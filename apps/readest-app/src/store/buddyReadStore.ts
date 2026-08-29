@@ -7,12 +7,13 @@ interface BuddyReadState {
   activeBuddyRead: any | null;
   members: any[];
   comments: any[];
+  hasMoreComments: boolean;
   annotations: any[];
   loading: boolean;
 
   setBuddyReadId: (id: number | null) => void;
   fetchBuddyReadDetails: (id: number) => Promise<any>;
-  fetchComments: (id: number) => Promise<void>;
+  fetchComments: (id: number, page?: number, limit?: number) => Promise<void>;
   fetchAnnotations: (id: number) => Promise<void>;
   postComment: (
     id: number,
@@ -37,6 +38,7 @@ export const useBuddyReadStore = create<BuddyReadState>((set, get) => ({
   activeBuddyRead: null,
   members: [],
   comments: [],
+  hasMoreComments: false,
   annotations: [],
   loading: false,
 
@@ -65,12 +67,22 @@ export const useBuddyReadStore = create<BuddyReadState>((set, get) => ({
     }
   },
 
-  fetchComments: async (id: number) => {
+  fetchComments: async (id: number, page: number = 1, limit: number = 15) => {
     try {
-      const url = `${getAPIBaseUrl()}/social/buddy-reads/${id}/comments`;
+      const url = `${getAPIBaseUrl()}/social/buddy-reads/${id}/comments?limit=${limit}&page=${page}&order_by=created_at_desc`;
       const response = await fetchWithAuth(url, { method: 'GET' });
       const resData = await response.json();
-      set({ comments: resData.data?.comments || [] });
+      const fetchedComments = resData.data?.comments || [];
+      const hasMore = resData.data?.hasMoreComments || false;
+
+      if (page === 1) {
+        set({ comments: [...fetchedComments].reverse(), hasMoreComments: hasMore });
+      } else {
+        set((state) => ({
+          comments: [...[...fetchedComments].reverse(), ...state.comments],
+          hasMoreComments: hasMore,
+        }));
+      }
     } catch (err) {
       console.error('Failed to fetch comments:', err);
     }

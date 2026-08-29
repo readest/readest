@@ -24,6 +24,7 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     currentBuddyReadId,
     activeBuddyRead,
     comments,
+    hasMoreComments,
     postComment,
     fetchComments,
     fetchAnnotations,
@@ -49,13 +50,59 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
 
   const currentPage = progress ? (progress.pageinfo?.current || 0) + 1 : 1;
 
+  const commentsPageRef = useRef(1);
+  const loadingMoreRef = useRef(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const commentsLengthRef = useRef(comments.length);
+
+  useEffect(() => {
+    commentsLengthRef.current = comments.length;
+  }, [comments.length]);
+
+  useEffect(() => {
+    commentsPageRef.current = 1;
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
+    lastCommentIdRef.current = null;
+  }, [currentBuddyReadId]);
+
+  const handleLoadMore = async (prevHeight?: number, container?: HTMLDivElement | null) => {
+    if (loadingMoreRef.current || !currentBuddyReadId) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    try {
+      const nextPage = commentsPageRef.current + 1;
+      await fetchComments(currentBuddyReadId, nextPage, 15);
+      commentsPageRef.current = nextPage;
+
+      if (prevHeight && container) {
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight - prevHeight;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load more comments:', err);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollTop <= 5 && hasMoreComments && !loadingMoreRef.current) {
+      const previousScrollHeight = target.scrollHeight;
+      handleLoadMore(previousScrollHeight, target);
+    }
+  };
+
   // Poll comments and annotations every 15 seconds
   useEffect(() => {
     if (!currentBuddyReadId) return;
 
     const refreshData = () => {
       fetchBuddyReadDetails(currentBuddyReadId);
-      fetchComments(currentBuddyReadId);
+      fetchComments(currentBuddyReadId, 1, Math.max(15, commentsLengthRef.current));
       fetchAnnotations(currentBuddyReadId);
     };
 
@@ -64,9 +111,24 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     return () => clearInterval(interval);
   }, [currentBuddyReadId, fetchComments, fetchAnnotations, fetchBuddyReadDetails]);
 
-  // Scroll to bottom when comments update
+  const lastCommentIdRef = useRef<number | null>(null);
+
+  // Scroll to bottom when comments update (only if a new comment is appended at the bottom)
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (comments.length === 0) {
+      lastCommentIdRef.current = null;
+      return;
+    }
+    const lastComment = comments[comments.length - 1];
+    const lastId = lastComment?.commentId;
+
+    if (lastId !== lastCommentIdRef.current) {
+      const isInitial = lastCommentIdRef.current === null;
+      chatEndRef.current?.scrollIntoView({
+        behavior: isInitial ? 'auto' : 'smooth',
+      });
+      lastCommentIdRef.current = lastId;
+    }
   }, [comments]);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -314,65 +376,85 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       </div>
 
       {/* Chat History Panel */}
-      <div className='flex-1 overflow-y-auto p-4 space-y-3.5 min-h-0 bg-base-100'>
+      <div
+        className='flex-1 overflow-y-auto p-4 space-y-3.5 min-h-0 bg-base-100'
+        onScroll={handleScroll}
+      >
         {comments.length === 0 ? (
           <div className='flex h-full flex-col items-center justify-center text-center text-base-content/50 py-10'>
             <p className='text-xs'>{_('No messages yet. Say hi!')}</p>
           </div>
         ) : (
-          comments.map((msg) => {
-            const isSpoiler = (msg.progressPercentage || 0) > currentProgressPercent;
-            const isRevealed = revealedComments[msg.commentId];
-            const isMe = msg.supabaseUserId === user?.id;
-
-            return (
-              <div
-                key={msg.commentId}
-                className={clsx(
-                  'chat',
-                  isMe
-                    ? 'chat-end flex flex-col items-end'
-                    : 'chat-start flex flex-col items-start',
-                )}
-              >
-                {/* Meta details */}
-                <div className='chat-header flex items-center gap-1.5 mb-1 text-xs opacity-75'>
-                  <span className='font-bold text-base-content/90'>
-                    {isMe ? _('You') : msg.user_name || 'Reader'}
-                  </span>
-                  <span className='text-[10px] bg-primary/10 text-primary font-bold px-1 rounded-sm'>
-                    {_('Page')} {msg.pageNumber || 1} ({msg.progressPercentage || 0}%)
-                  </span>
-                </div>
-
-                {/* Message Bubble */}
-                <div
-                  className={clsx(
-                    'chat-bubble max-w-full text-sm py-2 px-3 rounded-lg border',
-                    isSpoiler && !isRevealed
-                      ? 'bg-warning/10 border-warning/35 text-warning-content cursor-pointer'
-                      : isMe
-                        ? 'bg-primary text-primary-content border-transparent'
-                        : 'bg-base-200 border-base-300 text-base-content',
-                  )}
-                  onClick={() => isSpoiler && toggleReveal(msg.commentId)}
+          <>
+            {hasMoreComments && (
+              <div className='flex justify-center mb-2'>
+                <button
+                  type='button'
+                  onClick={(e) => {
+                    const container = e.currentTarget.closest('.overflow-y-auto') as HTMLDivElement;
+                    handleLoadMore(container?.scrollHeight, container);
+                  }}
+                  disabled={loadingMore}
+                  className='btn btn-xs btn-ghost text-xs text-primary font-semibold hover:bg-transparent normal-case'
                 >
-                  {isSpoiler && !isRevealed ? (
-                    <div className='flex items-center gap-1.5 font-medium select-none text-xs'>
-                      <span>⚠️ {_('Spoiler Alert')}</span>
-                      <span className='underline text-[10px] opacity-80'>
-                        ({_('Click to view')})
-                      </span>
-                    </div>
-                  ) : (
-                    <p className='whitespace-pre-wrap break-words leading-relaxed'>
-                      {msg.commentText}
-                    </p>
-                  )}
-                </div>
+                  {loadingMore ? _('Loading older messages...') : _('Load older messages')}
+                </button>
               </div>
-            );
-          })
+            )}
+            {comments.map((msg) => {
+              const isSpoiler = (msg.progressPercentage || 0) > currentProgressPercent;
+              const isRevealed = revealedComments[msg.commentId];
+              const isMe = msg.supabaseUserId === user?.id;
+
+              return (
+                <div
+                  key={msg.commentId}
+                  className={clsx(
+                    'chat',
+                    isMe
+                      ? 'chat-end flex flex-col items-end'
+                      : 'chat-start flex flex-col items-start',
+                  )}
+                >
+                  {/* Meta details */}
+                  <div className='chat-header flex items-center gap-1.5 mb-1 text-xs opacity-75'>
+                    <span className='font-bold text-base-content/90'>
+                      {isMe ? _('You') : msg.user_name || 'Reader'}
+                    </span>
+                    <span className='text-[10px] bg-primary/10 text-primary font-bold px-1 rounded-sm'>
+                      {_('Page')} {msg.pageNumber || 1} ({msg.progressPercentage || 0}%)
+                    </span>
+                  </div>
+
+                  {/* Message Bubble */}
+                  <div
+                    className={clsx(
+                      'chat-bubble max-w-full text-sm py-2 px-3 rounded-lg border',
+                      isSpoiler && !isRevealed
+                        ? 'bg-warning/10 border-warning/35 text-warning-content cursor-pointer'
+                        : isMe
+                          ? 'bg-primary text-primary-content border-transparent'
+                          : 'bg-base-200 border-base-300 text-base-content',
+                    )}
+                    onClick={() => isSpoiler && toggleReveal(msg.commentId)}
+                  >
+                    {isSpoiler && !isRevealed ? (
+                      <div className='flex items-center gap-1.5 font-medium select-none text-xs'>
+                        <span>⚠️ {_('Spoiler Alert')}</span>
+                        <span className='underline text-[10px] opacity-80'>
+                          ({_('Click to view')})
+                        </span>
+                      </div>
+                    ) : (
+                      <p className='whitespace-pre-wrap break-words leading-relaxed'>
+                        {msg.commentText}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </>
         )}
         <div ref={chatEndRef} />
       </div>
