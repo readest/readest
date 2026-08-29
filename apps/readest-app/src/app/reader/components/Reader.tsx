@@ -68,7 +68,11 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
   const { getIsNotebookVisible, setNotebookVisible } = useNotebookStore();
   const { isDarkMode, systemUIAlwaysHidden, isRoundedWindow } = useThemeStore();
 
-  useTheme({ systemUIVisible: settings.alwaysShowStatusBar, appThemeColor: 'base-100' });
+  useTheme({
+    systemUIVisible: settings.alwaysShowStatusBar,
+    appThemeColor: 'base-100',
+    themeScope: 'reader',
+  });
   useScreenWakeLock(settings.screenWakeLock, appService?.hasWindow);
   useScreenBrightness();
   useTransferQueue(libraryLoaded, 5000);

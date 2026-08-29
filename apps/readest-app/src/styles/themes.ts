@@ -9,6 +9,13 @@ export type BaseColor = {
 /** `ambient` follows the ambient light sensor (lux → light/dark), Android-first. */
 export type ThemeMode = 'auto' | 'light' | 'dark' | 'ambient';
 
+/**
+ * Which page's theme is being read or written (issue #5945). The library and
+ * the reader can carry different theme modes and colors; every route that is
+ * not the reader resolves as 'library'.
+ */
+export type ThemeScope = 'library' | 'reader';
+
 export type Palette = {
   'base-100': string;
   'base-200': string;

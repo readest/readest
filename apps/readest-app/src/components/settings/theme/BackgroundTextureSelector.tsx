@@ -1,9 +1,8 @@
-import clsx from 'clsx';
 import React from 'react';
 import { MdClose, MdPlayCircleOutline } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { BoxedList, SectionTitle, SettingsRow, SettingsSelect } from '../primitives';
+import { BoxedList, ScopeSwitch, SectionTitle, SettingsRow, SettingsSelect } from '../primitives';
 import { PiPlus } from 'react-icons/pi';
 import type { BackgroundTextureScope } from '@/helpers/settings';
 
@@ -54,44 +53,7 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
     <div>
       <div className='mb-2 flex items-center justify-between gap-2'>
         <SectionTitle>{_('Background Image')}</SectionTitle>
-        {/* Same segmented-control anatomy as ThemeModeSelector (44px targets,
-            eink-bordered track + eink-inverted active thumb), with text labels:
-            the visible Library|Reader pair is what tells users the two pages
-            have separate backgrounds (issue #5306). */}
-        <div
-          role='radiogroup'
-          aria-label={_('Background Image')}
-          className='bg-base-200 eink-bordered inline-flex items-center rounded-full p-0.5'
-        >
-          {(
-            [
-              { scope: 'library', label: _('Library') },
-              { scope: 'reader', label: _('Reader') },
-            ] as const
-          ).map(({ scope: segScope, label }) => {
-            const active = scope === segScope;
-            return (
-              <button
-                key={segScope}
-                type='button'
-                role='radio'
-                aria-checked={active}
-                onClick={() => onScopeChange(segScope)}
-                className={clsx(
-                  // em-based like SectionTitle, not rem-based text-sm — the
-                  // settings-content wrapper scales 14/16px (DESIGN.md §5).
-                  'flex h-9 items-center justify-center rounded-full px-3 text-[0.85em] font-medium transition-colors',
-                  'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
-                  active
-                    ? 'bg-base-300 text-base-content eink-inverted shadow-xs'
-                    : 'text-base-content/60 hover:text-base-content',
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+        <ScopeSwitch label={_('Background Image')} scope={scope} onScopeChange={onScopeChange} />
       </div>
       <div className='mb-4 grid grid-cols-3 gap-4'>
         {allTextures.map((texture) => (
