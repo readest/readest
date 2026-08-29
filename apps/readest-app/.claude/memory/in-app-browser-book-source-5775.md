@@ -141,3 +141,9 @@ regenerate `out/` (next export) -> one clobbers a hashed asset (`jieba_rs_wasm_b
 `generate_context!()` read -> spurious "failed to read asset" build failure; run mobile builds SEQUENTIALLY.
 Device smoke-test of the download happy-path PENDING (Xiaomi secure-locked; behind keyguard the browser
 WebView timers stall so CDP evals that await hang).
+
+**iOS DOWNLOAD CRASH (2026-08-29/30, found from a user `.ips` on 0.12.6):** the iOS device flow was
+never exercised before merge, and it was 100% broken — every finished download froze the app for 10s
+and iOS SIGKILLed it (`0x8BADF00D`). Mobile `set_web_browser_status` was the app's only *synchronous*
+`#[tauri::command]` reaching `native_bridge()`, which parks the iOS main thread. Full mechanism, the
+fix, and the guard test: [[ios-sync-command-run-mobile-plugin-deadlock]].
