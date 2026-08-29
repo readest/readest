@@ -51,6 +51,7 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'lastSyncedAtReplicas',
   'readwise.lastSyncedAt',
   'hardcover.lastSyncedAt',
+  'notion.lastSyncedAt',
   'googleDrive.deviceId',
   'googleDrive.lastSyncedAt',
   'webdav.deviceId',
@@ -92,6 +93,7 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'bookorbit.password',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'notion.accessToken',
   // S3 access keys are strong, long-lived cloud credentials — strip them from
   // unencrypted backup zips unless the user opts into including credentials.
   's3.accessKeyId',

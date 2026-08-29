@@ -32,6 +32,7 @@ import { useBookOrbitNotesSync } from '../../hooks/useBookOrbitNotesSync';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { useReadwiseSync } from '../../hooks/useReadwiseSync';
 import { useHardcoverSync } from '../../hooks/useHardcoverSync';
+import { useNotionSync } from '../../hooks/useNotionSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
 import { Point, Position, TextSelection } from '@/utils/sel';
 import {
@@ -138,6 +139,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   useBookOrbitNotesSync(bookKey);
   useReadwiseSync(bookKey);
   useHardcoverSync(bookKey);
+  useNotionSync(bookKey);
 
   useEffect(() => {
     void loadCustomDictionaries(envConfig).catch((error) => {
