@@ -2265,7 +2265,5 @@
   "With notes": "Notlu",
   "{{count}} Annotations_one": "{{count}} açıklama",
   "{{count}} Annotations_other": "{{count}} açıklama",
-  "Insert into Notebook": "Not defterine ekle",
-  "This Book — Overrides Global Settings": "Bu kitap — Genel Ayarlar'ı geçersiz kılar",
-  "Always Global Settings": "Her zaman Genel Ayarlar"
+  "Insert into Notebook": "Not defterine ekle"
 }

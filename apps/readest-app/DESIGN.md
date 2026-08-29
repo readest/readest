@@ -660,34 +660,6 @@ the closest analog.
 - Drag handle at top (the small horizontal pill) is mandatory if the sheet supports
   swipe-to-dismiss.
 
-#### Status banner (dialog header)
-
-A one-line strip in a sticky dialog header. It states a condition that governs
-every control below it. It is read-only, it never dismisses, and it is not a
-warning. Adwaita's **AdwBanner** is the closest analog; `AdwBanner` can carry a
-button, and this one never does. `SettingsScopeBanner` is the first of these.
-
-Use it only when the answer must stay on screen while the body scrolls, and only
-when the condition changes what the body's controls do. Anything the reader must
-act on is an alert, not this.
-
-- Full width, `rounded-lg`, `border-s-4`, `px-2.5 py-1`. The label sits in an
-  inner `<span>` at `text-[0.8em]`, and truncates.
-- Keep the chassis and the tint on one element. `eink-bordered` rewrites the
-  background and the border of the element that carries it, so the two must not
-  be split.
-- A leading rule only. Do not add a full border; that is the callout spelling
-  used by `MigrateDataWindow` and `CatalogManager`.
-- `border-info` with `bg-info/15` for the ordinary condition, `border-warning`
-  with `bg-warning/10` for the unusual one. `themes.ts` sets `--color-info` and
-  `--color-warning` from `STATE_COLORS` for every theme, so a palette cannot
-  break the pair.
-- Colour is never the only signal. Pair each state with its own icon and its own
-  words, because `eink-bordered` removes both the tint and the thick rule on
-  e-ink. A browser test must measure this.
-- `role='status'` with `aria-live='polite'`, because the control that changes the
-  condition may announce nothing when it closes.
-
 #### Stacking order (z-index scale)
 
 Full-screen and body-portaled overlays share **one global stacking scale**. Keep it

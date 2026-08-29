@@ -2204,7 +2204,5 @@
   "Notebook draft copied to clipboard": "Draf Buku Catatan disalin ke papan klip",
   "With notes": "Dengan catatan",
   "{{count}} Annotations_other": "{{count}} anotasi",
-  "Insert into Notebook": "Sisipkan ke Buku Catatan",
-  "This Book — Overrides Global Settings": "Buku ini — menimpa pengaturan global",
-  "Always Global Settings": "Pengaturan yang Selalu Global"
+  "Insert into Notebook": "Sisipkan ke Buku Catatan"
 }

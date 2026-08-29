@@ -28,7 +28,6 @@ import IntegrationsPanel from './IntegrationsPanel';
 import Dropdown from '@/components/Dropdown';
 import Dialog from '@/components/Dialog';
 import DialogMenu from './DialogMenu';
-import SettingsScopeBanner from './SettingsScopeBanner';
 import ControlPanel from './ControlPanel';
 import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
@@ -45,27 +44,6 @@ export type SettingsPanelType =
   | 'AI'
   | 'Integrations'
   | 'Custom';
-
-/**
- * This map shows which panels the scope controls.
- *
- * It is a `Record`, not an array. The compiler thus refuses a new panel until
- * this file classifies it. An array of the scoped panels would make a new panel
- * always-global. An array of the always-global panels would make a new panel
- * scoped. Each array mislabels a new panel, and no test finds that error.
- */
-const PANEL_SCOPE: Record<SettingsPanelType, 'scoped' | 'always-global'> = {
-  Font: 'scoped',
-  Layout: 'scoped',
-  Theme: 'scoped',
-  Control: 'scoped',
-  TTS: 'scoped',
-  Language: 'scoped',
-  Custom: 'scoped',
-  AI: 'always-global',
-  Integrations: 'always-global',
-};
-
 export type SettingsPanelPanelProp = {
   bookKey: string;
   onRegisterReset: (resetFn: () => void) => void;
@@ -453,12 +431,6 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             )}
             <div className='hidden sm:flex'>{windowControls}</div>
           </div>
-          {/* The banner shows on every panel. A missing banner would be
-              ambiguous. */}
-          <SettingsScopeBanner
-            bookKey={bookKey}
-            alwaysGlobal={PANEL_SCOPE[activePanel] === 'always-global'}
-          />
         </div>
       }
     >

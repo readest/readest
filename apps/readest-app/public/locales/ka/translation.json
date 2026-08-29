@@ -2265,7 +2265,5 @@
   "With notes": "შენიშვნებით",
   "{{count}} Annotations_one": "{{count}} ანოტაცია",
   "{{count}} Annotations_other": "{{count}} ანოტაცია",
-  "Insert into Notebook": "რვეულში ჩასმა",
-  "This Book — Overrides Global Settings": "ეს წიგნი — გადაფარავს გლობალურ პარამეტრებს",
-  "Always Global Settings": "ყოველთვის გლობალური პარამეტრები"
+  "Insert into Notebook": "რვეულში ჩასმა"
 }

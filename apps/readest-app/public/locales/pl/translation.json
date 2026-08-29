@@ -2387,7 +2387,5 @@
   "{{count}} Annotations_few": "{{count}} adnotacje",
   "{{count}} Annotations_many": "{{count}} adnotacji",
   "{{count}} Annotations_other": "{{count}} adnotacji",
-  "Insert into Notebook": "Wstaw do notatnika",
-  "This Book — Overrides Global Settings": "Ta książka — nadpisuje ustawienia globalne",
-  "Always Global Settings": "Ustawienia są zawsze globalne"
+  "Insert into Notebook": "Wstaw do notatnika"
 }

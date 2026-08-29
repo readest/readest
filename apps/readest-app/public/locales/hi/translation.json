@@ -2265,7 +2265,5 @@
   "With notes": "नोट्स सहित",
   "{{count}} Annotations_one": "{{count}} टिप्पणी",
   "{{count}} Annotations_other": "{{count}} टिप्पणियाँ",
-  "Insert into Notebook": "नोटबुक में डालें",
-  "This Book — Overrides Global Settings": "यह पुस्तक — वैश्विक सेटिंग्स को ओवरराइड करती है",
-  "Always Global Settings": "सभी के लिए सेटिंग्स"
+  "Insert into Notebook": "नोटबुक में डालें"
 }

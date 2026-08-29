@@ -2326,7 +2326,5 @@
   "{{count}} Annotations_one": "{{count}} annotazione",
   "{{count}} Annotations_many": "{{count}} annotazioni",
   "{{count}} Annotations_other": "{{count}} annotazioni",
-  "Insert into Notebook": "Inserisci nel quaderno",
-  "This Book — Overrides Global Settings": "Questo libro — sovrascrive Impostazioni globali",
-  "Always Global Settings": "Sempre Impostazioni globali"
+  "Insert into Notebook": "Inserisci nel quaderno"
 }

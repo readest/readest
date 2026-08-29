@@ -2204,7 +2204,5 @@
   "Notebook draft copied to clipboard": "笔记本草稿已复制到剪贴板",
   "With notes": "含笔记",
   "{{count}} Annotations_other": "{{count}} 条注释",
-  "Insert into Notebook": "插入到笔记本",
-  "This Book — Overrides Global Settings": "本书 — 覆盖全局设置",
-  "Always Global Settings": "始终全局设置"
+  "Insert into Notebook": "插入到笔记本"
 }

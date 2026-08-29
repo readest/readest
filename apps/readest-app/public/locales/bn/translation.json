@@ -2265,7 +2265,5 @@
   "With notes": "নোটসহ",
   "{{count}} Annotations_one": "{{count}} টীকা",
   "{{count}} Annotations_other": "{{count}} টীকা",
-  "Insert into Notebook": "নোটবুকে যোগ করুন",
-  "This Book — Overrides Global Settings": "এই বই — গ্লোবাল সেটিংস অগ্রাহ্য করে",
-  "Always Global Settings": "সর্বদা গ্লোবাল সেটিংস"
+  "Insert into Notebook": "নোটবুকে যোগ করুন"
 }

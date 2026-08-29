@@ -2265,7 +2265,5 @@
   "With notes": "Med anteckningar",
   "{{count}} Annotations_one": "{{count}} anteckning",
   "{{count}} Annotations_other": "{{count}} anteckningar",
-  "Insert into Notebook": "Infoga i anteckningsboken",
-  "This Book — Overrides Global Settings": "Den här boken — åsidosätter globala inställningar",
-  "Always Global Settings": "Alltid globala inställningar"
+  "Insert into Notebook": "Infoga i anteckningsboken"
 }

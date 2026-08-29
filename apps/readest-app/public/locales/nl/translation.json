@@ -2265,7 +2265,5 @@
   "With notes": "Met notities",
   "{{count}} Annotations_one": "{{count}} aantekening",
   "{{count}} Annotations_other": "{{count}} aantekeningen",
-  "Insert into Notebook": "Invoegen in notitieblok",
-  "This Book — Overrides Global Settings": "Dit boek — overschrijft Algemene instellingen",
-  "Always Global Settings": "Altijd Algemene instellingen"
+  "Insert into Notebook": "Invoegen in notitieblok"
 }

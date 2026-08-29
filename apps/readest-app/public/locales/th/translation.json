@@ -2204,7 +2204,5 @@
   "Notebook draft copied to clipboard": "คัดลอกฉบับร่างสมุดบันทึกไปยังคลิปบอร์ดแล้ว",
   "With notes": "มีบันทึกย่อ",
   "{{count}} Annotations_other": "คำอธิบายประกอบ {{count}} รายการ",
-  "Insert into Notebook": "แทรกลงในสมุดบันทึก",
-  "This Book — Overrides Global Settings": "หนังสือเล่มนี้ — แทนที่การตั้งค่าทั่วไป",
-  "Always Global Settings": "การตั้งค่าทั่วไปเสมอ"
+  "Insert into Notebook": "แทรกลงในสมุดบันทึก"
 }
