@@ -59,6 +59,9 @@ jobs:
       build_android: true
       android_abi: ${{ github.event_name == 'workflow_dispatch' && inputs.android_abi || 'aarch64' }}
       version_override: ${{ needs.resolve.outputs.version }}
+    # Repo secrets (the Android signing keystore) are NOT visible to a called
+    # workflow unless explicitly forwarded.
+    secrets: inherit
 
   release:
     needs: [resolve, build]
