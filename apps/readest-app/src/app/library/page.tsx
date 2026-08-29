@@ -89,6 +89,7 @@ import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
+import LanSyncManager from '@/components/lan/LanSyncManager';
 import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { CatalogDialog } from './components/OPDSDialog';
@@ -2140,6 +2141,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <AboutWindow />
       <KeyboardShortcutsHelp />
       <LocalSendManager />
+      <LanSyncManager />
       <UpdaterWindow />
       <MigrateDataWindow />
       <BackupWindow onPullLibrary={pullLibrary} />

@@ -18,6 +18,7 @@ import {
   RiMicrosoftLine,
   RiAppleLine,
   RiHeadphoneLine,
+  RiRouterLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -45,6 +46,7 @@ import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import LocalSendForm from './integrations/LocalSendForm';
+import LanForm from './integrations/LanForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
@@ -76,6 +78,7 @@ type SubPage =
   | 's3'
   | 'onedrive'
   | 'icloud'
+  | 'lan'
   | 'readest-cloud'
   | 'readwise'
   | 'hardcover'
@@ -120,6 +123,8 @@ const IntegrationsPanel: React.FC = () => {
   const onedriveLastError = useFileSyncStore((s) => s.lastErrorByKind.onedrive);
   const isICloudSyncing = useFileSyncStore((s) => s.byKind.icloud?.isSyncing ?? false);
   const icloudLastError = useFileSyncStore((s) => s.lastErrorByKind.icloud);
+  const isLanSyncing = useFileSyncStore((s) => s.byKind.lan?.isSyncing ?? false);
+  const lanLastError = useFileSyncStore((s) => s.lastErrorByKind.lan);
   // "Configured" for iCloud = the container is reachable (an entitled build
   // with an iCloud session). Probed once; Apple Tauri platforms only.
   const [icloudAvailable, setICloudAvailable] = useState(false);
@@ -215,7 +220,8 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'opds' ||
       requestedSubPage === 'audiobookshelf' ||
       requestedSubPage === 'send' ||
-      requestedSubPage === 'localsend'
+      requestedSubPage === 'localsend' ||
+      requestedSubPage === 'lan'
     ) {
       setSubPage(requestedSubPage);
     } else if (requestedSubPage === 'cloudsync') {
@@ -411,6 +417,38 @@ const IntegrationsPanel: React.FC = () => {
         )}
       </div>
     );
+  // LAN Sync sub-page: deliberately NOT in the premium-gated cloud-request
+  // branch above — the home-network channel has no plan requirement.
+  if (subPage === 'lan')
+    return (
+      <div className='my-4 w-full'>
+        <SubPageHeader
+          parentLabel={_('Integrations')}
+          currentLabel={_('LAN Sync')}
+          description={_(
+            'Sync your library, reading progress, and highlights with another Readest device on your local network.',
+          )}
+          onBack={() => setSubPage(null)}
+        />
+        <LanForm />
+        {settings.lan?.enabled && (
+          <div className='mt-5'>
+            <Tips>
+              <li>
+                {_('{{provider}} keeps a full copy of your books, progress, and annotations.', {
+                  provider: _('LAN Sync'),
+                })}
+              </li>
+              <li>
+                {_(
+                  'Both devices must be on the same network, run Readest with LAN Sync enabled, and share the same pairing token.',
+                )}
+              </li>
+            </Tips>
+          </div>
+        )}
+      </div>
+    );
   if (subPage === 'readest-cloud')
     return (
       <div className='my-4 w-full'>
@@ -553,6 +591,17 @@ const IntegrationsPanel: React.FC = () => {
     lastError: icloudLastError,
     syncBooks: settings.icloud?.syncBooks ?? false,
     booksBackedUpElsewhere: booksBackedUpBy('icloud'),
+  });
+  const lanConfigured = !!(settings.lan?.host && settings.lan?.token);
+  const lanStatus = getThirdPartyRowStatus(_, {
+    enabled: !!settings.lan?.enabled,
+    configured: lanConfigured,
+    syncing: isLanSyncing,
+    // LAN never pauses with the plan — resolveCloudSyncGate carves 'lan' out.
+    paused: false,
+    lastError: lanLastError,
+    syncBooks: settings.lan?.syncBooks ?? false,
+    booksBackedUpElsewhere: booksBackedUpBy('lan'),
   });
   const readestStatus = getReadestCloudRowStatus(_, {
     signedIn: !!user,
@@ -725,6 +774,23 @@ const IntegrationsPanel: React.FC = () => {
                 toggleLabel={_('Sync with iCloud')}
               />
             )}
+            {/* LAN sync is the home-network channel: deliberately not gated by
+                the cloud premium badge — resolveCloudSyncGate never pauses it,
+                and the toggle only needs a configured peer (host + token). */}
+            <CloudProviderRow
+              icon={RiRouterLine}
+              title={_('LAN Sync')}
+              status={lanStatus}
+              checked={!!settings.lan?.enabled}
+              canToggle={canToggleCloudProvider({
+                isPremium: true,
+                isConfigured: lanConfigured,
+                isEnabled: !!settings.lan?.enabled,
+              })}
+              onToggle={(next) => toggleCloudProvider('lan', next)}
+              onOpen={() => setSubPage('lan')}
+              toggleLabel={_('Sync with LAN')}
+            />
           </div>
         </div>
         {providers.length === 0 && (
