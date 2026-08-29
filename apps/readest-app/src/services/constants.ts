@@ -966,7 +966,7 @@ export const ZOOM_STEP = 10;
 // Ctrl+wheel font-size stepping in useBookShortcuts.
 export const FONT_SIZE_LIMITS = {
   MIN: 8,
-  MAX: 30,
+  MAX: 50,
   DEFAULT: 16,
 } as const;
 
