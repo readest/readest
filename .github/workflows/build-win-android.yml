@@ -1,0 +1,234 @@
+# Fork CI build: Windows NSIS installer + Android APK, artifacts only (no release).
+#
+# Differences from upstream release.yml / nightly.yml, per prosecutor review #1:
+#   - Android keystore comes from repo secrets (ANDROID_KEY_BASE64 / ALIAS /
+#     PASSWORD) so the signing identity is stable across runs and APKs can
+#     overwrite-install. The job FAILS LOUDLY if the secrets are missing —
+#     never generate a throwaway keystore per run.
+#   - Desktop updater artifacts are disabled via the tauri.fork.conf.json
+#     overlay (createUpdaterArtifacts: false), so no TAURI_SIGNING_* secrets.
+#   - gen/android is tracked in this repo and matches the pinned tauri CLI,
+#     so we do NOT `tauri android init` per run — just drop keystore.properties.
+#   - Cloud/telemetry keys stay empty on purpose; the app degrades to
+#     "not signed in" instead of failing (upload-sourcemaps is a no-op then).
+name: Fork Build (Windows + Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_windows:
+        description: 'Build Windows installer'
+        type: boolean
+        default: true
+      build_android:
+        description: 'Build Android APK'
+        type: boolean
+        default: true
+      android_abi:
+        description: 'Android ABI (aarch64 = fast single-target for real devices, all = universal 4-ABI)'
+        type: choice
+        default: 'aarch64'
+        options:
+          - aarch64
+          - all
+  push:
+    branches: [main]
+    paths:
+      - 'apps/readest-app/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/build-win-android.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-win-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_windows }}
+    name: Windows x64 (NSIS)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: install Rust stable (MSVC)
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: fork-windows-x86_64-cargo
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: create .env.local for Next.js
+        shell: bash
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_POSTHOG_KEY=
+          NEXT_PUBLIC_SUPABASE_URL=
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=
+          SENTRY_DSN=
+          EOF
+          cp .env.local apps/readest-app/.env.local
+
+      - name: build Windows installer (NSIS, updater disabled)
+        shell: bash
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: |
+          version=$(node -p "require('./apps/readest-app/package.json').version")
+          echo "version=$version" >> "$GITHUB_ENV"
+          cd apps/readest-app
+          pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis \
+            --config src-tauri/tauri.fork.conf.json
+
+      - name: collect artifacts
+        shell: bash
+        run: |
+          version="${{ env.version }}"
+          mkdir -p fork-out
+          cp "target/x86_64-pc-windows-msvc/release/bundle/nsis/Readest_${version}_x64-setup.exe" fork-out/
+
+      - name: upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Readest_${{ env.version }}_windows_x64
+          path: fork-out/
+          if-no-files-found: error
+
+  android:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_android }}
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: setup Java 17 (Android build)
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: setup Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+
+      - name: install NDK
+        run: sdkmanager "ndk;28.2.13676358"
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: install Rust stable (Android targets)
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: fork-android-cargo
+
+      - name: create .env.local for Next.js
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_POSTHOG_KEY=
+          NEXT_PUBLIC_SUPABASE_URL=
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=
+          SENTRY_DSN=
+          EOF
+          cp .env.local apps/readest-app/.env.local
+
+      - name: write signing keystore from secrets
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEY_BASE64" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "::error::Missing ANDROID_KEY_BASE64 / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD secrets."
+            echo "::error::The keystore must be stable across runs (same signature = overwrite-install). Never generate one per run."
+            exit 1
+          fi
+          base64 -d <<< "$ANDROID_KEY_BASE64" > "$RUNNER_TEMP/keystore.jks"
+          cd apps/readest-app/src-tauri/gen/android
+          cat > keystore.properties <<EOF
+          keyAlias=$ANDROID_KEY_ALIAS
+          password=$ANDROID_KEY_PASSWORD
+          storeFile=$RUNNER_TEMP/keystore.jks
+          EOF
+
+      - name: build Android APK
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: |
+          version=$(node -p "require('./apps/readest-app/package.json').version")
+          echo "version=$version" >> "$GITHUB_ENV"
+          cd apps/readest-app
+          if [ "${{ inputs.android_abi || 'aarch64' }}" = "all" ]; then
+            pnpm tauri android build
+          else
+            pnpm tauri android build -t aarch64
+          fi
+
+      - name: collect artifacts
+        run: |
+          version="${{ env.version }}"
+          mkdir -p fork-out
+          if [ "${{ inputs.android_abi || 'aarch64' }}" = "all" ]; then
+            name="Readest_${version}_universal.apk"
+          else
+            name="Readest_${version}_arm64.apk"
+          fi
+          outdir=apps/readest-app/src-tauri/gen/android/app/build/outputs/apk/universal/release
+          if [ -f "$outdir/app-universal-release.apk" ]; then
+            cp "$outdir/app-universal-release.apk" "fork-out/$name"
+          else
+            apk=$(find apps/readest-app/src-tauri/gen/android/app/build/outputs/apk -name '*-release.apk' | head -1)
+            echo "Falling back to $apk"
+            cp "$apk" "fork-out/$name"
+          fi
+
+      - name: upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Readest_${{ env.version }}_android_${{ inputs.android_abi || 'aarch64' }}
+          path: fork-out/
+          if-no-files-found: error
