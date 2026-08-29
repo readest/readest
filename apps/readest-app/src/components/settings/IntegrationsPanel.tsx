@@ -145,8 +145,11 @@ const IntegrationsPanel: React.FC = () => {
   // once the plan resolves). An entitled user already has it, so the badge is
   // noise. Suppressing it while a signed-in user's plan is still loading avoids
   // flashing the chip at a premium user on every open.
+  // Fork unlock: isCloudSyncAllowed always passes in this build, so the chip
+  // would never show for a signed-in user; drop the signed-out branch too
+  // rather than teasing an upgrade the build has unlocked.
   const premiumBadge =
-    !user || (userProfilePlan !== undefined && !isCloudSyncPremium) ? _('Premium') : undefined;
+    userProfilePlan !== undefined && !isCloudSyncPremium ? _('Premium') : undefined;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 

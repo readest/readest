@@ -50,7 +50,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { userProfilePlan, quotas } = useQuotaStats(true);
+  const { quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
@@ -164,11 +164,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     const newValue = !settings.openLastBooks;
     saveSysSettings(envConfig, 'openLastBooks', newValue);
     setIsOpenLastBooks(newValue);
-  };
-
-  const handleUpgrade = () => {
-    navigateToProfile(router);
-    setIsDropdownOpen?.(false);
   };
 
   const handleSetRootDir = () => {
@@ -467,9 +462,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         </ul>
       </MenuItem>
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      {user && userProfilePlan === 'free' && (
-        <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
-      )}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
       <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
     </Menu>
