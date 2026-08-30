@@ -12,6 +12,7 @@ interface UseOcrSessionOptions {
   enabled: boolean;
   language?: string | readonly string[];
   mangaFallback?: boolean;
+  mangaMode?: boolean;
   getDocuments?: () => readonly { doc?: Document; index?: number }[];
   onProgress?: (progress: OcrEngineProgress) => void;
   onError?: (error: unknown, pageIndex: number) => void;
@@ -22,6 +23,7 @@ export const useOcrSession = ({
   enabled,
   language,
   mangaFallback = false,
+  mangaMode = false,
   getDocuments,
   onProgress,
   onError,
@@ -77,7 +79,7 @@ export const useOcrSession = ({
       createEngine: () =>
         new TesseractOcrEngine({
           languages,
-          mangaMode: mangaFallback,
+          mangaMode,
           onProgress: (progress) => {
             if (sessionRef.current === session && enabledRef.current) {
               onProgressRef.current?.(progress);
@@ -103,7 +105,7 @@ export const useOcrSession = ({
       if (sessionRef.current === session) sessionRef.current = null;
       void session.terminate();
     };
-  }, [languages, processKnownDocuments]);
+  }, [languages, mangaMode, processKnownDocuments]);
 
   useEffect(() => {
     const session = sessionRef.current;

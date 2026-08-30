@@ -72,7 +72,7 @@ describe('useOcrSession', () => {
     expect(mocks.engineOptions).toEqual([
       expect.objectContaining({
         languages: ['jpn', 'jpn_vert', 'eng'],
-        mangaMode: true,
+        mangaMode: false,
       }),
     ]);
 
