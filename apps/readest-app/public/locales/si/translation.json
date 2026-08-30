@@ -2277,7 +2277,7 @@
   "Invalid Notion access token": "වලංගු නොවන Notion ප්‍රවේශ ටෝකනය",
   "Disconnected from Notion": "Notion වෙතින් විසන්ධි විය",
   "Connected to Notion. Last synced {{time}}.": "Notion වෙත සම්බන්ධයි. අවසන් සමමුහූර්තකරණය {{time}}.",
-  "Connect a Notion database to sync highlights and notes.": "උද්දීපන සහ සටහන් සමමුහූර්ත කිරීමට Notion දත්ත සමුදායක් සම්බන්ධ කරන්න.",
+  "Connect a Notion database to sync highlights and notes.": "ඉස්මතු කිරීම් සහ සටහන් සමමුහූර්ත කිරීමට Notion දත්ත සමුදායක් සම්බන්ධ කරන්න.",
   "Create an integration and share a database with it at": "ඒකාබද්ධතාවයක් සාදා එය සමඟ දත්ත සමුදායක් බෙදා ගන්න:",
   "Notion": "Notion",
   "Include Chapter Heading": "පරිච්ඡේද ශීර්ෂය ඇතුළත් කරන්න",

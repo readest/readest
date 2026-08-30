@@ -2339,10 +2339,10 @@
   "Disconnected from Notion": "Déconnecté de Notion",
   "Connected to Notion. Last synced {{time}}.": "Connecté à Notion. Dernière synchronisation {{time}}.",
   "Connect a Notion database to sync highlights and notes.": "Connectez une base de données Notion pour synchroniser vos surlignages et vos notes.",
-  "Create an integration and share a database with it at": "Créez une intégration et partagez-lui une base de données sur",
+  "Create an integration and share a database with it at": "Créez une intégration et partagez une base de données avec elle sur",
   "Notion": "Notion",
   "Include Chapter Heading": "Inclure le titre du chapitre",
   "Paste your Notion integration token (secret_...)": "Collez votre jeton d'intégration Notion (secret_...)",
   "Database ID": "ID de la base de données",
-  "Paste the Notion database ID to sync into": "Collez l'ID de la base de données Notion vers laquelle synchroniser"
+  "Paste the Notion database ID to sync into": "Collez l’ID de la base de données Notion de destination"
 }

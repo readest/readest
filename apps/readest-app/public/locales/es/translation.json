@@ -2338,11 +2338,11 @@
   "Invalid Notion access token": "Token de acceso de Notion no válido",
   "Disconnected from Notion": "Desconectado de Notion",
   "Connected to Notion. Last synced {{time}}.": "Conectado a Notion. Última sincronización {{time}}.",
-  "Connect a Notion database to sync highlights and notes.": "Conecta una base de datos de Notion para sincronizar subrayados y notas.",
+  "Connect a Notion database to sync highlights and notes.": "Conecta una base de datos de Notion para sincronizar resaltados y notas.",
   "Create an integration and share a database with it at": "Crea una integración y comparte una base de datos con ella en",
   "Notion": "Notion",
   "Include Chapter Heading": "Incluir título del capítulo",
   "Paste your Notion integration token (secret_...)": "Pega tu token de integración de Notion (secret_...)",
   "Database ID": "ID de la base de datos",
-  "Paste the Notion database ID to sync into": "Pega el ID de la base de datos de Notion con la que sincronizar"
+  "Paste the Notion database ID to sync into": "Pega el ID de la base de datos de Notion de destino"
 }

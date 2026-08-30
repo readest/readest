@@ -2344,5 +2344,5 @@
   "Include Chapter Heading": "Includi titolo del capitolo",
   "Paste your Notion integration token (secret_...)": "Incolla il tuo token di integrazione Notion (secret_...)",
   "Database ID": "ID del database",
-  "Paste the Notion database ID to sync into": "Incolla l'ID del database Notion in cui sincronizzare"
+  "Paste the Notion database ID to sync into": "Incolla l’ID del database Notion di destinazione"
 }

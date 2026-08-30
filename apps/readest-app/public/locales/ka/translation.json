@@ -2277,7 +2277,7 @@
   "Invalid Notion access token": "არასწორი Notion-ის წვდომის ტოკენი",
   "Disconnected from Notion": "გათიშულია Notion-იდან",
   "Connected to Notion. Last synced {{time}}.": "დაკავშირებულია Notion-თან. ბოლო სინქრონიზაცია {{time}}.",
-  "Connect a Notion database to sync highlights and notes.": "დააკავშირეთ Notion-ის მონაცემთა ბაზა მონიშვნებისა და შენიშვნების სინქრონიზაციისთვის.",
+  "Connect a Notion database to sync highlights and notes.": "დააკავშირეთ Notion-ის მონაცემთა ბაზა მარკირებებისა და შენიშვნების სინქრონიზაციისთვის.",
   "Create an integration and share a database with it at": "შექმენით ინტეგრაცია და გაუზიარეთ მას მონაცემთა ბაზა აქ:",
   "Notion": "Notion",
   "Include Chapter Heading": "თავის სათაურის ჩართვა",

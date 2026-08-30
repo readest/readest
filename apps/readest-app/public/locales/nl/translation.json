@@ -2283,5 +2283,5 @@
   "Include Chapter Heading": "Hoofdstuktitel toevoegen",
   "Paste your Notion integration token (secret_...)": "Plak je Notion-integratietoken (secret_...)",
   "Database ID": "Database-ID",
-  "Paste the Notion database ID to sync into": "Plak de Notion-database-ID om naar te synchroniseren"
+  "Paste the Notion database ID to sync into": "Plak de ID van de Notion-database waarnaar je wilt synchroniseren"
 }

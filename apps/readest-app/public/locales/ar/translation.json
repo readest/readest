@@ -2521,7 +2521,7 @@
   "Invalid Notion access token": "رمز وصول Notion غير صالح",
   "Disconnected from Notion": "تم قطع الاتصال بـ Notion",
   "Connected to Notion. Last synced {{time}}.": "متصل بـ Notion. آخر مزامنة {{time}}.",
-  "Connect a Notion database to sync highlights and notes.": "اربط قاعدة بيانات Notion لمزامنة التظليلات والملاحظات.",
+  "Connect a Notion database to sync highlights and notes.": "اربط قاعدة بيانات Notion لمزامنة التمييزات والملاحظات.",
   "Create an integration and share a database with it at": "أنشئ تكاملاً وشارك معه قاعدة بيانات على",
   "Notion": "Notion",
   "Include Chapter Heading": "تضمين عنوان الفصل",

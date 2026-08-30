@@ -2216,7 +2216,7 @@
   "Invalid Notion access token": "Token akses Notion tidak sah",
   "Disconnected from Notion": "Sambungan ke Notion diputuskan",
   "Connected to Notion. Last synced {{time}}.": "Disambungkan ke Notion. Penyegerakan terakhir {{time}}.",
-  "Connect a Notion database to sync highlights and notes.": "Sambungkan pangkalan data Notion untuk menyegerakkan sorotan dan nota.",
+  "Connect a Notion database to sync highlights and notes.": "Sambungkan pangkalan data Notion untuk menyegerakkan serlahan dan nota.",
   "Create an integration and share a database with it at": "Cipta integrasi dan kongsi pangkalan data dengannya di",
   "Notion": "Notion",
   "Include Chapter Heading": "Sertakan tajuk bab",
