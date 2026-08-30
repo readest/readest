@@ -141,6 +141,7 @@ describe('MangaDetector', () => {
     expect(loadRuntime).toHaveBeenCalledOnce();
     expect(loadModel).toHaveBeenCalledOnce();
     expect(createSession).toHaveBeenCalledOnce();
+    expect(runtime.env.wasm.proxy).toBe(true);
     expect(drawImage).toHaveBeenCalledWith(source, 0, 0, 640, 640);
     const firstFeeds = run.mock.calls[0]![0] as {
       images: Tensor;
@@ -167,5 +168,66 @@ describe('MangaDetector', () => {
       detector.detect(document.createElement('canvas'), { width: 0, height: 100 }),
     ).rejects.toThrow('dimensions');
     expect(loadRuntime).not.toHaveBeenCalled();
+  });
+
+  it('recreates and releases the session after inference fails', async () => {
+    const pixels = new Uint8ClampedArray(640 * 640 * 4);
+    const createCanvas = () => ({
+      width: 0,
+      height: 0,
+      getContext: () => ({
+        drawImage: vi.fn(),
+        getImageData: () => ({ data: pixels }),
+      }),
+    });
+    class Tensor {
+      constructor(
+        public type: string,
+        public data: Float32Array | BigInt64Array,
+        public dims: number[],
+      ) {}
+    }
+    const firstRelease = vi.fn(async () => undefined);
+    const secondRelease = vi.fn(async () => undefined);
+    const createSession = vi
+      .fn()
+      .mockResolvedValueOnce({
+        run: vi.fn(async () => {
+          throw new Error('inference failed');
+        }),
+        release: firstRelease,
+      })
+      .mockResolvedValueOnce({
+        run: vi.fn(async () => ({
+          labels: { data: new BigInt64Array() },
+          boxes: { data: new Float32Array() },
+          scores: { data: new Float32Array() },
+        })),
+        release: secondRelease,
+      });
+    const runtime = {
+      env: { wasm: {} },
+      Tensor,
+      InferenceSession: { create: createSession },
+    };
+    const detector = new MangaDetector(
+      {},
+      {
+        createCanvas,
+        loadRuntime: async () => runtime,
+        loadModel: async () => new ArrayBuffer(4),
+      },
+    );
+    const source = document.createElement('canvas');
+
+    await expect(detector.detect(source, { width: 100, height: 200 })).rejects.toThrow(
+      'inference failed',
+    );
+    await expect(detector.detect(source, { width: 100, height: 200 })).resolves.toEqual([]);
+
+    expect(createSession).toHaveBeenCalledTimes(2);
+    expect(firstRelease).toHaveBeenCalledOnce();
+    await detector.terminate();
+    expect(secondRelease).toHaveBeenCalledOnce();
   });
 });

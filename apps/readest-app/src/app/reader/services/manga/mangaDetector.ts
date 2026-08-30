@@ -47,6 +47,7 @@ interface DetectorRuntime {
   env: {
     wasm: {
       numThreads?: number;
+      proxy?: boolean;
       wasmPaths?: string;
     };
   };
@@ -328,19 +329,25 @@ export class MangaDetector {
     const session = await this.#getSession(runtime);
     if (this.#terminated) throw new Error('Manga detector has been terminated');
 
-    const outputs = await session.run({
-      images: new runtime.Tensor('float32', makeImageTensor(pixels), [
-        1,
-        3,
-        DETECTOR_SIZE,
-        DETECTOR_SIZE,
-      ]),
-      orig_target_sizes: new runtime.Tensor(
-        'int64',
-        new BigInt64Array([BigInt(page.width), BigInt(page.height)]),
-        [1, 2],
-      ),
-    });
+    let outputs: Record<string, DetectorTensor>;
+    try {
+      outputs = await session.run({
+        images: new runtime.Tensor('float32', makeImageTensor(pixels), [
+          1,
+          3,
+          DETECTOR_SIZE,
+          DETECTOR_SIZE,
+        ]),
+        orig_target_sizes: new runtime.Tensor(
+          'int64',
+          new BigInt64Array([BigInt(page.width), BigInt(page.height)]),
+          [1, 2],
+        ),
+      });
+    } catch (error) {
+      await this.#discardSession(session);
+      throw error;
+    }
     if (this.#terminated) throw new Error('Manga detector has been terminated');
     const labels = outputs['labels']?.data;
     const boxes = outputs['boxes']?.data;
@@ -378,6 +385,7 @@ export class MangaDetector {
     if (this.#sessionPromise) return this.#sessionPromise;
 
     runtime.env.wasm.numThreads = 1;
+    runtime.env.wasm.proxy = true;
     runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
     const sessionPromise = this.#loadModel(
       this.#abortController.signal,
@@ -401,6 +409,24 @@ export class MangaDetector {
       }
     });
     return sessionPromise;
+  }
+
+  async #discardSession(session: DetectorSession): Promise<void> {
+    const sessionPromise = this.#sessionPromise;
+    if (!sessionPromise) return;
+    let activeSession: DetectorSession;
+    try {
+      activeSession = await sessionPromise;
+    } catch {
+      return;
+    }
+    if (activeSession !== session || this.#sessionPromise !== sessionPromise) return;
+    this.#sessionPromise = null;
+    try {
+      await activeSession.release();
+    } catch {
+      return;
+    }
   }
 
   #getRuntime(): Promise<DetectorRuntime> {
