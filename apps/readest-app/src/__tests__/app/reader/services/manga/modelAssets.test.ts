@@ -129,6 +129,7 @@ describe('fetchVerifiedModelAsset', () => {
       {
         url: 'https://models.example/model.bin.gz',
         sha256: SHA256,
+        compressedSha256: SHA256,
         compression: 'gzip',
         maximumDownloadBytes: 8,
         maximumResultBytes: 3,
@@ -141,6 +142,31 @@ describe('fetchVerifiedModelAsset', () => {
     expect(dependencies.digestSha256).toHaveBeenCalledWith(new Uint8Array([4, 5, 6]));
   });
 
+  it('rejects a compressed checksum mismatch before decompression', async () => {
+    const gzip = new Uint8Array(8);
+    gzip.set([0x1f, 0x8b]);
+    const decompressGzip = vi.fn(async () => new Uint8Array([1]));
+
+    await expect(
+      fetchVerifiedModelAsset(
+        {
+          url: 'https://models.example/model.bin.gz',
+          sha256: SHA256,
+          compressedSha256: SHA256,
+          compression: 'gzip',
+          maximumDownloadBytes: 8,
+          maximumResultBytes: 4,
+        },
+        {
+          ...successDependencies(responseWithChunks([gzip])),
+          digestSha256: vi.fn(async () => 'ff'.repeat(32)),
+          decompressGzip,
+        },
+      ),
+    ).rejects.toThrow('compressed checksum');
+    expect(decompressGzip).not.toHaveBeenCalled();
+  });
+
   it('rejects malformed and oversized gzip output before decompression', async () => {
     const decompressGzip = vi.fn(async () => new Uint8Array());
     const malformed = successDependencies(responseWithChunks([new Uint8Array(3)]));
@@ -150,6 +176,7 @@ describe('fetchVerifiedModelAsset', () => {
         {
           url: 'https://models.example/model.bin.gz',
           sha256: SHA256,
+          compressedSha256: SHA256,
           compression: 'gzip',
           maximumDownloadBytes: 8,
           maximumResultBytes: 4,
@@ -167,6 +194,7 @@ describe('fetchVerifiedModelAsset', () => {
         {
           url: 'https://models.example/model.bin.gz',
           sha256: SHA256,
+          compressedSha256: SHA256,
           compression: 'gzip',
           maximumDownloadBytes: 8,
           maximumResultBytes: 4,

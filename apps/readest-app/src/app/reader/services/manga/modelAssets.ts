@@ -8,6 +8,7 @@ export interface ModelDownloadProgress {
 export interface VerifiedModelAsset {
   url: string;
   sha256: string;
+  compressedSha256?: string;
   compression?: 'gzip';
   maximumDownloadBytes: number;
   maximumResultBytes: number;
@@ -125,14 +126,21 @@ const validateLimit = (name: string, value: number): void => {
   }
 };
 
+const validateSha256 = (name: string, value: string | undefined): void => {
+  if (!value || !/^[a-f\d]{64}$/iu.test(value)) {
+    throw new Error(`${name} must contain 64 hexadecimal characters`);
+  }
+};
+
 export const fetchVerifiedModelAsset = async (
   options: VerifiedModelAsset,
   dependencies: Partial<ModelAssetDependencies> = {},
 ): Promise<ArrayBuffer> => {
   validateLimit('maximumDownloadBytes', options.maximumDownloadBytes);
   validateLimit('maximumResultBytes', options.maximumResultBytes);
-  if (!/^[a-f\d]{64}$/iu.test(options.sha256)) {
-    throw new Error('Model asset SHA-256 must contain 64 hexadecimal characters');
+  validateSha256('Model asset SHA-256', options.sha256);
+  if (options.compression === 'gzip') {
+    validateSha256('Model compressed SHA-256', options.compressedSha256);
   }
   throwIfAborted(options.signal);
 
@@ -148,9 +156,15 @@ export const fetchVerifiedModelAsset = async (
 
   const downloaded = await readDownload(response, options.maximumDownloadBytes, options.onProgress);
   throwIfAborted(options.signal);
+  const digest = dependencies.digestSha256 ?? defaultDigestSha256;
 
   let result = downloaded;
   if (options.compression === 'gzip') {
+    const compressedSha256 = await digest(downloaded);
+    if (compressedSha256.toLowerCase() !== options.compressedSha256!.toLowerCase()) {
+      throw new Error('Model compressed checksum does not match the pinned SHA-256');
+    }
+    throwIfAborted(options.signal);
     const declaredSize = getGzipResultSize(downloaded);
     if (declaredSize > options.maximumResultBytes) {
       throw new Error(`Model gzip expands beyond ${options.maximumResultBytes} bytes`);
@@ -163,7 +177,6 @@ export const fetchVerifiedModelAsset = async (
   }
   throwIfAborted(options.signal);
 
-  const digest = dependencies.digestSha256 ?? defaultDigestSha256;
   const actualSha256 = await digest(result);
   if (actualSha256.toLowerCase() !== options.sha256.toLowerCase()) {
     throw new Error('Model asset checksum does not match the pinned SHA-256');
