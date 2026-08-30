@@ -23,6 +23,13 @@ export interface LanSyncStatus {
 /** Keep in sync with `lan_sync::DEFAULT_PORT` (src-tauri/src/lan_sync/mod.rs). */
 export const DEFAULT_LAN_SYNC_PORT = 53430;
 
+/** Generate the 32-hex-character token shared by both LAN peers. */
+export const generateLanSyncToken = (): string => {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+};
+
 let lanSyncLifecycleQueue: Promise<unknown> = Promise.resolve();
 let lanSyncGeneration = 0;
 

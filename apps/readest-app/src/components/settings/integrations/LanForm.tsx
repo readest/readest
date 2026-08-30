@@ -12,6 +12,7 @@ import { FileSyncError } from '@/services/sync/file/provider';
 import { lanSyncPing } from '@/services/sync/providers/lan/LanSyncProvider';
 import {
   DEFAULT_LAN_SYNC_PORT,
+  generateLanSyncToken,
   getLanSyncStatus,
   getLanSyncGeneration,
   replaceLanSyncToken,
@@ -39,16 +40,6 @@ const formatPingError = (_: TranslationFunc, e: unknown): string => {
     }
   }
   return _('Network error');
-};
-
-/**
- * The pairing token per the LanSyncSettings spec: 32 hex chars from
- * crypto.getRandomValues, shared verbatim by both devices.
- */
-const generateToken = (): string => {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 };
 
 type DiscoveryPanelProps = {
@@ -389,7 +380,7 @@ const LanForm: React.FC = () => {
           // to prepare discovery. Use its device id for self-peer filtering.
           ownDeviceId = existingStatus.device_id;
         } else {
-          const temporaryToken = token.trim() || generateToken();
+          const temporaryToken = token.trim() || generateLanSyncToken();
           const temporaryStatus = await startLanSync(
             temporaryToken,
             DEFAULT_LAN_SYNC_PORT,
@@ -889,7 +880,7 @@ const LanForm: React.FC = () => {
           </SectionTitle>
           <button
             type='button'
-            onClick={() => setToken(generateToken())}
+            onClick={() => setToken(generateLanSyncToken())}
             className='btn btn-ghost btn-xs h-7 min-h-7 px-2 text-xs'
             title={_('Generate a new pairing token')}
           >
@@ -972,6 +963,36 @@ const LanForm: React.FC = () => {
               </button>
             </SettingsRow>
           </BoxedList>
+
+          {stored?.token && (
+            <BoxedList title={_('Pairing Token')}>
+              <SettingsRow
+                label={
+                  <span className='font-mono text-sm'>
+                    {showToken ? stored.token : '•'.repeat(Math.min(stored.token.length, 32))}
+                  </span>
+                }
+                description={_('Same token on both devices')}
+              >
+                <button
+                  type='button'
+                  onClick={() => setShowToken((value) => !value)}
+                  className={clsx(
+                    'text-base-content/60 hover:text-base-content shrink-0 rounded-sm',
+                    'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
+                  )}
+                  aria-label={showToken ? _('Hide password') : _('Show password')}
+                  title={showToken ? _('Hide password') : _('Show password')}
+                >
+                  {showToken ? (
+                    <MdVisibilityOff className='h-5 w-5' />
+                  ) : (
+                    <MdVisibility className='h-5 w-5' />
+                  )}
+                </button>
+              </SettingsRow>
+            </BoxedList>
+          )}
 
           {showPeerDiscovery && (
             <div className='space-y-3'>

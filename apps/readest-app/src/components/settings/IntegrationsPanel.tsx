@@ -33,7 +33,7 @@ import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
-import { stopLanSync } from '@/services/lanSync/lifecycle';
+import { generateLanSyncToken, stopLanSync } from '@/services/lanSync/lifecycle';
 import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
@@ -596,7 +596,10 @@ const IntegrationsPanel: React.FC = () => {
     syncBooks: settings.icloud?.syncBooks ?? false,
     booksBackedUpElsewhere: booksBackedUpBy('icloud'),
   });
-  const lanConfigured = !!(settings.lan?.host && settings.lan?.token);
+  // Native LAN Sync can be enabled before a peer is selected so the device
+  // can advertise its own server for first-time pairing. Web still requires a
+  // complete peer address because it cannot host the embedded server.
+  const lanConfigured = !!settings.lan?.token && (isTauriAppPlatform() || !!settings.lan?.host);
   const lanStatus = getThirdPartyRowStatus(_, {
     enabled: !!settings.lan?.enabled,
     configured: lanConfigured,
@@ -631,7 +634,15 @@ const IntegrationsPanel: React.FC = () => {
       }
     }
     try {
-      await persistCloudProviderEnabled(envConfig, kind, next);
+      await persistCloudProviderEnabled(envConfig, kind, next, (current) => {
+        if (kind !== 'lan' || !next || !isTauriAppPlatform() || current.lan?.token?.trim()) {
+          return current;
+        }
+        return {
+          ...current,
+          lan: { ...current.lan, token: generateLanSyncToken() },
+        };
+      });
     } catch (e) {
       if (isLanDisable && previousSettings) setSettings(previousSettings);
       throw e;
@@ -800,18 +811,21 @@ const IntegrationsPanel: React.FC = () => {
               />
             )}
             {/* LAN sync is the home-network channel: deliberately not gated by
-                the cloud premium badge — resolveCloudSyncGate never pauses it,
-                and the toggle only needs a configured peer (host + token). */}
+                the cloud premium badge — native clients can enable their own
+                server before selecting a peer for first-time pairing. */}
             <CloudProviderRow
               icon={RiRouterLine}
               title={_('LAN Sync')}
               status={lanStatus}
               checked={!!settings.lan?.enabled}
-              canToggle={canToggleCloudProvider({
-                isPremium: true,
-                isConfigured: lanConfigured,
-                isEnabled: !!settings.lan?.enabled,
-              })}
+              canToggle={
+                isTauriAppPlatform() ||
+                canToggleCloudProvider({
+                  isPremium: true,
+                  isConfigured: lanConfigured,
+                  isEnabled: !!settings.lan?.enabled,
+                })
+              }
               onToggle={(next) => toggleCloudProvider('lan', next)}
               onOpen={() => setSubPage('lan')}
               toggleLabel={_('Sync with LAN')}
