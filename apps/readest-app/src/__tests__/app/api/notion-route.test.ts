@@ -211,9 +211,9 @@ describe('Notion proxy', () => {
         .status,
     ).toBe(200);
     expect((await POST(send('pages', 'POST'), params(['pages']))).status).toBe(200);
-    expect(
-      (await PATCH(send('pages/page-id', 'PATCH'), params(['pages', 'page-id']))).status,
-    ).toBe(200);
+    expect((await PATCH(send('pages/page-id', 'PATCH'), params(['pages', 'page-id']))).status).toBe(
+      200,
+    );
     expect(
       (
         await PATCH(
