@@ -35,7 +35,6 @@
   "Font Family": "字族",
   "Font Size": "字號",
   "Full Justification": "兩端對齊",
-  "Global Settings": "全局設置",
   "Go Back": "返回",
   "Go Forward": "前進",
   "Grass": "青草",
@@ -2220,5 +2219,8 @@
   "With notes": "含筆記",
   "{{count}} Annotations_other": "{{count}} 則註解",
   "Insert into Notebook": "插入到筆記本",
-  "Reading": "閱讀中"
+  "Reading": "閱讀中",
+  "Invalid Notion database ID or URL": "無效的 Notion 資料庫 ID 或 URL",
+  "This Notion database has multiple data sources. Paste a data source ID instead.": "此 Notion 資料庫包含多個資料來源。請改為貼上資料來源 ID。",
+  "The Notion database is unavailable or has not been shared with this integration.": "Notion 資料庫無法使用，或尚未分享給此整合。"
 }
