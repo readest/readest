@@ -58,6 +58,18 @@ describe('resolveTranslationSourceNodes', () => {
     expect(resolveTranslationSourceNodes([paragraph])).toEqual([paragraph]);
   });
 
+  it('drops visual manga translation overlays', () => {
+    const source = document.createElement('p');
+    source.textContent = 'Book text';
+    const layer = document.createElement('div');
+    layer.setAttribute('data-readest-manga-translation-layer', '');
+    const translatedBubble = document.createElement('span');
+    translatedBubble.textContent = 'Translated manga text';
+    layer.append(translatedBubble);
+
+    expect(resolveTranslationSourceNodes([source, layer, translatedBubble])).toEqual([source]);
+  });
+
   it('drops generated wrappers and folds a hidden original back to its paragraph', () => {
     const source = document.createElement('p');
     source.className = 'translation-source';
