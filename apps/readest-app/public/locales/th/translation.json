@@ -2204,5 +2204,6 @@
   "Notebook draft copied to clipboard": "คัดลอกฉบับร่างสมุดบันทึกไปยังคลิปบอร์ดแล้ว",
   "With notes": "มีบันทึกย่อ",
   "{{count}} Annotations_other": "คำอธิบายประกอบ {{count}} รายการ",
-  "Insert into Notebook": "แทรกลงในสมุดบันทึก"
+  "Insert into Notebook": "แทรกลงในสมุดบันทึก",
+  "Reading": "กำลังอ่าน"
 }

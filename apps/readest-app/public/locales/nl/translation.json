@@ -2265,5 +2265,6 @@
   "With notes": "Met notities",
   "{{count}} Annotations_one": "{{count}} aantekening",
   "{{count}} Annotations_other": "{{count}} aantekeningen",
-  "Insert into Notebook": "Invoegen in notitieblok"
+  "Insert into Notebook": "Invoegen in notitieblok",
+  "Reading": "Wordt gelezen"
 }
