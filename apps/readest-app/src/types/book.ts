@@ -49,6 +49,11 @@ export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 export interface BookLookupIndex {
   byHash: Map<string, Book>;
   byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
+  // Fallback for books whose metaHash moves with every export of the same file
+  // (calibre re-mints dc:identifier, issue #5959). key =
+  // `${getStableMetadataHash(metadata)}:${format}`, and only books that carry a
+  // volatile identifier appear here.
+  byStableKey: Map<string, Book[]>;
   // Maps normalized absolute source path -> Book for in-place imports.
   // Lets the importer recognize "I already have this exact file" without
   // having to open, parse, and hash it again. Only books with a non-empty

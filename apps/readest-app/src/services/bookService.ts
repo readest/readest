@@ -22,6 +22,7 @@ import {
   formatAuthors,
   getPrimaryLanguage,
   getMetadataHash,
+  getStableMetadataHash,
 } from '@/utils/book';
 import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
@@ -49,9 +50,22 @@ import {
   type BookFileContentSource,
 } from './bookContent';
 
+/**
+ * Import-time fallback key for a book already in the library, or undefined when
+ * its `metaHash` is already stable across re-exports (issue #5959).
+ *
+ * PDFs are left out: #5411 deliberately scopes their identity to the filename,
+ * and a library row no longer knows the filename it was imported from.
+ */
+function getStableBookHash(book: Book) {
+  if (book.format === 'PDF' || !book.metadata) return undefined;
+  return getStableMetadataHash(book.metadata);
+}
+
 export function buildBookLookupIndex(books: Book[], osPlatform?: OsPlatform): BookLookupIndex {
   const byHash = new Map<string, Book>();
   const byMetaKey = new Map<string, Book[]>();
+  const byStableKey = new Map<string, Book[]>();
   const byFilePath = new Map<string, Book>();
   for (const book of books) {
     byHash.set(book.hash, book);
@@ -60,6 +74,15 @@ export function buildBookLookupIndex(books: Book[], osPlatform?: OsPlatform): Bo
       const list = byMetaKey.get(key);
       if (list) list.push(book);
       else byMetaKey.set(key, [book]);
+    }
+    if (!book.deletedAt) {
+      const stableHash = getStableBookHash(book);
+      if (stableHash) {
+        const key = `${stableHash}:${book.format}`;
+        const list = byStableKey.get(key);
+        if (list) list.push(book);
+        else byStableKey.set(key, [book]);
+      }
     }
     // In-place books carry the absolute source path on `filePath` (set by
     // importBook below). Indexing them here lets a re-import of the exact
@@ -70,7 +93,7 @@ export function buildBookLookupIndex(books: Book[], osPlatform?: OsPlatform): Bo
       if (key) byFilePath.set(key, book);
     }
   }
-  return { byHash, byMetaKey, byFilePath };
+  return { byHash, byMetaKey, byStableKey, byFilePath };
 }
 
 /**
@@ -590,6 +613,7 @@ export async function importBook(
       loadedBook.metadata,
       format === 'PDF' ? getBaseFilename(filename) : undefined,
     );
+    const stableHash = format === 'PDF' ? undefined : getStableMetadataHash(loadedBook.metadata);
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
@@ -611,9 +635,21 @@ export async function importBook(
     if (!transient && metaHash) {
       if (!existingBook) {
         const metaKey = `${metaHash}:${format}`;
-        const firstMatch = lookupIndex
+        let firstMatch = lookupIndex
           ? (lookupIndex.byMetaKey.get(metaKey) ?? []).find((b) => !b.deletedAt)
           : books.find((b) => b.metaHash === metaHash && b.format === format && !b.deletedAt);
+        // The metaHash of a calibre-built file moves with every export, so a
+        // re-downloaded update of a book already in the library misses above
+        // (issue #5959). Retry on the hash that leaves those throwaway
+        // identifiers out; only files that carry one have a stable hash at all.
+        if (!firstMatch && stableHash) {
+          const stableKey = `${stableHash}:${format}`;
+          firstMatch = lookupIndex
+            ? (lookupIndex.byStableKey.get(stableKey) ?? []).find((b) => !b.deletedAt)
+            : books.find(
+                (b) => !b.deletedAt && b.format === format && getStableBookHash(b) === stableHash,
+              );
+        }
         if (firstMatch) {
           oldBookDir = getDir(firstMatch);
           existingBook = firstMatch;
@@ -792,6 +828,12 @@ export async function importBook(
             const list = lookupIndex.byMetaKey.get(key);
             if (list) list.push(book);
             else lookupIndex.byMetaKey.set(key, [book]);
+          }
+          if (stableHash) {
+            const key = `${stableHash}:${book.format}`;
+            const list = lookupIndex.byStableKey.get(key);
+            if (list) list.push(book);
+            else lookupIndex.byStableKey.set(key, [book]);
           }
         }
       }
