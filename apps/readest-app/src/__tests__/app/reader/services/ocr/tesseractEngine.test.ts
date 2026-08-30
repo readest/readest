@@ -364,6 +364,49 @@ describe('TesseractOcrEngine', () => {
     expect(page.blocks[0]?.text).toBe('recognized text');
   });
 
+  it('restores whole-page segmentation after a vertical manga page', async () => {
+    const source = document.createElement('canvas');
+    source.width = 1200;
+    source.height = 1800;
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+      getImageData: vi.fn(() => ({ data: new Uint8ClampedArray(4) })),
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D);
+    const worker = makeWorker();
+    vi.mocked(worker.recognize).mockResolvedValueOnce({
+      data: { text: '縦書き', confidence: 90 },
+    });
+    const detector = {
+      detect: vi
+        .fn()
+        .mockResolvedValueOnce([
+          {
+            id: 'bubble',
+            bubbleBox: { xMin: 10, yMin: 10, xMax: 200, yMax: 400 },
+            textBoxes: [{ xMin: 40, yMin: 40, xMax: 100, yMax: 300 }],
+            writingMode: 'vertical-rl' as const,
+          },
+        ])
+        .mockResolvedValueOnce([]),
+      terminate: vi.fn(async () => undefined),
+    };
+    const engine = new TesseractOcrEngine(
+      { mangaMode: true, pageSegmentationMode: PSM.AUTO },
+      vi.fn(async () => worker),
+      () => detector,
+    );
+
+    await engine.recognize(source, { pageIndex: 0, width: 1200, height: 1800 });
+    await engine.recognize(source, { pageIndex: 1, width: 1200, height: 1800 });
+
+    expect(worker.setParameters).toHaveBeenLastCalledWith({
+      tessedit_pageseg_mode: PSM.AUTO,
+      preserve_interword_spaces: '1',
+    });
+  });
+
   it('skips whole-page OCR when manga translation only accepts speech bubbles', async () => {
     const source = document.createElement('canvas');
     source.width = 1200;

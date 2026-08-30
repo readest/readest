@@ -434,9 +434,13 @@ export class TesseractOcrEngine {
 
   async #recognizeWholePage(prepared: PreparedImage): Promise<OcrPage> {
     const worker = await this.#getWorker();
-    const { data } = await this.#runWorkerOperation(worker, () =>
-      worker.recognize(prepared.image, {}, { text: true, blocks: true }),
-    );
+    const { data } = await this.#runWorkerOperation(worker, async () => {
+      await worker.setParameters({
+        tessedit_pageseg_mode: this.#pageSegmentationMode,
+        preserve_interword_spaces: '1',
+      });
+      return worker.recognize(prepared.image, {}, { text: true, blocks: true });
+    });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     return adaptTesseractPage(data, {
       ...prepared.page,
