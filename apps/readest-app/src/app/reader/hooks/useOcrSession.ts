@@ -77,6 +77,7 @@ export const useOcrSession = ({
       createEngine: () =>
         new TesseractOcrEngine({
           languages,
+          mangaMode: mangaFallback,
           onProgress: (progress) => {
             if (sessionRef.current === session && enabledRef.current) {
               onProgressRef.current?.(progress);

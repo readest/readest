@@ -70,7 +70,10 @@ describe('useOcrSession', () => {
     const engine = mocks.sessionOptions[0]!.createEngine();
     expect(engine).toBe(mocks.engine);
     expect(mocks.engineOptions).toEqual([
-      expect.objectContaining({ languages: ['jpn', 'jpn_vert', 'eng'] }),
+      expect.objectContaining({
+        languages: ['jpn', 'jpn_vert', 'eng'],
+        mangaMode: true,
+      }),
     ]);
 
     const error = new Error('recognition failed');
