@@ -199,4 +199,49 @@ describe('OcrSession', () => {
     expect(engine.recognize).toHaveBeenCalledTimes(1);
     expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 6');
   });
+
+  it('recognizes a different image that reuses a page index', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    await session.setEnabled(true);
+    await session.processDocument(makeDocument(3), 3);
+
+    await session.processDocument(makeDocument(4), 3);
+
+    expect(engine.recognize).toHaveBeenCalledTimes(2);
+    expect(engine.recognize).toHaveBeenLastCalledWith('blob:page-4', {
+      pageIndex: 3,
+      width: 1200,
+      height: 1800,
+    });
+  });
+
+  it('does not reuse pending recognition for a different image at the same index', async () => {
+    let finishFirst!: (page: OcrPage) => void;
+    const engine = makeEngine();
+    vi.mocked(engine.recognize).mockImplementationOnce(
+      () => new Promise((resolve) => (finishFirst = resolve)),
+    );
+    const session = new OcrSession({ createEngine: () => engine });
+    const firstDocument = makeDocument(3);
+    const secondDocument = makeDocument(4);
+    await session.setEnabled(true);
+
+    const first = session.processDocument(firstDocument, 3);
+    await vi.waitFor(() => expect(engine.recognize).toHaveBeenCalledOnce());
+    const second = session.processDocument(secondDocument, 3);
+    finishFirst(makePage(3));
+    await Promise.all([first, second]);
+
+    expect(engine.recognize).toHaveBeenCalledTimes(2);
+    expect(engine.recognize).toHaveBeenLastCalledWith('blob:page-4', {
+      pageIndex: 3,
+      width: 1200,
+      height: 1800,
+    });
+    expect(firstDocument.querySelector(OCR_TEXT_LAYER_SELECTOR)).toBeNull();
+    expect(secondDocument.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe(
+      'recognized page 3',
+    );
+  });
 });

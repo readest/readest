@@ -26,6 +26,34 @@ interface PageImage {
   height: number;
 }
 
+interface PageImageIdentity {
+  document: Document;
+  image: PageImage;
+}
+
+interface CachedOcrPage extends PageImageIdentity {
+  page: OcrPage;
+}
+
+interface PendingOcrPage extends PageImageIdentity {
+  promise: Promise<OcrPage | null>;
+}
+
+const isSamePageImage = (
+  left: PageImageIdentity,
+  document: Document,
+  image: PageImage,
+): boolean => {
+  if (typeof left.image.source !== 'string' || typeof image.source !== 'string') {
+    return left.document === document;
+  }
+  return (
+    left.image.source === image.source &&
+    left.image.width === image.width &&
+    left.image.height === image.height
+  );
+};
+
 const getPageImage = (doc: Document): PageImage | null => {
   const image = doc.querySelector('img');
   if (image) {
@@ -49,8 +77,8 @@ export class OcrSession {
   readonly #createEngine: () => OcrEngine;
   readonly #onError?: (error: unknown, pageIndex: number) => void;
   readonly #onPageRecognized?: (page: OcrPage) => void;
-  readonly #pages = new Map<number, OcrPage>();
-  readonly #pending = new Map<number, Promise<OcrPage | null>>();
+  readonly #pages = new Map<number, CachedOcrPage>();
+  readonly #pending = new Map<number, PendingOcrPage>();
   readonly #documents = new Map<number, Document>();
   #engine: OcrEngine | null = null;
   #queue: Promise<void> = Promise.resolve();
@@ -78,14 +106,18 @@ export class OcrSession {
     }
 
     const cachedPage = this.#pages.get(pageIndex);
-    if (cachedPage) {
-      mountOcrTextLayer(doc, cachedPage);
-      return cachedPage;
+    if (cachedPage && isSamePageImage(cachedPage, doc, image)) {
+      mountOcrTextLayer(doc, cachedPage.page);
+      return cachedPage.page;
     }
+    if (cachedPage) this.#pages.delete(pageIndex);
 
     const generation = this.#generation;
+    const pendingPage = this.#pending.get(pageIndex);
     const recognition =
-      this.#pending.get(pageIndex) ?? this.#recognize(image, pageIndex, generation);
+      pendingPage && isSamePageImage(pendingPage, doc, image)
+        ? pendingPage.promise
+        : this.#recognize(doc, image, pageIndex, generation);
 
     let page: OcrPage | null;
     try {
@@ -96,7 +128,8 @@ export class OcrSession {
     }
     if (!page || !this.#enabled || generation !== this.#generation) return page;
     if (this.#documents.get(pageIndex) !== doc) return page;
-    if (getPageImage(doc)?.source !== image.source) return page;
+    const currentImage = getPageImage(doc);
+    if (!currentImage || !isSamePageImage({ document: doc, image }, doc, currentImage)) return page;
 
     mountOcrTextLayer(doc, page);
     return page;
@@ -147,7 +180,12 @@ export class OcrSession {
     );
   }
 
-  #recognize(image: PageImage, pageIndex: number, generation: number): Promise<OcrPage | null> {
+  #recognize(
+    document: Document,
+    image: PageImage,
+    pageIndex: number,
+    generation: number,
+  ): Promise<OcrPage | null> {
     const recognition = this.#queue.then(async () => {
       if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
       const page = await this.#getEngine().recognize(image.source, {
@@ -156,21 +194,31 @@ export class OcrSession {
         height: image.height,
       });
       if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
-      this.#pages.set(pageIndex, page);
+      const currentDocument = this.#documents.get(pageIndex);
+      const currentImage = currentDocument && getPageImage(currentDocument);
+      if (
+        !currentDocument ||
+        !currentImage ||
+        !isSamePageImage({ document, image }, currentDocument, currentImage)
+      ) {
+        return page;
+      }
+      this.#pages.set(pageIndex, { document: currentDocument, image: currentImage, page });
       this.#onPageRecognized?.(page);
       return page;
     });
-    this.#pending.set(pageIndex, recognition);
+    const pendingPage = { document, image, promise: recognition };
+    this.#pending.set(pageIndex, pendingPage);
     this.#queue = recognition.then(
       () => undefined,
       () => undefined,
     );
     void recognition.then(
       () => {
-        if (this.#pending.get(pageIndex) === recognition) this.#pending.delete(pageIndex);
+        if (this.#pending.get(pageIndex) === pendingPage) this.#pending.delete(pageIndex);
       },
       () => {
-        if (this.#pending.get(pageIndex) === recognition) this.#pending.delete(pageIndex);
+        if (this.#pending.get(pageIndex) === pendingPage) this.#pending.delete(pageIndex);
       },
     );
     return recognition;
