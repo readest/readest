@@ -316,7 +316,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     saveViewSettings(envConfig, bookKey, 'writingMode', writingMode, true).then(() => {
       const view = getView(bookKey);
       if (view) view.book.dir = rtlSpread ? 'rtl' : 'ltr';
-      recreateViewer(envConfig, bookKey);
+      recreateViewer(envConfig, bookKey, { preserveSession: true });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rtlSpread]);

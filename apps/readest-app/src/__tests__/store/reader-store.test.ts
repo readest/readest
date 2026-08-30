@@ -421,5 +421,67 @@ describe('readerStore', () => {
       expect(mountedKeys).toEqual(['book-1-uid-1']);
       uniqueIdMock.mockImplementation(() => 'mock-uid-123');
     });
+
+    test.each([
+      {
+        name: 'OCR',
+        state: { ocrEnabled: true, mangaTranslationEnabled: false, ocrLanguage: 'jpn' },
+      },
+      {
+        name: 'manga translation',
+        state: { ocrEnabled: false, mangaTranslationEnabled: true, ocrLanguage: 'jpn' },
+      },
+    ])('preserves the active $name session when requested', async ({ state: sessionState }) => {
+      seedViewState('book-1', sessionState);
+
+      const initViewState = vi.fn(
+        async (
+          _envConfig: unknown,
+          _id: string,
+          key: string,
+          _isPrimary: boolean,
+          _reload: boolean,
+          preserved?: {
+            ocrEnabled: boolean;
+            mangaTranslationEnabled: boolean;
+            ocrLanguage: string;
+          },
+        ) => {
+          useReaderStore.setState((state) => ({
+            viewStates: {
+              ...state.viewStates,
+              [key]: {
+                ...state.viewStates[key]!,
+                ocrEnabled: false,
+                mangaTranslationEnabled: false,
+                ocrLanguage: '',
+                viewerKey: `${key}-reloaded`,
+                ...(preserved ?? {}),
+              },
+            },
+          }));
+        },
+      );
+      useReaderStore.setState({
+        initViewState: initViewState as unknown as ReturnType<
+          typeof useReaderStore.getState
+        >['initViewState'],
+      });
+
+      useReaderStore.getState().recreateViewer({} as never, 'book-1', {
+        preserveSession: true,
+      });
+      await vi.waitFor(() => expect(initViewState).toHaveBeenCalled());
+
+      expect(initViewState).toHaveBeenCalledWith(
+        expect.anything(),
+        'book',
+        'book-1',
+        true,
+        true,
+        sessionState,
+      );
+      expect(useReaderStore.getState().viewStates['book-1']).toMatchObject(sessionState);
+    });
   });
 });

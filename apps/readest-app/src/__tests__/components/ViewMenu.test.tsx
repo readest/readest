@@ -155,7 +155,9 @@ describe('ViewMenu right-to-left pages toggle', () => {
         true,
       );
       expect(mockView.book.dir).toBe('rtl');
-      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
+      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1', {
+        preserveSession: true,
+      });
     });
   });
 
@@ -176,7 +178,9 @@ describe('ViewMenu right-to-left pages toggle', () => {
         true,
       );
       expect(mockView.book.dir).toBe('ltr');
-      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
+      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1', {
+        preserveSession: true,
+      });
     });
   });
 
@@ -209,7 +213,9 @@ describe('ViewMenu right-to-left pages toggle', () => {
         true,
       );
       expect(mockView.book.dir).toBe('ltr');
-      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
+      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1', {
+        preserveSession: true,
+      });
     });
   });
 });
