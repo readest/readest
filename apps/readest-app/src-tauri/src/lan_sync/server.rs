@@ -311,9 +311,10 @@ async fn write_file(
     };
     let mut writer = tokio::io::BufWriter::new(file);
     let mut stream = body.into_data_stream();
-    while let Some(frame) = stream.next().await {
-        let frame = match frame {
-            Ok(frame) => frame,
+    // BodyDataStream yields the body as `Bytes` chunks directly.
+    while let Some(chunk) = stream.next().await {
+        let chunk = match chunk {
+            Ok(chunk) => chunk,
             Err(_) => {
                 // Peer disconnected mid-upload; the guard removes the temp file.
                 return with_cors(internal_error(std::io::Error::new(
@@ -322,10 +323,7 @@ async fn write_file(
                 )));
             }
         };
-        let Ok(bytes) = frame.into_data() else {
-            continue; // trailer frame — nothing to persist
-        };
-        if let Err(e) = writer.write_all(&bytes).await {
+        if let Err(e) = writer.write_all(&chunk).await {
             return internal_error(e);
         }
     }
