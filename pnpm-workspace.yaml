@@ -13,6 +13,7 @@ allowBuilds:
   geckodriver: true
   protobufjs: true
   sharp: true
+  tesseract.js: false
   workerd: true
 
 onlyBuiltDependencies:
