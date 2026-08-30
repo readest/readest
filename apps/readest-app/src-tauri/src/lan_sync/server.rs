@@ -24,6 +24,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
+use futures::StreamExt;
 use serde_json::json;
 use tokio::io::AsyncWriteExt;
 use tokio_util::io::ReaderStream;
@@ -310,7 +311,7 @@ async fn write_file(
     };
     let mut writer = tokio::io::BufWriter::new(file);
     let mut stream = body.into_data_stream();
-    while let Some(frame) = stream.frame().await {
+    while let Some(frame) = stream.next().await {
         let frame = match frame {
             Ok(frame) => frame,
             Err(_) => {

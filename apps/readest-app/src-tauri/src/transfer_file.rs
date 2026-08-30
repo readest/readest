@@ -158,7 +158,7 @@ pub async fn download_file(
     body: Option<String>,
     single_threaded: Option<bool>,
     skip_ssl_verification: Option<bool>,
-    on_progress: Option<Channel<ProgressPayload>>,
+    on_progress: Channel<ProgressPayload>,
 ) -> Result<HashMap<String, String>> {
     use futures::stream::{self, StreamExt};
     use std::cmp::min;
@@ -180,7 +180,7 @@ pub async fn download_file(
         file_path: &str,
         headers: &HashMap<String, String>,
         body: &Option<String>,
-        on_progress: &Option<Channel<ProgressPayload>>,
+        on_progress: Channel<ProgressPayload>,
     ) -> Result<HashMap<String, String>> {
         let mut request = if let Some(body) = body {
             client.post(url).body(body.clone())
@@ -215,13 +215,11 @@ pub async fn download_file(
         while let Some(chunk) = stream.try_next().await? {
             file.write_all(&chunk).await?;
             stats.record_chunk_transfer(chunk.len());
-            if let Some(on_progress) = on_progress {
-                let _ = on_progress.send(ProgressPayload {
-                    progress: stats.total_transferred,
-                    total,
-                    transfer_speed: stats.transfer_speed,
-                });
-            }
+            let _ = on_progress.send(ProgressPayload {
+                progress: stats.total_transferred,
+                total,
+                transfer_speed: stats.transfer_speed,
+            });
         }
         file.flush().await?;
 
@@ -229,7 +227,7 @@ pub async fn download_file(
     }
 
     if force_single {
-        return single_threaded_download(&client, url, file_path, &headers, &body, &on_progress)
+        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
             .await;
     }
 
@@ -261,7 +259,7 @@ pub async fn download_file(
     }
 
     if !accept_ranges || total == 0 {
-        return single_threaded_download(&client, url, file_path, &headers, &body, &on_progress)
+        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
             .await;
     }
 
@@ -317,13 +315,11 @@ pub async fn download_file(
                 {
                     let mut stat = progress.lock().await;
                     stat.record_chunk_transfer(bytes.len());
-                    if let Some(on_progress) = &on_progress {
-                        let _ = on_progress.send(ProgressPayload {
-                            progress: stat.total_transferred,
-                            total,
-                            transfer_speed: stat.transfer_speed,
-                        });
-                    }
+                    let _ = on_progress.send(ProgressPayload {
+                        progress: stat.total_transferred,
+                        total,
+                        transfer_speed: stat.transfer_speed,
+                    });
                 }
             }
         })
@@ -339,7 +335,7 @@ pub async fn upload_file(
     file_path: &str,
     method: &str,
     headers: HashMap<String, String>,
-    on_progress: Option<Channel<ProgressPayload>>,
+    on_progress: Channel<ProgressPayload>,
 ) -> Result<String> {
     ensure_path_allowed(&app, file_path)?;
 
@@ -372,11 +368,7 @@ pub async fn upload_file(
     }
 }
 
-fn file_to_body(
-    channel: Option<Channel<ProgressPayload>>,
-    file: File,
-    file_len: u64,
-) -> reqwest::Body {
+fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) -> reqwest::Body {
     let stream = FramedRead::new(file, BytesCodec::new()).map_ok(|r| r.freeze());
 
     let mut stats = TransferStats::default();
@@ -384,13 +376,11 @@ fn file_to_body(
         stream,
         Box::new(move |progress_chunk, _progress_total| {
             stats.record_chunk_transfer(progress_chunk as usize);
-            if let Some(channel) = &channel {
-                let _ = channel.send(ProgressPayload {
-                    progress: stats.total_transferred,
-                    total: file_len,
-                    transfer_speed: stats.transfer_speed,
-                });
-            }
+            let _ = channel.send(ProgressPayload {
+                progress: stats.total_transferred,
+                total: file_len,
+                transfer_speed: stats.transfer_speed,
+            });
         }),
     ))
 }

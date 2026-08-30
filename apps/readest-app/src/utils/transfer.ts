@@ -184,16 +184,13 @@ export const tauriUpload = async (
     onProgress.onmessage = progressHandler;
   }
 
-  // Omit the channel entirely when nobody listens: the Rust side streams one
-  // IPC message per chunk, and an unconsumed channel still crosses the
-  // bridge (~11k messages for a 90 MB book).
   return await invoke('upload_file', {
     id,
     url,
     filePath,
     method,
     headers: headers ?? {},
-    ...(progressHandler ? { onProgress } : {}),
+    onProgress,
   });
 };
 
@@ -220,7 +217,7 @@ export const tauriDownload = async (
     url,
     filePath,
     headers: headers ?? {},
-    ...(progressHandler ? { onProgress } : {}),
+    onProgress,
     body,
     singleThreaded,
     skipSslVerification,
