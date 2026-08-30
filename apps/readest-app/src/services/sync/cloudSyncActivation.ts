@@ -63,18 +63,39 @@ export const withCloudProviderEnabled = (
  * account label without pre-setting `enabled` (which would suppress the
  * activation side effects).
  */
-export const persistCloudProviderEnabled = async (
+let settingsMutationQueue: Promise<unknown> = Promise.resolve();
+
+const enqueueSettingsMutation = <T>(operation: () => Promise<T>): Promise<T> => {
+  const result = settingsMutationQueue.then(operation);
+  settingsMutationQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+};
+
+/** Persist a settings mutation against the latest store snapshot in order. */
+export const persistSettingsMutation = (
+  envConfig: EnvConfigType,
+  mutate: (settings: SystemSettings) => SystemSettings,
+): Promise<SystemSettings> =>
+  enqueueSettingsMutation(async () => {
+    const store = useSettingsStore.getState();
+    const appService = await envConfig.getAppService();
+    const current = store.settings?.version ? store.settings : await appService.loadSettings();
+    const next = mutate(current);
+    store.setSettings(next);
+    await appService.saveSettings(next);
+    void broadcastGlobalSettings(next, { includeCloudSyncProviders: true });
+    return next;
+  });
+
+export const persistCloudProviderEnabled = (
   envConfig: EnvConfigType,
   kind: CloudSyncProviderKind,
   enabled: boolean,
   mutate: (settings: SystemSettings) => SystemSettings = (s) => s,
-): Promise<SystemSettings> => {
-  const store = useSettingsStore.getState();
-  const appService = await envConfig.getAppService();
-  const current = store.settings?.version ? store.settings : await appService.loadSettings();
-  const next = withCloudProviderEnabled(mutate(current), kind, enabled);
-  store.setSettings(next);
-  await appService.saveSettings(next);
-  void broadcastGlobalSettings(next, { includeCloudSyncProviders: true });
-  return next;
-};
+): Promise<SystemSettings> =>
+  persistSettingsMutation(envConfig, (settings) =>
+    withCloudProviderEnabled(mutate(settings), kind, enabled),
+  );

@@ -21,14 +21,17 @@
 pub mod server;
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::net::Ipv4Addr;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use md5::{Digest, Md5};
 use mdns_sd::{ServiceDaemon, ServiceEvent, ServiceInfo};
 use serde::Serialize;
 use tauri::{AppHandle, Manager, Runtime, State};
-use tokio::sync::{watch, Mutex};
+use tokio::sync::{oneshot, watch, Mutex};
 
 /// Readest's LAN sync port. LocalSend deliberately avoids 53317 (and we avoid
 /// the localsend-in-Readest range 53318-53327); 53430 is unclaimed territory.
@@ -39,18 +42,24 @@ pub const DEFAULT_PORT: u16 = 53430;
 const PORT_FALLBACK: u16 = 10;
 const MDNS_SERVICE_TYPE: &str = "_readest-lan-sync._tcp.local.";
 const MDNS_DISCOVERY_WINDOW: Duration = Duration::from_secs(3);
+const SERVER_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Tauri managed state: the running LAN sync server, or `None` while the
-/// integration is disabled. Mirrors `localsend::LocalSendState`.
+/// integration is disabled. The epoch rejects stale starts from other windows.
 #[derive(Default)]
-pub struct LanSyncState(pub Arc<Mutex<Option<RunningServer>>>);
+pub struct LanSyncState {
+    pub server: Arc<Mutex<Option<RunningServer>>>,
+    pub generation: AtomicU64,
+}
 
 pub struct RunningServer {
     pub port: u16,
     pub device_name: String,
     pub device_id: String,
+    token: String,
     stop_tx: watch::Sender<bool>,
-    mdns: ServiceDaemon,
+    task: tokio::task::JoinHandle<()>,
+    mdns: Option<ServiceDaemon>,
 }
 
 #[derive(Clone, Serialize)]
@@ -60,6 +69,33 @@ pub struct LanSyncStatus {
     device_name: String,
     device_id: String,
     local_ips: Vec<String>,
+    /// Monotonic process-wide epoch used to reject stale starts.
+    generation: u64,
+    /// True only when this start call created the running server.
+    started: bool,
+}
+
+/// Benchmark/test networks are commonly used by TUN and proxy adapters, not
+/// by peers on a home LAN. Keep them out even when the interface name is not
+/// descriptive (notably on Windows).
+fn is_benchmark_ipv4(ip: Ipv4Addr) -> bool {
+    let [a, b, _, _] = ip.octets();
+    a == 198 && (b == 18 || b == 19)
+}
+
+fn is_usable_ipv4(ip: Ipv4Addr) -> bool {
+    !ip.is_loopback() && !is_benchmark_ipv4(ip)
+}
+
+/// Prefer RFC1918 addresses while retaining a deterministic fallback for
+/// unusual but usable LAN arrangements.
+fn preferred_ipv4<I>(ips: I) -> Option<Ipv4Addr>
+where
+    I: IntoIterator<Item = Ipv4Addr>,
+{
+    let mut candidates: Vec<Ipv4Addr> = ips.into_iter().filter(|ip| is_usable_ipv4(*ip)).collect();
+    candidates.sort_by_key(|ip| (!ip.is_private(), ip.octets()));
+    candidates.into_iter().next()
 }
 
 /// LAN-facing addresses of this device, VPN tunnels excluded. Same filter as
@@ -67,7 +103,7 @@ pub struct LanSyncStatus {
 /// peers on the LAN never see, and listing them just produces confusing
 /// "#2"-suffixed entries in the pairing form.
 fn local_ips() -> Vec<String> {
-    if_addrs::get_if_addrs()
+    let mut ips: Vec<Ipv4Addr> = if_addrs::get_if_addrs()
         .unwrap_or_default()
         .iter()
         .filter(|iface| {
@@ -77,37 +113,147 @@ fn local_ips() -> Vec<String> {
                 .any(|prefix| name.starts_with(prefix))
         })
         .filter_map(|iface| match iface.ip() {
-            std::net::IpAddr::V4(ip) if !ip.is_loopback() => Some(ip.to_string()),
+            std::net::IpAddr::V4(ip) if is_usable_ipv4(ip) => Some(ip),
             _ => None,
         })
-        .collect()
+        .collect();
+    ips.sort_by_key(|ip| (!ip.is_private(), ip.octets()));
+    ips.dedup();
+    ips.into_iter().map(|ip| ip.to_string()).collect()
 }
 
-fn status_of(server: &RunningServer) -> LanSyncStatus {
+fn token_fingerprint(token: &str) -> String {
+    let mut hasher = Md5::new();
+    hasher.update(token.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn status_of(server: &RunningServer, generation: u64) -> LanSyncStatus {
     LanSyncStatus {
         running: true,
         port: server.port,
         device_name: server.device_name.clone(),
         device_id: server.device_id.clone(),
         local_ips: local_ips(),
+        generation,
+        started: false,
     }
 }
 
-fn stopped_status() -> LanSyncStatus {
+fn stopped_status(generation: u64) -> LanSyncStatus {
     LanSyncStatus {
         running: false,
         port: 0,
         device_name: String::new(),
         device_id: String::new(),
         local_ips: Vec::new(),
+        generation,
+        started: false,
     }
 }
 
-/// Fresh per-run identity for the /ping handshake. A persistent id (surviving
-/// restarts) matters only for the M1.5 auto-discovery pairing memory; revisit
-/// then.
+async fn shutdown_running_server(server: RunningServer) {
+    let _ = server.stop_tx.send(true);
+    if let Some(mdns) = server.mdns {
+        let _ = mdns.shutdown();
+    }
+    let mut task = server.task;
+    if tokio::time::timeout(SERVER_SHUTDOWN_TIMEOUT, &mut task)
+        .await
+        .is_err()
+    {
+        task.abort();
+        let _ = task.await;
+    }
+}
+
+/// Generate the identity used by the /ping handshake when no persisted id
+/// exists. The caller stores it below the app data directory for stable
+/// self-discovery filtering across restarts.
 fn new_device_id() -> String {
     uuid::Uuid::new_v4().simple().to_string()
+}
+
+fn is_valid_device_id(id: &str) -> bool {
+    id.len() == 32 && id.is_ascii() && id.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn read_valid_device_id(path: &Path) -> Result<Option<String>, String> {
+    let metadata = match std::fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(format!("lan_sync: inspect device id: {e}")),
+    };
+    if !metadata.file_type().is_file() {
+        return Err(format!("lan_sync: device id is not a regular file: {}", path.display()));
+    }
+    let id = std::fs::read_to_string(path)
+        .map_err(|e| format!("lan_sync: read device id: {e}"))?;
+    let id = id.trim();
+    Ok(is_valid_device_id(id).then(|| id.to_string()))
+}
+
+fn remove_device_id_file(path: &Path) -> Result<(), String> {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_file() || metadata.file_type().is_symlink() => {
+            std::fs::remove_file(path)
+                .map_err(|e| format!("lan_sync: remove legacy device id: {e}"))?;
+        }
+        Ok(_) => {
+            return Err(format!(
+                "lan_sync: legacy device id is not a file: {}",
+                path.display()
+            ));
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(format!("lan_sync: inspect legacy device id: {e}")),
+    }
+    Ok(())
+}
+
+fn write_device_id(path: &Path, id: &str) -> Result<(), String> {
+    if let Ok(metadata) = std::fs::symlink_metadata(path) {
+        if !metadata.file_type().is_file() {
+            return Err(format!("lan_sync: device id is not a regular file: {}", path.display()));
+        }
+    }
+    std::fs::write(path, id).map_err(|e| format!("lan_sync: persist device id: {e}"))
+}
+
+fn load_device_id(app_data_dir: &Path) -> Result<String, String> {
+    let metadata_dir = app_data_dir.join("LanSyncMeta");
+    match std::fs::symlink_metadata(&metadata_dir) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err("lan_sync: device metadata dir must not be a symlink".to_string());
+        }
+        Ok(metadata) if !metadata.is_dir() => {
+            return Err("lan_sync: device metadata path must be a directory".to_string());
+        }
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            std::fs::create_dir_all(&metadata_dir)
+                .map_err(|e| format!("lan_sync: create device metadata dir: {e}"))?;
+        }
+        Err(e) => return Err(format!("lan_sync: inspect device metadata dir: {e}")),
+    }
+    let path = metadata_dir.join("device_id");
+    // Migrate the pre-hardening identity out of the HTTP-served root so an
+    // upgrade does not leave the old file visible to LAN peers.
+    let legacy_path = app_data_dir.join("LanSync").join("device_id");
+    if let Some(id) = read_valid_device_id(&path)? {
+        remove_device_id_file(&legacy_path)?;
+        return Ok(id);
+    }
+    if let Some(id) = read_valid_device_id(&legacy_path)? {
+        write_device_id(&path, &id)?;
+        remove_device_id_file(&legacy_path)?;
+        return Ok(id);
+    }
+    remove_device_id_file(&legacy_path)?;
+
+    let id = new_device_id();
+    write_device_id(&path, &id)?;
+    Ok(id)
 }
 
 fn mdns_instance_name(device_name: &str, device_id: &str) -> String {
@@ -124,26 +270,37 @@ fn advertise_mdns(
     token: &str,
     port: u16,
 ) -> Result<ServiceDaemon, String> {
+    let addresses = local_ips();
+    if addresses.is_empty() {
+        return Err("lan_sync: no non-loopback IPv4 address for mDNS".to_string());
+    }
     let mdns = ServiceDaemon::new().map_err(|e| format!("lan_sync: start mDNS: {e}"))?;
     let instance = mdns_instance_name(device_name, device_id);
     let hostname = format!("readest-{}.local.", &device_id[..device_id.len().min(12)]);
     let properties: HashMap<String, String> = HashMap::from([
         ("device_id".to_string(), device_id.to_string()),
         ("name".to_string(), device_name.to_string()),
-        ("token".to_string(), token.to_string()),
+        ("token_fingerprint".to_string(), token_fingerprint(token)),
         ("proto".to_string(), "readest-lan-sync-1".to_string()),
     ]);
-    let info = ServiceInfo::new(
+    let info = match ServiceInfo::new(
         MDNS_SERVICE_TYPE,
         &instance,
         &hostname,
-        "",
+        addresses.join(","),
         port,
         properties,
-    )
-    .map_err(|e| format!("lan_sync: build mDNS service: {e}"))?;
-    mdns.register(info)
-        .map_err(|e| format!("lan_sync: publish mDNS service: {e}"))?;
+    ) {
+        Ok(info) => info,
+        Err(e) => {
+            let _ = mdns.shutdown();
+            return Err(format!("lan_sync: build mDNS service: {e}"));
+        }
+    };
+    if let Err(e) = mdns.register(info) {
+        let _ = mdns.shutdown();
+        return Err(format!("lan_sync: publish mDNS service: {e}"));
+    }
     Ok(mdns)
 }
 
@@ -179,18 +336,10 @@ fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
                     .get_property_val_str("name")
                     .map(ToString::to_string)
                     .unwrap_or_else(|| info.get_fullname().to_string());
-                let token = props
-                    .get_property_val_str("token")
-                    .unwrap_or("")
-                    .to_string();
-                let host = info
-                    .get_addresses_v4()
-                    .into_iter()
-                    .filter(|ip| !ip.is_loopback())
-                    .map(ToString::to_string)
-                    .next()
+                let host = preferred_ipv4(info.get_addresses_v4())
+                    .map(|ip| ip.to_string())
                     .unwrap_or_default();
-                if host.is_empty() || token.is_empty() {
+                if host.is_empty() {
                     continue;
                 }
                 peers.push(DiscoveredPeer {
@@ -198,7 +347,9 @@ fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
                     host,
                     port: info.get_port(),
                     device_id,
-                    token,
+                    // Tokens are exchanged out-of-band; never expose them in
+                    // unauthenticated mDNS metadata.
+                    token: String::new(),
                 });
             }
             Ok(_) => {}
@@ -217,6 +368,7 @@ pub async fn lan_sync_start<R: Runtime>(
     token: String,
     port: u16,
     device_name: String,
+    expected_generation: Option<u64>,
 ) -> Result<LanSyncStatus, String> {
     let token = token.trim().to_string();
     if token.is_empty() {
@@ -231,23 +383,56 @@ pub async fn lan_sync_start<R: Runtime>(
         }
     };
 
-    let mut guard = state.0.lock().await;
+    let mut guard = state.server.lock().await;
+    let generation = state.generation.load(Ordering::SeqCst);
+    if expected_generation.is_some_and(|expected| expected != generation) {
+        return Ok(match guard.as_ref() {
+            Some(server) => status_of(server, generation),
+            None => stopped_status(generation),
+        });
+    }
     if let Some(server) = guard.as_ref() {
-        return Ok(status_of(server));
+        if server.token == token {
+            return Ok(status_of(server, generation));
+        }
     }
 
-    let root: PathBuf = app
+    // A token change or a start from stopped is a new lifecycle intent. Advance
+    // the epoch before doing any fallible work so a failed replacement cannot
+    // leave stale callers with an apparently current generation.
+    let start_generation = state.generation.fetch_add(1, Ordering::SeqCst) + 1;
+    if let Some(server) = guard.take() {
+        // Keep stop and start under the same state mutex so a stale caller
+        // cannot resurrect an old server after a disconnect.
+        shutdown_running_server(server).await;
+    }
+
+    let app_data_dir: PathBuf = app
         .path()
         .app_data_dir()
-        .map_err(|e| format!("lan_sync: app data dir: {e}"))?
-        .join("LanSync");
-    std::fs::create_dir_all(&root).map_err(|e| format!("lan_sync: create root: {e}"))?;
+        .map_err(|e| format!("lan_sync: app data dir: {e}"))?;
+    let root = app_data_dir.join("LanSync");
+    match std::fs::symlink_metadata(&root) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            return Err("lan_sync: sync root must not be a symlink".to_string());
+        }
+        Ok(metadata) if !metadata.is_dir() => {
+            return Err("lan_sync: sync root must be a directory".to_string());
+        }
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            std::fs::create_dir_all(&root)
+                .map_err(|e| format!("lan_sync: create root: {e}"))?;
+        }
+        Err(e) => return Err(format!("lan_sync: inspect root: {e}")),
+    }
 
+    let device_id = load_device_id(&app_data_dir)?;
     let server_state = Arc::new(server::ServerState {
         root,
         token,
         device_name: device_name.clone(),
-        device_id: new_device_id(),
+        device_id,
     });
 
     // Bind the requested port, walking upwards through a small fallback range
@@ -270,44 +455,71 @@ pub async fn lan_sync_start<R: Runtime>(
         ));
     };
 
-    let mdns = advertise_mdns(
-        &device_name,
-        &server_state.device_id,
-        &server_state.token,
-        bound_port,
-    )?;
     let (stop_tx, mut stop_rx) = watch::channel(false);
     let router = server::router(server_state.clone());
-    tauri::async_runtime::spawn(async move {
-        // Runs until lan_sync_stop flips the watch channel; the join handle is
-        // intentionally dropped — graceful shutdown cleans the socket up.
+    let (ready_tx, ready_rx) = oneshot::channel();
+    let task = tauri::async_runtime::spawn(async move {
+        // The listener is already bound before this task is spawned. Signal
+        // readiness before advertising so mDNS never points at a not-yet-live
+        // TCP endpoint.
+        let _ = ready_tx.send(());
         let _ = axum::serve(listener, router)
             .with_graceful_shutdown(async move {
                 let _ = stop_rx.changed().await;
             })
             .await;
     });
+    let _ = ready_rx.await;
+
+    // mDNS is an optional convenience for pairing. A missing IPv4 address or
+    // an mDNS daemon failure must not prevent authenticated manual TCP use.
+    let mdns = match advertise_mdns(
+        &device_name,
+        &server_state.device_id,
+        &server_state.token,
+        bound_port,
+    ) {
+        Ok(mdns) => Some(mdns),
+        Err(e) => {
+            log::warn!("{e}");
+            None
+        }
+    };
 
     let running = RunningServer {
         port: bound_port,
         device_name,
         device_id: server_state.device_id.clone(),
+        token: server_state.token.clone(),
         stop_tx,
+        task,
         mdns,
     };
-    let status = status_of(&running);
+    let mut status = status_of(&running, start_generation);
+    status.started = true;
     *guard = Some(running);
     Ok(status)
 }
 
 #[tauri::command]
-pub async fn lan_sync_stop(state: State<'_, LanSyncState>) -> Result<LanSyncStatus, String> {
-    let mut guard = state.0.lock().await;
-    if let Some(server) = guard.take() {
-        let _ = server.stop_tx.send(true);
-        let _ = server.mdns.shutdown();
+pub async fn lan_sync_stop(
+    state: State<'_, LanSyncState>,
+    expected_generation: Option<u64>,
+) -> Result<LanSyncStatus, String> {
+    let mut guard = state.server.lock().await;
+    let current_generation = state.generation.load(Ordering::SeqCst);
+    if expected_generation.is_some_and(|expected| expected != current_generation) {
+        return Ok(match guard.as_ref() {
+            Some(server) => status_of(server, current_generation),
+            None => stopped_status(current_generation),
+        });
     }
-    Ok(stopped_status())
+
+    let generation = state.generation.fetch_add(1, Ordering::SeqCst) + 1;
+    if let Some(server) = guard.take() {
+        shutdown_running_server(server).await;
+    }
+    Ok(stopped_status(generation))
 }
 
 #[tauri::command]
@@ -319,9 +531,38 @@ pub async fn lan_sync_discover() -> Result<Vec<DiscoveredPeer>, String> {
 
 #[tauri::command]
 pub async fn lan_sync_status(state: State<'_, LanSyncState>) -> Result<LanSyncStatus, String> {
-    let guard = state.0.lock().await;
+    let guard = state.server.lock().await;
+    let generation = state.generation.load(Ordering::SeqCst);
     Ok(match guard.as_ref() {
-        Some(server) => status_of(server),
-        None => stopped_status(),
+        Some(server) => status_of(server, generation),
+        None => stopped_status(generation),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_benchmark_ipv4_addresses() {
+        assert!(is_benchmark_ipv4(Ipv4Addr::new(198, 18, 0, 1)));
+        assert!(is_benchmark_ipv4(Ipv4Addr::new(198, 19, 255, 254)));
+        assert!(!is_benchmark_ipv4(Ipv4Addr::new(192, 168, 1, 9)));
+    }
+
+    #[test]
+    fn prefers_private_ipv4_addresses() {
+        assert_eq!(
+            preferred_ipv4([
+                Ipv4Addr::new(198, 18, 0, 1),
+                Ipv4Addr::new(8, 8, 8, 8),
+                Ipv4Addr::new(192, 168, 1, 9),
+            ]),
+            Some(Ipv4Addr::new(192, 168, 1, 9)),
+        );
+        assert_eq!(
+            preferred_ipv4([Ipv4Addr::new(198, 18, 0, 1), Ipv4Addr::new(8, 8, 8, 8)]),
+            Some(Ipv4Addr::new(8, 8, 8, 8)),
+        );
+    }
 }

@@ -1,25 +1,29 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { discoverLanPeers, type DiscoveredLanPeer } from '@/services/lanSync/discovery';
+import { setMulticastLock } from '@/utils/bridge';
 import { eventDispatcher } from '@/utils/event';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { lanSyncPing } from '@/services/sync/providers/lan/LanSyncProvider';
 import {
   DEFAULT_LAN_SYNC_PORT,
   getLanSyncStatus,
+  getLanSyncGeneration,
+  replaceLanSyncToken,
   startLanSync,
   stopLanSync,
+  stopLanSyncIfCurrent,
   type LanSyncStatus,
 } from '@/services/lanSync/lifecycle';
-import type { LanSyncSettings } from '@/types/settings';
+import type { LanSyncSettings, SystemSettings } from '@/types/settings';
 import { BoxedList, SectionTitle, SettingsRow } from '../primitives';
 import FileSyncForm from './FileSyncForm';
-import { persistCloudProviderEnabled } from './cloudSync';
+import { persistCloudProviderEnabled, persistSettingsMutation } from './cloudSync';
 
 /**
  * Translate a peer-probe failure into a user-facing string. Each branch is a
@@ -143,12 +147,13 @@ const LanPeerDiscovery: React.FC<DiscoveryPanelProps> = ({
  */
 const LanForm: React.FC = () => {
   const _ = useTranslation();
-  const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { envConfig } = useEnv();
+  const { settings, setSettings } = useSettingsStore();
+  const { envConfig, appService } = useEnv();
 
   const stored = settings.lan;
   const isActive = !!stored?.enabled;
   const isTauri = isTauriAppPlatform();
+  const needsMulticastLock = appService?.isAndroidApp === true;
 
   const [host, setHost] = useState(stored?.host || '');
   const [port, setPort] = useState(
@@ -169,23 +174,147 @@ const LanForm: React.FC = () => {
   // searching. A successful connection persists the settings and keeps the
   // server running; cancellation/close cleans this short-lived server up.
   const temporaryServerRef = useRef(false);
+  const temporaryServerGenerationRef = useRef<number | null>(null);
   const temporaryTokenRef = useRef<string | null>(null);
+  const promotionLockHeldRef = useRef(false);
+  const promotionLockPromiseRef = useRef<Promise<void> | null>(null);
+  const promotionLockReleasePromiseRef = useRef<Promise<void> | null>(null);
+  const unmountedRef = useRef(false);
+  const disconnectingRef = useRef(false);
+  const connectingRef = useRef(false);
+  const connectionRunRef = useRef(0);
+  const temporaryDiscoveryLockRef = useRef(false);
+  const discoveryLockPromiseRef = useRef<Promise<void> | null>(null);
+  const discoveryCleanupPromiseRef = useRef<Promise<void> | null>(null);
+  const discoveryRunRef = useRef(0);
+
+  const acquireDiscoveryLock = useCallback(async () => {
+    if (!needsMulticastLock || temporaryDiscoveryLockRef.current) return;
+    const existing = discoveryLockPromiseRef.current;
+    if (existing) {
+      await existing;
+      return;
+    }
+    const pending = setMulticastLock(true, 'lan-discovery');
+    discoveryLockPromiseRef.current = pending;
+    try {
+      await pending;
+      temporaryDiscoveryLockRef.current = true;
+    } finally {
+      if (discoveryLockPromiseRef.current === pending) {
+        discoveryLockPromiseRef.current = null;
+      }
+    }
+  }, [needsMulticastLock]);
+
+  const releaseDiscoveryLock = useCallback(async () => {
+    const pending = discoveryLockPromiseRef.current;
+    if (pending) await pending.catch(() => {});
+    if (!temporaryDiscoveryLockRef.current) return;
+    try {
+      await setMulticastLock(false, 'lan-discovery');
+      temporaryDiscoveryLockRef.current = false;
+    } catch (e) {
+      console.warn('lan_sync discovery multicast unlock failed:', e);
+    }
+  }, []);
+
+  const stopTemporaryServer = useCallback(async () => {
+    if (!temporaryServerRef.current) return;
+    const generation = temporaryServerGenerationRef.current;
+    const temporaryToken = temporaryTokenRef.current;
+    temporaryServerRef.current = false;
+    temporaryServerGenerationRef.current = null;
+    temporaryTokenRef.current = null;
+    if (generation === null) return;
+    try {
+      await stopLanSyncIfCurrent(generation);
+    } catch (e) {
+      // Keep ownership for a later cleanup retry when the IPC call itself
+      // failed. A successful compare-stop (including a generation mismatch)
+      // intentionally leaves these refs cleared.
+      temporaryServerRef.current = true;
+      temporaryServerGenerationRef.current = generation;
+      temporaryTokenRef.current = temporaryToken;
+      console.warn('lan_sync temporary server stop failed:', e);
+    }
+  }, []);
+
+  const releasePromotionLock = useCallback(() => {
+    const existingRelease = promotionLockReleasePromiseRef.current;
+    if (existingRelease) return existingRelease;
+    const release = (async () => {
+      const pending = promotionLockPromiseRef.current;
+      if (pending) await pending.catch(() => {});
+      if (!promotionLockHeldRef.current) return;
+      try {
+        await setMulticastLock(false, 'lan-sync');
+        promotionLockHeldRef.current = false;
+      } catch (e) {
+        console.warn('lan_sync promotion multicast unlock failed:', e);
+      }
+    })();
+    promotionLockReleasePromiseRef.current = release;
+    void release.finally(() => {
+      if (promotionLockReleasePromiseRef.current === release) {
+        promotionLockReleasePromiseRef.current = null;
+      }
+    });
+    return release;
+  }, []);
+
+  const cleanupDiscovery = useCallback(async () => {
+    const previous = discoveryCleanupPromiseRef.current;
+    if (previous) await previous.catch(() => {});
+
+    const cleanup = (async () => {
+      await stopTemporaryServer();
+      await releaseDiscoveryLock();
+    })();
+    discoveryCleanupPromiseRef.current = cleanup;
+    try {
+      await cleanup;
+    } finally {
+      if (discoveryCleanupPromiseRef.current === cleanup) {
+        discoveryCleanupPromiseRef.current = null;
+      }
+    }
+  }, [releaseDiscoveryLock, stopTemporaryServer]);
 
   // Active state: surface this device's own LAN addresses for the peer's form,
   // and self-heal the embedded server after an app restart that raced the
   // boot-time manager (start is idempotent on the Rust side).
   useEffect(() => {
     if (!isActive || !isTauri || !stored?.token) return;
+    const expectedIntentGeneration = getLanSyncGeneration();
     let cancelled = false;
     (async () => {
       try {
         let s = await getLanSyncStatus();
+        if (cancelled || disconnectingRef.current) return;
         if (!s.running) {
-          s = await startLanSync(stored.token);
+          s = await startLanSync(stored.token, DEFAULT_LAN_SYNC_PORT, '', s.generation);
+          const currentLan = useSettingsStore.getState().settings?.lan;
+          if (
+            cancelled ||
+            disconnectingRef.current ||
+            getLanSyncGeneration() !== expectedIntentGeneration ||
+            !currentLan?.enabled ||
+            currentLan.token !== stored.token
+          ) {
+            if (s.started) {
+              try {
+                await stopLanSyncIfCurrent(s.generation);
+              } catch {
+                /* another cleanup may have stopped it already */
+              }
+            }
+            return;
+          }
         }
-        if (!cancelled) setStatus(s);
+        setStatus(s);
       } catch (e) {
-        console.warn('lan_sync status failed:', e);
+        if (!cancelled && !disconnectingRef.current) console.warn('lan_sync status failed:', e);
       }
     })();
     return () => {
@@ -194,57 +323,120 @@ const LanForm: React.FC = () => {
   }, [isActive, isTauri, stored?.token]);
 
   useEffect(() => {
+    if (isActive && needsMulticastLock) return;
+    void releasePromotionLock();
+  }, [isActive, needsMulticastLock, releasePromotionLock]);
+
+  useEffect(() => {
     return () => {
-      if (temporaryServerRef.current) {
-        void stopLanSync().catch(() => {});
-        temporaryServerRef.current = false;
-        temporaryTokenRef.current = null;
-      }
+      unmountedRef.current = true;
+      connectionRunRef.current += 1;
+      discoveryRunRef.current += 1;
+      void cleanupDiscovery().then(() => releasePromotionLock());
     };
-  }, []);
+  }, [cleanupDiscovery, releasePromotionLock]);
 
   const persistLan = async (patch: Partial<LanSyncSettings>) => {
     const latest = useSettingsStore.getState().settings;
-    const next = { ...latest, lan: { ...latest.lan, ...patch } };
-    setSettings(next);
-    await saveSettings(envConfig, next);
+    setSettings({ ...latest, lan: { ...latest.lan, ...patch } });
+    await persistSettingsMutation(envConfig, (current) => ({
+      ...current,
+      lan: { ...current.lan, ...patch },
+    }));
   };
+
+  const persistLanProvider = (
+    enabled: boolean,
+    mutate: (settings: SystemSettings) => SystemSettings = (s) => s,
+  ): Promise<SystemSettings> => persistCloudProviderEnabled(envConfig, 'lan', enabled, mutate);
 
   const handleDiscover = async () => {
     if (!isTauri || isDiscovering || isConnecting) return;
+    const runId = discoveryRunRef.current + 1;
+    const expectedGeneration = getLanSyncGeneration();
+    discoveryRunRef.current = runId;
     setIsDiscovering(true);
     setHasSearched(false);
     setDiscoveryFailed(false);
     setPeers([]);
+    const pendingCleanup = discoveryCleanupPromiseRef.current;
+    if (pendingCleanup) await pendingCleanup.catch(() => {});
+    if (runId !== discoveryRunRef.current) return;
     try {
+      await acquireDiscoveryLock();
+      if (runId !== discoveryRunRef.current) return;
+
       // A first-time device has no enabled LAN server yet, so there would be
       // nothing for the other device to discover. Start a temporary advertiser
       // with a local token before browsing; it is kept alive while this panel
       // remains open and is promoted to the persisted server after pairing.
+      let ownDeviceId = '';
+      let expectedServerGeneration: number | undefined;
+      if (isActive) {
+        const currentStatus = await getLanSyncStatus();
+        if (runId !== discoveryRunRef.current || getLanSyncGeneration() !== expectedGeneration)
+          return;
+        expectedServerGeneration = currentStatus.generation;
+        if (currentStatus.running) ownDeviceId = currentStatus.device_id;
+      }
       if (!isActive) {
-        const temporaryToken = token.trim() || generateToken();
-        const temporaryStatus = await startLanSync(
-          temporaryToken,
-          DEFAULT_LAN_SYNC_PORT,
-          'Readest',
-        );
-        setStatus(temporaryStatus);
-        temporaryServerRef.current = true;
-        temporaryTokenRef.current = temporaryToken;
-        if (!token.trim()) setToken(temporaryToken);
+        const existingStatus = await getLanSyncStatus();
+        if (runId !== discoveryRunRef.current || getLanSyncGeneration() !== expectedGeneration)
+          return;
+        expectedServerGeneration = existingStatus.generation;
+        if (existingStatus.running) {
+          // A running server may belong to another window; never stop it just
+          // to prepare discovery. Use its device id for self-peer filtering.
+          ownDeviceId = existingStatus.device_id;
+        } else {
+          const temporaryToken = token.trim() || generateToken();
+          const temporaryStatus = await startLanSync(
+            temporaryToken,
+            DEFAULT_LAN_SYNC_PORT,
+            'Readest',
+            expectedServerGeneration,
+          );
+          if (temporaryStatus.started) {
+            // Record the server before checking cancellation so an unmount
+            // while startLanSync was pending can stop only our new server.
+            temporaryServerRef.current = true;
+            temporaryServerGenerationRef.current = temporaryStatus.generation;
+            temporaryTokenRef.current = temporaryToken;
+            expectedServerGeneration = temporaryStatus.generation;
+            if (runId !== discoveryRunRef.current) {
+              await cleanupDiscovery();
+              return;
+            }
+            setStatus(temporaryStatus);
+            ownDeviceId = temporaryStatus.device_id;
+          } else {
+            // Another manager won the stopped-to-running race. Do not claim
+            // ownership or stop its server during discovery cleanup.
+            ownDeviceId = temporaryStatus.device_id;
+          }
+        }
       }
       const found = await discoverLanPeers();
-      const visible = status?.device_id
-        ? found.filter((peer) => peer.device_id !== status.device_id)
-        : found;
+      if (runId !== discoveryRunRef.current || getLanSyncGeneration() !== expectedGeneration) {
+        await cleanupDiscovery();
+        return;
+      }
+      // The server may have come up after the initial status check. Refresh the
+      // identity before filtering so this device never appears as a peer.
+      if (isTauri) {
+        const latestStatus = await getLanSyncStatus();
+        if (runId !== discoveryRunRef.current || getLanSyncGeneration() !== expectedGeneration) {
+          await cleanupDiscovery();
+          return;
+        }
+        if (latestStatus.running) ownDeviceId = latestStatus.device_id;
+      }
+      const visible = ownDeviceId ? found.filter((peer) => peer.device_id !== ownDeviceId) : found;
       setPeers(visible);
     } catch (e) {
       console.warn('lan_sync discovery failed:', e);
-      if (temporaryServerRef.current) {
-        await stopLanSync().catch(() => {});
-        temporaryServerRef.current = false;
-        temporaryTokenRef.current = null;
-      }
+      if (runId !== discoveryRunRef.current) return;
+      await cleanupDiscovery();
       setDiscoveryFailed(true);
       setShowManualConnection(true);
       eventDispatcher.dispatch('toast', {
@@ -252,31 +444,56 @@ const LanForm: React.FC = () => {
         message: _('Failed to search for nearby devices'),
       });
     } finally {
-      setHasSearched(true);
-      setIsDiscovering(false);
+      if (runId === discoveryRunRef.current) {
+        if (!temporaryServerRef.current) await releaseDiscoveryLock();
+        setHasSearched(true);
+        setIsDiscovering(false);
+      }
     }
   };
 
-  const restartLocalServerWithToken = async (nextToken: string, previousToken: string) => {
-    await stopLanSync();
-    try {
-      return await startLanSync(nextToken);
-    } catch (e) {
-      try {
-        await startLanSync(previousToken);
-      } catch (rollbackError) {
-        console.warn('lan_sync rollback start failed:', rollbackError);
-      }
-      throw e;
-    }
+  const closePeerDiscovery = () => {
+    discoveryRunRef.current += 1;
+    setIsDiscovering(false);
+    setShowPeerDiscovery(false);
+    void cleanupDiscovery();
   };
+
+  const restartLocalServerWithToken = async (
+    nextToken: string,
+    previousToken: string,
+    expectedGeneration?: number,
+  ) => replaceLanSyncToken(nextToken, previousToken, DEFAULT_LAN_SYNC_PORT, '', expectedGeneration);
 
   const handleConnect = async (target?: DiscoveredLanPeer) => {
     const trimmedHost = (target?.host ?? host).trim();
-    const trimmedToken = (target?.token ?? token).trim();
+    const trimmedToken = target?.token?.trim() || token.trim();
     const trimmedPort = target?.port ?? (Number(port) || DEFAULT_LAN_SYNC_PORT);
+    if (target) {
+      setHost(trimmedHost);
+      setPort(String(trimmedPort));
+      setShowManualConnection(true);
+      if (target.token.trim()) setToken(trimmedToken);
+      if (!trimmedToken) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Enter the pairing token to connect'),
+        });
+        return;
+      }
+    }
     if (!trimmedHost || !trimmedToken) return;
+    if (unmountedRef.current || disconnectingRef.current || connectingRef.current) return;
+    connectingRef.current = true;
+    const connectionRunId = ++connectionRunRef.current;
+    const connectionLanGeneration = getLanSyncGeneration();
+    const isConnectionCurrent = () =>
+      connectionRunRef.current === connectionRunId &&
+      getLanSyncGeneration() === connectionLanGeneration &&
+      !disconnectingRef.current &&
+      !unmountedRef.current;
 
+    const previousSettings = useSettingsStore.getState().settings;
     const previousToken = stored?.token?.trim() || '';
     const switchingActiveToken =
       isActive && isTauri && !!previousToken && previousToken !== trimmedToken;
@@ -292,65 +509,226 @@ const LanForm: React.FC = () => {
     }
 
     let restartedForSwitch = false;
+    let restartedServerGeneration: number | undefined;
+    let temporaryTokenForPromotion: string | null = null;
+    let persistentLockAcquiredForPromotion = false;
+    let expectedServerGeneration: number | undefined;
     try {
+      if (isTauri) {
+        const localStatus = await getLanSyncStatus();
+        if (!isConnectionCurrent()) return;
+        expectedServerGeneration = localStatus.generation;
+      }
       const peer = await lanSyncPing({
         enabled: false,
         host: trimmedHost,
         port: trimmedPort,
         token: trimmedToken,
       });
+      if (!isConnectionCurrent()) return;
 
       // When changing devices while LAN Sync is already active, the newly
       // discovered peer may advertise a different token. Update this device's
       // embedded server only after the new peer has accepted the token, and
       // roll the old server back if that restart itself fails.
       if (switchingActiveToken) {
-        const nextStatus = await restartLocalServerWithToken(trimmedToken, previousToken);
+        const nextStatus = await restartLocalServerWithToken(
+          trimmedToken,
+          previousToken,
+          expectedServerGeneration,
+        );
+        restartedServerGeneration = nextStatus.started ? nextStatus.generation : undefined;
+        if (!isConnectionCurrent()) {
+          if (restartedServerGeneration !== undefined) {
+            try {
+              await stopLanSyncIfCurrent(restartedServerGeneration);
+            } catch {
+              /* another lifecycle operation may have stopped it already */
+            }
+          }
+          return;
+        }
         setStatus(nextStatus);
         restartedForSwitch = true;
       } else if (temporaryServerRef.current) {
         // Promote the temporary advertiser to the peer's token before saving
         // the connection. Otherwise startLanSync would be idempotent and leave
         // this device serving with the throwaway token it used for discovery.
-        const temporaryToken = temporaryTokenRef.current || '';
-        const nextStatus = await restartLocalServerWithToken(trimmedToken, temporaryToken);
+        temporaryTokenForPromotion = temporaryTokenRef.current || '';
+        if (needsMulticastLock) {
+          // Take a persistent lease before replacing the temporary server so
+          // there is no gap in multicast coverage during promotion. Keep this
+          // lease until disconnect/unmount; LanSyncManager has its own lease.
+          const pendingPromotionLock = setMulticastLock(true, 'lan-sync');
+          promotionLockPromiseRef.current = pendingPromotionLock;
+          promotionLockHeldRef.current = true;
+          try {
+            await pendingPromotionLock;
+          } catch (e) {
+            promotionLockHeldRef.current = false;
+            throw e;
+          } finally {
+            if (promotionLockPromiseRef.current === pendingPromotionLock) {
+              promotionLockPromiseRef.current = null;
+            }
+          }
+          if (unmountedRef.current || disconnectingRef.current) {
+            await cleanupDiscovery();
+            await releasePromotionLock();
+            return;
+          }
+          persistentLockAcquiredForPromotion = true;
+        }
+        const nextStatus = await restartLocalServerWithToken(
+          trimmedToken,
+          temporaryTokenForPromotion,
+          expectedServerGeneration,
+        );
+        if (nextStatus.started) {
+          temporaryServerGenerationRef.current = nextStatus.generation;
+          restartedServerGeneration = nextStatus.generation;
+        } else {
+          temporaryServerRef.current = false;
+          temporaryServerGenerationRef.current = null;
+          temporaryTokenRef.current = null;
+          restartedServerGeneration = undefined;
+        }
+        if (!isConnectionCurrent() || unmountedRef.current) {
+          await cleanupDiscovery();
+          await releasePromotionLock();
+          return;
+        }
         setStatus(nextStatus);
         restartedForSwitch = true;
-        temporaryServerRef.current = false;
-        temporaryTokenRef.current = null;
+      }
+
+      if (!isConnectionCurrent()) {
+        if (temporaryTokenForPromotion !== null) {
+          await cleanupDiscovery();
+          await releasePromotionLock();
+        } else if (restartedServerGeneration !== undefined) {
+          try {
+            await stopLanSyncIfCurrent(restartedServerGeneration);
+          } catch {
+            /* another lifecycle operation may have stopped it already */
+          }
+        }
+        return;
+      }
+      if (isTauri && !isActive && !temporaryServerRef.current) {
+        const existingStatus = await getLanSyncStatus();
+        if (!isConnectionCurrent()) return;
+        if (existingStatus.running) {
+          eventDispatcher.dispatch('toast', {
+            type: 'error',
+            message: _('Another LAN Sync server is already running'),
+          });
+          return;
+        }
       }
 
       try {
         // persistCloudProviderEnabled owns activation, persistence, and the
         // cross-window provider broadcast; host/port/token land before the
         // toggle flips so the first engine run sees a complete slice.
-        await persistCloudProviderEnabled(envConfig, 'lan', true, (s) => ({
+        await persistLanProvider(true, (s) => ({
           ...s,
           lan: { ...s.lan, host: trimmedHost, port: trimmedPort, token: trimmedToken },
         }));
+        if (!isConnectionCurrent()) {
+          if (temporaryTokenForPromotion !== null) {
+            await cleanupDiscovery();
+            await releasePromotionLock();
+          } else if (restartedServerGeneration !== undefined) {
+            try {
+              await stopLanSyncIfCurrent(restartedServerGeneration);
+            } catch {
+              /* another lifecycle operation may have stopped it already */
+            }
+          }
+          return;
+        }
       } catch (e) {
-        if (restartedForSwitch) {
+        if (connectionRunRef.current === connectionRunId && previousSettings) {
+          useSettingsStore.getState().setSettings(previousSettings);
+        }
+        if (restartedForSwitch && restartedServerGeneration !== undefined) {
           try {
-            const restoredStatus = await restartLocalServerWithToken(previousToken, trimmedToken);
-            setStatus(restoredStatus);
+            const rollbackToken = temporaryTokenForPromotion ?? previousToken;
+            const restoredStatus = await restartLocalServerWithToken(
+              rollbackToken,
+              trimmedToken,
+              restartedServerGeneration,
+            );
+            if (temporaryTokenForPromotion !== null && restoredStatus.started) {
+              temporaryServerRef.current = true;
+              temporaryServerGenerationRef.current = restoredStatus.generation;
+              temporaryTokenRef.current = rollbackToken;
+            }
+            if (isConnectionCurrent()) setStatus(restoredStatus);
           } catch (rollbackError) {
             console.warn('lan_sync settings rollback start failed:', rollbackError);
           }
         }
+        if (persistentLockAcquiredForPromotion) {
+          await releasePromotionLock();
+          persistentLockAcquiredForPromotion = false;
+        }
         throw e;
+      }
+
+      if (temporaryTokenForPromotion !== null) {
+        // The persistent owner was acquired before the token switch. Keep the
+        // temporary owner until persistence succeeds, then release it after
+        // the server is safely running with the persisted peer token.
+        temporaryServerRef.current = false;
+        temporaryServerGenerationRef.current = null;
+        temporaryTokenRef.current = null;
+        await releaseDiscoveryLock();
+        // promotionLockHeldRef remains set until disconnect/unmount, while the
+        // local flag only controls failure cleanup for this operation.
+        persistentLockAcquiredForPromotion = false;
       }
 
       // Bring this device's own server up so the peer can connect back. A
       // device switch above already restarted it with the new token.
       if (isTauri && !restartedForSwitch) {
+        if (!isConnectionCurrent()) return;
         try {
-          const nextStatus = await startLanSync(trimmedToken);
+          const nextStatus = await startLanSync(
+            trimmedToken,
+            DEFAULT_LAN_SYNC_PORT,
+            '',
+            expectedServerGeneration,
+          );
+          if (!isConnectionCurrent()) {
+            if (nextStatus.started) {
+              try {
+                await stopLanSyncIfCurrent(nextStatus.generation);
+              } catch {
+                /* disconnect cleanup may already have stopped it */
+              }
+            }
+            return;
+          }
+          const currentLan = useSettingsStore.getState().settings?.lan;
+          if (!currentLan?.enabled || currentLan.token !== trimmedToken) {
+            if (nextStatus.started) {
+              try {
+                await stopLanSyncIfCurrent(nextStatus.generation);
+              } catch {
+                /* another lifecycle operation may have replaced it */
+              }
+            }
+            return;
+          }
           setStatus(nextStatus);
         } catch (e) {
-          console.warn('lan_sync start failed:', e);
+          if (isConnectionCurrent()) console.warn('lan_sync start failed:', e);
         }
       }
 
+      if (!isConnectionCurrent()) return;
       setPeers([]);
       setHasSearched(false);
       setDiscoveryFailed(false);
@@ -362,28 +740,75 @@ const LanForm: React.FC = () => {
         }),
       });
     } catch (e) {
+      if (persistentLockAcquiredForPromotion) {
+        await releasePromotionLock();
+      }
+      if (!isConnectionCurrent()) return;
       if (target) setShowManualConnection(true);
       eventDispatcher.dispatch('toast', {
         type: 'error',
         message: `${_('Failed to connect')}: ${formatPingError(_, e)}`,
       });
     } finally {
-      setIsConnecting(false);
-      setConnectingPeerId(null);
+      if (connectionRunRef.current === connectionRunId && !unmountedRef.current) {
+        connectingRef.current = false;
+        setIsConnecting(false);
+        setConnectingPeerId(null);
+      }
     }
   };
 
   const handleDisconnect = async () => {
-    // Switch LAN sync off only — other providers keep syncing. The peer
-    // config stays so a later reconnect is one click.
-    await persistCloudProviderEnabled(envConfig, 'lan', false);
+    if (unmountedRef.current || disconnectingRef.current) return;
+    disconnectingRef.current = true;
+    connectionRunRef.current += 1;
+    connectingRef.current = false;
+    // Update the local setting before any asynchronous cleanup so
+    // LanSyncManager cancels boot/start work before the server is stopped.
+    const currentSettings = useSettingsStore.getState().settings;
+    if (currentSettings) {
+      setSettings({
+        ...currentSettings,
+        lan: { ...currentSettings.lan, enabled: false },
+      });
+    }
+    discoveryRunRef.current += 1;
+    setIsDiscovering(false);
+    await cleanupDiscovery();
+    // Stop the server before dropping its persistent multicast lease. The
+    // peer config stays so a later reconnect is one click.
     if (isTauriAppPlatform()) {
       try {
         await stopLanSync();
       } catch (e) {
         console.warn('lan_sync stop failed:', e);
+        await releasePromotionLock();
+        if (currentSettings) setSettings(currentSettings);
+        disconnectingRef.current = false;
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to stop LAN Sync. Your connection is still active.'),
+        });
+        return;
       }
     }
+    // Switch LAN sync off only — other providers keep syncing. Restore the
+    // prior setting on a persistence failure so disk and memory stay aligned.
+    try {
+      await persistLanProvider(false);
+    } catch (e) {
+      console.warn('lan_sync disconnect persistence failed:', e);
+      await releasePromotionLock();
+      if (currentSettings) setSettings(currentSettings);
+      disconnectingRef.current = false;
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to save the disconnected state. Please try again.'),
+      });
+      return;
+    }
+    await releasePromotionLock();
+    disconnectingRef.current = false;
     setShowToken(false);
     setStatus(null);
     setShowPeerDiscovery(false);
@@ -539,7 +964,7 @@ const LanForm: React.FC = () => {
             >
               <button
                 type='button'
-                onClick={showPeerDiscovery ? () => setShowPeerDiscovery(false) : openPeerDiscovery}
+                onClick={showPeerDiscovery ? closePeerDiscovery : openPeerDiscovery}
                 disabled={isConnecting}
                 className='btn btn-ghost btn-sm h-9 min-h-9 shrink-0 px-3 text-xs'
               >

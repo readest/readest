@@ -187,4 +187,26 @@ describe('broadcastGlobalSettings: readestCloud in the emitted payload', () => {
     expect(serialized).not.toContain('hunter2');
     expect(serialized).not.toContain('lastSyncedAt');
   });
+
+  test('carries the LAN tuple and token in the app-local event', async () => {
+    const settings = makeFullSettings({
+      lan: {
+        enabled: true,
+        host: '192.168.1.9',
+        port: 53430,
+        token: 'lan-secret',
+      },
+    });
+
+    await broadcastGlobalSettings(settings, { includeCloudSyncProviders: true });
+
+    const payload = capturePayload();
+    expect(payload.cloudSyncProviders?.lan).toEqual({
+      enabled: true,
+      host: '192.168.1.9',
+      port: 53430,
+      token: 'lan-secret',
+      providerSelectedAt: undefined,
+    });
+  });
 });

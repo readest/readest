@@ -146,14 +146,73 @@ export async function invokeUseBackgroundAudio(request: UseBackgroundAudioReques
 }
 
 /**
- * Acquire or release the Android WifiManager MulticastLock so LocalSend
- * discovery announcements are delivered. Android only; a no-op elsewhere
- * (callers gate on isAndroidApp).
+ * Acquire or release the Android WifiManager MulticastLock for one owner.
+ * Android only; callers gate on isAndroidApp. The native bridge keeps the
+ * shared lock held until every owner has released it.
+ *
+ * Requests are reference-counted and serialized per webview. This keeps an
+ * old effect cleanup from releasing a newer lease for the same owner while
+ * still allowing independent callers to share one native owner.
  */
-export async function setMulticastLock(acquire: boolean): Promise<void> {
-  await invoke('plugin:native-bridge|set_multicast_lock', {
-    payload: { acquire },
+export type MulticastLockOwner = 'localsend' | 'lan-sync' | 'lan-discovery';
+
+const multicastLockLeaseCounts: Record<MulticastLockOwner, number> = {
+  localsend: 0,
+  'lan-sync': 0,
+  'lan-discovery': 0,
+};
+const persistentMulticastLockStates: Record<MulticastLockOwner, boolean> = {
+  localsend: false,
+  'lan-sync': false,
+  'lan-discovery': false,
+};
+let multicastLockQueue: Promise<void> = Promise.resolve();
+
+const updateMulticastLock = async (acquire: boolean, owner: MulticastLockOwner): Promise<void> => {
+  const previousCount = multicastLockLeaseCounts[owner];
+  if (!acquire && previousCount === 0) return;
+
+  const nextCount = acquire ? previousCount + 1 : previousCount - 1;
+  multicastLockLeaseCounts[owner] = nextCount;
+  if ((previousCount === 0) !== (nextCount === 0)) {
+    try {
+      await invoke('plugin:native-bridge|set_multicast_lock', {
+        payload: { acquire, owner },
+      });
+    } catch (error) {
+      multicastLockLeaseCounts[owner] = previousCount;
+      throw error;
+    }
+  }
+};
+
+export function setMulticastLock(acquire: boolean, owner: MulticastLockOwner): Promise<void> {
+  const operation = multicastLockQueue.then(() => updateMulticastLock(acquire, owner));
+  multicastLockQueue = operation.catch(() => {});
+  return operation;
+}
+
+/**
+ * Set one process-wide lease for a long-lived service. Route-level managers can
+ * call this repeatedly without accumulating leases; only the state change is
+ * reflected in the reference-counted owner above.
+ */
+export function setPersistentMulticastLock(
+  acquire: boolean,
+  owner: MulticastLockOwner,
+): Promise<void> {
+  const operation = multicastLockQueue.then(async () => {
+    if (persistentMulticastLockStates[owner] === acquire) return;
+    persistentMulticastLockStates[owner] = acquire;
+    try {
+      await updateMulticastLock(acquire, owner);
+    } catch (error) {
+      persistentMulticastLockStates[owner] = !acquire;
+      throw error;
+    }
   });
+  multicastLockQueue = operation.catch(() => {});
+  return operation;
 }
 
 // Suppress a piece of the OS text-selection UI that would fight the reader's

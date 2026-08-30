@@ -72,12 +72,14 @@ pub struct UseBackgroundAudioRequest {
     pub enabled: bool,
 }
 
-/// Acquire/release the Android WifiManager MulticastLock so LocalSend
-/// discovery announcements are delivered while the service runs.
+/// Acquire/release the Android WifiManager MulticastLock for one owner.
+/// The Android implementation keeps the shared lock held while any owner is
+/// active (for example LocalSend, persistent LAN sync, or LAN discovery).
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MulticastLockRequest {
     pub acquire: bool,
+    pub owner: String,
 }
 
 /// Which piece of the OS selection UI to gate: "gesture" suppresses the

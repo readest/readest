@@ -2,7 +2,12 @@ import React, { useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
-import { getLanSyncStatus, startLanSync } from '@/services/lanSync/lifecycle';
+import {
+  getLanSyncGeneration,
+  getLanSyncStatus,
+  startLanSync,
+  stopLanSyncIfCurrent,
+} from '@/services/lanSync/lifecycle';
 import { setMulticastLock } from '@/utils/bridge';
 
 /**
@@ -15,31 +20,77 @@ import { setMulticastLock } from '@/utils/bridge';
 const LanSyncManager: React.FC = () => {
   const lan = useSettingsStore((s) => s.settings?.lan);
   const { appService } = useEnv();
+  const isTauri = isTauriAppPlatform();
+  const isLanEnabled = !!lan?.enabled && !!lan?.token;
+  const isAndroidApp = appService?.isAndroidApp === true;
 
   useEffect(() => {
-    if (!isTauriAppPlatform()) return;
-    if (!lan?.enabled || !lan.token) return;
+    if (!isTauri || !isLanEnabled || !lan?.token) return;
+    const expectedIntentGeneration = getLanSyncGeneration();
     let cancelled = false;
-    const needsMulticastLock = appService?.isAndroidApp === true;
-    // Android drops Wi-Fi multicast while the app is idle unless a
-    // MulticastLock is held. LocalSend already owns the same bridge; acquire
-    // it for LAN discovery and release it when this integration is disabled.
-    if (needsMulticastLock) void setMulticastLock(true).catch(() => {});
+    let lockHeld = false;
+    const lockAcquisition = isAndroidApp
+      ? setMulticastLock(true, 'lan-sync')
+          .then(() => {
+            lockHeld = true;
+          })
+          .catch((e) => {
+            // Manual TCP sync remains usable if Android denies the multicast
+            // lease; discovery simply becomes best-effort.
+            console.warn('lan_sync multicast lock failed:', e);
+          })
+      : Promise.resolve();
+    let lockReleasePromise: Promise<void> | null = null;
+    const releaseLock = async () => {
+      if (lockReleasePromise) return lockReleasePromise;
+      lockReleasePromise = (async () => {
+        await lockAcquisition;
+        if (!lockHeld) return;
+        lockHeld = false;
+        await setMulticastLock(false, 'lan-sync').catch(() => {});
+      })();
+      return lockReleasePromise;
+    };
+
     (async () => {
       try {
+        await lockAcquisition;
+        if (cancelled) {
+          await releaseLock();
+          return;
+        }
         const status = await getLanSyncStatus();
-        if (!status.running && !cancelled) {
-          await startLanSync(lan.token);
+        if (cancelled || getLanSyncGeneration() !== expectedIntentGeneration) {
+          await releaseLock();
+          return;
+        }
+        const nextStatus = await startLanSync(lan.token, undefined, '', status.generation);
+        const currentLan = useSettingsStore.getState().settings?.lan;
+        if (
+          cancelled ||
+          getLanSyncGeneration() !== expectedIntentGeneration ||
+          !currentLan?.enabled ||
+          currentLan.token !== lan.token
+        ) {
+          if (nextStatus.started) {
+            try {
+              await stopLanSyncIfCurrent(nextStatus.generation);
+            } catch {
+              /* disconnect cleanup may already have stopped it */
+            }
+          }
+          await releaseLock();
         }
       } catch (e) {
-        console.warn('lan_sync boot start failed:', e);
+        await releaseLock();
+        if (!cancelled) console.warn('lan_sync boot start failed:', e);
       }
     })();
     return () => {
       cancelled = true;
-      if (needsMulticastLock) void setMulticastLock(false).catch(() => {});
+      void releaseLock();
     };
-  }, [appService, lan]);
+  }, [isAndroidApp, isLanEnabled, isTauri, lan?.token]);
 
   return null;
 };

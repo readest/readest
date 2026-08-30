@@ -17,7 +17,7 @@ use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
 use axum::body::{Body, Bytes};
-use axum::extract::{Path as AxumPath, Request, State};
+use axum::extract::{DefaultBodyLimit, Path as AxumPath, Request, State};
 use axum::http::{header, HeaderValue, Method, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
@@ -25,6 +25,11 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 use serde_json::json;
+
+/// Upper bound for one request body (book binaries ride PUTs). Axum's default
+/// is 2 MiB, which silently 413-rejects nearly every real book; 2 GiB leaves
+/// room for the largest comics/PDFs while still bounding a malicious peer.
+const MAX_BODY_BYTES: usize = 2 * 1024 * 1024 * 1024;
 
 pub struct ServerState {
     /// On-disk root of the remote-format tree (`.../LanSync/`).
@@ -43,6 +48,7 @@ pub fn router(state: Arc<ServerState>) -> Router {
             get(read_file).head(head_file).put(write_file).delete(delete_path),
         )
         .route("/list", post(list_dir))
+        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_and_cors,
@@ -116,6 +122,29 @@ fn safe_join(root: &std::path::Path, rel: &str) -> Option<PathBuf> {
     }
 }
 
+/// Resolve the root and reject symlinks in every existing requested component.
+/// Missing components are allowed so writes can create them safely afterward.
+async fn checked_join(root: &std::path::Path, rel: &str) -> std::io::Result<Option<PathBuf>> {
+    let Some(joined) = safe_join(root, rel) else {
+        return Ok(None);
+    };
+    let canonical_root = tokio::fs::canonicalize(root).await?;
+    let relative = joined
+        .strip_prefix(root)
+        .expect("safe_join result must be under root");
+    let mut checked = canonical_root.clone();
+    for component in relative.components() {
+        checked.push(component.as_os_str());
+        match tokio::fs::symlink_metadata(&checked).await {
+            Ok(meta) if meta.file_type().is_symlink() => return Ok(None),
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => break,
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(Some(checked))
+}
+
 fn not_found() -> Response {
     (StatusCode::NOT_FOUND, "not found").into_response()
 }
@@ -154,8 +183,10 @@ async fn read_file(
     State(state): State<Arc<ServerState>>,
     AxumPath(path): AxumPath<String>,
 ) -> Response {
-    let Some(full) = safe_join(&state.root, &path) else {
-        return bad_request("invalid path");
+    let full = match checked_join(&state.root, &path).await {
+        Ok(Some(full)) => full,
+        Ok(None) => return bad_request("invalid path"),
+        Err(e) => return internal_error(e),
     };
     match tokio::fs::metadata(&full).await {
         Ok(meta) if meta.is_file() => match tokio::fs::read(&full).await {
@@ -175,8 +206,10 @@ async fn head_file(
     State(state): State<Arc<ServerState>>,
     AxumPath(path): AxumPath<String>,
 ) -> Response {
-    let Some(full) = safe_join(&state.root, &path) else {
-        return bad_request("invalid path");
+    let full = match checked_join(&state.root, &path).await {
+        Ok(Some(full)) => full,
+        Ok(None) => return bad_request("invalid path"),
+        Err(e) => return internal_error(e),
     };
     match tokio::fs::metadata(&full).await {
         Ok(meta) if meta.is_file() => {
@@ -202,9 +235,12 @@ async fn write_file(
     AxumPath(path): AxumPath<String>,
     body: Bytes,
 ) -> Response {
-    let Some(full) = safe_join(&state.root, &path) else {
-        return bad_request("invalid path");
+    let full = match checked_join(&state.root, &path).await {
+        Ok(Some(full)) => full,
+        Ok(None) => return bad_request("invalid path"),
+        Err(e) => return internal_error(e),
     };
+    // checked_join validates existing parents before creating missing ones.
     if let Some(parent) = full.parent() {
         if let Err(e) = tokio::fs::create_dir_all(parent).await {
             return internal_error(e);
@@ -220,9 +256,18 @@ async fn delete_path(
     State(state): State<Arc<ServerState>>,
     AxumPath(path): AxumPath<String>,
 ) -> Response {
-    let Some(full) = safe_join(&state.root, &path) else {
-        return bad_request("invalid path");
+    let full = match checked_join(&state.root, &path).await {
+        Ok(Some(full)) => full,
+        Ok(None) => return bad_request("invalid path"),
+        Err(e) => return internal_error(e),
     };
+    let canonical_root = match tokio::fs::canonicalize(&state.root).await {
+        Ok(root) => root,
+        Err(e) => return internal_error(e),
+    };
+    if full == canonical_root {
+        return bad_request("cannot delete LAN sync root");
+    }
     // Missing is success: deleteDir's contract is idempotence.
     let result = match tokio::fs::metadata(&full).await {
         Ok(meta) if meta.is_dir() => tokio::fs::remove_dir_all(&full).await,
@@ -249,8 +294,10 @@ async fn list_dir(
     } else {
         format!("/{}", req.dir)
     };
-    let Some(full) = safe_join(&state.root, &dir) else {
-        return bad_request("invalid path");
+    let full = match checked_join(&state.root, &dir).await {
+        Ok(Some(full)) => full,
+        Ok(None) => return bad_request("invalid path"),
+        Err(e) => return internal_error(e),
     };
     let mut entries = Vec::new();
     let mut reader = match tokio::fs::read_dir(&full).await {

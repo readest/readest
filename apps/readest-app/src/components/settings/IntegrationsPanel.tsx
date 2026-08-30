@@ -33,6 +33,7 @@ import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
+import { stopLanSync } from '@/services/lanSync/lifecycle';
 import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
@@ -105,7 +106,7 @@ const IntegrationsPanel: React.FC = () => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();
+  const { settings, requestedSubPage, setRequestedSubPage, setSettings } = useSettingsStore();
   const opdsCatalogs = useCustomOPDSStore((s) => s.catalogs);
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
   const absServers = useABSServerStore((s) => s.servers);
@@ -613,7 +614,28 @@ const IntegrationsPanel: React.FC = () => {
   });
 
   const toggleCloudProvider = async (kind: CloudSyncProviderKind, next: boolean) => {
-    await persistCloudProviderEnabled(envConfig, kind, next);
+    const isLanDisable = kind === 'lan' && !next && isTauriAppPlatform();
+    const previousSettings = useSettingsStore.getState().settings;
+    if (isLanDisable && previousSettings) {
+      // Disable locally before stopping so every mounted manager observes the
+      // cancellation before the shared server is torn down.
+      setSettings({
+        ...previousSettings,
+        lan: { ...previousSettings.lan, enabled: false },
+      });
+      try {
+        await stopLanSync();
+      } catch (e) {
+        setSettings(previousSettings);
+        throw e;
+      }
+    }
+    try {
+      await persistCloudProviderEnabled(envConfig, kind, next);
+    } catch (e) {
+      if (isLanDisable && previousSettings) setSettings(previousSettings);
+      throw e;
+    }
   };
 
   const opdsStatus =

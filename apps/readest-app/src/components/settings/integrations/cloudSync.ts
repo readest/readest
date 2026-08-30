@@ -6,4 +6,5 @@
 export {
   withCloudProviderEnabled,
   persistCloudProviderEnabled,
+  persistSettingsMutation,
 } from '@/services/sync/cloudSyncActivation';

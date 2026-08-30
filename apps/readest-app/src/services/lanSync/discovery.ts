@@ -6,7 +6,7 @@ export interface DiscoveredLanPeer {
   host: string;
   port: number;
   device_id: string;
-  /** Pairing token advertised on the trusted home LAN for one-click pairing. */
+  /** Empty because pairing tokens are exchanged out-of-band. */
   token: string;
 }
 

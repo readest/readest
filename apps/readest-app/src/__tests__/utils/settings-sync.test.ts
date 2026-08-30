@@ -81,6 +81,33 @@ describe('mergeSyncedGlobalSettings cloud sync provider flags', () => {
     expect(merged.onedrive.enabled).toBe(true);
     expect(merged.onedrive.accountLabel).toBe('c@d');
   });
+
+  test('adopts the complete LAN tuple including its pairing token', () => {
+    const local = makeLocal({
+      lan: { enabled: false, host: '', port: 53430, token: 'old-token' },
+    } as Partial<SystemSettings>);
+    const merged = mergeSyncedGlobalSettings(local, {
+      globalViewSettings: local.globalViewSettings,
+      globalReadSettings: local.globalReadSettings,
+      cloudSyncProviders: {
+        webdav: { enabled: false },
+        googleDrive: { enabled: false },
+        lan: {
+          enabled: true,
+          host: '192.168.1.9',
+          port: 53430,
+          token: 'new-token',
+          providerSelectedAt: 123,
+        },
+      },
+    });
+    expect(merged.lan).toMatchObject({
+      enabled: true,
+      host: '192.168.1.9',
+      token: 'new-token',
+      providerSelectedAt: 123,
+    });
+  });
 });
 
 describe('mergeSyncedGlobalSettings', () => {
