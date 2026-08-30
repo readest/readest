@@ -85,7 +85,9 @@ const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
   const targetHeight = Math.round(height * scale);
   if (targetWidth === width && targetHeight === height) return { image, page };
 
-  const canvas = source.ownerDocument.createElement('canvas');
+  const canvasDocument =
+    source.ownerDocument.defaultView?.frameElement?.ownerDocument ?? source.ownerDocument;
+  const canvas = canvasDocument.createElement('canvas');
   canvas.width = targetWidth;
   canvas.height = targetHeight;
   const context = canvas.getContext('2d');

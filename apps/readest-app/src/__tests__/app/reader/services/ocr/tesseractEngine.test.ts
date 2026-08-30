@@ -35,6 +35,7 @@ const makeWorker = (): TesseractWorker => ({
 describe('TesseractOcrEngine', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    document.body.replaceChildren();
   });
 
   it('creates one lazy local worker and converts recognition output', async () => {
@@ -139,6 +140,33 @@ describe('TesseractOcrEngine', () => {
     expect(prepared.height).toBe(1731);
     expect(drawImage).toHaveBeenCalledWith(source, 0, 0, 1173, 1731);
     expect(page).toMatchObject({ width: 1173, height: 1731 });
+  });
+
+  it('prepares an iframe canvas in the reader document realm', async () => {
+    const iframe = document.createElement('iframe');
+    document.body.append(iframe);
+    const source = iframe.contentDocument!.createElement('canvas');
+    source.width = 391;
+    source.height = 577;
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D);
+    const worker = makeWorker();
+    const engine = new TesseractOcrEngine(
+      {},
+      vi.fn(async () => worker),
+    );
+
+    await engine.recognize(source, {
+      pageIndex: 4,
+      width: source.width,
+      height: source.height,
+    });
+
+    const prepared = vi.mocked(worker.recognize).mock.calls[0]?.[0] as HTMLCanvasElement;
+    expect(prepared.ownerDocument).toBe(document);
   });
 
   it('keeps an already detailed canvas at its source resolution', async () => {
