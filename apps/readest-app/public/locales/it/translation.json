@@ -2326,5 +2326,6 @@
   "{{count}} Annotations_one": "{{count}} annotazione",
   "{{count}} Annotations_many": "{{count}} annotazioni",
   "{{count}} Annotations_other": "{{count}} annotazioni",
-  "Insert into Notebook": "Inserisci nel quaderno"
+  "Insert into Notebook": "Inserisci nel quaderno",
+  "Reading": "In lettura"
 }

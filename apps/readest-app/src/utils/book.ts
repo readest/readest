@@ -474,7 +474,7 @@ const normalizeIdentifier = (identifier: string) => {
   return identifier;
 };
 
-const getPreferredIdentifier = (identifiers: string[] | Identifier[]) => {
+const getPreferredIdentifier = (identifiers: (string | Identifier)[]) => {
   for (const scheme of ['uuid', 'calibre', 'isbn']) {
     const found = identifiers.find((identifier) =>
       typeof identifier === 'string'
@@ -489,7 +489,7 @@ const getPreferredIdentifier = (identifiers: string[] | Identifier[]) => {
 };
 
 const getIdentifiersList = (
-  identifiers: undefined | string | string[] | Identifier | Identifier[],
+  identifiers: undefined | string | Identifier | (string | Identifier)[],
 ) => {
   if (!identifiers) return [];
   if (Array.isArray(identifiers)) {
@@ -538,4 +538,43 @@ export const getMetadataHashInfo = (
 
 export const getMetadataHash = (metadata: BookMetadata, filename?: string) => {
   return getMetadataHashInfo(metadata, filename)?.metaHash;
+};
+
+// A bare UUID identifies an export, not a book: calibre mints a fresh one on
+// every conversion, so every AO3 / FanFicFare re-download of the same work
+// carries a different `dc:identifier` (issue #5959).
+const VOLATILE_IDENTIFIER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const isVolatileIdentifier = (identifier: string | Identifier) =>
+  VOLATILE_IDENTIFIER.test(
+    typeof identifier === 'string' ? normalizeIdentifier(identifier) : identifier.value,
+  );
+
+/**
+ * Metadata hash computed with volatile identifiers left out, so two exports of
+ * the same book still hash alike. Returns undefined when the metadata carries
+ * no volatile identifier — `getMetadataHash` is already stable for those and
+ * the caller has nothing extra to look up.
+ *
+ * This is a local, import-time key only. Never use it as a sync key:
+ * `getMetadataHash` is a wire format shared with the sync server and with the
+ * KOReader plugin (which caches it as `meta_hash_v1`), so its output has to
+ * stay byte-identical across versions and across the two implementations.
+ */
+export const getStableMetadataHash = (metadata: BookMetadata) => {
+  if (!metadata) return;
+  try {
+    const identifier = metadata.altIdentifier || metadata.identifier;
+    const all = identifier ? (Array.isArray(identifier) ? identifier : [identifier]) : [];
+    const stable = all.filter((id) => !isVolatileIdentifier(id));
+    if (stable.length === all.length) return;
+    const title = getTitleForHash(metadata.title);
+    const authors = getAuthorsList(metadata.author);
+    const identifiers = getIdentifiersList(stable);
+    const hashSource = `${title}|${authors.join(',')}|${identifiers.join(',')}`;
+    return md5(hashSource.normalize('NFC'));
+  } catch (error) {
+    console.error('Error generating stable metadata hash:', error);
+  }
+  return;
 };

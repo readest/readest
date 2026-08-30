@@ -2387,5 +2387,6 @@
   "{{count}} Annotations_few": "{{count}} adnotacje",
   "{{count}} Annotations_many": "{{count}} adnotacji",
   "{{count}} Annotations_other": "{{count}} adnotacji",
-  "Insert into Notebook": "Wstaw do notatnika"
+  "Insert into Notebook": "Wstaw do notatnika",
+  "Reading": "W trakcie czytania"
 }

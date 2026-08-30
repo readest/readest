@@ -2234,5 +2234,6 @@
   "LAN Sync": "區域網路同步",
   "Sync with LAN": "透過區域網路同步",
   "Sync your library, reading progress, and highlights with another Readest device on your local network.": "與區域網路中的另一台 Readest 裝置同步書庫、閱讀進度和高亮。",
-  "Both devices must be on the same network, run Readest with LAN Sync enabled, and share the same pairing token.": "兩台裝置必須位於同一網路、均開啟 Readest 區域網路同步，並共用同一配對權杖。"
+  "Both devices must be on the same network, run Readest with LAN Sync enabled, and share the same pairing token.": "兩台裝置必須位於同一網路、均開啟 Readest 區域網路同步，並共用同一配對權杖。",
+  "Reading": "閱讀中"
 }

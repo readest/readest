@@ -2509,5 +2509,6 @@
   "{{count}} Annotations_few": "{{count}} تعليقات توضيحية",
   "{{count}} Annotations_many": "{{count}} تعليقًا توضيحيًا",
   "{{count}} Annotations_other": "{{count}} تعليق توضيحي",
-  "Insert into Notebook": "إدراج في المفكرة"
+  "Insert into Notebook": "إدراج في المفكرة",
+  "Reading": "قيد القراءة"
 }
