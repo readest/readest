@@ -134,6 +134,7 @@ export function sanitizeSettingsForBackup(
     for (const path of BACKUP_SETTINGS_CREDENTIAL_FIELDS) {
       deletePath(clone, path);
     }
+    if (clone.notion) clone.notion.enabled = false;
     if (Array.isArray(clone.opdsCatalogs)) {
       clone.opdsCatalogs = clone.opdsCatalogs.map((catalog) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

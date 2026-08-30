@@ -1,60 +1,166 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { NOTION_API_VERSION } from '@/services/constants';
 
 const NOTION_UPSTREAM = 'https://api.notion.com/v1';
-const ALLOWED_METHODS = new Set(['GET', 'POST', 'PATCH']);
+const MAX_REQUEST_BODY_BYTES = 500 * 1024;
+const UPSTREAM_TIMEOUT_MS = 15_000;
 
 interface RouteParams {
   params: Promise<{ path: string[] }>;
 }
 
-// Notion id / database id / block id are UUIDs (hex + dashes) or bare 32-hex.
-// Restricting each path segment to that alphabet keeps the proxy from being
-// used as a general-purpose URL forwarder while still covering every endpoint
-// the client calls (`users/me`, `databases/{id}/query`, `blocks/{id}/children`,
-// `pages`). The upstream host is fixed, so there is no SSRF surface.
-const isSafeSegment = (segment: string): boolean => /^[a-zA-Z0-9_-]+$/.test(segment);
+const isId = (segment: string | undefined): segment is string =>
+  !!segment && /^[a-zA-Z0-9_-]+$/.test(segment);
 
-async function forward(request: NextRequest, pathSegments: string[]) {
-  const method = request.method;
-  if (!ALLOWED_METHODS.has(method)) {
-    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+const isAllowedOperation = (method: string, path: string[]): boolean => {
+  if (method === 'GET' && path.length === 2 && path[0] === 'users' && path[1] === 'me') {
+    return true;
   }
-  if (pathSegments.length === 0 || !pathSegments.every(isSafeSegment)) {
-    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+  if (
+    method === 'GET' &&
+    path.length === 2 &&
+    (path[0] === 'data_sources' || path[0] === 'databases' || path[0] === 'pages') &&
+    isId(path[1])
+  ) {
+    return true;
+  }
+  if (
+    method === 'POST' &&
+    path.length === 3 &&
+    path[0] === 'data_sources' &&
+    isId(path[1]) &&
+    path[2] === 'query'
+  ) {
+    return true;
+  }
+  if (
+    method === 'GET' &&
+    path.length === 3 &&
+    path[0] === 'blocks' &&
+    isId(path[1]) &&
+    path[2] === 'children'
+  ) {
+    return true;
+  }
+  if (method === 'POST' && path.length === 1 && path[0] === 'pages') return true;
+  if (method === 'PATCH' && path.length === 2 && path[0] === 'pages' && isId(path[1])) {
+    return true;
+  }
+  if (
+    method === 'PATCH' &&
+    path.length === 3 &&
+    path[0] === 'blocks' &&
+    isId(path[1]) &&
+    path[2] === 'children'
+  ) {
+    return true;
+  }
+  return method === 'DELETE' && path.length === 2 && path[0] === 'blocks' && isId(path[1]);
+};
+
+const isSameOriginBrowserRequest = (request: NextRequest): boolean => {
+  const origin = request.headers.get('origin');
+  const fetchSite = request.headers.get('sec-fetch-site');
+  return origin === request.nextUrl.origin || fetchSite === 'same-origin';
+};
+
+type BodyResult = { ok: true; body: string } | { ok: false };
+
+const readBoundedBody = async (request: NextRequest): Promise<BodyResult> => {
+  const declaredLength = Number(request.headers.get('content-length') ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BODY_BYTES) {
+    return { ok: false };
+  }
+  if (!request.body) return { ok: true, body: '' };
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_REQUEST_BODY_BYTES) {
+      await reader.cancel();
+      return { ok: false };
+    }
+    chunks.push(value);
   }
 
-  const authorization = request.headers.get('authorization');
-  if (!authorization) {
-    return NextResponse.json({ error: 'Missing authorization header' }, { status: 401 });
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
   }
-  const notionVersion = request.headers.get('notion-version') ?? '2022-06-28';
+  return { ok: true, body: new TextDecoder().decode(bytes) };
+};
 
-  const headers: Record<string, string> = {
-    authorization,
-    'notion-version': notionVersion,
-  };
+const upstreamUrl = (request: NextRequest, path: string[]): string => {
+  const url = new URL(`${NOTION_UPSTREAM}/${path.join('/')}`);
+  if (request.method === 'GET' && path[0] === 'blocks' && path[2] === 'children') {
+    const pageSize = request.nextUrl.searchParams.get('page_size');
+    const cursor = request.nextUrl.searchParams.get('start_cursor');
+    if (pageSize && /^\d{1,3}$/.test(pageSize) && Number(pageSize) <= 100) {
+      url.searchParams.set('page_size', pageSize);
+    }
+    if (cursor && new TextEncoder().encode(cursor).byteLength <= 512) {
+      url.searchParams.set('start_cursor', cursor);
+    }
+  }
+  return url.toString();
+};
+
+async function forward(request: NextRequest, path: string[]) {
+  if (!isAllowedOperation(request.method, path)) {
+    return NextResponse.json({ error: 'Notion operation not found' }, { status: 404 });
+  }
+  if (!isSameOriginBrowserRequest(request)) {
+    return NextResponse.json({ error: 'Cross-origin request denied' }, { status: 403 });
+  }
+
+  const authorization = request.headers.get('authorization') ?? '';
+  if (!/^Bearer\s+(?:secret_|ntn_)[a-zA-Z0-9_-]+$/.test(authorization)) {
+    return NextResponse.json({ error: 'Invalid authorization header' }, { status: 401 });
+  }
 
   let body: string | undefined;
-  if (method !== 'GET') {
-    body = await request.text();
-    headers['content-type'] = 'application/json';
+  if (request.method === 'POST' || request.method === 'PATCH') {
+    const result = await readBoundedBody(request);
+    if (!result.ok) {
+      return NextResponse.json({ error: 'Request body too large' }, { status: 413 });
+    }
+    body = result.body;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  const abort = () => controller.abort();
+  request.signal.addEventListener('abort', abort, { once: true });
+
   try {
-    const url = `${NOTION_UPSTREAM}/${pathSegments.join('/')}`;
-    const res = await fetch(url, { method, headers, body });
-    const text = await res.text();
-    // Pass the upstream body through verbatim so the client's error handling
-    // (which reads `message` / `detail` from Notion's JSON) keeps working.
-    return new NextResponse(text, {
-      status: res.status,
+    const response = await fetch(upstreamUrl(request, path), {
+      method: request.method,
       headers: {
-        'content-type': res.headers.get('content-type') ?? 'application/json',
+        authorization,
+        'notion-version': NOTION_API_VERSION,
+        ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
       },
+      body,
+      signal: controller.signal,
     });
+    const headers = new Headers({
+      'content-type': response.headers.get('content-type') ?? 'application/json',
+    });
+    const retryAfter = response.headers.get('retry-after');
+    if (retryAfter) headers.set('retry-after', retryAfter);
+    return new NextResponse(response.body, { status: response.status, headers });
   } catch (error) {
     console.error('[Notion Proxy] fetch error:', error);
     return NextResponse.json({ error: 'Failed to reach Notion API' }, { status: 502 });
+  } finally {
+    clearTimeout(timeout);
+    request.signal.removeEventListener('abort', abort);
   }
 }
 
@@ -69,6 +175,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const { path } = await params;
+  return forward(request, path);
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { path } = await params;
   return forward(request, path);
 }

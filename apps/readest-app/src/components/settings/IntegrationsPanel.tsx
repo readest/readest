@@ -490,7 +490,10 @@ const IntegrationsPanel: React.FC = () => {
 
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
-  const notionStatus = settings.notion?.enabled ? _('Connected') : _('Not connected');
+  const notionStatus =
+    settings.notion?.enabled && settings.notion.accessToken && settings.notion.databaseId
+      ? _('Connected')
+      : _('Not connected');
 
   // Cloud sync providers are independently selectable (#5062): any subset of
   // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive, iCloud} can sync the

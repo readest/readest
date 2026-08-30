@@ -4,7 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
-import { NotionClient } from '@/services/notion';
+import { normalizeNotionObjectId, NotionClient } from '@/services/notion';
 import SubPageHeader from '../SubPageHeader';
 import { SectionTitle, SettingLabel } from '../primitives';
 import { Toggle } from '@/components/primitives/toggle';
@@ -24,32 +24,47 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
 
   const isConfigured = !!settings.notion?.accessToken && !!settings.notion?.databaseId;
 
-  // Accept a bare 32-hex id, a dashed UUID, or a full Notion URL and reduce it
-  // to the 32-hex id the API expects. Notion's database id is the 32-char hex
-  // fragment in the page URL (https://www.notion.so/{workspace}/{id}?v=...).
-  const normalizeDatabaseId = (input: string): string => {
-    const match = input.replace(/-/g, '').match(/[0-9a-fA-F]{32}/);
-    return match ? match[0] : input.replace(/-/g, '').trim();
-  };
-
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
-      const normalizedId = normalizeDatabaseId(databaseId);
+      const normalizedId = normalizeNotionObjectId(databaseId);
+      if (!normalizedId) {
+        eventDispatcher.dispatch('toast', {
+          message: _('Invalid Notion database ID or URL'),
+          type: 'error',
+        });
+        return;
+      }
       const client = new NotionClient({
         enabled: true,
-        accessToken,
+        accessToken: accessToken.trim(),
         databaseId: normalizedId,
         lastSyncedAt: 0,
       });
       const { valid, isNetworkError } = await client.validateToken();
       if (valid) {
+        const target = await client.resolveDataSourceId(normalizedId);
+        if (!target.success) {
+          eventDispatcher.dispatch('toast', {
+            message: target.isNetworkError
+              ? _('Unable to connect to Notion. Please check your network connection.')
+              : target.code === 'multiple_data_sources'
+                ? _(
+                    'This Notion database has multiple data sources. Paste a data source ID instead.',
+                  )
+                : _(
+                    'The Notion database is unavailable or has not been shared with this integration.',
+                  ),
+            type: 'error',
+          });
+          return;
+        }
         const newSettings = {
           ...settings,
           notion: {
             enabled: true,
-            accessToken,
-            databaseId: normalizedId,
+            accessToken: accessToken.trim(),
+            databaseId: target.dataSourceId,
             lastSyncedAt: settings.notion?.lastSyncedAt ?? 0,
             includeChapterHeading: settings.notion?.includeChapterHeading ?? true,
           },
@@ -143,7 +158,7 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
 
       {isConfigured ? (
         <div className='space-y-5'>
-          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+          <div className='card eink-bordered border-base-200 bg-base-100 border'>
             <div className='divide-base-200 divide-y'>
               <label className='flex min-h-14 items-center justify-between px-4'>
                 <SettingLabel>{_('Sync Enabled')}</SettingLabel>
@@ -188,7 +203,7 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
               id='notion-token'
               type='password'
               placeholder={_('Paste your Notion integration token (secret_...)')}
-              className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+              className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
               spellCheck='false'
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
@@ -203,7 +218,7 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
               id='notion-database-id'
               type='text'
               placeholder={_('Paste the Notion database ID to sync into')}
-              className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+              className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
               spellCheck='false'
               value={databaseId}
               onChange={(e) => setDatabaseId(e.target.value)}
@@ -216,7 +231,7 @@ const NotionForm: React.FC<NotionFormProps> = ({ onBack }) => {
               onClick={handleConnect}
               disabled={isConnecting || !accessToken || !databaseId.trim()}
               className={clsx(
-                'btn btn-primary',
+                'btn btn-contrast',
                 'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
                 'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
                 isConnecting && 'opacity-60',

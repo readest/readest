@@ -192,7 +192,9 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       {(settings.kosync.enabled ||
         settings.readwise.enabled ||
         settings.hardcover.enabled ||
-        settings.notion.enabled) && <hr aria-hidden='true' className='border-base-200 my-1' />}
+        (settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId)) && (
+        <hr aria-hidden='true' className='border-base-200 my-1' />
+      )}
       {settings.kosync.enabled && (
         <MenuItem label={_('KOReader Sync')} detailsOpen={false} buttonClass='py-2'>
           <ul className='flex flex-col ps-1'>
@@ -208,7 +210,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
           </ul>
         </MenuItem>
       )}
-      {settings.notion.enabled && (
+      {settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId && (
         <MenuItem label={_('Notion Sync')} detailsOpen={false} buttonClass='py-2'>
           <ul className='flex flex-col ps-1'>
             <MenuItem label={_('Push Notes')} noIcon onClick={handlePushNotion} />

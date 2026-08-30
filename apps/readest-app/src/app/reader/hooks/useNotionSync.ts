@@ -6,10 +6,29 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
 import { findTocItemBS } from '@/services/nav';
-import { NotionClient } from '@/services/notion';
+import { NotionClient, NotionSyncStore } from '@/services/notion';
 import { BookNote } from '@/types/book';
 
 const NOTION_SYNC_DEBOUNCE_MS = 5000;
+const NOTION_SYNC_LOCK = 'readest-notion-sync';
+let syncQueue: Promise<boolean> = Promise.resolve(true);
+
+const withCrossWindowLock = async (task: () => Promise<boolean>): Promise<boolean> => {
+  if (!globalThis.navigator?.locks) return task();
+  return globalThis.navigator.locks.request(NOTION_SYNC_LOCK, task);
+};
+
+const enqueueSync = (task: () => Promise<boolean>): Promise<boolean> => {
+  const next = syncQueue
+    .catch(() => false)
+    .then(() => withCrossWindowLock(task))
+    .catch((error) => {
+      console.error('Notion sync failed:', error);
+      return false;
+    });
+  syncQueue = next;
+  return next;
+};
 
 export const useNotionSync = (bookKey: string) => {
   const _ = useTranslation();
@@ -39,52 +58,67 @@ export const useNotionSync = (bookKey: string) => {
     [bookKey, getBookData],
   );
 
-  const pushNotes = useCallback(
-    async (all: boolean): Promise<boolean> => {
+  const pushNotes = useCallback(async (): Promise<boolean> => {
+    return enqueueSync(async () => {
+      // Read all inputs only after earlier pushes settle. An edit made during
+      // an upload then becomes the next queued payload instead of being hidden
+      // by a completion-time global cursor.
       const { settings } = useSettingsStore.getState();
-      if (!settings.notion?.enabled || !settings.notion?.accessToken) return false;
-      const client = new NotionClient(settings.notion);
-      const book = getBookData(bookKey)?.book;
+      if (
+        !settings.notion?.enabled ||
+        !settings.notion?.accessToken ||
+        !settings.notion?.databaseId
+      ) {
+        return false;
+      }
+      const bookData = getBookData(bookKey);
       const config = getConfig(bookKey);
-      if (!book || !config?.booknotes) return false;
+      if (!bookData?.book || !config?.booknotes) return false;
+      if (config.booknotes.length === 0) return true;
 
-      const notes = all
-        ? config.booknotes
-        : config.booknotes.filter(
-            (n) =>
-              n.updatedAt > (settings.notion.lastSyncedAt ?? 0) ||
-              (n.deletedAt ?? 0) > (settings.notion.lastSyncedAt ?? 0),
-          );
-      if (notes.length === 0) return true;
-
-      const result = await client.pushNotes(notes, book.title, chapterForNote);
-      if (result.success) {
-        await updateLastSyncedAt(Date.now());
-        return true;
+      const appService = await envConfig.getAppService();
+      const syncStore = new NotionSyncStore(appService);
+      try {
+        const client = new NotionClient(settings.notion, syncStore);
+        const result = await client.syncBookNotes(
+          bookData.book.hash,
+          bookData.book.title,
+          config.booknotes,
+          chapterForNote,
+        );
+        if (result.success) {
+          await updateLastSyncedAt(Date.now());
+          return true;
+        }
+        if (!result.isNetworkError) console.error('Notion sync failed:', result.message);
+        return false;
+      } finally {
+        await syncStore.close();
       }
-      if (!result.isNetworkError) {
-        console.error('Notion sync failed:', result.message);
-      }
-      return false;
-    },
-    [bookKey, getBookData, getConfig, chapterForNote, updateLastSyncedAt],
-  );
+    });
+  }, [bookKey, getBookData, getConfig, chapterForNote, updateLastSyncedAt, envConfig]);
 
   // useMemo (not useCallback) so the debounce timer isn't reset on every render
   const debouncedPush = useMemo(
     () =>
       debounce(async () => {
-        await pushNotes(false);
+        await pushNotes();
       }, NOTION_SYNC_DEBOUNCE_MS),
     [pushNotes],
   );
 
-  // Manual "Push All": sends every annotation/excerpt regardless of sync timestamp
+  // Manual push uses the same per-note idempotent engine as auto-sync.
   const pushAllHighlights = useCallback(async () => {
     const { settings } = useSettingsStore.getState();
-    if (!settings.notion?.enabled || !settings.notion?.accessToken) return;
+    if (
+      !settings.notion?.enabled ||
+      !settings.notion?.accessToken ||
+      !settings.notion?.databaseId
+    ) {
+      return;
+    }
 
-    const ok = await pushNotes(true);
+    const ok = await pushNotes();
     if (ok) {
       eventDispatcher.dispatch('toast', {
         message: _('Notes synced to Notion'),
@@ -98,6 +132,20 @@ export const useNotionSync = (bookKey: string) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pushNotes]);
+
+  // ReaderContent awaits this before teardown. Flush the last edit now so
+  // unmount cleanup cannot discard a pending debounce timer.
+  useEffect(() => {
+    const handleFlush = async (event: CustomEvent) => {
+      if (event.detail.bookKey !== bookKey) return;
+      debouncedPush.cancel();
+      await pushNotes();
+    };
+    eventDispatcher.on('flush-notion-sync', handleFlush);
+    return () => {
+      eventDispatcher.off('flush-notion-sync', handleFlush);
+    };
+  }, [bookKey, debouncedPush, pushNotes]);
 
   // Cancel any pending debounced sync on unmount to avoid background requests
   useEffect(() => {

@@ -147,9 +147,9 @@ export interface NotionSettings {
   /** Notion integration token (`secret_...`). */
   accessToken: string;
   /**
-   * Target Notion database id. May also be a page id containing a child
-   * database, which is resolved at sync time (mirrors Koodo Reader's
-   * `resolveDatabaseId`).
+   * Target Notion data source id. The connection form also accepts a database
+   * container or a page containing a child database and resolves it before
+   * persisting settings.
    */
   databaseId: string;
   lastSyncedAt: number;
