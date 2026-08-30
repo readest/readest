@@ -58,7 +58,7 @@ pub struct RunningServer {
     pub device_id: String,
     token: String,
     stop_tx: watch::Sender<bool>,
-    task: tokio::task::JoinHandle<()>,
+    task: tauri::async_runtime::JoinHandle<()>,
     mdns: Option<ServiceDaemon>,
 }
 
@@ -336,7 +336,7 @@ fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
                     .get_property_val_str("name")
                     .map(ToString::to_string)
                     .unwrap_or_else(|| info.get_fullname().to_string());
-                let host = preferred_ipv4(info.get_addresses_v4())
+                let host = preferred_ipv4(info.get_addresses_v4().into_iter().copied())
                     .map(|ip| ip.to_string())
                     .unwrap_or_default();
                 if host.is_empty() {
