@@ -53,8 +53,14 @@ vi.mock('@/app/reader/components/tts/TTSMiniPlayer', () => ({
 
 vi.mock('@/app/reader/components/tts/TTSPlayerSheet', () => ({
   __esModule: true,
-  default: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div data-testid='player-sheet' /> : null,
+  default: ({
+    isOpen,
+    activeSectionIndex,
+  }: {
+    isOpen: boolean;
+    activeSectionIndex: number | null;
+  }) =>
+    isOpen ? <div data-testid='player-sheet' data-active-section={activeSectionIndex} /> : null,
 }));
 
 import TTSControl from '@/app/reader/components/tts/TTSControl';
@@ -69,6 +75,7 @@ describe('TTSControl', () => {
       ttsClientsInited: true,
       showIndicator: true,
       showBackToCurrentTTSLocation: false,
+      ttsSectionIndex: 2,
       getController: () => null,
       timeoutOption: 0,
       timeoutTimestamp: 0,
@@ -126,6 +133,12 @@ describe('TTSControl', () => {
     expect(screen.getByTestId('player-sheet')).toBeTruthy();
     // The two surfaces never show at the same time.
     expect(screen.queryByTestId('mini-player')).toBeNull();
+  });
+
+  test('passes the TTS session section to the chapters indicator', () => {
+    render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
+    fireEvent.click(screen.getByTestId('mini-player'));
+    expect(screen.getByTestId('player-sheet').getAttribute('data-active-section')).toBe('2');
   });
 
   test('shows the back-to-TTS-location pill when reading has drifted', () => {

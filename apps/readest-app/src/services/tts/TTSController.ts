@@ -612,6 +612,24 @@ export class TTSController extends EventTarget {
     this.#highlightGranularity = granularity;
   }
 
+  // The reader's visible section can intentionally diverge from the section
+  // queued by Read Aloud (for example while paused at a chapter boundary).
+  // Expose the session cursor so player surfaces never have to infer it from
+  // reader progress.
+  getSectionIndex(): number | null {
+    return this.#ttsSectionIndex >= 0 ? this.#ttsSectionIndex : null;
+  }
+
+  #setSectionIndex(sectionIndex: number) {
+    if (this.#ttsSectionIndex === sectionIndex) return;
+    this.#ttsSectionIndex = sectionIndex;
+    this.dispatchEvent(
+      new CustomEvent('tts-section-change', {
+        detail: { sectionIndex },
+      }),
+    );
+  }
+
   async initViewTTS(index?: number) {
     if (this.#ttsSectionIndex === -1) {
       const fromSectionIndex = (index || this.#getPrimaryContent()?.index) ?? 0;
@@ -663,7 +681,7 @@ export class TTSController extends EventTarget {
     // are still rendering the outgoing section.
     this.#clearAllHighlights();
 
-    this.#ttsSectionIndex = sectionIndex;
+    this.#setSectionIndex(sectionIndex);
 
     const currentSection = this.#getPrimaryContent();
     if (currentSection?.index !== sectionIndex) {

@@ -192,6 +192,68 @@ describe('TTSPlayerSheet', () => {
     expect(screen.queryByText('Read Aloud')).toBeNull();
   });
 
+  test('resolves the chapter label from the ranged TTS section metadata', () => {
+    const props = makeProps();
+    render(
+      <TTSPlayerSheet
+        {...props}
+        activeSectionIndex={3}
+        downloads={{
+          ...props.downloads,
+          chapters: [
+            { key: 'one', label: 'Chapter One', depth: 0, startSection: 0, endSection: 2 },
+            { key: 'two', label: 'Chapter Two', depth: 0, startSection: 2, endSection: 5 },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Chapter Two')).toBeTruthy();
+    expect(screen.queryByText('Chapter 5')).toBeNull();
+  });
+
+  test('falls back to an accurate section label when chapter metadata is missing', () => {
+    const props = makeProps();
+    render(
+      <TTSPlayerSheet
+        {...props}
+        activeSectionIndex={4}
+        downloads={{ ...props.downloads, chapters: [] }}
+      />,
+    );
+
+    expect(screen.getByText('Section 5')).toBeTruthy();
+    expect(screen.queryByText('Chapter 5')).toBeNull();
+  });
+
+  test('ignores malformed chapter ranges and blank labels', () => {
+    const props = makeProps();
+    render(
+      <TTSPlayerSheet
+        {...props}
+        activeSectionIndex={3}
+        downloads={{
+          ...props.downloads,
+          chapters: [
+            { key: 'negative', label: 'Wrong Negative', depth: 0, startSection: -1, endSection: 5 },
+            {
+              key: 'fractional',
+              label: 'Wrong Fractional',
+              depth: 0,
+              startSection: 2.5,
+              endSection: 5,
+            },
+            { key: 'blank', label: '   ', depth: 0, startSection: 2, endSection: 5 },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Section 4')).toBeTruthy();
+    expect(screen.queryByText('Wrong Negative')).toBeNull();
+    expect(screen.queryByText('Wrong Fractional')).toBeNull();
+  });
+
   test('degrades without a timeline: no scrubber, estimate text instead', () => {
     render(
       <TTSPlayerSheet

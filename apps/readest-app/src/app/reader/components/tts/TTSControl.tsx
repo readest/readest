@@ -5,7 +5,6 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
 import { useTTSDownloads } from '@/app/reader/hooks/useTTSDownloads';
-import { useBookProgress } from '@/store/readerProgressStore';
 import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import TTSMiniPlayer from './TTSMiniPlayer';
@@ -33,7 +32,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   });
 
   const downloads = useTTSDownloads(bookKey, tts.getController, showPlayerSheet);
-  const activeSectionIndex = useBookProgress(bookKey)?.index ?? null;
+  const activeSectionIndex = tts.ttsSectionIndex;
 
   const viewSettings = getViewSettings(bookKey);
   const isEink = viewSettings?.isEink ?? false;

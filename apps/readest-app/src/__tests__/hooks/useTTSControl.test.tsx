@@ -184,6 +184,9 @@ vi.mock('@/services/tts', () => ({
       isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
       getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
+      getSectionIndex: vi.fn().mockReturnValue(0),
+      usesAudioTransport: vi.fn().mockReturnValue(false),
+      supportsLyrics: vi.fn().mockReturnValue(false),
       reapplyCurrentHighlight: vi.fn(),
       kind: 'tts',
       terminated: false,
@@ -308,6 +311,61 @@ const Harness = () => {
   useTTSControl({ bookKey: 'book-1' });
   return null;
 };
+
+const SectionIndexHarness = () => {
+  const { ttsSectionIndex } = useTTSControl({ bookKey: 'book-1' });
+  return <output data-testid='tts-section-index'>{ttsSectionIndex ?? 'none'}</output>;
+};
+
+describe('useTTSControl section cursor', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('hydrates from the controller and follows section-change events', async () => {
+    render(<SectionIndexHarness />);
+
+    await act(async () => {
+      const start = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await start;
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('tts-section-index').textContent).toBe('0');
+
+    const controller = ttsControllerInstances[0] as {
+      addEventListener: { mock: { calls: [string, (event: Event) => void][] } };
+    };
+    const listener = controller.addEventListener.mock.calls.find(
+      ([eventName]) => eventName === 'tts-section-change',
+    )?.[1];
+    if (!listener) throw new Error('tts-section-change listener was not registered');
+
+    act(() => {
+      listener(
+        new CustomEvent('tts-section-change', {
+          detail: { sectionIndex: 2 },
+        }),
+      );
+    });
+
+    expect(screen.getByTestId('tts-section-index').textContent).toBe('2');
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('tts-section-index').textContent).toBe('none');
+  });
+});
 
 describe('useTTSControl concurrent tts-speak events', () => {
   beforeEach(() => {
@@ -1052,6 +1110,7 @@ describe('useTTSControl background session lifecycle', () => {
       getSpeakingLang: vi.fn().mockReturnValue('en'),
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
       getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
+      getSectionIndex: vi.fn().mockReturnValue(0),
       isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
       getSpokenSentence: vi.fn().mockReturnValue(null),
       updateHighlightOptions: vi.fn(),
