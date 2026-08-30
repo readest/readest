@@ -115,6 +115,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('readwise-push-all', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  const handlePushNotion = () => {
+    eventDispatcher.dispatch('notion-push-all', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
   const handlePushHardcoverNotes = () => {
     eventDispatcher.dispatch('hardcover-push-notes', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
@@ -185,7 +189,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         ) : (
           <MenuItem label={_('Enter Parallel Read')} onClick={handleSetParallel} />
         ))}
-      {(settings.kosync.enabled || settings.readwise.enabled || settings.hardcover.enabled) && (
+      {(settings.kosync.enabled ||
+        settings.readwise.enabled ||
+        settings.hardcover.enabled ||
+        (settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId)) && (
         <hr aria-hidden='true' className='border-base-200 my-1' />
       )}
       {settings.kosync.enabled && (
@@ -200,6 +207,13 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         <MenuItem label={_('Readwise Sync')} detailsOpen={false} buttonClass='py-2'>
           <ul className='flex flex-col ps-1'>
             <MenuItem label={_('Push Highlights')} noIcon onClick={handlePushReadwise} />
+          </ul>
+        </MenuItem>
+      )}
+      {settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId && (
+        <MenuItem label={_('Notion Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Notes')} noIcon onClick={handlePushNotion} />
           </ul>
         </MenuItem>
       )}

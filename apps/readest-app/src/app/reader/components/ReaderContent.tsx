@@ -54,6 +54,13 @@ import HardcoverLinkDialog from './hardcover/HardcoverLinkDialog';
 import ModalPortal from '@/components/ModalPortal';
 import NotebookTransitionAlert from './notebook/NotebookTransitionAlert';
 
+/**
+ * How long the close path waits for the Notion flush before giving up on it.
+ * `tauriHandleOnCloseWindow` preventDefaults the close and awaits our callback,
+ * so an unbounded flush would leave the window unclosable on a dead network.
+ */
+const NOTION_FLUSH_TIMEOUT_MS = 3000;
+
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -232,7 +239,15 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       const settings = useSettingsStore.getState().settings;
       eventDispatcher.dispatch('sync-book-progress', { bookKey });
       eventDispatcher.dispatch('flush-kosync', { bookKey });
+      // Persist locally before any remote flush. `beforeunload` and `quit-app`
+      // can unload the document while a flush is still in flight, and losing
+      // the reading position costs the user more than deferring a Notion push
+      // (the push is idempotent and resumes on the next sync).
       await saveConfig(envConfig, bookKey, config, settings);
+      await Promise.race([
+        eventDispatcher.dispatch('flush-notion-sync', { bookKey }),
+        new Promise<void>((resolve) => setTimeout(resolve, NOTION_FLUSH_TIMEOUT_MS)),
+      ]);
     }
   };
 

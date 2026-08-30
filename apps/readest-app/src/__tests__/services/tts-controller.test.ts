@@ -1107,16 +1107,47 @@ describe('TTSController', () => {
 
     test('auto-advance stops at the boundary, parked on the next section', async () => {
       await arriveAtSectionEnd();
+      const sectionChanges: number[] = [];
+      controller.addEventListener('tts-section-change', (event) => {
+        sectionChanges.push((event as CustomEvent<{ sectionIndex: number }>).detail.sectionIndex);
+      });
       controller.stopAtChapterEnd = true;
 
       await controller.forward(false, true);
 
       expect(sectionOpened(1)).toBe(true);
+      expect(controller.getSectionIndex()).toBe(1);
+      expect(sectionChanges).toEqual([1]);
       // 'forward-paused', not 'paused': the play/pause toggle routes plain
       // 'paused' to the lightweight ttsClient.resume(), which would be a no-op
       // here since nothing was ever spoken for the new section.
       expect(controller.state).toBe('forward-paused');
       expect(stopKeepAlive).toHaveBeenCalled();
+    });
+
+    test('paused cross-section navigation publishes the section Play will resume from', async () => {
+      await controller.init();
+      await controller.initViewTTS(0);
+      const sectionChanges: number[] = [];
+      controller.addEventListener('tts-section-change', (event) => {
+        sectionChanges.push((event as CustomEvent<{ sectionIndex: number }>).detail.sectionIndex);
+      });
+
+      const firstTts = mockView.tts as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      firstTts['next'] = vi.fn().mockReturnValue(undefined);
+      controller.state = 'paused';
+      await controller.forward();
+
+      expect(controller.state).toBe('forward-paused');
+      expect(controller.getSectionIndex()).toBe(1);
+
+      const secondTts = mockView.tts as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      secondTts['prev'] = vi.fn().mockReturnValue(undefined);
+      await controller.backward();
+
+      expect(controller.state).toBe('backward-paused');
+      expect(controller.getSectionIndex()).toBe(0);
+      expect(sectionChanges).toEqual([1, 0]);
     });
 
     test('auto-advance crosses the boundary normally when the mode is off', async () => {

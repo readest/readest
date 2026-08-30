@@ -68,6 +68,7 @@ export function formatProgress(
 
 export interface ReferencePageItem {
   label?: string;
+  index?: number;
   subitems?: ReferencePageItem[] | null;
 }
 
@@ -104,10 +105,18 @@ export function getReferencePageInfo({
 }): ReferencePageInfo | null {
   if (pageList?.length) {
     const labels = collectLabels(pageList).filter(Boolean);
-    // The last entries may be non-numeric (e.g. a roman-numeral index page),
-    // so the total is the highest numeric label, not the last one.
+    // PDF page lists contain one top-level entry per physical page and retain
+    // its zero-based index. Their labels can restart or switch numbering
+    // systems, so the physical count is authoritative. EPUB page lists are
+    // semantic anchors instead; keep their highest-numeric-label behavior
+    // because they can be sparse and may end in a non-numeric index page.
+    const hasPhysicalPageIndexes = pageList.every((item, index) => item.index === index);
     const numericLabels = labels.filter((label) => /^\d+$/.test(label));
-    const total = numericLabels.length ? Math.max(...numericLabels.map(Number)) : labels.length;
+    const total = hasPhysicalPageIndexes
+      ? pageList.length
+      : numericLabels.length
+        ? Math.max(...numericLabels.map(Number))
+        : labels.length;
     const current = pageItem?.label?.trim() || String(estimatePage(fraction, total));
     return { current, total };
   }
