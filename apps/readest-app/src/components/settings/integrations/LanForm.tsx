@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
@@ -165,6 +165,11 @@ const LanForm: React.FC = () => {
   const [peers, setPeers] = useState<DiscoveredLanPeer[]>([]);
   const [showPeerDiscovery, setShowPeerDiscovery] = useState(false);
   const [showManualConnection, setShowManualConnection] = useState(!isTauri);
+  // True only for the temporary advertiser used while an unpaired device is
+  // searching. A successful connection persists the settings and keeps the
+  // server running; cancellation/close cleans this short-lived server up.
+  const temporaryServerRef = useRef(false);
+  const temporaryTokenRef = useRef<string | null>(null);
 
   // Active state: surface this device's own LAN addresses for the peer's form,
   // and self-heal the embedded server after an app restart that raced the
@@ -188,6 +193,16 @@ const LanForm: React.FC = () => {
     };
   }, [isActive, isTauri, stored?.token]);
 
+  useEffect(() => {
+    return () => {
+      if (temporaryServerRef.current) {
+        void stopLanSync().catch(() => {});
+        temporaryServerRef.current = false;
+        temporaryTokenRef.current = null;
+      }
+    };
+  }, []);
+
   const persistLan = async (patch: Partial<LanSyncSettings>) => {
     const latest = useSettingsStore.getState().settings;
     const next = { ...latest, lan: { ...latest.lan, ...patch } };
@@ -202,6 +217,22 @@ const LanForm: React.FC = () => {
     setDiscoveryFailed(false);
     setPeers([]);
     try {
+      // A first-time device has no enabled LAN server yet, so there would be
+      // nothing for the other device to discover. Start a temporary advertiser
+      // with a local token before browsing; it is kept alive while this panel
+      // remains open and is promoted to the persisted server after pairing.
+      if (!isActive) {
+        const temporaryToken = token.trim() || generateToken();
+        const temporaryStatus = await startLanSync(
+          temporaryToken,
+          DEFAULT_LAN_SYNC_PORT,
+          'Readest',
+        );
+        setStatus(temporaryStatus);
+        temporaryServerRef.current = true;
+        temporaryTokenRef.current = temporaryToken;
+        if (!token.trim()) setToken(temporaryToken);
+      }
       const found = await discoverLanPeers();
       const visible = status?.device_id
         ? found.filter((peer) => peer.device_id !== status.device_id)
@@ -209,6 +240,11 @@ const LanForm: React.FC = () => {
       setPeers(visible);
     } catch (e) {
       console.warn('lan_sync discovery failed:', e);
+      if (temporaryServerRef.current) {
+        await stopLanSync().catch(() => {});
+        temporaryServerRef.current = false;
+        temporaryTokenRef.current = null;
+      }
       setDiscoveryFailed(true);
       setShowManualConnection(true);
       eventDispatcher.dispatch('toast', {
@@ -272,6 +308,16 @@ const LanForm: React.FC = () => {
         const nextStatus = await restartLocalServerWithToken(trimmedToken, previousToken);
         setStatus(nextStatus);
         restartedForSwitch = true;
+      } else if (temporaryServerRef.current) {
+        // Promote the temporary advertiser to the peer's token before saving
+        // the connection. Otherwise startLanSync would be idempotent and leave
+        // this device serving with the throwaway token it used for discovery.
+        const temporaryToken = temporaryTokenRef.current || '';
+        const nextStatus = await restartLocalServerWithToken(trimmedToken, temporaryToken);
+        setStatus(nextStatus);
+        restartedForSwitch = true;
+        temporaryServerRef.current = false;
+        temporaryTokenRef.current = null;
       }
 
       try {
