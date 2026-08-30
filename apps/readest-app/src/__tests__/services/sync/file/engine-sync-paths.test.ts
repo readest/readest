@@ -852,13 +852,36 @@ describe('FileSyncEngine.syncLibrary — empty-dir record', () => {
     return entries;
   };
 
-  test('records an inspected file-less dir in the index', async () => {
+  test('adds a metadata-only row for an index-known file-less dir', async () => {
+    // The index knows h9 but its bytes are still in flight on the peer: the
+    // shelf row (cover + config) materialises now instead of waiting for the
+    // file, and the dir is deliberately NOT recorded as empty — the next run
+    // re-lists once uploadedHashes catches up.
     const captured: Captured = { writes: [] };
     const provider = fakeProvider({
       readText: async (p) =>
         p.endsWith('library.json')
           ? JSON.stringify(makeIndex([makeBook('h9', { updatedAt: 100 })]))
           : null,
+      list: orphanListing(false),
+      captured,
+    });
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary([], opts);
+
+    expect(res.booksAdded).toBe(1);
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.emptyDirs ?? []).not.toContain('h9');
+    expect(idx.uploadedHashes ?? []).not.toContain('h9');
+  });
+
+  test('records a file-less dir with no index entry as empty', async () => {
+    // A dir-discovered candidate (legacy upload, no library.json entry) with
+    // no book file: nothing to show, record it so later runs skip re-listing.
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) => (p.endsWith('library.json') ? JSON.stringify(makeIndex([])) : null),
       list: orphanListing(false),
       captured,
     });

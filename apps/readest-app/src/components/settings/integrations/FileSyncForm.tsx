@@ -154,7 +154,12 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         fullSync: stored.fullSync ?? false,
         deviceId: deviceId as string,
         onProgress: ({ book, index, total, action }) => {
-          const actionStr = action === 'downloading' ? _('Downloading') : _('Uploading');
+          const actionStr =
+            action === 'downloading'
+              ? _('Downloading')
+              : action === 'uploading-files'
+                ? _('Uploading files')
+                : _('Uploading');
           updateProgress(
             kind,
             _('{{action}} {{n}} / {{total}}', { action: actionStr, n: index + 1, total }),

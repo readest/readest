@@ -98,7 +98,12 @@ const syncOneBackend = async (
     concurrency: 6,
     deviceId,
     onProgress: ({ index, total, action }) => {
-      const label = action === 'downloading' ? _('Downloading') : _('Uploading');
+      const label =
+        action === 'downloading'
+          ? _('Downloading')
+          : action === 'uploading-files'
+            ? _('Uploading files')
+            : _('Uploading');
       useFileSyncStore
         .getState()
         .updateProgress(

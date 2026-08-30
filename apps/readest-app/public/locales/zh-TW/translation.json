@@ -2264,5 +2264,6 @@
   "Less than a minute": "不足一分鐘",
   "{{minutes}} min": "{{minutes}} 分鐘",
   "{{hours}} hr": "{{hours}} 小時",
-  "{{hours}} hr {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘"
+  "{{hours}} hr {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘",
+  "Uploading files": "上傳檔案"
 }
