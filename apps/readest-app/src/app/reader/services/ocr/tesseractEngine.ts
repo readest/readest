@@ -95,6 +95,13 @@ export type TesseractWorkerFactory = (
   options: Partial<WorkerOptions>,
 ) => Promise<TesseractWorker>;
 
+interface WorkerRequest {
+  creation: Promise<TesseractWorker>;
+  initialized: Promise<TesseractWorker>;
+  worker: TesseractWorker | null;
+  termination: Promise<void> | null;
+}
+
 const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
   createWorker(languages, oem, options);
 
@@ -314,7 +321,7 @@ export class TesseractOcrEngine {
   readonly #createWorker: TesseractWorkerFactory;
   readonly #createMangaDetector: MangaTextDetectorFactory;
   readonly #loadMangaImage: MangaImageLoader;
-  #workerPromise: Promise<TesseractWorker> | null = null;
+  #workerRequest: WorkerRequest | null = null;
   #mangaDetector: MangaTextDetector | null = null;
   #terminated = false;
 
@@ -353,15 +360,18 @@ export class TesseractOcrEngine {
   async terminate(): Promise<void> {
     if (this.#terminated) return;
     this.#terminated = true;
-    const workerPromise = this.#workerPromise;
-    this.#workerPromise = null;
+    const workerRequest = this.#workerRequest;
+    this.#workerRequest = null;
     const detector = this.#mangaDetector;
     this.#mangaDetector = null;
 
-    await Promise.all([
-      detector?.terminate(),
-      workerPromise?.then((worker) => worker.terminate()).catch(() => undefined),
-    ]);
+    let workerTermination: Promise<void> | undefined;
+    if (workerRequest) {
+      const termination = this.#terminateWorker(workerRequest);
+      if (workerRequest.worker) workerTermination = termination;
+    }
+
+    await Promise.all([detector?.terminate(), workerTermination]);
   }
 
   async #recognizeManga(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
@@ -461,30 +471,46 @@ export class TesseractOcrEngine {
 
   #getWorker(): Promise<TesseractWorker> {
     if (this.#terminated) return Promise.reject(new Error('OCR engine has been terminated'));
-    if (this.#workerPromise) return this.#workerPromise;
+    if (this.#workerRequest) return this.#workerRequest.initialized;
 
-    const workerPromise = this.#createWorker([...this.#languages], OEM.LSTM_ONLY, {
+    const workerRequest = {
+      creation: undefined as unknown as Promise<TesseractWorker>,
+      initialized: undefined as unknown as Promise<TesseractWorker>,
+      worker: null as TesseractWorker | null,
+      termination: null as Promise<void> | null,
+    };
+    workerRequest.creation = this.#createWorker([...this.#languages], OEM.LSTM_ONLY, {
       workerPath: WORKER_PATH,
       corePath: CORE_PATH,
       workerBlobURL: false,
       logger: ({ status, progress }) => this.#onProgress?.({ status, progress }),
-    }).then(async (worker) => {
+    }).then((worker) => {
+      workerRequest.worker = worker;
+      return worker;
+    });
+    workerRequest.initialized = workerRequest.creation.then(async (worker) => {
       try {
+        if (this.#terminated || this.#workerRequest !== workerRequest) {
+          throw new Error('OCR engine has been terminated');
+        }
         await worker.setParameters({
           tessedit_pageseg_mode: this.#pageSegmentationMode,
           preserve_interword_spaces: '1',
         });
+        if (this.#terminated || this.#workerRequest !== workerRequest) {
+          throw new Error('OCR engine has been terminated');
+        }
         return worker;
       } catch (error) {
-        await worker.terminate().catch(() => undefined);
+        await this.#terminateWorker(workerRequest);
         throw error;
       }
     });
-    this.#workerPromise = workerPromise;
-    void workerPromise.catch(() => {
-      if (this.#workerPromise === workerPromise) this.#workerPromise = null;
+    this.#workerRequest = workerRequest;
+    void workerRequest.initialized.catch(() => {
+      if (this.#workerRequest === workerRequest) this.#workerRequest = null;
     });
-    return workerPromise;
+    return workerRequest.initialized;
   }
 
   async #runWorkerOperation<T>(worker: TesseractWorker, operation: () => Promise<T>): Promise<T> {
@@ -497,11 +523,35 @@ export class TesseractOcrEngine {
   }
 
   async #discardWorker(worker: TesseractWorker): Promise<void> {
-    const workerPromise = this.#workerPromise;
-    if (!workerPromise) return;
-    const currentWorker = await workerPromise.catch(() => null);
-    if (this.#workerPromise !== workerPromise || currentWorker !== worker) return;
-    this.#workerPromise = null;
-    await worker.terminate().catch(() => undefined);
+    const workerRequest = this.#workerRequest;
+    if (!workerRequest) return;
+    const currentWorker = await workerRequest.initialized.catch(() => null);
+    if (this.#workerRequest !== workerRequest || currentWorker !== worker) return;
+    this.#workerRequest = null;
+    await this.#terminateWorker(workerRequest);
+  }
+
+  #terminateWorker(workerRequest: WorkerRequest): Promise<void> {
+    if (workerRequest.termination) return workerRequest.termination;
+    if (workerRequest.worker) {
+      workerRequest.termination = Promise.resolve()
+        .then(() => workerRequest.worker?.terminate())
+        .then(
+          () => undefined,
+          () => undefined,
+        );
+    } else {
+      workerRequest.termination = workerRequest.creation.then(
+        (worker) =>
+          Promise.resolve()
+            .then(() => worker.terminate())
+            .then(
+              () => undefined,
+              () => undefined,
+            ),
+        () => undefined,
+      );
+    }
+    return workerRequest.termination;
   }
 }

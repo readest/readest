@@ -463,4 +463,63 @@ describe('TesseractOcrEngine', () => {
       engine.recognize('blob:page', { pageIndex: 0, width: 100, height: 100 }),
     ).rejects.toThrow('terminated');
   });
+
+  it('does not wait for worker creation during termination', async () => {
+    let resolveWorker!: (worker: TesseractWorker) => void;
+    const workerCreation = new Promise<TesseractWorker>((resolve) => {
+      resolveWorker = resolve;
+    });
+    const createWorker = vi.fn<TesseractWorkerFactory>(() => workerCreation);
+    const engine = new TesseractOcrEngine({}, createWorker);
+    const recognition = engine.recognize('blob:page', {
+      pageIndex: 0,
+      width: 100,
+      height: 100,
+    });
+
+    await vi.waitFor(() => expect(createWorker).toHaveBeenCalledOnce());
+    const termination = await Promise.race([
+      engine.terminate().then(() => 'terminated' as const),
+      new Promise<'timed out'>((resolve) => {
+        setTimeout(() => resolve('timed out'), 20);
+      }),
+    ]);
+    expect(termination).toBe('terminated');
+
+    const worker = makeWorker();
+    resolveWorker(worker);
+    await expect(recognition).rejects.toThrow('terminated');
+    await vi.waitFor(() => expect(worker.terminate).toHaveBeenCalledOnce());
+  });
+
+  it('terminates a worker while initialization is still pending', async () => {
+    const worker = makeWorker();
+    let resolveParameters!: () => void;
+    vi.mocked(worker.setParameters).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveParameters = resolve;
+        }),
+    );
+    const createWorker = vi.fn<TesseractWorkerFactory>(async () => worker);
+    const engine = new TesseractOcrEngine({}, createWorker);
+    const recognition = engine.recognize('blob:page', {
+      pageIndex: 0,
+      width: 100,
+      height: 100,
+    });
+
+    await vi.waitFor(() => expect(worker.setParameters).toHaveBeenCalledOnce());
+    const termination = await Promise.race([
+      engine.terminate().then(() => 'terminated' as const),
+      new Promise<'timed out'>((resolve) => {
+        setTimeout(() => resolve('timed out'), 20);
+      }),
+    ]);
+    expect(termination).toBe('terminated');
+    expect(worker.terminate).toHaveBeenCalledOnce();
+
+    resolveParameters();
+    await expect(recognition).rejects.toThrow('terminated');
+  });
 });
