@@ -67,7 +67,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       setValue: (newValue: string) => {
         if (editorRef.current) {
           editorRef.current.value = newValue;
-          adjustHeight();
+          if (autoResize) adjustHeight();
         }
       },
       getElement: () => editorRef.current,
@@ -109,7 +109,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      adjustHeight();
+      if (autoResize) adjustHeight();
       onChange(e.target.value);
     };
 
