@@ -70,6 +70,34 @@ const isSamePageImage = (
   );
 };
 
+const isSamePdfPage = (left: PageImageIdentity, document: Document, image: PageImage): boolean =>
+  left.document === document &&
+  typeof left.image.source !== 'string' &&
+  typeof image.source !== 'string';
+
+const resizeOcrPage = (page: OcrPage, image: PageImage): OcrPage => {
+  const scaleX = image.width / page.width;
+  const scaleY = image.height / page.height;
+  const resizeBox = (box: OcrPage['blocks'][number]['box']) => ({
+    xMin: box.xMin * scaleX,
+    yMin: box.yMin * scaleY,
+    xMax: box.xMax * scaleX,
+    yMax: box.yMax * scaleY,
+  });
+
+  return {
+    ...page,
+    width: image.width,
+    height: image.height,
+    blocks: page.blocks.map((block) => ({
+      ...block,
+      box: resizeBox(block.box),
+      ...(block.bubbleBox ? { bubbleBox: resizeBox(block.bubbleBox) } : {}),
+      ...(block.maskBoxes ? { maskBoxes: block.maskBoxes.map(resizeBox) } : {}),
+    })),
+  };
+};
+
 const getPageImage = (doc: Document): PageImage | null => {
   const canvas = doc.querySelector<HTMLCanvasElement>('#canvas canvas');
   if (canvas) {
@@ -132,11 +160,19 @@ export class OcrSession {
     }
 
     const cachedPage = this.#pages.get(pageIndex);
-    if (cachedPage && isSamePageImage(cachedPage, doc, image)) {
-      mountOcrTextLayer(doc, cachedPage.page);
-      return cachedPage.page;
+    if (cachedPage) {
+      if (isSamePageImage(cachedPage, doc, image)) {
+        mountOcrTextLayer(doc, cachedPage.page);
+        return cachedPage.page;
+      }
+      if (isSamePdfPage(cachedPage, doc, image)) {
+        const resizedPage = resizeOcrPage(cachedPage.page, image);
+        this.#pages.set(pageIndex, { document: doc, image, page: resizedPage });
+        mountOcrTextLayer(doc, resizedPage);
+        return resizedPage;
+      }
+      this.#pages.delete(pageIndex);
     }
-    if (cachedPage) this.#pages.delete(pageIndex);
 
     const generation = this.#generation;
     const pendingPage = this.#pending.get(pageIndex);
@@ -145,6 +181,9 @@ export class OcrSession {
       if (priority) this.#promoteTask(pendingPage.task);
       recognition = pendingPage.promise;
     } else {
+      if (pendingPage && isSamePdfPage(pendingPage, doc, image)) {
+        this.#cancelQueuedTask(pendingPage.task);
+      }
       recognition = this.#recognize(doc, image, pageIndex, generation, priority);
     }
 
@@ -275,6 +314,14 @@ export class OcrSession {
     if (index <= 0) return;
     this.#queue.splice(index, 1);
     this.#queue.unshift(task);
+  }
+
+  #cancelQueuedTask(task: OcrQueueTask): void {
+    if (this.#runningTask === task) return;
+    const index = this.#queue.indexOf(task);
+    if (index < 0) return;
+    this.#queue.splice(index, 1);
+    task.resolve(null);
   }
 
   async #drainQueue(): Promise<void> {

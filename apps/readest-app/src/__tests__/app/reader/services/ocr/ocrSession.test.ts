@@ -183,7 +183,7 @@ describe('OcrSession', () => {
     finishFirst(makePage(0));
     await Promise.all([running, prefetched, prefetchedCurrent, current]);
 
-    expect(engine.recognize.mock.calls.map(([source]) => source)).toEqual([
+    expect(vi.mocked(engine.recognize).mock.calls.map(([source]) => source)).toEqual([
       'blob:page-0',
       'blob:page-2',
       'blob:page-1',
@@ -277,7 +277,7 @@ describe('OcrSession', () => {
     expect(engine.recognize).toHaveBeenCalledTimes(1);
   });
 
-  it('recognizes a PDF again after a zoom replaces the rendered canvas', async () => {
+  it('reuses completed PDF OCR after a zoom replaces the rendered canvas', async () => {
     const engine = makeEngine();
     const session = new OcrSession({ createEngine: () => engine });
     const doc = makePdfDocument();
@@ -291,16 +291,14 @@ describe('OcrSession', () => {
     doc.querySelector('#canvas')!.replaceChildren(zoomedCanvas);
     await session.processDocument(doc, 6);
 
-    expect(engine.recognize).toHaveBeenCalledTimes(2);
-    expect(engine.recognize).toHaveBeenLastCalledWith(zoomedCanvas, {
-      pageIndex: 6,
-      width: 2400,
-      height: 3600,
-    });
+    expect(engine.recognize).toHaveBeenCalledTimes(1);
     expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 6');
+    expect(
+      (doc.querySelector('[data-readest-ocr-block-id]') as HTMLElement | null)?.style.left,
+    ).toBe(`${(100 / 1200) * 100}%`);
   });
 
-  it('reruns when the same PDF canvas changes size and reuses unchanged dimensions', async () => {
+  it('reuses completed PDF OCR when the same canvas changes size', async () => {
     const engine = makeEngine();
     const session = new OcrSession({ createEngine: () => engine });
     const doc = makePdfDocument();
@@ -314,11 +312,63 @@ describe('OcrSession', () => {
     await session.processDocument(doc, 7);
     await session.processDocument(doc, 7);
 
+    expect(engine.recognize).toHaveBeenCalledTimes(1);
+  });
+
+  it('coalesces queued PDF zoom renders to the newest canvas', async () => {
+    let finishFirst!: (page: OcrPage) => void;
+    const engine = makeEngine();
+    vi.mocked(engine.recognize).mockImplementationOnce(
+      () =>
+        new Promise<OcrPage>((resolve) => {
+          finishFirst = resolve;
+        }),
+    );
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument();
+    const firstCanvas = doc.querySelector('canvas')!;
+    await session.setEnabled(true);
+
+    const first = session.processDocument(doc, 6, { priority: true });
+    await vi.waitFor(() => expect(engine.recognize).toHaveBeenCalledOnce());
+
+    const intermediateCanvas = doc.createElement('canvas');
+    intermediateCanvas.width = 2000;
+    intermediateCanvas.height = 3000;
+    doc.querySelector('#canvas')!.replaceChildren(intermediateCanvas);
+    const intermediate = session.processDocument(doc, 6, { priority: true });
+
+    const finalCanvas = doc.createElement('canvas');
+    finalCanvas.width = 2400;
+    finalCanvas.height = 3600;
+    doc.querySelector('#canvas')!.replaceChildren(finalCanvas);
+    const final = session.processDocument(doc, 6, { priority: true });
+
+    finishFirst(makePage(6));
+    const [, intermediatePage, finalPage] = await Promise.all([first, intermediate, final]);
+
+    expect(intermediatePage).toBeNull();
+    expect(finalPage).not.toBeNull();
+    expect(vi.mocked(engine.recognize).mock.calls.map(([source]) => source)).toEqual([
+      firstCanvas,
+      finalCanvas,
+    ]);
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 6');
+  });
+
+  it('does not reuse completed PDF OCR for a CBZ image at the same page index', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    await session.setEnabled(true);
+
+    await session.processDocument(makePdfDocument(), 3);
+    await session.processDocument(makeDocument(4), 3);
+
     expect(engine.recognize).toHaveBeenCalledTimes(2);
-    expect(engine.recognize).toHaveBeenLastCalledWith(canvas, {
-      pageIndex: 7,
-      width: 2000,
-      height: 3000,
+    expect(engine.recognize).toHaveBeenLastCalledWith('blob:page-4', {
+      pageIndex: 3,
+      width: 1200,
+      height: 1800,
     });
   });
 

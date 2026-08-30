@@ -149,7 +149,7 @@ describe('MangaTranslationSession', () => {
     finishFirst(makePage(0));
     await Promise.all([running, prefetched, prefetchedCurrent, current]);
 
-    expect(engine.translate.mock.calls.map(([source]) => source)).toEqual([
+    expect(vi.mocked(engine.translate).mock.calls.map(([source]) => source)).toEqual([
       'blob:manga-page-0',
       'blob:manga-page-2',
       'blob:manga-page-1',
