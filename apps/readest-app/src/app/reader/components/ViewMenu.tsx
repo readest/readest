@@ -51,6 +51,13 @@ interface ViewMenuProps {
   onShowMetaHashDialog?: () => void;
 }
 
+const isRtlWritingMode = (writingMode: string | undefined, fallbackDir?: string) =>
+  writingMode === 'horizontal-rl' || writingMode === 'vertical-rl'
+    ? true
+    : writingMode === 'horizontal-tb'
+      ? false
+      : fallbackDir === 'rtl';
+
 const ViewMenu: React.FC<ViewMenuProps> = ({
   bookKey,
   setIsDropdownOpen,
@@ -96,7 +103,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     viewSettings!.invertImgColorInDark,
   );
   const [applyThemeToPDF, setApplyThemeToPDF] = useState(viewSettings!.applyThemeToPDF!);
-  const [rtlSpread, setRtlSpread] = useState(bookData?.bookDoc?.dir === 'rtl');
+  const [rtlSpread, setRtlSpread] = useState(() =>
+    isRtlWritingMode(viewSettings?.writingMode, bookData?.bookDoc?.dir),
+  );
   const supportsOcr = bookData.book?.format === 'CBZ' || bookData.book?.format === 'PDF';
   const ocrLanguageOptions = supportsOcr
     ? [
@@ -298,7 +307,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
   useEffect(() => {
     const bookDoc = bookData?.bookDoc;
-    if (!bookDoc || rtlSpread === (bookDoc.dir === 'rtl')) return;
+    if (!bookDoc || rtlSpread === isRtlWritingMode(viewSettings.writingMode, bookDoc.dir)) return;
     // Writing mode is per-book only (no global fallback), and horizontal-rl is
     // what flips both the spread order and the page progression, so the toggle
     // rides the same setting the Layout panel edits instead of a new one.
