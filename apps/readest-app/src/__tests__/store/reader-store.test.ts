@@ -90,6 +90,7 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
         ribbonVisible: false,
         ttsEnabled: false,
         autoScrollEnabled: false,
+        ocrEnabled: false,
         syncing: false,
         gridInsets: null,
         previewMode: false,
@@ -267,6 +268,21 @@ describe('readerStore', () => {
 
       useReaderStore.getState().setTTSEnabled('book-1', false);
       expect(useReaderStore.getState().viewStates['book-1']!.ttsEnabled).toBe(false);
+    });
+  });
+
+  describe('setOcrEnabled', () => {
+    test('sets OCR only for the requested view', () => {
+      seedViewState('book-1');
+      seedViewState('book-2');
+
+      useReaderStore.getState().setOcrEnabled('book-1', true);
+
+      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(true);
+      expect(useReaderStore.getState().viewStates['book-2']!.ocrEnabled).toBe(false);
+
+      useReaderStore.getState().setOcrEnabled('book-1', false);
+      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(false);
     });
   });
 
