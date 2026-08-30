@@ -484,7 +484,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         />
       )}
 
-      {bookData.book?.format === 'CBZ' && (
+      {(bookData.book?.format === 'CBZ' || bookData.book?.format === 'PDF') && (
         <MenuItem
           label={_('Recognize Text')}
           Icon={viewState?.ocrEnabled ? MdCheck : undefined}

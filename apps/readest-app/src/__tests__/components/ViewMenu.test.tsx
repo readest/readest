@@ -190,11 +190,13 @@ describe('ViewMenu OCR toggle', () => {
     expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
   });
 
-  it('does not show the unfinished control for PDF views', () => {
+  it('enables text recognition for a PDF view', () => {
     mockBookData.book.format = 'PDF';
 
     render(<ViewMenu bookKey='book-1' />);
 
-    expect(screen.queryByText('Recognize Text')).toBeNull();
+    fireEvent.click(screen.getByText('Recognize Text'));
+
+    expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
   });
 });

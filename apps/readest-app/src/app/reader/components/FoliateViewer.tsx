@@ -138,6 +138,7 @@ const FoliateViewer: React.FC<{
   const { registerBrightnessListeners, overlayVisible, overlayLevel } =
     useBrightnessGesture(bookKey);
   const bookData = getBookData(bookKey);
+  const bookFormat = bookData?.book?.format;
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -158,9 +159,9 @@ const FoliateViewer: React.FC<{
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
   const processOcrDocument = useOcrSession({
-    enabled: bookData?.book?.format === 'CBZ' && ocrEnabled,
+    enabled: (bookFormat === 'CBZ' || bookFormat === 'PDF') && ocrEnabled,
     language: bookDoc.metadata.language,
-    mangaFallback: bookData?.book?.format === 'CBZ',
+    mangaFallback: bookFormat === 'CBZ' || (bookFormat === 'PDF' && bookDoc.dir === 'rtl'),
     onProgress: ({ status, progress }) => {
       const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
       const phase = status === 'recognizing text' ? 'recognizing' : 'preparing';
@@ -534,6 +535,12 @@ const FoliateViewer: React.FC<{
     }
   };
 
+  const pdfPageRenderedHandler = (event: Event) => {
+    if (bookFormat !== 'PDF') return;
+    const { doc, index } = (event as CustomEvent<{ doc?: Document; index?: number }>).detail;
+    if (doc && typeof index === 'number') void processOcrDocument(doc, index);
+  };
+
   const evalInlineScripts = (doc: Document) => {
     if (doc.defaultView && doc.defaultView.frameElement) {
       const iframe = doc.defaultView.frameElement as HTMLIFrameElement;
@@ -732,6 +739,7 @@ const FoliateViewer: React.FC<{
     onStabilized: stabilizedHandler,
     onRelocate: progressRelocateHandler,
     onRendererRelocate: docRelocateHandler,
+    onRendererCreateOverlayer: pdfPageRenderedHandler,
     onNavigateStart: navigateStartHandler,
     onNavigateEnd: navigateEndHandler,
   });
