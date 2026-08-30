@@ -207,7 +207,7 @@ export const normalizeOpenSearchTemplates = (doc: Document): Document => {
 
 export const resolveURL = (url: string, relativeTo: string): string => {
   if (!url) return '';
-  if (relativeTo.includes('/api/opds/proxy?url=')) {
+  if (relativeTo.includes('opds/proxy?url=')) {
     const params = new URLSearchParams(relativeTo.split('?')[1]);
     const proxiedURL = params.get('url') || '';
     return resolveURL(url, proxiedURL);

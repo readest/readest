@@ -407,6 +407,12 @@ describe('opdsUtils', () => {
       expect(result).toBe('https://example.com/feed/new');
     });
 
+    it('should resolve through versioned or basepath-prefixed proxy URL', () => {
+      const proxyBase = '/yomi/api/v0/opds/proxy?url=https%3A%2F%2Fexample.com%2Fopds';
+      const result = resolveURL('/feed/new', proxyBase);
+      expect(result).toBe('https://example.com/feed/new');
+    });
+
     it('should handle non-scheme relativeTo (path-only)', () => {
       const result = resolveURL('subdir/file.xml', '/opds/catalog/');
       // Should use the invalid.invalid root and strip it
