@@ -81,6 +81,7 @@ export class OcrSession {
   readonly #pending = new Map<number, PendingOcrPage>();
   readonly #documents = new Map<number, Document>();
   #engine: OcrEngine | null = null;
+  #engineTermination: Promise<void> = Promise.resolve();
   #queue: Promise<void> = Promise.resolve();
   #generation = 0;
   #enabled = false;
@@ -188,6 +189,8 @@ export class OcrSession {
   ): Promise<OcrPage | null> {
     const recognition = this.#queue.then(async () => {
       if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
+      await this.#engineTermination;
+      if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
       const page = await this.#getEngine().recognize(image.source, {
         pageIndex,
         width: image.width,
@@ -229,14 +232,18 @@ export class OcrSession {
     return this.#engine;
   }
 
-  async #terminateEngine(): Promise<void> {
+  #terminateEngine(): Promise<void> {
     const engine = this.#engine;
     this.#engine = null;
-    if (!engine) return;
-    try {
-      await engine.terminate();
-    } catch (error) {
-      this.#onError?.(error, -1);
-    }
+    if (!engine) return this.#engineTermination;
+    const termination = this.#engineTermination.then(async () => {
+      try {
+        await engine.terminate();
+      } catch (error) {
+        this.#onError?.(error, -1);
+      }
+    });
+    this.#engineTermination = termination;
+    return termination;
   }
 }
