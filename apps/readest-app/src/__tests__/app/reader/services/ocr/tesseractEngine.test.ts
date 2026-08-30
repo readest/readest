@@ -113,6 +113,27 @@ describe('TesseractOcrEngine', () => {
     expect(createWorker).toHaveBeenCalledTimes(2);
   });
 
+  it('replaces a worker after recognition fails', async () => {
+    const failedWorker = makeWorker();
+    vi.mocked(failedWorker.recognize).mockRejectedValue(new Error('worker crashed'));
+    const replacementWorker = makeWorker();
+    const createWorker = vi
+      .fn<TesseractWorkerFactory>()
+      .mockResolvedValueOnce(failedWorker)
+      .mockResolvedValue(replacementWorker);
+    const engine = new TesseractOcrEngine({}, createWorker);
+
+    await expect(
+      engine.recognize('blob:page', { pageIndex: 0, width: 100, height: 100 }),
+    ).rejects.toThrow('worker crashed');
+    await expect(
+      engine.recognize('blob:page', { pageIndex: 0, width: 100, height: 100 }),
+    ).resolves.toMatchObject({ pageIndex: 0 });
+
+    expect(failedWorker.terminate).toHaveBeenCalledOnce();
+    expect(createWorker).toHaveBeenCalledTimes(2);
+  });
+
   it('upscales a low-resolution canvas before recognition', async () => {
     const source = document.createElement('canvas');
     source.width = 391;

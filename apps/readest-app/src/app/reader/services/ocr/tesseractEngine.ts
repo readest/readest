@@ -334,7 +334,9 @@ export class TesseractOcrEngine {
     const worker = await this.#getWorker();
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     const prepared = prepareImage(image, page);
-    const { data } = await worker.recognize(prepared.image, {}, { text: true, blocks: true });
+    const { data } = await this.#runWorkerOperation(worker, () =>
+      worker.recognize(prepared.image, {}, { text: true, blocks: true }),
+    );
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     return adaptTesseractPage(data, {
       ...prepared.page,
@@ -371,56 +373,60 @@ export class TesseractOcrEngine {
     const worker = await this.#getWorker();
     const blocks: OcrTextBlock[] = [];
     const sampleBackground = createMangaBackgroundSampler(prepared.image);
-    for (const region of regions) {
-      if (this.#terminated) throw new Error('OCR engine has been terminated');
-      await worker.setParameters({
-        tessedit_pageseg_mode: segmentationModeFor(region.writingMode),
-        preserve_interword_spaces: '1',
-      });
-      const parts: string[] = [];
-      const confidences: number[] = [];
-      const recognizedBoxes: OcrBoundingBox[] = [];
-      for (const box of region.textBoxes) {
-        const rectangle = toRectangle(box, prepared.page);
-        if (!rectangle) continue;
-        const { data } = await worker.recognize(
-          prepared.image,
-          { rectangle },
-          { text: true, blocks: false },
-        );
-        const text = data.text?.trim();
-        if (!text) continue;
-        parts.push(text);
-        recognizedBoxes.push(box);
-        if (Number.isFinite(data.confidence)) confidences.push(data.confidence!);
+    await this.#runWorkerOperation(worker, async () => {
+      for (const region of regions) {
+        if (this.#terminated) throw new Error('OCR engine has been terminated');
+        await worker.setParameters({
+          tessedit_pageseg_mode: segmentationModeFor(region.writingMode),
+          preserve_interword_spaces: '1',
+        });
+        const parts: string[] = [];
+        const confidences: number[] = [];
+        const recognizedBoxes: OcrBoundingBox[] = [];
+        for (const box of region.textBoxes) {
+          const rectangle = toRectangle(box, prepared.page);
+          if (!rectangle) continue;
+          const { data } = await worker.recognize(
+            prepared.image,
+            { rectangle },
+            { text: true, blocks: false },
+          );
+          const text = data.text?.trim();
+          if (!text) continue;
+          parts.push(text);
+          recognizedBoxes.push(box);
+          if (Number.isFinite(data.confidence)) confidences.push(data.confidence!);
+        }
+        if (!parts.length) continue;
+        const confidence = confidences.length
+          ? confidences.reduce((total, value) => total + value, 0) / confidences.length
+          : undefined;
+        if (
+          this.#minimumConfidence > 0 &&
+          (confidence === undefined || confidence < this.#minimumConfidence)
+        ) {
+          continue;
+        }
+        blocks.push({
+          id: region.id,
+          text: parts.join('\n'),
+          ...(confidence === undefined ? {} : { confidence }),
+          box: unionBoxes(recognizedBoxes),
+          bubbleBox: region.bubbleBox,
+          maskBoxes: region.textBoxes,
+          backgroundColor: sampleBackground(region.bubbleBox, region.textBoxes),
+          writingMode: region.writingMode,
+        });
       }
-      if (!parts.length) continue;
-      const confidence = confidences.length
-        ? confidences.reduce((total, value) => total + value, 0) / confidences.length
-        : undefined;
-      if (
-        this.#minimumConfidence > 0 &&
-        (confidence === undefined || confidence < this.#minimumConfidence)
-      ) {
-        continue;
-      }
-      blocks.push({
-        id: region.id,
-        text: parts.join('\n'),
-        ...(confidence === undefined ? {} : { confidence }),
-        box: unionBoxes(recognizedBoxes),
-        bubbleBox: region.bubbleBox,
-        maskBoxes: region.textBoxes,
-        backgroundColor: sampleBackground(region.bubbleBox, region.textBoxes),
-        writingMode: region.writingMode,
-      });
-    }
+    });
     return { ...prepared.page, blocks };
   }
 
   async #recognizeWholePage(prepared: PreparedImage): Promise<OcrPage> {
     const worker = await this.#getWorker();
-    const { data } = await worker.recognize(prepared.image, {}, { text: true, blocks: true });
+    const { data } = await this.#runWorkerOperation(worker, () =>
+      worker.recognize(prepared.image, {}, { text: true, blocks: true }),
+    );
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     return adaptTesseractPage(data, {
       ...prepared.page,
@@ -465,5 +471,23 @@ export class TesseractOcrEngine {
       if (this.#workerPromise === workerPromise) this.#workerPromise = null;
     });
     return workerPromise;
+  }
+
+  async #runWorkerOperation<T>(worker: TesseractWorker, operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      await this.#discardWorker(worker);
+      throw error;
+    }
+  }
+
+  async #discardWorker(worker: TesseractWorker): Promise<void> {
+    const workerPromise = this.#workerPromise;
+    if (!workerPromise) return;
+    const currentWorker = await workerPromise.catch(() => null);
+    if (this.#workerPromise !== workerPromise || currentWorker !== worker) return;
+    this.#workerPromise = null;
+    await worker.terminate().catch(() => undefined);
   }
 }
