@@ -216,6 +216,70 @@ const toRectangle = (
 const segmentationModeFor = (writingMode: OcrWritingMode): PSM =>
   writingMode === 'vertical-rl' ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_BLOCK;
 
+const DEFAULT_BUBBLE_COLOR = 'rgb(255 255 255)';
+
+const isInsideBox = (x: number, y: number, box: OcrBoundingBox): boolean =>
+  x >= box.xMin && x <= box.xMax && y >= box.yMin && y <= box.yMax;
+
+const median = (values: number[]): number => {
+  values.sort((left, right) => left - right);
+  return values[Math.floor(values.length / 2)] ?? 255;
+};
+
+const createMangaBackgroundSampler = (
+  canvas: HTMLCanvasElement,
+): ((bubbleBox: OcrBoundingBox, textBoxes: readonly OcrBoundingBox[]) => string) => {
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  let readable = !!context;
+
+  return (bubbleBox, textBoxes) => {
+    if (!context || !readable) return DEFAULT_BUBBLE_COLOR;
+    const rectangle = toRectangle(bubbleBox, { width: canvas.width, height: canvas.height });
+    if (!rectangle) return DEFAULT_BUBBLE_COLOR;
+
+    try {
+      const pixels = context.getImageData(
+        rectangle.left,
+        rectangle.top,
+        rectangle.width,
+        rectangle.height,
+      ).data;
+      const stride = Math.max(
+        1,
+        Math.ceil(Math.sqrt((rectangle.width * rectangle.height) / 12_000)),
+      );
+      const red: number[] = [];
+      const green: number[] = [];
+      const blue: number[] = [];
+      for (let y = 0; y < rectangle.height; y += stride) {
+        for (let x = 0; x < rectangle.width; x += stride) {
+          const pageX = rectangle.left + x;
+          const pageY = rectangle.top + y;
+          if (textBoxes.some((box) => isInsideBox(pageX, pageY, box))) continue;
+          const offset = (y * rectangle.width + x) * 4;
+          const r = pixels[offset];
+          const g = pixels[offset + 1];
+          const b = pixels[offset + 2];
+          const alpha = pixels[offset + 3];
+          if (r === undefined || g === undefined || b === undefined || alpha === undefined)
+            continue;
+          const luminance = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255;
+          const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+          if (alpha < 200 || luminance < 0.55 || saturation > 100) continue;
+          red.push(r);
+          green.push(g);
+          blue.push(b);
+        }
+      }
+      if (red.length < 16) return DEFAULT_BUBBLE_COLOR;
+      return `rgb(${median(red)} ${median(green)} ${median(blue)})`;
+    } catch {
+      readable = false;
+      return DEFAULT_BUBBLE_COLOR;
+    }
+  };
+};
+
 export class TesseractOcrEngine {
   readonly #languages: string[];
   readonly #mangaMode: boolean;
@@ -286,6 +350,7 @@ export class TesseractOcrEngine {
 
     const worker = await this.#getWorker();
     const blocks: OcrTextBlock[] = [];
+    const sampleBackground = createMangaBackgroundSampler(prepared.image);
     for (const region of regions) {
       if (this.#terminated) throw new Error('OCR engine has been terminated');
       await worker.setParameters({
@@ -326,6 +391,7 @@ export class TesseractOcrEngine {
         box: unionBoxes(recognizedBoxes),
         bubbleBox: region.bubbleBox,
         maskBoxes: recognizedBoxes,
+        backgroundColor: sampleBackground(region.bubbleBox, recognizedBoxes),
         writingMode: region.writingMode,
       });
     }

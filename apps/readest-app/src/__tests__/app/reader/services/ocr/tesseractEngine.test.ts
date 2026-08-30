@@ -194,6 +194,21 @@ describe('TesseractOcrEngine', () => {
     const source = document.createElement('canvas');
     source.width = 1200;
     source.height = 1800;
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((() => ({
+      getImageData: (_x: number, _y: number, width: number, height: number) => {
+        const data = new Uint8ClampedArray(width * height * 4);
+        for (let offset = 0; offset < data.length; offset += 4) {
+          data[offset] = 250;
+          data[offset + 1] = 248;
+          data[offset + 2] = 242;
+          data[offset + 3] = 255;
+        }
+        data[0] = 0;
+        data[1] = 0;
+        data[2] = 0;
+        return { data, width, height };
+      },
+    })) as unknown as typeof HTMLCanvasElement.prototype.getContext);
     const worker = makeWorker();
     vi.mocked(worker.recognize)
       .mockResolvedValueOnce({ data: { text: '右', confidence: 90 } })
@@ -258,6 +273,7 @@ describe('TesseractOcrEngine', () => {
           { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
           { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
         ],
+        backgroundColor: 'rgb(250 248 242)',
         writingMode: 'vertical-rl',
       },
     ]);
