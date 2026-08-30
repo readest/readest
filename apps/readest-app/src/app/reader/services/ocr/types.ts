@@ -10,6 +10,7 @@ export interface OcrBoundingBox {
 export interface OcrTextBlock {
   id: string;
   text: string;
+  confidence?: number;
   box: OcrBoundingBox;
   writingMode: OcrWritingMode;
 }
