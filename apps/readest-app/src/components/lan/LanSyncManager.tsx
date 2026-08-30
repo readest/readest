@@ -21,11 +21,11 @@ const LanSyncManager: React.FC = () => {
   const lan = useSettingsStore((s) => s.settings?.lan);
   const { appService } = useEnv();
   const isTauri = isTauriAppPlatform();
-  const isLanEnabled = !!lan?.enabled && !!lan?.token;
+  const isLanEnabled = !!lan?.enabled;
   const isAndroidApp = appService?.isAndroidApp === true;
 
   useEffect(() => {
-    if (!isTauri || !isLanEnabled || !lan?.token) return;
+    if (!isTauri || !isLanEnabled) return;
     const expectedIntentGeneration = getLanSyncGeneration();
     let cancelled = false;
     let lockHeld = false;
@@ -64,13 +64,13 @@ const LanSyncManager: React.FC = () => {
           await releaseLock();
           return;
         }
-        const nextStatus = await startLanSync(lan.token, undefined, '', status.generation);
+        const nextStatus = await startLanSync(lan?.token ?? '', undefined, '', status.generation);
         const currentLan = useSettingsStore.getState().settings?.lan;
         if (
           cancelled ||
           getLanSyncGeneration() !== expectedIntentGeneration ||
           !currentLan?.enabled ||
-          currentLan.token !== lan.token
+          (currentLan.token?.trim() ?? '') !== (lan?.token?.trim() ?? '')
         ) {
           if (nextStatus.started) {
             try {

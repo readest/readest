@@ -197,6 +197,7 @@
         }
       ]
     },
+    "barcode-scanner:default",
     "biometric:default",
     "haptics:allow-vibrate",
     "haptics:allow-impact-feedback",

@@ -37,7 +37,9 @@ const doFetch = async (
   path: string,
   init?: { method?: string; body?: BodyInit; contentType?: string },
 ): Promise<Response> => {
-  const headers: Record<string, string> = { Authorization: `Bearer ${settings.token}` };
+  const headers: Record<string, string> = {};
+  const token = settings.token?.trim() ?? '';
+  if (token) headers.Authorization = `Bearer ${token}`;
   if (init?.body !== undefined) {
     headers['Content-Type'] =
       init.contentType ??

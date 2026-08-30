@@ -34,8 +34,8 @@ const MAX_BODY_BYTES: usize = 2 * 1024 * 1024 * 1024;
 pub struct ServerState {
     /// On-disk root of the remote-format tree (`.../LanSync/`).
     pub root: PathBuf,
-    /// Shared pairing token; every request must present it as a Bearer.
-    pub token: String,
+    /// Optional shared pairing token. `None` permits direct LAN access.
+    pub auth_token: Option<String>,
     pub device_name: String,
     pub device_id: String,
 }
@@ -67,12 +67,16 @@ async fn auth_and_cors(
     if req.method() == Method::OPTIONS {
         return with_cors(StatusCode::NO_CONTENT.into_response());
     }
-    let expected = format!("Bearer {}", state.token);
-    let authorized = req
-        .headers()
-        .get(header::AUTHORIZATION)
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|v| v == expected);
+    let authorized = match state.auth_token.as_deref() {
+        None => true,
+        Some(token) => {
+            let expected = format!("Bearer {token}");
+            req.headers()
+                .get(header::AUTHORIZATION)
+                .and_then(|v| v.to_str().ok())
+                .is_some_and(|v| v == expected)
+        }
+    };
     if !authorized {
         return with_cors((StatusCode::UNAUTHORIZED, "unauthorized").into_response());
     }

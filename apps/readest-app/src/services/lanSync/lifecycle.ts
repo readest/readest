@@ -107,9 +107,8 @@ export function replaceLanSyncToken(
     } catch (error) {
       const after = await invoke<LanSyncStatus>('lan_sync_status');
       const canRestore =
-        previousToken &&
-        (after.generation === generation ||
-          (!startResponseReceived && after.generation === replacementGeneration));
+        after.generation === generation ||
+        (!startResponseReceived && after.generation === replacementGeneration);
       if (canRestore) {
         try {
           await invoke<LanSyncStatus>('lan_sync_start', {

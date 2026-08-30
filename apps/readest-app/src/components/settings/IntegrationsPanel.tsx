@@ -33,7 +33,7 @@ import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
-import { generateLanSyncToken, stopLanSync } from '@/services/lanSync/lifecycle';
+import { stopLanSync } from '@/services/lanSync/lifecycle';
 import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
@@ -445,7 +445,7 @@ const IntegrationsPanel: React.FC = () => {
               </li>
               <li>
                 {_(
-                  'Both devices must be on the same network, run Readest with LAN Sync enabled, and share the same pairing token.',
+                  'Both devices must be on the same network and run Readest with LAN Sync enabled. A pairing token is optional; if set, use the same token on both devices.',
                 )}
               </li>
             </Tips>
@@ -599,7 +599,7 @@ const IntegrationsPanel: React.FC = () => {
   // Native LAN Sync can be enabled before a peer is selected so the device
   // can advertise its own server for first-time pairing. Web still requires a
   // complete peer address because it cannot host the embedded server.
-  const lanConfigured = !!settings.lan?.token && (isTauriAppPlatform() || !!settings.lan?.host);
+  const lanConfigured = isTauriAppPlatform() || !!settings.lan?.host;
   const lanStatus = getThirdPartyRowStatus(_, {
     enabled: !!settings.lan?.enabled,
     configured: lanConfigured,
@@ -634,15 +634,7 @@ const IntegrationsPanel: React.FC = () => {
       }
     }
     try {
-      await persistCloudProviderEnabled(envConfig, kind, next, (current) => {
-        if (kind !== 'lan' || !next || !isTauriAppPlatform() || current.lan?.token?.trim()) {
-          return current;
-        }
-        return {
-          ...current,
-          lan: { ...current.lan, token: generateLanSyncToken() },
-        };
-      });
+      await persistCloudProviderEnabled(envConfig, kind, next);
     } catch (e) {
       if (isLanDisable && previousSettings) setSettings(previousSettings);
       throw e;

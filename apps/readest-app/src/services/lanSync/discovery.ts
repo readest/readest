@@ -6,8 +6,10 @@ export interface DiscoveredLanPeer {
   host: string;
   port: number;
   device_id: string;
-  /** Empty because pairing tokens are exchanged out-of-band. */
+  /** Empty because pairing tokens are never included in mDNS metadata. */
   token: string;
+  /** True for legacy or explicitly protected peers. */
+  auth_required: boolean;
 }
 
 /**

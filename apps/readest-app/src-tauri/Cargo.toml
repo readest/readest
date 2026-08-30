@@ -63,6 +63,7 @@ tauri-plugin-shell = "2"
 tauri-plugin-process = "2"
 tauri-plugin-oauth = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-barcode-scanner = { path = "../../../packages/tauri-plugins/plugins/barcode-scanner" }
 tauri-plugin-deep-link = "2"
 tauri-plugin-sign-in-with-apple = "1.0.2"
 tauri-plugin-haptics = "2"

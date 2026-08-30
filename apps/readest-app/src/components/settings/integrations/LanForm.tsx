@@ -1,11 +1,22 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Format,
+  checkPermissions,
+  requestPermissions,
+  scan,
+} from '@tauri-apps/plugin-barcode-scanner';
+import { QRCodeSVG } from 'qrcode.react';
 import { MdContentCopy, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { discoverLanPeers, type DiscoveredLanPeer } from '@/services/lanSync/discovery';
+import {
+  createLanSyncPairingPayload,
+  parseLanSyncPairingPayload,
+} from '@/services/lanSync/pairing';
 import { setMulticastLock } from '@/utils/bridge';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { eventDispatcher } from '@/utils/event';
@@ -35,7 +46,7 @@ const formatPingError = (_: TranslationFunc, e: unknown): string => {
   if (e instanceof FileSyncError) {
     switch (e.code) {
       case 'AUTH_FAILED':
-        return _('The peer rejected the pairing token');
+        return _('The peer requires a pairing token');
       case 'NETWORK':
         return _('Device unreachable on the local network');
     }
@@ -146,6 +157,7 @@ const LanForm: React.FC = () => {
   const isActive = !!stored?.enabled;
   const isTauri = isTauriAppPlatform();
   const needsMulticastLock = appService?.isAndroidApp === true;
+  const canScanPairingQr = isTauri && appService?.isMobileApp === true;
 
   const [host, setHost] = useState(stored?.host || '');
   const [port, setPort] = useState(
@@ -277,7 +289,8 @@ const LanForm: React.FC = () => {
   // and self-heal the embedded server after an app restart that raced the
   // boot-time manager (start is idempotent on the Rust side).
   useEffect(() => {
-    if (!isActive || !isTauri || !stored?.token) return;
+    if (!isActive || !isTauri) return;
+    const localToken = stored?.token?.trim() ?? '';
     const expectedIntentGeneration = getLanSyncGeneration();
     let cancelled = false;
     (async () => {
@@ -285,14 +298,14 @@ const LanForm: React.FC = () => {
         let s = await getLanSyncStatus();
         if (cancelled || disconnectingRef.current) return;
         if (!s.running) {
-          s = await startLanSync(stored.token, DEFAULT_LAN_SYNC_PORT, '', s.generation);
+          s = await startLanSync(localToken, DEFAULT_LAN_SYNC_PORT, '', s.generation);
           const currentLan = useSettingsStore.getState().settings?.lan;
           if (
             cancelled ||
             disconnectingRef.current ||
             getLanSyncGeneration() !== expectedIntentGeneration ||
             !currentLan?.enabled ||
-            currentLan.token !== stored.token
+            (currentLan.token?.trim() ?? '') !== localToken
           ) {
             if (s.started) {
               try {
@@ -371,8 +384,8 @@ const LanForm: React.FC = () => {
 
       // A first-time device has no enabled LAN server yet, so there would be
       // nothing for the other device to discover. Start a temporary advertiser
-      // with a local token before browsing; it is kept alive while this panel
-      // remains open and is promoted to the persisted server after pairing.
+      // before browsing; it is kept alive while this panel remains open and is
+      // promoted to the persisted server after pairing.
       let ownDeviceId = '';
       let expectedServerGeneration: number | undefined;
       if (isActive) {
@@ -392,7 +405,7 @@ const LanForm: React.FC = () => {
           // to prepare discovery. Use its device id for self-peer filtering.
           ownDeviceId = existingStatus.device_id;
         } else {
-          const temporaryToken = token.trim() || generateLanSyncToken();
+          const temporaryToken = token.trim();
           const temporaryStatus = await startLanSync(
             temporaryToken,
             DEFAULT_LAN_SYNC_PORT,
@@ -470,14 +483,16 @@ const LanForm: React.FC = () => {
 
   const handleConnect = async (target?: DiscoveredLanPeer) => {
     const trimmedHost = (target?.host ?? host).trim();
-    const trimmedToken = target?.token?.trim() || token.trim();
+    const trimmedToken = target
+      ? target.token.trim() || (target.auth_required ? token.trim() : '')
+      : token.trim();
     const trimmedPort = target?.port ?? (Number(port) || DEFAULT_LAN_SYNC_PORT);
     if (target) {
       setHost(trimmedHost);
       setPort(String(trimmedPort));
       setShowManualConnection(true);
-      if (target.token.trim()) setToken(trimmedToken);
-      if (!trimmedToken) {
+      setToken(trimmedToken);
+      if (target.auth_required && !trimmedToken) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           message: _('Enter the pairing token to connect'),
@@ -485,7 +500,7 @@ const LanForm: React.FC = () => {
         return;
       }
     }
-    if (!trimmedHost || !trimmedToken) return;
+    if (!trimmedHost) return;
     if (unmountedRef.current || disconnectingRef.current || connectingRef.current) return;
     connectingRef.current = true;
     const connectionRunId = ++connectionRunRef.current;
@@ -498,8 +513,7 @@ const LanForm: React.FC = () => {
 
     const previousSettings = useSettingsStore.getState().settings;
     const previousToken = stored?.token?.trim() || '';
-    const switchingActiveToken =
-      isActive && isTauri && !!previousToken && previousToken !== trimmedToken;
+    const switchingActiveToken = isActive && isTauri && previousToken !== trimmedToken;
 
     setIsConnecting(true);
     setConnectingPeerId(target?.device_id || null);
@@ -715,7 +729,7 @@ const LanForm: React.FC = () => {
             return;
           }
           const currentLan = useSettingsStore.getState().settings?.lan;
-          if (!currentLan?.enabled || currentLan.token !== trimmedToken) {
+          if (!currentLan?.enabled || (currentLan.token?.trim() ?? '') !== trimmedToken) {
             if (nextStatus.started) {
               try {
                 await stopLanSyncIfCurrent(nextStatus.generation);
@@ -758,6 +772,43 @@ const LanForm: React.FC = () => {
         setIsConnecting(false);
         setConnectingPeerId(null);
       }
+    }
+  };
+
+  const handleScanPairingQr = async () => {
+    if (!canScanPairingQr || isConnecting) return;
+    try {
+      let permission = await checkPermissions();
+      if (permission !== 'granted') permission = await requestPermissions();
+      if (permission !== 'granted') {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Camera permission is required to scan a pairing QR code'),
+        });
+        return;
+      }
+      const result = await scan({ formats: [Format.QRCode], windowed: true });
+      const pairing = parseLanSyncPairingPayload(result.content);
+      if (!pairing) {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Invalid Readest LAN pairing QR code'),
+        });
+        return;
+      }
+      await handleConnect({
+        name: 'Readest',
+        host: pairing.hosts[0],
+        port: pairing.port,
+        device_id: `qr:${pairing.hosts[0]}`,
+        token: pairing.token,
+        auth_required: !!pairing.token,
+      });
+    } catch {
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to scan pairing QR code'),
+      });
     }
   };
 
@@ -850,8 +901,27 @@ const LanForm: React.FC = () => {
     </BoxedList>
   );
 
+  const pairingQrValue =
+    isTauri && status?.running
+      ? createLanSyncPairingPayload(status, stored?.token?.trim() ?? '')
+      : '';
+
   const manualConnectionForm = (
     <div className='space-y-4 pt-4'>
+      {canScanPairingQr && (
+        <button
+          type='button'
+          onClick={() => void handleScanPairingQr()}
+          disabled={isConnecting}
+          className={clsx(
+            'btn btn-contrast h-11 min-h-11 w-full rounded-lg border-0 text-sm font-medium',
+            'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
+            isConnecting && 'opacity-60',
+          )}
+        >
+          {_('Scan PC pairing QR code')}
+        </button>
+      )}
       <div className='space-y-1.5'>
         <SectionTitle as='label' htmlFor='lan-host' className='block'>
           {_('Peer Address')}
@@ -888,7 +958,7 @@ const LanForm: React.FC = () => {
       <div className='space-y-1.5'>
         <div className='flex items-center justify-between'>
           <SectionTitle as='label' htmlFor='lan-token' className='block'>
-            {_('Pairing Token')}
+            {_('Pairing Token (optional)')}
           </SectionTitle>
           <button
             type='button'
@@ -903,7 +973,7 @@ const LanForm: React.FC = () => {
           <input
             id='lan-token'
             type={showToken ? 'text' : 'password'}
-            placeholder={_('Same token on both devices')}
+            placeholder={_('Leave blank for local network only')}
             className='input eink-bordered h-11 w-full pe-11 text-sm focus:outline-hidden'
             spellCheck='false'
             value={token}
@@ -937,7 +1007,7 @@ const LanForm: React.FC = () => {
         <button
           type='button'
           onClick={() => void handleConnect()}
-          disabled={isConnecting || !host.trim() || !token.trim()}
+          disabled={isConnecting || !host.trim()}
           className={clsx(
             'btn btn-contrast',
             'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
@@ -1044,6 +1114,18 @@ const LanForm: React.FC = () => {
         </div>
 
         <FileSyncForm kind='lan' stored={stored} persist={persistLan} />
+
+        {pairingQrValue && (
+          <BoxedList title={_('Pairing QR code')}>
+            <SettingsRow
+              label={_('Scan this code on your phone')}
+              description={_("It contains this device's LAN address and optional pairing token.")}
+            />
+            <div className='flex justify-center bg-white p-4'>
+              <QRCodeSVG value={pairingQrValue} size={220} level='M' includeMargin />
+            </div>
+          </BoxedList>
+        )}
 
         {isTauri && status?.running && status.local_ips.length > 0 && (
           <div className='space-y-1.5'>

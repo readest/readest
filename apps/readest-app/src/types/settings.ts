@@ -192,7 +192,8 @@ export interface WebDAVSettings {
  * sync with another Readest device on the same home network through the axum
  * peer server each app embeds (src-tauri/src/lan_sync). Shape mirrors
  * {@link WebDAVSettings} minus the cloud-specific fields; `lan` sits outside
- * the cloud plan, so it is exempt from the free-plan sync pause.
+ * the cloud plan, so it is exempt from the free-plan sync pause. An empty
+ * token means direct LAN access; a non-empty token enables Bearer protection.
  */
 export interface LanSyncSettings {
   enabled: boolean;

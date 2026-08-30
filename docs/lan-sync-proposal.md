@@ -25,7 +25,7 @@
 | 网络权限 | `src-tauri/capabilities/default.json:85-115`（http://*:* 放行）、`tauri.conf.json:16`（CSP connect-src） | webview 直连局域网 HTTP 无需改权限 |
 | 网卡枚举 | `if-addrs`（Cargo.toml:96）；三份现成实现：`localsend/commands.rs:7-24`、`lan_sync/mod.rs:61-76`、koplugin 移植版 | 含 VPN 隧道过滤（tun/utun/ppp/wg） |
 | Android 多播 | `gen/android/app/src/main/AndroidManifest.xml:3-7`（INTERNET + ACCESS_WIFI_STATE + CHANGE_WIFI_MULTICAST_STATE 已声明）；MulticastLock 桥 `plugins/tauri-plugin-native-bridge/android/.../NativeBridgePlugin.kt:550-569`，前端 `utils/bridge.ts:153-157`，启停挂钩 `LocalSendManager.tsx:83-104` | 自研多播零新增权限 |
-| **lan_sync 服务器（M1 已落地，指挥官）** | `src-tauri/src/lan_sync/`（axum，端口 **53430**） | token 中间件（server.rs:56-74）、`/ping` 返回 device_id（server.rs:142-151）、防目录穿越；安全模型 = 明文 HTTP + Bearer token 为 deliberate trade-off（mod.rs:14-19） |
+| **lan_sync 服务器（M1 已落地，指挥官）** | `src-tauri/src/lan_sync/`（axum，默认端口 **53430**） | 可选 token 中间件（server.rs:56-83）、`/ping` 返回 device_id（server.rs:142-151）、防目录穿越；默认是局域网明文直连，Bearer token 可选（mod.rs:14-19） |
 
 ## 3. 方案选型（已拍板：A）
 
@@ -55,7 +55,7 @@
 | `POST /list` `{dir}` | list | 返回 `FileEntry[]`，代替 PROPFIND |
 
 - 框架 axum：lockfile 已有 0.8.9（localsend 传递依赖），加显式依赖零编译增量。
-- 鉴权：所有端点走 Bearer token 中间件（server.rs:56-74 已实现）；首连配对 = 交换 token，存 `SystemSettings.lan.token`。
+- 鉴权：默认不带 token 即可直连；设置非空 `SystemSettings.lan.token` 时，所有端点走 Bearer token 中间件（server.rs:56-83）。新客户端连接旧的受保护端点时保留 401，并提示输入 token，不自动降级。
 - Tauri 命令：`lan_sync_start/stop/status`。
 
 ### 4.2 客户端（TS `services/sync/providers/lan/LanSyncProvider.ts`，指挥官）

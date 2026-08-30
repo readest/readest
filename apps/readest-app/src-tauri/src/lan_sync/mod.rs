@@ -9,9 +9,8 @@
 //! and conflict handling are all inherited unchanged.
 //!
 //! Security model (home-LAN scope, see docs/lan-sync-proposal.md §6):
-//!   - every request must carry `Authorization: Bearer <token>`; the token is
-//!     generated once by the UI on first enable and shared out-of-band (typed
-//!     into the peer's LanForm);
+//!   - the default mode is direct plaintext LAN access; an optional shared
+//!     `Authorization: Bearer <token>` can restrict requests when configured;
 //!   - request paths are lexically normalised and must stay inside the root
 //!     (no `..`, no separators smuggled inside segments, no drive letters);
 //!   - plaintext HTTP is a deliberate trade-off; upgrading to the localsend
@@ -277,12 +276,16 @@ fn advertise_mdns(
     let mdns = ServiceDaemon::new().map_err(|e| format!("lan_sync: start mDNS: {e}"))?;
     let instance = mdns_instance_name(device_name, device_id);
     let hostname = format!("readest-{}.local.", &device_id[..device_id.len().min(12)]);
-    let properties: HashMap<String, String> = HashMap::from([
+    let auth_mode = if token.is_empty() { "none" } else { "required" };
+    let mut properties: HashMap<String, String> = HashMap::from([
         ("device_id".to_string(), device_id.to_string()),
         ("name".to_string(), device_name.to_string()),
-        ("token_fingerprint".to_string(), token_fingerprint(token)),
+        ("auth".to_string(), auth_mode.to_string()),
         ("proto".to_string(), "readest-lan-sync-1".to_string()),
     ]);
+    if !token.is_empty() {
+        properties.insert("token_fingerprint".to_string(), token_fingerprint(token));
+    }
     let info = match ServiceInfo::new(
         MDNS_SERVICE_TYPE,
         &instance,
@@ -311,6 +314,7 @@ pub struct DiscoveredPeer {
     pub port: u16,
     pub device_id: String,
     pub token: String,
+    pub auth_required: bool,
 }
 
 fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
@@ -325,6 +329,9 @@ fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
         match receiver.recv_timeout(remaining) {
             Ok(ServiceEvent::ServiceResolved(info)) => {
                 let props = info.get_properties();
+                // Missing metadata means an older token-protected peer; only an
+                // explicit `auth=none` advertises anonymous access.
+                let auth_required = props.get_property_val_str("auth") != Some("none");
                 let device_id = props
                     .get_property_val_str("device_id")
                     .unwrap_or("")
@@ -348,8 +355,9 @@ fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
                     port: info.get_port(),
                     device_id,
                     // Tokens are exchanged out-of-band; never expose them in
-                    // unauthenticated mDNS metadata.
+                    // mDNS metadata.
                     token: String::new(),
+                    auth_required,
                 });
             }
             Ok(_) => {}
@@ -371,9 +379,6 @@ pub async fn lan_sync_start<R: Runtime>(
     expected_generation: Option<u64>,
 ) -> Result<LanSyncStatus, String> {
     let token = token.trim().to_string();
-    if token.is_empty() {
-        return Err("lan_sync: token must not be empty".to_string());
-    }
     let device_name = {
         let trimmed = device_name.trim();
         if trimmed.is_empty() {
@@ -430,7 +435,7 @@ pub async fn lan_sync_start<R: Runtime>(
     let device_id = load_device_id(&app_data_dir)?;
     let server_state = Arc::new(server::ServerState {
         root,
-        token,
+        auth_token: (!token.is_empty()).then(|| token.clone()),
         device_name: device_name.clone(),
         device_id,
     });
@@ -476,7 +481,7 @@ pub async fn lan_sync_start<R: Runtime>(
     let mdns = match advertise_mdns(
         &device_name,
         &server_state.device_id,
-        &server_state.token,
+        &token,
         bound_port,
     ) {
         Ok(mdns) => Some(mdns),
@@ -490,7 +495,7 @@ pub async fn lan_sync_start<R: Runtime>(
         port: bound_port,
         device_name,
         device_id: server_state.device_id.clone(),
-        token: server_state.token.clone(),
+        token,
         stop_tx,
         task,
         mdns,
