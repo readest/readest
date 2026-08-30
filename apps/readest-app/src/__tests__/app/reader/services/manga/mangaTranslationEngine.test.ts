@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  getMangaOcrEngineOptions,
   MangaTranslationEngine,
   normalizeEnglishTranslation,
   type JapaneseTextTranslatorFactory,
@@ -53,6 +54,15 @@ const makeOcrPage = (): OcrPage => ({
 });
 
 describe('MangaTranslationEngine', () => {
+  it('loads horizontal and vertical Japanese OCR without whole-page fallback', () => {
+    expect(getMangaOcrEngineOptions()).toMatchObject({
+      languages: ['jpn', 'jpn_vert'],
+      mangaMode: true,
+      minimumConfidence: 35,
+      wholePageFallback: false,
+    });
+  });
+
   it('translates only Japanese speech bubbles and preserves their geometry', async () => {
     const ocrEngine = {
       recognize: vi.fn(async () => makeOcrPage()),

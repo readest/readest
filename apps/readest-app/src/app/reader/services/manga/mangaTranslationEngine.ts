@@ -1,5 +1,8 @@
 import { BergamotJapaneseTranslator } from '@/app/reader/services/manga/bergamotTranslator';
-import { TesseractOcrEngine } from '@/app/reader/services/ocr/tesseractEngine';
+import {
+  TesseractOcrEngine,
+  type TesseractOcrEngineOptions,
+} from '@/app/reader/services/ocr/tesseractEngine';
 import type { OcrBoundingBox, OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
 
 export type MangaPageSource = string | HTMLCanvasElement;
@@ -57,13 +60,18 @@ interface MangaTranslationEngineDependencies {
   createTranslator: JapaneseTextTranslatorFactory;
 }
 
+export const getMangaOcrEngineOptions = (
+  onProgress?: (progress: { status: string; progress: number }) => void,
+): TesseractOcrEngineOptions => ({
+  languages: ['jpn', 'jpn_vert'],
+  mangaMode: true,
+  minimumConfidence: MINIMUM_MANGA_OCR_CONFIDENCE,
+  wholePageFallback: false,
+  onProgress,
+});
+
 const createOcrEngine: MangaOcrEngineFactory = (onProgress) =>
-  new TesseractOcrEngine({
-    languages: ['jpn_vert'],
-    mangaMode: true,
-    minimumConfidence: MINIMUM_MANGA_OCR_CONFIDENCE,
-    onProgress,
-  });
+  new TesseractOcrEngine(getMangaOcrEngineOptions(onProgress));
 
 const createTranslator: JapaneseTextTranslatorFactory = (onProgress) =>
   new BergamotJapaneseTranslator({ onProgress });
