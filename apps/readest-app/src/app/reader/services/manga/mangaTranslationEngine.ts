@@ -86,6 +86,8 @@ export const normalizeEnglishTranslation = (text: string): string => {
     .replace(/\s+/gu, ' ')
     .replace(/\s+([,.;:!?])/gu, '$1');
   if (!/\p{Script=Latin}/u.test(normalized)) return '';
+  const latinLetters = normalized.match(/\p{Script=Latin}/gu)?.length ?? 0;
+  if (latinLetters < 2 && !/^(?:a|i)[.!?]?$/iu.test(normalized)) return '';
   return normalized
     .replace(/\b([A-Z])([A-Z]+)(?=[a-z])/gu, (_match, first: string, rest: string) =>
       first.concat(rest.toLowerCase()),

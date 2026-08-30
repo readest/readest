@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   MangaTranslationEngine,
+  normalizeEnglishTranslation,
   type JapaneseTextTranslatorFactory,
   type MangaOcrEngineFactory,
 } from '@/app/reader/services/manga/mangaTranslationEngine';
@@ -135,5 +136,13 @@ describe('MangaTranslationEngine', () => {
     await expect(
       engine.translate('blob:page', { pageIndex: 0, width: 100, height: 100 }),
     ).rejects.toThrow('terminated');
+  });
+});
+
+describe('normalizeEnglishTranslation', () => {
+  it('rejects alphanumeric OCR noise while keeping short English dialogue', () => {
+    expect(normalizeEnglishTranslation('A69 "')).toBe('');
+    expect(normalizeEnglishTranslation('I!')).toBe('I!');
+    expect(normalizeEnglishTranslation('go!')).toBe('Go!');
   });
 });
