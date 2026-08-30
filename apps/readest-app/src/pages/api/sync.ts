@@ -804,6 +804,7 @@ export async function POST(req: NextRequest) {
           start_time: p.start_time,
           duration: p.duration,
           total_pages: p.total_pages,
+          words_read: p.words_read ?? 0,
           ext: p.ext ?? null,
           updated_at: new Date().toISOString(),
           deleted_at: p.deleted_at ?? null,

@@ -82,6 +82,7 @@ export async function pullStats(stats: StatisticsDb, client: PullClient): Promis
       startTime: p.start_time,
       duration: p.duration,
       totalPages: p.total_pages,
+      wordsRead: p.words_read ?? 0,
     }));
     await stats.applyRemoteEvents(books, events);
     // Advance the cursor to the newest page-event updated_at_ms. Stop when a
