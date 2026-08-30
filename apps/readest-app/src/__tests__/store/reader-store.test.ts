@@ -91,6 +91,7 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
         ttsEnabled: false,
         autoScrollEnabled: false,
         ocrEnabled: false,
+        ocrLanguage: '',
         syncing: false,
         gridInsets: null,
         previewMode: false,
@@ -283,6 +284,18 @@ describe('readerStore', () => {
 
       useReaderStore.getState().setOcrEnabled('book-1', false);
       expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(false);
+    });
+  });
+
+  describe('setOcrLanguage', () => {
+    test('sets the session language only for the requested view', () => {
+      seedViewState('book-1');
+      seedViewState('book-2');
+
+      useReaderStore.getState().setOcrLanguage('book-1', 'es');
+
+      expect(useReaderStore.getState().viewStates['book-1']!.ocrLanguage).toBe('es');
+      expect(useReaderStore.getState().viewStates['book-2']!.ocrLanguage).toBe('');
     });
   });
 

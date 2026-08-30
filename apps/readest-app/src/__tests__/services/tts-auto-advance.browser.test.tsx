@@ -214,6 +214,7 @@ const seedStores = (view: FoliateView, viewSettings: ViewSettings) => {
         ttsEnabled: false,
         autoScrollEnabled: false,
         ocrEnabled: false,
+        ocrLanguage: '',
         syncing: false,
         gridInsets: null,
         previewMode: false,

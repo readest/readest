@@ -50,6 +50,8 @@ interface ViewState {
   autoScrollEnabled: boolean;
   /* True while OCR is active for this view; session-only, never persisted. */
   ocrEnabled: boolean;
+  /* Empty uses book metadata; otherwise a session-only OCR language override. */
+  ocrLanguage: string;
   syncing: boolean;
   gridInsets: Insets | null;
   /* True while the reader is showing a position requested by an external
@@ -80,6 +82,7 @@ interface ReaderStore {
   setTTSEnabled: (key: string, enabled: boolean) => void;
   setAutoScrollEnabled: (key: string, enabled: boolean) => void;
   setOcrEnabled: (key: string, enabled: boolean) => void;
+  setOcrLanguage: (key: string, language: string) => void;
   setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
   setProgress: (
@@ -176,6 +179,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           ttsEnabled: false,
           autoScrollEnabled: false,
           ocrEnabled: false,
+          ocrLanguage: '',
           syncing: false,
           gridInsets: null,
           previewMode: false,
@@ -328,6 +332,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ttsEnabled: false,
             autoScrollEnabled: false,
             ocrEnabled: false,
+            ocrLanguage: '',
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -353,6 +358,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ttsEnabled: false,
             autoScrollEnabled: false,
             ocrEnabled: false,
+            ocrLanguage: '',
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -518,6 +524,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ocrEnabled: enabled,
+        },
+      },
+    })),
+
+  setOcrLanguage: (key: string, language: string) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          ocrLanguage: language,
         },
       },
     })),
