@@ -181,4 +181,34 @@ describe('MangaTranslationSession', () => {
       'Watch out on page 3!',
     );
   });
+
+  it('waits for old engine termination before starting replacement work', async () => {
+    let finishTermination!: () => void;
+    const firstEngine = makeEngine();
+    vi.mocked(firstEngine.terminate).mockImplementationOnce(
+      () => new Promise((resolve) => (finishTermination = resolve)),
+    );
+    const secondEngine = makeEngine();
+    const createEngine = vi.fn().mockReturnValueOnce(firstEngine).mockReturnValue(secondEngine);
+    const session = new MangaTranslationSession({ createEngine });
+    await session.setEnabled(true);
+    await session.processDocument(makeDocument(3), 3);
+
+    const disabling = session.setEnabled(false);
+    await vi.waitFor(() => expect(firstEngine.terminate).toHaveBeenCalledOnce());
+    await session.processDocument(makeDocument(4), 3);
+    const enabling = session.setEnabled(true);
+    await Promise.resolve();
+
+    expect(createEngine).toHaveBeenCalledOnce();
+    finishTermination();
+    await Promise.all([disabling, enabling]);
+
+    expect(createEngine).toHaveBeenCalledTimes(2);
+    expect(secondEngine.translate).toHaveBeenCalledWith('blob:manga-page-4', {
+      pageIndex: 3,
+      width: 1200,
+      height: 1800,
+    });
+  });
 });

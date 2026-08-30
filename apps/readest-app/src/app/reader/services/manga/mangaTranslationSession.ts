@@ -80,6 +80,7 @@ export class MangaTranslationSession {
   readonly #pending = new Map<number, PendingMangaPage>();
   readonly #documents = new Map<number, Document>();
   #engine: MangaTranslationSessionEngine | null = null;
+  #engineTermination: Promise<void> = Promise.resolve();
   #queue: Promise<void> = Promise.resolve();
   #generation = 0;
   #enabled = false;
@@ -185,6 +186,8 @@ export class MangaTranslationSession {
   ): Promise<TranslatedMangaPage | null> {
     const translation = this.#queue.then(async () => {
       if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
+      await this.#engineTermination;
+      if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
       const page = await this.#getEngine().translate(image.source, {
         pageIndex,
         width: image.width,
@@ -222,14 +225,18 @@ export class MangaTranslationSession {
     return this.#engine;
   }
 
-  async #terminateEngine(): Promise<void> {
+  #terminateEngine(): Promise<void> {
     const engine = this.#engine;
     this.#engine = null;
-    if (!engine) return;
-    try {
-      await engine.terminate();
-    } catch (error) {
-      this.#onError?.(error, -1);
-    }
+    if (!engine) return this.#engineTermination;
+    const termination = this.#engineTermination.then(async () => {
+      try {
+        await engine.terminate();
+      } catch (error) {
+        this.#onError?.(error, -1);
+      }
+    });
+    this.#engineTermination = termination;
+    return termination;
   }
 }
