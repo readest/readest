@@ -89,6 +89,7 @@ import { observeDynamicResources } from '@/utils/dynamicResources';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
+import { useOcrSession } from '../hooks/useOcrSession';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
@@ -98,8 +99,6 @@ import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
 import { getTTSMiniPlayerClearance } from '../utils/ttsMiniPlayerPosition';
-import type { OcrPage } from '../services/ocr/types';
-import { restoreOcrTextLayer } from '../utils/ocrTextLayer';
 
 declare global {
   interface Window {
@@ -131,6 +130,7 @@ const FoliateViewer: React.FC<{
   const getProgress = useReaderStore((s) => s.getProgress);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const { applyBackgroundTexture } = useBackgroundTexture();
@@ -143,7 +143,6 @@ const FoliateViewer: React.FC<{
 
   const viewRef = useRef<FoliateView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const ocrPagesRef = useRef(new Map<number, OcrPage>());
   const isViewCreated = useRef(false);
   const doubleClickDisabled = useRef(!!viewSettings?.disableDoubleClick);
   const [toastMessage, setToastMessage] = useState('');
@@ -157,6 +156,14 @@ const FoliateViewer: React.FC<{
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
+  const processOcrDocument = useOcrSession({
+    enabled: bookData?.book?.format === 'CBZ' && ocrEnabled,
+    language: bookDoc.metadata.language,
+    mangaFallback: bookData?.book?.format === 'CBZ',
+    onError: (error, pageIndex) => {
+      console.error(`Failed to recognize text on page ${pageIndex}`, error);
+    },
+  });
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {
@@ -385,7 +392,7 @@ const FoliateViewer: React.FC<{
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings, undefined, bookData.book?.format);
         if (bookData.book?.format === 'CBZ') {
-          restoreOcrTextLayer(detail.doc, detail.index, ocrPagesRef.current);
+          void processOcrDocument(detail.doc, detail.index);
         }
         const themeCode = getThemeCode();
         if (bookData.book?.format === 'PDF' && themeCode && renderer) {
