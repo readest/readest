@@ -157,6 +157,25 @@ describe('OcrSession', () => {
     expect(engine.recognize).toHaveBeenCalledTimes(2);
   });
 
+  it('prioritizes pages in their most recently registered order', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const first = makeDocument(5);
+    const current = makeDocument(7);
+    await session.processDocument(first, 5);
+    await session.processDocument(current, 7);
+
+    await session.processDocument(current, 7);
+    await session.processDocument(first, 5);
+    await session.setEnabled(true);
+
+    expect(engine.recognize).toHaveBeenNthCalledWith(1, 'blob:page-7', {
+      pageIndex: 7,
+      width: 1200,
+      height: 1800,
+    });
+  });
+
   it('recognizes a rendered canvas when a PDF page has no native text', async () => {
     const engine = makeEngine();
     const session = new OcrSession({ createEngine: () => engine });

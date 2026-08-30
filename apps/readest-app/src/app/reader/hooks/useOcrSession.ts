@@ -58,10 +58,15 @@ export const useOcrSession = ({
 
   const processKnownDocuments = useCallback(
     (session: OcrSession) => {
+      const currentPageIndexes = new Set<number>();
       for (const { doc, index } of getDocumentsRef.current?.() ?? []) {
-        if (doc && typeof index === 'number') rememberDocument(doc, index);
+        if (!doc || typeof index !== 'number') continue;
+        rememberDocument(doc, index);
+        currentPageIndexes.add(index);
+        void session.processDocument(doc, index);
       }
       for (const [pageIndex, doc] of documentsRef.current) {
+        if (currentPageIndexes.has(pageIndex)) continue;
         void session.processDocument(doc, pageIndex);
       }
     },

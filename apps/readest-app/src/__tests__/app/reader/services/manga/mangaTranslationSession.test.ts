@@ -123,6 +123,25 @@ describe('MangaTranslationSession', () => {
     expect(engine.translate).toHaveBeenCalledTimes(2);
   });
 
+  it('prioritizes pages in their most recently registered order', async () => {
+    const engine = makeEngine();
+    const session = new MangaTranslationSession({ createEngine: () => engine });
+    const first = makeDocument(5);
+    const current = makeDocument(7);
+    await session.processDocument(first, 5);
+    await session.processDocument(current, 7);
+
+    await session.processDocument(current, 7);
+    await session.processDocument(first, 5);
+    await session.setEnabled(true);
+
+    expect(engine.translate).toHaveBeenNthCalledWith(1, 'blob:manga-page-7', {
+      pageIndex: 7,
+      width: 1200,
+      height: 1800,
+    });
+  });
+
   it('reports failures without persisting or mounting a partial page', async () => {
     const error = new Error('translation failed');
     const engine = makeEngine();

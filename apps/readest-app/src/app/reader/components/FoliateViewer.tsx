@@ -91,6 +91,7 @@ import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
 import { useOcrSession } from '../hooks/useOcrSession';
 import { useMangaTranslationSession } from '../hooks/useMangaTranslationSession';
+import { prioritizeCurrentDocument } from '../utils/ocrDocumentPriority';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
@@ -160,6 +161,11 @@ const FoliateViewer: React.FC<{
   const mangaTranslationProgressKeyRef = useRef('');
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
+  const getOnDeviceTextDocuments = useCallback(() => {
+    const renderer = viewRef.current?.renderer;
+    if (!renderer) return [];
+    return prioritizeCurrentDocument(renderer.getContents(), renderer.primaryIndex);
+  }, []);
 
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
@@ -169,7 +175,7 @@ const FoliateViewer: React.FC<{
     language: ocrLanguage || bookDoc.metadata.language,
     mangaFallback: bookFormat === 'CBZ' || (bookFormat === 'PDF' && bookDoc.dir === 'rtl'),
     mangaMode: bookFormat === 'CBZ',
-    getDocuments: () => viewRef.current?.renderer.getContents() ?? [],
+    getDocuments: getOnDeviceTextDocuments,
     onProgress: ({ status, progress }) => {
       const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
       const phase = status === 'recognizing text' ? 'recognizing' : 'preparing';
@@ -209,7 +215,7 @@ const FoliateViewer: React.FC<{
 
   const processMangaTranslationDocument = useMangaTranslationSession({
     enabled: bookFormat === 'CBZ' && mangaTranslationEnabled,
-    getDocuments: () => viewRef.current?.renderer.getContents() ?? [],
+    getDocuments: getOnDeviceTextDocuments,
     onProgress: ({ status, progress }) => {
       const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
       const phase = status === 'translating speech bubbles' ? 'translating' : 'preparing';

@@ -178,7 +178,11 @@ export class OcrSession {
 
   #registerDocument(doc: Document, pageIndex: number): void {
     if (this.#terminated) return;
-    if (this.#documents.get(pageIndex) === doc) return;
+    if (this.#documents.get(pageIndex) === doc) {
+      this.#documents.delete(pageIndex);
+      this.#documents.set(pageIndex, doc);
+      return;
+    }
     this.#documents.set(pageIndex, doc);
     doc.defaultView?.addEventListener(
       'pagehide',

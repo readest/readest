@@ -130,4 +130,31 @@ describe('useOcrSession', () => {
       expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 6);
     });
   });
+
+  it('processes the current renderer order before older remembered pages', async () => {
+    const first = document.implementation.createHTMLDocument();
+    const current = document.implementation.createHTMLDocument();
+    let rendered: readonly { doc: Document; index: number }[] = [];
+    const getDocuments = vi.fn(() => rendered);
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useOcrSession({ enabled, getDocuments }),
+      { initialProps: { enabled: false } },
+    );
+    await act(async () => {
+      await result.current(first, 5);
+      await result.current(current, 7);
+    });
+    rendered = [
+      { doc: current, index: 7 },
+      { doc: first, index: 5 },
+    ];
+    mocks.session.processDocument.mockClear();
+
+    rerender({ enabled: true });
+
+    expect(mocks.session.processDocument.mock.calls).toEqual([
+      [current, 7],
+      [first, 5],
+    ]);
+  });
 });
