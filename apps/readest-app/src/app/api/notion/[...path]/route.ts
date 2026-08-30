@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NOTION_API_VERSION } from '@/services/constants';
+import { validateUserAndToken } from '@/utils/access';
 
 const NOTION_UPSTREAM = 'https://api.notion.com/v1';
+/**
+ * The caller's Notion integration secret. It travels in its own header so
+ * `authorization` can carry the Readest JWT that actually authenticates the
+ * caller, matching the azure-translate / yandex-translate proxies.
+ */
+const NOTION_TOKEN_HEADER = 'x-notion-token';
 const MAX_REQUEST_BODY_BYTES = 500 * 1024;
 const UPSTREAM_TIMEOUT_MS = 15_000;
 
@@ -119,9 +126,17 @@ async function forward(request: NextRequest, path: string[]) {
     return NextResponse.json({ error: 'Cross-origin request denied' }, { status: 403 });
   }
 
-  const authorization = request.headers.get('authorization') ?? '';
-  if (!/^Bearer\s+(?:secret_|ntn_)[a-zA-Z0-9_-]+$/.test(authorization)) {
-    return NextResponse.json({ error: 'Invalid authorization header' }, { status: 401 });
+  // Authenticate the caller, not the credential they hand us. Without this the
+  // route is an anonymous relay for the whole Notion API on Readest's budget:
+  // a format check on a third-party secret proves nothing about who is calling.
+  const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
+  if (!user || !token) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
+  }
+
+  const notionToken = request.headers.get(NOTION_TOKEN_HEADER) ?? '';
+  if (!/^Bearer\s+(?:secret_|ntn_)[a-zA-Z0-9_-]+$/.test(notionToken)) {
+    return NextResponse.json({ error: 'Invalid Notion token' }, { status: 401 });
   }
 
   let body: string | undefined;
@@ -142,7 +157,7 @@ async function forward(request: NextRequest, path: string[]) {
     const response = await fetch(upstreamUrl(request, path), {
       method: request.method,
       headers: {
-        authorization,
+        authorization: notionToken,
         'notion-version': NOTION_API_VERSION,
         ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
       },

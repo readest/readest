@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { NOTION_API_BASE_URL, NOTION_API_VERSION } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
+import { getAccessToken } from '@/utils/access';
 import {
   normalizeNotionObjectId,
   NotionClient,
@@ -12,6 +13,7 @@ import type { NotionSettings } from '@/types/settings';
 
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: vi.fn() }));
 vi.mock('@/services/environment', () => ({ isTauriAppPlatform: vi.fn(() => false) }));
+vi.mock('@/utils/access', () => ({ getAccessToken: vi.fn(async () => 'readest-jwt') }));
 
 const TARGET_ID = '1234567890abcdef1234567890abcdef';
 const PAGE_ID = 'page-id';
@@ -82,6 +84,58 @@ describe('normalizeNotionObjectId', () => {
       ),
     ).toBe(TARGET_ID);
     expect(normalizeNotionObjectId('not-a-database')).toBeNull();
+  });
+});
+
+describe('NotionClient transport credentials', () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    fetchMock = vi.fn().mockResolvedValue(jsonResponse({}));
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  test('web builds send the Readest JWT as auth and the Notion secret separately', async () => {
+    vi.mocked(isTauriAppPlatform).mockReturnValue(false);
+
+    await new NotionClient(makeSettings()).validateToken();
+
+    const [url, init] = fetchMock.mock.calls[0]!;
+    const headers = init.headers as Record<string, string>;
+    expect(url).toBe('/api/notion/users/me');
+    // The proxy authenticates the caller, so the Notion secret must not be the
+    // thing in `Authorization` on this path.
+    expect(headers['Authorization']).toBe('Bearer readest-jwt');
+    expect(headers['X-Notion-Token']).toBe('Bearer secret_test');
+  });
+
+  test('web builds refuse to sync when the user is not signed in to Readest', async () => {
+    vi.mocked(isTauriAppPlatform).mockReturnValue(false);
+    vi.mocked(getAccessToken).mockResolvedValueOnce(null);
+
+    const result = await new NotionClient(makeSettings()).validateToken();
+
+    expect(result).toEqual({ valid: false, isNetworkError: true });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('native builds call Notion directly with the secret and no proxy header', async () => {
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    vi.mocked(tauriFetch).mockResolvedValue(jsonResponse({}) as never);
+
+    await new NotionClient(makeSettings()).validateToken();
+
+    const [url, init] = vi.mocked(tauriFetch).mock.calls[0]!;
+    const headers = (init as { headers: Record<string, string> }).headers;
+    expect(url).toBe(`${NOTION_API_BASE_URL}/users/me`);
+    expect(headers['Authorization']).toBe('Bearer secret_test');
+    expect(headers['X-Notion-Token']).toBeUndefined();
+    expect(getAccessToken).not.toHaveBeenCalled();
   });
 });
 
