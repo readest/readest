@@ -120,6 +120,7 @@ export const mountMangaTranslationLayer = (
   const layer = doc.createElement('div');
   layer.setAttribute('data-readest-manga-translation-layer', '');
   layer.setAttribute('data-readest-manga-page-index', String(page.pageIndex));
+  layer.setAttribute('aria-hidden', 'true');
   Object.assign(layer.style, {
     inset: '0',
     overflow: 'hidden',
@@ -164,10 +165,10 @@ export const mountMangaTranslationLayer = (
       display: 'flex',
       justifyContent: 'center',
       overflow: 'hidden',
-      pointerEvents: 'auto',
+      pointerEvents: 'none',
       position: 'absolute',
       textAlign: 'center',
-      userSelect: 'text',
+      userSelect: 'none',
     });
     positionElement(container, textBox, page);
 
@@ -181,10 +182,11 @@ export const mountMangaTranslationLayer = (
       fontWeight: '600',
       letterSpacing: '-0.01em',
       lineHeight: '1.08',
-      maxHeight: '100%',
       maxWidth: '100%',
-      overflow: 'hidden',
+      overflow: 'visible',
       overflowWrap: 'anywhere',
+      transformOrigin: 'center center',
+      width: '100%',
       whiteSpace: 'normal',
     });
     text.append(doc.createTextNode(region.translatedText));
@@ -210,6 +212,7 @@ export const mountMangaTranslationLayer = (
     for (const text of textElements) {
       const container = text.parentElement;
       if (!container || container.clientWidth <= 0 || container.clientHeight <= 0) continue;
+      text.style.transform = 'none';
       const maximum = getMaximumMangaFontSize(container.clientWidth, container.clientHeight);
       const size = findLargestFittingFontSize({
         minimum: 4,
@@ -223,6 +226,12 @@ export const mountMangaTranslationLayer = (
         },
       });
       text.style.fontSize = `${size}px`;
+      const scale = Math.min(
+        1,
+        container.clientWidth / Math.max(1, text.scrollWidth),
+        container.clientHeight / Math.max(1, text.scrollHeight),
+      );
+      text.style.transform = scale < 1 ? `scale(${Number(scale.toFixed(6))})` : 'none';
     }
   };
 

@@ -50,6 +50,7 @@ describe('mangaTranslationLayer', () => {
     expect(document.querySelectorAll(MANGA_TRANSLATION_LAYER_SELECTOR)).toHaveLength(1);
     expect(layer?.style.pointerEvents).toBe('none');
     expect(layer?.style.overflow).toBe('hidden');
+    expect(layer?.getAttribute('aria-hidden')).toBe('true');
 
     const mask = layer?.querySelector<HTMLElement>('[data-readest-manga-mask]');
     expect(mask?.style.backgroundColor).toBe('rgb(250, 248, 242)');
@@ -65,12 +66,42 @@ describe('mangaTranslationLayer', () => {
     expect(bubble?.style.width).toBe('32%');
     expect(bubble?.style.height).toBe('16%');
     expect(bubble?.style.overflow).toBe('hidden');
+    expect(bubble?.style.pointerEvents).toBe('none');
+    expect(bubble?.style.userSelect).toBe('none');
     expect(text?.textContent).toBe('safe <img src=x onerror=alert(1)> text');
     expect(text?.querySelector('img')).toBeNull();
     expect(text?.style.overflowWrap).toBe('anywhere');
     expect(text?.style.maxWidth).toBe('100%');
-    expect(text?.style.maxHeight).toBe('100%');
+    expect(text?.style.overflow).toBe('visible');
+    expect(text?.style.transformOrigin).toBe('center center');
     expect(animate).toHaveBeenCalled();
+  });
+
+  it('scales text that cannot fit at the minimum font size', () => {
+    let fitText: FrameRequestCallback | undefined;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      fitText = callback;
+      return 1;
+    });
+
+    const layer = mountMangaTranslationLayer(document, makePage());
+    const container = layer?.querySelector<HTMLElement>('[data-readest-manga-region-id]');
+    const text = container?.querySelector<HTMLElement>('[data-readest-manga-text]');
+    Object.defineProperties(container!, {
+      clientWidth: { configurable: true, value: 80 },
+      clientHeight: { configurable: true, value: 40 },
+    });
+    Object.defineProperties(text!, {
+      scrollWidth: { configurable: true, value: 160 },
+      scrollHeight: { configurable: true, value: 120 },
+    });
+
+    fitText?.(0);
+
+    expect(text?.style.fontSize).toBe('4px');
+    const scale = Number.parseFloat(text?.style.transform.match(/scale\(([^)]+)\)/u)?.[1] ?? '1');
+    expect(160 * scale).toBeLessThanOrEqual(80);
+    expect(120 * scale).toBeLessThanOrEqual(40);
   });
 
   it('clamps masks and bubble text to the page and skips invalid regions', () => {
