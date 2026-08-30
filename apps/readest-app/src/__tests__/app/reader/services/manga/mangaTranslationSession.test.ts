@@ -123,6 +123,39 @@ describe('MangaTranslationSession', () => {
     expect(engine.translate).toHaveBeenCalledTimes(2);
   });
 
+  it('lets a newly current page overtake queued prefetch work', async () => {
+    let finishFirst!: (page: TranslatedMangaPage) => void;
+    const engine = makeEngine();
+    vi.mocked(engine.translate)
+      .mockImplementationOnce(
+        () =>
+          new Promise<TranslatedMangaPage>((resolve) => {
+            finishFirst = resolve;
+          }),
+      )
+      .mockImplementation(async (_source, { pageIndex }) => makePage(pageIndex));
+    const session = new MangaTranslationSession({ createEngine: () => engine });
+    await session.setEnabled(true);
+
+    const running = session.processDocument(makeDocument(0), 0);
+    await vi.waitFor(() => expect(engine.translate).toHaveBeenCalledOnce());
+    const prefetched = session.processDocument(makeDocument(1), 1);
+    const currentDocument = makeDocument(2);
+    const prefetchedCurrent = session.processDocument(currentDocument, 2);
+    const current = session.processDocument(currentDocument, 2, { priority: true });
+
+    expect(engine.translate).toHaveBeenCalledTimes(1);
+
+    finishFirst(makePage(0));
+    await Promise.all([running, prefetched, prefetchedCurrent, current]);
+
+    expect(engine.translate.mock.calls.map(([source]) => source)).toEqual([
+      'blob:manga-page-0',
+      'blob:manga-page-2',
+      'blob:manga-page-1',
+    ]);
+  });
+
   it('prioritizes pages in their most recently registered order', async () => {
     const engine = makeEngine();
     const session = new MangaTranslationSession({ createEngine: () => engine });

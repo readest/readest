@@ -59,11 +59,17 @@ export const useOcrSession = ({
   const processKnownDocuments = useCallback(
     (session: OcrSession) => {
       const currentPageIndexes = new Set<number>();
+      let current = true;
       for (const { doc, index } of getDocumentsRef.current?.() ?? []) {
         if (!doc || typeof index !== 'number') continue;
         rememberDocument(doc, index);
         currentPageIndexes.add(index);
-        void session.processDocument(doc, index);
+        if (current) {
+          void session.processDocument(doc, index, { priority: true });
+          current = false;
+        } else {
+          void session.processDocument(doc, index);
+        }
       }
       for (const [pageIndex, doc] of documentsRef.current) {
         if (currentPageIndexes.has(pageIndex)) continue;
@@ -129,7 +135,10 @@ export const useOcrSession = ({
   return useCallback(
     (doc: Document, pageIndex: number) => {
       rememberDocument(doc, pageIndex);
-      return sessionRef.current?.processDocument(doc, pageIndex) ?? Promise.resolve(null);
+      return (
+        sessionRef.current?.processDocument(doc, pageIndex, { priority: true }) ??
+        Promise.resolve(null)
+      );
     },
     [rememberDocument],
   );

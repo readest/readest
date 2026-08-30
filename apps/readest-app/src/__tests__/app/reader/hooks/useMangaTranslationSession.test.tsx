@@ -55,7 +55,7 @@ describe('useMangaTranslationSession', () => {
 
     expect(mocks.session.setEnabled).toHaveBeenCalledWith(false);
     await act(async () => await result.current(doc, 2));
-    expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 2);
+    expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 2, { priority: true });
 
     rerender({ enabled: true });
     expect(mocks.session.setEnabled).toHaveBeenLastCalledWith(true);
@@ -93,7 +93,7 @@ describe('useMangaTranslationSession', () => {
     rerender({ enabled: true });
 
     await waitFor(() => {
-      expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 6);
+      expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 6, { priority: true });
     });
   });
 
@@ -119,7 +119,7 @@ describe('useMangaTranslationSession', () => {
     rerender({ enabled: true });
 
     expect(mocks.session.processDocument.mock.calls).toEqual([
-      [current, 7],
+      [current, 7, { priority: true }],
       [first, 5],
     ]);
   });

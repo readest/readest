@@ -24,6 +24,10 @@ interface MangaTranslationSessionOptions {
   onPageTranslated?: (page: TranslatedMangaPage) => void;
 }
 
+export interface MangaTranslationProcessOptions {
+  priority?: boolean;
+}
+
 interface MangaPageImage {
   source: MangaPageSource;
   width: number;
@@ -41,6 +45,13 @@ interface CachedMangaPage extends MangaPageIdentity {
 
 interface PendingMangaPage extends MangaPageIdentity {
   promise: Promise<TranslatedMangaPage | null>;
+  task: MangaQueueTask;
+}
+
+interface MangaQueueTask {
+  run: () => Promise<TranslatedMangaPage | null>;
+  resolve: (page: TranslatedMangaPage | null) => void;
+  reject: (error: unknown) => void;
 }
 
 const isSamePageImage = (
@@ -81,7 +92,9 @@ export class MangaTranslationSession {
   readonly #documents = new Map<number, Document>();
   #engine: MangaTranslationSessionEngine | null = null;
   #engineTermination: Promise<void> = Promise.resolve();
-  #queue: Promise<void> = Promise.resolve();
+  #queue: MangaQueueTask[] = [];
+  #runningTask: MangaQueueTask | null = null;
+  #drainingQueue = false;
   #generation = 0;
   #enabled = false;
   #terminated = false;
@@ -92,7 +105,11 @@ export class MangaTranslationSession {
     this.#onPageTranslated = onPageTranslated;
   }
 
-  async processDocument(doc: Document, pageIndex: number): Promise<TranslatedMangaPage | null> {
+  async processDocument(
+    doc: Document,
+    pageIndex: number,
+    { priority = false }: MangaTranslationProcessOptions = {},
+  ): Promise<TranslatedMangaPage | null> {
     this.#registerDocument(doc, pageIndex);
     if (this.#terminated || !this.#enabled) {
       removeMangaTranslationLayer(doc);
@@ -114,10 +131,13 @@ export class MangaTranslationSession {
 
     const generation = this.#generation;
     const pendingPage = this.#pending.get(pageIndex);
-    const translation =
-      pendingPage && isSamePageImage(pendingPage, doc, image)
-        ? pendingPage.promise
-        : this.#translate(doc, image, pageIndex, generation);
+    let translation: Promise<TranslatedMangaPage | null>;
+    if (pendingPage && isSamePageImage(pendingPage, doc, image)) {
+      if (priority) this.#promoteTask(pendingPage.task);
+      translation = pendingPage.promise;
+    } else {
+      translation = this.#translate(doc, image, pageIndex, generation, priority);
+    }
     let page: TranslatedMangaPage | null;
     try {
       page = await translation;
@@ -149,7 +169,7 @@ export class MangaTranslationSession {
 
     for (const doc of this.#documents.values()) removeMangaTranslationLayer(doc);
     this.#pending.clear();
-    this.#queue = Promise.resolve();
+    this.#cancelQueuedTasks();
     return this.#terminateEngine();
   }
 
@@ -162,7 +182,7 @@ export class MangaTranslationSession {
     this.#documents.clear();
     this.#pages.clear();
     this.#pending.clear();
-    this.#queue = Promise.resolve();
+    this.#cancelQueuedTasks();
     await this.#terminateEngine();
   }
 
@@ -188,41 +208,85 @@ export class MangaTranslationSession {
     image: MangaPageImage,
     pageIndex: number,
     generation: number,
+    priority: boolean,
   ): Promise<TranslatedMangaPage | null> {
-    const translation = this.#queue.then(async () => {
-      if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
-      await this.#engineTermination;
-      if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
-      const page = await this.#getEngine().translate(image.source, {
-        pageIndex,
-        width: image.width,
-        height: image.height,
-      });
-      if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
-      const currentDocument = this.#documents.get(pageIndex);
-      const currentImage = currentDocument && getPageImage(currentDocument);
-      if (
-        !currentDocument ||
-        !currentImage ||
-        !isSamePageImage({ document, image }, currentDocument, currentImage)
-      ) {
-        return page;
-      }
-      this.#pages.set(pageIndex, { document: currentDocument, image: currentImage, page });
-      this.#onPageTranslated?.(page);
-      return page;
+    let resolveTranslation!: (page: TranslatedMangaPage | null) => void;
+    let rejectTranslation!: (error: unknown) => void;
+    const translation = new Promise<TranslatedMangaPage | null>((resolve, reject) => {
+      resolveTranslation = resolve;
+      rejectTranslation = reject;
     });
-    const pendingPage = { document, image, promise: translation };
+    const task: MangaQueueTask = {
+      run: async () => {
+        if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
+        await this.#engineTermination;
+        if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
+        const page = await this.#getEngine().translate(image.source, {
+          pageIndex,
+          width: image.width,
+          height: image.height,
+        });
+        if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
+        const currentDocument = this.#documents.get(pageIndex);
+        const currentImage = currentDocument && getPageImage(currentDocument);
+        if (
+          !currentDocument ||
+          !currentImage ||
+          !isSamePageImage({ document, image }, currentDocument, currentImage)
+        ) {
+          return page;
+        }
+        this.#pages.set(pageIndex, { document: currentDocument, image: currentImage, page });
+        this.#onPageTranslated?.(page);
+        return page;
+      },
+      resolve: resolveTranslation,
+      reject: rejectTranslation,
+    };
+    const pendingPage = { document, image, promise: translation, task };
     this.#pending.set(pageIndex, pendingPage);
-    this.#queue = translation.then(
-      () => undefined,
-      () => undefined,
-    );
+    if (priority) this.#queue.unshift(task);
+    else this.#queue.push(task);
+    void this.#drainQueue();
     const clearPending = () => {
       if (this.#pending.get(pageIndex) === pendingPage) this.#pending.delete(pageIndex);
     };
     void translation.then(clearPending, clearPending);
     return translation;
+  }
+
+  #promoteTask(task: MangaQueueTask): void {
+    if (this.#runningTask === task) return;
+    const index = this.#queue.indexOf(task);
+    if (index <= 0) return;
+    this.#queue.splice(index, 1);
+    this.#queue.unshift(task);
+  }
+
+  async #drainQueue(): Promise<void> {
+    if (this.#drainingQueue) return;
+    this.#drainingQueue = true;
+    try {
+      while (this.#queue.length > 0) {
+        const task = this.#queue.shift()!;
+        this.#runningTask = task;
+        try {
+          task.resolve(await task.run());
+        } catch (error) {
+          task.reject(error);
+        } finally {
+          this.#runningTask = null;
+        }
+      }
+    } finally {
+      this.#drainingQueue = false;
+    }
+  }
+
+  #cancelQueuedTasks(): void {
+    const queuedTasks = this.#queue;
+    this.#queue = [];
+    for (const task of queuedTasks) task.resolve(null);
   }
 
   #getEngine(): MangaTranslationSessionEngine {
