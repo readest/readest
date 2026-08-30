@@ -8,6 +8,7 @@ import {
   buildChapterFootnotes,
   expandInlineFootnotes,
   extractFootnoteDefs,
+  normalizeFootnoteDefinitionIndent,
 } from './mdFootnotes';
 import { frontmatterToMetadata, parseFrontmatter } from './mdFrontmatter';
 import { sanitizeHtml } from './sanitize';
@@ -25,7 +26,7 @@ const XHTML_NS = 'http://www.w3.org/1999/xhtml';
 // annotation note renderer and the export dialog, and must not gain footnote
 // parsing as a side effect.
 const markdown = new Marked({ gfm: true }).use(markedFootnote({ prefixId: FOOTNOTE_PREFIX_ID }), {
-  hooks: { preprocess: expandInlineFootnotes },
+  hooks: { preprocess: (src) => expandInlineFootnotes(normalizeFootnoteDefinitionIndent(src)) },
 });
 
 // Minimal defaults so code blocks wrap inside the paginated column (long lines
