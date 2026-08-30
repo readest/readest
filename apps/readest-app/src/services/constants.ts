@@ -409,6 +409,9 @@ export const DEFAULT_EINK_VIEW_SETTINGS: Partial<ViewSettings> = {
   isEink: true,
   animated: false,
   volumeKeysToFlip: true,
+  // Matches the text-sm the header/footer used to hard-code in e-ink mode,
+  // so e-ink devices keep their larger chrome once the size is configurable.
+  headerFooterFontSize: 14,
 };
 
 export const DEFAULT_PARAGRAPH_MODE_CONFIG: ParagraphModeConfig = {
@@ -436,6 +439,11 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showPaginationButtons: false,
   progressStyle: 'fraction',
   referencePageCount: 0,
+
+  headerFooterFontSize: 12,
+  headerFooterTextColor: '',
+  headerFooterBackground: 'auto',
+  headerFooterBgOpacity: 0.85,
 
   animated: false,
   pageTurnStyle: 'push',
