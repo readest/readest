@@ -18,7 +18,7 @@ interface TesseractParagraph {
 }
 
 interface TesseractBlock {
-  blocktype?: string;
+  blocktype?: unknown;
   paragraphs?: readonly TesseractParagraph[];
 }
 
@@ -37,7 +37,9 @@ const isValidBox = ({ x0, y0, x1, y1 }: TesseractBoundingBox) =>
   [x0, y0, x1, y1].every(Number.isFinite) && x1 > x0 && y1 > y0;
 
 const isVerticalLine = (block: TesseractBlock, box: TesseractBoundingBox) => {
-  if (block.blocktype?.toLowerCase().includes('vertical')) return true;
+  if (typeof block.blocktype === 'string' && block.blocktype.toLowerCase().includes('vertical')) {
+    return true;
+  }
   return box.y1 - box.y0 > (box.x1 - box.x0) * 1.5;
 };
 

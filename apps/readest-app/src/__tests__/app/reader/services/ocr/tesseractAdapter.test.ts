@@ -100,6 +100,32 @@ describe('adaptTesseractPage', () => {
     expect(page.blocks[0]?.writingMode).toBe('vertical-rl');
   });
 
+  it('accepts the numeric block types returned by the Tesseract runtime', () => {
+    const page = adaptTesseractPage(
+      {
+        blocks: [
+          {
+            blocktype: 1,
+            paragraphs: [
+              {
+                lines: [
+                  {
+                    text: '縦書き',
+                    confidence: 80,
+                    bbox: { x0: 20, y0: 20, x1: 70, y1: 300 },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      { pageIndex: 0, width: 500, height: 800 },
+    );
+
+    expect(page.blocks[0]?.writingMode).toBe('vertical-rl');
+  });
+
   it('filters low-confidence, empty, non-finite, and degenerate lines', () => {
     const page = adaptTesseractPage(
       {
