@@ -199,23 +199,26 @@ export class BergamotJapaneseTranslator {
       ),
     );
 
-    const modelPromise = Promise.all([this.#getWorker(), loadBuffers]).then(async ([, buffers]) => {
-      if (this.#terminated) throw new Error('Local translator has been terminated');
-      const model = buffers[0];
-      const vocab = buffers[1];
-      const shortlist = buffers[2];
-      if (!model || !vocab || !shortlist) {
-        throw new Error('Local translation model download is incomplete');
-      }
-      await this.#call(
-        'loadTranslationModel',
-        [
-          { from: 'ja', to: 'en' },
-          { model, shortlist, vocabs: [vocab], config: {} },
-        ],
-        [model, vocab, shortlist],
-      );
-    });
+    const modelPromise = Promise.all([this.#getWorker(), loadBuffers]).then(
+      async ([worker, buffers]) => {
+        if (this.#terminated) throw new Error('Local translator has been terminated');
+        if (this.#worker !== worker) throw new Error('Local translation worker was replaced');
+        const model = buffers[0];
+        const vocab = buffers[1];
+        const shortlist = buffers[2];
+        if (!model || !vocab || !shortlist) {
+          throw new Error('Local translation model download is incomplete');
+        }
+        await this.#call(
+          'loadTranslationModel',
+          [
+            { from: 'ja', to: 'en' },
+            { model, shortlist, vocabs: [vocab], config: {} },
+          ],
+          [model, vocab, shortlist],
+        );
+      },
+    );
     this.#modelPromise = modelPromise;
     void modelPromise.catch(() => {
       if (this.#modelPromise === modelPromise && !this.#terminated) this.#modelPromise = null;
@@ -230,10 +233,10 @@ export class BergamotJapaneseTranslator {
     const worker = this.#createWorker(WORKER_URL);
     this.#worker = worker;
     worker.addEventListener('message', (event: WorkerMessageEvent | WorkerErrorEvent) =>
-      this.#handleMessage(event as WorkerMessageEvent),
+      this.#handleMessage(worker, event as WorkerMessageEvent),
     );
     worker.addEventListener('error', (event: WorkerMessageEvent | WorkerErrorEvent) =>
-      this.#handleWorkerError(event as WorkerErrorEvent),
+      this.#handleWorkerError(worker, event as WorkerErrorEvent),
     );
     const workerPromise = this.#call('initialize', [
       { cacheSize: 0, useNativeIntGemm: false },
@@ -272,7 +275,8 @@ export class BergamotJapaneseTranslator {
     });
   }
 
-  #handleMessage({ data }: WorkerMessageEvent): void {
+  #handleMessage(worker: BergamotWorker, { data }: WorkerMessageEvent): void {
+    if (worker !== this.#worker) return;
     if (typeof data.id !== 'number') return;
     const pending = this.#pending.get(data.id);
     if (!pending) return;
@@ -286,9 +290,14 @@ export class BergamotJapaneseTranslator {
     }
   }
 
-  #handleWorkerError(event: WorkerErrorEvent): void {
+  #handleWorkerError(worker: BergamotWorker, event: WorkerErrorEvent): void {
+    if (worker !== this.#worker) return;
     const error = makeWorkerError(event);
     for (const pending of this.#pending.values()) pending.reject(error);
     this.#pending.clear();
+    this.#worker = null;
+    this.#workerPromise = null;
+    this.#modelPromise = null;
+    worker.terminate();
   }
 }

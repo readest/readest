@@ -16,6 +16,7 @@ class FakeWorker {
     message: new Set<(event: MessageEvent) => void>(),
     error: new Set<(event: ErrorEvent) => void>(),
   };
+  #failed = false;
 
   constructor(private readonly autoRespond = true) {}
 
@@ -27,6 +28,7 @@ class FakeWorker {
   }
 
   postMessage(message: unknown, transfer: readonly Transferable[] = []): void {
+    if (this.#failed) throw new Error('Worker is no longer running');
     const rpcMessage = message as RpcMessage;
     this.messages.push({ message: rpcMessage, transfer });
     if (!this.autoRespond) return;
@@ -43,6 +45,13 @@ class FakeWorker {
 
   emitMessage(data: unknown): void {
     for (const listener of this.#listeners.message) listener({ data } as MessageEvent);
+  }
+
+  emitError(error: Error): void {
+    this.#failed = true;
+    for (const listener of this.#listeners.error) {
+      listener({ error, message: error.message } as ErrorEvent);
+    }
   }
 }
 
@@ -162,5 +171,26 @@ describe('BergamotJapaneseTranslator', () => {
     await expect(translation).rejects.toThrow('terminated');
     expect(worker.terminate).toHaveBeenCalledOnce();
     await expect(translator.translate(['後'])).rejects.toThrow('terminated');
+  });
+
+  it('replaces a failed worker and reloads the model on retry', async () => {
+    const firstWorker = new FakeWorker();
+    const secondWorker = new FakeWorker();
+    const createWorker = vi.fn().mockReturnValueOnce(firstWorker).mockReturnValue(secondWorker);
+    const loadAsset = vi.fn(async () => new ArrayBuffer(1));
+    const translator = new BergamotJapaneseTranslator({}, { createWorker, loadAsset });
+    await expect(translator.translate(['最初'])).resolves.toEqual(['EN:最初']);
+
+    firstWorker.emitError(new Error('worker crashed'));
+
+    await expect(translator.translate(['次'])).resolves.toEqual(['EN:次']);
+    expect(createWorker).toHaveBeenCalledTimes(2);
+    expect(loadAsset).toHaveBeenCalledTimes(6);
+    expect(firstWorker.terminate).toHaveBeenCalledOnce();
+    expect(secondWorker.messages.map(({ message }) => message.name)).toEqual([
+      'initialize',
+      'loadTranslationModel',
+      'translate',
+    ]);
   });
 });
