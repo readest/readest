@@ -131,6 +131,7 @@ const FoliateViewer: React.FC<{
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
   const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
+  const ocrLanguage = useReaderStore((s) => s.viewStates[bookKey]?.ocrLanguage ?? '');
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const { applyBackgroundTexture } = useBackgroundTexture();
@@ -160,7 +161,7 @@ const FoliateViewer: React.FC<{
     useAutoScrollSpeedGesture(autoScroll);
   const processOcrDocument = useOcrSession({
     enabled: (bookFormat === 'CBZ' || bookFormat === 'PDF') && ocrEnabled,
-    language: bookDoc.metadata.language,
+    language: ocrLanguage || bookDoc.metadata.language,
     mangaFallback: bookFormat === 'CBZ' || (bookFormat === 'PDF' && bookDoc.dir === 'rtl'),
     onProgress: ({ status, progress }) => {
       const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
@@ -201,7 +202,7 @@ const FoliateViewer: React.FC<{
 
   useEffect(() => {
     if (!ocrEnabled) ocrProgressKeyRef.current = '';
-  }, [ocrEnabled]);
+  }, [ocrEnabled, ocrLanguage]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {

@@ -39,7 +39,8 @@ const currentViewSettings = {
 
 const mockRecreateViewer = vi.fn();
 const mockSetOcrEnabled = vi.fn();
-const mockViewState = { ocrEnabled: false };
+const mockSetOcrLanguage = vi.fn();
+const mockViewState = { ocrEnabled: false, ocrLanguage: '' };
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('next/navigation', () => ({
@@ -62,6 +63,7 @@ vi.mock('@/store/readerStore', () => ({
     getProgress: () => null,
     setViewSettings: vi.fn(),
     setOcrEnabled: mockSetOcrEnabled,
+    setOcrLanguage: mockSetOcrLanguage,
     recreateViewer: mockRecreateViewer,
   }),
 }));
@@ -93,6 +95,12 @@ vi.mock('@/services/constants', () => ({
   MAX_CONTRAST: 200,
   MIN_CONTRAST: 50,
   CONTRAST_STEP: 10,
+  TRANSLATED_LANGS: {
+    en: 'English',
+    es: 'Español',
+    ja: '日本語',
+    'zh-CN': '简体中文',
+  },
 }));
 vi.mock('@/utils/style', () => ({ getStyles: vi.fn() }));
 vi.mock('@/utils/nav', () => ({ navigateToLogin: vi.fn() }));
@@ -198,5 +206,15 @@ describe('ViewMenu OCR toggle', () => {
     fireEvent.click(screen.getByText('Recognize Text'));
 
     expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
+  });
+
+  it('sets a session-only OCR language override', () => {
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Text Language' }), {
+      target: { value: 'es' },
+    });
+
+    expect(mockSetOcrLanguage).toHaveBeenCalledWith('book-1', 'es');
   });
 });
