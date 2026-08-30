@@ -26,6 +26,9 @@ const MINIMUM_OCR_LONG_EDGE = 1800;
 const MAXIMUM_OCR_SCALE = 3;
 const MAXIMUM_OCR_PIXELS = 3_000_000;
 
+const scaleImageDimension = (value: number, scale: number): number =>
+  Math.max(1, scale < 1 ? Math.floor(value * scale) : Math.round(value * scale));
+
 export interface OcrEngineProgress {
   status: string;
   progress: number;
@@ -123,11 +126,11 @@ const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
   const pixelCount = width * height;
   if (longEdge <= 0 || pixelCount <= 0) return { image, page };
 
-  const detailScale = MINIMUM_OCR_LONG_EDGE / longEdge;
+  const detailScale = longEdge < MINIMUM_OCR_LONG_EDGE ? MINIMUM_OCR_LONG_EDGE / longEdge : 1;
   const pixelScale = Math.sqrt(MAXIMUM_OCR_PIXELS / pixelCount);
-  const scale = Math.max(1, Math.min(MAXIMUM_OCR_SCALE, detailScale, pixelScale));
-  const targetWidth = Math.round(width * scale);
-  const targetHeight = Math.round(height * scale);
+  const scale = Math.min(MAXIMUM_OCR_SCALE, detailScale, pixelScale);
+  const targetWidth = scaleImageDimension(width, scale);
+  const targetHeight = scaleImageDimension(height, scale);
   if (targetWidth === width && targetHeight === height) return { image, page };
 
   const canvasDocument =
@@ -178,8 +181,8 @@ const prepareMangaImage = async (
   }
 
   const scale = getMangaScale(loaded.width, loaded.height);
-  const targetWidth = Math.max(1, Math.round(loaded.width * scale));
-  const targetHeight = Math.max(1, Math.round(loaded.height * scale));
+  const targetWidth = scaleImageDimension(loaded.width, scale);
+  const targetHeight = scaleImageDimension(loaded.height, scale);
   if (canvasSource && targetWidth === loaded.width && targetHeight === loaded.height) {
     return { image: canvasSource, page: { ...page, width: targetWidth, height: targetHeight } };
   }

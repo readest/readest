@@ -193,8 +193,8 @@ describe('TesseractOcrEngine', () => {
 
   it('keeps an already detailed canvas at its source resolution', async () => {
     const source = document.createElement('canvas');
-    source.width = 1600;
-    source.height = 2400;
+    source.width = 1200;
+    source.height = 1800;
     const worker = makeWorker();
     const engine = new TesseractOcrEngine(
       {},
@@ -208,7 +208,36 @@ describe('TesseractOcrEngine', () => {
     });
 
     expect(worker.recognize).toHaveBeenCalledWith(source, {}, { text: true, blocks: true });
-    expect(page).toMatchObject({ width: 1600, height: 2400 });
+    expect(page).toMatchObject({ width: 1200, height: 1800 });
+  });
+
+  it('downscales an oversized canvas before recognition', async () => {
+    const source = document.createElement('canvas');
+    source.width = 8000;
+    source.height = 12_000;
+    const drawImage = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage,
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D);
+    const worker = makeWorker();
+    const engine = new TesseractOcrEngine(
+      {},
+      vi.fn(async () => worker),
+    );
+
+    const page = await engine.recognize(source, {
+      pageIndex: 6,
+      width: source.width,
+      height: source.height,
+    });
+
+    const prepared = vi.mocked(worker.recognize).mock.calls[0]?.[0] as HTMLCanvasElement;
+    expect(prepared).not.toBe(source);
+    expect(prepared.width * prepared.height).toBeLessThanOrEqual(3_000_000);
+    expect(drawImage).toHaveBeenCalledWith(source, 0, 0, prepared.width, prepared.height);
+    expect(page).toMatchObject({ width: prepared.width, height: prepared.height });
   });
 
   it('detects manga bubbles and recognizes their text boxes with matching segmentation', async () => {
