@@ -68,6 +68,9 @@ describe('mangaTranslationLayer browser layout', () => {
     expect(textRect.bottom).toBeLessThanOrEqual(bubbleRect.bottom + tolerance);
     expect(win.getComputedStyle(layer).pointerEvents).toBe('none');
     expect(win.getComputedStyle(bubble).pointerEvents).toBe('none');
+    for (const element of [layer, ...layer.querySelectorAll<HTMLElement>('*')]) {
+      expect(win.getComputedStyle(element).pointerEvents).toBe('none');
+    }
     expect(win.getComputedStyle(bubble).userSelect).toBe('none');
     expect(layer.getAttribute('aria-hidden')).toBe('true');
   });
