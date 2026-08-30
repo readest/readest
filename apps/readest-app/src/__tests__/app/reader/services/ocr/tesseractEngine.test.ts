@@ -3,6 +3,7 @@ import { OEM, PSM } from 'tesseract.js';
 
 import {
   TesseractOcrEngine,
+  type MangaTextDetectorFactory,
   type TesseractWorker,
   type TesseractWorkerFactory,
 } from '@/app/reader/services/ocr/tesseractEngine';
@@ -187,6 +188,108 @@ describe('TesseractOcrEngine', () => {
 
     expect(worker.recognize).toHaveBeenCalledWith(source, {}, { text: true, blocks: true });
     expect(page).toMatchObject({ width: 1600, height: 2400 });
+  });
+
+  it('detects manga bubbles and recognizes their text boxes with matching segmentation', async () => {
+    const source = document.createElement('canvas');
+    source.width = 1200;
+    source.height = 1800;
+    const worker = makeWorker();
+    vi.mocked(worker.recognize)
+      .mockResolvedValueOnce({ data: { text: '右', confidence: 90 } })
+      .mockResolvedValueOnce({ data: { text: '左', confidence: 80 } });
+    const detector = {
+      detect: vi.fn(async () => [
+        {
+          id: 'manga-bubble-0',
+          score: 0.94,
+          bubbleBox: { xMin: 80, yMin: 100, xMax: 420, yMax: 620 },
+          textBoxes: [
+            { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
+            { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
+          ],
+          writingMode: 'vertical-rl' as const,
+        },
+      ]),
+      terminate: vi.fn(async () => undefined),
+    };
+    const createDetector = vi.fn<MangaTextDetectorFactory>(() => detector);
+    const engine = new TesseractOcrEngine(
+      { languages: ['jpn_vert'], mangaMode: true },
+      vi.fn(async () => worker),
+      createDetector,
+    );
+
+    const page = await engine.recognize(source, {
+      pageIndex: 7,
+      width: source.width,
+      height: source.height,
+    });
+
+    expect(createDetector).toHaveBeenCalledOnce();
+    expect(detector.detect).toHaveBeenCalledWith(source, {
+      width: 1200,
+      height: 1800,
+    });
+    expect(worker.recognize).toHaveBeenNthCalledWith(
+      1,
+      source,
+      { rectangle: { left: 260, top: 160, width: 100, height: 340 } },
+      { text: true, blocks: false },
+    );
+    expect(worker.recognize).toHaveBeenNthCalledWith(
+      2,
+      source,
+      { rectangle: { left: 120, top: 180, width: 100, height: 300 } },
+      { text: true, blocks: false },
+    );
+    expect(worker.setParameters).toHaveBeenNthCalledWith(2, {
+      tessedit_pageseg_mode: PSM.SINGLE_BLOCK_VERT_TEXT,
+      preserve_interword_spaces: '1',
+    });
+    expect(page.blocks).toEqual([
+      {
+        id: 'manga-bubble-0',
+        text: '右\n左',
+        confidence: 85,
+        box: { xMin: 120, yMin: 160, xMax: 360, yMax: 500 },
+        bubbleBox: { xMin: 80, yMin: 100, xMax: 420, yMax: 620 },
+        maskBoxes: [
+          { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
+          { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
+        ],
+        writingMode: 'vertical-rl',
+      },
+    ]);
+
+    await engine.terminate();
+    expect(worker.terminate).toHaveBeenCalledOnce();
+    expect(detector.terminate).toHaveBeenCalledOnce();
+  });
+
+  it('falls back to whole-page OCR when the manga detector finds no bubbles', async () => {
+    const source = document.createElement('canvas');
+    source.width = 1200;
+    source.height = 1800;
+    const worker = makeWorker();
+    const detector = {
+      detect: vi.fn(async () => []),
+      terminate: vi.fn(async () => undefined),
+    };
+    const engine = new TesseractOcrEngine(
+      { mangaMode: true },
+      vi.fn(async () => worker),
+      () => detector,
+    );
+
+    const page = await engine.recognize(source, {
+      pageIndex: 2,
+      width: source.width,
+      height: source.height,
+    });
+
+    expect(worker.recognize).toHaveBeenCalledWith(source, {}, { text: true, blocks: true });
+    expect(page.blocks[0]?.text).toBe('recognized text');
   });
 
   it('terminates a worker that fails during parameter setup', async () => {
