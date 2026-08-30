@@ -1,87 +1,463 @@
-# Fork release flow: tag a version (or dispatch manually) and get a GitHub
-# Release with the Windows installer + Android APK attached.
+# Build and publish a fork release from one frozen main commit.
 #
-#   git tag v0.12.6.1 && git push origin v0.12.6.1
-#
-# Versioning scheme (owner decision): the first three segments mirror the
-# upstream base (0.12.6) and the fourth counts fork releases on that base
-# (0.12.6.1, 0.12.6.2, ...); syncing upstream to 0.12.7 resets to 0.12.7.1.
-# The tag (v0.12.6.1) yields the stamped build version (0.12.6.1) and a
-# monotonic Android versionCode computed by the build workflow.
-
-name: Fork Release
+# The resolve job checks out main first and freezes its commit. Windows,
+# Android, and the GitHub release all use that same commit, even if main moves
+# while the long-running builds are in progress.
+name: Release
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, e.g. v0.12.6.1'
+        description: 'Release tag, e.g. v0.12.6.9'
         required: true
         type: string
       android_abi:
-        description: 'Android ABI: aarch64 (fast, real devices) or all (universal 4-ABI)'
-        type: string
-        default: 'aarch64'
-  push:
-    tags: ['v*']
+        description: 'Android ABI'
+        type: choice
+        options:
+          - aarch64
+          - all
+        default: aarch64
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-main
   cancel-in-progress: false
 
 jobs:
   resolve:
+    name: Resolve release commit
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
       version: ${{ steps.resolve.outputs.version }}
+      version_code: ${{ steps.resolve.outputs.version_code }}
+      main_sha: ${{ steps.resolve.outputs.main_sha }}
     steps:
-      - name: resolve tag and version
-        id: resolve
+      - name: require main dispatch ref
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+        shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag="${{ inputs.tag }}"
-          else
-            tag="${GITHUB_REF_NAME}"
+          set -euo pipefail
+          if [ "$DISPATCH_REF" != "refs/heads/main" ]; then
+            echo "::error::Release workflow must be dispatched from the main branch."
+            exit 1
           fi
-          version="${tag#v}"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-  build:
+      - name: checkout main to freeze release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: validate tag and resolve version
+        id: resolve
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag must match vMAJOR.MINOR.PATCH.FORK, for example v0.12.6.9"
+            exit 1
+          fi
+          version="${RELEASE_TAG#v}"
+          package_version="$(node -p "require('./apps/readest-app/package.json').version")"
+          version_code="$(VERSION="$version" PACKAGE_VERSION="$package_version" node <<'NODE'
+          const version = process.env.VERSION;
+          const packageVersion = process.env.PACKAGE_VERSION;
+          const parts = version.split('.');
+          const packageParts = packageVersion.split('.');
+          if (!/^\d+\.\d+\.\d+$/.test(packageVersion) || packageParts.length !== 3) {
+            throw new Error(`Invalid package version: ${packageVersion}`);
+          }
+          if (parts.slice(0, 3).join('.') !== packageVersion) {
+            throw new Error(`Tag ${version} must match package version ${packageVersion} in its first three segments`);
+          }
+          const [major, minor, patch, fork] = parts.map(Number);
+          if (![major, minor, patch, fork].every(Number.isSafeInteger)) {
+            throw new Error('Version segments must be safe integers');
+          }
+          if (minor < 0 || minor > 99 || patch < 0 || patch > 99 || fork < 0 || fork > 999) {
+            throw new Error('Version ranges are minor 0..99, patch 0..99, fork 0..999');
+          }
+          const versionCode = major * 10000000 + minor * 100000 + patch * 1000 + fork;
+          if (!Number.isSafeInteger(versionCode) || versionCode < 1 || versionCode > 2100000000) {
+            throw new Error(`Unsafe Android versionCode: ${versionCode}`);
+          }
+          process.stdout.write(String(versionCode));
+          NODE
+          )"
+          main_sha="$(git rev-parse HEAD)"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
+          echo "main_sha=$main_sha" >> "$GITHUB_OUTPUT"
+          echo "tag=$RELEASE_TAG"
+          echo "version=$version"
+          echo "version_code=$version_code"
+          echo "package_version=$package_version"
+          echo "main_sha=$main_sha"
+
+  windows:
     needs: resolve
-    uses: ./.github/workflows/build-win-android.yml
-    with:
-      build_windows: true
-      build_android: true
-      android_abi: ${{ github.event_name == 'workflow_dispatch' && inputs.android_abi || 'aarch64' }}
-      version_override: ${{ needs.resolve.outputs.version }}
-    # Repo secrets (the Android signing keystore) are NOT visible to a called
-    # workflow unless explicitly forwarded.
-    secrets: inherit
+    name: Windows x64 (NSIS)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.main_sha }}
+          submodules: recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: install Rust stable (MSVC)
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: fork-windows-x86_64-cargo
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: create .env.local for Next.js
+        shell: bash
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_POSTHOG_KEY=
+          NEXT_PUBLIC_SUPABASE_URL=
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=
+          SENTRY_DSN=
+          EOF
+          cp .env.local apps/readest-app/.env.local
+
+      - name: resolve versions
+        shell: bash
+        env:
+          NAME_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          # version remains upstream-valid for Tauri config; name_version
+          # carries the four-segment fork version in artifact names.
+          version=$(node -p "require('./apps/readest-app/package.json').version")
+          name_version="$NAME_VERSION"
+          echo "version=$version" >> "$GITHUB_ENV"
+          echo "name_version=$name_version" >> "$GITHUB_ENV"
+
+      - name: generate throwaway updater signing key (safety net)
+        id: updater-key
+        shell: bash
+        run: |
+          # tauri.fork.conf.json disables updater artifacts, so this key should
+          # never be used. Export both v2 and legacy names as a safety net.
+          pnpm tauri signer generate -w "$RUNNER_TEMP/updater.key" --password "" --force
+          echo "private_key=$(cat "$RUNNER_TEMP/updater.key")" >> "$GITHUB_OUTPUT"
+
+      - name: build Windows installer (NSIS, updater disabled)
+        shell: bash
+        timeout-minutes: 60
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ steps.updater-key.outputs.private_key }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          TAURI_PRIVATE_KEY: ${{ steps.updater-key.outputs.private_key }}
+          TAURI_PRIVATE_KEY_PASSWORD: ''
+        run: |
+          cd apps/readest-app
+          pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis \
+            --config src-tauri/tauri.fork.conf.json
+
+      - name: collect artifacts
+        shell: bash
+        run: |
+          mkdir -p fork-out
+          src="target/x86_64-pc-windows-msvc/release/bundle/nsis/Readest_${{ env.version }}_x64-setup.exe"
+          cp "$src" "fork-out/Readest_${{ env.name_version }}_x64-setup.exe"
+
+      - name: upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Readest_${{ env.name_version }}_windows_x64
+          path: fork-out/
+          if-no-files-found: error
+
+  android:
+    needs: resolve
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.main_sha }}
+          submodules: recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: setup Java 17 (Android build)
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: setup Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+
+      - name: install NDK
+        run: sdkmanager "ndk;28.2.13676358"
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: install Rust stable (Android targets)
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: fork-android-cargo
+
+      - name: create .env.local for Next.js
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_POSTHOG_KEY=
+          NEXT_PUBLIC_SUPABASE_URL=
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=
+          SENTRY_DSN=
+          EOF
+          cp .env.local apps/readest-app/.env.local
+
+      - name: resolve versions
+        shell: bash
+        env:
+          NAME_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          # Keep package.json at the upstream-valid version; use the fork
+          # version in artifact names and Android versionCode.
+          version=$(node -p "require('./apps/readest-app/package.json').version")
+          name_version="$NAME_VERSION"
+          echo "version=$version" >> "$GITHUB_ENV"
+          echo "name_version=$name_version" >> "$GITHUB_ENV"
+
+      - name: regenerate android scaffolding
+        run: |
+          cd apps/readest-app
+          rm -rf src-tauri/gen/android
+          pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+          git checkout .
+
+      - name: stamp fork android versionCode
+        shell: bash
+        env:
+          VERSION_CODE: ${{ needs.resolve.outputs.version_code }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const versionCode = Number(process.env.VERSION_CODE);
+            if (!Number.isSafeInteger(versionCode) || versionCode < 1 || versionCode > 2100000000) {
+              throw new Error('Invalid resolved Android versionCode');
+            }
+            const confPath = 'apps/readest-app/src-tauri/tauri.fork.conf.json';
+            const conf = JSON.parse(fs.readFileSync(confPath, 'utf8'));
+            conf.bundle = conf.bundle || {};
+            conf.bundle.android = conf.bundle.android || {};
+            conf.bundle.android.versionCode = versionCode;
+            fs.writeFileSync(confPath, JSON.stringify(conf, null, 2) + '\n');
+            console.log('android versionCode', versionCode);
+          "
+
+      - name: write signing keystore from secrets
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEY_BASE64" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "::error::Missing ANDROID_KEY_BASE64 / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD secrets."
+            echo "::error::The keystore must be stable across runs (same signature = overwrite-install). Never generate one per run."
+            exit 1
+          fi
+          base64 -d <<< "$ANDROID_KEY_BASE64" > "$RUNNER_TEMP/keystore.jks"
+          cd apps/readest-app/src-tauri/gen/android
+          cat > keystore.properties <<EOF
+          keyAlias=$ANDROID_KEY_ALIAS
+          password=$ANDROID_KEY_PASSWORD
+          storeFile=$RUNNER_TEMP/keystore.jks
+          EOF
+
+      - name: build Android APK
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: |
+          cd apps/readest-app
+          if [ "${{ inputs.android_abi }}" = "all" ]; then
+            pnpm tauri android build --config src-tauri/tauri.fork.conf.json
+          else
+            pnpm tauri android build -t aarch64 --config src-tauri/tauri.fork.conf.json
+          fi
+          # The Android bundler does not create updater artifacts.
+
+      - name: collect artifacts
+        run: |
+          mkdir -p fork-out
+          if [ "${{ inputs.android_abi }}" = "all" ]; then
+            name="Readest_${{ env.name_version }}_universal.apk"
+          else
+            name="Readest_${{ env.name_version }}_arm64.apk"
+          fi
+          outdir=apps/readest-app/src-tauri/gen/android/app/build/outputs/apk/universal/release
+          if [ -f "$outdir/app-universal-release.apk" ]; then
+            cp "$outdir/app-universal-release.apk" "fork-out/$name"
+          else
+            apk=$(find apps/readest-app/src-tauri/gen/android/app/build/outputs/apk -name '*-release.apk' | head -1)
+            echo "Falling back to $apk"
+            cp "$apk" "fork-out/$name"
+          fi
+
+      - name: upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Readest_${{ env.name_version }}_android_${{ inputs.android_abi }}
+          path: fork-out/
+          if-no-files-found: error
 
   release:
-    needs: [resolve, build]
+    needs: [resolve, windows, android]
+    name: Publish release
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           merge-multiple: true
           path: dist
+
       - name: publish release with assets
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.resolve.outputs.tag }}
+          MAIN_SHA: ${{ needs.resolve.outputs.main_sha }}
+        shell: bash
         run: |
+          set -euo pipefail
           ls -la dist/
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
-          else
-            gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes
-          fi
+
+          api_get() {
+            local url="$1" body="$2" status
+            if ! status="$(curl -sS \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' \
+              -o "$body" -w '%{http_code}' "$url")"; then
+              echo "::error::GitHub API request failed: $url" >&2
+              return 1
+            fi
+            printf '%s' "$status"
+          }
+
+          tag_sha=''
+          tag_body="$(mktemp)"
+          release_body="$(mktemp)"
+          trap 'rm -f "$tag_body" "$release_body"' EXIT
+          tag_status="$(api_get "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" "$tag_body")" || exit 1
+          case "$tag_status" in
+            200)
+              object_sha="$(jq -er '.object.sha' "$tag_body")" || { echo "::error::Invalid tag API response."; exit 1; }
+              object_type="$(jq -er '.object.type' "$tag_body")" || { echo "::error::Invalid tag API response."; exit 1; }
+              for depth in 0 1 2 3 4; do
+                if [ "$object_type" = "commit" ]; then
+                  tag_sha="$object_sha"
+                  break
+                fi
+                if [ "$object_type" != "tag" ]; then
+                  echo "::error::Tag resolves to unsupported Git object type: $object_type"
+                  exit 1
+                fi
+                tag_status="$(api_get "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/tags/${object_sha}" "$tag_body")" || exit 1
+                if [ "$tag_status" != "200" ]; then
+                  echo "::error::Annotated tag dereference returned HTTP $tag_status."
+                  exit 1
+                fi
+                object_sha="$(jq -er '.object.sha' "$tag_body")" || { echo "::error::Invalid annotated tag response."; exit 1; }
+                object_type="$(jq -er '.object.type' "$tag_body")" || { echo "::error::Invalid annotated tag response."; exit 1; }
+              done
+              if [ -z "$tag_sha" ]; then
+                echo "::error::Annotated tag chain exceeded maximum depth."
+                exit 1
+              fi
+              echo "tag_commit=$tag_sha"
+              if [ "$tag_sha" != "$MAIN_SHA" ]; then
+                echo "::error::Tag $TAG points to $tag_sha, but the frozen main SHA is $MAIN_SHA."
+                exit 1
+              fi
+              ;;
+            404)
+              echo "Tag $TAG does not exist yet; a new release will create it at $MAIN_SHA."
+              ;;
+            *)
+              echo "::error::Unexpected HTTP $tag_status while resolving tag $TAG."
+              exit 1
+              ;;
+          esac
+          release_status="$(api_get "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" "$release_body")" || exit 1
+          case "$release_status" in
+            200)
+              if [ -z "$tag_sha" ]; then
+                echo "::error::Release $TAG exists but its tag could not be resolved."
+                exit 1
+              fi
+              release_target="$(jq -er '.target_commitish' "$release_body")" || {
+                echo "::error::Invalid release API response."
+                exit 1
+              }
+              if [ "$release_target" != "$MAIN_SHA" ]; then
+                echo "::error::Release $TAG targets $release_target, but the frozen main SHA is $MAIN_SHA."
+                exit 1
+              fi
+              gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+              ;;
+            404)
+              gh release create "$TAG" dist/* \
+                --repo "$GITHUB_REPOSITORY" \
+                --target "$MAIN_SHA" \
+                --title "$TAG" \
+                --generate-notes
+              ;;
+            *)
+              echo "::error::Unexpected HTTP $release_status while resolving release $TAG."
+              exit 1
+              ;;
+          esac
