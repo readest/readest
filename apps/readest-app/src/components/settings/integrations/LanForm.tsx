@@ -1,12 +1,13 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
+import { MdContentCopy, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { discoverLanPeers, type DiscoveredLanPeer } from '@/services/lanSync/discovery';
 import { setMulticastLock } from '@/utils/bridge';
+import { writeTextToClipboard } from '@/utils/clipboard';
 import { eventDispatcher } from '@/utils/event';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { lanSyncPing } from '@/services/sync/providers/lan/LanSyncProvider';
@@ -340,6 +341,17 @@ const LanForm: React.FC = () => {
     enabled: boolean,
     mutate: (settings: SystemSettings) => SystemSettings = (s) => s,
   ): Promise<SystemSettings> => persistCloudProviderEnabled(envConfig, 'lan', enabled, mutate);
+
+  const copyPairingToken = async () => {
+    const value = stored?.token?.trim();
+    if (!value) return;
+    if (await writeTextToClipboard(value)) {
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Copied to clipboard'),
+      });
+    }
+  };
 
   const handleDiscover = async () => {
     if (!isTauri || isDiscovering || isConnecting) return;
@@ -974,22 +986,36 @@ const LanForm: React.FC = () => {
                 }
                 description={_('Same token on both devices')}
               >
-                <button
-                  type='button'
-                  onClick={() => setShowToken((value) => !value)}
-                  className={clsx(
-                    'text-base-content/60 hover:text-base-content shrink-0 rounded-sm',
-                    'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
-                  )}
-                  aria-label={showToken ? _('Hide password') : _('Show password')}
-                  title={showToken ? _('Hide password') : _('Show password')}
-                >
-                  {showToken ? (
-                    <MdVisibilityOff className='h-5 w-5' />
-                  ) : (
-                    <MdVisibility className='h-5 w-5' />
-                  )}
-                </button>
+                <div className='flex shrink-0 items-center gap-1'>
+                  <button
+                    type='button'
+                    onClick={() => void copyPairingToken()}
+                    className={clsx(
+                      'text-base-content/60 hover:text-base-content flex h-9 w-9 items-center justify-center rounded-sm',
+                      'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
+                    )}
+                    aria-label={_('Copy')}
+                    title={_('Copy')}
+                  >
+                    <MdContentCopy className='h-5 w-5' />
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => setShowToken((value) => !value)}
+                    className={clsx(
+                      'text-base-content/60 hover:text-base-content flex h-9 w-9 items-center justify-center rounded-sm',
+                      'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
+                    )}
+                    aria-label={showToken ? _('Hide password') : _('Show password')}
+                    title={showToken ? _('Hide password') : _('Show password')}
+                  >
+                    {showToken ? (
+                      <MdVisibilityOff className='h-5 w-5' />
+                    ) : (
+                      <MdVisibility className='h-5 w-5' />
+                    )}
+                  </button>
+                </div>
               </SettingsRow>
             </BoxedList>
           )}
