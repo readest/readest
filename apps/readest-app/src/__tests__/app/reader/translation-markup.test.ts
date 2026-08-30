@@ -46,6 +46,16 @@ describe('extractSourcePayload', () => {
     expect(payload.text).not.toContain('译文');
   });
 
+  it('never sends visual manga translations back to the translator', () => {
+    const source = el('Original manga text.');
+    const layer = document.createElement('div');
+    layer.setAttribute('data-readest-manga-translation-layer', '');
+    layer.textContent = 'Translated bubble';
+    source.append(layer);
+
+    expect(extractSourcePayload(source).text).toBe('Original manga text.');
+  });
+
   it('drops a11y skip links', () => {
     const source = el('Real prose.<span cfi-inert="">Skip to next section</span>');
     expect(extractSourcePayload(source).text).toBe('Real prose.');

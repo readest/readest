@@ -1,4 +1,5 @@
 import { INLINE_FORMATTING_TAGS, isInlineFormattingTag } from '@/utils/inlineTags';
+import { MANGA_TRANSLATION_LAYER_SELECTOR } from '@/app/reader/utils/mangaTranslationLayer';
 
 /**
  * Carrying a paragraph's inline formatting through translation (#1582).
@@ -25,7 +26,7 @@ const PRESERVABLE_ATTRS = ['class', 'href', 'lang', 'dir'] as const;
  * a11y skip links, and WordLens ruby glosses. It must never be fed to the
  * translator (a gloss would come back translated as if it were prose).
  */
-const INJECTED_SELECTOR = '.translation-target, [cfi-inert]';
+const INJECTED_SELECTOR = `.translation-target, [cfi-inert], ${MANGA_TRANSLATION_LAYER_SELECTOR}`;
 const GLOSS_SELECTOR = 'ruby.wl-gloss, .wl-gloss';
 
 export interface SourcePayload {
