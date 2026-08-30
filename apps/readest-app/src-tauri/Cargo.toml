@@ -33,8 +33,8 @@ minisign-verify = "0.2"
 log = "0.4"
 thiserror = "2"
 walkdir = "2"
-tokio = { version = "1", features = ["fs", "net", "sync", "time"] }
-tokio-util = { version = "0.7", features = ["codec", "rt"] }
+tokio = { version = "1", features = ["fs", "io-util", "net", "sync", "time"] }
+tokio-util = { version = "0.7", features = ["codec", "io", "rt"] }
 # LAN sync peer server (src/lan_sync/). Already in the dependency tree via
 # localsend, so this resolves to the same 0.8.x build — near-zero added cost.
 axum = "0.8"

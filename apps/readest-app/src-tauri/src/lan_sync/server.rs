@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
-use axum::body::{Body, Bytes};
+use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Path as AxumPath, Request, State};
 use axum::http::{header, HeaderValue, Method, StatusCode};
 use axum::middleware::{self, Next};
@@ -25,6 +25,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
 use serde_json::json;
+use tokio::io::AsyncWriteExt;
+use tokio_util::io::ReaderStream;
 
 /// Upper bound for one request body (book binaries ride PUTs). Axum's default
 /// is 2 MiB, which silently 413-rejects nearly every real book; 2 GiB leaves
@@ -192,18 +194,31 @@ async fn read_file(
         Ok(None) => return bad_request("invalid path"),
         Err(e) => return internal_error(e),
     };
-    match tokio::fs::metadata(&full).await {
-        Ok(meta) if meta.is_file() => match tokio::fs::read(&full).await {
-            Ok(bytes) => with_cors((
-                [(header::CONTENT_TYPE, "application/octet-stream")],
-                bytes,
-            )
-                .into_response()),
-            Err(e) => internal_error(e),
-        },
-        Ok(_) => not_found(),
-        Err(_) => not_found(),
-    }
+    // Stream from disk instead of reading the whole file into memory: book
+    // binaries are large, and this handler runs in the same native process
+    // as the webview (a buffered 100 MB read starves the UI on phones).
+    // Content-Length is set explicitly — the peer's download progress bar
+    // derives from it.
+    let file = match tokio::fs::File::open(&full).await {
+        Ok(file) => file,
+        Err(_) => return not_found(),
+    };
+    let meta = match file.metadata().await {
+        Ok(meta) if meta.is_file() => meta,
+        _ => return not_found(),
+    };
+    let size = meta.len();
+    let etag = etag_for(&meta);
+    let stream = ReaderStream::with_capacity(file, 64 * 1024);
+    with_cors(
+        Response::builder()
+            .status(StatusCode::OK)
+            .header(header::CONTENT_LENGTH, size)
+            .header(header::CONTENT_TYPE, "application/octet-stream")
+            .header(header::ETAG, etag)
+            .body(Body::from_stream(stream))
+            .expect("static read response"),
+    )
 }
 
 async fn head_file(
@@ -234,10 +249,35 @@ async fn head_file(
     }
 }
 
+/// Best-effort removal of a `.part` temp file when a streaming write is
+/// abandoned (handler error, or the future dropped mid-transfer because the
+/// peer disconnected — Drop can't await, so the cleanup is spawned).
+struct PartFileGuard {
+    path: PathBuf,
+    armed: bool,
+}
+
+impl PartFileGuard {
+    fn disarm(&mut self) {
+        self.armed = false;
+    }
+}
+
+impl Drop for PartFileGuard {
+    fn drop(&mut self) {
+        if self.armed {
+            let path = self.path.clone();
+            tokio::spawn(async move {
+                let _ = tokio::fs::remove_file(&path).await;
+            });
+        }
+    }
+}
+
 async fn write_file(
     State(state): State<Arc<ServerState>>,
     AxumPath(path): AxumPath<String>,
-    body: Bytes,
+    body: Body,
 ) -> Response {
     let full = match checked_join(&state.root, &path).await {
         Ok(Some(full)) => full,
@@ -250,8 +290,53 @@ async fn write_file(
             return internal_error(e);
         }
     }
-    match tokio::fs::write(&full, body).await {
-        Ok(()) => with_cors(StatusCode::NO_CONTENT.into_response()),
+    // Stream the request body to a same-directory `.part` temp file and rename
+    // atomically on completion. Buffering the whole body first (the previous
+    // implementation) spiked to ~2x the file size in RAM and starved the UI on
+    // phones; streaming keeps memory O(chunk). A connection that dies
+    // mid-transfer leaves no truncated book behind for the discovery scan to
+    // mistake for a complete upload (the engine skips `.part` names anyway).
+    let mut part_os = full.clone().into_os_string();
+    part_os.push(".part");
+    let part_path = PathBuf::from(part_os);
+
+    let file = match tokio::fs::File::create(&part_path).await {
+        Ok(file) => file,
+        Err(e) => return internal_error(e),
+    };
+    let mut guard = PartFileGuard {
+        path: part_path.clone(),
+        armed: true,
+    };
+    let mut writer = tokio::io::BufWriter::new(file);
+    let mut stream = body.into_data_stream();
+    while let Some(frame) = stream.frame().await {
+        let frame = match frame {
+            Ok(frame) => frame,
+            Err(_) => {
+                // Peer disconnected mid-upload; the guard removes the temp file.
+                return with_cors(internal_error(std::io::Error::new(
+                    std::io::ErrorKind::ConnectionAborted,
+                    "peer disconnected mid-upload",
+                )));
+            }
+        };
+        let Ok(bytes) = frame.into_data() else {
+            continue; // trailer frame — nothing to persist
+        };
+        if let Err(e) = writer.write_all(&bytes).await {
+            return internal_error(e);
+        }
+    }
+    if let Err(e) = writer.flush().await {
+        return internal_error(e);
+    }
+    drop(writer); // release the handle before renaming (Windows)
+    match tokio::fs::rename(&part_path, &full).await {
+        Ok(()) => {
+            guard.disarm();
+            with_cors(StatusCode::NO_CONTENT.into_response())
+        }
         Err(e) => internal_error(e),
     }
 }
