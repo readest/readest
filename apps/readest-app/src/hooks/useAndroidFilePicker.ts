@@ -63,14 +63,17 @@ export function useAndroidPickedBooks(
         const books = files.filter(({ name }) => hasAllowedExtension(name, extensions));
         if (books.length > 0) {
           onPickedBooksRef.current(books);
-        } else {
-          // Dropping every pick used to be completely silent, so an
-          // unsupported (or oddly named) file looked like the import button
-          // doing nothing at all (issue #5959).
+        }
+        // Files the whitelist drops used to vanish without a trace, so an
+        // unsupported (or oddly named) pick looked like the import button doing
+        // nothing at all (issue #5959). Name them, whether or not anything else
+        // in the same pick made it through.
+        if (books.length < files.length) {
+          const skipped = files.filter((file) => !books.includes(file));
           eventDispatcher.dispatch('toast', {
             type: 'error',
             message: _ref.current('Failed to import book(s): {{filenames}}', {
-              filenames: files.map(({ name, path }) => name || path).join(', '),
+              filenames: skipped.map(({ name, path }) => name || path).join(', '),
             }),
             timeout: 5000,
           });

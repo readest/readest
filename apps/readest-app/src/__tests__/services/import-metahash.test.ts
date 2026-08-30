@@ -1197,6 +1197,101 @@ describe('importBook volatile-identifier dedup (issue #5959)', () => {
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
   });
 
+  // The reporter of #5959 had set their own cover art on the book. The merge
+  // re-keys the row to the incoming file's hash directory and retires the old
+  // one, so a cover the user chose has to travel with it.
+  it('carries a cover the user chose across the merge', async () => {
+    const existingBook = makeBook({
+      hash: 'old-file-hash',
+      title: AO3_TITLE,
+      author: 'KicsterAsh',
+      metaHash: getMetadataHash(OLD_METADATA),
+      metadata: OLD_METADATA,
+      coverUpdatedAt: Date.now() - 60000,
+    });
+    const books: Book[] = [existingBook];
+    const fs = service.getFs();
+    const present = new Set<string>(['old-file-hash/cover.png']);
+    fs.exists.mockImplementation(async (path: string) => present.has(path));
+    fs.copyFile.mockImplementation(async (_src: string, _sb: string, dst: string) => {
+      present.add(dst);
+    });
+    fs.writeFile.mockImplementation(async (path: string) => {
+      present.add(path);
+    });
+
+    mockPartialMD5.mockResolvedValue('new-file-hash');
+    mockOpen.mockResolvedValue({
+      book: {
+        metadata: NEW_METADATA,
+        getCover: vi.fn().mockResolvedValue(new Blob(['embedded'], { type: 'image/png' })),
+      },
+      format: 'EPUB',
+    });
+
+    await service.importBook(
+      new File(['updated fic'], 'The_Amazing_Traveling.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(fs.copyFile).toHaveBeenCalledWith(
+      'old-file-hash/cover.png',
+      'Books',
+      'new-file-hash/cover.png',
+      'Books',
+    );
+    // ...and the file's own artwork must not overwrite the carried one.
+    expect(fs.writeFile).not.toHaveBeenCalledWith(
+      'new-file-hash/cover.png',
+      'Books',
+      expect.anything(),
+    );
+    expect(existingBook.coverImageUrl).toBe(await service.generateCoverImageUrl(existingBook));
+  });
+
+  it("lets the new file's own cover win when the user never chose one", async () => {
+    const existingBook = makeBook({
+      hash: 'old-file-hash',
+      title: AO3_TITLE,
+      author: 'KicsterAsh',
+      metaHash: getMetadataHash(OLD_METADATA),
+      metadata: OLD_METADATA,
+    });
+    const books: Book[] = [existingBook];
+    const fs = service.getFs();
+    const present = new Set<string>(['old-file-hash/cover.png']);
+    fs.exists.mockImplementation(async (path: string) => present.has(path));
+    fs.writeFile.mockImplementation(async (path: string) => {
+      present.add(path);
+    });
+
+    mockPartialMD5.mockResolvedValue('new-file-hash');
+    mockOpen.mockResolvedValue({
+      book: {
+        metadata: NEW_METADATA,
+        getCover: vi.fn().mockResolvedValue(new Blob(['embedded'], { type: 'image/png' })),
+      },
+      format: 'EPUB',
+    });
+
+    await service.importBook(
+      new File(['updated fic'], 'The_Amazing_Traveling.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(fs.copyFile).not.toHaveBeenCalledWith(
+      'old-file-hash/cover.png',
+      'Books',
+      'new-file-hash/cover.png',
+      'Books',
+    );
+    expect(fs.writeFile).toHaveBeenCalledWith(
+      'new-file-hash/cover.png',
+      'Books',
+      expect.anything(),
+    );
+  });
+
   it('leaves the PDF filename rule from #5411 alone', async () => {
     const pdfMetadata = (uuid: string) => ({
       title: 'PowerPoint Presentation',

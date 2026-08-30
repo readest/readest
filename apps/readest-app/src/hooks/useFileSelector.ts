@@ -151,14 +151,18 @@ const selectFileTauri = async (
   if (noFilter && options.extensions) {
     const extensions = options.extensions;
     const kept = files.filter(({ name }) => hasAllowedExtension(name, extensions));
-    // An all-dropped selection is indistinguishable from a cancel to the
-    // caller, which turns picking an unsupported file into a silent no-op
-    // (issue #5959). Name what was skipped instead.
-    if (kept.length === 0 && files.length > 0) {
+    // Whatever the whitelist drops here disappears without a trace: an
+    // all-dropped selection is indistinguishable from a cancel, and a mixed one
+    // imports part of the pick and stays quiet about the rest (issue #5959).
+    // Name the skipped files. Only book selections get the toast — it is the
+    // one message already translated, and it would read as nonsense for an
+    // audio or dictionary pick.
+    if (options.type === 'books' && kept.length < files.length) {
+      const skipped = files.filter((file) => !kept.includes(file));
       eventDispatcher.dispatch('toast', {
         type: 'error',
         message: _('Failed to import book(s): {{filenames}}', {
-          filenames: files.map(({ name, path }) => name || getFilename(path!)).join(', '),
+          filenames: skipped.map(({ name, path }) => name || getFilename(path!)).join(', '),
         }),
         timeout: 5000,
       });

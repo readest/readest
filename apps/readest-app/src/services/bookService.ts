@@ -761,6 +761,28 @@ export async function importBook(
         await fs.writeFile(bookFilename, 'Books', fileobj);
       }
     }
+    // A metaHash match re-keys the book to the incoming file's hash directory
+    // and retires the old one further down. The cover step below only writes
+    // the embedded cover when the target has none, so carry a cover the user
+    // picked themselves across first — `coverUpdatedAt` is set by nothing but
+    // that edit. Without this, updating a book silently reverts its cover to
+    // whatever artwork the new file happens to embed (issue #5959).
+    if (
+      saveCover &&
+      metaHashMatch &&
+      oldBookDir &&
+      oldBookDir !== getDir(book) &&
+      existingBook?.coverUpdatedAt
+    ) {
+      const oldCoverPath = `${oldBookDir}/cover.png`;
+      try {
+        if (await fs.exists(oldCoverPath, 'Books')) {
+          await fs.copyFile(oldCoverPath, 'Books', getCoverFilename(book), 'Books');
+        }
+      } catch (error) {
+        console.warn('Failed to carry the custom cover to the new book directory:', error);
+      }
+    }
     if (saveCover && (!(await fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {
       let cover = await loadedBook.getCover();
       if (cover?.type === 'image/svg+xml') {
@@ -929,6 +951,9 @@ export async function importBook(
       }
     }
     book.coverImageUrl = await generateCoverImageUrlFn(book);
+    // The row we hand back is `existingBook` on a match, and its cached URL
+    // still points into the directory this import just retired.
+    if (existingBook) existingBook.coverImageUrl = book.coverImageUrl;
 
     return existingBook || book;
   } catch (error) {

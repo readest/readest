@@ -28,6 +28,7 @@ vi.mock('@tauri-apps/api/path', () => ({
 }));
 
 import { useAndroidPickedBooks } from '@/hooks/useAndroidFilePicker';
+import { eventDispatcher } from '@/utils/event';
 
 const makeAppService = (isAndroidApp: boolean): AppService =>
   ({ isAndroidApp, isIOSApp: false }) as unknown as AppService;
@@ -132,5 +133,29 @@ describe('useAndroidPickedBooks with a duplicate-download marker', () => {
     expect(onPickedBooks.mock.calls[0]![0]).toEqual([
       expect.objectContaining({ name: 'The_Amazing_Traveling.epub (1)' }),
     ]);
+  });
+});
+
+describe('useAndroidPickedBooks with a mixed selection', () => {
+  test('imports the books and still names the file it dropped', async () => {
+    const onPickedBooks = vi.fn();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    basenameMock.mockImplementation(async (path: string) =>
+      path.endsWith('/1') ? 'novel.epub' : 'resume.docx',
+    );
+    renderHook(() => useAndroidPickedBooks(makeAppService(true), onPickedBooks));
+
+    await waitFor(() => expect(listeners).toHaveLength(1));
+    await listeners[0]!.handler({ uris: ['content://downloads/1', 'content://downloads/2'] });
+
+    await waitFor(() => expect(onPickedBooks).toHaveBeenCalled());
+    expect(onPickedBooks.mock.calls[0]![0]).toEqual([
+      expect.objectContaining({ name: 'novel.epub' }),
+    ]);
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      'toast',
+      expect.objectContaining({ message: expect.stringContaining('resume.docx') }),
+    );
+    dispatchSpy.mockRestore();
   });
 });
