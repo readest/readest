@@ -30,6 +30,34 @@ interface MangaPageImage {
   height: number;
 }
 
+interface MangaPageIdentity {
+  document: Document;
+  image: MangaPageImage;
+}
+
+interface CachedMangaPage extends MangaPageIdentity {
+  page: TranslatedMangaPage;
+}
+
+interface PendingMangaPage extends MangaPageIdentity {
+  promise: Promise<TranslatedMangaPage | null>;
+}
+
+const isSamePageImage = (
+  left: MangaPageIdentity,
+  document: Document,
+  image: MangaPageImage,
+): boolean => {
+  if (typeof left.image.source !== 'string' || typeof image.source !== 'string') {
+    return left.document === document;
+  }
+  return (
+    left.image.source === image.source &&
+    left.image.width === image.width &&
+    left.image.height === image.height
+  );
+};
+
 const getPageImage = (doc: Document): MangaPageImage | null => {
   const image = doc.querySelector('img');
   if (image) {
@@ -48,8 +76,8 @@ export class MangaTranslationSession {
   readonly #createEngine: () => MangaTranslationSessionEngine;
   readonly #onError?: (error: unknown, pageIndex: number) => void;
   readonly #onPageTranslated?: (page: TranslatedMangaPage) => void;
-  readonly #pages = new Map<number, TranslatedMangaPage>();
-  readonly #pending = new Map<number, Promise<TranslatedMangaPage | null>>();
+  readonly #pages = new Map<number, CachedMangaPage>();
+  readonly #pending = new Map<number, PendingMangaPage>();
   readonly #documents = new Map<number, Document>();
   #engine: MangaTranslationSessionEngine | null = null;
   #queue: Promise<void> = Promise.resolve();
@@ -77,14 +105,18 @@ export class MangaTranslationSession {
     }
 
     const cachedPage = this.#pages.get(pageIndex);
-    if (cachedPage) {
-      mountMangaTranslationLayer(doc, cachedPage);
-      return cachedPage;
+    if (cachedPage && isSamePageImage(cachedPage, doc, image)) {
+      mountMangaTranslationLayer(doc, cachedPage.page);
+      return cachedPage.page;
     }
+    if (cachedPage) this.#pages.delete(pageIndex);
 
     const generation = this.#generation;
+    const pendingPage = this.#pending.get(pageIndex);
     const translation =
-      this.#pending.get(pageIndex) ?? this.#translate(image, pageIndex, generation);
+      pendingPage && isSamePageImage(pendingPage, doc, image)
+        ? pendingPage.promise
+        : this.#translate(doc, image, pageIndex, generation);
     let page: TranslatedMangaPage | null;
     try {
       page = await translation;
@@ -94,7 +126,8 @@ export class MangaTranslationSession {
     }
     if (!page || !this.#enabled || generation !== this.#generation) return page;
     if (this.#documents.get(pageIndex) !== doc) return page;
-    if (getPageImage(doc)?.source !== image.source) return page;
+    const currentImage = getPageImage(doc);
+    if (!currentImage || !isSamePageImage({ document: doc, image }, doc, currentImage)) return page;
 
     mountMangaTranslationLayer(doc, page);
     return page;
@@ -145,6 +178,7 @@ export class MangaTranslationSession {
   }
 
   #translate(
+    document: Document,
     image: MangaPageImage,
     pageIndex: number,
     generation: number,
@@ -157,17 +191,27 @@ export class MangaTranslationSession {
         height: image.height,
       });
       if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
-      this.#pages.set(pageIndex, page);
+      const currentDocument = this.#documents.get(pageIndex);
+      const currentImage = currentDocument && getPageImage(currentDocument);
+      if (
+        !currentDocument ||
+        !currentImage ||
+        !isSamePageImage({ document, image }, currentDocument, currentImage)
+      ) {
+        return page;
+      }
+      this.#pages.set(pageIndex, { document: currentDocument, image: currentImage, page });
       this.#onPageTranslated?.(page);
       return page;
     });
-    this.#pending.set(pageIndex, translation);
+    const pendingPage = { document, image, promise: translation };
+    this.#pending.set(pageIndex, pendingPage);
     this.#queue = translation.then(
       () => undefined,
       () => undefined,
     );
     const clearPending = () => {
-      if (this.#pending.get(pageIndex) === translation) this.#pending.delete(pageIndex);
+      if (this.#pending.get(pageIndex) === pendingPage) this.#pending.delete(pageIndex);
     };
     void translation.then(clearPending, clearPending);
     return translation;

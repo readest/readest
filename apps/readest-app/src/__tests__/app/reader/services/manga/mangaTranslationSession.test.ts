@@ -136,4 +136,49 @@ describe('MangaTranslationSession', () => {
     expect(onError).toHaveBeenCalledWith(error, 8);
     expect(doc.querySelector(MANGA_TRANSLATION_LAYER_SELECTOR)).toBeNull();
   });
+
+  it('translates a different image that reuses a page index', async () => {
+    const engine = makeEngine();
+    const session = new MangaTranslationSession({ createEngine: () => engine });
+    await session.setEnabled(true);
+    await session.processDocument(makeDocument(3), 3);
+
+    await session.processDocument(makeDocument(4), 3);
+
+    expect(engine.translate).toHaveBeenCalledTimes(2);
+    expect(engine.translate).toHaveBeenLastCalledWith('blob:manga-page-4', {
+      pageIndex: 3,
+      width: 1200,
+      height: 1800,
+    });
+  });
+
+  it('does not reuse pending translation for a different image at the same index', async () => {
+    let finishFirst!: (page: TranslatedMangaPage) => void;
+    const engine = makeEngine();
+    vi.mocked(engine.translate).mockImplementationOnce(
+      () => new Promise((resolve) => (finishFirst = resolve)),
+    );
+    const session = new MangaTranslationSession({ createEngine: () => engine });
+    const firstDocument = makeDocument(3);
+    const secondDocument = makeDocument(4);
+    await session.setEnabled(true);
+
+    const first = session.processDocument(firstDocument, 3);
+    await vi.waitFor(() => expect(engine.translate).toHaveBeenCalledOnce());
+    const second = session.processDocument(secondDocument, 3);
+    finishFirst(makePage(3));
+    await Promise.all([first, second]);
+
+    expect(engine.translate).toHaveBeenCalledTimes(2);
+    expect(engine.translate).toHaveBeenLastCalledWith('blob:manga-page-4', {
+      pageIndex: 3,
+      width: 1200,
+      height: 1800,
+    });
+    expect(firstDocument.querySelector(MANGA_TRANSLATION_LAYER_SELECTOR)).toBeNull();
+    expect(secondDocument.querySelector(MANGA_TRANSLATION_LAYER_SELECTOR)?.textContent).toContain(
+      'Watch out on page 3!',
+    );
+  });
 });
