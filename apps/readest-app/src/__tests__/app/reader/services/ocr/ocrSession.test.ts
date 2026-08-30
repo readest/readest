@@ -38,7 +38,8 @@ const makeEngine = (): OcrEngine => ({
 describe('OcrSession', () => {
   it('recognizes registered pages only after activation and restores cached reloads', async () => {
     const engine = makeEngine();
-    const session = new OcrSession({ createEngine: () => engine });
+    const onPageRecognized = vi.fn();
+    const session = new OcrSession({ createEngine: () => engine, onPageRecognized });
     const firstDocument = makeDocument(3);
 
     await session.processDocument(firstDocument, 3);
@@ -55,11 +56,14 @@ describe('OcrSession', () => {
     expect(firstDocument.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe(
       'recognized page 3',
     );
+    expect(onPageRecognized).toHaveBeenCalledOnce();
+    expect(onPageRecognized).toHaveBeenCalledWith(makePage(3));
 
     const reloadedDocument = makeDocument(3);
     await session.processDocument(reloadedDocument, 3);
 
     expect(engine.recognize).toHaveBeenCalledTimes(1);
+    expect(onPageRecognized).toHaveBeenCalledTimes(1);
     expect(reloadedDocument.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe(
       'recognized page 3',
     );

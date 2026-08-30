@@ -15,6 +15,7 @@ export interface OcrEngine {
 interface OcrSessionOptions {
   createEngine: () => OcrEngine;
   onError?: (error: unknown, pageIndex: number) => void;
+  onPageRecognized?: (page: OcrPage) => void;
 }
 
 interface PageImage {
@@ -38,6 +39,7 @@ const getPageImage = (doc: Document): PageImage | null => {
 export class OcrSession {
   readonly #createEngine: () => OcrEngine;
   readonly #onError?: (error: unknown, pageIndex: number) => void;
+  readonly #onPageRecognized?: (page: OcrPage) => void;
   readonly #pages = new Map<number, OcrPage>();
   readonly #pending = new Map<number, Promise<OcrPage | null>>();
   readonly #documents = new Map<number, Document>();
@@ -47,9 +49,10 @@ export class OcrSession {
   #enabled = false;
   #terminated = false;
 
-  constructor({ createEngine, onError }: OcrSessionOptions) {
+  constructor({ createEngine, onError, onPageRecognized }: OcrSessionOptions) {
     this.#createEngine = createEngine;
     this.#onError = onError;
+    this.#onPageRecognized = onPageRecognized;
   }
 
   async processDocument(doc: Document, pageIndex: number): Promise<OcrPage | null> {
@@ -141,6 +144,7 @@ export class OcrSession {
       });
       if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
       this.#pages.set(pageIndex, page);
+      this.#onPageRecognized?.(page);
       return page;
     });
     this.#pending.set(pageIndex, recognition);
