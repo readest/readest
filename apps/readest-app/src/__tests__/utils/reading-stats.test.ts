@@ -1,0 +1,91 @@
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import dayjs from 'dayjs';
+import { getPeriodRange, periodRangeToSeconds, getTzOffsetSecs } from '@/utils/stats';
+
+// Fixed clock: 2026-08-30 12:34:56 local (a Sunday).
+const NOW = dayjs('2026-08-30T12:34:56').valueOf();
+
+describe('getPeriodRange', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns millisecond magnitudes (dayjs-native), not seconds', () => {
+    for (const period of ['week', 'month', 'year', 'total'] as const) {
+      const { fromTs, toTs } = getPeriodRange(period);
+      // 1e12 ms ≈ 2001-09-09; a seconds-denominated value would be < 4e9.
+      expect(toTs).toBeGreaterThan(1e12);
+      expect(fromTs).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('toTs is local midnight of tomorrow (exclusive end)', () => {
+    const { toTs } = getPeriodRange('week');
+    expect(toTs).toBe(dayjs().add(1, 'day').startOf('day').valueOf());
+  });
+
+  it('week starts on Monday', () => {
+    const { fromTs } = getPeriodRange('week');
+    // 2026-08-30 is a Sunday: the week started 2026-08-24 (Monday).
+    expect(dayjs(fromTs).format('YYYY-MM-DD')).toBe('2026-08-24');
+    expect(dayjs(fromTs).day()).toBe(1);
+  });
+
+  it('month / year align to local boundaries', () => {
+    expect(dayjs(getPeriodRange('month').fromTs).format('YYYY-MM-DD')).toBe('2026-08-01');
+    expect(dayjs(getPeriodRange('year').fromTs).format('YYYY-MM-DD')).toBe('2026-01-01');
+  });
+
+  it('total spans from epoch', () => {
+    expect(getPeriodRange('total')).toEqual({
+      fromTs: 0,
+      toTs: dayjs().add(1, 'day').startOf('day').valueOf(),
+    });
+  });
+});
+
+describe('periodRangeToSeconds', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('converts the window to Unix seconds matching the db unit', () => {
+    const range = getPeriodRange('year');
+    const secs = periodRangeToSeconds(range);
+    expect(secs.fromTs).toBe(Math.floor(range.fromTs / 1000));
+    expect(secs.toTs).toBe(Math.ceil(range.toTs / 1000));
+    expect(secs.toTs).toBeLessThan(4e9);
+    // Seconds-precision range endpoints land on the same instants.
+    expect(secs.fromTs * 1000).toBeLessThan(range.fromTs + 1000);
+    expect(secs.toTs * 1000).toBeGreaterThanOrEqual(range.toTs - 999);
+  });
+
+  it('total keeps fromTs at 0', () => {
+    expect(periodRangeToSeconds(getPeriodRange('total')).fromTs).toBe(0);
+  });
+
+  it('toTs rounds up so the exclusive bound stays exclusive', () => {
+    // A toTs with sub-second remainder must not shrink into the range.
+    const secs = periodRangeToSeconds({ fromTs: 1000, toTs: 1500 });
+    expect(secs).toEqual({ fromTs: 1, toTs: 2 });
+  });
+
+  it('is consistent with the tracker clock (nowSec) and the tz helper', () => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const secs = periodRangeToSeconds(getPeriodRange('total'));
+    expect(nowSec).toBeGreaterThan(secs.fromTs);
+    expect(nowSec).toBeLessThan(secs.toTs);
+    // tz helper stays second-denominated for the SQL day bucketing.
+    expect(getTzOffsetSecs() % 60).toBe(0);
+  });
+});

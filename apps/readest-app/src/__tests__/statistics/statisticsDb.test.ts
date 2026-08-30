@@ -5,6 +5,7 @@ import { getMigrations } from '@/services/database/migrations';
 import type { DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
+import { getPeriodRange, periodRangeToSeconds, getTzOffsetSecs } from '@/utils/stats';
 
 async function freshStatsDb(): Promise<DatabaseService> {
   // In-memory libsql DB; run the same migrations production uses.
@@ -259,6 +260,30 @@ describe('StatisticsDb aggregates', () => {
       { dayStartTs: 0 * DAY - TZ, seconds: 10 },
       { dayStartTs: 1 * DAY - TZ, seconds: 60 },
     ]);
+  });
+
+  it('matches real-scale tracker timestamps via the hook unit chain', async () => {
+    // Regression for the ms-vs-seconds unit split: the tracker writes
+    // Math.floor(Date.now()/1000) (seconds, KOReader-compatible), while
+    // getPeriodRange is dayjs-native milliseconds. This drives the exact
+    // conversion chain useReadingStats uses, against real-magnitude data.
+    vi.useFakeTimers();
+    try {
+      const nowMs = Date.now();
+      const nowSec = Math.floor(nowMs / 1000);
+      await seedBook('real', [{ page: 1, startTime: nowSec, duration: 90 }]);
+      const dbRange = periodRangeToSeconds(getPeriodRange('week'));
+      expect(await stats.getReadTimeBetween(dbRange.fromTs, dbRange.toTs)).toBe(90);
+      const daily = await stats.getDailyReadTimeBetween(
+        dbRange.fromTs,
+        dbRange.toTs,
+        getTzOffsetSecs(),
+      );
+      expect(daily.length).toBeGreaterThan(0);
+      expect(daily.at(-1)!.seconds).toBe(90);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('ranks books by reading time and honors the limit', async () => {

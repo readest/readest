@@ -9,7 +9,7 @@ import { SyncClient } from '@/libs/sync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import type { Book } from '@/types/book';
 import type { BookReadTime, DailyReadTime, StatsPeriod, TotalReadStats } from '@/types/statistics';
-import { getPeriodRange, getTzOffsetSecs } from '@/utils/stats';
+import { getPeriodRange, getTzOffsetSecs, periodRangeToSeconds } from '@/utils/stats';
 
 /** One ranking row: same-book editions merged by (title, authors). */
 export interface RankedBook {
@@ -80,7 +80,8 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
   const load = useCallback(async (db: StatisticsDb, currentPeriod: StatsPeriod) => {
     const seq = ++seqRef.current;
     const tzOffsetSecs = getTzOffsetSecs();
-    const { fromTs, toTs } = getPeriodRange(currentPeriod);
+    // getPeriodRange is dayjs-native milliseconds; the db stores seconds.
+    const { fromTs, toTs } = periodRangeToSeconds(getPeriodRange(currentPeriod));
     try {
       const [totals, periodSeconds, daily, bookTimes] = await Promise.all([
         db.getTotalReadStats(tzOffsetSecs),
@@ -89,6 +90,9 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
         db.getBookReadTimesBetween(fromTs, toTs, 200),
       ]);
       if (seq !== seqRef.current) return;
+      // Chart components are dayjs-based (milliseconds): scale the db's
+      // second-denominated day buckets back up at this boundary.
+      const dailyMs = daily.map((d) => ({ ...d, dayStartTs: d.dayStartTs * 1000 }));
       const { getBookByHash } = useLibraryStore.getState();
       const booksByHash = new Map<string, Book>();
       for (const row of bookTimes) {
@@ -102,7 +106,7 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
         loading: false,
         totals,
         periodSeconds,
-        daily,
+        daily: dailyMs,
         ranking: mergeEditions(bookTimes, booksByHash),
       });
     } catch (err) {

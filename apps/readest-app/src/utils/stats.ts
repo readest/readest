@@ -2,9 +2,11 @@ import dayjs from 'dayjs';
 import type { StatsPeriod } from '@/types/statistics';
 
 /**
- * Local-timezone [fromTs, toTs) window in Unix seconds for a stats period.
+ * Local-timezone [fromTs, toTs) window for a stats period, in **Unix
+ * milliseconds** (dayjs-native, matches the chart components' expectations).
  * The exclusive `toTs` is local midnight of tomorrow so a session started
- * today is included through the end of the day.
+ * today is included through the end of the day. statistics.db stores SECONDS —
+ * convert with {@link periodRangeToSeconds} before querying it.
  */
 export const getPeriodRange = (period: StatsPeriod): { fromTs: number; toTs: number } => {
   const now = dayjs();
@@ -28,6 +30,20 @@ export const getPeriodRange = (period: StatsPeriod): { fromTs: number; toTs: num
       return { fromTs: 0, toTs };
   }
 };
+
+/**
+ * Convert a {@link getPeriodRange} millisecond window into the Unix-second
+ * range statistics.db expects (`start_time` columns are seconds everywhere —
+ * see `ReadingStatsTracker`'s `nowSec` and the KOReader-compatible schema).
+ * `toTs` rounds UP so the exclusive local-midnight bound stays exclusive.
+ */
+export const periodRangeToSeconds = (range: {
+  fromTs: number;
+  toTs: number;
+}): { fromTs: number; toTs: number } => ({
+  fromTs: Math.floor(range.fromTs / 1000),
+  toTs: Math.ceil(range.toTs / 1000),
+});
 
 /** Seconds east of UTC; the sign convention SQL day-bucketing expects. */
 export const getTzOffsetSecs = (): number => -new Date().getTimezoneOffset() * 60;
