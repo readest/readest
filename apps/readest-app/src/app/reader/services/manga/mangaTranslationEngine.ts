@@ -82,7 +82,7 @@ const containsJapanese = (text: string): boolean =>
 export const normalizeJapaneseOcrText = (text: string): string =>
   text
     .normalize('NFKC')
-    .replace(/[A-Za-z]+/gu, '')
+    .replace(/\b[A-Za-z]\b/gu, '')
     .replace(/\s+/gu, '')
     .trim();
 

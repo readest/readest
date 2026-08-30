@@ -4,6 +4,7 @@ import {
   getMangaOcrEngineOptions,
   MangaTranslationEngine,
   normalizeEnglishTranslation,
+  normalizeJapaneseOcrText,
   type JapaneseTextTranslatorFactory,
   type MangaOcrEngineFactory,
 } from '@/app/reader/services/manga/mangaTranslationEngine';
@@ -154,5 +155,11 @@ describe('normalizeEnglishTranslation', () => {
     expect(normalizeEnglishTranslation('A69 "')).toBe('');
     expect(normalizeEnglishTranslation('I!')).toBe('I!');
     expect(normalizeEnglishTranslation('go!')).toBe('Go!');
+  });
+});
+
+describe('normalizeJapaneseOcrText', () => {
+  it('preserves meaningful Latin tokens in mixed Japanese text while dropping lone OCR letters', () => {
+    expect(normalizeJapaneseOcrText('これは Web comic です R')).toBe('これはWebcomicです');
   });
 });
