@@ -58,7 +58,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
   const buttonContent = (
     <>
-      <div className='flex w-full items-center justify-between'>
+      <div className='flex w-full min-w-0 items-center justify-between'>
         <div className='flex min-w-0 items-center'>
           {!noIcon && (
             <span style={{ minWidth: `${iconSize}px` }}>
@@ -94,7 +94,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
           </kbd>
         )}
       </div>
-      <div className='flex w-full'>
+      <div className='flex w-full min-w-0'>
         {description && (
           <span
             className='mt-1 truncate text-start text-xs text-gray-500'
@@ -109,9 +109,13 @@ const MenuItem: React.FC<MenuItemProps> = ({
 
   if (children) {
     return (
-      <ul className='menu rounded-box m-0 p-0'>
-        <li aria-label={label}>
-          <details open={detailsOpen} onToggle={(e) => setIsDetailsOpen(e.currentTarget.open)}>
+      <ul className='menu rounded-box m-0 w-full min-w-0 p-0'>
+        <li className='w-full min-w-0 max-w-full' aria-label={label}>
+          <details
+            className='w-full min-w-0'
+            open={detailsOpen}
+            onToggle={(e) => setIsDetailsOpen(e.currentTarget.open)}
+          >
             <summary
               role='button'
               tabIndex={0}
@@ -133,7 +137,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   }
 
   return (
-    <div className='flex'>
+    <div className='flex min-w-0'>
       <button
         role={disabled ? 'none' : 'menuitem'}
         aria-label={
@@ -142,7 +146,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         aria-live={toggled === undefined ? 'polite' : 'off'}
         tabIndex={disabled ? -1 : 0}
         className={clsx(
-          'hover:bg-base-300 text-base-content flex w-full flex-col items-center justify-center rounded-md p-1 py-[10px]',
+          'hover:bg-base-300 text-base-content flex w-full min-w-0 flex-col items-center justify-center rounded-md p-1 py-[10px]',
           disabled && 'btn-disabled text-gray-400',
           buttonClass,
         )}
