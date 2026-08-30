@@ -266,6 +266,13 @@ The following libraries and frameworks are used in this software:
 - [react-icons](https://github.com/react-icons/react-icons), which has various open-source licenses.
 - [react](https://github.com/facebook/react), which is MIT licensed.
 - [tauri](https://github.com/tauri-apps/tauri), which is MIT licensed.
+- [@browsermt/bergamot-translator](https://github.com/browsermt/bergamot-translator), which is licensed under the Mozilla Public License 2.0.
+- [ONNX Runtime Web](https://github.com/microsoft/onnxruntime), which is licensed under the MIT License with Microsoft Corporation copyright.
+- [Tesseract.js](https://github.com/naptha/tesseract.js) and [tesseract.js-core](https://github.com/naptha/tesseract.js-core), which are licensed under the Apache License 2.0.
+- [comic-text-and-bubble-detector](https://huggingface.co/ogkalu/comic-text-and-bubble-detector), which is licensed under the Apache License 2.0.
+- [Bergamot Japanese-English model](https://huggingface.co/TiberiuCristianLeon/Bergamot), which is licensed under CC BY 4.0.
+
+See the [manga pipeline third-party notices](apps/readest-app/vendor-notices/THIRD_PARTY_NOTICES.md) for pinned model revisions and license texts.
 
 The following fonts are utilized in this software, either bundled within the application or provided through web fonts:
 
