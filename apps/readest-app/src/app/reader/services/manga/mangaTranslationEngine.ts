@@ -77,9 +77,12 @@ export const normalizeJapaneseOcrText = (text: string): string =>
 
 export const normalizeEnglishTranslation = (text: string): string => {
   const normalized = text
+    .replace(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]+/gu, ' ')
+    .replace(/[^\p{Script=Latin}\p{N}\s.,!?;:'"()\-…]/gu, ' ')
     .trim()
     .replace(/\s+/gu, ' ')
     .replace(/\s+([,.;:!?])/gu, '$1');
+  if (!/\p{Script=Latin}/u.test(normalized)) return '';
   return normalized.replace(/[a-z]/u, (letter) => letter.toUpperCase());
 };
 

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TranslatedMangaPage } from '@/app/reader/services/manga/mangaTranslationEngine';
 import {
   findLargestFittingFontSize,
+  getMaximumMangaFontSize,
   MANGA_TRANSLATION_LAYER_SELECTOR,
   mountMangaTranslationLayer,
   removeMangaTranslationLayer,
@@ -139,5 +140,13 @@ describe('findLargestFittingFontSize', () => {
 
   it('returns the minimum when no tested size fits', () => {
     expect(findLargestFittingFontSize({ minimum: 4, maximum: 40, fits: () => false })).toBe(4);
+  });
+});
+
+describe('getMaximumMangaFontSize', () => {
+  it('keeps comic text proportional to its bubble', () => {
+    expect(getMaximumMangaFontSize(144, 146)).toBe(36);
+    expect(getMaximumMangaFontSize(500, 500)).toBe(48);
+    expect(getMaximumMangaFontSize(8, 8)).toBe(4);
   });
 });

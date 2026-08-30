@@ -93,6 +93,9 @@ export const findLargestFittingFontSize = ({ minimum, maximum, fits }: FontFitOp
   return lower;
 };
 
+export const getMaximumMangaFontSize = (width: number, height: number): number =>
+  Math.max(4, Math.min(48, width * 0.25, height * 0.3));
+
 const animateLayer = (element: HTMLElement, keyframes: Keyframe[], duration: number) => {
   if (typeof element.animate !== 'function') return;
   element.animate(keyframes, { duration, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' });
@@ -175,8 +178,9 @@ export const mountMangaTranslationLayer = (
       display: 'block',
       fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
       fontSize: 'clamp(4px, 4vh, 48px)',
-      fontWeight: '650',
-      lineHeight: '1.05',
+      fontWeight: '600',
+      letterSpacing: '-0.01em',
+      lineHeight: '1.08',
       maxHeight: '100%',
       maxWidth: '100%',
       overflow: 'hidden',
@@ -206,10 +210,7 @@ export const mountMangaTranslationLayer = (
     for (const text of textElements) {
       const container = text.parentElement;
       if (!container || container.clientWidth <= 0 || container.clientHeight <= 0) continue;
-      const maximum = Math.max(
-        4,
-        Math.min(64, container.clientWidth * 0.35, container.clientHeight * 0.45),
-      );
+      const maximum = getMaximumMangaFontSize(container.clientWidth, container.clientHeight);
       const size = findLargestFittingFontSize({
         minimum: 4,
         maximum,

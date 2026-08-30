@@ -49,7 +49,7 @@ describe('MangaTranslationEngine', () => {
       terminate: vi.fn(async () => undefined),
     };
     const translator = {
-      translate: vi.fn(async () => ['  what happened ?!  ']),
+      translate: vi.fn(async () => [' むんむむん  what happened ?! 即 ']),
       terminate: vi.fn(async () => undefined),
     };
     const createOcrEngine = vi.fn<MangaOcrEngineFactory>(() => ocrEngine);
