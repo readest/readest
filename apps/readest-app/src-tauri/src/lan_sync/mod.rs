@@ -153,6 +153,7 @@ pub struct DiscoveredPeer {
     pub host: String,
     pub port: u16,
     pub device_id: String,
+    pub token: String,
 }
 
 fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
