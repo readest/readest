@@ -64,7 +64,7 @@
     "copy-tesseract-core": "cpx \"./node_modules/tesseract.js-core/{LICENSE,tesseract-core-lstm.wasm.js,tesseract-core-simd-lstm.wasm.js,tesseract-core-relaxedsimd-lstm.wasm.js}\" ./public/vendor/tesseract/core",
     "copy-bergamot": "cpx \"./node_modules/@browsermt/bergamot-translator/worker/{translator-worker.js,bergamot-translator-worker.js,bergamot-translator-worker.wasm}\" ./public/vendor/bergamot",
     "copy-onnxruntime": "cpx \"./node_modules/onnxruntime-web/dist/{ort-wasm-simd-threaded.mjs,ort-wasm-simd-threaded.wasm}\" ./public/vendor/onnxruntime",
-    "copy-third-party-notices": "cpx \"./vendor-notices/{LICENSE-MPL-2.0.txt,LICENSE-APACHE-2.0.txt,LICENSE-MIT-ONNXRUNTIME.txt,LICENSE-MIT-TESSERACT-DATA.txt,THIRD_PARTY_NOTICES.md}\" ./public/vendor/licenses",
+    "copy-third-party-notices": "cpx \"./vendor-notices/{LICENSE-MPL-2.0.txt,LICENSE-APACHE-2.0.txt,LICENSE-MIT-ONNXRUNTIME.txt,LICENSE-MIT-TESSERACT-DATA.txt,ONNXRUNTIME-ThirdPartyNotices.txt,THIRD_PARTY_NOTICES.md}\" ./public/vendor/licenses",
     "setup-pdfjs": "pnpm prepare-public-vendor && pnpm copy-pdfjs",
     "setup-simplecc": "pnpm prepare-public-vendor && pnpm copy-simplecc",
     "setup-jieba": "pnpm prepare-public-vendor && pnpm copy-jieba",
