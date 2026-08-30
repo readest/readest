@@ -4,8 +4,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import GroupHeader from '@/app/library/components/GroupHeader';
 import { LibraryGroupByType } from '@/types/settings';
 
+// Stand-in for a non-English locale: keys the app ships translations for come
+// back translated, everything else falls through to the key (i18next's
+// key-as-content fallback).
+const FAKE_LOCALE: Record<string, string> = {
+  Status: 'Statut',
+  'On hold': 'En pause',
+};
+
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (key: string) => key,
+  useTranslation: () => (key: string) => FAKE_LOCALE[key] ?? key,
 }));
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
@@ -61,5 +69,22 @@ describe('GroupHeader back button', () => {
     expect(params.get('groupBy')).toBe('author');
     expect(params.get('sort')).toBe('title');
     expect(params.get('group')).toBe('');
+  });
+});
+
+describe('GroupHeader group name', () => {
+  it('translates the name of a localized (status) group', () => {
+    render(<GroupHeader groupBy={LibraryGroupByType.Status} groupName='On hold' localized />);
+
+    expect(screen.getByText('Statut:')).toBeTruthy();
+    expect(screen.getByText('En pause')).toBeTruthy();
+  });
+
+  it('renders a user-authored name verbatim even when it collides with a UI key', () => {
+    // A tag literally named "On hold" must not be translated.
+    render(<GroupHeader groupBy={LibraryGroupByType.Tag} groupName='On hold' />);
+
+    expect(screen.getByText('On hold')).toBeTruthy();
+    expect(screen.queryByText('En pause')).toBeNull();
   });
 });

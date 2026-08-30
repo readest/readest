@@ -2265,5 +2265,6 @@
   "With notes": "Με σημειώσεις",
   "{{count}} Annotations_one": "{{count}} σχολιασμός",
   "{{count}} Annotations_other": "{{count}} σχολιασμοί",
-  "Insert into Notebook": "Εισαγωγή στο σημειωματάριο"
+  "Insert into Notebook": "Εισαγωγή στο σημειωματάριο",
+  "Reading": "Σε ανάγνωση"
 }

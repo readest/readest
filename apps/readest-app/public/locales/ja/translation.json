@@ -2204,5 +2204,6 @@
   "Notebook draft copied to clipboard": "ノートの下書きをクリップボードにコピーしました",
   "With notes": "メモ付き",
   "{{count}} Annotations_other": "{{count}} 件の注釈",
-  "Insert into Notebook": "ノートに挿入"
+  "Insert into Notebook": "ノートに挿入",
+  "Reading": "読書中"
 }
