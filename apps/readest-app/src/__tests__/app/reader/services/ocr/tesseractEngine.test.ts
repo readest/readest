@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OEM, PSM } from 'tesseract.js';
 
 import {
@@ -33,6 +33,10 @@ const makeWorker = (): TesseractWorker => ({
 });
 
 describe('TesseractOcrEngine', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('creates one lazy local worker and converts recognition output', async () => {
     const worker = makeWorker();
     const progress = vi.fn();
@@ -105,6 +109,56 @@ describe('TesseractOcrEngine', () => {
     ).resolves.toMatchObject({ pageIndex: 0 });
 
     expect(createWorker).toHaveBeenCalledTimes(2);
+  });
+
+  it('upscales a low-resolution canvas before recognition', async () => {
+    const source = document.createElement('canvas');
+    source.width = 391;
+    source.height = 577;
+    const drawImage = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage,
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D);
+    const worker = makeWorker();
+    const engine = new TesseractOcrEngine(
+      {},
+      vi.fn(async () => worker),
+    );
+
+    const page = await engine.recognize(source, {
+      pageIndex: 4,
+      width: source.width,
+      height: source.height,
+    });
+
+    const prepared = vi.mocked(worker.recognize).mock.calls[0]?.[0] as HTMLCanvasElement;
+    expect(prepared).not.toBe(source);
+    expect(prepared.width).toBe(1173);
+    expect(prepared.height).toBe(1731);
+    expect(drawImage).toHaveBeenCalledWith(source, 0, 0, 1173, 1731);
+    expect(page).toMatchObject({ width: 1173, height: 1731 });
+  });
+
+  it('keeps an already detailed canvas at its source resolution', async () => {
+    const source = document.createElement('canvas');
+    source.width = 1600;
+    source.height = 2400;
+    const worker = makeWorker();
+    const engine = new TesseractOcrEngine(
+      {},
+      vi.fn(async () => worker),
+    );
+
+    const page = await engine.recognize(source, {
+      pageIndex: 5,
+      width: source.width,
+      height: source.height,
+    });
+
+    expect(worker.recognize).toHaveBeenCalledWith(source, {}, { text: true, blocks: true });
+    expect(page).toMatchObject({ width: 1600, height: 2400 });
   });
 
   it('terminates a worker that fails during parameter setup', async () => {

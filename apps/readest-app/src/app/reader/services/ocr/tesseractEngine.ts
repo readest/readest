@@ -16,6 +16,9 @@ import {
 const DEFAULT_LANGUAGES = ['eng'] as const;
 const WORKER_PATH = '/vendor/tesseract/dist/worker.min.js';
 const CORE_PATH = '/vendor/tesseract/core';
+const MINIMUM_OCR_LONG_EDGE = 1800;
+const MAXIMUM_OCR_SCALE = 3;
+const MAXIMUM_OCR_PIXELS = 3_000_000;
 
 export interface OcrEngineProgress {
   status: string;
@@ -33,6 +36,11 @@ interface OcrImagePage {
   pageIndex: number;
   width: number;
   height: number;
+}
+
+interface PreparedImage {
+  image: ImageLike;
+  page: OcrImagePage;
 }
 
 export interface TesseractWorker {
@@ -53,6 +61,44 @@ export type TesseractWorkerFactory = (
 
 const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
   createWorker(languages, oem, options);
+
+const isHtmlCanvas = (image: ImageLike): image is HTMLCanvasElement =>
+  typeof image === 'object' &&
+  image !== null &&
+  'tagName' in image &&
+  image.tagName === 'CANVAS' &&
+  'ownerDocument' in image;
+
+const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
+  if (!isHtmlCanvas(image)) return { image, page };
+
+  const source = image;
+  const { width, height } = source;
+  const longEdge = Math.max(width, height);
+  const pixelCount = width * height;
+  if (longEdge <= 0 || pixelCount <= 0) return { image, page };
+
+  const detailScale = MINIMUM_OCR_LONG_EDGE / longEdge;
+  const pixelScale = Math.sqrt(MAXIMUM_OCR_PIXELS / pixelCount);
+  const scale = Math.max(1, Math.min(MAXIMUM_OCR_SCALE, detailScale, pixelScale));
+  const targetWidth = Math.round(width * scale);
+  const targetHeight = Math.round(height * scale);
+  if (targetWidth === width && targetHeight === height) return { image, page };
+
+  const canvas = source.ownerDocument.createElement('canvas');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const context = canvas.getContext('2d');
+  if (!context) return { image, page };
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(source, 0, 0, targetWidth, targetHeight);
+
+  return {
+    image: canvas,
+    page: { ...page, width: targetWidth, height: targetHeight },
+  };
+};
 
 export class TesseractOcrEngine {
   readonly #languages: string[];
@@ -77,10 +123,11 @@ export class TesseractOcrEngine {
   async recognize(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
     const worker = await this.#getWorker();
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    const { data } = await worker.recognize(image, {}, { text: true, blocks: true });
+    const prepared = prepareImage(image, page);
+    const { data } = await worker.recognize(prepared.image, {}, { text: true, blocks: true });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     return adaptTesseractPage(data, {
-      ...page,
+      ...prepared.page,
       minimumConfidence: this.#minimumConfidence,
     });
   }
