@@ -5,6 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
+import { discoverLanPeers, type DiscoveredLanPeer } from '@/services/lanSync/discovery';
 import { eventDispatcher } from '@/utils/event';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { lanSyncPing } from '@/services/sync/providers/lan/LanSyncProvider';
@@ -77,6 +78,8 @@ const LanForm: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [status, setStatus] = useState<LanSyncStatus | null>(null);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [peers, setPeers] = useState<DiscoveredLanPeer[]>([]);
 
   const isTauri = isTauriAppPlatform();
 
@@ -107,6 +110,34 @@ const LanForm: React.FC = () => {
     const next = { ...latest, lan: { ...latest.lan, ...patch } };
     setSettings(next);
     await saveSettings(envConfig, next);
+  };
+
+  const handleDiscover = async () => {
+    if (!isTauri || isDiscovering) return;
+    setIsDiscovering(true);
+    setPeers([]);
+    try {
+      const found = await discoverLanPeers();
+      setPeers(found);
+      if (found.length === 0) {
+        eventDispatcher.dispatch('toast', { type: 'info', message: _('No Readest devices found') });
+      }
+    } catch (e) {
+      console.warn('lan_sync discovery failed:', e);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: `${_('Failed to search')}: ${formatPingError(_, e)}`,
+      });
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
+
+  const selectPeer = (peer: DiscoveredLanPeer) => {
+    setHost(peer.host);
+    setPort(String(peer.port));
+    setToken(peer.token);
+    setPeers([]);
   };
 
   const handleConnect = async () => {
@@ -216,6 +247,43 @@ const LanForm: React.FC = () => {
         handleConnect();
       }}
     >
+      {isTauri && (
+        <div className='space-y-2'>
+          <button
+            type='button'
+            onClick={handleDiscover}
+            disabled={isDiscovering}
+            className={clsx(
+              'btn btn-ghost h-10 min-h-10 w-full rounded-lg text-sm',
+              isDiscovering && 'opacity-60',
+            )}
+          >
+            {isDiscovering ? <span className='loading loading-spinner loading-sm' /> : null}
+            {isDiscovering ? _('Searching for devices…') : _('Find nearby Readest devices')}
+          </button>
+          {peers.length > 0 && (
+            <BoxedList>
+              {peers.map((peer) => (
+                <button
+                  type='button'
+                  key={peer.device_id}
+                  onClick={() => selectPeer(peer)}
+                  className='hover:bg-base-200 flex w-full items-center justify-between gap-3 px-4 py-3 text-start transition-colors'
+                >
+                  <span className='min-w-0'>
+                    <span className='block truncate text-sm font-medium'>{peer.name}</span>
+                    <span className='text-base-content/60 block text-xs'>
+                      {peer.host}:{peer.port}
+                    </span>
+                  </span>
+                  <span className='text-primary shrink-0 text-xs'>{_('Use')}</span>
+                </button>
+              ))}
+            </BoxedList>
+          )}
+        </div>
+      )}
+
       <div className='space-y-1.5'>
         <SectionTitle as='label' htmlFor='lan-host' className='block'>
           {_('Peer Address')}

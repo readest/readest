@@ -20,9 +20,12 @@
 
 pub mod server;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
+use mdns_sd::{ServiceDaemon, ServiceEvent, ServiceInfo};
 use serde::Serialize;
 use tauri::{AppHandle, Manager, Runtime, State};
 use tokio::sync::{watch, Mutex};
@@ -34,6 +37,8 @@ use tokio::sync::{watch, Mutex};
 pub const DEFAULT_PORT: u16 = 53430;
 /// Number of extra ports to try when the requested one is taken.
 const PORT_FALLBACK: u16 = 10;
+const MDNS_SERVICE_TYPE: &str = "_readest-lan-sync._tcp.local.";
+const MDNS_DISCOVERY_WINDOW: Duration = Duration::from_secs(3);
 
 /// Tauri managed state: the running LAN sync server, or `None` while the
 /// integration is disabled. Mirrors `localsend::LocalSendState`.
@@ -45,6 +50,7 @@ pub struct RunningServer {
     pub device_name: String,
     pub device_id: String,
     stop_tx: watch::Sender<bool>,
+    mdns: ServiceDaemon,
 }
 
 #[derive(Clone, Serialize)]
@@ -102,6 +108,105 @@ fn stopped_status() -> LanSyncStatus {
 /// then.
 fn new_device_id() -> String {
     uuid::Uuid::new_v4().simple().to_string()
+}
+
+fn mdns_instance_name(device_name: &str, device_id: &str) -> String {
+    let safe_name: String = device_name
+        .chars()
+        .map(|c| if c.is_control() { '_' } else { c })
+        .collect();
+    format!("{safe_name} {}", &device_id[..device_id.len().min(8)])
+}
+
+fn advertise_mdns(
+    device_name: &str,
+    device_id: &str,
+    token: &str,
+    port: u16,
+) -> Result<ServiceDaemon, String> {
+    let mdns = ServiceDaemon::new().map_err(|e| format!("lan_sync: start mDNS: {e}"))?;
+    let instance = mdns_instance_name(device_name, device_id);
+    let hostname = format!("readest-{}.local.", &device_id[..device_id.len().min(12)]);
+    let properties: HashMap<String, String> = HashMap::from([
+        ("device_id".to_string(), device_id.to_string()),
+        ("name".to_string(), device_name.to_string()),
+        ("token".to_string(), token.to_string()),
+        ("proto".to_string(), "readest-lan-sync-1".to_string()),
+    ]);
+    let info = ServiceInfo::new(
+        MDNS_SERVICE_TYPE,
+        &instance,
+        &hostname,
+        "",
+        port,
+        properties,
+    )
+    .map_err(|e| format!("lan_sync: build mDNS service: {e}"))?;
+    mdns.register(info)
+        .map_err(|e| format!("lan_sync: publish mDNS service: {e}"))?;
+    Ok(mdns)
+}
+
+#[derive(Clone, Serialize)]
+pub struct DiscoveredPeer {
+    pub name: String,
+    pub host: String,
+    pub port: u16,
+    pub device_id: String,
+}
+
+fn discover_mdns() -> Result<Vec<DiscoveredPeer>, String> {
+    let mdns = ServiceDaemon::new().map_err(|e| format!("lan_sync: start mDNS browse: {e}"))?;
+    let receiver = mdns
+        .browse(MDNS_SERVICE_TYPE)
+        .map_err(|e| format!("lan_sync: browse mDNS services: {e}"))?;
+    let deadline = Instant::now() + MDNS_DISCOVERY_WINDOW;
+    let mut peers = Vec::new();
+    while Instant::now() < deadline {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        match receiver.recv_timeout(remaining) {
+            Ok(ServiceEvent::ServiceResolved(info)) => {
+                let props = info.get_properties();
+                let device_id = props
+                    .get_property_val_str("device_id")
+                    .unwrap_or("")
+                    .to_string();
+                if device_id.is_empty() || peers.iter().any(|p: &DiscoveredPeer| p.device_id == device_id) {
+                    continue;
+                }
+                let name = props
+                    .get_property_val_str("name")
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| info.get_fullname().to_string());
+                let token = props
+                    .get_property_val_str("token")
+                    .unwrap_or("")
+                    .to_string();
+                let host = info
+                    .get_addresses_v4()
+                    .into_iter()
+                    .filter(|ip| !ip.is_loopback())
+                    .map(ToString::to_string)
+                    .next()
+                    .unwrap_or_default();
+                if host.is_empty() || token.is_empty() {
+                    continue;
+                }
+                peers.push(DiscoveredPeer {
+                    name,
+                    host,
+                    port: info.get_port(),
+                    device_id,
+                    token,
+                });
+            }
+            Ok(_) => {}
+            Err(_) => break,
+        }
+    }
+    let _ = mdns.stop_browse(MDNS_SERVICE_TYPE);
+    let _ = mdns.shutdown();
+    Ok(peers)
 }
 
 #[tauri::command]
@@ -164,6 +269,12 @@ pub async fn lan_sync_start<R: Runtime>(
         ));
     };
 
+    let mdns = advertise_mdns(
+        &device_name,
+        &server_state.device_id,
+        &server_state.token,
+        bound_port,
+    )?;
     let (stop_tx, mut stop_rx) = watch::channel(false);
     let router = server::router(server_state.clone());
     tauri::async_runtime::spawn(async move {
@@ -181,6 +292,7 @@ pub async fn lan_sync_start<R: Runtime>(
         device_name,
         device_id: server_state.device_id.clone(),
         stop_tx,
+        mdns,
     };
     let status = status_of(&running);
     *guard = Some(running);
@@ -192,8 +304,16 @@ pub async fn lan_sync_stop(state: State<'_, LanSyncState>) -> Result<LanSyncStat
     let mut guard = state.0.lock().await;
     if let Some(server) = guard.take() {
         let _ = server.stop_tx.send(true);
+        let _ = server.mdns.shutdown();
     }
     Ok(stopped_status())
+}
+
+#[tauri::command]
+pub async fn lan_sync_discover() -> Result<Vec<DiscoveredPeer>, String> {
+    tauri::async_runtime::spawn_blocking(discover_mdns)
+        .await
+        .map_err(|e| format!("lan_sync: discovery task failed: {e}"))?
 }
 
 #[tauri::command]

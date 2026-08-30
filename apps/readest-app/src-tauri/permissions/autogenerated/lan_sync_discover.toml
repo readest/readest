@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-sync-discover"
+description = "Enables the lan_sync_discover command without any pre-configured scope."
+commands.allow = ["lan_sync_discover"]
+
+[[permission]]
+identifier = "deny-lan-sync-discover"
+description = "Denies the lan_sync_discover command without any pre-configured scope."
+commands.deny = ["lan_sync_discover"]

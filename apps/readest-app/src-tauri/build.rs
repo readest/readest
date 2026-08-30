@@ -65,6 +65,7 @@ fn main() {
             "localsend_send_files",
             "localsend_cancel_send",
             "lan_sync_start",
+            "lan_sync_discover",
             "lan_sync_stop",
             "lan_sync_status",
         ]),

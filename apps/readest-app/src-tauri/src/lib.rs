@@ -450,6 +450,7 @@ pub fn run() {
             localsend::commands::localsend_send_files,
             localsend::commands::localsend_cancel_send,
             lan_sync::lan_sync_start,
+            lan_sync::lan_sync_discover,
             lan_sync::lan_sync_stop,
             lan_sync::lan_sync_status,
             #[cfg(desktop)]

@@ -29,6 +29,7 @@ dependencies = [
  "localsend",
  "log",
  "md-5",
+ "mdns-sd",
  "memmap2",
  "minisign-verify",
  "mobi",
@@ -11873,4 +11874,29 @@ dependencies = [
  "serde",
  "syn 2.0.118",
  "winnow 1.0.3",
+]
+
+[[package]]
+name = "flume"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da0e4dd2a88388a1f4ccc7c9ce104604dab68d9f408dc34cd45823d5a9069095"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "spin",
+]
+
+[[package]]
+name = "mdns-sd"
+version = "0.13.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "328f4e1041f7cfeb3affccb814ddbe2f004856a2ce769c8bf22080d74c5204c6"
+dependencies = [
+ "fastrand",
+ "flume",
+ "if-addrs",
+ "log",
+ "mio",
+ "socket2",
 ]

@@ -250,6 +250,7 @@
     "allow-localsend-send-files",
     "allow-localsend-cancel-send",
     "allow-lan-sync-start",
+    "allow-lan-sync-discover",
     "allow-lan-sync-stop",
     "allow-lan-sync-status"
   ]

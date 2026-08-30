@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getLanSyncStatus, startLanSync } from '@/services/lanSync/lifecycle';
+import { setMulticastLock } from '@/utils/bridge';
 
 /**
  * Keeps the embedded LAN sync server alive while the integration is enabled.
@@ -12,11 +14,17 @@ import { getLanSyncStatus, startLanSync } from '@/services/lanSync/lifecycle';
  */
 const LanSyncManager: React.FC = () => {
   const lan = useSettingsStore((s) => s.settings?.lan);
+  const { appService } = useEnv();
 
   useEffect(() => {
     if (!isTauriAppPlatform()) return;
     if (!lan?.enabled || !lan.token) return;
     let cancelled = false;
+    const needsMulticastLock = appService?.isAndroidApp === true;
+    // Android drops Wi-Fi multicast while the app is idle unless a
+    // MulticastLock is held. LocalSend already owns the same bridge; acquire
+    // it for LAN discovery and release it when this integration is disabled.
+    if (needsMulticastLock) void setMulticastLock(true).catch(() => {});
     (async () => {
       try {
         const status = await getLanSyncStatus();
@@ -29,8 +37,9 @@ const LanSyncManager: React.FC = () => {
     })();
     return () => {
       cancelled = true;
+      if (needsMulticastLock) void setMulticastLock(false).catch(() => {});
     };
-  }, [lan]);
+  }, [appService, lan]);
 
   return null;
 };

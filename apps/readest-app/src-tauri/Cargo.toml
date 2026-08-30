@@ -94,6 +94,8 @@ anyhow = "1"
 bytes = "1"
 tokio-stream = "0.1"
 if-addrs = "0.15"
+# Readest-specific mDNS service for one-click LAN peer discovery.
+mdns-sd = "0.13"
 
 # Native EPUB import path (Q1): zip + quick-xml + md5.
 # Used by `epub_parser::parse_epub_metadata` (partialMD5 + downscaled
