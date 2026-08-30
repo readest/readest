@@ -194,25 +194,27 @@ describe('TesseractOcrEngine', () => {
     const source = document.createElement('canvas');
     source.width = 1200;
     source.height = 1800;
+    const getImageData = vi.fn((_x: number, _y: number, width: number, height: number) => {
+      const data = new Uint8ClampedArray(width * height * 4);
+      for (let offset = 0; offset < data.length; offset += 4) {
+        data[offset] = 48;
+        data[offset + 1] = 36;
+        data[offset + 2] = 72;
+        data[offset + 3] = 255;
+      }
+      return { data, width, height };
+    });
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((() => ({
-      getImageData: (_x: number, _y: number, width: number, height: number) => {
-        const data = new Uint8ClampedArray(width * height * 4);
-        for (let offset = 0; offset < data.length; offset += 4) {
-          data[offset] = 250;
-          data[offset + 1] = 248;
-          data[offset + 2] = 242;
-          data[offset + 3] = 255;
-        }
-        data[0] = 0;
-        data[1] = 0;
-        data[2] = 0;
-        return { data, width, height };
-      },
+      drawImage: vi.fn(),
+      getImageData,
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
     })) as unknown as typeof HTMLCanvasElement.prototype.getContext);
     const worker = makeWorker();
     vi.mocked(worker.recognize)
       .mockResolvedValueOnce({ data: { text: '右', confidence: 90 } })
-      .mockResolvedValueOnce({ data: { text: '左', confidence: 80 } });
+      .mockResolvedValueOnce({ data: { text: '左', confidence: 80 } })
+      .mockResolvedValueOnce({ data: { text: '  ', confidence: 95 } });
     const detector = {
       detect: vi.fn(async () => [
         {
@@ -222,6 +224,7 @@ describe('TesseractOcrEngine', () => {
           textBoxes: [
             { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
             { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
+            { xMin: 365, yMin: 200, xMax: 395, yMax: 340 },
           ],
           writingMode: 'vertical-rl' as const,
         },
@@ -272,11 +275,14 @@ describe('TesseractOcrEngine', () => {
         maskBoxes: [
           { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
           { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
+          { xMin: 365, yMin: 200, xMax: 395, yMax: 340 },
         ],
-        backgroundColor: 'rgb(250 248 242)',
+        backgroundColor: 'rgb(48 36 72)',
         writingMode: 'vertical-rl',
       },
     ]);
+    const [, , sampledWidth = 0, sampledHeight = 0] = getImageData.mock.calls[0] ?? [];
+    expect(sampledWidth * sampledHeight).toBeLessThanOrEqual(12_000);
 
     await engine.terminate();
     expect(worker.terminate).toHaveBeenCalledOnce();

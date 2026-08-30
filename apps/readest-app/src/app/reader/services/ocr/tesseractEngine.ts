@@ -217,19 +217,16 @@ const segmentationModeFor = (writingMode: OcrWritingMode): PSM =>
   writingMode === 'vertical-rl' ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_BLOCK;
 
 const DEFAULT_BUBBLE_COLOR = 'rgb(255 255 255)';
+const MAXIMUM_BACKGROUND_SAMPLES = 12_000;
 
 const isInsideBox = (x: number, y: number, box: OcrBoundingBox): boolean =>
   x >= box.xMin && x <= box.xMax && y >= box.yMin && y <= box.yMax;
 
-const median = (values: number[]): number => {
-  values.sort((left, right) => left - right);
-  return values[Math.floor(values.length / 2)] ?? 255;
-};
-
 const createMangaBackgroundSampler = (
   canvas: HTMLCanvasElement,
 ): ((bubbleBox: OcrBoundingBox, textBoxes: readonly OcrBoundingBox[]) => string) => {
-  const context = canvas.getContext('2d', { willReadFrequently: true });
+  const sampleCanvas = getCanvasDocument(canvas).createElement('canvas');
+  const context = sampleCanvas.getContext('2d', { willReadFrequently: true });
   let readable = !!context;
 
   return (bubbleBox, textBoxes) => {
@@ -238,41 +235,64 @@ const createMangaBackgroundSampler = (
     if (!rectangle) return DEFAULT_BUBBLE_COLOR;
 
     try {
-      const pixels = context.getImageData(
+      const scale = Math.min(
+        1,
+        Math.sqrt(MAXIMUM_BACKGROUND_SAMPLES / (rectangle.width * rectangle.height)),
+      );
+      const sampleWidth = Math.max(1, Math.floor(rectangle.width * scale));
+      const sampleHeight = Math.max(1, Math.floor(rectangle.height * scale));
+      sampleCanvas.width = sampleWidth;
+      sampleCanvas.height = sampleHeight;
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(
+        canvas,
         rectangle.left,
         rectangle.top,
         rectangle.width,
         rectangle.height,
-      ).data;
-      const stride = Math.max(
-        1,
-        Math.ceil(Math.sqrt((rectangle.width * rectangle.height) / 12_000)),
+        0,
+        0,
+        sampleWidth,
+        sampleHeight,
       );
-      const red: number[] = [];
-      const green: number[] = [];
-      const blue: number[] = [];
-      for (let y = 0; y < rectangle.height; y += stride) {
-        for (let x = 0; x < rectangle.width; x += stride) {
-          const pageX = rectangle.left + x;
-          const pageY = rectangle.top + y;
+      const pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+      const buckets = new Map<
+        number,
+        { count: number; red: number; green: number; blue: number }
+      >();
+      for (let y = 0; y < sampleHeight; y += 1) {
+        for (let x = 0; x < sampleWidth; x += 1) {
+          const pageX = rectangle.left + ((x + 0.5) / sampleWidth) * rectangle.width;
+          const pageY = rectangle.top + ((y + 0.5) / sampleHeight) * rectangle.height;
           if (textBoxes.some((box) => isInsideBox(pageX, pageY, box))) continue;
-          const offset = (y * rectangle.width + x) * 4;
+          const offset = (y * sampleWidth + x) * 4;
           const r = pixels[offset];
           const g = pixels[offset + 1];
           const b = pixels[offset + 2];
           const alpha = pixels[offset + 3];
           if (r === undefined || g === undefined || b === undefined || alpha === undefined)
             continue;
-          const luminance = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255;
-          const saturation = Math.max(r, g, b) - Math.min(r, g, b);
-          if (alpha < 200 || luminance < 0.55 || saturation > 100) continue;
-          red.push(r);
-          green.push(g);
-          blue.push(b);
+          if (alpha < 128) continue;
+          const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+          const bucket = buckets.get(key) ?? { count: 0, red: 0, green: 0, blue: 0 };
+          bucket.count += 1;
+          bucket.red += r;
+          bucket.green += g;
+          bucket.blue += b;
+          buckets.set(key, bucket);
         }
       }
-      if (red.length < 16) return DEFAULT_BUBBLE_COLOR;
-      return `rgb(${median(red)} ${median(green)} ${median(blue)})`;
+      const dominant = [...buckets.values()].reduce<
+        { count: number; red: number; green: number; blue: number } | undefined
+      >(
+        (largest, bucket) => (!largest || bucket.count > largest.count ? bucket : largest),
+        undefined,
+      );
+      if (!dominant) return DEFAULT_BUBBLE_COLOR;
+      return `rgb(${Math.round(dominant.red / dominant.count)} ${Math.round(
+        dominant.green / dominant.count,
+      )} ${Math.round(dominant.blue / dominant.count)})`;
     } catch {
       readable = false;
       return DEFAULT_BUBBLE_COLOR;
@@ -390,8 +410,8 @@ export class TesseractOcrEngine {
         ...(confidence === undefined ? {} : { confidence }),
         box: unionBoxes(recognizedBoxes),
         bubbleBox: region.bubbleBox,
-        maskBoxes: recognizedBoxes,
-        backgroundColor: sampleBackground(region.bubbleBox, recognizedBoxes),
+        maskBoxes: region.textBoxes,
+        backgroundColor: sampleBackground(region.bubbleBox, region.textBoxes),
         writingMode: region.writingMode,
       });
     }
