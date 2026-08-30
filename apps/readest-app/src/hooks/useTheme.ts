@@ -3,18 +3,25 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSafeAreaInsets } from './useSafeAreaInsets';
-import { applyCustomTheme, Palette } from '@/styles/themes';
+import { applyCustomTheme, Palette, ThemeScope } from '@/styles/themes';
 import { getStatusBarHeight, setSystemUIVisibility } from '@/utils/bridge';
 import { getOSPlatform } from '@/utils/misc';
 
 type UseThemeProps = {
   systemUIVisible?: boolean;
   appThemeColor?: keyof Palette;
+  /**
+   * Which page's theme this route paints (issue #5945). Only the reader owns
+   * its own scope; the library, OPDS, player, auth and user pages all share
+   * the library's so no route paints a third look.
+   */
+  themeScope?: ThemeScope;
 };
 
 export const useTheme = ({
   systemUIVisible = true,
   appThemeColor = 'base-100',
+  themeScope = 'library',
 }: UseThemeProps = {}) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -31,8 +38,16 @@ export const useTheme = ({
     setStatusBarHeight,
     systemUIAlwaysHidden,
     setSystemUIAlwaysHidden,
+    setThemeScope,
   } = useThemeStore();
   const { onUpdateInsets } = useSafeAreaInsets();
+
+  // Point the store at this route's scope. `themeColor`/`isDarkMode` below
+  // are the resolved values for whichever scope is active, so the data-theme
+  // effect repaints for free when the user moves between library and reader.
+  useEffect(() => {
+    setThemeScope(themeScope);
+  }, [themeScope, setThemeScope]);
 
   useEffect(() => {
     updateAppTheme(appThemeColor);

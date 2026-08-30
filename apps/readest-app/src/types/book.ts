@@ -343,6 +343,23 @@ export interface ViewConfig {
   progressStyle: 'percentage' | 'fraction' | 'reference';
   referencePageCount: number;
 
+  // Styling for the header (section title) and footer (progress readout,
+  // remaining time/pages, clock, battery). See utils/headerFooterStyle.ts
+  // for how these resolve; e-ink ignores both colors.
+  /** Font size in px for the header/footer info text. */
+  headerFooterFontSize: number;
+  /** `''` follows the theme's base-content; otherwise a `#rrggbb`. */
+  headerFooterTextColor: string;
+  /**
+   * `'auto'` keeps the built-in backdrop (the scrolled-mode footer pill and
+   * nothing behind the header), `'none'` removes it everywhere, and a
+   * `#rrggbb` paints a matching chip behind both header and footer in every
+   * flow mode.
+   */
+  headerFooterBackground: string;
+  /** 0-1 alpha applied to a `#rrggbb` headerFooterBackground. */
+  headerFooterBgOpacity: number;
+
   animated: boolean;
   pageTurnStyle: PageTurnStyle;
   isEink: boolean;

@@ -407,9 +407,14 @@ pub async fn open_web_browser(
     })
 }
 
+/// Must stay `async`: on iOS `invoke()` arrives through the `ipc` custom scheme,
+/// which WKWebView dispatches on the MAIN thread, and a synchronous command body
+/// runs inline there. `run_mobile_plugin` would then park the main thread until
+/// the Swift handler replies from the main queue — a deadlock the watchdog ends
+/// with `0x8badf00d`. `async` moves the body onto the async runtime instead.
 #[cfg(mobile)]
 #[tauri::command]
-pub fn set_web_browser_status(
+pub async fn set_web_browser_status(
     app: tauri::AppHandle,
     status: WebBrowserStatus,
 ) -> Result<(), String> {
@@ -534,6 +539,62 @@ mod tests {
         assert!(
             open_rule.contains("flex:none"),
             "the Open button must not shrink/clip: {open_rule}"
+        );
+    }
+
+    /// Regression guard for the iOS watchdog kill (`0x8badf00d`) that fired on
+    /// every finished in-app-browser download: `invoke()` on iOS is a
+    /// `fetch("ipc://…")` and WKWebView runs the scheme handler on the MAIN
+    /// thread, where a non-`async` `#[tauri::command]` body executes inline.
+    /// `run_mobile_plugin` then parks that thread on a channel until the Swift
+    /// handler answers — which it does from `DispatchQueue.main.async`, i.e.
+    /// never. Any command that reaches the native bridge must be `async` so it
+    /// runs on the async runtime instead.
+    ///
+    /// This is a source scan rather than a type-level assertion because
+    /// `pnpm test:rust` builds for the host, where `#[cfg(mobile)]` commands are
+    /// not compiled at all.
+    #[test]
+    fn commands_reaching_the_native_bridge_are_async() {
+        let src_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut offenders = Vec::new();
+        for entry in walkdir::WalkDir::new(&src_dir)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|e| e.path().extension().is_some_and(|ext| ext == "rs"))
+        {
+            let text = std::fs::read_to_string(entry.path()).unwrap();
+            // Commands never live in a test module, and this very test mentions
+            // the attribute in its prose — stop at `#[cfg(test)]`.
+            let text = text.split("\n#[cfg(test)]").next().unwrap();
+            // Both spellings are in use here, so normalise before splitting.
+            let text = text.replace("#[tauri::command]", "#[command]");
+            for chunk in text.split("#[command]").skip(1) {
+                // Signature is everything up to the opening brace; the body ends
+                // at the first `}` in column 0 (rustfmt puts top-level items there).
+                let Some(brace) = chunk.find('{') else {
+                    continue;
+                };
+                let (signature, rest) = chunk.split_at(brace);
+                let body = rest.split_once("\n}").map_or(rest, |(b, _)| b);
+                if !body.contains(".native_bridge()") || signature.contains("async fn") {
+                    continue;
+                }
+                let name = signature
+                    .split("fn ")
+                    .nth(1)
+                    .and_then(|s| s.split(['(', '<']).next())
+                    .unwrap_or("<unknown>")
+                    .trim()
+                    .to_string();
+                offenders.push(format!("{}: {}", entry.path().display(), name));
+            }
+        }
+        assert!(
+            offenders.is_empty(),
+            "these commands call into the native bridge from a synchronous \
+             `#[tauri::command]`, which deadlocks the iOS main thread and gets the \
+             app killed by the watchdog — make them `async fn`: {offenders:#?}"
         );
     }
 }

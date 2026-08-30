@@ -12,6 +12,10 @@ interface StickyProgressBarProps {
 // Always-visible, display-only reading progress bar with chapter tick marks.
 // Positions are expressed from the reading-start edge so the fill grows and the
 // ticks sit correctly in both LTR and RTL.
+//
+// Track, fill and ticks are drawn in `currentColor` rather than a fixed
+// `base-content`, so the bar follows whatever color the footer resolves --
+// the theme's by default, or the reader's own (#5938).
 const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
   fraction,
   tickFractions,
@@ -32,13 +36,13 @@ const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
       <div
         className={clsx(
           'sticky-progress-track absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full border',
-          isEink ? 'border-base-content' : 'border-base-content/40',
+          isEink ? 'border-current' : 'border-current/40',
         )}
       >
         <div
           className={clsx(
             'sticky-progress-fill absolute inset-y-0 rounded-full',
-            isEink ? 'bg-base-content' : 'bg-base-content/50',
+            isEink ? 'bg-current' : 'bg-current/50',
           )}
           style={{ width: `${pct}%`, [startEdge]: 0 }}
         />
@@ -49,7 +53,7 @@ const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
             key={index}
             className={clsx(
               'sticky-progress-tick absolute inset-y-0 w-px',
-              isEink ? 'bg-base-content' : 'bg-base-content/40',
+              isEink ? 'bg-current' : 'bg-current/40',
             )}
             style={{ [startEdge]: `${tick * 100}%` }}
           />

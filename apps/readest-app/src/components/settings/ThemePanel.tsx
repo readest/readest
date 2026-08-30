@@ -6,9 +6,11 @@ import {
   generateLightPalette,
   Theme,
   themes,
+  ThemeScope,
 } from '@/styles/themes';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { resolveThemeIsDarkMode } from '@/utils/ambientLight';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -30,7 +32,7 @@ import { PREDEFINED_TEXTURES } from '@/styles/textures';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
 import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/types/book';
 import clsx from 'clsx';
-import { SettingLabel } from './primitives';
+import { ScopeSwitch, SectionTitle, SettingLabel } from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 import ThemeEditor from './theme/ThemeEditor';
 import ThemeModeSelector from './theme/ThemeModeSelector';
@@ -44,8 +46,16 @@ import LibrarySettings from './theme/LibrarySettings';
 
 const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
-  const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor, saveCustomTheme } =
-    useThemeStore();
+  const {
+    isDarkMode,
+    systemIsDarkMode,
+    ambientIsDarkMode,
+    getScopedTheme,
+    setScopedThemeMode,
+    setScopedThemeColor,
+    resetThemeScopes,
+    saveCustomTheme,
+  } = useThemeStore();
   const { envConfig, appService } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
@@ -59,6 +69,16 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [textureScope, setTextureScope] = useState<BackgroundTextureScope>(
     isLibraryContext ? 'library' : 'reader',
   );
+  // Theme Mode and Theme Color share one scope switch (issue #5945): picking
+  // a value here is what decouples the library from the reader, so the two
+  // halves of "the theme" must never be editable for different pages at once.
+  const [themeScope, setThemeScope] = useState<ThemeScope>(isLibraryContext ? 'library' : 'reader');
+  const { themeMode, themeColor } = getScopedTheme(themeScope);
+  // Swatches preview the scope being EDITED, which is not always the scope
+  // on screen — picking a library color from inside a dark reader has to
+  // show the library's light swatches.
+  const scopedIsDarkMode = resolveThemeIsDarkMode(themeMode, systemIsDarkMode, ambientIsDarkMode);
+
   const currentBackground = getBackgroundTextureSettings(
     textureScope,
     settings,
@@ -122,8 +142,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
     });
-    setThemeColor('default');
-    setThemeMode('auto');
+    resetThemeScopes();
     setSelectedTextureId('none');
     setBackgroundOpacity(0.6);
     setBackgroundSize('cover');
@@ -300,14 +319,14 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     applyCustomTheme(customTheme);
     saveCustomTheme(envConfig, settings, customTheme);
     setSettings({ ...settings });
-    setThemeColor(customTheme.name);
+    setScopedThemeColor(themeScope, customTheme.name);
     setShowCustomThemeEditor(false);
   };
 
   const handleDeleteCustomTheme = (customTheme: CustomTheme) => {
     saveCustomTheme(envConfig, settings, customTheme, true);
     setSettings({ ...settings });
-    setThemeColor('default');
+    setScopedThemeColor(themeScope, 'default');
     setShowCustomThemeEditor(false);
   };
 
@@ -393,12 +412,27 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
         />
       ) : (
         <>
-          <ThemeModeSelector
-            themeMode={themeMode}
-            onThemeModeChange={setThemeMode}
-            hasAmbientLightSensor={!!appService?.hasAmbientLightSensor}
-            data-setting-id='settings.color.themeMode'
-          />
+          <div className='space-y-6'>
+            <div className='mb-2 flex items-center justify-between gap-2'>
+              <SectionTitle>{_('Theme')}</SectionTitle>
+              <ScopeSwitch label={_('Theme')} scope={themeScope} onScopeChange={setThemeScope} />
+            </div>
+            <ThemeModeSelector
+              themeMode={themeMode}
+              onThemeModeChange={(mode) => setScopedThemeMode(themeScope, mode)}
+              hasAmbientLightSensor={!!appService?.hasAmbientLightSensor}
+              data-setting-id='settings.color.themeMode'
+            />
+            <ThemeColorSelector
+              themes={themes.concat(customThemes)}
+              themeColor={themeColor}
+              isDarkMode={scopedIsDarkMode}
+              onThemeColorChange={(color) => setScopedThemeColor(themeScope, color)}
+              onEditTheme={handleEditTheme}
+              onCreateTheme={() => setShowCustomThemeEditor(true)}
+              data-setting-id='settings.color.themeColor'
+            />
+          </div>
 
           <label
             data-setting-id='settings.color.invertImageInDarkMode'
@@ -423,16 +457,6 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             <SettingLabel>{_('Override Book Color')}</SettingLabel>
             <Toggle checked={overrideColor} onChange={() => setOverrideColor(!overrideColor)} />
           </label>
-
-          <ThemeColorSelector
-            themes={themes.concat(customThemes)}
-            themeColor={themeColor}
-            isDarkMode={isDarkMode}
-            onThemeColorChange={setThemeColor}
-            onEditTheme={handleEditTheme}
-            onCreateTheme={() => setShowCustomThemeEditor(true)}
-            data-setting-id='settings.color.themeColor'
-          />
 
           <BackgroundTextureSelector
             predefinedTextures={PREDEFINED_TEXTURES}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import type { Renderer } from '@/types/view';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { saveSysSettings } from '@/helpers/settings';
@@ -21,6 +22,7 @@ interface LatestState {
   enabled: boolean;
   scrolled: boolean;
   autoBrightness: boolean;
+  renderer: Renderer | undefined;
 }
 
 /**
@@ -49,11 +51,17 @@ export const useBrightnessGesture = (bookKey: string) => {
   const [overlayLevel, setOverlayLevel] = useState(0);
 
   // Everything the once-attached listener must read at the latest value.
-  const latestRef = useRef<LatestState>({ enabled: false, scrolled: false, autoBrightness: false });
+  const latestRef = useRef<LatestState>({
+    enabled: false,
+    scrolled: false,
+    autoBrightness: false,
+    renderer: undefined,
+  });
   latestRef.current = {
     enabled: brightnessGestureEnabled,
     scrolled: !!viewSettings?.scrolled,
     autoBrightness: settings.autoScreenBrightness,
+    renderer,
   };
 
   useEffect(() => {
@@ -189,6 +197,19 @@ export const useBrightnessGesture = (bookKey: string) => {
         if (!t) return;
         const dx = t.screenX - startXRef.current;
         const dy = t.screenY - startYRef.current;
+        // A text gesture that only began after touchstart owns the sequence:
+        // the OS long-press selected a word and the finger is now extending it
+        // (#5939), or the instant-highlight quick action engaged and locked the
+        // renderer (that one selects nothing, it synthesizes its range). Yield
+        // permanently — one-way, as below — because iOS can transiently
+        // collapse the selection while a handle is being dragged.
+        if (!activeRef.current) {
+          const selection = doc.getSelection?.();
+          if ((selection && !selection.isCollapsed) || latestRef.current.renderer?.scrollLocked) {
+            resetGesture();
+            return;
+          }
+        }
         // Gesture ownership is one-way. Once the same activation distance is
         // clearly horizontal, brightness may not claim the sequence later if
         // the trajectory bends vertically; Slide/Curl can safely own it.
