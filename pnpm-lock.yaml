@@ -54,7 +54,7 @@ overrides:
 patchedDependencies:
   '@ai-sdk/provider-utils@4.0.27': 168f9924f516aa1264359fc6b3520c6aaba761842888ccd504660fc30ee96d6f
   mdast-util-gfm-autolink-literal@2.0.1: a119b196bac546b8f07e1a9600ced6f526b0676e2b959914868e393ecffbaff8
-  tesseract.js@7.0.0: 115435990c592db1f4de670598b5e8403cc3d1937b75a573d6832ecc089d84f8
+  tesseract.js@7.0.0: 9835ad542d07a711a4578f213c869c88954aeca80881546abcf8053622e529b0
 
 importers:
 
@@ -431,7 +431,7 @@ importers:
         version: 1.0.1
       tesseract.js:
         specifier: 7.0.0
-        version: 7.0.0(patch_hash=115435990c592db1f4de670598b5e8403cc3d1937b75a573d6832ecc089d84f8)
+        version: 7.0.0(patch_hash=9835ad542d07a711a4578f213c869c88954aeca80881546abcf8053622e529b0)
       tesseract.js-core:
         specifier: 7.0.0
         version: 7.0.0
@@ -17267,7 +17267,7 @@ snapshots:
 
   tesseract.js-core@7.0.0: {}
 
-  tesseract.js@7.0.0(patch_hash=115435990c592db1f4de670598b5e8403cc3d1937b75a573d6832ecc089d84f8):
+  tesseract.js@7.0.0(patch_hash=9835ad542d07a711a4578f213c869c88954aeca80881546abcf8053622e529b0):
     dependencies:
       bmp-js: 0.1.0
       idb-keyval: 6.3.0
