@@ -98,6 +98,8 @@ import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
 import { getTTSMiniPlayerClearance } from '../utils/ttsMiniPlayerPosition';
+import type { OcrPage } from '../services/ocr/types';
+import { restoreOcrTextLayer } from '../utils/ocrTextLayer';
 
 declare global {
   interface Window {
@@ -141,6 +143,7 @@ const FoliateViewer: React.FC<{
 
   const viewRef = useRef<FoliateView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const ocrPagesRef = useRef(new Map<number, OcrPage>());
   const isViewCreated = useRef(false);
   const doubleClickDisabled = useRef(!!viewSettings?.disableDoubleClick);
   const [toastMessage, setToastMessage] = useState('');
@@ -381,6 +384,9 @@ const FoliateViewer: React.FC<{
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings, undefined, bookData.book?.format);
+        if (bookData.book?.format === 'CBZ') {
+          restoreOcrTextLayer(detail.doc, detail.index, ocrPagesRef.current);
+        }
         const themeCode = getThemeCode();
         if (bookData.book?.format === 'PDF' && themeCode && renderer) {
           renderer.pageColors = viewSettings.applyThemeToPDF

@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { OcrPage } from '@/app/reader/services/ocr/types';
-import { mountOcrTextLayer, OCR_TEXT_LAYER_SELECTOR } from '@/app/reader/utils/ocrTextLayer';
+import {
+  mountOcrTextLayer,
+  OCR_TEXT_LAYER_SELECTOR,
+  restoreOcrTextLayer,
+} from '@/app/reader/utils/ocrTextLayer';
 
 const makePage = (overrides: Partial<OcrPage> = {}): OcrPage => ({
   pageIndex: 3,
@@ -115,5 +119,22 @@ describe('mountOcrTextLayer', () => {
 
     expect(mountOcrTextLayer(document, makePage({ width: 0 }))).toBeNull();
     expect(document.querySelector(OCR_TEXT_LAYER_SELECTOR)).toBeNull();
+  });
+
+  it('restores a cached page into a recreated fixed-layout document', () => {
+    const cache = new Map([[3, makePage()]]);
+    const firstDocument = document.implementation.createHTMLDocument();
+    const reloadedDocument = document.implementation.createHTMLDocument();
+
+    restoreOcrTextLayer(firstDocument, 3, cache);
+    restoreOcrTextLayer(reloadedDocument, 3, cache);
+
+    expect(firstDocument.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toContain('縦書き');
+    expect(reloadedDocument.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toContain(
+      '縦書き',
+    );
+
+    expect(restoreOcrTextLayer(reloadedDocument, 4, cache)).toBeNull();
+    expect(reloadedDocument.querySelector(OCR_TEXT_LAYER_SELECTOR)).toBeNull();
   });
 });

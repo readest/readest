@@ -96,3 +96,16 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
   doc.body.append(layer);
   return layer;
 };
+
+export const restoreOcrTextLayer = (
+  doc: Document,
+  pageIndex: number,
+  pages: ReadonlyMap<number, OcrPage>,
+): HTMLDivElement | null => {
+  const page = pages.get(pageIndex);
+  if (!page) {
+    removeOcrTextLayer(doc);
+    return null;
+  }
+  return mountOcrTextLayer(doc, page);
+};
