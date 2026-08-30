@@ -91,6 +91,11 @@ describe('BergamotJapaneseTranslator', () => {
       '5cb217758bae05877bb3f0c2f612e4e7c1e4cb03c10db11f4a47098d7ae62919',
       '525f412f0d210536c2933c78ae395fa0bf2b5ee6cc5dda61ebc2e79410ebaee4',
     ]);
+    expect(loadAsset.mock.calls.map(([asset]) => asset.compressedSha256)).toEqual([
+      'ae56ffbb5556d8e4240b2f208a7c7a2449a4b627ac9d673981ed29eaadaab79d',
+      '12d693f5055525d5cc1e133c8c1b8ed787c77b9bb797400d9a14382ac69c1236',
+      '438152f5ccd982edb43e88ef51305e3ae7c7b66ee5c20a8fa425e9f1822f9b9b',
+    ]);
     expect(worker.messages.map(({ message }) => message.name)).toEqual([
       'initialize',
       'loadTranslationModel',
