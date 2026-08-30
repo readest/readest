@@ -124,8 +124,9 @@ describe('MangaDetector', () => {
     }));
     const release = vi.fn(async () => undefined);
     const createSession = vi.fn(async () => ({ run, release }));
+    const wasm: { proxy?: boolean } = {};
     const runtime = {
-      env: { wasm: {} },
+      env: { wasm },
       Tensor,
       InferenceSession: { create: createSession },
     };
@@ -141,7 +142,7 @@ describe('MangaDetector', () => {
     expect(loadRuntime).toHaveBeenCalledOnce();
     expect(loadModel).toHaveBeenCalledOnce();
     expect(createSession).toHaveBeenCalledOnce();
-    expect(runtime.env.wasm.proxy).toBe(true);
+    expect(wasm.proxy).toBe(true);
     expect(drawImage).toHaveBeenCalledWith(source, 0, 0, 640, 640);
     const firstFeeds = run.mock.calls[0]![0] as {
       images: Tensor;
