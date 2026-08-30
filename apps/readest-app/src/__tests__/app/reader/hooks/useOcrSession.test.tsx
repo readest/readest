@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -83,5 +83,48 @@ describe('useOcrSession', () => {
 
     unmount();
     expect(mocks.session.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands loaded documents to a replacement language session', async () => {
+    const { result, rerender } = renderHook(
+      ({ language }) =>
+        useOcrSession({
+          enabled: true,
+          language,
+        }),
+      { initialProps: { language: 'ja' } },
+    );
+    const doc = document.implementation.createHTMLDocument();
+
+    await act(async () => {
+      await result.current(doc, 4);
+    });
+    mocks.session.processDocument.mockClear();
+
+    rerender({ language: 'es' });
+
+    await waitFor(() => {
+      expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 4);
+    });
+  });
+
+  it('discovers an already-rendered document when OCR is enabled', async () => {
+    const doc = document.implementation.createHTMLDocument();
+    const { rerender } = renderHook(
+      ({ enabled }) =>
+        useOcrSession({
+          enabled,
+          language: 'ja',
+          getDocuments: () => [{ doc, index: 6 }],
+        }),
+      { initialProps: { enabled: false } },
+    );
+    mocks.session.processDocument.mockClear();
+
+    rerender({ enabled: true });
+
+    await waitFor(() => {
+      expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 6);
+    });
   });
 });

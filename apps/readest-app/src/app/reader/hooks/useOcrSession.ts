@@ -12,6 +12,7 @@ interface UseOcrSessionOptions {
   enabled: boolean;
   language?: string | readonly string[];
   mangaFallback?: boolean;
+  getDocuments?: () => readonly { doc?: Document; index?: number }[];
   onProgress?: (progress: OcrEngineProgress) => void;
   onError?: (error: unknown, pageIndex: number) => void;
   onPageRecognized?: (page: OcrPage) => void;
@@ -21,6 +22,7 @@ export const useOcrSession = ({
   enabled,
   language,
   mangaFallback = false,
+  getDocuments,
   onProgress,
   onError,
   onPageRecognized,
@@ -30,10 +32,39 @@ export const useOcrSession = ({
   const onProgressRef = useRef(onProgress);
   const onErrorRef = useRef(onError);
   const onPageRecognizedRef = useRef(onPageRecognized);
+  const documentsRef = useRef(new Map<number, Document>());
+  const getDocumentsRef = useRef(getDocuments);
   enabledRef.current = enabled;
+  getDocumentsRef.current = getDocuments;
   onProgressRef.current = onProgress;
   onErrorRef.current = onError;
   onPageRecognizedRef.current = onPageRecognized;
+
+  const rememberDocument = useCallback((doc: Document, pageIndex: number) => {
+    if (documentsRef.current.get(pageIndex) === doc) return;
+    documentsRef.current.set(pageIndex, doc);
+    doc.defaultView?.addEventListener(
+      'pagehide',
+      () => {
+        if (documentsRef.current.get(pageIndex) === doc) {
+          documentsRef.current.delete(pageIndex);
+        }
+      },
+      { once: true },
+    );
+  }, []);
+
+  const processKnownDocuments = useCallback(
+    (session: OcrSession) => {
+      for (const { doc, index } of getDocumentsRef.current?.() ?? []) {
+        if (doc && typeof index === 'number') rememberDocument(doc, index);
+      }
+      for (const [pageIndex, doc] of documentsRef.current) {
+        void session.processDocument(doc, pageIndex);
+      }
+    },
+    [rememberDocument],
+  );
 
   const languages = useMemo(
     () => getTesseractLanguages(language, { mangaFallback }),
@@ -64,21 +95,34 @@ export const useOcrSession = ({
       },
     });
     sessionRef.current = session;
+    processKnownDocuments(session);
     void session.setEnabled(enabledRef.current);
 
     return () => {
       if (sessionRef.current === session) sessionRef.current = null;
       void session.terminate();
     };
-  }, [languages]);
+  }, [languages, processKnownDocuments]);
 
   useEffect(() => {
-    void sessionRef.current?.setEnabled(enabled);
-  }, [enabled]);
+    const session = sessionRef.current;
+    if (!session) return;
+    if (enabled) processKnownDocuments(session);
+    void session.setEnabled(enabled);
+  }, [enabled, processKnownDocuments]);
+
+  useEffect(
+    () => () => {
+      documentsRef.current.clear();
+    },
+    [],
+  );
 
   return useCallback(
-    (doc: Document, pageIndex: number) =>
-      sessionRef.current?.processDocument(doc, pageIndex) ?? Promise.resolve(null),
-    [],
+    (doc: Document, pageIndex: number) => {
+      rememberDocument(doc, pageIndex);
+      return sessionRef.current?.processDocument(doc, pageIndex) ?? Promise.resolve(null);
+    },
+    [rememberDocument],
   );
 };

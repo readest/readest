@@ -163,6 +163,7 @@ const FoliateViewer: React.FC<{
     enabled: (bookFormat === 'CBZ' || bookFormat === 'PDF') && ocrEnabled,
     language: ocrLanguage || bookDoc.metadata.language,
     mangaFallback: bookFormat === 'CBZ' || (bookFormat === 'PDF' && bookDoc.dir === 'rtl'),
+    getDocuments: () => viewRef.current?.renderer.getContents() ?? [],
     onProgress: ({ status, progress }) => {
       const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
       const phase = status === 'recognizing text' ? 'recognizing' : 'preparing';
