@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTesseractLanguages } from '@/app/reader/services/ocr/tesseractLanguages';
+import {
+  getTesseractLanguages,
+  OCR_LANGUAGE_CODES,
+} from '@/app/reader/services/ocr/tesseractLanguages';
 
 describe('getTesseractLanguages', () => {
   it('uses mixed Japanese models for manga without language metadata', () => {
@@ -18,6 +21,27 @@ describe('getTesseractLanguages', () => {
     expect(getTesseractLanguages('zh-CN')).toEqual(['chi_sim', 'chi_sim_vert', 'eng']);
   });
 
+  it('maps supported scanned-book languages to their Tesseract models', () => {
+    expect(getTesseractLanguages('es-MX')).toEqual(['spa']);
+    expect(getTesseractLanguages('fr')).toEqual(['fra']);
+    expect(getTesseractLanguages('deu')).toEqual(['deu']);
+    expect(getTesseractLanguages('pt-BR')).toEqual(['por']);
+    expect(getTesseractLanguages('ar')).toEqual(['ara']);
+    expect(getTesseractLanguages('hi')).toEqual(['hin']);
+    expect(getTesseractLanguages('uk')).toEqual(['ukr']);
+  });
+
+  it('offers every app language that has a matching OCR model', () => {
+    expect(OCR_LANGUAGE_CODES).toContain('es');
+    expect(OCR_LANGUAGE_CODES).toContain('ja');
+    expect(OCR_LANGUAGE_CODES).toContain('zh-CN');
+    for (const language of OCR_LANGUAGE_CODES) {
+      const models = getTesseractLanguages(language);
+      expect(models.length).toBeGreaterThan(0);
+      if (language !== 'en') expect(models).not.toEqual(['eng']);
+    }
+  });
+
   it('uses the first metadata language and otherwise falls back to English', () => {
     expect(getTesseractLanguages(['ja', 'en'])).toEqual(['jpn', 'jpn_vert', 'eng']);
     expect(getTesseractLanguages('en-US')).toEqual(['eng']);
@@ -26,6 +50,6 @@ describe('getTesseractLanguages', () => {
       'jpn_vert',
       'eng',
     ]);
-    expect(getTesseractLanguages('fr')).toEqual(['eng']);
+    expect(getTesseractLanguages('xx')).toEqual(['eng']);
   });
 });
