@@ -69,6 +69,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     getProgress,
     setViewSettings,
     setOcrEnabled,
+    setMangaTranslationEnabled,
     setOcrLanguage,
     recreateViewer,
   } = useReaderStore();
@@ -500,6 +501,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       {supportsOcr && (
         <>
+          {bookData.book?.format === 'CBZ' && (
+            <MenuItem
+              label={_('Translate Manga')}
+              Icon={viewState?.mangaTranslationEnabled ? MdCheck : undefined}
+              onClick={() =>
+                setMangaTranslationEnabled(bookKey, !viewState?.mangaTranslationEnabled)
+              }
+            />
+          )}
           <MenuItem
             label={_('Recognize Text')}
             Icon={viewState?.ocrEnabled ? MdCheck : undefined}

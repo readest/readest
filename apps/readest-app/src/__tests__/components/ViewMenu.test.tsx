@@ -39,8 +39,9 @@ const currentViewSettings = {
 
 const mockRecreateViewer = vi.fn();
 const mockSetOcrEnabled = vi.fn();
+const mockSetMangaTranslationEnabled = vi.fn();
 const mockSetOcrLanguage = vi.fn();
-const mockViewState = { ocrEnabled: false, ocrLanguage: '' };
+const mockViewState = { ocrEnabled: false, mangaTranslationEnabled: false, ocrLanguage: '' };
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('next/navigation', () => ({
@@ -63,6 +64,7 @@ vi.mock('@/store/readerStore', () => ({
     getProgress: () => null,
     setViewSettings: vi.fn(),
     setOcrEnabled: mockSetOcrEnabled,
+    setMangaTranslationEnabled: mockSetMangaTranslationEnabled,
     setOcrLanguage: mockSetOcrLanguage,
     recreateViewer: mockRecreateViewer,
   }),
@@ -184,6 +186,7 @@ describe('ViewMenu OCR toggle', () => {
     vi.clearAllMocks();
     mockBookData.book.format = 'CBZ';
     mockViewState.ocrEnabled = false;
+    mockViewState.mangaTranslationEnabled = false;
   });
 
   afterEach(() => {
@@ -216,5 +219,21 @@ describe('ViewMenu OCR toggle', () => {
     });
 
     expect(mockSetOcrLanguage).toHaveBeenCalledWith('book-1', 'es');
+  });
+
+  it('enables in-bubble manga translation for a CBZ view', () => {
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.click(screen.getByText('Translate Manga'));
+
+    expect(mockSetMangaTranslationEnabled).toHaveBeenCalledWith('book-1', true);
+  });
+
+  it('does not offer manga translation for a PDF view', () => {
+    mockBookData.book.format = 'PDF';
+
+    render(<ViewMenu bookKey='book-1' />);
+
+    expect(screen.queryByText('Translate Manga')).toBeNull();
   });
 });

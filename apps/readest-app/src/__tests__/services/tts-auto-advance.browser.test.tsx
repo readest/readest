@@ -214,6 +214,7 @@ const seedStores = (view: FoliateView, viewSettings: ViewSettings) => {
         ttsEnabled: false,
         autoScrollEnabled: false,
         ocrEnabled: false,
+        mangaTranslationEnabled: false,
         ocrLanguage: '',
         syncing: false,
         gridInsets: null,

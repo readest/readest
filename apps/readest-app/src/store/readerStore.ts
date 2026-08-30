@@ -50,6 +50,8 @@ interface ViewState {
   autoScrollEnabled: boolean;
   /* True while OCR is active for this view; session-only, never persisted. */
   ocrEnabled: boolean;
+  /* True while local in-bubble manga translation is active; session-only, never persisted. */
+  mangaTranslationEnabled: boolean;
   /* Empty uses book metadata; otherwise a session-only OCR language override. */
   ocrLanguage: string;
   syncing: boolean;
@@ -82,6 +84,7 @@ interface ReaderStore {
   setTTSEnabled: (key: string, enabled: boolean) => void;
   setAutoScrollEnabled: (key: string, enabled: boolean) => void;
   setOcrEnabled: (key: string, enabled: boolean) => void;
+  setMangaTranslationEnabled: (key: string, enabled: boolean) => void;
   setOcrLanguage: (key: string, language: string) => void;
   setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
@@ -179,6 +182,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           ttsEnabled: false,
           autoScrollEnabled: false,
           ocrEnabled: false,
+          mangaTranslationEnabled: false,
           ocrLanguage: '',
           syncing: false,
           gridInsets: null,
@@ -332,6 +336,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ttsEnabled: false,
             autoScrollEnabled: false,
             ocrEnabled: false,
+            mangaTranslationEnabled: false,
             ocrLanguage: '',
             syncing: false,
             gridInsets: null,
@@ -358,6 +363,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ttsEnabled: false,
             autoScrollEnabled: false,
             ocrEnabled: false,
+            mangaTranslationEnabled: false,
             ocrLanguage: '',
             syncing: false,
             gridInsets: null,
@@ -524,6 +530,19 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ocrEnabled: enabled,
+          ...(enabled ? { mangaTranslationEnabled: false } : {}),
+        },
+      },
+    })),
+
+  setMangaTranslationEnabled: (key: string, enabled: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          mangaTranslationEnabled: enabled,
+          ...(enabled ? { ocrEnabled: false } : {}),
         },
       },
     })),

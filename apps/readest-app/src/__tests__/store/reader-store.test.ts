@@ -91,6 +91,7 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
         ttsEnabled: false,
         autoScrollEnabled: false,
         ocrEnabled: false,
+        mangaTranslationEnabled: false,
         ocrLanguage: '',
         syncing: false,
         gridInsets: null,
@@ -280,10 +281,27 @@ describe('readerStore', () => {
       useReaderStore.getState().setOcrEnabled('book-1', true);
 
       expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(true);
+      expect(useReaderStore.getState().viewStates['book-1']!.mangaTranslationEnabled).toBe(false);
       expect(useReaderStore.getState().viewStates['book-2']!.ocrEnabled).toBe(false);
 
       useReaderStore.getState().setOcrEnabled('book-1', false);
       expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(false);
+    });
+  });
+
+  describe('setMangaTranslationEnabled', () => {
+    test('keeps manga translation session-only and mutually exclusive with OCR', () => {
+      seedViewState('book-1', { ocrEnabled: true });
+      seedViewState('book-2');
+
+      useReaderStore.getState().setMangaTranslationEnabled('book-1', true);
+
+      expect(useReaderStore.getState().viewStates['book-1']!.mangaTranslationEnabled).toBe(true);
+      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(false);
+      expect(useReaderStore.getState().viewStates['book-2']!.mangaTranslationEnabled).toBe(false);
+
+      useReaderStore.getState().setOcrEnabled('book-1', true);
+      expect(useReaderStore.getState().viewStates['book-1']!.mangaTranslationEnabled).toBe(false);
     });
   });
 

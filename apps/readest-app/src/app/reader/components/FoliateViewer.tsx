@@ -90,6 +90,7 @@ import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
 import { useOcrSession } from '../hooks/useOcrSession';
+import { useMangaTranslationSession } from '../hooks/useMangaTranslationSession';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
@@ -131,6 +132,9 @@ const FoliateViewer: React.FC<{
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
   const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
+  const mangaTranslationEnabled = useReaderStore(
+    (s) => s.viewStates[bookKey]?.mangaTranslationEnabled ?? false,
+  );
   const ocrLanguage = useReaderStore((s) => s.viewStates[bookKey]?.ocrLanguage ?? '');
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
@@ -153,6 +157,7 @@ const FoliateViewer: React.FC<{
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ocrProgressKeyRef = useRef('');
+  const mangaTranslationProgressKeyRef = useRef('');
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
 
@@ -201,9 +206,58 @@ const FoliateViewer: React.FC<{
     },
   });
 
+  const processMangaTranslationDocument = useMangaTranslationSession({
+    enabled: bookFormat === 'CBZ' && mangaTranslationEnabled,
+    getDocuments: () => viewRef.current?.renderer.getContents() ?? [],
+    onProgress: ({ status, progress }) => {
+      const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+      const phase = status === 'translating speech bubbles' ? 'translating' : 'preparing';
+      const progressKey = `${phase}-${Math.floor(percentage / 25)}`;
+      if (mangaTranslationProgressKeyRef.current === progressKey) return;
+      mangaTranslationProgressKeyRef.current = progressKey;
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message:
+          phase === 'translating'
+            ? _('Translating manga: {{progress}}%', { progress: percentage })
+            : _('Preparing manga translation: {{progress}}%', { progress: percentage }),
+        timeout: 5000,
+      });
+    },
+    onError: (error, pageIndex) => {
+      console.error(`Failed to translate manga on page ${pageIndex}`, error);
+      mangaTranslationProgressKeyRef.current = '';
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message:
+          pageIndex >= 0
+            ? _('Manga translation failed on page {{page}}', { page: pageIndex + 1 })
+            : _('Manga translation failed'),
+        timeout: 5000,
+      });
+    },
+    onPageTranslated: ({ pageIndex, regions }) => {
+      mangaTranslationProgressKeyRef.current = '';
+      eventDispatcher.dispatch('toast', {
+        type: regions.length ? 'success' : 'info',
+        message: regions.length
+          ? _('Translated {{count}} speech bubbles on page {{page}}', {
+              count: regions.length,
+              page: pageIndex + 1,
+            })
+          : _('No Japanese speech bubbles found on page {{page}}', { page: pageIndex + 1 }),
+        timeout: 3000,
+      });
+    },
+  });
+
   useEffect(() => {
     if (!ocrEnabled) ocrProgressKeyRef.current = '';
   }, [ocrEnabled, ocrLanguage]);
+
+  useEffect(() => {
+    if (!mangaTranslationEnabled) mangaTranslationProgressKeyRef.current = '';
+  }, [mangaTranslationEnabled]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {
@@ -433,6 +487,7 @@ const FoliateViewer: React.FC<{
         applyFixedlayoutStyles(detail.doc, viewSettings, undefined, bookData.book?.format);
         if (bookData.book?.format === 'CBZ') {
           void processOcrDocument(detail.doc, detail.index);
+          void processMangaTranslationDocument(detail.doc, detail.index);
         }
         const themeCode = getThemeCode();
         if (bookData.book?.format === 'PDF' && themeCode && renderer) {
