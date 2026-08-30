@@ -1474,6 +1474,8 @@ export const applyFixedlayoutStyles = (
     }
     img, canvas, [data-readest-manga-translation-layer] {
       ${imgFilter}
+    }
+    img, canvas {
       ${overrideColor ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
     }
     img.singlePage {
