@@ -30,6 +30,21 @@ const makeDocument = (pageIndex: number): Document => {
   return doc;
 };
 
+const makePdfDocument = ({ text = '' }: { text?: string } = {}): Document => {
+  const doc = document.implementation.createHTMLDocument();
+  const canvasContainer = doc.createElement('div');
+  canvasContainer.id = 'canvas';
+  const canvas = doc.createElement('canvas');
+  canvas.width = 1600;
+  canvas.height = 2400;
+  canvasContainer.append(canvas);
+  const textLayer = doc.createElement('div');
+  textLayer.className = 'textLayer';
+  textLayer.textContent = text;
+  doc.body.append(canvasContainer, textLayer);
+  return doc;
+};
+
 const makeEngine = (): OcrEngine => ({
   recognize: vi.fn(async (_source, { pageIndex }) => makePage(pageIndex)),
   terminate: vi.fn(async () => undefined),
@@ -125,5 +140,63 @@ describe('OcrSession', () => {
     await activation;
 
     expect(engine.recognize).toHaveBeenCalledTimes(2);
+  });
+
+  it('recognizes a rendered canvas when a PDF page has no native text', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument();
+    const canvas = doc.querySelector('canvas')!;
+
+    await session.setEnabled(true);
+    await session.processDocument(doc, 5);
+
+    expect(engine.recognize).toHaveBeenCalledWith(canvas, {
+      pageIndex: 5,
+      width: 1600,
+      height: 2400,
+    });
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 5');
+  });
+
+  it('does not recognize a PDF page that already has native text', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument({ text: 'Selectable PDF text' });
+
+    await session.setEnabled(true);
+    await session.processDocument(doc, 2);
+
+    expect(engine.recognize).not.toHaveBeenCalled();
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)).toBeNull();
+  });
+
+  it('treats a whitespace-only PDF text layer as image-only', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument({ text: ' \n\t ' });
+
+    await session.setEnabled(true);
+    await session.processDocument(doc, 4);
+
+    expect(engine.recognize).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores cached PDF text after a zoom replaces the rendered canvas', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument();
+    await session.setEnabled(true);
+    await session.processDocument(doc, 6);
+    doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.remove();
+
+    const zoomedCanvas = doc.createElement('canvas');
+    zoomedCanvas.width = 2400;
+    zoomedCanvas.height = 3600;
+    doc.querySelector('#canvas')!.replaceChildren(zoomedCanvas);
+    await session.processDocument(doc, 6);
+
+    expect(engine.recognize).toHaveBeenCalledTimes(1);
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 6');
   });
 });

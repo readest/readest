@@ -7,8 +7,10 @@ interface OcrImagePage {
   height: number;
 }
 
+export type OcrImageSource = string | HTMLCanvasElement;
+
 export interface OcrEngine {
-  recognize: (source: string, page: OcrImagePage) => Promise<OcrPage>;
+  recognize: (source: OcrImageSource, page: OcrImagePage) => Promise<OcrPage>;
   terminate: () => Promise<void>;
 }
 
@@ -19,21 +21,28 @@ interface OcrSessionOptions {
 }
 
 interface PageImage {
-  source: string;
+  source: OcrImageSource;
   width: number;
   height: number;
 }
 
 const getPageImage = (doc: Document): PageImage | null => {
   const image = doc.querySelector('img');
-  if (!image) return null;
+  if (image) {
+    const source = image.currentSrc || image.src;
+    const width = image.naturalWidth;
+    const height = image.naturalHeight;
+    if (!source || !Number.isFinite(width) || width <= 0) return null;
+    if (!Number.isFinite(height) || height <= 0) return null;
+    return { source, width, height };
+  }
 
-  const source = image.currentSrc || image.src;
-  const width = image.naturalWidth;
-  const height = image.naturalHeight;
-  if (!source || !Number.isFinite(width) || width <= 0) return null;
-  if (!Number.isFinite(height) || height <= 0) return null;
-  return { source, width, height };
+  const canvas = doc.querySelector<HTMLCanvasElement>('#canvas canvas');
+  if (!canvas) return null;
+  if (/\S/u.test(doc.querySelector('.textLayer')?.textContent ?? '')) return null;
+  if (!Number.isFinite(canvas.width) || canvas.width <= 0) return null;
+  if (!Number.isFinite(canvas.height) || canvas.height <= 0) return null;
+  return { source: canvas, width: canvas.width, height: canvas.height };
 };
 
 export class OcrSession {
@@ -62,14 +71,18 @@ export class OcrSession {
       return null;
     }
 
+    const image = getPageImage(doc);
+    if (!image) {
+      removeOcrTextLayer(doc);
+      return null;
+    }
+
     const cachedPage = this.#pages.get(pageIndex);
     if (cachedPage) {
       mountOcrTextLayer(doc, cachedPage);
       return cachedPage;
     }
 
-    const image = getPageImage(doc);
-    if (!image) return null;
     const generation = this.#generation;
     const recognition =
       this.#pending.get(pageIndex) ?? this.#recognize(image, pageIndex, generation);
