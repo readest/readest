@@ -399,8 +399,7 @@ const ProfilePage = () => {
                     </div>
                   </>
                 )}
-                {/* <LegalLinks /> */}
-                TOC, privacy, source-code
+                <LegalLinks />
               </div>
             </div>
           )}

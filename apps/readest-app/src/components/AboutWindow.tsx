@@ -163,16 +163,14 @@ export const AboutWindow = () => {
             </p>
             {/* <p className='text-neutral-content text-xs'>
               Source code is available at{' '}
-              <Link href='https://github.com/debarshit/readest' className='text-blue-500 underline'>
+              <Link href='https://github.com/debarshit/readest/tree/working' className='text-blue-500 underline'>
                 GitHub
               </Link>
               .
             </p> */}
-            {/* <LegalLinks /> */}
-            TOC, Privacy, etc etc
+            <LegalLinks />
           </div>
-          {/* <SupportLinks /> */}
-          insta, threads, reddit, etc
+          <SupportLinks />
         </div>
       )}
     </Dialog>

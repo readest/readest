@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="../readest/apps/readest-app/public/icon.png" alt="Yomi Logo" width="15%" />
+  <img src="https://biblophile.com/yomi/icon.png" alt="Yomi Logo" width="15%" />
   <h1>Yomi</h1>
   <p><strong>A distraction-free, open-source ebook reader designed for deep, immersive reading.</strong></p>
   <p><em>Forked from the excellent <a href="https://github.com/readest/readest">Readest</a> project.</em></p>
@@ -54,7 +54,7 @@ Yomi is designed around the philosophy of **deep reading**. Here is how Yomi ele
 
 ---
 
-## 📲 Downloads
+<!-- ## 📲 Downloads
 
 Yomi runs wherever you do. Get the latest version for your platform below:
 
@@ -63,7 +63,7 @@ Yomi runs wherever you do. Get the latest version for your platform below:
 *   **Windows & Linux Desktop:** Get the latest desktop installers from the [GitHub Releases](https://github.com/readest/readest/releases) page.
 *   **Web App:** Open the reader directly in your browser at [web.readest.com](https://web.readest.com).
 
----
+--- -->
 
 ## 📄 License & Credits
 

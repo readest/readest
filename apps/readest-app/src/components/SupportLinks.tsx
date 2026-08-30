@@ -1,4 +1,4 @@
-import { FaGithub, FaDiscord, FaReddit } from 'react-icons/fa';
+import { FaDiscord, FaReddit, FaInstagram } from 'react-icons/fa';
 import { BRAND_NAME } from '@/services/branding';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -15,29 +15,29 @@ const SupportLinks = () => {
       </p>
       <div className='flex gap-4'>
         <Link
-          href='https://github.com/readest/readest'
+          href='https://www.instagram.com/__biblophile__/'
           className='flex items-center gap-2 rounded-full bg-gray-800 p-1.5 text-white transition-colors hover:bg-gray-700'
-          title='GitHub'
-          aria-label='GitHub'
+          title='Instagram'
+          aria-label='Instagram'
         >
-          <FaGithub size={iconSize} />
+          <FaInstagram size={iconSize} />
         </Link>
         <Link
-          href='https://discord.gg/gntyVNk3BJ'
+          href='https://discord.gg/tyg7WVeTmQ'
           className='flex items-center gap-2 rounded-full bg-indigo-600 p-1.5 text-white transition-colors hover:bg-indigo-500'
           title='Discord'
           aria-label='Discord'
         >
           <FaDiscord size={iconSize} />
         </Link>
-        <Link
+        {/* <Link
           href='https://reddit.com/r/readest/'
           className='flex items-center gap-2 rounded-full bg-orange-600 p-1.5 text-white transition-colors hover:bg-orange-500'
           title='Reddit'
           aria-label='Reddit'
         >
           <FaReddit size={iconSize} />
-        </Link>
+        </Link> */}
       </div>
     </div>
   );
