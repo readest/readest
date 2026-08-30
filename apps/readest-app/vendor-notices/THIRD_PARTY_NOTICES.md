@@ -7,6 +7,7 @@ Readest loads the following assets for local manga OCR and translation.
 - `@browsermt/bergamot-translator` 0.4.9 provides the translation worker. It is licensed under the [Mozilla Public License 2.0](LICENSE-MPL-2.0.txt).
 - `onnxruntime-web` 1.29.0 provides WebAssembly inference. It is licensed under the [MIT License](LICENSE-MIT-ONNXRUNTIME.txt). Copyright Microsoft Corporation.
 - `tesseract.js` 7.0.0 and `tesseract.js-core` 7.0.0 provide OCR. Both are licensed under the [Apache License 2.0](LICENSE-APACHE-2.0.txt). The setup script also copies each package's license beside its generated runtime files.
+- `@tesseract.js-data/<language>` 1.0.0 provides the pinned Tesseract traineddata files. The packages declare the [MIT License](LICENSE-MIT-TESSERACT-DATA.txt), are attributed to Balearica and contributors, and are sourced from [naptha/tessdata](https://github.com/naptha/tessdata).
 
 ## Remote models
 

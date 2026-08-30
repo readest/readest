@@ -1,6 +1,7 @@
 import { createWorker, OEM, PSM } from 'tesseract.js';
 import type {
   ImageLike,
+  Lang as TesseractLang,
   OutputFormats,
   RecognizeOptions,
   WorkerOptions,
@@ -8,6 +9,10 @@ import type {
 } from 'tesseract.js';
 
 import { MangaDetector, type MangaBubbleRegion } from '@/app/reader/services/manga/mangaDetector';
+import {
+  fetchVerifiedModelAsset,
+  type VerifiedModelAsset,
+} from '@/app/reader/services/manga/modelAssets';
 import type {
   OcrBoundingBox,
   OcrPage,
@@ -18,6 +23,7 @@ import {
   adaptTesseractPage,
   type TesseractPageData,
 } from '@/app/reader/services/ocr/tesseractAdapter';
+import { getTesseractLanguageAsset } from '@/app/reader/services/ocr/tesseractLanguageAssets';
 
 const DEFAULT_LANGUAGES = ['eng'] as const;
 const WORKER_PATH = '/vendor/tesseract/dist/worker.min.js';
@@ -89,11 +95,15 @@ export interface TesseractWorker {
   terminate: () => Promise<unknown>;
 }
 
+export type TesseractWorkerLanguages = string[] | TesseractLang[];
+
 export type TesseractWorkerFactory = (
-  languages: string[],
+  languages: TesseractWorkerLanguages,
   oem: OEM,
   options: Partial<WorkerOptions>,
 ) => Promise<TesseractWorker>;
+
+export type TesseractLanguageAssetLoader = (asset: VerifiedModelAsset) => Promise<ArrayBuffer>;
 
 interface WorkerRequest {
   creation: Promise<TesseractWorker>;
@@ -104,6 +114,8 @@ interface WorkerRequest {
 
 const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
   createWorker(languages, oem, options);
+
+const loadLocalLanguageAsset: TesseractLanguageAssetLoader = fetchVerifiedModelAsset;
 
 const createMangaDetector: MangaTextDetectorFactory = (onDownloadProgress) =>
   new MangaDetector({ onDownloadProgress });
@@ -321,6 +333,8 @@ export class TesseractOcrEngine {
   readonly #createWorker: TesseractWorkerFactory;
   readonly #createMangaDetector: MangaTextDetectorFactory;
   readonly #loadMangaImage: MangaImageLoader;
+  readonly #loadLanguageAsset: TesseractLanguageAssetLoader;
+  readonly #abortController = new AbortController();
   #workerRequest: WorkerRequest | null = null;
   #mangaDetector: MangaTextDetector | null = null;
   #terminated = false;
@@ -330,6 +344,7 @@ export class TesseractOcrEngine {
     workerFactory: TesseractWorkerFactory = createLocalWorker,
     mangaDetectorFactory: MangaTextDetectorFactory = createMangaDetector,
     mangaImageLoader: MangaImageLoader = loadMangaImage,
+    languageAssetLoader: TesseractLanguageAssetLoader = loadLocalLanguageAsset,
   ) {
     this.#languages = options.languages?.length ? [...options.languages] : [...DEFAULT_LANGUAGES];
     this.#pageSegmentationMode = options.pageSegmentationMode ?? PSM.AUTO;
@@ -340,6 +355,7 @@ export class TesseractOcrEngine {
     this.#createWorker = workerFactory;
     this.#createMangaDetector = mangaDetectorFactory;
     this.#loadMangaImage = mangaImageLoader;
+    this.#loadLanguageAsset = languageAssetLoader;
   }
 
   async recognize(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
@@ -360,6 +376,7 @@ export class TesseractOcrEngine {
   async terminate(): Promise<void> {
     if (this.#terminated) return;
     this.#terminated = true;
+    this.#abortController.abort();
     const workerRequest = this.#workerRequest;
     this.#workerRequest = null;
     const detector = this.#mangaDetector;
@@ -479,15 +496,22 @@ export class TesseractOcrEngine {
       worker: null as TesseractWorker | null,
       termination: null as Promise<void> | null,
     };
-    workerRequest.creation = this.#createWorker([...this.#languages], OEM.LSTM_ONLY, {
-      workerPath: WORKER_PATH,
-      corePath: CORE_PATH,
-      workerBlobURL: false,
-      logger: ({ status, progress }) => this.#onProgress?.({ status, progress }),
-    }).then((worker) => {
-      workerRequest.worker = worker;
-      return worker;
-    });
+    workerRequest.creation = this.#loadLanguageData()
+      .then((languages) => {
+        if (this.#terminated) throw new Error('OCR engine has been terminated');
+        return this.#createWorker(languages, OEM.LSTM_ONLY, {
+          workerPath: WORKER_PATH,
+          corePath: CORE_PATH,
+          workerBlobURL: false,
+          cacheMethod: 'none',
+          gzip: false,
+          logger: ({ status, progress }) => this.#onProgress?.({ status, progress }),
+        });
+      })
+      .then((worker) => {
+        workerRequest.worker = worker;
+        return worker;
+      });
     workerRequest.initialized = workerRequest.creation.then(async (worker) => {
       try {
         if (this.#terminated || this.#workerRequest !== workerRequest) {
@@ -511,6 +535,35 @@ export class TesseractOcrEngine {
       if (this.#workerRequest === workerRequest) this.#workerRequest = null;
     });
     return workerRequest.initialized;
+  }
+
+  async #loadLanguageData(): Promise<TesseractLang[]> {
+    const assets = this.#languages.map((code) => getTesseractLanguageAsset(code));
+    const progress = assets.map(() => ({ loaded: 0, total: undefined as number | undefined }));
+    const buffers = await Promise.all(
+      assets.map((asset, index) =>
+        this.#loadLanguageAsset({
+          ...asset,
+          signal: this.#abortController.signal,
+          onProgress: ({ loaded, total }) => {
+            progress[index] = { loaded, total };
+            const allTotalsKnown = progress.every((item) => item.total !== undefined);
+            const loadedBytes = progress.reduce((sum, item) => sum + item.loaded, 0);
+            const totalBytes = progress.reduce((sum, item) => sum + (item.total ?? 0), 0);
+            this.#onProgress?.({
+              status: 'loading OCR language data',
+              progress:
+                allTotalsKnown && totalBytes > 0 ? Math.min(1, loadedBytes / totalBytes) : 0,
+            });
+          },
+        }),
+      ),
+    );
+    if (this.#terminated) throw new Error('OCR engine has been terminated');
+    return buffers.map((buffer, index) => ({
+      code: assets[index]!.code,
+      data: new Uint8Array(buffer),
+    }));
   }
 
   async #runWorkerOperation<T>(worker: TesseractWorker, operation: () => Promise<T>): Promise<T> {

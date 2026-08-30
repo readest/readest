@@ -204,4 +204,34 @@ describe('fetchVerifiedModelAsset', () => {
     ).rejects.toThrow('expands beyond 4 bytes');
     expect(decompressGzip).not.toHaveBeenCalled();
   });
+
+  it('passes cancellation to an in-flight model request', async () => {
+    const controller = new AbortController();
+    let requestSignal: AbortSignal | undefined;
+    const fetchImpl = vi.fn(
+      (_url: URL | RequestInfo, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          requestSignal = init?.signal ?? undefined;
+          init?.signal?.addEventListener(
+            'abort',
+            () => reject(init?.signal?.reason ?? new DOMException('Aborted', 'AbortError')),
+            { once: true },
+          );
+        }),
+    );
+    const request = fetchVerifiedModelAsset(
+      {
+        url: 'https://models.example/model.onnx',
+        sha256: SHA256,
+        maximumDownloadBytes: 4,
+        maximumResultBytes: 4,
+        signal: controller.signal,
+      },
+      { fetchImpl, digestSha256: async () => SHA256 },
+    );
+
+    expect(requestSignal).toBe(controller.signal);
+    controller.abort();
+    await expect(request).rejects.toMatchObject({ name: 'AbortError' });
+  });
 });

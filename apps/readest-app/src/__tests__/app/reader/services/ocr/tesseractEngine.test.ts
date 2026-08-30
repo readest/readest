@@ -4,9 +4,14 @@ import { OEM, PSM } from 'tesseract.js';
 import {
   TesseractOcrEngine,
   type MangaTextDetectorFactory,
+  type TesseractLanguageAssetLoader,
   type TesseractWorker,
   type TesseractWorkerFactory,
 } from '@/app/reader/services/ocr/tesseractEngine';
+
+vi.mock('@/app/reader/services/manga/modelAssets', () => ({
+  fetchVerifiedModelAsset: vi.fn(async () => new ArrayBuffer(1)),
+}));
 
 const makeWorker = (): TesseractWorker => ({
   setParameters: vi.fn(async () => undefined),
@@ -62,13 +67,21 @@ describe('TesseractOcrEngine', () => {
     await engine.recognize('blob:page-2', { pageIndex: 2, width: 1200, height: 1800 });
 
     expect(createWorker).toHaveBeenCalledTimes(1);
+    const languages = createWorker.mock.calls[0]?.[0];
+    expect(languages).toHaveLength(2);
+    expect(languages).toEqual([
+      { code: 'jpn', data: expect.any(Uint8Array) },
+      { code: 'jpn_vert', data: expect.any(Uint8Array) },
+    ]);
     expect(createWorker).toHaveBeenCalledWith(
-      ['jpn', 'jpn_vert'],
+      languages,
       OEM.LSTM_ONLY,
       expect.objectContaining({
         workerPath: '/vendor/tesseract/dist/worker.min.js',
         corePath: '/vendor/tesseract/core',
         workerBlobURL: false,
+        cacheMethod: 'none',
+        gzip: false,
       }),
     );
     expect(worker.setParameters).toHaveBeenCalledWith({
@@ -93,6 +106,32 @@ describe('TesseractOcrEngine', () => {
       workerId: 'worker-1',
     });
     expect(progress).toHaveBeenCalledWith({ status: 'recognizing text', progress: 0.5 });
+  });
+
+  it('loads every requested language before creating the worker', async () => {
+    const worker = makeWorker();
+    const events: string[] = [];
+    const loadLanguageAsset = vi.fn<TesseractLanguageAssetLoader>(async (asset) => {
+      events.push(`asset:${asset.url}`);
+      return new Uint8Array([1, 2, 3]).buffer;
+    });
+    const createWorker = vi.fn<TesseractWorkerFactory>(async () => {
+      events.push('worker');
+      return worker;
+    });
+    const engine = new TesseractOcrEngine(
+      { languages: ['jpn', 'jpn_vert'] },
+      createWorker,
+      undefined,
+      undefined,
+      loadLanguageAsset,
+    );
+
+    await engine.recognize('blob:page', { pageIndex: 0, width: 100, height: 100 });
+
+    expect(loadLanguageAsset).toHaveBeenCalledTimes(2);
+    expect(events.at(-1)).toBe('worker');
+    expect(events.slice(0, 2).every((event) => event.startsWith('asset:'))).toBe(true);
   });
 
   it('retries worker initialization after a transient failure', async () => {
@@ -490,6 +529,37 @@ describe('TesseractOcrEngine', () => {
     resolveWorker(worker);
     await expect(recognition).rejects.toThrow('terminated');
     await vi.waitFor(() => expect(worker.terminate).toHaveBeenCalledOnce());
+  });
+
+  it('aborts language loading before a worker is created', async () => {
+    const worker = makeWorker();
+    const loadLanguageAsset = vi.fn<TesseractLanguageAssetLoader>(
+      (asset) =>
+        new Promise<ArrayBuffer>((resolve) => {
+          asset.signal?.addEventListener('abort', () => resolve(new ArrayBuffer(1)), {
+            once: true,
+          });
+        }),
+    );
+    const createWorker = vi.fn<TesseractWorkerFactory>(async () => worker);
+    const engine = new TesseractOcrEngine(
+      {},
+      createWorker,
+      undefined,
+      undefined,
+      loadLanguageAsset,
+    );
+    const recognition = engine.recognize('blob:page', {
+      pageIndex: 0,
+      width: 100,
+      height: 100,
+    });
+
+    await vi.waitFor(() => expect(loadLanguageAsset).toHaveBeenCalledOnce());
+    await engine.terminate();
+
+    await expect(recognition).rejects.toThrow('terminated');
+    expect(createWorker).not.toHaveBeenCalled();
   });
 
   it('terminates a worker while initialization is still pending', async () => {
