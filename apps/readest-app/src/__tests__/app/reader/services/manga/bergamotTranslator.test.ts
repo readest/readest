@@ -99,13 +99,48 @@ describe('BergamotJapaneseTranslator', () => {
     expect(worker.terminate).toHaveBeenCalledOnce();
   });
 
-  it('rejects oversized batches before loading the runtime', async () => {
+  it('splits large requests into bounded worker batches and preserves order', async () => {
+    const worker = new FakeWorker();
+    const translator = new BergamotJapaneseTranslator(
+      {},
+      {
+        createWorker: () => worker,
+        loadAsset: async () => new ArrayBuffer(1),
+      },
+    );
+    const texts = Array.from({ length: 129 }, (_, index) => `文${index}`);
+
+    await expect(translator.translate(texts)).resolves.toEqual(texts.map((text) => `EN:${text}`));
+
+    const batches = worker.messages
+      .filter(({ message }) => message.name === 'translate')
+      .map(({ message }) => (message.args[0] as { texts: unknown[] }).texts.length);
+    expect(batches).toEqual([128, 1]);
+  });
+
+  it('splits batches at the total character limit', async () => {
+    const worker = new FakeWorker();
+    const translator = new BergamotJapaneseTranslator(
+      {},
+      {
+        createWorker: () => worker,
+        loadAsset: async () => new ArrayBuffer(1),
+      },
+    );
+    const texts = Array.from({ length: 11 }, () => '文'.repeat(2_000));
+
+    await expect(translator.translate(texts)).resolves.toHaveLength(11);
+
+    const batches = worker.messages
+      .filter(({ message }) => message.name === 'translate')
+      .map(({ message }) => (message.args[0] as { texts: unknown[] }).texts.length);
+    expect(batches).toEqual([10, 1]);
+  });
+
+  it('rejects an oversized text before loading the runtime', async () => {
     const createWorker = vi.fn();
     const translator = new BergamotJapaneseTranslator({}, { createWorker });
 
-    await expect(translator.translate(Array.from({ length: 129 }, () => '文'))).rejects.toThrow(
-      '128',
-    );
     await expect(translator.translate(['文'.repeat(2_001)])).rejects.toThrow('2000');
     expect(createWorker).not.toHaveBeenCalled();
   });

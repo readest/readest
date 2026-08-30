@@ -106,38 +106,46 @@ export class BergamotJapaneseTranslator {
   async translate(texts: readonly string[]): Promise<string[]> {
     if (this.#terminated) throw new Error('Local translator has been terminated');
     if (texts.length === 0) return [];
-    if (texts.length > MAXIMUM_BATCH_SIZE) {
-      throw new Error(`Local translation batches are limited to ${MAXIMUM_BATCH_SIZE} texts`);
-    }
-    let characters = 0;
+    const batches: string[][] = [];
+    let batch: string[] = [];
+    let batchCharacters = 0;
     for (const text of texts) {
       if (typeof text !== 'string') throw new Error('Local translation accepts text only');
       if (text.length > MAXIMUM_TEXT_LENGTH) {
         throw new Error(`Each local translation is limited to ${MAXIMUM_TEXT_LENGTH} characters`);
       }
-      characters += text.length;
+      if (
+        batch.length >= MAXIMUM_BATCH_SIZE ||
+        (batch.length > 0 && batchCharacters + text.length > MAXIMUM_BATCH_CHARACTERS)
+      ) {
+        batches.push(batch);
+        batch = [];
+        batchCharacters = 0;
+      }
+      batch.push(text);
+      batchCharacters += text.length;
     }
-    if (characters > MAXIMUM_BATCH_CHARACTERS) {
-      throw new Error(
-        `Local translation batches are limited to ${MAXIMUM_BATCH_CHARACTERS} characters`,
-      );
-    }
+    if (batch.length) batches.push(batch);
 
     await this.#ensureModel();
-    const responses = await this.#call<TranslationResponse[]>('translate', [
-      {
-        models: [{ from: 'ja', to: 'en' }],
-        texts: texts.map((text) => ({ text, html: false, qualityScores: false })),
-      },
-    ]);
-    if (!Array.isArray(responses) || responses.length !== texts.length) {
-      throw new Error('Local translator returned an incomplete batch');
+    const translated: string[] = [];
+    for (const textsInBatch of batches) {
+      const responses = await this.#call<TranslationResponse[]>('translate', [
+        {
+          models: [{ from: 'ja', to: 'en' }],
+          texts: textsInBatch.map((text) => ({ text, html: false, qualityScores: false })),
+        },
+      ]);
+      if (!Array.isArray(responses) || responses.length !== textsInBatch.length) {
+        throw new Error('Local translator returned an incomplete batch');
+      }
+      for (const response of responses) {
+        const text = response?.target?.text;
+        if (typeof text !== 'string') throw new Error('Local translator returned invalid text');
+        translated.push(text);
+      }
     }
-    return responses.map((response) => {
-      const text = response?.target?.text;
-      if (typeof text !== 'string') throw new Error('Local translator returned invalid text');
-      return text;
-    });
+    return translated;
   }
 
   async terminate(): Promise<void> {
