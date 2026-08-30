@@ -59,8 +59,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
-  const { getView, getViewSettings, getViewState, getProgress, setViewSettings, recreateViewer } =
-    useReaderStore();
+  const {
+    getView,
+    getViewSettings,
+    getViewState,
+    getProgress,
+    setViewSettings,
+    setOcrEnabled,
+    recreateViewer,
+  } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
@@ -474,6 +481,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           shortcut='Shift+J'
           Icon={isScrolledMode ? MdCheck : undefined}
           onClick={toggleScrolledMode}
+        />
+      )}
+
+      {bookData.book?.format === 'CBZ' && (
+        <MenuItem
+          label={_('Recognize Text')}
+          Icon={viewState?.ocrEnabled ? MdCheck : undefined}
+          onClick={() => setOcrEnabled(bookKey, !viewState?.ocrEnabled)}
         />
       )}
 

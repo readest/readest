@@ -12,6 +12,7 @@ const mockView = {
 };
 
 const mockBookData = {
+  book: { format: 'CBZ' },
   isFixedLayout: true,
   bookDoc: {
     dir: undefined as string | undefined,
@@ -37,6 +38,8 @@ const currentViewSettings = {
 };
 
 const mockRecreateViewer = vi.fn();
+const mockSetOcrEnabled = vi.fn();
+const mockViewState = { ocrEnabled: false };
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('next/navigation', () => ({
@@ -55,9 +58,10 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => mockView,
     getViewSettings: () => currentViewSettings,
-    getViewState: () => ({}),
+    getViewState: () => mockViewState,
     getProgress: () => null,
     setViewSettings: vi.fn(),
+    setOcrEnabled: mockSetOcrEnabled,
     recreateViewer: mockRecreateViewer,
   }),
 }));
@@ -164,5 +168,33 @@ describe('ViewMenu right-to-left pages toggle', () => {
       expect(mockView.book.dir).toBe('ltr');
       expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
     });
+  });
+});
+
+describe('ViewMenu OCR toggle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockBookData.book.format = 'CBZ';
+    mockViewState.ocrEnabled = false;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('enables text recognition for a CBZ view', () => {
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.click(screen.getByText('Recognize Text'));
+
+    expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
+  });
+
+  it('does not show the unfinished control for PDF views', () => {
+    mockBookData.book.format = 'PDF';
+
+    render(<ViewMenu bookKey='book-1' />);
+
+    expect(screen.queryByText('Recognize Text')).toBeNull();
   });
 });
