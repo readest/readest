@@ -39,6 +39,15 @@ const makeOcrPage = (): OcrPage => ({
       maskBoxes: [{ xMin: 800, yMin: 100, xMax: 900, yMax: 300 }],
       writingMode: 'vertical-rl',
     },
+    {
+      id: 'low-confidence-noise',
+      text: '人人むょふん',
+      confidence: 28,
+      box: { xMin: 950, yMin: 800, xMax: 1100, yMax: 1000 },
+      bubbleBox: { xMin: 900, yMin: 750, xMax: 1150, yMax: 1050 },
+      maskBoxes: [{ xMin: 950, yMin: 800, xMax: 1100, yMax: 1000 }],
+      writingMode: 'vertical-rl',
+    },
   ],
 });
 
@@ -49,7 +58,7 @@ describe('MangaTranslationEngine', () => {
       terminate: vi.fn(async () => undefined),
     };
     const translator = {
-      translate: vi.fn(async () => [' むんむむん  what happened ?! 即 ']),
+      translate: vi.fn(async () => [' むんむむん  THe thing happened ?! 即 ']),
       terminate: vi.fn(async () => undefined),
     };
     const createOcrEngine = vi.fn<MangaOcrEngineFactory>(() => ocrEngine);
@@ -75,7 +84,7 @@ describe('MangaTranslationEngine', () => {
         {
           id: 'bubble-0',
           sourceText: 'ずどどえやあいくっ!!!!',
-          translatedText: 'What happened?!',
+          translatedText: 'The thing happened?!',
           confidence: 62,
           textBox: { xMin: 120, yMin: 160, xMax: 360, yMax: 500 },
           bubbleBox: { xMin: 80, yMin: 100, xMax: 420, yMax: 620 },

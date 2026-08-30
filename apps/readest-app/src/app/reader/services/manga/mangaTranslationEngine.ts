@@ -46,6 +46,8 @@ export type JapaneseTextTranslatorFactory = (
   onProgress?: (progress: { status: string; progress: number }) => void,
 ) => JapaneseTextTranslator;
 
+const MINIMUM_MANGA_OCR_CONFIDENCE = 35;
+
 interface MangaTranslationEngineOptions {
   onProgress?: (progress: { status: string; progress: number }) => void;
 }
@@ -59,6 +61,7 @@ const createOcrEngine: MangaOcrEngineFactory = (onProgress) =>
   new TesseractOcrEngine({
     languages: ['jpn_vert'],
     mangaMode: true,
+    minimumConfidence: MINIMUM_MANGA_OCR_CONFIDENCE,
     onProgress,
   });
 
@@ -83,7 +86,11 @@ export const normalizeEnglishTranslation = (text: string): string => {
     .replace(/\s+/gu, ' ')
     .replace(/\s+([,.;:!?])/gu, '$1');
   if (!/\p{Script=Latin}/u.test(normalized)) return '';
-  return normalized.replace(/[a-z]/u, (letter) => letter.toUpperCase());
+  return normalized
+    .replace(/\b([A-Z])([A-Z]+)(?=[a-z])/gu, (_match, first: string, rest: string) =>
+      first.concat(rest.toLowerCase()),
+    )
+    .replace(/\p{Script=Latin}/u, (letter) => letter.toUpperCase());
 };
 
 const isTranslatableBlock = (
@@ -94,6 +101,7 @@ const isTranslatableBlock = (
 } =>
   !!block.bubbleBox &&
   !!block.maskBoxes?.length &&
+  (block.confidence === undefined || block.confidence >= MINIMUM_MANGA_OCR_CONFIDENCE) &&
   containsJapanese(normalizeJapaneseOcrText(block.text));
 
 export class MangaTranslationEngine {
