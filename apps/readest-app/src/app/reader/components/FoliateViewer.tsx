@@ -150,6 +150,7 @@ const FoliateViewer: React.FC<{
   const [navigating, setNavigating] = useState(false);
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ocrProgressKeyRef = useRef('');
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
 
@@ -160,10 +161,46 @@ const FoliateViewer: React.FC<{
     enabled: bookData?.book?.format === 'CBZ' && ocrEnabled,
     language: bookDoc.metadata.language,
     mangaFallback: bookData?.book?.format === 'CBZ',
+    onProgress: ({ status, progress }) => {
+      const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+      const phase = status === 'recognizing text' ? 'recognizing' : 'preparing';
+      const progressKey = `${phase}-${Math.floor(percentage / 25)}`;
+      if (ocrProgressKeyRef.current === progressKey) return;
+      ocrProgressKeyRef.current = progressKey;
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message:
+          phase === 'recognizing'
+            ? _('Recognizing text: {{progress}}%', { progress: percentage })
+            : _('Preparing text recognition: {{progress}}%', { progress: percentage }),
+        timeout: 5000,
+      });
+    },
     onError: (error, pageIndex) => {
       console.error(`Failed to recognize text on page ${pageIndex}`, error);
+      ocrProgressKeyRef.current = '';
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message:
+          pageIndex >= 0
+            ? _('Text recognition failed on page {{page}}', { page: pageIndex + 1 })
+            : _('Text recognition failed'),
+        timeout: 5000,
+      });
+    },
+    onPageRecognized: ({ pageIndex }) => {
+      ocrProgressKeyRef.current = '';
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Text is ready to select on page {{page}}', { page: pageIndex + 1 }),
+        timeout: 3000,
+      });
     },
   });
+
+  useEffect(() => {
+    if (!ocrEnabled) ocrProgressKeyRef.current = '';
+  }, [ocrEnabled]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {

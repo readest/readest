@@ -14,6 +14,7 @@ interface UseOcrSessionOptions {
   mangaFallback?: boolean;
   onProgress?: (progress: OcrEngineProgress) => void;
   onError?: (error: unknown, pageIndex: number) => void;
+  onPageRecognized?: (page: OcrPage) => void;
 }
 
 export const useOcrSession = ({
@@ -22,14 +23,17 @@ export const useOcrSession = ({
   mangaFallback = false,
   onProgress,
   onError,
+  onPageRecognized,
 }: UseOcrSessionOptions): ((doc: Document, pageIndex: number) => Promise<OcrPage | null>) => {
   const sessionRef = useRef<OcrSession | null>(null);
   const enabledRef = useRef(enabled);
   const onProgressRef = useRef(onProgress);
   const onErrorRef = useRef(onError);
+  const onPageRecognizedRef = useRef(onPageRecognized);
   enabledRef.current = enabled;
   onProgressRef.current = onProgress;
   onErrorRef.current = onError;
+  onPageRecognizedRef.current = onPageRecognized;
 
   const languages = useMemo(
     () => getTesseractLanguages(language, { mangaFallback }),
@@ -37,13 +41,27 @@ export const useOcrSession = ({
   );
 
   useEffect(() => {
-    const session = new OcrSession({
+    let session!: OcrSession;
+    session = new OcrSession({
       createEngine: () =>
         new TesseractOcrEngine({
           languages,
-          onProgress: (progress) => onProgressRef.current?.(progress),
+          onProgress: (progress) => {
+            if (sessionRef.current === session && enabledRef.current) {
+              onProgressRef.current?.(progress);
+            }
+          },
         }),
-      onError: (error, pageIndex) => onErrorRef.current?.(error, pageIndex),
+      onError: (error, pageIndex) => {
+        if (sessionRef.current === session && enabledRef.current) {
+          onErrorRef.current?.(error, pageIndex);
+        }
+      },
+      onPageRecognized: (page) => {
+        if (sessionRef.current === session && enabledRef.current) {
+          onPageRecognizedRef.current?.(page);
+        }
+      },
     });
     sessionRef.current = session;
     void session.setEnabled(enabledRef.current);

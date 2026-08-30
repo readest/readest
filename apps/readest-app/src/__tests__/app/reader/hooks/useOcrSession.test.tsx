@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   sessionOptions: [] as Array<{
     createEngine: () => unknown;
     onError?: (error: unknown, pageIndex: number) => void;
+    onPageRecognized?: (page: unknown) => void;
   }>,
   engine: {
     recognize: vi.fn(),
@@ -43,6 +44,7 @@ describe('useOcrSession', () => {
 
   it('hands documents to one session and follows the enabled state', async () => {
     const onError = vi.fn();
+    const onPageRecognized = vi.fn();
     const { result, rerender, unmount } = renderHook(
       ({ enabled }) =>
         useOcrSession({
@@ -50,6 +52,7 @@ describe('useOcrSession', () => {
           language: undefined,
           mangaFallback: true,
           onError,
+          onPageRecognized,
         }),
       { initialProps: { enabled: false } },
     );
@@ -73,6 +76,10 @@ describe('useOcrSession', () => {
     const error = new Error('recognition failed');
     mocks.sessionOptions[0]!.onError?.(error, 2);
     expect(onError).toHaveBeenCalledWith(error, 2);
+
+    const page = { pageIndex: 2 };
+    mocks.sessionOptions[0]!.onPageRecognized?.(page);
+    expect(onPageRecognized).toHaveBeenCalledWith(page);
 
     unmount();
     expect(mocks.session.terminate).toHaveBeenCalledTimes(1);
