@@ -12,6 +12,7 @@ export interface OcrTextBlock {
   text: string;
   confidence?: number;
   box: OcrBoundingBox;
+  backgroundColor?: string;
   bubbleBox?: OcrBoundingBox;
   maskBoxes?: readonly OcrBoundingBox[];
   writingMode: OcrWritingMode;
