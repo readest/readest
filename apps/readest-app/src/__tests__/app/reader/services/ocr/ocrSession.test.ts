@@ -30,7 +30,13 @@ const makeDocument = (pageIndex: number): Document => {
   return doc;
 };
 
-const makePdfDocument = ({ text = '' }: { text?: string } = {}): Document => {
+const makePdfDocument = ({
+  text = '',
+  withImage = false,
+}: {
+  text?: string;
+  withImage?: boolean;
+} = {}): Document => {
   const doc = document.implementation.createHTMLDocument();
   const canvasContainer = doc.createElement('div');
   canvasContainer.id = 'canvas';
@@ -41,6 +47,15 @@ const makePdfDocument = ({ text = '' }: { text?: string } = {}): Document => {
   const textLayer = doc.createElement('div');
   textLayer.className = 'textLayer';
   textLayer.textContent = text;
+  if (withImage) {
+    const image = doc.createElement('img');
+    image.src = 'blob:arbitrary-image';
+    Object.defineProperties(image, {
+      naturalWidth: { value: 800 },
+      naturalHeight: { value: 1200 },
+    });
+    doc.body.append(image);
+  }
   doc.body.append(canvasContainer, textLayer);
   return doc;
 };
@@ -159,6 +174,34 @@ describe('OcrSession', () => {
     expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 5');
   });
 
+  it('prefers a PDF canvas over an arbitrary image', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument({ withImage: true });
+    const canvas = doc.querySelector('canvas')!;
+
+    await session.setEnabled(true);
+    await session.processDocument(doc, 8);
+
+    expect(engine.recognize).toHaveBeenCalledWith(canvas, {
+      pageIndex: 8,
+      width: 1600,
+      height: 2400,
+    });
+  });
+
+  it('suppresses PDF OCR when native text exists even if an image is present', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument({ text: 'Selectable PDF text', withImage: true });
+
+    await session.setEnabled(true);
+    await session.processDocument(doc, 9);
+
+    expect(engine.recognize).not.toHaveBeenCalled();
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)).toBeNull();
+  });
+
   it('does not recognize a PDF page that already has native text', async () => {
     const engine = makeEngine();
     const session = new OcrSession({ createEngine: () => engine });
@@ -182,7 +225,7 @@ describe('OcrSession', () => {
     expect(engine.recognize).toHaveBeenCalledTimes(1);
   });
 
-  it('restores cached PDF text after a zoom replaces the rendered canvas', async () => {
+  it('recognizes a PDF again after a zoom replaces the rendered canvas', async () => {
     const engine = makeEngine();
     const session = new OcrSession({ createEngine: () => engine });
     const doc = makePdfDocument();
@@ -196,8 +239,35 @@ describe('OcrSession', () => {
     doc.querySelector('#canvas')!.replaceChildren(zoomedCanvas);
     await session.processDocument(doc, 6);
 
-    expect(engine.recognize).toHaveBeenCalledTimes(1);
+    expect(engine.recognize).toHaveBeenCalledTimes(2);
+    expect(engine.recognize).toHaveBeenLastCalledWith(zoomedCanvas, {
+      pageIndex: 6,
+      width: 2400,
+      height: 3600,
+    });
     expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 6');
+  });
+
+  it('reruns when the same PDF canvas changes size and reuses unchanged dimensions', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument();
+    const canvas = doc.querySelector('canvas')!;
+
+    await session.setEnabled(true);
+    await session.processDocument(doc, 7);
+
+    canvas.width = 2000;
+    canvas.height = 3000;
+    await session.processDocument(doc, 7);
+    await session.processDocument(doc, 7);
+
+    expect(engine.recognize).toHaveBeenCalledTimes(2);
+    expect(engine.recognize).toHaveBeenLastCalledWith(canvas, {
+      pageIndex: 7,
+      width: 2000,
+      height: 3000,
+    });
   });
 
   it('recognizes a different image that reuses a page index', async () => {

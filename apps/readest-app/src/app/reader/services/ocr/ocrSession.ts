@@ -45,7 +45,12 @@ const isSamePageImage = (
   image: PageImage,
 ): boolean => {
   if (typeof left.image.source !== 'string' || typeof image.source !== 'string') {
-    return left.document === document;
+    return (
+      left.document === document &&
+      left.image.source === image.source &&
+      left.image.width === image.width &&
+      left.image.height === image.height
+    );
   }
   return (
     left.image.source === image.source &&
@@ -55,6 +60,14 @@ const isSamePageImage = (
 };
 
 const getPageImage = (doc: Document): PageImage | null => {
+  const canvas = doc.querySelector<HTMLCanvasElement>('#canvas canvas');
+  if (canvas) {
+    if (/\S/u.test(doc.querySelector('.textLayer')?.textContent ?? '')) return null;
+    if (!Number.isFinite(canvas.width) || canvas.width <= 0) return null;
+    if (!Number.isFinite(canvas.height) || canvas.height <= 0) return null;
+    return { source: canvas, width: canvas.width, height: canvas.height };
+  }
+
   const image = doc.querySelector('img');
   if (image) {
     const source = image.currentSrc || image.src;
@@ -65,12 +78,7 @@ const getPageImage = (doc: Document): PageImage | null => {
     return { source, width, height };
   }
 
-  const canvas = doc.querySelector<HTMLCanvasElement>('#canvas canvas');
-  if (!canvas) return null;
-  if (/\S/u.test(doc.querySelector('.textLayer')?.textContent ?? '')) return null;
-  if (!Number.isFinite(canvas.width) || canvas.width <= 0) return null;
-  if (!Number.isFinite(canvas.height) || canvas.height <= 0) return null;
-  return { source: canvas, width: canvas.width, height: canvas.height };
+  return null;
 };
 
 export class OcrSession {
