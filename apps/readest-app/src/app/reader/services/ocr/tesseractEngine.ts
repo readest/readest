@@ -34,6 +34,7 @@ export interface OcrEngineProgress {
 export interface TesseractOcrEngineOptions {
   languages?: readonly string[];
   mangaMode?: boolean;
+  wholePageFallback?: boolean;
   pageSegmentationMode?: PSM;
   minimumConfidence?: number;
   onProgress?: (progress: OcrEngineProgress) => void;
@@ -303,6 +304,7 @@ const createMangaBackgroundSampler = (
 export class TesseractOcrEngine {
   readonly #languages: string[];
   readonly #mangaMode: boolean;
+  readonly #wholePageFallback: boolean;
   readonly #pageSegmentationMode: PSM;
   readonly #minimumConfidence: number;
   readonly #onProgress?: (progress: OcrEngineProgress) => void;
@@ -322,6 +324,7 @@ export class TesseractOcrEngine {
     this.#languages = options.languages?.length ? [...options.languages] : [...DEFAULT_LANGUAGES];
     this.#pageSegmentationMode = options.pageSegmentationMode ?? PSM.AUTO;
     this.#mangaMode = options.mangaMode ?? false;
+    this.#wholePageFallback = options.wholePageFallback ?? true;
     this.#minimumConfidence = options.minimumConfidence ?? 0;
     this.#onProgress = options.onProgress;
     this.#createWorker = workerFactory;
@@ -368,7 +371,11 @@ export class TesseractOcrEngine {
     });
     this.#onProgress?.({ status: 'detecting speech bubbles', progress: 1 });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    if (!regions.length) return this.#recognizeWholePage(prepared);
+    if (!regions.length) {
+      return this.#wholePageFallback
+        ? this.#recognizeWholePage(prepared)
+        : { ...prepared.page, blocks: [] };
+    }
 
     const worker = await this.#getWorker();
     const blocks: OcrTextBlock[] = [];

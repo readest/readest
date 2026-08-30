@@ -335,6 +335,27 @@ describe('TesseractOcrEngine', () => {
     expect(page.blocks[0]?.text).toBe('recognized text');
   });
 
+  it('skips whole-page OCR when manga translation only accepts speech bubbles', async () => {
+    const source = document.createElement('canvas');
+    source.width = 1200;
+    source.height = 1800;
+    const createWorker = vi.fn<TesseractWorkerFactory>();
+    const detector = {
+      detect: vi.fn(async () => []),
+      terminate: vi.fn(async () => undefined),
+    };
+    const engine = new TesseractOcrEngine(
+      { mangaMode: true, wholePageFallback: false },
+      createWorker,
+      () => detector,
+    );
+
+    await expect(
+      engine.recognize(source, { pageIndex: 2, width: source.width, height: source.height }),
+    ).resolves.toEqual({ pageIndex: 2, width: 1200, height: 1800, blocks: [] });
+    expect(createWorker).not.toHaveBeenCalled();
+  });
+
   it('terminates a worker that fails during parameter setup', async () => {
     const failedWorker = makeWorker();
     vi.mocked(failedWorker.setParameters).mockRejectedValueOnce(new Error('setup failed'));
