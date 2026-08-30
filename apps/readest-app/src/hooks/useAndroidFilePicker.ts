@@ -4,8 +4,11 @@ import { AppService } from '@/types/system';
 import {
   FILE_SELECTION_PRESETS,
   SelectedFile,
+  hasAllowedExtension,
   resolveTauriFileName,
 } from '@/hooks/useFileSelector';
+import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 
 interface FilePickerResultPayload {
   uris: string[];
@@ -37,6 +40,9 @@ export function useAndroidPickedBooks(
   // unregister/register pair.
   const onPickedBooksRef = useRef(onPickedBooks);
   onPickedBooksRef.current = onPickedBooks;
+  const _ = useTranslation();
+  const _ref = useRef(_);
+  _ref.current = _;
 
   useEffect(() => {
     if (!appService?.isAndroidApp) return;
@@ -54,12 +60,20 @@ export function useAndroidPickedBooks(
           uris.map(async (path) => ({ path, name: await resolveTauriFileName(path, appService) })),
         );
         const extensions = FILE_SELECTION_PRESETS.books.extensions;
-        const books = files.filter(({ name }) => {
-          const ext = name?.split('.').pop()?.toLowerCase() || 'unknown';
-          return extensions.includes(ext);
-        });
+        const books = files.filter(({ name }) => hasAllowedExtension(name, extensions));
         if (books.length > 0) {
           onPickedBooksRef.current(books);
+        } else {
+          // Dropping every pick used to be completely silent, so an
+          // unsupported (or oddly named) file looked like the import button
+          // doing nothing at all (issue #5959).
+          eventDispatcher.dispatch('toast', {
+            type: 'error',
+            message: _ref.current('Failed to import book(s): {{filenames}}', {
+              filenames: files.map(({ name, path }) => name || path).join(', '),
+            }),
+            timeout: 5000,
+          });
         }
       },
     );

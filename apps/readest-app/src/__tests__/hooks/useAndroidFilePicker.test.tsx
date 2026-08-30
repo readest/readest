@@ -115,3 +115,22 @@ describe('useAndroidPickedBooks', () => {
     expect(first).not.toHaveBeenCalled();
   });
 });
+
+// Issue #5959: the native-bridge picker path runs the same whitelist as
+// useFileSelector, so a re-download saved as "book.epub (1)" was dropped here
+// too — and `if (books.length > 0)` made that completely silent.
+describe('useAndroidPickedBooks with a duplicate-download marker', () => {
+  test('forwards a book whose duplicate marker landed after the extension', async () => {
+    const onPickedBooks = vi.fn();
+    basenameMock.mockImplementation(async () => 'The_Amazing_Traveling.epub (1)');
+    renderHook(() => useAndroidPickedBooks(makeAppService(true), onPickedBooks));
+
+    await waitFor(() => expect(listeners).toHaveLength(1));
+    await listeners[0]!.handler({ uris: ['content://downloads/1'] });
+
+    await waitFor(() => expect(onPickedBooks).toHaveBeenCalled());
+    expect(onPickedBooks.mock.calls[0]![0]).toEqual([
+      expect.objectContaining({ name: 'The_Amazing_Traveling.epub (1)' }),
+    ]);
+  });
+});

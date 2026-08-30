@@ -26,7 +26,7 @@ import {
 } from '@/utils/book';
 import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
-import { getBaseFilename, getFilename } from '@/utils/path';
+import { getBaseFilename, getFilename, stripDuplicateMarker } from '@/utils/path';
 import { BookDoc, DocumentLoader } from '@/libs/document';
 import { hasMediaOverlays } from '@/services/tts/mediaOverlay';
 import { getAudiobookDirectory, isAudiobookFilePath } from '@/services/audiobook/storage';
@@ -520,6 +520,10 @@ export async function importBook(
           fileobj = file;
           filename = file.name;
         }
+        // A download saved as "novel.txt (1)" is still a TXT, and its title
+        // should not read "novel.txt" either. Drop the duplicate marker before
+        // anything downstream classifies or names the book (issue #5959).
+        filename = stripDuplicateMarker(filename);
         const maybeClosable = fileobj as ClosableFile;
         if (typeof maybeClosable.close === 'function') {
           openedSource = maybeClosable;

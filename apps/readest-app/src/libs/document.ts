@@ -1,6 +1,7 @@
 import { BookFormat } from '@/types/book';
 import { Collection, Contributor, Identifier, LanguageMap } from '@/utils/book';
 import { configureZip } from '@/utils/zip';
+import { stripDuplicateMarker } from '@/utils/path';
 import * as epubcfi from 'foliate-js/epubcfi.js';
 
 export const CFI = epubcfi;
@@ -360,24 +361,34 @@ export class DocumentLoader {
     return { entries, loadText, loadBlob, getSize, getComment, sha1: undefined };
   }
 
+  /**
+   * File name with any duplicate-download marker removed, e.g.
+   * `novel.epub (1)` -> `novel.epub`. Some download managers append the marker
+   * after the extension, which would otherwise hide the extension from every
+   * probe below and drop the file onto the unknown-binary path (issue #5959).
+   */
+  private get filename(): string {
+    return stripDuplicateMarker(this.file.name ?? '');
+  }
+
   private isCBZ(): boolean {
     return (
-      this.file.type === 'application/vnd.comicbook+zip' || this.file.name.endsWith(`.${EXTS.CBZ}`)
+      this.file.type === 'application/vnd.comicbook+zip' || this.filename.endsWith(`.${EXTS.CBZ}`)
     );
   }
 
   private isFB2(): boolean {
     return (
-      this.file.type === 'application/x-fictionbook+xml' || this.file.name.endsWith(`.${EXTS.FB2}`)
+      this.file.type === 'application/x-fictionbook+xml' || this.filename.endsWith(`.${EXTS.FB2}`)
     );
   }
 
   private isFBZ(): boolean {
     return (
       this.file.type === 'application/x-zip-compressed-fb2' ||
-      this.file.name.endsWith('.fb.zip') ||
-      this.file.name.endsWith('.fb2.zip') ||
-      this.file.name.endsWith(`.${EXTS.FBZ}`)
+      this.filename.endsWith('.fb.zip') ||
+      this.filename.endsWith('.fb2.zip') ||
+      this.filename.endsWith(`.${EXTS.FBZ}`)
     );
   }
 
@@ -387,12 +398,12 @@ export class DocumentLoader {
     // non-text path and yield a null book.
     return (
       this.file.type.startsWith('text/plain') ||
-      (this.file.name?.toLowerCase().endsWith(`.${EXTS.TXT}`) ?? false)
+      this.filename.toLowerCase().endsWith(`.${EXTS.TXT}`)
     );
   }
 
   private isMd(): boolean {
-    const name = this.file.name?.toLowerCase() ?? '';
+    const name = this.filename.toLowerCase();
     return (
       this.file.type === 'text/markdown' ||
       this.file.type === 'text/x-markdown' ||
@@ -465,7 +476,7 @@ export class DocumentLoader {
         const fflate = await import('foliate-js/vendor/fflate.js');
         const { MOBI } = await import('foliate-js/mobi.js');
         book = await new MOBI({ unzlib: fflate.unzlibSync }).open(this.file);
-        const ext = this.file.name.split('.').pop()?.toLowerCase();
+        const ext = this.filename.split('.').pop()?.toLowerCase();
         switch (ext) {
           case 'azw':
             format = 'AZW';

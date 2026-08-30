@@ -24,7 +24,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 import { FILE_SELECTION_PRESETS, useFileSelector } from '@/hooks/useFileSelector';
 import { eventDispatcher } from '@/utils/event';
 
-const _ = (key: string) => key;
+const _ = (key: string, options: Record<string, string | number> = {}) =>
+  Object.entries(options).reduce(
+    (text, [name, value]) => text.replace(`{{${name}}}`, `${value}`),
+    key,
+  );
 
 const makeAppService = (
   platform: 'ios' | 'android' | 'linux',
@@ -148,5 +152,69 @@ describe('useFileSelector under gamescope (SteamOS Gaming Mode, #3049)', () => {
     await select({ type: 'books', multiple: true });
 
     expect(invokeMock).not.toHaveBeenCalled();
+  });
+});
+
+// Issue #5959: a re-download saved as "book.epub (1)" was dropped by the
+// client-side whitelist that the unfiltered mobile pickers rely on, and the
+// caller cannot tell an all-dropped selection from a user cancel — so picking
+// the file did nothing at all, with no error.
+describe('useFileSelector book selection with a duplicate-download marker', () => {
+  test('Android: keeps a book whose duplicate marker landed after the extension', async () => {
+    basenameMock.mockResolvedValueOnce('The_Amazing_Traveling.epub (1)');
+    const { appService } = makeAppService('android', [
+      'content://com.android.providers.downloads/document/42',
+    ]);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+
+    expect(result.files).toEqual([
+      expect.objectContaining({ name: 'The_Amazing_Traveling.epub (1)' }),
+    ]);
+  });
+
+  test('iOS: keeps it too', async () => {
+    const { appService } = makeAppService('ios', [
+      'file:///private/var/mobile/Containers/Data/Application/ABC/Documents/Novel.epub (2)',
+    ]);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+
+    expect(result.files).toHaveLength(1);
+  });
+
+  test('reports the files it dropped instead of returning an empty selection silently', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    basenameMock.mockResolvedValueOnce('resume.docx');
+    const { appService } = makeAppService('android', [
+      'content://com.android.providers.downloads/document/7',
+    ]);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+
+    expect(result.files).toHaveLength(0);
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      'toast',
+      expect.objectContaining({
+        type: 'error',
+        message: expect.stringContaining('resume.docx'),
+      }),
+    );
+    dispatchSpy.mockRestore();
+  });
+
+  test('stays quiet when the user simply cancels the picker', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    const { appService } = makeAppService('android', []);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+
+    expect(result.files).toHaveLength(0);
+    expect(dispatchSpy).not.toHaveBeenCalled();
+    dispatchSpy.mockRestore();
   });
 });
