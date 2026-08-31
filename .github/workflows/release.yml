@@ -4,7 +4,7 @@
 # Android, and the GitHub release all use that same commit, even if main moves
 # while the long-running builds are in progress.
 name: 发布构建
-run-name: 发布构建 · ${{ inputs.tag }} · Android ${{ inputs.android_abi }}
+run-name: 发布构建 · ${{ inputs.tag }}
 
 on:
   workflow_dispatch:
@@ -13,13 +13,6 @@ on:
         description: '发布版本号，例如 v0.12.6.14'
         required: true
         type: string
-      android_abi:
-        description: 'Android 构建范围（Windows 与 Android 会并行构建）'
-        type: choice
-        options:
-          - all
-          - aarch64
-        default: all
 
 permissions:
   contents: read
@@ -231,7 +224,7 @@ jobs:
 
   android:
     needs: [resolve, verify]
-    name: Android APK（${{ inputs.android_abi }}）
+    name: Android APK（arm64）
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -267,14 +260,14 @@ jobs:
       - name: copy pdfjs-dist and simplecc-dist to public directory
         run: pnpm --filter @readest/readest-app setup-vendors
 
-      - name: install Rust stable (Android targets)
+      - name: install Rust stable (Android arm64)
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          targets: aarch64-linux-android
 
       - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
         with:
-          key: fork-android-cargo
+          key: fork-android-aarch64-cargo
 
       - name: create .env.local for Next.js
         run: |
@@ -352,34 +345,25 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=8192'
         run: |
           cd apps/readest-app
-          if [ "${{ inputs.android_abi }}" = "all" ]; then
-            pnpm tauri android build --config src-tauri/tauri.fork.conf.json
-          else
-            pnpm tauri android build -t aarch64 --config src-tauri/tauri.fork.conf.json
-          fi
+          pnpm tauri android build -t aarch64 --config src-tauri/tauri.fork.conf.json
           # The Android bundler does not create updater artifacts.
 
       - name: collect artifacts
         run: |
           mkdir -p fork-out
-          if [ "${{ inputs.android_abi }}" = "all" ]; then
-            name="Readest_${{ env.name_version }}_universal.apk"
-          else
-            name="Readest_${{ env.name_version }}_arm64.apk"
+          name="Readest_${{ env.name_version }}_arm64.apk"
+          apk=$(find apps/readest-app/src-tauri/gen/android/app/build/outputs/apk -name '*-release.apk' | head -1)
+          if [ -z "$apk" ]; then
+            echo "::error::No release APK was produced."
+            exit 1
           fi
-          outdir=apps/readest-app/src-tauri/gen/android/app/build/outputs/apk/universal/release
-          if [ -f "$outdir/app-universal-release.apk" ]; then
-            cp "$outdir/app-universal-release.apk" "fork-out/$name"
-          else
-            apk=$(find apps/readest-app/src-tauri/gen/android/app/build/outputs/apk -name '*-release.apk' | head -1)
-            echo "Falling back to $apk"
-            cp "$apk" "fork-out/$name"
-          fi
+          echo "Using $apk"
+          cp "$apk" "fork-out/$name"
 
       - name: upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Readest_${{ env.name_version }}_android_${{ inputs.android_abi }}
+          name: Readest_${{ env.name_version }}_android_arm64
           path: fork-out/
           if-no-files-found: error
 
