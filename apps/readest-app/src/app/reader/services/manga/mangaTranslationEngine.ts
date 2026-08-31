@@ -79,24 +79,63 @@ const createTranslator: JapaneseTextTranslatorFactory = (onProgress) =>
 const containsJapanese = (text: string): boolean =>
   /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
 
+const DUPLICATED_SMALL_KANA_PAIRS: Readonly<Record<string, string>> = {
+  ゃ: 'や',
+  ゅ: 'ゆ',
+  ょ: 'よ',
+  ぁ: 'あ',
+  ぃ: 'い',
+  ぅ: 'う',
+  ぇ: 'え',
+  ぉ: 'お',
+  ャ: 'ヤ',
+  ュ: 'ユ',
+  ョ: 'ヨ',
+  ァ: 'ア',
+  ィ: 'イ',
+  ゥ: 'ウ',
+  ェ: 'エ',
+  ォ: 'オ',
+};
+
 export const normalizeJapaneseOcrText = (text: string): string =>
   text
     .normalize('NFKC')
     .replace(/\b[A-Za-z]\b/gu, '')
-    .replace(/[ゃゅょぁぃぅぇぉ](?=[やゆよあいうえお])/gu, '')
-    .replace(/[ャュョァィゥェォ](?=[ヤユヨアイウエオ])/gu, '')
+    .replace(
+      /([ゃゅょぁぃぅぇぉャュョァィゥェォ])([やゆよあいうえおヤユヨアイウエオ])/gu,
+      (pair, smallKana: string, followingKana: string) =>
+        DUPLICATED_SMALL_KANA_PAIRS[smallKana] === followingKana ? followingKana : pair,
+    )
     .replace(/\s+/gu, '')
     .trim();
 
+interface MangaExpressionRule {
+  pattern: RegExp;
+  translation: string;
+}
+
+const MANGA_EXPRESSION_RULES: readonly MangaExpressionRule[] = [
+  { pattern: /^(?:やあ)?オッス(?:[グパバ])?[!！]*$/u, translation: 'Hey!' },
+  { pattern: /^おしまい(?:っと)?(?:ググ)?[。.!！]*$/u, translation: 'All done!' },
+  { pattern: /^(?:ハラ|腹)へった(?:な)?[。.!！]*$/u, translation: "I'm hungry." },
+  { pattern: /^[~〜ゾ{「『]*ん?むんむんる{0,8}$/u, translation: 'Hmmm...' },
+  { pattern: /^むふん[。.!！]*$/u, translation: 'Hmph!' },
+  {
+    pattern: /^(?:でえっ(?:にpie[。.]?し)?|えやあ|とりゃ|おりゃ|せいや)[!！]*$/iu,
+    translation: 'Hyaaah!',
+  },
+  {
+    pattern: /^(?:す[ほぼぽ]{2,}(?:な[|｜]つっつっルル)?|ずどど(?:いをを誰こ)?)[!！]*$/u,
+    translation: 'Hrrrgh!',
+  },
+];
+
 export const translateJapaneseMangaExpression = (text: string): string | null => {
   const normalized = text.normalize('NFKC').replace(/\s+/gu, '');
-  if (/(?:やあ[^。!?！？]{0,8})?オッス/u.test(normalized)) return 'Hey!';
-  if (/おしまい/u.test(normalized)) return 'All done!';
-  if (/(?:ハラ|腹)へった/u.test(normalized)) return "I'm hungry.";
-  if (/むんむん/u.test(normalized)) return 'Hmmm...';
-  if (/むふん/u.test(normalized)) return 'Hmph!';
-  if (/(?:でえっ|えやあ|とりゃ|おりゃ|せいや)/u.test(normalized)) return 'Hyaaah!';
-  if (/(?:す[ほぼぽ]{2,}|ずどど)/u.test(normalized)) return 'Hrrrgh!';
+  for (const { pattern, translation } of MANGA_EXPRESSION_RULES) {
+    if (pattern.test(normalized)) return translation;
+  }
   return null;
 };
 

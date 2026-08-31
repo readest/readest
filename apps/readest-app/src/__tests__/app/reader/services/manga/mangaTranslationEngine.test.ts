@@ -191,6 +191,15 @@ describe('normalizeJapaneseOcrText', () => {
   it('removes a duplicated small kana from vertical manga OCR', () => {
     expect(normalizeJapaneseOcrText('ゃやあ\nオッスグ')).toBe('やあオッスグ');
   });
+
+  it.each([
+    ['きゃあ', 'きゃあ'],
+    ['じゃあ行こう', 'じゃあ行こう'],
+    ['どうでしょう', 'どうでしょう'],
+    ['ファイル', 'ファイル'],
+  ])('preserves valid small kana in %s', (source, expected) => {
+    expect(normalizeJapaneseOcrText(source)).toBe(expected);
+  });
 });
 
 describe('translateJapaneseMangaExpression', () => {
@@ -209,5 +218,16 @@ describe('translateJapaneseMangaExpression', () => {
 
   it('leaves normal dialogue for the translation model', () => {
     expect(translateJapaneseMangaExpression('悟空は走る')).toBeNull();
+  });
+
+  it.each([
+    'オッス、今日はどうした？',
+    '今日はこれでおしまいにして帰ろう',
+    '腹へったからラーメン食べよう',
+    'オッス悟空',
+    '悟空おしまい',
+    'むふんけど帰ろう',
+  ])('leaves longer dialogue for the translation model: %s', (source) => {
+    expect(translateJapaneseMangaExpression(source)).toBeNull();
   });
 });

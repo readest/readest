@@ -372,12 +372,94 @@ const makeMangaTextCrop = (
   return canvas;
 };
 
-const trimMangaVerticalBox = (box: OcrBoundingBox): OcrBoundingBox | null => {
-  const width = box.xMax - box.xMin;
-  const height = box.yMax - box.yMin;
-  const trim = Math.min(height * 0.3, width * 1.25);
-  if (height - trim < width * 1.5) return null;
-  return { ...box, yMax: box.yMax - trim };
+const trimMangaTrailingPunctuation = (
+  canvas: HTMLCanvasElement,
+  box: OcrBoundingBox,
+  page: Pick<OcrPage, 'width' | 'height'>,
+): OcrBoundingBox | null => {
+  const rectangle = toRectangle(box, page);
+  if (!rectangle || rectangle.height < rectangle.width * 2) return null;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) return null;
+
+  let pixels: Uint8ClampedArray;
+  try {
+    pixels = context.getImageData(
+      rectangle.left,
+      rectangle.top,
+      rectangle.width,
+      rectangle.height,
+    ).data;
+  } catch {
+    return null;
+  }
+  if (pixels.length !== rectangle.width * rectangle.height * 4) return null;
+
+  const minimumRowInk = Math.max(1, Math.round(rectangle.width * 0.025));
+  const rowHasInk = Array.from({ length: rectangle.height }, (_, y) => {
+    let ink = 0;
+    for (let x = 0; x < rectangle.width; x += 1) {
+      const offset = (y * rectangle.width + x) * 4;
+      const red = pixels[offset]!;
+      const green = pixels[offset + 1]!;
+      const blue = pixels[offset + 2]!;
+      if (red * 0.2126 + green * 0.7152 + blue * 0.0722 < 128) ink += 1;
+    }
+    return ink >= minimumRowInk;
+  });
+  const runs: MangaInkRun[] = [];
+  let runStart = -1;
+  for (let y = 0; y <= rectangle.height; y += 1) {
+    if (y < rectangle.height && rowHasInk[y]) {
+      if (runStart < 0) runStart = y;
+    } else if (runStart >= 0) {
+      runs.push({ start: runStart, end: y - 1 });
+      runStart = -1;
+    }
+  }
+  if (runs.length < 2) return null;
+
+  const minimumGap = Math.max(3, Math.round(rectangle.width * 0.12));
+  let suffixStart = -1;
+  for (let index = 1; index < runs.length; index += 1) {
+    const gap = runs[index]!.start - runs[index - 1]!.end - 1;
+    if (gap >= minimumGap && runs[index]!.start >= rectangle.height * 0.55) {
+      suffixStart = runs[index]!.start;
+      break;
+    }
+  }
+  if (suffixStart < 0) return null;
+
+  let inkLeft = rectangle.width;
+  let inkRight = -1;
+  let inkTop = rectangle.height;
+  let inkBottom = -1;
+  for (let y = suffixStart; y < rectangle.height; y += 1) {
+    for (let x = 0; x < rectangle.width; x += 1) {
+      const offset = (y * rectangle.width + x) * 4;
+      const red = pixels[offset]!;
+      const green = pixels[offset + 1]!;
+      const blue = pixels[offset + 2]!;
+      if (red * 0.2126 + green * 0.7152 + blue * 0.0722 >= 128) continue;
+      inkLeft = Math.min(inkLeft, x);
+      inkRight = Math.max(inkRight, x);
+      inkTop = Math.min(inkTop, y);
+      inkBottom = Math.max(inkBottom, y);
+    }
+  }
+  if (inkRight < inkLeft || inkBottom < inkTop) return null;
+  const inkWidth = inkRight - inkLeft + 1;
+  const inkHeight = inkBottom - inkTop + 1;
+  const maximumSuffixHeight = Math.min(rectangle.height * 0.35, rectangle.width * 1.8);
+  if (
+    inkWidth > rectangle.width * 0.58 ||
+    inkHeight > maximumSuffixHeight ||
+    inkHeight < inkWidth * 1.25
+  ) {
+    return null;
+  }
+
+  return { ...box, yMax: rectangle.top + suffixStart };
 };
 
 const segmentationModeFor = (writingMode: OcrWritingMode): PSM =>
@@ -564,6 +646,7 @@ export class TesseractOcrEngine {
         const parts: string[] = [];
         const confidences: number[] = [];
         const recognizedBoxes: OcrBoundingBox[] = [];
+        let incomplete = false;
         const ocrBoxes = region.textBoxes.flatMap((box) =>
           region.writingMode === 'vertical-rl'
             ? getMangaVerticalOcrBoxes(prepared.image, box, prepared.page).map((ocrBox) => ({
@@ -582,18 +665,22 @@ export class TesseractOcrEngine {
             crop,
           );
           const text = result?.text;
-          if (!text) continue;
+          if (!text) {
+            incomplete = true;
+            continue;
+          }
           if (
             this.#minimumConfidence > 0 &&
             (result.confidence === undefined || result.confidence < this.#minimumConfidence)
           ) {
+            incomplete = true;
             continue;
           }
           parts.push(text);
           recognizedBoxes.push(box);
           if (result.confidence !== undefined) confidences.push(result.confidence);
         }
-        if (!parts.length) continue;
+        if (incomplete || !parts.length) continue;
         const confidence = confidences.length
           ? confidences.reduce((total, value) => total + value, 0) / confidences.length
           : undefined;
@@ -650,10 +737,16 @@ export class TesseractOcrEngine {
       return primary;
     }
 
-    const trimmedBox = trimMangaVerticalBox(box);
+    const trimmedBox = trimMangaTrailingPunctuation(image, box, page);
     if (!trimmedBox) return primary;
     const retry = await recognize(trimmedBox);
     if (!retry) return primary;
+    if (
+      this.#minimumConfidence > 0 &&
+      (retry.confidence === undefined || retry.confidence < this.#minimumConfidence)
+    ) {
+      return primary;
+    }
     const primaryConfidence = primary?.confidence ?? Number.NEGATIVE_INFINITY;
     const retryConfidence = retry.confidence ?? Number.NEGATIVE_INFINITY;
     return retryConfidence >= primaryConfidence + 10 ? retry : primary;
