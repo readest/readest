@@ -22,7 +22,10 @@ const YearHeatmap: React.FC<YearHeatmapProps> = ({ daily, year }) => {
     const totals = Array.from({ length: 12 }, () => 0);
     for (const row of daily) {
       const date = dayjs(row.dayStartTs * 1000);
-      if (date.year() === year) totals[date.month()] += row.seconds;
+      if (date.year() === year) {
+        const month = date.month();
+        totals[month] = (totals[month] ?? 0) + row.seconds;
+      }
     }
     return totals;
   }, [daily, year]);

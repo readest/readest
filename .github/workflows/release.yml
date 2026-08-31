@@ -104,8 +104,34 @@ jobs:
           echo "package_version=$package_version"
           echo "main_sha=$main_sha"
 
-  windows:
+  verify:
     needs: resolve
+    name: 前端类型预检
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.main_sha }}
+          submodules: recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: TypeScript 类型检查
+        run: pnpm --filter @readest/readest-app exec tsc --noEmit
+
+  windows:
+    needs: [resolve, verify]
     name: Windows x64 安装包
     runs-on: windows-latest
     timeout-minutes: 90
@@ -201,7 +227,7 @@ jobs:
           if-no-files-found: error
 
   android:
-    needs: resolve
+    needs: [resolve, verify]
     name: Android APK（${{ inputs.android_abi }}）
     runs-on: ubuntu-latest
     timeout-minutes: 90
