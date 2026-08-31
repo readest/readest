@@ -4,6 +4,7 @@ import type { OcrBoundingBox } from '@/app/reader/services/ocr/types';
 export const MANGA_TRANSLATION_LAYER_SELECTOR = '[data-readest-manga-translation-layer]';
 
 const layerCleanups = new WeakMap<Element, () => void>();
+const MINIMUM_MANGA_FONT_SIZE = 6;
 
 const clamp = (value: number, maximum: number) => Math.min(maximum, Math.max(0, value));
 
@@ -34,16 +35,16 @@ const insetBox = (box: OcrBoundingBox, ratio: number): OcrBoundingBox => {
   };
 };
 
-const expandAndClipMask = (mask: OcrBoundingBox, bubble: OcrBoundingBox): OcrBoundingBox | null => {
-  const padding = Math.min(mask.xMax - mask.xMin, mask.yMax - mask.yMin) * 0.08;
-  const bubbleClip = insetBox(bubble, 0.015);
-  const clipped = {
-    xMin: Math.max(mask.xMin - padding, bubbleClip.xMin),
-    yMin: Math.max(mask.yMin - padding, bubbleClip.yMin),
-    xMax: Math.min(mask.xMax + padding, bubbleClip.xMax),
-    yMax: Math.min(mask.yMax + padding, bubbleClip.yMax),
+const intersectBoxes = (left: OcrBoundingBox, right: OcrBoundingBox): OcrBoundingBox | null => {
+  const intersection = {
+    xMin: Math.max(left.xMin, right.xMin),
+    yMin: Math.max(left.yMin, right.yMin),
+    xMax: Math.min(left.xMax, right.xMax),
+    yMax: Math.min(left.yMax, right.yMax),
   };
-  return clipped.xMax > clipped.xMin && clipped.yMax > clipped.yMin ? clipped : null;
+  return intersection.xMax > intersection.xMin && intersection.yMax > intersection.yMin
+    ? intersection
+    : null;
 };
 
 const percentage = (value: number, total: number) =>
@@ -94,7 +95,7 @@ export const findLargestFittingFontSize = ({ minimum, maximum, fits }: FontFitOp
 };
 
 export const getMaximumMangaFontSize = (width: number, height: number): number =>
-  Math.max(4, Math.min(48, width * 0.25, height * 0.3));
+  Math.max(MINIMUM_MANGA_FONT_SIZE, Math.min(48, width * 0.25, height * 0.3));
 
 const animateLayer = (element: HTMLElement, keyframes: Keyframe[], duration: number) => {
   if (typeof element.animate !== 'function') return;
@@ -131,18 +132,27 @@ export const mountMangaTranslationLayer = (
     zIndex: '2',
   });
 
-  const textElements: HTMLElement[] = [];
+  const renderedRegions: Array<{
+    container: HTMLElement;
+    masks: HTMLElement[];
+    text: HTMLElement;
+    visible: boolean;
+  }> = [];
   const reducedMotion = doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   for (const region of page.regions) {
     if (!region.translatedText.trim()) continue;
     const bubble = normalizeBox(region.bubbleBox, page);
     if (!bubble) continue;
+    const sourceTextBox = normalizeBox(region.textBox, page);
+    const textBox = sourceTextBox && intersectBoxes(sourceTextBox, insetBox(bubble, 0.015));
+    if (!textBox) continue;
 
+    const masks: HTMLElement[] = [];
     for (const rawMask of region.maskBoxes) {
       const mask = normalizeBox(rawMask, page);
       if (!mask) continue;
-      const clippedMask = expandAndClipMask(mask, bubble);
+      const clippedMask = intersectBoxes(mask, insetBox(bubble, 0.015));
       if (!clippedMask) continue;
       const maskElement = doc.createElement('span');
       maskElement.setAttribute('data-readest-manga-mask', '');
@@ -150,14 +160,14 @@ export const mountMangaTranslationLayer = (
         backgroundColor: region.backgroundColor,
         borderRadius: '16%',
         position: 'absolute',
+        visibility: 'hidden',
       });
       positionElement(maskElement, clippedMask, page);
       layer.append(maskElement);
-      if (!reducedMotion) animateLayer(maskElement, [{ opacity: 0 }, { opacity: 1 }], 120);
+      masks.push(maskElement);
     }
+    if (!masks.length) continue;
 
-    const textBox = normalizeBox(insetBox(bubble, 0.1), page);
-    if (!textBox) continue;
     const container = doc.createElement('span');
     container.setAttribute('data-readest-manga-region-id', region.id);
     Object.assign(container.style, {
@@ -169,6 +179,7 @@ export const mountMangaTranslationLayer = (
       position: 'absolute',
       textAlign: 'center',
       userSelect: 'none',
+      visibility: 'hidden',
     });
     positionElement(container, textBox, page);
 
@@ -178,7 +189,7 @@ export const mountMangaTranslationLayer = (
       color: textColorFor(region.backgroundColor),
       display: 'block',
       fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
-      fontSize: 'clamp(4px, 4vh, 48px)',
+      fontSize: 'clamp(6px, 4vh, 48px)',
       fontWeight: '600',
       letterSpacing: '-0.01em',
       lineHeight: '1.08',
@@ -192,30 +203,30 @@ export const mountMangaTranslationLayer = (
     text.append(doc.createTextNode(region.translatedText));
     container.append(text);
     layer.append(container);
-    textElements.push(text);
-    if (!reducedMotion) {
-      animateLayer(
-        container,
-        [
-          { opacity: 0, transform: 'scale(.96)' },
-          { opacity: 1, transform: 'scale(1)' },
-        ],
-        160,
-      );
-    }
+    renderedRegions.push({ container, masks, text, visible: false });
   }
 
-  if (!textElements.length) return null;
+  if (!renderedRegions.length) return null;
   doc.body.append(layer);
 
   const fitText = () => {
-    for (const text of textElements) {
-      const container = text.parentElement;
+    for (const region of renderedRegions) {
+      const { container, masks, text } = region;
       if (!container || container.clientWidth <= 0 || container.clientHeight <= 0) continue;
       text.style.transform = 'none';
+      text.style.fontSize = `${MINIMUM_MANGA_FONT_SIZE}px`;
+      const fitsMinimum =
+        text.scrollWidth <= container.clientWidth + 0.5 &&
+        text.scrollHeight <= container.clientHeight + 0.5;
+      container.style.visibility = fitsMinimum ? 'visible' : 'hidden';
+      for (const mask of masks) mask.style.visibility = container.style.visibility;
+      if (!fitsMinimum) {
+        region.visible = false;
+        continue;
+      }
       const maximum = getMaximumMangaFontSize(container.clientWidth, container.clientHeight);
       const size = findLargestFittingFontSize({
-        minimum: 4,
+        minimum: MINIMUM_MANGA_FONT_SIZE,
         maximum,
         fits: (candidate) => {
           text.style.fontSize = `${candidate}px`;
@@ -226,20 +237,29 @@ export const mountMangaTranslationLayer = (
         },
       });
       text.style.fontSize = `${size}px`;
-      const scale = Math.min(
-        1,
-        container.clientWidth / Math.max(1, text.scrollWidth),
-        container.clientHeight / Math.max(1, text.scrollHeight),
+      if (region.visible || reducedMotion) {
+        region.visible = true;
+        continue;
+      }
+      region.visible = true;
+      for (const mask of masks) animateLayer(mask, [{ opacity: 0 }, { opacity: 1 }], 120);
+      animateLayer(
+        container,
+        [
+          { opacity: 0, transform: 'scale(.96)' },
+          { opacity: 1, transform: 'scale(1)' },
+        ],
+        160,
       );
-      text.style.transform = scale < 1 ? `scale(${Number(scale.toFixed(6))})` : 'none';
     }
   };
 
   const win = doc.defaultView;
+  fitText();
   let frame = win?.requestAnimationFrame?.(fitText);
   const ResizeObserverConstructor = win?.ResizeObserver;
   const observer = ResizeObserverConstructor ? new ResizeObserverConstructor(fitText) : null;
-  if (observer) for (const text of textElements) observer.observe(text.parentElement!);
+  if (observer) for (const { container } of renderedRegions) observer.observe(container);
   void doc.fonts?.ready.then(() => fitText());
   layerCleanups.set(layer, () => {
     if (frame !== undefined) win?.cancelAnimationFrame?.(frame);

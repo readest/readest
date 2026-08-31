@@ -39,6 +39,8 @@ describe('mangaTranslationLayer', () => {
 
   it('masks source text and mounts safe English inside the detected bubble', () => {
     const animate = vi.fn(() => ({ cancel: vi.fn() }));
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(150);
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(200);
     Object.defineProperty(HTMLElement.prototype, 'animate', {
       configurable: true,
       value: animate,
@@ -54,17 +56,17 @@ describe('mangaTranslationLayer', () => {
 
     const mask = layer?.querySelector<HTMLElement>('[data-readest-manga-mask]');
     expect(mask?.style.backgroundColor).toBe('rgb(250, 248, 242)');
-    expect(Number.parseFloat(mask?.style.left ?? '')).toBeCloseTo(13.8);
-    expect(Number.parseFloat(mask?.style.top ?? '')).toBeCloseTo(11.9);
-    expect(Number.parseFloat(mask?.style.width ?? '')).toBeCloseTo(17.4);
-    expect(Number.parseFloat(mask?.style.height ?? '')).toBeCloseTo(11.2);
+    expect(Number.parseFloat(mask?.style.left ?? '')).toBeCloseTo(15);
+    expect(Number.parseFloat(mask?.style.top ?? '')).toBeCloseTo(12.5);
+    expect(Number.parseFloat(mask?.style.width ?? '')).toBeCloseTo(15);
+    expect(Number.parseFloat(mask?.style.height ?? '')).toBeCloseTo(10);
 
     const bubble = layer?.querySelector<HTMLElement>('[data-readest-manga-region-id="bubble-0"]');
     const text = bubble?.querySelector<HTMLElement>('[data-readest-manga-text]');
-    expect(bubble?.style.left).toBe('14%');
-    expect(bubble?.style.top).toBe('12%');
-    expect(bubble?.style.width).toBe('32%');
-    expect(bubble?.style.height).toBe('16%');
+    expect(bubble?.style.left).toBe('15%');
+    expect(bubble?.style.top).toBe('12.5%');
+    expect(bubble?.style.width).toBe('15%');
+    expect(bubble?.style.height).toBe('10%');
     expect(bubble?.style.overflow).toBe('hidden');
     expect(bubble?.style.pointerEvents).toBe('none');
     expect(bubble?.style.userSelect).toBe('none');
@@ -77,7 +79,7 @@ describe('mangaTranslationLayer', () => {
     expect(animate).toHaveBeenCalled();
   });
 
-  it('scales text that cannot fit at the minimum font size', () => {
+  it('leaves the source text visible when English cannot fit legibly', () => {
     let fitText: FrameRequestCallback | undefined;
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       fitText = callback;
@@ -98,10 +100,12 @@ describe('mangaTranslationLayer', () => {
 
     fitText?.(0);
 
-    expect(text?.style.fontSize).toBe('4px');
-    const scale = Number.parseFloat(text?.style.transform.match(/scale\(([^)]+)\)/u)?.[1] ?? '1');
-    expect(160 * scale).toBeLessThanOrEqual(80);
-    expect(120 * scale).toBeLessThanOrEqual(40);
+    expect(text?.style.fontSize).toBe('6px');
+    expect(text?.style.transform).toBe('none');
+    expect(container?.style.visibility).toBe('hidden');
+    expect(layer?.querySelector<HTMLElement>('[data-readest-manga-mask]')?.style.visibility).toBe(
+      'hidden',
+    );
   });
 
   it('clamps masks and bubble text to the page and skips invalid regions', () => {
@@ -130,6 +134,27 @@ describe('mangaTranslationLayer', () => {
     expect(Number.parseFloat(bubble?.style.top ?? '')).toBeGreaterThanOrEqual(0);
     expect(Number.parseFloat(bubble?.style.width ?? '')).toBeLessThanOrEqual(100);
     expect(Number.parseFloat(bubble?.style.height ?? '')).toBeLessThanOrEqual(100);
+  });
+
+  it('clips translated text to the detected source text area inside the bubble', () => {
+    const layer = mountMangaTranslationLayer(
+      document,
+      makePage({
+        regions: [
+          {
+            ...makePage().regions[0]!,
+            textBox: { xMin: 50, yMin: 150, xMax: 550, yMax: 650 },
+          },
+        ],
+      }),
+    );
+
+    const textArea = layer?.querySelector<HTMLElement>('[data-readest-manga-region-id]');
+    expect(textArea?.style.left).toBe('10.6%');
+    expect(textArea?.style.top).toBe('10.3%');
+    expect(textArea?.style.width).toBe('38.8%');
+    expect(textArea?.style.height).toBe('19.4%');
+    expect(textArea?.style.overflow).toBe('hidden');
   });
 
   it('disables motion when the reader requests reduced motion', () => {
@@ -178,6 +203,6 @@ describe('getMaximumMangaFontSize', () => {
   it('keeps comic text proportional to its bubble', () => {
     expect(getMaximumMangaFontSize(144, 146)).toBe(36);
     expect(getMaximumMangaFontSize(500, 500)).toBe(48);
-    expect(getMaximumMangaFontSize(8, 8)).toBe(4);
+    expect(getMaximumMangaFontSize(8, 8)).toBe(6);
   });
 });
