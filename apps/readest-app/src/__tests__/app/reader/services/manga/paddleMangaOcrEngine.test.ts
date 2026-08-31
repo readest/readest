@@ -57,7 +57,7 @@ const makeViewOutput = (items: readonly { indices: readonly number[]; confidence
   return { data, dims: [items.length, steps, classes] };
 };
 
-const makeHarness = () => {
+const makeHarness = (width = 80, height = 120) => {
   class Tensor {
     constructor(
       public type: string,
@@ -100,8 +100,8 @@ const makeHarness = () => {
     },
   );
   const source = document.createElement('canvas');
-  source.width = 80;
-  source.height = 120;
+  source.width = width;
+  source.height = height;
   const pixels = makePixels(source.width, source.height);
   vi.spyOn(source, 'getContext').mockReturnValue({
     getImageData: vi.fn(() => ({ data: pixels, width: source.width, height: source.height })),
@@ -338,6 +338,74 @@ describe('PaddleMangaOcrEngine', () => {
       pageIndex: 7,
       width: 80,
       height: 120,
+    });
+
+    expect(harness.run).toHaveBeenCalledTimes(2);
+    expect(page.blocks[0]?.text).toBe('あい\nあい');
+    await harness.engine.terminate();
+  });
+
+  it('splits framed vertical narration without treating the border as text', async () => {
+    const harness = makeHarness();
+    harness.pixels.fill(255);
+    for (let y = 5; y < 115; y += 1) {
+      for (let x = 5; x < 75; x += 1) {
+        const border = y < 15 || y >= 105;
+        const column = y >= 25 && y < 95 && ((x >= 15 && x < 22) || (x >= 35 && x < 42));
+        if (!border && !column) continue;
+        const offset = (y * 80 + x) * 4;
+        harness.pixels.fill(0, offset, offset + 3);
+        harness.pixels[offset + 3] = 255;
+      }
+    }
+    harness.detector.detect.mockResolvedValueOnce([
+      {
+        id: 'caption-0',
+        score: 0.41,
+        bubbleBox: box(2, 2, 78, 118),
+        textBoxes: [box(5, 5, 75, 115)],
+        writingMode: 'vertical-rl',
+      },
+    ]);
+
+    const page = await harness.engine.recognize(harness.source, {
+      pageIndex: 7,
+      width: 80,
+      height: 120,
+    });
+
+    expect(harness.run).toHaveBeenCalledTimes(2);
+    expect(page.blocks[0]?.text).toBe('あい\nあい');
+    await harness.engine.terminate();
+  });
+
+  it('keeps tightly spaced narration columns separate', async () => {
+    const harness = makeHarness(200, 160);
+    harness.pixels.fill(255);
+    for (let y = 10; y < 150; y += 1) {
+      for (let x = 10; x < 190; x += 1) {
+        const border = y < 24 || y >= 136;
+        const column = y >= 35 && y < 125 && ((x >= 40 && x < 60) || (x >= 70 && x < 90));
+        if (!border && !column) continue;
+        const offset = (y * 200 + x) * 4;
+        harness.pixels.fill(0, offset, offset + 3);
+        harness.pixels[offset + 3] = 255;
+      }
+    }
+    harness.detector.detect.mockResolvedValueOnce([
+      {
+        id: 'caption-0',
+        score: 0.41,
+        bubbleBox: box(5, 5, 195, 155),
+        textBoxes: [box(10, 10, 190, 150)],
+        writingMode: 'vertical-rl',
+      },
+    ]);
+
+    const page = await harness.engine.recognize(harness.source, {
+      pageIndex: 7,
+      width: 200,
+      height: 160,
     });
 
     expect(harness.run).toHaveBeenCalledTimes(2);

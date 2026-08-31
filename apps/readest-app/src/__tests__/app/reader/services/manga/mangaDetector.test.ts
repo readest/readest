@@ -62,6 +62,21 @@ describe('parseMangaDetections', () => {
     expect(detections).toHaveLength(1);
     expect(detections[0]?.score).toBeCloseTo(0.95);
   });
+
+  it('keeps a slightly weaker container without lowering the text threshold', () => {
+    const detections = parseMangaDetections(
+      new BigInt64Array([0n, 1n, 2n]),
+      new Float32Array([10, 10, 190, 290, 30, 30, 170, 270, 210, 10, 280, 80]),
+      new Float32Array([0.404, 0.52, 0.44]),
+      { width: 300, height: 300 },
+    );
+
+    expect(detections).toEqual([
+      { label: 'text-bubble', score: expect.closeTo(0.52), box: box(30, 30, 170, 270) },
+      { label: 'bubble', score: expect.closeTo(0.404), box: box(10, 10, 190, 290) },
+    ]);
+    expect(associateMangaBubbles(detections)).toHaveLength(1);
+  });
 });
 
 describe('associateMangaBubbles', () => {

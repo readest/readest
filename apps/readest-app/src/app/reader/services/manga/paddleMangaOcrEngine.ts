@@ -257,9 +257,13 @@ const splitTextBox = (
   const length = vertical ? rectangle?.width : rectangle?.height;
   const crossLength = vertical ? rectangle?.height : rectangle?.width;
   if (!rectangle || !length || !crossLength || length < 24) return [box];
+  const crossInset = Math.min(
+    Math.floor(crossLength / 4),
+    Math.max(1, Math.round(crossLength * 0.08)),
+  );
   const density = Array.from({ length }, (_, position) => {
     let ink = 0;
-    for (let cross = 0; cross < crossLength; cross += 1) {
+    for (let cross = crossInset; cross < crossLength - crossInset; cross += 1) {
       const x = vertical ? rectangle.left + position : rectangle.left + cross;
       const y = vertical ? rectangle.top + cross : rectangle.top + position;
       if (luminanceAt(image, x, y) < 128) ink += 1;
@@ -294,7 +298,7 @@ const splitTextBox = (
     }
   }
 
-  const maximumGap = Math.max(2, Math.round(length * 0.035));
+  const maximumGap = Math.max(2, Math.round(length * 0.012));
   const merged: InkRun[] = [];
   for (const run of runs) {
     const previous = merged.at(-1);

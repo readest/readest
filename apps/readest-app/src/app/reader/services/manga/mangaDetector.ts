@@ -7,6 +7,7 @@ import {
 const DETECTOR_SIZE = 640;
 const MAXIMUM_DETECTIONS = 1_000;
 const DEFAULT_CONFIDENCE = 0.45;
+const BUBBLE_CONFIDENCE_MARGIN = 0.05;
 const DUPLICATE_IOU = 0.85;
 const MODEL_URL =
   'https://huggingface.co/ogkalu/comic-text-and-bubble-detector/resolve/16e8a622f91fabc6b5b65c96d32d1183f8843546/detector-v4-s_int8.onnx';
@@ -172,7 +173,11 @@ export const parseMangaDetections = (
   for (let index = 0; index < count; index += 1) {
     const score = Number(scores[index]);
     const label = LABELS[Number(labels[index])];
-    if (!label || !Number.isFinite(score) || score < minimumConfidence) continue;
+    const confidenceThreshold =
+      label === 'bubble'
+        ? Math.max(0, minimumConfidence - BUBBLE_CONFIDENCE_MARGIN)
+        : minimumConfidence;
+    if (!label || !Number.isFinite(score) || score < confidenceThreshold) continue;
     const offset = index * 4;
     const box = normalizeBox(
       [
