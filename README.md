@@ -270,6 +270,7 @@ The following libraries and frameworks are used in this software:
 - [ONNX Runtime Web](https://github.com/microsoft/onnxruntime), which is licensed under the MIT License with Microsoft Corporation copyright.
 - [Tesseract.js](https://github.com/naptha/tesseract.js) and [tesseract.js-core](https://github.com/naptha/tesseract.js-core), which are licensed under the Apache License 2.0.
 - [comic-text-and-bubble-detector](https://huggingface.co/ogkalu/comic-text-and-bubble-detector), which is licensed under the Apache License 2.0.
+- [comic text detector](https://huggingface.co/mayocream/koharu), which is licensed under the GNU Affero General Public License 3.0.
 - [PP-OCRv6 manga recognition model](https://huggingface.co/fumetodev/PP-OCRv6_small_rec_manga_ONNX) and [PaddleOCR dictionary](https://github.com/PaddlePaddle/PaddleOCR), which are licensed under the Apache License 2.0.
 - [Bergamot Japanese-English model](https://huggingface.co/TiberiuCristianLeon/Bergamot), which is licensed under CC BY 4.0.
 
