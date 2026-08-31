@@ -289,13 +289,24 @@ describe('OcrSession', () => {
     zoomedCanvas.width = 2400;
     zoomedCanvas.height = 3600;
     doc.querySelector('#canvas')!.replaceChildren(zoomedCanvas);
-    await session.processDocument(doc, 6);
+    const resizedPage = await session.processDocument(doc, 6);
 
     expect(engine.recognize).toHaveBeenCalledTimes(1);
     expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 6');
-    expect(
-      (doc.querySelector('[data-readest-ocr-block-id]') as HTMLElement | null)?.style.left,
-    ).toBe(`${(100 / 1200) * 100}%`);
+    expect(resizedPage).toMatchObject({
+      width: 2400,
+      height: 3600,
+      blocks: [
+        {
+          box: {
+            xMin: 200,
+            yMin: 400,
+            xMax: 1200,
+            yMax: 560,
+          },
+        },
+      ],
+    });
   });
 
   it('reuses completed PDF OCR when the same canvas changes size', async () => {
@@ -309,10 +320,24 @@ describe('OcrSession', () => {
 
     canvas.width = 2000;
     canvas.height = 3000;
-    await session.processDocument(doc, 7);
+    const resizedPage = await session.processDocument(doc, 7);
     await session.processDocument(doc, 7);
 
     expect(engine.recognize).toHaveBeenCalledTimes(1);
+    expect(resizedPage).toMatchObject({
+      width: 2000,
+      height: 3000,
+      blocks: [
+        {
+          box: {
+            xMin: expect.closeTo(500 / 3, 5),
+            yMin: expect.closeTo(1000 / 3, 5),
+            xMax: expect.closeTo(1000, 5),
+            yMax: expect.closeTo(1400 / 3, 5),
+          },
+        },
+      ],
+    });
   });
 
   it('coalesces queued PDF zoom renders to the newest canvas', async () => {
@@ -370,6 +395,57 @@ describe('OcrSession', () => {
       width: 1200,
       height: 1800,
     });
+  });
+
+  it('does not reuse completed PDF OCR for a different document at the same page index', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const firstDocument = makePdfDocument();
+    const secondDocument = makePdfDocument();
+    const firstCanvas = firstDocument.querySelector('canvas');
+    const secondCanvas = secondDocument.querySelector('canvas');
+    await session.setEnabled(true);
+
+    await session.processDocument(firstDocument, 3);
+    await session.processDocument(secondDocument, 3);
+
+    expect(engine.recognize).toHaveBeenCalledTimes(2);
+    expect(engine.recognize).toHaveBeenNthCalledWith(1, firstCanvas, {
+      pageIndex: 3,
+      width: 1600,
+      height: 2400,
+    });
+    expect(engine.recognize).toHaveBeenNthCalledWith(2, secondCanvas, {
+      pageIndex: 3,
+      width: 1600,
+      height: 2400,
+    });
+  });
+
+  it('removes the OCR overlay for appearing native text and restores cache when it disappears', async () => {
+    const engine = makeEngine();
+    const session = new OcrSession({ createEngine: () => engine });
+    const doc = makePdfDocument();
+    const textLayer = doc.querySelector('.textLayer')!;
+
+    await session.setEnabled(true);
+    const recognizedPage = await session.processDocument(doc, 10);
+
+    expect(recognizedPage).not.toBeNull();
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 10');
+    expect(engine.recognize).toHaveBeenCalledOnce();
+
+    textLayer.textContent = 'Selectable PDF text';
+    expect(await session.processDocument(doc, 10)).toBeNull();
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)).toBeNull();
+    expect(engine.recognize).toHaveBeenCalledOnce();
+
+    textLayer.textContent = '';
+    const restoredPage = await session.processDocument(doc, 10);
+
+    expect(restoredPage).toEqual(recognizedPage);
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('recognized page 10');
+    expect(engine.recognize).toHaveBeenCalledOnce();
   });
 
   it('recognizes a different image that reuses a page index', async () => {
