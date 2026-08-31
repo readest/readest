@@ -79,6 +79,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const [showCaption, setShowCaption] = useState(true);
   const lastTouchDistance = useRef<number>(0);
   const dragStart = useRef({ x: 0, y: 0 });
+  const activePointerId = useRef<number | null>(null);
   const wasDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -325,48 +326,79 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     hideZoomLabelAfterDelay();
   };
 
-  const handleImageMouseDown = (e: React.MouseEvent) => {
-    if (isDragging || scale <= 1) return;
+  const finishPointerDrag = useCallback(
+    (target?: HTMLImageElement, pointerId?: number) => {
+      const activeId = activePointerId.current;
+      if (pointerId !== undefined && activeId !== pointerId) return;
+
+      activePointerId.current = null;
+      setIsDragging(false);
+
+      // Pointer capture normally releases automatically on pointerup/cancel.
+      // Explicitly release it when possible so manually-ended drags (for
+      // example a buttons=0 recovery move) cannot retain capture until later.
+      if (target && activeId !== null && target.hasPointerCapture?.(activeId)) {
+        target.releasePointerCapture(activeId);
+      }
+    },
+    [],
+  );
+
+  const handleImagePointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+    // Touch continues to use the existing touch pan/pinch path below. Pointer
+    // capture here is specifically for desktop mouse panning.
+    if (e.pointerType !== 'mouse' || e.button !== 0 || isDragging || scale <= 1) return;
     e.stopPropagation();
     e.preventDefault();
 
+    activePointerId.current = e.pointerId;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     setIsDragging(true);
     wasDragging.current = false;
     dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
 
-  // Track the drag on `window` (not the moving <img>) so the pan keeps
-  // following the pointer even when it crosses the image boundary. Binding the
-  // move/up handlers to the image meant the cursor leaving the lagging image
-  // aborted and restarted the drag, which flickered on desktop (#4451). Some
-  // WebViews can still lose the `mouseup` entirely when the pointer is released
-  // outside the app window, so `mousemove.buttons` and `blur` are independent
-  // release signals that prevent a stale drag from sticking to the cursor.
+  const handleImagePointerMove = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (
+      e.pointerType !== 'mouse' ||
+      activePointerId.current !== e.pointerId ||
+      !isDragging
+    ) {
+      return;
+    }
+
+    // Keep the old physical-button-state recovery as a second line of defense.
+    // It handles WebViews that deliver a move after an out-of-window release
+    // but fail to deliver pointerup/lostpointercapture.
+    if ((e.buttons & 1) === 0) {
+      finishPointerDrag(e.currentTarget, e.pointerId);
+      return;
+    }
+
+    wasDragging.current = true;
+    setPosition({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
+  };
+
+  const handleImagePointerEnd = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (e.pointerType !== 'mouse') return;
+    finishPointerDrag(e.currentTarget, e.pointerId);
+  };
+
+  // Pointer capture routes subsequent move/up events back to the image even
+  // after the cursor leaves its bounds. `lostpointercapture` and window blur
+  // are explicit cancellation paths for WebView/window boundary cases.
+  const handleLostPointerCapture = (e: React.PointerEvent<HTMLImageElement>) => {
+    finishPointerDrag(undefined, e.pointerId);
+  };
+
   useEffect(() => {
     if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      // `buttons` reflects the physical button state even if the WebView missed
-      // the corresponding mouseup while the pointer was outside its bounds.
-      if ((e.buttons & 1) === 0) {
-        setIsDragging(false);
-        return;
-      }
-      wasDragging.current = true;
-      setPosition({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
-    };
     const stopDragging = () => {
+      activePointerId.current = null;
       setIsDragging(false);
     };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', stopDragging);
     window.addEventListener('blur', stopDragging);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', stopDragging);
-      window.removeEventListener('blur', stopDragging);
-    };
+    return () => window.removeEventListener('blur', stopDragging);
   }, [isDragging]);
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -653,7 +685,11 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           sizes='100vw'
           onLoad={measureFit}
           onClick={handleImageClick}
-          onMouseDown={handleImageMouseDown}
+          onPointerDown={handleImagePointerDown}
+          onPointerMove={handleImagePointerMove}
+          onPointerUp={handleImagePointerEnd}
+          onPointerCancel={handleImagePointerEnd}
+          onLostPointerCapture={handleLostPointerCapture}
           onDoubleClick={onDoubleClick}
           style={{
             // Once measured, the layout size is explicit so committed zoom can
