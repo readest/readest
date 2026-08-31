@@ -100,7 +100,7 @@ describe('associateMangaBubbles', () => {
 });
 
 describe('MangaDetector', () => {
-  it('loads lazily, sends width before height, reuses the session, and releases it', async () => {
+  it('loads lazily, reuses the session, and waits for inference before release', async () => {
     const drawImage = vi.fn();
     const rgba = new Uint8ClampedArray(640 * 640 * 4);
     rgba.set([255, 128, 0, 255]);
@@ -153,7 +153,21 @@ describe('MangaDetector', () => {
     expect(firstFeeds.images.data[640 * 640]).toBeCloseTo(128 / 255);
     expect(firstFeeds.orig_target_sizes.data).toEqual(new BigInt64Array([100n, 200n]));
 
-    await detector.terminate();
+    let finishRun!: (output: Awaited<ReturnType<typeof run>>) => void;
+    run.mockImplementationOnce(() => new Promise((resolve) => (finishRun = resolve)));
+    const detecting = detector.detect(source, { width: 100, height: 200 });
+    await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(3));
+
+    const terminating = detector.terminate();
+    await Promise.resolve();
+    expect(release).not.toHaveBeenCalled();
+    finishRun({
+      labels: { data: new BigInt64Array() },
+      boxes: { data: new Float32Array() },
+      scores: { data: new Float32Array() },
+    });
+    await expect(detecting).rejects.toThrow('terminated');
+    await terminating;
     await detector.terminate();
     expect(release).toHaveBeenCalledOnce();
     await expect(detector.detect(source, { width: 100, height: 200 })).rejects.toThrow(

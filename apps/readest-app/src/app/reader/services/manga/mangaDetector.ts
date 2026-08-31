@@ -299,6 +299,7 @@ export class MangaDetector {
   readonly #loadRuntime: () => Promise<DetectorRuntime>;
   readonly #loadModel: MangaDetectorDependencies['loadModel'];
   readonly #abortController = new AbortController();
+  readonly #activeRuns = new Set<Promise<Record<string, DetectorTensor>>>();
   #runtimePromise: Promise<DetectorRuntime> | null = null;
   #sessionPromise: Promise<DetectorSession> | null = null;
   #terminated = false;
@@ -329,24 +330,28 @@ export class MangaDetector {
     const session = await this.#getSession(runtime);
     if (this.#terminated) throw new Error('Manga detector has been terminated');
 
+    const run = session.run({
+      images: new runtime.Tensor('float32', makeImageTensor(pixels), [
+        1,
+        3,
+        DETECTOR_SIZE,
+        DETECTOR_SIZE,
+      ]),
+      orig_target_sizes: new runtime.Tensor(
+        'int64',
+        new BigInt64Array([BigInt(page.width), BigInt(page.height)]),
+        [1, 2],
+      ),
+    });
+    this.#activeRuns.add(run);
     let outputs: Record<string, DetectorTensor>;
     try {
-      outputs = await session.run({
-        images: new runtime.Tensor('float32', makeImageTensor(pixels), [
-          1,
-          3,
-          DETECTOR_SIZE,
-          DETECTOR_SIZE,
-        ]),
-        orig_target_sizes: new runtime.Tensor(
-          'int64',
-          new BigInt64Array([BigInt(page.width), BigInt(page.height)]),
-          [1, 2],
-        ),
-      });
+      outputs = await run;
     } catch (error) {
       await this.#discardSession(session);
       throw error;
+    } finally {
+      this.#activeRuns.delete(run);
     }
     if (this.#terminated) throw new Error('Manga detector has been terminated');
     const labels = outputs['labels']?.data;
@@ -374,6 +379,7 @@ export class MangaDetector {
     if (!sessionPromise) return;
     try {
       const session = await sessionPromise;
+      await Promise.allSettled([...this.#activeRuns]);
       await session.release();
     } catch {
       return;
