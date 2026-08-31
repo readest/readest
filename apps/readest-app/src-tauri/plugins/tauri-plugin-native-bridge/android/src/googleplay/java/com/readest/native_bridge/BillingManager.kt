@@ -20,6 +20,19 @@ internal fun shouldRetryBillingQuery(responseCode: Int, attempt: Int): Boolean {
         attempt < MAX_BILLING_QUERY_ATTEMPTS
 }
 
+/**
+ * Whether a new subscription purchase should replace an existing one. Play
+ * treats a billing flow launched without the old purchase token as a brand new
+ * subscription, so a monthly subscriber buying the yearly plan would end up
+ * paying for both. Re-buying the same product is not a replacement.
+ */
+internal fun shouldReplaceSubscription(
+    existingProductIds: List<String>,
+    newProductId: String
+): Boolean {
+    return existingProductIds.isNotEmpty() && !existingProductIds.contains(newProductId)
+}
+
 internal class BillingSetupState {
     private var setupComplete = false
     private var setupInProgress = false
@@ -245,6 +258,28 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
             return
         }
 
+        if (productDetails.productType != BillingClient.ProductType.SUBS) {
+            launchPurchaseFlow(productDetails, null, callback)
+            return
+        }
+
+        // Changing plan or billing period has to hand Play the token of the
+        // subscription being replaced, otherwise it starts a second one
+        // alongside the old and the user is billed twice.
+        queryPurchases(BillingClient.ProductType.SUBS) { purchases ->
+            val replaced = purchases.firstOrNull { purchase ->
+                purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
+                    shouldReplaceSubscription(purchase.products, productId)
+            }
+            launchPurchaseFlow(productDetails, replaced?.purchaseToken, callback)
+        }
+    }
+
+    private fun launchPurchaseFlow(
+        productDetails: ProductDetails,
+        oldPurchaseToken: String?,
+        callback: (PurchaseData?) -> Unit
+    ) {
         purchaseCallback = callback
 
         val productDetailsParamsList = listOf(
@@ -261,10 +296,26 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
 
         val billingFlowParams = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(productDetailsParamsList)
+            .apply {
+                oldPurchaseToken?.let { oldToken ->
+                    setSubscriptionUpdateParams(
+                        BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                            .setOldPurchaseToken(oldToken)
+                            // Credits the unused remainder of the old plan and
+                            // shifts the renewal date, which reads correctly
+                            // both upgrading and downgrading.
+                            .setSubscriptionReplacementMode(
+                                BillingFlowParams.SubscriptionUpdateParams
+                                    .ReplacementMode.WITH_TIME_PRORATION
+                            )
+                            .build()
+                    )
+                }
+            }
             .build()
 
         val billingResult = billingClient.launchBillingFlow(activity, billingFlowParams)
-        
+
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             Log.e(TAG, "Failed to launch billing flow: ${billingResult.debugMessage}")
             callback(null)
