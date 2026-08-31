@@ -90,9 +90,7 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
         ribbonVisible: false,
         ttsEnabled: false,
         autoScrollEnabled: false,
-        ocrEnabled: false,
         mangaTranslationEnabled: false,
-        ocrLanguage: '',
         syncing: false,
         gridInsets: null,
         previewMode: false,
@@ -273,47 +271,15 @@ describe('readerStore', () => {
     });
   });
 
-  describe('setOcrEnabled', () => {
-    test('sets OCR only for the requested view', () => {
-      seedViewState('book-1');
-      seedViewState('book-2');
-
-      useReaderStore.getState().setOcrEnabled('book-1', true);
-
-      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(true);
-      expect(useReaderStore.getState().viewStates['book-1']!.mangaTranslationEnabled).toBe(false);
-      expect(useReaderStore.getState().viewStates['book-2']!.ocrEnabled).toBe(false);
-
-      useReaderStore.getState().setOcrEnabled('book-1', false);
-      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(false);
-    });
-  });
-
   describe('setMangaTranslationEnabled', () => {
-    test('keeps manga translation session-only and mutually exclusive with OCR', () => {
-      seedViewState('book-1', { ocrEnabled: true });
+    test('sets manga translation only for the requested view', () => {
+      seedViewState('book-1');
       seedViewState('book-2');
 
       useReaderStore.getState().setMangaTranslationEnabled('book-1', true);
 
       expect(useReaderStore.getState().viewStates['book-1']!.mangaTranslationEnabled).toBe(true);
-      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(false);
       expect(useReaderStore.getState().viewStates['book-2']!.mangaTranslationEnabled).toBe(false);
-
-      useReaderStore.getState().setOcrEnabled('book-1', true);
-      expect(useReaderStore.getState().viewStates['book-1']!.mangaTranslationEnabled).toBe(false);
-    });
-  });
-
-  describe('setOcrLanguage', () => {
-    test('sets the session language only for the requested view', () => {
-      seedViewState('book-1');
-      seedViewState('book-2');
-
-      useReaderStore.getState().setOcrLanguage('book-1', 'es');
-
-      expect(useReaderStore.getState().viewStates['book-1']!.ocrLanguage).toBe('es');
-      expect(useReaderStore.getState().viewStates['book-2']!.ocrLanguage).toBe('');
     });
   });
 
@@ -422,16 +388,8 @@ describe('readerStore', () => {
       uniqueIdMock.mockImplementation(() => 'mock-uid-123');
     });
 
-    test.each([
-      {
-        name: 'OCR',
-        state: { ocrEnabled: true, mangaTranslationEnabled: false, ocrLanguage: 'jpn' },
-      },
-      {
-        name: 'manga translation',
-        state: { ocrEnabled: false, mangaTranslationEnabled: true, ocrLanguage: 'jpn' },
-      },
-    ])('preserves the active $name session when requested', async ({ state: sessionState }) => {
+    test('preserves an active manga translation session when requested', async () => {
+      const sessionState = { mangaTranslationEnabled: true };
       seedViewState('book-1', sessionState);
 
       const initViewState = vi.fn(
@@ -442,9 +400,7 @@ describe('readerStore', () => {
           _isPrimary: boolean,
           _reload: boolean,
           preserved?: {
-            ocrEnabled: boolean;
             mangaTranslationEnabled: boolean;
-            ocrLanguage: string;
           },
         ) => {
           useReaderStore.setState((state) => ({
@@ -452,9 +408,7 @@ describe('readerStore', () => {
               ...state.viewStates,
               [key]: {
                 ...state.viewStates[key]!,
-                ocrEnabled: false,
                 mangaTranslationEnabled: false,
-                ocrLanguage: '',
                 viewerKey: `${key}-reloaded`,
                 ...(preserved ?? {}),
               },

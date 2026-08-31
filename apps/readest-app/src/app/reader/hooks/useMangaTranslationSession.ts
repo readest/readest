@@ -57,29 +57,52 @@ export const useMangaTranslationSession = ({
     );
   }, []);
 
+  const reportFailure = useCallback(
+    (session: MangaTranslationSession, task: Promise<unknown>, pageIndex: number) => {
+      void task.catch((error) => {
+        if (sessionRef.current === session && enabledRef.current) {
+          onErrorRef.current?.(error, pageIndex);
+        }
+      });
+    },
+    [],
+  );
+
   const processKnownDocuments = useCallback(
     (session: MangaTranslationSession) => {
       const currentPageIndexes = new Set<number>();
-      const entries = [...(getDocumentsRef.current?.() ?? [])]
-        .filter(({ index }) => typeof index === 'number' && Number.isFinite(index))
-        .sort((left, right) => left.index! - right.index!);
+      let entries: {
+        doc?: Document;
+        index?: number;
+        load?: MangaPageLoader;
+      }[];
+      try {
+        entries = [...(getDocumentsRef.current?.() ?? [])]
+          .filter(({ index }) => typeof index === 'number' && Number.isFinite(index))
+          .sort((left, right) => left.index! - right.index!);
+      } catch (error) {
+        if (sessionRef.current === session && enabledRef.current) {
+          onErrorRef.current?.(error, -1);
+        }
+        return;
+      }
       for (const { doc, index, load } of entries) {
         if (typeof index !== 'number') continue;
         currentPageIndexes.add(index);
-        if (load) void session.processPage(index, load);
+        if (load) reportFailure(session, session.processPage(index, load), index);
         if (doc) {
           rememberDocument(doc, index);
-          void session.processDocument(doc, index);
+          reportFailure(session, session.processDocument(doc, index), index);
         }
       }
       for (const [pageIndex, doc] of [...documentsRef.current].sort(
         ([left], [right]) => left - right,
       )) {
         if (currentPageIndexes.has(pageIndex)) continue;
-        void session.processDocument(doc, pageIndex);
+        reportFailure(session, session.processDocument(doc, pageIndex), pageIndex);
       }
     },
-    [rememberDocument],
+    [rememberDocument, reportFailure],
   );
 
   useEffect(() => {
@@ -107,7 +130,7 @@ export const useMangaTranslationSession = ({
     });
     sessionRef.current = session;
     processKnownDocuments(session);
-    void session.setEnabled(enabledRef.current);
+    reportFailure(session, session.setEnabled(enabledRef.current), -1);
 
     return () => {
       if (sessionRef.current === session) sessionRef.current = null;
@@ -119,8 +142,8 @@ export const useMangaTranslationSession = ({
     const session = sessionRef.current;
     if (!session) return;
     if (enabled) processKnownDocuments(session);
-    void session.setEnabled(enabled);
-  }, [enabled, processKnownDocuments]);
+    reportFailure(session, session.setEnabled(enabled), -1);
+  }, [enabled, processKnownDocuments, reportFailure]);
 
   useEffect(
     () => () => {

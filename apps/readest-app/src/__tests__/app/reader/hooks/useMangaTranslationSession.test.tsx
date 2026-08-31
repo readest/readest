@@ -186,4 +186,21 @@ describe('useMangaTranslationSession', () => {
     await waitFor(() => expect(mocks.session.processPage).toHaveBeenCalledWith(4, load));
     expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 4);
   });
+
+  it('reports document discovery failures instead of crashing the reader', async () => {
+    const error = new Error('document discovery failed');
+    const onError = vi.fn();
+
+    renderHook(() =>
+      useMangaTranslationSession({
+        enabled: true,
+        getDocuments: () => {
+          throw error;
+        },
+        onError,
+      }),
+    );
+
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(error, -1));
+  });
 });

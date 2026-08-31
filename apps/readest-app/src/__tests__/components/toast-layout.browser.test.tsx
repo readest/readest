@@ -84,4 +84,28 @@ describe('Toast layout', () => {
       0,
     );
   });
+
+  it('updates one anchored toast with progress', async () => {
+    const toast = await showToast({
+      type: 'info',
+      message: 'Translating page 1 of 10',
+      progress: 0.4,
+    });
+    const initialBox = toast.getBoundingClientRect();
+
+    expect(screen.getByRole('progressbar').getAttribute('value')).toBe('0.4');
+
+    await act(async () => {
+      await eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: 'Page 1 is ready. Continuing in the background',
+        progress: 1,
+      });
+    });
+    await waitFor(() => expect(screen.getByRole('progressbar').getAttribute('value')).toBe('1'));
+    for (const animation of toast.getAnimations({ subtree: true })) animation.finish();
+    await nextFrame();
+
+    expect(toast.getBoundingClientRect().top).toBeCloseTo(initialBox.top, 0);
+  });
 });

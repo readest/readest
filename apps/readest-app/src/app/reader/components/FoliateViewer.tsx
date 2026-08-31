@@ -89,9 +89,7 @@ import { observeDynamicResources } from '@/utils/dynamicResources';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
-import { useOcrSession } from '../hooks/useOcrSession';
 import { useMangaTranslationSession } from '../hooks/useMangaTranslationSession';
-import { prioritizeCurrentDocument } from '../utils/ocrDocumentPriority';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
@@ -132,11 +130,9 @@ const FoliateViewer: React.FC<{
   const getProgress = useReaderStore((s) => s.getProgress);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
-  const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
   const mangaTranslationEnabled = useReaderStore(
     (s) => s.viewStates[bookKey]?.mangaTranslationEnabled ?? false,
   );
-  const ocrLanguage = useReaderStore((s) => s.viewStates[bookKey]?.ocrLanguage ?? '');
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const { applyBackgroundTexture } = useBackgroundTexture();
@@ -157,14 +153,10 @@ const FoliateViewer: React.FC<{
   const [navigating, setNavigating] = useState(false);
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ocrProgressKeyRef = useRef('');
+  const mangaTranslationProgressKeyRef = useRef('');
+  const firstMangaPageReadyRef = useRef(false);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
-  const getOnDeviceTextDocuments = useCallback(() => {
-    const renderer = viewRef.current?.renderer;
-    if (!renderer) return [];
-    return prioritizeCurrentDocument(renderer.getContents(), renderer.primaryIndex);
-  }, []);
 
   const getMangaTranslationDocuments = useCallback(() => {
     const renderer = viewRef.current?.renderer;
@@ -224,54 +216,48 @@ const FoliateViewer: React.FC<{
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
-  const processOcrDocument = useOcrSession({
-    enabled: (bookFormat === 'CBZ' || bookFormat === 'PDF') && ocrEnabled,
-    language: ocrLanguage || bookDoc.metadata.language,
-    mangaFallback: bookFormat === 'CBZ' || (bookFormat === 'PDF' && bookDoc.dir === 'rtl'),
-    mangaMode: bookFormat === 'CBZ',
-    getDocuments: getOnDeviceTextDocuments,
-    onProgress: ({ status, progress }) => {
-      const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
-      const phase = status === 'recognizing text' ? 'recognizing' : 'preparing';
-      const progressKey = `${phase}-${Math.floor(percentage / 25)}`;
-      if (ocrProgressKeyRef.current === progressKey) return;
-      ocrProgressKeyRef.current = progressKey;
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        message:
-          phase === 'recognizing'
-            ? _('Recognizing text: {{progress}}%', { progress: percentage })
-            : _('Preparing text recognition: {{progress}}%', { progress: percentage }),
-        timeout: 5000,
-      });
-    },
-    onError: (error, pageIndex) => {
-      console.error(`Failed to recognize text on page ${pageIndex}`, error);
-      ocrProgressKeyRef.current = '';
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message:
-          pageIndex >= 0
-            ? _('Text recognition failed on page {{page}}', { page: pageIndex + 1 })
-            : _('Text recognition failed'),
-        timeout: 5000,
-      });
-    },
-    onPageRecognized: ({ pageIndex }) => {
-      ocrProgressKeyRef.current = '';
-      eventDispatcher.dispatch('toast', {
-        type: 'success',
-        message: _('Text is ready to select on page {{page}}', { page: pageIndex + 1 }),
-        timeout: 3000,
-      });
-    },
-  });
 
   const processMangaTranslationDocument = useMangaTranslationSession({
     enabled: bookFormat === 'CBZ' && mangaTranslationEnabled,
     getDocuments: getMangaTranslationDocuments,
+    onProgress: ({ status, progress, completed, total }) => {
+      if (firstMangaPageReadyRef.current) return;
+      if (completed > 0 && !(status === 'completed manga page' && completed === 1)) return;
+      const firstPageProgress =
+        status === 'completed manga page'
+          ? 1
+          : status === 'loading manga detector'
+            ? progress * 0.1
+            : status === 'detecting speech bubbles'
+              ? 0.1 + progress * 0.1
+              : status === 'loading manga text detector'
+                ? 0.2 + progress * 0.15
+                : status === 'detecting Japanese text'
+                  ? 0.35 + progress * 0.1
+                  : status === 'loading manga OCR model'
+                    ? 0.45 + progress * 0.15
+                    : status === 'recognizing speech bubbles'
+                      ? 0.6 + progress * 0.15
+                      : status === 'loading translation model'
+                        ? 0.75 + progress * 0.2
+                        : 0.95 + progress * 0.05;
+      const progressKey = `${status}-${Math.floor(firstPageProgress * 20)}`;
+      if (mangaTranslationProgressKeyRef.current === progressKey) return;
+      mangaTranslationProgressKeyRef.current = progressKey;
+      if (status === 'completed manga page') firstMangaPageReadyRef.current = true;
+      void eventDispatcher.dispatch('toast', {
+        type: status === 'completed manga page' ? 'success' : 'info',
+        message:
+          status === 'completed manga page'
+            ? _('Page 1 is ready. Continuing in the background')
+            : _('Translating page 1 of {{total}}', { total }),
+        progress: firstPageProgress,
+        timeout: status === 'completed manga page' ? 2000 : 300000,
+      });
+    },
     onError: (error, pageIndex) => {
       console.error(`Failed to translate manga on page ${pageIndex}`, error);
+      mangaTranslationProgressKeyRef.current = '';
       eventDispatcher.dispatch('toast', {
         type: 'error',
         message:
@@ -284,8 +270,11 @@ const FoliateViewer: React.FC<{
   });
 
   useEffect(() => {
-    if (!ocrEnabled) ocrProgressKeyRef.current = '';
-  }, [ocrEnabled, ocrLanguage]);
+    if (!mangaTranslationEnabled) {
+      mangaTranslationProgressKeyRef.current = '';
+      firstMangaPageReadyRef.current = false;
+    }
+  }, [mangaTranslationEnabled]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {
@@ -514,7 +503,6 @@ const FoliateViewer: React.FC<{
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings, undefined, bookData.book?.format);
         if (bookData.book?.format === 'CBZ') {
-          void processOcrDocument(detail.doc, detail.index);
           void processMangaTranslationDocument(detail.doc, detail.index);
         }
         const themeCode = getThemeCode();
@@ -618,12 +606,6 @@ const FoliateViewer: React.FC<{
         registerBookmarkPullDoc(bookKey, detail.doc);
       }
     }
-  };
-
-  const pdfPageRenderedHandler = (event: Event) => {
-    if (bookFormat !== 'PDF') return;
-    const { doc, index } = (event as CustomEvent<{ doc?: Document; index?: number }>).detail;
-    if (doc && typeof index === 'number') void processOcrDocument(doc, index);
   };
 
   const evalInlineScripts = (doc: Document) => {
@@ -824,7 +806,6 @@ const FoliateViewer: React.FC<{
     onStabilized: stabilizedHandler,
     onRelocate: progressRelocateHandler,
     onRendererRelocate: docRelocateHandler,
-    onRendererCreateOverlayer: pdfPageRenderedHandler,
     onNavigateStart: navigateStartHandler,
     onNavigateEnd: navigateEndHandler,
   });

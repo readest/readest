@@ -21,7 +21,6 @@ import {
   MAX_CONTRAST,
   MIN_CONTRAST,
   CONTRAST_STEP,
-  TRANSLATED_LANGS,
 } from '@/services/constants';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -42,8 +41,6 @@ import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
-import Select from '@/components/Select';
-import { OCR_LANGUAGE_CODES } from '@/app/reader/services/ocr/tesseractLanguages';
 
 interface ViewMenuProps {
   bookKey: string;
@@ -75,9 +72,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     getViewState,
     getProgress,
     setViewSettings,
-    setOcrEnabled,
     setMangaTranslationEnabled,
-    setOcrLanguage,
     recreateViewer,
   } = useReaderStore();
   const config = getConfig(bookKey)!;
@@ -106,17 +101,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const [rtlSpread, setRtlSpread] = useState(() =>
     isRtlWritingMode(viewSettings?.writingMode, bookData?.bookDoc?.dir),
   );
-  const supportsOcr = bookData.book?.format === 'CBZ' || bookData.book?.format === 'PDF';
-  const ocrLanguageOptions = supportsOcr
-    ? [
-        { value: '', label: _('Auto') },
-        ...OCR_LANGUAGE_CODES.flatMap((value) => {
-          const label = TRANSLATED_LANGS[value];
-          return typeof label === 'string' ? [{ value, label }] : [];
-        }),
-      ]
-    : [];
-
   const zoomIn = () => setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM_LEVEL));
   const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
   const resetZoom = () => setZoomLevel(100);
@@ -509,31 +493,23 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         />
       )}
 
-      {supportsOcr && (
-        <>
-          {bookData.book?.format === 'CBZ' && (
-            <MenuItem
-              label={_('Translate Manga')}
-              Icon={viewState?.mangaTranslationEnabled ? MdCheck : undefined}
-              onClick={() =>
-                setMangaTranslationEnabled(bookKey, !viewState?.mangaTranslationEnabled)
-              }
-            />
-          )}
-          <MenuItem
-            label={_('Recognize Text')}
-            Icon={viewState?.ocrEnabled ? MdCheck : undefined}
-            onClick={() => setOcrEnabled(bookKey, !viewState?.ocrEnabled)}
-          />
-          <label className='hover:bg-base-300 text-base-content flex items-center justify-between rounded-md px-3 py-2'>
-            <span className='ms-6 text-base sm:text-sm'>{_('Text Language')}</span>
-            <Select
-              value={viewState?.ocrLanguage ?? ''}
-              onChange={(event) => setOcrLanguage(bookKey, event.target.value)}
-              options={ocrLanguageOptions}
-            />
-          </label>
-        </>
+      {bookData.book?.format === 'CBZ' && (
+        <MenuItem
+          label={_('Translate Manga')}
+          Icon={viewState?.mangaTranslationEnabled ? MdCheck : undefined}
+          onClick={() => {
+            const enabled = !viewState?.mangaTranslationEnabled;
+            setMangaTranslationEnabled(bookKey, enabled);
+            if (enabled) {
+              void eventDispatcher.dispatch('toast', {
+                type: 'info',
+                message: _('Preparing manga translation'),
+                progress: 0,
+                timeout: 2000,
+              });
+            }
+          }}
+        />
       )}
 
       <MenuItem

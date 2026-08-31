@@ -13,7 +13,7 @@ const MAXIMUM_BATCH_CHARACTERS = 20_000;
 
 interface TranslationWorker {
   addEventListener: (
-    type: 'message' | 'error',
+    type: 'message' | 'messageerror' | 'error',
     listener: (event: MessageEvent<OpusTranslationResponse> | ErrorEvent) => void,
   ) => void;
   postMessage: (message: OpusTranslationRequest) => void;
@@ -149,6 +149,12 @@ export class OpusJapaneseTranslator {
     );
     worker.addEventListener('error', (event) =>
       this.#handleWorkerFailure(worker, (event as ErrorEvent).error ?? event),
+    );
+    worker.addEventListener('messageerror', () =>
+      this.#handleWorkerFailure(
+        worker,
+        new Error('Local translation worker response could not be decoded'),
+      ),
     );
     return worker;
   }
