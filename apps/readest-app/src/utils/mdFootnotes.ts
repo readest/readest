@@ -23,6 +23,18 @@ const REF_PREFIX = `${FOOTNOTE_PREFIX_ID}ref-`;
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 const FOOTNOTE_DEF_RE = /^\[\^[^\]\n]+\]:/;
 
+const stripFootnoteContinuationIndent = (line: string): string | null => {
+  let column = 0;
+  let offset = 0;
+  while (offset < line.length && column < 4) {
+    if (line[offset] === ' ') column++;
+    else if (line[offset] === '\t') column += 4 - (column % 4);
+    else break;
+    offset++;
+  }
+  return column >= 4 ? line.slice(offset) : null;
+};
+
 // marked-footnote strips either four spaces or a tab from captured continuation
 // lines, but its block tokenizer only captures the four-space form. Obsidian
 // commonly writes the equivalent indentation with tabs, so expand leading tabs
@@ -39,7 +51,11 @@ export const normalizeFootnoteDefinitionIndent = (src: string): string => {
     const line = lines[i]!;
 
     if (closingFence) {
-      if (closingFence.test(line)) closingFence = null;
+      const fenceLine = inDefinition ? stripFootnoteContinuationIndent(line) : line;
+      if (fenceLine !== null && closingFence.test(fenceLine)) {
+        closingFence = null;
+        if (inDefinition) lines[i] = `    ${fenceLine}`;
+      }
       continue;
     }
 
@@ -50,6 +66,12 @@ export const normalizeFootnoteDefinitionIndent = (src: string): string => {
 
     if (inDefinition) {
       if (/^[ \t]/.test(line)) {
+        const fenceLine = stripFootnoteContinuationIndent(line);
+        const fence = fenceLine === null ? null : FENCE_RE.exec(fenceLine);
+        if (fence) {
+          const marker = fence[1]!;
+          closingFence = new RegExp(`^ {0,3}\\${marker[0]}{${marker.length},}[ \\t]*\\r?$`);
+        }
         if (/^[ \t]*\t/.test(line)) {
           let column = 0;
           let offset = 0;

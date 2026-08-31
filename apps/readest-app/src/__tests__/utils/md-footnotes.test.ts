@@ -196,6 +196,13 @@ describe('markdown footnotes', () => {
     expect(notes(doc)[0]!.textContent).toContain('Second.');
   });
 
+  it('preserves a source tab in fenced code nested inside a footnote', async () => {
+    const book = await make('t[^a]\n\n[^a]: Example:\n\n    ```text\n    \tcode\n    ```\n');
+    const doc = await docOf(book);
+
+    expect(notes(doc)[0]!.querySelector('pre code')?.textContent).toBe('\tcode\n');
+  });
+
   it('gives a reused reference one note, unique ids and a backlink per reference', async () => {
     const book = await make('a[^a] b[^a]\n\n[^a]: once\n');
     const doc = await docOf(book);
