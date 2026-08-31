@@ -8,7 +8,7 @@
 
 use futures_util::TryStreamExt;
 use serde::{ser::Serializer, Serialize};
-use tauri::{command, ipc::Channel, AppHandle};
+use tauri::{command, ipc::Channel, AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
 use tokio::{
     fs::{File, OpenOptions},
