@@ -7,7 +7,7 @@
 //! Download files from a remote HTTP server to disk.
 
 use futures_util::TryStreamExt;
-use serde::{ser::Serializer, Serialize};
+use serde::{ser::Serializer, Deserialize, Serialize};
 use tauri::{command, ipc::Channel, AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
 use tokio::{
@@ -343,6 +343,344 @@ pub struct ProgressPayload {
     transfer_speed: u64,
 }
 
+const PROGRESS_INTERVAL_MS: u128 = 500;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ResumeMetadata {
+    url: String,
+    etag: Option<String>,
+    total: u64,
+}
+
+fn resume_paths(file_path: &str) -> (PathBuf, PathBuf) {
+    let part = format!("{file_path}.readest.part");
+    let sidecar = format!("{file_path}.readest.part.json");
+    (PathBuf::from(part), PathBuf::from(sidecar))
+}
+
+struct ProgressEmitter {
+    channel: Channel<ProgressPayload>,
+    stats: TransferStats,
+    total: u64,
+    last_emit: Instant,
+}
+
+impl ProgressEmitter {
+    fn new(channel: Channel<ProgressPayload>, total: u64) -> Self {
+        Self {
+            channel,
+            stats: TransferStats::default(),
+            total,
+            last_emit: Instant::now()
+                - std::time::Duration::from_millis(PROGRESS_INTERVAL_MS as u64),
+        }
+    }
+
+    fn start_at(&mut self, offset: u64) {
+        self.stats.total_transferred = offset;
+        let _ = self.channel.send(ProgressPayload {
+            progress: offset,
+            total: self.total,
+            transfer_speed: 0,
+        });
+    }
+
+    fn record(&mut self, len: usize) {
+        self.stats.record_chunk_transfer(len);
+        let payload = ProgressPayload {
+            progress: self.stats.total_transferred,
+            total: self.total,
+            transfer_speed: self.stats.transfer_speed,
+        };
+        if self.last_emit.elapsed().as_millis() >= PROGRESS_INTERVAL_MS {
+            let _ = self.channel.send(payload);
+            self.last_emit = Instant::now();
+        }
+    }
+
+    fn finish(&mut self) {
+        let payload = ProgressPayload {
+            progress: self.stats.total_transferred,
+            total: self.total,
+            transfer_speed: self.stats.transfer_speed,
+        };
+        let _ = self.channel.send(payload);
+    }
+}
+
+async fn single_threaded_download(
+    client: &reqwest::Client,
+    url: &str,
+    file_path: &str,
+    headers: &HashMap<String, String>,
+    body: Option<&str>,
+    on_progress: Channel<ProgressPayload>,
+) -> Result<HashMap<String, String>> {
+    let mut request = if let Some(body) = body {
+        client.post(url).body(body.to_owned())
+    } else {
+        client.get(url)
+    };
+
+    for (key, value) in headers {
+        request = request.header(key, value);
+    }
+
+    let response = request.send().await?;
+    if !response.status().is_success() {
+        let status = response.status().as_u16();
+        let body = read_response_body_limited(response, MAX_ERROR_BODY_BYTES).await?;
+        return Err(Error::HttpErrorCode(
+            status,
+            String::from_utf8_lossy(&body).into_owned(),
+        ));
+    }
+
+    let mut resp_headers = HashMap::new();
+    for (key, value) in response.headers().iter() {
+        if let Ok(val_str) = value.to_str() {
+            resp_headers.insert(key.to_string(), val_str.to_string());
+        }
+    }
+
+    let total = response.content_length().unwrap_or(0);
+    if total > MAX_DOWNLOAD_BYTES {
+        return Err(Error::ContentLength(format!(
+            "download size {total} exceeds the {MAX_DOWNLOAD_BYTES}-byte limit"
+        )));
+    }
+    let mut temp = DownloadTempFile::new(file_path);
+    let mut emitter = ProgressEmitter::new(on_progress, total);
+    {
+        let mut file = BufWriter::new(
+            OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&temp.path)
+                .await?,
+        );
+        let mut stream = response.bytes_stream();
+
+        let mut received = 0u64;
+        while let Some(chunk) = stream.try_next().await? {
+            let next_received = received.saturating_add(chunk.len() as u64);
+            if next_received > MAX_DOWNLOAD_BYTES {
+                return Err(Error::ContentLength(format!(
+                    "response body exceeds the {MAX_DOWNLOAD_BYTES}-byte limit"
+                )));
+            }
+            received = next_received;
+            file.write_all(&chunk).await?;
+            emitter.record(chunk.len());
+        }
+        file.flush().await?;
+    }
+    emitter.finish();
+    commit_download_file(&mut temp, file_path).await?;
+
+    Ok(resp_headers)
+}
+
+async fn fallback_single_download(
+    client: &reqwest::Client,
+    url: &str,
+    file_path: &str,
+    headers: &HashMap<String, String>,
+    on_progress: Channel<ProgressPayload>,
+) -> Result<HashMap<String, String>> {
+    let (part_path, sidecar_path) = resume_paths(file_path);
+    let _ = tokio::fs::remove_file(&part_path).await;
+    let _ = tokio::fs::remove_file(&sidecar_path).await;
+    let result = single_threaded_download(client, url, file_path, headers, None, on_progress).await;
+    let _ = tokio::fs::remove_file(&part_path).await;
+    let _ = tokio::fs::remove_file(&sidecar_path).await;
+    result
+}
+
+async fn resumable_download(
+    client: &reqwest::Client,
+    url: &str,
+    file_path: &str,
+    headers: &HashMap<String, String>,
+    on_progress: Channel<ProgressPayload>,
+) -> Result<HashMap<String, String>> {
+    let mut probe = client.get(url).header("Range", "bytes=0-0");
+    for (key, value) in headers {
+        probe = probe.header(key, value);
+    }
+    let probe_response = probe.send().await?;
+    if probe_response.status() != reqwest::StatusCode::PARTIAL_CONTENT {
+        return fallback_single_download(client, url, file_path, headers, on_progress).await;
+    }
+    let Some((start, end, total)) = probe_response
+        .headers()
+        .get("content-range")
+        .and_then(|v| v.to_str().ok())
+        .and_then(parse_content_range)
+    else {
+        return fallback_single_download(client, url, file_path, headers, on_progress).await;
+    };
+    if start != 0 || end != 0 || total == 0 {
+        return fallback_single_download(client, url, file_path, headers, on_progress).await;
+    }
+    if total > MAX_DOWNLOAD_BYTES {
+        return Err(Error::ContentLength(format!(
+            "download size {total} exceeds the {MAX_DOWNLOAD_BYTES}-byte limit"
+        )));
+    }
+    let Some(etag) = probe_response
+        .headers()
+        .get(reqwest::header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned)
+    else {
+        // Without a validator, an old partial file cannot be proven to match
+        // the current remote content, so use a fresh single-request download.
+        return fallback_single_download(client, url, file_path, headers, on_progress).await;
+    };
+    let mut response_headers = HashMap::new();
+    for (key, value) in probe_response.headers() {
+        if let Ok(value) = value.to_str() {
+            response_headers.insert(key.to_string(), value.to_string());
+        }
+    }
+
+    let (part_path, sidecar_path) = resume_paths(file_path);
+    let identity = ResumeMetadata {
+        url: url.to_string(),
+        etag: Some(etag.clone()),
+        total,
+    };
+    let valid_sidecar = match tokio::fs::read(&sidecar_path).await {
+        Ok(bytes) => serde_json::from_slice::<ResumeMetadata>(&bytes)
+            .ok()
+            .is_some_and(|m| {
+                m.url == identity.url && m.etag == identity.etag && m.total == total
+            }),
+        Err(_) => false,
+    };
+    let mut offset = if valid_sidecar {
+        tokio::fs::metadata(&part_path)
+            .await
+            .ok()
+            .map(|m| m.len())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    if offset > total {
+        offset = 0;
+        let _ = tokio::fs::remove_file(&part_path).await;
+    }
+    if !valid_sidecar {
+        let _ = tokio::fs::remove_file(&part_path).await;
+        let _ = tokio::fs::remove_file(&sidecar_path).await;
+    }
+    if offset == total {
+        let mut temp = DownloadTempFile {
+            path: part_path.to_string_lossy().into_owned(),
+            committed: false,
+        };
+        commit_download_file(&mut temp, file_path).await?;
+        let _ = tokio::fs::remove_file(&sidecar_path).await;
+        let mut emitter = ProgressEmitter::new(on_progress, total);
+        emitter.start_at(total);
+        emitter.finish();
+        return Ok(response_headers);
+    }
+    tokio::fs::write(
+        &sidecar_path,
+        serde_json::to_vec(&identity).map_err(|e| Error::ContentLength(e.to_string()))?,
+    )
+    .await?;
+
+    for attempt in 0..2 {
+        let mut request = client.get(url);
+        if offset > 0 {
+            request = request.header("Range", format!("bytes={offset}-"));
+            request = request.header("If-Range", &etag);
+        }
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        let response = request.send().await?;
+        let response_etag = response
+            .headers()
+            .get(reqwest::header::ETAG)
+            .and_then(|v| v.to_str().ok());
+        let valid_status = if offset > 0 {
+            response.status() == reqwest::StatusCode::PARTIAL_CONTENT
+        } else {
+            response.status().is_success()
+        };
+        let valid_range = if response.status() == reqwest::StatusCode::PARTIAL_CONTENT {
+            response
+                .headers()
+                .get("content-range")
+                .and_then(|v| v.to_str().ok())
+                .and_then(parse_content_range)
+                == Some((offset, total - 1, total))
+        } else {
+            offset == 0
+        };
+        let valid_etag = etag
+            .as_str()
+            .is_empty()
+            || response_etag == Some(etag.as_str());
+        if !valid_status || !valid_range || !valid_etag {
+            if attempt == 0 && offset > 0 {
+                offset = 0;
+                let _ = tokio::fs::remove_file(&part_path).await;
+                continue;
+            }
+            let status = response.status().as_u16();
+            let body = read_response_body_limited(response, MAX_ERROR_BODY_BYTES).await?;
+            return Err(Error::HttpErrorCode(
+                status,
+                String::from_utf8_lossy(&body).into_owned(),
+            ));
+        }
+        let mut open = OpenOptions::new();
+        open.write(true).create(true);
+        if offset == 0 {
+            open.truncate(true);
+        }
+        let mut file = tokio::io::BufWriter::new(open.open(&part_path).await?);
+        use tokio::io::AsyncSeekExt;
+        file.seek(std::io::SeekFrom::Start(offset)).await?;
+        let mut received = offset;
+        let mut emitter = ProgressEmitter::new(on_progress.clone(), total);
+        emitter.start_at(offset);
+        let mut stream = response.bytes_stream();
+        while let Some(chunk) = stream.try_next().await? {
+            received = received.saturating_add(chunk.len() as u64);
+            if received > MAX_DOWNLOAD_BYTES || received > total {
+                return Err(Error::ContentLength(
+                    "response body exceeds download limit".into(),
+                ));
+            }
+            file.write_all(&chunk).await?;
+            emitter.record(chunk.len());
+        }
+        if received != total {
+            return Err(Error::ContentLength(format!(
+                "download ended at {received}, expected {total}"
+            )));
+        }
+        file.flush().await?;
+        drop(file);
+        emitter.finish();
+        let mut temp = DownloadTempFile {
+            path: part_path.to_string_lossy().into_owned(),
+            committed: false,
+        };
+        commit_download_file(&mut temp, file_path).await?;
+        let _ = tokio::fs::remove_file(&sidecar_path).await;
+        return Ok(response_headers);
+    }
+    unreachable!()
+}
+
 #[command]
 #[allow(clippy::too_many_arguments)] // Tauri command surface mirrors the JS caller's options.
 pub async fn download_file(
@@ -353,6 +691,7 @@ pub async fn download_file(
     body: Option<String>,
     single_threaded: Option<bool>,
     skip_ssl_verification: Option<bool>,
+    resume: Option<bool>,
     on_progress: Channel<ProgressPayload>,
 ) -> Result<HashMap<String, String>> {
     use futures::stream::{self, StreamExt};
@@ -367,88 +706,22 @@ pub async fn download_file(
         .danger_accept_invalid_certs(skip_ssl_verification.unwrap_or(false))
         .danger_accept_invalid_hostnames(skip_ssl_verification.unwrap_or(false))
         .build()?;
-    let force_single = single_threaded.unwrap_or(false);
+    let force_single = single_threaded.unwrap_or(false) && !resume.unwrap_or(false);
 
-    async fn single_threaded_download(
-        client: &reqwest::Client,
-        url: &str,
-        file_path: &str,
-        headers: &HashMap<String, String>,
-        body: &Option<String>,
-        on_progress: Channel<ProgressPayload>,
-    ) -> Result<HashMap<String, String>> {
-        let mut request = if let Some(body) = body {
-            client.post(url).body(body.clone())
-        } else {
-            client.get(url)
-        };
-
-        for (key, value) in headers {
-            request = request.header(key, value);
-        }
-
-        let response = request.send().await?;
-        if !response.status().is_success() {
-            let status = response.status().as_u16();
-            let body = read_response_body_limited(response, MAX_ERROR_BODY_BYTES).await?;
-            return Err(Error::HttpErrorCode(
-                status,
-                String::from_utf8_lossy(&body).into_owned(),
-            ));
-        }
-
-        let mut resp_headers = HashMap::new();
-        for (key, value) in response.headers().iter() {
-            if let Ok(val_str) = value.to_str() {
-                resp_headers.insert(key.to_string(), val_str.to_string());
-            }
-        }
-
-        let total = response.content_length().unwrap_or(0);
-        if total > MAX_DOWNLOAD_BYTES {
-            return Err(Error::ContentLength(format!(
-                "download size {total} exceeds the {MAX_DOWNLOAD_BYTES}-byte limit"
-            )));
-        }
-        let mut temp = DownloadTempFile::new(file_path);
-        {
-            let mut file = BufWriter::new(
-                OpenOptions::new()
-                    .write(true)
-                    .create_new(true)
-                    .open(&temp.path)
-                    .await?,
-            );
-            let mut stream = response.bytes_stream();
-
-            let mut received = 0u64;
-            let mut stats = TransferStats::default();
-            while let Some(chunk) = stream.try_next().await? {
-                let next_received = received.saturating_add(chunk.len() as u64);
-                if next_received > MAX_DOWNLOAD_BYTES {
-                    return Err(Error::ContentLength(format!(
-                        "response body exceeds the {MAX_DOWNLOAD_BYTES}-byte limit"
-                    )));
-                }
-                received = next_received;
-                file.write_all(&chunk).await?;
-                stats.record_chunk_transfer(chunk.len());
-                let _ = on_progress.send(ProgressPayload {
-                    progress: stats.total_transferred,
-                    total,
-                    transfer_speed: stats.transfer_speed,
-                });
-            }
-            file.flush().await?;
-        }
-        commit_download_file(&mut temp, file_path).await?;
-
-        Ok(resp_headers)
+    if resume.unwrap_or(false) && body.is_none() {
+        return resumable_download(&client, url, file_path, &headers, on_progress).await;
     }
 
     if force_single {
-        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
-            .await;
+        return single_threaded_download(
+            &client,
+            url,
+            file_path,
+            &headers,
+            body.as_deref(),
+            on_progress,
+        )
+        .await;
     }
 
     // Check if server supports range requests
@@ -485,8 +758,15 @@ pub async fn download_file(
         || !probe_body_size_ok
         || total == 0
     {
-        return single_threaded_download(&client, url, file_path, &headers, &body, on_progress)
-            .await;
+        return single_threaded_download(
+            &client,
+            url,
+            file_path,
+            &headers,
+            body.as_deref(),
+            on_progress,
+        )
+        .await;
     }
     if total > MAX_DOWNLOAD_BYTES {
         return Err(Error::ContentLength(format!(
@@ -506,7 +786,7 @@ pub async fn download_file(
     file.set_len(total).await?;
 
     let file = Arc::new(tokio::sync::Mutex::new(file));
-    let progress = Arc::new(tokio::sync::Mutex::new(TransferStats::default()));
+    let progress = Arc::new(std::sync::Mutex::new(ProgressEmitter::new(on_progress.clone(), total)));
 
     stream::iter(0..part_count)
         .map(Ok::<u64, Error>)
@@ -516,7 +796,6 @@ pub async fn download_file(
             let progress = Arc::clone(&progress);
             let headers = headers.clone();
             let url = url.to_string();
-            let on_progress = on_progress.clone();
 
             async move {
                 let start = i * PART_SIZE;
@@ -564,21 +843,14 @@ pub async fn download_file(
                     f.write_all(&bytes).await?;
                 }
 
-                {
-                    let mut stat = progress.lock().await;
-                    stat.record_chunk_transfer(bytes.len());
-                    let _ = on_progress.send(ProgressPayload {
-                        progress: stat.total_transferred,
-                        total,
-                        transfer_speed: stat.transfer_speed,
-                    });
-                }
+                progress.lock().unwrap().record(bytes.len());
 
                 Ok(())
             }
         })
         .await?;
 
+    progress.lock().unwrap().finish();
     drop(file);
     commit_download_file(&mut temp, file_path).await?;
 
@@ -606,15 +878,17 @@ pub async fn upload_file(
         _ => return Err(Error::ContentLength("Invalid HTTP method".into())),
     };
 
+    let (upload_body, upload_progress) = file_to_body(on_progress.clone(), file, file_len);
     request = request
         .header(reqwest::header::CONTENT_LENGTH, file_len)
-        .body(file_to_body(on_progress.clone(), file, file_len));
+        .body(upload_body);
 
     for (key, value) in headers {
         request = request.header(&key, value);
     }
 
     let response = request.send().await?;
+    upload_progress.lock().unwrap().finish();
     let status = response.status();
     if status.is_success() {
         Ok(response.text().await?)
@@ -627,26 +901,33 @@ pub async fn upload_file(
     }
 }
 
-fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) -> reqwest::Body {
+fn file_to_body(
+    channel: Channel<ProgressPayload>,
+    file: File,
+    file_len: u64,
+) -> (reqwest::Body, Arc<std::sync::Mutex<ProgressEmitter>>) {
     let stream = FramedRead::new(file, BytesCodec::new()).map_ok(|r| r.freeze());
-
-    let mut stats = TransferStats::default();
-    reqwest::Body::wrap_stream(ReadProgressStream::new(
+    let progress = Arc::new(std::sync::Mutex::new(ProgressEmitter::new(channel, file_len)));
+    let callback_progress = Arc::clone(&progress);
+    let body = reqwest::Body::wrap_stream(ReadProgressStream::new(
         stream,
         Box::new(move |progress_chunk, _progress_total| {
-            stats.record_chunk_transfer(progress_chunk as usize);
-            let _ = channel.send(ProgressPayload {
-                progress: stats.total_transferred,
-                total: file_len,
-                transfer_speed: stats.transfer_speed,
-            });
+            callback_progress.lock().unwrap().record(progress_chunk as usize);
         }),
-    ))
+    ));
+    (body, progress)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{has_disallowed_components, is_path_within_root, parse_content_range};
+    use super::{has_disallowed_components, is_path_within_root, parse_content_range, resume_paths};
+
+    #[test]
+    fn resume_paths_are_stable_and_sidecar_has_no_headers() {
+        let (part, sidecar) = resume_paths("/tmp/book.epub");
+        assert_eq!(part.to_string_lossy(), "/tmp/book.epub.readest.part");
+        assert_eq!(sidecar.to_string_lossy(), "/tmp/book.epub.readest.part.json");
+    }
 
     #[test]
     fn app_storage_fallback_requires_a_component_boundary() {

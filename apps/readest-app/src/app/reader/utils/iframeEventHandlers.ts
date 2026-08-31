@@ -88,9 +88,25 @@ const createNativeTurnIntent = (
 // middle-clicked link doesn't open. These handlers run in the main realm, so
 // the hook toggles this state directly.
 const autoscrollArmedBooks = new Set<string>();
+// Fixed-layout mouse panning needs the iframe's move stream while the pointer
+// is inside the browsing context. The parent window listener takes over once
+// the pointer leaves the iframe, so this set is deliberately separate from the
+// middle-click autoscroll state.
+const mousePanArmedBooks = new Set<string>();
+const mousePanClaimedBooks = new Set<string>();
 // Whether an autoscroll session is running; gates mousemove forwarding so the
 // stream costs nothing while idle.
 let autoscrollTracking = false;
+
+export const setMousePanArmed = (bookKey: string, armed: boolean) => {
+  if (armed) mousePanArmedBooks.add(bookKey);
+  else mousePanArmedBooks.delete(bookKey);
+};
+
+export const setMousePanClaimed = (bookKey: string, claimed: boolean) => {
+  if (claimed) mousePanClaimedBooks.add(bookKey);
+  else mousePanClaimedBooks.delete(bookKey);
+};
 
 export const setAutoscrollArmed = (bookKey: string, armed: boolean) => {
   if (armed) autoscrollArmedBooks.add(bookKey);
@@ -99,6 +115,15 @@ export const setAutoscrollArmed = (bookKey: string, armed: boolean) => {
 
 export const setAutoscrollTracking = (tracking: boolean) => {
   autoscrollTracking = tracking;
+};
+
+// Fixed-layout mouse panning owns the compatibility click after a claimed drag.
+export const suppressMousePanClick = (bookKey: string, endX: number, endY: number) => {
+  suppressedSwipeClicks.set(bookKey, {
+    until: Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS,
+    endX,
+    endY,
+  });
 };
 
 // A layered turn can now claim below the generic 15px swipe threshold. Keep
@@ -345,6 +370,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      hasTextSelection: Boolean(event.view?.getSelection?.()?.isCollapsed === false),
       // Anchor point for the autoscroll indicator, which renders in the parent.
       ...(event.button === 1 ? getWindowPoint(event) : null),
       ...getKeyStatus(event),
@@ -363,7 +389,8 @@ export const handleAuxclick = (bookKey: string, event: MouseEvent) => {
 };
 
 export const handleMousemove = (bookKey: string, event: MouseEvent) => {
-  if (!autoscrollTracking) return;
+  if (!autoscrollTracking && !mousePanArmedBooks.has(bookKey)) return;
+  if (mousePanClaimedBooks.has(bookKey)) event.preventDefault();
   window.postMessage(
     {
       type: 'iframe-mousemove',

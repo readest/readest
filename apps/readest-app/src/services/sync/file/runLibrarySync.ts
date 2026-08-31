@@ -223,8 +223,9 @@ export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): P
  * Explicit per-book Download (also reached when opening a book whose file is not
  * local). Tries the enabled backends in order and stops at the first one holding
  * the file — the mirrors are equivalent, so there is nothing to gain from asking
- * the rest. Stamps downloadedAt/coverDownloadedAt like the native download path;
- * persisting the book row (updateBook) and toasts are the caller's job.
+ * the rest. Stamps downloadedAt after the binary succeeds; the engine stamps
+ * coverDownloadedAt only when a cover was actually saved. Persisting the book
+ * row (updateBook) and toasts are the caller's job.
  */
 export const runFileBookDownload = async (
   envConfig: EnvConfigType,
@@ -238,7 +239,6 @@ export const runFileBookDownload = async (
       if (!engine) continue;
       if (!(await engine.downloadBookFile(book, onProgress))) continue;
       book.downloadedAt = Date.now();
-      if (!book.coverDownloadedAt) book.coverDownloadedAt = Date.now();
       return true;
     } catch (e) {
       console.warn('[cloudSync] book download failed', kind, book.hash, e);

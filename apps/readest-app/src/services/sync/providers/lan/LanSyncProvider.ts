@@ -224,7 +224,16 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
 
     provider.downloadStream = async (remotePath, localPath, onProgress) => {
       try {
-        await tauriDownload(fileUrl(remotePath), localPath, onProgress, authHeaders());
+        await tauriDownload(
+          fileUrl(remotePath),
+          localPath,
+          onProgress,
+          authHeaders(),
+          undefined,
+          false,
+          false,
+          { resume: true },
+        );
         return true;
       } catch (e) {
         const authError = getLanStreamAuthError(e, 'download');

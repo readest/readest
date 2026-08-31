@@ -119,6 +119,24 @@ export const createAppLocalStore = ({
     await appService.writeFile(getCoverFilename(book), 'Books', bytes);
   },
 
+  updateBookCover: async (book) => {
+    if (!useLibraryStore.getState().libraryLoaded) {
+      useLibraryStore.getState().setLibrary(await appService.loadLibraryBooks());
+    }
+    const live = useLibraryStore
+      .getState()
+      .library.find((candidate) => candidate.hash === book.hash);
+    if (!live) return;
+    const updated: Book = {
+      ...live,
+      coverHash: book.coverHash,
+      coverUpdatedAt: book.coverUpdatedAt,
+      coverDownloadedAt: book.coverDownloadedAt,
+      coverImageUrl: await appService.generateCoverImageUrl({ ...live, coverHash: book.coverHash }),
+    };
+    await useLibraryStore.getState().updateBooks(envConfig, [updated]);
+  },
+
   addBookToLibrary: async (book) => {
     try {
       book.coverImageUrl = await appService.generateCoverImageUrl(book);

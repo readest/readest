@@ -27,6 +27,14 @@ export const INDETERMINATE_PROGRESS = -1;
 export const toProgressPercent = (progress: ProgressPayload): number =>
   progress.total > 0 ? (progress.progress / progress.total) * 100 : INDETERMINATE_PROGRESS;
 
+export interface TransferOptions {
+  resume?: boolean;
+}
+
+export const normalizeTransferOptions = (options?: TransferOptions) => ({
+  resume: options?.resume === true,
+});
+
 export interface ProgressThrottle {
   /** Record a progress payload, emitting at most once per interval. */
   push: (progress: ProgressPayload) => void;
@@ -202,6 +210,7 @@ export const tauriDownload = async (
   body?: string,
   singleThreaded?: boolean,
   skipSslVerification?: boolean,
+  options?: TransferOptions,
 ): Promise<Record<string, string>> => {
   const ids = new Uint32Array(1);
   window.crypto.getRandomValues(ids);
@@ -221,6 +230,7 @@ export const tauriDownload = async (
     body,
     singleThreaded,
     skipSslVerification,
+    ...normalizeTransferOptions(options),
   });
   return responseHeaders;
 };

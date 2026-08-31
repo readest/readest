@@ -86,4 +86,33 @@ describe('useMouseEvent wheel handling', () => {
 
     expect(handler).not.toHaveBeenCalled();
   });
+
+  test('parent window continues a pending iframe mouse drag after it leaves the frame', () => {
+    const pageHandler = vi.fn();
+    const panHandler = vi.fn(() => true);
+    function Wrapper() {
+      useMouseEvent('book-1', pageHandler, panHandler);
+      return null;
+    }
+    render(<Wrapper />);
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'iframe-mousedown',
+          bookKey: 'book-1',
+          button: 0,
+          screenX: 100,
+          screenY: 100,
+        },
+      }),
+    );
+    const move = new MouseEvent('mousemove', { screenX: 120, screenY: 100 });
+    window.dispatchEvent(move);
+    window.dispatchEvent(new MouseEvent('mouseup', { screenX: 120, screenY: 100 }));
+
+    expect(panHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'mousemove', screenX: 120 }),
+    );
+  });
 });

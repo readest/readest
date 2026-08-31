@@ -591,8 +591,8 @@ const FoliateViewer: React.FC<{
     }
   };
 
-  const { handlePageFlip } = usePagination(bookKey, viewRef, containerRef);
-  const mouseHandlers = useMouseEvent(bookKey, handlePageFlip);
+  const { handlePageFlip, handleMousePan } = usePagination(bookKey, viewRef, containerRef);
+  const mouseHandlers = useMouseEvent(bookKey, handlePageFlip, handleMousePan);
   const touchHandlers = useTouchEvent(bookKey);
   const autoscrollAnchor = useMiddleClickAutoscroll(bookKey, viewRef, containerRef);
 

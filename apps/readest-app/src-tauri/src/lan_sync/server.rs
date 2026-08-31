@@ -26,7 +26,7 @@ use axum::{Json, Router};
 use serde::Deserialize;
 use futures::StreamExt;
 use serde_json::json;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio_util::io::ReaderStream;
 
 /// Upper bound for one request body (book binaries ride PUTs). Axum's default
@@ -101,7 +101,11 @@ fn with_cors(mut res: Response) -> Response {
     );
     headers.insert(
         header::ACCESS_CONTROL_ALLOW_HEADERS,
-        HeaderValue::from_static("Authorization, Content-Type"),
+        HeaderValue::from_static("Authorization, Content-Type, Range, If-Range"),
+    );
+    headers.insert(
+        header::ACCESS_CONTROL_EXPOSE_HEADERS,
+        HeaderValue::from_static("Accept-Ranges, Content-Length, Content-Range, Content-Type, ETag"),
     );
     headers.insert(header::ACCESS_CONTROL_MAX_AGE, HeaderValue::from_static("86400"));
     res
@@ -182,15 +186,59 @@ async fn publish_part_file(part_path: &Path, file_path: &Path) -> std::io::Resul
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct ByteRange {
+    start: u64,
+    end: u64,
+}
+
+impl ByteRange {
+    const fn new(start: u64, end: u64) -> Self {
+        Self { start, end }
+    }
+
+    const fn len(&self) -> u64 {
+        self.end - self.start + 1
+    }
+}
+
+fn parse_byte_range(value: &str, size: u64) -> Result<ByteRange, ()> {
+    let spec = value.strip_prefix("bytes=").ok_or(())?;
+    if spec.contains(',') || size == 0 {
+        return Err(());
+    }
+    let (start, end) = spec.split_once('-').ok_or(())?;
+    if start.is_empty() {
+        let suffix = end.parse::<u64>().map_err(|_| ())?;
+        if suffix == 0 {
+            return Err(());
+        }
+        return Ok(ByteRange::new(size.saturating_sub(suffix), size - 1));
+    }
+    let start = start.parse::<u64>().map_err(|_| ())?;
+    if start >= size {
+        return Err(());
+    }
+    let end = if end.is_empty() {
+        size - 1
+    } else {
+        end.parse::<u64>().map_err(|_| ())?.min(size - 1)
+    };
+    if start > end {
+        return Err(());
+    }
+    Ok(ByteRange::new(start, end))
+}
+
 fn etag_for(meta: &std::fs::Metadata) -> String {
     let size = meta.len();
-    let secs = meta
+    let modified = meta
         .modified()
         .ok()
         .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-        .map(|d| d.as_secs())
+        .map(|d| d.as_nanos())
         .unwrap_or(0);
-    format!("\"{size:x}-{secs:x}\"")
+    format!("\"{size:x}-{modified:x}\"")
 }
 
 async fn ping(State(state): State<Arc<ServerState>>) -> Response {
@@ -204,8 +252,58 @@ async fn ping(State(state): State<Arc<ServerState>>) -> Response {
     )
 }
 
+fn range_for(headers: &HeaderMap, size: u64, etag: &str) -> Result<Option<ByteRange>, ()> {
+    let Some(range) = headers.get(header::RANGE).and_then(|value| value.to_str().ok()) else {
+        return Ok(None);
+    };
+    if headers
+        .get(header::IF_RANGE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|if_range| if_range != etag)
+    {
+        return Ok(None);
+    }
+    parse_byte_range(range, size).map(Some)
+}
+
+fn range_error(size: u64) -> Response {
+    with_cors(
+        Response::builder()
+            .status(StatusCode::RANGE_NOT_SATISFIABLE)
+            .header(header::CONTENT_RANGE, format!("bytes */{size}"))
+            .body(Body::empty())
+            .expect("static range response"),
+    )
+}
+
+fn response_headers(
+    status: StatusCode,
+    size: u64,
+    etag: String,
+    range: Option<&ByteRange>,
+) -> axum::http::response::Builder {
+    let (content_length, content_range) = match range {
+        Some(range) => (
+            range.len(),
+            Some(format!("bytes {}-{}/{}", range.start, range.end, size)),
+        ),
+        None => (size, None),
+    };
+    let mut builder = Response::builder()
+        .status(status)
+        .header(header::ACCEPT_RANGES, "bytes")
+        .header(header::CONTENT_LENGTH, content_length)
+        .header(header::CONTENT_TYPE, "application/octet-stream")
+        .header(header::ETAG, etag);
+    if let Some(content_range) = content_range {
+        builder = builder.header(header::CONTENT_RANGE, content_range);
+    }
+    builder
+}
+
 async fn read_file(
     State(state): State<Arc<ServerState>>,
+    headers: HeaderMap,
     AxumPath(path): AxumPath<String>,
 ) -> Response {
     let full = match checked_join(&state.root, &path).await {
@@ -213,12 +311,7 @@ async fn read_file(
         Ok(None) => return bad_request("invalid path"),
         Err(e) => return internal_error(e),
     };
-    // Stream from disk instead of reading the whole file into memory: book
-    // binaries are large, and this handler runs in the same native process
-    // as the webview (a buffered 100 MB read starves the UI on phones).
-    // Content-Length is set explicitly — the peer's download progress bar
-    // derives from it.
-    let file = match tokio::fs::File::open(&full).await {
+    let mut file = match tokio::fs::File::open(&full).await {
         Ok(file) => file,
         Err(_) => return not_found(),
     };
@@ -228,13 +321,24 @@ async fn read_file(
     };
     let size = meta.len();
     let etag = etag_for(&meta);
+    let range = match range_for(&headers, size, &etag) {
+        Ok(range) => range,
+        Err(()) => return range_error(size),
+    };
+    if let Some(range) = &range {
+        if let Err(e) = file.seek(std::io::SeekFrom::Start(range.start)).await {
+            return internal_error(e);
+        }
+        let stream = ReaderStream::with_capacity(file.take(range.len()), 64 * 1024);
+        return with_cors(
+            response_headers(StatusCode::PARTIAL_CONTENT, size, etag, Some(range))
+                .body(Body::from_stream(stream))
+                .expect("static range response"),
+        );
+    }
     let stream = ReaderStream::with_capacity(file, 64 * 1024);
     with_cors(
-        Response::builder()
-            .status(StatusCode::OK)
-            .header(header::CONTENT_LENGTH, size)
-            .header(header::CONTENT_TYPE, "application/octet-stream")
-            .header(header::ETAG, etag)
+        response_headers(StatusCode::OK, size, etag, None)
             .body(Body::from_stream(stream))
             .expect("static read response"),
     )
@@ -242,6 +346,7 @@ async fn read_file(
 
 async fn head_file(
     State(state): State<Arc<ServerState>>,
+    headers: HeaderMap,
     AxumPath(path): AxumPath<String>,
 ) -> Response {
     let full = match checked_join(&state.root, &path).await {
@@ -253,12 +358,13 @@ async fn head_file(
         Ok(meta) if meta.is_file() => {
             let size = meta.len();
             let etag = etag_for(&meta);
+            let range = match range_for(&headers, size, &etag) {
+                Ok(range) => range,
+                Err(()) => return range_error(size),
+            };
+            let status = if range.is_some() { StatusCode::PARTIAL_CONTENT } else { StatusCode::OK };
             with_cors(
-                Response::builder()
-                    .status(StatusCode::OK)
-                    .header(header::CONTENT_LENGTH, size)
-                    .header(header::CONTENT_TYPE, "application/octet-stream")
-                    .header(header::ETAG, etag)
+                response_headers(status, size, etag, range.as_ref())
                     .body(Body::empty())
                     .expect("static head response"),
             )
@@ -459,8 +565,23 @@ async fn list_dir(
 
 #[cfg(test)]
 mod tests {
-    use super::is_authorized;
+    use super::{is_authorized, parse_byte_range, ByteRange};
     use axum::http::{header, HeaderMap, HeaderValue};
+
+    #[test]
+    fn parses_supported_byte_ranges() {
+        assert_eq!(parse_byte_range("bytes=0-99", 200), Ok(ByteRange::new(0, 99)));
+        assert_eq!(parse_byte_range("bytes=100-", 200), Ok(ByteRange::new(100, 199)));
+        assert_eq!(parse_byte_range("bytes=-25", 200), Ok(ByteRange::new(175, 199)));
+    }
+
+    #[test]
+    fn rejects_malformed_multiple_and_unsatisfiable_ranges() {
+        for value in ["bytes=", "items=0-1", "bytes=0-1,2-3", "bytes=200-", "bytes=-0"] {
+            assert!(parse_byte_range(value, 200).is_err(), "{value}");
+        }
+        assert!(parse_byte_range("bytes=0-1", 0).is_err());
+    }
 
     #[test]
     fn anonymous_server_accepts_requests_without_authorization() {

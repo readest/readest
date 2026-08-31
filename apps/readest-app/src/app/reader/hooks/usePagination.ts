@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
@@ -19,6 +19,11 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
 import { useTouchInterceptor } from './useTouchInterceptor';
+import {
+  setMousePanArmed,
+  setMousePanClaimed,
+  suppressMousePanClick,
+} from '../utils/iframeEventHandlers';
 
 export type ScrollSource = 'touch' | 'mouse';
 
@@ -217,6 +222,135 @@ export const usePagination = (
   // the ttsPlaying state directly without going stale. This ref mirrors it for
   // the volume-key page-flip guard.
   const ttsPlayingRef = useRef(false);
+  const mousePanRef = useRef<{
+    startX: number;
+    startY: number;
+    lastX: number;
+    lastY: number;
+    horizontal: boolean;
+    vertical: boolean;
+    claimed: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    const settings = getViewSettings(bookKey);
+    const data = getBookData(bookKey);
+    setMousePanArmed(
+      bookKey,
+      Boolean(
+        data?.isFixedLayout &&
+          !settings?.scrolled &&
+          isPanningView(view, settings) &&
+          (hasHorizontalPanning(view, settings) || hasVerticalPanning(view, settings)),
+      ),
+    );
+    return () => {
+      mousePanRef.current = null;
+      setMousePanArmed(bookKey, false);
+      setMousePanClaimed(bookKey, false);
+    };
+  }, [bookKey, getBookData, getViewSettings, viewRef]);
+
+  type MousePanEvent = {
+    type:
+      | 'iframe-mousedown'
+      | 'iframe-mousemove'
+      | 'iframe-mouseup'
+      | 'mousemove'
+      | 'mouseup'
+      | 'blur';
+    bookKey?: string;
+    button?: number;
+    screenX?: number;
+    screenY?: number;
+    hasTextSelection?: boolean;
+    preventDefault?: () => void;
+  };
+
+  const handleMousePan = useCallback(
+    (event: MousePanEvent): boolean => {
+      if (event.bookKey && event.bookKey !== bookKey) return false;
+      const view = viewRef.current;
+      const settings = getViewSettings(bookKey);
+      const data = getBookData(bookKey);
+      const finish = () => {
+        const state = mousePanRef.current;
+        mousePanRef.current = null;
+        setMousePanArmed(bookKey, false);
+        setMousePanClaimed(bookKey, false);
+        if (state?.claimed && event.screenX != null && event.screenY != null) {
+          suppressMousePanClick(bookKey, event.screenX, event.screenY);
+          return true;
+        }
+        return false;
+      };
+
+      if (event.type === 'blur') return finish();
+      if (event.type === 'iframe-mousedown') {
+        mousePanRef.current = null;
+        setMousePanClaimed(bookKey, false);
+        const canPan = Boolean(
+          data?.isFixedLayout &&
+            !settings?.scrolled &&
+            isPanningView(view, settings) &&
+            (hasHorizontalPanning(view, settings) || hasVerticalPanning(view, settings)),
+        );
+        const canTrack = canPan && event.button === 0 && !event.hasTextSelection;
+        setMousePanArmed(bookKey, canTrack);
+        if (!canTrack) return false;
+        const horizontal = hasHorizontalPanning(view, settings);
+        const vertical = hasVerticalPanning(view, settings);
+        if ((!horizontal && !vertical) || event.screenX == null || event.screenY == null)
+          return false;
+        mousePanRef.current = {
+          startX: event.screenX,
+          startY: event.screenY,
+          lastX: event.screenX,
+          lastY: event.screenY,
+          horizontal,
+          vertical,
+          claimed: false,
+        };
+        return false;
+      }
+      const state = mousePanRef.current;
+      if (!state) return false;
+      if (event.type === 'mouseup' || event.type === 'iframe-mouseup') return finish();
+      if (
+        !data?.isFixedLayout ||
+        settings?.scrolled ||
+        !isPanningView(view, settings) ||
+        (!hasHorizontalPanning(view, settings) && !hasVerticalPanning(view, settings))
+      ) {
+        mousePanRef.current = null;
+        setMousePanClaimed(bookKey, false);
+        return false;
+      }
+      if (event.screenX == null || event.screenY == null) return false;
+      const totalX = event.screenX - state.startX;
+      const totalY = event.screenY - state.startY;
+      if (!state.claimed) {
+        const distance = Math.hypot(totalX, totalY);
+        if (distance < 6) return false;
+        const horizontal = state.horizontal && Math.abs(totalX) >= Math.abs(totalY);
+        const vertical = state.vertical && Math.abs(totalY) > Math.abs(totalX);
+        if (!horizontal && !vertical) return false;
+        state.horizontal = horizontal;
+        state.vertical = vertical;
+        state.claimed = true;
+        setMousePanClaimed(bookKey, true);
+      }
+      const dx = event.screenX - state.lastX;
+      const dy = event.screenY - state.lastY;
+      state.lastX = event.screenX;
+      state.lastY = event.screenY;
+      view?.pan(state.horizontal ? -dx : 0, state.vertical ? -dy : 0);
+      event.preventDefault?.();
+      return true;
+    },
+    [bookKey, getBookData, getViewSettings, viewRef],
+  );
 
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -577,5 +711,6 @@ export const usePagination = (
 
   return {
     handlePageFlip,
+    handleMousePan,
   };
 };

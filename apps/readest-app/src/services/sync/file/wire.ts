@@ -126,6 +126,11 @@ export interface RemoteLibraryIndex {
    */
   uploadedHashes?: string[];
   /**
+   * Hashes whose cover.png is confirmed present on the remote. Optional and
+   * additive for compatibility with older index writers.
+   */
+  coveredHashes?: string[];
+  /**
    * Hash dirs inspected by discovery and found to hold no book file (config /
    * cover only — legacy leftovers, or peers syncing without "Upload Book
    * Files"). Discovery skips them instead of re-listing every one on every

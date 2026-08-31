@@ -410,7 +410,9 @@ export const useFileSync = (bookKey: string) => {
       if (coverSyncedRef.current.has(kind)) continue;
       coverSyncedRef.current.add(kind);
       try {
-        await engine.pushBookCover(book);
+        // The explicit reader path may follow an equal-sized cover edit; do not
+        // let a size-only HEAD check retain stale remote bytes.
+        await engine.pushBookCover(book, true);
       } catch (e) {
         coverSyncedRef.current.delete(kind);
         handleSyncError(kind, 'file sync cover push failed', e);

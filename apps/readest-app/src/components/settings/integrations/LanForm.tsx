@@ -175,6 +175,7 @@ const LanForm: React.FC = () => {
   const [peers, setPeers] = useState<DiscoveredLanPeer[]>([]);
   const [showPeerDiscovery, setShowPeerDiscovery] = useState(false);
   const [showManualConnection, setShowManualConnection] = useState(!isTauri);
+  const [showSelfPairingQr, setShowSelfPairingQr] = useState(false);
   // True only for the temporary advertiser used while an unpaired device is
   // searching. A successful connection persists the settings and keeps the
   // server running; cancellation/close cleans this short-lived server up.
@@ -901,6 +902,7 @@ const LanForm: React.FC = () => {
     await releasePromotionLock();
     disconnectingRef.current = false;
     setShowToken(false);
+    setShowSelfPairingQr(false);
     setStatus(null);
     setShowPeerDiscovery(false);
     setShowManualConnection(!isTauri);
@@ -942,11 +944,12 @@ const LanForm: React.FC = () => {
     isTauri && status?.running
       ? createLanSyncPairingPayload(status, (isActive ? stored?.token : token)?.trim() ?? '')
       : '';
+  const shouldShowPairingQr = !!pairingQrValue && (!canScanPairingQr || showSelfPairingQr);
 
-  const pairingQrPanel = pairingQrValue ? (
+  const pairingQrPanel = shouldShowPairingQr ? (
     <BoxedList title={_('Pairing QR code')}>
       <SettingsRow
-        label={_('Scan this code on your phone')}
+        label={_('Scan this code on the other device')}
         description={_("It contains this device's LAN address and optional pairing token.")}
       />
       <div className='flex justify-center bg-white p-4'>
@@ -955,22 +958,46 @@ const LanForm: React.FC = () => {
     </BoxedList>
   ) : null;
 
-  const manualConnectionForm = (
-    <div className='space-y-4 pt-4'>
-      {canScanPairingQr && (
-        <button
-          type='button'
-          onClick={() => void handleScanPairingQr()}
-          disabled={isConnecting}
+  const pairingQrToggle =
+    canScanPairingQr && pairingQrValue ? (
+      <button
+        type='button'
+        onClick={() => setShowSelfPairingQr((value) => !value)}
+        className='text-base-content/70 hover:text-base-content flex w-full items-center justify-between rounded-lg px-1 py-2 text-sm font-medium transition-colors'
+      >
+        <span>
+          {showSelfPairingQr
+            ? _("Hide this device's pairing QR code")
+            : _("Show this device's pairing QR code")}
+        </span>
+        <span
           className={clsx(
-            'btn btn-contrast h-11 min-h-11 w-full rounded-lg border-0 text-sm font-medium',
-            'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
-            isConnecting && 'opacity-60',
+            'text-base-content/45 transition-transform',
+            showSelfPairingQr && 'rotate-90',
           )}
         >
-          {_('Scan PC pairing QR code')}
-        </button>
+          ›
+        </span>
+      </button>
+    ) : null;
+
+  const pairingScanButton = canScanPairingQr ? (
+    <button
+      type='button'
+      onClick={() => void handleScanPairingQr()}
+      disabled={isConnecting}
+      className={clsx(
+        'btn btn-contrast h-11 min-h-11 w-full rounded-lg border-0 text-sm font-medium',
+        'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
+        isConnecting && 'opacity-60',
       )}
+    >
+      {_('Scan pairing QR code')}
+    </button>
+  ) : null;
+
+  const manualConnectionForm = (
+    <div className='space-y-4 pt-4'>
       <div className='space-y-1.5'>
         <SectionTitle as='label' htmlFor='lan-host' className='block'>
           {_('Peer Address')}
@@ -1141,6 +1168,7 @@ const LanForm: React.FC = () => {
 
           {showPeerDiscovery && (
             <div className='space-y-3'>
+              {pairingScanButton}
               {discoveryPanel}
               <button
                 type='button'
@@ -1164,6 +1192,7 @@ const LanForm: React.FC = () => {
 
         <FileSyncForm kind='lan' stored={stored} persist={persistLan} />
 
+        {pairingQrToggle}
         {pairingQrPanel}
 
         {isTauri && status?.running && status.local_ips.length > 0 && (
@@ -1208,7 +1237,9 @@ const LanForm: React.FC = () => {
         void handleConnect();
       }}
     >
+      {pairingScanButton}
       {discoveryPanel}
+      {pairingQrToggle}
       {pairingQrPanel}
 
       <div>

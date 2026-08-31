@@ -56,6 +56,7 @@ const fakeStore = (opts: Partial<LocalStore> = {}): LocalStore => ({
   prepareLocalBookPath: opts.prepareLocalBookPath ?? (async () => '/local/dst'),
   loadBookCover: opts.loadBookCover ?? (async () => null),
   saveBookCover: opts.saveBookCover ?? (async () => {}),
+  updateBookCover: opts.updateBookCover ?? (async () => {}),
   addBookToLibrary: opts.addBookToLibrary ?? (async () => {}),
   updateBookMetadata: opts.updateBookMetadata ?? (async () => {}),
   deleteBookLocally: opts.deleteBookLocally ?? (async () => {}),
@@ -351,6 +352,79 @@ describe('FileSyncEngine.downloadBookFile', () => {
   });
 });
 
+describe('FileSyncEngine.syncLibrary — cover healing and presence cursor', () => {
+  test('repairs a missing local cover when the remote presence cursor is set', async () => {
+    const saveBookCover = vi.fn(async () => {});
+    const updateBookCover = vi.fn(async () => {});
+    const readBinary = vi.fn(async () => new ArrayBuffer(8));
+    const provider = fakeProvider({
+      readText: async (path: string) =>
+        path.endsWith('library.json')
+          ? JSON.stringify({
+              ...makeIndex([makeBook('h1', { coverHash: 'remote-cover', coverUpdatedAt: 20 })]),
+              coveredHashes: ['h1'],
+            })
+          : null,
+      readBinary,
+    });
+    const local = makeBook('h1', { coverHash: undefined, coverDownloadedAt: undefined });
+    const store = fakeStore({ saveBookCover, updateBookCover });
+
+    await new FileSyncEngine(provider, store).syncLibrary([local], {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'd',
+    });
+
+    expect(readBinary).toHaveBeenCalledWith('/Readest/books/h1/cover.png');
+    expect(saveBookCover).toHaveBeenCalledWith(
+      expect.objectContaining({ hash: 'h1' }),
+      expect.anything(),
+    );
+    expect(updateBookCover).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hash: 'h1',
+        coverHash: 'remote-cover',
+        coverDownloadedAt: expect.any(Number),
+      }),
+    );
+  });
+
+  test('persists coveredHashes after a successful cover upload', async () => {
+    const captured: Captured = { writes: [] };
+    const writeBinary = vi.fn(async () => {});
+    const provider = fakeProvider({
+      readText: async (path: string) =>
+        path.endsWith('library.json') ? JSON.stringify(makeIndex([makeBook('h1')])) : null,
+      head: async () => null,
+      writeBinary,
+      captured,
+    });
+    const store = fakeStore({
+      loadBookCover: async () => ({ bytes: new ArrayBuffer(8), size: 8 }),
+    });
+
+    await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { coverHash: 'local-cover', coverUpdatedAt: 2 })],
+      {
+        strategy: 'silent',
+        syncBooks: false,
+        deviceId: 'd',
+      },
+    );
+
+    expect(writeBinary).toHaveBeenCalledWith(
+      '/Readest/books/h1/cover.png',
+      expect.anything(),
+      'image/png',
+    );
+    const index = JSON.parse(
+      captured.writes.find((write) => write.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(index.coveredHashes).toEqual(['h1']);
+  });
+});
+
 describe('FileSyncEngine.syncLibrary — receive strategy is pull-only', () => {
   test('never writes (no config push, no index re-push) under receive', async () => {
     const captured: Captured = { writes: [] };
@@ -373,6 +447,7 @@ const makeIndex = (books: Book[], uploadedHashes?: string[]): RemoteLibraryIndex
   schemaVersion: 1,
   updatedAt: 1,
   books,
+  coveredHashes: [],
   ...(uploadedHashes ? { uploadedHashes } : {}),
 });
 

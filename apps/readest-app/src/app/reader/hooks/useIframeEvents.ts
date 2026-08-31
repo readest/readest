@@ -22,8 +22,27 @@ import { hasVerticalPanning } from './usePagination';
 export const useMouseEvent = (
   bookKey: string,
   handlePageFlip: (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => void,
+  handleMousePan?: (event: {
+    type:
+      | 'iframe-mousedown'
+      | 'iframe-mousemove'
+      | 'iframe-mouseup'
+      | 'mousemove'
+      | 'mouseup'
+      | 'blur';
+    bookKey?: string;
+    button?: number;
+    screenX?: number;
+    screenY?: number;
+    hasTextSelection?: boolean;
+    preventDefault?: () => void;
+  }) => boolean,
 ) => {
   const { hoveredBookKey } = useReaderStore();
+  const handleMousePanRef = useRef(handleMousePan);
+  useEffect(() => {
+    handleMousePanRef.current = handleMousePan;
+  }, [handleMousePan]);
   // Keep the latest handlePageFlip in a ref so the wheel-driven flip path
   // always invokes the most recent closure, independent of when listeners
   // were registered.
@@ -42,6 +61,13 @@ export const useMouseEvent = (
   const handleMouseEvent = (msg: MessageEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (msg instanceof MessageEvent) {
       if (msg.data && msg.data.bookKey === bookKey) {
+        if (
+          msg.data.type === 'iframe-mousedown' ||
+          msg.data.type === 'iframe-mousemove' ||
+          msg.data.type === 'iframe-mouseup'
+        ) {
+          handleMousePanRef.current?.(msg.data);
+        }
         if (msg.data.type === 'iframe-wheel') {
           if (msg.data.ctrlKey) {
             // Pinch/ctrl-wheel zoom is not a page-turn gesture — drop any
@@ -77,9 +103,34 @@ export const useMouseEvent = (
   };
 
   useEffect(() => {
+    const handleParentMove = (event: MouseEvent) => {
+      handleMousePanRef.current?.({
+        type: 'mousemove',
+        bookKey,
+        screenX: event.screenX,
+        screenY: event.screenY,
+        preventDefault: () => event.preventDefault(),
+      });
+    };
+    const handleParentUp = (event: MouseEvent) => {
+      handleMousePanRef.current?.({
+        type: 'mouseup',
+        bookKey,
+        screenX: event.screenX,
+        screenY: event.screenY,
+      });
+    };
+    const handleParentBlur = () => handleMousePanRef.current?.({ type: 'blur', bookKey });
     window.addEventListener('message', handleMouseEvent);
+    window.addEventListener('mousemove', handleParentMove);
+    window.addEventListener('mouseup', handleParentUp);
+    window.addEventListener('blur', handleParentBlur);
     return () => {
+      handleMousePanRef.current?.({ type: 'blur', bookKey });
       window.removeEventListener('message', handleMouseEvent);
+      window.removeEventListener('mousemove', handleParentMove);
+      window.removeEventListener('mouseup', handleParentUp);
+      window.removeEventListener('blur', handleParentBlur);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, hoveredBookKey]);

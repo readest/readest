@@ -45,6 +45,8 @@ export interface LocalStore {
   loadBookCover(book: Book): Promise<BookBytes | null>;
   /** Write a freshly-pulled cover image to disk. */
   saveBookCover(book: Book, bytes: ArrayBuffer): Promise<void>;
+  /** Persist only cover-related fields on the live library row. */
+  updateBookCover?(book: Book): Promise<void>;
 
   /** Insert a brand-new book row (no-op on an existing hash). */
   addBookToLibrary(book: Book): Promise<void>;

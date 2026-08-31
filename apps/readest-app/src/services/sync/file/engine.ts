@@ -32,6 +32,7 @@ import {
   resolvePublishedBook,
   shouldApplyRemoteBookMetadata,
 } from './merge';
+import { pickFresherCover } from '@/app/library/utils/libraryUtils';
 
 export type SyncStrategy = 'silent' | 'send' | 'receive';
 
@@ -426,10 +427,16 @@ export class FileSyncEngine {
    * Same HEAD-probe + size-compare idempotency as {@link pushBookFile}. Covers
    * are best-effort: a book without a local cover resolves to `no-source`.
    */
-  async pushBookCover(book: Book): Promise<PushBookFileResult> {
+  async pushBookCover(book: Book, forceUpload = false): Promise<PushBookFileResult> {
     const dirPath = buildBookDirPath(this.provider.rootPath, book.hash);
     const path = buildBookCoverPath(this.provider.rootPath, book.hash);
     const dirs = [...ancestorsOf(`${dirPath}/.placeholder`), dirPath];
+
+    // Resolve the local cover before probing the remote. A book without cover
+    // bytes should cost no remote request and should not become a permanent
+    // "cover missing" retry on every incremental sync.
+    const local = await this.store.loadBookCover(book);
+    if (!local) return { uploaded: false, reason: 'no-source' };
 
     let remoteHead: FileHead | null = null;
     try {
@@ -437,10 +444,7 @@ export class FileSyncEngine {
     } catch (e) {
       if (!(e instanceof FileSyncError) || e.code !== 'NETWORK') throw e;
     }
-
-    const local = await this.store.loadBookCover(book);
-    if (!local) return { uploaded: false, reason: 'no-source' };
-    if (remoteHead && remoteHead.size === local.size) {
+    if (!forceUpload && remoteHead && remoteHead.size === local.size) {
       return { uploaded: false, reason: 'remote-matches' };
     }
     await this.ensureDirs(dirs);
@@ -495,7 +499,10 @@ export class FileSyncEngine {
 
     try {
       const coverBytes = await this.pullBookCover(book.hash);
-      if (coverBytes) await this.store.saveBookCover(book, coverBytes);
+      if (coverBytes) {
+        await this.store.saveBookCover(book, coverBytes);
+        book.coverDownloadedAt = Date.now();
+      }
     } catch (e) {
       console.warn('file sync: cover download failed', book.hash, e);
     }
@@ -686,6 +693,10 @@ export class FileSyncEngine {
     // records and audits the real filesystem — that is the escape hatch, not a
     // per-run re-audit.
     const uploadedHashes = new Set<string>(remoteIndex?.uploadedHashes ?? []);
+    // Optional presence cursor for cover.png. A missing field means a legacy
+    // index, so cover presence is unknown until this client rewrites the index.
+    const coverCursorKnown = Array.isArray(remoteIndex?.coveredHashes);
+    const coveredHashes = new Set<string>(remoteIndex?.coveredHashes ?? []);
     // A file needs (re)uploading only when syncBooks is on, the remote copy
     // isn't recorded yet, and the LIBRARY ROW says this device holds the file.
     // The row is authoritative (import / download / delete all stamp
@@ -713,6 +724,18 @@ export class FileSyncEngine {
         (!uploadedHashes.has(book.hash) &&
           hasLocalFile(book) &&
           knownNoSource.get(book.hash) !== (book.updatedAt ?? 0)));
+    const localCoverIsNewer = (book: Book): boolean => {
+      const remote = remoteByHash.get(book.hash);
+      return (
+        !!book.coverHash &&
+        book.coverHash !== remote?.coverHash &&
+        (book.coverUpdatedAt ?? 0) > (remote?.coverUpdatedAt ?? 0)
+      );
+    };
+    const needsCoverPush = (book: Book): boolean =>
+      fullSync ||
+      localCoverIsNewer(book) ||
+      (!coveredHashes.has(book.hash) && (!!book.coverHash || !coverCursorKnown));
 
     // A book whose FILE is on the remote is cloud-backed, exactly like a book in
     // Readest Cloud storage — and `book.uploadedAt` is the only thing the rest of
@@ -760,9 +783,17 @@ export class FileSyncEngine {
         // descriptions to #5911 / #5912. That is true for a whole library at
         // once and costs a library write each, so it must never run on the
         // incremental path — see isRemoteBookMissingLocally.
+        const coverRepair =
+          canPull &&
+          (fullSync || coveredHashes.has(rb.hash) || !coverCursorKnown) &&
+          (!local.coverDownloadedAt ||
+            (!!rb.coverHash &&
+              rb.coverHash !== local.coverHash &&
+              (rb.coverUpdatedAt ?? 0) > (local.coverUpdatedAt ?? 0)));
         return (
           shouldApplyRemoteBookMetadata(local, rb) ||
-          (fullSync && isRemoteBookMissingLocally(local, rb))
+          (fullSync && isRemoteBookMissingLocally(local, rb)) ||
+          coverRepair
         );
       });
       await runPool(
@@ -778,17 +809,41 @@ export class FileSyncEngine {
           // config GET per book — which on a first run after the fix would be
           // one of each for the whole library.
           const bytesMayHaveMoved = isRemoteBookClockNewer(local, rb);
-          // A row added while the peer was mid-transfer pulled no cover (the
-          // metadata pass hadn't reached it yet); re-pull once it appears
-          // instead of leaving the shelf tile on its placeholder forever.
-          const needsCoverPull = !local.coverDownloadedAt;
-          // Re-pull the cover so a changed cover travels with the metadata. The
-          // subsequent push-side pushBookCover HEAD/size short-circuit then
-          // matches (local now equals remote), so we never bounce it back up.
-          if (bytesMayHaveMoved || needsCoverPull) {
+          const coverRepair =
+            canPull &&
+            (fullSync || coveredHashes.has(rb.hash) || !coverCursorKnown) &&
+            (!local.coverDownloadedAt ||
+              (!!rb.coverHash &&
+                rb.coverHash !== local.coverHash &&
+                (rb.coverUpdatedAt ?? 0) > (local.coverUpdatedAt ?? 0)));
+          const metadataChanged =
+            shouldApplyRemoteBookMetadata(local, rb) ||
+            (fullSync && isRemoteBookMissingLocally(local, rb));
+          const remoteCoverIsFresher =
+            !local.coverHash ||
+            (!!rb.coverHash &&
+              rb.coverHash !== local.coverHash &&
+              (rb.coverUpdatedAt ?? 0) > (local.coverUpdatedAt ?? 0));
+          const remoteCoverMatchesLocal = !!local.coverHash && rb.coverHash === local.coverHash;
+          // A remote clock change is the legacy signal; coveredHashes adds the
+          // explicit presence signal needed for repair when clocks are unchanged.
+          if (bytesMayHaveMoved || coverRepair) {
             try {
               const coverBytes = await this.pullBookCover(rb.hash);
-              if (coverBytes) await this.store.saveBookCover(merged, coverBytes);
+              if (coverBytes) {
+                // Seeing bytes confirms remote presence even when the local
+                // cover is newer. Never pair newer local metadata with older
+                // remote bytes on disk.
+                coveredHashes.add(rb.hash);
+                merged.coverDownloadedAt = Date.now();
+                if (remoteCoverIsFresher || remoteCoverMatchesLocal) {
+                  const cover = pickFresherCover(local, rb);
+                  merged.coverHash = cover.coverHash;
+                  merged.coverUpdatedAt = cover.coverUpdatedAt;
+                  await this.store.saveBookCover(merged, coverBytes);
+                }
+                if (!metadataChanged) await this.store.updateBookCover?.(merged);
+              }
             } catch (e) {
               noteAbort(e);
               console.warn('file sync: metadata cover pull failed', rb.hash, e);
@@ -816,9 +871,11 @@ export class FileSyncEngine {
             }
           }
           try {
-            await this.store.updateBookMetadata(merged);
+            if (metadataChanged) {
+              await this.store.updateBookMetadata(merged);
+              result.metadataUpdated += 1;
+            }
             allBooksMap.set(rb.hash, merged);
-            result.metadataUpdated += 1;
             syncedHashes.add(rb.hash);
           } catch (e) {
             console.warn('file sync: metadata update failed', rb.hash, e);
@@ -1065,6 +1122,7 @@ export class FileSyncEngine {
               if (coverBytes) {
                 await this.store.saveBookCover(rb, coverBytes);
                 rb.coverDownloadedAt = Date.now();
+                coveredHashes.add(rb.hash);
               }
             } catch (e) {
               console.warn('file sync: cover download failed', rb.hash, e);
@@ -1137,7 +1195,7 @@ export class FileSyncEngine {
       (b) =>
         !isEffectivelyDeleted(b) &&
         !addedHashes.has(b.hash) &&
-        (configChanged(b) || needsFilePush(b)),
+        (configChanged(b) || needsFilePush(b) || needsCoverPush(b)),
     );
     result.totalBooks = booksToPush.length;
 
@@ -1185,18 +1243,6 @@ export class FileSyncEngine {
                 result.configsUploaded += 1;
                 syncedHashes.add(book.hash);
               }
-              // Covers ride along with the config-level sync, NOT with syncBooks:
-              // the receiving device can't regenerate them without the book bytes.
-              // Failures here are warnings, not hard failures.
-              try {
-                const coverResult = await this.pushBookCover(book);
-                if (coverResult.uploaded) {
-                  result.coversUploaded += 1;
-                  syncedHashes.add(book.hash);
-                }
-              } catch (e) {
-                console.warn('file sync: cover failed', book.hash, e);
-              }
             }
           } catch (e) {
             noteAbort(e);
@@ -1208,6 +1254,35 @@ export class FileSyncEngine {
               reason: formatFailureReason(e),
             });
             console.warn('file sync: book metadata failed', book.hash, e);
+          }
+        },
+        aborted,
+      );
+
+      // Covers are an independent best-effort pass. A config failure must not
+      // suppress a cover upload, and failures leave coveredHashes unset so the
+      // next run retries.
+      const coverBooks = booksToPush.filter((b) => needsCoverPush(b));
+      await runPool(
+        coverBooks,
+        concurrency,
+        async (book) => {
+          try {
+            const coverResult = await this.pushBookCover(
+              book,
+              fullSync ||
+                !coverCursorKnown ||
+                !coveredHashes.has(book.hash) ||
+                localCoverIsNewer(book),
+            );
+            if (coverResult.uploaded || coverResult.reason === 'remote-matches') {
+              coveredHashes.add(book.hash);
+              if (coverResult.uploaded) result.coversUploaded += 1;
+              syncedHashes.add(book.hash);
+            }
+          } catch (e) {
+            noteAbort(e);
+            console.warn('file sync: cover failed', book.hash, e);
           }
         },
         aborted,
@@ -1328,8 +1403,16 @@ export class FileSyncEngine {
           return !!b && !b.deletedAt;
         }),
         emptyDirs: Array.from(emptyDirs),
+        coveredHashes: Array.from(coveredHashes).filter((hash) => {
+          const b = indexByHash.get(hash);
+          return !!b && !b.deletedAt;
+        }),
       });
-      const { uploadedHashes: nextUploadedHashes, emptyDirs: nextEmptyDirs } = buildRecords();
+      const {
+        uploadedHashes: nextUploadedHashes,
+        emptyDirs: nextEmptyDirs,
+        coveredHashes: nextCoveredHashes,
+      } = buildRecords();
 
       // Skip the re-push when the rebuilt index is semantically identical to
       // the pulled one: a restamped byte-copy only churns the remote and
@@ -1341,7 +1424,9 @@ export class FileSyncEngine {
         remoteIndex === null ||
         syncedHashes.size > 0 ||
         result.failures > 0 ||
+        !coverCursorKnown ||
         !sameStringSet(nextUploadedHashes, remoteIndex.uploadedHashes ?? []) ||
+        !sameStringSet(nextCoveredHashes, remoteIndex.coveredHashes ?? []) ||
         !sameStringSet(nextEmptyDirs, remoteIndex.emptyDirs ?? []) ||
         books.some((b) => {
           const r = remoteAllByHash.get(b.hash);
@@ -1384,6 +1469,7 @@ export class FileSyncEngine {
               if (!indexByHash.has(rb.hash)) indexByHash.set(rb.hash, rb);
             }
             for (const hash of fresh?.uploadedHashes ?? []) uploadedHashes.add(hash);
+            for (const hash of fresh?.coveredHashes ?? []) coveredHashes.add(hash);
             for (const hash of fresh?.emptyDirs ?? []) {
               // ...except a dir THIS run looked inside and found a file in.
               // That is newer knowledge than the peer's record, not a
@@ -1398,6 +1484,7 @@ export class FileSyncEngine {
             books: Array.from(indexByHash.values()).map(stripDeviceLocalFields),
             updatedAt: Date.now(),
             uploadedHashes: merged.uploadedHashes,
+            coveredHashes: merged.coveredHashes,
             emptyDirs: merged.emptyDirs,
           };
           await this.pushLibraryIndex(newIndex);
