@@ -51,6 +51,18 @@ const getLanStreamAuthError = (error: unknown, action: string): FileSyncError | 
   );
 };
 
+/**
+ * Native LAN transfers must never fail open into FileSyncEngine's buffered
+ * compatibility path. That fallback materialises an entire book in the JS
+ * heap/WebView and can make mobile clients unresponsive for large CBZ/PDFs.
+ */
+export const toLanStreamError = (error: unknown, action: 'upload' | 'download'): FileSyncError => {
+  const authError = getLanStreamAuthError(error, action);
+  if (authError) return authError;
+  const message = error instanceof Error ? error.message : String(error);
+  return new FileSyncError(`LAN peer ${action} stream failed: ${message}`, 'NETWORK');
+};
+
 const doFetch = async (
   settings: LanSyncSettings,
   path: string,
@@ -201,11 +213,10 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
     },
   };
 
-  // Streaming transfers, Tauri only (same ownership + fallback rules as the
-  // other providers): without these the engine falls back to the buffered
-  // path, which hauls every book byte twice across the webview main thread
-  // (fs IPC in, plugin-http IPC out) and stalls the whole app on large
-  // libraries. The Rust side streams straight from disk to the peer instead.
+  // Streaming transfers are mandatory for native LAN book binaries. Returning
+  // false here would ask FileSyncEngine to retry through readBinary/writeBinary,
+  // hauling the entire book through the WebView and recreating the large-file
+  // UI freeze this path exists to avoid. Rust streams disk-to-network directly.
   if (isTauriAppPlatform()) {
     const authHeaders = (): Record<string, string> => buildLanSyncAuthHeaders(settings.token);
     const fileUrl = (path: string): string => `${peerBase(settings)}/files${path}`;
@@ -215,10 +226,8 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
         await tauriUpload(fileUrl(remotePath), localPath, 'PUT', undefined, authHeaders());
         return true;
       } catch (e) {
-        const authError = getLanStreamAuthError(e, 'upload');
-        if (authError) throw authError;
         console.warn('LanSyncProvider.uploadStream failed', remotePath, e);
-        return false;
+        throw toLanStreamError(e, 'upload');
       }
     };
 
@@ -236,10 +245,8 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
         );
         return true;
       } catch (e) {
-        const authError = getLanStreamAuthError(e, 'download');
-        if (authError) throw authError;
         console.warn('LanSyncProvider.downloadStream failed', remotePath, e);
-        return false;
+        throw toLanStreamError(e, 'download');
       }
     };
   }

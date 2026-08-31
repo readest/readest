@@ -3,7 +3,10 @@ import {
   createLanSyncPairingPayload,
   parseLanSyncPairingPayload,
 } from '@/services/lanSync/pairing';
-import { buildLanSyncAuthHeaders } from '@/services/sync/providers/lan/LanSyncProvider';
+import {
+  buildLanSyncAuthHeaders,
+  toLanStreamError,
+} from '@/services/sync/providers/lan/LanSyncProvider';
 
 describe('LAN Sync pairing payloads', () => {
   const status = { local_ips: ['192.168.1.5', '10.0.0.2'], port: 53430 };
@@ -94,5 +97,18 @@ describe('LAN Sync pairing payloads', () => {
     expect(buildLanSyncAuthHeaders('  secret-token  ')).toEqual({
       Authorization: 'Bearer secret-token',
     });
+  });
+
+  it('classifies native stream failures instead of allowing buffered fallback', () => {
+    const networkError = toLanStreamError(new Error('connection reset'), 'download');
+    expect(networkError.code).toBe('NETWORK');
+    expect(networkError.message).toContain('download stream failed');
+
+    const authError = toLanStreamError(
+      new Error('request failed with status code 401: unauthorized'),
+      'upload',
+    );
+    expect(authError.code).toBe('AUTH_FAILED');
+    expect(authError.status).toBe(401);
   });
 });
