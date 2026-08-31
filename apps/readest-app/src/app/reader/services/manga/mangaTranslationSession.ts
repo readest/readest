@@ -195,10 +195,11 @@ export class MangaTranslationSession {
     const pendingPage = this.#pending.get(pageIndex);
     if (pendingPage) return pendingPage.promise;
 
+    const generation = this.#generation;
     try {
-      return await this.#translateLazy(pageIndex, this.#generation);
+      return await this.#translateLazy(pageIndex, generation);
     } catch (error) {
-      if (this.#enabled) this.#onError?.(error, pageIndex);
+      if (this.#enabled && generation === this.#generation) this.#onError?.(error, pageIndex);
       return null;
     }
   }

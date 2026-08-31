@@ -5,6 +5,7 @@ export const MANGA_TRANSLATION_LAYER_SELECTOR = '[data-readest-manga-translation
 
 const layerCleanups = new WeakMap<Element, () => void>();
 const MINIMUM_MANGA_FONT_SIZE = 6;
+const TEXT_MASK_PADDING_RATIO = 0.05;
 
 const clamp = (value: number, maximum: number) => Math.min(maximum, Math.max(0, value));
 
@@ -196,7 +197,10 @@ export const mountMangaTranslationLayer = (
       layer.append(maskElement);
       masks.push(maskElement);
     };
-    if (region.maskPolygons?.length) {
+    if (region.contentBox) {
+      const eraseBox = intersectBoxes(insetBox(textBox, -TEXT_MASK_PADDING_RATIO), maskBoundary);
+      if (eraseBox) appendMask(eraseBox);
+    } else if (region.maskPolygons?.length) {
       for (const rawPolygon of region.maskPolygons) {
         const polygon = normalizePolygon(rawPolygon, maskBoundary, page);
         if (polygon) appendMask(polygon.box, polygon.clipPath);

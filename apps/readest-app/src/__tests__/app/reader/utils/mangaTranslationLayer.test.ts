@@ -166,7 +166,7 @@ describe('mangaTranslationLayer', () => {
     expect(textArea?.style.overflow).toBe('hidden');
   });
 
-  it('uses the safe bubble interior when OCR provides one', () => {
+  it('uses and fully clears the safe bubble interior when OCR provides one', () => {
     const layer = mountMangaTranslationLayer(
       document,
       makePage({
@@ -184,6 +184,13 @@ describe('mangaTranslationLayer', () => {
     expect(textArea?.style.top).toBe('11%');
     expect(textArea?.style.width).toBe('35%');
     expect(textArea?.style.height).toBe('17.5%');
+
+    const mask = layer?.querySelector<HTMLElement>('[data-readest-manga-mask]');
+    expect(mask?.style.left).toBe('10.6%');
+    expect(mask?.style.top).toBe('10.3%');
+    expect(mask?.style.width).toBe('38.15%');
+    expect(mask?.style.height).toBe('19.075%');
+    expect(mask?.style.clipPath).toBe('');
   });
 
   it('disables motion when the reader requests reduced motion', () => {

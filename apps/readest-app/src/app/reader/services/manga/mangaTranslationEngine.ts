@@ -1,4 +1,4 @@
-import { BergamotJapaneseTranslator } from '@/app/reader/services/manga/bergamotTranslator';
+import { OpusJapaneseTranslator } from '@/app/reader/services/manga/opusJapaneseTranslator';
 import {
   PaddleMangaOcrEngine,
   type PaddleMangaOcrEngineOptions,
@@ -88,7 +88,7 @@ const createOcrEngine: MangaOcrEngineFactory = (onProgress) =>
   new PaddleMangaOcrEngine(getMangaOcrEngineOptions(onProgress));
 
 const createTranslator: JapaneseTextTranslatorFactory = (onProgress) =>
-  new BergamotJapaneseTranslator({ onProgress });
+  new OpusJapaneseTranslator({ onProgress });
 
 const containsJapanese = (text: string): boolean =>
   /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);

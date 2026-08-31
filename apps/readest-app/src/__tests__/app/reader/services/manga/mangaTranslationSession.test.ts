@@ -341,4 +341,33 @@ describe('MangaTranslationSession', () => {
       height: 1800,
     });
   });
+
+  it('does not report a stale lazy-page failure after reactivation', async () => {
+    let rejectFirst!: (error: Error) => void;
+    const firstEngine = makeEngine();
+    vi.mocked(firstEngine.translate).mockImplementationOnce(
+      () => new Promise((_resolve, reject) => (rejectFirst = reject)),
+    );
+    const secondEngine = makeEngine();
+    const onError = vi.fn();
+    const session = new MangaTranslationSession({
+      createEngine: vi.fn().mockReturnValueOnce(firstEngine).mockReturnValue(secondEngine),
+      onError,
+    });
+    const load = async () => ({
+      image: { source: 'blob:background-page-3', width: 1200, height: 1800 },
+    });
+    await session.setEnabled(true);
+
+    const stale = session.processPage(3, load);
+    await vi.waitFor(() => expect(firstEngine.translate).toHaveBeenCalledOnce());
+    await session.setEnabled(false);
+    const reactivated = session.setEnabled(true);
+    rejectFirst(new Error('old worker stopped'));
+
+    await Promise.all([stale, reactivated]);
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(secondEngine.translate).toHaveBeenCalledOnce();
+  });
 });
