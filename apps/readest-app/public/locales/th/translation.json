@@ -276,7 +276,7 @@
   "Complete Your Subscription": "ดำเนินการสมัครสมาชิกให้เสร็จ",
   "Coming Soon": "เร็วๆ นี้",
   "Current Plan": "แผนปัจจุบัน",
-  "Plan Limits": "ข้อจำกัดแผน",
+  "What's Included": "สิ่งที่รวมอยู่",
   "Failed to delete user. Please try again later.": "ไม่สามารถลบผู้ใช้ ลองใหม่ภายหลัง",
   "Loading profile...": "กำลังโหลดโปรไฟล์...",
   "Processing your payment...": "กำลังประมวลผลการชำระเงิน...",
@@ -2227,7 +2227,5 @@
   "Monthly": "รายเดือน",
   "Save {{percent}}%": "ประหยัด {{percent}}%",
   "Change billing period": "เปลี่ยนรอบการเรียกเก็บเงิน",
-  "Free forever": "ฟรีตลอดไป",
-  "{{price}} billed yearly": "เรียกเก็บ {{price}} ต่อปี",
-  "Popular": "ยอดนิยม"
+  "{{price}} billed yearly": "เรียกเก็บ {{price}} ต่อปี"
 }

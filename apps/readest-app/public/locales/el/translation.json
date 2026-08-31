@@ -328,7 +328,7 @@
   "Coming Soon": "Έρχεται σύντομα",
   "Upgrade to {{plan}}": "Αναβάθμιση σε {{plan}}",
   "Current Plan": "Τρέχον πρόγραμμα",
-  "Plan Limits": "Όρια προγράμματος",
+  "What's Included": "Τι περιλαμβάνεται",
   "Processing your payment...": "Επεξεργασία πληρωμής...",
   "Please wait while we confirm your subscription.": "Παρακαλώ περιμένετε όσο επιβεβαιώνουμε τη συνδρομή σας.",
   "Payment Processing": "Επεξεργασία πληρωμής",
@@ -2288,7 +2288,5 @@
   "Monthly": "Μηνιαία",
   "Save {{percent}}%": "Κερδίστε {{percent}}%",
   "Change billing period": "Αλλαγή περιόδου χρέωσης",
-  "Free forever": "Δωρεάν για πάντα",
-  "{{price}} billed yearly": "{{price}} με ετήσια χρέωση",
-  "Popular": "Δημοφιλές"
+  "{{price}} billed yearly": "{{price}} με ετήσια χρέωση"
 }

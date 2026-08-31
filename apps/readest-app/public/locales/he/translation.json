@@ -602,7 +602,7 @@
   "Coming Soon": "בקרוב",
   "Current Plan": "תוכנית נוכחית",
   "On-Demand Purchase": "רכישה לפי דרישה",
-  "Plan Limits": "מגבלות תוכנית",
+  "What's Included": "מה כלול",
   "Full Customization": "התאמה אישית מלאה",
   "Failed to load files": "טעינת הקבצים נכשלה",
   "Deleted {{count}} file(s)_one": "קובץ אחד נמחק",
@@ -2349,7 +2349,5 @@
   "Monthly": "חודשי",
   "Save {{percent}}%": "חיסכון של {{percent}}%",
   "Change billing period": "שינוי תקופת החיוב",
-  "Free forever": "חינם לתמיד",
-  "{{price}} billed yearly": "{{price}} בחיוב שנתי",
-  "Popular": "פופולרי"
+  "{{price}} billed yearly": "{{price}} בחיוב שנתי"
 }

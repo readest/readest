@@ -336,7 +336,7 @@
   "Coming Soon": "Wkrótce dostępne",
   "Upgrade to {{plan}}": "Uaktualnij do {{plan}}",
   "Current Plan": "Obecny plan",
-  "Plan Limits": "Limity planu",
+  "What's Included": "Co zawiera",
   "Processing your payment...": "Przetwarzanie płatności...",
   "Please wait while we confirm your subscription.": "Proszę czekać, potwierdzamy subskrypcję.",
   "Payment Processing": "Przetwarzanie płatności",
@@ -2410,7 +2410,5 @@
   "Monthly": "Miesięcznie",
   "Save {{percent}}%": "Oszczędź {{percent}}%",
   "Change billing period": "Zmień okres rozliczeniowy",
-  "Free forever": "Za darmo na zawsze",
-  "{{price}} billed yearly": "{{price}} rozliczane rocznie",
-  "Popular": "Popularne"
+  "{{price}} billed yearly": "{{price}} rozliczane rocznie"
 }

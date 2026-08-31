@@ -307,7 +307,7 @@
   "Complete Your Subscription": "Slutför din prenumeration",
   "Coming Soon": "Kommer snart",
   "Current Plan": "Nuvarande plan",
-  "Plan Limits": "Plangränser",
+  "What's Included": "Vad som ingår",
   "Failed to delete user. Please try again later.": "Kunde inte ta bort användare. Försök senare.",
   "Failed to create checkout session": "Kunde inte skapa betalningssession",
   "No purchases found to restore.": "Inga köp att återställa.",
@@ -2288,7 +2288,5 @@
   "Monthly": "Månadsvis",
   "Save {{percent}}%": "Spara {{percent}} %",
   "Change billing period": "Ändra faktureringsperiod",
-  "Free forever": "Gratis för alltid",
-  "{{price}} billed yearly": "{{price}} faktureras årsvis",
-  "Popular": "Populär"
+  "{{price}} billed yearly": "{{price}} faktureras årsvis"
 }

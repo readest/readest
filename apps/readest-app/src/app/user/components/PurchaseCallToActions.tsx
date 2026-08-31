@@ -2,10 +2,11 @@ import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PlanType } from '@/types/quota';
 import { getLocale } from '@/utils/misc';
-import { PlanDetails } from '../utils/plan';
+import { PlanAccent, PlanDetails } from '../utils/plan';
 
 interface PurchaseCallToActionsProps {
   plan: PlanDetails;
+  accent: PlanAccent;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
@@ -17,7 +18,13 @@ const productButtonClass = clsx(
   'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
 );
 
-const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({ plan, onSubscribe }) => {
+const tileTextClass = 'text-sm font-semibold';
+
+const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
+  plan,
+  accent,
+  onSubscribe,
+}) => {
   const _ = useTranslation();
 
   if (!plan.products || plan.products.length === 0) {
@@ -40,10 +47,10 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({ plan, onS
             <button
               key={product.id}
               onClick={() => onSubscribe(product.id, 'purchase')}
-              className={productButtonClass}
+              className={clsx(productButtonClass, accent.tile)}
             >
-              <span className='text-base-content text-sm font-semibold'>{_(product.name)}</span>
-              <span className='text-base-content/70 text-xs font-bold'>
+              <span className={tileTextClass}>{_(product.name)}</span>
+              <span className='text-xs font-bold opacity-80'>
                 {formatProductPrice(product.price, product.currency)}
               </span>
             </button>
@@ -57,10 +64,10 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({ plan, onS
             <button
               key={product.id}
               onClick={() => onSubscribe(product.id, 'purchase')}
-              className={productButtonClass}
+              className={clsx(productButtonClass, accent.tile)}
             >
-              <span className='text-base-content text-sm font-semibold'>{_(product.name)}</span>
-              <span className='text-base-content/70 text-xs font-bold'>
+              <span className={tileTextClass}>{_(product.name)}</span>
+              <span className='text-xs font-bold opacity-80'>
                 {formatProductPrice(product.price, product.currency)}
               </span>
             </button>
@@ -68,8 +75,19 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({ plan, onS
         </div>
       ) : (
         <div className='grid grid-cols-1 gap-2'>
-          <div className='bg-base-200/60 eink-bordered flex min-h-14 w-full flex-col items-center justify-center rounded-lg p-2'>
-            <span className='text-base-content/60 text-sm font-medium'>
+          {/* Same chassis as the Current Plan button so the two cards' footers
+              line up whatever daisyUI sizes a button at. */}
+          {/* Same treatment as the Current Plan chip: a disabled <button> is
+              washed out to near-invisible grey, so this keeps the tier colour
+              and the button's geometry. */}
+          <div
+            aria-disabled='true'
+            className={clsx(
+              'btn eink-bordered pointer-events-none h-12 min-h-12 w-full',
+              accent.current,
+            )}
+          >
+            <span className='text-xs leading-tight font-medium whitespace-normal'>
               {_('Full Customization')} ({_('Coming Soon')})
             </span>
           </div>

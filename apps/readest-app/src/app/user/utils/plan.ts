@@ -87,6 +87,68 @@ export const getYearlySavingsPercent = (availablePlans: AvailablePlan[]): number
 export const shouldUseBillingPortal = (userPlan: UserPlan, planType: PlanType): boolean =>
   planType === 'subscription' && (userPlan === 'plus' || userPlan === 'pro');
 
+/**
+ * Per-tier accent. The store front is the one surface that is actively selling,
+ * so it carries colour the rest of the app deliberately does not.
+ *
+ * Every colour is `not-eink:` guarded: on e-ink none of it applies and the card
+ * falls back to the neutral + 1px border treatment, which is the only thing
+ * that reads on those screens. The hues avoid `blue`/`red` on purpose —
+ * globals.css flattens `[class*='text-blue']` to base-content AND
+ * `font-weight: normal`, which would silently un-bold the price.
+ */
+export type PlanAccent = {
+  header: string;
+  border: string;
+  current: string;
+  price: string;
+  check: string;
+  cta: string;
+  tile: string;
+};
+
+const PLAN_ACCENTS: Record<UserPlan, PlanAccent> = {
+  free: {
+    header: 'not-eink:bg-slate-100',
+    border: 'not-eink:border-slate-400',
+    current: 'not-eink:bg-slate-200 not-eink:text-slate-700',
+    price: '',
+    check: 'not-eink:text-slate-500',
+    cta: '',
+    tile: '',
+  },
+  plus: {
+    header: 'not-eink:bg-sky-50',
+    border: 'not-eink:border-sky-400',
+    current: 'not-eink:bg-sky-100 not-eink:text-sky-900',
+    price: 'not-eink:text-sky-700',
+    check: 'not-eink:text-sky-600',
+    cta: 'not-eink:border-sky-600 not-eink:bg-sky-600 not-eink:hover:border-sky-700 not-eink:hover:bg-sky-700 not-eink:text-white',
+    tile: '',
+  },
+  pro: {
+    header: 'not-eink:bg-violet-50',
+    border: 'not-eink:border-violet-400',
+    current: 'not-eink:bg-violet-100 not-eink:text-violet-900',
+    price: 'not-eink:text-violet-700',
+    check: 'not-eink:text-violet-600',
+    cta: 'not-eink:border-violet-200 not-eink:bg-violet-50 not-eink:text-violet-700 not-eink:hover:bg-violet-100',
+    tile: '',
+  },
+  purchase: {
+    header: 'not-eink:bg-emerald-50',
+    border: 'not-eink:border-emerald-400',
+    current: 'not-eink:bg-emerald-100 not-eink:text-emerald-900',
+    price: 'not-eink:text-emerald-700',
+    check: 'not-eink:text-emerald-600',
+    cta: '',
+    tile: 'not-eink:bg-emerald-50 not-eink:text-emerald-700 not-eink:hover:bg-emerald-100',
+  },
+};
+
+export const getPlanAccent = (plan: UserPlan): PlanAccent =>
+  PLAN_ACCENTS[plan] ?? PLAN_ACCENTS.free;
+
 export function getPlanDetails(
   planCode: UserPlan,
   availablePlans: (AvailablePlan & StripeAvailablePlan)[],
@@ -114,7 +176,7 @@ export function getPlanDetails(
         name: _('Lifetime Plan'),
         plan: planCode,
         type: 'purchase',
-        color: 'bg-base-200/60 text-base-content/80',
+        color: 'not-eink:bg-emerald-100 not-eink:text-emerald-800 eink-bordered',
         hintColor: 'text-base-content/60',
         price: availablePlan?.price || 1999,
         currency,
@@ -148,7 +210,7 @@ export function getPlanDetails(
         name: _('Free Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-base-200 text-base-content/70',
+        color: 'not-eink:bg-slate-200 not-eink:text-slate-800 eink-bordered',
         hintColor: 'text-base-content/60',
         price: 0,
         currency,
@@ -196,7 +258,7 @@ export function getPlanDetails(
         name: _('Plus Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-base-300 text-base-content',
+        color: 'not-eink:bg-sky-100 not-eink:text-sky-800 eink-bordered',
         hintColor: 'text-base-content/60',
         price: availablePlan?.price || (interval === 'year' ? 3999 : 499),
         currency,
@@ -247,7 +309,7 @@ export function getPlanDetails(
         name: _('Pro Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-base-300 text-base-content ring-base-content/15 ring-1',
+        color: 'not-eink:bg-violet-100 not-eink:text-violet-800 eink-bordered',
         hintColor: 'text-base-content/60',
         price: availablePlan?.price || (interval === 'year' ? 7999 : 999),
         currency,

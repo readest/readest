@@ -772,7 +772,7 @@
   "Coming Soon": "Em breve",
   "Current Plan": "Plano atual",
   "On-Demand Purchase": "Compra sob demanda",
-  "Plan Limits": "Limites do plano",
+  "What's Included": "O que está incluído",
   "Full Customization": "Personalização completa",
   "Could not load your shares": "Não foi possível carregar seus compartilhamentos",
   "Revoked": "Revogado",
@@ -2349,7 +2349,5 @@
   "Monthly": "Mensal",
   "Save {{percent}}%": "Economize {{percent}}%",
   "Change billing period": "Alterar período de cobrança",
-  "Free forever": "Grátis para sempre",
-  "{{price}} billed yearly": "{{price}} cobrado anualmente",
-  "Popular": "Popular"
+  "{{price}} billed yearly": "{{price}} cobrado anualmente"
 }

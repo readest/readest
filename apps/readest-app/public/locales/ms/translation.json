@@ -327,7 +327,7 @@
   "Coming Soon": "Akan Datang",
   "Current Plan": "Pelan Semasa",
   "On-Demand Purchase": "Pembelian Atas Permintaan",
-  "Plan Limits": "Had Pelan",
+  "What's Included": "Apa yang disertakan",
   "Full Customization": "Penyesuaian Penuh",
   "Failed to create checkout session": "Gagal mencipta sesi pembayaran",
   "No purchases found to restore.": "Tiada pembelian dijumpai untuk dipulihkan.",
@@ -2227,7 +2227,5 @@
   "Monthly": "Bulanan",
   "Save {{percent}}%": "Jimat {{percent}}%",
   "Change billing period": "Tukar tempoh pengebilan",
-  "Free forever": "Percuma selamanya",
-  "{{price}} billed yearly": "{{price}} dibilkan setiap tahun",
-  "Popular": "Popular"
+  "{{price}} billed yearly": "{{price}} dibilkan setiap tahun"
 }

@@ -328,7 +328,7 @@
   "Coming Soon": "Yakında",
   "Upgrade to {{plan}}": "{{plan}} planına yükselt",
   "Current Plan": "Mevcut Plan",
-  "Plan Limits": "Plan Limitleri",
+  "What's Included": "Neler dahil",
   "Processing your payment...": "Ödemeniz işleniyor...",
   "Please wait while we confirm your subscription.": "Aboneliğinizi onaylıyoruz, lütfen bekleyin.",
   "Payment Processing": "Ödeme İşleniyor",
@@ -2288,7 +2288,5 @@
   "Monthly": "Aylık",
   "Save {{percent}}%": "%{{percent}} tasarruf",
   "Change billing period": "Faturalandırma dönemini değiştir",
-  "Free forever": "Sonsuza dek ücretsiz",
-  "{{price}} billed yearly": "Yıllık {{price}} olarak faturalandırılır",
-  "Popular": "Popüler"
+  "{{price}} billed yearly": "Yıllık {{price}} olarak faturalandırılır"
 }

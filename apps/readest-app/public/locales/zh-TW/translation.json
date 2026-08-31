@@ -324,7 +324,7 @@
   "Coming Soon": "即將推出",
   "Upgrade to {{plan}}": "升級到 {{plan}}",
   "Current Plan": "當前方案",
-  "Plan Limits": "方案限制",
+  "What's Included": "包含內容",
   "Processing your payment...": "正在處理付款...",
   "Please wait while we confirm your subscription.": "請稍候，我們正在確認您的訂閱。",
   "Payment Processing": "付款處理中",
@@ -2227,7 +2227,5 @@
   "Monthly": "按月",
   "Save {{percent}}%": "省 {{percent}}%",
   "Change billing period": "變更結算週期",
-  "Free forever": "永久免費",
-  "{{price}} billed yearly": "按年收取 {{price}}",
-  "Popular": "熱門"
+  "{{price}} billed yearly": "按年收取 {{price}}"
 }

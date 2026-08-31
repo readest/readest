@@ -327,7 +327,7 @@
   "Coming Soon": "به‌زودی",
   "Upgrade to {{plan}}": "ارتقاء به {{plan}}",
   "Current Plan": "طرح فعلی",
-  "Plan Limits": "محدودیت‌های طرح",
+  "What's Included": "موارد شامل",
   "Processing your payment...": "در حال پردازش پرداخت شما...",
   "Please wait while we confirm your subscription.": "لطفاً تا تأیید اشتراک صبور باشید.",
   "Payment Processing": "پردازش پرداخت",
@@ -2288,7 +2288,5 @@
   "Monthly": "ماهانه",
   "Save {{percent}}%": "{{percent}}٪ صرفه‌جویی",
   "Change billing period": "تغییر دوره صورت‌حساب",
-  "Free forever": "همیشه رایگان",
-  "{{price}} billed yearly": "{{price}} به‌صورت سالانه",
-  "Popular": "محبوب"
+  "{{price}} billed yearly": "{{price}} به‌صورت سالانه"
 }

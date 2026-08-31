@@ -327,7 +327,7 @@
   "Coming Soon": "Demnächst verfügbar",
   "Upgrade to {{plan}}": "Upgrade auf {{plan}}",
   "Current Plan": "Aktueller Tarif",
-  "Plan Limits": "Tariflimits",
+  "What's Included": "Enthalten",
   "Processing your payment...": "Zahlung wird verarbeitet...",
   "Please wait while we confirm your subscription.": "Bitte warten Sie, während wir Ihr Abo bestätigen.",
   "Payment Processing": "Zahlung wird verarbeitet",
@@ -2288,7 +2288,5 @@
   "Monthly": "Monatlich",
   "Save {{percent}}%": "{{percent}} % sparen",
   "Change billing period": "Abrechnungszeitraum ändern",
-  "Free forever": "Dauerhaft kostenlos",
-  "{{price}} billed yearly": "{{price}} jährlich abgerechnet",
-  "Popular": "Beliebt"
+  "{{price}} billed yearly": "{{price}} jährlich abgerechnet"
 }

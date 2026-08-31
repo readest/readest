@@ -329,7 +329,7 @@
   "Complete Your Subscription": "உங்கள் சந்தாவை நிறைவு செய்யவும்",
   "Coming Soon": "விரைவில் வரும்",
   "Current Plan": "தற்போதைய திட்டம்",
-  "Plan Limits": "திட்ட வரம்புகள்",
+  "What's Included": "என்ன அடங்கும்",
   "Failed to delete user. Please try again later.": "பயனரை நீக்க முடியவில்லை. பின்னர் மீண்டும் முயற்சிக்கவும்.",
   "Failed to create checkout session": "checkout session உருவாக்க முடியவில்லை",
   "No purchases found to restore.": "மீட்டெடுக்க வாங்குதல்கள் இல்லை.",
@@ -2288,7 +2288,5 @@
   "Monthly": "மாதந்தோறும்",
   "Save {{percent}}%": "{{percent}}% சேமிக்கவும்",
   "Change billing period": "கட்டணக் காலத்தை மாற்று",
-  "Free forever": "எப்போதும் இலவசம்",
-  "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்",
-  "Popular": "பிரபலமானது"
+  "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்"
 }

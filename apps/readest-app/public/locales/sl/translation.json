@@ -637,7 +637,7 @@
   "Coming Soon": "Kmalu na voljo",
   "Current Plan": "Trenutni paket",
   "On-Demand Purchase": "Nakup na zahtevo",
-  "Plan Limits": "Omejitve paketa",
+  "What's Included": "Kaj je vključeno",
   "Full Customization": "Popolna prilagoditev",
   "Failed to load files": "Nalaganje datotek ni uspelo",
   "Deleted {{count}} file(s)_one": "Izbrisan {{count}} datoteka",
@@ -2410,7 +2410,5 @@
   "Monthly": "Mesečno",
   "Save {{percent}}%": "Prihranite {{percent}} %",
   "Change billing period": "Spremeni obdobje zaračunavanja",
-  "Free forever": "Brezplačno za vedno",
-  "{{price}} billed yearly": "{{price}} zaračunano letno",
-  "Popular": "Priljubljeno"
+  "{{price}} billed yearly": "{{price}} zaračunano letno"
 }

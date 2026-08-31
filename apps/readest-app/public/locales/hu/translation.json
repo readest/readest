@@ -676,7 +676,7 @@
   "Coming Soon": "Hamarosan",
   "Current Plan": "Jelenlegi csomag",
   "On-Demand Purchase": "Egyszeri vásárlás",
-  "Plan Limits": "Csomag korlátai",
+  "What's Included": "Mit tartalmaz",
   "Full Customization": "Teljes testreszabás",
   "Failed to load files": "Fájlok betöltése sikertelen",
   "Deleted {{count}} file(s)_one": "{{count}} fájl törölve",
@@ -2288,7 +2288,5 @@
   "Monthly": "Havi",
   "Save {{percent}}%": "{{percent}}% megtakarítás",
   "Change billing period": "Számlázási időszak módosítása",
-  "Free forever": "Örökre ingyenes",
-  "{{price}} billed yearly": "{{price}} évente számlázva",
-  "Popular": "Népszerű"
+  "{{price}} billed yearly": "{{price}} évente számlázva"
 }

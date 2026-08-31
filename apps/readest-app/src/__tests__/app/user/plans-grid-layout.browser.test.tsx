@@ -1,7 +1,7 @@
 /**
  * The plans grid replaced a one-card-at-a-time swipe carousel, so its layout
- * invariants now matter: four tiers abreast on desktop, two on tablet, one on
- * phones, cards flush to a common bottom edge, and never a horizontal scroll.
+ * invariants now matter: at most two tiers abreast at any width, one on phones,
+ * cards in a row flush to a common bottom edge, and never a horizontal scroll.
  *
  * Needs real layout and real Tailwind, so it runs as a browser test.
  */
@@ -61,34 +61,33 @@ beforeAll(async () => {
 });
 
 describe('plans grid layout', () => {
-  it('lays the four tiers out abreast on desktop', async () => {
-    await page.viewport(1280, 1024);
-    renderGrid();
+  it('never goes wider than two columns, however wide the viewport', async () => {
+    for (const width of [1280, 1600, 2560]) {
+      await page.viewport(width, 1024);
+      renderGrid();
 
-    const tops = cards().map((card) => Math.round(card.getBoundingClientRect().top));
-    expect(cards()).toHaveLength(4);
-    // One row: every card shares a top edge.
-    expect(new Set(tops).size).toBe(1);
+      expect(cards()).toHaveLength(4);
+      const tops = cards().map((card) => Math.round(card.getBoundingClientRect().top));
+      // Four cards over two columns is two rows, never one.
+      expect(new Set(tops).size).toBe(2);
+      cleanup();
+    }
   });
 
-  it('aligns the call-to-action buttons to a common bottom edge', async () => {
+  it('aligns the call-to-action buttons within a row', async () => {
     await page.viewport(1280, 1024);
     renderGrid();
 
     const bottoms = cards().map((card) => Math.round(card.getBoundingClientRect().bottom));
-    expect(new Set(bottoms).size).toBe(1);
+    // One shared bottom edge per row, so two distinct values across two rows.
+    expect(new Set(bottoms).size).toBe(2);
   });
 
-  it('drops to two columns on a tablet and one on a phone', async () => {
-    await page.viewport(800, 1024);
-    renderGrid();
-    let rows = new Set(cards().map((c) => Math.round(c.getBoundingClientRect().top)));
-    expect(rows.size).toBe(2);
-
-    cleanup();
+  it('drops to a single column on a phone', async () => {
     await page.viewport(390, 844);
     renderGrid();
-    rows = new Set(cards().map((c) => Math.round(c.getBoundingClientRect().top)));
+
+    const rows = new Set(cards().map((c) => Math.round(c.getBoundingClientRect().top)));
     expect(rows.size).toBe(4);
   });
 

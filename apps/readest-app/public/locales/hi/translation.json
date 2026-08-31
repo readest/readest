@@ -328,7 +328,7 @@
   "Coming Soon": "जल्द आ रहा है",
   "Upgrade to {{plan}}": "{{plan}} में अपग्रेड करें",
   "Current Plan": "वर्तमान योजना",
-  "Plan Limits": "योजना की सीमाएँ",
+  "What's Included": "क्या शामिल है",
   "Processing your payment...": "आपका भुगतान संसाधित हो रहा है...",
   "Please wait while we confirm your subscription.": "कृपया प्रतीक्षा करें, हम आपकी सदस्यता की पुष्टि कर रहे हैं।",
   "Payment Processing": "भुगतान संसाधित हो रहा है",
@@ -2288,7 +2288,5 @@
   "Monthly": "मासिक",
   "Save {{percent}}%": "{{percent}}% बचाएँ",
   "Change billing period": "बिलिंग अवधि बदलें",
-  "Free forever": "हमेशा के लिए मुफ़्त",
-  "{{price}} billed yearly": "{{price}} वार्षिक बिल",
-  "Popular": "लोकप्रिय"
+  "{{price}} billed yearly": "{{price}} वार्षिक बिल"
 }

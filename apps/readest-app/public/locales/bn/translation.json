@@ -329,7 +329,7 @@
   "Complete Your Subscription": "আপনার সাবস্ক্রিপশন সম্পূর্ণ করুন",
   "Coming Soon": "শীঘ্রই আসছে",
   "Current Plan": "বর্তমান প্ল্যান",
-  "Plan Limits": "প্ল্যান সীমা",
+  "What's Included": "যা অন্তর্ভুক্ত",
   "Failed to delete user. Please try again later.": "ইউজার মুছতে ব্যর্থ। পরে আবার চেষ্টা করুন।",
   "Failed to create checkout session": "চেকআউট সেশন তৈরি করতে ব্যর্থ",
   "No purchases found to restore.": "পুনরুদ্ধার করার জন্য কোন ক্রয় পাওয়া যায়নি।",
@@ -2288,7 +2288,5 @@
   "Monthly": "মাসিক",
   "Save {{percent}}%": "{{percent}}% সাশ্রয়",
   "Change billing period": "বিলিং সময়কাল পরিবর্তন করুন",
-  "Free forever": "চিরকাল বিনামূল্যে",
-  "{{price}} billed yearly": "{{price}} বার্ষিক বিল",
-  "Popular": "জনপ্রিয়"
+  "{{price}} billed yearly": "{{price}} বার্ষিক বিল"
 }

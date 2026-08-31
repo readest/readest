@@ -336,7 +336,7 @@
   "Coming Soon": "Незабаром",
   "Upgrade to {{plan}}": "Перейти на {{plan}}",
   "Current Plan": "Поточний план",
-  "Plan Limits": "Обмеження плану",
+  "What's Included": "Що входить",
   "Processing your payment...": "Обробка вашого платежу...",
   "Please wait while we confirm your subscription.": "Зачекайте, ми підтверджуємо вашу підписку.",
   "Payment Processing": "Обробка платежу",
@@ -2410,7 +2410,5 @@
   "Monthly": "Щомісяця",
   "Save {{percent}}%": "Заощадьте {{percent}}%",
   "Change billing period": "Змінити період оплати",
-  "Free forever": "Безкоштовно назавжди",
-  "{{price}} billed yearly": "{{price}} на рік",
-  "Popular": "Популярний"
+  "{{price}} billed yearly": "{{price}} на рік"
 }

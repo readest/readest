@@ -328,7 +328,7 @@
   "Coming Soon": "Binnenkort beschikbaar",
   "Upgrade to {{plan}}": "Upgrade naar {{plan}}",
   "Current Plan": "Huidig abonnement",
-  "Plan Limits": "Abonnementslimieten",
+  "What's Included": "Wat is inbegrepen",
   "Processing your payment...": "Je betaling wordt verwerkt...",
   "Please wait while we confirm your subscription.": "Even geduld terwijl we je abonnement bevestigen.",
   "Payment Processing": "Betaling verwerken",
@@ -2288,7 +2288,5 @@
   "Monthly": "Maandelijks",
   "Save {{percent}}%": "Bespaar {{percent}}%",
   "Change billing period": "Facturatieperiode wijzigen",
-  "Free forever": "Altijd gratis",
-  "{{price}} billed yearly": "{{price}} jaarlijks gefactureerd",
-  "Popular": "Populair"
+  "{{price}} billed yearly": "{{price}} jaarlijks gefactureerd"
 }

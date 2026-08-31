@@ -324,7 +324,7 @@
   "Coming Soon": "ཉེ་བར་སྤྱོད་འགོ་འཛུགས་རྒྱུ།",
   "Upgrade to {{plan}}": "{{plan}} ལ་རིམ་སྤོར་བྱེད་པ།",
   "Current Plan": "ད་ལྟའི་ཐུམ་སྒྲིལ།",
-  "Plan Limits": "ཐུམ་སྒྲིལ་གྱི་ཚད་བཀག",
+  "What's Included": "ཚུད་པའི་ནང་དོན།",
   "Processing your payment...": "དངུལ་སྤྲོད་པར་བརྟག་དཔྱད་བྱེད་བཞིན་པ།...",
   "Please wait while we confirm your subscription.": "ཅུང་ཙམ་སྒུག་དང་། ང་ཚོས་ཁྱེད་ཀྱི་མཚམས་སྦྱོར་གཏན་འཁེལ་བྱེད་བཞིན་པ་རེད།",
   "Payment Processing": "དངུལ་སྤྲོད་པར་བརྟག་དཔྱད་བྱེད་བཞིན་པ།",
@@ -2227,7 +2227,5 @@
   "Monthly": "ཟླ་རེའི།",
   "Save {{percent}}%": "བརྒྱ་ཆ་{{percent}} གྲོན་ཆུང་།",
   "Change billing period": "རྩིས་སྤྲོད་དུས་ཡུན་བསྒྱུར་བ།",
-  "Free forever": "རྟག་ཏུ་རིན་མེད།",
-  "{{price}} billed yearly": "ལོ་རེར་ {{price}} རྩིས་སྤྲོད།",
-  "Popular": "ཡོངས་གྲགས།"
+  "{{price}} billed yearly": "ལོ་རེར་ {{price}} རྩིས་སྤྲོད།"
 }

@@ -1,10 +1,11 @@
 import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PlanType } from '@/types/quota';
-import { PlanDetails } from '../utils/plan';
+import { PlanAccent, PlanDetails } from '../utils/plan';
 
 interface PlanActionButtonProps {
   plan: PlanDetails;
+  accent: PlanAccent;
   isUserPlan: boolean;
   recommended?: boolean;
   upgradable?: boolean;
@@ -14,6 +15,7 @@ interface PlanActionButtonProps {
 
 const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   plan,
+  accent,
   isUserPlan,
   recommended,
   upgradable,
@@ -32,6 +34,7 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
           // [data-eink], so the secondary tiers use a plain bordered button —
           // the recommendation stays legible on monochrome screens too.
           recommended ? 'btn-primary' : 'eink-bordered',
+          accent.cta,
         )}
       >
         {_('Upgrade to {{plan}}', { plan: _(plan.name) })}
@@ -42,9 +45,15 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   if (isUserPlan) {
     return (
       <div className='flex flex-col gap-2'>
-        <button disabled className='btn eink-bordered w-full'>
+        {/* Not a <button disabled>: daisyUI washes disabled buttons out to a
+            near-invisible grey. This is a status chip, so it keeps the tier's
+            own colour and the button's geometry. */}
+        <div
+          aria-disabled='true'
+          className={clsx('btn eink-bordered pointer-events-none w-full', accent.current)}
+        >
           {_('Current Plan')}
-        </button>
+        </div>
         {/* The account's billing interval isn't carried on the session token, so
             this stays neutrally worded rather than claiming which one they are
             on. It routes to the Stripe portal, which swaps the subscription in

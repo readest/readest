@@ -324,7 +324,7 @@
   "Coming Soon": "Sắp ra mắt",
   "Upgrade to {{plan}}": "Nâng cấp lên {{plan}}",
   "Current Plan": "Gói hiện tại",
-  "Plan Limits": "Giới hạn gói",
+  "What's Included": "Bao gồm những gì",
   "Processing your payment...": "Đang xử lý thanh toán...",
   "Please wait while we confirm your subscription.": "Vui lòng chờ trong khi chúng tôi xác nhận đăng ký của bạn.",
   "Payment Processing": "Đang xử lý thanh toán",
@@ -2227,7 +2227,5 @@
   "Monthly": "Hàng tháng",
   "Save {{percent}}%": "Tiết kiệm {{percent}}%",
   "Change billing period": "Thay đổi chu kỳ thanh toán",
-  "Free forever": "Miễn phí mãi mãi",
-  "{{price}} billed yearly": "Thanh toán {{price}} mỗi năm",
-  "Popular": "Phổ biến"
+  "{{price}} billed yearly": "Thanh toán {{price}} mỗi năm"
 }

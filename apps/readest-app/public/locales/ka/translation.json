@@ -1052,7 +1052,7 @@
   "Coming Soon": "მალე",
   "Current Plan": "მიმდინარე გეგმა",
   "On-Demand Purchase": "შესყიდვა მოთხოვნისამებრ",
-  "Plan Limits": "გეგმის ლიმიტები",
+  "What's Included": "რა შედის",
   "Full Customization": "სრული მორგება",
   "Could not load your shares": "თქვენი გაზიარებების ჩატვირთვა ვერ მოხერხდა",
   "Revoked": "გაუქმებული",
@@ -2288,7 +2288,5 @@
   "Monthly": "თვიური",
   "Save {{percent}}%": "დაზოგეთ {{percent}}%",
   "Change billing period": "ბილინგის პერიოდის შეცვლა",
-  "Free forever": "სამუდამოდ უფასო",
-  "{{price}} billed yearly": "{{price}} წლიური გადახდით",
-  "Popular": "პოპულარული"
+  "{{price}} billed yearly": "{{price}} წლიური გადახდით"
 }

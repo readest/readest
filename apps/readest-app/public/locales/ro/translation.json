@@ -663,7 +663,7 @@
   "Coming Soon": "În curând",
   "Current Plan": "Abonament curent",
   "On-Demand Purchase": "Achiziție la cerere",
-  "Plan Limits": "Limitele abonamentului",
+  "What's Included": "Ce include",
   "Full Customization": "Personalizare completă",
   "Failed to load files": "Nu s-au putut încărca fișierele",
   "Deleted {{count}} file(s)_one": "S-a șters {{count}} fișier",
@@ -2349,7 +2349,5 @@
   "Monthly": "Lunar",
   "Save {{percent}}%": "Economisiți {{percent}}%",
   "Change billing period": "Schimbă perioada de facturare",
-  "Free forever": "Gratuit pentru totdeauna",
-  "{{price}} billed yearly": "{{price}} facturat anual",
-  "Popular": "Popular"
+  "{{price}} billed yearly": "{{price}} facturat anual"
 }

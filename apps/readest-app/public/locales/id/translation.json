@@ -324,7 +324,7 @@
   "Coming Soon": "Segera Hadir",
   "Upgrade to {{plan}}": "Tingkatkan ke {{plan}}",
   "Current Plan": "Paket Saat Ini",
-  "Plan Limits": "Batas Paket",
+  "What's Included": "Yang termasuk",
   "Processing your payment...": "Memproses pembayaran Anda...",
   "Please wait while we confirm your subscription.": "Mohon tunggu saat kami mengonfirmasi langganan Anda.",
   "Payment Processing": "Memproses Pembayaran",
@@ -2227,7 +2227,5 @@
   "Monthly": "Bulanan",
   "Save {{percent}}%": "Hemat {{percent}}%",
   "Change billing period": "Ubah periode penagihan",
-  "Free forever": "Gratis selamanya",
-  "{{price}} billed yearly": "{{price}} ditagih per tahun",
-  "Popular": "Populer"
+  "{{price}} billed yearly": "{{price}} ditagih per tahun"
 }

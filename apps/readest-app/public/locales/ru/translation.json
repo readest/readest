@@ -336,7 +336,7 @@
   "Coming Soon": "Скоро будет",
   "Upgrade to {{plan}}": "Обновить до {{plan}}",
   "Current Plan": "Текущий план",
-  "Plan Limits": "Лимиты плана",
+  "What's Included": "Что входит",
   "Processing your payment...": "Обработка платежа...",
   "Please wait while we confirm your subscription.": "Пожалуйста, подождите, пока мы подтверждаем вашу подписку.",
   "Payment Processing": "Обработка платежа",
@@ -2410,7 +2410,5 @@
   "Monthly": "Ежемесячно",
   "Save {{percent}}%": "Экономия {{percent}}%",
   "Change billing period": "Изменить период оплаты",
-  "Free forever": "Бесплатно навсегда",
-  "{{price}} billed yearly": "{{price}} при оплате за год",
-  "Popular": "Популярный"
+  "{{price}} billed yearly": "{{price}} при оплате за год"
 }
