@@ -170,9 +170,10 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
   // (fs IPC in, plugin-http IPC out) and stalls the whole app on large
   // libraries. The Rust side streams straight from disk to the peer instead.
   if (isTauriAppPlatform()) {
-    const authHeaders = (): Record<string, string> => ({
-      Authorization: `Bearer ${settings.token}`,
-    });
+    const authHeaders = (): Record<string, string> => {
+      const token = settings.token?.trim() ?? '';
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    };
     const fileUrl = (path: string): string => `${peerBase(settings)}/files${path}`;
 
     provider.uploadStream = async (remotePath, localPath) => {
