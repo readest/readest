@@ -19,6 +19,7 @@ export interface TranslatedMangaRegion {
   translatedText: string;
   confidence?: number;
   textBox: OcrBoundingBox;
+  contentBox?: OcrBoundingBox;
   bubbleBox: OcrBoundingBox;
   maskBoxes: readonly OcrBoundingBox[];
   backgroundColor: string;
@@ -204,6 +205,7 @@ export class MangaTranslationEngine {
         translatedText,
         ...(block.confidence === undefined ? {} : { confidence: block.confidence }),
         textBox: block.box,
+        ...(block.contentBox ? { contentBox: block.contentBox } : {}),
         bubbleBox: block.bubbleBox,
         maskBoxes: block.maskBoxes,
         backgroundColor: block.backgroundColor ?? 'rgb(255 255 255)',

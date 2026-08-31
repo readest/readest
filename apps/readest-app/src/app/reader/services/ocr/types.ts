@@ -14,6 +14,7 @@ export interface OcrTextBlock {
   box: OcrBoundingBox;
   backgroundColor?: string;
   bubbleBox?: OcrBoundingBox;
+  contentBox?: OcrBoundingBox;
   maskBoxes?: readonly OcrBoundingBox[];
   writingMode: OcrWritingMode;
 }

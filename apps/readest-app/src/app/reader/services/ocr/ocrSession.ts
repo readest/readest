@@ -93,6 +93,7 @@ const resizeOcrPage = (page: OcrPage, image: PageImage): OcrPage => {
       ...block,
       box: resizeBox(block.box),
       ...(block.bubbleBox ? { bubbleBox: resizeBox(block.bubbleBox) } : {}),
+      ...(block.contentBox ? { contentBox: resizeBox(block.contentBox) } : {}),
       ...(block.maskBoxes ? { maskBoxes: block.maskBoxes.map(resizeBox) } : {}),
     })),
   };

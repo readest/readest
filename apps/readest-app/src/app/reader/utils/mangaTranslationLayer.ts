@@ -144,7 +144,7 @@ export const mountMangaTranslationLayer = (
     if (!region.translatedText.trim()) continue;
     const bubble = normalizeBox(region.bubbleBox, page);
     if (!bubble) continue;
-    const sourceTextBox = normalizeBox(region.textBox, page);
+    const sourceTextBox = normalizeBox(region.contentBox ?? region.textBox, page);
     const textBox = sourceTextBox && intersectBoxes(sourceTextBox, insetBox(bubble, 0.015));
     if (!textBox) continue;
 

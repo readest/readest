@@ -19,7 +19,6 @@ const MAXIMUM_INPUT_WIDTH = 3_200;
 const MAXIMUM_PAGE_PIXELS = 4_000_000;
 const MAXIMUM_BACKGROUND_SAMPLES = 12_000;
 const DEFAULT_MINIMUM_CONFIDENCE = 35;
-const DEFAULT_BUBBLE_COLOR = 'rgb(255 255 255)';
 const MAXIMUM_RECOGNITION_VIEW_CONFIDENCE_GAP = 10;
 const MAXIMUM_IGNORED_PART_THICKNESS_RATIO = 0.5;
 
@@ -56,7 +55,7 @@ interface PreparedPage {
   page: PageIdentity;
 }
 
-interface RgbaImage {
+export interface RgbaImage {
   data: Uint8ClampedArray;
   width: number;
   height: number;
@@ -550,42 +549,177 @@ export const decodePaddleMangaOcr = (
 const isInsideBox = (x: number, y: number, box: OcrBoundingBox): boolean =>
   x >= box.xMin && x <= box.xMax && y >= box.yMin && y <= box.yMax;
 
+const sampleBackgroundChannels = (
+  image: RgbaImage,
+  bubbleBox: OcrBoundingBox,
+  textBoxes: readonly OcrBoundingBox[],
+): [number, number, number] => {
+  const rectangle = toRectangle(bubbleBox, image);
+  if (!rectangle) return [255, 255, 255];
+  const textBounds = toRectangle(unionBoxes(textBoxes), image);
+  const padding = textBounds
+    ? Math.max(4, Math.round(Math.max(textBounds.width, textBounds.height) * 0.45))
+    : 0;
+  const nearText = textBounds
+    ? {
+        left: Math.max(rectangle.left, textBounds.left - padding),
+        top: Math.max(rectangle.top, textBounds.top - padding),
+        width:
+          Math.min(rectangle.left + rectangle.width, textBounds.left + textBounds.width + padding) -
+          Math.max(rectangle.left, textBounds.left - padding),
+        height:
+          Math.min(rectangle.top + rectangle.height, textBounds.top + textBounds.height + padding) -
+          Math.max(rectangle.top, textBounds.top - padding),
+      }
+    : rectangle;
+
+  const sample = (area: PixelRectangle) => {
+    const stride = Math.max(
+      1,
+      Math.ceil(Math.sqrt((area.width * area.height) / MAXIMUM_BACKGROUND_SAMPLES)),
+    );
+    const buckets = new Map<number, { count: number; red: number; green: number; blue: number }>();
+    for (let y = area.top; y < area.top + area.height; y += stride) {
+      for (let x = area.left; x < area.left + area.width; x += stride) {
+        if (textBoxes.some((box) => isInsideBox(x, y, box))) continue;
+        const offset = pixelOffset(image, x, y);
+        if (image.data[offset + 3]! < 128) continue;
+        const red = image.data[offset]!;
+        const green = image.data[offset + 1]!;
+        const blue = image.data[offset + 2]!;
+        const key = ((red >> 4) << 8) | ((green >> 4) << 4) | (blue >> 4);
+        const bucket = buckets.get(key) ?? { count: 0, red: 0, green: 0, blue: 0 };
+        bucket.count += 1;
+        bucket.red += red;
+        bucket.green += green;
+        bucket.blue += blue;
+        buckets.set(key, bucket);
+      }
+    }
+    return [...buckets.values()].reduce<
+      { count: number; red: number; green: number; blue: number } | undefined
+    >(
+      (largest, bucket) => (!largest || bucket.count > largest.count ? bucket : largest),
+      undefined,
+    );
+  };
+
+  const dominant = sample(nearText) ?? sample(rectangle);
+  if (!dominant) return [255, 255, 255];
+  return [
+    Math.round(dominant.red / dominant.count),
+    Math.round(dominant.green / dominant.count),
+    Math.round(dominant.blue / dominant.count),
+  ];
+};
+
 const sampleBackground = (
   image: RgbaImage,
   bubbleBox: OcrBoundingBox,
   textBoxes: readonly OcrBoundingBox[],
 ): string => {
-  const rectangle = toRectangle(bubbleBox, image);
-  if (!rectangle) return DEFAULT_BUBBLE_COLOR;
-  const stride = Math.max(
-    1,
-    Math.ceil(Math.sqrt((rectangle.width * rectangle.height) / MAXIMUM_BACKGROUND_SAMPLES)),
+  const [red, green, blue] = sampleBackgroundChannels(image, bubbleBox, textBoxes);
+  return `rgb(${red} ${green} ${blue})`;
+};
+
+export const findSafeBubbleContentBox = (
+  image: RgbaImage,
+  bubbleBox: OcrBoundingBox,
+  textBoxes: readonly OcrBoundingBox[],
+): OcrBoundingBox | null => {
+  const bubble = toRectangle(bubbleBox, image);
+  if (!bubble || !textBoxes.length) return null;
+  const source = toRectangle(unionBoxes(textBoxes), image);
+  if (!source) return null;
+  const sourceLeft = Math.max(bubble.left, source.left);
+  const sourceTop = Math.max(bubble.top, source.top);
+  const sourceRight = Math.min(bubble.left + bubble.width, source.left + source.width);
+  const sourceBottom = Math.min(bubble.top + bubble.height, source.top + source.height);
+  if (sourceRight <= sourceLeft || sourceBottom <= sourceTop) return null;
+
+  const cellSize = Math.max(1, Math.ceil(Math.max(bubble.width, bubble.height) / 128));
+  const columns = Math.ceil(bubble.width / cellSize);
+  const rows = Math.ceil(bubble.height / cellSize);
+  const [backgroundRed, backgroundGreen, backgroundBlue] = sampleBackgroundChannels(
+    image,
+    bubbleBox,
+    textBoxes,
   );
-  const buckets = new Map<number, { count: number; red: number; green: number; blue: number }>();
-  for (let y = rectangle.top; y < rectangle.top + rectangle.height; y += stride) {
-    for (let x = rectangle.left; x < rectangle.left + rectangle.width; x += stride) {
-      if (textBoxes.some((box) => isInsideBox(x, y, box))) continue;
-      const offset = pixelOffset(image, x, y);
-      if (image.data[offset + 3]! < 128) continue;
-      const red = image.data[offset]!;
-      const green = image.data[offset + 1]!;
-      const blue = image.data[offset + 2]!;
-      const key = ((red >> 4) << 8) | ((green >> 4) << 4) | (blue >> 4);
-      const bucket = buckets.get(key) ?? { count: 0, red: 0, green: 0, blue: 0 };
-      bucket.count += 1;
-      bucket.red += red;
-      bucket.green += green;
-      bucket.blue += blue;
-      buckets.set(key, bucket);
+  const unsafePrefix = new Uint32Array((columns + 1) * (rows + 1));
+  const prefixWidth = columns + 1;
+  const maximumColorDistanceSquared = 58 * 58;
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const x = Math.min(image.width - 1, bubble.left + column * cellSize + cellSize / 2);
+      const y = Math.min(image.height - 1, bubble.top + row * cellSize + cellSize / 2);
+      const offset = pixelOffset(image, Math.floor(x), Math.floor(y));
+      const redDifference = image.data[offset]! - backgroundRed;
+      const greenDifference = image.data[offset + 1]! - backgroundGreen;
+      const blueDifference = image.data[offset + 2]! - backgroundBlue;
+      const colorDistanceSquared =
+        redDifference * redDifference +
+        greenDifference * greenDifference +
+        blueDifference * blueDifference;
+      const safe =
+        textBoxes.some((box) => isInsideBox(x, y, box)) ||
+        (image.data[offset + 3]! >= 128 && colorDistanceSquared <= maximumColorDistanceSquared);
+      const prefixIndex = (row + 1) * prefixWidth + column + 1;
+      unsafePrefix[prefixIndex] =
+        Number(!safe) +
+        unsafePrefix[prefixIndex - 1]! +
+        unsafePrefix[prefixIndex - prefixWidth]! -
+        unsafePrefix[prefixIndex - prefixWidth - 1]!;
     }
   }
-  const dominant = [...buckets.values()].reduce<
-    { count: number; red: number; green: number; blue: number } | undefined
-  >((largest, bucket) => (!largest || bucket.count > largest.count ? bucket : largest), undefined);
-  if (!dominant) return DEFAULT_BUBBLE_COLOR;
-  return `rgb(${Math.round(dominant.red / dominant.count)} ${Math.round(
-    dominant.green / dominant.count,
-  )} ${Math.round(dominant.blue / dominant.count)})`;
+
+  const isSafeRectangle = (left: number, top: number, right: number, bottom: number): boolean => {
+    const unsafe =
+      unsafePrefix[bottom * prefixWidth + right]! -
+      unsafePrefix[top * prefixWidth + right]! -
+      unsafePrefix[bottom * prefixWidth + left]! +
+      unsafePrefix[top * prefixWidth + left]!;
+    return unsafe === 0;
+  };
+  let left = Math.max(0, Math.floor((sourceLeft - bubble.left) / cellSize));
+  let top = Math.max(0, Math.floor((sourceTop - bubble.top) / cellSize));
+  let right = Math.min(columns, Math.ceil((sourceRight - bubble.left) / cellSize));
+  let bottom = Math.min(rows, Math.ceil((sourceBottom - bubble.top) / cellSize));
+  if (!isSafeRectangle(left, top, right, bottom)) {
+    return {
+      xMin: sourceLeft,
+      yMin: sourceTop,
+      xMax: sourceRight,
+      yMax: sourceBottom,
+    };
+  }
+
+  for (;;) {
+    const candidates = [
+      left > 0 ? { left: left - 1, top, right, bottom } : null,
+      top > 0 ? { left, top: top - 1, right, bottom } : null,
+      right < columns ? { left, top, right: right + 1, bottom } : null,
+      bottom < rows ? { left, top, right, bottom: bottom + 1 } : null,
+    ]
+      .filter((candidate): candidate is NonNullable<typeof candidate> => !!candidate)
+      .filter((candidate) =>
+        isSafeRectangle(candidate.left, candidate.top, candidate.right, candidate.bottom),
+      )
+      .sort(
+        (first, second) =>
+          (second.right - second.left) * (second.bottom - second.top) -
+          (first.right - first.left) * (first.bottom - first.top),
+      );
+    const next = candidates[0];
+    if (!next) break;
+    ({ left, top, right, bottom } = next);
+  }
+
+  return {
+    xMin: bubble.left + left * cellSize,
+    yMin: bubble.top + top * cellSize,
+    xMax: Math.min(bubble.left + bubble.width, bubble.left + right * cellSize),
+    yMax: Math.min(bubble.top + bubble.height, bubble.top + bottom * cellSize),
+  };
 };
 
 const parseDictionary = (buffer: ArrayBuffer): string[] => {
@@ -697,6 +831,8 @@ export class PaddleMangaOcrEngine {
           parts.reduce((sum, part) => sum + part.confidence, 0) / Math.max(1, parts.length),
         box: unionBoxes(boxes),
         bubbleBox: region.bubbleBox,
+        contentBox:
+          findSafeBubbleContentBox(image, region.bubbleBox, region.textBoxes) ?? undefined,
         maskBoxes: region.textBoxes,
         backgroundColor: sampleBackground(image, region.bubbleBox, region.textBoxes),
         writingMode: region.writingMode,

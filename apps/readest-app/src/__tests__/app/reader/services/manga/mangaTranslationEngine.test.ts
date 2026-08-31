@@ -21,6 +21,7 @@ const makeOcrPage = (): OcrPage => ({
       confidence: 62,
       box: { xMin: 120, yMin: 160, xMax: 360, yMax: 500 },
       bubbleBox: { xMin: 80, yMin: 100, xMax: 420, yMax: 620 },
+      contentBox: { xMin: 100, yMin: 130, xMax: 400, yMax: 590 },
       maskBoxes: [
         { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
         { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
@@ -97,6 +98,7 @@ describe('MangaTranslationEngine', () => {
           translatedText: 'The thing happened?!',
           confidence: 62,
           textBox: { xMin: 120, yMin: 160, xMax: 360, yMax: 500 },
+          contentBox: { xMin: 100, yMin: 130, xMax: 400, yMax: 590 },
           bubbleBox: { xMin: 80, yMin: 100, xMax: 420, yMax: 620 },
           maskBoxes: [
             { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },

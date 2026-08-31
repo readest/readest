@@ -157,6 +157,26 @@ describe('mangaTranslationLayer', () => {
     expect(textArea?.style.overflow).toBe('hidden');
   });
 
+  it('uses the safe bubble interior when OCR provides one', () => {
+    const layer = mountMangaTranslationLayer(
+      document,
+      makePage({
+        regions: [
+          {
+            ...makePage().regions[0]!,
+            contentBox: { xMin: 120, yMin: 220, xMax: 470, yMax: 570 },
+          },
+        ],
+      }),
+    );
+
+    const textArea = layer?.querySelector<HTMLElement>('[data-readest-manga-region-id]');
+    expect(textArea?.style.left).toBe('12%');
+    expect(textArea?.style.top).toBe('11%');
+    expect(textArea?.style.width).toBe('35%');
+    expect(textArea?.style.height).toBe('17.5%');
+  });
+
   it('disables motion when the reader requests reduced motion', () => {
     const animate = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'animate', {

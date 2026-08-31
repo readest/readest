@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   decodePaddleMangaOcr,
+  findSafeBubbleContentBox,
   PADDLE_MANGA_OCR_DICTIONARY_ASSET,
   PADDLE_MANGA_OCR_MODEL_ASSET,
   PaddleMangaOcrEngine,
@@ -162,6 +163,48 @@ describe('rotateRgbaCounterclockwise', () => {
   });
 });
 
+describe('findSafeBubbleContentBox', () => {
+  it('keeps the English layout rectangle inside an irregular bubble', () => {
+    const width = 100;
+    const height = 100;
+    const pixels = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const offset = (y * width + x) * 4;
+        const insideDiamond = Math.abs(x - 50) + Math.abs(y - 50) <= 42;
+        pixels[offset] = insideDiamond ? 250 : 20;
+        pixels[offset + 1] = insideDiamond ? 248 : 30;
+        pixels[offset + 2] = insideDiamond ? 242 : 40;
+        pixels[offset + 3] = 255;
+      }
+    }
+    for (let y = 38; y < 62; y += 1) {
+      for (let x = 43; x < 57; x += 1) {
+        const offset = (y * width + x) * 4;
+        pixels.fill(15, offset, offset + 3);
+      }
+    }
+
+    const content = findSafeBubbleContentBox({ data: pixels, width, height }, box(8, 8, 93, 93), [
+      box(43, 38, 57, 62),
+    ]);
+
+    expect(content).not.toBeNull();
+    expect(content!.xMin).toBeLessThanOrEqual(43);
+    expect(content!.xMax).toBeGreaterThanOrEqual(57);
+    expect(content!.yMin).toBeLessThanOrEqual(38);
+    expect(content!.yMax).toBeGreaterThanOrEqual(62);
+    for (const [x, y] of [
+      [content!.xMin, content!.yMin],
+      [content!.xMax - 1, content!.yMin],
+      [content!.xMin, content!.yMax - 1],
+      [content!.xMax - 1, content!.yMax - 1],
+    ]) {
+      expect(Math.abs(x - 50) + Math.abs(y - 50)).toBeLessThanOrEqual(42);
+    }
+  });
+});
+
 describe('PaddleMangaOcrEngine', () => {
   it('loads lazily, reuses one model session, and returns detector geometry', async () => {
     const harness = makeHarness();
@@ -188,6 +231,7 @@ describe('PaddleMangaOcrEngine', () => {
           confidence: expect.closeTo(90),
           box: box(15, 20, 55, 80),
           bubbleBox: box(5, 5, 75, 110),
+          contentBox: box(5, 5, 75, 110),
           maskBoxes: [box(15, 20, 55, 80)],
           backgroundColor: 'rgb(255 255 255)',
           writingMode: 'horizontal-tb',
