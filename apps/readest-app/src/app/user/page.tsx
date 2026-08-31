@@ -15,7 +15,7 @@ import type { PlanType } from '@/types/quota';
 import { navigateToLibrary } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
-import { getPlanDetails } from './utils/plan';
+import { getPlanDetails, shouldUseBillingPortal } from './utils/plan';
 import { Toast } from '@/components/Toast';
 import {
   purchaseIAPProduct,
@@ -33,6 +33,7 @@ import {
   handleStripeCheckoutError,
   getSubscriptionSuccessUrl as getStripeSubscriptionSuccessUrl,
   type StripeAvailablePlan,
+  type StripePortalFlow,
 } from '@/libs/payment/stripe/client';
 import LegalLinks from '@/components/LegalLinks';
 import Spinner from '@/components/Spinner';
@@ -131,6 +132,14 @@ const ProfilePage = () => {
 
   const handleStripeSubscribe = async (productId?: string, planType: PlanType = 'subscription') => {
     if (!productId) return;
+
+    // Someone who already holds a subscription changes plan or billing period
+    // in the billing portal. Opening a second checkout session would leave the
+    // old subscription running alongside the new one and bill them twice.
+    if (shouldUseBillingPortal(userProfilePlan, planType)) {
+      await openStripePortal('subscription_update');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -238,10 +247,10 @@ const ProfilePage = () => {
     setLoading(false);
   };
 
-  const handleManageSubscription = async () => {
+  const openStripePortal = async (flow?: StripePortalFlow) => {
     setLoading(true);
     try {
-      const url = await createStripePortalSession();
+      const url = await createStripePortalSession(flow);
       await redirectToStripePortal(url);
     } catch (error) {
       console.error('Error creating portal session:', error);
@@ -253,6 +262,8 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
+
+  const handleManageSubscription = () => openStripePortal();
 
   const handleDeleteWithMessage = () => {
     handleConfirmDelete(_('Failed to delete user. Please try again later.'));
