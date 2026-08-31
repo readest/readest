@@ -600,7 +600,6 @@
   "Upgrade to {{plan}}": "שדרג ל-{{plan}}",
   "Complete Your Subscription": "השלם את המנוי שלך",
   "Coming Soon": "בקרוב",
-  "Upgrade to Plus or Pro": "שדרג ל-Plus או Pro",
   "Current Plan": "תוכנית נוכחית",
   "On-Demand Purchase": "רכישה לפי דרישה",
   "Plan Limits": "מגבלות תוכנית",
@@ -2350,7 +2349,7 @@
   "Monthly": "חודשי",
   "Save {{percent}}%": "חיסכון של {{percent}}%",
   "Change billing period": "שינוי תקופת החיוב",
-  "forever": "לתמיד",
+  "Free forever": "חינם לתמיד",
   "{{price}} billed yearly": "{{price}} בחיוב שנתי",
   "Popular": "פופולרי"
 }

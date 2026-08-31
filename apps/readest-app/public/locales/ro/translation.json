@@ -661,7 +661,6 @@
   "Upgrade to {{plan}}": "Treceți la {{plan}}",
   "Complete Your Subscription": "Finalizați abonamentul",
   "Coming Soon": "În curând",
-  "Upgrade to Plus or Pro": "Treceți la Plus sau Pro",
   "Current Plan": "Abonament curent",
   "On-Demand Purchase": "Achiziție la cerere",
   "Plan Limits": "Limitele abonamentului",
@@ -2350,7 +2349,7 @@
   "Monthly": "Lunar",
   "Save {{percent}}%": "Economisiți {{percent}}%",
   "Change billing period": "Schimbă perioada de facturare",
-  "forever": "pentru totdeauna",
+  "Free forever": "Gratuit pentru totdeauna",
   "{{price}} billed yearly": "{{price}} facturat anual",
   "Popular": "Popular"
 }

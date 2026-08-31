@@ -324,7 +324,6 @@
   "Manage Subscription": "管理订阅",
   "Coming Soon": "即将上线",
   "Upgrade to {{plan}}": "升级到 {{plan}}",
-  "Upgrade to Plus or Pro": "升级到 Plus 或 Pro",
   "Current Plan": "当前套餐",
   "Plan Limits": "套餐限制",
   "Processing your payment...": "正在处理付款...",
@@ -2228,7 +2227,7 @@
   "Monthly": "按月",
   "Save {{percent}}%": "省 {{percent}}%",
   "Change billing period": "更改结算周期",
-  "forever": "永久免费",
+  "Free forever": "永久免费",
   "{{price}} billed yearly": "按年收取 {{price}}",
   "Popular": "热门"
 }

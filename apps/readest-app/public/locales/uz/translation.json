@@ -755,7 +755,6 @@
   "Upgrade to {{plan}}": "{{plan}} ga yangilash",
   "Complete Your Subscription": "Obunangizni yakunlang",
   "Coming Soon": "Tez orada",
-  "Upgrade to Plus or Pro": "Plus yoki Pro ga yangilash",
   "Current Plan": "Joriy reja",
   "On-Demand Purchase": "Talabga koʻra xarid",
   "Plan Limits": "Reja cheklovlari",
@@ -2289,7 +2288,7 @@
   "Monthly": "Oylik",
   "Save {{percent}}%": "{{percent}}% tejang",
   "Change billing period": "Hisob-kitob davrini o'zgartirish",
-  "forever": "abadiy",
+  "Free forever": "Abadiy bepul",
   "{{price}} billed yearly": "Yiliga {{price}} hisoblanadi",
   "Popular": "Ommabop"
 }

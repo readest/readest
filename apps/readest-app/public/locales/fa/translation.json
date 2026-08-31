@@ -326,7 +326,6 @@
   "Manage Subscription": "مدیریت اشتراک",
   "Coming Soon": "به‌زودی",
   "Upgrade to {{plan}}": "ارتقاء به {{plan}}",
-  "Upgrade to Plus or Pro": "ارتقاء به Plus یا Pro",
   "Current Plan": "طرح فعلی",
   "Plan Limits": "محدودیت‌های طرح",
   "Processing your payment...": "در حال پردازش پرداخت شما...",
@@ -2289,7 +2288,7 @@
   "Monthly": "ماهانه",
   "Save {{percent}}%": "{{percent}}٪ صرفه‌جویی",
   "Change billing period": "تغییر دوره صورت‌حساب",
-  "forever": "برای همیشه",
+  "Free forever": "همیشه رایگان",
   "{{price}} billed yearly": "{{price}} به‌صورت سالانه",
   "Popular": "محبوب"
 }

@@ -328,7 +328,6 @@
   "Upgrade to {{plan}}": "{{plan}} වෙත උසස් කරන්න",
   "Complete Your Subscription": "ඔබේ දායකත්වය සම්පූර්ණ කරන්න",
   "Coming Soon": "ඉක්මනින් පැමිණේ",
-  "Upgrade to Plus or Pro": "Plus හෝ Pro වෙත උසස් කරන්න",
   "Current Plan": "වර්තමාන සැලැස්ම",
   "Plan Limits": "සැලැස්මේ සීමා",
   "Failed to delete user. Please try again later.": "පරිශීලකයා මකා දැමීමට අසමත්. කරුණාකර පසුව නැවත උත්සාහ කරන්න.",
@@ -2289,7 +2288,7 @@
   "Monthly": "මාසික",
   "Save {{percent}}%": "{{percent}}% ඉතිරි කරන්න",
   "Change billing period": "බිල්පත් කාලය වෙනස් කරන්න",
-  "forever": "සදහටම",
+  "Free forever": "සදහටම නොමිලේ",
   "{{price}} billed yearly": "වාර්ෂිකව {{price}} අය කෙරේ",
   "Popular": "ජනප්‍රිය"
 }

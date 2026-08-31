@@ -331,7 +331,6 @@
   "Manage Subscription": "Gestisci Abbonamento",
   "Coming Soon": "Prossimamente",
   "Upgrade to {{plan}}": "Aggiorna a {{plan}}",
-  "Upgrade to Plus or Pro": "Aggiorna a Plus o Pro",
   "Current Plan": "Piano Attuale",
   "Plan Limits": "Limiti del Piano",
   "Processing your payment...": "Elaborazione del pagamento...",
@@ -2350,7 +2349,7 @@
   "Monthly": "Mensile",
   "Save {{percent}}%": "Risparmia il {{percent}}%",
   "Change billing period": "Cambia periodo di fatturazione",
-  "forever": "per sempre",
+  "Free forever": "Gratis per sempre",
   "{{price}} billed yearly": "{{price}} fatturato annualmente",
   "Popular": "Popolare"
 }

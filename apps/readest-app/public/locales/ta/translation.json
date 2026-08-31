@@ -328,7 +328,6 @@
   "Upgrade to {{plan}}": "{{plan}} க்கு மேம்படுத்தவும்",
   "Complete Your Subscription": "உங்கள் சந்தாவை நிறைவு செய்யவும்",
   "Coming Soon": "விரைவில் வரும்",
-  "Upgrade to Plus or Pro": "Plus அல்லது Pro க்கு மேம்படுத்தவும்",
   "Current Plan": "தற்போதைய திட்டம்",
   "Plan Limits": "திட்ட வரம்புகள்",
   "Failed to delete user. Please try again later.": "பயனரை நீக்க முடியவில்லை. பின்னர் மீண்டும் முயற்சிக்கவும்.",
@@ -2289,7 +2288,7 @@
   "Monthly": "மாதந்தோறும்",
   "Save {{percent}}%": "{{percent}}% சேமிக்கவும்",
   "Change billing period": "கட்டணக் காலத்தை மாற்று",
-  "forever": "என்றென்றும்",
+  "Free forever": "எப்போதும் இலவசம்",
   "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்",
   "Popular": "பிரபலமானது"
 }

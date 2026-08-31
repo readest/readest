@@ -323,7 +323,6 @@
   "Manage Subscription": "管理訂閱",
   "Coming Soon": "即將推出",
   "Upgrade to {{plan}}": "升級到 {{plan}}",
-  "Upgrade to Plus or Pro": "升級到 Plus 或 Pro",
   "Current Plan": "當前方案",
   "Plan Limits": "方案限制",
   "Processing your payment...": "正在處理付款...",
@@ -2228,7 +2227,7 @@
   "Monthly": "按月",
   "Save {{percent}}%": "省 {{percent}}%",
   "Change billing period": "變更結算週期",
-  "forever": "永久免費",
+  "Free forever": "永久免費",
   "{{price}} billed yearly": "按年收取 {{price}}",
   "Popular": "熱門"
 }

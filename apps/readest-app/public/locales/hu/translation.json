@@ -674,7 +674,6 @@
   "Upgrade to {{plan}}": "Váltás erre: {{plan}}",
   "Complete Your Subscription": "Előfizetés befejezése",
   "Coming Soon": "Hamarosan",
-  "Upgrade to Plus or Pro": "Váltás Plus vagy Pro csomagra",
   "Current Plan": "Jelenlegi csomag",
   "On-Demand Purchase": "Egyszeri vásárlás",
   "Plan Limits": "Csomag korlátai",
@@ -2289,7 +2288,7 @@
   "Monthly": "Havi",
   "Save {{percent}}%": "{{percent}}% megtakarítás",
   "Change billing period": "Számlázási időszak módosítása",
-  "forever": "örökre",
+  "Free forever": "Örökre ingyenes",
   "{{price}} billed yearly": "{{price}} évente számlázva",
   "Popular": "Népszerű"
 }

@@ -38,7 +38,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   const headlinePrice = formatPrice(isYearly ? price / 12 : price);
 
   const renderPriceCaption = () => {
-    if (plan.plan === 'free') return _('forever');
+    if (plan.plan === 'free') return _('Free forever');
     if (isYearly) return _('{{price}} billed yearly', { price: formatPrice(price) });
     return null;
   };

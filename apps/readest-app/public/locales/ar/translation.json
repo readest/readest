@@ -342,7 +342,6 @@
   "Manage Subscription": "إدارة الاشتراك",
   "Coming Soon": "قريبًا",
   "Upgrade to {{plan}}": "الترقية إلى {{plan}}",
-  "Upgrade to Plus or Pro": "الترقية إلى Plus أو Pro",
   "Current Plan": "الخطة الحالية",
   "Plan Limits": "حدود الخطة",
   "Processing your payment...": "جارٍ معالجة الدفع...",
@@ -2533,7 +2532,7 @@
   "Monthly": "شهري",
   "Save {{percent}}%": "وفّر {{percent}}٪",
   "Change billing period": "تغيير فترة الفوترة",
-  "forever": "إلى الأبد",
+  "Free forever": "مجاني إلى الأبد",
   "{{price}} billed yearly": "{{price}} تُحصّل سنويًا",
   "Popular": "شائع"
 }

@@ -323,7 +323,6 @@
   "Manage Subscription": "구독 관리",
   "Coming Soon": "곧 출시 예정",
   "Upgrade to {{plan}}": "{{plan}}로 업그레이드",
-  "Upgrade to Plus or Pro": "Plus 또는 Pro로 업그레이드",
   "Current Plan": "현재 요금제",
   "Plan Limits": "요금제 한도",
   "Processing your payment...": "결제를 처리 중입니다...",
@@ -2228,7 +2227,7 @@
   "Monthly": "월간",
   "Save {{percent}}%": "{{percent}}% 할인",
   "Change billing period": "결제 주기 변경",
-  "forever": "평생 무료",
+  "Free forever": "평생 무료",
   "{{price}} billed yearly": "연 {{price}} 청구",
   "Popular": "인기"
 }

@@ -1050,7 +1050,6 @@
   "Upgrade to {{plan}}": "გადადით {{plan}}-ზე",
   "Complete Your Subscription": "დაასრულეთ თქვენი გამოწერა",
   "Coming Soon": "მალე",
-  "Upgrade to Plus or Pro": "გადადით Plus-ზე ან Pro-ზე",
   "Current Plan": "მიმდინარე გეგმა",
   "On-Demand Purchase": "შესყიდვა მოთხოვნისამებრ",
   "Plan Limits": "გეგმის ლიმიტები",
@@ -2289,7 +2288,7 @@
   "Monthly": "თვიური",
   "Save {{percent}}%": "დაზოგეთ {{percent}}%",
   "Change billing period": "ბილინგის პერიოდის შეცვლა",
-  "forever": "სამუდამოდ",
+  "Free forever": "სამუდამოდ უფასო",
   "{{price}} billed yearly": "{{price}} წლიური გადახდით",
   "Popular": "პოპულარული"
 }

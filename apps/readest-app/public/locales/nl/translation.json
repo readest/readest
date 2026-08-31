@@ -327,7 +327,6 @@
   "Manage Subscription": "Abonnement beheren",
   "Coming Soon": "Binnenkort beschikbaar",
   "Upgrade to {{plan}}": "Upgrade naar {{plan}}",
-  "Upgrade to Plus or Pro": "Upgrade naar Plus of Pro",
   "Current Plan": "Huidig abonnement",
   "Plan Limits": "Abonnementslimieten",
   "Processing your payment...": "Je betaling wordt verwerkt...",
@@ -2289,7 +2288,7 @@
   "Monthly": "Maandelijks",
   "Save {{percent}}%": "Bespaar {{percent}}%",
   "Change billing period": "Facturatieperiode wijzigen",
-  "forever": "voor altijd",
+  "Free forever": "Altijd gratis",
   "{{price}} billed yearly": "{{price}} jaarlijks gefactureerd",
   "Popular": "Populair"
 }

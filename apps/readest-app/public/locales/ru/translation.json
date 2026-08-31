@@ -335,7 +335,6 @@
   "Manage Subscription": "Управление подпиской",
   "Coming Soon": "Скоро будет",
   "Upgrade to {{plan}}": "Обновить до {{plan}}",
-  "Upgrade to Plus or Pro": "Обновить до Plus или Pro",
   "Current Plan": "Текущий план",
   "Plan Limits": "Лимиты плана",
   "Processing your payment...": "Обработка платежа...",
@@ -2411,7 +2410,7 @@
   "Monthly": "Ежемесячно",
   "Save {{percent}}%": "Экономия {{percent}}%",
   "Change billing period": "Изменить период оплаты",
-  "forever": "навсегда",
+  "Free forever": "Бесплатно навсегда",
   "{{price}} billed yearly": "{{price}} при оплате за год",
   "Popular": "Популярный"
 }

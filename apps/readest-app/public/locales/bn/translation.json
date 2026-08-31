@@ -328,7 +328,6 @@
   "Upgrade to {{plan}}": "{{plan}} এ আপগ্রেড",
   "Complete Your Subscription": "আপনার সাবস্ক্রিপশন সম্পূর্ণ করুন",
   "Coming Soon": "শীঘ্রই আসছে",
-  "Upgrade to Plus or Pro": "প্লাস বা প্রো তে আপগ্রেড",
   "Current Plan": "বর্তমান প্ল্যান",
   "Plan Limits": "প্ল্যান সীমা",
   "Failed to delete user. Please try again later.": "ইউজার মুছতে ব্যর্থ। পরে আবার চেষ্টা করুন।",
@@ -2289,7 +2288,7 @@
   "Monthly": "মাসিক",
   "Save {{percent}}%": "{{percent}}% সাশ্রয়",
   "Change billing period": "বিলিং সময়কাল পরিবর্তন করুন",
-  "forever": "চিরকালের জন্য",
+  "Free forever": "চিরকাল বিনামূল্যে",
   "{{price}} billed yearly": "{{price}} বার্ষিক বিল",
   "Popular": "জনপ্রিয়"
 }

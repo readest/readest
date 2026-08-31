@@ -327,7 +327,6 @@
   "Manage Subscription": "Διαχείριση συνδρομής",
   "Coming Soon": "Έρχεται σύντομα",
   "Upgrade to {{plan}}": "Αναβάθμιση σε {{plan}}",
-  "Upgrade to Plus or Pro": "Αναβάθμιση σε Plus ή Pro",
   "Current Plan": "Τρέχον πρόγραμμα",
   "Plan Limits": "Όρια προγράμματος",
   "Processing your payment...": "Επεξεργασία πληρωμής...",
@@ -2289,7 +2288,7 @@
   "Monthly": "Μηνιαία",
   "Save {{percent}}%": "Κερδίστε {{percent}}%",
   "Change billing period": "Αλλαγή περιόδου χρέωσης",
-  "forever": "για πάντα",
+  "Free forever": "Δωρεάν για πάντα",
   "{{price}} billed yearly": "{{price}} με ετήσια χρέωση",
   "Popular": "Δημοφιλές"
 }

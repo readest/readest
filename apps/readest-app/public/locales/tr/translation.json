@@ -327,7 +327,6 @@
   "Manage Subscription": "Aboneliği Yönet",
   "Coming Soon": "Yakında",
   "Upgrade to {{plan}}": "{{plan}} planına yükselt",
-  "Upgrade to Plus or Pro": "Plus veya Pro'ya yükselt",
   "Current Plan": "Mevcut Plan",
   "Plan Limits": "Plan Limitleri",
   "Processing your payment...": "Ödemeniz işleniyor...",
@@ -2289,7 +2288,7 @@
   "Monthly": "Aylık",
   "Save {{percent}}%": "%{{percent}} tasarruf",
   "Change billing period": "Faturalandırma dönemini değiştir",
-  "forever": "sonsuza dek",
+  "Free forever": "Sonsuza dek ücretsiz",
   "{{price}} billed yearly": "Yıllık {{price}} olarak faturalandırılır",
   "Popular": "Popüler"
 }

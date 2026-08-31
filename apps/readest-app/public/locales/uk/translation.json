@@ -335,7 +335,6 @@
   "Manage Subscription": "Керувати підпискою",
   "Coming Soon": "Незабаром",
   "Upgrade to {{plan}}": "Перейти на {{plan}}",
-  "Upgrade to Plus or Pro": "Перейти на Plus або Pro",
   "Current Plan": "Поточний план",
   "Plan Limits": "Обмеження плану",
   "Processing your payment...": "Обробка вашого платежу...",
@@ -2411,7 +2410,7 @@
   "Monthly": "Щомісяця",
   "Save {{percent}}%": "Заощадьте {{percent}}%",
   "Change billing period": "Змінити період оплати",
-  "forever": "назавжди",
+  "Free forever": "Безкоштовно назавжди",
   "{{price}} billed yearly": "{{price}} на рік",
   "Popular": "Популярний"
 }

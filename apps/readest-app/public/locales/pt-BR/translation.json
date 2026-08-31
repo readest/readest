@@ -770,7 +770,6 @@
   "Upgrade to {{plan}}": "Atualizar para {{plan}}",
   "Complete Your Subscription": "Complete sua assinatura",
   "Coming Soon": "Em breve",
-  "Upgrade to Plus or Pro": "Atualizar para Plus ou Pro",
   "Current Plan": "Plano atual",
   "On-Demand Purchase": "Compra sob demanda",
   "Plan Limits": "Limites do plano",
@@ -2350,7 +2349,7 @@
   "Monthly": "Mensal",
   "Save {{percent}}%": "Economize {{percent}}%",
   "Change billing period": "Alterar período de cobrança",
-  "forever": "para sempre",
+  "Free forever": "Grátis para sempre",
   "{{price}} billed yearly": "{{price}} cobrado anualmente",
   "Popular": "Popular"
 }

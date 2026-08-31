@@ -323,7 +323,6 @@
   "Manage Subscription": "サブスクリプションを管理",
   "Coming Soon": "近日公開",
   "Upgrade to {{plan}}": "{{plan}} にアップグレード",
-  "Upgrade to Plus or Pro": "Plus または Pro にアップグレード",
   "Current Plan": "現在のプラン",
   "Plan Limits": "プランの上限",
   "Processing your payment...": "お支払いを処理中...",
@@ -2228,7 +2227,7 @@
   "Monthly": "月額",
   "Save {{percent}}%": "{{percent}}%お得",
   "Change billing period": "お支払い間隔を変更",
-  "forever": "ずっと無料",
+  "Free forever": "ずっと無料",
   "{{price}} billed yearly": "年額 {{price}} で請求",
   "Popular": "人気"
 }
