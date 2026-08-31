@@ -113,7 +113,7 @@ const BookItem: React.FC<BookItemProps> = ({
       <div
         className={clsx(
           'bookitem-main relative flex justify-center overflow-hidden rounded-sm',
-          !fitCoverInGrid && 'aspect-[28/41]',
+          !fitCoverInGrid && 'aspect-28/41',
           coverFit === 'crop' && 'shadow-md',
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
@@ -230,14 +230,14 @@ const BookItem: React.FC<BookItemProps> = ({
                   showBookDetailsModal(book);
                 }}
               >
-                <div className='pt-[2px] sm:pt-[1px]'>
+                <div className='pt-0.5 sm:pt-px'>
                   <LiaInfoCircleSolid size={iconSize15} />
                 </div>
               </button>
             )}
             {(book.hasNarration || isAbsBook) && (
               <div
-                className='pt-[2px] sm:pt-[1px]'
+                className='pt-0.5 sm:pt-px'
                 title={isAbsBook ? _('Audiobook') : _('Includes narration')}
                 aria-label={isAbsBook ? _('Audiobook') : _('Includes narration')}
               >
