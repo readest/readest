@@ -127,6 +127,9 @@ jobs:
       - name: install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
 
+      - name: 准备前端 vendor
+        run: pnpm --filter @readest/readest-app setup-vendors
+
       - name: TypeScript 类型检查
         run: pnpm --filter @readest/readest-app exec tsc --noEmit
 
