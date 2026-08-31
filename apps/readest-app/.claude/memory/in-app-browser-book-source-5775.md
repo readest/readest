@@ -146,4 +146,6 @@ WebView timers stall so CDP evals that await hang).
 never exercised before merge, and it was 100% broken — every finished download froze the app for 10s
 and iOS SIGKILLed it (`0x8BADF00D`). Mobile `set_web_browser_status` was the app's only *synchronous*
 `#[tauri::command]` reaching `native_bridge()`, which parks the iOS main thread. Full mechanism, the
-fix, and the guard test: [[ios-sync-command-run-mobile-plugin-deadlock]].
+fix, and the guard test: [[ios-sync-command-run-mobile-plugin-deadlock]]. MERGED #5947
+(8d24f5925). iOS download flow now sim-VERIFIED end to end, which closes the last
+unverified platform for this feature.

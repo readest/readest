@@ -18,3 +18,12 @@ metadata:
 3. junit is already wired (`testImplementation junit:4.13.2` in plugin build.gradle.kts).
 
 Notes: the copied `tauri.settings.gradle` references cargo-registry plugin paths, so this only works on a machine with the registry populated. A standalone harness (own settings.gradle including just `:tauri-android` + the two plugins) also works — plugins depend only on `project(":tauri-android")` from `packages/tauri` + maven artifacts; needs `android.useAndroidX=true` in gradle.properties and AGP 8.11/Kotlin 1.9.25 matching gen/android. A `kotlin_test` CI job was drafted 2026-08-04 but the user discarded it; the native-tts `ExampleUnitTest.kt` invalid package (`com.readest.native-tts`) it caught was fixed in #5484 (MERGED).
+
+**Flavor correction (2026-08-30):** billing lives in the `googleplay` flavor, so
+`BillingManager.kt` is NOT covered by `testFossDebugUnitTest` — use
+`:tauri-plugin-native-bridge:testGoogleplayDebugUnitTest`, with tests in
+`android/src/testGoogleplay/java/...`. `app/tauri.properties` must be copied
+alongside `tauri.settings.gradle` + `app/tauri.build.gradle.kts`, and
+`ANDROID_HOME=/Users/chrox/dev/Android/sdk` exported. Results land in
+`android/build/test-results/testGoogleplayDebugUnitTest/*.xml` (gradle can
+report BUILD SUCCESSFUL without running anything, so read the XML).

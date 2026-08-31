@@ -257,7 +257,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 // carry no inline ink and do want the flattening.
                 style !== 'highlight' && 'text-base-content',
                 style === 'highlight' ? 'flex items-center justify-center' : 'text-center',
-                style === 'underline' || style === 'squiggly' ? 'sm:mt-[-2px]' : '',
+                style === 'underline' || style === 'squiggly' ? 'sm:-mt-0.5' : '',
               )}
             >
               {style === 'highlight' ? (
