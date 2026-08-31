@@ -123,6 +123,34 @@ describe('MangaTranslationSession', () => {
     expect(engine.translate).toHaveBeenCalledTimes(2);
   });
 
+  it('reports progress against the real queued page count', async () => {
+    let reportEngineProgress!: (progress: { status: string; progress: number }) => void;
+    const engine = makeEngine();
+    vi.mocked(engine.translate).mockImplementation(async (_source, { pageIndex }) => {
+      reportEngineProgress({ status: 'recognizing speech bubbles', progress: 0.5 });
+      return makePage(pageIndex);
+    });
+    const onProgress = vi.fn();
+    const session = new MangaTranslationSession({
+      createEngine: (report) => {
+        reportEngineProgress = report;
+        return engine;
+      },
+      onProgress,
+    });
+    await session.processDocument(makeDocument(0), 0);
+    await session.processDocument(makeDocument(1), 1);
+
+    await session.setEnabled(true);
+
+    expect(onProgress.mock.calls.map(([progress]) => progress)).toEqual([
+      { status: 'recognizing speech bubbles', progress: 0.5, completed: 0, total: 2 },
+      { status: 'completed manga page', progress: 0, completed: 1, total: 2 },
+      { status: 'recognizing speech bubbles', progress: 0.5, completed: 1, total: 2 },
+      { status: 'completed manga page', progress: 0, completed: 2, total: 2 },
+    ]);
+  });
+
   it('lets a newly current page overtake queued prefetch work', async () => {
     let finishFirst!: (page: TranslatedMangaPage) => void;
     const engine = makeEngine();

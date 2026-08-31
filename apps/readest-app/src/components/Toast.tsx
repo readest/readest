@@ -16,6 +16,7 @@ export const Toast = () => {
   const { safeAreaInsets } = useThemeStore();
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<ToastType>('info');
+  const [toastProgress, setToastProgress] = useState<number | null>(null);
   const [toastTimeout, setToastTimeout] = useState(5000);
   const [messageClass, setMessageClass] = useState('');
   const [isVisible, setIsVisible] = useState(false);
@@ -88,12 +89,24 @@ export const Toast = () => {
       };
     }
     return;
-  }, [toastMessage, toastTimeout]);
+  }, [toastMessage, toastProgress, toastTimeout]);
 
   const handleShowToast = async (event: CustomEvent) => {
-    const { message, type = 'info', timeout, className = '', callback = null } = event.detail;
+    const {
+      message,
+      type = 'info',
+      progress,
+      timeout,
+      className = '',
+      callback = null,
+    } = event.detail;
     setToastMessage(message);
     setToastType(type);
+    setToastProgress(
+      typeof progress === 'number' && Number.isFinite(progress)
+        ? Math.min(1, Math.max(0, progress))
+        : null,
+    );
     if (timeout) setToastTimeout(timeout);
     if (callback && typeof callback === 'function') {
       setTimeout(() => callback(), timeout || 5000);
@@ -143,24 +156,34 @@ export const Toast = () => {
           {/* Icon */}
           <div className='shrink-0'>{iconMap[toastType]}</div>
 
-          {/* Message */}
-          <span
+          {/* Message and optional progress */}
+          <div
             className={clsx(
-              'max-h-[50vh] flex-1 overflow-y-auto',
-              'font-sans text-base font-medium leading-snug sm:text-sm',
+              'min-w-0 flex-1',
               toastType === 'info'
                 ? 'max-w-[60vw] truncate sm:max-w-[80vw]'
                 : 'min-w-[60vw] max-w-[80vw] whitespace-normal break-words sm:min-w-40 sm:max-w-80',
               messageClass,
             )}
           >
-            {toastMessage.split('\n').map((line, idx) => (
-              <React.Fragment key={idx}>
-                {line || <>&nbsp;</>}
-                {idx < toastMessage.split('\n').length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </span>
+            <span className='block max-h-[50vh] overflow-y-auto font-sans text-base font-medium leading-snug sm:text-sm'>
+              {toastMessage.split('\n').map((line, idx) => (
+                <React.Fragment key={idx}>
+                  {line || <>&nbsp;</>}
+                  {idx < toastMessage.split('\n').length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </span>
+            {toastProgress !== null && (
+              <progress
+                aria-label='Progress'
+                aria-valuetext={`${Math.round(toastProgress * 100)}%`}
+                className='progress progress-primary mt-2 block h-1.5 w-full'
+                max={1}
+                value={toastProgress}
+              />
+            )}
+          </div>
 
           {/* Close button */}
           <button

@@ -18,8 +18,21 @@ export interface MangaTranslationSessionEngine {
   terminate: () => Promise<void>;
 }
 
+interface MangaTranslationEngineProgress {
+  status: string;
+  progress: number;
+}
+
+export interface MangaTranslationSessionProgress extends MangaTranslationEngineProgress {
+  completed: number;
+  total: number;
+}
+
 interface MangaTranslationSessionOptions {
-  createEngine: () => MangaTranslationSessionEngine;
+  createEngine: (
+    onProgress: (progress: MangaTranslationEngineProgress) => void,
+  ) => MangaTranslationSessionEngine;
+  onProgress?: (progress: MangaTranslationSessionProgress) => void;
   onError?: (error: unknown, pageIndex: number) => void;
   onPageTranslated?: (page: TranslatedMangaPage) => void;
 }
@@ -84,7 +97,8 @@ const getPageImage = (doc: Document): MangaPageImage | null => {
 };
 
 export class MangaTranslationSession {
-  readonly #createEngine: () => MangaTranslationSessionEngine;
+  readonly #createEngine: MangaTranslationSessionOptions['createEngine'];
+  readonly #onProgress?: (progress: MangaTranslationSessionProgress) => void;
   readonly #onError?: (error: unknown, pageIndex: number) => void;
   readonly #onPageTranslated?: (page: TranslatedMangaPage) => void;
   readonly #pages = new Map<number, CachedMangaPage>();
@@ -95,12 +109,20 @@ export class MangaTranslationSession {
   #queue: MangaQueueTask[] = [];
   #runningTask: MangaQueueTask | null = null;
   #drainingQueue = false;
+  #batchCompleted = 0;
+  #batchTotal = 0;
   #generation = 0;
   #enabled = false;
   #terminated = false;
 
-  constructor({ createEngine, onError, onPageTranslated }: MangaTranslationSessionOptions) {
+  constructor({
+    createEngine,
+    onProgress,
+    onError,
+    onPageTranslated,
+  }: MangaTranslationSessionOptions) {
     this.#createEngine = createEngine;
+    this.#onProgress = onProgress;
     this.#onError = onError;
     this.#onPageTranslated = onPageTranslated;
   }
@@ -245,6 +267,11 @@ export class MangaTranslationSession {
     };
     const pendingPage = { document, image, promise: translation, task };
     this.#pending.set(pageIndex, pendingPage);
+    if (!this.#runningTask && this.#queue.length === 0) {
+      this.#batchCompleted = 0;
+      this.#batchTotal = 0;
+    }
+    this.#batchTotal += 1;
     if (priority) this.#queue.unshift(task);
     else this.#queue.push(task);
     void this.#drainQueue();
@@ -275,6 +302,15 @@ export class MangaTranslationSession {
         } catch (error) {
           task.reject(error);
         } finally {
+          if (this.#enabled) {
+            this.#batchCompleted = Math.min(this.#batchTotal, this.#batchCompleted + 1);
+            this.#onProgress?.({
+              status: 'completed manga page',
+              progress: 0,
+              completed: this.#batchCompleted,
+              total: this.#batchTotal,
+            });
+          }
           this.#runningTask = null;
         }
       }
@@ -290,7 +326,14 @@ export class MangaTranslationSession {
   }
 
   #getEngine(): MangaTranslationSessionEngine {
-    this.#engine ??= this.#createEngine();
+    this.#engine ??= this.#createEngine((progress) => {
+      if (!this.#enabled) return;
+      this.#onProgress?.({
+        ...progress,
+        completed: this.#batchCompleted,
+        total: Math.max(1, this.#batchTotal),
+      });
+    });
     return this.#engine;
   }
 

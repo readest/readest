@@ -8,7 +8,13 @@ const mocks = vi.hoisted(() => ({
     terminate: vi.fn(async () => undefined),
   },
   sessionOptions: [] as Array<{
-    createEngine: () => unknown;
+    createEngine: (onProgress: (progress: { status: string; progress: number }) => void) => unknown;
+    onProgress?: (progress: {
+      status: string;
+      progress: number;
+      completed: number;
+      total: number;
+    }) => void;
     onError?: (error: unknown, pageIndex: number) => void;
     onPageTranslated?: (page: unknown) => void;
   }>,
@@ -60,11 +66,16 @@ describe('useMangaTranslationSession', () => {
     rerender({ enabled: true });
     expect(mocks.session.setEnabled).toHaveBeenLastCalledWith(true);
 
-    expect(mocks.sessionOptions[0]!.createEngine()).toBe(mocks.engine);
-    const progress = { status: 'translating speech bubbles', progress: 0.5 };
-    (mocks.engineOptions[0] as { onProgress: (value: typeof progress) => void }).onProgress(
-      progress,
-    );
+    const reportEngineProgress = vi.fn();
+    expect(mocks.sessionOptions[0]!.createEngine(reportEngineProgress)).toBe(mocks.engine);
+    expect(mocks.engineOptions[0]).toEqual({ onProgress: reportEngineProgress });
+    const progress = {
+      status: 'translating speech bubbles',
+      progress: 0.5,
+      completed: 1,
+      total: 2,
+    };
+    mocks.sessionOptions[0]!.onProgress?.(progress);
     expect(onProgress).toHaveBeenCalledWith(progress);
 
     const error = new Error('failed');

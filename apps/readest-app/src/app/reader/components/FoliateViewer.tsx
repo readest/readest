@@ -216,19 +216,33 @@ const FoliateViewer: React.FC<{
   const processMangaTranslationDocument = useMangaTranslationSession({
     enabled: bookFormat === 'CBZ' && mangaTranslationEnabled,
     getDocuments: getOnDeviceTextDocuments,
-    onProgress: ({ status, progress }) => {
-      const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
-      const phase = status === 'translating speech bubbles' ? 'translating' : 'preparing';
-      const progressKey = `${phase}-${Math.floor(percentage / 25)}`;
+    onProgress: ({ status, progress, completed, total }) => {
+      const stageProgress = Math.min(1, Math.max(0, progress));
+      const [start, end, message]: readonly [number, number, string] =
+        status === 'loading manga detector'
+          ? [0, 0.15, _('Manga translation: loading detector')]
+          : status === 'detecting speech bubbles'
+            ? [0, 0.3, _('Manga translation: finding text')]
+            : status === 'loading manga OCR model'
+              ? [0.3, 0.45, _('Manga translation: loading OCR')]
+              : status === 'recognizing speech bubbles'
+                ? [0.45, 0.65, _('Manga translation: reading Japanese')]
+                : status === 'loading translation model'
+                  ? [0.65, 0.85, _('Manga translation: loading translator')]
+                  : [0.65, 1, _('Manga translation: translating')];
+      const pageProgress = start + (end - start) * stageProgress;
+      const overallProgress =
+        status === 'completed manga page'
+          ? completed / Math.max(1, total)
+          : (completed + pageProgress) / Math.max(1, total);
+      const progressKey = `${status}-${Math.floor(overallProgress * 20)}`;
       if (mangaTranslationProgressKeyRef.current === progressKey) return;
       mangaTranslationProgressKeyRef.current = progressKey;
       eventDispatcher.dispatch('toast', {
         type: 'info',
-        message:
-          phase === 'translating'
-            ? _('Translating manga: {{progress}}%', { progress: percentage })
-            : _('Preparing manga translation: {{progress}}%', { progress: percentage }),
-        timeout: 5000,
+        message,
+        progress: overallProgress,
+        timeout: overallProgress >= 1 ? 3000 : 30000,
       });
     },
     onError: (error, pageIndex) => {
@@ -241,19 +255,6 @@ const FoliateViewer: React.FC<{
             ? _('Manga translation failed on page {{page}}', { page: pageIndex + 1 })
             : _('Manga translation failed'),
         timeout: 5000,
-      });
-    },
-    onPageTranslated: ({ pageIndex, regions }) => {
-      mangaTranslationProgressKeyRef.current = '';
-      eventDispatcher.dispatch('toast', {
-        type: regions.length ? 'success' : 'info',
-        message: regions.length
-          ? _('Translated {{count}} speech bubbles on page {{page}}', {
-              count: regions.length,
-              page: pageIndex + 1,
-            })
-          : _('No Japanese speech bubbles found on page {{page}}', { page: pageIndex + 1 }),
-        timeout: 3000,
       });
     },
   });

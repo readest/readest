@@ -4,17 +4,15 @@ import {
   MangaTranslationEngine,
   type TranslatedMangaPage,
 } from '@/app/reader/services/manga/mangaTranslationEngine';
-import { MangaTranslationSession } from '@/app/reader/services/manga/mangaTranslationSession';
-
-interface MangaTranslationProgress {
-  status: string;
-  progress: number;
-}
+import {
+  MangaTranslationSession,
+  type MangaTranslationSessionProgress,
+} from '@/app/reader/services/manga/mangaTranslationSession';
 
 interface UseMangaTranslationSessionOptions {
   enabled: boolean;
   getDocuments?: () => readonly { doc?: Document; index?: number }[];
-  onProgress?: (progress: MangaTranslationProgress) => void;
+  onProgress?: (progress: MangaTranslationSessionProgress) => void;
   onError?: (error: unknown, pageIndex: number) => void;
   onPageTranslated?: (page: TranslatedMangaPage) => void;
 }
@@ -80,14 +78,15 @@ export const useMangaTranslationSession = ({
   useEffect(() => {
     let session!: MangaTranslationSession;
     session = new MangaTranslationSession({
-      createEngine: () =>
+      createEngine: (onProgress) =>
         new MangaTranslationEngine({
-          onProgress: (progress) => {
-            if (sessionRef.current === session && enabledRef.current) {
-              onProgressRef.current?.(progress);
-            }
-          },
+          onProgress,
         }),
+      onProgress: (progress) => {
+        if (sessionRef.current === session && enabledRef.current) {
+          onProgressRef.current?.(progress);
+        }
+      },
       onError: (error, pageIndex) => {
         if (sessionRef.current === session && enabledRef.current) {
           onErrorRef.current?.(error, pageIndex);

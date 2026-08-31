@@ -86,8 +86,16 @@ describe('Toast layout', () => {
   });
 
   it('keeps the same anchor when progress becomes success', async () => {
-    const toast = await showToast({ type: 'info', message: 'Translating manga: 75%' });
+    const toast = await showToast({
+      type: 'info',
+      message: 'Manga translation: reading Japanese',
+      progress: 0.75,
+    });
     const progressBox = toast.getBoundingClientRect();
+
+    const progress = screen.getByRole('progressbar');
+    expect(progress.getAttribute('value')).toBe('0.75');
+    expect(progress.getAttribute('aria-valuetext')).toBe('75%');
 
     await act(async () => {
       await eventDispatcher.dispatch('toast', {
