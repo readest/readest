@@ -9,6 +9,8 @@ interface RpcMessage {
   args: unknown[];
 }
 
+type TranslationResponder = (texts: readonly string[], callIndex: number) => unknown;
+
 class FakeWorker {
   readonly messages: Array<{ message: RpcMessage; transfer: readonly Transferable[] }> = [];
   readonly terminate = vi.fn();
@@ -17,8 +19,12 @@ class FakeWorker {
     error: new Set<(event: ErrorEvent) => void>(),
   };
   #failed = false;
+  #translationCallIndex = 0;
 
-  constructor(private readonly autoRespond = true) {}
+  constructor(
+    private readonly autoRespond = true,
+    private readonly translationResponder?: TranslationResponder,
+  ) {}
 
   addEventListener(
     type: 'message' | 'error',
@@ -33,12 +39,15 @@ class FakeWorker {
     this.messages.push({ message: rpcMessage, transfer });
     if (!this.autoRespond) return;
     queueMicrotask(() => {
-      const result =
-        rpcMessage.name === 'translate'
-          ? (rpcMessage.args[0] as { texts: Array<{ text: string }> }).texts.map(({ text }) => ({
-              target: { text: `EN:${text}` },
-            }))
-          : undefined;
+      let result: unknown;
+      if (rpcMessage.name === 'translate') {
+        const texts = (rpcMessage.args[0] as { texts: Array<{ text: string }> }).texts.map(
+          ({ text }) => text,
+        );
+        result = this.translationResponder
+          ? this.translationResponder(texts, this.#translationCallIndex++)
+          : texts.map((text) => ({ target: { text: `EN:${text}` } }));
+      }
       this.emitMessage({ id: rpcMessage.id, result });
     });
   }
@@ -149,6 +158,57 @@ describe('BergamotJapaneseTranslator', () => {
       .filter(({ message }) => message.name === 'translate')
       .map(({ message }) => (message.args[0] as { texts: unknown[] }).texts.length);
     expect(batches).toEqual([10, 1]);
+  });
+
+  it('retries empty batch entries individually without shifting later translations', async () => {
+    const worker = new FakeWorker(true, (texts, callIndex) => {
+      if (callIndex === 0) {
+        return [
+          { target: { text: 'First' } },
+          { target: { text: '   ' } },
+          { target: { text: 'Third' } },
+        ];
+      }
+      expect(texts).toEqual(['二']);
+      return [{ target: { text: 'Second' } }];
+    });
+    const translator = new BergamotJapaneseTranslator(
+      {},
+      {
+        createWorker: () => worker,
+        loadAsset: async () => new ArrayBuffer(1),
+      },
+    );
+
+    await expect(translator.translate(['一', '二', '三'])).resolves.toEqual([
+      'First',
+      'Second',
+      'Third',
+    ]);
+  });
+
+  it('retries an incomplete batch individually and keeps unresolved entries empty', async () => {
+    const worker = new FakeWorker(true, (texts, callIndex) => {
+      if (callIndex === 0) return [{ target: { text: 'Unsafe positional result' } }];
+      const text = texts[0];
+      if (text === '二') return [{ target: {} }];
+      return [{ target: { text: `EN:${text}` } }];
+    });
+    const translator = new BergamotJapaneseTranslator(
+      {},
+      {
+        createWorker: () => worker,
+        loadAsset: async () => new ArrayBuffer(1),
+      },
+    );
+
+    await expect(translator.translate(['一', '二', '三'])).resolves.toEqual(['EN:一', '', 'EN:三']);
+    const requests = worker.messages
+      .filter(({ message }) => message.name === 'translate')
+      .map(({ message }) =>
+        (message.args[0] as { texts: Array<{ text: string }> }).texts.map(({ text }) => text),
+      );
+    expect(requests).toEqual([['一', '二', '三'], ['一'], ['二'], ['三']]);
   });
 
   it('rejects an oversized text before loading the runtime', async () => {

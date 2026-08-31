@@ -133,20 +133,18 @@ export class BergamotJapaneseTranslator {
     await this.#ensureModel();
     const translated: string[] = [];
     for (const textsInBatch of batches) {
-      const responses = await this.#call<TranslationResponse[]>('translate', [
-        {
-          models: [{ from: 'ja', to: 'en' }],
-          texts: textsInBatch.map((text) => ({ text, html: false, qualityScores: false })),
-        },
-      ]);
+      const responses = await this.#requestTranslations(textsInBatch);
       if (!Array.isArray(responses) || responses.length !== textsInBatch.length) {
-        throw new Error('Local translator returned an incomplete batch');
+        translated.push(...(await this.#retryTranslationsIndividually(textsInBatch)));
+        continue;
       }
-      for (const response of responses) {
-        const text = response?.target?.text;
-        if (typeof text !== 'string') throw new Error('Local translator returned invalid text');
-        translated.push(text);
+
+      const batchTranslations = responses.map((response) => this.#readTranslation(response));
+      for (const [index, sourceText] of textsInBatch.entries()) {
+        if (batchTranslations[index]?.trim()) continue;
+        batchTranslations[index] = await this.#retryTranslation(sourceText);
       }
+      translated.push(...batchTranslations);
     }
     return translated;
   }
@@ -254,6 +252,33 @@ export class BergamotJapaneseTranslator {
       }
     });
     return workerPromise;
+  }
+
+  #requestTranslations(texts: readonly string[]): Promise<TranslationResponse[]> {
+    return this.#call<TranslationResponse[]>('translate', [
+      {
+        models: [{ from: 'ja', to: 'en' }],
+        texts: texts.map((text) => ({ text, html: false, qualityScores: false })),
+      },
+    ]);
+  }
+
+  async #retryTranslationsIndividually(texts: readonly string[]): Promise<string[]> {
+    const translations: string[] = [];
+    for (const text of texts) translations.push(await this.#retryTranslation(text));
+    return translations;
+  }
+
+  async #retryTranslation(sourceText: string): Promise<string> {
+    if (!sourceText.trim()) return '';
+    const responses = await this.#requestTranslations([sourceText]);
+    if (!Array.isArray(responses) || responses.length !== 1) return '';
+    const translation = this.#readTranslation(responses[0]);
+    return translation.trim() ? translation : '';
+  }
+
+  #readTranslation(response: TranslationResponse | undefined): string {
+    return typeof response?.target?.text === 'string' ? response.target.text : '';
   }
 
   #call<T = unknown>(

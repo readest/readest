@@ -73,8 +73,9 @@ describe('MangaTranslationEngine', () => {
     const createOcrEngine = vi.fn<MangaOcrEngineFactory>(() => ocrEngine);
     const createTranslator = vi.fn<JapaneseTextTranslatorFactory>(() => translator);
     const progress = vi.fn();
+    const diagnostics = vi.fn();
     const engine = new MangaTranslationEngine(
-      { onProgress: progress },
+      { onProgress: progress, onDiagnostics: diagnostics },
       { createOcrEngine, createTranslator },
     );
 
@@ -109,6 +110,15 @@ describe('MangaTranslationEngine', () => {
       status: 'translating speech bubbles',
       progress: 1,
     });
+    expect(diagnostics).toHaveBeenCalledOnce();
+    expect(diagnostics).toHaveBeenCalledWith({
+      pageIndex: 7,
+      ocrBlocks: 4,
+      japaneseCandidates: 1,
+      nonEmptyTranslations: 1,
+      normalizedEnglish: 1,
+      finalRegions: 1,
+    });
 
     await engine.terminate();
     expect(ocrEngine.terminate).toHaveBeenCalledOnce();
@@ -121,8 +131,9 @@ describe('MangaTranslationEngine', () => {
       terminate: vi.fn(async () => undefined),
     };
     const createTranslator = vi.fn<JapaneseTextTranslatorFactory>();
+    const diagnostics = vi.fn();
     const engine = new MangaTranslationEngine(
-      {},
+      { onDiagnostics: diagnostics },
       { createOcrEngine: () => ocrEngine, createTranslator },
     );
 
@@ -130,6 +141,54 @@ describe('MangaTranslationEngine', () => {
       engine.translate('blob:page', { pageIndex: 0, width: 1200, height: 1800 }),
     ).resolves.toEqual({ pageIndex: 7, width: 1200, height: 1800, regions: [] });
     expect(createTranslator).not.toHaveBeenCalled();
+    expect(diagnostics).toHaveBeenCalledWith({
+      pageIndex: 7,
+      ocrBlocks: 0,
+      japaneseCandidates: 0,
+      nonEmptyTranslations: 0,
+      normalizedEnglish: 0,
+      finalRegions: 0,
+    });
+  });
+
+  it('reports each post-OCR loss stage while rejecting pathological English', async () => {
+    const sourceBlock = makeOcrPage().blocks[0]!;
+    const ocrEngine = {
+      recognize: vi.fn(async () => ({
+        ...makeOcrPage(),
+        blocks: [
+          sourceBlock,
+          { ...sourceBlock, id: 'bubble-1', text: '孫悟空' },
+          { ...sourceBlock, id: 'bubble-2', text: '行くぞ' },
+        ],
+      })),
+      terminate: vi.fn(async () => undefined),
+    };
+    const translator = {
+      translate: vi.fn(async () => ['It happened!', '', 'No, no, no, no, no, no, no']),
+      terminate: vi.fn(async () => undefined),
+    };
+    const diagnostics = vi.fn();
+    const engine = new MangaTranslationEngine(
+      { onDiagnostics: diagnostics },
+      { createOcrEngine: () => ocrEngine, createTranslator: () => translator },
+    );
+
+    const page = await engine.translate('blob:page', {
+      pageIndex: 7,
+      width: 1200,
+      height: 1800,
+    });
+
+    expect(page.regions.map(({ id }) => id)).toEqual(['bubble-0']);
+    expect(diagnostics).toHaveBeenCalledWith({
+      pageIndex: 7,
+      ocrBlocks: 3,
+      japaneseCandidates: 3,
+      nonEmptyTranslations: 2,
+      normalizedEnglish: 1,
+      finalRegions: 1,
+    });
   });
 
   it('sends short expressions to the model instead of mapping their content in code', async () => {

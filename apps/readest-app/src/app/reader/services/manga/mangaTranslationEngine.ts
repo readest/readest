@@ -31,6 +31,15 @@ export interface TranslatedMangaPage {
   regions: readonly TranslatedMangaRegion[];
 }
 
+export interface MangaTranslationDiagnostics {
+  pageIndex: number;
+  ocrBlocks: number;
+  japaneseCandidates: number;
+  nonEmptyTranslations: number;
+  normalizedEnglish: number;
+  finalRegions: number;
+}
+
 export interface MangaOcrEngine {
   recognize: (source: MangaPageSource, page: MangaPageIdentity) => Promise<OcrPage>;
   terminate: () => Promise<void>;
@@ -51,8 +60,9 @@ export type JapaneseTextTranslatorFactory = (
 
 const MINIMUM_MANGA_OCR_CONFIDENCE = 35;
 
-interface MangaTranslationEngineOptions {
+export interface MangaTranslationEngineOptions {
   onProgress?: (progress: { status: string; progress: number }) => void;
+  onDiagnostics?: (diagnostics: MangaTranslationDiagnostics) => void;
 }
 
 interface MangaTranslationEngineDependencies {
@@ -140,6 +150,7 @@ const isTranslatableBlock = (
 
 export class MangaTranslationEngine {
   readonly #onProgress?: (progress: { status: string; progress: number }) => void;
+  readonly #onDiagnostics?: (diagnostics: MangaTranslationDiagnostics) => void;
   readonly #createOcrEngine: MangaOcrEngineFactory;
   readonly #createTranslator: JapaneseTextTranslatorFactory;
   #ocrEngine: MangaOcrEngine | null = null;
@@ -151,6 +162,7 @@ export class MangaTranslationEngine {
     dependencies: Partial<MangaTranslationEngineDependencies> = {},
   ) {
     this.#onProgress = options.onProgress;
+    this.#onDiagnostics = options.onDiagnostics;
     this.#createOcrEngine = dependencies.createOcrEngine ?? createOcrEngine;
     this.#createTranslator = dependencies.createTranslator ?? createTranslator;
   }
@@ -164,6 +176,7 @@ export class MangaTranslationEngine {
       .filter(isTranslatableBlock)
       .map((block) => ({ block, sourceText: normalizeJapaneseOcrText(block.text) }));
     if (!candidates.length) {
+      this.#reportDiagnostics(recognized.pageIndex, recognized.blocks.length, 0, [], []);
       return {
         pageIndex: recognized.pageIndex,
         width: recognized.width,
@@ -178,9 +191,12 @@ export class MangaTranslationEngine {
     );
     if (this.#terminated) throw new Error('Manga translation engine has been terminated');
 
+    const normalizedTranslations = candidates.map((_, index) =>
+      normalizeEnglishTranslation(translations[index] ?? ''),
+    );
     const regions: TranslatedMangaRegion[] = [];
     for (const [index, { block, sourceText }] of candidates.entries()) {
-      const translatedText = normalizeEnglishTranslation(translations[index] ?? '');
+      const translatedText = normalizedTranslations[index] ?? '';
       if (!translatedText) continue;
       regions.push({
         id: block.id,
@@ -194,6 +210,14 @@ export class MangaTranslationEngine {
       });
     }
     this.#onProgress?.({ status: 'translating speech bubbles', progress: 1 });
+    this.#reportDiagnostics(
+      recognized.pageIndex,
+      recognized.blocks.length,
+      candidates.length,
+      translations,
+      normalizedTranslations,
+      regions.length,
+    );
     return {
       pageIndex: recognized.pageIndex,
       width: recognized.width,
@@ -222,5 +246,23 @@ export class MangaTranslationEngine {
     if (this.#terminated) throw new Error('Manga translation engine has been terminated');
     this.#translator ??= this.#createTranslator(this.#onProgress);
     return this.#translator;
+  }
+
+  #reportDiagnostics(
+    pageIndex: number,
+    ocrBlocks: number,
+    japaneseCandidates: number,
+    translations: readonly string[],
+    normalizedTranslations: readonly string[],
+    finalRegions = 0,
+  ): void {
+    this.#onDiagnostics?.({
+      pageIndex,
+      ocrBlocks,
+      japaneseCandidates,
+      nonEmptyTranslations: translations.filter((translation) => translation.trim()).length,
+      normalizedEnglish: normalizedTranslations.filter(Boolean).length,
+      finalRegions,
+    });
   }
 }
