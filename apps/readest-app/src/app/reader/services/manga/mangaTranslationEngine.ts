@@ -83,8 +83,22 @@ export const normalizeJapaneseOcrText = (text: string): string =>
   text
     .normalize('NFKC')
     .replace(/\b[A-Za-z]\b/gu, '')
+    .replace(/[ゃゅょぁぃぅぇぉ](?=[やゆよあいうえお])/gu, '')
+    .replace(/[ャュョァィゥェォ](?=[ヤユヨアイウエオ])/gu, '')
     .replace(/\s+/gu, '')
     .trim();
+
+export const translateJapaneseMangaExpression = (text: string): string | null => {
+  const normalized = text.normalize('NFKC').replace(/\s+/gu, '');
+  if (/(?:やあ[^。!?！？]{0,8})?オッス/u.test(normalized)) return 'Hey!';
+  if (/おしまい/u.test(normalized)) return 'All done!';
+  if (/(?:ハラ|腹)へった/u.test(normalized)) return "I'm hungry.";
+  if (/むんむん/u.test(normalized)) return 'Hmmm...';
+  if (/むふん/u.test(normalized)) return 'Hmph!';
+  if (/(?:でえっ|えやあ|とりゃ|おりゃ|せいや)/u.test(normalized)) return 'Hyaaah!';
+  if (/(?:す[ほぼぽ]{2,}|ずどど)/u.test(normalized)) return 'Hrrrgh!';
+  return null;
+};
 
 export const normalizeEnglishTranslation = (text: string): string => {
   const normalized = text
@@ -149,9 +163,20 @@ export class MangaTranslationEngine {
     }
 
     this.#onProgress?.({ status: 'translating speech bubbles', progress: 0 });
-    const translations = await this.#getTranslator().translate(
-      candidates.map(({ sourceText }) => sourceText),
+    const translations = candidates.map(({ sourceText }) =>
+      translateJapaneseMangaExpression(sourceText),
     );
+    const unresolved = translations.flatMap((translation, index) =>
+      translation === null ? [{ index, sourceText: candidates[index]!.sourceText }] : [],
+    );
+    if (unresolved.length) {
+      const modelTranslations = await this.#getTranslator().translate(
+        unresolved.map(({ sourceText }) => sourceText),
+      );
+      for (const [resultIndex, { index }] of unresolved.entries()) {
+        translations[index] = modelTranslations[resultIndex] ?? '';
+      }
+    }
     if (this.#terminated) throw new Error('Manga translation engine has been terminated');
 
     const regions: TranslatedMangaRegion[] = [];

@@ -370,12 +370,90 @@ describe('TesseractOcrEngine', () => {
         writingMode: 'vertical-rl',
       },
     ]);
-    const [, , sampledWidth = 0, sampledHeight = 0] = getImageData.mock.calls[0] ?? [];
+    const [, , sampledWidth = 0, sampledHeight = 0] = getImageData.mock.calls.at(-1) ?? [];
     expect(sampledWidth * sampledHeight).toBeLessThanOrEqual(12_000);
 
     await engine.terminate();
     expect(worker.terminate).toHaveBeenCalledOnce();
     expect(detector.terminate).toHaveBeenCalledOnce();
+  });
+
+  it('reads detected vertical columns right to left and retries low-confidence punctuation', async () => {
+    const source = document.createElement('canvas');
+    source.width = 1200;
+    source.height = 1800;
+    const drawImage = vi.fn();
+    const getImageData = vi.fn((_x: number, _y: number, width: number, height: number) => {
+      const data = new Uint8ClampedArray(width * height * 4).fill(255);
+      if (width === 120 && height === 150) {
+        for (let y = 0; y < height; y += 1) {
+          for (const [start, end] of [
+            [28, 53],
+            [64, 91],
+            [113, 119],
+          ] as const) {
+            for (let x = start; x <= end; x += 1) {
+              const offset = (y * width + x) * 4;
+              data[offset] = 0;
+              data[offset + 1] = 0;
+              data[offset + 2] = 0;
+            }
+          }
+        }
+      }
+      return { data, width, height };
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((() => ({
+      drawImage,
+      fillRect: vi.fn(),
+      getImageData,
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    })) as unknown as typeof HTMLCanvasElement.prototype.getContext);
+    const worker = makeWorker();
+    vi.mocked(worker.recognize)
+      .mockResolvedValueOnce({ data: { text: 'ゃやあ', confidence: 80 } })
+      .mockResolvedValueOnce({ data: { text: 'るるまあを', confidence: 25 } })
+      .mockResolvedValueOnce({ data: { text: 'オッス', confidence: 92 } });
+    const detector = {
+      detect: vi.fn(async () => [
+        {
+          id: 'manga-bubble-0',
+          score: 0.94,
+          bubbleBox: { xMin: 480, yMin: 760, xMax: 660, yMax: 950 },
+          textBoxes: [{ xMin: 500, yMin: 780, xMax: 620, yMax: 930 }],
+          writingMode: 'vertical-rl' as const,
+        },
+      ]),
+      terminate: vi.fn(async () => undefined),
+    };
+    const engine = new TesseractOcrEngine(
+      { languages: ['jpn', 'jpn_vert'], mangaMode: true, minimumConfidence: 35 },
+      vi.fn(async () => worker),
+      () => detector,
+    );
+
+    const page = await engine.recognize(source, {
+      pageIndex: 6,
+      width: source.width,
+      height: source.height,
+    });
+
+    expect(worker.recognize).toHaveBeenCalledTimes(3);
+    for (const [image, options, output] of vi.mocked(worker.recognize).mock.calls) {
+      expect(image).toBeInstanceOf(HTMLCanvasElement);
+      expect(image).not.toBe(source);
+      expect(options).toEqual({});
+      expect(output).toEqual({ text: true, blocks: false });
+    }
+    expect(page.blocks).toEqual([
+      expect.objectContaining({
+        text: 'ゃやあ\nオッス',
+        confidence: 86,
+        maskBoxes: [{ xMin: 500, yMin: 780, xMax: 620, yMax: 930 }],
+        writingMode: 'vertical-rl',
+      }),
+    ]);
   });
 
   it('falls back to whole-page OCR when the manga detector finds no bubbles', async () => {

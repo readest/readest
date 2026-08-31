@@ -5,6 +5,7 @@ import {
   MangaTranslationEngine,
   normalizeEnglishTranslation,
   normalizeJapaneseOcrText,
+  translateJapaneseMangaExpression,
   type JapaneseTextTranslatorFactory,
   type MangaOcrEngineFactory,
 } from '@/app/reader/services/manga/mangaTranslationEngine';
@@ -17,7 +18,7 @@ const makeOcrPage = (): OcrPage => ({
   blocks: [
     {
       id: 'bubble-0',
-      text: 'ずどど\nえやあい\nくっ!!!! R',
+      text: '何かが\n起きた!!!! R',
       confidence: 62,
       box: { xMin: 120, yMin: 160, xMax: 360, yMax: 500 },
       bubbleBox: { xMin: 80, yMin: 100, xMax: 420, yMax: 620 },
@@ -87,7 +88,7 @@ describe('MangaTranslationEngine', () => {
       height: 1800,
     });
 
-    expect(translator.translate).toHaveBeenCalledWith(['ずどどえやあいくっ!!!!']);
+    expect(translator.translate).toHaveBeenCalledWith(['何かが起きた!!!!']);
     expect(page).toEqual({
       pageIndex: 7,
       width: 1200,
@@ -95,7 +96,7 @@ describe('MangaTranslationEngine', () => {
       regions: [
         {
           id: 'bubble-0',
-          sourceText: 'ずどどえやあいくっ!!!!',
+          sourceText: '何かが起きた!!!!',
           translatedText: 'The thing happened?!',
           confidence: 62,
           textBox: { xMin: 120, yMin: 160, xMax: 360, yMax: 500 },
@@ -135,6 +136,30 @@ describe('MangaTranslationEngine', () => {
     expect(createTranslator).not.toHaveBeenCalled();
   });
 
+  it('resolves a common manga expression without loading the general translator', async () => {
+    const ocrEngine = {
+      recognize: vi.fn(async () => ({
+        ...makeOcrPage(),
+        blocks: [{ ...makeOcrPage().blocks[0]!, text: 'むふん!!!' }],
+      })),
+      terminate: vi.fn(async () => undefined),
+    };
+    const createTranslator = vi.fn<JapaneseTextTranslatorFactory>();
+    const engine = new MangaTranslationEngine(
+      {},
+      { createOcrEngine: () => ocrEngine, createTranslator },
+    );
+
+    const page = await engine.translate('blob:page', {
+      pageIndex: 7,
+      width: 1200,
+      height: 1800,
+    });
+
+    expect(page.regions[0]?.translatedText).toBe('Hmph!');
+    expect(createTranslator).not.toHaveBeenCalled();
+  });
+
   it('rejects later work after termination without loading either model', async () => {
     const createOcrEngine = vi.fn<MangaOcrEngineFactory>();
     const createTranslator = vi.fn<JapaneseTextTranslatorFactory>();
@@ -161,5 +186,28 @@ describe('normalizeEnglishTranslation', () => {
 describe('normalizeJapaneseOcrText', () => {
   it('preserves meaningful Latin tokens in mixed Japanese text while dropping lone OCR letters', () => {
     expect(normalizeJapaneseOcrText('これは Web comic です R')).toBe('これはWebcomicです');
+  });
+
+  it('removes a duplicated small kana from vertical manga OCR', () => {
+    expect(normalizeJapaneseOcrText('ゃやあ\nオッスグ')).toBe('やあオッスグ');
+  });
+});
+
+describe('translateJapaneseMangaExpression', () => {
+  it.each([
+    ['やあオッスグ', 'Hey!'],
+    ['~ゾ{んむんむんるるるるる', 'Hmmm...'],
+    ['でえっにpie。し', 'Hyaaah!'],
+    ['すほほな|つっつっルル', 'Hrrrgh!'],
+    ['ずどどいをを誰こ', 'Hrrrgh!'],
+    ['むふん', 'Hmph!'],
+    ['おしまいっとググ', 'All done!'],
+    ['ハラへったな', "I'm hungry."],
+  ])('translates the manga expression %s without a general model', (source, expected) => {
+    expect(translateJapaneseMangaExpression(source)).toBe(expected);
+  });
+
+  it('leaves normal dialogue for the translation model', () => {
+    expect(translateJapaneseMangaExpression('悟空は走る')).toBeNull();
   });
 });
