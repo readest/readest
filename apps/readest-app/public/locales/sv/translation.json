@@ -306,7 +306,6 @@
   "Upgrade to {{plan}}": "Uppgradera till {{plan}}",
   "Complete Your Subscription": "Slutför din prenumeration",
   "Coming Soon": "Kommer snart",
-  "Upgrade to Plus or Pro": "Uppgradera till Plus eller Pro",
   "Current Plan": "Nuvarande plan",
   "Plan Limits": "Plangränser",
   "Failed to delete user. Please try again later.": "Kunde inte ta bort användare. Försök senare.",
@@ -447,7 +446,6 @@
   "Tips": "Tips",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Format som stöds: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Anpassade typsnitt kan väljas från typsnittsmeny",
-  "Global Settings": "Globala inställningar",
   "Apply to All Books": "Tillämpa på alla böcker",
   "Apply to This Book": "Tillämpa på denna bok",
   "Reset Settings": "Återställ inställningar",
@@ -2265,5 +2263,13 @@
   "With notes": "Med anteckningar",
   "{{count}} Annotations_one": "{{count}} anteckning",
   "{{count}} Annotations_other": "{{count}} anteckningar",
-  "Insert into Notebook": "Infoga i anteckningsboken"
+  "Insert into Notebook": "Infoga i anteckningsboken",
+  "Billing interval": "Faktureringsintervall",
+  "Yearly": "Årsvis",
+  "Monthly": "Månadsvis",
+  "Save {{percent}}%": "Spara {{percent}} %",
+  "Change billing period": "Ändra faktureringsperiod",
+  "forever": "för alltid",
+  "{{price}} billed yearly": "{{price}} faktureras årsvis",
+  "Popular": "Populär"
 }

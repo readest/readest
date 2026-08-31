@@ -35,7 +35,6 @@
   "Font Family": "Família da Fonte",
   "Font Size": "Tamanho da Fonte",
   "Full Justification": "Justificação Completa",
-  "Global Settings": "Configurações Globais",
   "Go Back": "Voltar",
   "Go Forward": "Avançar",
   "Grass": "Grama",
@@ -332,7 +331,6 @@
   "Manage Subscription": "Gerenciar assinatura",
   "Coming Soon": "Em breve",
   "Upgrade to {{plan}}": "Atualizar para {{plan}}",
-  "Upgrade to Plus or Pro": "Atualizar para Plus ou Pro",
   "Current Plan": "Plano atual",
   "Plan Limits": "Limites do plano",
   "Processing your payment...": "Processando seu pagamento...",
@@ -2326,5 +2324,13 @@
   "{{count}} Annotations_one": "{{count}} anotação",
   "{{count}} Annotations_many": "{{count}} anotações",
   "{{count}} Annotations_other": "{{count}} anotações",
-  "Insert into Notebook": "Inserir no caderno"
+  "Insert into Notebook": "Inserir no caderno",
+  "Billing interval": "Intervalo de faturação",
+  "Yearly": "Anual",
+  "Monthly": "Mensal",
+  "Save {{percent}}%": "Poupe {{percent}}%",
+  "Change billing period": "Alterar período de faturação",
+  "forever": "para sempre",
+  "{{price}} billed yearly": "{{price}} faturado anualmente",
+  "Popular": "Popular"
 }

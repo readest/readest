@@ -207,7 +207,6 @@
   "Tips": "ඉඟි",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "සහාය දක්වන අකුරු ආකෘති: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Font Face මෙනුවෙන් අභිරුචි අකුරු තෝරා ගත හැක",
-  "Global Settings": "ගෝලීය සැකසුම්",
   "Apply to All Books": "සියලු පොත් වලට අනුගත කරන්න",
   "Apply to This Book": "මෙම පොතට අනුගත කරන්න",
   "Reset Settings": "සැකසුම් නැවත සකස් කරන්න",
@@ -329,7 +328,6 @@
   "Upgrade to {{plan}}": "{{plan}} වෙත උසස් කරන්න",
   "Complete Your Subscription": "ඔබේ දායකත්වය සම්පූර්ණ කරන්න",
   "Coming Soon": "ඉක්මනින් පැමිණේ",
-  "Upgrade to Plus or Pro": "Plus හෝ Pro වෙත උසස් කරන්න",
   "Current Plan": "වර්තමාන සැලැස්ම",
   "Plan Limits": "සැලැස්මේ සීමා",
   "Failed to delete user. Please try again later.": "පරිශීලකයා මකා දැමීමට අසමත්. කරුණාකර පසුව නැවත උත්සාහ කරන්න.",
@@ -2265,5 +2263,13 @@
   "With notes": "සටහන් සමඟ",
   "{{count}} Annotations_one": "{{count}} අනුසටහන",
   "{{count}} Annotations_other": "{{count}} අනුසටහන්",
-  "Insert into Notebook": "සටහන් පොතට ඇතුළු කරන්න"
+  "Insert into Notebook": "සටහන් පොතට ඇතුළු කරන්න",
+  "Billing interval": "බිල්පත් කාල පරාසය",
+  "Yearly": "වාර්ෂික",
+  "Monthly": "මාසික",
+  "Save {{percent}}%": "{{percent}}% ඉතිරි කරන්න",
+  "Change billing period": "බිල්පත් කාලය වෙනස් කරන්න",
+  "forever": "සදහටම",
+  "{{price}} billed yearly": "වාර්ෂිකව {{price}} අය කෙරේ",
+  "Popular": "ජනප්‍රිය"
 }

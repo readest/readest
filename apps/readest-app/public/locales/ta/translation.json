@@ -207,7 +207,6 @@
   "Tips": "குறிப்புகள்",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "ஆதரிக்கப்படும் எழுத்துரு வடிவங்கள்: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Font Face மெனுவிலிருந்து தனிப்பயன் எழுத்துருக்களை தேர்வு செய்யலாம்",
-  "Global Settings": "உலகளாவிய அமைப்புகள்",
   "Apply to All Books": "அனைத்து புத்தகங்களுக்கும் பொருந்தும்",
   "Apply to This Book": "இந்த புத்தகத்திற்கு பொருந்தும்",
   "Reset Settings": "அமைப்புகளை மீட்டமைக்கவும்",
@@ -329,7 +328,6 @@
   "Upgrade to {{plan}}": "{{plan}} க்கு மேம்படுத்தவும்",
   "Complete Your Subscription": "உங்கள் சந்தாவை நிறைவு செய்யவும்",
   "Coming Soon": "விரைவில் வரும்",
-  "Upgrade to Plus or Pro": "Plus அல்லது Pro க்கு மேம்படுத்தவும்",
   "Current Plan": "தற்போதைய திட்டம்",
   "Plan Limits": "திட்ட வரம்புகள்",
   "Failed to delete user. Please try again later.": "பயனரை நீக்க முடியவில்லை. பின்னர் மீண்டும் முயற்சிக்கவும்.",
@@ -2265,5 +2263,13 @@
   "With notes": "குறிப்புகளுடன்",
   "{{count}} Annotations_one": "{{count}} சிறுகுறிப்பு",
   "{{count}} Annotations_other": "{{count}} சிறுகுறிப்புகள்",
-  "Insert into Notebook": "குறிப்பேட்டில் செருகவும்"
+  "Insert into Notebook": "குறிப்பேட்டில் செருகவும்",
+  "Billing interval": "கட்டண இடைவெளி",
+  "Yearly": "ஆண்டுதோறும்",
+  "Monthly": "மாதந்தோறும்",
+  "Save {{percent}}%": "{{percent}}% சேமிக்கவும்",
+  "Change billing period": "கட்டணக் காலத்தை மாற்று",
+  "forever": "என்றென்றும்",
+  "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்",
+  "Popular": "பிரபலமானது"
 }

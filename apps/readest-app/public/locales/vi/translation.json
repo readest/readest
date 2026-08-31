@@ -35,7 +35,6 @@
   "Font Family": "Họ phông chữ",
   "Font Size": "Cỡ chữ",
   "Full Justification": "Căn đều hai bên",
-  "Global Settings": "Cài đặt chung",
   "Go Back": "Quay lại",
   "Go Forward": "Tiến tới",
   "Grass": "Xanh cỏ",
@@ -324,7 +323,6 @@
   "Manage Subscription": "Quản lý đăng ký",
   "Coming Soon": "Sắp ra mắt",
   "Upgrade to {{plan}}": "Nâng cấp lên {{plan}}",
-  "Upgrade to Plus or Pro": "Nâng cấp lên Plus hoặc Pro",
   "Current Plan": "Gói hiện tại",
   "Plan Limits": "Giới hạn gói",
   "Processing your payment...": "Đang xử lý thanh toán...",
@@ -2204,5 +2202,13 @@
   "Notebook draft copied to clipboard": "Đã sao chép bản nháp sổ ghi chép vào bảng ghi",
   "With notes": "Có ghi chú",
   "{{count}} Annotations_other": "{{count}} chú thích",
-  "Insert into Notebook": "Chèn vào sổ ghi chép"
+  "Insert into Notebook": "Chèn vào sổ ghi chép",
+  "Billing interval": "Chu kỳ thanh toán",
+  "Yearly": "Hàng năm",
+  "Monthly": "Hàng tháng",
+  "Save {{percent}}%": "Tiết kiệm {{percent}}%",
+  "Change billing period": "Thay đổi chu kỳ thanh toán",
+  "forever": "mãi mãi",
+  "{{price}} billed yearly": "Thanh toán {{price}} mỗi năm",
+  "Popular": "Phổ biến"
 }

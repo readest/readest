@@ -35,7 +35,6 @@
   "Font Family": "ཡིག་རིགས།",
   "Font Size": "ཡིག་ཆེ་ཆུང་།",
   "Full Justification": "གཡས་གཡོན་སྙོམས་པ།",
-  "Global Settings": "ཁྱོན་ཡོངས་སྒྲིག་བཀོད།",
   "Go Back": "ཕྱིར་ལོག",
   "Go Forward": "མདུན་སྐྱོད།",
   "Grass": "རྩྭ་ལྗང་ཁུ།",
@@ -324,7 +323,6 @@
   "Manage Subscription": "མཚམས་སྦྱོར་དོ་དམ།",
   "Coming Soon": "ཉེ་བར་སྤྱོད་འགོ་འཛུགས་རྒྱུ།",
   "Upgrade to {{plan}}": "{{plan}} ལ་རིམ་སྤོར་བྱེད་པ།",
-  "Upgrade to Plus or Pro": "Plus ཡང་ན་ Pro ལ་རིམ་སྤོར་བྱེད་པ།",
   "Current Plan": "ད་ལྟའི་ཐུམ་སྒྲིལ།",
   "Plan Limits": "ཐུམ་སྒྲིལ་གྱི་ཚད་བཀག",
   "Processing your payment...": "དངུལ་སྤྲོད་པར་བརྟག་དཔྱད་བྱེད་བཞིན་པ།...",
@@ -2204,5 +2202,13 @@
   "Notebook draft copied to clipboard": "ཟིན་དེབ་ཀྱི་སྔོན་བྲིས་འདྲ་བཤུས་ལྡེ་མིག་ཏུ་བྱས་ཟིན།",
   "With notes": "ཟིན་བྲིས་ཡོད་པ།",
   "{{count}} Annotations_other": "མཆན་ {{count}}",
-  "Insert into Notebook": "ཟིན་དེབ་ནང་འཇུག་པ།"
+  "Insert into Notebook": "ཟིན་དེབ་ནང་འཇུག་པ།",
+  "Billing interval": "རྩིས་སྤྲོད་བར་མཚམས།",
+  "Yearly": "ལོ་རེའི།",
+  "Monthly": "ཟླ་རེའི།",
+  "Save {{percent}}%": "བརྒྱ་ཆ་{{percent}} གྲོན་ཆུང་།",
+  "Change billing period": "རྩིས་སྤྲོད་དུས་ཡུན་བསྒྱུར་བ།",
+  "forever": "རྟག་ཏུ།",
+  "{{price}} billed yearly": "ལོ་རེར་ {{price}} རྩིས་སྤྲོད།",
+  "Popular": "ཡོངས་གྲགས།"
 }

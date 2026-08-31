@@ -35,7 +35,6 @@
   "Font Family": "Schriftfamilie",
   "Font Size": "Schriftgröße",
   "Full Justification": "Blocksatz",
-  "Global Settings": "Globale Einstellungen",
   "Go Back": "Zurück",
   "Go Forward": "Vorwärts",
   "Grass": "Grasgrün",
@@ -327,7 +326,6 @@
   "Manage Subscription": "Abo verwalten",
   "Coming Soon": "Demnächst verfügbar",
   "Upgrade to {{plan}}": "Upgrade auf {{plan}}",
-  "Upgrade to Plus or Pro": "Upgrade auf Plus oder Pro",
   "Current Plan": "Aktueller Tarif",
   "Plan Limits": "Tariflimits",
   "Processing your payment...": "Zahlung wird verarbeitet...",
@@ -2265,5 +2263,13 @@
   "With notes": "Mit Notizen",
   "{{count}} Annotations_one": "{{count}} Anmerkung",
   "{{count}} Annotations_other": "{{count}} Anmerkungen",
-  "Insert into Notebook": "In Notizbuch einfügen"
+  "Insert into Notebook": "In Notizbuch einfügen",
+  "Billing interval": "Abrechnungsintervall",
+  "Yearly": "Jährlich",
+  "Monthly": "Monatlich",
+  "Save {{percent}}%": "{{percent}} % sparen",
+  "Change billing period": "Abrechnungszeitraum ändern",
+  "forever": "für immer",
+  "{{price}} billed yearly": "{{price}} jährlich abgerechnet",
+  "Popular": "Beliebt"
 }

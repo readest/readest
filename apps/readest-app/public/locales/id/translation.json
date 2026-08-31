@@ -35,7 +35,6 @@
   "Font Family": "Keluarga Font",
   "Font Size": "Ukuran Font",
   "Full Justification": "Rata Penuh",
-  "Global Settings": "Pengaturan Global",
   "Go Back": "Kembali",
   "Go Forward": "Maju",
   "Grass": "Rumput",
@@ -324,7 +323,6 @@
   "Manage Subscription": "Kelola Langganan",
   "Coming Soon": "Segera Hadir",
   "Upgrade to {{plan}}": "Tingkatkan ke {{plan}}",
-  "Upgrade to Plus or Pro": "Tingkatkan ke Plus atau Pro",
   "Current Plan": "Paket Saat Ini",
   "Plan Limits": "Batas Paket",
   "Processing your payment...": "Memproses pembayaran Anda...",
@@ -2204,5 +2202,13 @@
   "Notebook draft copied to clipboard": "Draf Buku Catatan disalin ke papan klip",
   "With notes": "Dengan catatan",
   "{{count}} Annotations_other": "{{count}} anotasi",
-  "Insert into Notebook": "Sisipkan ke Buku Catatan"
+  "Insert into Notebook": "Sisipkan ke Buku Catatan",
+  "Billing interval": "Interval penagihan",
+  "Yearly": "Tahunan",
+  "Monthly": "Bulanan",
+  "Save {{percent}}%": "Hemat {{percent}}%",
+  "Change billing period": "Ubah periode penagihan",
+  "forever": "selamanya",
+  "{{price}} billed yearly": "{{price}} ditagih per tahun",
+  "Popular": "Populer"
 }

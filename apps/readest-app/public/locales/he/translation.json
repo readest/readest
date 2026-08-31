@@ -600,7 +600,6 @@
   "Upgrade to {{plan}}": "שדרג ל-{{plan}}",
   "Complete Your Subscription": "השלם את המנוי שלך",
   "Coming Soon": "בקרוב",
-  "Upgrade to Plus or Pro": "שדרג ל-Plus או Pro",
   "Current Plan": "תוכנית נוכחית",
   "On-Demand Purchase": "רכישה לפי דרישה",
   "Plan Limits": "מגבלות תוכנית",
@@ -863,7 +862,6 @@
   "Tips": "טיפים",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "פורמטי גופנים נתמכים: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "ניתן לבחור גופנים מותאמים אישית מתפריט סוגי הגופן",
-  "Global Settings": "הגדרות גלובליות",
   "Apply to All Books": "החל על כל הספרים",
   "Apply to This Book": "החל על ספר זה",
   "Reset Settings": "אפס הגדרות",
@@ -2326,5 +2324,13 @@
   "{{count}} Annotations_one": "{{count}} הערה",
   "{{count}} Annotations_two": "{{count}} הערות",
   "{{count}} Annotations_other": "{{count}} הערות",
-  "Insert into Notebook": "הוסף למחברת"
+  "Insert into Notebook": "הוסף למחברת",
+  "Billing interval": "מחזור חיוב",
+  "Yearly": "שנתי",
+  "Monthly": "חודשי",
+  "Save {{percent}}%": "חיסכון של {{percent}}%",
+  "Change billing period": "שינוי תקופת החיוב",
+  "forever": "לתמיד",
+  "{{price}} billed yearly": "{{price}} בחיוב שנתי",
+  "Popular": "פופולרי"
 }

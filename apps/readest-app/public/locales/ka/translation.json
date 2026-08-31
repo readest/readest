@@ -1050,7 +1050,6 @@
   "Upgrade to {{plan}}": "გადადით {{plan}}-ზე",
   "Complete Your Subscription": "დაასრულეთ თქვენი გამოწერა",
   "Coming Soon": "მალე",
-  "Upgrade to Plus or Pro": "გადადით Plus-ზე ან Pro-ზე",
   "Current Plan": "მიმდინარე გეგმა",
   "On-Demand Purchase": "შესყიდვა მოთხოვნისამებრ",
   "Plan Limits": "გეგმის ლიმიტები",
@@ -1495,7 +1494,6 @@
   "Importing...": "მიმდინარეობს იმპორტი...",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "მხარდაჭერილი შრიფტის ფორმატები: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "მორგებული შრიფტების არჩევა შესაძლებელია შრიფტის სახეობის მენიუდან",
-  "Global Settings": "გლობალური პარამეტრები",
   "Apply to All Books": "ყველა წიგნზე გამოყენება",
   "Apply to This Book": "ამ წიგნზე გამოყენება",
   "Reset Settings": "პარამეტრების აღდგენა",
@@ -2265,5 +2263,13 @@
   "With notes": "შენიშვნებით",
   "{{count}} Annotations_one": "{{count}} ანოტაცია",
   "{{count}} Annotations_other": "{{count}} ანოტაცია",
-  "Insert into Notebook": "რვეულში ჩასმა"
+  "Insert into Notebook": "რვეულში ჩასმა",
+  "Billing interval": "ბილინგის ინტერვალი",
+  "Yearly": "წლიური",
+  "Monthly": "თვიური",
+  "Save {{percent}}%": "დაზოგეთ {{percent}}%",
+  "Change billing period": "ბილინგის პერიოდის შეცვლა",
+  "forever": "სამუდამოდ",
+  "{{price}} billed yearly": "{{price}} წლიური გადახდით",
+  "Popular": "პოპულარული"
 }

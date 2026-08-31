@@ -35,7 +35,6 @@
   "Font Family": "字族",
   "Font Size": "字號",
   "Full Justification": "兩端對齊",
-  "Global Settings": "全局設置",
   "Go Back": "返回",
   "Go Forward": "前進",
   "Grass": "青草",
@@ -324,7 +323,6 @@
   "Manage Subscription": "管理訂閱",
   "Coming Soon": "即將推出",
   "Upgrade to {{plan}}": "升級到 {{plan}}",
-  "Upgrade to Plus or Pro": "升級到 Plus 或 Pro",
   "Current Plan": "當前方案",
   "Plan Limits": "方案限制",
   "Processing your payment...": "正在處理付款...",
@@ -2204,5 +2202,13 @@
   "Notebook draft copied to clipboard": "筆記本草稿已複製到剪貼板",
   "With notes": "含筆記",
   "{{count}} Annotations_other": "{{count}} 則註解",
-  "Insert into Notebook": "插入到筆記本"
+  "Insert into Notebook": "插入到筆記本",
+  "Billing interval": "結算週期",
+  "Yearly": "按年",
+  "Monthly": "按月",
+  "Save {{percent}}%": "省 {{percent}}%",
+  "Change billing period": "變更結算週期",
+  "forever": "永久免費",
+  "{{price}} billed yearly": "按年收取 {{price}}",
+  "Popular": "熱門"
 }

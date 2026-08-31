@@ -35,7 +35,6 @@
   "Font Family": "フォントファミリー",
   "Font Size": "フォントサイズ",
   "Full Justification": "両端揃え",
-  "Global Settings": "全体設定",
   "Go Back": "戻る",
   "Go Forward": "進む",
   "Grass": "グリーン",
@@ -324,7 +323,6 @@
   "Manage Subscription": "サブスクリプションを管理",
   "Coming Soon": "近日公開",
   "Upgrade to {{plan}}": "{{plan}} にアップグレード",
-  "Upgrade to Plus or Pro": "Plus または Pro にアップグレード",
   "Current Plan": "現在のプラン",
   "Plan Limits": "プランの上限",
   "Processing your payment...": "お支払いを処理中...",
@@ -2204,5 +2202,13 @@
   "Notebook draft copied to clipboard": "ノートの下書きをクリップボードにコピーしました",
   "With notes": "メモ付き",
   "{{count}} Annotations_other": "{{count}} 件の注釈",
-  "Insert into Notebook": "ノートに挿入"
+  "Insert into Notebook": "ノートに挿入",
+  "Billing interval": "お支払い間隔",
+  "Yearly": "年額",
+  "Monthly": "月額",
+  "Save {{percent}}%": "{{percent}}%お得",
+  "Change billing period": "お支払い間隔を変更",
+  "forever": "ずっと無料",
+  "{{price}} billed yearly": "年額 {{price}} で請求",
+  "Popular": "人気"
 }

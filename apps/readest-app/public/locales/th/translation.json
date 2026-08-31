@@ -167,7 +167,6 @@
   "Security": "ความปลอดภัย",
   "Allow JavaScript": "อนุญาต JavaScript",
   "Enable only if you trust the file.": "เปิดเฉพาะไฟล์ที่เชื่อถือได้",
-  "Global Settings": "การตั้งค่าทั่วไป",
   "Apply to All Books": "ใช้กับหนังสือทั้งหมด",
   "Apply to This Book": "ใช้กับหนังสือนี้",
   "Reset Settings": "รีเซ็ตการตั้งค่า",
@@ -276,7 +275,6 @@
   "Upgrade to {{plan}}": "อัปเกรดเป็น {{plan}}",
   "Complete Your Subscription": "ดำเนินการสมัครสมาชิกให้เสร็จ",
   "Coming Soon": "เร็วๆ นี้",
-  "Upgrade to Plus or Pro": "อัปเกรดเป็น Plus หรือ Pro",
   "Current Plan": "แผนปัจจุบัน",
   "Plan Limits": "ข้อจำกัดแผน",
   "Failed to delete user. Please try again later.": "ไม่สามารถลบผู้ใช้ ลองใหม่ภายหลัง",
@@ -2204,5 +2202,13 @@
   "Notebook draft copied to clipboard": "คัดลอกฉบับร่างสมุดบันทึกไปยังคลิปบอร์ดแล้ว",
   "With notes": "มีบันทึกย่อ",
   "{{count}} Annotations_other": "คำอธิบายประกอบ {{count}} รายการ",
-  "Insert into Notebook": "แทรกลงในสมุดบันทึก"
+  "Insert into Notebook": "แทรกลงในสมุดบันทึก",
+  "Billing interval": "รอบการเรียกเก็บเงิน",
+  "Yearly": "รายปี",
+  "Monthly": "รายเดือน",
+  "Save {{percent}}%": "ประหยัด {{percent}}%",
+  "Change billing period": "เปลี่ยนรอบการเรียกเก็บเงิน",
+  "forever": "ตลอดไป",
+  "{{price}} billed yearly": "เรียกเก็บ {{price}} ต่อปี",
+  "Popular": "ยอดนิยม"
 }

@@ -755,7 +755,6 @@
   "Upgrade to {{plan}}": "{{plan}} ga yangilash",
   "Complete Your Subscription": "Obunangizni yakunlang",
   "Coming Soon": "Tez orada",
-  "Upgrade to Plus or Pro": "Plus yoki Pro ga yangilash",
   "Current Plan": "Joriy reja",
   "On-Demand Purchase": "Talabga koʻra xarid",
   "Plan Limits": "Reja cheklovlari",
@@ -1067,7 +1066,6 @@
   "Import Font": "Shriftni import qilish",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Qoʻllab-quvvatlanadigan shrift formatlari: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Maxsus shriftlar Font Face menyusidan tanlanishi mumkin",
-  "Global Settings": "Umumiy sozlamalar",
   "Apply to All Books": "Barcha kitoblarga qoʻllash",
   "Apply to This Book": "Ushbu kitobga qoʻllash",
   "Reset Settings": "Sozlamalarni tiklash",
@@ -2265,5 +2263,13 @@
   "With notes": "Eslatmali",
   "{{count}} Annotations_one": "{{count}} izoh",
   "{{count}} Annotations_other": "{{count}} ta izoh",
-  "Insert into Notebook": "Daftarga qoʻshish"
+  "Insert into Notebook": "Daftarga qoʻshish",
+  "Billing interval": "Hisob-kitob oralig'i",
+  "Yearly": "Yillik",
+  "Monthly": "Oylik",
+  "Save {{percent}}%": "{{percent}}% tejang",
+  "Change billing period": "Hisob-kitob davrini o'zgartirish",
+  "forever": "abadiy",
+  "{{price}} billed yearly": "Yiliga {{price}} hisoblanadi",
+  "Popular": "Ommabop"
 }

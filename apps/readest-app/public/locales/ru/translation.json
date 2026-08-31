@@ -35,7 +35,6 @@
   "Font Family": "Семейство шрифтов",
   "Font Size": "Размер шрифта",
   "Full Justification": "Полное выравнивание",
-  "Global Settings": "Общие настройки",
   "Go Back": "Назад",
   "Go Forward": "Вперёд",
   "Grass": "Трава",
@@ -336,7 +335,6 @@
   "Manage Subscription": "Управление подпиской",
   "Coming Soon": "Скоро будет",
   "Upgrade to {{plan}}": "Обновить до {{plan}}",
-  "Upgrade to Plus or Pro": "Обновить до Plus или Pro",
   "Current Plan": "Текущий план",
   "Plan Limits": "Лимиты плана",
   "Processing your payment...": "Обработка платежа...",
@@ -2387,5 +2385,13 @@
   "{{count}} Annotations_few": "{{count}} аннотации",
   "{{count}} Annotations_many": "{{count}} аннотаций",
   "{{count}} Annotations_other": "{{count}} аннотаций",
-  "Insert into Notebook": "Вставить в блокнот"
+  "Insert into Notebook": "Вставить в блокнот",
+  "Billing interval": "Период оплаты",
+  "Yearly": "Ежегодно",
+  "Monthly": "Ежемесячно",
+  "Save {{percent}}%": "Экономия {{percent}}%",
+  "Change billing period": "Изменить период оплаты",
+  "forever": "навсегда",
+  "{{price}} billed yearly": "{{price}} при оплате за год",
+  "Popular": "Популярный"
 }

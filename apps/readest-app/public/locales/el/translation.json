@@ -35,7 +35,6 @@
   "Font Family": "Οικογένεια γραμματοσειράς",
   "Font Size": "Μέγεθος γραμματοσειράς",
   "Full Justification": "Πλήρης στοίχιση",
-  "Global Settings": "Γενικές ρυθμίσεις",
   "Go Back": "Πίσω",
   "Go Forward": "Μπροστά",
   "Grass": "Γρασίδι",
@@ -328,7 +327,6 @@
   "Manage Subscription": "Διαχείριση συνδρομής",
   "Coming Soon": "Έρχεται σύντομα",
   "Upgrade to {{plan}}": "Αναβάθμιση σε {{plan}}",
-  "Upgrade to Plus or Pro": "Αναβάθμιση σε Plus ή Pro",
   "Current Plan": "Τρέχον πρόγραμμα",
   "Plan Limits": "Όρια προγράμματος",
   "Processing your payment...": "Επεξεργασία πληρωμής...",
@@ -2265,5 +2263,13 @@
   "With notes": "Με σημειώσεις",
   "{{count}} Annotations_one": "{{count}} σχολιασμός",
   "{{count}} Annotations_other": "{{count}} σχολιασμοί",
-  "Insert into Notebook": "Εισαγωγή στο σημειωματάριο"
+  "Insert into Notebook": "Εισαγωγή στο σημειωματάριο",
+  "Billing interval": "Διάστημα χρέωσης",
+  "Yearly": "Ετήσια",
+  "Monthly": "Μηνιαία",
+  "Save {{percent}}%": "Κερδίστε {{percent}}%",
+  "Change billing period": "Αλλαγή περιόδου χρέωσης",
+  "forever": "για πάντα",
+  "{{price}} billed yearly": "{{price}} με ετήσια χρέωση",
+  "Popular": "Δημοφιλές"
 }

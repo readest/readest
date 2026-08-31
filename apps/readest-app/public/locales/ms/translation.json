@@ -325,7 +325,6 @@
   "Upgrade to {{plan}}": "Naik Taraf ke {{plan}}",
   "Complete Your Subscription": "Lengkapkan Langganan Anda",
   "Coming Soon": "Akan Datang",
-  "Upgrade to Plus or Pro": "Naik Taraf ke Plus atau Pro",
   "Current Plan": "Pelan Semasa",
   "On-Demand Purchase": "Pembelian Atas Permintaan",
   "Plan Limits": "Had Pelan",
@@ -511,7 +510,6 @@
   "Tips": "Petua",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Format fon yang disokong: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Fon tersuai boleh dipilih dari menu Muka Fon",
-  "Global Settings": "Tetapan Global",
   "Apply to All Books": "Gunakan pada Semua Buku",
   "Apply to This Book": "Gunakan pada Buku Ini",
   "Reset Settings": "Tetapkan Semula Tetapan",
@@ -2204,5 +2202,13 @@
   "Notebook draft copied to clipboard": "Draf Buku Nota disalin ke papan klip",
   "With notes": "Dengan nota",
   "{{count}} Annotations_other": "{{count}} anotasi",
-  "Insert into Notebook": "Sisipkan ke Buku Nota"
+  "Insert into Notebook": "Sisipkan ke Buku Nota",
+  "Billing interval": "Selang pengebilan",
+  "Yearly": "Tahunan",
+  "Monthly": "Bulanan",
+  "Save {{percent}}%": "Jimat {{percent}}%",
+  "Change billing period": "Tukar tempoh pengebilan",
+  "forever": "selamanya",
+  "{{price}} billed yearly": "{{price}} dibilkan setiap tahun",
+  "Popular": "Popular"
 }

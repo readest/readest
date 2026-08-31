@@ -635,7 +635,6 @@
   "Upgrade to {{plan}}": "Nadgradi na {{plan}}",
   "Complete Your Subscription": "Dokončajte svojo naročnino",
   "Coming Soon": "Kmalu na voljo",
-  "Upgrade to Plus or Pro": "Nadgradite na Plus ali Pro",
   "Current Plan": "Trenutni paket",
   "On-Demand Purchase": "Nakup na zahtevo",
   "Plan Limits": "Omejitve paketa",
@@ -904,7 +903,6 @@
   "Tips": "Nasveti",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Podprti formati pisav: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Pisave po meri lahko izberete v meniju Ime pisave",
-  "Global Settings": "Globalne nastavitve",
   "Apply to All Books": "Uporabi za vse knjige",
   "Apply to This Book": "Uporabi za to knjigo",
   "Reset Settings": "Ponastavi nastavitve",
@@ -2387,5 +2385,13 @@
   "{{count}} Annotations_two": "{{count}} opombi",
   "{{count}} Annotations_few": "{{count}} opombe",
   "{{count}} Annotations_other": "{{count}} opomb",
-  "Insert into Notebook": "Vstavi v beležnico"
+  "Insert into Notebook": "Vstavi v beležnico",
+  "Billing interval": "Interval zaračunavanja",
+  "Yearly": "Letno",
+  "Monthly": "Mesečno",
+  "Save {{percent}}%": "Prihranite {{percent}} %",
+  "Change billing period": "Spremeni obdobje zaračunavanja",
+  "forever": "za vedno",
+  "{{price}} billed yearly": "{{price}} zaračunano letno",
+  "Popular": "Priljubljeno"
 }

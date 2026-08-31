@@ -770,7 +770,6 @@
   "Upgrade to {{plan}}": "Atualizar para {{plan}}",
   "Complete Your Subscription": "Complete sua assinatura",
   "Coming Soon": "Em breve",
-  "Upgrade to Plus or Pro": "Atualizar para Plus ou Pro",
   "Current Plan": "Plano atual",
   "On-Demand Purchase": "Compra sob demanda",
   "Plan Limits": "Limites do plano",
@@ -1089,7 +1088,6 @@
   "Import Font": "Importar fonte",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Formatos de fonte suportados: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Fontes personalizadas podem ser selecionadas no menu Estilo da fonte",
-  "Global Settings": "Configurações globais",
   "Apply to All Books": "Aplicar a todos os livros",
   "Apply to This Book": "Aplicar a este livro",
   "Reset Settings": "Redefinir configurações",
@@ -2326,5 +2324,13 @@
   "{{count}} Annotations_one": "{{count}} anotação",
   "{{count}} Annotations_many": "{{count}} anotações",
   "{{count}} Annotations_other": "{{count}} anotações",
-  "Insert into Notebook": "Inserir no caderno"
+  "Insert into Notebook": "Inserir no caderno",
+  "Billing interval": "Intervalo de cobrança",
+  "Yearly": "Anual",
+  "Monthly": "Mensal",
+  "Save {{percent}}%": "Economize {{percent}}%",
+  "Change billing period": "Alterar período de cobrança",
+  "forever": "para sempre",
+  "{{price}} billed yearly": "{{price}} cobrado anualmente",
+  "Popular": "Popular"
 }

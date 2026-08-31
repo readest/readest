@@ -35,7 +35,6 @@
   "Font Family": "Rodzina czcionek",
   "Font Size": "Rozmiar czcionki",
   "Full Justification": "Pełne justowanie",
-  "Global Settings": "Ustawienia globalne",
   "Go Back": "Wstecz",
   "Go Forward": "Dalej",
   "Grass": "Trawiasty",
@@ -336,7 +335,6 @@
   "Manage Subscription": "Zarządzaj subskrypcją",
   "Coming Soon": "Wkrótce dostępne",
   "Upgrade to {{plan}}": "Uaktualnij do {{plan}}",
-  "Upgrade to Plus or Pro": "Uaktualnij do Plus lub Pro",
   "Current Plan": "Obecny plan",
   "Plan Limits": "Limity planu",
   "Processing your payment...": "Przetwarzanie płatności...",
@@ -2387,5 +2385,13 @@
   "{{count}} Annotations_few": "{{count}} adnotacje",
   "{{count}} Annotations_many": "{{count}} adnotacji",
   "{{count}} Annotations_other": "{{count}} adnotacji",
-  "Insert into Notebook": "Wstaw do notatnika"
+  "Insert into Notebook": "Wstaw do notatnika",
+  "Billing interval": "Okres rozliczeniowy",
+  "Yearly": "Rocznie",
+  "Monthly": "Miesięcznie",
+  "Save {{percent}}%": "Oszczędź {{percent}}%",
+  "Change billing period": "Zmień okres rozliczeniowy",
+  "forever": "na zawsze",
+  "{{price}} billed yearly": "{{price}} rozliczane rocznie",
+  "Popular": "Popularne"
 }

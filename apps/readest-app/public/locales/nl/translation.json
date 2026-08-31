@@ -129,7 +129,6 @@
   "Custom": "Aangepast",
   "Apply to All Books": "Toepassen op alle boeken",
   "Apply to This Book": "Toepassen op dit boek",
-  "Global Settings": "Algemene instellingen",
   "System Fonts": "Systeemlettertypen",
   "Serif Font": "Serif lettertype",
   "Sans-Serif Font": "Sans-serif lettertype",
@@ -328,7 +327,6 @@
   "Manage Subscription": "Abonnement beheren",
   "Coming Soon": "Binnenkort beschikbaar",
   "Upgrade to {{plan}}": "Upgrade naar {{plan}}",
-  "Upgrade to Plus or Pro": "Upgrade naar Plus of Pro",
   "Current Plan": "Huidig abonnement",
   "Plan Limits": "Abonnementslimieten",
   "Processing your payment...": "Je betaling wordt verwerkt...",
@@ -2265,5 +2263,13 @@
   "With notes": "Met notities",
   "{{count}} Annotations_one": "{{count}} aantekening",
   "{{count}} Annotations_other": "{{count}} aantekeningen",
-  "Insert into Notebook": "Invoegen in notitieblok"
+  "Insert into Notebook": "Invoegen in notitieblok",
+  "Billing interval": "Facturatie-interval",
+  "Yearly": "Jaarlijks",
+  "Monthly": "Maandelijks",
+  "Save {{percent}}%": "Bespaar {{percent}}%",
+  "Change billing period": "Facturatieperiode wijzigen",
+  "forever": "voor altijd",
+  "{{price}} billed yearly": "{{price}} jaarlijks gefactureerd",
+  "Popular": "Populair"
 }

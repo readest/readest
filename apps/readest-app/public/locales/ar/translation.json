@@ -35,7 +35,6 @@
   "Font Family": "عائلة الخط",
   "Font Size": "حجم الخط",
   "Full Justification": "محاذاة كاملة",
-  "Global Settings": "الإعدادات العامة",
   "Go Back": "العودة",
   "Go Forward": "التقدم",
   "Grass": "عشبي",
@@ -343,7 +342,6 @@
   "Manage Subscription": "إدارة الاشتراك",
   "Coming Soon": "قريبًا",
   "Upgrade to {{plan}}": "الترقية إلى {{plan}}",
-  "Upgrade to Plus or Pro": "الترقية إلى Plus أو Pro",
   "Current Plan": "الخطة الحالية",
   "Plan Limits": "حدود الخطة",
   "Processing your payment...": "جارٍ معالجة الدفع...",
@@ -2509,5 +2507,13 @@
   "{{count}} Annotations_few": "{{count}} تعليقات توضيحية",
   "{{count}} Annotations_many": "{{count}} تعليقًا توضيحيًا",
   "{{count}} Annotations_other": "{{count}} تعليق توضيحي",
-  "Insert into Notebook": "إدراج في المفكرة"
+  "Insert into Notebook": "إدراج في المفكرة",
+  "Billing interval": "فترة الفوترة",
+  "Yearly": "سنوي",
+  "Monthly": "شهري",
+  "Save {{percent}}%": "وفّر {{percent}}٪",
+  "Change billing period": "تغيير فترة الفوترة",
+  "forever": "إلى الأبد",
+  "{{price}} billed yearly": "{{price}} تُحصّل سنويًا",
+  "Popular": "شائع"
 }

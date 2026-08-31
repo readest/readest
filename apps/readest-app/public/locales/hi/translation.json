@@ -35,7 +35,6 @@
   "Font Family": "फ़ॉन्ट परिवार",
   "Font Size": "फ़ॉन्ट साइज़",
   "Full Justification": "पूर्ण जस्टिफिकेशन",
-  "Global Settings": "वैश्विक सेटिंग्स",
   "Go Back": "वापस जाएं",
   "Go Forward": "आगे जाएं",
   "Grass": "घास",
@@ -328,7 +327,6 @@
   "Manage Subscription": "सदस्यता प्रबंधित करें",
   "Coming Soon": "जल्द आ रहा है",
   "Upgrade to {{plan}}": "{{plan}} में अपग्रेड करें",
-  "Upgrade to Plus or Pro": "Plus या Pro में अपग्रेड करें",
   "Current Plan": "वर्तमान योजना",
   "Plan Limits": "योजना की सीमाएँ",
   "Processing your payment...": "आपका भुगतान संसाधित हो रहा है...",
@@ -2265,5 +2263,13 @@
   "With notes": "नोट्स सहित",
   "{{count}} Annotations_one": "{{count}} टिप्पणी",
   "{{count}} Annotations_other": "{{count}} टिप्पणियाँ",
-  "Insert into Notebook": "नोटबुक में डालें"
+  "Insert into Notebook": "नोटबुक में डालें",
+  "Billing interval": "बिलिंग अंतराल",
+  "Yearly": "वार्षिक",
+  "Monthly": "मासिक",
+  "Save {{percent}}%": "{{percent}}% बचाएँ",
+  "Change billing period": "बिलिंग अवधि बदलें",
+  "forever": "हमेशा के लिए",
+  "{{price}} billed yearly": "{{price}} वार्षिक बिल",
+  "Popular": "लोकप्रिय"
 }

@@ -674,7 +674,6 @@
   "Upgrade to {{plan}}": "Váltás erre: {{plan}}",
   "Complete Your Subscription": "Előfizetés befejezése",
   "Coming Soon": "Hamarosan",
-  "Upgrade to Plus or Pro": "Váltás Plus vagy Pro csomagra",
   "Current Plan": "Jelenlegi csomag",
   "On-Demand Purchase": "Egyszeri vásárlás",
   "Plan Limits": "Csomag korlátai",
@@ -940,7 +939,6 @@
   "Tips": "Tippek",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Támogatott betűtípus-formátumok: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Az egyéni betűtípusok a Betűtípus menüből választhatók ki",
-  "Global Settings": "Globális beállítások",
   "Apply to All Books": "Alkalmazás minden könyvre",
   "Apply to This Book": "Alkalmazás erre a könyvre",
   "Reset Settings": "Beállítások visszaállítása",
@@ -2265,5 +2263,13 @@
   "With notes": "Jegyzettel",
   "{{count}} Annotations_one": "{{count}} megjegyzés",
   "{{count}} Annotations_other": "{{count}} megjegyzés",
-  "Insert into Notebook": "Beszúrás a jegyzetfüzetbe"
+  "Insert into Notebook": "Beszúrás a jegyzetfüzetbe",
+  "Billing interval": "Számlázási időszak",
+  "Yearly": "Éves",
+  "Monthly": "Havi",
+  "Save {{percent}}%": "{{percent}}% megtakarítás",
+  "Change billing period": "Számlázási időszak módosítása",
+  "forever": "örökre",
+  "{{price}} billed yearly": "{{price}} évente számlázva",
+  "Popular": "Népszerű"
 }

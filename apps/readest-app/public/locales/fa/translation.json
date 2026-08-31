@@ -35,7 +35,6 @@
   "Font Family": "خانواده‌ی فونت",
   "Font Size": "اندازه فونت",
   "Full Justification": "تراز کامل",
-  "Global Settings": "تنظیمات سراسری",
   "Go Back": "بازگشت",
   "Go Forward": "رفتن به جلو",
   "Grass": "چمنی",
@@ -327,7 +326,6 @@
   "Manage Subscription": "مدیریت اشتراک",
   "Coming Soon": "به‌زودی",
   "Upgrade to {{plan}}": "ارتقاء به {{plan}}",
-  "Upgrade to Plus or Pro": "ارتقاء به Plus یا Pro",
   "Current Plan": "طرح فعلی",
   "Plan Limits": "محدودیت‌های طرح",
   "Processing your payment...": "در حال پردازش پرداخت شما...",
@@ -2265,5 +2263,13 @@
   "With notes": "با یادداشت",
   "{{count}} Annotations_one": "{{count}} یادداشت",
   "{{count}} Annotations_other": "{{count}} یادداشت",
-  "Insert into Notebook": "درج در دفترچه یادداشت"
+  "Insert into Notebook": "درج در دفترچه یادداشت",
+  "Billing interval": "بازه صورت‌حساب",
+  "Yearly": "سالانه",
+  "Monthly": "ماهانه",
+  "Save {{percent}}%": "{{percent}}٪ صرفه‌جویی",
+  "Change billing period": "تغییر دوره صورت‌حساب",
+  "forever": "برای همیشه",
+  "{{price}} billed yearly": "{{price}} به‌صورت سالانه",
+  "Popular": "محبوب"
 }

@@ -661,7 +661,6 @@
   "Upgrade to {{plan}}": "Treceți la {{plan}}",
   "Complete Your Subscription": "Finalizați abonamentul",
   "Coming Soon": "În curând",
-  "Upgrade to Plus or Pro": "Treceți la Plus sau Pro",
   "Current Plan": "Abonament curent",
   "On-Demand Purchase": "Achiziție la cerere",
   "Plan Limits": "Limitele abonamentului",
@@ -929,7 +928,6 @@
   "Tips": "Sfaturi",
   "Supported font formats: .ttf, .otf, .woff, .woff2": "Formate de fonturi acceptate: .ttf, .otf, .woff, .woff2",
   "Custom fonts can be selected from the Font Face menu": "Fonturile personalizate pot fi selectate din meniul Tip caracter",
-  "Global Settings": "Setări globale",
   "Apply to All Books": "Aplică la toate cărțile",
   "Apply to This Book": "Aplică la această carte",
   "Reset Settings": "Resetează setările",
@@ -2326,5 +2324,13 @@
   "{{count}} Annotations_one": "{{count}} adnotare",
   "{{count}} Annotations_few": "{{count}} adnotări",
   "{{count}} Annotations_other": "{{count}} de adnotări",
-  "Insert into Notebook": "Inserează în carnețel"
+  "Insert into Notebook": "Inserează în carnețel",
+  "Billing interval": "Interval de facturare",
+  "Yearly": "Anual",
+  "Monthly": "Lunar",
+  "Save {{percent}}%": "Economisiți {{percent}}%",
+  "Change billing period": "Schimbă perioada de facturare",
+  "forever": "pentru totdeauna",
+  "{{price}} billed yearly": "{{price}} facturat anual",
+  "Popular": "Popular"
 }
