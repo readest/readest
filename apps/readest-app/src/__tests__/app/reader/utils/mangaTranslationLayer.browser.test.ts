@@ -26,7 +26,7 @@ describe('mangaTranslationLayer browser layout', () => {
 
   afterEach(() => iframe.remove());
 
-  it('keeps a long translation within its bubble without intercepting gestures', async () => {
+  it('keeps unreadable English hidden without intercepting gestures', async () => {
     const doc = iframe.contentDocument!;
     const win = iframe.contentWindow!;
     const page: TranslatedMangaPage = {
@@ -56,16 +56,15 @@ describe('mangaTranslationLayer browser layout', () => {
     const bubble = layer.querySelector<HTMLElement>('[data-readest-manga-region-id]')!;
     const text = bubble.querySelector<HTMLElement>('[data-readest-manga-text]')!;
     const bubbleRect = bubble.getBoundingClientRect();
-    const textRect = text.getBoundingClientRect();
-    const tolerance = 0.75;
+    const mask = layer.querySelector<HTMLElement>('[data-readest-manga-mask]')!;
 
     expect(bubbleRect.width).toBeGreaterThan(0);
     expect(bubbleRect.height).toBeGreaterThan(0);
-    expect(text.style.transform).not.toBe('none');
-    expect(textRect.left).toBeGreaterThanOrEqual(bubbleRect.left - tolerance);
-    expect(textRect.top).toBeGreaterThanOrEqual(bubbleRect.top - tolerance);
-    expect(textRect.right).toBeLessThanOrEqual(bubbleRect.right + tolerance);
-    expect(textRect.bottom).toBeLessThanOrEqual(bubbleRect.bottom + tolerance);
+    expect(bubble.style.visibility).toBe('hidden');
+    expect(mask.style.visibility).toBe('hidden');
+    expect(text.style.fontSize).toBe('6px');
+    expect(text.style.transform).toBe('none');
+    expect(bubble.style.overflow).toBe('hidden');
     expect(win.getComputedStyle(layer).pointerEvents).toBe('none');
     expect(win.getComputedStyle(bubble).pointerEvents).toBe('none');
     for (const element of [layer, ...layer.querySelectorAll<HTMLElement>('*')]) {
