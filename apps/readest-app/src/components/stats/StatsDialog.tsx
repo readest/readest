@@ -32,7 +32,6 @@ const PERIOD_LABELS: Record<StatsPeriod, string> = {
 };
 
 interface StatsDialogProps {
-  /** Opens the book details dialog for a library book tapped in the ranking. */
   onShowBookDetails?: (book: Book) => void;
 }
 
@@ -47,18 +46,13 @@ const StatsDialog: React.FC<StatsDialogProps> = ({ onShowBookDetails }) => {
       setIsOpen(event.detail.visible);
     };
     const el = document.getElementById('stats_dialog');
-    if (el) {
-      el.addEventListener('setDialogVisibility', handleCustomEvent as EventListener);
-    }
+    if (el) el.addEventListener('setDialogVisibility', handleCustomEvent as EventListener);
     return () => {
-      if (el) {
-        el.removeEventListener('setDialogVisibility', handleCustomEvent as EventListener);
-      }
+      if (el) el.removeEventListener('setDialogVisibility', handleCustomEvent as EventListener);
     };
   }, []);
 
   const handleClose = useCallback(() => setIsOpen(false), []);
-
   const { loading, totals, periodSeconds, daily, ranking } = useReadingStats(isOpen, period);
 
   const periodOptions = useMemo(
@@ -72,6 +66,14 @@ const StatsDialog: React.FC<StatsDialogProps> = ({ onShowBookDetails }) => {
 
   const range = useMemo(() => getPeriodRange(period), [period]);
   const hasAnyData = !!totals && totals.totalSeconds > 0;
+  const displayedSeconds = period === 'total' ? (totals?.totalSeconds ?? 0) : periodSeconds;
+  const readDays =
+    period === 'total' ? (totals?.readDays ?? 0) : daily.filter((row) => row.seconds > 0).length;
+  const averageReadDaySeconds = Math.round(displayedSeconds / Math.max(1, readDays));
+  const topBook = ranking[0];
+  const topBookShare = topBook
+    ? Math.min(100, Math.round((topBook.seconds / Math.max(1, displayedSeconds)) * 100))
+    : 0;
 
   return (
     <Dialog
@@ -107,28 +109,19 @@ const StatsDialog: React.FC<StatsDialogProps> = ({ onShowBookDetails }) => {
             </div>
           ) : (
             <>
-              {period === 'total' && totals ? (
-                <div className='flex flex-col items-center gap-1 py-2'>
-                  <span className='text-3xl font-bold tabular-nums'>
-                    {formatReadingDuration(totals.totalSeconds, _)}
-                  </span>
-                  <span className='text-neutral-content text-xs'>
+              <div className='flex flex-col items-center gap-1 py-2'>
+                <span className='text-3xl font-bold tabular-nums'>
+                  {formatReadingDuration(displayedSeconds, _)}
+                </span>
+                {readDays > 0 && (
+                  <span className='text-neutral-content/65 text-xs'>
                     {_('{{days}} days read · {{avg}} per day on average', {
-                      days: totals.readDays,
-                      avg: formatReadingDuration(
-                        Math.round(totals.totalSeconds / Math.max(1, totals.readDays)),
-                        _,
-                      ),
+                      days: readDays,
+                      avg: formatReadingDuration(averageReadDaySeconds, _),
                     })}
                   </span>
-                </div>
-              ) : (
-                <div className='flex flex-col items-center gap-1 py-2'>
-                  <span className='text-3xl font-bold tabular-nums'>
-                    {formatReadingDuration(periodSeconds, _)}
-                  </span>
-                </div>
-              )}
+                )}
+              </div>
 
               {period === 'year' ? (
                 <YearHeatmap daily={daily} year={dayjs().year()} />
@@ -141,16 +134,35 @@ const StatsDialog: React.FC<StatsDialogProps> = ({ onShowBookDetails }) => {
                 />
               )}
 
-              <div className='flex flex-col gap-2'>
-                <h3 className='text-neutral-content/85 text-sm font-semibold'>
-                  {_('Reading Ranking')}
-                </h3>
-                <BookRankingList
-                  ranking={ranking}
-                  totalSeconds={period === 'total' ? (totals?.totalSeconds ?? 0) : periodSeconds}
-                  onShowBookDetails={onShowBookDetails}
-                />
-              </div>
+              {ranking.length > 0 && (
+                <div className='flex flex-col gap-2'>
+                  <h3 className='text-neutral-content/85 text-sm font-semibold'>
+                    {_('Reading Ranking')}
+                  </h3>
+                  <BookRankingList
+                    ranking={ranking}
+                    totalSeconds={displayedSeconds}
+                    onShowBookDetails={onShowBookDetails}
+                  />
+                </div>
+              )}
+
+              {readDays > 0 && (
+                <div className='bg-base-200/55 border-base-content/5 mt-1 rounded-2xl border px-4 py-3'>
+                  <p className='text-base-content/80 text-sm leading-relaxed'>
+                    <span className='text-primary me-1.5'>✦</span>
+                    {_('{{days}} days read · {{avg}} per day on average', {
+                      days: readDays,
+                      avg: formatReadingDuration(averageReadDaySeconds, _),
+                    })}
+                  </p>
+                  {topBook && (
+                    <p className='text-neutral-content/65 mt-1 truncate ps-5 text-xs'>
+                      《{topBook.title || _('Unknown Book')}》 · {formatReadingDuration(topBook.seconds, _)} · {topBookShare}%
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

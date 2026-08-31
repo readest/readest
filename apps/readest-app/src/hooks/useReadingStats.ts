@@ -11,6 +11,9 @@ import type { Book } from '@/types/book';
 import type { BookReadTime, DailyReadTime, StatsPeriod, TotalReadStats } from '@/types/statistics';
 import { getPeriodRange, periodRangeToSeconds } from '@/utils/stats';
 
+/** Only meaningful reading sessions belong in a ranking. */
+export const MIN_RANKING_SECONDS = 5 * 60;
+
 /** One ranking row: same-book editions merged by (title, authors). */
 export interface RankedBook {
   key: string;
@@ -45,8 +48,11 @@ const EMPTY: ReadingStatsData = {
  */
 const isPlaceholderTitle = (title: string, bookMd5: string): boolean => !title || title === bookMd5;
 
-/** Merge same-work editions: identical (title, authors) collapse into one row. */
-const mergeEditions = (rows: BookReadTime[], booksByHash: Map<string, Book>): RankedBook[] => {
+/** Merge same-work editions, remove noise, then rank by meaningful reading time. */
+export const mergeEditions = (
+  rows: BookReadTime[],
+  booksByHash: Map<string, Book>,
+): RankedBook[] => {
   const groups = new Map<string, RankedBook>();
   for (const row of rows) {
     const placeholder = isPlaceholderTitle(row.title, row.bookMd5);
@@ -61,10 +67,11 @@ const mergeEditions = (rows: BookReadTime[], booksByHash: Map<string, Book>): Ra
     }
     group.seconds += row.seconds;
     group.versions += 1;
-    // Any edition that's still in the library supplies the cover + details link.
     if (!group.book) group.book = booksByHash.get(row.bookMd5) ?? null;
   }
-  return [...groups.values()];
+  return [...groups.values()]
+    .filter((row) => row.seconds >= MIN_RANKING_SECONDS)
+    .sort((a, b) => b.seconds - a.seconds);
 };
 
 /**
@@ -81,7 +88,6 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
 
   const load = useCallback(async (db: StatisticsDb, currentPeriod: StatsPeriod) => {
     const seq = ++seqRef.current;
-    // getPeriodRange is dayjs-native milliseconds; the db stores seconds.
     const { fromTs, toTs } = periodRangeToSeconds(getPeriodRange(currentPeriod));
     try {
       const [totals, periodSeconds, daily, bookTimes] = await Promise.all([
@@ -96,8 +102,6 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
       for (const row of bookTimes) {
         if (booksByHash.has(row.bookMd5)) continue;
         const book = getBookByHash(row.bookMd5);
-        // Books scheduled for deletion read as not-in-library: placeholder
-        // cover, no details link — the stats row itself still ranks.
         if (book && !book.deletedAt) booksByHash.set(row.bookMd5, book);
       }
       setData({
@@ -119,9 +123,6 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
     void StatisticsDb.open(appService)
       .then(async (db) => {
         if (cancelled) return;
-        // Refresh from other devices first (best-effort) so the dialog shows
-        // freshly merged data: the cloud channel when signed in, and file
-        // backend snapshots (LAN/WebDAV) regardless of account.
         if (user && isSyncCategoryEnabled('stats')) {
           try {
             await pullStats(db, new SyncClient());

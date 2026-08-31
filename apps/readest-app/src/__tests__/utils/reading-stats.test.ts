@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import dayjs from 'dayjs';
+import { mergeEditions, MIN_RANKING_SECONDS } from '@/hooks/useReadingStats';
 import { getPeriodRange, periodRangeToSeconds, getTzOffsetSecs } from '@/utils/stats';
 
 // Fixed clock: 2026-08-30 12:34:56 local (a Sunday).
@@ -18,7 +19,6 @@ describe('getPeriodRange', () => {
   it('returns millisecond magnitudes (dayjs-native), not seconds', () => {
     for (const period of ['week', 'month', 'year', 'total'] as const) {
       const { fromTs, toTs } = getPeriodRange(period);
-      // 1e12 ms ≈ 2001-09-09; a seconds-denominated value would be < 4e9.
       expect(toTs).toBeGreaterThan(1e12);
       expect(fromTs).toBeGreaterThanOrEqual(0);
     }
@@ -31,7 +31,6 @@ describe('getPeriodRange', () => {
 
   it('week starts on Monday', () => {
     const { fromTs } = getPeriodRange('week');
-    // 2026-08-30 is a Sunday: the week started 2026-08-24 (Monday).
     expect(dayjs(fromTs).format('YYYY-MM-DD')).toBe('2026-08-24');
     expect(dayjs(fromTs).day()).toBe(1);
   });
@@ -65,7 +64,6 @@ describe('periodRangeToSeconds', () => {
     expect(secs.fromTs).toBe(Math.floor(range.fromTs / 1000));
     expect(secs.toTs).toBe(Math.ceil(range.toTs / 1000));
     expect(secs.toTs).toBeLessThan(4e9);
-    // Seconds-precision range endpoints land on the same instants.
     expect(secs.fromTs * 1000).toBeLessThan(range.fromTs + 1000);
     expect(secs.toTs * 1000).toBeGreaterThanOrEqual(range.toTs - 999);
   });
@@ -75,7 +73,6 @@ describe('periodRangeToSeconds', () => {
   });
 
   it('toTs rounds up so the exclusive bound stays exclusive', () => {
-    // A toTs with sub-second remainder must not shrink into the range.
     const secs = periodRangeToSeconds({ fromTs: 1000, toTs: 1500 });
     expect(secs).toEqual({ fromTs: 1, toTs: 2 });
   });
@@ -85,7 +82,23 @@ describe('periodRangeToSeconds', () => {
     const secs = periodRangeToSeconds(getPeriodRange('total'));
     expect(nowSec).toBeGreaterThan(secs.fromTs);
     expect(nowSec).toBeLessThan(secs.toTs);
-    // tz helper stays second-denominated for the SQL day bucketing.
     expect(getTzOffsetSecs() % 60).toBe(0);
+  });
+});
+
+describe('reading ranking', () => {
+  it('merges editions before applying the five-minute threshold', () => {
+    const rows = [
+      { bookMd5: 'a', title: 'Same Book', authors: 'Author', seconds: 160, pages: 2 },
+      { bookMd5: 'b', title: 'Same Book', authors: 'Author', seconds: 140, pages: 2 },
+      { bookMd5: 'c', title: 'Too Short', authors: 'Author', seconds: 299, pages: 3 },
+      { bookMd5: 'd', title: 'Longer', authors: 'Author', seconds: 600, pages: 4 },
+    ];
+    const ranking = mergeEditions(rows, new Map());
+    expect(MIN_RANKING_SECONDS).toBe(300);
+    expect(ranking.map((row) => [row.title, row.seconds, row.versions])).toEqual([
+      ['Longer', 600, 1],
+      ['Same Book', 300, 2],
+    ]);
   });
 });

@@ -15,11 +15,6 @@ interface BookRankingListProps {
   onShowBookDetails?: (book: Book) => void;
 }
 
-/**
- * WeChat-Reading style per-book reading-time ranking for the selected period.
- * Rows come from statistics.db (deleted books still rank); only rows matching
- * a library book get a real cover and open the details dialog.
- */
 const BookRankingList: React.FC<BookRankingListProps> = ({
   ranking,
   totalSeconds,
@@ -28,14 +23,10 @@ const BookRankingList: React.FC<BookRankingListProps> = ({
   const _ = useTranslation();
   const base = Math.max(1, totalSeconds);
 
-  if (ranking.length === 0) {
-    return (
-      <p className='text-neutral-content py-6 text-center text-sm'>{_('No reading history yet')}</p>
-    );
-  }
+  if (ranking.length === 0) return null;
 
   return (
-    <ul className='divide-base-200/70 divide-y'>
+    <ul className='divide-base-200/60 divide-y'>
       {ranking.map((row, index) => {
         const share = Math.min(100, Math.round((row.seconds / base) * 100));
         const title = row.title || _('Unknown Book');
@@ -47,7 +38,7 @@ const BookRankingList: React.FC<BookRankingListProps> = ({
               disabled={!row.book || !onShowBookDetails}
               onClick={() => row.book && onShowBookDetails?.(row.book)}
               className={clsx(
-                'flex w-full items-center gap-3 rounded-lg py-2.5 text-start',
+                'flex w-full items-center gap-3 rounded-lg py-3 text-start',
                 row.book && onShowBookDetails
                   ? 'hover:bg-base-200 cursor-pointer'
                   : 'cursor-default',
@@ -55,8 +46,8 @@ const BookRankingList: React.FC<BookRankingListProps> = ({
             >
               <span
                 className={clsx(
-                  'w-5 shrink-0 text-center text-sm font-semibold',
-                  index < 3 ? 'text-primary' : 'text-neutral-content/60',
+                  'w-5 shrink-0 text-center text-sm font-semibold tabular-nums',
+                  index < 3 ? 'text-primary/90' : 'text-neutral-content/45',
                 )}
               >
                 {index + 1}
@@ -82,17 +73,22 @@ const BookRankingList: React.FC<BookRankingListProps> = ({
                     </span>
                   )}
                 </div>
-                {authors && <p className='text-neutral-content/70 truncate text-xs'>{authors}</p>}
-                <div className='bg-base-200/80 mt-1.5 h-1 w-full max-w-40 overflow-hidden rounded-full'>
+                {authors && <p className='text-neutral-content/65 mt-0.5 truncate text-xs'>{authors}</p>}
+                <div className='bg-base-content/8 mt-2 h-0.5 w-full max-w-28 overflow-hidden rounded-full'>
                   <div
-                    className='bg-primary/70 h-full rounded-full'
+                    className='bg-primary/45 h-full rounded-full'
                     style={{ width: `${share}%` }}
                   />
                 </div>
               </div>
-              <span className='shrink-0 text-sm font-semibold tabular-nums'>
-                {formatReadingDuration(row.seconds, _)}
-              </span>
+              <div className='shrink-0 text-end'>
+                <span className='text-sm font-semibold tabular-nums'>
+                  {formatReadingDuration(row.seconds, _)}
+                </span>
+                <span className='text-neutral-content/45 mt-0.5 block text-[10px] tabular-nums'>
+                  {share}%
+                </span>
+              </div>
             </button>
           </li>
         );
