@@ -3,22 +3,23 @@
 # The resolve job checks out main first and freezes its commit. Windows,
 # Android, and the GitHub release all use that same commit, even if main moves
 # while the long-running builds are in progress.
-name: Release
+name: 发布构建
+run-name: 发布构建 · ${{ inputs.tag }} · Android ${{ inputs.android_abi }}
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, e.g. v0.12.6.9'
+        description: '发布版本号，例如 v0.12.6.14'
         required: true
         type: string
       android_abi:
-        description: 'Android ABI'
+        description: 'Android 构建范围（Windows 与 Android 会并行构建）'
         type: choice
         options:
-          - aarch64
           - all
-        default: aarch64
+          - aarch64
+        default: all
 
 permissions:
   contents: read
@@ -29,7 +30,7 @@ concurrency:
 
 jobs:
   resolve:
-    name: Resolve release commit
+    name: 准备发布版本
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
@@ -105,7 +106,7 @@ jobs:
 
   windows:
     needs: resolve
-    name: Windows x64 (NSIS)
+    name: Windows x64 安装包
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
@@ -201,7 +202,7 @@ jobs:
 
   android:
     needs: resolve
-    name: Android APK
+    name: Android APK（${{ inputs.android_abi }}）
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -355,7 +356,7 @@ jobs:
 
   release:
     needs: [resolve, windows, android]
-    name: Publish release
+    name: 发布 GitHub Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
