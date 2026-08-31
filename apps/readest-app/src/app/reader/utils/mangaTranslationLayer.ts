@@ -1,5 +1,5 @@
 import type { TranslatedMangaPage } from '@/app/reader/services/manga/mangaTranslationEngine';
-import type { OcrBoundingBox } from '@/app/reader/services/ocr/types';
+import type { OcrBoundingBox, OcrPoint } from '@/app/reader/services/ocr/types';
 
 export const MANGA_TRANSLATION_LAYER_SELECTOR = '[data-readest-manga-translation-layer]';
 
@@ -49,6 +49,38 @@ const intersectBoxes = (left: OcrBoundingBox, right: OcrBoundingBox): OcrBoundin
 
 const percentage = (value: number, total: number) =>
   `${Number.parseFloat(((value / total) * 100).toFixed(6))}%`;
+
+const normalizePolygon = (
+  polygon: readonly OcrPoint[],
+  boundary: OcrBoundingBox,
+  page: Pick<TranslatedMangaPage, 'width' | 'height'>,
+): { box: OcrBoundingBox; clipPath: string } | null => {
+  if (polygon.length < 3) return null;
+  const points = polygon.map(({ x, y }) => ({
+    x: Math.min(boundary.xMax, Math.max(boundary.xMin, clamp(x, page.width))),
+    y: Math.min(boundary.yMax, Math.max(boundary.yMin, clamp(y, page.height))),
+  }));
+  if (points.some(({ x, y }) => !Number.isFinite(x) || !Number.isFinite(y))) return null;
+  const box = {
+    xMin: Math.min(...points.map(({ x }) => x)),
+    yMin: Math.min(...points.map(({ y }) => y)),
+    xMax: Math.max(...points.map(({ x }) => x)),
+    yMax: Math.max(...points.map(({ y }) => y)),
+  };
+  if (box.xMax <= box.xMin || box.yMax <= box.yMin) return null;
+  return {
+    box,
+    clipPath: `polygon(${points
+      .map(
+        ({ x, y }) =>
+          `${percentage(x - box.xMin, box.xMax - box.xMin)} ${percentage(
+            y - box.yMin,
+            box.yMax - box.yMin,
+          )}`,
+      )
+      .join(', ')})`,
+  };
+};
 
 const positionElement = (
   element: HTMLElement,
@@ -149,22 +181,33 @@ export const mountMangaTranslationLayer = (
     if (!textBox) continue;
 
     const masks: HTMLElement[] = [];
-    for (const rawMask of region.maskBoxes) {
-      const mask = normalizeBox(rawMask, page);
-      if (!mask) continue;
-      const clippedMask = intersectBoxes(mask, insetBox(bubble, 0.015));
-      if (!clippedMask) continue;
+    const maskBoundary = insetBox(bubble, 0.015);
+    const appendMask = (mask: OcrBoundingBox, clipPath?: string) => {
       const maskElement = doc.createElement('span');
       maskElement.setAttribute('data-readest-manga-mask', '');
       Object.assign(maskElement.style, {
         backgroundColor: region.backgroundColor,
-        borderRadius: '16%',
+        borderRadius: clipPath ? '0' : '16%',
+        ...(clipPath ? { clipPath } : {}),
         position: 'absolute',
         visibility: 'hidden',
       });
-      positionElement(maskElement, clippedMask, page);
+      positionElement(maskElement, mask, page);
       layer.append(maskElement);
       masks.push(maskElement);
+    };
+    if (region.maskPolygons?.length) {
+      for (const rawPolygon of region.maskPolygons) {
+        const polygon = normalizePolygon(rawPolygon, maskBoundary, page);
+        if (polygon) appendMask(polygon.box, polygon.clipPath);
+      }
+    } else {
+      for (const rawMask of region.maskBoxes) {
+        const mask = normalizeBox(rawMask, page);
+        if (!mask) continue;
+        const clippedMask = intersectBoxes(mask, maskBoundary);
+        if (clippedMask) appendMask(clippedMask);
+      }
     }
     if (!masks.length) continue;
 

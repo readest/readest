@@ -3,7 +3,12 @@ import {
   PaddleMangaOcrEngine,
   type PaddleMangaOcrEngineOptions,
 } from '@/app/reader/services/manga/paddleMangaOcrEngine';
-import type { OcrBoundingBox, OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
+import type {
+  OcrBoundingBox,
+  OcrPage,
+  OcrPoint,
+  OcrTextBlock,
+} from '@/app/reader/services/ocr/types';
 
 export type MangaPageSource = string | HTMLCanvasElement;
 
@@ -22,6 +27,7 @@ export interface TranslatedMangaRegion {
   contentBox?: OcrBoundingBox;
   bubbleBox: OcrBoundingBox;
   maskBoxes: readonly OcrBoundingBox[];
+  maskPolygons?: readonly (readonly OcrPoint[])[];
   backgroundColor: string;
 }
 
@@ -208,6 +214,7 @@ export class MangaTranslationEngine {
         ...(block.contentBox ? { contentBox: block.contentBox } : {}),
         bubbleBox: block.bubbleBox,
         maskBoxes: block.maskBoxes,
+        ...(block.maskPolygons ? { maskPolygons: block.maskPolygons } : {}),
         backgroundColor: block.backgroundColor ?? 'rgb(255 255 255)',
       });
     }

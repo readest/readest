@@ -1,5 +1,11 @@
 import { MangaDetector, type MangaBubbleRegion } from '@/app/reader/services/manga/mangaDetector';
 import {
+  MokuroTextDetector,
+  type MokuroPoint,
+  type MokuroTextDetectionResult,
+  type MokuroTextLine,
+} from '@/app/reader/services/manga/mokuroTextDetector';
+import {
   fetchVerifiedModelAsset,
   type ModelDownloadProgress,
   type VerifiedModelAsset,
@@ -109,11 +115,22 @@ interface BubbleDetector {
   terminate: () => Promise<void>;
 }
 
+interface TextDetector {
+  detect: (
+    source: CanvasImageSource,
+    page: Pick<PageIdentity, 'width' | 'height'>,
+  ) => Promise<MokuroTextDetectionResult>;
+  terminate: () => Promise<void>;
+}
+
 interface PaddleMangaOcrEngineDependencies {
   createCanvas: (source?: HTMLCanvasElement) => HTMLCanvasElement;
   createDetector: (
     onDownloadProgress?: (progress: ModelDownloadProgress) => void,
   ) => BubbleDetector;
+  createTextDetector: (
+    onDownloadProgress?: (progress: ModelDownloadProgress) => void,
+  ) => TextDetector;
   loadDictionary: (
     signal?: AbortSignal,
     onProgress?: (progress: ModelDownloadProgress) => void,
@@ -144,6 +161,7 @@ interface RecognizedText {
 
 interface RecognizedTextPart {
   box: OcrBoundingBox;
+  polygon?: readonly MokuroPoint[];
   result: RecognizedText;
 }
 
@@ -158,6 +176,10 @@ const defaultCreateCanvas = (source?: HTMLCanvasElement): HTMLCanvasElement =>
 const defaultCreateDetector = (
   onDownloadProgress?: (progress: ModelDownloadProgress) => void,
 ): BubbleDetector => new MangaDetector({ onDownloadProgress });
+
+const defaultCreateTextDetector = (
+  onDownloadProgress?: (progress: ModelDownloadProgress) => void,
+): TextDetector => new MokuroTextDetector({ onDownloadProgress });
 
 const defaultLoadImage = (source: string): Promise<LoadedImage> =>
   new Promise((resolve, reject) => {
@@ -206,6 +228,105 @@ const unionBoxes = (boxes: readonly OcrBoundingBox[]): OcrBoundingBox => ({
   xMax: Math.max(...boxes.map((box) => box.xMax)),
   yMax: Math.max(...boxes.map((box) => box.yMax)),
 });
+
+const boxArea = (box: OcrBoundingBox): number =>
+  Math.max(0, box.xMax - box.xMin) * Math.max(0, box.yMax - box.yMin);
+
+const intersectionArea = (left: OcrBoundingBox, right: OcrBoundingBox): number =>
+  Math.max(0, Math.min(left.xMax, right.xMax) - Math.max(left.xMin, right.xMin)) *
+  Math.max(0, Math.min(left.yMax, right.yMax) - Math.max(left.yMin, right.yMin));
+
+const centerInside = (inner: OcrBoundingBox, outer: OcrBoundingBox): boolean => {
+  const x = (inner.xMin + inner.xMax) / 2;
+  const y = (inner.yMin + inner.yMax) / 2;
+  return x >= outer.xMin && x <= outer.xMax && y >= outer.yMin && y <= outer.yMax;
+};
+
+export interface MokuroOcrRegion {
+  id: string;
+  bubbleBox: OcrBoundingBox;
+  lines: readonly MokuroTextLine[];
+  writingMode: OcrWritingMode;
+}
+
+const expandBox = (
+  box: OcrBoundingBox,
+  page: Pick<MokuroTextDetectionResult['page'], 'width' | 'height'>,
+): OcrBoundingBox => {
+  const padding = Math.max(4, Math.min(box.xMax - box.xMin, box.yMax - box.yMin) * 0.25);
+  return {
+    xMin: Math.max(0, box.xMin - padding),
+    yMin: Math.max(0, box.yMin - padding),
+    xMax: Math.min(page.width, box.xMax + padding),
+    yMax: Math.min(page.height, box.yMax + padding),
+  };
+};
+
+/** Attach Mokuro's ordered text lines to bubble containers without using coarse text boxes. */
+export const associateMokuroTextWithBubbles = (
+  bubbles: readonly MangaBubbleRegion[],
+  detection: MokuroTextDetectionResult,
+): MokuroOcrRegion[] => {
+  const grouped = new Map<
+    number,
+    { bubble: MangaBubbleRegion; firstBlock: number; lines: MokuroTextLine[] }
+  >();
+  const regions: Array<MokuroOcrRegion & { order: number }> = [];
+
+  detection.blocks.forEach((block, blockIndex) => {
+    if (!block.lines.length) return;
+    const blockArea = boxArea(block.box);
+    const bubbleIndex = bubbles
+      .map((bubble, index) => ({
+        bubble,
+        index,
+        containsCenter: centerInside(block.box, bubble.bubbleBox),
+        coverage: blockArea > 0 ? intersectionArea(block.box, bubble.bubbleBox) / blockArea : 0,
+      }))
+      .filter(({ containsCenter, coverage }) => containsCenter || coverage >= 0.5)
+      .sort(
+        (left, right) =>
+          Number(right.containsCenter) - Number(left.containsCenter) ||
+          right.coverage - left.coverage ||
+          boxArea(left.bubble.bubbleBox) - boxArea(right.bubble.bubbleBox),
+      )[0]?.index;
+
+    if (bubbleIndex === undefined) {
+      regions.push({
+        id: `mokuro-text-${blockIndex}`,
+        bubbleBox: expandBox(block.box, detection.page),
+        lines: [...block.lines],
+        writingMode: block.vertical ? 'vertical-rl' : 'horizontal-tb',
+        order: blockIndex,
+      });
+      return;
+    }
+
+    const existing = grouped.get(bubbleIndex);
+    if (existing) existing.lines.push(...block.lines);
+    else {
+      grouped.set(bubbleIndex, {
+        bubble: bubbles[bubbleIndex]!,
+        firstBlock: blockIndex,
+        lines: [...block.lines],
+      });
+    }
+  });
+
+  for (const { bubble, firstBlock, lines } of grouped.values()) {
+    const verticalLines = lines.filter((line) => line.vertical).length;
+    regions.push({
+      id: bubble.id,
+      bubbleBox: bubble.bubbleBox,
+      lines,
+      writingMode: verticalLines >= lines.length / 2 ? 'vertical-rl' : 'horizontal-tb',
+      order: firstBlock,
+    });
+  }
+  return regions
+    .sort((left, right) => left.order - right.order)
+    .map(({ order: _order, ...region }) => region);
+};
 
 const textPartThickness = (box: OcrBoundingBox, writingMode: OcrWritingMode): number =>
   writingMode === 'vertical-rl' ? box.xMax - box.xMin : box.yMax - box.yMin;
@@ -347,6 +468,82 @@ const cropRgba = (image: RgbaImage, box: OcrBoundingBox): RgbaImage | null => {
     data.set(image.data.subarray(sourceStart, sourceEnd), y * rectangle.width * 4);
   }
   return { data, width: rectangle.width, height: rectangle.height };
+};
+
+const pointDistance = (left: MokuroPoint, right: MokuroPoint): number =>
+  Math.hypot(right.x - left.x, right.y - left.y);
+
+const rgbaChannelAt = (image: RgbaImage, x: number, y: number, channel: number): number => {
+  const x0 = Math.max(0, Math.min(image.width - 1, Math.floor(x)));
+  const y0 = Math.max(0, Math.min(image.height - 1, Math.floor(y)));
+  const x1 = Math.min(image.width - 1, x0 + 1);
+  const y1 = Math.min(image.height - 1, y0 + 1);
+  const xWeight = Math.max(0, Math.min(1, x - Math.floor(x)));
+  const yWeight = Math.max(0, Math.min(1, y - Math.floor(y)));
+  const top =
+    image.data[pixelOffset(image, x0, y0) + channel]! * (1 - xWeight) +
+    image.data[pixelOffset(image, x1, y0) + channel]! * xWeight;
+  const bottom =
+    image.data[pixelOffset(image, x0, y1) + channel]! * (1 - xWeight) +
+    image.data[pixelOffset(image, x1, y1) + channel]! * xWeight;
+  return top * (1 - yWeight) + bottom * yWeight;
+};
+
+/** Rectify an ordered top-left, top-right, bottom-right, bottom-left quadrilateral. */
+export const perspectiveWarpRgba = (
+  image: RgbaImage,
+  polygon: readonly MokuroPoint[],
+  targetHeight?: number,
+): RgbaImage | null => {
+  if (polygon.length !== 4) return null;
+  const [topLeft, topRight, bottomRight, bottomLeft] = polygon;
+  if (!topLeft || !topRight || !bottomRight || !bottomLeft) return null;
+  const sourceWidth =
+    (pointDistance(topLeft, topRight) + pointDistance(bottomLeft, bottomRight)) / 2;
+  const sourceHeight =
+    (pointDistance(topLeft, bottomLeft) + pointDistance(topRight, bottomRight)) / 2;
+  if (
+    !Number.isFinite(sourceWidth) ||
+    !Number.isFinite(sourceHeight) ||
+    sourceWidth < 1 ||
+    sourceHeight < 1
+  ) {
+    return null;
+  }
+  const height = Math.max(1, Math.round(targetHeight ?? sourceHeight));
+  const width = Math.max(1, Math.round((sourceWidth / sourceHeight) * height));
+
+  const dx1 = topRight.x - bottomRight.x;
+  const dx2 = bottomLeft.x - bottomRight.x;
+  const dx3 = topLeft.x - topRight.x + bottomRight.x - bottomLeft.x;
+  const dy1 = topRight.y - bottomRight.y;
+  const dy2 = bottomLeft.y - bottomRight.y;
+  const dy3 = topLeft.y - topRight.y + bottomRight.y - bottomLeft.y;
+  const denominator = dx1 * dy2 - dx2 * dy1;
+  const projective = Math.abs(dx3) + Math.abs(dy3) > 1e-6 && Math.abs(denominator) > 1e-6;
+  const g = projective ? (dx3 * dy2 - dx2 * dy3) / denominator : 0;
+  const h = projective ? (dx1 * dy3 - dx3 * dy1) / denominator : 0;
+  const a = topRight.x - topLeft.x + g * topRight.x;
+  const b = bottomLeft.x - topLeft.x + h * bottomLeft.x;
+  const c = topLeft.x;
+  const d = topRight.y - topLeft.y + g * topRight.y;
+  const e = bottomLeft.y - topLeft.y + h * bottomLeft.y;
+  const f = topLeft.y;
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    const v = height === 1 ? 0 : y / (height - 1);
+    for (let x = 0; x < width; x += 1) {
+      const u = width === 1 ? 0 : x / (width - 1);
+      const scale = g * u + h * v + 1;
+      const sourceX = (a * u + b * v + c) / scale;
+      const sourceY = (d * u + e * v + f) / scale;
+      const target = (y * width + x) * 4;
+      for (let channel = 0; channel < 4; channel += 1) {
+        data[target + channel] = rgbaChannelAt(image, sourceX, sourceY, channel);
+      }
+    }
+  }
+  return { data, width, height };
 };
 
 export const rotateRgbaCounterclockwise = (source: RgbaImage): RgbaImage => {
@@ -737,6 +934,7 @@ export class PaddleMangaOcrEngine {
   readonly #onProgress?: (progress: { status: string; progress: number }) => void;
   readonly #createCanvas: PaddleMangaOcrEngineDependencies['createCanvas'];
   readonly #createDetector: PaddleMangaOcrEngineDependencies['createDetector'];
+  readonly #createTextDetector: PaddleMangaOcrEngineDependencies['createTextDetector'];
   readonly #loadDictionary: PaddleMangaOcrEngineDependencies['loadDictionary'];
   readonly #loadImage: PaddleMangaOcrEngineDependencies['loadImage'];
   readonly #loadModel: PaddleMangaOcrEngineDependencies['loadModel'];
@@ -744,6 +942,7 @@ export class PaddleMangaOcrEngine {
   readonly #abortController = new AbortController();
   readonly #activeRuns = new Set<Promise<Record<string, PaddleTensor>>>();
   #detector: BubbleDetector | null = null;
+  #textDetector: TextDetector | null = null;
   #recognizerPromise: Promise<Recognizer> | null = null;
   #runtimePromise: Promise<PaddleMangaOcrRuntime> | null = null;
   #terminated = false;
@@ -756,6 +955,7 @@ export class PaddleMangaOcrEngine {
     this.#onProgress = options.onProgress;
     this.#createCanvas = dependencies.createCanvas ?? defaultCreateCanvas;
     this.#createDetector = dependencies.createDetector ?? defaultCreateDetector;
+    this.#createTextDetector = dependencies.createTextDetector ?? defaultCreateTextDetector;
     this.#loadDictionary = dependencies.loadDictionary ?? defaultLoadDictionary;
     this.#loadImage = dependencies.loadImage ?? defaultLoadImage;
     this.#loadModel = dependencies.loadModel ?? defaultLoadModel;
@@ -772,7 +972,12 @@ export class PaddleMangaOcrEngine {
     const regions = await this.#getDetector().detect(prepared.image, prepared.page);
     this.#onProgress?.({ status: 'detecting speech bubbles', progress: 1 });
     if (this.#terminated) throw new Error('Manga OCR engine has been terminated');
-    if (!regions.length) return { ...prepared.page, blocks: [] };
+
+    this.#onProgress?.({ status: 'detecting Japanese text', progress: 0 });
+    const textDetection = await this.#getTextDetector().detect(prepared.image, prepared.page);
+    this.#onProgress?.({ status: 'detecting Japanese text', progress: 1 });
+    if (this.#terminated) throw new Error('Manga OCR engine has been terminated');
+    if (!regions.length && !textDetection.blocks.length) return { ...prepared.page, blocks: [] };
 
     const context = prepared.image.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('Manga OCR could not read the page canvas');
@@ -787,22 +992,38 @@ export class PaddleMangaOcrEngine {
     }
 
     const recognizer = await this.#getRecognizer();
-    const preparedRegions = regions.map((region) => ({
-      region,
-      boxes: region.textBoxes.flatMap((textBox) =>
-        splitTextBox(image, textBox, region.writingMode),
-      ),
-    }));
+    const useMokuro = textDetection.blocks.length > 0;
+    const preparedRegions = useMokuro
+      ? associateMokuroTextWithBubbles(regions, textDetection).map((region) => ({
+          id: region.id,
+          bubbleBox: region.bubbleBox,
+          boxes: region.lines.map((line) => line.box),
+          lines: region.lines,
+          writingMode: region.writingMode,
+        }))
+      : regions.map((region) => ({
+          id: region.id,
+          bubbleBox: region.bubbleBox,
+          boxes: region.textBoxes.flatMap((textBox) =>
+            splitTextBox(image, textBox, region.writingMode),
+          ),
+          lines: [] as readonly MokuroTextLine[],
+          writingMode: region.writingMode,
+        }));
     const totalBoxes = preparedRegions.reduce((sum, { boxes }) => sum + boxes.length, 0);
     let completedBoxes = 0;
     this.#onProgress?.({ status: 'recognizing speech bubbles', progress: 0 });
     const blocks: OcrTextBlock[] = [];
-    for (const { region, boxes } of preparedRegions) {
+    for (const region of preparedRegions) {
+      const { boxes } = region;
       const recognizedParts: RecognizedTextPart[] = [];
-      for (const textBox of boxes) {
+      for (const [index, textBox] of boxes.entries()) {
         if (this.#terminated) throw new Error('Manga OCR engine has been terminated');
-        const result = await this.#recognizeTextBox(recognizer, image, textBox, region.writingMode);
-        recognizedParts.push({ box: textBox, result });
+        const line = region.lines[index];
+        const result = line
+          ? await this.#recognizeTextLine(recognizer, image, line, region.writingMode)
+          : await this.#recognizeTextBox(recognizer, image, textBox, region.writingMode);
+        recognizedParts.push({ box: textBox, ...(line ? { polygon: line.polygon } : {}), result });
         completedBoxes += 1;
         this.#onProgress?.({
           status: 'recognizing speech bubbles',
@@ -813,28 +1034,35 @@ export class PaddleMangaOcrEngine {
         ({ result }) => result.text && result.confidence >= this.#minimumConfidence,
       );
       if (!readableParts.length) continue;
-      const minimumReadableThickness = Math.min(
-        ...readableParts.map(({ box }) => textPartThickness(box, region.writingMode)),
-      );
-      const hasUnreadableText = recognizedParts.some(
-        ({ box, result }) =>
-          (!result.text || result.confidence < this.#minimumConfidence) &&
-          textPartThickness(box, region.writingMode) >
-            minimumReadableThickness * MAXIMUM_IGNORED_PART_THICKNESS_RATIO,
-      );
-      if (hasUnreadableText) continue;
+      if (!useMokuro) {
+        const minimumReadableThickness = Math.min(
+          ...readableParts.map(({ box }) => textPartThickness(box, region.writingMode)),
+        );
+        const hasUnreadableText = recognizedParts.some(
+          ({ box, result }) =>
+            (!result.text || result.confidence < this.#minimumConfidence) &&
+            textPartThickness(box, region.writingMode) >
+              minimumReadableThickness * MAXIMUM_IGNORED_PART_THICKNESS_RATIO,
+        );
+        if (hasUnreadableText) continue;
+      }
       const parts = readableParts.map(({ result }) => result);
+      const readableBoxes = readableParts.map(({ box }) => box);
       blocks.push({
         id: region.id,
         text: parts.map((part) => part.text).join('\n'),
         confidence:
           parts.reduce((sum, part) => sum + part.confidence, 0) / Math.max(1, parts.length),
-        box: unionBoxes(boxes),
+        box: unionBoxes(useMokuro ? readableBoxes : boxes),
         bubbleBox: region.bubbleBox,
-        contentBox:
-          findSafeBubbleContentBox(image, region.bubbleBox, region.textBoxes) ?? undefined,
-        maskBoxes: region.textBoxes,
-        backgroundColor: sampleBackground(image, region.bubbleBox, region.textBoxes),
+        contentBox: findSafeBubbleContentBox(image, region.bubbleBox, boxes) ?? undefined,
+        maskBoxes: useMokuro ? readableBoxes : boxes,
+        ...(useMokuro
+          ? {
+              maskPolygons: readableParts.flatMap(({ polygon }) => (polygon ? [polygon] : [])),
+            }
+          : {}),
+        backgroundColor: sampleBackground(image, region.bubbleBox, boxes),
         writingMode: region.writingMode,
       });
     }
@@ -847,8 +1075,10 @@ export class PaddleMangaOcrEngine {
     this.#terminated = true;
     this.#abortController.abort();
     const detector = this.#detector;
+    const textDetector = this.#textDetector;
     const recognizerPromise = this.#recognizerPromise;
     this.#detector = null;
+    this.#textDetector = null;
     this.#recognizerPromise = null;
     const releaseRecognizer = recognizerPromise?.then(
       async ({ session }) => {
@@ -857,7 +1087,7 @@ export class PaddleMangaOcrEngine {
       },
       () => undefined,
     );
-    await Promise.all([detector?.terminate(), releaseRecognizer]);
+    await Promise.all([detector?.terminate(), textDetector?.terminate(), releaseRecognizer]);
   }
 
   async #preparePage(
@@ -899,6 +1129,17 @@ export class PaddleMangaOcrEngine {
       });
     });
     return this.#detector;
+  }
+
+  #getTextDetector(): TextDetector {
+    if (this.#terminated) throw new Error('Manga OCR engine has been terminated');
+    this.#textDetector ??= this.#createTextDetector(({ loaded, total }) => {
+      this.#onProgress?.({
+        status: 'loading manga text detector',
+        progress: total && total > 0 ? Math.min(1, loaded / total) : 0,
+      });
+    });
+    return this.#textDetector;
   }
 
   #getRuntime(): Promise<PaddleMangaOcrRuntime> {
@@ -965,6 +1206,36 @@ export class PaddleMangaOcrEngine {
     const cropped = cropRgba(page, box);
     if (!cropped) return { text: '', confidence: 0 };
     const image = writingMode === 'vertical-rl' ? rotateRgbaCounterclockwise(cropped) : cropped;
+    return this.#recognizeImage(recognizer, image);
+  }
+
+  async #recognizeTextLine(
+    recognizer: Recognizer,
+    page: RgbaImage,
+    line: MokuroTextLine,
+    writingMode: OcrWritingMode,
+  ): Promise<RecognizedText> {
+    const vertical = writingMode === 'vertical-rl';
+    const [topLeft, topRight, bottomRight, bottomLeft] = line.polygon;
+    if (!topLeft || !topRight || !bottomRight || !bottomLeft) {
+      return this.#recognizeTextBox(recognizer, page, line.box, writingMode);
+    }
+    const lineWidth =
+      (pointDistance(topLeft, topRight) + pointDistance(bottomLeft, bottomRight)) / 2;
+    const lineHeight =
+      (pointDistance(topLeft, bottomLeft) + pointDistance(topRight, bottomRight)) / 2;
+    const targetHeight = vertical
+      ? Math.max(
+          RECOGNITION_HEIGHT,
+          Math.round((RECOGNITION_HEIGHT * lineHeight) / Math.max(1, lineWidth)),
+        )
+      : RECOGNITION_HEIGHT;
+    const warped = perspectiveWarpRgba(page, line.polygon, targetHeight);
+    if (!warped) return this.#recognizeTextBox(recognizer, page, line.box, writingMode);
+    return this.#recognizeImage(recognizer, vertical ? rotateRgbaCounterclockwise(warped) : warped);
+  }
+
+  async #recognizeImage(recognizer: Recognizer, image: RgbaImage): Promise<RecognizedText> {
     const input = makeRecognitionInput(image, getRecognitionViews(image));
     let outputs: Record<string, PaddleTensor>;
     const run = recognizer.session.run({

@@ -21,6 +21,14 @@ const makePage = (overrides: Partial<TranslatedMangaPage> = {}): TranslatedManga
       textBox: { xMin: 150, yMin: 250, xMax: 300, yMax: 450 },
       bubbleBox: { xMin: 100, yMin: 200, xMax: 500, yMax: 600 },
       maskBoxes: [{ xMin: 150, yMin: 250, xMax: 300, yMax: 450 }],
+      maskPolygons: [
+        [
+          { x: 150, y: 250 },
+          { x: 300, y: 260 },
+          { x: 280, y: 450 },
+          { x: 160, y: 440 },
+        ],
+      ],
       backgroundColor: 'rgb(250 248 242)',
     },
   ],
@@ -60,6 +68,7 @@ describe('mangaTranslationLayer', () => {
     expect(Number.parseFloat(mask?.style.top ?? '')).toBeCloseTo(12.5);
     expect(Number.parseFloat(mask?.style.width ?? '')).toBeCloseTo(15);
     expect(Number.parseFloat(mask?.style.height ?? '')).toBeCloseTo(10);
+    expect(mask?.style.clipPath).toBe('polygon(0% 0%, 100% 5%, 86.666667% 100%, 6.666667% 95%)');
 
     const bubble = layer?.querySelector<HTMLElement>('[data-readest-manga-region-id="bubble-0"]');
     const text = bubble?.querySelector<HTMLElement>('[data-readest-manga-text]');

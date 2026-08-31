@@ -26,6 +26,14 @@ const makeOcrPage = (): OcrPage => ({
         { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
         { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
       ],
+      maskPolygons: [
+        [
+          { x: 260, y: 160 },
+          { x: 360, y: 160 },
+          { x: 360, y: 500 },
+          { x: 260, y: 500 },
+        ],
+      ],
       backgroundColor: 'rgb(250 248 242)',
       writingMode: 'vertical-rl',
     },
@@ -103,6 +111,14 @@ describe('MangaTranslationEngine', () => {
           maskBoxes: [
             { xMin: 260, yMin: 160, xMax: 360, yMax: 500 },
             { xMin: 120, yMin: 180, xMax: 220, yMax: 480 },
+          ],
+          maskPolygons: [
+            [
+              { x: 260, y: 160 },
+              { x: 360, y: 160 },
+              { x: 360, y: 500 },
+              { x: 260, y: 500 },
+            ],
           ],
           backgroundColor: 'rgb(250 248 242)',
         },

@@ -1,20 +1,50 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  associateMokuroTextWithBubbles,
   decodePaddleMangaOcr,
   findSafeBubbleContentBox,
   PADDLE_MANGA_OCR_DICTIONARY_ASSET,
   PADDLE_MANGA_OCR_MODEL_ASSET,
   PaddleMangaOcrEngine,
+  perspectiveWarpRgba,
   rotateRgbaCounterclockwise,
   type PaddleMangaOcrRuntime,
 } from '@/app/reader/services/manga/paddleMangaOcrEngine';
+import type {
+  MokuroTextBlock,
+  MokuroTextDetectionResult,
+  MokuroTextLine,
+} from '@/app/reader/services/manga/mokuroTextDetector';
 
 const box = (xMin: number, yMin: number, xMax: number, yMax: number) => ({
   xMin,
   yMin,
   xMax,
   yMax,
+});
+
+const line = (xMin: number, yMin: number, xMax: number, yMax: number): MokuroTextLine => ({
+  box: box(xMin, yMin, xMax, yMax),
+  polygon: [
+    { x: xMin, y: yMin },
+    { x: xMax, y: yMin },
+    { x: xMax, y: yMax },
+    { x: xMin, y: yMax },
+  ],
+  score: 0.9,
+  vertical: yMax - yMin > xMax - xMin,
+});
+
+const textDetection = (
+  width: number,
+  height: number,
+  blocks: readonly MokuroTextBlock[] = [],
+): MokuroTextDetectionResult => ({
+  page: { width, height },
+  blocks,
+  rawMask: { width, height, data: new Uint8Array(width * height) },
+  refinedMask: { width, height, data: new Uint8Array(width * height).fill(255) },
 });
 
 const makePixels = (width: number, height: number): Uint8ClampedArray => {
@@ -89,12 +119,17 @@ const makeHarness = (width = 80, height = 120) => {
     ]),
     terminate: vi.fn(async () => undefined),
   };
+  const textDetector = {
+    detect: vi.fn(async () => textDetection(width, height)),
+    terminate: vi.fn(async () => undefined),
+  };
   const loadModel = vi.fn(async () => new ArrayBuffer(4));
   const loadDictionary = vi.fn(async () => new TextEncoder().encode('あ\nい\n').buffer);
   const engine = new PaddleMangaOcrEngine(
     {},
     {
       createDetector: () => detector,
+      createTextDetector: () => textDetector,
       loadRuntime: async () => runtime,
       loadModel,
       loadDictionary,
@@ -117,6 +152,7 @@ const makeHarness = (width = 80, height = 120) => {
     run,
     pixels,
     source,
+    textDetector,
   };
 };
 
@@ -163,6 +199,102 @@ describe('rotateRgbaCounterclockwise', () => {
   });
 });
 
+describe('perspectiveWarpRgba', () => {
+  it('rectifies a quadrilateral into a straight OCR crop', () => {
+    const data = new Uint8ClampedArray(6 * 6 * 4);
+    for (let y = 0; y < 6; y += 1) {
+      for (let x = 0; x < 6; x += 1) {
+        const offset = (y * 6 + x) * 4;
+        data[offset] = x * 10;
+        data[offset + 1] = y * 10;
+        data[offset + 3] = 255;
+      }
+    }
+
+    const warped = perspectiveWarpRgba(
+      { data, width: 6, height: 6 },
+      [
+        { x: 1, y: 1 },
+        { x: 4, y: 0 },
+        { x: 5, y: 4 },
+        { x: 0, y: 5 },
+      ],
+      4,
+    );
+
+    expect(warped).not.toBeNull();
+    expect(warped).toMatchObject({ width: 4, height: 4 });
+    expect(warped!.data[0]).toBeCloseTo(10, -1);
+    expect(warped!.data[1]).toBeCloseTo(10, -1);
+    expect(warped!.data.at(-4)).toBeCloseTo(50, -1);
+    expect(warped!.data.at(-3)).toBeCloseTo(40, -1);
+    const bottomLeft = 3 * warped!.width * 4;
+    expect(warped!.data[bottomLeft]).toBeCloseTo(0, -1);
+    expect(warped!.data[bottomLeft + 1]).toBeCloseTo(50, -1);
+  });
+});
+
+describe('associateMokuroTextWithBubbles', () => {
+  it('uses Mokuro line polygons and preserves Japanese reading order inside the bubble', () => {
+    const right = line(55, 20, 65, 90);
+    const left = line(30, 25, 40, 95);
+    const block: MokuroTextBlock = {
+      box: box(30, 20, 65, 95),
+      score: 0.95,
+      language: 'ja',
+      vertical: true,
+      lines: [right, left],
+    };
+
+    const regions = associateMokuroTextWithBubbles(
+      [
+        {
+          id: 'bubble-0',
+          score: 0.8,
+          bubbleBox: box(10, 10, 90, 110),
+          textBoxes: [box(20, 15, 70, 100)],
+          writingMode: 'horizontal-tb',
+        },
+      ],
+      textDetection(100, 120, [block]),
+    );
+
+    expect(regions).toEqual([
+      {
+        id: 'bubble-0',
+        bubbleBox: box(10, 10, 90, 110),
+        lines: [right, left],
+        writingMode: 'vertical-rl',
+      },
+    ]);
+  });
+
+  it('keeps uncontained Mokuro text in a bounded fallback region', () => {
+    const detectedLine = line(80, 30, 95, 100);
+    const regions = associateMokuroTextWithBubbles(
+      [],
+      textDetection(100, 120, [
+        {
+          box: detectedLine.box,
+          score: 0.9,
+          language: 'ja',
+          vertical: true,
+          lines: [detectedLine],
+        },
+      ]),
+    );
+
+    expect(regions[0]).toMatchObject({
+      id: 'mokuro-text-0',
+      writingMode: 'vertical-rl',
+      lines: [detectedLine],
+    });
+    expect(regions[0]!.bubbleBox.xMin).toBeGreaterThanOrEqual(0);
+    expect(regions[0]!.bubbleBox.xMax).toBeLessThanOrEqual(100);
+    expect(regions[0]!.bubbleBox.yMax).toBeLessThanOrEqual(120);
+  });
+});
+
 describe('findSafeBubbleContentBox', () => {
   it('keeps the English layout rectangle inside an irregular bubble', () => {
     const width = 100;
@@ -199,13 +331,48 @@ describe('findSafeBubbleContentBox', () => {
       [content!.xMax - 1, content!.yMin],
       [content!.xMin, content!.yMax - 1],
       [content!.xMax - 1, content!.yMax - 1],
-    ]) {
+    ] as const) {
       expect(Math.abs(x - 50) + Math.abs(y - 50)).toBeLessThanOrEqual(42);
     }
   });
 });
 
 describe('PaddleMangaOcrEngine', () => {
+  it('recognizes Mokuro polygons instead of the coarse bubble detector text box', async () => {
+    const harness = makeHarness();
+    const detectedLine = line(50, 18, 62, 92);
+    harness.textDetector.detect.mockResolvedValueOnce(
+      textDetection(80, 120, [
+        {
+          box: detectedLine.box,
+          score: 0.95,
+          language: 'ja',
+          vertical: true,
+          lines: [detectedLine],
+        },
+      ]),
+    );
+
+    const page = await harness.engine.recognize(harness.source, {
+      pageIndex: 7,
+      width: 80,
+      height: 120,
+    });
+
+    expect(page.blocks[0]).toMatchObject({
+      id: 'bubble-0',
+      box: detectedLine.box,
+      maskBoxes: [detectedLine.box],
+      maskPolygons: [detectedLine.polygon],
+      writingMode: 'vertical-rl',
+    });
+    expect(harness.run).toHaveBeenCalledOnce();
+    const input = harness.run.mock.calls[0]![0]['x'] as { dims: number[] };
+    expect(input.dims[2]).toBe(48);
+    expect(input.dims[3]).toBeGreaterThan(320 - 1);
+    await harness.engine.terminate();
+  });
+
   it('loads lazily, reuses one model session, and returns detector geometry', async () => {
     const harness = makeHarness();
 
@@ -255,6 +422,7 @@ describe('PaddleMangaOcrEngine', () => {
     await harness.engine.terminate();
     expect(harness.release).toHaveBeenCalledOnce();
     expect(harness.detector.terminate).toHaveBeenCalledOnce();
+    expect(harness.textDetector.terminate).toHaveBeenCalledOnce();
     await expect(
       harness.engine.recognize(harness.source, { pageIndex: 9, width: 80, height: 120 }),
     ).rejects.toThrow('terminated');

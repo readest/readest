@@ -7,6 +7,11 @@ export interface OcrBoundingBox {
   yMax: number;
 }
 
+export interface OcrPoint {
+  x: number;
+  y: number;
+}
+
 export interface OcrTextBlock {
   id: string;
   text: string;
@@ -16,6 +21,7 @@ export interface OcrTextBlock {
   bubbleBox?: OcrBoundingBox;
   contentBox?: OcrBoundingBox;
   maskBoxes?: readonly OcrBoundingBox[];
+  maskPolygons?: readonly (readonly OcrPoint[])[];
   writingMode: OcrWritingMode;
 }
 
