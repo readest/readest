@@ -61,8 +61,12 @@ describe('PageNavigationButtons Android hit areas', () => {
     render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
 
     for (const label of navigationLabels) {
-      const bounds = screen.getByRole('button', { name: label }).getBoundingClientRect();
+      const button = screen.getByRole('button', { name: label });
+      const bounds = button.getBoundingClientRect();
       expect([bounds.width, bounds.height], label).toEqual([16, 16]);
+
+      const hitTarget = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top - 1);
+      expect(button.contains(hitTarget), label).toBe(false);
     }
   });
 

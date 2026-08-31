@@ -38,7 +38,9 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
   const isPageNavigationButtonsVisible =
     (hoveredBookKey === bookKey || isDropdownOpen) && viewSettings?.showPaginationButtons;
   const navigationButtonSize =
-    !isPageNavigationButtonsVisible && appService?.isAndroidApp ? 'h-4 w-4' : 'h-20 w-20';
+    !isPageNavigationButtonsVisible && appService?.isAndroidApp
+      ? 'h-4 w-4 overflow-hidden'
+      : 'h-20 w-20';
 
   const handleGoLeftPage = useCallback(() => {
     viewPagination(view, viewSettings, 'left', 'page');
