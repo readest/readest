@@ -338,24 +338,34 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   // Track the drag on `window` (not the moving <img>) so the pan keeps
   // following the pointer even when it crosses the image boundary. Binding the
   // move/up handlers to the image meant the cursor leaving the lagging image
-  // aborted and restarted the drag, which flickered on desktop (#4451). This
-  // mirrors the touch path, which tracks on the full-screen container.
+  // aborted and restarted the drag, which flickered on desktop (#4451). Some
+  // WebViews can still lose the `mouseup` entirely when the pointer is released
+  // outside the app window, so `mousemove.buttons` and `blur` are independent
+  // release signals that prevent a stale drag from sticking to the cursor.
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
+      // `buttons` reflects the physical button state even if the WebView missed
+      // the corresponding mouseup while the pointer was outside its bounds.
+      if ((e.buttons & 1) === 0) {
+        setIsDragging(false);
+        return;
+      }
       wasDragging.current = true;
       setPosition({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
     };
-    const handleMouseUp = () => {
+    const stopDragging = () => {
       setIsDragging(false);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mouseup', stopDragging);
+    window.addEventListener('blur', stopDragging);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', stopDragging);
+      window.removeEventListener('blur', stopDragging);
     };
   }, [isDragging]);
 

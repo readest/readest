@@ -61,7 +61,7 @@ describe('ImageViewer', () => {
 
     fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
     // Pointer moves while no longer over the image element — handled on window.
-    fireEvent.mouseMove(window, { clientX: 160, clientY: 130 });
+    fireEvent.mouseMove(window, { clientX: 160, clientY: 130, buttons: 1 });
 
     // position = (60, 30); transform divides the translate by scale (2).
     expect(img.style.transform).toContain('scale(2)');
@@ -82,6 +82,29 @@ describe('ImageViewer', () => {
 
     fireEvent.mouseUp(window);
     expect(img.style.transition).not.toBe('none');
+  });
+
+  it('stops panning when the WebView misses mouseup but the mouse button is released', () => {
+    const { container } = render(
+      <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const img = container.querySelector('img')!;
+    zoomIn(img);
+
+    fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(window, { clientX: 160, clientY: 130, buttons: 1 });
+    const positionAfterDrag = img.style.transform;
+    expect(img.style.cursor).toBe('grabbing');
+
+    // Re-entering the WebView after releasing outside can produce mousemove
+    // with buttons=0 without any preceding mouseup. That must end the stale
+    // drag immediately instead of making the image stick to the cursor.
+    fireEvent.mouseMove(window, { clientX: 220, clientY: 180, buttons: 0 });
+    expect(img.style.cursor).toBe('grab');
+    expect(img.style.transform).toBe(positionAfterDrag);
+
+    fireEvent.mouseMove(window, { clientX: 300, clientY: 240, buttons: 0 });
+    expect(img.style.transform).toBe(positionAfterDrag);
   });
 
   // Zoom percentage is relative to the image's own resolution (#5362).
