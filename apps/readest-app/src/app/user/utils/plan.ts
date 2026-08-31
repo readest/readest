@@ -42,6 +42,51 @@ const getProductFeature = (productId: string): QuotaFeature | undefined => {
   return undefined;
 };
 
+// Only Plus and Pro are sold on a recurring interval; `purchase` is one-time
+// and `free` has no price to compare.
+const SUBSCRIPTION_TIERS: UserPlan[] = ['plus', 'pro'];
+
+/**
+ * Which billing intervals the store front may offer. Yearly only appears once
+ * the store actually returns a yearly price for a subscription tier, so this
+ * ships safely ahead of the Stripe prices / App Store / Play SKUs existing.
+ */
+export const getSubscriptionIntervals = (availablePlans: AvailablePlan[]): PlanInterval[] => {
+  const hasYearly = availablePlans.some(
+    (plan) => plan.interval === 'year' && SUBSCRIPTION_TIERS.includes(plan.plan),
+  );
+  return hasYearly ? ['month', 'year'] : ['month'];
+};
+
+/**
+ * The headline discount for paying yearly, as a whole percentage off twelve
+ * monthly payments. Returns the largest saving across tiers, or `null` when no
+ * tier has both intervals priced or the yearly price saves nothing — the badge
+ * is then omitted rather than claiming a discount that isn't there.
+ */
+export const getYearlySavingsPercent = (availablePlans: AvailablePlan[]): number | null => {
+  let best: number | null = null;
+  for (const tier of SUBSCRIPTION_TIERS) {
+    const monthly = availablePlans.find((p) => p.plan === tier && p.interval === 'month');
+    const yearly = availablePlans.find((p) => p.plan === tier && p.interval === 'year');
+    if (!monthly?.price || !yearly?.price) continue;
+    const saving = Math.floor((1 - yearly.price / (monthly.price * 12)) * 100);
+    if (saving > 0 && (best === null || saving > best)) {
+      best = saving;
+    }
+  }
+  return best;
+};
+
+/**
+ * A user who already holds a Stripe subscription must change it through the
+ * billing portal: a second checkout session would leave both subscriptions
+ * running and bill them twice. `purchase` means storage add-ons with no
+ * subscription behind them, so those users still go to checkout.
+ */
+export const shouldUseBillingPortal = (userPlan: UserPlan, planType: PlanType): boolean =>
+  planType === 'subscription' && (userPlan === 'plus' || userPlan === 'pro');
+
 export function getPlanDetails(
   planCode: UserPlan,
   availablePlans: (AvailablePlan & StripeAvailablePlan)[],
@@ -69,8 +114,8 @@ export function getPlanDetails(
         name: _('Lifetime Plan'),
         plan: planCode,
         type: 'purchase',
-        color: 'bg-green-100 text-green-800',
-        hintColor: 'text-green-800/75',
+        color: 'bg-base-200/60 text-base-content/80',
+        hintColor: 'text-base-content/60',
         price: availablePlan?.price || 1999,
         currency,
         productId: availablePlan?.productId,
@@ -103,8 +148,8 @@ export function getPlanDetails(
         name: _('Free Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-gray-200 text-gray-800',
-        hintColor: 'text-gray-800/75',
+        color: 'bg-base-200 text-base-content/70',
+        hintColor: 'text-base-content/60',
         price: 0,
         currency,
         productId: availablePlan?.productId,
@@ -151,9 +196,9 @@ export function getPlanDetails(
         name: _('Plus Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-blue-200 text-blue-800',
-        hintColor: 'text-blue-800/75',
-        price: availablePlan?.price || 499,
+        color: 'bg-base-300 text-base-content',
+        hintColor: 'text-base-content/60',
+        price: availablePlan?.price || (interval === 'year' ? 3999 : 499),
         currency,
         productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
@@ -202,9 +247,9 @@ export function getPlanDetails(
         name: _('Pro Plan'),
         plan: planCode,
         type: 'subscription',
-        color: 'bg-purple-200 text-purple-800',
-        hintColor: 'text-purple-800/75',
-        price: availablePlan?.price || 999,
+        color: 'bg-base-300 text-base-content ring-base-content/15 ring-1',
+        hintColor: 'text-base-content/60',
+        price: availablePlan?.price || (interval === 'year' ? 7999 : 999),
         currency,
         productId: availablePlan?.productId,
         interval: interval === 'month' ? _('month') : _('year'),
