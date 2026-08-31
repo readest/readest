@@ -19,7 +19,7 @@
 // break reading or the main sync pipeline.
 
 import { useSettingsStore } from '@/store/settingsStore';
-import { resolveCloudSyncGate } from '@/services/sync/cloudSyncProvider';
+import { getActiveFileSyncBackends } from '@/services/sync/cloudSyncProvider';
 import { ancestorsOf, buildStatsDirPath, buildStatsFilePath } from '@/services/sync/file/layout';
 import { createFileSyncProvider } from '@/services/sync/file/providerRegistry';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
@@ -75,16 +75,15 @@ const writeAppliedMemo = (memo: Record<string, number>): void => {
 
 /**
  * Every enabled file-sync backend (LAN included — unlike the cloud-gated
- * channels, stats snapshots ride whatever the user switched on). Empty when
- * file sync is paused or no backend is configured.
+ * channels, stats snapshots ride whatever the user switched on). When a cloud
+ * plan pauses third-party backends, the active-backend helper still preserves
+ * LAN because it is local and outside the cloud quota.
  */
 const getActiveProviders = async (): Promise<FileSyncProvider[]> => {
   try {
     const settings = useSettingsStore.getState().settings;
-    const gate = resolveCloudSyncGate(settings);
-    if (gate.paused) return [];
     const providers: FileSyncProvider[] = [];
-    for (const backend of gate.backends) {
+    for (const backend of getActiveFileSyncBackends(settings)) {
       const provider = await createFileSyncProvider(backend, settings);
       if (provider) providers.push(provider);
     }
