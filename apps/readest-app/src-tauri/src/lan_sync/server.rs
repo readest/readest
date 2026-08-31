@@ -23,8 +23,8 @@ use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use serde::Deserialize;
 use futures::StreamExt;
+use serde::Deserialize;
 use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio_util::io::ReaderStream;
@@ -141,6 +141,13 @@ fn safe_join(root: &std::path::Path, rel: &str) -> Option<PathBuf> {
 
 /// Resolve the root and reject symlinks in every existing requested component.
 /// Missing components are allowed so writes can create them safely afterward.
+///
+/// Once the first missing component is reached we still append the remaining
+/// lexical suffix. The old implementation stopped there, so the first PUT for
+/// `Readest/books/<hash>/config.json` resolved to `Readest/books/<hash>` and
+/// wrote the JSON body into a FILE named `<hash>`. Existing hash directories
+/// kept working while every newly imported book failed its later config/file
+/// uploads — exactly the "old 18 sync, new books never appear" failure mode.
 async fn checked_join(root: &std::path::Path, rel: &str) -> std::io::Result<Option<PathBuf>> {
     let Some(joined) = safe_join(root, rel) else {
         return Ok(None);
@@ -149,17 +156,76 @@ async fn checked_join(root: &std::path::Path, rel: &str) -> std::io::Result<Opti
     let relative = joined
         .strip_prefix(root)
         .expect("safe_join result must be under root");
+    let components: Vec<_> = relative.components().collect();
     let mut checked = canonical_root.clone();
-    for component in relative.components() {
+    let mut missing = false;
+    for (index, component) in components.iter().enumerate() {
         checked.push(component.as_os_str());
+        if missing {
+            continue;
+        }
         match tokio::fs::symlink_metadata(&checked).await {
             Ok(meta) if meta.file_type().is_symlink() => return Ok(None),
-            Ok(_) => {}
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => break,
+            Ok(meta) => {
+                if index + 1 < components.len() && !meta.is_dir() {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::NotADirectory,
+                        format!("LAN sync path component is not a directory: {}", checked.display()),
+                    ));
+                }
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => missing = true,
             Err(e) => return Err(e),
         }
     }
     Ok(Some(checked))
+}
+
+/// Repair the exact directory slots the old checked_join bug could have
+/// published as files. This is intentionally limited to Readest's frozen wire
+/// layout rather than deleting arbitrary regular-file ancestors supplied by a
+/// peer. It makes already-poisoned phones self-heal on the next PUT, so users do
+/// not need to clear LAN Sync storage or re-import their books.
+async fn repair_legacy_wire_dirs(root: &Path, rel: &str) -> std::io::Result<()> {
+    let segments: Vec<&str> = rel.split('/').filter(|segment| !segment.is_empty()).collect();
+    if segments.first().copied() != Some("Readest") {
+        return Ok(());
+    }
+
+    let mut directory_depths = vec![1usize]; // Readest
+    if segments.get(1).copied() == Some("books") {
+        directory_depths.push(2); // Readest/books
+        if segments.len() >= 4 {
+            directory_depths.push(3); // Readest/books/<hash>
+        }
+        if segments.get(3).copied() == Some("tts") && segments.len() >= 5 {
+            directory_depths.push(4); // Readest/books/<hash>/tts
+        }
+    } else if segments.get(1).copied() == Some("stats") && segments.len() >= 3 {
+        directory_depths.push(2); // Readest/stats
+    }
+
+    for depth in directory_depths {
+        let mut candidate = root.to_path_buf();
+        for segment in segments.iter().take(depth) {
+            candidate.push(segment);
+        }
+        match tokio::fs::symlink_metadata(&candidate).await {
+            Ok(meta) if meta.file_type().is_symlink() => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    format!("refusing symlink in LAN sync path: {}", candidate.display()),
+                ));
+            }
+            Ok(meta) if !meta.is_dir() => {
+                tokio::fs::remove_file(&candidate).await?;
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(())
 }
 
 fn not_found() -> Response {
@@ -362,7 +428,11 @@ async fn head_file(
                 Ok(range) => range,
                 Err(()) => return range_error(size),
             };
-            let status = if range.is_some() { StatusCode::PARTIAL_CONTENT } else { StatusCode::OK };
+            let status = if range.is_some() {
+                StatusCode::PARTIAL_CONTENT
+            } else {
+                StatusCode::OK
+            };
             with_cors(
                 response_headers(status, size, etag, range.as_ref())
                     .body(Body::empty())
@@ -404,6 +474,11 @@ async fn write_file(
     AxumPath(path): AxumPath<String>,
     body: Body,
 ) -> Response {
+    // Heal regular files left in frozen directory positions by the old
+    // checked_join truncation bug before validating/creating the full path.
+    if let Err(e) = repair_legacy_wire_dirs(&state.root, &path).await {
+        return internal_error(e);
+    }
     let full = match checked_join(&state.root, &path).await {
         Ok(Some(full)) => full,
         Ok(None) => return bad_request("invalid path"),
@@ -422,15 +497,16 @@ async fn write_file(
             return internal_error(e);
         }
     }
-    // Stream the request body to a same-directory `.part` temp file and rename
-    // atomically on completion. Buffering the whole body first (the previous
-    // implementation) spiked to ~2x the file size in RAM and starved the UI on
-    // phones; streaming keeps memory O(chunk). A connection that dies
-    // mid-transfer leaves no truncated book behind for the discovery scan to
-    // mistake for a complete upload (the engine skips `.part` names anyway).
-    let mut part_os = full.clone().into_os_string();
-    part_os.push(format!(".{}.part", uuid::Uuid::new_v4()));
-    let part_path = PathBuf::from(part_os);
+    // Stream the request body to a short, same-directory `.part` temp file and
+    // rename atomically on completion. Do NOT append the UUID to the target
+    // filename: makeSafeFilename can already use nearly the filesystem's full
+    // 255-byte component budget, and `<long-name>.epub.<uuid>.part` exceeded it
+    // on Android/Linux. The hash directory already isolates each book and the
+    // UUID makes concurrent temp names unique.
+    let Some(parent) = full.parent() else {
+        return bad_request("invalid file path");
+    };
+    let part_path = parent.join(format!(".upload-{}.part", uuid::Uuid::new_v4().simple()));
 
     let file = match tokio::fs::OpenOptions::new()
         .write(true)
@@ -464,7 +540,9 @@ async fn write_file(
         };
         let next_size = written.saturating_add(chunk.len() as u64);
         if next_size > MAX_BODY_BYTES {
-            return with_cors((StatusCode::PAYLOAD_TOO_LARGE, "request body too large").into_response());
+            return with_cors(
+                (StatusCode::PAYLOAD_TOO_LARGE, "request body too large").into_response(),
+            );
         }
         written = next_size;
         if let Err(e) = writer.write_all(&chunk).await {
@@ -565,7 +643,7 @@ async fn list_dir(
 
 #[cfg(test)]
 mod tests {
-    use super::{is_authorized, parse_byte_range, ByteRange};
+    use super::{checked_join, is_authorized, parse_byte_range, repair_legacy_wire_dirs, ByteRange};
     use axum::http::{header, HeaderMap, HeaderValue};
 
     #[test]
@@ -601,5 +679,37 @@ mod tests {
             HeaderValue::from_static("Bearer secret"),
         );
         assert!(is_authorized(&headers, Some("secret")));
+    }
+
+    #[tokio::test]
+    async fn checked_join_keeps_suffix_after_first_missing_component() {
+        let root = std::env::temp_dir().join(format!("readest-lan-path-{}", uuid::Uuid::new_v4()));
+        tokio::fs::create_dir_all(&root).await.unwrap();
+        let resolved = checked_join(&root, "/Readest/books/hash/config.json")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(resolved, root.join("Readest/books/hash/config.json"));
+        let _ = tokio::fs::remove_dir_all(&root).await;
+    }
+
+    #[tokio::test]
+    async fn repairs_hash_file_left_by_old_truncation_bug() {
+        let root = std::env::temp_dir().join(format!("readest-lan-repair-{}", uuid::Uuid::new_v4()));
+        let books = root.join("Readest/books");
+        tokio::fs::create_dir_all(&books).await.unwrap();
+        let poisoned = books.join("hash");
+        tokio::fs::write(&poisoned, b"old config body").await.unwrap();
+
+        repair_legacy_wire_dirs(&root, "/Readest/books/hash/config.json")
+            .await
+            .unwrap();
+        assert!(tokio::fs::metadata(&poisoned).await.is_err());
+        let resolved = checked_join(&root, "/Readest/books/hash/config.json")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(resolved, root.join("Readest/books/hash/config.json"));
+        let _ = tokio::fs::remove_dir_all(&root).await;
     }
 }
