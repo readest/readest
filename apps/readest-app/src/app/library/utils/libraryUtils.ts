@@ -11,6 +11,7 @@ import {
   isCurrentlyReadingBook,
 } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
+import { stubTranslation as _ } from '@/utils/misc';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 
@@ -19,6 +20,22 @@ const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
 
 /** Valid group by types for the library */
 const VALID_GROUP_BY_TYPES: LibraryGroupByType[] = Object.values(LibraryGroupByType);
+
+/**
+ * Group labels for `groupBy=status`. These are i18n *keys*, not display text:
+ * `stubTranslation` only registers them for extraction, and the rendering
+ * component applies the real `_()` (see docs/i18n.md). Keys match the ones the
+ * status UI already ships, so every locale translates these for free.
+ *
+ * Typed as a total `Record<ReadingStatus, string>` on purpose: a fifth reading
+ * status can't be added without also giving it a label here.
+ */
+const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
+  unread: _('Unread'),
+  reading: _('Reading'),
+  finished: _('Finished'),
+  abandoned: _('On hold'),
+};
 
 /**
  * Safely cast a query parameter to LibrarySortByType with fallback.
@@ -493,6 +510,27 @@ export const createBookGroups = (
   if (groupBy === LibraryGroupByType.Subject) {
     return createValueGroups(activeBooks, 'subject', getBookSubjects);
   }
+  if (groupBy === LibraryGroupByType.Status) {
+    return createValueGroups(
+      activeBooks,
+      'status',
+      // `readingStatus` is an optional annotation, not a lifecycle field:
+      // nothing stamps it at import, and opening a book *clears* 'unread' back
+      // to `undefined`. Grouping on it alone therefore partitions badly — on a
+      // real 750-book library it dropped 414 never-opened books out of the
+      // shelf entirely and left "Unread" holding the 1 book that had been
+      // manually re-marked. So derive both ends instead: 'reading' from the
+      // predicate the recently-read shelf and home-screen widget already share
+      // (#1010 asks for exactly that shelf), and 'unread' as the resting state
+      // for a book with no status and no progress. Every book lands in exactly
+      // one bucket and nothing is left ungrouped.
+      (book) =>
+        isCurrentlyReadingBook(book)
+          ? ['reading' satisfies ReadingStatus]
+          : [book.readingStatus ?? ('unread' satisfies ReadingStatus)],
+      (status) => READING_STATUS_LABELS[status as ReadingStatus] ?? status,
+    );
+  }
 
   // 'group' mode is handled separately by generateBookshelfItems
   return activeBooks;
@@ -580,8 +618,15 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
 
 const createValueGroups = (
   books: Book[],
-  namespace: 'tag' | 'subject',
+  namespace: 'tag' | 'subject' | 'status',
   getValues: (book: Book) => string[],
+  /**
+   * Maps an internal value to a translation *key*. Supply this only for
+   * namespaces whose values are enums we own; the resulting groups are flagged
+   * `localized` so the UI translates them. Omit it for user-authored values
+   * (tags, subjects) so a tag literally named "Unread" renders verbatim.
+   */
+  getDisplayKey?: (value: string) => string,
 ): (Book | BooksGroup)[] => {
   const valueMap = new Map<string, Book[]>();
   const ungroupedBooks: Book[] = [];
@@ -598,16 +643,17 @@ const createValueGroups = (
     }
   }
 
-  const groups = Array.from(
-    valueMap,
-    ([name, groupBooks]): BooksGroup => ({
+  const groups = Array.from(valueMap, ([name, groupBooks]): BooksGroup => {
+    const group: BooksGroup = {
       id: md5Fingerprint(`${namespace}:${name}`),
       name,
-      displayName: name,
+      displayName: getDisplayKey ? getDisplayKey(name) : name,
       books: groupBooks,
       updatedAt: Math.max(...groupBooks.map(({ updatedAt }) => updatedAt)),
-    }),
-  );
+    };
+    if (getDisplayKey) group.localized = true;
+    return group;
+  });
   return [...groups, ...ungroupedBooks];
 };
 

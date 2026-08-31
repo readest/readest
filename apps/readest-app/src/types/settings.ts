@@ -44,6 +44,7 @@ export const LibraryGroupByType = {
   Author: 'author',
   Tag: 'tag',
   Subject: 'subject',
+  Status: 'status',
 } as const;
 
 export type LibraryGroupByType = (typeof LibraryGroupByType)[keyof typeof LibraryGroupByType];
@@ -139,6 +140,21 @@ export interface HardcoverSettings {
   // user reads (debounced) instead of only via the reader menu. Default OFF;
   // existing connected users (undefined) stay manual until they opt in.
   autoSync?: boolean;
+}
+
+export interface NotionSettings {
+  enabled: boolean;
+  /** Notion integration token (`secret_...`). */
+  accessToken: string;
+  /**
+   * Target Notion data source id. The connection form also accepts a database
+   * container or a page containing a child database and resolves it before
+   * persisting settings.
+   */
+  databaseId: string;
+  lastSyncedAt: number;
+  /** Append a chapter heading block before each highlight (default ON). */
+  includeChapterHeading?: boolean;
 }
 
 /**
@@ -500,6 +516,7 @@ export interface SystemSettings {
   bookorbit: BookOrbitSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
+  notion: NotionSettings;
   /** Optional by design — see {@link ReadestCloudSettings}. Never defaulted. */
   readestCloud?: ReadestCloudSettings;
   webdav: WebDAVSettings;

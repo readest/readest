@@ -3,7 +3,8 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { invoke } from '@tauri-apps/api/core';
 import { basename } from '@tauri-apps/api/path';
 import { isContentURI, isFileURI, stubTranslation as _ } from '@/utils/misc';
-import { getFilename } from '@/utils/path';
+import { getFileExtension, getFilename } from '@/utils/path';
+import type { TranslationFunc } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
 
@@ -36,6 +37,14 @@ export interface FileSelectionResult {
   files: SelectedFile[];
   error?: string;
 }
+
+/**
+ * Whether `filename` is one of `extensions` (lowercase, no leading dot), with
+ * `'*'` accepting anything. Tolerates the duplicate-download marker some
+ * browsers append after the extension, e.g. `book.epub (1)` (issue #5959).
+ */
+export const hasAllowedExtension = (filename: string | undefined, extensions: string[]) =>
+  extensions.includes('*') || extensions.includes(getFileExtension(filename || ''));
 
 const selectFileWeb = (options: FileSelectorOptions): Promise<File[]> => {
   return new Promise((resolve) => {
@@ -90,7 +99,7 @@ const isGamescopeSession = async (): Promise<boolean> => {
 const selectFileTauri = async (
   options: FileSelectorOptions,
   appService: AppService,
-  _: (key: string) => string,
+  _: TranslationFunc,
 ): Promise<SelectedFile[]> => {
   // A gamescope session (SteamOS Gaming Mode) runs no XDG portal backend, so
   // the FileChooser dialog can never appear, and the sandboxed Flatpak relies
@@ -141,10 +150,24 @@ const selectFileTauri = async (
 
   if (noFilter && options.extensions) {
     const extensions = options.extensions;
-    files = files.filter(({ name }) => {
-      const fileExt = name?.split('.').pop()?.toLowerCase() || 'unknown';
-      return extensions.includes(fileExt) || extensions.includes('*');
-    });
+    const kept = files.filter(({ name }) => hasAllowedExtension(name, extensions));
+    // Whatever the whitelist drops here disappears without a trace: an
+    // all-dropped selection is indistinguishable from a cancel, and a mixed one
+    // imports part of the pick and stays quiet about the rest (issue #5959).
+    // Name the skipped files. Only book selections get the toast — it is the
+    // one message already translated, and it would read as nonsense for an
+    // audio or dictionary pick.
+    if (options.type === 'books' && kept.length < files.length) {
+      const skipped = files.filter((file) => !kept.includes(file));
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to import book(s): {{filenames}}', {
+          filenames: skipped.map(({ name, path }) => name || getFilename(path!)).join(', '),
+        }),
+        timeout: 5000,
+      });
+    }
+    files = kept;
   }
 
   return files;
@@ -156,7 +179,7 @@ const processWebFiles = (files: File[]): SelectedFile[] => {
   }));
 };
 
-export const useFileSelector = (appService: AppService | null, _: (key: string) => string) => {
+export const useFileSelector = (appService: AppService | null, _: TranslationFunc) => {
   const selectFiles = async (options: FileSelectorOptions = { type: 'generic' }) => {
     options = { ...FILE_SELECTION_PRESETS[options.type], ...options };
     if (!appService) {

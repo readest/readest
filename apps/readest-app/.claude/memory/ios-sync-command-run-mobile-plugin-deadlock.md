@@ -5,6 +5,9 @@ metadata:
   type: project
 ---
 
+**MERGED #5947 (squash 8d24f5925, 2026-08-29), branch cleaned up.** Reporter verify pending;
+the fix is UNRELEASED (0.12.6 predates it), so shipped iOS builds still deadlock.
+
 **Rule: on iOS a `#[tauri::command]` that reaches `native_bridge()` (or any
 `run_mobile_plugin`) MUST be `async fn`.** Breaking it is a hard deadlock, not a slowdown.
 

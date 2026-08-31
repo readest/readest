@@ -49,6 +49,11 @@ export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 export interface BookLookupIndex {
   byHash: Map<string, Book>;
   byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
+  // Fallback for books whose metaHash moves with every export of the same file
+  // (calibre re-mints dc:identifier, issue #5959). key =
+  // `${getStableMetadataHash(metadata)}:${format}`, and only books that carry a
+  // volatile identifier appear here.
+  byStableKey: Map<string, Book[]>;
   // Maps normalized absolute source path -> Book for in-place imports.
   // Lets the importer recognize "I already have this exact file" without
   // having to open, parse, and hash it again. Only books with a non-empty
@@ -342,6 +347,23 @@ export interface ViewConfig {
   showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction' | 'reference';
   referencePageCount: number;
+
+  // Styling for the header (section title) and footer (progress readout,
+  // remaining time/pages, clock, battery). See utils/headerFooterStyle.ts
+  // for how these resolve; e-ink ignores both colors.
+  /** Font size in px for the header/footer info text. */
+  headerFooterFontSize: number;
+  /** `''` follows the theme's base-content; otherwise a `#rrggbb`. */
+  headerFooterTextColor: string;
+  /**
+   * `'auto'` keeps the built-in backdrop (the scrolled-mode footer pill and
+   * nothing behind the header), `'none'` removes it everywhere, and a
+   * `#rrggbb` paints a matching chip behind both header and footer in every
+   * flow mode.
+   */
+  headerFooterBackground: string;
+  /** 0-1 alpha applied to a `#rrggbb` headerFooterBackground. */
+  headerFooterBgOpacity: number;
 
   animated: boolean;
   pageTurnStyle: PageTurnStyle;
@@ -687,6 +709,14 @@ export interface BooksGroup {
   id: string;
   name: string;
   displayName: string;
+  /**
+   * True when `displayName` is an i18n key rather than user-authored text, so
+   * the rendering component must run it through `_()`. Set for groupings whose
+   * values are enums we own (reading status); never set for series, author,
+   * tag or subject names, which must render verbatim even when one of them
+   * happens to collide with a UI string.
+   */
+  localized?: boolean;
   books: Book[];
 
   updatedAt: number;

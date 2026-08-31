@@ -332,6 +332,28 @@ const layoutPanelItems = [
     keywords: ['progress', 'display', 'page', 'number', 'percentage'],
     section: 'Header & Footer',
   },
+  {
+    id: 'settings.layout.headerFooterFontSize',
+    labelKey: _('Font Size'),
+    keywords: ['font', 'size', 'header', 'footer', 'progress', 'page', 'number', 'text'],
+    section: 'Header & Footer',
+  },
+  {
+    id: 'settings.layout.headerFooterBackground',
+    labelKey: _('Background Color'),
+    keywords: [
+      'background',
+      'color',
+      'transparent',
+      'text',
+      'header',
+      'footer',
+      'progress',
+      'page',
+      'number',
+    ],
+    section: 'Header & Footer',
+  },
 ];
 
 // color panel items

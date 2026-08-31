@@ -432,6 +432,20 @@
     max-width: calc(100vw - 32px);
   }
 
+  /* Keep the book menu's width stable while nested sync actions expand. A
+     linked Hardcover title is intentionally truncated inside its row; letting
+     that title set the menu's intrinsic width also leaves stale hover paint in
+     macOS WebKit when the pointer moves across the resized rows (#5973). */
+  :where(.book-menu) {
+    width: 18rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  :where(.book-menu details > ul) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .dropdown-content::before,
   .dropdown-content::after {
     content: '';

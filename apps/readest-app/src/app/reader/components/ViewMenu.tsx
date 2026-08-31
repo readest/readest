@@ -143,6 +143,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     // and useHardcoverSync listen for — so for a third-party-only user the row
     // did nothing at all.
     eventDispatcher.dispatch('sync-book-progress', { bookKey });
+    eventDispatcher.dispatch('flush-notion-sync', { bookKey });
     eventDispatcher.dispatch('push-file-sync', { bookKey });
     eventDispatcher.dispatch('pull-file-sync', { bookKey });
     eventDispatcher.dispatch('flush-kosync', { bookKey });

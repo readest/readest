@@ -419,6 +419,35 @@ subtitle, and the badge + toggle + edit/delete buttons stack as suffixes.
 These names come from libadwaita and apply 1:1 to Readest's lists. Use the names in code
 comments and PR descriptions.
 
+#### Two controls in one suffix
+
+When a row carries a swatch (or badge) *and* a select, pass them as **siblings**
+of `<SettingsRow>`, never wrapped together in a `<div>`:
+
+```tsx
+// ✓ Right — both are flex items of the row
+<SettingsRow label={_('Background Color')}>
+  {isCustom && (
+    <div className='ms-auto'>
+      <ColorInput … />
+    </div>
+  )}
+  <SettingsSelect … />
+</SettingsRow>
+```
+
+Two reasons, both of which show up as visible bugs:
+
+- `<SettingsSelect>` sizes itself with `max-w-[60%]`, which resolves against
+  its **containing block**. A shared wrapper shrinks to fit, so 60% of that is
+  a few dozen pixels and every option label truncates ("Auto" → "Au").
+- The row is `justify-between`, so free space lands *in front of* the middle
+  item and the swatch drifts left or right with each label's width. `ms-auto`
+  on the swatch collapses that space, so swatches line up down the list. Use
+  the logical `ms-`, never `ml-`/`mr-` (RTL).
+
+Canonical example: the Text Color / Background Color rows in `LayoutPanel`.
+
 #### Spacing
 
 - Row vertical padding: `py-2` (8px) for compact lists, `py-3` (12px) for breathing room.

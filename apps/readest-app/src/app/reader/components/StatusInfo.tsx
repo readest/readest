@@ -11,6 +11,8 @@ interface StatusInfoProps {
   isVertical?: boolean;
   isEink?: boolean;
   className?: string;
+  /** Backdrop for the scrolled-mode pill; see ProgressBar. */
+  style?: React.CSSProperties;
 }
 
 const StatusInfo: React.FC<StatusInfoProps> = ({
@@ -21,6 +23,7 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
   isVertical,
   isEink,
   className,
+  style,
 }) => {
   const formattedTime = useCurrentTime(showTime, use24Hour);
   const batteryLevel = useCurrentBatteryStatus(showBattery);
@@ -34,6 +37,7 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
         isVertical ? 'my-auto' : 'flex-row',
         className,
       )}
+      style={style}
     >
       {showTime && <span>{formattedTime}</span>}
       {showBattery && batteryLevel !== null && (
