@@ -2269,5 +2269,8 @@
   "{{hours}} hr {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘",
   "Failed to stop LAN Sync. Your connection is still active.": "停止區域網路同步失敗。連線仍處於啟用狀態。",
   "Failed to save the disconnected state. Please try again.": "儲存中斷連線狀態失敗，請重試。",
-  "Uploading files": "上傳檔案"
+  "Uploading files": "上傳檔案",
+  "Invalid Notion database ID or URL": "無效的 Notion 資料庫 ID 或 URL",
+  "This Notion database has multiple data sources. Paste a data source ID instead.": "此 Notion 資料庫包含多個資料來源。請改為貼上資料來源 ID。",
+  "The Notion database is unavailable or has not been shared with this integration.": "Notion 資料庫無法使用，或尚未分享給此整合。"
 }

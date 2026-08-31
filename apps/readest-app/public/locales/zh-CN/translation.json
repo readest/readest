@@ -2269,5 +2269,8 @@
   "{{hours}} hr {{minutes}} min": "{{hours}} 小时 {{minutes}} 分钟",
   "Failed to stop LAN Sync. Your connection is still active.": "停止局域网同步失败。连接仍处于活动状态。",
   "Failed to save the disconnected state. Please try again.": "保存断开状态失败，请重试。",
-  "Uploading files": "上传文件"
+  "Uploading files": "上传文件",
+  "Invalid Notion database ID or URL": "无效的 Notion 数据库 ID 或 URL",
+  "This Notion database has multiple data sources. Paste a data source ID instead.": "此 Notion 数据库包含多个数据源。请改为粘贴数据源 ID。",
+  "The Notion database is unavailable or has not been shared with this integration.": "Notion 数据库不可用，或尚未共享给此集成。"
 }
