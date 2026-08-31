@@ -40,8 +40,10 @@ import FileSyncForm from './FileSyncForm';
 import { persistCloudProviderEnabled, persistSettingsMutation } from './cloudSync';
 
 /**
- * Translate a peer-probe failure into a user-facing string. Each branch is a
- * literal `_('...')` call so the i18next-scanner picks the keys up.
+ * Translate a peer-probe failure into a user-facing string. Preserve the raw
+ * provider message for unknown failures: LAN pairing is a diagnostic surface,
+ * and hiding "self address", HTTP status, or the actual socket error behind a
+ * generic "Network error" made real failures impossible to triage.
  */
 const formatPingError = (_: TranslationFunc, e: unknown): string => {
   if (e instanceof FileSyncError) {
@@ -49,10 +51,22 @@ const formatPingError = (_: TranslationFunc, e: unknown): string => {
       case 'AUTH_FAILED':
         return _('The peer requires a pairing token');
       case 'NETWORK':
-        return _('Device unreachable on the local network');
+        return e.message || _('Device unreachable on the local network');
     }
+    if (e.message) return e.message;
   }
+  if (e instanceof Error && e.message) return e.message;
   return _('Network error');
+};
+
+const isLoopbackHost = (value: string): boolean => {
+  const host = value
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/:\d+$/, '')
+    .replace(/^\[|\]$/g, '')
+    .toLowerCase();
+  return host === 'localhost' || host === '::1' || /^127(?:\.\d{1,3}){3}$/.test(host);
 };
 
 type DiscoveryPanelProps = {
@@ -127,7 +141,7 @@ const LanPeerDiscovery: React.FC<DiscoveryPanelProps> = ({
         <SettingsRow
           label={_('No nearby Readest devices found')}
           description={_(
-            'Make sure both devices are on the same local network and LAN Sync is enabled.',
+            'Open LAN Sync settings on the other device and keep both devices on the same local network.',
           )}
         />
       </BoxedList>
@@ -176,9 +190,9 @@ const LanForm: React.FC = () => {
   const [showPeerDiscovery, setShowPeerDiscovery] = useState(false);
   const [showManualConnection, setShowManualConnection] = useState(!isTauri);
   const [showSelfPairingQr, setShowSelfPairingQr] = useState(false);
-  // True only for the temporary advertiser used while an unpaired device is
-  // searching. A successful connection persists the settings and keeps the
-  // server running; cancellation/close cleans this short-lived server up.
+  // True only for the temporary advertiser used while an unpaired device is on
+  // this pairing screen. A successful connection promotes it to the persisted
+  // server; leaving the screen cleans it up.
   const temporaryServerRef = useRef(false);
   const temporaryServerGenerationRef = useRef<number | null>(null);
   const temporaryTokenRef = useRef<string | null>(null);
@@ -332,6 +346,55 @@ const LanForm: React.FC = () => {
     };
   }, [isActive, isTauri, stored?.token]);
 
+  // Pairing/discovery must not require the integration to already be enabled.
+  // Merely opening this LAN settings page temporarily advertises this device,
+  // so two disconnected devices can discover one another. The existing owner
+  // refs ensure the temporary server is stopped on unmount or promoted safely
+  // if a connection succeeds.
+  useEffect(() => {
+    if (!isTauri || isActive || unmountedRef.current) return;
+    let cancelled = false;
+    const expectedGeneration = getLanSyncGeneration();
+    void (async () => {
+      try {
+        await acquireDiscoveryLock();
+        if (cancelled || unmountedRef.current) return;
+        const existing = await getLanSyncStatus();
+        if (cancelled || getLanSyncGeneration() !== expectedGeneration) return;
+        if (existing.running) {
+          setStatus(existing);
+          return;
+        }
+        const temporaryToken = useSettingsStore.getState().settings?.lan?.token?.trim() ?? '';
+        const temporaryStatus = await startLanSync(
+          temporaryToken,
+          DEFAULT_LAN_SYNC_PORT,
+          'Readest',
+          existing.generation,
+        );
+        if (temporaryStatus.started) {
+          temporaryServerRef.current = true;
+          temporaryServerGenerationRef.current = temporaryStatus.generation;
+          temporaryTokenRef.current = temporaryToken;
+        }
+        if (cancelled || unmountedRef.current) {
+          if (temporaryStatus.started) await cleanupDiscovery();
+          return;
+        }
+        setStatus(temporaryStatus);
+      } catch (e) {
+        if (!cancelled && !unmountedRef.current) {
+          console.warn('lan_sync temporary pairing advertiser failed:', e);
+          setDiscoveryFailed(true);
+        }
+        if (!temporaryServerRef.current) await releaseDiscoveryLock();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [acquireDiscoveryLock, cleanupDiscovery, isActive, isTauri, releaseDiscoveryLock]);
+
   useEffect(() => {
     if (isActive && needsMulticastLock) return;
     void releasePromotionLock();
@@ -406,8 +469,8 @@ const LanForm: React.FC = () => {
           return;
         expectedServerGeneration = existingStatus.generation;
         if (existingStatus.running) {
-          // A running server may belong to another window; never stop it just
-          // to prepare discovery. Use its device id for self-peer filtering.
+          // The page-level temporary advertiser normally gets here first. A
+          // running server may also belong to another window; never claim it.
           ownDeviceId = existingStatus.device_id;
         } else {
           const temporaryToken = token.trim();
@@ -462,7 +525,7 @@ const LanForm: React.FC = () => {
       setShowManualConnection(true);
       eventDispatcher.dispatch('toast', {
         type: 'error',
-        message: _('Failed to search for nearby devices'),
+        message: `${_('Failed to search for nearby devices')}: ${formatPingError(_, e)}`,
       });
     } finally {
       if (runId === discoveryRunRef.current) {
@@ -509,6 +572,19 @@ const LanForm: React.FC = () => {
       }
     }
     if (!trimmedHost) return;
+    if (isLoopbackHost(trimmedHost)) {
+      const error = new FileSyncError(
+        'The selected address points to this device (loopback). Use the peer LAN address instead.',
+        'UNKNOWN',
+      );
+      if (!options?.suppressErrorToast) {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: `${_('Failed to connect')}: ${formatPingError(_, error)}`,
+        });
+      }
+      return { success: false, error };
+    }
     if (unmountedRef.current || disconnectingRef.current || connectingRef.current) return;
     connectingRef.current = true;
     const connectionRunId = ++connectionRunRef.current;
@@ -538,11 +614,13 @@ const LanForm: React.FC = () => {
     let temporaryTokenForPromotion: string | null = null;
     let persistentLockAcquiredForPromotion = false;
     let expectedServerGeneration: number | undefined;
+    let localDeviceId = '';
     try {
       if (isTauri) {
         const localStatus = await getLanSyncStatus();
         if (!isConnectionCurrent()) return;
         expectedServerGeneration = localStatus.generation;
+        localDeviceId = localStatus.device_id;
       }
       const peer = await lanSyncPing({
         enabled: false,
@@ -551,6 +629,12 @@ const LanForm: React.FC = () => {
         token: trimmedToken,
       });
       if (!isConnectionCurrent()) return;
+      if (localDeviceId && peer.device_id === localDeviceId) {
+        throw new FileSyncError(
+          'The selected address resolves to this device, not the peer. Choose the peer LAN address.',
+          'UNKNOWN',
+        );
+      }
 
       // When changing devices while LAN Sync is already active, the newly
       // discovered peer may advertise a different token. Update this device's
@@ -568,7 +652,7 @@ const LanForm: React.FC = () => {
             try {
               await stopLanSyncIfCurrent(restartedServerGeneration);
             } catch {
-              /* another lifecycle operation may have stopped it already */
+              /* another cleanup may have stopped it already */
             }
           }
           return;
@@ -759,9 +843,11 @@ const LanForm: React.FC = () => {
       setDiscoveryFailed(false);
       setShowPeerDiscovery(false);
       eventDispatcher.dispatch('toast', {
-        type: 'info',
-        message: _('Connected to {{name}}', {
+        type: 'success',
+        message: _('Connected to {{name}} at {{host}}:{{port}}', {
           name: target?.name || peer.name || peer.device_id,
+          host: trimmedHost,
+          port: trimmedPort,
         }),
       });
       return { success: true };
@@ -787,6 +873,19 @@ const LanForm: React.FC = () => {
     }
   };
 
+  const confirmPeerConnection = async (peer: DiscoveredLanPeer): Promise<void> => {
+    const confirmed = appService
+      ? await appService.ask(
+          _('Connect to {{name}} at {{host}}:{{port}} and enable LAN Sync?', {
+            name: peer.name || _('Readest device'),
+            host: peer.host,
+            port: peer.port,
+          }),
+        )
+      : true;
+    if (confirmed) await handleConnect(peer);
+  };
+
   const handleScanPairingQr = async () => {
     if (!canScanPairingQr || isConnecting) return;
 
@@ -801,11 +900,22 @@ const LanForm: React.FC = () => {
         });
         return;
       }
-      result = await scan({ formats: [Format.QRCode], windowed: true });
-    } catch {
+      // Android's barcode plugin places a `windowed` camera preview behind the
+      // WebView. Readest's opaque app surface therefore covered the preview even
+      // though permission was granted. Use the native full-screen preview on
+      // Android; iOS keeps the windowed mode that already works there.
+      result = await scan({
+        formats: [Format.QRCode],
+        windowed: appService?.isAndroidApp !== true,
+        cameraDirection: 'back',
+      });
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : String(e);
+      console.warn('lan_sync QR scan failed:', e);
+      if (/cancel/i.test(reason)) return;
       eventDispatcher.dispatch('toast', {
         type: 'error',
-        message: _('Failed to scan pairing QR code'),
+        message: `${_('Failed to scan pairing QR code')}: ${reason}`,
       });
       return;
     }
@@ -817,6 +927,11 @@ const LanForm: React.FC = () => {
         message: _('Invalid Readest LAN pairing QR code'),
       });
       return;
+    }
+
+    if (appService) {
+      const confirmed = await appService.ask(_('Connect to this Readest device and enable LAN Sync?'));
+      if (!confirmed) return;
     }
 
     let lastConnectionError: unknown;
@@ -929,7 +1044,7 @@ const LanForm: React.FC = () => {
       isConnecting={isConnecting}
       connectingPeerId={connectingPeerId}
       onDiscover={() => void handleDiscover()}
-      onSelectPeer={(peer) => void handleConnect(peer)}
+      onSelectPeer={(peer) => void confirmPeerConnection(peer)}
     />
   ) : (
     <BoxedList>
