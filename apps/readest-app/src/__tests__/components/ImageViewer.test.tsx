@@ -42,69 +42,163 @@ describe('ImageViewer', () => {
     expect(calloutSafeImage).toBeTruthy();
   });
 
-  // Desktop-only flicker (#4451): the drag pan must keep tracking the pointer
-  // even after it leaves the (moving) image, mirroring how the touch path
-  // tracks on the full-screen container. Binding the move/up handlers to the
-  // <img> meant the pointer crossing the image boundary aborted/restarted the
-  // drag, producing the flicker. The drag now tracks on `window`.
   const zoomIn = (img: Element) => {
     // Double-click on a fresh viewer zooms to scale=2 so panning is enabled.
     fireEvent.doubleClick(img);
   };
 
-  it('keeps panning when the pointer leaves the image (tracks on window)', () => {
+  const mockPointerCapture = (img: Element) => {
+    const captured = new Set<number>();
+    const setPointerCapture = vi.fn((pointerId: number) => captured.add(pointerId));
+    const releasePointerCapture = vi.fn((pointerId: number) => captured.delete(pointerId));
+    const hasPointerCapture = vi.fn((pointerId: number) => captured.has(pointerId));
+    Object.defineProperties(img, {
+      setPointerCapture: { configurable: true, value: setPointerCapture },
+      releasePointerCapture: { configurable: true, value: releasePointerCapture },
+      hasPointerCapture: { configurable: true, value: hasPointerCapture },
+    });
+    return { setPointerCapture, releasePointerCapture };
+  };
+
+  // Desktop pan uses Pointer Capture rather than a window-level mousemove
+  // listener. Once captured, the browser routes subsequent pointer events back
+  // to the image even if the physical cursor has crossed its moving boundary.
+  it('captures the mouse pointer and keeps panning outside the image bounds', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
+    const { setPointerCapture } = mockPointerCapture(img);
     zoomIn(img);
 
-    fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
-    // Pointer moves while no longer over the image element — handled on window.
-    fireEvent.mouseMove(window, { clientX: 160, clientY: 130, buttons: 1 });
+    fireEvent.pointerDown(img, {
+      pointerId: 7,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 1,
+      clientX: 100,
+      clientY: 100,
+    });
+    expect(setPointerCapture).toHaveBeenCalledWith(7);
+
+    // In a browser this move is retargeted to the image by Pointer Capture even
+    // when the physical pointer is already outside the image's hit-test area.
+    fireEvent.pointerMove(img, {
+      pointerId: 7,
+      pointerType: 'mouse',
+      buttons: 1,
+      clientX: 160,
+      clientY: 130,
+    });
 
     // position = (60, 30); transform divides the translate by scale (2).
     expect(img.style.transform).toContain('scale(2)');
     expect(img.style.transform).toContain('translate(30px, 15px)');
   });
 
-  it('disables the transform transition while dragging to avoid lag flicker', () => {
+  it('disables the transform transition while pointer-captured dragging', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
+    mockPointerCapture(img);
     zoomIn(img);
 
     expect(img.style.transition).not.toBe('none');
 
-    fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(img, {
+      pointerId: 8,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 1,
+      clientX: 100,
+      clientY: 100,
+    });
     expect(img.style.transition).toBe('none');
 
-    fireEvent.mouseUp(window);
+    fireEvent.pointerUp(img, {
+      pointerId: 8,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 0,
+    });
     expect(img.style.transition).not.toBe('none');
   });
 
-  it('stops panning when the WebView misses mouseup but the mouse button is released', () => {
+  it('ends the drag when pointer capture is lost at a WebView boundary', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
+    mockPointerCapture(img);
     zoomIn(img);
 
-    fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
-    fireEvent.mouseMove(window, { clientX: 160, clientY: 130, buttons: 1 });
+    fireEvent.pointerDown(img, {
+      pointerId: 9,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 1,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(img, {
+      pointerId: 9,
+      pointerType: 'mouse',
+      buttons: 1,
+      clientX: 160,
+      clientY: 130,
+    });
     const positionAfterDrag = img.style.transform;
     expect(img.style.cursor).toBe('grabbing');
 
-    // Re-entering the WebView after releasing outside can produce mousemove
-    // with buttons=0 without any preceding mouseup. That must end the stale
-    // drag immediately instead of making the image stick to the cursor.
-    fireEvent.mouseMove(window, { clientX: 220, clientY: 180, buttons: 0 });
+    fireEvent.lostPointerCapture(img, { pointerId: 9 });
+    expect(img.style.cursor).toBe('grab');
+
+    fireEvent.pointerMove(img, {
+      pointerId: 9,
+      pointerType: 'mouse',
+      buttons: 1,
+      clientX: 260,
+      clientY: 230,
+    });
+    expect(img.style.transform).toBe(positionAfterDrag);
+  });
+
+  it('still recovers if a WebView misses pointerup but reports buttons=0', () => {
+    const { container } = render(
+      <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const img = container.querySelector('img')!;
+    const { releasePointerCapture } = mockPointerCapture(img);
+    zoomIn(img);
+
+    fireEvent.pointerDown(img, {
+      pointerId: 10,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 1,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(img, {
+      pointerId: 10,
+      pointerType: 'mouse',
+      buttons: 1,
+      clientX: 160,
+      clientY: 130,
+    });
+    const positionAfterDrag = img.style.transform;
+
+    fireEvent.pointerMove(img, {
+      pointerId: 10,
+      pointerType: 'mouse',
+      buttons: 0,
+      clientX: 220,
+      clientY: 180,
+    });
     expect(img.style.cursor).toBe('grab');
     expect(img.style.transform).toBe(positionAfterDrag);
-
-    fireEvent.mouseMove(window, { clientX: 300, clientY: 240, buttons: 0 });
-    expect(img.style.transform).toBe(positionAfterDrag);
+    expect(releasePointerCapture).toHaveBeenCalledWith(10);
   });
 
   // Zoom percentage is relative to the image's own resolution (#5362).
