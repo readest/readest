@@ -6,6 +6,7 @@ import {
   normalizeEnglishTranslation,
   normalizeJapaneseOcrText,
   translateJapaneseMangaExpression,
+  translateJapaneseMangaSoundFallback,
   type JapaneseTextTranslatorFactory,
   type MangaOcrEngineFactory,
 } from '@/app/reader/services/manga/mangaTranslationEngine';
@@ -56,12 +57,9 @@ const makeOcrPage = (): OcrPage => ({
 });
 
 describe('MangaTranslationEngine', () => {
-  it('loads horizontal and vertical Japanese OCR without whole-page fallback', () => {
+  it('uses the manga OCR confidence threshold', () => {
     expect(getMangaOcrEngineOptions()).toMatchObject({
-      languages: ['jpn', 'jpn_vert'],
-      mangaMode: true,
       minimumConfidence: 35,
-      wholePageFallback: false,
     });
   });
 
@@ -160,6 +158,34 @@ describe('MangaTranslationEngine', () => {
     expect(createTranslator).not.toHaveBeenCalled();
   });
 
+  it('normalizes clipped manga phrasing before model translation', async () => {
+    const ocrEngine = {
+      recognize: vi.fn(async () => ({
+        ...makeOcrPage(),
+        blocks: [{ ...makeOcrPage().blocks[0]!, text: '薪割り\nおしまいっと!!' }],
+      })),
+      terminate: vi.fn(async () => undefined),
+    };
+    const translator = {
+      translate: vi.fn(async () => ["I'm done with the wood!"]),
+      terminate: vi.fn(async () => undefined),
+    };
+    const engine = new MangaTranslationEngine(
+      {},
+      { createOcrEngine: () => ocrEngine, createTranslator: () => translator },
+    );
+
+    const page = await engine.translate('blob:page', {
+      pageIndex: 7,
+      width: 1200,
+      height: 1800,
+    });
+
+    expect(translator.translate).toHaveBeenCalledWith(['薪割りを終えた！']);
+    expect(page.regions[0]?.sourceText).toBe('薪割りおしまいっと!!');
+    expect(page.regions[0]?.translatedText).toBe("I'm done with the wood!");
+  });
+
   it('rejects later work after termination without loading either model', async () => {
     const createOcrEngine = vi.fn<MangaOcrEngineFactory>();
     const createTranslator = vi.fn<JapaneseTextTranslatorFactory>();
@@ -181,6 +207,14 @@ describe('normalizeEnglishTranslation', () => {
     expect(normalizeEnglishTranslation('I!')).toBe('I!');
     expect(normalizeEnglishTranslation('go!')).toBe('Go!');
   });
+
+  it.each([
+    'OOOOOOOOOOOOOOOOOOOO',
+    'Shhhhhhhhhhhhhhhhhhhhh',
+    'No, no, no, no, no, no, no',
+  ])('rejects pathological repeated model output: %s', (translation) => {
+    expect(normalizeEnglishTranslation(translation)).toBe('');
+  });
 });
 
 describe('normalizeJapaneseOcrText', () => {
@@ -190,6 +224,10 @@ describe('normalizeJapaneseOcrText', () => {
 
   it('removes a duplicated small kana from vertical manga OCR', () => {
     expect(normalizeJapaneseOcrText('ゃやあ\nオッスグ')).toBe('やあオッスグ');
+  });
+
+  it('turns repeated round glyph noise after Japanese dialogue into an ellipsis', () => {
+    expect(normalizeJapaneseOcrText('ハラ\nへったな\nOOOOOOOOO')).toBe('ハラへったな…');
   });
 
   it.each([
@@ -204,13 +242,10 @@ describe('normalizeJapaneseOcrText', () => {
 
 describe('translateJapaneseMangaExpression', () => {
   it.each([
-    ['やあオッスグ', 'Hey!'],
-    ['~ゾ{んむんむんるるるるる', 'Hmmm...'],
-    ['でえっにpie。し', 'Hyaaah!'],
-    ['すほほな|つっつっルル', 'Hrrrgh!'],
-    ['ずどどいをを誰こ', 'Hrrrgh!'],
+    ['やあオッス!', 'Hey!'],
+    ['えやあ!', 'Hyaaah!'],
     ['むふん', 'Hmph!'],
-    ['おしまいっとググ', 'All done!'],
+    ['おしまいっと!!', 'All done!'],
     ['ハラへったな', "I'm hungry."],
   ])('translates the manga expression %s without a general model', (source, expected) => {
     expect(translateJapaneseMangaExpression(source)).toBe(expected);
@@ -218,6 +253,15 @@ describe('translateJapaneseMangaExpression', () => {
 
   it('leaves normal dialogue for the translation model', () => {
     expect(translateJapaneseMangaExpression('悟空は走る')).toBeNull();
+  });
+
+  it.each([
+    'むんむん',
+    'ずどど',
+    'すほほーっ!!!!',
+    'ずどどえやあ〜っ!!!!',
+  ])('leaves ambiguous sound effects for the translation model: %s', (source) => {
+    expect(translateJapaneseMangaExpression(source)).toBeNull();
   });
 
   it.each([
@@ -229,5 +273,34 @@ describe('translateJapaneseMangaExpression', () => {
     'むふんけど帰ろう',
   ])('leaves longer dialogue for the translation model: %s', (source) => {
     expect(translateJapaneseMangaExpression(source)).toBeNull();
+  });
+
+  it.each([
+    'やあオッスグ',
+    '~ゾ{んむんむんるるるるる',
+    'でえっにpie。し',
+    'すほほな|つっつっルル',
+    'ずどどいをを誰こ',
+    'おしまいっとググ',
+  ])('rejects corrupt OCR text instead of inventing a translation: %s', (source) => {
+    expect(translateJapaneseMangaExpression(source)).toBeNull();
+  });
+});
+
+describe('translateJapaneseMangaSoundFallback', () => {
+  it.each([
+    ['む〜〜んむんむん……●', 'Hmmmm...'],
+    ['すほほつ!!', 'Hrrrgh!'],
+    ['ずどどえやあ〜〜っ!!', 'Hyaaah!'],
+  ])('localizes a rejected vocal sound %s as %s', (source, expected) => {
+    expect(translateJapaneseMangaSoundFallback(source)).toBe(expected);
+  });
+
+  it.each([
+    'ずどど',
+    'すほほなつっつっルル',
+    'むんむん今日は暑い',
+  ])('does not guess at ambiguous or corrupt text: %s', (source) => {
+    expect(translateJapaneseMangaSoundFallback(source)).toBeNull();
   });
 });

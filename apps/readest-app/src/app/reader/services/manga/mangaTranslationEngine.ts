@@ -1,8 +1,8 @@
 import { BergamotJapaneseTranslator } from '@/app/reader/services/manga/bergamotTranslator';
 import {
-  TesseractOcrEngine,
-  type TesseractOcrEngineOptions,
-} from '@/app/reader/services/ocr/tesseractEngine';
+  PaddleMangaOcrEngine,
+  type PaddleMangaOcrEngineOptions,
+} from '@/app/reader/services/manga/paddleMangaOcrEngine';
 import type { OcrBoundingBox, OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
 
 export type MangaPageSource = string | HTMLCanvasElement;
@@ -62,16 +62,13 @@ interface MangaTranslationEngineDependencies {
 
 export const getMangaOcrEngineOptions = (
   onProgress?: (progress: { status: string; progress: number }) => void,
-): TesseractOcrEngineOptions => ({
-  languages: ['jpn', 'jpn_vert'],
-  mangaMode: true,
+): PaddleMangaOcrEngineOptions => ({
   minimumConfidence: MINIMUM_MANGA_OCR_CONFIDENCE,
-  wholePageFallback: false,
   onProgress,
 });
 
 const createOcrEngine: MangaOcrEngineFactory = (onProgress) =>
-  new TesseractOcrEngine(getMangaOcrEngineOptions(onProgress));
+  new PaddleMangaOcrEngine(getMangaOcrEngineOptions(onProgress));
 
 const createTranslator: JapaneseTextTranslatorFactory = (onProgress) =>
   new BergamotJapaneseTranslator({ onProgress });
@@ -102,6 +99,7 @@ export const normalizeJapaneseOcrText = (text: string): string =>
   text
     .normalize('NFKC')
     .replace(/\b[A-Za-z]\b/gu, '')
+    .replace(/[Oo0○◯]{5,}/gu, '…')
     .replace(
       /([ゃゅょぁぃぅぇぉャュョァィゥェォ])([やゆよあいうえおヤユヨアイウエオ])/gu,
       (pair, smallKana: string, followingKana: string) =>
@@ -116,18 +114,28 @@ interface MangaExpressionRule {
 }
 
 const MANGA_EXPRESSION_RULES: readonly MangaExpressionRule[] = [
-  { pattern: /^(?:やあ)?オッス(?:[グパバ])?[!！]*$/u, translation: 'Hey!' },
-  { pattern: /^おしまい(?:っと)?(?:ググ)?[。.!！]*$/u, translation: 'All done!' },
-  { pattern: /^(?:ハラ|腹)へった(?:な)?[。.!！]*$/u, translation: "I'm hungry." },
-  { pattern: /^[~〜ゾ{「『]*ん?むんむんる{0,8}$/u, translation: 'Hmmm...' },
-  { pattern: /^むふん[。.!！]*$/u, translation: 'Hmph!' },
+  { pattern: /^(?:やあ)?オッス[!！]*$/u, translation: 'Hey!' },
+  { pattern: /^おしまい(?:っと)?[。.!！…]*$/u, translation: 'All done!' },
+  { pattern: /^(?:ハラ|腹)へった(?:な)?[。.!！…]*$/u, translation: "I'm hungry." },
+  { pattern: /^むふん[。.!！…]*$/u, translation: 'Hmph!' },
   {
-    pattern: /^(?:でえっ(?:にpie[。.]?し)?|えやあ|とりゃ|おりゃ|せいや)[!！]*$/iu,
+    pattern: /^(?:でえっ|えやあ|とりゃ|おりゃ|せいや)[〜～ー]*[つっ]?[!！…]*$/u,
     translation: 'Hyaaah!',
   },
+];
+
+const MANGA_SOUND_FALLBACK_RULES: readonly MangaExpressionRule[] = [
   {
-    pattern: /^(?:す[ほぼぽ]{2,}(?:な[|｜]つっつっルル)?|ずどど(?:いをを誰こ)?)[!！]*$/u,
+    pattern: /^む[〜～ー]*んむんむん[。.!！…●○◯〜～ー]*$/u,
+    translation: 'Hmmmm...',
+  },
+  {
+    pattern: /^す[ほぼぽ]{2,}[〜～ー]*[つっ]?[。.!！…]*$/u,
     translation: 'Hrrrgh!',
+  },
+  {
+    pattern: /^ずどど(?:えやあ|でえっ|とりゃ|おりゃ|せいや)[〜～ー]*[つっ]?[。.!！…]*$/u,
+    translation: 'Hyaaah!',
   },
 ];
 
@@ -139,6 +147,17 @@ export const translateJapaneseMangaExpression = (text: string): string | null =>
   return null;
 };
 
+export const translateJapaneseMangaSoundFallback = (text: string): string | null => {
+  const normalized = text.normalize('NFKC').replace(/\s+/gu, '');
+  for (const { pattern, translation } of MANGA_SOUND_FALLBACK_RULES) {
+    if (pattern.test(normalized)) return translation;
+  }
+  return null;
+};
+
+const prepareJapaneseForTranslation = (text: string): string =>
+  text.replace(/^(.+?)おしまい(?:っと)?[。.!！…]*$/u, '$1を終えた！');
+
 export const normalizeEnglishTranslation = (text: string): string => {
   const normalized = text
     .replace(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]+/gu, ' ')
@@ -147,6 +166,8 @@ export const normalizeEnglishTranslation = (text: string): string => {
     .replace(/\s+/gu, ' ')
     .replace(/\s+([,.;:!?])/gu, '$1');
   if (!/\p{Script=Latin}/u.test(normalized)) return '';
+  if (/(\p{Script=Latin})\1{7,}/iu.test(normalized)) return '';
+  if (/\b(\p{Script=Latin}+)(?:[\s,]+\1){5,}\b/iu.test(normalized)) return '';
   const latinLetters = normalized.match(/\p{Script=Latin}/gu)?.length ?? 0;
   if (latinLetters < 2 && !/^(?:a|i)[.!?]?$/iu.test(normalized)) return '';
   return normalized
@@ -205,9 +226,12 @@ export class MangaTranslationEngine {
     const translations = candidates.map(({ sourceText }) =>
       translateJapaneseMangaExpression(sourceText),
     );
-    const unresolved = translations.flatMap((translation, index) =>
-      translation === null ? [{ index, sourceText: candidates[index]!.sourceText }] : [],
-    );
+    const unresolved = translations.flatMap((translation, index) => {
+      const sourceText = candidates[index]!.sourceText;
+      return translation === null
+        ? [{ index, sourceText: prepareJapaneseForTranslation(sourceText) }]
+        : [];
+    });
     if (unresolved.length) {
       const modelTranslations = await this.#getTranslator().translate(
         unresolved.map(({ sourceText }) => sourceText),
@@ -220,7 +244,9 @@ export class MangaTranslationEngine {
 
     const regions: TranslatedMangaRegion[] = [];
     for (const [index, { block, sourceText }] of candidates.entries()) {
-      const translatedText = normalizeEnglishTranslation(translations[index] ?? '');
+      const translatedText =
+        normalizeEnglishTranslation(translations[index] ?? '') ||
+        translateJapaneseMangaSoundFallback(sourceText);
       if (!translatedText) continue;
       regions.push({
         id: block.id,
