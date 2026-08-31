@@ -67,9 +67,13 @@ describe('plans grid layout', () => {
       renderGrid();
 
       expect(cards()).toHaveLength(4);
-      const tops = cards().map((card) => Math.round(card.getBoundingClientRect().top));
-      // Four cards over two columns is two rows, never one.
-      expect(new Set(tops).size).toBe(2);
+      const rect = () => cards().map((card) => card.getBoundingClientRect());
+      // Count columns directly. Counting rows instead would pass on a
+      // three-column grid too, since 3 + 1 also lands on two distinct tops.
+      const lefts = new Set(rect().map((r) => Math.round(r.left)));
+      const tops = new Set(rect().map((r) => Math.round(r.top)));
+      expect(lefts.size).toBe(2);
+      expect(tops.size).toBe(2);
       cleanup();
     }
   });
@@ -79,8 +83,10 @@ describe('plans grid layout', () => {
     renderGrid();
 
     const bottoms = cards().map((card) => Math.round(card.getBoundingClientRect().bottom));
-    // One shared bottom edge per row, so two distinct values across two rows.
-    expect(new Set(bottoms).size).toBe(2);
+    // Compare within each row: two distinct values overall would also hold if
+    // the pairs were mismatched across rows rather than flush within them.
+    expect(bottoms[0]).toBe(bottoms[1]);
+    expect(bottoms[2]).toBe(bottoms[3]);
   });
 
   it('drops to a single column on a phone', async () => {
