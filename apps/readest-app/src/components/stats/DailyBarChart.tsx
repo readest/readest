@@ -23,7 +23,7 @@ const DailyBarChart: React.FC<DailyBarChartProps> = ({ daily, fromTs, toTs, vari
   const _ = useTranslation();
 
   const days = useMemo(() => {
-    const secondsByDay = new Map(daily.map((d) => [d.dayStartTs, d.seconds]));
+    const secondsByDay = new Map(daily.map((d) => [d.dayStartTs * 1000, d.seconds]));
     const out: { dayStartTs: number; seconds: number }[] = [];
     let cursor = dayjs(fromTs).startOf('day');
     const end = dayjs(toTs).startOf('day');
@@ -56,7 +56,7 @@ const DailyBarChart: React.FC<DailyBarChartProps> = ({ daily, fromTs, toTs, vari
             <div
               key={dayStartTs}
               className='flex h-full min-w-0 flex-1 flex-col justify-end'
-              title={`${dayjs(dayStartTs).format('LL')} · ${formatReadingDuration(seconds, _)}`}
+              title={`${dayjs(dayStartTs).format('YYYY-MM-DD')} · ${formatReadingDuration(seconds, _)}`}
             >
               {pct > 0 ? (
                 <div

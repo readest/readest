@@ -182,6 +182,7 @@ discord-rich-presence = "1.0.0"
 # Resolve the user's default browser from the registry for the cold-browser
 # OAuth-redirect fallback (see src/spawn_fresh_browser.rs).
 winreg = "0.52"
+windows-sys = { version = "0.59", features = ["Win32_Storage_FileSystem"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"

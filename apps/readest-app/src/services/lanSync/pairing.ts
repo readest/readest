@@ -2,13 +2,14 @@ import type { LanSyncStatus } from './lifecycle';
 
 export const LAN_SYNC_PAIRING_SERVICE = 'readest-lan-sync';
 export const LAN_SYNC_PAIRING_VERSION = 1 as const;
+export const LAN_SYNC_PROTOCOL = 'readest-lan-sync-1' as const;
 
 export interface LanSyncPairingPayload {
   v: typeof LAN_SYNC_PAIRING_VERSION;
   service: typeof LAN_SYNC_PAIRING_SERVICE;
   hosts: string[];
   port: number;
-  token: string;
+  token?: string;
 }
 
 const isIpv4 = (value: unknown): value is string => {
@@ -16,7 +17,19 @@ const isIpv4 = (value: unknown): value is string => {
   const parts = value.split('.');
   return (
     parts.length === 4 &&
-    parts.every((part) => /^\d{1,3}$/.test(part) && Number(part) >= 0 && Number(part) <= 255)
+    parts.every((part) => /^(?:0|[1-9]\d{0,2})$/.test(part) && Number(part) <= 255)
+  );
+};
+
+const isLanIpv4 = (value: unknown): value is string => {
+  if (!isIpv4(value)) return false;
+  const [a, b, , d] = value.split('.').map(Number);
+  if (d === 255) return false;
+  return (
+    a === 10 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254)
   );
 };
 
@@ -28,7 +41,7 @@ export const createLanSyncPairingPayload = (
   status: Pick<LanSyncStatus, 'local_ips' | 'port'>,
   token: string,
 ): string => {
-  const hosts = status.local_ips.filter(isIpv4);
+  const hosts = status.local_ips.filter(isLanIpv4);
   if (!hosts.length || !Number.isInteger(status.port) || status.port < 1 || status.port > 65535) {
     return '';
   }
@@ -56,10 +69,11 @@ export const parseLanSyncPairingPayload = (raw: string): LanSyncPairingPayload |
     ) {
       return null;
     }
-    const hosts = record.hosts.filter(isIpv4);
+    const hosts = record.hosts.filter(isLanIpv4);
     if (!hosts.length || hosts.length !== record.hosts.length) return null;
     const port = record.port;
     if (!Number.isInteger(port) || (port as number) < 1 || (port as number) > 65535) return null;
+    if (record.token !== undefined && typeof record.token !== 'string') return null;
     const token = typeof record.token === 'string' ? record.token.trim() : '';
     if (!isValidToken(token)) return null;
     return {
@@ -67,7 +81,7 @@ export const parseLanSyncPairingPayload = (raw: string): LanSyncPairingPayload |
       service: LAN_SYNC_PAIRING_SERVICE,
       hosts,
       port: port as number,
-      token,
+      ...(token ? { token } : {}),
     };
   } catch {
     return null;

@@ -9,6 +9,9 @@ import {
   isCompactionEnabled,
   readCompactConfig,
   tsToMs,
+  tsToUs,
+  archivedRowUpdatedAtUs,
+  toWireStatPage,
   type ArchivedPageRow,
   type StatsSegment,
 } from '@/libs/statsArchive';
@@ -19,6 +22,12 @@ describe('tsToMs', () => {
     expect(tsToMs('2026-07-01T00:00:01.5+00:00')).toBe(Date.parse('2026-07-01T00:00:01.500Z'));
     expect(tsToMs('1970-01-01T00:00:00+00:00')).toBe(0);
     expect(tsToMs('2026-07-01T02:00:00.999999+02:00')).toBe(Date.parse('2026-07-01T00:00:00.999Z'));
+  });
+});
+
+describe('tsToUs', () => {
+  it('preserves the complete PostgreSQL fractional timestamp', () => {
+    expect(tsToUs('2026-07-01T00:00:00.123456+00:00')).toBe(1_782_864_000_123_456);
   });
 });
 
@@ -60,6 +69,17 @@ describe('statsArchive segment codec', () => {
     expect(back.rows[0]!.ext).toEqual({ src: 'tts' });
   });
 
+  it('preserves exact microsecond timestamps for new segments', () => {
+    const text = encodeSegment(segment([row(100, { updated_at_us: 100_123 })]));
+    expect(text).toContain('"updated_at_us":100123');
+    const back = decodeSegment(text);
+    expect(archivedRowUpdatedAtUs(back.rows[0]!)).toBe(100_123);
+    expect(toWireStatPage(back.rows[0]!, 'u1')).toMatchObject({
+      updated_at: '1970-01-01T00:00:00.100123Z',
+      updated_at_us: 100_123,
+    });
+  });
+
   it('rejects unknown versions and malformed rows', () => {
     expect(() =>
       decodeSegment('{"v":2,"user_id":"u1","updated_from_ms":0,"updated_to_ms":1,"rows":[]}'),
@@ -91,6 +111,14 @@ describe('takePage', () => {
       [300, 2],
       [300, 3],
     ]);
+  });
+
+  it('uses exact microseconds when a precise cursor is supplied', () => {
+    const preciseRows = [
+      row(1_000, { page: 1, updated_at_us: 1_000_900 }),
+      row(1_000, { page: 2, updated_at_us: 1_001_100 }),
+    ];
+    expect(takePage(preciseRows, 1_000, 10, null, 1_001_000).map((r) => r.page)).toEqual([2]);
   });
 
   it('honors the book filter and returns an empty page when nothing matches', () => {

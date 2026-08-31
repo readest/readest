@@ -15,6 +15,7 @@ import {
   SYNC_BOOK_CONFIG_FILE,
   SYNC_BOOK_COVER_FILE,
   SYNC_PART_FILE_SUFFIX,
+  SYNC_BACKUP_FILE_SUFFIX,
 } from './layout';
 import {
   buildRemotePayload,
@@ -157,7 +158,8 @@ const isSyncableFileEntry = (e: FileEntry): boolean =>
   e.name !== SYNC_BOOK_CONFIG_FILE &&
   e.name !== SYNC_BOOK_COVER_FILE &&
   !e.name.startsWith('.') &&
-  !e.name.endsWith(SYNC_PART_FILE_SUFFIX);
+  !e.name.endsWith(SYNC_PART_FILE_SUFFIX) &&
+  !e.name.endsWith(SYNC_BACKUP_FILE_SUFFIX);
 
 /**
  * Delete the per-book directory `<rootPath>/Readest/books/<hash>/` — file,
@@ -389,15 +391,11 @@ export class FileSyncEngine {
           return { uploaded: false, reason: 'remote-matches' };
         }
         await this.ensureDirs(dirs);
-        let ok = await this.provider.uploadStream(path, src.path);
-        if (!ok) {
-          // Mirror the buffered path's one-shot retry: a parent may have been
-          // recreated mid-PUT (409). Re-ensure directories and try once more.
-          await this.ensureDirs(dirs);
-          ok = await this.provider.uploadStream(path, src.path);
-          if (!ok) throw new FileSyncError('Streaming upload failed', 'NETWORK');
-        }
-        return { uploaded: true };
+        const ok = await this.provider.uploadStream(path, src.path);
+        if (ok) return { uploaded: true };
+        // A stream provider may return false for a transport/size limitation.
+        // Fall through to the buffered path, which is the provider contract's
+        // compatibility fallback.
       }
       // src null — book isn't on this device via the streaming resolver; fall
       // through to the buffered loader as a last resort.
@@ -483,7 +481,10 @@ export class FileSyncEngine {
     if (this.provider.downloadStream) {
       const dst = await this.store.prepareLocalBookPath(book);
       written = await this.provider.downloadStream(fileEntry.path, dst, onProgress);
-    } else {
+    }
+    if (!written) {
+      // Stream providers return false for a transport/size limitation; use the
+      // buffered provider operation as the compatibility fallback.
       const bytes = await this.provider.readBinary(fileEntry.path);
       if (bytes) {
         await this.store.saveBookFile(book, bytes);

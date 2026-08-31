@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { md5 } from 'js-md5';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Format,
@@ -297,6 +298,9 @@ const LanForm: React.FC = () => {
       try {
         let s = await getLanSyncStatus();
         if (cancelled || disconnectingRef.current) return;
+        if (s.running && s.token_fingerprint !== md5(localToken)) {
+          s = await restartLocalServerWithToken(localToken, localToken, s.generation);
+        }
         if (!s.running) {
           s = await startLanSync(localToken, DEFAULT_LAN_SYNC_PORT, '', s.generation);
           const currentLan = useSettingsStore.getState().settings?.lan;
@@ -481,7 +485,10 @@ const LanForm: React.FC = () => {
     expectedGeneration?: number,
   ) => replaceLanSyncToken(nextToken, previousToken, DEFAULT_LAN_SYNC_PORT, '', expectedGeneration);
 
-  const handleConnect = async (target?: DiscoveredLanPeer) => {
+  const handleConnect = async (
+    target?: DiscoveredLanPeer,
+    options?: { suppressErrorToast?: boolean },
+  ): Promise<{ success: boolean; error?: unknown } | undefined> => {
     const trimmedHost = (target?.host ?? host).trim();
     const trimmedToken = target
       ? target.token.trim() || (target.auth_required ? token.trim() : '')
@@ -756,16 +763,20 @@ const LanForm: React.FC = () => {
           name: target?.name || peer.name || peer.device_id,
         }),
       });
+      return { success: true };
     } catch (e) {
       if (persistentLockAcquiredForPromotion) {
         await releasePromotionLock();
       }
       if (!isConnectionCurrent()) return;
       if (target) setShowManualConnection(true);
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message: `${_('Failed to connect')}: ${formatPingError(_, e)}`,
-      });
+      if (!options?.suppressErrorToast) {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: `${_('Failed to connect')}: ${formatPingError(_, e)}`,
+        });
+      }
+      return { success: false, error: e };
     } finally {
       if (connectionRunRef.current === connectionRunId && !unmountedRef.current) {
         connectingRef.current = false;
@@ -777,6 +788,8 @@ const LanForm: React.FC = () => {
 
   const handleScanPairingQr = async () => {
     if (!canScanPairingQr || isConnecting) return;
+
+    let result: Awaited<ReturnType<typeof scan>>;
     try {
       let permission = await checkPermissions();
       if (permission !== 'granted') permission = await requestPermissions();
@@ -787,27 +800,49 @@ const LanForm: React.FC = () => {
         });
         return;
       }
-      const result = await scan({ formats: [Format.QRCode], windowed: true });
-      const pairing = parseLanSyncPairingPayload(result.content);
-      if (!pairing) {
-        eventDispatcher.dispatch('toast', {
-          type: 'error',
-          message: _('Invalid Readest LAN pairing QR code'),
-        });
-        return;
-      }
-      await handleConnect({
-        name: 'Readest',
-        host: pairing.hosts[0],
-        port: pairing.port,
-        device_id: `qr:${pairing.hosts[0]}`,
-        token: pairing.token,
-        auth_required: !!pairing.token,
-      });
+      result = await scan({ formats: [Format.QRCode], windowed: true });
     } catch {
       eventDispatcher.dispatch('toast', {
         type: 'error',
         message: _('Failed to scan pairing QR code'),
+      });
+      return;
+    }
+
+    const pairing = parseLanSyncPairingPayload(result.content);
+    if (!pairing) {
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Invalid Readest LAN pairing QR code'),
+      });
+      return;
+    }
+
+    let lastConnectionError: unknown;
+    let attemptedConnection = false;
+    for (const pairingHost of pairing.hosts) {
+      const connection = await handleConnect(
+        {
+          name: 'Readest',
+          host: pairingHost,
+          port: pairing.port,
+          device_id: `qr:${pairingHost}`,
+          token: pairing.token ?? '',
+          auth_required: !!pairing.token,
+        },
+        { suppressErrorToast: true },
+      );
+      if (connection?.success) return;
+      if (connection) {
+        attemptedConnection = true;
+        lastConnectionError = connection.error;
+      }
+    }
+
+    if (attemptedConnection) {
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: `${_('Failed to connect')}: ${formatPingError(_, lastConnectionError)}`,
       });
     }
   };
@@ -817,6 +852,8 @@ const LanForm: React.FC = () => {
     disconnectingRef.current = true;
     connectionRunRef.current += 1;
     connectingRef.current = false;
+    setIsConnecting(false);
+    setConnectingPeerId(null);
     // Update the local setting before any asynchronous cleanup so
     // LanSyncManager cancels boot/start work before the server is stopped.
     const currentSettings = useSettingsStore.getState().settings;
@@ -903,8 +940,20 @@ const LanForm: React.FC = () => {
 
   const pairingQrValue =
     isTauri && status?.running
-      ? createLanSyncPairingPayload(status, stored?.token?.trim() ?? '')
+      ? createLanSyncPairingPayload(status, (isActive ? stored?.token : token)?.trim() ?? '')
       : '';
+
+  const pairingQrPanel = pairingQrValue ? (
+    <BoxedList title={_('Pairing QR code')}>
+      <SettingsRow
+        label={_('Scan this code on your phone')}
+        description={_("It contains this device's LAN address and optional pairing token.")}
+      />
+      <div className='flex justify-center bg-white p-4'>
+        <QRCodeSVG value={pairingQrValue} size={220} level='M' includeMargin />
+      </div>
+    </BoxedList>
+  ) : null;
 
   const manualConnectionForm = (
     <div className='space-y-4 pt-4'>
@@ -1115,17 +1164,7 @@ const LanForm: React.FC = () => {
 
         <FileSyncForm kind='lan' stored={stored} persist={persistLan} />
 
-        {pairingQrValue && (
-          <BoxedList title={_('Pairing QR code')}>
-            <SettingsRow
-              label={_('Scan this code on your phone')}
-              description={_("It contains this device's LAN address and optional pairing token.")}
-            />
-            <div className='flex justify-center bg-white p-4'>
-              <QRCodeSVG value={pairingQrValue} size={220} level='M' includeMargin />
-            </div>
-          </BoxedList>
-        )}
+        {pairingQrPanel}
 
         {isTauri && status?.running && status.local_ips.length > 0 && (
           <div className='space-y-1.5'>
@@ -1170,6 +1209,7 @@ const LanForm: React.FC = () => {
       }}
     >
       {discoveryPanel}
+      {pairingQrPanel}
 
       <div>
         <button

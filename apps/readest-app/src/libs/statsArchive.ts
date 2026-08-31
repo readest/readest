@@ -27,6 +27,8 @@ export interface ArchivedPageRow {
   ext: unknown;
   deleted_at: string | null;
   updated_at_ms: number;
+  /** Exact PostgreSQL timestamp when the segment was written by new compactors. */
+  updated_at_us?: number;
 }
 
 export interface StatsSegment {
@@ -108,13 +110,24 @@ export const getStatsArchiveEnv = (): Partial<StatsArchiveEnv> => {
 export const tsToMs = (ts: string): number =>
   Date.parse(ts.replace(/\.(\d{1,3})\d*/, (_m, f: string) => `.${f.padEnd(3, '0')}`));
 
+/** PostgREST timestamptz text -> epoch microseconds without losing its fraction. */
+export const tsToUs = (ts: string): number => {
+  const parsedMs = Date.parse(ts);
+  if (!Number.isFinite(parsedMs)) return Number.NaN;
+  const fraction = /\.(\d+)(?:Z|[+-]\d{2}:?\d{2})$/.exec(ts)?.[1] ?? '';
+  return Math.floor(parsedMs / 1000) * 1_000_000 + Number(fraction.padEnd(6, '0').slice(0, 6));
+};
+
 export const segmentKey = (userId: string, updatedToMs: number) =>
   `${SEGMENT_KEY_PREFIX}${userId}/${updatedToMs}.json`;
 
 export const userSegmentPrefix = (userId: string) => `${SEGMENT_KEY_PREFIX}${userId}/`;
 
+export const archivedRowUpdatedAtUs = (row: ArchivedPageRow): number =>
+  row.updated_at_us ?? row.updated_at_ms * 1000;
+
 const compareRows = (a: ArchivedPageRow, b: ArchivedPageRow) =>
-  a.updated_at_ms - b.updated_at_ms ||
+  archivedRowUpdatedAtUs(a) - archivedRowUpdatedAtUs(b) ||
   (a.book_hash < b.book_hash ? -1 : a.book_hash > b.book_hash ? 1 : 0) ||
   a.page - b.page ||
   a.start_time - b.start_time;
@@ -129,6 +142,7 @@ const toWireRow = (r: ArchivedPageRow): ArchivedPageRow => ({
   ext: r.ext ?? null,
   deleted_at: r.deleted_at ?? null,
   updated_at_ms: r.updated_at_ms,
+  ...(Number.isSafeInteger(r.updated_at_us) ? { updated_at_us: r.updated_at_us } : {}),
 });
 
 export function encodeSegment(seg: StatsSegment): string {
@@ -164,6 +178,10 @@ export function decodeSegment(text: string): StatsSegment {
       !isFiniteNumber(r['duration']) ||
       !isFiniteNumber(r['total_pages']) ||
       !isFiniteNumber(r['updated_at_ms']) ||
+      (r['updated_at_us'] != null &&
+        (!isFiniteNumber(r['updated_at_us']) ||
+          !Number.isSafeInteger(r['updated_at_us']) ||
+          r['updated_at_us'] < 0)) ||
       (r['deleted_at'] != null && typeof r['deleted_at'] !== 'string')
     ) {
       throw new Error(`invalid segment row at index ${i}`);
@@ -177,6 +195,7 @@ export function decodeSegment(text: string): StatsSegment {
       ext: r['ext'] ?? null,
       deleted_at: (r['deleted_at'] as string | null | undefined) ?? null,
       updated_at_ms: r['updated_at_ms'],
+      ...(r['updated_at_us'] == null ? {} : { updated_at_us: r['updated_at_us'] as number }),
     });
   });
   return {
@@ -190,29 +209,43 @@ export function decodeSegment(text: string): StatsSegment {
 
 /**
  * Rows strictly after `sinceMs` (and of `book` when given), in segment order.
- * With a positive `limit`, the first `limit` rows extended with every trailing
- * row that shares the last `updated_at_ms`, so a client advancing its cursor
- * to that value never skips a tie. `limit <= 0` returns everything.
+ * New segments can use the optional exact microsecond cursor; old segments fall
+ * back to their millisecond timestamps. With a positive `limit`, the first
+ * `limit` rows are extended through the trailing cursor value so a client never
+ * skips a tie. `limit <= 0` returns everything.
  */
 export function takePage(
   rows: ArchivedPageRow[],
   sinceMs: number,
   limit: number,
   book?: string | null,
+  sinceUs?: number,
 ): ArchivedPageRow[] {
-  const kept = rows.filter((r) => r.updated_at_ms > sinceMs && (!book || r.book_hash === book));
+  const cursor = sinceUs ?? sinceMs * 1000;
+  const kept = rows.filter(
+    (r) => archivedRowUpdatedAtUs(r) > cursor && (!book || r.book_hash === book),
+  );
   if (limit <= 0 || kept.length <= limit) return kept;
-  const edge = kept[limit - 1]!.updated_at_ms;
+  const edge = archivedRowUpdatedAtUs(kept[limit - 1]!);
   let end = limit;
-  while (end < kept.length && kept[end]!.updated_at_ms === edge) end++;
+  while (end < kept.length && archivedRowUpdatedAtUs(kept[end]!) === edge) end++;
   return kept.slice(0, end);
 }
+
+const epochUsToIso = (epochUs: number): string => {
+  const wholeMs = Math.floor(epochUs / 1000);
+  const subMs = epochUs % 1000;
+  return new Date(wholeMs).toISOString().replace('Z', `${String(subMs).padStart(3, '0')}Z`);
+};
 
 /** Segment row as the stats pull returns it (same shape as a hot row). */
 export const toWireStatPage = (r: ArchivedPageRow, userId: string) => ({
   user_id: userId,
   ...toWireRow(r),
-  updated_at: new Date(r.updated_at_ms).toISOString(),
+  updated_at: Number.isSafeInteger(r.updated_at_us)
+    ? epochUsToIso(r.updated_at_us)
+    : new Date(r.updated_at_ms).toISOString(),
+  ...(Number.isSafeInteger(r.updated_at_us) ? { updated_at_us: r.updated_at_us } : {}),
 });
 
 export class SegmentUnavailableError extends Error {

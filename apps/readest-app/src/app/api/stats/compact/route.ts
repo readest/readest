@@ -10,6 +10,7 @@ import {
   readCompactConfig,
   segmentKey,
   tsToMs,
+  tsToUs,
   type ArchivedPageRow,
 } from '@/libs/statsArchive';
 
@@ -322,6 +323,7 @@ export async function POST(request: Request) {
           ext: r.ext ?? null,
           deleted_at: r.deleted_at ?? null,
           updated_at_ms: tsToMs(r.updated_at),
+          updated_at_us: tsToUs(r.updated_at),
         }));
         const body = encodeSegment({
           v: SEGMENT_VERSION,

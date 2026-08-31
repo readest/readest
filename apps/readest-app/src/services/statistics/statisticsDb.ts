@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
 import type {
@@ -19,7 +20,7 @@ interface BookRow extends DatabaseRow {
   pages: number;
 }
 
-type CursorKey = 'push' | 'pull' | 'bookorbit-push' | 'file-push';
+type CursorKey = 'push' | 'pull' | 'pull-us' | 'bookorbit-push' | 'file-push';
 
 /**
  * Per-tab singleton open promise. OPFS permits only ONE access handle per file
@@ -48,11 +49,35 @@ function bindLifecycle(): void {
  * keyed on `book_hash` (= Book.hash); the local autoincrement `id_book` never
  * leaves this class.
  */
+const statsEventKey = (event: PageStatEvent): string =>
+  JSON.stringify([event.bookMd5, event.page, event.startTime, event.duration, event.totalPages]);
+
 export class StatisticsDb {
   // Serializes applyRemoteEvents so two concurrent pulls can't nest BEGINs.
   private applyRemoteLock: Promise<void> = Promise.resolve();
+  private pushBoundaryTableReady: Promise<void> | null = null;
 
   private constructor(private readonly db: DatabaseService) {}
+
+  private async ensurePushBoundaryTable(): Promise<void> {
+    if (!this.pushBoundaryTableReady) {
+      const ready = this.db
+        .execute(
+          `CREATE TABLE IF NOT EXISTS readest_stat_sync_boundary (
+             key TEXT PRIMARY KEY,
+             start_time INTEGER NOT NULL,
+             event_keys TEXT NOT NULL
+           )`,
+        )
+        .then(() => undefined)
+        .catch((error) => {
+          if (this.pushBoundaryTableReady === ready) this.pushBoundaryTableReady = null;
+          throw error;
+        });
+      this.pushBoundaryTableReady = ready;
+    }
+    await this.pushBoundaryTableReady;
+  }
 
   /** Production entry point — opens + migrates statistics.db (per-tab singleton). */
   static async open(appService: AppService): Promise<StatisticsDb> {
@@ -178,23 +203,37 @@ export class StatisticsDb {
   }
 
   // ---- Derived aggregates for the stats UI (never stored; see types/statistics.ts).
-  // Day buckets use `tzOffsetSecs` = -new Date().getTimezoneOffset() * 60 so the
-  // grouping is by LOCAL day; SQLite's integer division is fine here because
-  // start_time + tzOffsetSecs is always positive.
+  // Callers may pass a fixed offset for deterministic/imported data. The UI omits
+  // it and buckets through dayjs so historical daylight-saving transitions use
+  // each event's actual local calendar day.
 
   /** All-time totals: total seconds, distinct local days read, first event time. */
-  async getTotalReadStats(tzOffsetSecs: number): Promise<TotalReadStats> {
-    const rows = await this.db.select<{ total: number; days: number; first: number | null }>(
+  async getTotalReadStats(tzOffsetSecs?: number): Promise<TotalReadStats> {
+    const rows = await this.db.select<{ total: number; first: number | null }>(
       `SELECT COALESCE(SUM(duration), 0) AS total,
-              COUNT(DISTINCT (start_time + ?) / 86400) AS days,
               MIN(start_time) AS first
        FROM page_stat_data`,
-      [tzOffsetSecs],
     );
     const row = rows[0];
+    let readDays = 0;
+    if (tzOffsetSecs !== undefined) {
+      const dayRows = await this.db.select<{ days: number }>(
+        `SELECT COUNT(DISTINCT (start_time + ?) / 86400) AS days
+         FROM page_stat_data`,
+        [tzOffsetSecs],
+      );
+      readDays = Number(dayRows[0]?.days ?? 0);
+    } else {
+      const startRows = await this.db.select<{ startTime: number }>(
+        `SELECT start_time AS startTime FROM page_stat_data`,
+      );
+      readDays = new Set(
+        startRows.map((event) => dayjs(Number(event.startTime) * 1000).format('YYYY-MM-DD')),
+      ).size;
+    }
     return {
       totalSeconds: Number(row?.total ?? 0),
-      readDays: Number(row?.days ?? 0),
+      readDays,
       firstStartTime: row?.first != null ? Number(row.first) : null,
     };
   }
@@ -214,20 +253,40 @@ export class StatisticsDb {
   async getDailyReadTimeBetween(
     fromTs: number,
     toTs: number,
-    tzOffsetSecs: number,
+    tzOffsetSecs?: number,
   ): Promise<DailyReadTime[]> {
-    const rows = await this.db.select<{ dayIdx: number; seconds: number }>(
-      `SELECT (start_time + ?) / 86400 AS dayIdx, SUM(duration) AS seconds
+    if (tzOffsetSecs !== undefined) {
+      const rows = await this.db.select<{ dayIdx: number; seconds: number }>(
+        `SELECT (start_time + ?) / 86400 AS dayIdx, SUM(duration) AS seconds
+         FROM page_stat_data
+         WHERE start_time >= ? AND start_time < ?
+         GROUP BY dayIdx
+         ORDER BY dayIdx ASC`,
+        [tzOffsetSecs, fromTs, toTs],
+      );
+      return rows.map((r) => ({
+        dayStartTs: Number(r.dayIdx) * 86400 - tzOffsetSecs,
+        seconds: Number(r.seconds),
+      }));
+    }
+
+    const rows = await this.db.select<{ startTime: number; duration: number }>(
+      `SELECT start_time AS startTime, duration
        FROM page_stat_data
        WHERE start_time >= ? AND start_time < ?
-       GROUP BY dayIdx
-       ORDER BY dayIdx ASC`,
-      [tzOffsetSecs, fromTs, toTs],
+       ORDER BY start_time ASC`,
+      [fromTs, toTs],
     );
-    return rows.map((r) => ({
-      dayStartTs: Number(r.dayIdx) * 86400 - tzOffsetSecs,
-      seconds: Number(r.seconds),
-    }));
+    const daily = new Map<number, number>();
+    for (const row of rows) {
+      const dayStartTs = dayjs(Number(row.startTime) * 1000)
+        .startOf('day')
+        .unix();
+      daily.set(dayStartTs, (daily.get(dayStartTs) ?? 0) + Number(row.duration));
+    }
+    return [...daily.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([dayStartTs, seconds]) => ({ dayStartTs, seconds }));
   }
 
   /** Per-book reading seconds for events starting within [fromTs, toTs), longest first. */
@@ -275,27 +334,58 @@ export class StatisticsDb {
     return this.upsertBook({ bookMd5, title: bookMd5, authors: '' });
   }
 
-  /** Events with start_time > cursor, joined to their md5, for pushing. */
+  /** Events with start_time >= cursor, joined to their md5, for pushing.
+   * The inclusive boundary prevents same-second events from being skipped. A
+   * durable boundary memo filters events already acknowledged at that
+   * timestamp, so a successful push does not replay forever. */
   async getEventsForPush(
     sinceStartTime: number,
+    cursorKey: CursorKey = 'push',
   ): Promise<{ events: PageStatEvent[]; books: StatBook[] }> {
+    await this.ensurePushBoundaryTable();
     const rows = await this.db.select<DatabaseRow>(
       `SELECT b.md5 AS bookMd5, b.title AS title, b.authors AS authors,
               p.page AS page, p.start_time AS startTime, p.duration AS duration, p.total_pages AS totalPages
        FROM page_stat_data p JOIN book b ON b.id = p.id_book
-       WHERE p.start_time > ?
-       ORDER BY p.start_time ASC`,
+       WHERE p.start_time >= ?
+       ORDER BY p.start_time ASC, b.md5 ASC, p.page ASC`,
       [sinceStartTime],
     );
-    const events: PageStatEvent[] = rows.map((r) => ({
-      bookMd5: String(r['bookMd5']),
-      page: Number(r['page']),
-      startTime: Number(r['startTime']),
-      duration: Number(r['duration']),
-      totalPages: Number(r['totalPages']),
-    }));
+    const boundaryRows = await this.db.select<{ startTime: number; eventKeys: string }>(
+      `SELECT start_time AS startTime, event_keys AS eventKeys
+       FROM readest_stat_sync_boundary WHERE key = ?`,
+      [cursorKey],
+    );
+    let acknowledged = new Set<string>();
+    const boundary = boundaryRows[0];
+    if (boundary && Number(boundary.startTime) === sinceStartTime) {
+      try {
+        const keys: unknown = JSON.parse(boundary.eventKeys);
+        if (Array.isArray(keys) && keys.every((key) => typeof key === 'string')) {
+          acknowledged = new Set(keys);
+        }
+      } catch {
+        // A malformed optimization memo must never hide local events.
+      }
+    }
+
+    const events: PageStatEvent[] = [];
+    const pendingRows = rows.filter((r) => {
+      const event = {
+        bookMd5: String(r['bookMd5']),
+        page: Number(r['page']),
+        startTime: Number(r['startTime']),
+        duration: Number(r['duration']),
+        totalPages: Number(r['totalPages']),
+      };
+      if (event.startTime === sinceStartTime && acknowledged.has(statsEventKey(event))) {
+        return false;
+      }
+      events.push(event);
+      return true;
+    });
     const bookMap = new Map<string, StatBook>();
-    for (const r of rows) {
+    for (const r of pendingRows) {
       const md5 = String(r['bookMd5']);
       if (!bookMap.has(md5)) {
         bookMap.set(md5, {
@@ -306,6 +396,43 @@ export class StatisticsDb {
       }
     }
     return { events, books: [...bookMap.values()] };
+  }
+
+  /** Remember the exact boundary events acknowledged by a successful push. */
+  async markEventsPushed(cursorKey: CursorKey, events: PageStatEvent[]): Promise<void> {
+    if (events.length === 0) return;
+    await this.ensurePushBoundaryTable();
+    const startTime = events.reduce(
+      (max, event) => Math.max(max, event.startTime),
+      events[0]!.startTime,
+    );
+    const eventKeys = new Set<string>();
+    const existing = await this.db.select<{ startTime: number; eventKeys: string }>(
+      `SELECT start_time AS startTime, event_keys AS eventKeys
+       FROM readest_stat_sync_boundary WHERE key = ?`,
+      [cursorKey],
+    );
+    if (existing[0] && Number(existing[0].startTime) === startTime) {
+      try {
+        const keys: unknown = JSON.parse(existing[0].eventKeys);
+        if (Array.isArray(keys)) {
+          for (const key of keys) if (typeof key === 'string') eventKeys.add(key);
+        }
+      } catch {
+        // A malformed optimization memo must never hide local events.
+      }
+    }
+    for (const event of events) {
+      if (event.startTime === startTime) eventKeys.add(statsEventKey(event));
+    }
+    await this.db.execute(
+      `INSERT INTO readest_stat_sync_boundary (key, start_time, event_keys)
+       VALUES (?, ?, ?)
+       ON CONFLICT(key) DO UPDATE SET
+         start_time = excluded.start_time,
+         event_keys = excluded.event_keys`,
+      [cursorKey, startTime, JSON.stringify([...eventKeys])],
+    );
   }
 
   async applyRemoteEvents(books: StatBook[], events: PageStatEvent[]): Promise<void> {

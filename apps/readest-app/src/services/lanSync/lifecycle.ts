@@ -14,6 +14,8 @@ export interface LanSyncStatus {
   device_name: string;
   device_id: string;
   local_ips: string[];
+  /** MD5 fingerprint used to detect a running server with a stale token. */
+  token_fingerprint: string;
   /** Monotonic Rust-side epoch used to reject stale starts across windows. */
   generation: number;
   /** True only when the start call created the running server. */

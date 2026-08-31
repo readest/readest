@@ -9,16 +9,16 @@
 //!   DEL  /files/{path}    → deleteDir (recursive; missing = success)
 //!   POST /list {dir}      → list (immediate children, engine-style entries)
 //!
-//! Book files are buffered in memory today; the M2 streaming endpoints will
-//! move large EPUBs to chunked transfer without changing these shapes.
+//! Book uploads and downloads are streamed from disk; native clients can use
+//! the same endpoints without buffering whole books in the webview.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
 use axum::body::Body;
 use axum::extract::{DefaultBodyLimit, Path as AxumPath, Request, State};
-use axum::http::{header, HeaderValue, Method, StatusCode};
+use axum::http::{header, HeaderMap, HeaderValue, Method, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
@@ -32,7 +32,7 @@ use tokio_util::io::ReaderStream;
 /// Upper bound for one request body (book binaries ride PUTs). Axum's default
 /// is 2 MiB, which silently 413-rejects nearly every real book; 2 GiB leaves
 /// room for the largest comics/PDFs while still bounding a malicious peer.
-const MAX_BODY_BYTES: usize = 2 * 1024 * 1024 * 1024;
+const MAX_BODY_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
 pub struct ServerState {
     /// On-disk root of the remote-format tree (`.../LanSync/`).
@@ -43,6 +43,19 @@ pub struct ServerState {
     pub device_id: String,
 }
 
+fn is_authorized(headers: &HeaderMap, auth_token: Option<&str>) -> bool {
+    match auth_token {
+        None => true,
+        Some(token) => {
+            let expected = format!("Bearer {token}");
+            headers
+                .get(header::AUTHORIZATION)
+                .and_then(|value| value.to_str().ok())
+                .is_some_and(|value| value == expected)
+        }
+    }
+}
+
 pub fn router(state: Arc<ServerState>) -> Router {
     Router::new()
         .route("/ping", get(ping))
@@ -50,8 +63,10 @@ pub fn router(state: Arc<ServerState>) -> Router {
             "/files/{*path}",
             get(read_file).head(head_file).put(write_file).delete(delete_path),
         )
-        .route("/list", post(list_dir))
-        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
+        .route(
+            "/list",
+            post(list_dir).layer(DefaultBodyLimit::max(64 * 1024)),
+        )
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth_and_cors,
@@ -70,16 +85,7 @@ async fn auth_and_cors(
     if req.method() == Method::OPTIONS {
         return with_cors(StatusCode::NO_CONTENT.into_response());
     }
-    let authorized = match state.auth_token.as_deref() {
-        None => true,
-        Some(token) => {
-            let expected = format!("Bearer {token}");
-            req.headers()
-                .get(header::AUTHORIZATION)
-                .and_then(|v| v.to_str().ok())
-                .is_some_and(|v| v == expected)
-        }
-    };
+    let authorized = is_authorized(req.headers(), state.auth_token.as_deref());
     if !authorized {
         return with_cors((StatusCode::UNAUTHORIZED, "unauthorized").into_response());
     }
@@ -162,6 +168,18 @@ fn bad_request(msg: &str) -> Response {
 
 fn internal_error(err: std::io::Error) -> Response {
     (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+}
+
+async fn publish_part_file(part_path: &Path, file_path: &Path) -> std::io::Result<()> {
+    #[cfg(windows)]
+    {
+        crate::transfer_file::replace_file_atomically(part_path, file_path)
+    }
+
+    #[cfg(not(windows))]
+    {
+        tokio::fs::rename(part_path, file_path).await
+    }
 }
 
 fn etag_for(meta: &std::fs::Metadata) -> String {
@@ -285,6 +303,13 @@ async fn write_file(
         Ok(None) => return bad_request("invalid path"),
         Err(e) => return internal_error(e),
     };
+    let canonical_root = match tokio::fs::canonicalize(&state.root).await {
+        Ok(root) => root,
+        Err(e) => return internal_error(e),
+    };
+    if full == canonical_root {
+        return bad_request("cannot write LAN sync root");
+    }
     // checked_join validates existing parents before creating missing ones.
     if let Some(parent) = full.parent() {
         if let Err(e) = tokio::fs::create_dir_all(parent).await {
@@ -298,10 +323,15 @@ async fn write_file(
     // mid-transfer leaves no truncated book behind for the discovery scan to
     // mistake for a complete upload (the engine skips `.part` names anyway).
     let mut part_os = full.clone().into_os_string();
-    part_os.push(".part");
+    part_os.push(format!(".{}.part", uuid::Uuid::new_v4()));
     let part_path = PathBuf::from(part_os);
 
-    let file = match tokio::fs::File::create(&part_path).await {
+    let file = match tokio::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&part_path)
+        .await
+    {
         Ok(file) => file,
         Err(e) => return internal_error(e),
     };
@@ -311,7 +341,10 @@ async fn write_file(
     };
     let mut writer = tokio::io::BufWriter::new(file);
     let mut stream = body.into_data_stream();
-    // BodyDataStream yields the body as `Bytes` chunks directly.
+    let mut written = 0u64;
+    // BodyDataStream yields the body as `Bytes` chunks directly. Because this
+    // handler consumes the raw Body, enforce the limit here as well as through
+    // DefaultBodyLimit (which primarily protects extractor-based handlers).
     while let Some(chunk) = stream.next().await {
         let chunk = match chunk {
             Ok(chunk) => chunk,
@@ -323,6 +356,11 @@ async fn write_file(
                 )));
             }
         };
+        let next_size = written.saturating_add(chunk.len() as u64);
+        if next_size > MAX_BODY_BYTES {
+            return with_cors((StatusCode::PAYLOAD_TOO_LARGE, "request body too large").into_response());
+        }
+        written = next_size;
         if let Err(e) = writer.write_all(&chunk).await {
             return internal_error(e);
         }
@@ -331,7 +369,7 @@ async fn write_file(
         return internal_error(e);
     }
     drop(writer); // release the handle before renaming (Windows)
-    match tokio::fs::rename(&part_path, &full).await {
+    match publish_part_file(&part_path, &full).await {
         Ok(()) => {
             guard.disarm();
             with_cors(StatusCode::NO_CONTENT.into_response())
@@ -400,6 +438,9 @@ async fn list_dir(
             continue;
         };
         let name = entry.file_name().to_string_lossy().to_string();
+        if name.ends_with(".part") || name.ends_with(".previous") {
+            continue;
+        }
         let child_path = format!("{}/{}", dir.trim_end_matches('/'), name);
         let (is_dir, size) = if meta.is_dir() {
             (true, None)
@@ -414,4 +455,30 @@ async fn list_dir(
         }));
     }
     with_cors(Json(json!({ "entries": entries })).into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_authorized;
+    use axum::http::{header, HeaderMap, HeaderValue};
+
+    #[test]
+    fn anonymous_server_accepts_requests_without_authorization() {
+        assert!(is_authorized(&HeaderMap::new(), None));
+    }
+
+    #[test]
+    fn protected_server_requires_the_exact_bearer_token() {
+        let mut headers = HeaderMap::new();
+        assert!(!is_authorized(&headers, Some("secret")));
+
+        headers.insert(header::AUTHORIZATION, HeaderValue::from_static("Bearer wrong"));
+        assert!(!is_authorized(&headers, Some("secret")));
+
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer secret"),
+        );
+        assert!(is_authorized(&headers, Some("secret")));
+    }
 }

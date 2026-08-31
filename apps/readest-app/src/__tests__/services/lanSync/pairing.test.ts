@@ -3,6 +3,7 @@ import {
   createLanSyncPairingPayload,
   parseLanSyncPairingPayload,
 } from '@/services/lanSync/pairing';
+import { buildLanSyncAuthHeaders } from '@/services/sync/providers/lan/LanSyncProvider';
 
 describe('LAN Sync pairing payloads', () => {
   const status = { local_ips: ['192.168.1.5', '10.0.0.2'], port: 53430 };
@@ -20,7 +21,6 @@ describe('LAN Sync pairing payloads', () => {
       service: 'readest-lan-sync',
       hosts: status.local_ips,
       port: 53430,
-      token: '',
     });
   });
 
@@ -36,7 +36,37 @@ describe('LAN Sync pairing payloads', () => {
         JSON.stringify({
           v: 1,
           service: 'readest-lan-sync',
-          hosts: ['127.0.0.1/evil'],
+          hosts: ['127.0.0.1'],
+          port: 53430,
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      parseLanSyncPairingPayload(
+        JSON.stringify({
+          v: 1,
+          service: 'readest-lan-sync',
+          hosts: ['8.8.8.8'],
+          port: 53430,
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      parseLanSyncPairingPayload(
+        JSON.stringify({
+          v: 1,
+          service: 'readest-lan-sync',
+          hosts: ['192.168.1.255'],
+          port: 53430,
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      parseLanSyncPairingPayload(
+        JSON.stringify({
+          v: 1,
+          service: 'readest-lan-sync',
+          hosts: ['192.168.001.5'],
           port: 53430,
         }),
       ),
@@ -46,5 +76,23 @@ describe('LAN Sync pairing payloads', () => {
         JSON.stringify({ v: 1, service: 'readest-lan-sync', hosts: ['192.168.1.5'], port: 0 }),
       ),
     ).toBeNull();
+  });
+
+  it('only advertises private LAN addresses', () => {
+    expect(
+      JSON.parse(
+        createLanSyncPairingPayload(
+          { local_ips: ['127.0.0.1', '8.8.8.8', '192.168.1.5'], port: 53430 },
+          '',
+        ),
+      ).hosts,
+    ).toEqual(['192.168.1.5']);
+  });
+
+  it('omits empty auth headers and trims protected tokens', () => {
+    expect(buildLanSyncAuthHeaders('')).toEqual({});
+    expect(buildLanSyncAuthHeaders('  secret-token  ')).toEqual({
+      Authorization: 'Bearer secret-token',
+    });
   });
 });

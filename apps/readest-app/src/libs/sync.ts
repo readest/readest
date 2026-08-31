@@ -19,6 +19,7 @@ export interface StatBookRecord {
   authors: string;
   updated_at?: string;
   updated_at_ms?: number; // epoch ms, attached by the GET response for cursor math
+  updated_at_us?: number; // epoch microseconds, attached by the stats GET response
   deleted_at?: string | null;
 }
 
@@ -32,6 +33,7 @@ export interface StatPageRecord {
   ext?: unknown;
   updated_at?: string;
   updated_at_ms?: number; // epoch ms, attached by the GET response for cursor math
+  updated_at_us?: number; // epoch microseconds, attached by the stats GET response
   deleted_at?: string | null;
 }
 
@@ -55,7 +57,8 @@ export interface SyncData {
 
 export class SyncClient {
   /**
-   * Pull incremental changes since a given timestamp (in ms).
+   * Pull incremental changes since a given timestamp (in ms). Stats pulls may
+   * also provide an epoch-microsecond cursor to preserve PostgreSQL precision.
    * Returns updated or deleted records since that time.
    */
   async pullChanges(
@@ -64,12 +67,17 @@ export class SyncClient {
     book?: string,
     metaHash?: string,
     limit?: number,
+    sinceUs?: number,
   ): Promise<SyncResult> {
     const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated');
 
     const limitParam = limit && limit > 0 ? `&limit=${encodeURIComponent(limit)}` : '';
-    const url = `${SYNC_API_ENDPOINT}?since=${encodeURIComponent(since)}&type=${type ?? ''}&book=${book ?? ''}&meta_hash=${metaHash ?? ''}${limitParam}`;
+    const sinceUsParam =
+      type === 'stats' && sinceUs !== undefined
+        ? `&since_us=${encodeURIComponent(Math.trunc(sinceUs))}`
+        : '';
+    const url = `${SYNC_API_ENDPOINT}?since=${encodeURIComponent(since)}&type=${type ?? ''}&book=${book ?? ''}&meta_hash=${metaHash ?? ''}${limitParam}${sinceUsParam}`;
     const res = await fetchWithTimeout(
       url,
       {

@@ -70,6 +70,15 @@ describe('GET /api/sync?type=stats pull cursor', () => {
     expect(gtUpdated.length).toBeGreaterThan(0);
   });
 
+  it('uses an epoch-microsecond cursor for precise stats pulls', async () => {
+    await GET(req('type=stats&since=1000&limit=100&since_us=1000123'));
+
+    const statPageGt = calls.find(
+      (c) => c.table === 'stat_pages' && c.method === 'gt' && c.args[0] === 'updated_at',
+    );
+    expect(statPageGt?.args[1]).toContain('00:00:01.000123Z');
+  });
+
   it('also drops the deleted_at OR for the koplugin full-delta pull (no limit)', async () => {
     await GET(req('type=stats&since=1000'));
 

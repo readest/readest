@@ -29,7 +29,7 @@ const YearHeatmap: React.FC<YearHeatmapProps> = ({ daily, year }) => {
   const _ = useTranslation();
 
   const { weeks, monthLabels } = useMemo(() => {
-    const secondsByDay = new Map(daily.map((d) => [d.dayStartTs, d.seconds]));
+    const secondsByDay = new Map(daily.map((d) => [d.dayStartTs * 1000, d.seconds]));
     // Monday-start alignment: leading blanks before day 1, then chunk by 7.
     const start = dayjs().year(year).startOf('year');
     const isCurrentYear = year === dayjs().year();
@@ -88,7 +88,7 @@ const YearHeatmap: React.FC<YearHeatmapProps> = ({ daily, year }) => {
                 )}
                 title={
                   cell
-                    ? `${cell.date.format('LL')} · ${formatReadingDuration(cell.seconds, _)}`
+                    ? `${cell.date.format('YYYY-MM-DD')} · ${formatReadingDuration(cell.seconds, _)}`
                     : ''
                 }
               />

@@ -13,7 +13,7 @@ When contributing to `Readest`, whether on GitHub or in other community spaces:
 
 In order to not waste your time implementing a change that has already been declined, or is generally not needed, start by [opening an issue](https://github.com/readest/readest/issues/new/choose) describing the problem you would like to solve.
 
-For the best experience to build Readest for yourself, use a recent version of Node.js and Rust. Refer to the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) for details on setting up the development environment prerequisites on different platforms.
+For the best experience to develop Readest, use a recent version of Node.js and Rust. Refer to the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) for details on setting up the development environment prerequisites on different platforms.
 
 Basically you need to install or update the following development tools:
 
@@ -29,7 +29,7 @@ rustup update
 
 ## Getting Started
 
-To get started with Readest, follow these steps to clone and build the project.
+To get started with Readest, follow these steps to clone and set up the project.
 
 ### 1. Clone the Repository
 
@@ -54,7 +54,7 @@ To confirm that all dependencies are correctly installed, run the following comm
 pnpm tauri info
 ```
 
-This command will display information about the installed Tauri dependencies and configuration on your platform. Note that the output may vary depending on the operating system and environment setup. Please review the output specific to your platform for any potential issues.
+This command will display information about the installed Tauri dependencies and configuration on your platform. Note that the output may vary depending on the operating system and environment setup. Please review the output specific to your platform.
 
 For Windows targets, “Build Tools for Visual Studio 2022” (or a higher edition of Visual Studio) and the “Desktop development with C++” workflow must be installed. For Windows ARM64 targets, the “VS 2022 C++ ARM64 build tools” and "C++ Clang Compiler for Windows" components must be installed. And make sure `clang` can be found in the path by adding `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin` for example in the environment variable `Path`.
 
@@ -121,14 +121,11 @@ pnpm tauri ios dev --host
 
 ### 5. Build for Production
 
-```bash
-pnpm tauri build
-pnpm tauri android build
-pnpm tauri ios build
-```
+Production compilation and release packaging run in GitHub Actions only. Use the
+manual **Release** workflow on `main` rather than running Tauri production builds
+locally:
 
-Please refer to our release script if you experience any issues:
-https://github.com/readest/readest/blob/main/.github/workflows/release.yml
+https://github.com/readest/readest/actions/workflows/release.yml
 
 
 ### 7. More information
@@ -144,7 +141,8 @@ This project is a monorepo. The code for the `readest-app` is in the `apps/reade
 | Command          | Description                                        |
 | ---------------- | -------------------------------------------------- |
 | `pnpm dev-web`   | Starts the development server for the web app only |
-| `pnpm build-web` | Builds the web app                                 |
+| `pnpm test`      | Runs the frontend test suite                      |
+| `pnpm format:check` | Checks formatting without compiling               |
 
 ### Editor-specific setup
 
@@ -166,10 +164,11 @@ The only extension needed is [biome-zed](https://github.com/biomejs/biome-zed), 
 Check that your code follows the project's style guidelines by running:
 
 ```bash
-pnpm build
+pnpm test
+pnpm format:check
 ```
 
-Please also make a manual, functional test of your changes. When all that's done, it's time to file a pull request to upstream and fill out the title and body appropriately.
+Production compilation and release validation must be run through the GitHub Actions workflow above. Please also make a manual, functional test of your changes. When all that's done, it's time to file a pull request to upstream and fill out the title and body appropriately.
 
 ## Credits
 

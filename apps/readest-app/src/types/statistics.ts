@@ -44,7 +44,7 @@ export type StatsPeriod = 'total' | 'year' | 'month' | 'week';
 /** All-time totals for the "总计" summary card. */
 export interface TotalReadStats {
   totalSeconds: number;
-  /** Distinct LOCAL days (per tzOffsetSecs) with any recorded reading. */
+  /** Distinct LOCAL calendar days with any recorded reading. */
   readDays: number;
   firstStartTime: number | null;
 }

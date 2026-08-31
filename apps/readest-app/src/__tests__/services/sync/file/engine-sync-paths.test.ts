@@ -93,20 +93,22 @@ describe('FileSyncEngine.pushBookFile — streaming upload', () => {
     expect(uploadStream).not.toHaveBeenCalled();
   });
 
-  test('retries the stream once before failing', async () => {
-    const uploadStream = vi
-      .fn<(remotePath: string, localPath: string) => Promise<boolean>>()
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(true);
-    const provider = fakeProvider({ head: async () => null, uploadStream });
+  test('falls back to buffered upload when streaming returns false', async () => {
+    const uploadStream = vi.fn(async () => false);
+    const writeBinary = vi.fn(async () => {});
+    const loadBookFile = vi.fn(async () => ({ bytes: new ArrayBuffer(100), size: 100 }));
+    const provider = fakeProvider({ head: async () => null, uploadStream, writeBinary });
     const store = fakeStore({
       resolveLocalBookPath: async () => ({ path: '/local/x.epub', size: 100 }),
+      loadBookFile,
     });
 
     const res = await new FileSyncEngine(provider, store).pushBookFile(makeBook('h1'));
 
     expect(res).toEqual({ uploaded: true });
-    expect(uploadStream).toHaveBeenCalledTimes(2);
+    expect(uploadStream).toHaveBeenCalledTimes(1);
+    expect(loadBookFile).toHaveBeenCalledTimes(1);
+    expect(writeBinary).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -311,6 +313,21 @@ describe('FileSyncEngine.downloadBookFile', () => {
       '/local/h1/B.epub',
       undefined,
     );
+  });
+
+  test('falls back to buffered download when streaming returns false', async () => {
+    const downloadStream = vi.fn(async () => false);
+    const readBinary = vi.fn(async () => new ArrayBuffer(8));
+    const saveBookFile = vi.fn(async () => {});
+    const provider = fakeProvider({ list: hashDirListing(true), downloadStream, readBinary });
+    const store = fakeStore({ saveBookFile });
+
+    const ok = await new FileSyncEngine(provider, store).downloadBookFile(makeBook('h1'));
+
+    expect(ok).toBe(true);
+    expect(downloadStream).toHaveBeenCalledTimes(1);
+    expect(readBinary).toHaveBeenCalledWith('/Readest/books/h1/B.epub');
+    expect(saveBookFile).toHaveBeenCalledTimes(1);
   });
 
   test('forwards an onProgress handler to the streaming downloader', async () => {

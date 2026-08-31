@@ -2255,6 +2255,8 @@
   "No reading history yet": "暫無閱讀記錄",
   "Reading time is recorded automatically while you read, starting from the version that added tracking.": "閱讀時會自動記錄閱讀時長，自支援統計的版本起開始累積。",
   "{{days}} days read · {{avg}} per day on average": "已讀 {{days}} 天 · 日均 {{avg}}",
+  "Enter the pairing token to connect": "輸入配對權杖以連線",
+  "Another LAN Sync server is already running": "另一個區域網路同步伺服器已在執行",
   "Reading Ranking": "閱讀排行",
   "Daily reading time": "每日閱讀時長",
   "Yearly reading time": "年度閱讀時長",
@@ -2265,5 +2267,7 @@
   "{{minutes}} min": "{{minutes}} 分鐘",
   "{{hours}} hr": "{{hours}} 小時",
   "{{hours}} hr {{minutes}} min": "{{hours}} 小時 {{minutes}} 分鐘",
+  "Failed to stop LAN Sync. Your connection is still active.": "停止區域網路同步失敗。連線仍處於啟用狀態。",
+  "Failed to save the disconnected state. Please try again.": "儲存中斷連線狀態失敗，請重試。",
   "Uploading files": "上傳檔案"
 }

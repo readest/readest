@@ -109,6 +109,17 @@ describe('StatisticsDb', () => {
     expect(events[0]!.bookMd5).toBe('m1');
   });
 
+  it('merges acknowledged events when bounded chunks share one start_time', async () => {
+    const id = await stats.upsertBook({ bookMd5: 'm1', title: 'T1', authors: 'A1' });
+    for (let page = 1; page <= 51; page++) {
+      await stats.insertPageEvent(id, { page, startTime: 1000, duration: 5, totalPages: 51 });
+    }
+    const all = (await stats.getEventsForPush(1000, 'bookorbit-push')).events;
+    await stats.markEventsPushed('bookorbit-push', all.slice(0, 50));
+    await stats.markEventsPushed('bookorbit-push', all.slice(50));
+    expect((await stats.getEventsForPush(1000, 'bookorbit-push')).events).toHaveLength(0);
+  });
+
   it('applies remote events idempotently via upsert', async () => {
     const remoteBooks = [{ bookMd5: 'm2', title: 'T2', authors: 'A2' }];
     const remoteEvents = [

@@ -28,6 +28,25 @@ import {
 
 const ms = (s?: string | number | null) => (s ? new Date(s).getTime() : 0);
 
+const timestampToUs = (timestamp: string): number => {
+  const parsedMs = Date.parse(timestamp);
+  if (!Number.isFinite(parsedMs)) return 0;
+  const fraction = /\.(\d+)(?:Z|[+-]\d{2}:?\d{2})$/.exec(timestamp)?.[1] ?? '';
+  const fractionUs = Number(fraction.padEnd(6, '0').slice(0, 6));
+  return Math.floor(parsedMs / 1000) * 1_000_000 + fractionUs;
+};
+
+const epochUsToIso = (value: string | number): string | null => {
+  const epochUs = typeof value === 'number' ? value : Number(value);
+  if (!Number.isSafeInteger(epochUs) || epochUs < 0) return null;
+  const wholeMs = Math.floor(epochUs / 1000);
+  const subMs = epochUs % 1000;
+  const date = new Date(wholeMs);
+  if (!Number.isFinite(date.getTime())) return null;
+  const iso = date.toISOString();
+  return iso.replace('Z', `${String(subMs).padStart(3, '0')}Z`);
+};
+
 /**
  * Field-level last-writer-wins for a books row's reading_status: return the
  * status fields with the newer reading_status_updated_at (ties → client). NULL
@@ -290,12 +309,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '"since" query parameter is required' }, { status: 400 });
   }
 
-  const since = new Date(Number(sinceParam));
+  const sinceUsParam = typeParam === 'stats' ? searchParams.get('since_us') : null;
+  const preciseSinceUs =
+    sinceUsParam !== null && /^\d+$/.test(sinceUsParam) ? Number(sinceUsParam) : null;
+  const preciseSinceIso = preciseSinceUs === null ? null : epochUsToIso(preciseSinceUs);
+  if (sinceUsParam !== null && !preciseSinceIso) {
+    return NextResponse.json({ error: 'Invalid "since_us" timestamp' }, { status: 400 });
+  }
+  const since = new Date(preciseSinceUs === null ? Number(sinceParam) : preciseSinceUs / 1000);
   if (isNaN(since.getTime())) {
     return NextResponse.json({ error: 'Invalid "since" timestamp' }, { status: 400 });
   }
 
-  const sinceIso = since.toISOString();
+  const sinceIso = preciseSinceIso ?? since.toISOString();
 
   try {
     const results: SyncResult = { books: [], configs: [], notes: [], statBooks: [], statPages: [] };
@@ -535,12 +561,14 @@ export async function GET(req: NextRequest) {
       // compaction committing in between moves rows from hot to a segment, so
       // reading hot first can only return such rows twice (clients union-merge),
       // never zero times.
-      // Attach updated_at_ms (epoch ms) so non-JS clients (the Lua koplugin) can
-      // compute their pull cursor without parsing ISO-8601 timestamps.
+      // Attach numeric cursors so clients do not lose PostgreSQL's microsecond
+      // precision when a page boundary falls inside one millisecond. The ms
+      // field remains for older clients such as the Lua koplugin.
       const withMs = <T extends { updated_at?: string }>(rows: T[]) =>
         rows.map((r) => ({
           ...r,
           updated_at_ms: r.updated_at ? new Date(r.updated_at).getTime() : 0,
+          updated_at_us: r.updated_at ? timestampToUs(r.updated_at) : 0,
         }));
       const hotRows = withMs((sp.data ?? []) as unknown as StatPageRecord[]);
       let pageRows: StatPageRecord[] = hotRows;
@@ -584,7 +612,7 @@ export async function GET(req: NextRequest) {
           for (const m of segments) {
             const segment = await readSegment(bucket, m);
             segmentsRead++;
-            const kept = takePage(segment.rows, sinceMs, 0, bookParam);
+            const kept = takePage(segment.rows, sinceMs, 0, bookParam, preciseSinceUs ?? undefined);
             archived.push(...(kept.map((r) => toWireStatPage(r, user.id)) as StatPageRecord[]));
             if (limit > 0 && archived.length >= limit) break;
           }
@@ -602,12 +630,16 @@ export async function GET(req: NextRequest) {
         const combined =
           limit > 0 && archived.length >= limit ? archived : [...archived, ...hotRows];
         if (limit > 0 && combined.length > limit) {
-          // Cut at `limit`, extended with every row sharing the last
-          // updated_at_ms (segments never split a millisecond and the hot page
-          // was already completed by fetchPagedPages, so the ties are present).
-          const edge = combined[limit - 1]!.updated_at_ms;
+          // Cut at `limit`, extended with every row sharing the last cursor
+          // value. New clients compare exact microseconds; legacy clients keep
+          // the millisecond tie behavior.
+          const cursorOf = (row: StatPageRecord): number =>
+            preciseSinceUs === null
+              ? (row.updated_at_ms ?? 0)
+              : (row.updated_at_us ?? (row.updated_at_ms ?? 0) * 1000);
+          const edge = cursorOf(combined[limit - 1]!);
           let end = limit;
-          while (end < combined.length && combined[end]!.updated_at_ms === edge) end++;
+          while (end < combined.length && cursorOf(combined[end]!) === edge) end++;
           pageRows = combined.slice(0, end);
         } else {
           pageRows = combined;

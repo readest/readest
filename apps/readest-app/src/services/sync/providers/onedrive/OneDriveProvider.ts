@@ -253,7 +253,7 @@ class OneDriveProviderImpl {
       const uploadUrl = await this.openUploadSession(remotePath);
       await tauriUpload(uploadUrl, localPath, 'PUT', undefined, {
         'Content-Range': `bytes 0-${size - 1}/${size}`,
-      } as unknown as Map<string, string>);
+      });
       return true;
     } catch (e) {
       console.warn('OneDriveProvider.uploadStream failed', remotePath, e);

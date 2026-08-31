@@ -2255,6 +2255,8 @@
   "No reading history yet": "暂无阅读记录",
   "Reading time is recorded automatically while you read, starting from the version that added tracking.": "阅读时会自动记录阅读时长，自支持统计的版本起开始积累。",
   "{{days}} days read · {{avg}} per day on average": "已读 {{days}} 天 · 日均 {{avg}}",
+  "Enter the pairing token to connect": "输入配对令牌以连接",
+  "Another LAN Sync server is already running": "另一个局域网同步服务器已在运行",
   "Reading Ranking": "阅读排行",
   "Daily reading time": "每日阅读时长",
   "Yearly reading time": "年度阅读时长",
@@ -2265,5 +2267,7 @@
   "{{minutes}} min": "{{minutes}} 分钟",
   "{{hours}} hr": "{{hours}} 小时",
   "{{hours}} hr {{minutes}} min": "{{hours}} 小时 {{minutes}} 分钟",
+  "Failed to stop LAN Sync. Your connection is still active.": "停止局域网同步失败。连接仍处于活动状态。",
+  "Failed to save the disconnected state. Please try again.": "保存断开状态失败，请重试。",
   "Uploading files": "上传文件"
 }

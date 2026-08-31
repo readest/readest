@@ -87,6 +87,7 @@ dependencies = [
  "uuid 1.24.0",
  "walkdir",
  "winreg 0.52.0",
+ "windows-sys 0.59.0",
  "zip 2.4.2",
 ]
 

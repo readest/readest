@@ -14,6 +14,8 @@ const makeEvent = (overrides: Partial<PageStatEvent>): PageStatEvent => ({
 
 const makeStats = (events: PageStatEvent[], cursor = 0) => {
   const cursors: Record<string, number> = { 'bookorbit-push': cursor };
+  const acknowledged = new Set<string>();
+  const eventKey = (event: PageStatEvent) => JSON.stringify(event);
   return {
     cursors,
     getCursor: vi.fn(async (key: string) => cursors[key] ?? 0),
@@ -21,9 +23,14 @@ const makeStats = (events: PageStatEvent[], cursor = 0) => {
       cursors[key] = value;
     }),
     getEventsForPush: vi.fn(async (since: number) => ({
-      events: events.filter((event) => event.startTime > since),
+      events: events.filter(
+        (event) => event.startTime >= since && !acknowledged.has(eventKey(event)),
+      ),
       books: [],
     })),
+    markEventsPushed: vi.fn(async (_key: string, pushed: PageStatEvent[]) => {
+      for (const event of pushed) acknowledged.add(eventKey(event));
+    }),
   };
 };
 
@@ -81,6 +88,21 @@ describe('pushStatsToBookOrbit', () => {
     expect(uploaded[0]![0]!.events).toEqual([
       { page: 1, startTime: 1300, durationSeconds: 30, totalPages: 100 },
     ]);
+  });
+
+  it('splits more than 50 books sharing one startTime and acknowledges each chunk', async () => {
+    const events = Array.from({ length: 51 }, (_, i) =>
+      makeEvent({ bookMd5: `book-${i}`, page: i + 1, startTime: 1000 }),
+    );
+    const stats = makeStats(events);
+    const client = { uploadPageStats: vi.fn(async () => undefined) };
+    await pushStatsToBookOrbit(stats, client);
+    expect(client.uploadPageStats).toHaveBeenCalledTimes(2);
+    expect(client.uploadPageStats.mock.calls[0]![0]).toHaveLength(50);
+    expect(client.uploadPageStats.mock.calls[1]![0]).toHaveLength(1);
+    expect(stats.cursors['bookorbit-push']).toBe(1000);
+    await pushStatsToBookOrbit(stats, client);
+    expect(client.uploadPageStats).toHaveBeenCalledTimes(2);
   });
 
   it('chunks by 50 distinct books without splitting a startTime and stops on failure', async () => {

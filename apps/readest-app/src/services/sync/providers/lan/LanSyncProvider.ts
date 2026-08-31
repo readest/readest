@@ -20,6 +20,7 @@ import {
   type FileHead,
   type FileSyncProvider,
 } from '@/services/sync/file/provider';
+import { LAN_SYNC_PROTOCOL } from '@/services/lanSync/pairing';
 import type { LanSyncSettings } from '@/types/settings';
 
 const peerBase = (settings: LanSyncSettings): string => {
@@ -33,14 +34,29 @@ const peerBase = (settings: LanSyncSettings): string => {
   return host.includes(':') ? `http://${host}` : `http://${host}:${settings.port}`;
 };
 
+export const buildLanSyncAuthHeaders = (token?: string): Record<string, string> => {
+  const normalized = token?.trim() ?? '';
+  return normalized ? { Authorization: `Bearer ${normalized}` } : {};
+};
+
+const getLanStreamAuthError = (error: unknown, action: string): FileSyncError | null => {
+  const message = error instanceof Error ? error.message : String(error);
+  const status = message.match(/status code\s*:?\s*(\d{3})\b/i)?.[1];
+  const statusCode = status ? Number(status) : undefined;
+  if (statusCode !== 401 && statusCode !== 403) return null;
+  return new FileSyncError(
+    `LAN peer rejected the pairing token (${action})`,
+    'AUTH_FAILED',
+    statusCode,
+  );
+};
+
 const doFetch = async (
   settings: LanSyncSettings,
   path: string,
   init?: { method?: string; body?: BodyInit; contentType?: string },
 ): Promise<Response> => {
-  const headers: Record<string, string> = {};
-  const token = settings.token?.trim() ?? '';
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const headers: Record<string, string> = buildLanSyncAuthHeaders(settings.token);
   if (init?.body !== undefined) {
     headers['Content-Type'] =
       init.contentType ??
@@ -94,10 +110,26 @@ const fileRequest = async (
  */
 export const lanSyncPing = async (
   settings: LanSyncSettings,
-): Promise<{ name: string; device_id: string; protocol?: string }> => {
+): Promise<{ name: string; device_id: string; protocol: string }> => {
   const res = await doFetch(settings, '/ping');
   mapStatus(res, 'ping');
-  return (await res.json()) as { name: string; device_id: string; protocol?: string };
+  const value: unknown = await res.json();
+  if (!value || typeof value !== 'object') {
+    throw new FileSyncError('LAN peer is not a compatible Readest server', 'UNKNOWN', res.status);
+  }
+  const peer = value as Record<string, unknown>;
+  if (
+    peer.protocol !== LAN_SYNC_PROTOCOL ||
+    typeof peer.name !== 'string' ||
+    typeof peer.device_id !== 'string'
+  ) {
+    throw new FileSyncError('LAN peer is not a compatible Readest server', 'UNKNOWN', res.status);
+  }
+  return {
+    name: peer.name,
+    device_id: peer.device_id,
+    protocol: peer.protocol,
+  };
 };
 
 export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvider => {
@@ -145,11 +177,17 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
     },
 
     writeText: async (path, body) => {
-      await fileRequest(settings, path, { method: 'PUT', body });
+      const res = await fileRequest(settings, path, { method: 'PUT', body });
+      if (!res) {
+        throw new FileSyncError(`LAN peer file was not found for PUT ${path}`, 'NOT_FOUND', 404);
+      }
     },
 
     writeBinary: async (path, body) => {
-      await fileRequest(settings, path, { method: 'PUT', body });
+      const res = await fileRequest(settings, path, { method: 'PUT', body });
+      if (!res) {
+        throw new FileSyncError(`LAN peer file was not found for PUT ${path}`, 'NOT_FOUND', 404);
+      }
     },
 
     ensureDir: async () => {
@@ -170,25 +208,16 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
   // (fs IPC in, plugin-http IPC out) and stalls the whole app on large
   // libraries. The Rust side streams straight from disk to the peer instead.
   if (isTauriAppPlatform()) {
-    const authHeaders = (): Record<string, string> => {
-      const token = settings.token?.trim() ?? '';
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    };
+    const authHeaders = (): Record<string, string> => buildLanSyncAuthHeaders(settings.token);
     const fileUrl = (path: string): string => `${peerBase(settings)}/files${path}`;
 
     provider.uploadStream = async (remotePath, localPath) => {
       try {
-        // tauriUpload's TS type says Map, but the Rust command accepts a JSON
-        // object → HashMap<String, String>; pass the headers object directly.
-        await tauriUpload(
-          fileUrl(remotePath),
-          localPath,
-          'PUT',
-          undefined,
-          authHeaders() as unknown as Map<string, string>,
-        );
+        await tauriUpload(fileUrl(remotePath), localPath, 'PUT', undefined, authHeaders());
         return true;
       } catch (e) {
+        const authError = getLanStreamAuthError(e, 'upload');
+        if (authError) throw authError;
         console.warn('LanSyncProvider.uploadStream failed', remotePath, e);
         return false;
       }
@@ -199,6 +228,8 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
         await tauriDownload(fileUrl(remotePath), localPath, onProgress, authHeaders());
         return true;
       } catch (e) {
+        const authError = getLanStreamAuthError(e, 'download');
+        if (authError) throw authError;
         console.warn('LanSyncProvider.downloadStream failed', remotePath, e);
         return false;
       }

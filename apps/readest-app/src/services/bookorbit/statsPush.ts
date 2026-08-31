@@ -7,7 +7,11 @@ const MAX_BOOKS_PER_REQUEST = 50;
 export interface StatsPushDb {
   getCursor(key: 'bookorbit-push'): Promise<number>;
   setCursor(key: 'bookorbit-push', value: number): Promise<void>;
-  getEventsForPush(sinceStartTime: number): Promise<{ events: PageStatEvent[]; books: StatBook[] }>;
+  getEventsForPush(
+    sinceStartTime: number,
+    cursorKey: 'bookorbit-push',
+  ): Promise<{ events: PageStatEvent[]; books: StatBook[] }>;
+  markEventsPushed(cursorKey: 'bookorbit-push', events: PageStatEvent[]): Promise<void>;
 }
 
 export interface StatsPushClient {
@@ -43,7 +47,7 @@ export const pushStatsToBookOrbit = async (
   client: StatsPushClient,
 ): Promise<void> => {
   const cursor = await stats.getCursor('bookorbit-push');
-  const { events: rawEvents } = await stats.getEventsForPush(cursor);
+  const { events: rawEvents } = await stats.getEventsForPush(cursor, 'bookorbit-push');
   // The server validates startTime >= 1 and totalPages >= 1; dropping the
   // stragglers locally keeps one bad row from failing a whole chunk.
   const events = rawEvents.filter((event) => event.startTime >= 1 && event.totalPages >= 1);
@@ -55,23 +59,14 @@ export const pushStatsToBookOrbit = async (
     let end = i;
     while (end < events.length) {
       const event = events[end]!;
-      if (!hashes.has(event.bookMd5) && hashes.size === MAX_BOOKS_PER_REQUEST) {
-        // A 51st book only starts a new chunk on a fresh startTime; a
-        // same-second event stays with its second so the cursor never
-        // splits it.
-        if (end > i && events[end - 1]!.startTime === event.startTime) {
-          hashes.add(event.bookMd5);
-          end++;
-          continue;
-        }
-        break;
-      }
+      if (!hashes.has(event.bookMd5) && hashes.size === MAX_BOOKS_PER_REQUEST) break;
       hashes.add(event.bookMd5);
       end++;
     }
     const chunk = events.slice(i, end);
     await client.uploadPageStats(toWireBooks(chunk));
     await stats.setCursor('bookorbit-push', chunk[chunk.length - 1]!.startTime);
+    await stats.markEventsPushed('bookorbit-push', chunk);
     i = end;
   }
 };

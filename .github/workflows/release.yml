@@ -439,14 +439,9 @@ jobs:
                 echo "::error::Release $TAG exists but its tag could not be resolved."
                 exit 1
               fi
-              release_target="$(jq -er '.target_commitish' "$release_body")" || {
-                echo "::error::Invalid release API response."
-                exit 1
-              }
-              if [ "$release_target" != "$MAIN_SHA" ]; then
-                echo "::error::Release $TAG targets $release_target, but the frozen main SHA is $MAIN_SHA."
-                exit 1
-              fi
+              # The tag dereference above is the authoritative release source.
+              # GitHub may report target_commitish as a branch name even when
+              # the tag itself points at the frozen commit.
               gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
               ;;
             404)

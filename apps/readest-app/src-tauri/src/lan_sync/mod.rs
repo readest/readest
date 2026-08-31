@@ -70,6 +70,9 @@ pub struct LanSyncStatus {
     local_ips: Vec<String>,
     /// Monotonic process-wide epoch used to reject stale starts.
     generation: u64,
+    /// MD5 fingerprint used by the UI to detect a stale server token without
+    /// exposing the token itself through lifecycle status.
+    token_fingerprint: String,
     /// True only when this start call created the running server.
     started: bool,
 }
@@ -83,11 +86,14 @@ fn is_benchmark_ipv4(ip: Ipv4Addr) -> bool {
 }
 
 fn is_usable_ipv4(ip: Ipv4Addr) -> bool {
-    !ip.is_loopback() && !is_benchmark_ipv4(ip)
+    (ip.is_private() || ip.is_link_local())
+        && !ip.is_loopback()
+        && !ip.is_broadcast()
+        && !is_benchmark_ipv4(ip)
 }
 
 /// Prefer RFC1918 addresses while retaining a deterministic fallback for
-/// unusual but usable LAN arrangements.
+/// unusual but usable private-LAN arrangements.
 fn preferred_ipv4<I>(ips: I) -> Option<Ipv4Addr>
 where
     I: IntoIterator<Item = Ipv4Addr>,
@@ -134,6 +140,7 @@ fn status_of(server: &RunningServer, generation: u64) -> LanSyncStatus {
         device_name: server.device_name.clone(),
         device_id: server.device_id.clone(),
         local_ips: local_ips(),
+        token_fingerprint: token_fingerprint(&server.token),
         generation,
         started: false,
     }
@@ -146,6 +153,7 @@ fn stopped_status(generation: u64) -> LanSyncStatus {
         device_name: String::new(),
         device_id: String::new(),
         local_ips: Vec::new(),
+        token_fingerprint: String::new(),
         generation,
         started: false,
     }

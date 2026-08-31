@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import type { TranslationFunc } from '@/hooks/useTranslation';
 import type { StatsPeriod } from '@/types/statistics';
 
 /**
@@ -53,10 +54,7 @@ export const getTzOffsetSecs = (): number => -new Date().getTimezoneOffset() * 6
  * i18next interpolation. `t` is the `useTranslation` function passed in so
  * this stays usable outside components.
  */
-export const formatReadingDuration = (
-  seconds: number,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string => {
+export const formatReadingDuration = (seconds: number, t: TranslationFunc): string => {
   const totalMinutes = Math.floor(seconds / 60);
   if (totalMinutes < 1) return t('Less than a minute');
   const hours = Math.floor(totalMinutes / 60);

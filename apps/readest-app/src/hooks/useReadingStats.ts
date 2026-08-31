@@ -9,7 +9,7 @@ import { SyncClient } from '@/libs/sync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import type { Book } from '@/types/book';
 import type { BookReadTime, DailyReadTime, StatsPeriod, TotalReadStats } from '@/types/statistics';
-import { getPeriodRange, getTzOffsetSecs, periodRangeToSeconds } from '@/utils/stats';
+import { getPeriodRange, periodRangeToSeconds } from '@/utils/stats';
 
 /** One ranking row: same-book editions merged by (title, authors). */
 export interface RankedBook {
@@ -51,7 +51,9 @@ const mergeEditions = (rows: BookReadTime[], booksByHash: Map<string, Book>): Ra
   for (const row of rows) {
     const placeholder = isPlaceholderTitle(row.title, row.bookMd5);
     const title = placeholder ? '' : row.title.trim();
-    const key = `${title.toLowerCase()}\u0000${row.authors.trim().toLowerCase()}`;
+    const key = placeholder
+      ? `unknown\u0000${row.bookMd5}`
+      : `${title.toLowerCase()}\u0000${row.authors.trim().toLowerCase()}`;
     let group = groups.get(key);
     if (!group) {
       group = { key, title, authors: row.authors.trim(), seconds: 0, versions: 0, book: null };
@@ -79,20 +81,16 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
 
   const load = useCallback(async (db: StatisticsDb, currentPeriod: StatsPeriod) => {
     const seq = ++seqRef.current;
-    const tzOffsetSecs = getTzOffsetSecs();
     // getPeriodRange is dayjs-native milliseconds; the db stores seconds.
     const { fromTs, toTs } = periodRangeToSeconds(getPeriodRange(currentPeriod));
     try {
       const [totals, periodSeconds, daily, bookTimes] = await Promise.all([
-        db.getTotalReadStats(tzOffsetSecs),
+        db.getTotalReadStats(),
         db.getReadTimeBetween(fromTs, toTs),
-        db.getDailyReadTimeBetween(fromTs, toTs, tzOffsetSecs),
+        db.getDailyReadTimeBetween(fromTs, toTs),
         db.getBookReadTimesBetween(fromTs, toTs, 200),
       ]);
       if (seq !== seqRef.current) return;
-      // Chart components are dayjs-based (milliseconds): scale the db's
-      // second-denominated day buckets back up at this boundary.
-      const dailyMs = daily.map((d) => ({ ...d, dayStartTs: d.dayStartTs * 1000 }));
       const { getBookByHash } = useLibraryStore.getState();
       const booksByHash = new Map<string, Book>();
       for (const row of bookTimes) {
@@ -106,7 +104,7 @@ export const useReadingStats = (enabled: boolean, period: StatsPeriod): ReadingS
         loading: false,
         totals,
         periodSeconds,
-        daily: dailyMs,
+        daily,
         ranking: mergeEditions(bookTimes, booksByHash),
       });
     } catch (err) {

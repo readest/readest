@@ -36,6 +36,8 @@ export const SYNC_BOOK_COVER_FILE = 'cover.png';
 // renamed into place atomically when the PUT completes. Both ends must skip
 // these when listing book files (server.rs hardcodes the same suffix).
 export const SYNC_PART_FILE_SUFFIX = '.part';
+// Suffix of a native transport's retained previous copy while replacing a file.
+export const SYNC_BACKUP_FILE_SUFFIX = '.previous';
 // TTS section packs (<section>-<keysfp>.mp3 + .json sidecars) live in a
 // per-book subdirectory. Additive to the frozen layout above: older clients
 // simply never look inside it.
