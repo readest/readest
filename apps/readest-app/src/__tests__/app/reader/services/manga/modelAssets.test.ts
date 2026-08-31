@@ -120,9 +120,10 @@ describe('fetchVerifiedModelAsset', () => {
     const gzip = new Uint8Array(8);
     gzip.set([0x1f, 0x8b]);
     new DataView(gzip.buffer).setUint32(4, 3, true);
+    const decompressed = new Uint8Array([4, 5, 6]);
     const dependencies = {
       ...successDependencies(responseWithChunks([gzip])),
-      decompressGzip: vi.fn(async () => new Uint8Array([4, 5, 6])),
+      decompressGzip: vi.fn(async () => decompressed),
     };
 
     const result = await fetchVerifiedModelAsset(
@@ -138,8 +139,35 @@ describe('fetchVerifiedModelAsset', () => {
     );
 
     expect([...new Uint8Array(result)]).toEqual([4, 5, 6]);
+    expect(result).toBe(decompressed.buffer);
     expect(dependencies.decompressGzip).toHaveBeenCalledOnce();
     expect(dependencies.digestSha256).toHaveBeenCalledWith(new Uint8Array([4, 5, 6]));
+  });
+
+  it('copies a decompressed subarray without returning unrelated backing bytes', async () => {
+    const gzip = new Uint8Array(8);
+    gzip.set([0x1f, 0x8b]);
+    new DataView(gzip.buffer).setUint32(4, 3, true);
+    const backing = new Uint8Array([9, 4, 5, 6, 9]);
+    const dependencies = {
+      ...successDependencies(responseWithChunks([gzip])),
+      decompressGzip: vi.fn(async () => backing.subarray(1, 4)),
+    };
+
+    const result = await fetchVerifiedModelAsset(
+      {
+        url: 'https://models.example/model.bin.gz',
+        sha256: SHA256,
+        compressedSha256: SHA256,
+        compression: 'gzip',
+        maximumDownloadBytes: 8,
+        maximumResultBytes: 3,
+      },
+      dependencies,
+    );
+
+    expect(result).not.toBe(backing.buffer);
+    expect([...new Uint8Array(result)]).toEqual([4, 5, 6]);
   });
 
   it('rejects a compressed checksum mismatch before decompression', async () => {

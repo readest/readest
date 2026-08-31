@@ -29,9 +29,17 @@ const throwIfAborted = (signal?: AbortSignal): void => {
   if (signal?.aborted) throw abortError(signal);
 };
 
+const toExactArrayBuffer = (data: Uint8Array): ArrayBuffer =>
+  data.buffer instanceof ArrayBuffer &&
+  data.byteOffset === 0 &&
+  data.byteLength === data.buffer.byteLength
+    ? data.buffer
+    : Uint8Array.from(data).buffer;
+
 const defaultDigestSha256 = async (data: Uint8Array): Promise<string> => {
-  const input = Uint8Array.from(data).buffer;
-  const digest = new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', input));
+  const digest = new Uint8Array(
+    await globalThis.crypto.subtle.digest('SHA-256', toExactArrayBuffer(data)),
+  );
   return [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 };
 
@@ -182,5 +190,5 @@ export const fetchVerifiedModelAsset = async (
     throw new Error('Model asset checksum does not match the pinned SHA-256');
   }
 
-  return Uint8Array.from(result).buffer;
+  return toExactArrayBuffer(result);
 };
