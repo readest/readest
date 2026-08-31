@@ -158,7 +158,6 @@ const FoliateViewer: React.FC<{
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ocrProgressKeyRef = useRef('');
-  const mangaTranslationProgressKeyRef = useRef('');
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
   const getOnDeviceTextDocuments = useCallback(() => {
@@ -166,6 +165,61 @@ const FoliateViewer: React.FC<{
     if (!renderer) return [];
     return prioritizeCurrentDocument(renderer.getContents(), renderer.primaryIndex);
   }, []);
+
+  const getMangaTranslationDocuments = useCallback(() => {
+    const renderer = viewRef.current?.renderer;
+    const rendered = renderer?.getContents?.() ?? [];
+    const renderedByIndex = new Map<number, Document>();
+    for (const { doc, index } of rendered) {
+      if (doc && typeof index === 'number' && Number.isFinite(index)) {
+        renderedByIndex.set(index, doc);
+      }
+    }
+
+    const documents = bookDoc.sections.map((section, index) => {
+      const doc = renderedByIndex.get(index);
+      return {
+        doc,
+        index,
+        load: !section.load
+          ? undefined
+          : async () => {
+              const pageUrl = await section.load!();
+              try {
+                const response = await fetch(pageUrl);
+                if (!response.ok) throw new Error('Manga page could not be loaded');
+                const html = await response.text();
+                const parsed = new DOMParser().parseFromString(html, 'text/html');
+                const source = parsed.querySelector('img')?.getAttribute('src');
+                if (!source) throw new Error('Manga page image is missing');
+                const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+                  const loaded = new Image();
+                  loaded.decoding = 'async';
+                  loaded.onload = () => resolve(loaded);
+                  loaded.onerror = () => reject(new Error('Manga page image could not be decoded'));
+                  loaded.src = source;
+                });
+                return {
+                  image: {
+                    source,
+                    width: image.naturalWidth,
+                    height: image.naturalHeight,
+                  },
+                  release: () => section.unload?.(),
+                };
+              } catch (error) {
+                section.unload?.();
+                throw error;
+              }
+            },
+      };
+    });
+    const sectionIndexes = new Set(documents.map(({ index }) => index));
+    for (const [index, doc] of renderedByIndex) {
+      if (!sectionIndexes.has(index)) documents.push({ doc, index, load: undefined });
+    }
+    return documents;
+  }, [bookDoc]);
 
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
@@ -215,39 +269,9 @@ const FoliateViewer: React.FC<{
 
   const processMangaTranslationDocument = useMangaTranslationSession({
     enabled: bookFormat === 'CBZ' && mangaTranslationEnabled,
-    getDocuments: getOnDeviceTextDocuments,
-    onProgress: ({ status, progress, completed, total }) => {
-      const stageProgress = Math.min(1, Math.max(0, progress));
-      const [start, end, message]: readonly [number, number, string] =
-        status === 'loading manga detector'
-          ? [0, 0.15, _('Manga translation: loading detector')]
-          : status === 'detecting speech bubbles'
-            ? [0, 0.3, _('Manga translation: finding text')]
-            : status === 'loading manga OCR model'
-              ? [0.3, 0.45, _('Manga translation: loading OCR')]
-              : status === 'recognizing speech bubbles'
-                ? [0.45, 0.65, _('Manga translation: reading Japanese')]
-                : status === 'loading translation model'
-                  ? [0.65, 0.85, _('Manga translation: loading translator')]
-                  : [0.65, 1, _('Manga translation: translating')];
-      const pageProgress = start + (end - start) * stageProgress;
-      const overallProgress =
-        status === 'completed manga page'
-          ? completed / Math.max(1, total)
-          : (completed + pageProgress) / Math.max(1, total);
-      const progressKey = `${status}-${Math.floor(overallProgress * 20)}`;
-      if (mangaTranslationProgressKeyRef.current === progressKey) return;
-      mangaTranslationProgressKeyRef.current = progressKey;
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        message,
-        progress: overallProgress,
-        timeout: overallProgress >= 1 ? 3000 : 30000,
-      });
-    },
+    getDocuments: getMangaTranslationDocuments,
     onError: (error, pageIndex) => {
       console.error(`Failed to translate manga on page ${pageIndex}`, error);
-      mangaTranslationProgressKeyRef.current = '';
       eventDispatcher.dispatch('toast', {
         type: 'error',
         message:
@@ -262,10 +286,6 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     if (!ocrEnabled) ocrProgressKeyRef.current = '';
   }, [ocrEnabled, ocrLanguage]);
-
-  useEffect(() => {
-    if (!mangaTranslationEnabled) mangaTranslationProgressKeyRef.current = '';
-  }, [mangaTranslationEnabled]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {

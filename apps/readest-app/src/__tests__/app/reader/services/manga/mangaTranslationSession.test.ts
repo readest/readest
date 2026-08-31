@@ -151,7 +151,7 @@ describe('MangaTranslationSession', () => {
     ]);
   });
 
-  it('lets a newly current page overtake queued prefetch work', async () => {
+  it('keeps queued work in ascending page order', async () => {
     let finishFirst!: (page: TranslatedMangaPage) => void;
     const engine = makeEngine();
     vi.mocked(engine.translate)
@@ -170,7 +170,7 @@ describe('MangaTranslationSession', () => {
     const prefetched = session.processDocument(makeDocument(1), 1);
     const currentDocument = makeDocument(2);
     const prefetchedCurrent = session.processDocument(currentDocument, 2);
-    const current = session.processDocument(currentDocument, 2, { priority: true });
+    const current = session.processDocument(currentDocument, 2);
 
     expect(engine.translate).toHaveBeenCalledTimes(1);
 
@@ -179,12 +179,12 @@ describe('MangaTranslationSession', () => {
 
     expect(vi.mocked(engine.translate).mock.calls.map(([source]) => source)).toEqual([
       'blob:manga-page-0',
-      'blob:manga-page-2',
       'blob:manga-page-1',
+      'blob:manga-page-2',
     ]);
   });
 
-  it('prioritizes pages in their most recently registered order', async () => {
+  it('starts with the earliest registered page', async () => {
     const engine = makeEngine();
     const session = new MangaTranslationSession({ createEngine: () => engine });
     const first = makeDocument(5);
@@ -196,11 +196,61 @@ describe('MangaTranslationSession', () => {
     await session.processDocument(first, 5);
     await session.setEnabled(true);
 
-    expect(engine.translate).toHaveBeenNthCalledWith(1, 'blob:manga-page-7', {
-      pageIndex: 7,
+    expect(engine.translate).toHaveBeenNthCalledWith(1, 'blob:manga-page-5', {
+      pageIndex: 5,
       width: 1200,
       height: 1800,
     });
+  });
+
+  it('loads unloaded pages in order and releases each image', async () => {
+    const engine = makeEngine();
+    const session = new MangaTranslationSession({ createEngine: () => engine });
+    const releases: number[] = [];
+    const loadPage = (pageIndex: number) => async () => {
+      const doc = makeDocument(pageIndex);
+      const image = doc.querySelector('img')!;
+      return {
+        image: {
+          source: image.src,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+        },
+        release: () => releases.push(pageIndex),
+      };
+    };
+
+    await session.processPage(2, loadPage(2));
+    await session.processPage(0, loadPage(0));
+    await session.processPage(1, loadPage(1));
+    await session.setEnabled(true);
+
+    expect(vi.mocked(engine.translate).mock.calls.map(([source]) => source)).toEqual([
+      'blob:manga-page-0',
+      'blob:manga-page-1',
+      'blob:manga-page-2',
+    ]);
+    expect(releases).toEqual([0, 1, 2]);
+  });
+
+  it('mounts a background result when the same page later gets a new blob URL', async () => {
+    const engine = makeEngine();
+    const release = vi.fn();
+    const session = new MangaTranslationSession({ createEngine: () => engine });
+    await session.processPage(0, async () => ({
+      image: { source: 'blob:background-page-0', width: 1200, height: 1800 },
+      release,
+    }));
+    await session.setEnabled(true);
+
+    const rendered = makeDocument(0);
+    await session.processDocument(rendered, 0);
+
+    expect(engine.translate).toHaveBeenCalledTimes(1);
+    expect(release).toHaveBeenCalledOnce();
+    expect(rendered.querySelector(MANGA_TRANSLATION_LAYER_SELECTOR)?.textContent).toContain(
+      'Watch out on page 0!',
+    );
   });
 
   it('reports failures without persisting or mounting a partial page', async () => {

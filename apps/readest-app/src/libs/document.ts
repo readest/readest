@@ -48,6 +48,8 @@ export interface SectionItem {
   // Resolve a reference a script introduces after load (see observeDynamicResources).
   loadHref?: (href: string) => Promise<string>;
   createDocument: () => Promise<Document>;
+  load?: () => string | Promise<string>;
+  unload?: () => void;
 
   // EPUB 3 Media Overlays: the manifest item of this section's SMIL file, or
   // null when the section has no recorded narration. Populated by foliate's

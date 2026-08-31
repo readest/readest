@@ -5,13 +5,18 @@ import {
   type TranslatedMangaPage,
 } from '@/app/reader/services/manga/mangaTranslationEngine';
 import {
+  type MangaPageLoader,
   MangaTranslationSession,
   type MangaTranslationSessionProgress,
 } from '@/app/reader/services/manga/mangaTranslationSession';
 
 interface UseMangaTranslationSessionOptions {
   enabled: boolean;
-  getDocuments?: () => readonly { doc?: Document; index?: number }[];
+  getDocuments?: () => readonly {
+    doc?: Document;
+    index?: number;
+    load?: MangaPageLoader;
+  }[];
   onProgress?: (progress: MangaTranslationSessionProgress) => void;
   onError?: (error: unknown, pageIndex: number) => void;
   onPageTranslated?: (page: TranslatedMangaPage) => void;
@@ -55,19 +60,21 @@ export const useMangaTranslationSession = ({
   const processKnownDocuments = useCallback(
     (session: MangaTranslationSession) => {
       const currentPageIndexes = new Set<number>();
-      let current = true;
-      for (const { doc, index } of getDocumentsRef.current?.() ?? []) {
-        if (!doc || typeof index !== 'number') continue;
-        rememberDocument(doc, index);
+      const entries = [...(getDocumentsRef.current?.() ?? [])]
+        .filter(({ index }) => typeof index === 'number' && Number.isFinite(index))
+        .sort((left, right) => left.index! - right.index!);
+      for (const { doc, index, load } of entries) {
+        if (typeof index !== 'number') continue;
         currentPageIndexes.add(index);
-        if (current) {
-          void session.processDocument(doc, index, { priority: true });
-          current = false;
-        } else {
+        if (load) void session.processPage(index, load);
+        if (doc) {
+          rememberDocument(doc, index);
           void session.processDocument(doc, index);
         }
       }
-      for (const [pageIndex, doc] of documentsRef.current) {
+      for (const [pageIndex, doc] of [...documentsRef.current].sort(
+        ([left], [right]) => left - right,
+      )) {
         if (currentPageIndexes.has(pageIndex)) continue;
         void session.processDocument(doc, pageIndex);
       }
@@ -125,10 +132,7 @@ export const useMangaTranslationSession = ({
   return useCallback(
     (doc: Document, pageIndex: number) => {
       rememberDocument(doc, pageIndex);
-      return (
-        sessionRef.current?.processDocument(doc, pageIndex, { priority: true }) ??
-        Promise.resolve(null)
-      );
+      return sessionRef.current?.processDocument(doc, pageIndex) ?? Promise.resolve(null);
     },
     [rememberDocument],
   );

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   session: {
     processDocument: vi.fn(async () => null),
+    processPage: vi.fn(async () => null),
     setEnabled: vi.fn(async () => undefined),
     terminate: vi.fn(async () => undefined),
   },
@@ -61,7 +62,7 @@ describe('useMangaTranslationSession', () => {
 
     expect(mocks.session.setEnabled).toHaveBeenCalledWith(false);
     await act(async () => await result.current(doc, 2));
-    expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 2, { priority: true });
+    expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 2);
 
     rerender({ enabled: true });
     expect(mocks.session.setEnabled).toHaveBeenLastCalledWith(true);
@@ -104,11 +105,11 @@ describe('useMangaTranslationSession', () => {
     rerender({ enabled: true });
 
     await waitFor(() => {
-      expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 6, { priority: true });
+      expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 6);
     });
   });
 
-  it('processes the current renderer order before older remembered pages', async () => {
+  it('processes available pages in ascending page order', async () => {
     const first = document.implementation.createHTMLDocument();
     const current = document.implementation.createHTMLDocument();
     let rendered: readonly { doc: Document; index: number }[] = [];
@@ -130,8 +131,59 @@ describe('useMangaTranslationSession', () => {
     rerender({ enabled: true });
 
     expect(mocks.session.processDocument.mock.calls).toEqual([
-      [current, 7, { priority: true }],
       [first, 5],
+      [current, 7],
     ]);
+  });
+
+  it('registers unloaded pages with the session loader', async () => {
+    const loadFirst = vi.fn(async () => ({
+      image: { source: 'blob:first', width: 100, height: 200 },
+    }));
+    const loadSecond = vi.fn(async () => ({
+      image: { source: 'blob:second', width: 100, height: 200 },
+    }));
+    const { rerender } = renderHook(
+      ({ enabled }) =>
+        useMangaTranslationSession({
+          enabled,
+          getDocuments: () => [
+            { index: 2, load: loadSecond },
+            { index: 1, load: loadFirst },
+          ],
+        }),
+      { initialProps: { enabled: false } },
+    );
+    mocks.session.processPage.mockClear();
+
+    rerender({ enabled: true });
+
+    await waitFor(() => expect(mocks.session.processPage).toHaveBeenCalledTimes(2));
+    expect(mocks.session.processPage.mock.calls).toEqual([
+      [1, loadFirst],
+      [2, loadSecond],
+    ]);
+  });
+
+  it('uses a stable loader for a page that is currently rendered', async () => {
+    const doc = document.implementation.createHTMLDocument();
+    const load = vi.fn(async () => ({
+      image: { source: 'blob:stable-page', width: 100, height: 200 },
+    }));
+    const { rerender } = renderHook(
+      ({ enabled }) =>
+        useMangaTranslationSession({
+          enabled,
+          getDocuments: () => [{ doc, index: 4, load }],
+        }),
+      { initialProps: { enabled: false } },
+    );
+    mocks.session.processPage.mockClear();
+    mocks.session.processDocument.mockClear();
+
+    rerender({ enabled: true });
+
+    await waitFor(() => expect(mocks.session.processPage).toHaveBeenCalledWith(4, load));
+    expect(mocks.session.processDocument).toHaveBeenCalledWith(doc, 4);
   });
 });
