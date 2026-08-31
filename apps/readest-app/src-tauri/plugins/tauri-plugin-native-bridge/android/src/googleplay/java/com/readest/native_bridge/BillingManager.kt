@@ -310,6 +310,16 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
                 )
             }
 
+            // Replacing one of several still leaves the others billing, and the
+            // client cannot cancel them — only Play can. Log it so we find out
+            // whether anyone is actually in this state before building for it.
+            val replaceableCount = existing.orEmpty().count { subscription ->
+                subscription.isPurchased && !subscription.productIds.contains(productId)
+            }
+            if (replaceableCount > 1) {
+                Log.w(TAG, "User holds $replaceableCount subscriptions; replacing only the newest")
+            }
+
             when (val replacement = resolveSubscriptionReplacement(existing, productId)) {
                 is SubscriptionReplacement.Abort -> {
                     // Buying blind here is how a user ends up with two live
