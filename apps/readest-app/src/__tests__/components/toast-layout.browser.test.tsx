@@ -68,12 +68,11 @@ describe('Toast layout', () => {
     );
   });
 
-  it('centers the info toast on the viewport', async () => {
+  it('keeps an info toast below the top bar', async () => {
     const toast = await showToast({ type: 'info', message: 'Copied to clipboard' });
-    const box = toast.getBoundingClientRect();
+    const alert = toast.querySelector('.alert') as HTMLElement;
 
-    expect(box.left + box.width / 2).toBeCloseTo(window.innerWidth / 2, 0);
-    expect(box.top + box.height / 2).toBeCloseTo(window.innerHeight / 2, 0);
+    expect(alert.getBoundingClientRect().top).toBe(TOP_BAR + TOAST_GAP);
   });
 
   it('keeps a top toast below the top bar', async () => {
@@ -84,5 +83,26 @@ describe('Toast layout', () => {
     expect(screen.getByText('Something went wrong').getBoundingClientRect().width).toBeGreaterThan(
       0,
     );
+  });
+
+  it('keeps the same anchor when progress becomes success', async () => {
+    const toast = await showToast({ type: 'info', message: 'Translating manga: 75%' });
+    const progressBox = toast.getBoundingClientRect();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: 'Translated 2 speech bubbles on page 7',
+      });
+    });
+    await waitFor(() =>
+      expect(screen.getByText('Translated 2 speech bubbles on page 7')).toBeTruthy(),
+    );
+    for (const animation of toast.getAnimations({ subtree: true })) animation.finish();
+    await nextFrame();
+    const successBox = toast.getBoundingClientRect();
+
+    expect(successBox.top).toBeCloseTo(progressBox.top, 0);
+    expect(successBox.right).toBeCloseTo(progressBox.right, 0);
   });
 });
