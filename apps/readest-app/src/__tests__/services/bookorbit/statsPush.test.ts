@@ -95,7 +95,9 @@ describe('pushStatsToBookOrbit', () => {
       makeEvent({ bookMd5: `book-${i}`, page: i + 1, startTime: 1000 }),
     );
     const stats = makeStats(events);
-    const client = { uploadPageStats: vi.fn(async () => undefined) };
+    const client = {
+      uploadPageStats: vi.fn(async (_books: PageStatsBookWire[]) => undefined),
+    };
     await pushStatsToBookOrbit(stats, client);
     expect(client.uploadPageStats).toHaveBeenCalledTimes(2);
     expect(client.uploadPageStats.mock.calls[0]![0]).toHaveLength(50);

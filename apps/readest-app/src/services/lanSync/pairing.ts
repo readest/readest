@@ -24,7 +24,7 @@ const isIpv4 = (value: unknown): value is string => {
 const isLanIpv4 = (value: unknown): value is string => {
   if (!isIpv4(value)) return false;
   const [a, b, , d] = value.split('.').map(Number);
-  if (d === 255) return false;
+  if (a === undefined || b === undefined || d === undefined || d === 255) return false;
   return (
     a === 10 ||
     (a === 172 && b >= 16 && b <= 31) ||
@@ -62,19 +62,21 @@ export const parseLanSyncPairingPayload = (raw: string): LanSyncPairingPayload |
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== 'object') return null;
     const record = value as Record<string, unknown>;
+    const rawHosts = record['hosts'];
     if (
-      record.v !== LAN_SYNC_PAIRING_VERSION ||
-      record.service !== LAN_SYNC_PAIRING_SERVICE ||
-      !Array.isArray(record.hosts)
+      record['v'] !== LAN_SYNC_PAIRING_VERSION ||
+      record['service'] !== LAN_SYNC_PAIRING_SERVICE ||
+      !Array.isArray(rawHosts)
     ) {
       return null;
     }
-    const hosts = record.hosts.filter(isLanIpv4);
-    if (!hosts.length || hosts.length !== record.hosts.length) return null;
-    const port = record.port;
+    const hosts = rawHosts.filter(isLanIpv4);
+    if (!hosts.length || hosts.length !== rawHosts.length) return null;
+    const port = record['port'];
     if (!Number.isInteger(port) || (port as number) < 1 || (port as number) > 65535) return null;
-    if (record.token !== undefined && typeof record.token !== 'string') return null;
-    const token = typeof record.token === 'string' ? record.token.trim() : '';
+    const rawToken = record['token'];
+    if (rawToken !== undefined && typeof rawToken !== 'string') return null;
+    const token = typeof rawToken === 'string' ? rawToken.trim() : '';
     if (!isValidToken(token)) return null;
     return {
       v: LAN_SYNC_PAIRING_VERSION,

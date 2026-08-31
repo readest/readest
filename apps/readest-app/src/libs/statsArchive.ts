@@ -243,7 +243,7 @@ export const toWireStatPage = (r: ArchivedPageRow, userId: string) => ({
   user_id: userId,
   ...toWireRow(r),
   updated_at: Number.isSafeInteger(r.updated_at_us)
-    ? epochUsToIso(r.updated_at_us)
+    ? epochUsToIso(r.updated_at_us!)
     : new Date(r.updated_at_ms).toISOString(),
   ...(Number.isSafeInteger(r.updated_at_us) ? { updated_at_us: r.updated_at_us } : {}),
 });

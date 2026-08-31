@@ -118,17 +118,16 @@ export const lanSyncPing = async (
     throw new FileSyncError('LAN peer is not a compatible Readest server', 'UNKNOWN', res.status);
   }
   const peer = value as Record<string, unknown>;
-  if (
-    peer.protocol !== LAN_SYNC_PROTOCOL ||
-    typeof peer.name !== 'string' ||
-    typeof peer.device_id !== 'string'
-  ) {
+  const protocol = peer['protocol'];
+  const name = peer['name'];
+  const deviceId = peer['device_id'];
+  if (protocol !== LAN_SYNC_PROTOCOL || typeof name !== 'string' || typeof deviceId !== 'string') {
     throw new FileSyncError('LAN peer is not a compatible Readest server', 'UNKNOWN', res.status);
   }
   return {
-    name: peer.name,
-    device_id: peer.device_id,
-    protocol: peer.protocol,
+    name,
+    device_id: deviceId,
+    protocol,
   };
 };
 
