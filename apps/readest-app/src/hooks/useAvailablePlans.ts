@@ -13,6 +13,7 @@ const IAP_PRODUCT_IDS = [
   'com.bilingify.readest.storage.2gb.purchase',
   'com.bilingify.readest.storage.5gb.purchase',
   'com.bilingify.readest.storage.10gb.purchase',
+  'com.bilingify.readest.customization.purchase',
 ];
 
 interface UseAvailablePlansParams {

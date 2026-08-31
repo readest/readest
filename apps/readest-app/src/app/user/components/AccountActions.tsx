@@ -112,7 +112,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {appService?.hasIAP && iapAvailable ? (
           <button
             onClick={onRestorePurchase}
-            className='eink-bordered w-full rounded-lg px-6 py-3 font-medium transition-colors duration-150 border not-eink:border-sky-300 not-eink:bg-sky-100 not-eink:text-sky-900 not-eink:hover:bg-sky-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Restore Purchase')}
           </button>
@@ -120,7 +120,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
           userPlan !== 'free' && (
             <button
               onClick={onManageSubscription}
-              className='eink-bordered w-full rounded-lg px-6 py-3 font-medium transition-colors duration-150 border not-eink:border-sky-300 not-eink:bg-sky-100 not-eink:text-sky-900 not-eink:hover:bg-sky-200 md:w-auto'
+              className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
             >
               {_('Manage Subscription')}
             </button>
@@ -129,7 +129,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {onManageSync && (
           <button
             onClick={onManageSync}
-            className='eink-bordered w-full rounded-lg px-6 py-3 font-medium transition-colors duration-150 border not-eink:border-sky-300 not-eink:bg-sky-100 not-eink:text-sky-900 not-eink:hover:bg-sky-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Manage Sync')}
           </button>
@@ -137,7 +137,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {onManageStorage && (
           <button
             onClick={onManageStorage}
-            className='eink-bordered w-full rounded-lg px-6 py-3 font-medium transition-colors duration-150 border not-eink:border-violet-300 not-eink:bg-violet-100 not-eink:text-violet-900 not-eink:hover:bg-violet-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Manage Storage')}
           </button>
@@ -145,7 +145,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {onManageSharedLinks && (
           <button
             onClick={onManageSharedLinks}
-            className='eink-bordered w-full rounded-lg px-6 py-3 font-medium transition-colors duration-150 border not-eink:border-violet-300 not-eink:bg-violet-100 not-eink:text-violet-900 not-eink:hover:bg-violet-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Manage Shared Links')}
           </button>
