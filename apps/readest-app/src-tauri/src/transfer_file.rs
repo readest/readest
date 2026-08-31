@@ -616,10 +616,10 @@ pub async fn upload_file(
 
     let response = request.send().await?;
     let status = response.status();
-    let body = read_response_body_limited(response, MAX_ERROR_BODY_BYTES).await?;
     if status.is_success() {
-        Ok(String::from_utf8_lossy(&body).into_owned())
+        Ok(response.text().await?)
     } else {
+        let body = read_response_body_limited(response, MAX_ERROR_BODY_BYTES).await?;
         Err(Error::HttpErrorCode(
             status.as_u16(),
             String::from_utf8_lossy(&body).into_owned(),
