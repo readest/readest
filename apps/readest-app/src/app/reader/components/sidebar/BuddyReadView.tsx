@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { createShare } from '@/libs/share';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { READEST_WEB_BASE_URL } from '@/services/constants';
@@ -17,7 +18,7 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const progress = useBookProgress(bookKey);
   const { getBookData } = useBookDataStore();
   const { user } = useAuth();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const [copyingInvite, setCopyingInvite] = useState(false);
 
   const {
@@ -282,6 +283,7 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             timeout: 3000,
           });
           await appService.uploadBook(book, () => {});
+          await useLibraryStore.getState().updateBook(envConfig, book);
         }
 
         const response = await createShare({

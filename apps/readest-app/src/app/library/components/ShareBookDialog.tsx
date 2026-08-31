@@ -17,6 +17,7 @@ import { SHARE_DEFAULT_EXPIRATION_DAYS, SHARE_EXPIRATION_DAYS } from '@/services
 import { ShareApiError, createShare, revokeShare } from '@/libs/share';
 import { formatBytes } from '@/utils/book';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 
 interface ShareBookDialogProps {
@@ -37,7 +38,7 @@ interface CreatedShare {
 
 const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, onClose }) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const settings = useSettingsStore((state) => state.settings);
 
   const [expirationDays, setExpirationDays] = useState<number>(SHARE_DEFAULT_EXPIRATION_DAYS);
@@ -109,6 +110,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
           await appService.uploadBook(book, (progress) => {
             setUploadProgress((progress.progress / progress.total) * 100);
           });
+          await useLibraryStore.getState().updateBook(envConfig, book);
         } finally {
           setUploadProgress(null);
         }

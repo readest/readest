@@ -3,6 +3,9 @@ import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
 import { useLibraryStore } from '@/store/libraryStore';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
+import { getUserID } from '@/utils/access';
+import { SyncClient } from '@/libs/sync';
+import { transformBookToDB } from '@/utils/transform';
 import { ShareApiError, getShare, type ImportShareResponse, type ShareMetadata } from './share';
 
 interface EnsureSharedBookLocalArgs {
@@ -89,6 +92,19 @@ export const ensureSharedBookLocal = async ({
     if (!existing.downloadedAt) existing.downloadedAt = Date.now();
     existing.updatedAt = Date.now();
     await persistLibrary();
+
+    // Push existing book to sync so other devices can pull it
+    try {
+      const userId = await getUserID();
+      if (userId) {
+        const syncClient = new SyncClient();
+        const dbBook = transformBookToDB(existing, userId);
+        await syncClient.pushChanges({ books: [dbBook] });
+      }
+    } catch (syncErr) {
+      console.error('Failed to push existing book to sync:', syncErr);
+    }
+
     return existing;
   }
 
@@ -130,5 +146,18 @@ export const ensureSharedBookLocal = async ({
   imported.coverDownloadedAt = now;
 
   await persistLibrary();
+
+  // Push imported book to sync so other devices can pull it
+  try {
+    const userId = await getUserID();
+    if (userId) {
+      const syncClient = new SyncClient();
+      const dbBook = transformBookToDB(imported, userId);
+      await syncClient.pushChanges({ books: [dbBook] });
+    }
+  } catch (syncErr) {
+    console.error('Failed to push imported book to sync:', syncErr);
+  }
+
   return imported;
 };
