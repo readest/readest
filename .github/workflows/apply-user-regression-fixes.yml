@@ -14,6 +14,14 @@ jobs:
   patch-test-commit:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_ANON_KEY: test-anon-key
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key
+      NEXT_PUBLIC_APP_PLATFORM: tauri
+      NEXT_PUBLIC_POSTHOG_KEY: ''
+      SENTRY_DSN: ''
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
