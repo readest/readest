@@ -66,6 +66,7 @@ const h = vi.hoisted(() => ({
   setSearchBarVisible: vi.fn(),
   deselect: vi.fn(),
   suppressNativeSelectionHandles: vi.fn(),
+  isSideBarVisible: false,
   isTextSelected: { current: true },
 }));
 
@@ -159,7 +160,9 @@ vi.mock('@/store/notebookStore', () => ({
 vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({
     clearBooknotesNav: vi.fn(),
-    isSideBarVisible: false,
+    get isSideBarVisible() {
+      return h.isSideBarVisible;
+    },
     setSideBarVisible: h.setSideBarVisible,
     setSearchBarVisible: h.setSearchBarVisible,
   }),
@@ -307,6 +310,7 @@ beforeEach(() => {
     return h.config;
   });
   setViewport(1280, 800);
+  h.isSideBarVisible = false;
   h.isTextSelected.current = true;
   vi.clearAllMocks();
 });
@@ -441,6 +445,31 @@ describe('Annotate opens the note editor at the selection', () => {
     expect(liveAnnotations()).toEqual([
       expect.objectContaining({ id: 'existing-note', note: 'an older thought' }),
     ]);
+  });
+
+  // #4791: the placeholder only lives as long as its editor is presented, and
+  // Cancel is not the only way it stops being presented. Opening the sidebar
+  // dismisses the popup from an effect, which used to clear the target and
+  // leave the empty highlight behind.
+  test('drops the placeholder when the editor is dismissed, not just cancelled', async () => {
+    const view = render(
+      <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+    );
+    await selectText();
+    act(() => {
+      h.actions?.['onAnnotateSelection']?.();
+    });
+    expect(liveAnnotations()).toHaveLength(1);
+
+    h.isSideBarVisible = true;
+    act(() => {
+      view.rerender(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+    });
+
+    expect(screen.queryByTestId('note-editor-popup')).toBeNull();
+    expect(liveAnnotations()).toHaveLength(0);
   });
 
   test('cancelling keeps a highlight that already existed before Annotate', async () => {

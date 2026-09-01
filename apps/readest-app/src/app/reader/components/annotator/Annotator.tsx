@@ -1533,32 +1533,52 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setNoteEditorTarget({ annotationId: note.id, placeholderIds: [] });
   };
 
+  // Takes back the highlight Annotate created for the note to hang on, but
+  // never one the user had already made themselves (#4791).
+  const removeNotePlaceholders = (placeholderIds: string[]) => {
+    if (placeholderIds.length === 0) return;
+    const { booknotes = [] } = getConfig(bookKey) ?? {};
+    const removed = placeholderIds
+      .map((id) => removeEmptyAnnotationPlaceholder(booknotes, id, Date.now()))
+      .filter((placeholder): placeholder is BookNote => placeholder !== null);
+    if (removed.length === 0) return;
+    const views = getViewsById(bookKey.split('-')[0]!);
+    removed.forEach((placeholder) => {
+      views.forEach((view) => removeBookNoteOverlays(view, placeholder));
+    });
+    const updatedConfig = updateBooknotes(bookKey, booknotes);
+    if (updatedConfig) saveConfig(envConfig, bookKey, updatedConfig, settings);
+  };
+
+  // That placeholder lives only as long as its editor is presented, and Cancel
+  // is not the only way it stops being presented: opening the sidebar and a
+  // page relocate both dismiss the popup from effects, and the relocate guard
+  // no longer holds now that opening the editor clears isTextSelected. So the
+  // cleanup hangs off the target going away rather than off any one dismiss
+  // path (the pre-#5928 Notebook did the same).
+  const pendingNotePlaceholdersRef = useRef<string[]>([]);
+  useEffect(() => {
+    if (noteEditorTarget) {
+      pendingNotePlaceholdersRef.current = noteEditorTarget.placeholderIds;
+      return;
+    }
+    const placeholderIds = pendingNotePlaceholdersRef.current;
+    pendingNotePlaceholdersRef.current = [];
+    removeNotePlaceholders(placeholderIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteEditorTarget]);
+
   const handleSaveNote = (note: string) => {
     if (!noteEditorTarget) return;
     saveBooknoteNoteText(noteEditorTarget.annotationId, note);
+    // The placeholder carries a note now — a real annotation, not a leftover.
+    pendingNotePlaceholdersRef.current = [];
     setNoteEditorTarget(null);
     handleDismissPopupAndSelection();
   };
 
-  // Cancelling takes back the highlight Annotate created for the note to hang
-  // on, but never one the user had already made themselves (#4791).
   const handleCancelNote = () => {
     if (!noteEditorTarget) return;
-    const { placeholderIds } = noteEditorTarget;
-    if (placeholderIds.length > 0) {
-      const { booknotes = [] } = getConfig(bookKey) ?? {};
-      const removed = placeholderIds
-        .map((id) => removeEmptyAnnotationPlaceholder(booknotes, id, Date.now()))
-        .filter((placeholder): placeholder is BookNote => placeholder !== null);
-      if (removed.length > 0) {
-        const views = getViewsById(bookKey.split('-')[0]!);
-        removed.forEach((placeholder) => {
-          views.forEach((view) => removeBookNoteOverlays(view, placeholder));
-        });
-        const updatedConfig = updateBooknotes(bookKey, booknotes);
-        if (updatedConfig) saveConfig(envConfig, bookKey, updatedConfig, settings);
-      }
-    }
     setNoteEditorTarget(null);
     handleDismissPopupAndSelection();
   };
