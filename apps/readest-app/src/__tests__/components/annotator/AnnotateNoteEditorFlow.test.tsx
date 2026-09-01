@@ -394,11 +394,15 @@ describe('Annotate opens the note editor at the selection', () => {
     expect(h.isTextSelected.current).toBe(false);
   });
 
+  // The other side of the boundary: a toolbar lookup keeps its selection so
+  // dismissing it lands back on the selection toolbar (#5213). Only the note
+  // editor consumes the selection; a lookup's handles are hidden for its
+  // duration by the same gate instead.
   test.each([
     'onDictionarySelection',
     'onTranslateSelection',
     'onProofreadSelection',
-  ])('%s drops the selection too', async (action) => {
+  ])('%s keeps the selection so its dismiss returns to the toolbar (#5213)', async (action) => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectText();
 
@@ -406,8 +410,8 @@ describe('Annotate opens the note editor at the selection', () => {
       h.actions?.[action]?.();
     });
 
-    expect(h.deselect).toHaveBeenCalled();
-    expect(h.isTextSelected.current).toBe(false);
+    expect(h.deselect).not.toHaveBeenCalled();
+    expect(h.isTextSelected.current).toBe(true);
   });
 
   test('the note bubble pencil opens the same editor, seeded with the existing note', async () => {

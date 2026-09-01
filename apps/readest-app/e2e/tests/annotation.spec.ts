@@ -103,6 +103,38 @@ test.describe('Annotation', () => {
   // range editor: app-drawn handles in a fixed overlay painted after the lookup
   // popups, so they floated on top of the dictionary (#5815). A lookup hides
   // them; they come back only with the toolbar.
+  // #5815 unmounts the handles for the lookup popups, but the reason they were
+  // ever on top is that both layers were z-50 in one stacking context, so the
+  // tie broke on DOM order and the range editors are rendered last. Any surface
+  // that forgets to join that gate — the note editor did — gets handles drawn
+  // over it. Pin the layer order itself, read off the live DOM.
+  test('draws the range-edit handles below the popup layer', async ({ openBook }) => {
+    const reader = await openBook();
+
+    await reader.selectText();
+    await reader.highlightSelection();
+    await reader.dismissPopup();
+    await reader.clickHighlight();
+
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(reader.rangeHandles).toHaveCount(2);
+
+    const layers = await reader.page.evaluate(() => {
+      const handleLayer = document
+        .querySelector('[data-testid="selection-handle"]')
+        ?.closest('div.fixed');
+      const popup = document.querySelector('.selection-popup');
+      return {
+        handles: handleLayer ? getComputedStyle(handleLayer).zIndex : null,
+        popup: popup ? getComputedStyle(popup).zIndex : null,
+      };
+    });
+
+    expect(layers.handles).not.toBeNull();
+    expect(layers.popup).not.toBeNull();
+    expect(Number(layers.handles)).toBeLessThan(Number(layers.popup));
+  });
+
   test('hides the range-edit handles while the dictionary popup is open (#5815)', async ({
     openBook,
   }) => {

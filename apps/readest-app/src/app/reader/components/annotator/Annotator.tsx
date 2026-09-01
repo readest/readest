@@ -1470,6 +1470,27 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
+  // The note editor replaces the selection with the annotation it just created,
+  // so the selection has no job left — and both the app-drawn range handles and
+  // (on iOS) the native selection highlight paint above web content, which is
+  // how they ended up sitting on top of the editor sheet. Drop it. The flag is
+  // cleared first: the selectionchange that deselect() fires would otherwise
+  // dismiss the very surface we are opening (#5585).
+  //
+  // The lookup popups are deliberately NOT here. A dictionary / translator /
+  // proofread lookup leaves the selection alive so dismissing it lands back on
+  // the selection toolbar (#5213, e2e-covered); their handles are hidden for
+  // the duration by `overlaySurfaceOpen` instead.
+  const dropSelectionForOverlay = () => {
+    isTextSelected.current = false;
+    view?.deselect();
+    // A popup-window selection lives in its own document (the footnote popup
+    // view's iframe or the host document), out of view.deselect()'s reach.
+    if (selection?.popup) {
+      selection.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
+    }
+  };
+
   const handleAnnotate = () => {
     if (!selection || !selection.text) return;
     // A popup selection without a CFI has nothing to anchor a note to (the
@@ -1551,22 +1572,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     eventDispatcher.dispatch('search-term', { term, bookKey });
   };
 
-  // Every surface that opens over the page — a lookup popup, the note editor —
-  // is painted below both the app-drawn range handles and (on iOS) the native
-  // selection highlight, which sit above web content. Drop the selection as the
-  // surface opens so neither ends up covering it. The flag is cleared first:
-  // the selectionchange that deselect() fires would otherwise dismiss the very
-  // surface we are opening (#5585).
-  const dropSelectionForOverlay = () => {
-    isTextSelected.current = false;
-    view?.deselect();
-    // A popup-window selection lives in its own document (the footnote popup
-    // view's iframe or the host document), out of view.deselect()'s reach.
-    if (selection?.popup) {
-      selection.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
-    }
-  };
-
   const handleDictionary = () => {
     if (!selection || !selection.text) return;
     // System-dictionary path: when the user has opted in via Settings →
@@ -1591,14 +1596,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       return;
     }
     setShowAnnotPopup(false);
-    dropSelectionForOverlay();
     setShowDictionaryPopup(true);
   };
 
   const handleTranslation = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
-    dropSelectionForOverlay();
     setShowDeepLPopup(true);
   };
 
@@ -1633,7 +1636,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
     setShowAnnotPopup(false);
-    dropSelectionForOverlay();
     setShowProofreadPopup(true);
 
     if (getWordCount(selection.text) > 30) {
