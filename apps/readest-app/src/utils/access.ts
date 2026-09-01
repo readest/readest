@@ -128,7 +128,9 @@ export const PREMIUM_PLANS: readonly UserPlan[] = ['plus', 'pro'];
  */
 export const isSelfHosted = (): boolean =>
   getRuntimeConfig()?.selfHosted === true ||
-  (process.env['SELF_HOSTED'] ?? process.env['NEXT_PUBLIC_SELF_HOSTED']) === 'true';
+  // `??` would stop at an empty string, so an explicitly blank SELF_HOSTED
+  // would mask NEXT_PUBLIC_SELF_HOSTED. `||` falls through on empty too.
+  (process.env['SELF_HOSTED'] || process.env['NEXT_PUBLIC_SELF_HOSTED']) === 'true';
 
 /**
  * The single gate for premium features: a self-hosted deployment, a paid

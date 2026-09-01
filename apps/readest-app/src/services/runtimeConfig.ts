@@ -38,7 +38,7 @@ export const getServerRuntimeConfig = (): ReadestRuntimeConfig => ({
   // to buy from, and the operator already runs the infrastructure the paywall
   // funds.
   selfHosted:
-    (process.env['SELF_HOSTED'] ?? process.env['NEXT_PUBLIC_SELF_HOSTED']) === 'true' || undefined,
+    (process.env['SELF_HOSTED'] || process.env['NEXT_PUBLIC_SELF_HOSTED']) === 'true' || undefined,
   storageFixedQuota: (() => {
     const raw =
       process.env['STORAGE_FIXED_QUOTA'] ?? process.env['NEXT_PUBLIC_STORAGE_FIXED_QUOTA'];

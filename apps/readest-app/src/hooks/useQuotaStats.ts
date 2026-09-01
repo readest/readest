@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { QuotaType, UserPlan } from '@/types/quota';
 import {
@@ -18,10 +18,26 @@ export const useQuotaStats = (briefName = false) => {
   const { token, user } = useAuth();
   const [quotas, setQuotas] = useState<QuotaType[]>([]);
   const [userProfilePlan, setUserProfilePlan] = useState<UserPlan | undefined>(undefined);
-  const [customizationPurchased, setCustomizationPurchased] = useState(false);
+  // Derived, not state: state lags one render behind a token change, which
+  // would briefly report the previous account's entitlement after a switch or
+  // a sign-out.
+  const customizationPurchased = useMemo(
+    () => (token ? getCustomizationPurchased(token) : false),
+    [token],
+  );
 
   useEffect(() => {
-    if (!user || !token) return;
+    if (!user || !token) {
+      // Signing out must clear the module-level caches. They are read
+      // synchronously by non-React gates, so a stale entitlement would leave a
+      // signed-out session looking premium. Falling back to the restrictive
+      // side matches how these caches are documented to behave before the
+      // first auth resolution.
+      setUserProfilePlan(undefined);
+      setCachedUserPlan(undefined);
+      setCachedCustomizationPurchased(false);
+      return;
+    }
 
     const storagPlan = getStoragePlanData(token);
     const inGB = storagPlan.quota > 1e9;
@@ -57,12 +73,10 @@ export const useQuotaStats = (briefName = false) => {
     // synchronously for the cloud-sync provider gate; cache it here, the
     // one place the plan is resolved from the JWT.
     setCachedUserPlan(profilePlan);
-    const purchasedCustomization = getCustomizationPurchased(token);
-    setCustomizationPurchased(purchasedCustomization);
-    setCachedCustomizationPurchased(purchasedCustomization);
+    setCachedCustomizationPurchased(customizationPurchased);
     setQuotas([storageQuota, translationQuota]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, customizationPurchased]);
 
   return {
     quotas,

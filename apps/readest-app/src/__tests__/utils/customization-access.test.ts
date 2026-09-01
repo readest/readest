@@ -61,4 +61,12 @@ describe('self-hosted deployments', () => {
     vi.stubEnv('NEXT_PUBLIC_SELF_HOSTED', 'true');
     expect(isCustomizationAllowed('free', false)).toBe(true);
   });
+
+  // `??` stops at an empty string, so a blank SELF_HOSTED would mask the
+  // public variable and silently re-lock a self-hosted deployment.
+  it('falls through an explicitly empty SELF_HOSTED', () => {
+    vi.stubEnv('SELF_HOSTED', '');
+    vi.stubEnv('NEXT_PUBLIC_SELF_HOSTED', 'true');
+    expect(isSelfHosted()).toBe(true);
+  });
 });
