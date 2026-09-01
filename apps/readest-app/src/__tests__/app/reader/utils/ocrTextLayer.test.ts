@@ -40,6 +40,14 @@ describe('OCR text layer', () => {
     text?.dispatchEvent(click);
     expect(click.defaultPrevented).toBe(true);
     expect(document.getSelection()?.toString()).toBe('縦書き<img src=x>');
+    const manualRange = document.createRange();
+    manualRange.selectNodeContents(text!.firstChild!);
+    document.getSelection()?.removeAllRanges();
+    document.getSelection()?.addRange(manualRange);
+    const dragEndClick = new MouseEvent('click', { bubbles: true, cancelable: true });
+    text?.dispatchEvent(dragEndClick);
+    expect(dragEndClick.defaultPrevented).toBe(false);
+    expect(document.getSelection()?.toString()).toBe('縦書き');
     expect(document.querySelector('[data-readest-ocr-style]')?.textContent).toContain(
       'background-color: #fff',
     );

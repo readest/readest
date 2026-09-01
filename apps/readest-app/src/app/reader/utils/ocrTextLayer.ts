@@ -151,10 +151,10 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
   layer.addEventListener('click', (event) => {
     const block = (event.target as Element | null)?.closest?.(OCR_TEXT_BLOCK_SELECTOR);
     if (!block || !layer.contains(block)) return;
+    const selection = doc.getSelection();
+    if (!selection || !selection.isCollapsed) return;
     event.preventDefault();
     event.stopPropagation();
-    const selection = doc.getSelection();
-    if (!selection) return;
     const range = doc.createRange();
     range.selectNodeContents(block);
     selection.removeAllRanges();
