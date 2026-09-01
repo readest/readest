@@ -144,8 +144,14 @@ export const lanSyncPing = async (
 };
 
 export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvider => {
+  const native = isTauriAppPlatform();
   const provider: FileSyncProvider = {
     rootPath: '/',
+    // Book binaries can be hundreds of MB or several GB. Native LAN must stay
+    // disk-to-socket/disk-to-disk: never fall back to a whole-book ArrayBuffer
+    // in the WebView. One bulky stream at a time also prevents an Android peer
+    // from servicing four large file pipelines while trying to render the UI.
+    ...(native ? { requireBookStreaming: true, maxConcurrentBookTransfers: 1 } : {}),
 
     readText: async (path) => {
       const res = await fileRequest(settings, path, { method: 'GET' });
@@ -217,7 +223,7 @@ export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvid
   // false here would ask FileSyncEngine to retry through readBinary/writeBinary,
   // hauling the entire book through the WebView and recreating the large-file
   // UI freeze this path exists to avoid. Rust streams disk-to-network directly.
-  if (isTauriAppPlatform()) {
+  if (native) {
     const authHeaders = (): Record<string, string> => buildLanSyncAuthHeaders(settings.token);
     const fileUrl = (path: string): string => `${peerBase(settings)}/files${path}`;
 
