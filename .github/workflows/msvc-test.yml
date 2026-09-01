@@ -16,22 +16,6 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
-  push:
-    branches:
-      - 'fix/**'
-      - 'feat/**'
-      - 'refactor/**'
-      - 'chore/**'
-    paths:
-      - '.github/workflows/msvc-test.yml'
-      - 'apps/readest-app/**'
-      - 'packages/**'
-      - 'data/icons/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
 
 permissions:
   contents: read
