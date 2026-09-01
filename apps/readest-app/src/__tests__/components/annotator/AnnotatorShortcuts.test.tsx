@@ -152,6 +152,7 @@ vi.mock('@/app/reader/hooks/useTextSelector', () => ({
     handleUpToPopup: vi.fn(),
     handleContextmenu: vi.fn(),
     dragSelectionTo: vi.fn(),
+    suppressNativeSelectionHandles: vi.fn(),
     noteAutoTurnPoint: { current: null },
     cancelAutoTurn: vi.fn(),
     onAutoTurn: vi.fn(),

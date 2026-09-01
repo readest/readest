@@ -369,6 +369,47 @@ export const useTextSelector = (
     await makeSelection(sel, index, false, true);
   };
 
+  // A lookup popup opening over a live selection can never stack above the
+  // platform's own selection grabbers: iOS draws them (and the callout bar) as
+  // UIKit views over the whole web layer, so they are outside the DOM and no
+  // z-index reaches them. #5213 rules out just deselecting — the selection has
+  // to survive the lookup so its dismiss lands back on the toolbar — so take
+  // the grabbers away instead and leave the selection.
+  //
+  // Same trick as suppressNativeHandlesForPages: a selection that goes empty
+  // for one painted frame drops its native handles, and re-adding the range
+  // programmatically doesn't bring them back (the engine only draws them for a
+  // user-initiated selection). `handlesSuppressed` then hands the job to the
+  // app's own handles, which do stack below the popup.
+  const suppressNativeSelectionHandles = async () => {
+    // Desktop has no grabbers to take away, and the dance would only churn the
+    // selection the popup is anchored to.
+    if (!appService?.isMobile) return;
+    const content = getContents().find(
+      (c) => c.doc && c.index != null && isValidSelection(c.doc.getSelection()!),
+    );
+    if (!content) return;
+    const doc = content.doc;
+    const win = doc.defaultView;
+    const sel = doc.getSelection();
+    if (!win || !sel) return;
+    const range = sel.getRangeAt(0).cloneRange();
+    guardProgrammaticSelection();
+    sel.removeAllRanges();
+    await new Promise<void>((resolve) =>
+      win.requestAnimationFrame(() => win.requestAnimationFrame(() => resolve())),
+    );
+    // Bail if a competing gesture touched the selection while we waited: the
+    // range we cloned is no longer the one on screen.
+    if (sel.rangeCount > 0 || range.collapsed) {
+      releaseProgrammaticSelection();
+      return;
+    }
+    sel.addRange(range);
+    releaseProgrammaticSelection();
+    setSelection((prev) => (prev ? { ...prev, handlesSuppressed: true } : prev));
+  };
+
   const {
     isInstantAnnotationEnabled,
     handleInstantAnnotationPointerDown,
@@ -1148,6 +1189,7 @@ export const useTextSelector = (
     handleUpToPopup,
     handleContextmenu,
     dragSelectionTo,
+    suppressNativeSelectionHandles,
     // The shared corner auto-turn feed/cancel/subscribe, re-exposed so the range
     // editors can drive the same machine from their overlay handle drags.
     noteAutoTurnPoint,

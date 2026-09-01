@@ -359,6 +359,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleUpToPopup,
     handleContextmenu,
     dragSelectionTo,
+    suppressNativeSelectionHandles,
     noteAutoTurnPoint,
     cancelAutoTurn,
     onAutoTurn,
@@ -1479,8 +1480,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   //
   // The lookup popups are deliberately NOT here. A dictionary / translator /
   // proofread lookup leaves the selection alive so dismissing it lands back on
-  // the selection toolbar (#5213, e2e-covered); their handles are hidden for
-  // the duration by `overlaySurfaceOpen` instead.
+  // the selection toolbar (#5213, e2e-covered); they call
+  // `suppressNativeSelectionHandles` instead, which sheds the platform's
+  // grabbers without spending the selection, and `overlaySurfaceOpen` hides the
+  // app's own handles for the duration.
   const dropSelectionForOverlay = () => {
     isTextSelected.current = false;
     view?.deselect();
@@ -1596,12 +1599,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       return;
     }
     setShowAnnotPopup(false);
+    void suppressNativeSelectionHandles();
     setShowDictionaryPopup(true);
   };
 
   const handleTranslation = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    void suppressNativeSelectionHandles();
     setShowDeepLPopup(true);
   };
 
@@ -1636,6 +1641,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
     setShowAnnotPopup(false);
+    void suppressNativeSelectionHandles();
     setShowProofreadPopup(true);
 
     if (getWordCount(selection.text) > 30) {

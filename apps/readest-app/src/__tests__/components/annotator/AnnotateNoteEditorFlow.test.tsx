@@ -65,6 +65,7 @@ const h = vi.hoisted(() => ({
   setSideBarVisible: vi.fn(),
   setSearchBarVisible: vi.fn(),
   deselect: vi.fn(),
+  suppressNativeSelectionHandles: vi.fn(),
   isTextSelected: { current: true },
 }));
 
@@ -209,6 +210,7 @@ vi.mock('@/app/reader/hooks/useTextSelector', () => ({
     handleUpToPopup: vi.fn(),
     handleContextmenu: vi.fn(),
     dragSelectionTo: vi.fn(),
+    suppressNativeSelectionHandles: h.suppressNativeSelectionHandles,
     noteAutoTurnPoint: { current: null },
     cancelAutoTurn: vi.fn(),
     onAutoTurn: vi.fn(),
@@ -412,6 +414,9 @@ describe('Annotate opens the note editor at the selection', () => {
 
     expect(h.deselect).not.toHaveBeenCalled();
     expect(h.isTextSelected.current).toBe(true);
+    // ...but the platform's own grabbers go, since no z-index can get a popup
+    // above them on iOS.
+    expect(h.suppressNativeSelectionHandles).toHaveBeenCalled();
   });
 
   test('the note bubble pencil opens the same editor, seeded with the existing note', async () => {
