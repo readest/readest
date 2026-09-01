@@ -39,7 +39,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
     (hoveredBookKey === bookKey || isDropdownOpen) && viewSettings?.showPaginationButtons;
   const navigationButtonSize =
     !isPageNavigationButtonsVisible && appService?.isAndroidApp
-      ? 'h-4 w-4 overflow-hidden'
+      ? 'h-2 w-2 overflow-hidden'
       : 'h-20 w-20';
 
   const handleGoLeftPage = useCallback(() => {

@@ -63,7 +63,7 @@ describe('PageNavigationButtons Android hit areas', () => {
     for (const label of navigationLabels) {
       const button = screen.getByRole('button', { name: label });
       const bounds = button.getBoundingClientRect();
-      expect([bounds.width, bounds.height], label).toEqual([16, 16]);
+      expect([bounds.width, bounds.height], label).toEqual([8, 8]);
 
       const hitTarget = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top - 1);
       expect(button.contains(hitTarget), label).toBe(false);
