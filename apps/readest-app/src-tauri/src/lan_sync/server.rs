@@ -181,12 +181,19 @@ async fn checked_join(root: &std::path::Path, rel: &str) -> std::io::Result<Opti
     Ok(Some(checked))
 }
 
+fn is_book_hash_segment(value: &str) -> bool {
+    value.len() == 32 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
 /// Repair the exact directory slots the old checked_join bug could have
-/// published as files. This is intentionally limited to Readest's frozen wire
-/// layout rather than deleting arbitrary regular-file ancestors supplied by a
-/// peer. It makes already-poisoned phones self-heal on the next PUT, so users do
-/// not need to clear LAN Sync storage or re-import their books.
+/// published as files. The request must first pass the normal lexical safety
+/// rules, and the per-book slot is repaired only when it is a real 32-character
+/// hex book hash. That keeps migration self-healing without turning it into a
+/// general-purpose delete of arbitrary `Readest/books/*` files.
 async fn repair_legacy_wire_dirs(root: &Path, rel: &str) -> std::io::Result<()> {
+    if safe_join(root, rel).is_none() {
+        return Ok(());
+    }
     let segments: Vec<&str> = rel.split('/').filter(|segment| !segment.is_empty()).collect();
     if segments.first().copied() != Some("Readest") {
         return Ok(());
@@ -195,10 +202,14 @@ async fn repair_legacy_wire_dirs(root: &Path, rel: &str) -> std::io::Result<()> 
     let mut directory_depths = vec![1usize]; // Readest
     if segments.get(1).copied() == Some("books") {
         directory_depths.push(2); // Readest/books
-        if segments.len() >= 4 {
+        let valid_book_hash = segments
+            .get(2)
+            .copied()
+            .is_some_and(is_book_hash_segment);
+        if valid_book_hash && segments.len() >= 4 {
             directory_depths.push(3); // Readest/books/<hash>
         }
-        if segments.get(3).copied() == Some("tts") && segments.len() >= 5 {
+        if valid_book_hash && segments.get(3).copied() == Some("tts") && segments.len() >= 5 {
             directory_depths.push(4); // Readest/books/<hash>/tts
         }
     } else if segments.get(1).copied() == Some("stats") && segments.len() >= 3 {
@@ -474,8 +485,6 @@ async fn write_file(
     AxumPath(path): AxumPath<String>,
     body: Body,
 ) -> Response {
-    // Heal regular files left in frozen directory positions by the old
-    // checked_join truncation bug before validating/creating the full path.
     if let Err(e) = repair_legacy_wire_dirs(&state.root, &path).await {
         return internal_error(e);
     }
@@ -491,18 +500,13 @@ async fn write_file(
     if full == canonical_root {
         return bad_request("cannot write LAN sync root");
     }
-    // checked_join validates existing parents before creating missing ones.
     if let Some(parent) = full.parent() {
         if let Err(e) = tokio::fs::create_dir_all(parent).await {
             return internal_error(e);
         }
     }
-    // Stream the request body to a short, same-directory `.part` temp file and
-    // rename atomically on completion. Do NOT append the UUID to the target
-    // filename: makeSafeFilename can already use nearly the filesystem's full
-    // 255-byte component budget, and `<long-name>.epub.<uuid>.part` exceeded it
-    // on Android/Linux. The hash directory already isolates each book and the
-    // UUID makes concurrent temp names unique.
+    // Keep the temporary component short: the target filename itself can be
+    // close to the filesystem's 255-byte component limit.
     let Some(parent) = full.parent() else {
         return bad_request("invalid file path");
     };
@@ -524,14 +528,10 @@ async fn write_file(
     let mut writer = tokio::io::BufWriter::new(file);
     let mut stream = body.into_data_stream();
     let mut written = 0u64;
-    // BodyDataStream yields the body as `Bytes` chunks directly. Because this
-    // handler consumes the raw Body, enforce the limit here as well as through
-    // DefaultBodyLimit (which primarily protects extractor-based handlers).
     while let Some(chunk) = stream.next().await {
         let chunk = match chunk {
             Ok(chunk) => chunk,
             Err(_) => {
-                // Peer disconnected mid-upload; the guard removes the temp file.
                 return with_cors(internal_error(std::io::Error::new(
                     std::io::ErrorKind::ConnectionAborted,
                     "peer disconnected mid-upload",
@@ -552,7 +552,7 @@ async fn write_file(
     if let Err(e) = writer.flush().await {
         return internal_error(e);
     }
-    drop(writer); // release the handle before renaming (Windows)
+    drop(writer);
     match publish_part_file(&part_path, &full).await {
         Ok(()) => {
             guard.disarm();
@@ -578,7 +578,6 @@ async fn delete_path(
     if full == canonical_root {
         return bad_request("cannot delete LAN sync root");
     }
-    // Missing is success: deleteDir's contract is idempotence.
     let result = match tokio::fs::metadata(&full).await {
         Ok(meta) if meta.is_dir() => tokio::fs::remove_dir_all(&full).await,
         Ok(_) => tokio::fs::remove_file(&full).await,
@@ -643,8 +642,13 @@ async fn list_dir(
 
 #[cfg(test)]
 mod tests {
-    use super::{checked_join, is_authorized, parse_byte_range, repair_legacy_wire_dirs, ByteRange};
+    use super::{
+        checked_join, is_authorized, is_book_hash_segment, parse_byte_range,
+        repair_legacy_wire_dirs, ByteRange,
+    };
     use axum::http::{header, HeaderMap, HeaderValue};
+
+    const HASH: &str = "0123456789abcdef0123456789abcdef";
 
     #[test]
     fn parses_supported_byte_ranges() {
@@ -662,6 +666,14 @@ mod tests {
     }
 
     #[test]
+    fn validates_book_hash_segments() {
+        assert!(is_book_hash_segment(HASH));
+        assert!(is_book_hash_segment("ABCDEF0123456789ABCDEF0123456789"));
+        assert!(!is_book_hash_segment("hash"));
+        assert!(!is_book_hash_segment("g123456789abcdef0123456789abcdef"));
+    }
+
+    #[test]
     fn anonymous_server_accepts_requests_without_authorization() {
         assert!(is_authorized(&HeaderMap::new(), None));
     }
@@ -670,10 +682,8 @@ mod tests {
     fn protected_server_requires_the_exact_bearer_token() {
         let mut headers = HeaderMap::new();
         assert!(!is_authorized(&headers, Some("secret")));
-
         headers.insert(header::AUTHORIZATION, HeaderValue::from_static("Bearer wrong"));
         assert!(!is_authorized(&headers, Some("secret")));
-
         headers.insert(
             header::AUTHORIZATION,
             HeaderValue::from_static("Bearer secret"),
@@ -685,11 +695,9 @@ mod tests {
     async fn checked_join_keeps_suffix_after_first_missing_component() {
         let root = std::env::temp_dir().join(format!("readest-lan-path-{}", uuid::Uuid::new_v4()));
         tokio::fs::create_dir_all(&root).await.unwrap();
-        let resolved = checked_join(&root, "/Readest/books/hash/config.json")
-            .await
-            .unwrap()
-            .unwrap();
-        assert_eq!(resolved, root.join("Readest/books/hash/config.json"));
+        let rel = format!("/Readest/books/{HASH}/config.json");
+        let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
+        assert_eq!(resolved, root.join(format!("Readest/books/{HASH}/config.json")));
         let _ = tokio::fs::remove_dir_all(&root).await;
     }
 
@@ -698,18 +706,29 @@ mod tests {
         let root = std::env::temp_dir().join(format!("readest-lan-repair-{}", uuid::Uuid::new_v4()));
         let books = root.join("Readest/books");
         tokio::fs::create_dir_all(&books).await.unwrap();
-        let poisoned = books.join("hash");
+        let poisoned = books.join(HASH);
         tokio::fs::write(&poisoned, b"old config body").await.unwrap();
 
-        repair_legacy_wire_dirs(&root, "/Readest/books/hash/config.json")
-            .await
-            .unwrap();
+        let rel = format!("/Readest/books/{HASH}/config.json");
+        repair_legacy_wire_dirs(&root, &rel).await.unwrap();
         assert!(tokio::fs::metadata(&poisoned).await.is_err());
-        let resolved = checked_join(&root, "/Readest/books/hash/config.json")
+        let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
+        assert_eq!(resolved, root.join(format!("Readest/books/{HASH}/config.json")));
+        let _ = tokio::fs::remove_dir_all(&root).await;
+    }
+
+    #[tokio::test]
+    async fn does_not_repair_non_hash_book_children() {
+        let root = std::env::temp_dir().join(format!("readest-lan-safe-repair-{}", uuid::Uuid::new_v4()));
+        let books = root.join("Readest/books");
+        tokio::fs::create_dir_all(&books).await.unwrap();
+        let unrelated = books.join("not-a-hash");
+        tokio::fs::write(&unrelated, b"keep me").await.unwrap();
+
+        repair_legacy_wire_dirs(&root, "/Readest/books/not-a-hash/config.json")
             .await
-            .unwrap()
             .unwrap();
-        assert_eq!(resolved, root.join("Readest/books/hash/config.json"));
+        assert_eq!(tokio::fs::read(&unrelated).await.unwrap(), b"keep me");
         let _ = tokio::fs::remove_dir_all(&root).await;
     }
 }
