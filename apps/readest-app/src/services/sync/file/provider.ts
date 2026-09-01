@@ -75,9 +75,9 @@ export interface FileSyncProvider {
   /**
    * Optional streaming upload: PUT `localPath`'s bytes to `remotePath`
    * without materialising them in the JS heap. The provider owns the
-   * remote URL + auth. Resolves `true` on success, `false` on a swallowed
-   * failure. Absent on backends without a streaming primitive (e.g. web);
-   * the engine then falls back to buffered {@link writeBinary}.
+   * remote URL + auth. Resolves `true` on success, `false` when a provider can
+   * safely fall back to buffered transfer. Absent on backends without a native
+   * streaming primitive (e.g. web), where the engine uses {@link writeBinary}.
    */
   uploadStream?(remotePath: string, localPath: string): Promise<boolean>;
   /**
@@ -90,4 +90,21 @@ export interface FileSyncProvider {
     localPath: string,
     onProgress?: ProgressHandler,
   ): Promise<boolean>;
+
+  /**
+   * Native/mobile transports can forbid the ArrayBuffer compatibility path.
+   * This is essential for LAN on Android: falling back from a failed stream to
+   * `readBinary`/`writeBinary` materialises an entire CBZ/PDF in the WebView and
+   * can freeze or OOM the UI. When true, a missing/failed stream is surfaced as
+   * an explicit error instead of silently buffering the book.
+   */
+  readonly requireBookStreaming?: boolean;
+
+  /**
+   * Optional per-provider cap for the bulky book-binary phase. Metadata and
+   * covers keep using the engine's normal concurrency. LAN uses one stream at a
+   * time so a phone never has several multi-hundred-MB socket/file pipelines
+   * competing with the UI and GC simultaneously.
+   */
+  readonly maxConcurrentBookTransfers?: number;
 }
