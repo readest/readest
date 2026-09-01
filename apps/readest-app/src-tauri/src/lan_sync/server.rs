@@ -724,11 +724,12 @@ mod tests {
     async fn checked_join_keeps_suffix_after_first_missing_component() {
         let root = std::env::temp_dir().join(format!("readest-lan-path-{}", uuid::Uuid::new_v4()));
         tokio::fs::create_dir_all(&root).await.unwrap();
+        let canonical_root = tokio::fs::canonicalize(&root).await.unwrap();
         let rel = format!("/Readest/books/{HASH}/config.json");
         let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
         assert_eq!(
             resolved,
-            root.join(format!("Readest/books/{HASH}/config.json"))
+            canonical_root.join(format!("Readest/books/{HASH}/config.json"))
         );
         let _ = tokio::fs::remove_dir_all(&root).await;
     }
@@ -739,6 +740,7 @@ mod tests {
             std::env::temp_dir().join(format!("readest-lan-repair-{}", uuid::Uuid::new_v4()));
         let books = root.join("Readest/books");
         tokio::fs::create_dir_all(&books).await.unwrap();
+        let canonical_root = tokio::fs::canonicalize(&root).await.unwrap();
         let poisoned = books.join(HASH);
         tokio::fs::write(&poisoned, b"old config body")
             .await
@@ -750,7 +752,7 @@ mod tests {
         let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
         assert_eq!(
             resolved,
-            root.join(format!("Readest/books/{HASH}/config.json"))
+            canonical_root.join(format!("Readest/books/{HASH}/config.json"))
         );
         let _ = tokio::fs::remove_dir_all(&root).await;
     }
