@@ -293,6 +293,16 @@ export function getPlanDetails(
             ),
           },
           {
+            // Plus and Pro carry the premium feature set that the Full
+            // Customization unlock sells separately, so the tier should say so.
+            // Reuses the existing key rather than a new phrasing: it is already
+            // translated in every locale.
+            label: _('Unlock All Customization Options'),
+            description: _(
+              'Unlock additional themes, fonts, layout options and read aloud, translators, cloud storage services.',
+            ),
+          },
+          {
             label: _('Priority Support'),
             description: _(
               'Enjoy faster responses and dedicated assistance whenever you need help.',

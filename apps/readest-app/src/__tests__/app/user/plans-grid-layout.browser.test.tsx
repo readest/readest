@@ -89,6 +89,23 @@ describe('plans grid layout', () => {
     expect(bottoms[2]).toBe(bottoms[3]);
   });
 
+  // The features list varies in height per tier, so without a bottom-anchored
+  // group the "What's Included" panel floats to wherever that list happens to
+  // end and the panels sit at different heights across a row.
+  it("aligns the What's Included panels within a row", async () => {
+    await page.viewport(1280, 1024);
+    renderGrid();
+
+    const panels = (Array.from(document.querySelectorAll('h5')) as HTMLElement[])
+      .filter((h) => h.textContent === "What's Included")
+      .map((h) => h.parentElement as HTMLElement);
+
+    // free, plus and pro carry limits; the purchase card does not.
+    expect(panels).toHaveLength(3);
+    const tops = panels.map((p) => Math.round(p.getBoundingClientRect().top));
+    expect(tops[0]).toBe(tops[1]);
+  });
+
   it('drops to a single column on a phone', async () => {
     await page.viewport(390, 844);
     renderGrid();

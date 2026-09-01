@@ -111,23 +111,28 @@ const PlanCard: React.FC<PlanCardProps> = ({
           ))}
         </div>
 
-        {plan.limits && Object.keys(plan.limits).length > 0 && (
-          <div className='bg-base-200/60 mb-5 rounded-lg p-3'>
-            <h5 className='text-base-content mb-2 text-xs font-semibold'>{_("What's Included")}</h5>
-            <div className='space-y-1.5'>
-              {Object.entries(plan.limits).map(([key, value]) => (
-                <div key={key} className='flex justify-between gap-2 text-xs'>
-                  <span className={plan.hintColor}>{_(key)}</span>
-                  <span className='text-base-content shrink-0 font-medium whitespace-nowrap'>
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* Anchored to the card's bottom as one group. Feature lists differ in
+            height per tier, so leaving these to follow the list directly puts
+            the panels at different heights across a row. */}
         <div className='mt-auto'>
+          {plan.limits && Object.keys(plan.limits).length > 0 && (
+            <div className='bg-base-200/60 mb-5 rounded-lg p-3'>
+              <h5 className='text-base-content mb-2 text-xs font-semibold'>
+                {_("What's Included")}
+              </h5>
+              <div className='space-y-1.5'>
+                {Object.entries(plan.limits).map(([key, value]) => (
+                  <div key={key} className='flex justify-between gap-2 text-xs'>
+                    <span className={plan.hintColor}>{_(key)}</span>
+                    <span className='text-base-content shrink-0 font-medium whitespace-nowrap'>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {plan.plan === 'purchase' ? (
             <PurchaseCallToActions
               plan={plan}
