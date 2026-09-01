@@ -23,8 +23,8 @@ use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use serde::Deserialize;
 use futures::StreamExt;
+use serde::Deserialize;
 use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio_util::io::ReaderStream;
@@ -61,16 +61,16 @@ pub fn router(state: Arc<ServerState>) -> Router {
         .route("/ping", get(ping))
         .route(
             "/files/{*path}",
-            get(read_file).head(head_file).put(write_file).delete(delete_path),
+            get(read_file)
+                .head(head_file)
+                .put(write_file)
+                .delete(delete_path),
         )
         .route(
             "/list",
             post(list_dir).layer(DefaultBodyLimit::max(64 * 1024)),
         )
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            auth_and_cors,
-        ))
+        .layer(middleware::from_fn_with_state(state.clone(), auth_and_cors))
         .with_state(state)
 }
 
@@ -94,7 +94,10 @@ async fn auth_and_cors(
 
 fn with_cors(mut res: Response) -> Response {
     let headers = res.headers_mut();
-    headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        HeaderValue::from_static("*"),
+    );
     headers.insert(
         header::ACCESS_CONTROL_ALLOW_METHODS,
         HeaderValue::from_static("GET, HEAD, PUT, DELETE, POST, OPTIONS"),
@@ -105,9 +108,14 @@ fn with_cors(mut res: Response) -> Response {
     );
     headers.insert(
         header::ACCESS_CONTROL_EXPOSE_HEADERS,
-        HeaderValue::from_static("Accept-Ranges, Content-Length, Content-Range, Content-Type, ETag"),
+        HeaderValue::from_static(
+            "Accept-Ranges, Content-Length, Content-Range, Content-Type, ETag",
+        ),
     );
-    headers.insert(header::ACCESS_CONTROL_MAX_AGE, HeaderValue::from_static("86400"));
+    headers.insert(
+        header::ACCESS_CONTROL_MAX_AGE,
+        HeaderValue::from_static("86400"),
+    );
     res
 }
 
@@ -141,6 +149,13 @@ fn safe_join(root: &std::path::Path, rel: &str) -> Option<PathBuf> {
 
 /// Resolve the root and reject symlinks in every existing requested component.
 /// Missing components are allowed so writes can create them safely afterward.
+///
+/// Once the first missing component is reached we still append the remaining
+/// lexical suffix. The old implementation stopped there, so the first PUT for
+/// `Readest/books/<hash>/config.json` resolved to `Readest/books/<hash>` and
+/// wrote the JSON body into a FILE named `<hash>`. Existing hash directories
+/// kept working while every newly imported book failed its later config/file
+/// uploads — exactly the "old 18 sync, new books never appear" failure mode.
 async fn checked_join(root: &std::path::Path, rel: &str) -> std::io::Result<Option<PathBuf>> {
     let Some(joined) = safe_join(root, rel) else {
         return Ok(None);
@@ -149,17 +164,90 @@ async fn checked_join(root: &std::path::Path, rel: &str) -> std::io::Result<Opti
     let relative = joined
         .strip_prefix(root)
         .expect("safe_join result must be under root");
+    let components: Vec<_> = relative.components().collect();
     let mut checked = canonical_root.clone();
-    for component in relative.components() {
+    let mut missing = false;
+    for (index, component) in components.iter().enumerate() {
         checked.push(component.as_os_str());
+        if missing {
+            continue;
+        }
         match tokio::fs::symlink_metadata(&checked).await {
             Ok(meta) if meta.file_type().is_symlink() => return Ok(None),
-            Ok(_) => {}
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => break,
+            Ok(meta) => {
+                if index + 1 < components.len() && !meta.is_dir() {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::NotADirectory,
+                        format!(
+                            "LAN sync path component is not a directory: {}",
+                            checked.display()
+                        ),
+                    ));
+                }
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => missing = true,
             Err(e) => return Err(e),
         }
     }
     Ok(Some(checked))
+}
+
+fn is_book_hash_segment(value: &str) -> bool {
+    value.len() == 32 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+/// Repair the exact directory slots the old checked_join bug could have
+/// published as files. The request must first pass the normal lexical safety
+/// rules, and the per-book slot is repaired only when it is a real 32-character
+/// hex book hash. That keeps migration self-healing without turning it into a
+/// general-purpose delete of arbitrary `Readest/books/*` files.
+async fn repair_legacy_wire_dirs(root: &Path, rel: &str) -> std::io::Result<()> {
+    if safe_join(root, rel).is_none() {
+        return Ok(());
+    }
+    let segments: Vec<&str> = rel
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .collect();
+    if segments.first().copied() != Some("Readest") {
+        return Ok(());
+    }
+
+    let mut directory_depths = vec![1usize]; // Readest
+    if segments.get(1).copied() == Some("books") {
+        directory_depths.push(2); // Readest/books
+        let valid_book_hash = segments.get(2).copied().is_some_and(is_book_hash_segment);
+        if valid_book_hash && segments.len() >= 4 {
+            directory_depths.push(3); // Readest/books/<hash>
+        }
+        if valid_book_hash && segments.get(3).copied() == Some("tts") && segments.len() >= 5 {
+            directory_depths.push(4); // Readest/books/<hash>/tts
+        }
+    } else if segments.get(1).copied() == Some("stats") && segments.len() >= 3 {
+        directory_depths.push(2); // Readest/stats
+    }
+
+    for depth in directory_depths {
+        let mut candidate = root.to_path_buf();
+        for segment in segments.iter().take(depth) {
+            candidate.push(segment);
+        }
+        match tokio::fs::symlink_metadata(&candidate).await {
+            Ok(meta) if meta.file_type().is_symlink() => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::PermissionDenied,
+                    format!("refusing symlink in LAN sync path: {}", candidate.display()),
+                ));
+            }
+            Ok(meta) if !meta.is_dir() => {
+                tokio::fs::remove_file(&candidate).await?;
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(())
 }
 
 fn not_found() -> Response {
@@ -253,7 +341,10 @@ async fn ping(State(state): State<Arc<ServerState>>) -> Response {
 }
 
 fn range_for(headers: &HeaderMap, size: u64, etag: &str) -> Result<Option<ByteRange>, ()> {
-    let Some(range) = headers.get(header::RANGE).and_then(|value| value.to_str().ok()) else {
+    let Some(range) = headers
+        .get(header::RANGE)
+        .and_then(|value| value.to_str().ok())
+    else {
         return Ok(None);
     };
     if headers
@@ -362,7 +453,11 @@ async fn head_file(
                 Ok(range) => range,
                 Err(()) => return range_error(size),
             };
-            let status = if range.is_some() { StatusCode::PARTIAL_CONTENT } else { StatusCode::OK };
+            let status = if range.is_some() {
+                StatusCode::PARTIAL_CONTENT
+            } else {
+                StatusCode::OK
+            };
             with_cors(
                 response_headers(status, size, etag, range.as_ref())
                     .body(Body::empty())
@@ -404,6 +499,9 @@ async fn write_file(
     AxumPath(path): AxumPath<String>,
     body: Body,
 ) -> Response {
+    if let Err(e) = repair_legacy_wire_dirs(&state.root, &path).await {
+        return internal_error(e);
+    }
     let full = match checked_join(&state.root, &path).await {
         Ok(Some(full)) => full,
         Ok(None) => return bad_request("invalid path"),
@@ -416,21 +514,17 @@ async fn write_file(
     if full == canonical_root {
         return bad_request("cannot write LAN sync root");
     }
-    // checked_join validates existing parents before creating missing ones.
     if let Some(parent) = full.parent() {
         if let Err(e) = tokio::fs::create_dir_all(parent).await {
             return internal_error(e);
         }
     }
-    // Stream the request body to a same-directory `.part` temp file and rename
-    // atomically on completion. Buffering the whole body first (the previous
-    // implementation) spiked to ~2x the file size in RAM and starved the UI on
-    // phones; streaming keeps memory O(chunk). A connection that dies
-    // mid-transfer leaves no truncated book behind for the discovery scan to
-    // mistake for a complete upload (the engine skips `.part` names anyway).
-    let mut part_os = full.clone().into_os_string();
-    part_os.push(format!(".{}.part", uuid::Uuid::new_v4()));
-    let part_path = PathBuf::from(part_os);
+    // Keep the temporary component short: the target filename itself can be
+    // close to the filesystem's 255-byte component limit.
+    let Some(parent) = full.parent() else {
+        return bad_request("invalid file path");
+    };
+    let part_path = parent.join(format!(".upload-{}.part", uuid::Uuid::new_v4().simple()));
 
     let file = match tokio::fs::OpenOptions::new()
         .write(true)
@@ -448,14 +542,10 @@ async fn write_file(
     let mut writer = tokio::io::BufWriter::new(file);
     let mut stream = body.into_data_stream();
     let mut written = 0u64;
-    // BodyDataStream yields the body as `Bytes` chunks directly. Because this
-    // handler consumes the raw Body, enforce the limit here as well as through
-    // DefaultBodyLimit (which primarily protects extractor-based handlers).
     while let Some(chunk) = stream.next().await {
         let chunk = match chunk {
             Ok(chunk) => chunk,
             Err(_) => {
-                // Peer disconnected mid-upload; the guard removes the temp file.
                 return with_cors(internal_error(std::io::Error::new(
                     std::io::ErrorKind::ConnectionAborted,
                     "peer disconnected mid-upload",
@@ -464,7 +554,9 @@ async fn write_file(
         };
         let next_size = written.saturating_add(chunk.len() as u64);
         if next_size > MAX_BODY_BYTES {
-            return with_cors((StatusCode::PAYLOAD_TOO_LARGE, "request body too large").into_response());
+            return with_cors(
+                (StatusCode::PAYLOAD_TOO_LARGE, "request body too large").into_response(),
+            );
         }
         written = next_size;
         if let Err(e) = writer.write_all(&chunk).await {
@@ -474,7 +566,7 @@ async fn write_file(
     if let Err(e) = writer.flush().await {
         return internal_error(e);
     }
-    drop(writer); // release the handle before renaming (Windows)
+    drop(writer);
     match publish_part_file(&part_path, &full).await {
         Ok(()) => {
             guard.disarm();
@@ -500,7 +592,6 @@ async fn delete_path(
     if full == canonical_root {
         return bad_request("cannot delete LAN sync root");
     }
-    // Missing is success: deleteDir's contract is idempotence.
     let result = match tokio::fs::metadata(&full).await {
         Ok(meta) if meta.is_dir() => tokio::fs::remove_dir_all(&full).await,
         Ok(_) => tokio::fs::remove_file(&full).await,
@@ -517,10 +608,7 @@ struct ListRequest {
     dir: String,
 }
 
-async fn list_dir(
-    State(state): State<Arc<ServerState>>,
-    Json(req): Json<ListRequest>,
-) -> Response {
+async fn list_dir(State(state): State<Arc<ServerState>>, Json(req): Json<ListRequest>) -> Response {
     let dir = if req.dir.starts_with('/') {
         req.dir
     } else {
@@ -565,22 +653,50 @@ async fn list_dir(
 
 #[cfg(test)]
 mod tests {
-    use super::{is_authorized, parse_byte_range, ByteRange};
+    use super::{
+        checked_join, is_authorized, is_book_hash_segment, parse_byte_range,
+        repair_legacy_wire_dirs, ByteRange,
+    };
     use axum::http::{header, HeaderMap, HeaderValue};
+
+    const HASH: &str = "0123456789abcdef0123456789abcdef";
 
     #[test]
     fn parses_supported_byte_ranges() {
-        assert_eq!(parse_byte_range("bytes=0-99", 200), Ok(ByteRange::new(0, 99)));
-        assert_eq!(parse_byte_range("bytes=100-", 200), Ok(ByteRange::new(100, 199)));
-        assert_eq!(parse_byte_range("bytes=-25", 200), Ok(ByteRange::new(175, 199)));
+        assert_eq!(
+            parse_byte_range("bytes=0-99", 200),
+            Ok(ByteRange::new(0, 99))
+        );
+        assert_eq!(
+            parse_byte_range("bytes=100-", 200),
+            Ok(ByteRange::new(100, 199))
+        );
+        assert_eq!(
+            parse_byte_range("bytes=-25", 200),
+            Ok(ByteRange::new(175, 199))
+        );
     }
 
     #[test]
     fn rejects_malformed_multiple_and_unsatisfiable_ranges() {
-        for value in ["bytes=", "items=0-1", "bytes=0-1,2-3", "bytes=200-", "bytes=-0"] {
+        for value in [
+            "bytes=",
+            "items=0-1",
+            "bytes=0-1,2-3",
+            "bytes=200-",
+            "bytes=-0",
+        ] {
             assert!(parse_byte_range(value, 200).is_err(), "{value}");
         }
         assert!(parse_byte_range("bytes=0-1", 0).is_err());
+    }
+
+    #[test]
+    fn validates_book_hash_segments() {
+        assert!(is_book_hash_segment(HASH));
+        assert!(is_book_hash_segment("ABCDEF0123456789ABCDEF0123456789"));
+        assert!(!is_book_hash_segment("hash"));
+        assert!(!is_book_hash_segment("g123456789abcdef0123456789abcdef"));
     }
 
     #[test]
@@ -592,14 +708,68 @@ mod tests {
     fn protected_server_requires_the_exact_bearer_token() {
         let mut headers = HeaderMap::new();
         assert!(!is_authorized(&headers, Some("secret")));
-
-        headers.insert(header::AUTHORIZATION, HeaderValue::from_static("Bearer wrong"));
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer wrong"),
+        );
         assert!(!is_authorized(&headers, Some("secret")));
-
         headers.insert(
             header::AUTHORIZATION,
             HeaderValue::from_static("Bearer secret"),
         );
         assert!(is_authorized(&headers, Some("secret")));
+    }
+
+    #[tokio::test]
+    async fn checked_join_keeps_suffix_after_first_missing_component() {
+        let root = std::env::temp_dir().join(format!("readest-lan-path-{}", uuid::Uuid::new_v4()));
+        tokio::fs::create_dir_all(&root).await.unwrap();
+        let canonical_root = tokio::fs::canonicalize(&root).await.unwrap();
+        let rel = format!("/Readest/books/{HASH}/config.json");
+        let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
+        assert_eq!(
+            resolved,
+            canonical_root.join(format!("Readest/books/{HASH}/config.json"))
+        );
+        let _ = tokio::fs::remove_dir_all(&root).await;
+    }
+
+    #[tokio::test]
+    async fn repairs_hash_file_left_by_old_truncation_bug() {
+        let root =
+            std::env::temp_dir().join(format!("readest-lan-repair-{}", uuid::Uuid::new_v4()));
+        let books = root.join("Readest/books");
+        tokio::fs::create_dir_all(&books).await.unwrap();
+        let canonical_root = tokio::fs::canonicalize(&root).await.unwrap();
+        let poisoned = books.join(HASH);
+        tokio::fs::write(&poisoned, b"old config body")
+            .await
+            .unwrap();
+
+        let rel = format!("/Readest/books/{HASH}/config.json");
+        repair_legacy_wire_dirs(&root, &rel).await.unwrap();
+        assert!(tokio::fs::metadata(&poisoned).await.is_err());
+        let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
+        assert_eq!(
+            resolved,
+            canonical_root.join(format!("Readest/books/{HASH}/config.json"))
+        );
+        let _ = tokio::fs::remove_dir_all(&root).await;
+    }
+
+    #[tokio::test]
+    async fn does_not_repair_non_hash_book_children() {
+        let root =
+            std::env::temp_dir().join(format!("readest-lan-safe-repair-{}", uuid::Uuid::new_v4()));
+        let books = root.join("Readest/books");
+        tokio::fs::create_dir_all(&books).await.unwrap();
+        let unrelated = books.join("not-a-hash");
+        tokio::fs::write(&unrelated, b"keep me").await.unwrap();
+
+        repair_legacy_wire_dirs(&root, "/Readest/books/not-a-hash/config.json")
+            .await
+            .unwrap();
+        assert_eq!(tokio::fs::read(&unrelated).await.unwrap(), b"keep me");
+        let _ = tokio::fs::remove_dir_all(&root).await;
     }
 }

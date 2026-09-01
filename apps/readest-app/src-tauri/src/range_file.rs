@@ -244,24 +244,24 @@ mod tests {
 
     #[test]
     fn safe_path_accepts_absolute_traversal_free() {
-        assert!(is_safe_path(Path::new(
-            "/data/user/0/com.bilingify.readest/Readest/Books/a.epub"
-        )));
-        assert!(is_safe_path(Path::new("/书/堂吉诃德.mobi")));
+        let root = std::env::temp_dir().join("Readest").join("Books");
+        assert!(is_safe_path(&root.join("a.epub")));
+        assert!(is_safe_path(&root.join("堂吉诃德.mobi")));
     }
 
     #[test]
     fn safe_path_rejects_parent_dir_traversal() {
-        assert!(!is_safe_path(Path::new(
-            "/data/user/0/com.bilingify.readest/Readest/../../../../etc/passwd"
-        )));
-        assert!(!is_safe_path(Path::new("/a/../b")));
+        let root = std::env::temp_dir().join("Readest");
+        assert!(!is_safe_path(
+            &root.join("..").join("..").join("etc").join("passwd")
+        ));
+        assert!(!is_safe_path(&root.join("a").join("..").join("b")));
     }
 
     #[test]
     fn safe_path_rejects_relative_and_nul() {
         assert!(!is_safe_path(Path::new("data/x/a.epub"))); // not absolute
         assert!(!is_safe_path(Path::new("a.epub")));
-        assert!(!is_safe_path(Path::new("/data/a\0b.epub"))); // NUL byte
+        assert!(!is_safe_path(&std::env::temp_dir().join("a\0b.epub"))); // NUL byte
     }
 }

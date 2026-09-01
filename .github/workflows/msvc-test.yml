@@ -1,0 +1,280 @@
+name: "Windows MSVC & Android Test"
+run-name: "平台测试 · ${{ github.ref_name }} · #${{ github.run_number }}"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/msvc-test.yml'
+      - 'apps/readest-app/**'
+      - 'packages/**'
+      - 'data/icons/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: '1'
+
+jobs:
+  windows-msvc:
+    name: Windows x64 MSVC
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      NODE_OPTIONS: '--max-old-space-size=8192'
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_ANON_KEY: test-anon-key
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key
+      NEXT_PUBLIC_APP_PLATFORM: tauri
+      NEXT_PUBLIC_POSTHOG_KEY: ''
+      SENTRY_DSN: ''
+
+    steps:
+      - name: Checkout tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install Rust stable MSVC
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: test-windows-x86_64-msvc
+
+      - name: Print toolchain versions
+        shell: pwsh
+        run: |
+          node --version
+          pnpm --version
+          rustc -Vv
+          cargo -V
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Prepare frontend vendors
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: Write deterministic test environment
+        shell: pwsh
+        run: |
+          @'
+          NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_POSTHOG_KEY=
+          NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key
+          SENTRY_DSN=
+          '@ | Set-Content -Encoding utf8 .env.local
+          Copy-Item .env.local apps/readest-app/.env.local -Force
+
+      - name: TypeScript typecheck
+        run: pnpm --filter @readest/readest-app exec tsc --noEmit
+
+      - name: ImageViewer regression tests
+        run: pnpm --filter @readest/readest-app exec vitest run src/__tests__/components/ImageViewer.test.tsx --maxWorkers=2
+
+      - name: Rust MSVC compile check
+        run: cargo check -p Readest --target x86_64-pc-windows-msvc
+
+      - name: Rust MSVC unit tests
+        run: cargo test -p Readest --lib --target x86_64-pc-windows-msvc
+
+      - name: Generate throwaway updater key
+        id: updater-key
+        shell: bash
+        run: |
+          pnpm tauri signer generate -w "$RUNNER_TEMP/updater.key" --password "" --force
+          echo "private_key=$(cat "$RUNNER_TEMP/updater.key")" >> "$GITHUB_OUTPUT"
+
+      - name: Build Windows MSVC installer
+        shell: bash
+        timeout-minutes: 60
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ steps.updater-key.outputs.private_key }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          TAURI_PRIVATE_KEY: ${{ steps.updater-key.outputs.private_key }}
+          TAURI_PRIVATE_KEY_PASSWORD: ''
+        run: |
+          cd apps/readest-app
+          pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis \
+            --config src-tauri/tauri.fork.conf.json
+
+      - name: Upload temporary Windows installer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Readest-windows-msvc-test-${{ github.run_number }}
+          path: target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  android-arm64:
+    name: Android arm64 Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NODE_OPTIONS: '--max-old-space-size=8192'
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_ANON_KEY: test-anon-key
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key
+      NEXT_PUBLIC_APP_PLATFORM: tauri
+      NEXT_PUBLIC_POSTHOG_KEY: ''
+      SENTRY_DSN: ''
+
+    steps:
+      - name: Checkout tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup Java 17
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+
+      - name: Install Android NDK
+        run: sdkmanager "ndk;28.2.13676358"
+
+      - name: Install Rust stable for Android arm64
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: test-android-aarch64-release
+
+      - name: Print toolchain versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          pnpm --version
+          java -version
+          rustc -Vv
+          cargo -V
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Prepare frontend vendors
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: Write deterministic test environment
+        shell: bash
+        run: |
+          cat > .env.local <<'EOF'
+          NEXT_PUBLIC_APP_PLATFORM=tauri
+          NEXT_PUBLIC_POSTHOG_KEY=
+          NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key
+          SENTRY_DSN=
+          EOF
+          cp .env.local apps/readest-app/.env.local
+
+      - name: Regenerate Android scaffolding
+        shell: bash
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+        run: |
+          set -euo pipefail
+          cd apps/readest-app
+          rm -rf src-tauri/gen/android
+          pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+          git checkout .
+
+      - name: Create throwaway Android signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -genkeypair \
+            -keystore "$RUNNER_TEMP/readest-ci.jks" \
+            -storepass readest-ci \
+            -keypass readest-ci \
+            -alias readest-ci \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 1 \
+            -dname "CN=Readest CI, OU=CI, O=Readest, L=CI, ST=CI, C=US"
+          cat > apps/readest-app/src-tauri/gen/android/keystore.properties <<EOF
+          keyAlias=readest-ci
+          password=readest-ci
+          storeFile=$RUNNER_TEMP/readest-ci.jks
+          EOF
+
+      - name: Build Android arm64 release APK
+        shell: bash
+        timeout-minutes: 60
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+        run: |
+          set -euo pipefail
+          cd apps/readest-app
+          pnpm tauri android build -t aarch64 \
+            --config src-tauri/tauri.fork.conf.json
+
+      - name: Collect Android release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p test-out
+          apk="$(find apps/readest-app/src-tauri/gen/android/app/build/outputs/apk -type f -name '*-release.apk' -print -quit)"
+          if [ -z "$apk" ]; then
+            echo "::error::Android release APK was not generated."
+            find apps/readest-app/src-tauri/gen/android/app/build/outputs -maxdepth 6 -type f -print || true
+            exit 1
+          fi
+          echo "Using $apk"
+          cp "$apk" "test-out/Readest_android_arm64_release.apk"
+
+      - name: Upload temporary Android APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Readest-android-arm64-release-test-${{ github.run_number }}
+          path: test-out/Readest_android_arm64_release.apk
+          if-no-files-found: error
+          retention-days: 7
