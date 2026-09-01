@@ -7,17 +7,14 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
-// useKeyDownActions pulls in EnvContext + device store; not under test here.
 vi.mock('@/hooks/useKeyDownActions', () => ({
   useKeyDownActions: () => {},
 }));
 
-// ImageViewer reads appService (for the save button) via useEnv; stub it.
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: null }),
 }));
 
-// ZoomControls reaches into the theme store and Tauri window APIs; stub it out.
 vi.mock('@/app/reader/components/ZoomControls', () => ({
   __esModule: true,
   default: () => null,
@@ -29,30 +26,20 @@ const gridInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 describe('ImageViewer', () => {
   it('suppresses the native image callout on the zoomed image', () => {
-    // The WebView's native long-press image callout collides with the
-    // viewer's own pinch/pan handlers on Android and freezes the app. The
-    // zoomed <img> must live under a `.no-context-menu` ancestor so the
-    // global `.no-context-menu img { -webkit-touch-callout: none }` rule
-    // disables that callout. Mirrors the book-cover fix (PR #4345).
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
-
-    const calloutSafeImage = container.querySelector('.no-context-menu img');
-    expect(calloutSafeImage).toBeTruthy();
+    expect(container.querySelector('.no-context-menu img')).toBeTruthy();
   });
 
-  const zoomIn = (img: Element) => {
-    // Double-click on a fresh viewer zooms to scale=2 so panning is enabled.
-    fireEvent.doubleClick(img);
-  };
+  const zoomIn = (img: Element) => fireEvent.doubleClick(img);
 
-  const mockPointerCapture = (img: Element) => {
+  const mockPointerCapture = (element: Element) => {
     const captured = new Set<number>();
     const setPointerCapture = vi.fn((pointerId: number) => captured.add(pointerId));
     const releasePointerCapture = vi.fn((pointerId: number) => captured.delete(pointerId));
     const hasPointerCapture = vi.fn((pointerId: number) => captured.has(pointerId));
-    Object.defineProperties(img, {
+    Object.defineProperties(element, {
       setPointerCapture: { configurable: true, value: setPointerCapture },
       releasePointerCapture: { configurable: true, value: releasePointerCapture },
       hasPointerCapture: { configurable: true, value: hasPointerCapture },
@@ -60,18 +47,16 @@ describe('ImageViewer', () => {
     return { setPointerCapture, releasePointerCapture };
   };
 
-  // Desktop pan uses Pointer Capture rather than a window-level mousemove
-  // listener. Once captured, the browser routes subsequent pointer events back
-  // to the image even if the physical cursor has crossed its moving boundary.
-  it('captures the mouse pointer and keeps panning outside the image bounds', () => {
+  it('captures desktop pan on the stable viewport instead of the moving image', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
-    const { setPointerCapture } = mockPointerCapture(img);
+    const surface = container.querySelector('.image-pan-surface')!;
+    const { setPointerCapture } = mockPointerCapture(surface);
     zoomIn(img);
 
-    fireEvent.pointerDown(img, {
+    fireEvent.pointerDown(surface, {
       pointerId: 7,
       pointerType: 'mouse',
       button: 0,
@@ -81,9 +66,7 @@ describe('ImageViewer', () => {
     });
     expect(setPointerCapture).toHaveBeenCalledWith(7);
 
-    // In a browser this move is retargeted to the image by Pointer Capture even
-    // when the physical pointer is already outside the image's hit-test area.
-    fireEvent.pointerMove(img, {
+    fireEvent.pointerMove(surface, {
       pointerId: 7,
       pointerType: 'mouse',
       buttons: 1,
@@ -91,22 +74,22 @@ describe('ImageViewer', () => {
       clientY: 130,
     });
 
-    // position = (60, 30); transform divides the translate by scale (2).
     expect(img.style.transform).toContain('scale(2)');
     expect(img.style.transform).toContain('translate(30px, 15px)');
+    expect(surface).not.toBe(img);
   });
 
-  it('disables the transform transition while pointer-captured dragging', () => {
+  it('disables the transform transition while viewport dragging', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
-    mockPointerCapture(img);
+    const surface = container.querySelector('.image-pan-surface')!;
+    mockPointerCapture(surface);
     zoomIn(img);
 
     expect(img.style.transition).not.toBe('none');
-
-    fireEvent.pointerDown(img, {
+    fireEvent.pointerDown(surface, {
       pointerId: 8,
       pointerType: 'mouse',
       button: 0,
@@ -116,7 +99,7 @@ describe('ImageViewer', () => {
     });
     expect(img.style.transition).toBe('none');
 
-    fireEvent.pointerUp(img, {
+    fireEvent.pointerUp(surface, {
       pointerId: 8,
       pointerType: 'mouse',
       button: 0,
@@ -125,15 +108,16 @@ describe('ImageViewer', () => {
     expect(img.style.transition).not.toBe('none');
   });
 
-  it('ends the drag when pointer capture is lost at a WebView boundary', () => {
+  it('ends the drag when viewport pointer capture is lost', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
-    mockPointerCapture(img);
+    const surface = container.querySelector('.image-pan-surface')!;
+    mockPointerCapture(surface);
     zoomIn(img);
 
-    fireEvent.pointerDown(img, {
+    fireEvent.pointerDown(surface, {
       pointerId: 9,
       pointerType: 'mouse',
       button: 0,
@@ -141,7 +125,7 @@ describe('ImageViewer', () => {
       clientX: 100,
       clientY: 100,
     });
-    fireEvent.pointerMove(img, {
+    fireEvent.pointerMove(surface, {
       pointerId: 9,
       pointerType: 'mouse',
       buttons: 1,
@@ -149,12 +133,12 @@ describe('ImageViewer', () => {
       clientY: 130,
     });
     const positionAfterDrag = img.style.transform;
-    expect(img.style.cursor).toBe('grabbing');
+    expect(surface.getAttribute('style')).toContain('grabbing');
 
-    fireEvent.lostPointerCapture(img, { pointerId: 9 });
-    expect(img.style.cursor).toBe('grab');
+    fireEvent.lostPointerCapture(surface, { pointerId: 9 });
+    expect(surface.getAttribute('style')).toContain('grab');
 
-    fireEvent.pointerMove(img, {
+    fireEvent.pointerMove(surface, {
       pointerId: 9,
       pointerType: 'mouse',
       buttons: 1,
@@ -164,15 +148,16 @@ describe('ImageViewer', () => {
     expect(img.style.transform).toBe(positionAfterDrag);
   });
 
-  it('still recovers if a WebView misses pointerup but reports buttons=0', () => {
+  it('recovers if a WebView misses pointerup but reports buttons=0', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
-    const { releasePointerCapture } = mockPointerCapture(img);
+    const surface = container.querySelector('.image-pan-surface')!;
+    const { releasePointerCapture } = mockPointerCapture(surface);
     zoomIn(img);
 
-    fireEvent.pointerDown(img, {
+    fireEvent.pointerDown(surface, {
       pointerId: 10,
       pointerType: 'mouse',
       button: 0,
@@ -180,7 +165,7 @@ describe('ImageViewer', () => {
       clientX: 100,
       clientY: 100,
     });
-    fireEvent.pointerMove(img, {
+    fireEvent.pointerMove(surface, {
       pointerId: 10,
       pointerType: 'mouse',
       buttons: 1,
@@ -189,28 +174,40 @@ describe('ImageViewer', () => {
     });
     const positionAfterDrag = img.style.transform;
 
-    fireEvent.pointerMove(img, {
+    fireEvent.pointerMove(surface, {
       pointerId: 10,
       pointerType: 'mouse',
       buttons: 0,
       clientX: 220,
       clientY: 180,
     });
-    expect(img.style.cursor).toBe('grab');
+    expect(surface.getAttribute('style')).toContain('grab');
     expect(img.style.transform).toBe(positionAfterDrag);
     expect(releasePointerCapture).toHaveBeenCalledWith(10);
   });
 
-  // Zoom percentage is relative to the image's own resolution (#5362).
-  //
-  // `scale` is relative to the fit-to-screen size, so on its own it says
-  // nothing about how much of the image's detail is actually on screen: fitting
-  // a 1600px illustration into an 800-device-pixel box paints it at half its
-  // resolution while the badge claimed "100%". Because the fit size and the
-  // device pixel ratio differ per device, the same book showed a different
-  // amount of detail on every device at the same reported zoom, and always less
-  // than the extracted file in an external viewer. 100% now means one image
-  // pixel per device pixel — no interpolation, identical detail everywhere.
+  it('uses window mouseup as a redundant drag-end signal', () => {
+    const { container } = render(
+      <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const img = container.querySelector('img')!;
+    const surface = container.querySelector('.image-pan-surface')!;
+    mockPointerCapture(surface);
+    zoomIn(img);
+
+    fireEvent.pointerDown(surface, {
+      pointerId: 11,
+      pointerType: 'mouse',
+      button: 0,
+      buttons: 1,
+      clientX: 100,
+      clientY: 100,
+    });
+    expect(surface.getAttribute('style')).toContain('grabbing');
+    fireEvent.mouseUp(window);
+    expect(surface.getAttribute('style')).toContain('grab');
+  });
+
   const measuredViewer = ({
     naturalWidth,
     fitWidth,
@@ -227,8 +224,6 @@ describe('ImageViewer', () => {
     const img = container.querySelector('img')!;
     Object.defineProperty(img, 'naturalWidth', { value: naturalWidth, configurable: true });
     Object.defineProperty(img, 'naturalHeight', { value: naturalWidth, configurable: true });
-    // jsdom has no layout; give the viewer container a square viewport so the
-    // (square) image's computed fit size equals `fitWidth`.
     const viewer = container.querySelector('[aria-label="Image viewer"]') as HTMLElement;
     viewer.getBoundingClientRect = () =>
       ({
@@ -242,9 +237,7 @@ describe('ImageViewer', () => {
         y: 0,
         toJSON: () => ({}),
       }) as DOMRect;
-    act(() => {
-      fireEvent.load(img);
-    });
+    act(() => fireEvent.load(img));
     return { container, img };
   };
 
@@ -252,66 +245,35 @@ describe('ImageViewer', () => {
     Number(container.querySelector('[aria-label="Zoom level"]')!.textContent!.replace('%', ''));
 
   it('reports the fraction of the image resolution actually shown when fit to screen', () => {
-    // 1600 image px painted across 400 CSS px * dpr 2 = 800 device px: half the
-    // image's detail is on screen, so the badge must not claim 100%.
     const { container } = measuredViewer({ naturalWidth: 1600, fitWidth: 400, dpr: 2 });
-
     expect(zoomPercent(container)).toBe(50);
   });
 
   it('double-click zooms to exactly 1:1 (100% = one image pixel per device pixel)', () => {
-    // Pixel-perfect needs scale 1200 / (400 * 1) = 3, which the old fixed 2x
-    // double-click could never land on.
     const { container, img } = measuredViewer({ naturalWidth: 1200, fitWidth: 400, dpr: 1 });
-
-    act(() => {
-      fireEvent.doubleClick(img);
-    });
-
+    act(() => fireEvent.doubleClick(img));
     expect(img.style.transform).toContain('scale(3)');
     expect(zoomPercent(container)).toBe(100);
   });
 
   it('keeps 1:1 reachable for images larger than the old zoom ceiling', () => {
-    // 1:1 needs scale 50 here, far past the old MAX_SCALE of 8 — the full
-    // resolution of a large illustration was simply unreachable.
     const { img } = measuredViewer({ naturalWidth: 20000, fitWidth: 400, dpr: 1 });
-
     act(() => {
       fireEvent.wheel(img, { deltaY: -20000, ctrlKey: true, clientX: 100, clientY: 100 });
     });
-
     const reachedScale = Number(/scale\(([\d.]+)\)/.exec(img.style.transform)![1]);
     expect(reachedScale).toBeGreaterThanOrEqual(50);
   });
 
-  // iOS WebKit rasterizes the image at its *layout* size and only stretches
-  // that raster for `transform: scale`, so zooming in showed a fit-to-screen
-  // resolution image no matter how much detail the source had (#5633).
-  // Chromium re-rasterizes at the transformed scale, which is why the same
-  // code was sharp on Android. The viewer must commit a settled zoom into the
-  // image's layout size so WebKit repaints it with enough pixels, and keep the
-  // transform only for the in-flight gesture.
   describe('committing zoom into the layout size (#5633)', () => {
     it('commits a settled discrete zoom into the layout size', () => {
       vi.useFakeTimers();
       try {
-        // pixelPerfectScale = 1600 / (400 * 2) = 2, which is also what
-        // double-click zooms to.
         const { img } = measuredViewer({ naturalWidth: 1600, fitWidth: 400, dpr: 2 });
-
         expect(img.style.width).toBe('400px');
-
-        act(() => {
-          fireEvent.doubleClick(img);
-        });
-        // The gesture itself rides on the transform.
+        act(() => fireEvent.doubleClick(img));
         expect(img.style.transform).toContain('scale(2)');
-
-        act(() => {
-          vi.advanceTimersByTime(1000);
-        });
-        // Settled: the zoom lives in the layout size, the transform is unity.
+        act(() => vi.advanceTimersByTime(1000));
         expect(img.style.width).toBe('800px');
         expect(img.style.transform).toContain('scale(1)');
       } finally {
@@ -323,26 +285,13 @@ describe('ImageViewer', () => {
       vi.useFakeTimers();
       try {
         const { img } = measuredViewer({ naturalWidth: 1600, fitWidth: 400, dpr: 2 });
-
         act(() => {
-          // Far past pixel-perfect (2): caps at maxScale 8.
           fireEvent.wheel(img, { deltaY: -20000, ctrlKey: true, clientX: 200, clientY: 200 });
         });
-        // Mid-gesture: layout still at fit size, zoom entirely on the transform.
         expect(img.style.width).toBe('400px');
         expect(img.style.transform).toContain('scale(8)');
-
-        // Two steps: the wheel gesture first settles (200ms), which is what
-        // arms the commit timer; then the commit fires.
-        act(() => {
-          vi.advanceTimersByTime(500);
-        });
-        act(() => {
-          vi.advanceTimersByTime(500);
-        });
-        // Committed layout is clamped to the image's own resolution (1:1);
-        // beyond that the transform magnifies, as extra raster pixels would
-        // add memory but no detail.
+        act(() => vi.advanceTimersByTime(500));
+        act(() => vi.advanceTimersByTime(500));
         expect(img.style.width).toBe('800px');
         expect(img.style.transform).toContain('scale(4)');
       } finally {
@@ -353,21 +302,12 @@ describe('ImageViewer', () => {
     it('caps the committed raster size for huge images', () => {
       vi.useFakeTimers();
       try {
-        // 1:1 would need a 20000px-wide layout; committing that would OOM the
-        // iOS WebContent process (cf. #5118), so the layout caps at 4096
-        // device px on the long side.
         const { img } = measuredViewer({ naturalWidth: 20000, fitWidth: 400, dpr: 1 });
-
         act(() => {
           fireEvent.wheel(img, { deltaY: -20000, ctrlKey: true, clientX: 200, clientY: 200 });
         });
-
-        act(() => {
-          vi.advanceTimersByTime(500);
-        });
-        act(() => {
-          vi.advanceTimersByTime(500);
-        });
+        act(() => vi.advanceTimersByTime(500));
+        act(() => vi.advanceTimersByTime(500));
         expect(img.style.width).toBe('4096px');
       } finally {
         vi.useRealTimers();
@@ -375,9 +315,6 @@ describe('ImageViewer', () => {
     });
   });
 
-  // #5232: EPUBs often keep the caption or table description of an
-  // illustration in the image's `alt` attribute, which was invisible once the
-  // image was opened full screen.
   describe('image description caption', () => {
     const caption = 'Tabella di come creare una buona abitudine';
 
@@ -390,10 +327,7 @@ describe('ImageViewer', () => {
           gridInsets={gridInsets}
         />,
       );
-
       expect(container.querySelector('.image-caption')?.textContent).toBe(caption);
-      // The zoomed image carries the book's own description too, instead of the
-      // placeholder used when the book provides none.
       expect(container.querySelector('img')!.getAttribute('alt')).toBe(caption);
     });
 
@@ -401,12 +335,9 @@ describe('ImageViewer', () => {
       const { container } = render(
         <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
       );
-
       expect(container.querySelector('.image-caption')).toBeNull();
     });
 
-    // The caption sits over the bottom of the image, so tapping the image must
-    // get it out of the way (and bring it back).
     it('toggles the caption when the image is tapped', () => {
       const { container } = render(
         <ImageViewer
@@ -417,10 +348,8 @@ describe('ImageViewer', () => {
         />,
       );
       const img = container.querySelector('img')!;
-
       fireEvent.click(img);
       expect(container.querySelector('.image-caption')).toBeNull();
-
       fireEvent.click(img);
       expect(container.querySelector('.image-caption')?.textContent).toBe(caption);
     });
@@ -435,19 +364,11 @@ describe('ImageViewer', () => {
           gridInsets={gridInsets}
         />,
       );
-
       fireEvent.click(container.querySelector('.image-caption')!);
-
       expect(onClose).not.toHaveBeenCalled();
     });
   });
 
-  // Trackpad pinch flicker (#4742): on macOS a trackpad pinch-to-zoom arrives
-  // as a rapid stream of ctrl+wheel events. With the 0.05s transition left on,
-  // each event restarts the in-flight transition from its interpolated
-  // mid-point, so the image lags and flickers — the same root cause as the
-  // #4451 pan flicker. The transition must be off while the wheel-zoom gesture
-  // is streaming, then return for discrete zoom once the gesture settles.
   it('disables the transform transition during ctrl+wheel (trackpad pinch) zoom', () => {
     vi.useFakeTimers();
     try {
@@ -455,18 +376,12 @@ describe('ImageViewer', () => {
         <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
       );
       const img = container.querySelector('img')!;
-
       expect(img.style.transition).not.toBe('none');
-
       act(() => {
         fireEvent.wheel(img, { deltaY: -50, ctrlKey: true, clientX: 100, clientY: 100 });
       });
       expect(img.style.transition).toBe('none');
-
-      // After the gesture settles the smoothing returns for discrete zoom.
-      act(() => {
-        vi.advanceTimersByTime(500);
-      });
+      act(() => vi.advanceTimersByTime(500));
       expect(img.style.transition).not.toBe('none');
     } finally {
       vi.useRealTimers();
