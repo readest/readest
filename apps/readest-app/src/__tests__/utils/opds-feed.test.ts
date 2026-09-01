@@ -337,4 +337,67 @@ describe('OPDS feed parsing', () => {
       expect(feed.publications![0]!.metadata.updated).toBeUndefined();
     });
   });
+  // Regression tests for https://github.com/readest/readest/issues/6003
+  //
+  // calibre and Calibre-Web mean opposite things by Atom <published>:
+  //
+  //   calibre (srv/opds.py)      <published> = mi.timestamp (date ADDED),
+  //                              <dcterms:date> = mi.pubdate (the real one)
+  //   Calibre-Web (feed.xml)     <published> = Books.pubdate (the real one),
+  //                              no Dublin Core date at all
+  //
+  // So the Dublin Core dates have to outrank <published>, which is also what
+  // RFC 4287 implies: atom:published is when the ENTRY was published to the
+  // feed, not when the book was published. Getting this backwards made every
+  // calibre download import its added-date as the publication date once
+  // #5477 let feed metadata win over the file's own metadata.
+  describe('publication date precedence (#6003)', () => {
+    const entryOf = (body: string) =>
+      parseXML(
+        `<?xml version="1.0" encoding="UTF-8"?>
+<entry xmlns="http://www.w3.org/2005/Atom"
+       xmlns:dc="http://purl.org/dc/elements/1.1/"
+       xmlns:dcterms="http://purl.org/dc/terms/">
+  <title>Dune</title>
+  <id>urn:uuid:1234</id>
+  <updated>2026-08-30T12:00:00+00:00</updated>
+  ${body}
+</entry>`,
+      ).documentElement;
+
+    const publishedOf = (body: string) =>
+      (getPublication(entryOf(body)) as OPDSPublication).metadata.published;
+
+    it("prefers calibre's dcterms:date over the added-date in atom:published", () => {
+      expect(
+        publishedOf(`<published>2026-08-30T12:00:00+00:00</published>
+  <dcterms:date>1965-08-01T00:00:00+00:00</dcterms:date>`),
+      ).toBe('1965-08-01T00:00:00+00:00');
+    });
+
+    it('prefers dc:date over atom:published', () => {
+      expect(
+        publishedOf(`<published>2026-08-30T12:00:00+00:00</published>
+  <dc:date>1965-08-01T00:00:00+00:00</dc:date>`),
+      ).toBe('1965-08-01T00:00:00+00:00');
+    });
+
+    it('still prefers dcterms:issued above everything else', () => {
+      expect(
+        publishedOf(`<published>2026-08-30T12:00:00+00:00</published>
+  <dcterms:issued>1965-08-01T00:00:00+00:00</dcterms:issued>
+  <dcterms:date>1970-01-01T00:00:00+00:00</dcterms:date>`),
+      ).toBe('1965-08-01T00:00:00+00:00');
+    });
+
+    it('falls back to atom:published when no Dublin Core date is offered (Calibre-Web)', () => {
+      expect(publishedOf('<published>1965-08-01T00:00:00+00:00</published>')).toBe(
+        '1965-08-01T00:00:00+00:00',
+      );
+    });
+
+    it('leaves published undefined when the entry carries no date at all', () => {
+      expect(publishedOf('')).toBeUndefined();
+    });
+  });
 });
