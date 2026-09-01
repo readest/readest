@@ -1,0 +1,210 @@
+import {
+  buildContextTranslationSystemPrompt,
+  buildContextTranslationUserPayload,
+} from './contextTranslationPrompt';
+import { parseContextTranslationResult } from './contextTranslationParser';
+import type {
+  ContextTranslationInput,
+  ContextTranslationResult,
+  ContextTranslationSettings,
+} from './contextTranslationTypes';
+import { ContextTranslationError } from './contextTranslationTypes';
+import { getAIFetch } from './utils/httpFetch';
+
+interface OpenAIChatCompletionResponse {
+  choices?: Array<{
+    message?: {
+      content?: string | null;
+    };
+  }>;
+}
+
+const cache = new Map<string, ContextTranslationResult>();
+
+export const clearContextTranslationCache = (): void => {
+  cache.clear();
+};
+
+export const normalizeChatCompletionsUrl = (baseUrl: string): string => {
+  const trimmed = baseUrl.trim().replace(/\/+$/, '');
+  if (trimmed.endsWith('/chat/completions')) return trimmed;
+  return `${trimmed}/chat/completions`;
+};
+
+const assertConfigured = (settings: ContextTranslationSettings): void => {
+  if (!settings.baseUrl.trim() || !settings.apiKey.trim() || !settings.modelId.trim()) {
+    throw new ContextTranslationError(
+      'not-configured',
+      'Context translation provider settings are incomplete.',
+      false,
+    );
+  }
+};
+
+const buildCacheKey = (
+  input: ContextTranslationInput,
+  settings: ContextTranslationSettings,
+): string =>
+  JSON.stringify({
+    input,
+    prompt: buildContextTranslationSystemPrompt(input.detailLevel),
+    baseUrl: normalizeChatCompletionsUrl(settings.baseUrl),
+    modelId: settings.modelId.trim(),
+  });
+
+const mapStatusToError = (status: number): ContextTranslationError => {
+  if (status === 401 || status === 403) {
+    return new ContextTranslationError(
+      'unauthorized',
+      'Context translation provider rejected the API key.',
+      false,
+    );
+  }
+  if (status === 404) {
+    return new ContextTranslationError(
+      'not-found',
+      'Context translation provider endpoint or model was not found.',
+      false,
+    );
+  }
+  if (status === 429) {
+    return new ContextTranslationError(
+      'rate-limited',
+      'Context translation provider rate limit was reached.',
+      true,
+    );
+  }
+  return new ContextTranslationError(
+    'provider-error',
+    `Context translation provider returned HTTP ${status}.`,
+    status >= 500,
+  );
+};
+
+const readCompletionContent = (json: unknown): string => {
+  const response = json as OpenAIChatCompletionResponse;
+  const content = response.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new ContextTranslationError(
+      'empty-response',
+      'Context translation provider returned an empty response.',
+      true,
+    );
+  }
+  return content;
+};
+
+const readResponseJson = async (response: Response): Promise<unknown> => {
+  try {
+    return await response.json();
+  } catch {
+    throw new ContextTranslationError(
+      'invalid-response',
+      'AI provider returned invalid JSON.',
+      true,
+    );
+  }
+};
+
+const isAbortError = (error: unknown): boolean =>
+  error instanceof DOMException && error.name === 'AbortError';
+
+const CJK_TEXT_PATTERN = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const CJK_TARGET_LANGUAGE_PATTERN =
+  /chinese|mandarin|cantonese|japanese|korean|中文|汉语|漢語|日本語|한국어|조선말/i;
+
+const allowsCjkText = (targetLanguage: string): boolean =>
+  CJK_TARGET_LANGUAGE_PATTERN.test(targetLanguage);
+
+const collectResultText = (result: ContextTranslationResult): string[] => {
+  if (result.mode === 'normal') return [result.explanation];
+  return [
+    result.grammarPattern ?? '',
+    result.definition,
+    result.explanation,
+    ...result.examples.flatMap((example) => [example.sentence, example.explanation]),
+    ...result.synonyms.flatMap((synonym) => [synonym.phrase, synonym.example, synonym.nuance]),
+  ];
+};
+
+const hasUnexpectedCjkText = (result: ContextTranslationResult, targetLanguage: string): boolean =>
+  !allowsCjkText(targetLanguage) &&
+  collectResultText(result).some((text) => CJK_TEXT_PATTERN.test(text));
+
+const requestChatCompletion = async (
+  input: ContextTranslationInput,
+  settings: ContextTranslationSettings,
+): Promise<Response> => {
+  try {
+    return await getAIFetch()(normalizeChatCompletionsUrl(settings.baseUrl), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${settings.apiKey.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: settings.modelId.trim(),
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content: buildContextTranslationSystemPrompt(input.detailLevel),
+          },
+          {
+            role: 'user',
+            content: buildContextTranslationUserPayload(input),
+          },
+        ],
+      }),
+    });
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    throw new ContextTranslationError(
+      'network-error',
+      'Could not reach the AI provider. Check the Base URL and connection.',
+      true,
+    );
+  }
+};
+
+export const requestContextTranslation = async (
+  input: ContextTranslationInput,
+  settings: ContextTranslationSettings,
+  options: { forceRefresh?: boolean } = {},
+): Promise<ContextTranslationResult> => {
+  assertConfigured(settings);
+
+  const cacheKey = buildCacheKey(input, settings);
+  const cached = cache.get(cacheKey);
+  if (cached && !options.forceRefresh) return cached;
+
+  const requestAndParse = async (): Promise<ContextTranslationResult> => {
+    const response = await requestChatCompletion(input, settings);
+    if (!response.ok) throw mapStatusToError(response.status);
+    return parseContextTranslationResult(
+      readCompletionContent(await readResponseJson(response)),
+      input.detailLevel,
+    );
+  };
+
+  try {
+    let result = await requestAndParse();
+    if (hasUnexpectedCjkText(result, input.targetLanguage)) {
+      result = await requestAndParse();
+      if (hasUnexpectedCjkText(result, input.targetLanguage)) {
+        throw new Error('AI provider returned text in the wrong language.');
+      }
+    }
+    cache.set(cacheKey, result);
+    return result;
+  } catch (error) {
+    if (error instanceof ContextTranslationError) throw error;
+    throw new ContextTranslationError(
+      'invalid-response',
+      error instanceof Error
+        ? error.message
+        : 'Context translation provider returned an invalid response.',
+      false,
+    );
+  }
+};

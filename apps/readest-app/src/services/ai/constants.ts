@@ -37,5 +37,13 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   spoilerProtection: true,
   maxContextChunks: 10,
   indexingMode: 'on-demand',
+  contextTranslation: {
+    enabled: false,
+    baseUrl: '',
+    apiKey: '',
+    modelId: '',
+    targetLanguage: 'Vietnamese',
+    maxContextChars: 2000,
+  },
   reedy: { enabled: false },
 };

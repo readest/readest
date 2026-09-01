@@ -71,6 +71,7 @@ describe('Model constants', () => {
 describe('AISettings Type', () => {
   test('should allow creating valid settings object', () => {
     const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
       enabled: true,
       provider: 'ollama',
       ollamaBaseUrl: 'http://localhost:11434',

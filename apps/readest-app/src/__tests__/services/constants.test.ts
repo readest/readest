@@ -713,7 +713,7 @@ describe('services/constants', () => {
       expect(DEFAULT_ANNOTATOR_CONFIG.noteExportConfig).toBe(DEFAULT_NOTE_EXPORT_CONFIG);
     });
 
-    it('annotationToolbarItems defaults to the eight non-share tools', () => {
+    it('annotationToolbarItems defaults to the non-share tools', () => {
       expect(DEFAULT_ANNOTATOR_CONFIG.annotationToolbarItems).toEqual(
         DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
       );
