@@ -503,7 +503,6 @@ describe('useProgressSync', () => {
 describe('useProgressSync — KOReader-origin config (#5625)', () => {
   // [current, total] as CREngine paginates it, matching the reported payload.
   const KO_PROGRESS: [number, number] = [176, 411];
-  const KO_FRACTION = 176 / 411;
   const koConfig = (extra: Record<string, unknown> = {}) => ({
     bookHash: 'h1',
     metaHash: 'm1',
@@ -518,25 +517,29 @@ describe('useProgressSync — KOReader-origin config (#5625)', () => {
     h.state.progress = { location: 'cfi-loc', fraction: 0.05 };
   });
 
-  test('feeds the KOReader page fraction in as the DocFragment drift anchor', async () => {
+  // #5980: the XPointer's own DocFragment picks the section. CREngine's
+  // [page, total] is its own pagination and is never comparable to foliate's
+  // byte-size section table, so it must not reach the converter at all — it
+  // survives only as the last-resort target below when conversion fails.
+  test('never feeds the KOReader page fraction into the converter', async () => {
     h.state.syncedConfigs = [koConfig()];
     renderHook(() => useProgressSync('h1-view1'));
     await advance(0);
 
     expect(h.getCFIFromXPointerMock).toHaveBeenCalledTimes(1);
-    expect(h.getCFIFromXPointerMock.mock.calls[0]![4]).toBeCloseTo(KO_FRACTION, 6);
+    expect(h.getCFIFromXPointerMock.mock.calls[0]!).toHaveLength(4);
   });
 
-  test('does not anchor on the percentage when the remote config carries its own CFI', async () => {
-    // A Readest-origin config: its xpointer was derived from that same CFI, so
-    // the nominal DocFragment is already exact and its [page, total] is
-    // foliate's pagination, not CREngine's — re-anchoring on it would move the
-    // target to the wrong section.
+  test('has no fraction fallback when the remote config carries its own CFI', async () => {
+    // A Readest-origin config: its [page, total] is foliate's pagination, and
+    // its own CFI is the precise handle, so a failed XPointer conversion must
+    // not trigger an approximate jump.
+    h.getCFIFromXPointerMock.mockRejectedValue(new Error('Failed to convert XPointer'));
     h.state.syncedConfigs = [koConfig({ location: 'epubcfi(/6/24!/4/20/1:58)' })];
     renderHook(() => useProgressSync('h1-view1'));
     await advance(0);
 
-    expect(h.getCFIFromXPointerMock.mock.calls[0]![4]).toBeUndefined();
+    expect(h.view.goToFraction).not.toHaveBeenCalled();
   });
 
   test('a failed XPointer conversion still lets the rest of the pull run', async () => {
@@ -558,29 +561,22 @@ describe('useProgressSync — KOReader-origin config (#5625)', () => {
     expect(h.setViewSettingsMock).toHaveBeenCalledTimes(1);
   });
 
-  test('falls back to the reported fraction when the XPointer cannot be converted', async () => {
+  // #5980: the koplugin's [page, total] is CREngine's own pagination. Jumping
+  // by it is a guess that routinely lands in the wrong chapter, and a wrong
+  // sync is worse than no sync. #5625's real damage was the auto-push
+  // overwriting the newer remote position; the pull continuing (config merge,
+  // proofread merge) is what prevents that, not moving the reader.
+  test('does not jump by the reported fraction when the XPointer cannot be converted', async () => {
     h.getCFIFromXPointerMock.mockRejectedValue(new Error('Failed to convert XPointer'));
-    h.state.syncedConfigs = [koConfig()];
-    renderHook(() => useProgressSync('h1-view1'));
-    await advance(0);
-
-    expect(h.view.goToFraction).toHaveBeenCalledTimes(1);
-    expect(h.view.goToFraction.mock.calls[0]![0]).toBeCloseTo(KO_FRACTION, 6);
-  });
-
-  test('never walks the reader backwards on that fallback', async () => {
-    // Local is already past the Kobo position; an approximate jump would be a
-    // regression, and the auto-push will carry the local position forward.
-    h.getCFIFromXPointerMock.mockRejectedValue(new Error('Failed to convert XPointer'));
-    h.state.progress = { location: 'cfi-loc', fraction: 0.9 };
     h.state.syncedConfigs = [koConfig()];
     renderHook(() => useProgressSync('h1-view1'));
     await advance(0);
 
     expect(h.view.goToFraction).not.toHaveBeenCalled();
+    expect(h.view.goTo).not.toHaveBeenCalled();
   });
 
-  test('prefers the converted CFI over the approximate fraction', async () => {
+  test('jumps to the converted CFI and never to a fraction', async () => {
     h.getCFIFromXPointerMock.mockResolvedValue('epubcfi(/6/30!/4/90/1:0)');
     h.cfiCompareMock.mockReturnValue(-1);
     h.state.syncedConfigs = [koConfig()];

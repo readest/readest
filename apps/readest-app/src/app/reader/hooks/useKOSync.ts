@@ -21,7 +21,6 @@ import {
 import {
   decideRemoteConflict,
   getRemoteFraction,
-  isReportedByKOReader,
   isXPointerProgress,
   resolveRemoteLocalFraction,
   type RemoteFractionResolution,
@@ -162,38 +161,34 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       if (isNaN(pageToGo)) return;
       view.select(pageToGo - 1);
     } else {
-      let navigated = false;
-      // KOReader stores positions as CREngine XPointers; convert and jump
-      // precisely when we have one.
+      // KOReader stores positions as CREngine XPointers, which name an exact
+      // node. When one is present it is the ONLY acceptable answer: if it
+      // won't convert, say so and stay put rather than approximating from the
+      // reported percentage. That percentage is CREngine's own pagination and
+      // lands in the wrong chapter often enough to be worse than not syncing
+      // (#5980). The pull stays in the unresolved/conflict state, so the
+      // auto-push still cannot overwrite the remote position with this one.
       if (isXPointerProgress(remote.progress)) {
         try {
           const content = view.renderer
             .getContents()
             .find((x) => x.index === view.renderer.primaryIndex);
-          // Only feed percentage into the CREngine↔foliate drift anchor when
-          // the report actually comes from KOReader (#5109) — a look-alike
-          // server's percentage isn't comparable to foliate's section table
-          // and re-anchors to the wrong chapter otherwise.
-          const driftAnchorPercentage = isReportedByKOReader(remote)
-            ? remote.percentage
-            : undefined;
           const cfi = await getCFIFromXPointer(
             remote.progress!,
             content?.doc,
             content?.index,
             bookDoc,
-            driftAnchorPercentage,
           );
           view.goTo(cfi);
-          navigated = true;
         } catch (error) {
           console.error('Failed to convert XPointer to CFI', error);
+          eventDispatcher.dispatch('hint', { bookKey, message: _('Sync failed') });
+          return;
         }
-      }
-      // Other KOSync-compatible servers (e.g. Kavita) report progress in
-      // formats Readest can't resolve positionally — approximate with the
-      // reported percentage so "use remote" still moves the reader.
-      if (!navigated) {
+      } else {
+        // Other KOSync-compatible servers (e.g. Kavita) report progress in
+        // formats Readest can't resolve positionally. There the percentage is
+        // the only signal there is, so it remains the target.
         const remoteFraction = getRemoteFraction(remote);
         if (remoteFraction === undefined) return;
         view.goToFraction(remoteFraction);
