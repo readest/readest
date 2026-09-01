@@ -308,6 +308,9 @@ jobs:
       - name: TypeScript typecheck
         run: pnpm --filter @readest/readest-app exec tsc --noEmit
 
+      - name: Format branch
+        run: pnpm -w format
+
       - name: Commit verified fixes and remove one-shot workflow
         shell: bash
         run: |
@@ -315,8 +318,6 @@ jobs:
           git rm .github/workflows/apply-user-regression-fixes.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add apps/readest-app/src/app/reader/components/ImageViewer.tsx \
-                  apps/readest-app/src/__tests__/components/ImageViewer.test.tsx \
-                  apps/readest-app/src/components/settings/integrations/LanForm.tsx
+          git add -u
           git commit -m 'fix: localize QR pairing and harden CBZ mouse pan release'
           git push origin HEAD:fix/lan-sync-pairing-and-image-drag
