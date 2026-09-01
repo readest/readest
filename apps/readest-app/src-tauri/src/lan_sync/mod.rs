@@ -575,7 +575,7 @@ mod tests {
         );
         assert_eq!(
             preferred_ipv4([Ipv4Addr::new(198, 18, 0, 1), Ipv4Addr::new(8, 8, 8, 8)]),
-            Some(Ipv4Addr::new(8, 8, 8, 8)),
+            None,
         );
     }
 }

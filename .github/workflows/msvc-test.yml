@@ -136,7 +136,7 @@ jobs:
           retention-days: 7
 
   android-arm64:
-    name: Android arm64 Debug
+    name: Android arm64 Release
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -185,7 +185,7 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
         with:
-          key: test-android-aarch64
+          key: test-android-aarch64-release
 
       - name: Print toolchain versions
         shell: bash
@@ -227,7 +227,26 @@ jobs:
           pnpm tauri icon ../../data/icons/readest-book.png
           git checkout .
 
-      - name: Build Android arm64 debug APK
+      - name: Create throwaway Android signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -genkeypair \
+            -keystore "$RUNNER_TEMP/readest-ci.jks" \
+            -storepass readest-ci \
+            -keypass readest-ci \
+            -alias readest-ci \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 1 \
+            -dname "CN=Readest CI, OU=CI, O=Readest, L=CI, ST=CI, C=US"
+          cat > apps/readest-app/src-tauri/gen/android/keystore.properties <<EOF
+          keyAlias=readest-ci
+          password=readest-ci
+          storeFile=$RUNNER_TEMP/readest-ci.jks
+          EOF
+
+      - name: Build Android arm64 release APK
         shell: bash
         timeout-minutes: 60
         env:
@@ -235,27 +254,27 @@ jobs:
         run: |
           set -euo pipefail
           cd apps/readest-app
-          pnpm tauri android build -t aarch64 --debug \
+          pnpm tauri android build -t aarch64 \
             --config src-tauri/tauri.fork.conf.json
 
-      - name: Collect Android debug APK
+      - name: Collect Android release APK
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p test-out
-          apk="$(find apps/readest-app/src-tauri/gen/android/app/build/outputs/apk -type f -name '*-debug.apk' -print -quit)"
+          apk="$(find apps/readest-app/src-tauri/gen/android/app/build/outputs/apk -type f -name '*-release.apk' -print -quit)"
           if [ -z "$apk" ]; then
-            echo "::error::Android debug APK was not generated."
+            echo "::error::Android release APK was not generated."
             find apps/readest-app/src-tauri/gen/android/app/build/outputs -maxdepth 6 -type f -print || true
             exit 1
           fi
           echo "Using $apk"
-          cp "$apk" "test-out/Readest_android_arm64_debug.apk"
+          cp "$apk" "test-out/Readest_android_arm64_release.apk"
 
       - name: Upload temporary Android APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Readest-android-arm64-test-${{ github.run_number }}
-          path: test-out/Readest_android_arm64_debug.apk
+          name: Readest-android-arm64-release-test-${{ github.run_number }}
+          path: test-out/Readest_android_arm64_release.apk
           if-no-files-found: error
           retention-days: 7
