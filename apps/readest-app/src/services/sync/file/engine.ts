@@ -354,6 +354,7 @@ export class FileSyncEngine {
    * HEAD-probe + size compare skips re-uploading an already-mirrored book.
    * Streaming (provider.uploadStream, Tauri only) is preferred — constant JS
    * heap regardless of book size; web falls back to buffered writeBinary.
+   * Providers with `requireBookStreaming` never enter that buffered fallback.
    *
    * The local source is resolved BEFORE any remote probe: a book this device
    * does not hold can never be uploaded, so probing the remote for it buys
@@ -361,17 +362,12 @@ export class FileSyncEngine {
    * sync into a full per-book request storm. `no-source` costs zero requests.
    */
   async pushBookFile(book: Book): Promise<PushBookFileResult> {
-    // ABS books stream from the server and never have a local file to push —
-    // guard here too, not just in syncLibrary's needsFilePush, since this is
-    // also called directly by the explicit per-book Upload action.
     if (isAudiobook(book)) return { uploaded: false, reason: 'no-source' };
     const dirPath = buildBookDirPath(this.provider.rootPath, book.hash);
     const path = buildBookFilePath(this.provider.rootPath, book);
     const dirs = [...ancestorsOf(`${dirPath}/.placeholder`), dirPath];
+    const requireStreaming = this.provider.requireBookStreaming === true;
 
-    // A thrown non-NETWORK failure (e.g. AUTH_FAILED) propagates so the
-    // caller's terminal-failure latch can stop the run; a transport blip is
-    // treated as "remote unknown" and the upload proceeds.
     const probeRemoteHead = async (): Promise<FileHead | null> => {
       try {
         return await this.provider.head(path);
@@ -381,12 +377,14 @@ export class FileSyncEngine {
       }
     };
 
-    // Streaming path: resolve the on-disk path + size only, then stream the
-    // bytes straight from disk. The metadata fetch never reads the body, so
-    // heap stays flat even for gigabyte-scale PDFs.
     if (this.provider.uploadStream) {
       const src = await this.store.resolveLocalBookPath(book);
-      if (src) {
+      if (!src) {
+        // The buffered loader resolves the same source but then reads the whole
+        // thing into JS. A stream-required provider must not use that as a
+        // second probe; report the honest no-source verdict instead.
+        if (requireStreaming) return { uploaded: false, reason: 'no-source' };
+      } else {
         const remoteHead = await probeRemoteHead();
         if (remoteHead && remoteHead.size === src.size) {
           return { uploaded: false, reason: 'remote-matches' };
@@ -394,12 +392,18 @@ export class FileSyncEngine {
         await this.ensureDirs(dirs);
         const ok = await this.provider.uploadStream(path, src.path);
         if (ok) return { uploaded: true };
-        // A stream provider may return false for a transport/size limitation.
-        // Fall through to the buffered path, which is the provider contract's
-        // compatibility fallback.
+        if (requireStreaming) {
+          throw new FileSyncError(
+            'Native book upload stream was unavailable; buffered fallback is disabled',
+            'UNKNOWN',
+          );
+        }
       }
-      // src null — book isn't on this device via the streaming resolver; fall
-      // through to the buffered loader as a last resort.
+    } else if (requireStreaming) {
+      throw new FileSyncError(
+        'Native book upload stream is not available; buffered fallback is disabled',
+        'UNKNOWN',
+      );
     }
 
     const local = await this.store.loadBookFile(book);
@@ -432,9 +436,6 @@ export class FileSyncEngine {
     const path = buildBookCoverPath(this.provider.rootPath, book.hash);
     const dirs = [...ancestorsOf(`${dirPath}/.placeholder`), dirPath];
 
-    // Resolve the local cover before probing the remote. A book without cover
-    // bytes should cost no remote request and should not become a permanent
-    // "cover missing" retry on every incremental sync.
     const local = await this.store.loadBookCover(book);
     if (!local) return { uploaded: false, reason: 'no-source' };
 
@@ -461,34 +462,34 @@ export class FileSyncEngine {
     return { uploaded: true };
   }
 
-  /** GET the remote cover.png bytes for a hash, or null when absent. */
   async pullBookCover(bookHash: string): Promise<ArrayBuffer | null> {
     return this.provider.readBinary(buildBookCoverPath(this.provider.rootPath, bookHash));
   }
 
-  /**
-   * Download one book's binary from its remote hash dir into the local store,
-   * plus cover + config best-effort — the explicit per-book Download action
-   * (Book Details / bookshelf cloud button) for a third-party provider.
-   * The on-disk filename is resolved by listing the dir (titles go stale).
-   * Returns false when the remote holds no book file. `syncLibrary` only adds
-   * metadata-only shelf rows; it deliberately leaves this binary transfer to
-   * the explicit action.
-   */
   async downloadBookFile(book: Book, onProgress?: ProgressHandler): Promise<boolean> {
     const dirPath = buildBookDirPath(this.provider.rootPath, book.hash);
     const entries = await this.provider.list(dirPath);
     const fileEntry = entries.find((e) => isSyncableFileEntry(e));
     if (!fileEntry) return false;
 
+    const requireStreaming = this.provider.requireBookStreaming === true;
     let written = false;
     if (this.provider.downloadStream) {
       const dst = await this.store.prepareLocalBookPath(book);
       written = await this.provider.downloadStream(fileEntry.path, dst, onProgress);
+      if (!written && requireStreaming) {
+        throw new FileSyncError(
+          'Native book download stream was unavailable; buffered fallback is disabled',
+          'UNKNOWN',
+        );
+      }
+    } else if (requireStreaming) {
+      throw new FileSyncError(
+        'Native book download stream is not available; buffered fallback is disabled',
+        'UNKNOWN',
+      );
     }
     if (!written) {
-      // Stream providers return false for a transport/size limitation; use the
-      // buffered provider operation as the compatibility fallback.
       const bytes = await this.provider.readBinary(fileEntry.path);
       if (bytes) {
         await this.store.saveBookFile(book, bytes);
@@ -518,36 +519,17 @@ export class FileSyncEngine {
     return true;
   }
 
-  /** GET + parse the shared library.json index, or null when absent/malformed. */
   async pullLibraryIndex(): Promise<RemoteLibraryIndex | null> {
     const path = buildLibraryPath(this.provider.rootPath);
     return parseRemoteLibraryIndex(await this.provider.readText(path));
   }
 
-  /** PUT the shared library.json index, creating its parent dirs. */
   async pushLibraryIndex(index: RemoteLibraryIndex): Promise<void> {
     const path = buildLibraryPath(this.provider.rootPath);
     await this.ensureDirs(ancestorsOf(path));
     await this.provider.writeText(path, JSON.stringify(index));
   }
 
-  /**
-   * Sync every book in `books` against the remote in sequence (predictable
-   * progress bar; no parallel PUTs that upset shared servers). Per book:
-   * pull index → reconcile metadata (LWW) → add remote-only cloud-shelf rows
-   * → pull-merge-push each local config + cover + (optionally) file → re-push
-   * the merged index.
-   *
-   * Strategy gating: 'silent' two-way, 'send' push-only, 'receive' pull-only.
-   * 'send' applies nothing from the remote — no metadata reconciliation, no
-   * deletion propagation, no discovery, no config pull-merge — but it is still
-   * INCREMENTAL: it reads library.json to know what it already published, and
-   * pushes only what changed locally. The blind local-authoritative overwrite
-   * ("re-push everything, my copy wins") is `fullSync`, not `'send'`, so it is
-   * reached deliberately instead of charged to every background run (#5900).
-   * Single-book failures are caught and counted so one bad apple never aborts
-   * the rest of the library.
-   */
   async syncLibrary(books: Book[], options: SyncLibraryOptions): Promise<SyncLibraryResult> {
     const result: SyncLibraryResult = {
       totalBooks: books.length,
@@ -565,10 +547,6 @@ export class FileSyncEngine {
       indexPushFailed: false,
     };
 
-    // Distinct books touched in any direction — the single "N book(s) synced"
-    // number the UI surfaces. Tracked as a set because the per-action counters
-    // overlap (a Full-Sync re-check both reconciles and re-pushes the same
-    // book, and one book can push a config + cover + file).
     const syncedHashes = new Set<string>();
 
     const strategy = options.strategy || 'silent';
@@ -576,28 +554,13 @@ export class FileSyncEngine {
     const canPush = strategy !== 'receive';
     const fullSync = options.fullSync ?? false;
     const concurrency = Math.max(1, options.concurrency ?? 4);
+    const bookTransferConcurrency = Math.min(
+      concurrency,
+      Math.max(1, this.provider.maxConcurrentBookTransfers ?? concurrency),
+    );
 
     let remoteIndex: RemoteLibraryIndex | null = null;
-    // True when the remote index provably matches what this provider saw on
-    // its previous successful run. Every peer mutation rewrites library.json,
-    // so an unchanged index means no remote-side news — the run can skip the
-    // index download AND the discovery scan.
     let remoteIndexUnchanged = false;
-    // Read UNCONDITIONALLY, 'send' included (#5900). library.json is the shared
-    // membership record, not a source of remote changes: the final re-push
-    // below rebuilds it, so a run that rewrites it without having read it
-    // publishes this device's state as the whole truth — dropping every
-    // previously confirmed upload and every book or tombstone a peer
-    // contributed that this device never materialised. The pull itself is a
-    // pure read; every behaviour that APPLIES remote state to this device
-    // (metadata reconciliation, deletion propagation, discovery, config
-    // pull-merge, the push cursors) stays gated on `canPull` below, so 'send'
-    // keeps its documented blind, local-authoritative push.
-    //
-    // Cheap change probe first: one metadata stat. `etag` is Drive's md5 / the
-    // WebDAV ETag; a provider without one always re-pulls. An AUTH failure
-    // aborts exactly like the pull below; any other probe failure falls back
-    // to the full pull.
     let remoteEtag: string | undefined;
     if (!fullSync) {
       try {
@@ -611,20 +574,9 @@ export class FileSyncEngine {
       remoteIndex = structuredClone(cachedIndex.index);
       remoteIndexUnchanged = true;
     } else {
-      // An UNREADABLE index (throw — expired session, network) is NOT the
-      // same as an ABSENT one (404 → null, first-sync semantics). Proceeding
-      // with a null index here would treat every local book as unpushed (an
-      // attempted mass re-upload against a dead session) and the final index
-      // re-push would drop the peers' tombstones it failed to read (#4860),
-      // resurrecting deleted books. Abort the run instead; callers surface
-      // one error.
       remoteIndex = await this.pullLibraryIndex();
       if (remoteIndex) {
         const fingerprint = JSON.stringify(remoteIndex);
-        // No etag to probe with: the download already happened, so compare
-        // what came back against the last snapshot instead. Identical content
-        // carries the same news as a matching etag — nobody wrote since — and
-        // that is what lets the discovery scan below be skipped.
         if (!fullSync && remoteEtag === undefined && cachedIndex?.fingerprint === fingerprint) {
           remoteIndexUnchanged = true;
         }
@@ -636,12 +588,6 @@ export class FileSyncEngine {
       }
     }
 
-    // Terminal-failure latch: once any remote call fails with AUTH_FAILED the
-    // session is gone for every subsequent call too. Stop scheduling work
-    // instead of marching the whole library through identical failures, skip
-    // the index re-push (a partial run must not rewrite library.json), and
-    // rethrow so the caller shows a single re-auth error. Mirrors the
-    // deleteRemoteBookDir contract (AUTH failures rethrow; the rest aggregate).
     let abort: FileSyncError | null = null;
     const noteAbort = (e: unknown): void => {
       if (!abort && e instanceof FileSyncError && e.code === 'AUTH_FAILED') abort = e;
@@ -649,21 +595,8 @@ export class FileSyncEngine {
     const aborted = (): boolean => abort !== null;
 
     const allBooksMap = new Map<string, Book>();
-    for (const b of books) {
-      allBooksMap.set(b.hash, b);
-    }
+    for (const b of books) allBooksMap.set(b.hash, b);
 
-    // Incremental cursor: a book needs a push only when its local copy is newer
-    // than (or absent from) the shared library.json index. `book.updatedAt`
-    // bumps on every progress / notes / metadata save, so the index is a
-    // reliable per-book change marker. EVERY strategy uses it, 'send'
-    // included: before #5900 send never read the index, so it re-pushed every
-    // config and re-probed every cover on every run — O(library) per sync,
-    // which a large library cannot afford. A book whose local row has not
-    // changed since the index was written has nothing new to send, so the
-    // cursor costs it nothing. Blind local-authoritative overwrite is Full
-    // Sync's job (see class doc), reached deliberately rather than paid for on
-    // every background run. A failed pull aborts before this point.
     const remoteByHash = new Map<string, Book>();
     if (remoteIndex?.books) {
       for (const rb of remoteIndex.books) {
@@ -676,38 +609,9 @@ export class FileSyncEngine {
       return (book.updatedAt ?? 0) > (remote.updatedAt ?? 0);
     };
 
-    // File-upload cursor (#4856): the index records which book FILES already
-    // live on the remote. A book's file is immutable per hash, so once recorded
-    // it never needs re-checking — this keeps an incremental sync O(changed)
-    // by skipping the per-book HEAD probe for already-mirrored files instead of
-    // probing every book each run. Seeded from the pulled index and carried
-    // forward (plus this run's uploads) into the re-pushed index. Empty on a
-    // fresh remote, so the first sync verifies every file once.
-    //
-    // 'send' now seeds it too. Before #5900 it could not (it never read the
-    // index), so every Send Only run re-probed every book: an O(library) storm
-    // of remote HEADs and local fs stats that made a big library unsyncable.
-    // Trusting the record is what keeps EVERY incremental run O(changed),
-    // whatever the strategy. The record being wrong is a drift case, and drift
-    // in either direction is healed by Full Sync, which bypasses all three
-    // records and audits the real filesystem — that is the escape hatch, not a
-    // per-run re-audit.
     const uploadedHashes = new Set<string>(remoteIndex?.uploadedHashes ?? []);
-    // Optional presence cursor for cover.png. A missing field means a legacy
-    // index, so cover presence is unknown until this client rewrites the index.
     const coverCursorKnown = Array.isArray(remoteIndex?.coveredHashes);
     const coveredHashes = new Set<string>(remoteIndex?.coveredHashes ?? []);
-    // A file needs (re)uploading only when syncBooks is on, the remote copy
-    // isn't recorded yet, and the LIBRARY ROW says this device holds the file.
-    // The row is authoritative (import / download / delete all stamp
-    // downloadedAt; merges keep it device-local), so a book the row marks as
-    // absent costs zero filesystem and zero remote probes — incremental sync
-    // stays pure metadata diffing instead of an O(library) fs walk (the
-    // Tauri plugin:fs|exists storm). The noSourceVerdicts memo additionally
-    // suppresses re-probes of DRIFTED rows (row claims a file the filesystem
-    // no longer has) within a session. Row-vs-filesystem split-brain in
-    // either direction is healed by Full Sync, which bypasses all three
-    // records and audits the real filesystem.
     let noSourceMemo = noSourceVerdicts.get(this.provider);
     if (!noSourceMemo) {
       noSourceMemo = new Map();
@@ -715,8 +619,6 @@ export class FileSyncEngine {
     }
     const knownNoSource = noSourceMemo;
     const hasLocalFile = (b: Book): boolean => !!(b.downloadedAt || b.filePath);
-    // ABS books stream from the server and never have a file to push, in a
-    // full sync or otherwise — their config/cover still sync normally below.
     const needsFilePush = (book: Book): boolean =>
       options.syncBooks &&
       !isAudiobook(book) &&
@@ -737,52 +639,26 @@ export class FileSyncEngine {
       localCoverIsNewer(book) ||
       (!coveredHashes.has(book.hash) && (!!book.coverHash || !coverCursorKnown));
 
-    // A book whose FILE is on the remote is cloud-backed, exactly like a book in
-    // Readest Cloud storage — and `book.uploadedAt` is the only thing the rest of
-    // the app reads to know that. Leaving it null for a provider-synced book made
-    // the whole library misread it as purely-local: it could never be re-downloaded
-    // (`makeBookAvailable` gates on `uploadedAt`), the shelf offered Upload instead
-    // of Download, and — the data loss in #5084 — once "Remove from Device Only"
-    // cleared `downloadedAt`, the stale-record cleanup treated it as a local book
-    // whose file had vanished and offered a delete that GC'd it off the remote.
-    // Stamps are collected and persisted in one batch at the end of the run.
     const stampedAt = Date.now();
     const cloudCopyStamps = new Map<string, Book>();
     const stampCloudCopy = (hash: string): void => {
       const current = allBooksMap.get(hash);
       if (!current || current.uploadedAt || current.deletedAt) return;
-      // A fresh object, never an in-place mutation: the caller's rows are the
-      // ones React renders, and a mutated row is invisible to the memo.
       const stamped: Book = { ...current, uploadedAt: stampedAt };
       allBooksMap.set(hash, stamped);
       cloudCopyStamps.set(hash, stamped);
     };
-    // The index's uploaded-file record already proves the file is on the remote,
-    // so a book another device (or an earlier run) pushed gets stamped without
-    // any request of its own.
     for (const book of books) {
       if (uploadedHashes.has(book.hash)) stampCloudCopy(book.hash);
     }
 
     const remoteBooksToAdd: Book[] = [];
 
-    // Metadata reconciliation for books present BOTH locally and in the shared
-    // library.json (#4756). Last-writer-wins on `book.updatedAt`: when a peer's
-    // indexed copy is strictly newer, pull its title / author / tags / cover
-    // down; readingStatus rides its own readingStatusUpdatedAt clock so a
-    // status-only change also triggers (see shouldApplyRemoteBookMetadata).
-    // Updating allBooksMap with the merged copy also stops the final index
-    // re-push from clobbering the peer's newer metadata with this device's
-    // stale copy.
     if (canPull && remoteIndex && remoteIndex.books) {
       const remoteNewer = remoteIndex.books.filter((rb) => {
         if (rb.deletedAt) return false;
         const local = allBooksMap.get(rb.hash);
         if (!local || local.deletedAt) return false;
-        // Full Sync additionally REPAIRS a shelf that lost its groups or
-        // descriptions to #5911 / #5912. That is true for a whole library at
-        // once and costs a library write each, so it must never run on the
-        // incremental path — see isRemoteBookMissingLocally.
         const coverRepair =
           canPull &&
           (fullSync || coveredHashes.has(rb.hash) || !coverCursorKnown) &&
@@ -802,12 +678,6 @@ export class FileSyncEngine {
         async (rb) => {
           const local = allBooksMap.get(rb.hash)!;
           const merged = mergeBookMetadata(local, rb);
-          // A book can also reach this pass with no clock newer at all, when
-          // the index simply holds a group or a description this device is
-          // missing (#5911 / #5912). That is an index-field repair: nothing
-          // says the remote BYTES moved, so it must not cost a cover GET and a
-          // config GET per book — which on a first run after the fix would be
-          // one of each for the whole library.
           const bytesMayHaveMoved = isRemoteBookClockNewer(local, rb);
           const coverRepair =
             canPull &&
@@ -825,15 +695,10 @@ export class FileSyncEngine {
               rb.coverHash !== local.coverHash &&
               (rb.coverUpdatedAt ?? 0) > (local.coverUpdatedAt ?? 0));
           const remoteCoverMatchesLocal = !!local.coverHash && rb.coverHash === local.coverHash;
-          // A remote clock change is the legacy signal; coveredHashes adds the
-          // explicit presence signal needed for repair when clocks are unchanged.
           if (bytesMayHaveMoved || coverRepair) {
             try {
               const coverBytes = await this.pullBookCover(rb.hash);
               if (coverBytes) {
-                // Seeing bytes confirms remote presence even when the local
-                // cover is newer. Never pair newer local metadata with older
-                // remote bytes on disk.
                 coveredHashes.add(rb.hash);
                 merged.coverDownloadedAt = Date.now();
                 if (remoteCoverIsFresher || remoteCoverMatchesLocal) {
@@ -849,11 +714,6 @@ export class FileSyncEngine {
               console.warn('file sync: metadata cover pull failed', rb.hash, e);
             }
           }
-          // Incremental only: the per-book push loop below skips remote-newer
-          // books, so pull their config here too — otherwise a peer's progress /
-          // notes wouldn't propagate without re-walking every book. In full-sync
-          // mode the push loop pulls each config, so we skip this to avoid a
-          // duplicate GET.
           if (!fullSync && bytesMayHaveMoved) {
             try {
               const localConfig = (await this.store.loadConfig(merged)) ?? {
@@ -885,12 +745,6 @@ export class FileSyncEngine {
       );
     }
 
-    // Deletion propagation (#4860): a book a peer tombstoned in the shared index
-    // must be removed from this device too, not just hidden on the origin. Apply
-    // the deletion with edit-wins-over-delete semantics — only when it is newer
-    // than any local change, so a device that kept reading a book after another
-    // device deleted it keeps its copy (and the live row re-revives the tombstone
-    // on the next push).
     if (canPull && remoteIndex && remoteIndex.books) {
       const remoteDeletions = remoteIndex.books.filter((rb) => {
         if (!rb.deletedAt) return false;
@@ -902,9 +756,6 @@ export class FileSyncEngine {
         const deleted: Book = {
           ...local,
           deletedAt: rb.deletedAt,
-          // Carry the peer's explicit provider-file deletion intent with the
-          // tombstone. Older/ambiguous tombstones intentionally leave this
-          // absent, which hides the row without destroying recoverable bytes.
           fileSyncDeletionRequestedAt: rb.fileSyncDeletionRequestedAt,
           downloadedAt: null,
           coverDownloadedAt: null,
@@ -912,7 +763,6 @@ export class FileSyncEngine {
         };
         try {
           await this.store.deleteBookLocally(deleted);
-          // Keep the tombstone in allBooksMap so the index re-push carries it.
           allBooksMap.set(rb.hash, deleted);
           result.booksDeleted += 1;
           syncedHashes.add(rb.hash);
@@ -922,24 +772,6 @@ export class FileSyncEngine {
       });
     }
 
-    // Revival stamp (#5900) — the send-mode dual of deletion propagation above.
-    // 'send' keeps its live row and republishes it over the peer's tombstone,
-    // but it republished the row's OLD `updatedAt`, and a peer only revives on
-    // `remote.updatedAt > local.deletedAt`. A book last edited BEFORE the peer
-    // deleted it could therefore never win: the peer kept re-pushing its
-    // tombstone, the next send kept re-pushing the live row, and the two
-    // devices ping-ponged forever without either shelf changing.
-    //
-    // Overriding a tombstone IS the newer decision, so stamp it as one — and
-    // persist it, or the next run regresses to the old clock and a peer that
-    // has not synced yet still refuses to revive. `deletedAt + 1` rather than
-    // `Date.now()`: it is the smallest value that wins, and it cannot lose to a
-    // peer whose wall clock runs ahead of ours (#5661).
-    //
-    // Send-mode only. Under 'silent' the deletion-propagation block above is
-    // the authority — it either applied the tombstone (the row is deleted here
-    // now) or declined it because the local edit was already newer, which the
-    // published row's own `updatedAt` already proves.
     if (!canPull && canPush && remoteIndex?.books) {
       const revivals = remoteIndex.books.filter((rb) => {
         if (!rb.deletedAt) return false;
@@ -959,34 +791,15 @@ export class FileSyncEngine {
       });
     }
 
-    // Hash directories that still exist on the remote. Populated by the discovery
-    // scan below and reused by the deleted-book GC before the index re-push.
     const remoteHashDirs = new Set<string>();
-    // Dirs discovery already inspected and found file-less (see wire.ts).
-    // Carried forward through the index so no client re-lists them every run.
     const emptyDirs = new Set<string>(remoteIndex?.emptyDirs ?? []);
-    // Dirs THIS run looked inside and found a book file in. Kept so the
-    // pre-push reconcile below can tell "the peer knows something we don't"
-    // from "the peer's record is stale and we just disproved it".
     const confirmedNonEmptyDirs = new Set<string>();
-    // Whether the books/ listing ran and succeeded this run — the empty-dir
-    // record may only be pruned against a listing that actually happened.
     let booksDirListed = false;
 
-    // Discovery is skipped when the remote index provably didn't change: a
-    // peer adding a book (or a legacy client uploading one) has no way to
-    // become visible without library.json changing... except a no-index
-    // legacy upload, which is still picked up on the first run of a session
-    // (cold cache) and on Full Sync.
     if (canPull && (!remoteIndexUnchanged || fullSync)) {
       const candidateHashes = new Set<string>();
-      // Candidates the remote index already knows about. When their hash dir
-      // holds no file yet (a peer is mid-transfer), they still become
-      // metadata-only shelf rows — covers arrive with the sender's metadata
-      // pass, binaries later — instead of waiting for the file.
       const indexSeededHashes = new Set<string>();
 
-      // 1) Seed with hashes from the remote index (when the file exists).
       if (remoteIndex && remoteIndex.books) {
         for (const rb of remoteIndex.books) {
           const local = allBooksMap.get(rb.hash);
@@ -995,18 +808,11 @@ export class FileSyncEngine {
           if ((!local || revivesLocalTombstone) && !rb.deletedAt) {
             candidateHashes.add(rb.hash);
             indexSeededHashes.add(rb.hash);
-            // Provisionally register the indexed book — fields refreshed below
-            // once we've inspected the actual hash dir. Strip the pushing
-            // device's local fields: an index written by an older client still
-            // carries its `filePath`, and adopting it would make this device
-            // read the book as a purely-local record (#5084).
             allBooksMap.set(rb.hash, stripDeviceLocalFields(rb));
           }
         }
       }
 
-      // 2) Also scan the books/ directory so legacy uploads (no library.json
-      //    entry) and index/disk drift are still picked up.
       try {
         const booksDirPath = `${buildBasePath(this.provider.rootPath)}/${SYNC_BOOKS_DIR}`;
         const dirEntries = await this.provider.list(booksDirPath);
@@ -1014,23 +820,15 @@ export class FileSyncEngine {
         for (const entry of dirEntries) {
           if (!entry.isDirectory) continue;
           remoteHashDirs.add(entry.name);
-          if (!allBooksMap.has(entry.name)) {
-            candidateHashes.add(entry.name);
-          }
+          if (!allBooksMap.has(entry.name)) candidateHashes.add(entry.name);
         }
       } catch (e) {
-        // 404 is normal if the user has never pushed anything yet.
         noteAbort(e);
         console.warn('file sync: failed to list books directory', e);
       }
 
-      // 3) For every candidate, look inside its hash directory to find the
-      //    actual book file (the only entry that isn't config.json/cover.png).
       for (const hash of candidateHashes) {
         if (aborted()) break;
-        // Already inspected and file-less: don't re-list it — unless the
-        // index says the file has since arrived (uploadedHashes), or a Full
-        // Sync re-verifies everything.
         if (!fullSync && emptyDirs.has(hash) && !uploadedHashes.has(hash)) continue;
         try {
           const hashDirPath = `${buildBasePath(this.provider.rootPath)}/${SYNC_BOOKS_DIR}/${hash}`;
@@ -1038,13 +836,6 @@ export class FileSyncEngine {
           const fileEntry = hashDirEntries.find((e) => isSyncableFileEntry(e));
           if (!fileEntry) {
             if (indexSeededHashes.has(hash)) {
-              // The index knows this book but its bytes haven't arrived (a
-              // peer is mid-transfer, or it was uploaded by a client that
-              // records files differently). Materialise a metadata-only
-              // cloud-shelf row now — the add pass pulls cover + config, and
-              // the file stays a manual download — instead of hiding the book
-              // until the transfer completes. No emptyDirs/confirmed markers:
-              // the next run re-lists once uploadedHashes catches up.
               const indexed = allBooksMap.get(hash);
               if (indexed) {
                 remoteBooksToAdd.push(indexed);
@@ -1062,9 +853,6 @@ export class FileSyncEngine {
           const ext = extMatch && extMatch[1] ? extMatch[1].toUpperCase() : 'EPUB';
           const format = ext as Book['format'];
           const title = fileEntry.name.replace(/\.[^.]+$/, '');
-
-          // If the index already gave us a book object, refresh the fields
-          // that might be wrong/stale from a previous buggy push.
           const existing = allBooksMap.get(hash);
           const book: Book = existing
             ? {
@@ -1097,12 +885,6 @@ export class FileSyncEngine {
       }
     }
 
-    // Discovery is NOT gated on `syncBooks`. The toggle controls whether this
-    // device uploads local book files. A remote-only book is materialised as a
-    // cloud-shelf row with its cover and reading config, while the immutable
-    // book file stays on the provider until the user opens or downloads it
-    // explicitly (#5009). This keeps secondary devices lightweight regardless
-    // of which FileSyncProvider transport is active.
     if (canPull) {
       let addStarted = 0;
       await runPool(
@@ -1128,9 +910,6 @@ export class FileSyncEngine {
               console.warn('file sync: cover download failed', rb.hash, e);
             }
 
-            // Pull the remote config so progress, bookmarks and annotations
-            // are ready before the placeholder appears. Best-effort: a missing
-            // config or cover must not hide an otherwise downloadable book.
             try {
               const emptyLocal: BookConfig = { updatedAt: 0, booknotes: [] };
               const pullResult = await this.pullBookConfig(rb, emptyLocal);
@@ -1142,9 +921,6 @@ export class FileSyncEngine {
               console.warn('file sync: config download failed', rb.hash, e);
             }
 
-            // Metadata-only rows (index-known, file still in flight) keep the
-            // index-provided uploadedAt and stay out of uploadedHashes so a
-            // later run re-verifies the directory once the file lands.
             if (confirmedNonEmptyDirs.has(rb.hash)) {
               rb.uploadedAt = rb.uploadedAt ?? Date.now();
             }
@@ -1152,14 +928,7 @@ export class FileSyncEngine {
             await this.store.addBookToLibrary(rb);
             result.booksAdded += 1;
             syncedHashes.add(rb.hash);
-            // Discovery confirmed the immutable file exists remotely. Record
-            // it so future incremental passes do not HEAD-probe or re-discover
-            // it. Metadata-only rows deliberately skip this: the next run's
-            // step-3 re-list (enabled by uploadedHashes missing) refreshes the
-            // row's format/title and stamps the cursor then.
-            if (confirmedNonEmptyDirs.has(rb.hash)) {
-              uploadedHashes.add(rb.hash);
-            }
+            if (confirmedNonEmptyDirs.has(rb.hash)) uploadedHashes.add(rb.hash);
           } catch (e) {
             noteAbort(e);
             result.failures += 1;
@@ -1176,20 +945,8 @@ export class FileSyncEngine {
       );
     }
 
-    // Books we just added already exist on the remote — don't re-push
-    // them. Only push books already present in the caller-supplied library.
     const addedHashes = new Set(remoteBooksToAdd.map((b) => b.hash));
-    // A book's config/cover only need pushing when it changed locally since the
-    // last index push (incremental; full-sync re-checks everything). Its FILE,
-    // by contrast, is immutable per hash and only needs uploading when the
-    // remote copy is missing per the index's uploaded-file record (`needsFilePush`)
-    // — which catches the user enabling "Upload Book Files" only after the first
-    // (config-only) sync (#4856) without a per-book probe once files are recorded.
     const configChanged = (b: Book): boolean => fullSync || isLocalNewer(b);
-    // Consult the merged state, not the caller's raw book: a book a peer just
-    // tombstoned in this same run is now deletedAt in allBooksMap even though
-    // the caller's array copy isn't — pushing it would re-upload a book we are
-    // about to GC (#4860).
     const isEffectivelyDeleted = (b: Book): boolean => !!(allBooksMap.get(b.hash) ?? b).deletedAt;
     const booksToPush = books.filter(
       (b) =>
@@ -1200,10 +957,6 @@ export class FileSyncEngine {
     result.totalBooks = booksToPush.length;
 
     if (canPush && booksToPush.length > 0) {
-      // Pass 1 — metadata (config + cover) for the whole batch. Landing every
-      // shelf row's metadata + cover BEFORE any bulky binary means a peer that
-      // syncs mid-run sees books with covers right away, instead of the row
-      // and its cover trickling in only after each file transfer.
       let metaStarted = 0;
       const metadataBooks = booksToPush.filter((b) => configChanged(b));
       await runPool(
@@ -1218,31 +971,23 @@ export class FileSyncEngine {
           });
           metaStarted += 1;
           try {
-            {
-              const config = await this.store.loadConfig(book);
-              if (config) {
-                // Mirror the reader hook's pull-merge-push discipline so a manual
-                // "Sync now" can't blind-overwrite state this device hasn't pulled
-                // yet. Only in two-way ('silent') mode — 'send' keeps the blind
-                // push. A failed pull-merge falls back to the local config.
-                let configToPush = config;
-                if (canPull) {
-                  try {
-                    const pull = await this.pullBookConfig(book, config);
-                    if (pull.applied && pull.mergedConfig) {
-                      configToPush = pull.mergedConfig;
-                      // Persist the merged superset locally so this device
-                      // converges too, not just the remote.
-                      await this.store.saveBookConfig(book, pull.mergedConfig);
-                    }
-                  } catch (e) {
-                    console.warn('file sync: config pull-merge failed', book.hash, e);
+            const config = await this.store.loadConfig(book);
+            if (config) {
+              let configToPush = config;
+              if (canPull) {
+                try {
+                  const pull = await this.pullBookConfig(book, config);
+                  if (pull.applied && pull.mergedConfig) {
+                    configToPush = pull.mergedConfig;
+                    await this.store.saveBookConfig(book, pull.mergedConfig);
                   }
+                } catch (e) {
+                  console.warn('file sync: config pull-merge failed', book.hash, e);
                 }
-                await this.pushBookConfig(book, configToPush, options.deviceId);
-                result.configsUploaded += 1;
-                syncedHashes.add(book.hash);
               }
+              await this.pushBookConfig(book, configToPush, options.deviceId);
+              result.configsUploaded += 1;
+              syncedHashes.add(book.hash);
             }
           } catch (e) {
             noteAbort(e);
@@ -1259,9 +1004,6 @@ export class FileSyncEngine {
         aborted,
       );
 
-      // Covers are an independent best-effort pass. A config failure must not
-      // suppress a cover upload, and failures leave coveredHashes unset so the
-      // next run retries.
       const coverBooks = booksToPush.filter((b) => needsCoverPush(b));
       await runPool(
         coverBooks,
@@ -1288,14 +1030,11 @@ export class FileSyncEngine {
         aborted,
       );
 
-      // Pass 2 — book files. Splitting from pass 1 also decouples failures: a
-      // config error no longer suppresses that book's file upload (the cursor
-      // semantics of needsFilePush are unchanged, so the next run re-checks).
       let fileStarted = 0;
       const fileBooks = booksToPush.filter((b) => needsFilePush(b));
       await runPool(
         fileBooks,
-        concurrency,
+        bookTransferConcurrency,
         async (book) => {
           options.onProgress?.({
             book,
@@ -1316,10 +1055,6 @@ export class FileSyncEngine {
               uploadedHashes.add(book.hash);
               stampCloudCopy(book.hash);
             } else if (fileResult.reason === 'no-source') {
-              // The file isn't on this device; remember the verdict for this
-              // exact row so the next run doesn't re-pay the fs probes. It
-              // stays out of uploadedHashes so a device that does have the
-              // file can upload and record it later.
               knownNoSource.set(book.hash, book.updatedAt ?? 0);
             }
           } catch (e) {
@@ -1338,16 +1073,8 @@ export class FileSyncEngine {
       );
     }
 
-    // A terminal auth failure surfaced mid-run: rethrow instead of re-pushing
-    // an index built from a partial run, and let the caller show one re-auth
-    // error rather than a per-book failure list.
     if (abort) throw abort;
 
-    // The final index whenever we're allowed to write, even if no binaries
-    // moved this turn (keeps library.json authoritative). Union in any remote
-    // entries this device never materialised (chiefly peers' tombstones):
-    // rebuilding purely from allBooksMap would drop a deletion for a book we
-    // never had, silently reviving it for every other device (#4860).
     if (canPush) {
       const indexByHash = new Map(allBooksMap);
       if (remoteIndex?.books) {
@@ -1357,23 +1084,10 @@ export class FileSyncEngine {
             indexByHash.set(rb.hash, rb);
             continue;
           }
-          // Publishing must never DELETE the group or the description the
-          // remote already carries — that clobber, on a row this device merely
-          // TIED, is what emptied every peer's shelf (#5911 / #5912). Pure
-          // in-memory over a map this push already walks: no request, no
-          // library write, incremental sync stays O(changed).
           indexByHash.set(rb.hash, resolvePublishedBook(local, rb));
         }
       }
 
-      // GC only when the current tombstone carries a matching, explicit
-      // provider-file deletion authorization (#5695). `deletedAt` by itself is
-      // library membership state and can come from older clients or indirect
-      // cleanup paths; treating it as permission to destroy the only remaining
-      // copy is what made "Remove from Device Only" destructive. Equality binds
-      // the authorization to this deletion and rejects a stale marker left by a
-      // prior delete/re-import cycle. Discovery scoping still avoids repeated
-      // DELETEs, and send mode (which never lists) remains a safe no-op.
       const dirsToGc = Array.from(remoteHashDirs).filter((hash) => {
         const book = indexByHash.get(hash);
         return !!book?.deletedAt && book.fileSyncDeletionRequestedAt === book.deletedAt;
@@ -1386,17 +1100,12 @@ export class FileSyncEngine {
         }
       });
 
-      // Prune the empty-dir record to dirs that still exist — but only against
-      // a listing that actually ran, so a discovery-skipped run can't wipe it.
       if (booksDirListed) {
         for (const hash of Array.from(emptyDirs)) {
           if (!remoteHashDirs.has(hash)) emptyDirs.delete(hash);
         }
       }
 
-      // Carry the uploaded-file record forward so the next incremental sync
-      // stays O(changed). Keep only hashes that still map to a live indexed
-      // book so the set can't grow unbounded with tombstoned / evicted books.
       const buildRecords = () => ({
         uploadedHashes: Array.from(uploadedHashes).filter((hash) => {
           const b = indexByHash.get(hash);
@@ -1414,11 +1123,6 @@ export class FileSyncEngine {
         coveredHashes: nextCoveredHashes,
       } = buildRecords();
 
-      // Skip the re-push when the rebuilt index is semantically identical to
-      // the pulled one: a restamped byte-copy only churns the remote and
-      // invalidates every other device's etag-based change detection. The
-      // check is deliberately conservative — any per-book activity, failure,
-      // record change, or local row the remote lacks (or trails) pushes.
       const remoteAllByHash = new Map((remoteIndex?.books ?? []).map((b) => [b.hash, b] as const));
       const indexDirty =
         remoteIndex === null ||
@@ -1439,30 +1143,6 @@ export class FileSyncEngine {
 
       if (indexDirty) {
         try {
-          // FULL SYNC ONLY: last-moment reconcile. Everything above was
-          // computed from the index as it looked when this run STARTED, and a
-          // peer syncing in parallel may have rewritten it since — so
-          // publishing the rebuild as-is drops whatever that peer added. Re-read
-          // and fold its entries in by hash, ours winning where both have an
-          // opinion.
-          //
-          // Deliberately NOT done on the incremental path. It costs a second
-          // GET of library.json on every pushing run (tens to hundreds of KB
-          // for a real library), and the incremental contract is speed, not
-          // convergence: it is best-effort, runs unattended on every library
-          // change, and is allowed to lose a race. Full Sync is where this
-          // library pays for correctness — the same split that already makes it
-          // the repair path for row-vs-filesystem drift above. A lost row is
-          // in any case re-published by the device that owns it locally, since
-          // membership is a union-by-hash CRDT.
-          //
-          // Even here the window is narrowed, not closed: two Full Syncs whose
-          // PUTs land between this read and the write still race. Closing it
-          // needs a conditional write, and there is nothing portable to
-          // condition on — `head()` exposes no version token at all on iCloud
-          // and only a server-dependent one on WebDAV, so an If-Match
-          // capability would have to be added to FileSyncProvider and degrade
-          // per backend. Follow-up.
           if (fullSync) {
             const fresh = await this.pullLibraryIndex();
             for (const rb of fresh?.books ?? []) {
@@ -1471,9 +1151,6 @@ export class FileSyncEngine {
             for (const hash of fresh?.uploadedHashes ?? []) uploadedHashes.add(hash);
             for (const hash of fresh?.coveredHashes ?? []) coveredHashes.add(hash);
             for (const hash of fresh?.emptyDirs ?? []) {
-              // ...except a dir THIS run looked inside and found a file in.
-              // That is newer knowledge than the peer's record, not a
-              // competing entry.
               if (!confirmedNonEmptyDirs.has(hash)) emptyDirs.add(hash);
             }
           }
@@ -1488,8 +1165,6 @@ export class FileSyncEngine {
             emptyDirs: merged.emptyDirs,
           };
           await this.pushLibraryIndex(newIndex);
-          // Our own push changed the remote etag; drop the cached snapshot so
-          // the next run re-pulls (and re-discovers) once, then goes quiet.
           remoteIndexCache.delete(this.provider);
         } catch (e) {
           result.indexPushFailed = true;
@@ -1498,9 +1173,6 @@ export class FileSyncEngine {
       }
     }
 
-    // Persist the cloud-copy stamps in one library write. They must survive a
-    // restart: a row that boots without `uploadedAt` is read as purely-local
-    // again, which is what made "Remove from Device Only" destructive (#5084).
     if (cloudCopyStamps.size > 0) {
       try {
         await this.store.markBooksUploaded(Array.from(cloudCopyStamps.keys()), stampedAt);
