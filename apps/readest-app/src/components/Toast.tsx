@@ -4,6 +4,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
+type ToastPlacement = 'top' | null;
 
 // The top bar a `toast-top` toast has to clear, plus the gap daisyUI 4 drew as
 // `.toast` padding. daisyUI 5 moved that padding into the insets, which the
@@ -15,6 +16,8 @@ export const Toast = () => {
   const { safeAreaInsets } = useThemeStore();
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<ToastType>('info');
+  const [toastPlacement, setToastPlacement] = useState<ToastPlacement>(null);
+  const [toastProgress, setToastProgress] = useState<number | null>(null);
   const [toastTimeout, setToastTimeout] = useState(5000);
   const [messageClass, setMessageClass] = useState('');
   const [isVisible, setIsVisible] = useState(false);
@@ -26,6 +29,8 @@ export const Toast = () => {
     warning: 'toast-warning toast-top sm:toast-end toast-center',
     error: 'toast-error toast-top sm:toast-end toast-center',
   };
+  const toastPositionClass =
+    toastPlacement === 'top' ? 'toast-top sm:toast-end toast-center' : toastClassMap[toastType];
 
   const alertClassMap = {
     info: 'alert-primary border-base-300',
@@ -97,12 +102,26 @@ export const Toast = () => {
   }, [toastMessage, toastTimeout]);
 
   const handleShowToast = async (event: CustomEvent) => {
-    const { message, type = 'info', timeout, className = '', callback = null } = event.detail;
+    const {
+      message,
+      type = 'info',
+      placement,
+      progress,
+      timeout,
+      className = '',
+      callback = null,
+    } = event.detail;
     setToastMessage(message);
     setToastType(type);
-    if (timeout) setToastTimeout(timeout);
+    setToastPlacement(placement === 'top' ? 'top' : null);
+    setToastProgress(
+      typeof progress === 'number' && Number.isFinite(progress)
+        ? Math.min(100, Math.max(0, progress))
+        : null,
+    );
+    setToastTimeout(timeout ?? 5000);
     if (callback && typeof callback === 'function') {
-      setTimeout(() => callback(), timeout || 5000);
+      setTimeout(() => callback(), timeout ?? 5000);
     }
     setMessageClass(className);
   };
@@ -128,12 +147,12 @@ export const Toast = () => {
         // `width: max-content`, and `width: auto` on a box pinned to
         // `inset-inline: 50%` (toast-center) resolves to zero.
         className={clsx(
-          'toast z-[130] max-w-(--breakpoint-sm) transition-all duration-300',
-          toastClassMap[toastType],
+          'toast z-[130] max-w-(--breakpoint-sm) transition-[opacity,transform] duration-300',
+          toastPositionClass,
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}
         style={{
-          top: toastClassMap[toastType].includes('toast-top')
+          top: toastPositionClass.includes('toast-top')
             ? `${(safeAreaInsets?.top || 0) + TOP_BAR_HEIGHT + TOAST_GAP}px`
             : undefined,
         }}
@@ -151,24 +170,34 @@ export const Toast = () => {
           {/* Icon */}
           <div className='shrink-0'>{iconMap[toastType]}</div>
 
-          {/* Message */}
-          <span
-            className={clsx(
-              'max-h-[50vh] flex-1 overflow-y-auto',
-              'font-sans text-base font-medium leading-snug sm:text-sm',
-              toastType === 'info'
-                ? 'max-w-[60vw] truncate sm:max-w-[80vw]'
-                : 'min-w-[60vw] max-w-[80vw] whitespace-normal break-words sm:min-w-40 sm:max-w-80',
-              messageClass,
+          <div className='flex min-w-0 flex-1 flex-col gap-2'>
+            {/* Message */}
+            <span
+              className={clsx(
+                'max-h-[50vh] flex-1 overflow-y-auto',
+                'font-sans text-base font-medium leading-snug sm:text-sm',
+                toastType === 'info'
+                  ? 'max-w-[60vw] truncate sm:max-w-[80vw]'
+                  : 'min-w-[60vw] max-w-[80vw] whitespace-normal break-words sm:min-w-40 sm:max-w-80',
+                messageClass,
+              )}
+            >
+              {toastMessage.split('\n').map((line, idx) => (
+                <React.Fragment key={idx}>
+                  {line || <>&nbsp;</>}
+                  {idx < toastMessage.split('\n').length - 1 && <br />}
+                </React.Fragment>
+              ))}
+            </span>
+            {toastProgress !== null && (
+              <progress
+                aria-label={toastMessage}
+                className='progress h-1.5 w-full'
+                value={toastProgress}
+                max={100}
+              />
             )}
-          >
-            {toastMessage.split('\n').map((line, idx) => (
-              <React.Fragment key={idx}>
-                {line || <>&nbsp;</>}
-                {idx < toastMessage.split('\n').length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </span>
+          </div>
 
           {/* Close button */}
           <button

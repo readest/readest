@@ -116,6 +116,28 @@ interface MangaLineProgress {
   total: number;
 }
 
+const getMokuroFontSize = (
+  block: MokuroTextDetectionResult['blocks'][number],
+): number | undefined => {
+  let vectorX = 0;
+  let vectorY = 0;
+  let lineCount = 0;
+  for (const { polygon } of block.lines) {
+    const [topLeft, topRight, bottomRight, bottomLeft] = polygon;
+    if (!topLeft || !topRight || !bottomRight || !bottomLeft) continue;
+    if (block.vertical) {
+      vectorX += (topRight.x + bottomRight.x - topLeft.x - bottomLeft.x) / 2;
+      vectorY += (topRight.y + bottomRight.y - topLeft.y - bottomLeft.y) / 2;
+    } else {
+      vectorX += (bottomRight.x + bottomLeft.x - topRight.x - topLeft.x) / 2;
+      vectorY += (bottomRight.y + bottomLeft.y - topRight.y - topLeft.y) / 2;
+    }
+    lineCount += 1;
+  }
+  const fontSize = lineCount ? Math.hypot(vectorX, vectorY) / lineCount : 0;
+  return Number.isFinite(fontSize) && fontSize > 0 ? fontSize : undefined;
+};
+
 const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
   createWorker(languages, oem, options);
 
@@ -318,6 +340,7 @@ export class TesseractOcrEngine {
       for (const [blockIndex, detectedBlock] of detection.blocks.entries()) {
         const textLines: string[] = [];
         const confidences: number[] = [];
+        const fontSize = getMokuroFontSize(detectedBlock);
         for (const line of detectedBlock.lines) {
           if (this.#terminated) throw new Error('OCR engine has been terminated');
           await worker.setParameters({
@@ -354,6 +377,7 @@ export class TesseractOcrEngine {
           id: `mokuro-block-${blockIndex}`,
           text: textLines.join(''),
           lines: textLines,
+          ...(fontSize === undefined ? {} : { fontSize }),
           ...(confidences.length
             ? {
                 confidence: confidences.reduce((sum, value) => sum + value, 0) / confidences.length,

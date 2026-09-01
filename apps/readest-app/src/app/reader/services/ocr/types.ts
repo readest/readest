@@ -11,6 +11,7 @@ export interface OcrTextBlock {
   id: string;
   text: string;
   lines?: readonly string[];
+  fontSize?: number;
   confidence?: number;
   box: OcrBoundingBox;
   writingMode: OcrWritingMode;

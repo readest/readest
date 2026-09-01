@@ -56,8 +56,14 @@ const showToast = async (detail: Record<string, unknown>) => {
 
 describe('Toast layout', () => {
   it('sizes an info toast to its message', async () => {
-    const toast = await showToast({ type: 'info', message: 'Copied to clipboard' });
-    const message = screen.getByText('Copied to clipboard');
+    const toast = await showToast({
+      type: 'info',
+      message: 'Recognizing text',
+      placement: 'top',
+      progress: 42,
+    });
+    const message = screen.getByText('Recognizing text');
+    const progress = screen.getByRole('progressbar') as HTMLProgressElement;
 
     expect(message.getBoundingClientRect().width).toBeGreaterThan(0);
     // The whole message fits: `truncate` hides any overflow, so a collapsed
@@ -66,6 +72,9 @@ describe('Toast layout', () => {
     expect(toast.getBoundingClientRect().width).toBeGreaterThanOrEqual(
       message.getBoundingClientRect().width,
     );
+    expect(progress.value).toBe(42);
+    expect(toast.className).toContain('toast-top');
+    expect(getComputedStyle(toast).transitionProperty).not.toBe('all');
   });
 
   it('centers the info toast on the viewport', async () => {

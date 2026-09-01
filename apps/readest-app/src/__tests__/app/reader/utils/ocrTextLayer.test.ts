@@ -17,6 +17,7 @@ describe('OCR text layer', () => {
           id: 'line-0',
           text: '縦書き<img src=x>',
           lines: ['縦書き', '<img src=x>'],
+          fontSize: 30,
           box: { xMin: 800, yMin: 400, xMax: 900, yMax: 1000 },
           writingMode: 'vertical-rl',
         },
@@ -32,6 +33,7 @@ describe('OCR text layer', () => {
     expect(text?.querySelector('img')).toBeNull();
     expect(text?.style).toMatchObject({
       cursor: 'vertical-text',
+      fontSize: '3vw',
       pointerEvents: 'auto',
       userSelect: 'text',
       writingMode: 'vertical-rl',

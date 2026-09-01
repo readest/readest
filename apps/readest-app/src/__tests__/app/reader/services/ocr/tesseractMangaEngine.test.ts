@@ -126,6 +126,7 @@ describe('Tesseract manga OCR', () => {
           text: '一行目二行目',
           lines: ['一行目', '二行目'],
           confidence: 90,
+          fontSize: 60,
           box: blockBox,
           writingMode: 'vertical-rl',
         },

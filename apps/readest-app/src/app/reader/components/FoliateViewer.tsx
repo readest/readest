@@ -154,6 +154,7 @@ const FoliateViewer: React.FC<{
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ocrProgressKeyRef = useRef('');
+  const ocrToastDoneRef = useRef(false);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
   const getOnDeviceTextDocuments = useCallback(() => {
@@ -172,22 +173,26 @@ const FoliateViewer: React.FC<{
     mangaMode: bookFormat === 'CBZ',
     getDocuments: getOnDeviceTextDocuments,
     onProgress: ({ status, progress }) => {
+      if (ocrToastDoneRef.current) return;
       const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
       const phase = status === 'recognizing text' ? 'recognizing' : 'preparing';
-      const progressKey = `${phase}-${Math.floor(percentage / 25)}`;
+      const progressKey = `${phase}-${Math.floor(percentage / 5)}`;
       if (ocrProgressKeyRef.current === progressKey) return;
       ocrProgressKeyRef.current = progressKey;
       eventDispatcher.dispatch('toast', {
         type: 'info',
+        placement: 'top',
+        progress: percentage,
         message:
           phase === 'recognizing'
             ? _('Recognizing text: {{progress}}%', { progress: percentage })
             : _('Preparing text recognition: {{progress}}%', { progress: percentage }),
-        timeout: 5000,
+        timeout: 60_000,
       });
     },
     onError: (error, pageIndex) => {
       console.error(`Failed to recognize text on page ${pageIndex}`, error);
+      ocrToastDoneRef.current = true;
       ocrProgressKeyRef.current = '';
       eventDispatcher.dispatch('toast', {
         type: 'error',
@@ -198,18 +203,23 @@ const FoliateViewer: React.FC<{
         timeout: 5000,
       });
     },
-    onPageRecognized: ({ pageIndex }) => {
-      ocrProgressKeyRef.current = '';
+    onPageRecognized: () => {
+      if (ocrToastDoneRef.current) return;
+      ocrToastDoneRef.current = true;
+      ocrProgressKeyRef.current = 'recognizing-20';
       eventDispatcher.dispatch('toast', {
-        type: 'success',
-        message: _('Text is ready to select on page {{page}}', { page: pageIndex + 1 }),
-        timeout: 3000,
+        type: 'info',
+        placement: 'top',
+        progress: 100,
+        message: _('Recognizing text: {{progress}}%', { progress: 100 }),
+        timeout: 1500,
       });
     },
   });
 
   useEffect(() => {
-    if (!ocrEnabled) ocrProgressKeyRef.current = '';
+    ocrProgressKeyRef.current = '';
+    ocrToastDoneRef.current = false;
   }, [ocrEnabled, ocrLanguage]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.

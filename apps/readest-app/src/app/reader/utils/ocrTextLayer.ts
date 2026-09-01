@@ -50,12 +50,17 @@ const toRelativeUnit = (value: number, total: number, unit: '%' | 'vh' | 'vw') =
   `${(value / total) * 100}${unit}`;
 
 const getFontSize = (
+  detectedFontSize: number | undefined,
   lines: readonly string[],
   width: number,
   height: number,
   vertical: boolean,
 ): number => {
   const lineCount = Math.max(1, lines.length);
+  const crossAxisFit = (vertical ? width : height) / lineCount / 1.1;
+  if (detectedFontSize !== undefined && Number.isFinite(detectedFontSize)) {
+    return Math.min(detectedFontSize, crossAxisFit);
+  }
   const longestLine = Math.max(1, ...lines.map((line) => Array.from(line).length));
   return (
     0.9 *
@@ -90,7 +95,11 @@ const createTextBlock = (
     height: toRelativeUnit(height, page.height, '%'),
     cursor: vertical ? 'vertical-text' : 'text',
     fontFamily: '"Noto Sans JP", sans-serif',
-    fontSize: toRelativeUnit(getFontSize(lines, width, height, vertical), page.width, 'vw'),
+    fontSize: toRelativeUnit(
+      getFontSize(block.fontSize, lines, width, height, vertical),
+      page.width,
+      'vw',
+    ),
     forcedColorAdjust: 'none',
     lineHeight: '1.1',
     overflow: 'hidden',
