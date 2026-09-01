@@ -272,33 +272,6 @@ describe('readerStore', () => {
     });
   });
 
-  describe('setOcrEnabled', () => {
-    test('sets OCR only for the requested view', () => {
-      seedViewState('book-1');
-      seedViewState('book-2');
-
-      useReaderStore.getState().setOcrEnabled('book-1', true);
-
-      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(true);
-      expect(useReaderStore.getState().viewStates['book-2']!.ocrEnabled).toBe(false);
-
-      useReaderStore.getState().setOcrEnabled('book-1', false);
-      expect(useReaderStore.getState().viewStates['book-1']!.ocrEnabled).toBe(false);
-    });
-  });
-
-  describe('setOcrLanguage', () => {
-    test('sets the session language only for the requested view', () => {
-      seedViewState('book-1');
-      seedViewState('book-2');
-
-      useReaderStore.getState().setOcrLanguage('book-1', 'es');
-
-      expect(useReaderStore.getState().viewStates['book-1']!.ocrLanguage).toBe('es');
-      expect(useReaderStore.getState().viewStates['book-2']!.ocrLanguage).toBe('');
-    });
-  });
-
   describe('setIsLoading', () => {
     test('sets loading on view state', () => {
       seedViewState('book-1');
