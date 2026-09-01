@@ -50,8 +50,6 @@ interface ViewState {
   autoScrollEnabled: boolean;
   /* True while OCR is active for this view; session-only, never persisted. */
   ocrEnabled: boolean;
-  /* True while local in-bubble manga translation is active; session-only, never persisted. */
-  mangaTranslationEnabled: boolean;
   /* Empty uses book metadata; otherwise a session-only OCR language override. */
   ocrLanguage: string;
   syncing: boolean;
@@ -69,10 +67,10 @@ interface ViewState {
   viewSettings: ViewSettings | null;
 }
 
-type ReaderTextSession = Pick<ViewState, 'ocrEnabled' | 'mangaTranslationEnabled' | 'ocrLanguage'>;
+type ReaderOcrSession = Pick<ViewState, 'ocrEnabled' | 'ocrLanguage'>;
 
 interface RecreateViewerOptions {
-  /* Preserve the active OCR or manga translation mode for an RTL reload. */
+  /* Preserve the active OCR mode for an RTL reload. */
   preserveSession?: boolean;
 }
 
@@ -91,7 +89,6 @@ interface ReaderStore {
   setTTSEnabled: (key: string, enabled: boolean) => void;
   setAutoScrollEnabled: (key: string, enabled: boolean) => void;
   setOcrEnabled: (key: string, enabled: boolean) => void;
-  setMangaTranslationEnabled: (key: string, enabled: boolean) => void;
   setOcrLanguage: (key: string, language: string) => void;
   setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
@@ -120,7 +117,7 @@ interface ReaderStore {
     key: string,
     isPrimary?: boolean,
     reload?: boolean,
-    textSession?: ReaderTextSession,
+    ocrSession?: ReaderOcrSession,
   ) => Promise<void>;
   clearViewState: (key: string) => void;
   getViewState: (key: string) => ViewState | null;
@@ -172,7 +169,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     key: string,
     isPrimary = true,
     reload = false,
-    textSession,
+    ocrSession,
   ) => {
     const booksData = useBookDataStore.getState().booksData;
     const bookData = booksData[id];
@@ -191,7 +188,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           ttsEnabled: false,
           autoScrollEnabled: false,
           ocrEnabled: false,
-          mangaTranslationEnabled: false,
           ocrLanguage: '',
           syncing: false,
           gridInsets: null,
@@ -344,9 +340,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ribbonVisible: false,
             ttsEnabled: false,
             autoScrollEnabled: false,
-            ocrEnabled: textSession?.ocrEnabled ?? false,
-            mangaTranslationEnabled: textSession?.mangaTranslationEnabled ?? false,
-            ocrLanguage: textSession?.ocrLanguage ?? '',
+            ocrEnabled: ocrSession?.ocrEnabled ?? false,
+            ocrLanguage: ocrSession?.ocrLanguage ?? '',
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -372,7 +367,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ttsEnabled: false,
             autoScrollEnabled: false,
             ocrEnabled: false,
-            mangaTranslationEnabled: false,
             ocrLanguage: '',
             syncing: false,
             gridInsets: null,
@@ -539,19 +533,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ocrEnabled: enabled,
-          ...(enabled ? { mangaTranslationEnabled: false } : {}),
-        },
-      },
-    })),
-
-  setMangaTranslationEnabled: (key: string, enabled: boolean) =>
-    set((state) => ({
-      viewStates: {
-        ...state.viewStates,
-        [key]: {
-          ...state.viewStates[key]!,
-          mangaTranslationEnabled: enabled,
-          ...(enabled ? { ocrEnabled: false } : {}),
         },
       },
     })),
@@ -635,13 +616,12 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     // font-family declarations, and the book fell back to the app font
     // (readest#5277).
     const viewState = options?.preserveSession ? get().viewStates[key] : undefined;
-    const textSession = viewState
+    const ocrSession = viewState
       ? {
           ocrEnabled: viewState.ocrEnabled,
-          mangaTranslationEnabled: viewState.mangaTranslationEnabled,
           ocrLanguage: viewState.ocrLanguage,
         }
       : undefined;
-    void get().initViewState(envConfig, id, key, true, true, textSession);
+    void get().initViewState(envConfig, id, key, true, true, ocrSession);
   },
 }));

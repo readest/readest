@@ -16,7 +16,6 @@ import {
   sanitizeTranslatedMarkup,
   splitMarkupIntoChunks,
 } from '@/app/reader/utils/translationMarkup';
-import { MANGA_TRANSLATION_LAYER_SELECTOR } from '@/app/reader/utils/mangaTranslationLayer';
 import { splitTextIntoChunks } from '@/services/translators/utils';
 
 /**
@@ -128,7 +127,6 @@ export const resolveTranslationSourceNodes = (nodes: HTMLElement[]) => {
   const sources: HTMLElement[] = [];
   const seen = new Set<HTMLElement>();
   for (const node of nodes) {
-    if (node.closest(MANGA_TRANSLATION_LAYER_SELECTOR)) continue;
     if (node.closest('.translation-target')) continue;
     const hider = node.closest<HTMLElement>(`.${SOURCE_HIDDEN_CLASS}`);
     const source = hider?.parentElement ?? node;

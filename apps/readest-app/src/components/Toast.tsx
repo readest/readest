@@ -10,7 +10,6 @@ export type ToastType = 'info' | 'success' | 'warning' | 'error';
 // `top` below overrides, so the toast carries the gap itself.
 const TOP_BAR_HEIGHT = 44;
 const TOAST_GAP = 16;
-const TOAST_POSITION_CLASS = 'toast-top sm:toast-end toast-center';
 
 export const Toast = () => {
   const { safeAreaInsets } = useThemeStore();
@@ -20,6 +19,13 @@ export const Toast = () => {
   const [messageClass, setMessageClass] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const toastDismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const toastClassMap = {
+    info: 'toast-info toast-center toast-middle',
+    success: 'toast-success toast-top sm:toast-end toast-center',
+    warning: 'toast-warning toast-top sm:toast-end toast-center',
+    error: 'toast-error toast-top sm:toast-end toast-center',
+  };
 
   const alertClassMap = {
     info: 'alert-primary border-base-300',
@@ -123,11 +129,13 @@ export const Toast = () => {
         // `inset-inline: 50%` (toast-center) resolves to zero.
         className={clsx(
           'toast z-[130] max-w-(--breakpoint-sm) transition-all duration-300',
-          TOAST_POSITION_CLASS,
+          toastClassMap[toastType],
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}
         style={{
-          top: `${(safeAreaInsets?.top || 0) + TOP_BAR_HEIGHT + TOAST_GAP}px`,
+          top: toastClassMap[toastType].includes('toast-top')
+            ? `${(safeAreaInsets?.top || 0) + TOP_BAR_HEIGHT + TOAST_GAP}px`
+            : undefined,
         }}
       >
         <div

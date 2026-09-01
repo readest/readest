@@ -98,32 +98,6 @@ describe('applyFixedlayoutStyles contrast filter', () => {
     expect(css).toContain('filter: invert(100%) contrast(150%)');
   });
 
-  it('applies image filters to manga translation overlays', () => {
-    const css = fixedLayoutCss(
-      makeViewSettings({ contrast: 125, invertImgColorInDark: true }),
-      makeThemeCode({ isDarkMode: true }),
-      'CBZ',
-    );
-
-    expect(css).toMatch(
-      /img, canvas, \[data-readest-manga-translation-layer\]\s*{[^}]*filter: invert\(100%\) contrast\(125%\)/,
-    );
-  });
-
-  it('keeps image color blending off manga translation overlays', () => {
-    const css = fixedLayoutCss(
-      makeViewSettings({ overrideColor: true }),
-      makeThemeCode({ isDarkMode: false }),
-      'CBZ',
-    );
-
-    const overlayRule = css.match(
-      /img, canvas, \[data-readest-manga-translation-layer\]\s*{([^}]*)}/,
-    )?.[1];
-    expect(overlayRule).not.toContain('mix-blend-mode');
-    expect(css).toMatch(/img, canvas\s*{[^}]*mix-blend-mode: multiply/);
-  });
-
   it('treats an undefined contrast as 100% (no filter, backward compatible)', () => {
     const css = fixedLayoutCss(
       makeViewSettings({ contrast: undefined as unknown as number }),

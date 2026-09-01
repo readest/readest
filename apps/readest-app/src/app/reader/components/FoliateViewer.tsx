@@ -90,7 +90,6 @@ import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
 import { useOcrSession } from '../hooks/useOcrSession';
-import { useMangaTranslationSession } from '../hooks/useMangaTranslationSession';
 import { prioritizeCurrentDocument } from '../utils/ocrDocumentPriority';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
@@ -133,9 +132,6 @@ const FoliateViewer: React.FC<{
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
   const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
-  const mangaTranslationEnabled = useReaderStore(
-    (s) => s.viewStates[bookKey]?.mangaTranslationEnabled ?? false,
-  );
   const ocrLanguage = useReaderStore((s) => s.viewStates[bookKey]?.ocrLanguage ?? '');
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
@@ -165,61 +161,6 @@ const FoliateViewer: React.FC<{
     if (!renderer) return [];
     return prioritizeCurrentDocument(renderer.getContents(), renderer.primaryIndex);
   }, []);
-
-  const getMangaTranslationDocuments = useCallback(() => {
-    const renderer = viewRef.current?.renderer;
-    const rendered = renderer?.getContents?.() ?? [];
-    const renderedByIndex = new Map<number, Document>();
-    for (const { doc, index } of rendered) {
-      if (doc && typeof index === 'number' && Number.isFinite(index)) {
-        renderedByIndex.set(index, doc);
-      }
-    }
-
-    const documents = bookDoc.sections.map((section, index) => {
-      const doc = renderedByIndex.get(index);
-      return {
-        doc,
-        index,
-        load: !section.load
-          ? undefined
-          : async () => {
-              const pageUrl = await section.load!();
-              try {
-                const response = await fetch(pageUrl);
-                if (!response.ok) throw new Error('Manga page could not be loaded');
-                const html = await response.text();
-                const parsed = new DOMParser().parseFromString(html, 'text/html');
-                const source = parsed.querySelector('img')?.getAttribute('src');
-                if (!source) throw new Error('Manga page image is missing');
-                const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-                  const loaded = new Image();
-                  loaded.decoding = 'async';
-                  loaded.onload = () => resolve(loaded);
-                  loaded.onerror = () => reject(new Error('Manga page image could not be decoded'));
-                  loaded.src = source;
-                });
-                return {
-                  image: {
-                    source,
-                    width: image.naturalWidth,
-                    height: image.naturalHeight,
-                  },
-                  release: () => section.unload?.(),
-                };
-              } catch (error) {
-                section.unload?.();
-                throw error;
-              }
-            },
-      };
-    });
-    const sectionIndexes = new Set(documents.map(({ index }) => index));
-    for (const [index, doc] of renderedByIndex) {
-      if (!sectionIndexes.has(index)) documents.push({ doc, index, load: undefined });
-    }
-    return documents;
-  }, [bookDoc]);
 
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
@@ -263,22 +204,6 @@ const FoliateViewer: React.FC<{
         type: 'success',
         message: _('Text is ready to select on page {{page}}', { page: pageIndex + 1 }),
         timeout: 3000,
-      });
-    },
-  });
-
-  const processMangaTranslationDocument = useMangaTranslationSession({
-    enabled: bookFormat === 'CBZ' && mangaTranslationEnabled,
-    getDocuments: getMangaTranslationDocuments,
-    onError: (error, pageIndex) => {
-      console.error(`Failed to translate manga on page ${pageIndex}`, error);
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message:
-          pageIndex >= 0
-            ? _('Manga translation failed on page {{page}}', { page: pageIndex + 1 })
-            : _('Manga translation failed'),
-        timeout: 5000,
       });
     },
   });
@@ -515,7 +440,6 @@ const FoliateViewer: React.FC<{
         applyFixedlayoutStyles(detail.doc, viewSettings, undefined, bookData.book?.format);
         if (bookData.book?.format === 'CBZ') {
           void processOcrDocument(detail.doc, detail.index);
-          void processMangaTranslationDocument(detail.doc, detail.index);
         }
         const themeCode = getThemeCode();
         if (bookData.book?.format === 'PDF' && themeCode && renderer) {

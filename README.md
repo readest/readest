@@ -266,15 +266,12 @@ The following libraries and frameworks are used in this software:
 - [react-icons](https://github.com/react-icons/react-icons), which has various open-source licenses.
 - [react](https://github.com/facebook/react), which is MIT licensed.
 - [tauri](https://github.com/tauri-apps/tauri), which is MIT licensed.
-- [Transformers.js](https://github.com/huggingface/transformers.js), which is licensed under the Apache License 2.0.
 - [ONNX Runtime Web](https://github.com/microsoft/onnxruntime), which is licensed under the MIT License with Microsoft Corporation copyright.
 - [Tesseract.js](https://github.com/naptha/tesseract.js) and [tesseract.js-core](https://github.com/naptha/tesseract.js-core), which are licensed under the Apache License 2.0.
 - [comic-text-and-bubble-detector](https://huggingface.co/ogkalu/comic-text-and-bubble-detector), which is licensed under the Apache License 2.0.
 - [comic text detector](https://huggingface.co/mayocream/koharu), which is licensed under the GNU Affero General Public License 3.0.
-- [PP-OCRv6 manga recognition model](https://huggingface.co/fumetodev/PP-OCRv6_small_rec_manga_ONNX) and [PaddleOCR dictionary](https://github.com/PaddlePaddle/PaddleOCR), which are licensed under the Apache License 2.0.
-- [OPUS Japanese-English model](https://huggingface.co/Helsinki-NLP/opus-mt-ja-en), which is licensed under the Apache License 2.0.
 
-See the [manga pipeline third-party notices](apps/readest-app/vendor-notices/THIRD_PARTY_NOTICES.md) for pinned model revisions and license texts.
+See the [OCR third-party notices](apps/readest-app/vendor-notices/THIRD_PARTY_NOTICES.md) for pinned model revisions and license texts.
 
 The following fonts are utilized in this software, either bundled within the application or provided through web fonts:
 

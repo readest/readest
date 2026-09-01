@@ -68,11 +68,12 @@ describe('Toast layout', () => {
     );
   });
 
-  it('keeps an info toast below the top bar', async () => {
+  it('centers the info toast on the viewport', async () => {
     const toast = await showToast({ type: 'info', message: 'Copied to clipboard' });
-    const alert = toast.querySelector('.alert') as HTMLElement;
+    const box = toast.getBoundingClientRect();
 
-    expect(alert.getBoundingClientRect().top).toBe(TOP_BAR + TOAST_GAP);
+    expect(box.left + box.width / 2).toBeCloseTo(window.innerWidth / 2, 0);
+    expect(box.top + box.height / 2).toBeCloseTo(window.innerHeight / 2, 0);
   });
 
   it('keeps a top toast below the top bar', async () => {

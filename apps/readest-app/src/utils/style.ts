@@ -1472,10 +1472,8 @@ export const applyFixedlayoutStyles = (
       height: fit-content;
       background-color: var(--theme-bg-color);
     }
-    img, canvas, [data-readest-manga-translation-layer] {
-      ${imgFilter}
-    }
     img, canvas {
+      ${imgFilter}
       ${overrideColor ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
     }
     img.singlePage {
