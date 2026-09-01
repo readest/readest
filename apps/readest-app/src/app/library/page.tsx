@@ -1086,7 +1086,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
    * import any newly-added books. Reuses the same in-place import + dedup as
    * manual folder import, but stays quiet: unreadable folders are skipped (no
    * toast), and `importBooks` runs only when genuinely-new files exist (its
-   * success toast then fires).
+   * silent import stays quiet).
    */
   const autoImportFromWatchedFolders = async (folders: string[]) => {
     if (!appService || loading) return;

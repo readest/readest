@@ -262,22 +262,28 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
   // Do not use pointer capture for desktop image panning. WebViews can keep a
   // captured mouse logically pressed after the physical button is released
-  // outside the window. Track movement on the stable window instead, require
-  // the physical left-button bit on every move, and terminate at the window
-  // boundary so a missed mouseup cannot leave the image stuck to the cursor.
+  // outside the window. Track movement on the stable window using both native
+  // pointer and compatibility mouse events, require the physical left-button
+  // bit on every move, and terminate at the window boundary so a missed mouseup
+  // cannot leave the image stuck to the cursor.
   useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (activePointerId.current === null) return;
-      if ((e.buttons & 1) === 0) {
-        finishPointerDrag();
+    const moveDrag = (clientX: number, clientY: number, buttons: number, pointerId?: number) => {
+      const activeId = activePointerId.current;
+      if (activeId === null) return;
+      if (pointerId !== undefined && activeId !== pointerId) return;
+      if ((buttons & 1) === 0) {
+        finishPointerDrag(pointerId);
         return;
       }
       wasDragging.current = true;
       updatePosition({
-        x: e.clientX - dragStart.current.x,
-        y: e.clientY - dragStart.current.y,
+        x: clientX - dragStart.current.x,
+        y: clientY - dragStart.current.y,
       });
     };
+    const onMouseMove = (e: MouseEvent) => moveDrag(e.clientX, e.clientY, e.buttons);
+    const onPointerMove = (e: PointerEvent) =>
+      moveDrag(e.clientX, e.clientY, e.buttons, e.pointerId);
     const onPointerEnd = (e: PointerEvent) => finishPointerDrag(e.pointerId);
     const onMouseUp = () => finishPointerDrag();
     const onWindowExit = (e: MouseEvent) => {
@@ -289,6 +295,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     };
 
     window.addEventListener('mousemove', onMouseMove, true);
+    window.addEventListener('pointermove', onPointerMove, true);
     window.addEventListener('pointerup', onPointerEnd, true);
     window.addEventListener('pointercancel', onPointerEnd, true);
     window.addEventListener('mouseup', onMouseUp, true);
@@ -297,6 +304,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
       window.removeEventListener('mousemove', onMouseMove, true);
+      window.removeEventListener('pointermove', onPointerMove, true);
       window.removeEventListener('pointerup', onPointerEnd, true);
       window.removeEventListener('pointercancel', onPointerEnd, true);
       window.removeEventListener('mouseup', onMouseUp, true);
