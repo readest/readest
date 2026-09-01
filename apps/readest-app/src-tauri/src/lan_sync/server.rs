@@ -61,16 +61,16 @@ pub fn router(state: Arc<ServerState>) -> Router {
         .route("/ping", get(ping))
         .route(
             "/files/{*path}",
-            get(read_file).head(head_file).put(write_file).delete(delete_path),
+            get(read_file)
+                .head(head_file)
+                .put(write_file)
+                .delete(delete_path),
         )
         .route(
             "/list",
             post(list_dir).layer(DefaultBodyLimit::max(64 * 1024)),
         )
-        .layer(middleware::from_fn_with_state(
-            state.clone(),
-            auth_and_cors,
-        ))
+        .layer(middleware::from_fn_with_state(state.clone(), auth_and_cors))
         .with_state(state)
 }
 
@@ -94,7 +94,10 @@ async fn auth_and_cors(
 
 fn with_cors(mut res: Response) -> Response {
     let headers = res.headers_mut();
-    headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        HeaderValue::from_static("*"),
+    );
     headers.insert(
         header::ACCESS_CONTROL_ALLOW_METHODS,
         HeaderValue::from_static("GET, HEAD, PUT, DELETE, POST, OPTIONS"),
@@ -105,9 +108,14 @@ fn with_cors(mut res: Response) -> Response {
     );
     headers.insert(
         header::ACCESS_CONTROL_EXPOSE_HEADERS,
-        HeaderValue::from_static("Accept-Ranges, Content-Length, Content-Range, Content-Type, ETag"),
+        HeaderValue::from_static(
+            "Accept-Ranges, Content-Length, Content-Range, Content-Type, ETag",
+        ),
     );
-    headers.insert(header::ACCESS_CONTROL_MAX_AGE, HeaderValue::from_static("86400"));
+    headers.insert(
+        header::ACCESS_CONTROL_MAX_AGE,
+        HeaderValue::from_static("86400"),
+    );
     res
 }
 
@@ -170,7 +178,10 @@ async fn checked_join(root: &std::path::Path, rel: &str) -> std::io::Result<Opti
                 if index + 1 < components.len() && !meta.is_dir() {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::NotADirectory,
-                        format!("LAN sync path component is not a directory: {}", checked.display()),
+                        format!(
+                            "LAN sync path component is not a directory: {}",
+                            checked.display()
+                        ),
                     ));
                 }
             }
@@ -194,7 +205,10 @@ async fn repair_legacy_wire_dirs(root: &Path, rel: &str) -> std::io::Result<()> 
     if safe_join(root, rel).is_none() {
         return Ok(());
     }
-    let segments: Vec<&str> = rel.split('/').filter(|segment| !segment.is_empty()).collect();
+    let segments: Vec<&str> = rel
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .collect();
     if segments.first().copied() != Some("Readest") {
         return Ok(());
     }
@@ -202,10 +216,7 @@ async fn repair_legacy_wire_dirs(root: &Path, rel: &str) -> std::io::Result<()> 
     let mut directory_depths = vec![1usize]; // Readest
     if segments.get(1).copied() == Some("books") {
         directory_depths.push(2); // Readest/books
-        let valid_book_hash = segments
-            .get(2)
-            .copied()
-            .is_some_and(is_book_hash_segment);
+        let valid_book_hash = segments.get(2).copied().is_some_and(is_book_hash_segment);
         if valid_book_hash && segments.len() >= 4 {
             directory_depths.push(3); // Readest/books/<hash>
         }
@@ -330,7 +341,10 @@ async fn ping(State(state): State<Arc<ServerState>>) -> Response {
 }
 
 fn range_for(headers: &HeaderMap, size: u64, etag: &str) -> Result<Option<ByteRange>, ()> {
-    let Some(range) = headers.get(header::RANGE).and_then(|value| value.to_str().ok()) else {
+    let Some(range) = headers
+        .get(header::RANGE)
+        .and_then(|value| value.to_str().ok())
+    else {
         return Ok(None);
     };
     if headers
@@ -594,10 +608,7 @@ struct ListRequest {
     dir: String,
 }
 
-async fn list_dir(
-    State(state): State<Arc<ServerState>>,
-    Json(req): Json<ListRequest>,
-) -> Response {
+async fn list_dir(State(state): State<Arc<ServerState>>, Json(req): Json<ListRequest>) -> Response {
     let dir = if req.dir.starts_with('/') {
         req.dir
     } else {
@@ -652,14 +663,29 @@ mod tests {
 
     #[test]
     fn parses_supported_byte_ranges() {
-        assert_eq!(parse_byte_range("bytes=0-99", 200), Ok(ByteRange::new(0, 99)));
-        assert_eq!(parse_byte_range("bytes=100-", 200), Ok(ByteRange::new(100, 199)));
-        assert_eq!(parse_byte_range("bytes=-25", 200), Ok(ByteRange::new(175, 199)));
+        assert_eq!(
+            parse_byte_range("bytes=0-99", 200),
+            Ok(ByteRange::new(0, 99))
+        );
+        assert_eq!(
+            parse_byte_range("bytes=100-", 200),
+            Ok(ByteRange::new(100, 199))
+        );
+        assert_eq!(
+            parse_byte_range("bytes=-25", 200),
+            Ok(ByteRange::new(175, 199))
+        );
     }
 
     #[test]
     fn rejects_malformed_multiple_and_unsatisfiable_ranges() {
-        for value in ["bytes=", "items=0-1", "bytes=0-1,2-3", "bytes=200-", "bytes=-0"] {
+        for value in [
+            "bytes=",
+            "items=0-1",
+            "bytes=0-1,2-3",
+            "bytes=200-",
+            "bytes=-0",
+        ] {
             assert!(parse_byte_range(value, 200).is_err(), "{value}");
         }
         assert!(parse_byte_range("bytes=0-1", 0).is_err());
@@ -682,7 +708,10 @@ mod tests {
     fn protected_server_requires_the_exact_bearer_token() {
         let mut headers = HeaderMap::new();
         assert!(!is_authorized(&headers, Some("secret")));
-        headers.insert(header::AUTHORIZATION, HeaderValue::from_static("Bearer wrong"));
+        headers.insert(
+            header::AUTHORIZATION,
+            HeaderValue::from_static("Bearer wrong"),
+        );
         assert!(!is_authorized(&headers, Some("secret")));
         headers.insert(
             header::AUTHORIZATION,
@@ -697,29 +726,39 @@ mod tests {
         tokio::fs::create_dir_all(&root).await.unwrap();
         let rel = format!("/Readest/books/{HASH}/config.json");
         let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
-        assert_eq!(resolved, root.join(format!("Readest/books/{HASH}/config.json")));
+        assert_eq!(
+            resolved,
+            root.join(format!("Readest/books/{HASH}/config.json"))
+        );
         let _ = tokio::fs::remove_dir_all(&root).await;
     }
 
     #[tokio::test]
     async fn repairs_hash_file_left_by_old_truncation_bug() {
-        let root = std::env::temp_dir().join(format!("readest-lan-repair-{}", uuid::Uuid::new_v4()));
+        let root =
+            std::env::temp_dir().join(format!("readest-lan-repair-{}", uuid::Uuid::new_v4()));
         let books = root.join("Readest/books");
         tokio::fs::create_dir_all(&books).await.unwrap();
         let poisoned = books.join(HASH);
-        tokio::fs::write(&poisoned, b"old config body").await.unwrap();
+        tokio::fs::write(&poisoned, b"old config body")
+            .await
+            .unwrap();
 
         let rel = format!("/Readest/books/{HASH}/config.json");
         repair_legacy_wire_dirs(&root, &rel).await.unwrap();
         assert!(tokio::fs::metadata(&poisoned).await.is_err());
         let resolved = checked_join(&root, &rel).await.unwrap().unwrap();
-        assert_eq!(resolved, root.join(format!("Readest/books/{HASH}/config.json")));
+        assert_eq!(
+            resolved,
+            root.join(format!("Readest/books/{HASH}/config.json"))
+        );
         let _ = tokio::fs::remove_dir_all(&root).await;
     }
 
     #[tokio::test]
     async fn does_not_repair_non_hash_book_children() {
-        let root = std::env::temp_dir().join(format!("readest-lan-safe-repair-{}", uuid::Uuid::new_v4()));
+        let root =
+            std::env::temp_dir().join(format!("readest-lan-safe-repair-{}", uuid::Uuid::new_v4()));
         let books = root.join("Readest/books");
         tokio::fs::create_dir_all(&books).await.unwrap();
         let unrelated = books.join("not-a-hash");
