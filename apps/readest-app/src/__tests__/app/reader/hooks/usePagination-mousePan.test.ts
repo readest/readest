@@ -117,6 +117,43 @@ describe('usePagination fixed-layout mouse pan', () => {
     ).toBe(true);
   });
 
+  test('ends a claimed drag when a move reports no buttons', () => {
+    const view = makeView();
+    const h = renderHook(() =>
+      usePagination('book-1', { current: view as unknown as FoliateView }, { current: null }),
+    );
+    h.result.current.handleMousePan(point(100, 100));
+    expect(
+      h.result.current.handleMousePan({
+        type: 'mousemove',
+        bookKey: 'book-1',
+        buttons: 1,
+        screenX: 120,
+        screenY: 100,
+      }),
+    ).toBe(true);
+
+    expect(
+      h.result.current.handleMousePan({
+        type: 'mousemove',
+        bookKey: 'book-1',
+        buttons: 0,
+        screenX: 140,
+        screenY: 100,
+      }),
+    ).toBe(true);
+    expect(
+      h.result.current.handleMousePan({
+        type: 'mousemove',
+        bookKey: 'book-1',
+        buttons: 1,
+        screenX: 160,
+        screenY: 100,
+      }),
+    ).toBe(false);
+    expect(view.pan).toHaveBeenCalledOnce();
+  });
+
   test('does not arm reflowable, scrolled, or non-overflowing views', () => {
     const view = makeView(false, false);
     const h = renderHook(() =>

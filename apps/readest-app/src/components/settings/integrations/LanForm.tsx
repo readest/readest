@@ -10,6 +10,8 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { MdContentCopy, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
+import Alert from '@/components/Alert';
+import ModalPortal from '@/components/ModalPortal';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -17,6 +19,7 @@ import { discoverLanPeers, type DiscoveredLanPeer } from '@/services/lanSync/dis
 import {
   createLanSyncPairingPayload,
   parseLanSyncPairingPayload,
+  type LanSyncPairingPayload,
 } from '@/services/lanSync/pairing';
 import { setMulticastLock } from '@/utils/bridge';
 import { writeTextToClipboard } from '@/utils/clipboard';
@@ -68,6 +71,10 @@ const isLoopbackHost = (value: string): boolean => {
     .toLowerCase();
   return host === 'localhost' || host === '::1' || /^127(?:\.\d{1,3}){3}$/.test(host);
 };
+
+type PendingLanConfirmation =
+  | { kind: 'peer'; peer: DiscoveredLanPeer }
+  | { kind: 'pairing'; pairing: LanSyncPairingPayload };
 
 type DiscoveryPanelProps = {
   _: TranslationFunc;
@@ -190,6 +197,8 @@ const LanForm: React.FC = () => {
   const [showPeerDiscovery, setShowPeerDiscovery] = useState(false);
   const [showManualConnection, setShowManualConnection] = useState(!isTauri);
   const [showSelfPairingQr, setShowSelfPairingQr] = useState(false);
+  const [pendingLanConfirmation, setPendingLanConfirmation] =
+    useState<PendingLanConfirmation | null>(null);
   // True only for the temporary advertiser used while an unpaired device is on
   // this pairing screen. A successful connection promotes it to the persisted
   // server; leaving the screen cleans it up.
@@ -873,17 +882,42 @@ const LanForm: React.FC = () => {
     }
   };
 
-  const confirmPeerConnection = async (peer: DiscoveredLanPeer): Promise<void> => {
-    const confirmed = appService
-      ? await appService.ask(
-          _('Connect to {{name}} at {{host}}:{{port}} and enable LAN Sync?', {
-            name: peer.name || _('Readest device'),
-            host: peer.host,
-            port: peer.port,
-          }),
-        )
-      : true;
-    if (confirmed) await handleConnect(peer);
+  const connectPairing = async (pairing: LanSyncPairingPayload) => {
+    let lastConnectionError: unknown;
+    let attemptedConnection = false;
+    for (const pairingHost of pairing.hosts) {
+      const connection = await handleConnect(
+        {
+          name: 'Readest',
+          host: pairingHost,
+          port: pairing.port,
+          device_id: `qr:${pairingHost}`,
+          token: pairing.token ?? '',
+          auth_required: !!pairing.token,
+        },
+        { suppressErrorToast: true },
+      );
+      if (connection?.success) return;
+      if (connection) {
+        attemptedConnection = true;
+        lastConnectionError = connection.error;
+      }
+    }
+
+    if (attemptedConnection) {
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: `${_('Failed to connect')}: ${formatPingError(_, lastConnectionError)}`,
+      });
+    }
+  };
+
+  const confirmPeerConnection = (peer: DiscoveredLanPeer): void => {
+    if (appService) {
+      setPendingLanConfirmation({ kind: 'peer', peer });
+    } else {
+      void handleConnect(peer);
+    }
   };
 
   const handleScanPairingQr = async () => {
@@ -930,38 +964,44 @@ const LanForm: React.FC = () => {
     }
 
     if (appService) {
-      const confirmed = await appService.ask(_('Connect to this Readest device and enable LAN Sync?'));
-      if (!confirmed) return;
+      setPendingLanConfirmation({ kind: 'pairing', pairing });
+      return;
     }
 
-    let lastConnectionError: unknown;
-    let attemptedConnection = false;
-    for (const pairingHost of pairing.hosts) {
-      const connection = await handleConnect(
-        {
-          name: 'Readest',
-          host: pairingHost,
-          port: pairing.port,
-          device_id: `qr:${pairingHost}`,
-          token: pairing.token ?? '',
-          auth_required: !!pairing.token,
-        },
-        { suppressErrorToast: true },
-      );
-      if (connection?.success) return;
-      if (connection) {
-        attemptedConnection = true;
-        lastConnectionError = connection.error;
-      }
-    }
+    await connectPairing(pairing);
+  };
 
-    if (attemptedConnection) {
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message: `${_('Failed to connect')}: ${formatPingError(_, lastConnectionError)}`,
-      });
+  const confirmPendingLanConnection = async () => {
+    const pending = pendingLanConfirmation;
+    if (!pending) return;
+    setPendingLanConfirmation(null);
+    if (pending.kind === 'peer') {
+      await handleConnect(pending.peer);
+    } else {
+      await connectPairing(pending.pairing);
     }
   };
+
+  const pendingLanConfirmationDialog = pendingLanConfirmation ? (
+    <ModalPortal>
+      <Alert
+        title={_('Confirm')}
+        message={
+          pendingLanConfirmation.kind === 'peer'
+            ? _('Connect to {{name}} at {{host}}:{{port}} and enable LAN Sync?', {
+                name: pendingLanConfirmation.peer.name || _('Readest device'),
+                host: pendingLanConfirmation.peer.host,
+                port: pendingLanConfirmation.peer.port,
+              })
+            : _('Connect to this Readest device and enable LAN Sync?')
+        }
+        onCancel={() => setPendingLanConfirmation(null)}
+        onConfirm={() => void confirmPendingLanConnection()}
+        confirmLabel={_('Connect')}
+        confirmButtonClassName='btn-contrast'
+      />
+    </ModalPortal>
+  ) : null;
 
   const handleDisconnect = async () => {
     if (unmountedRef.current || disconnectingRef.current) return;
@@ -1340,6 +1380,7 @@ const LanForm: React.FC = () => {
             {_('Disconnect')}
           </button>
         </div>
+        {pendingLanConfirmationDialog}
       </div>
     );
   }
@@ -1375,6 +1416,7 @@ const LanForm: React.FC = () => {
         </button>
         {showManualConnection && manualConnectionForm}
       </div>
+      {pendingLanConfirmationDialog}
     </form>
   );
 };

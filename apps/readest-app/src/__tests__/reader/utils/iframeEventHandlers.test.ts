@@ -311,6 +311,55 @@ describe('iframeEventHandlers touch forwarding', () => {
     vi.restoreAllMocks();
   });
 
+  test('mouse movement forwards the button bit so a released drag can finish', async () => {
+    const { handleMousedown, handleMousemove, setMousePanArmed } = await importHandlers();
+    setMousePanArmed('book-1', true);
+    handleMousedown('book-1', mouseEvent({ buttons: 1 }));
+    handleMousemove('book-1', mouseEvent({ buttons: 0, screenX: 120 }));
+
+    expect(postSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        type: 'iframe-mousemove',
+        bookKey: 'book-1',
+        buttons: 0,
+        screenX: 120,
+      }),
+      '*',
+    );
+  });
+
+  test('fixed-layout touch pan claims and prevents the raw browser gesture', async () => {
+    const { handleTouchStart, handleTouchMove, setTouchPanArmed } = await importHandlers();
+    setTouchPanArmed('book-1', true, { horizontal: true, vertical: false });
+    const start = touchPoint(200, 300);
+    const move = touchEvent([touchPoint(190, 302)]);
+
+    handleTouchStart('book-1', touchEvent([start]));
+    handleTouchMove('book-1', move);
+
+    expect(move.preventDefault).toHaveBeenCalledOnce();
+    expect(postSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        type: 'iframe-touchmove',
+        bookKey: 'book-1',
+        targetTouches: [{ clientX: 190, clientY: 302, screenX: 190, screenY: 302 }],
+      }),
+      '*',
+    );
+  });
+
+  test('fixed-layout touch pan leaves an unavailable axis to the native gesture', async () => {
+    const { handleTouchStart, handleTouchMove, setTouchPanArmed } = await importHandlers();
+    setTouchPanArmed('book-1', true, { horizontal: true, vertical: false });
+    const start = touchPoint(200, 300);
+    const move = touchEvent([touchPoint(202, 310)]);
+
+    handleTouchStart('book-1', touchEvent([start]));
+    handleTouchMove('book-1', move);
+
+    expect(move.preventDefault).not.toHaveBeenCalled();
+  });
+
   test('touchend forwards the released finger through changedTouches', async () => {
     const { handleTouchEnd } = await importHandlers();
     const released = {

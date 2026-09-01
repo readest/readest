@@ -44,7 +44,7 @@ const isPanningView = (view: FoliateView | null, viewSettings: ViewSettings | nu
   );
 };
 
-const hasHorizontalPanning = (
+export const hasHorizontalPanning = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
 ) => {
@@ -262,6 +262,7 @@ export const usePagination = (
       | 'blur';
     bookKey?: string;
     button?: number;
+    buttons?: number;
     screenX?: number;
     screenY?: number;
     hasTextSelection?: boolean;
@@ -317,6 +318,13 @@ export const usePagination = (
       const state = mousePanRef.current;
       if (!state) return false;
       if (event.type === 'mouseup' || event.type === 'iframe-mouseup') return finish();
+      if (
+        (event.type === 'mousemove' || event.type === 'iframe-mousemove') &&
+        event.buttons != null &&
+        (event.buttons & 1) === 0
+      ) {
+        return finish();
+      }
       if (
         !data?.isFixedLayout ||
         settings?.scrolled ||

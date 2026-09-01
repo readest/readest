@@ -8,6 +8,9 @@ import {
   beginLayeredTurnTouch,
   cancelLayeredTurnTouch,
   endLayeredTurnTouch,
+  resetMouseDownState,
+  resetMouseSession,
+  setTouchPanArmed,
 } from '@/app/reader/utils/iframeEventHandlers';
 import { NATIVE_CAPTURED_TURN_ATTRIBUTE } from '@/app/reader/utils/turnGestureArena';
 import {
@@ -17,7 +20,7 @@ import {
   TOUCH_SWIPE_THRESHOLD_PX,
   TouchDetail,
 } from './useTouchInterceptor';
-import { hasVerticalPanning } from './usePagination';
+import { hasHorizontalPanning, hasVerticalPanning } from './usePagination';
 
 export const useMouseEvent = (
   bookKey: string,
@@ -32,13 +35,13 @@ export const useMouseEvent = (
       | 'blur';
     bookKey?: string;
     button?: number;
+    buttons?: number;
     screenX?: number;
     screenY?: number;
     hasTextSelection?: boolean;
     preventDefault?: () => void;
   }) => boolean,
 ) => {
-  const { hoveredBookKey } = useReaderStore();
   const handleMousePanRef = useRef(handleMousePan);
   useEffect(() => {
     handleMousePanRef.current = handleMousePan;
@@ -104,36 +107,48 @@ export const useMouseEvent = (
 
   useEffect(() => {
     const handleParentMove = (event: MouseEvent) => {
+      if (event.buttons === 0) resetMouseDownState();
       handleMousePanRef.current?.({
         type: 'mousemove',
         bookKey,
+        buttons: event.buttons,
         screenX: event.screenX,
         screenY: event.screenY,
         preventDefault: () => event.preventDefault(),
       });
     };
     const handleParentUp = (event: MouseEvent) => {
+      resetMouseDownState();
       handleMousePanRef.current?.({
         type: 'mouseup',
         bookKey,
+        buttons: event.buttons,
         screenX: event.screenX,
         screenY: event.screenY,
       });
     };
-    const handleParentBlur = () => handleMousePanRef.current?.({ type: 'blur', bookKey });
-    window.addEventListener('message', handleMouseEvent);
-    window.addEventListener('mousemove', handleParentMove);
-    window.addEventListener('mouseup', handleParentUp);
-    window.addEventListener('blur', handleParentBlur);
-    return () => {
+    const handleParentBlur = () => {
+      resetMouseSession();
       handleMousePanRef.current?.({ type: 'blur', bookKey });
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) handleParentBlur();
+    };
+    window.addEventListener('message', handleMouseEvent);
+    window.addEventListener('mousemove', handleParentMove, true);
+    window.addEventListener('mouseup', handleParentUp, true);
+    window.addEventListener('blur', handleParentBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      handleParentBlur();
       window.removeEventListener('message', handleMouseEvent);
-      window.removeEventListener('mousemove', handleParentMove);
-      window.removeEventListener('mouseup', handleParentUp);
+      window.removeEventListener('mousemove', handleParentMove, true);
+      window.removeEventListener('mouseup', handleParentUp, true);
       window.removeEventListener('blur', handleParentBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKey, hoveredBookKey]);
+  }, [bookKey]);
 
   return {
     onClick: handlePageFlip,
@@ -190,6 +205,7 @@ const PINCH_ACTIVATION_THRESHOLD = 24;
 // Once the pair has translated this far together we lock the gesture as a
 // two-finger scroll and stop looking for a pinch for the rest of it.
 const TWO_FINGER_PAN_THRESHOLD = 12;
+const FIXED_LAYOUT_PAN_THRESHOLD = 6;
 
 export const useTouchEvent = (bookKey: string) => {
   const { getBookData } = useBookDataStore();
@@ -210,6 +226,15 @@ export const useTouchEvent = (bookKey: string) => {
   // single-finger arena. Keep the whole multi-touch sequence latched out until
   // every finger is up so the remaining finger cannot inherit the old start.
   const reflowableMultiTouchRef = useRef(false);
+  const fixedLayoutPanRef = useRef<{
+    startX: number;
+    startY: number;
+    lastX: number;
+    lastY: number;
+    horizontal: boolean;
+    vertical: boolean;
+    claimed: boolean;
+  } | null>(null);
 
   const isLifecycleManagedLayeredTurn = () => isLayeredTurnGestureActive(bookKey);
   const isLayeredTurnCandidate = () => {
@@ -259,6 +284,7 @@ export const useTouchEvent = (bookKey: string) => {
   });
 
   const clearSingleTouchState = () => {
+    fixedLayoutPanRef.current = null;
     touchStartRef.current = null;
     touchEndRef.current = null;
     touchStartTimeRef.current = null;
@@ -304,6 +330,17 @@ export const useTouchEvent = (bookKey: string) => {
   const onTouchStart = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
     layeredTurnOwnedRef.current = false;
     layeredTurnCandidateRef.current = false;
+    fixedLayoutPanRef.current = null;
+    const bookData = getBookData(bookKey);
+    const viewSettings = getViewSettings(bookKey);
+    const view = getView(bookKey);
+    const horizontalPan = hasHorizontalPanning(view, viewSettings);
+    const verticalPan = hasVerticalPanning(view, viewSettings);
+    setTouchPanArmed(
+      bookKey,
+      Boolean(bookData?.isFixedLayout && !viewSettings?.scrolled && (horizontalPan || verticalPan)),
+      { horizontal: horizontalPan, vertical: verticalPan },
+    );
     const t0 = e.targetTouches[0] as IframeTouch | undefined;
     const t1 = e.targetTouches[1] as IframeTouch | undefined;
     if (reflowableMultiTouchRef.current) {
@@ -315,7 +352,7 @@ export const useTouchEvent = (bookKey: string) => {
     // a raw move that arrived while the start message was still queued.
     if ('preventDefault' in e) beginLayeredTurnTouch(bookKey);
     if (t0 && t1) {
-      const bookData = getBookData(bookKey);
+      fixedLayoutPanRef.current = null;
       if (bookData?.isFixedLayout) {
         cancelLayeredTurnTouch(bookKey);
         pinchPendingRef.current = true;
@@ -340,6 +377,17 @@ export const useTouchEvent = (bookKey: string) => {
     touchStartRef.current = t0;
     touchStartTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
     touchConsumedRef.current = false;
+    if (bookData?.isFixedLayout && !viewSettings?.scrolled && (horizontalPan || verticalPan)) {
+      fixedLayoutPanRef.current = {
+        startX: t0.screenX,
+        startY: t0.screenY,
+        lastX: t0.screenX,
+        lastY: t0.screenY,
+        horizontal: horizontalPan,
+        vertical: verticalPan,
+        claimed: false,
+      };
+    }
     const detail = buildTouchDetail(
       'start',
       t0,
@@ -396,6 +444,41 @@ export const useTouchEvent = (bookKey: string) => {
     if (touch) {
       touchEndRef.current = touch;
       touchEndTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
+      const fixedPan = fixedLayoutPanRef.current;
+      if (fixedPan) {
+        const bookData = getBookData(bookKey);
+        const viewSettings = getViewSettings(bookKey);
+        const view = getView(bookKey);
+        if (!bookData?.isFixedLayout || viewSettings?.scrolled || !view) {
+          fixedLayoutPanRef.current = null;
+        } else {
+          const totalX = touch.screenX - fixedPan.startX;
+          const totalY = touch.screenY - fixedPan.startY;
+          if (!fixedPan.claimed) {
+            const distance = Math.hypot(totalX, totalY);
+            if (distance >= FIXED_LAYOUT_PAN_THRESHOLD) {
+              const horizontal = fixedPan.horizontal && Math.abs(totalX) >= Math.abs(totalY);
+              const vertical = fixedPan.vertical && Math.abs(totalY) > Math.abs(totalX);
+              if (horizontal || vertical) {
+                fixedPan.horizontal = horizontal;
+                fixedPan.vertical = vertical;
+                fixedPan.claimed = true;
+              }
+            }
+          }
+          if (fixedPan.claimed) {
+            const dx = touch.screenX - fixedPan.lastX;
+            const dy = touch.screenY - fixedPan.lastY;
+            fixedPan.lastX = touch.screenX;
+            fixedPan.lastY = touch.screenY;
+            view.pan(fixedPan.horizontal ? -dx : 0, fixedPan.vertical ? -dy : 0);
+            touchConsumedRef.current = true;
+            preventDirectTouchDefault(e);
+            return;
+          }
+        }
+      }
+
       const detail = buildTouchDetail(
         'move',
         touch,
@@ -404,6 +487,7 @@ export const useTouchEvent = (bookKey: string) => {
         touchEndTimeRef.current,
       );
       if (dispatchTouchInterceptors(bookKey, detail)) {
+        fixedLayoutPanRef.current = null;
         touchConsumedRef.current = true;
         preventDirectTouchDefault(e);
         return;
@@ -443,6 +527,7 @@ export const useTouchEvent = (bookKey: string) => {
 
   const onTouchEnd = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
     layeredTurnCandidateRef.current = false;
+    fixedLayoutPanRef.current = null;
     if (reflowableMultiTouchRef.current) {
       if (e.targetTouches.length === 0) {
         reflowableMultiTouchRef.current = false;
@@ -586,6 +671,7 @@ export const useTouchEvent = (bookKey: string) => {
 
   const onTouchCancel = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
     layeredTurnCandidateRef.current = false;
+    fixedLayoutPanRef.current = null;
     const preventCompatibilityClick = touchConsumedRef.current || layeredTurnOwnedRef.current;
     cancelLayeredTurnTouch(bookKey);
     if (preventCompatibilityClick) preventDirectTouchDefault(e);
@@ -637,6 +723,25 @@ export const useTouchEvent = (bookKey: string) => {
       }
     }
   };
+
+  useEffect(() => {
+    const bookData = getBookData(bookKey);
+    const viewSettings = getViewSettings(bookKey);
+    const view = getView(bookKey);
+    const horizontalPan = hasHorizontalPanning(view, viewSettings);
+    const verticalPan = hasVerticalPanning(view, viewSettings);
+    setTouchPanArmed(
+      bookKey,
+      Boolean(bookData?.isFixedLayout && !viewSettings?.scrolled && (horizontalPan || verticalPan)),
+      { horizontal: horizontalPan, vertical: verticalPan },
+    );
+    return () => {
+      setTouchPanArmed(bookKey, false);
+      fixedLayoutPanRef.current = null;
+      cancelLayeredTurnTouch(bookKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
 
   useEffect(() => {
     window.addEventListener('message', handleTouch);

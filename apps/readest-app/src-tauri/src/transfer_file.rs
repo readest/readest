@@ -101,8 +101,11 @@ struct DownloadTempFile {
 
 impl DownloadTempFile {
     fn new(file_path: &str) -> Self {
+        let destination = Path::new(file_path);
+        let parent = destination.parent().unwrap_or_else(|| Path::new("."));
+        let name = format!(".readest-download-{}.part", uuid::Uuid::new_v4().simple());
         Self {
-            path: format!("{file_path}.{}.part", uuid::Uuid::new_v4().simple()),
+            path: parent.join(name).to_string_lossy().into_owned(),
             committed: false,
         }
     }
@@ -352,10 +355,33 @@ struct ResumeMetadata {
     total: u64,
 }
 
+fn auxiliary_path(file_path: &str, suffix: &str) -> PathBuf {
+    const MAX_FILENAME_BYTES: usize = 255;
+    let destination = Path::new(file_path);
+    let filename_bytes = destination
+        .file_name()
+        .map(|name| name.to_string_lossy().as_bytes().len())
+        .unwrap_or(0);
+    if filename_bytes + suffix.len() <= MAX_FILENAME_BYTES {
+        return PathBuf::from(format!("{file_path}{suffix}"));
+    }
+
+    // The destination may already use the full platform filename budget. Keep
+    // resumable state as a short sibling instead of appending to that name.
+    let mut hash = 0xcbf29ce484222325u64;
+    for byte in file_path.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    let parent = destination.parent().unwrap_or_else(|| Path::new("."));
+    parent.join(format!(".readest-{hash:016x}{suffix}"))
+}
+
 fn resume_paths(file_path: &str) -> (PathBuf, PathBuf) {
-    let part = format!("{file_path}.readest.part");
-    let sidecar = format!("{file_path}.readest.part.json");
-    (PathBuf::from(part), PathBuf::from(sidecar))
+    (
+        auxiliary_path(file_path, ".readest.part"),
+        auxiliary_path(file_path, ".readest.part.json"),
+    )
 }
 
 struct ProgressEmitter {
@@ -920,13 +946,37 @@ fn file_to_body(
 
 #[cfg(test)]
 mod tests {
-    use super::{has_disallowed_components, is_path_within_root, parse_content_range, resume_paths};
+    use super::{
+        has_disallowed_components, is_path_within_root, parse_content_range, resume_paths,
+        DownloadTempFile,
+    };
 
     #[test]
     fn resume_paths_are_stable_and_sidecar_has_no_headers() {
         let (part, sidecar) = resume_paths("/tmp/book.epub");
         assert_eq!(part.to_string_lossy(), "/tmp/book.epub.readest.part");
         assert_eq!(sidecar.to_string_lossy(), "/tmp/book.epub.readest.part.json");
+    }
+
+    #[test]
+    fn long_filename_uses_short_sibling_paths_for_download_state() {
+        let filename = format!("{}.azw3", "a".repeat(250));
+        let parent = std::env::temp_dir();
+        let destination = parent.join(filename);
+        let destination = destination.to_string_lossy();
+        let (part, sidecar) = resume_paths(&destination);
+        let temp = DownloadTempFile::new(&destination);
+
+        assert_eq!(part.parent(), Some(parent.as_path()));
+        assert_eq!(sidecar.parent(), part.parent());
+        assert!(part.file_name().unwrap().to_string_lossy().len() < 255);
+        assert!(sidecar.file_name().unwrap().to_string_lossy().len() < 255);
+        assert!(std::path::Path::new(&temp.path)
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .len()
+            < 255);
     }
 
     #[test]

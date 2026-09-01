@@ -22,6 +22,7 @@ interface TouchGesture {
   startY: number;
   startTime: number;
   moved: boolean;
+  touchPanClaimed: boolean;
   turnHost?: NativeTurnHost;
   turnIntent?: TurnGestureIntent;
 }
@@ -36,6 +37,7 @@ const layeredTurnTouchClaims = new Map<string, LayeredTurnTouchClaim>();
 const SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX = 15;
 const SYNTHESIZED_CLICK_SUPPRESSION_MS = 750;
 const SYNTHESIZED_CLICK_POSITION_SLOP_PX = 15;
+const TOUCH_PAN_THRESHOLD_PX = 6;
 
 const getNativeTurnHost = (event: TouchEvent): NativeTurnHost | null => {
   const currentTarget = event.currentTarget as Document | null;
@@ -94,6 +96,10 @@ const autoscrollArmedBooks = new Set<string>();
 // middle-click autoscroll state.
 const mousePanArmedBooks = new Set<string>();
 const mousePanClaimedBooks = new Set<string>();
+// Fixed-layout touch panning needs the raw iframe touchmove listener to cancel
+// the browser's default gesture synchronously, before the postMessage reaches
+// React. The actual axis/scroll operation remains in useTouchEvent.
+const touchPanArmedBooks = new Map<string, { horizontal: boolean; vertical: boolean }>();
 // Whether an autoscroll session is running; gates mousemove forwarding so the
 // stream costs nothing while idle.
 let autoscrollTracking = false;
@@ -106,6 +112,27 @@ export const setMousePanArmed = (bookKey: string, armed: boolean) => {
 export const setMousePanClaimed = (bookKey: string, claimed: boolean) => {
   if (claimed) mousePanClaimedBooks.add(bookKey);
   else mousePanClaimedBooks.delete(bookKey);
+};
+
+export const setTouchPanArmed = (
+  bookKey: string,
+  armed: boolean,
+  axes: { horizontal: boolean; vertical: boolean } = { horizontal: true, vertical: true },
+) => {
+  if (armed) touchPanArmedBooks.set(bookKey, axes);
+  else touchPanArmedBooks.delete(bookKey);
+};
+
+export const resetMouseDownState = () => {
+  isMouseDown = false;
+};
+
+export const resetMouseSession = () => {
+  isMouseDown = false;
+  if (longHoldTimeout) {
+    clearTimeout(longHoldTimeout);
+    longHoldTimeout = null;
+  }
 };
 
 export const setAutoscrollArmed = (bookKey: string, armed: boolean) => {
@@ -350,6 +377,7 @@ export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {
 
 export const handleMousedown = (bookKey: string, event: MouseEvent) => {
   isMouseDown = true;
+  if (longHoldTimeout) clearTimeout(longHoldTimeout);
   longHoldTimeout = setTimeout(() => {
     longHoldTimeout = null;
   }, LONG_HOLD_THRESHOLD);
@@ -364,6 +392,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
       type: 'iframe-mousedown',
       bookKey,
       button: event.button,
+      buttons: event.buttons,
       screenX: event.screenX,
       screenY: event.screenY,
       clientX: event.clientX,
@@ -390,11 +419,15 @@ export const handleAuxclick = (bookKey: string, event: MouseEvent) => {
 
 export const handleMousemove = (bookKey: string, event: MouseEvent) => {
   if (!autoscrollTracking && !mousePanArmedBooks.has(bookKey)) return;
-  if (mousePanClaimedBooks.has(bookKey)) event.preventDefault();
+  if (event.buttons === 0) isMouseDown = false;
+  if (mousePanClaimedBooks.has(bookKey) && (event.buttons == null || (event.buttons & 1) !== 0)) {
+    event.preventDefault();
+  }
   window.postMessage(
     {
       type: 'iframe-mousemove',
       bookKey,
+      buttons: event.buttons,
       screenX: event.screenX,
       screenY: event.screenY,
     },
@@ -417,6 +450,7 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
       type: 'iframe-mouseup',
       bookKey,
       button: event.button,
+      buttons: event.buttons,
       screenX: event.screenX,
       screenY: event.screenY,
       clientX: event.clientX,
@@ -650,6 +684,7 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
         startY: touch.screenY,
         startTime: event.timeStamp,
         moved: false,
+        touchPanClaimed: false,
         turnHost: nativeTurn?.host,
         turnIntent: nativeTurn?.intent,
       });
@@ -660,8 +695,24 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
     if (gesture && touch) {
       const distance = Math.hypot(touch.screenX - gesture.startX, touch.screenY - gesture.startY);
       if (distance >= SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX) gesture.moved = true;
+      if (gesture.touchPanClaimed) {
+        event.preventDefault();
+      } else {
+        const panAxes = touchPanArmedBooks.get(bookKey);
+        const horizontalDominant =
+          Math.abs(touch.screenX - gesture.startX) >= Math.abs(touch.screenY - gesture.startY);
+        const canClaimPan =
+          !!panAxes &&
+          (horizontalDominant ? panAxes.horizontal : panAxes.vertical) &&
+          event.touches.length === 1 &&
+          distance >= TOUCH_PAN_THRESHOLD_PX;
+        if (canClaimPan) {
+          gesture.touchPanClaimed = true;
+          event.preventDefault();
+        }
+      }
       const { turnHost, turnIntent } = gesture;
-      if (turnHost && turnIntent) {
+      if (!gesture.touchPanClaimed && turnHost && turnIntent) {
         const currentTarget = event.currentTarget as Document | null;
         const selection = currentTarget?.getSelection?.();
         const invalid =
@@ -701,9 +752,12 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
     // browser-generated click belongs to a swipe.
     const releasedTouch = changedTouches[0];
     const layeredClaim = layeredTurnTouchClaims.get(bookKey);
-    if (type === 'iframe-touchend' && layeredClaim?.claimed) event.preventDefault();
+    if (type === 'iframe-touchend' && (layeredClaim?.claimed || gesture?.touchPanClaimed)) {
+      event.preventDefault();
+    }
     const moved =
       layeredClaim?.claimed ||
+      gesture?.touchPanClaimed ||
       gesture?.moved ||
       (gesture &&
         releasedTouch &&
