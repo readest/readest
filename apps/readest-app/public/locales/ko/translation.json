@@ -323,9 +323,8 @@
   "Manage Subscription": "구독 관리",
   "Coming Soon": "곧 출시 예정",
   "Upgrade to {{plan}}": "{{plan}}로 업그레이드",
-  "Upgrade to Plus or Pro": "Plus 또는 Pro로 업그레이드",
   "Current Plan": "현재 요금제",
-  "Plan Limits": "요금제 한도",
+  "What's Included": "포함 사항",
   "Processing your payment...": "결제를 처리 중입니다...",
   "Please wait while we confirm your subscription.": "구독을 확인하는 중입니다. 잠시만 기다려주세요.",
   "Payment Processing": "결제 처리 중",
@@ -2222,5 +2221,12 @@
   "Include Chapter Heading": "챕터 제목 포함",
   "Paste your Notion integration token (secret_...)": "Notion 통합 토큰을 붙여넣으세요 (secret_...)",
   "Database ID": "데이터베이스 ID",
-  "Paste the Notion database ID to sync into": "동기화할 Notion 데이터베이스 ID를 붙여넣으세요"
+  "Paste the Notion database ID to sync into": "동기화할 Notion 데이터베이스 ID를 붙여넣으세요",
+  "Billing interval": "결제 주기",
+  "Yearly": "연간",
+  "Monthly": "월간",
+  "Save {{percent}}%": "{{percent}}% 할인",
+  "Change billing period": "결제 주기 변경",
+  "{{price}} billed yearly": "연 {{price}} 청구",
+  "Unlocked": "잠금 해제됨"
 }

@@ -635,10 +635,9 @@
   "Upgrade to {{plan}}": "Nadgradi na {{plan}}",
   "Complete Your Subscription": "Dokončajte svojo naročnino",
   "Coming Soon": "Kmalu na voljo",
-  "Upgrade to Plus or Pro": "Nadgradite na Plus ali Pro",
   "Current Plan": "Trenutni paket",
   "On-Demand Purchase": "Nakup na zahtevo",
-  "Plan Limits": "Omejitve paketa",
+  "What's Included": "Kaj je vključeno",
   "Full Customization": "Popolna prilagoditev",
   "Failed to load files": "Nalaganje datotek ni uspelo",
   "Deleted {{count}} file(s)_one": "Izbrisan {{count}} datoteka",
@@ -2405,5 +2404,12 @@
   "Include Chapter Heading": "Vključi naslov poglavja",
   "Paste your Notion integration token (secret_...)": "Prilepi svoj integracijski žeton Notion (secret_...)",
   "Database ID": "ID zbirke podatkov",
-  "Paste the Notion database ID to sync into": "Prilepi ID zbirke podatkov Notion, v katero želiš sinhronizirati"
+  "Paste the Notion database ID to sync into": "Prilepi ID zbirke podatkov Notion, v katero želiš sinhronizirati",
+  "Billing interval": "Interval zaračunavanja",
+  "Yearly": "Letno",
+  "Monthly": "Mesečno",
+  "Save {{percent}}%": "Prihranite {{percent}} %",
+  "Change billing period": "Spremeni obdobje zaračunavanja",
+  "{{price}} billed yearly": "{{price}} zaračunano letno",
+  "Unlocked": "Odklenjeno"
 }

@@ -335,9 +335,8 @@
   "Manage Subscription": "Керувати підпискою",
   "Coming Soon": "Незабаром",
   "Upgrade to {{plan}}": "Перейти на {{plan}}",
-  "Upgrade to Plus or Pro": "Перейти на Plus або Pro",
   "Current Plan": "Поточний план",
-  "Plan Limits": "Обмеження плану",
+  "What's Included": "Що входить",
   "Processing your payment...": "Обробка вашого платежу...",
   "Please wait while we confirm your subscription.": "Зачекайте, ми підтверджуємо вашу підписку.",
   "Payment Processing": "Обробка платежу",
@@ -2405,5 +2404,12 @@
   "Include Chapter Heading": "Додавати заголовок розділу",
   "Paste your Notion integration token (secret_...)": "Вставте свій токен інтеграції Notion (secret_...)",
   "Database ID": "Ідентифікатор бази даних",
-  "Paste the Notion database ID to sync into": "Вставте ідентифікатор бази даних Notion для синхронізації"
+  "Paste the Notion database ID to sync into": "Вставте ідентифікатор бази даних Notion для синхронізації",
+  "Billing interval": "Інтервал оплати",
+  "Yearly": "Щорічно",
+  "Monthly": "Щомісяця",
+  "Save {{percent}}%": "Заощадьте {{percent}}%",
+  "Change billing period": "Змінити період оплати",
+  "{{price}} billed yearly": "{{price}} на рік",
+  "Unlocked": "Відкрито"
 }

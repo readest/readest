@@ -323,9 +323,8 @@
   "Manage Subscription": "Kelola Langganan",
   "Coming Soon": "Segera Hadir",
   "Upgrade to {{plan}}": "Tingkatkan ke {{plan}}",
-  "Upgrade to Plus or Pro": "Tingkatkan ke Plus atau Pro",
   "Current Plan": "Paket Saat Ini",
-  "Plan Limits": "Batas Paket",
+  "What's Included": "Yang termasuk",
   "Processing your payment...": "Memproses pembayaran Anda...",
   "Please wait while we confirm your subscription.": "Mohon tunggu saat kami mengonfirmasi langganan Anda.",
   "Payment Processing": "Memproses Pembayaran",
@@ -2222,5 +2221,12 @@
   "Include Chapter Heading": "Sertakan judul bab",
   "Paste your Notion integration token (secret_...)": "Tempel token integrasi Notion Anda (secret_...)",
   "Database ID": "ID basis data",
-  "Paste the Notion database ID to sync into": "Tempel ID basis data Notion tujuan sinkronisasi"
+  "Paste the Notion database ID to sync into": "Tempel ID basis data Notion tujuan sinkronisasi",
+  "Billing interval": "Interval penagihan",
+  "Yearly": "Tahunan",
+  "Monthly": "Bulanan",
+  "Save {{percent}}%": "Hemat {{percent}}%",
+  "Change billing period": "Ubah periode penagihan",
+  "{{price}} billed yearly": "{{price}} ditagih per tahun",
+  "Unlocked": "Terbuka"
 }

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { getPlanDetails } from '@/app/user/utils/plan';
+import {
+  getPlanDetails,
+  getSubscriptionIntervals,
+  getYearlySavingsPercent,
+  shouldUseBillingPortal,
+} from '@/app/user/utils/plan';
 import { AvailablePlan, UserPlan, PlanInterval, QuotaFeature } from '@/types/quota';
 import { StripeProductMetadata } from '@/types/payment';
 
@@ -300,6 +305,111 @@ describe('getPlanDetails', () => {
       // When interval is not set on available plan, it should still be found
       const result = getPlanDetails('purchase', plans);
       expect(result.price).toBe(1999);
+    });
+  });
+});
+
+describe('yearly billing', () => {
+  const catalog = [
+    makePlan({ plan: 'plus', productId: 'price_month_plus', price: 499, interval: 'month' }),
+    makePlan({ plan: 'plus', productId: 'price_year_plus', price: 3999, interval: 'year' }),
+    makePlan({ plan: 'pro', productId: 'price_month_pro', price: 999, interval: 'month' }),
+    makePlan({ plan: 'pro', productId: 'price_year_pro', price: 7999, interval: 'year' }),
+  ];
+
+  describe('getPlanDetails with a yearly interval', () => {
+    it('selects the yearly price and productId', () => {
+      const result = getPlanDetails('plus', catalog, 'year');
+      expect(result.price).toBe(3999);
+      expect(result.productId).toBe('price_year_plus');
+    });
+
+    it('selects the monthly price and productId', () => {
+      const result = getPlanDetails('plus', catalog, 'month');
+      expect(result.price).toBe(499);
+      expect(result.productId).toBe('price_month_plus');
+    });
+
+    it('falls back to a yearly default rather than the monthly price', () => {
+      // A tier with no yearly price must never present the monthly amount as
+      // if it were the annual one.
+      const result = getPlanDetails('pro', [], 'year');
+      expect(result.price).not.toBe(999);
+      expect(result.price).toBeGreaterThan(999);
+    });
+  });
+
+  describe('getSubscriptionIntervals', () => {
+    it('offers only monthly when the store has no yearly price', () => {
+      const monthlyOnly = catalog.filter((p) => p.interval === 'month');
+      expect(getSubscriptionIntervals(monthlyOnly)).toEqual(['month']);
+    });
+
+    it('offers yearly once any subscription tier has a yearly price', () => {
+      expect(getSubscriptionIntervals(catalog)).toEqual(['month', 'year']);
+    });
+
+    it('ignores lifetime purchases when deciding', () => {
+      const purchases = [
+        makePlan({ plan: 'purchase', productId: 'price_1gb', price: 199, interval: 'lifetime' }),
+      ];
+      expect(getSubscriptionIntervals(purchases)).toEqual(['month']);
+    });
+
+    it('offers only monthly for an empty catalog', () => {
+      expect(getSubscriptionIntervals([])).toEqual(['month']);
+    });
+  });
+
+  describe('getYearlySavingsPercent', () => {
+    it('computes the discount against twelve monthly payments', () => {
+      // plus: 3999 vs 5988 -> 33.2%, pro: 7999 vs 11988 -> 33.3%
+      expect(getYearlySavingsPercent(catalog)).toBe(33);
+    });
+
+    it('reports the largest saving across tiers', () => {
+      const uneven = [
+        makePlan({ plan: 'plus', price: 500, interval: 'month' }),
+        makePlan({ plan: 'plus', price: 3000, interval: 'year' }), // 50%
+        makePlan({ plan: 'pro', price: 1000, interval: 'month' }),
+        makePlan({ plan: 'pro', price: 10800, interval: 'year' }), // 10%
+      ];
+      expect(getYearlySavingsPercent(uneven)).toBe(50);
+    });
+
+    it('returns null when a tier lacks one of the two intervals', () => {
+      const monthlyOnly = catalog.filter((p) => p.interval === 'month');
+      expect(getYearlySavingsPercent(monthlyOnly)).toBeNull();
+    });
+
+    it('returns null when the yearly price is not actually cheaper', () => {
+      const noSaving = [
+        makePlan({ plan: 'plus', price: 499, interval: 'month' }),
+        makePlan({ plan: 'plus', price: 5988, interval: 'year' }),
+      ];
+      expect(getYearlySavingsPercent(noSaving)).toBeNull();
+    });
+  });
+
+  describe('shouldUseBillingPortal', () => {
+    it('sends an existing subscriber to the portal so Stripe swaps in place', () => {
+      expect(shouldUseBillingPortal('plus', 'subscription')).toBe(true);
+      expect(shouldUseBillingPortal('pro', 'subscription')).toBe(true);
+    });
+
+    it('sends a free user to checkout', () => {
+      expect(shouldUseBillingPortal('free', 'subscription')).toBe(false);
+    });
+
+    it('sends a lifetime/storage-only user to checkout', () => {
+      // `purchase` means storage add-ons with no active subscription, so there
+      // is nothing for the portal to switch.
+      expect(shouldUseBillingPortal('purchase', 'subscription')).toBe(false);
+    });
+
+    it('never routes a one-time purchase through the portal', () => {
+      expect(shouldUseBillingPortal('plus', 'purchase')).toBe(false);
+      expect(shouldUseBillingPortal('pro', 'purchase')).toBe(false);
     });
   });
 });

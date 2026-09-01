@@ -600,10 +600,9 @@
   "Upgrade to {{plan}}": "שדרג ל-{{plan}}",
   "Complete Your Subscription": "השלם את המנוי שלך",
   "Coming Soon": "בקרוב",
-  "Upgrade to Plus or Pro": "שדרג ל-Plus או Pro",
   "Current Plan": "תוכנית נוכחית",
   "On-Demand Purchase": "רכישה לפי דרישה",
-  "Plan Limits": "מגבלות תוכנית",
+  "What's Included": "מה כלול",
   "Full Customization": "התאמה אישית מלאה",
   "Failed to load files": "טעינת הקבצים נכשלה",
   "Deleted {{count}} file(s)_one": "קובץ אחד נמחק",
@@ -2344,5 +2343,12 @@
   "Include Chapter Heading": "כלול כותרת פרק",
   "Paste your Notion integration token (secret_...)": "הדבק את אסימון האינטגרציה שלך ב-Notion (secret_...)",
   "Database ID": "מזהה מסד הנתונים",
-  "Paste the Notion database ID to sync into": "הדבק את מזהה מסד הנתונים של Notion לסנכרון"
+  "Paste the Notion database ID to sync into": "הדבק את מזהה מסד הנתונים של Notion לסנכרון",
+  "Billing interval": "מחזור חיוב",
+  "Yearly": "שנתי",
+  "Monthly": "חודשי",
+  "Save {{percent}}%": "חיסכון של {{percent}}%",
+  "Change billing period": "שינוי תקופת החיוב",
+  "{{price}} billed yearly": "{{price}} בחיוב שנתי",
+  "Unlocked": "נפתח"
 }

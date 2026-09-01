@@ -327,9 +327,8 @@
   "Manage Subscription": "Abonnement beheren",
   "Coming Soon": "Binnenkort beschikbaar",
   "Upgrade to {{plan}}": "Upgrade naar {{plan}}",
-  "Upgrade to Plus or Pro": "Upgrade naar Plus of Pro",
   "Current Plan": "Huidig abonnement",
-  "Plan Limits": "Abonnementslimieten",
+  "What's Included": "Wat is inbegrepen",
   "Processing your payment...": "Je betaling wordt verwerkt...",
   "Please wait while we confirm your subscription.": "Even geduld terwijl we je abonnement bevestigen.",
   "Payment Processing": "Betaling verwerken",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "Hoofdstuktitel toevoegen",
   "Paste your Notion integration token (secret_...)": "Plak je Notion-integratietoken (secret_...)",
   "Database ID": "Database-ID",
-  "Paste the Notion database ID to sync into": "Plak de ID van de Notion-database waarnaar je wilt synchroniseren"
+  "Paste the Notion database ID to sync into": "Plak de ID van de Notion-database waarnaar je wilt synchroniseren",
+  "Billing interval": "Facturatie-interval",
+  "Yearly": "Jaarlijks",
+  "Monthly": "Maandelijks",
+  "Save {{percent}}%": "Bespaar {{percent}}%",
+  "Change billing period": "Facturatieperiode wijzigen",
+  "{{price}} billed yearly": "{{price}} jaarlijks gefactureerd",
+  "Unlocked": "Ontgrendeld"
 }

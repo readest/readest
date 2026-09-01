@@ -1,110 +1,157 @@
+import clsx from 'clsx';
 import { IoCheckmark } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getLocale } from '@/utils/misc';
-import { PlanDetails } from '../utils/plan';
-import { PlanType } from '@/types/quota';
+import { getPlanAccent, PlanDetails } from '../utils/plan';
+import { PlanInterval, PlanType } from '@/types/quota';
 import PlanActionButton from './PlanActionButton';
 import PurchaseCallToActions from './PurchaseCallToActions';
 
 interface PlanCardProps {
   plan: PlanDetails;
+  interval: PlanInterval;
   isUserPlan: boolean;
-  comingSoon?: boolean;
+  recommended?: boolean;
   upgradable?: boolean;
-  index: number;
-  currentPlanIndex: number;
+  canSwitchInterval?: boolean;
+  /** Defaults to false: an unknown state shows the buy button, never hides it. */
+  customizationPurchased?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
-  onSelectPlan: (index: number) => void;
 }
 
 const PlanCard: React.FC<PlanCardProps> = ({
   plan,
+  interval,
   isUserPlan,
-  comingSoon,
+  recommended,
+  customizationPurchased = false,
   upgradable,
-  index,
-  currentPlanIndex,
+  canSwitchInterval,
   onSubscribe,
-  onSelectPlan,
 }) => {
   const _ = useTranslation();
   const { price, currency } = plan;
-  const formattedPrice = new Intl.NumberFormat(getLocale(), {
-    style: 'currency',
-    currency,
-  }).format(price / 100);
+  const accent = getPlanAccent(plan.plan);
+
+  const formatPrice = (amountInCents: number) =>
+    new Intl.NumberFormat(getLocale(), { style: 'currency', currency }).format(amountInCents / 100);
+
+  // The free tier is nominally a subscription but has no yearly billing, so
+  // it must not pick up the "billed yearly" caption.
+  const isYearly = plan.type === 'subscription' && plan.plan !== 'free' && interval === 'year';
+  // Yearly plans lead with the per-month equivalent — the figure people compare
+  // against the monthly price — with the amount actually charged underneath.
+  const headlinePrice = formatPrice(isYearly ? price / 12 : price);
+
+  const renderPriceCaption = () => {
+    if (isYearly) return _('{{price}} billed yearly', { price: formatPrice(price) });
+    return null;
+  };
 
   return (
     <div
-      key={plan.plan}
-      className='w-full shrink-0 px-4 py-6 sm:min-w-96 sm:max-w-96'
-      style={{ scrollSnapAlign: 'start' }}
+      className={clsx(
+        'bg-base-100 eink-bordered flex h-full flex-col overflow-hidden rounded-lg border',
+        // The emphasised border marks the plan you are actually on, in that
+        // tier's own colour — "recommended" is not a state the reader is in.
+        isUserPlan ? accent.border : 'border-base-200',
+      )}
     >
-      <div
-        className={`rounded-xl border-2 p-4 ${plan.color} ${index === currentPlanIndex ? 'ring-2 ring-blue-500' : ''}`}
-      >
-        <div className='mb-6 text-center'>
-          <h4 className='mb-2 text-2xl font-bold'>{_(plan.name)}</h4>
-          <div className='text-3xl font-bold'>
-            {plan.plan !== 'purchase' ? (
-              <>
-                {formattedPrice}
-                <span className='text-lg font-normal'>/{_(plan.interval)}</span>
-              </>
-            ) : (
-              <span className='text-lg font-normal'>{_('On-Demand Purchase')}</span>
-            )}
-          </div>
+      <div className={clsx('px-4 py-3', accent.header)}>
+        <span
+          className={clsx('inline-block rounded-full px-3 py-1 text-sm font-medium', plan.color)}
+          data-plan={plan.plan}
+        >
+          {_(plan.name)}
+        </span>
+      </div>
+
+      <div className='flex flex-1 flex-col p-4'>
+        <div className='mb-5'>
+          {plan.plan !== 'purchase' ? (
+            <>
+              <div className='flex items-baseline gap-1'>
+                <span className={clsx('text-base-content text-3xl font-bold', accent.price)}>
+                  {headlinePrice}
+                </span>
+                <span className='text-base-content/60 text-sm font-normal'>/{_('month')}</span>
+              </div>
+              <div className={clsx('mt-1 min-h-5 text-xs', plan.hintColor)}>
+                {renderPriceCaption()}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Sized below the price: the same type size on an 18-character
+                  phrase outweighs a four-character figure. */}
+              <div
+                className={clsx(
+                  'text-base-content text-2xl leading-tight font-bold text-balance',
+                  accent.price,
+                )}
+              >
+                {_('On-Demand Purchase')}
+              </div>
+              <div className='mt-1 min-h-5 text-xs' />
+            </>
+          )}
         </div>
 
-        <div role='none' className='mb-6 space-y-3' onClick={() => onSelectPlan(index)}>
+        <div className='mb-5 space-y-3'>
           {plan.features.map((feature, featureIndex) => (
             <div key={featureIndex} className='flex flex-col'>
-              <div className='flex items-center gap-2'>
-                <IoCheckmark className='h-5 w-5 shrink-0 text-green-500' />
+              <div className='text-base-content flex items-start gap-2 text-sm'>
+                <IoCheckmark className={clsx('mt-0.5 h-4 w-4 shrink-0', accent.check)} />
                 <span>{_(feature.label)}</span>
               </div>
               {feature.description && (
-                <div className={`ms-7 text-sm sm:text-xs ${plan.hintColor}`}>
-                  {_(feature.description)}
-                </div>
+                <div className={clsx('ms-6 text-xs', plan.hintColor)}>{_(feature.description)}</div>
               )}
             </div>
           ))}
         </div>
 
-        {plan.limits && Object.keys(plan.limits).length > 0 && (
-          <div
-            role='none'
-            className='mb-6 rounded-lg bg-white/50 p-4'
-            onClick={() => onSelectPlan(index)}
-          >
-            <h5 className='mb-3 font-semibold'>{_('Plan Limits')}</h5>
-            <div className='space-y-2'>
-              {Object.entries(plan.limits).map(([key, value]) => (
-                <div key={key} className='flex justify-between text-sm'>
-                  <span>{_(key)}:</span>
-                  <span className='font-medium'>{value}</span>
-                </div>
-              ))}
+        {/* Anchored to the card's bottom as one group. Feature lists differ in
+            height per tier, so leaving these to follow the list directly puts
+            the panels at different heights across a row. */}
+        <div className='mt-auto'>
+          {plan.limits && Object.keys(plan.limits).length > 0 && (
+            <div className='bg-base-200/60 mb-5 rounded-lg p-3'>
+              <h5 className='text-base-content mb-2 text-xs font-semibold'>
+                {_("What's Included")}
+              </h5>
+              <div className='space-y-1.5'>
+                {Object.entries(plan.limits).map(([key, value]) => (
+                  <div key={key} className='flex justify-between gap-2 text-xs'>
+                    <span className={plan.hintColor}>{_(key)}</span>
+                    <span className='text-base-content shrink-0 font-medium whitespace-nowrap'>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {plan.plan === 'purchase' && (
-          <PurchaseCallToActions plan={plan} onSubscribe={onSubscribe} />
-        )}
-
-        {plan.plan !== 'purchase' && (
-          <PlanActionButton
-            plan={plan}
-            comingSoon={comingSoon}
-            upgradable={upgradable}
-            isUserPlan={isUserPlan}
-            onSubscribe={onSubscribe}
-            onSelectPlan={onSelectPlan}
-          />
-        )}
+          {plan.plan === 'purchase' ? (
+            <PurchaseCallToActions
+              plan={plan}
+              accent={accent}
+              customizationPurchased={customizationPurchased}
+              onSubscribe={onSubscribe}
+            />
+          ) : (
+            <PlanActionButton
+              plan={plan}
+              accent={accent}
+              recommended={recommended}
+              canSwitchInterval={canSwitchInterval}
+              upgradable={upgradable}
+              isUserPlan={isUserPlan}
+              onSubscribe={onSubscribe}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

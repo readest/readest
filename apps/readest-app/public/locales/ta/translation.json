@@ -328,9 +328,8 @@
   "Upgrade to {{plan}}": "{{plan}} க்கு மேம்படுத்தவும்",
   "Complete Your Subscription": "உங்கள் சந்தாவை நிறைவு செய்யவும்",
   "Coming Soon": "விரைவில் வரும்",
-  "Upgrade to Plus or Pro": "Plus அல்லது Pro க்கு மேம்படுத்தவும்",
   "Current Plan": "தற்போதைய திட்டம்",
-  "Plan Limits": "திட்ட வரம்புகள்",
+  "What's Included": "என்ன அடங்கும்",
   "Failed to delete user. Please try again later.": "பயனரை நீக்க முடியவில்லை. பின்னர் மீண்டும் முயற்சிக்கவும்.",
   "Failed to create checkout session": "checkout session உருவாக்க முடியவில்லை",
   "No purchases found to restore.": "மீட்டெடுக்க வாங்குதல்கள் இல்லை.",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "அத்தியாயத் தலைப்பைச் சேர்",
   "Paste your Notion integration token (secret_...)": "உங்கள் Notion ஒருங்கிணைப்பு டோக்கனை ஒட்டவும் (secret_...)",
   "Database ID": "தரவுத்தள ஐடி",
-  "Paste the Notion database ID to sync into": "ஒத்திசைக்க வேண்டிய Notion தரவுத்தள ஐடியை ஒட்டவும்"
+  "Paste the Notion database ID to sync into": "ஒத்திசைக்க வேண்டிய Notion தரவுத்தள ஐடியை ஒட்டவும்",
+  "Billing interval": "கட்டண இடைவெளி",
+  "Yearly": "ஆண்டுதோறும்",
+  "Monthly": "மாதந்தோறும்",
+  "Save {{percent}}%": "{{percent}}% சேமிக்கவும்",
+  "Change billing period": "கட்டணக் காலத்தை மாற்று",
+  "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்",
+  "Unlocked": "திறக்கப்பட்டது"
 }

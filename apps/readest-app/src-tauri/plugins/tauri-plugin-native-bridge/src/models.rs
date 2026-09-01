@@ -204,6 +204,9 @@ pub struct IAPFetchProductsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct IAPPurchaseProductRequest {
     pub product_id: String,
+    /// Supabase user id, surfaced by StoreKit as the transaction's
+    /// `appAccountToken` so a purchase can be attributed server-side.
+    pub app_account_token: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -335,9 +335,8 @@
   "Manage Subscription": "Управление подпиской",
   "Coming Soon": "Скоро будет",
   "Upgrade to {{plan}}": "Обновить до {{plan}}",
-  "Upgrade to Plus or Pro": "Обновить до Plus или Pro",
   "Current Plan": "Текущий план",
-  "Plan Limits": "Лимиты плана",
+  "What's Included": "Что входит",
   "Processing your payment...": "Обработка платежа...",
   "Please wait while we confirm your subscription.": "Пожалуйста, подождите, пока мы подтверждаем вашу подписку.",
   "Payment Processing": "Обработка платежа",
@@ -2405,5 +2404,12 @@
   "Include Chapter Heading": "Добавлять заголовок главы",
   "Paste your Notion integration token (secret_...)": "Вставьте свой токен интеграции Notion (secret_...)",
   "Database ID": "Идентификатор базы данных",
-  "Paste the Notion database ID to sync into": "Вставьте идентификатор базы данных Notion для синхронизации"
+  "Paste the Notion database ID to sync into": "Вставьте идентификатор базы данных Notion для синхронизации",
+  "Billing interval": "Период оплаты",
+  "Yearly": "Ежегодно",
+  "Monthly": "Ежемесячно",
+  "Save {{percent}}%": "Экономия {{percent}}%",
+  "Change billing period": "Изменить период оплаты",
+  "{{price}} billed yearly": "{{price}} при оплате за год",
+  "Unlocked": "Разблокировано"
 }

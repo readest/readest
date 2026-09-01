@@ -342,9 +342,8 @@
   "Manage Subscription": "إدارة الاشتراك",
   "Coming Soon": "قريبًا",
   "Upgrade to {{plan}}": "الترقية إلى {{plan}}",
-  "Upgrade to Plus or Pro": "الترقية إلى Plus أو Pro",
   "Current Plan": "الخطة الحالية",
-  "Plan Limits": "حدود الخطة",
+  "What's Included": "ما المتضمَّن",
   "Processing your payment...": "جارٍ معالجة الدفع...",
   "Please wait while we confirm your subscription.": "يرجى الانتظار بينما نقوم بتأكيد اشتراكك.",
   "Payment Processing": "معالجة الدفع",
@@ -2527,5 +2526,12 @@
   "Include Chapter Heading": "تضمين عنوان الفصل",
   "Paste your Notion integration token (secret_...)": "الصق رمز تكامل Notion الخاص بك (secret_...)",
   "Database ID": "معرّف قاعدة البيانات",
-  "Paste the Notion database ID to sync into": "الصق معرّف قاعدة بيانات Notion المراد المزامنة إليها"
+  "Paste the Notion database ID to sync into": "الصق معرّف قاعدة بيانات Notion المراد المزامنة إليها",
+  "Billing interval": "فترة الفوترة",
+  "Yearly": "سنوي",
+  "Monthly": "شهري",
+  "Save {{percent}}%": "وفّر {{percent}}٪",
+  "Change billing period": "تغيير فترة الفوترة",
+  "{{price}} billed yearly": "{{price}} تُحصّل سنويًا",
+  "Unlocked": "تم إلغاء القفل"
 }

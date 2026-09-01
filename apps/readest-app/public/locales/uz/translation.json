@@ -755,10 +755,9 @@
   "Upgrade to {{plan}}": "{{plan}} ga yangilash",
   "Complete Your Subscription": "Obunangizni yakunlang",
   "Coming Soon": "Tez orada",
-  "Upgrade to Plus or Pro": "Plus yoki Pro ga yangilash",
   "Current Plan": "Joriy reja",
   "On-Demand Purchase": "Talabga koʻra xarid",
-  "Plan Limits": "Reja cheklovlari",
+  "What's Included": "Nimalar kiradi",
   "Full Customization": "Toʻliq sozlash",
   "Could not load your shares": "Ulashishlaringizni yuklab boʻlmadi",
   "Revoked": "Bekor qilindi",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "Bob sarlavhasini qo'shish",
   "Paste your Notion integration token (secret_...)": "Notion integratsiya tokeningizni joylashtiring (secret_...)",
   "Database ID": "Ma'lumotlar bazasi identifikatori",
-  "Paste the Notion database ID to sync into": "Sinxronlanadigan Notion ma'lumotlar bazasi identifikatorini joylashtiring"
+  "Paste the Notion database ID to sync into": "Sinxronlanadigan Notion ma'lumotlar bazasi identifikatorini joylashtiring",
+  "Billing interval": "Hisob-kitob oralig'i",
+  "Yearly": "Yillik",
+  "Monthly": "Oylik",
+  "Save {{percent}}%": "{{percent}}% tejang",
+  "Change billing period": "Hisob-kitob davrini o'zgartirish",
+  "{{price}} billed yearly": "Yiliga {{price}} hisoblanadi",
+  "Unlocked": "Ochilgan"
 }

@@ -306,9 +306,8 @@
   "Upgrade to {{plan}}": "Uppgradera till {{plan}}",
   "Complete Your Subscription": "Slutför din prenumeration",
   "Coming Soon": "Kommer snart",
-  "Upgrade to Plus or Pro": "Uppgradera till Plus eller Pro",
   "Current Plan": "Nuvarande plan",
-  "Plan Limits": "Plangränser",
+  "What's Included": "Vad som ingår",
   "Failed to delete user. Please try again later.": "Kunde inte ta bort användare. Försök senare.",
   "Failed to create checkout session": "Kunde inte skapa betalningssession",
   "No purchases found to restore.": "Inga köp att återställa.",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "Inkludera kapitelrubrik",
   "Paste your Notion integration token (secret_...)": "Klistra in din Notion-integrationstoken (secret_...)",
   "Database ID": "Databas-ID",
-  "Paste the Notion database ID to sync into": "Klistra in det Notion-databas-ID som ska synkroniseras till"
+  "Paste the Notion database ID to sync into": "Klistra in det Notion-databas-ID som ska synkroniseras till",
+  "Billing interval": "Faktureringsintervall",
+  "Yearly": "Årsvis",
+  "Monthly": "Månadsvis",
+  "Save {{percent}}%": "Spara {{percent}} %",
+  "Change billing period": "Ändra faktureringsperiod",
+  "{{price}} billed yearly": "{{price}} faktureras årsvis",
+  "Unlocked": "Upplåst"
 }

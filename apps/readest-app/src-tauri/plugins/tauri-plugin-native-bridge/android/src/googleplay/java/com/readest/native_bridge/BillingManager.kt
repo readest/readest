@@ -20,6 +20,53 @@ internal fun shouldRetryBillingQuery(responseCode: Int, attempt: Int): Boolean {
         attempt < MAX_BILLING_QUERY_ATTEMPTS
 }
 
+/** A subscription the user already owns, as far as the billing flow cares. */
+internal data class ExistingSubscription(
+    val productIds: List<String>,
+    val purchaseToken: String,
+    val purchaseTimeMillis: Long,
+    val isPurchased: Boolean
+)
+
+internal sealed class SubscriptionReplacement {
+    /** The purchase state is unknown; launching would risk a duplicate. */
+    object Abort : SubscriptionReplacement()
+
+    /** Nothing to replace — this is a first subscription or a repurchase. */
+    object None : SubscriptionReplacement()
+
+    data class Replace(val purchaseToken: String, val oldProductId: String) :
+        SubscriptionReplacement()
+}
+
+/**
+ * Decide what a new subscription purchase replaces. Play treats a billing flow
+ * launched without the old purchase token as a brand new subscription, so a
+ * monthly subscriber buying the yearly plan would end up paying for both.
+ *
+ * `existing` is null when the purchase query failed. An empty list and a failed
+ * query must not be conflated: "no subscription" is safe to buy on top of,
+ * "we could not find out" is not, so a failed query aborts rather than
+ * silently buying a second subscription.
+ */
+internal fun resolveSubscriptionReplacement(
+    existing: List<ExistingSubscription>?,
+    newProductId: String
+): SubscriptionReplacement {
+    if (existing == null) return SubscriptionReplacement.Abort
+
+    val replaceable = existing.filter { subscription ->
+        subscription.isPurchased && !subscription.productIds.contains(newProductId)
+    }
+    // A user double-subscribed by the old flow can hold more than one. Pick the
+    // most recent so the choice is deterministic rather than query-order
+    // dependent; the older one still has to be cancelled in Play.
+    val target = replaceable.maxByOrNull { it.purchaseTimeMillis } ?: return SubscriptionReplacement.None
+    val oldProductId = target.productIds.firstOrNull() ?: return SubscriptionReplacement.None
+
+    return SubscriptionReplacement.Replace(target.purchaseToken, oldProductId)
+}
+
 internal class BillingSetupState {
     private var setupComplete = false
     private var setupInProgress = false
@@ -245,6 +292,54 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
             return
         }
 
+        if (productDetails.productType != BillingClient.ProductType.SUBS) {
+            launchPurchaseFlow(productDetails, null, callback)
+            return
+        }
+
+        // Changing plan or billing period has to hand Play the token of the
+        // subscription being replaced, otherwise it starts a second one
+        // alongside the old and the user is billed twice.
+        queryPurchases(BillingClient.ProductType.SUBS) { purchases ->
+            val existing = purchases?.map { purchase ->
+                ExistingSubscription(
+                    productIds = purchase.products,
+                    purchaseToken = purchase.purchaseToken,
+                    purchaseTimeMillis = purchase.purchaseTime,
+                    isPurchased = purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+                )
+            }
+
+            // Replacing one of several still leaves the others billing, and the
+            // client cannot cancel them — only Play can. Log it so we find out
+            // whether anyone is actually in this state before building for it.
+            val replaceableCount = existing.orEmpty().count { subscription ->
+                subscription.isPurchased && !subscription.productIds.contains(productId)
+            }
+            if (replaceableCount > 1) {
+                Log.w(TAG, "User holds $replaceableCount subscriptions; replacing only the newest")
+            }
+
+            when (val replacement = resolveSubscriptionReplacement(existing, productId)) {
+                is SubscriptionReplacement.Abort -> {
+                    // Buying blind here is how a user ends up with two live
+                    // subscriptions; failing the purchase is the cheaper error.
+                    Log.e(TAG, "Could not read existing subscriptions; not launching purchase")
+                    callback(null)
+                }
+                is SubscriptionReplacement.None -> launchPurchaseFlow(productDetails, null, callback)
+                is SubscriptionReplacement.Replace -> {
+                    launchPurchaseFlow(productDetails, replacement, callback)
+                }
+            }
+        }
+    }
+
+    private fun launchPurchaseFlow(
+        productDetails: ProductDetails,
+        replacement: SubscriptionReplacement.Replace?,
+        callback: (PurchaseData?) -> Unit
+    ) {
         purchaseCallback = callback
 
         val productDetailsParamsList = listOf(
@@ -255,16 +350,44 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
                     productDetails.subscriptionOfferDetails?.firstOrNull()?.let { offer ->
                         setOfferToken(offer.offerToken)
                     }
+                    // Billing 9 carries the replaced product and its mode on the
+                    // product params; SubscriptionUpdateParams keeps only the
+                    // old purchase token.
+                    replacement?.let { target ->
+                        setSubscriptionProductReplacementParams(
+                            BillingFlowParams.ProductDetailsParams
+                                .SubscriptionProductReplacementParams.newBuilder()
+                                .setOldProductId(target.oldProductId)
+                                // Credits the unused remainder of the old plan
+                                // and shifts the renewal date, which reads
+                                // correctly both upgrading and downgrading.
+                                .setReplacementMode(
+                                    BillingFlowParams.ProductDetailsParams
+                                        .SubscriptionProductReplacementParams
+                                        .ReplacementMode.WITH_TIME_PRORATION
+                                )
+                                .build()
+                        )
+                    }
                 }
                 .build()
         )
 
         val billingFlowParams = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(productDetailsParamsList)
+            .apply {
+                replacement?.let { target ->
+                    setSubscriptionUpdateParams(
+                        BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                            .setOldPurchaseToken(target.purchaseToken)
+                            .build()
+                    )
+                }
+            }
             .build()
 
         val billingResult = billingClient.launchBillingFlow(activity, billingFlowParams)
-        
+
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             Log.e(TAG, "Failed to launch billing flow: ${billingResult.debugMessage}")
             callback(null)
@@ -284,12 +407,12 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
                 val allPurchases = mutableListOf<PurchaseData>()
 
                 queryPurchases(BillingClient.ProductType.INAPP) { inAppPurchases ->
-                    allPurchases.addAll(inAppPurchases.map { purchase ->
+                    allPurchases.addAll(inAppPurchases.orEmpty().map { purchase ->
                         convertToPurchaseData(purchase, "restored")
                     })
 
                     queryPurchases(BillingClient.ProductType.SUBS) { subscriptionPurchases ->
-                        allPurchases.addAll(subscriptionPurchases.map { purchase ->
+                        allPurchases.addAll(subscriptionPurchases.orEmpty().map { purchase ->
                             convertToPurchaseData(purchase, "restored")
                         })
 
@@ -300,10 +423,11 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
         }
     }
 
+    /** Calls back with null when the query terminally failed, never an empty list. */
     private fun queryPurchases(
         productType: String,
         attempt: Int = 1,
-        callback: (List<Purchase>) -> Unit
+        callback: (List<Purchase>?) -> Unit
     ) {
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(productType)
@@ -318,8 +442,8 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
                     queryPurchases(productType, attempt + 1, callback)
                 }
             } else {
-                Log.e(TAG, "Failed to restore purchases: ${billingResult.debugMessage}")
-                callback(emptyList())
+                Log.e(TAG, "Failed to query purchases: ${billingResult.debugMessage}")
+                callback(null)
             }
         }
     }

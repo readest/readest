@@ -323,9 +323,8 @@
   "Manage Subscription": "མཚམས་སྦྱོར་དོ་དམ།",
   "Coming Soon": "ཉེ་བར་སྤྱོད་འགོ་འཛུགས་རྒྱུ།",
   "Upgrade to {{plan}}": "{{plan}} ལ་རིམ་སྤོར་བྱེད་པ།",
-  "Upgrade to Plus or Pro": "Plus ཡང་ན་ Pro ལ་རིམ་སྤོར་བྱེད་པ།",
   "Current Plan": "ད་ལྟའི་ཐུམ་སྒྲིལ།",
-  "Plan Limits": "ཐུམ་སྒྲིལ་གྱི་ཚད་བཀག",
+  "What's Included": "ཚུད་པའི་ནང་དོན།",
   "Processing your payment...": "དངུལ་སྤྲོད་པར་བརྟག་དཔྱད་བྱེད་བཞིན་པ།...",
   "Please wait while we confirm your subscription.": "ཅུང་ཙམ་སྒུག་དང་། ང་ཚོས་ཁྱེད་ཀྱི་མཚམས་སྦྱོར་གཏན་འཁེལ་བྱེད་བཞིན་པ་རེད།",
   "Payment Processing": "དངུལ་སྤྲོད་པར་བརྟག་དཔྱད་བྱེད་བཞིན་པ།",
@@ -2222,5 +2221,12 @@
   "Include Chapter Heading": "ལེའུའི་མགོ་བྱང་ནང་འདུས་བཟོ།",
   "Paste your Notion integration token (secret_...)": "ཁྱེད་ཀྱི་ Notion ཟུང་འབྲེལ་རྟགས་རིས་སྦྱར་རོགས། (secret_...)",
   "Database ID": "གཞི་གྲངས་མཛོད་ཀྱི་ངོས་འཛིན་ཨང་།",
-  "Paste the Notion database ID to sync into": "མཐུན་སྒྲིག་བྱེད་ཡུལ་གྱི་ Notion གཞི་གྲངས་མཛོད་ངོས་འཛིན་ཨང་སྦྱར་རོགས།"
+  "Paste the Notion database ID to sync into": "མཐུན་སྒྲིག་བྱེད་ཡུལ་གྱི་ Notion གཞི་གྲངས་མཛོད་ངོས་འཛིན་ཨང་སྦྱར་རོགས།",
+  "Billing interval": "རྩིས་སྤྲོད་བར་མཚམས།",
+  "Yearly": "ལོ་རེའི།",
+  "Monthly": "ཟླ་རེའི།",
+  "Save {{percent}}%": "བརྒྱ་ཆ་{{percent}} གྲོན་ཆུང་།",
+  "Change billing period": "རྩིས་སྤྲོད་དུས་ཡུན་བསྒྱུར་བ།",
+  "{{price}} billed yearly": "ལོ་རེར་ {{price}} རྩིས་སྤྲོད།",
+  "Unlocked": "ཁ་ཕྱེ་ཟིན།"
 }

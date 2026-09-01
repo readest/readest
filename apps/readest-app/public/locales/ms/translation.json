@@ -325,10 +325,9 @@
   "Upgrade to {{plan}}": "Naik Taraf ke {{plan}}",
   "Complete Your Subscription": "Lengkapkan Langganan Anda",
   "Coming Soon": "Akan Datang",
-  "Upgrade to Plus or Pro": "Naik Taraf ke Plus atau Pro",
   "Current Plan": "Pelan Semasa",
   "On-Demand Purchase": "Pembelian Atas Permintaan",
-  "Plan Limits": "Had Pelan",
+  "What's Included": "Apa yang disertakan",
   "Full Customization": "Penyesuaian Penuh",
   "Failed to create checkout session": "Gagal mencipta sesi pembayaran",
   "No purchases found to restore.": "Tiada pembelian dijumpai untuk dipulihkan.",
@@ -2222,5 +2221,12 @@
   "Include Chapter Heading": "Sertakan tajuk bab",
   "Paste your Notion integration token (secret_...)": "Tampal token integrasi Notion anda (secret_...)",
   "Database ID": "ID pangkalan data",
-  "Paste the Notion database ID to sync into": "Tampal ID pangkalan data Notion untuk disegerakkan"
+  "Paste the Notion database ID to sync into": "Tampal ID pangkalan data Notion untuk disegerakkan",
+  "Billing interval": "Selang pengebilan",
+  "Yearly": "Tahunan",
+  "Monthly": "Bulanan",
+  "Save {{percent}}%": "Jimat {{percent}}%",
+  "Change billing period": "Tukar tempoh pengebilan",
+  "{{price}} billed yearly": "{{price}} dibilkan setiap tahun",
+  "Unlocked": "Dibuka Kunci"
 }

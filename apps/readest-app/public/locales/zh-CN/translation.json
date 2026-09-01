@@ -324,9 +324,8 @@
   "Manage Subscription": "管理订阅",
   "Coming Soon": "即将上线",
   "Upgrade to {{plan}}": "升级到 {{plan}}",
-  "Upgrade to Plus or Pro": "升级到 Plus 或 Pro",
   "Current Plan": "当前套餐",
-  "Plan Limits": "套餐限制",
+  "What's Included": "包含内容",
   "Processing your payment...": "正在处理付款...",
   "Please wait while we confirm your subscription.": "请稍候，我们正在确认您的订阅。",
   "Payment Processing": "付款处理中",
@@ -2222,5 +2221,12 @@
   "Reading": "在读",
   "Invalid Notion database ID or URL": "无效的 Notion 数据库 ID 或 URL",
   "This Notion database has multiple data sources. Paste a data source ID instead.": "此 Notion 数据库包含多个数据源。请改为粘贴数据源 ID。",
-  "The Notion database is unavailable or has not been shared with this integration.": "Notion 数据库不可用，或尚未共享给此集成。"
+  "The Notion database is unavailable or has not been shared with this integration.": "Notion 数据库不可用，或尚未共享给此集成。",
+  "Billing interval": "结算周期",
+  "Yearly": "按年",
+  "Monthly": "按月",
+  "Save {{percent}}%": "省 {{percent}}%",
+  "Change billing period": "更改结算周期",
+  "{{price}} billed yearly": "按年收取 {{price}}",
+  "Unlocked": "已解锁"
 }

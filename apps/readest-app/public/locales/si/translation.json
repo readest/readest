@@ -328,9 +328,8 @@
   "Upgrade to {{plan}}": "{{plan}} වෙත උසස් කරන්න",
   "Complete Your Subscription": "ඔබේ දායකත්වය සම්පූර්ණ කරන්න",
   "Coming Soon": "ඉක්මනින් පැමිණේ",
-  "Upgrade to Plus or Pro": "Plus හෝ Pro වෙත උසස් කරන්න",
   "Current Plan": "වර්තමාන සැලැස්ම",
-  "Plan Limits": "සැලැස්මේ සීමා",
+  "What's Included": "ඇතුළත් වන දේ",
   "Failed to delete user. Please try again later.": "පරිශීලකයා මකා දැමීමට අසමත්. කරුණාකර පසුව නැවත උත්සාහ කරන්න.",
   "Failed to create checkout session": "checkout session නිර්මාණය කිරීමට අසමත්",
   "No purchases found to restore.": "ප්‍රතිෂ්ඨාපනය කිරීමට මිලදී ගැනීම් නොමැත.",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "පරිච්ඡේද ශීර්ෂය ඇතුළත් කරන්න",
   "Paste your Notion integration token (secret_...)": "ඔබගේ Notion ඒකාබද්ධතා ටෝකනය අලවන්න (secret_...)",
   "Database ID": "දත්ත සමුදා හැඳුනුම",
-  "Paste the Notion database ID to sync into": "සමමුහූර්ත කිරීමට Notion දත්ත සමුදා හැඳුනුම අලවන්න"
+  "Paste the Notion database ID to sync into": "සමමුහූර්ත කිරීමට Notion දත්ත සමුදා හැඳුනුම අලවන්න",
+  "Billing interval": "බිල්පත් කාල පරාසය",
+  "Yearly": "වාර්ෂික",
+  "Monthly": "මාසික",
+  "Save {{percent}}%": "{{percent}}% ඉතිරි කරන්න",
+  "Change billing period": "බිල්පත් කාලය වෙනස් කරන්න",
+  "{{price}} billed yearly": "වාර්ෂිකව {{price}} අය කෙරේ",
+  "Unlocked": "විවෘත කර ඇත"
 }

@@ -323,9 +323,8 @@
   "Manage Subscription": "Quản lý đăng ký",
   "Coming Soon": "Sắp ra mắt",
   "Upgrade to {{plan}}": "Nâng cấp lên {{plan}}",
-  "Upgrade to Plus or Pro": "Nâng cấp lên Plus hoặc Pro",
   "Current Plan": "Gói hiện tại",
-  "Plan Limits": "Giới hạn gói",
+  "What's Included": "Bao gồm những gì",
   "Processing your payment...": "Đang xử lý thanh toán...",
   "Please wait while we confirm your subscription.": "Vui lòng chờ trong khi chúng tôi xác nhận đăng ký của bạn.",
   "Payment Processing": "Đang xử lý thanh toán",
@@ -2222,5 +2221,12 @@
   "Include Chapter Heading": "Bao gồm tiêu đề chương",
   "Paste your Notion integration token (secret_...)": "Dán mã tích hợp Notion của bạn (secret_...)",
   "Database ID": "ID cơ sở dữ liệu",
-  "Paste the Notion database ID to sync into": "Dán ID cơ sở dữ liệu Notion để đồng bộ vào"
+  "Paste the Notion database ID to sync into": "Dán ID cơ sở dữ liệu Notion để đồng bộ vào",
+  "Billing interval": "Chu kỳ thanh toán",
+  "Yearly": "Hàng năm",
+  "Monthly": "Hàng tháng",
+  "Save {{percent}}%": "Tiết kiệm {{percent}}%",
+  "Change billing period": "Thay đổi chu kỳ thanh toán",
+  "{{price}} billed yearly": "Thanh toán {{price}} mỗi năm",
+  "Unlocked": "Đã mở khóa"
 }

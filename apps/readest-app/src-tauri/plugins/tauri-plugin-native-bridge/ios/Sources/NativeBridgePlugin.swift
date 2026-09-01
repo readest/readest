@@ -89,6 +89,7 @@ struct FetchProductsRequest: Decodable {
 
 struct PurchaseProductRequest: Decodable {
   let productId: String
+  let appAccountToken: String?
 }
 
 struct ProductData: Codable {
@@ -1166,7 +1167,9 @@ class NativeBridgePlugin: Plugin {
           return
         }
 
-        StoreKitManager.shared.purchase(product: product) { result in
+        StoreKitManager.shared.purchase(
+          product: product, appAccountToken: args.appAccountToken
+        ) { result in
           switch result {
           case .success(let txn):
             let purchase = PurchaseData(

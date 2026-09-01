@@ -327,9 +327,8 @@
   "Manage Subscription": "सदस्यता प्रबंधित करें",
   "Coming Soon": "जल्द आ रहा है",
   "Upgrade to {{plan}}": "{{plan}} में अपग्रेड करें",
-  "Upgrade to Plus or Pro": "Plus या Pro में अपग्रेड करें",
   "Current Plan": "वर्तमान योजना",
-  "Plan Limits": "योजना की सीमाएँ",
+  "What's Included": "क्या शामिल है",
   "Processing your payment...": "आपका भुगतान संसाधित हो रहा है...",
   "Please wait while we confirm your subscription.": "कृपया प्रतीक्षा करें, हम आपकी सदस्यता की पुष्टि कर रहे हैं।",
   "Payment Processing": "भुगतान संसाधित हो रहा है",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "अध्याय शीर्षक शामिल करें",
   "Paste your Notion integration token (secret_...)": "अपना Notion इंटीग्रेशन टोकन पेस्ट करें (secret_...)",
   "Database ID": "डेटाबेस आईडी",
-  "Paste the Notion database ID to sync into": "सिंक करने के लिए Notion डेटाबेस आईडी पेस्ट करें"
+  "Paste the Notion database ID to sync into": "सिंक करने के लिए Notion डेटाबेस आईडी पेस्ट करें",
+  "Billing interval": "बिलिंग अंतराल",
+  "Yearly": "वार्षिक",
+  "Monthly": "मासिक",
+  "Save {{percent}}%": "{{percent}}% बचाएँ",
+  "Change billing period": "बिलिंग अवधि बदलें",
+  "{{price}} billed yearly": "{{price}} वार्षिक बिल",
+  "Unlocked": "अनलॉक किया गया"
 }

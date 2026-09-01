@@ -674,10 +674,9 @@
   "Upgrade to {{plan}}": "Váltás erre: {{plan}}",
   "Complete Your Subscription": "Előfizetés befejezése",
   "Coming Soon": "Hamarosan",
-  "Upgrade to Plus or Pro": "Váltás Plus vagy Pro csomagra",
   "Current Plan": "Jelenlegi csomag",
   "On-Demand Purchase": "Egyszeri vásárlás",
-  "Plan Limits": "Csomag korlátai",
+  "What's Included": "Mit tartalmaz",
   "Full Customization": "Teljes testreszabás",
   "Failed to load files": "Fájlok betöltése sikertelen",
   "Deleted {{count}} file(s)_one": "{{count}} fájl törölve",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "Fejezetcím megjelenítése",
   "Paste your Notion integration token (secret_...)": "Illeszd be a Notion-integrációs tokenedet (secret_...)",
   "Database ID": "Adatbázis-azonosító",
-  "Paste the Notion database ID to sync into": "Illeszd be a Notion-adatbázis azonosítóját, amelybe szinkronizálni szeretnél"
+  "Paste the Notion database ID to sync into": "Illeszd be a Notion-adatbázis azonosítóját, amelybe szinkronizálni szeretnél",
+  "Billing interval": "Számlázási időszak",
+  "Yearly": "Éves",
+  "Monthly": "Havi",
+  "Save {{percent}}%": "{{percent}}% megtakarítás",
+  "Change billing period": "Számlázási időszak módosítása",
+  "{{price}} billed yearly": "{{price}} évente számlázva",
+  "Unlocked": "Feloldva"
 }

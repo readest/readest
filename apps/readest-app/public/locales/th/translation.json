@@ -275,9 +275,8 @@
   "Upgrade to {{plan}}": "อัปเกรดเป็น {{plan}}",
   "Complete Your Subscription": "ดำเนินการสมัครสมาชิกให้เสร็จ",
   "Coming Soon": "เร็วๆ นี้",
-  "Upgrade to Plus or Pro": "อัปเกรดเป็น Plus หรือ Pro",
   "Current Plan": "แผนปัจจุบัน",
-  "Plan Limits": "ข้อจำกัดแผน",
+  "What's Included": "สิ่งที่รวมอยู่",
   "Failed to delete user. Please try again later.": "ไม่สามารถลบผู้ใช้ ลองใหม่ภายหลัง",
   "Loading profile...": "กำลังโหลดโปรไฟล์...",
   "Processing your payment...": "กำลังประมวลผลการชำระเงิน...",
@@ -2222,5 +2221,12 @@
   "Include Chapter Heading": "รวมหัวข้อบท",
   "Paste your Notion integration token (secret_...)": "วางโทเค็นการเชื่อมต่อ Notion ของคุณ (secret_...)",
   "Database ID": "ID ฐานข้อมูล",
-  "Paste the Notion database ID to sync into": "วาง ID ฐานข้อมูล Notion ที่ต้องการซิงค์ไป"
+  "Paste the Notion database ID to sync into": "วาง ID ฐานข้อมูล Notion ที่ต้องการซิงค์ไป",
+  "Billing interval": "รอบการเรียกเก็บเงิน",
+  "Yearly": "รายปี",
+  "Monthly": "รายเดือน",
+  "Save {{percent}}%": "ประหยัด {{percent}}%",
+  "Change billing period": "เปลี่ยนรอบการเรียกเก็บเงิน",
+  "{{price}} billed yearly": "เรียกเก็บ {{price}} ต่อปี",
+  "Unlocked": "ปลดล็อกแล้ว"
 }

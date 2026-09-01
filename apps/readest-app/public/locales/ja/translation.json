@@ -323,9 +323,8 @@
   "Manage Subscription": "サブスクリプションを管理",
   "Coming Soon": "近日公開",
   "Upgrade to {{plan}}": "{{plan}} にアップグレード",
-  "Upgrade to Plus or Pro": "Plus または Pro にアップグレード",
   "Current Plan": "現在のプラン",
-  "Plan Limits": "プランの上限",
+  "What's Included": "含まれるもの",
   "Processing your payment...": "お支払いを処理中...",
   "Please wait while we confirm your subscription.": "サブスクリプションを確認しています。しばらくお待ちください。",
   "Payment Processing": "支払いを処理中",
@@ -2222,5 +2221,12 @@
   "Include Chapter Heading": "章見出しを含める",
   "Paste your Notion integration token (secret_...)": "Notion インテグレーショントークンを貼り付けてください (secret_...)",
   "Database ID": "データベース ID",
-  "Paste the Notion database ID to sync into": "同期先の Notion データベース ID を貼り付けてください"
+  "Paste the Notion database ID to sync into": "同期先の Notion データベース ID を貼り付けてください",
+  "Billing interval": "お支払い間隔",
+  "Yearly": "年額",
+  "Monthly": "月額",
+  "Save {{percent}}%": "{{percent}}%お得",
+  "Change billing period": "お支払い間隔を変更",
+  "{{price}} billed yearly": "年額 {{price}} で請求",
+  "Unlocked": "解除済み"
 }

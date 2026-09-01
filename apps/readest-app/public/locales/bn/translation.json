@@ -328,9 +328,8 @@
   "Upgrade to {{plan}}": "{{plan}} এ আপগ্রেড",
   "Complete Your Subscription": "আপনার সাবস্ক্রিপশন সম্পূর্ণ করুন",
   "Coming Soon": "শীঘ্রই আসছে",
-  "Upgrade to Plus or Pro": "প্লাস বা প্রো তে আপগ্রেড",
   "Current Plan": "বর্তমান প্ল্যান",
-  "Plan Limits": "প্ল্যান সীমা",
+  "What's Included": "যা অন্তর্ভুক্ত",
   "Failed to delete user. Please try again later.": "ইউজার মুছতে ব্যর্থ। পরে আবার চেষ্টা করুন।",
   "Failed to create checkout session": "চেকআউট সেশন তৈরি করতে ব্যর্থ",
   "No purchases found to restore.": "পুনরুদ্ধার করার জন্য কোন ক্রয় পাওয়া যায়নি।",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "অধ্যায়ের শিরোনাম অন্তর্ভুক্ত করুন",
   "Paste your Notion integration token (secret_...)": "আপনার Notion ইন্টিগ্রেশন টোকেন পেস্ট করুন (secret_...)",
   "Database ID": "ডেটাবেস আইডি",
-  "Paste the Notion database ID to sync into": "যে Notion ডেটাবেসে সিঙ্ক করবেন তার আইডি পেস্ট করুন"
+  "Paste the Notion database ID to sync into": "যে Notion ডেটাবেসে সিঙ্ক করবেন তার আইডি পেস্ট করুন",
+  "Billing interval": "বিলিং ব্যবধান",
+  "Yearly": "বার্ষিক",
+  "Monthly": "মাসিক",
+  "Save {{percent}}%": "{{percent}}% সাশ্রয়",
+  "Change billing period": "বিলিং সময়কাল পরিবর্তন করুন",
+  "{{price}} billed yearly": "{{price}} বার্ষিক বিল",
+  "Unlocked": "আনলক করা হয়েছে"
 }

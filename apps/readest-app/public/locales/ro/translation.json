@@ -661,10 +661,9 @@
   "Upgrade to {{plan}}": "Treceți la {{plan}}",
   "Complete Your Subscription": "Finalizați abonamentul",
   "Coming Soon": "În curând",
-  "Upgrade to Plus or Pro": "Treceți la Plus sau Pro",
   "Current Plan": "Abonament curent",
   "On-Demand Purchase": "Achiziție la cerere",
-  "Plan Limits": "Limitele abonamentului",
+  "What's Included": "Ce include",
   "Full Customization": "Personalizare completă",
   "Failed to load files": "Nu s-au putut încărca fișierele",
   "Deleted {{count}} file(s)_one": "S-a șters {{count}} fișier",
@@ -2344,5 +2343,12 @@
   "Include Chapter Heading": "Include titlul capitolului",
   "Paste your Notion integration token (secret_...)": "Lipește tokenul tău de integrare Notion (secret_...)",
   "Database ID": "ID-ul bazei de date",
-  "Paste the Notion database ID to sync into": "Lipește ID-ul bazei de date Notion în care să se sincronizeze"
+  "Paste the Notion database ID to sync into": "Lipește ID-ul bazei de date Notion în care să se sincronizeze",
+  "Billing interval": "Interval de facturare",
+  "Yearly": "Anual",
+  "Monthly": "Lunar",
+  "Save {{percent}}%": "Economisiți {{percent}}%",
+  "Change billing period": "Schimbă perioada de facturare",
+  "{{price}} billed yearly": "{{price}} facturat anual",
+  "Unlocked": "Deblocat"
 }

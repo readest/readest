@@ -89,15 +89,6 @@ export async function createOrUpdatePayment(userId: string, purchase: VerifiedPu
   try {
     const supabase = createSupabaseAdminClient();
 
-    const existingPayment = await supabase
-      .from('payments')
-      .select('*')
-      .eq('apple_original_transaction_id', purchase.originalTransactionId)
-      .single();
-    if (existingPayment.data && existingPayment.data.user_id !== userId) {
-      throw new Error(IAPError.TRANSACTION_BELONGS_TO_ANOTHER_USER);
-    }
-
     const paymentData: ApplePaymentData = {
       user_id: userId,
       provider: 'apple',
@@ -109,17 +100,39 @@ export async function createOrUpdatePayment(userId: string, purchase: VerifiedPu
       amount: purchase.amount,
       currency: purchase.currency,
     };
-    const { data, error } = await supabase.from('payments').upsert(paymentData, {
-      onConflict: 'apple_original_transaction_id',
-      ignoreDuplicates: false,
-    });
+    // Ownership is decided by the write itself, never by a preceding read. Two
+    // callers can now race for the same transaction (the client verification
+    // flow and the ONE_TIME_CHARGE notification), and a check-then-upsert lets
+    // both pass the check before the loser silently reassigns `user_id`, after
+    // which each call credits storage to a different account. Update only a row
+    // that already belongs to this user; otherwise insert and let the unique
+    // constraint on apple_original_transaction_id arbitrate.
+    const { data: updated, error: updateError } = await supabase
+      .from('payments')
+      .update(paymentData)
+      .eq('apple_original_transaction_id', purchase.originalTransactionId)
+      .eq('user_id', userId)
+      .select('id');
 
-    if (error) {
-      console.error('Database payment update error:', error);
-      throw new Error(`Database payment update failed: ${error.message}`);
+    if (updateError) {
+      console.error('Database payment update error:', updateError);
+      throw new Error(`Database payment update failed: ${updateError.message}`);
     }
+
+    if (!updated || updated.length === 0) {
+      const { error: insertError } = await supabase.from('payments').insert(paymentData);
+      // 23505 is a unique violation: the transaction exists under another user,
+      // since an existing row of our own would have been updated above.
+      if (insertError?.code === '23505') {
+        throw new Error(IAPError.TRANSACTION_BELONGS_TO_ANOTHER_USER);
+      }
+      if (insertError) {
+        console.error('Database payment insert error:', insertError);
+        throw new Error(`Database payment update failed: ${insertError.message}`);
+      }
+    }
+
     await updateUserStorage(userId);
-    return data;
   } catch (error) {
     console.error('Failed to update user payment:', error);
     throw error;

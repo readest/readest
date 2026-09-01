@@ -330,9 +330,8 @@
   "Manage Subscription": "Gérer l’abonnement",
   "Coming Soon": "Bientôt disponible",
   "Upgrade to {{plan}}": "Passer à {{plan}}",
-  "Upgrade to Plus or Pro": "Passer à Plus ou Pro",
   "Current Plan": "Abonnement actuel",
-  "Plan Limits": "Limites de l’abonnement",
+  "What's Included": "Ce qui est inclus",
   "Processing your payment...": "Traitement de votre paiement...",
   "Please wait while we confirm your subscription.": "Veuillez patienter pendant la confirmation de votre abonnement.",
   "Payment Processing": "Traitement du paiement",
@@ -2344,5 +2343,12 @@
   "Include Chapter Heading": "Inclure le titre du chapitre",
   "Paste your Notion integration token (secret_...)": "Collez votre jeton d'intégration Notion (secret_...)",
   "Database ID": "ID de la base de données",
-  "Paste the Notion database ID to sync into": "Collez l’ID de la base de données Notion de destination"
+  "Paste the Notion database ID to sync into": "Collez l’ID de la base de données Notion de destination",
+  "Billing interval": "Intervalle de facturation",
+  "Yearly": "Annuel",
+  "Monthly": "Mensuel",
+  "Save {{percent}}%": "Économisez {{percent}} %",
+  "Change billing period": "Modifier la période de facturation",
+  "{{price}} billed yearly": "{{price}} facturé annuellement",
+  "Unlocked": "Débloqué"
 }

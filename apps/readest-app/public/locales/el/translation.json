@@ -327,9 +327,8 @@
   "Manage Subscription": "Διαχείριση συνδρομής",
   "Coming Soon": "Έρχεται σύντομα",
   "Upgrade to {{plan}}": "Αναβάθμιση σε {{plan}}",
-  "Upgrade to Plus or Pro": "Αναβάθμιση σε Plus ή Pro",
   "Current Plan": "Τρέχον πρόγραμμα",
-  "Plan Limits": "Όρια προγράμματος",
+  "What's Included": "Τι περιλαμβάνεται",
   "Processing your payment...": "Επεξεργασία πληρωμής...",
   "Please wait while we confirm your subscription.": "Παρακαλώ περιμένετε όσο επιβεβαιώνουμε τη συνδρομή σας.",
   "Payment Processing": "Επεξεργασία πληρωμής",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "Συμπερίληψη τίτλου κεφαλαίου",
   "Paste your Notion integration token (secret_...)": "Επικολλήστε το διακριτικό ενσωμάτωσης Notion (secret_...)",
   "Database ID": "Αναγνωριστικό βάσης δεδομένων",
-  "Paste the Notion database ID to sync into": "Επικολλήστε το αναγνωριστικό της βάσης δεδομένων Notion για συγχρονισμό"
+  "Paste the Notion database ID to sync into": "Επικολλήστε το αναγνωριστικό της βάσης δεδομένων Notion για συγχρονισμό",
+  "Billing interval": "Διάστημα χρέωσης",
+  "Yearly": "Ετήσια",
+  "Monthly": "Μηνιαία",
+  "Save {{percent}}%": "Κερδίστε {{percent}}%",
+  "Change billing period": "Αλλαγή περιόδου χρέωσης",
+  "{{price}} billed yearly": "{{price}} με ετήσια χρέωση",
+  "Unlocked": "Ξεκλειδώθηκε"
 }

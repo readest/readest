@@ -326,9 +326,8 @@
   "Manage Subscription": "مدیریت اشتراک",
   "Coming Soon": "به‌زودی",
   "Upgrade to {{plan}}": "ارتقاء به {{plan}}",
-  "Upgrade to Plus or Pro": "ارتقاء به Plus یا Pro",
   "Current Plan": "طرح فعلی",
-  "Plan Limits": "محدودیت‌های طرح",
+  "What's Included": "موارد شامل",
   "Processing your payment...": "در حال پردازش پرداخت شما...",
   "Please wait while we confirm your subscription.": "لطفاً تا تأیید اشتراک صبور باشید.",
   "Payment Processing": "پردازش پرداخت",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "گنجاندن عنوان فصل",
   "Paste your Notion integration token (secret_...)": "توکن یکپارچه‌سازی Notion خود را جای‌گذاری کنید (secret_...)",
   "Database ID": "شناسه پایگاه داده",
-  "Paste the Notion database ID to sync into": "شناسه پایگاه داده Notion مقصد همگام‌سازی را جای‌گذاری کنید"
+  "Paste the Notion database ID to sync into": "شناسه پایگاه داده Notion مقصد همگام‌سازی را جای‌گذاری کنید",
+  "Billing interval": "بازه صورت‌حساب",
+  "Yearly": "سالانه",
+  "Monthly": "ماهانه",
+  "Save {{percent}}%": "{{percent}}٪ صرفه‌جویی",
+  "Change billing period": "تغییر دوره صورت‌حساب",
+  "{{price}} billed yearly": "{{price}} به‌صورت سالانه",
+  "Unlocked": "باز شد"
 }

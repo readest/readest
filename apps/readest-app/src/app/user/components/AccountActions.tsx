@@ -23,19 +23,19 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
-      <div className='w-full max-w-md rounded-2xl bg-white p-6'>
-        <h3 className='mb-4 text-xl font-bold text-gray-800'>{title}</h3>
-        <p className='mb-6 text-gray-600'>{message}</p>
+      <div className='bg-base-100 eink-bordered w-full max-w-md rounded-2xl p-6'>
+        <h3 className='text-base-content mb-4 text-xl font-bold'>{title}</h3>
+        <p className='text-base-content/70 mb-6'>{message}</p>
         <div className='flex flex-col gap-3 sm:flex-row'>
           <button
             onClick={onCancel}
-            className='flex-1 rounded-lg bg-gray-300 px-4 py-2 font-medium text-gray-800 hover:bg-gray-400'
+            className='bg-base-200 hover:bg-base-300 text-base-content eink-bordered flex-1 rounded-lg px-4 py-2 font-medium transition-colors duration-150'
           >
             {_('Cancel')}
           </button>
           <button
             onClick={onConfirm}
-            className='flex-1 rounded-lg bg-red-500 px-4 py-2 font-medium text-white hover:bg-red-600'
+            className='eink-contrast flex-1 rounded-lg px-4 py-2 font-medium transition-colors duration-150 not-eink:bg-rose-600 not-eink:text-white not-eink:hover:bg-rose-700'
           >
             {_('Delete Permanently')}
           </button>
@@ -112,7 +112,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {appService?.hasIAP && iapAvailable ? (
           <button
             onClick={onRestorePurchase}
-            className='w-full rounded-lg bg-blue-100 px-6 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Restore Purchase')}
           </button>
@@ -120,7 +120,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
           userPlan !== 'free' && (
             <button
               onClick={onManageSubscription}
-              className='w-full rounded-lg bg-blue-100 px-6 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-200 md:w-auto'
+              className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
             >
               {_('Manage Subscription')}
             </button>
@@ -129,7 +129,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {onManageSync && (
           <button
             onClick={onManageSync}
-            className='w-full rounded-lg bg-blue-100 px-6 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Manage Sync')}
           </button>
@@ -137,7 +137,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {onManageStorage && (
           <button
             onClick={onManageStorage}
-            className='w-full rounded-lg bg-purple-100 px-6 py-3 font-medium text-purple-600 transition-colors hover:bg-purple-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Manage Storage')}
           </button>
@@ -145,42 +145,44 @@ const AccountActions: React.FC<AccountActionsProps> = ({
         {onManageSharedLinks && (
           <button
             onClick={onManageSharedLinks}
-            className='w-full rounded-lg bg-purple-100 px-6 py-3 font-medium text-purple-600 transition-colors hover:bg-purple-200 md:w-auto'
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
             {_('Manage Shared Links')}
           </button>
         )}
         <button
           onClick={onResetPassword}
-          className='w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-800 transition-colors hover:bg-gray-300 md:w-auto'
+          className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
         >
           {_('Reset Password')}
         </button>
         <button
           onClick={onUpdateEmail}
-          className='w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-800 transition-colors hover:bg-gray-300 md:w-auto'
+          className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
         >
           {_('Update Email')}
         </button>
         <button
           onClick={onLogout}
-          className='w-full rounded-lg bg-gray-200 px-6 py-3 font-medium text-gray-800 transition-colors hover:bg-gray-300 md:w-auto'
+          className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
         >
           {_('Sign Out')}
         </button>
       </div>
-      <div className='mt-8 flex flex-col gap-3 rounded-lg border border-red-200 p-4'>
-        <h3 className='text-sm font-semibold text-red-600'>{_('Danger Zone')}</h3>
+      <div className='eink-bordered mt-8 flex flex-col gap-3 rounded-lg border p-4 not-eink:border-rose-200'>
+        <h3 className='text-base-content text-sm font-semibold not-eink:text-rose-700'>
+          {_('Danger Zone')}
+        </h3>
         <div className='flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3'>
           <button
             onClick={() => setPendingAction('books')}
-            className='w-full rounded-lg bg-red-100 px-6 py-3 font-medium text-red-600 transition-colors hover:bg-red-200 md:w-auto'
+            className='eink-bordered w-full rounded-lg px-6 py-3 font-medium transition-colors duration-150 border not-eink:border-rose-300 not-eink:bg-rose-100 not-eink:text-rose-900 not-eink:hover:bg-rose-200 md:w-auto'
           >
             {_('Delete All Books')}
           </button>
           <button
             onClick={() => setPendingAction('account')}
-            className='w-full rounded-lg bg-red-100 px-6 py-3 font-medium text-red-600 transition-colors hover:bg-red-200 md:w-auto'
+            className='eink-bordered w-full rounded-lg px-6 py-3 font-medium transition-colors duration-150 border not-eink:border-rose-300 not-eink:bg-rose-100 not-eink:text-rose-900 not-eink:hover:bg-rose-200 md:w-auto'
           >
             {_('Delete Account')}
           </button>

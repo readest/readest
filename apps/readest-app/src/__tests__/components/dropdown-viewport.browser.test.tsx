@@ -92,9 +92,10 @@ beforeAll(async () => {
   await page.viewport(PHONE_WIDTH, 800);
 });
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   document.documentElement.classList.remove('ui-rtl');
+  await page.viewport(PHONE_WIDTH, 800);
 });
 
 describe('Dropdown menu viewport layout', () => {
@@ -171,5 +172,77 @@ describe('Dropdown menu viewport layout', () => {
     });
 
     await expectMenuWithinViewport();
+  });
+
+  it('keeps a long nested description within the menu width', async () => {
+    await page.viewport(1440, 800);
+
+    render(
+      <DropdownProvider>
+        <div data-testid='dropdown-anchor' style={{ position: 'fixed', top: 8, left: 8 }}>
+          <Dropdown
+            label='Test Menu'
+            className='dropdown-bottom'
+            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+            toggleButton={<span>⋯</span>}
+            showTooltip={false}
+          >
+            <Menu className='book-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'>
+              <MenuItem label='Hardcover Sync'>
+                <ul className='flex flex-col ps-1'>
+                  <MenuItem label='Push Progress' noIcon />
+                  <MenuItem label='Push Notes' noIcon />
+                  <MenuItem
+                    label='Link Book'
+                    description='The Mind-Body Stress Reset: Somatic Practices to Reduce Overwhelm and Increase Well-Being'
+                    noIcon
+                  />
+                </ul>
+              </MenuItem>
+              <MenuItem label='Export Annotations' />
+            </Menu>
+          </Dropdown>
+        </div>
+      </DropdownProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Test Menu' }));
+    const menu = openMenu();
+    const collapsedWidth = menu.getBoundingClientRect().width;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hardcover Sync' }));
+
+    await waitFor(() => {
+      expect(
+        (
+          screen
+            .getByRole('button', { name: 'Hardcover Sync' })
+            .closest('details') as HTMLDetailsElement
+        ).open,
+      ).toBe(true);
+    });
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+
+    expect(menu.getBoundingClientRect().width).toBeLessThanOrEqual(collapsedWidth + 1);
+    expect(menu.getBoundingClientRect().width).toBeLessThanOrEqual(320);
+
+    const description = screen.getByText(
+      'The Mind-Body Stress Reset: Somatic Practices to Reduce Overwhelm and Increase Well-Being',
+    );
+    expect(description.scrollWidth).toBeGreaterThan(description.clientWidth);
+
+    const pushProgress = screen.getByRole('menuitem', { name: 'Push Progress' });
+    const linkBook = screen.getByRole('menuitem', { name: /^Link Book/ });
+
+    await page.getByRole('menuitem', { name: 'Push Progress' }).hover();
+    expect(pushProgress.matches(':hover')).toBe(true);
+    expect(linkBook.matches(':hover')).toBe(false);
+
+    await page.getByRole('menuitem', { name: /^Link Book/ }).hover();
+    expect(pushProgress.matches(':hover')).toBe(false);
+    expect(linkBook.matches(':hover')).toBe(true);
+    expect(menu.querySelectorAll('[role="menuitem"]:hover')).toHaveLength(1);
   });
 });

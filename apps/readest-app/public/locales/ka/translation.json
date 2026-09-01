@@ -1050,10 +1050,9 @@
   "Upgrade to {{plan}}": "გადადით {{plan}}-ზე",
   "Complete Your Subscription": "დაასრულეთ თქვენი გამოწერა",
   "Coming Soon": "მალე",
-  "Upgrade to Plus or Pro": "გადადით Plus-ზე ან Pro-ზე",
   "Current Plan": "მიმდინარე გეგმა",
   "On-Demand Purchase": "შესყიდვა მოთხოვნისამებრ",
-  "Plan Limits": "გეგმის ლიმიტები",
+  "What's Included": "რა შედის",
   "Full Customization": "სრული მორგება",
   "Could not load your shares": "თქვენი გაზიარებების ჩატვირთვა ვერ მოხერხდა",
   "Revoked": "გაუქმებული",
@@ -2283,5 +2282,12 @@
   "Include Chapter Heading": "თავის სათაურის ჩართვა",
   "Paste your Notion integration token (secret_...)": "ჩასვით თქვენი Notion-ის ინტეგრაციის ტოკენი (secret_...)",
   "Database ID": "მონაცემთა ბაზის იდენტიფიკატორი",
-  "Paste the Notion database ID to sync into": "ჩასვით Notion-ის მონაცემთა ბაზის იდენტიფიკატორი სინქრონიზაციისთვის"
+  "Paste the Notion database ID to sync into": "ჩასვით Notion-ის მონაცემთა ბაზის იდენტიფიკატორი სინქრონიზაციისთვის",
+  "Billing interval": "ბილინგის ინტერვალი",
+  "Yearly": "წლიური",
+  "Monthly": "თვიური",
+  "Save {{percent}}%": "დაზოგეთ {{percent}}%",
+  "Change billing period": "ბილინგის პერიოდის შეცვლა",
+  "{{price}} billed yearly": "{{price}} წლიური გადახდით",
+  "Unlocked": "გახსნილია"
 }
