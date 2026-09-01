@@ -440,3 +440,40 @@ describe('handleAppleNotification — one-time purchase ownership', () => {
     });
   });
 });
+
+// Apple's TEST notification is how the App Store verifies a configured
+// endpoint, and it is also what `requestTestNotification` sends. It carries a
+// `data` object (so it is not a summary payload) but no `signedTransactionInfo`,
+// so decoding a transaction from it throws and the route answers 500. Apple
+// records UNSUCCESSFUL_HTTP_RESPONSE_CODE and retries for days.
+describe('handleAppleNotification — payloads without a transaction', () => {
+  const mockDataPayload = (notificationType: NotificationType) => {
+    appleMocks.decodeNotificationPayload.mockResolvedValue({
+      notificationType,
+      subtype: undefined,
+      data: { appAppleId: 1234567890, bundleId: BUNDLE_ID, environment: 'Production' },
+    });
+  };
+
+  it('acknowledges a TEST notification instead of failing delivery', async () => {
+    mockDataPayload(NotificationType.Test);
+    const sb = createSupabaseMock({});
+    h.supabase = sb;
+
+    const res = await handleAppleNotification('payload');
+
+    expect(res).toMatchObject({ handled: false, reason: 'no_transaction_info' });
+    expect(appleMocks.decodeTransaction).not.toHaveBeenCalled();
+  });
+
+  it('does not throw for any data payload that carries no transaction', async () => {
+    mockDataPayload(NotificationType.ConsumptionRequest);
+    const sb = createSupabaseMock({});
+    h.supabase = sb;
+
+    await expect(handleAppleNotification('payload')).resolves.toMatchObject({
+      handled: false,
+      reason: 'no_transaction_info',
+    });
+  });
+});

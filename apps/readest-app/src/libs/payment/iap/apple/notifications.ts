@@ -79,6 +79,20 @@ export async function handleAppleNotification(
     throw new Error(`Unexpected bundle id: ${payload.data.bundleId}`);
   }
 
+  // `isDecodedNotificationDataPayload` only checks that a `data` object exists,
+  // and several notifications carry one with no transaction in it. TEST is the
+  // notable case: it is what the App Store sends to verify a configured
+  // endpoint, so decoding a transaction from it threw, the route answered 500,
+  // and Apple recorded UNSUCCESSFUL_HTTP_RESPONSE_CODE and retried for days.
+  // Acknowledge these instead, which returns 200 and ends the retries.
+  if (!payload.data.signedTransactionInfo) {
+    return {
+      handled: false,
+      reason: 'no_transaction_info',
+      notificationType: payload.notificationType,
+    };
+  }
+
   const transaction = await decodeTransaction(payload.data.signedTransactionInfo);
   const renewalInfo: JWSRenewalInfoDecodedPayload | undefined = payload.data.signedRenewalInfo
     ? await decodeRenewalInfo(payload.data.signedRenewalInfo)
