@@ -242,6 +242,48 @@ describe('useKOSync — no clobbering when the pull is unresolved (#5065)', () =
     expect(h.updateProgressMock).not.toHaveBeenCalled();
   });
 
+  // #5980 review: the 'silent' strategy takes a different branch from 'prompt'
+  // and never built a conflict, so `applyRemoteProgress` failing used to fall
+  // straight through to setSyncState('synced'). That releases the debounced
+  // auto-push, which then PUTs the stale local position over the newer remote
+  // XPointer -- the exact #5065 damage, on the path #5065's test didn't cover.
+  test('does NOT auto-push (PUT) when a silent pull cannot resolve the XPointer', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.cfiResolves = false;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    // The reader must not have moved, and a later page turn must not push.
+    expect(h.goTo).not.toHaveBeenCalled();
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/4!/4/2/8)',
+    };
+    rerender();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('still auto-pushes after a silent pull that DID apply', async () => {
+    // Positive control for the branch above: a resolvable XPointer applies,
+    // reaches 'synced', and auto-push keeps working.
+    h.settings.kosync.strategy = 'silent';
+    h.cfiResolves = true;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/650!/4/2/6)');
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/4!/4/2/8)',
+    };
+    rerender();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).toHaveBeenCalled();
+  });
+
   test('still auto-pushes for a genuine non-conflict (resolved position matches)', async () => {
     // Positive control: when the XPointer resolves to a fraction that matches
     // the local position, there is no conflict and auto-push works normally.
