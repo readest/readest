@@ -9,6 +9,8 @@ interface RgbaImage {
 
 const TEXT_THICKNESS = 64;
 const BORDER = 8;
+const MAXIMUM_HORIZONTAL_RATIO = 8;
+const MAXIMUM_VERTICAL_RATIO = 16;
 
 const pixelOffset = (image: Pick<RgbaImage, 'width'>, x: number, y: number): number =>
   (y * image.width + x) * 4;
@@ -47,9 +49,17 @@ const perspectiveWarp = (
   if (sourceWidth < 1 || sourceHeight < 1) return null;
 
   const height = vertical
-    ? Math.max(TEXT_THICKNESS, Math.round((TEXT_THICKNESS * sourceHeight) / sourceWidth))
+    ? Math.min(
+        TEXT_THICKNESS * MAXIMUM_VERTICAL_RATIO,
+        Math.max(TEXT_THICKNESS, Math.round((TEXT_THICKNESS * sourceHeight) / sourceWidth)),
+      )
     : TEXT_THICKNESS;
-  const width = Math.max(1, Math.round((sourceWidth / sourceHeight) * height));
+  const width = vertical
+    ? TEXT_THICKNESS
+    : Math.min(
+        TEXT_THICKNESS * MAXIMUM_HORIZONTAL_RATIO,
+        Math.max(1, Math.round((TEXT_THICKNESS * sourceWidth) / sourceHeight)),
+      );
   const dx1 = topRight.x - bottomRight.x;
   const dx2 = bottomLeft.x - bottomRight.x;
   const dx3 = topLeft.x - topRight.x + bottomRight.x - bottomLeft.x;

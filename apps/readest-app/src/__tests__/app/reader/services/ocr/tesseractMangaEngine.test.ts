@@ -233,4 +233,52 @@ describe('TesseractOcrEngine manga detection', () => {
     expect(worker.recognize).toHaveBeenCalledWith(source, {}, { text: true, blocks: true });
     expect(result.blocks[0]?.text).toBe('fallback');
   });
+
+  it('keeps OCR available when the optional Mokuro detector fails', async () => {
+    const source = document.createElement('canvas');
+    source.width = page.width;
+    source.height = page.height;
+    const detector = {
+      detect: vi.fn(async () => {
+        throw new Error('detector download failed');
+      }),
+      terminate: vi.fn(async () => undefined),
+    };
+    const worker = makeWorker();
+    vi.mocked(worker.recognize).mockResolvedValue({
+      data: {
+        blocks: [
+          {
+            blocktype: 'FLOWING_TEXT',
+            paragraphs: [
+              {
+                lines: [
+                  {
+                    text: 'fallback',
+                    confidence: 90,
+                    bbox: { x0: 10, y0: 20, x1: 210, y1: 60 },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const createDetector = vi.fn<MangaTextDetectorFactory>(() => detector);
+    const engine = new TesseractOcrEngine(
+      { mangaMode: true },
+      vi.fn(async () => worker),
+      createDetector,
+    );
+
+    const first = await engine.recognize(source, page);
+    const second = await engine.recognize(source, { ...page, pageIndex: 3 });
+
+    expect(first.blocks[0]?.text).toBe('fallback');
+    expect(second.blocks[0]?.text).toBe('fallback');
+    expect(createDetector).toHaveBeenCalledOnce();
+    expect(detector.detect).toHaveBeenCalledOnce();
+    expect(detector.terminate).toHaveBeenCalledOnce();
+  });
 });

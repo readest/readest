@@ -111,6 +111,11 @@ interface WorkerRequest {
   termination: Promise<void> | null;
 }
 
+interface MangaLineProgress {
+  index: number;
+  total: number;
+}
+
 const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
   createWorker(languages, oem, options);
 
@@ -222,6 +227,8 @@ export class TesseractOcrEngine {
   readonly #abortController = new AbortController();
   #workerRequest: WorkerRequest | null = null;
   #mangaDetector: MangaTextDetector | null = null;
+  #mangaDetectorUnavailable = false;
+  #mangaLineProgress: MangaLineProgress | null = null;
   #terminated = false;
 
   constructor(
@@ -279,11 +286,25 @@ export class TesseractOcrEngine {
   async #recognizeManga(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
     const prepared = await prepareMangaImage(image, page, this.#loadMangaImage);
     if (this.#terminated) throw new Error('OCR engine has been terminated');
+    if (this.#mangaDetectorUnavailable) return this.#recognizeWholePage(prepared);
     this.#onProgress?.({ status: 'detecting manga text', progress: 0 });
-    const detection = await this.#getMangaDetector().detect(prepared.image, {
-      width: prepared.page.width,
-      height: prepared.page.height,
-    });
+    let detection: MokuroTextDetectionResult;
+    try {
+      detection = await this.#getMangaDetector().detect(prepared.image, {
+        width: prepared.page.width,
+        height: prepared.page.height,
+      });
+    } catch (error) {
+      if (this.#terminated || this.#abortController.signal.aborted) {
+        throw new Error('OCR engine has been terminated');
+      }
+      this.#mangaDetectorUnavailable = true;
+      const detector = this.#mangaDetector;
+      this.#mangaDetector = null;
+      await detector?.terminate().catch(() => undefined);
+      console.warn('Manga text detector unavailable; using whole-page Tesseract', error);
+      return this.#recognizeWholePage(prepared);
+    }
     this.#onProgress?.({ status: 'detecting manga text', progress: 1 });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     const lines = detection.blocks.flatMap((block, blockIndex) =>
@@ -295,7 +316,7 @@ export class TesseractOcrEngine {
     const imageData = readCanvasRgba(prepared.image);
     const blocks: OcrTextBlock[] = [];
     await this.#runWorkerOperation(worker, async () => {
-      for (const { blockIndex, lineIndex, line } of lines) {
+      for (const [recognitionIndex, { blockIndex, lineIndex, line }] of lines.entries()) {
         if (this.#terminated) throw new Error('OCR engine has been terminated');
         const writingMode = line.vertical ? 'vertical-rl' : 'horizontal-tb';
         await worker.setParameters({
@@ -304,7 +325,13 @@ export class TesseractOcrEngine {
         });
         const crop = makeMangaTextLineCrop(prepared.image, imageData, line);
         if (!crop) continue;
-        const { data } = await worker.recognize(crop, {}, { text: true, blocks: false });
+        this.#mangaLineProgress = { index: recognitionIndex, total: lines.length };
+        let data: TesseractPageData & { text?: string; confidence?: number };
+        try {
+          ({ data } = await worker.recognize(crop, {}, { text: true, blocks: false }));
+        } finally {
+          this.#mangaLineProgress = null;
+        }
         const text = data.text?.trim();
         if (!text) continue;
         const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
@@ -377,7 +404,7 @@ export class TesseractOcrEngine {
           workerBlobURL: false,
           cacheMethod: 'none',
           gzip: false,
-          logger: ({ status, progress }) => this.#onProgress?.({ status, progress }),
+          logger: ({ status, progress }) => this.#reportWorkerProgress(status, progress),
         });
       })
       .then((worker) => {
@@ -445,6 +472,14 @@ export class TesseractOcrEngine {
       await this.#discardWorker(worker);
       throw error;
     }
+  }
+
+  #reportWorkerProgress(status: string, progress: number): void {
+    const line = status === 'recognizing text' ? this.#mangaLineProgress : null;
+    this.#onProgress?.({
+      status,
+      progress: line ? (line.index + Math.min(1, Math.max(0, progress))) / line.total : progress,
+    });
   }
 
   async #discardWorker(worker: TesseractWorker): Promise<void> {

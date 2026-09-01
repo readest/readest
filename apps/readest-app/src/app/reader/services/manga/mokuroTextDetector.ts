@@ -588,11 +588,15 @@ export const extractMokuroLinePolygons = (
     .slice(0, maximumLines);
 };
 
-const sampleMaskCoverage = (mask: MokuroMask, box: OcrBoundingBox): number => {
-  const xMin = clamp(Math.floor(box.xMin), 0, mask.width - 1);
-  const yMin = clamp(Math.floor(box.yMin), 0, mask.height - 1);
-  const xMax = clamp(Math.ceil(box.xMax), xMin + 1, mask.width);
-  const yMax = clamp(Math.ceil(box.yMax), yMin + 1, mask.height);
+const sampleMaskCoverage = (
+  mask: MokuroMask,
+  box: OcrBoundingBox,
+  page: MokuroPageSize,
+): number => {
+  const xMin = clamp(Math.floor((box.xMin * mask.width) / page.width), 0, mask.width - 1);
+  const yMin = clamp(Math.floor((box.yMin * mask.height) / page.height), 0, mask.height - 1);
+  const xMax = clamp(Math.ceil((box.xMax * mask.width) / page.width), xMin + 1, mask.width);
+  const yMax = clamp(Math.ceil((box.yMax * mask.height) / page.height), yMin + 1, mask.height);
   let sum = 0;
   let count = 0;
   for (let y = yMin; y < yMax; y += 1) {
@@ -604,34 +608,16 @@ const sampleMaskCoverage = (mask: MokuroMask, box: OcrBoundingBox): number => {
   return count > 0 ? sum / count / 255 : 0;
 };
 
-const resampleMask = (
-  data: ArrayLike<number>,
-  page: MokuroPageSize,
-  transform: LetterboxTransform,
-): MokuroMask => {
-  const result = new Uint8Array(page.width * page.height);
-  const inputWidth = MOKURO_TEXT_DETECTOR_INPUT_SIZE;
-  for (let y = 0; y < page.height; y += 1) {
-    const sourceY = ((y + 0.5) * transform.height) / page.height - 0.5;
-    const y0 = clamp(Math.floor(sourceY), 0, transform.height - 1);
-    const y1 = clamp(y0 + 1, 0, transform.height - 1);
-    const yWeight = clamp(sourceY - Math.floor(sourceY), 0, 1);
-    for (let x = 0; x < page.width; x += 1) {
-      const sourceX = ((x + 0.5) * transform.width) / page.width - 0.5;
-      const x0 = clamp(Math.floor(sourceX), 0, transform.width - 1);
-      const x1 = clamp(x0 + 1, 0, transform.width - 1);
-      const xWeight = clamp(sourceX - Math.floor(sourceX), 0, 1);
-      const topLeft = Number(data[y0 * inputWidth + x0]);
-      const topRight = Number(data[y0 * inputWidth + x1]);
-      const bottomLeft = Number(data[y1 * inputWidth + x0]);
-      const bottomRight = Number(data[y1 * inputWidth + x1]);
-      const top = topLeft + (topRight - topLeft) * xWeight;
-      const bottom = bottomLeft + (bottomRight - bottomLeft) * xWeight;
-      const value = clamp(top + (bottom - top) * yWeight, 0, 1);
-      result[y * page.width + x] = Math.round(value * 255);
+const readInputMask = (data: ArrayLike<number>, transform: LetterboxTransform): MokuroMask => {
+  const result = new Uint8Array(transform.width * transform.height);
+  for (let y = 0; y < transform.height; y += 1) {
+    const sourceOffset = y * MOKURO_TEXT_DETECTOR_INPUT_SIZE;
+    const targetOffset = y * transform.width;
+    for (let x = 0; x < transform.width; x += 1) {
+      result[targetOffset + x] = Math.round(clamp(Number(data[sourceOffset + x]), 0, 1) * 255);
     }
   }
-  return { width: page.width, height: page.height, data: result };
+  return { width: transform.width, height: transform.height, data: result };
 };
 
 const sortLines = (lines: readonly MokuroTextLine[], vertical: boolean): MokuroTextLine[] =>
@@ -713,7 +699,7 @@ export const groupMokuroText = (
     }
     if (bestIndex >= 0 && bestCoverage > 0.4) {
       grouped[bestIndex]!.lines.push(line);
-    } else if (sampleMaskCoverage(rawMask, line.box) >= 0.1) {
+    } else if (sampleMaskCoverage(rawMask, line.box, page) >= 0.1) {
       grouped.push({
         box: line.box,
         score: line.score,
@@ -727,7 +713,7 @@ export const groupMokuroText = (
   const finalBlocks: BlockCandidate[] = [];
   for (const block of grouped) {
     if (block.lines.length === 0) {
-      if (sampleMaskCoverage(rawMask, block.box) < 0.1) continue;
+      if (sampleMaskCoverage(rawMask, block.box, page) < 0.1) continue;
       block.lines.push(rectangleLine(block.box, block.score));
     }
     block.vertical = getBlockVertical(block);
@@ -754,7 +740,7 @@ export const postprocessMokuroDetectorOutputs = (
   assertOutputs(outputs);
   const resolved = resolveOptions(options);
   const transform = getLetterboxTransform(page);
-  const rawMask = resampleMask(outputs.seg.data, page, transform);
+  const rawMask = readInputMask(outputs.seg.data, transform);
   const blocks = decodeMokuroBlockPredictions(outputs.blk.data, page, transform, resolved);
   const lines = extractMokuroLinePolygons(outputs.det.data, page, transform, resolved);
   const grouped = groupMokuroText(blocks, lines, rawMask, page);
