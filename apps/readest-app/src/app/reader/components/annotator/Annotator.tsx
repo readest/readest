@@ -42,6 +42,7 @@ import {
   getRangeRectInWebview,
   getRangeTextStyleInWebview,
   getTextFromRange,
+  isOcrRange,
 } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { getPrimaryLanguage } from '@/utils/book';
@@ -165,6 +166,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [selection, setSelection] = useState<TextSelection | null>(null);
+  const selectionIsOcr = !!selection && isOcrRange(selection.range);
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
@@ -234,13 +236,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // since they show the wider highlight options / notes instead of the buttons.
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
-  const visibleToolCount = getToolbarToolTypes(
+  const toolbarToolTypes = getToolbarToolTypes(
     viewSettings.annotationToolbarItems,
     canShare,
-  ).length;
+  ).filter(
+    (type) =>
+      !selectionIsOcr || !['copylink', 'highlight', 'annotate', 'tts', 'proofread'].includes(type),
+  );
   const annotPopupWidth = selection?.annotated
     ? annotPopupMaxWidth
-    : Math.min(Math.max(visibleToolCount, 1) * annotPopupToolSize, annotPopupMaxWidth);
+    : Math.min(Math.max(toolbarToolTypes.length, 1) * annotPopupToolSize, annotPopupMaxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -1007,6 +1012,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           handleDismissPopupAndSelection();
           break;
         case 'highlight':
+          if (selectionIsOcr) {
+            handleShowAnnotPopup();
+            break;
+          }
           // highlight is already applied in instant annotating
           handleDismissPopupAndSelection();
           break;
@@ -1036,6 +1045,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           handleTranslation();
           break;
         case 'tts':
+          if (selectionIsOcr) {
+            handleShowAnnotPopup();
+            break;
+          }
           handleSpeakText(true);
           break;
         case 'share':
@@ -1054,7 +1067,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   useEffect(() => {
-    setHighlightOptionsVisible(!!(selection && selection.annotated));
+    setHighlightOptionsVisible(!!(selection && selection.annotated && !selectionIsOcr));
     if (selection && selection.text.trim().length > 0) {
       // Read-and-reset the Word Lens dictionary flag up front so it can never
       // stick to a later selection if an early return below fires (e.g. a gloss
@@ -1223,7 +1236,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       handleDismissPopupAndSelection();
     }
 
-    if (!viewSettings?.copyToNotebook) return;
+    if (!viewSettings?.copyToNotebook || selectionIsOcr) return;
 
     // A popup-window range is not in a main view document; use the CFI the
     // popup mapped into the pristine section (absent for data-attribute
@@ -1277,7 +1290,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // points at the position — resolution keys off the cfi, the note id is only
   // required to be present.
   const handleCopyLink = () => {
-    if (!selection) return;
+    if (!selection || selectionIsOcr) return;
     const cfi =
       selection.cfi || (selection.popup ? null : view?.getCFI(selection.index, selection.range));
     if (!cfi) return;
@@ -1314,7 +1327,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // selection): only those are placeholders the note-cancel flow may remove;
   // restyling/toggling an existing one must never tear down the user's record.
   const handleHighlight = (update = false, highlightStyle?: HighlightStyle): BookNote[] => {
-    if (!selection || !selection.text) return [];
+    if (!selection || !selection.text || selectionIsOcr) return [];
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
@@ -1467,7 +1480,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleAnnotate = () => {
-    if (!selection || !selection.text) return;
+    if (!selection || !selection.text || selectionIsOcr) return;
     // A popup selection without a CFI has nothing to anchor a note to (the
     // toolbar button is disabled, this guards the keyboard shortcut).
     if (selection.popup && !selection.cfi) return;
@@ -1545,7 +1558,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleSpeakText = async (oneTime = false) => {
-    if (!selection || !selection.text) return;
+    if (!selection || !selection.text || selectionIsOcr) return;
     // TTS walks the main view's documents; a popup-window range can't seed it
     // (the toolbar button is disabled, this guards the keyboard shortcut).
     if (selection.popup) return;
@@ -1571,6 +1584,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setProofreadRulesVisibility(true);
       return;
     }
+    if (selectionIsOcr) return;
     // Proofread rules anchor to a CFI; a popup selection without one (data-
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
@@ -1595,17 +1609,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   useShortcuts(
     {
       onHighlightSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'highlight');
         return true;
       },
       onUnderlineSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'underline');
         return true;
       },
       onAnnotateSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleAnnotate();
         return true;
       },
@@ -1630,17 +1644,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return true;
       },
       onReadAloudSelection: () => {
-        if (!selection?.text || selection.popup) return false;
+        if (!selection?.text || selectionIsOcr || selection.popup) return false;
         handleSpeakText();
         return true;
       },
       onProofreadSelection: () => {
-        if (selection?.popup && !selection.cfi) return false;
+        if (selectionIsOcr || (selection?.popup && !selection.cfi)) return false;
         handleProofread();
         return true;
       },
     },
-    [selection?.text, selection?.cfi, selection?.popup],
+    [selection?.text, selection?.cfi, selection?.popup, selectionIsOcr],
   );
 
   const handleImportAnnotations = (event: CustomEvent) => {
@@ -2108,7 +2122,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
-  const toolButtons = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare)
+  const toolButtons = toolbarToolTypes
     .map(buildToolButton)
     .filter((button): button is NonNullable<typeof button> => button !== null);
 

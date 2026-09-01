@@ -6,7 +6,7 @@ import type { Rect, Position } from '@/utils/sel';
 // constrainPointWithinRect is also non-exported but exercised through getPosition.
 
 // For getPopupPosition we can test directly.
-import { getOcrRangeLanguage, getPopupPosition, isPointInRect } from '@/utils/sel';
+import { getOcrRangeLanguage, getPopupPosition, isOcrRange, isPointInRect } from '@/utils/sel';
 
 describe('sel utilities', () => {
   describe('getOcrRangeLanguage', () => {
@@ -30,6 +30,18 @@ describe('sel utilities', () => {
       range.selectNodeContents(text);
 
       expect(getOcrRangeLanguage(range, 'en')).toBe('en');
+    });
+
+    it('identifies ranges backed by a temporary OCR layer', () => {
+      const layer = document.createElement('div');
+      const block = document.createElement('span');
+      layer.setAttribute('data-readest-ocr-layer', '');
+      block.textContent = '日本語';
+      layer.append(block);
+      const range = document.createRange();
+      range.selectNodeContents(block);
+
+      expect(isOcrRange(range)).toBe(true);
     });
   });
 

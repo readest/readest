@@ -56,6 +56,16 @@ export interface TextSelection {
   popup?: boolean;
 }
 
+export const isOcrNode = (node: Node): boolean => {
+  const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+  return !!element?.closest('[data-readest-ocr-layer]');
+};
+
+export const isOcrRange = (range: Range): boolean =>
+  isOcrNode(range.startContainer) ||
+  isOcrNode(range.endContainer) ||
+  isOcrNode(range.commonAncestorContainer);
+
 export const getOcrRangeLanguage = (range: Range, fallback?: string): string | undefined => {
   const start = range.startContainer;
   const element = start.nodeType === Node.ELEMENT_NODE ? (start as Element) : start.parentElement;

@@ -1,6 +1,12 @@
 import { useCallback, useRef } from 'react';
 import { BookNote } from '@/types/book';
-import { Point, TextSelection, getWordRangeFromPoint, snapRangeToWords } from '@/utils/sel';
+import {
+  Point,
+  TextSelection,
+  getWordRangeFromPoint,
+  isOcrNode,
+  snapRangeToWords,
+} from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -88,6 +94,7 @@ export const useInstantAnnotation = ({
     (doc: Document, x: number, y: number): boolean => {
       const pos = findPositionAtPoint(doc, x, y);
       if (!pos) return false;
+      if (isOcrNode(pos.node)) return false;
 
       // Must be a text node
       if (pos.node.nodeType !== Node.TEXT_NODE) return false;
