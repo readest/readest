@@ -40,7 +40,7 @@ export interface MokuroPoint {
   y: number;
 }
 
-/** A page-sized grayscale mask. Values are 0..255. */
+/** A detector-resolution grayscale page mask. Values are 0..255. */
 export interface MokuroMask extends MokuroPageSize {
   data: Uint8Array;
 }
@@ -62,6 +62,7 @@ export interface MokuroTextBlock {
 
 export interface MokuroTextDetectionResult {
   page: MokuroPageSize;
+  mask?: MokuroMask;
   blocks: readonly MokuroTextBlock[];
 }
 
@@ -746,6 +747,7 @@ export const postprocessMokuroDetectorOutputs = (
   const grouped = groupMokuroText(blocks, lines, rawMask, page);
   return {
     page: { ...page },
+    mask: rawMask,
     blocks: grouped,
   };
 };

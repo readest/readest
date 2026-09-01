@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PSM } from 'tesseract.js';
 
+import { makeMangaTextLineCrops } from '@/app/reader/services/ocr/mangaTextCrop';
 import {
   TesseractOcrEngine,
+  type JapaneseMangaRecognizerFactory,
   type MangaTextDetectorFactory,
   type TesseractWorker,
 } from '@/app/reader/services/ocr/tesseractEngine';
@@ -88,7 +89,7 @@ describe('Tesseract manga OCR', () => {
     expect(getTesseractLanguages('ja')).toEqual(['jpn', 'jpn_vert']);
   });
 
-  it('recognizes Mokuro blocks with the matching Tesseract line mode', async () => {
+  it('recognizes Japanese Mokuro blocks without loading Tesseract', async () => {
     installCanvas();
     const source = document.createElement('canvas');
     source.width = page.width;
@@ -109,21 +110,27 @@ describe('Tesseract manga OCR', () => {
       terminate: vi.fn(async () => undefined),
     };
     const worker = makeWorker();
-    vi.mocked(worker.recognize)
-      .mockResolvedValueOnce({ data: { text: '一行目', confidence: 91 } })
-      .mockResolvedValueOnce({ data: { text: '二行目', confidence: 89 } });
+    const createWorker = vi.fn(async () => worker);
+    const recognizer = {
+      recognize: vi
+        .fn()
+        .mockResolvedValueOnce({ text: '一行目', confidence: 91 })
+        .mockResolvedValueOnce({ text: '二行目', confidence: 89 }),
+      terminate: vi.fn(async () => undefined),
+    };
     const engine = new TesseractOcrEngine(
       { mangaMode: true, textLanguage: 'ja' },
-      vi.fn(async () => worker),
+      createWorker,
       () => detector,
+      undefined,
+      undefined,
+      () => recognizer,
     );
 
     const result = await engine.recognize(source, page);
 
-    expect(worker.setParameters).toHaveBeenLastCalledWith({
-      tessedit_pageseg_mode: PSM.SINGLE_BLOCK_VERT_TEXT,
-      preserve_interword_spaces: '1',
-    });
+    expect(createWorker).not.toHaveBeenCalled();
+    expect(recognizer.recognize).toHaveBeenCalledTimes(2);
     expect(result).toMatchObject({
       language: 'ja',
       blocks: [
@@ -138,6 +145,78 @@ describe('Tesseract manga OCR', () => {
         },
       ],
     });
+  });
+
+  it('rejects mixed-script garbage from Japanese manga recognition', async () => {
+    installCanvas();
+    const source = document.createElement('canvas');
+    source.width = page.width;
+    source.height = page.height;
+    const detector = {
+      detect: vi.fn(async () => ({
+        page,
+        blocks: [
+          {
+            box: blockBox,
+            score: 0.9,
+            language: 'ja' as const,
+            vertical: true,
+            lines: [line],
+          },
+        ],
+      })),
+      terminate: vi.fn(async () => undefined),
+    };
+    const recognizer = {
+      recognize: vi.fn(async () => ({ text: 'むかしむかしBwNrIni', confidence: 89 })),
+      terminate: vi.fn(async () => undefined),
+    };
+    const createRecognizer = vi.fn<JapaneseMangaRecognizerFactory>(() => recognizer);
+    const engine = new TesseractOcrEngine(
+      { mangaMode: true, textLanguage: 'ja' },
+      vi.fn(async () => makeWorker()),
+      () => detector,
+      undefined,
+      undefined,
+      createRecognizer,
+    );
+
+    const result = await engine.recognize(source, page);
+
+    expect(createRecognizer).toHaveBeenCalledOnce();
+    expect(result.blocks).toEqual([]);
+  });
+
+  it('splits long vertical text before recognition', () => {
+    installCanvas();
+    const source = document.createElement('canvas');
+    source.width = 64;
+    source.height = 1280;
+    const longLine = {
+      box: { xMin: 0, yMin: 0, xMax: 64, yMax: 1280 },
+      polygon: [
+        { x: 0, y: 0 },
+        { x: 64, y: 0 },
+        { x: 64, y: 1280 },
+        { x: 0, y: 1280 },
+      ],
+      score: 0.9,
+      vertical: true,
+    };
+
+    const crops = makeMangaTextLineCrops(
+      source,
+      {
+        data: new Uint8ClampedArray(source.width * source.height * 4).fill(255),
+        width: source.width,
+        height: source.height,
+      },
+      longLine,
+      { keepVertical: true, vertical: true },
+    );
+
+    expect(crops).toHaveLength(2);
+    expect(crops.every((crop) => crop.width === 80 && crop.height < 1_000)).toBe(true);
   });
 
   it('falls back to whole-page Tesseract for the rest of the session after detector failure', async () => {

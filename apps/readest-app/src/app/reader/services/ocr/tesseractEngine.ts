@@ -16,7 +16,11 @@ import {
   fetchVerifiedModelAsset,
   type VerifiedModelAsset,
 } from '@/app/reader/services/manga/modelAssets';
-import { makeMangaTextLineCrop, readCanvasRgba } from '@/app/reader/services/ocr/mangaTextCrop';
+import { makeMangaTextLineCrops, readCanvasRgba } from '@/app/reader/services/ocr/mangaTextCrop';
+import {
+  PaddleJapaneseRecognizer,
+  type JapaneseMangaRecognizer,
+} from '@/app/reader/services/ocr/paddleJapaneseRecognizer';
 import type { OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
 import {
   adaptTesseractPage,
@@ -30,6 +34,7 @@ const CORE_PATH = '/vendor/tesseract/core';
 const MINIMUM_OCR_LONG_EDGE = 1800;
 const MAXIMUM_OCR_SCALE = 3;
 const MAXIMUM_OCR_PIXELS = 3_000_000;
+const MINIMUM_MANGA_CONFIDENCE = 35;
 
 const scaleImageDimension = (value: number, scale: number): number =>
   Math.max(1, scale < 1 ? Math.floor(value * scale) : Math.round(value * scale));
@@ -81,6 +86,10 @@ export interface MangaTextDetector {
 export type MangaTextDetectorFactory = (
   onDownloadProgress?: (progress: { loaded: number; total?: number }) => void,
 ) => MangaTextDetector;
+
+export type JapaneseMangaRecognizerFactory = (
+  onDownloadProgress?: (progress: { loaded: number; total?: number }) => void,
+) => JapaneseMangaRecognizer;
 
 export type MangaImageLoader = (source: string) => Promise<LoadedMangaImage>;
 
@@ -145,6 +154,9 @@ const loadLocalLanguageAsset: TesseractLanguageAssetLoader = fetchVerifiedModelA
 
 const createMangaDetector: MangaTextDetectorFactory = (onDownloadProgress) =>
   new MokuroTextDetector({ onDownloadProgress });
+
+const createJapaneseMangaRecognizer: JapaneseMangaRecognizerFactory = (onDownloadProgress) =>
+  new PaddleJapaneseRecognizer({ onDownloadProgress });
 
 const loadMangaImage: MangaImageLoader = (source) =>
   new Promise((resolve, reject) => {
@@ -244,12 +256,15 @@ export class TesseractOcrEngine {
   readonly #onProgress?: (progress: OcrEngineProgress) => void;
   readonly #createWorker: TesseractWorkerFactory;
   readonly #createMangaDetector: MangaTextDetectorFactory;
+  readonly #createJapaneseMangaRecognizer: JapaneseMangaRecognizerFactory;
   readonly #loadMangaImage: MangaImageLoader;
   readonly #loadLanguageAsset: TesseractLanguageAssetLoader;
   readonly #abortController = new AbortController();
   #workerRequest: WorkerRequest | null = null;
   #mangaDetector: MangaTextDetector | null = null;
   #mangaDetectorUnavailable = false;
+  #japaneseMangaRecognizer: JapaneseMangaRecognizer | null = null;
+  #japaneseMangaRecognizerUnavailable = false;
   #mangaLineProgress: MangaLineProgress | null = null;
   #terminated = false;
 
@@ -259,15 +274,18 @@ export class TesseractOcrEngine {
     mangaDetectorFactory: MangaTextDetectorFactory = createMangaDetector,
     mangaImageLoader: MangaImageLoader = loadMangaImage,
     languageAssetLoader: TesseractLanguageAssetLoader = loadLocalLanguageAsset,
+    japaneseMangaRecognizerFactory: JapaneseMangaRecognizerFactory = createJapaneseMangaRecognizer,
   ) {
     this.#languages = options.languages?.length ? [...options.languages] : [...DEFAULT_LANGUAGES];
     this.#pageSegmentationMode = options.pageSegmentationMode ?? PSM.AUTO;
     this.#mangaMode = options.mangaMode ?? false;
     this.#textLanguage = options.textLanguage;
-    this.#minimumConfidence = options.minimumConfidence ?? 0;
+    this.#minimumConfidence =
+      options.minimumConfidence ?? (this.#mangaMode ? MINIMUM_MANGA_CONFIDENCE : 0);
     this.#onProgress = options.onProgress;
     this.#createWorker = workerFactory;
     this.#createMangaDetector = mangaDetectorFactory;
+    this.#createJapaneseMangaRecognizer = japaneseMangaRecognizerFactory;
     this.#loadMangaImage = mangaImageLoader;
     this.#loadLanguageAsset = languageAssetLoader;
   }
@@ -296,13 +314,15 @@ export class TesseractOcrEngine {
     this.#workerRequest = null;
     const detector = this.#mangaDetector;
     this.#mangaDetector = null;
+    const japaneseRecognizer = this.#japaneseMangaRecognizer;
+    this.#japaneseMangaRecognizer = null;
 
     let workerTermination: Promise<void> | undefined;
     if (workerRequest) {
       const termination = this.#terminateWorker(workerRequest);
       if (workerRequest.worker) workerTermination = termination;
     }
-    await Promise.all([detector?.terminate(), workerTermination]);
+    await Promise.all([detector?.terminate(), japaneseRecognizer?.terminate(), workerTermination]);
   }
 
   async #recognizeManga(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
@@ -332,67 +352,119 @@ export class TesseractOcrEngine {
     const totalLines = detection.blocks.reduce((total, block) => total + block.lines.length, 0);
     if (!totalLines) return this.#recognizeWholePage(prepared);
 
-    const worker = await this.#getWorker();
     const imageData = readCanvasRgba(prepared.image);
     const blocks: OcrTextBlock[] = [];
     let recognitionIndex = 0;
-    await this.#runWorkerOperation(worker, async () => {
-      for (const [blockIndex, detectedBlock] of detection.blocks.entries()) {
-        const textLines: string[] = [];
-        const confidences: number[] = [];
-        const fontSize = getMokuroFontSize(detectedBlock);
-        for (const line of detectedBlock.lines) {
-          if (this.#terminated) throw new Error('OCR engine has been terminated');
-          await worker.setParameters({
-            tessedit_pageseg_mode: line.vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
-            preserve_interword_spaces: '1',
-          });
-          const crop = makeMangaTextLineCrop(prepared.image, imageData, line);
-          if (!crop) {
-            recognitionIndex += 1;
-            continue;
-          }
-          this.#mangaLineProgress = { index: recognitionIndex, total: totalLines };
-          recognitionIndex += 1;
-          let data: TesseractPageData & { text?: string; confidence?: number };
-          try {
-            ({ data } = await worker.recognize(crop, {}, { text: true, blocks: false }));
-          } finally {
-            this.#mangaLineProgress = null;
-          }
-          const text = data.text?.replace(/\s+/g, ' ').trim();
-          if (!text) continue;
-          const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
-          if (
-            this.#minimumConfidence > 0 &&
-            (confidence === undefined || confidence < this.#minimumConfidence)
-          ) {
-            continue;
-          }
-          textLines.push(text);
-          if (confidence !== undefined) confidences.push(confidence);
-        }
-        if (!textLines.length) continue;
-        blocks.push({
-          id: `mokuro-block-${blockIndex}`,
-          text: textLines.join(''),
-          lines: textLines,
-          ...(fontSize === undefined ? {} : { fontSize }),
-          ...(confidences.length
-            ? {
-                confidence: confidences.reduce((sum, value) => sum + value, 0) / confidences.length,
-              }
-            : {}),
-          box: detectedBlock.box,
-          writingMode: detectedBlock.vertical ? 'vertical-rl' : 'horizontal-tb',
+    for (const [blockIndex, detectedBlock] of detection.blocks.entries()) {
+      const textLines: string[] = [];
+      const confidences: number[] = [];
+      const fontSize = getMokuroFontSize(detectedBlock);
+      for (const line of detectedBlock.lines) {
+        if (this.#terminated) throw new Error('OCR engine has been terminated');
+        const useJapaneseRecognizer = this.#textLanguage === 'ja';
+        const crops = makeMangaTextLineCrops(prepared.image, imageData, line, {
+          keepVertical: !useJapaneseRecognizer,
+          mask: detection.mask,
+          page: detection.page,
+          vertical: detectedBlock.vertical,
         });
+        this.#mangaLineProgress = { index: recognitionIndex, total: totalLines };
+        recognitionIndex += 1;
+        try {
+          const recognizedChunks: Array<{ text: string; confidence: number }> = [];
+          for (const crop of crops) {
+            const result = await this.#recognizeMangaCrop(
+              crop,
+              detectedBlock.vertical && !useJapaneseRecognizer,
+              useJapaneseRecognizer,
+            );
+            if (!result) {
+              recognizedChunks.length = 0;
+              break;
+            }
+            recognizedChunks.push(result);
+          }
+          if (!recognizedChunks.length) continue;
+          const text = recognizedChunks.map((chunk) => chunk.text).join('');
+          if (!this.#isPlausibleMangaText(text, detectedBlock.language)) continue;
+          textLines.push(text);
+          confidences.push(
+            recognizedChunks.reduce((sum, chunk) => sum + chunk.confidence, 0) /
+              recognizedChunks.length,
+          );
+        } finally {
+          this.#mangaLineProgress = null;
+        }
       }
-    });
+      if (!textLines.length) continue;
+      blocks.push({
+        id: `mokuro-block-${blockIndex}`,
+        text: textLines.join(''),
+        lines: textLines,
+        ...(fontSize === undefined ? {} : { fontSize }),
+        confidence: confidences.reduce((sum, value) => sum + value, 0) / confidences.length,
+        box: detectedBlock.box,
+        writingMode: detectedBlock.vertical ? 'vertical-rl' : 'horizontal-tb',
+      });
+    }
     return {
       ...prepared.page,
       ...(this.#textLanguage ? { language: this.#textLanguage } : {}),
       blocks,
     };
+  }
+
+  async #recognizeMangaCrop(
+    crop: HTMLCanvasElement,
+    vertical: boolean,
+    useJapaneseRecognizer: boolean,
+  ): Promise<{ text: string; confidence: number } | null> {
+    if (useJapaneseRecognizer && !this.#japaneseMangaRecognizerUnavailable) {
+      try {
+        const result = await this.#getJapaneseMangaRecognizer().recognize(crop);
+        if (!result || result.confidence < this.#minimumConfidence) return null;
+        return result;
+      } catch (error) {
+        if (this.#terminated || this.#abortController.signal.aborted) {
+          throw new Error('OCR engine has been terminated');
+        }
+        this.#japaneseMangaRecognizerUnavailable = true;
+        const recognizer = this.#japaneseMangaRecognizer;
+        this.#japaneseMangaRecognizer = null;
+        await recognizer?.terminate().catch(() => undefined);
+        console.warn('Japanese manga recognizer unavailable; using Tesseract', error);
+      }
+    }
+
+    const worker = await this.#getWorker();
+    const { data } = await this.#runWorkerOperation(worker, async () => {
+      await worker.setParameters({
+        tessedit_pageseg_mode: vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
+        preserve_interword_spaces: '1',
+      });
+      return worker.recognize(crop, {}, { text: true, blocks: false });
+    });
+    const text = data.text?.replace(/\s+/gu, ' ').trim();
+    const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
+    if (!text || confidence === undefined || confidence < this.#minimumConfidence) return null;
+    return { text, confidence };
+  }
+
+  #isPlausibleMangaText(
+    text: string,
+    detectedLanguage: MokuroTextDetectionResult['blocks'][number]['language'],
+  ): boolean {
+    if (this.#textLanguage !== 'ja' || detectedLanguage === 'eng') return true;
+    let japanese = 0;
+    let latin = 0;
+    for (const character of text) {
+      if (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(character)) {
+        japanese += 1;
+      } else if (/\p{Script=Latin}/u.test(character)) {
+        latin += 1;
+      }
+    }
+    return japanese > 0 && latin <= Math.max(1, Math.floor(japanese / 4));
   }
 
   async #recognizeWholePage(prepared: PreparedImage): Promise<OcrPage> {
@@ -421,6 +493,17 @@ export class TesseractOcrEngine {
       });
     });
     return this.#mangaDetector;
+  }
+
+  #getJapaneseMangaRecognizer(): JapaneseMangaRecognizer {
+    if (this.#terminated) throw new Error('OCR engine has been terminated');
+    this.#japaneseMangaRecognizer ??= this.#createJapaneseMangaRecognizer(({ loaded, total }) => {
+      this.#onProgress?.({
+        status: 'loading Japanese OCR model',
+        progress: total && total > 0 ? Math.min(1, loaded / total) : 0,
+      });
+    });
+    return this.#japaneseMangaRecognizer;
   }
 
   #getWorker(): Promise<TesseractWorker> {
