@@ -35,17 +35,9 @@ jobs:
 
           image_path = Path('apps/readest-app/src/app/reader/components/ImageViewer.tsx')
           image = image_path.read_text()
-
-          old_ref = """  // Mouse panning is captured by this fixed viewport, not the transformed
-          // image. A transformed target moves under the pointer and several WebViews
-          // have been observed to miss its release/capture bookkeeping (#8). Mature
-          // image viewers track gestures on a stable canvas/viewport for the same
-          // reason; the image itself is only the visual transform target.
-          const panSurfaceRef = useRef<HTMLDivElement>(null);
-          """
-          if image.count(old_ref) != 1:
-              raise SystemExit('ImageViewer panSurfaceRef block did not match exactly once')
-          image = image.replace(old_ref, '', 1)
+          ref_start = image.index('  // Mouse panning is captured by this fixed viewport')
+          ref_end = image.index('  const imageRef', ref_start)
+          image = image[:ref_start] + image[ref_end:]
 
           start = image.index('  const finishPointerDrag = useCallback')
           end = image.index('\n  const onTouchStart', start)
@@ -75,13 +67,10 @@ jobs:
             if (e.pointerType === 'mouse') finishPointerDrag(e.pointerId);
           };
 
-          // Do not use Pointer Capture for desktop image panning. WebView2 can keep
-          // a captured mouse pointer logically pressed after the physical button was
-          // released outside the WebView, which leaves the image following the cursor
-          // until the next click. Track movement on the stable window instead, require
-          // the physical left-button bit on every move, and terminate immediately when
-          // the cursor exits the WebView. Position is always derived from both client
-          // axes, so changing direction mid-drag never enters an axis-locked gesture.
+          // Pointer Capture is intentionally avoided for desktop panning. WebView2
+          // can retain a captured mouse as logically pressed after the physical
+          // button was released outside the WebView. Window-level MouseEvents keep
+          // both axes live, while buttons=0 and leaving the WebView are hard stops.
           useEffect(() => {
             const onMouseMove = (e: MouseEvent) => {
               if (activePointerId.current === null) return;
@@ -125,11 +114,15 @@ jobs:
           }, [finishPointerDrag, updatePosition]);
           """
           image = image[:start] + new_drag + image[end:]
-          image = image.replace('        ref={panSurfaceRef}\n', '', 1)
-          image = image.replace('        onPointerMove={handlePanPointerMove}\n', '', 1)
-          image = image.replace('        onLostPointerCapture={handlePanLostPointerCapture}\n', '', 1)
-          if 'panSurfaceRef' in image or 'handlePanPointerMove' in image or 'handlePanLostPointerCapture' in image:
-              raise SystemExit('ImageViewer still contains removed pointer-capture symbols')
+          for obsolete in (
+              '        ref={panSurfaceRef}\n',
+              '        onPointerMove={handlePanPointerMove}\n',
+              '        onLostPointerCapture={handlePanLostPointerCapture}\n',
+          ):
+              image = image.replace(obsolete, '', 1)
+          for symbol in ('panSurfaceRef', 'handlePanPointerMove', 'handlePanLostPointerCapture', 'setPointerCapture'):
+              if symbol in image:
+                  raise SystemExit(f'ImageViewer still contains obsolete symbol: {symbol}')
           image_path.write_text(image)
 
           test_path = Path('apps/readest-app/src/__tests__/components/ImageViewer.test.tsx')
@@ -156,8 +149,6 @@ jobs:
             expect(img.style.transform).toContain('scale(2)');
             expect(img.style.transform).toContain('translate(30px, 15px)');
 
-            // Reverse from a horizontal-biased move into a vertical-biased move.
-            // Both coordinates must remain live; no gesture axis may be locked.
             fireEvent.mouseMove(window, { buttons: 1, clientX: 130, clientY: 200 });
             expect(img.style.transform).toContain('translate(15px, 50px)');
           });
@@ -264,44 +255,28 @@ jobs:
 
           lan_path = Path('apps/readest-app/src/components/settings/integrations/LanForm.tsx')
           lan = lan_path.read_text()
-          old_success = """      eventDispatcher.dispatch('toast', {
-                type: 'success',
-                message: _('Connected to {{name}} at {{host}}:{{port}}', {
-                  name: target?.name || peer.name || peer.device_id,
-                  host: trimmedHost,
-                  port: trimmedPort,
-                }),
-              });
-          """
-          new_success = """      eventDispatcher.dispatch('toast', {
-                type: 'success',
-                message: _('Connected to {{name}}', {
-                  name: target?.name || peer.name || peer.device_id,
-                }),
-              });
-          """
-          if lan.count(old_success) != 1:
-              raise SystemExit('LAN success toast block did not match exactly once')
-          lan = lan.replace(old_success, new_success, 1)
+          old_key = "Connected to {{name}} at {{host}}:{{port}}"
+          if lan.count(old_key) != 1:
+              raise SystemExit('LAN connected toast key did not match exactly once')
+          lan = lan.replace(old_key, 'Connected to {{name}}', 1)
+          host_port_lines = '          host: trimmedHost,\n          port: trimmedPort,\n'
+          if lan.count(host_port_lines) != 1:
+              raise SystemExit('LAN connected toast host/port lines did not match exactly once')
+          lan = lan.replace(host_port_lines, '', 1)
 
           start = lan.index('  const confirmPeerConnection = async')
           end = lan.index('\n  const handleScanPairingQr', start)
           lan = lan[:start] + lan[end:]
 
-          old_qr_confirm = """    if (appService) {
-                const confirmed = await appService.ask(_('Connect to this Readest device and enable LAN Sync?'));
-                if (!confirmed) return;
-              }
+          start = lan.index("    if (appService) {\n      const confirmed = await appService.ask(_('Connect to this Readest device and enable LAN Sync?'));")
+          end = lan.index('\n\n    let lastConnectionError', start)
+          lan = lan[:start] + lan[end + 2:]
 
-          """
-          if lan.count(old_qr_confirm) != 1:
-              raise SystemExit('QR confirmation block did not match exactly once')
-          lan = lan.replace(old_qr_confirm, '', 1)
-          lan = lan.replace(
-              '      onSelectPeer={(peer) => void confirmPeerConnection(peer)}',
-              '      onSelectPeer={(peer) => void handleConnect(peer)}',
-              1,
-          )
+          old_select = '      onSelectPeer={(peer) => void confirmPeerConnection(peer)}'
+          if lan.count(old_select) != 1:
+              raise SystemExit('LAN peer selection callback did not match exactly once')
+          lan = lan.replace(old_select, '      onSelectPeer={(peer) => void handleConnect(peer)}', 1)
+
           for untranslated in (
               'Connect to this Readest device and enable LAN Sync?',
               'Connect to {{name}} at {{host}}:{{port}} and enable LAN Sync?',
