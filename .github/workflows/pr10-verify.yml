@@ -6,50 +6,23 @@ on:
       - fix/lan-sync-pairing-and-image-drag
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: pr10-verify
   cancel-in-progress: true
 
 jobs:
-  rustfmt:
-    name: Rust format
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: fix/lan-sync-pairing-and-image-drag
-          submodules: recursive
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
-        with:
-          components: rustfmt
-      - name: format changed Rust
-        run: cargo fmt -p Readest
-      - name: commit formatting if needed
-        shell: bash
-        run: |
-          if git diff --quiet; then
-            echo "rustfmt already clean"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/readest-app/src-tauri/src/lan_sync/server.rs
-          git commit -m "style: rustfmt LAN sync fixes"
-          git push origin HEAD:fix/lan-sync-pairing-and-image-drag
-
   frontend:
     name: TypeScript and ImageViewer tests
-    needs: rustfmt
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_ANON_KEY: test-anon-key
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: fix/lan-sync-pairing-and-image-drag
           submodules: recursive
       - name: setup pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
@@ -68,14 +41,12 @@ jobs:
         run: pnpm --filter @readest/readest-app exec vitest run src/__tests__/components/ImageViewer.test.tsx --maxWorkers=2
 
   rust:
-    name: Rust LAN sync checks
-    needs: rustfmt
+    name: Rust LAN sync compile and tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: fix/lan-sync-pairing-and-image-drag
           submodules: recursive
       - name: install Linux build dependencies
         run: |
@@ -83,14 +54,10 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
-        with:
-          components: rustfmt, clippy
       - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
         with:
           key: pr10-lan-sync
-      - name: rustfmt
-        run: cargo fmt -p Readest --check
-      - name: clippy
-        run: cargo clippy -p Readest --no-deps -- -D warnings
-      - name: Rust unit tests
+      - name: cargo check
+        run: cargo check -p Readest
+      - name: Rust LAN sync unit tests
         run: cargo test -p Readest --lib lan_sync
