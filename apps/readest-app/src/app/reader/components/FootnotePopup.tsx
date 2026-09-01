@@ -39,6 +39,18 @@ interface FootnotePopupProps {
 
 const popupWidth = 360;
 const popupHeight = 88;
+// `#popup-container` sizes itself as a border box and draws a 1px border, so
+// the content it holds gets `2 * popupBorder` less than the popup size handed
+// to it. Sizing the content to the popup size instead overflowed the box by
+// those two pixels on both axes, and `overflow-y-auto` promotes `overflow-x`
+// to `auto` too, so the popup wrapped its document in a spurious vertical and
+// horizontal scrollbar (#5999).
+const popupBorder = 1;
+// Every size the popup computes comes from measuring content — the paginator's
+// `viewSize`, the height of the synthesized paragraph — but the number handed
+// to `Popup` is the outer box. Grow the measurement by the border, or the
+// content ends up 2px short of the room it asked for and scrolls for it.
+const popupSizeForContent = (contentSize: number) => contentSize + 2 * popupBorder;
 
 const chromeButtonClassName = clsx(
   'btn btn-ghost btn-circle eink-bordered text-base-content bg-base-200/80 hover:bg-base-200',
@@ -181,9 +193,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const { renderer } = view;
     if (!renderer) return 0;
     const vertical = getViewSettings(bookKey)!.vertical;
+    const box = popupSizeForContent(renderer.viewSize);
     const size = vertical
-      ? clipPopupWith(Math.min(getResponsivePopupSize(renderer.viewSize, true), getMaxWidth()))
-      : clipPopupHeight(Math.min(getResponsivePopupSize(renderer.viewSize, false), getMaxHeight()));
+      ? clipPopupWith(Math.min(getResponsivePopupSize(box, true), getMaxWidth()))
+      : clipPopupHeight(Math.min(getResponsivePopupSize(box, false), getMaxHeight()));
     if (vertical) setResponsiveWidth(size);
     else setResponsiveHeight(size);
     return size;
@@ -544,20 +557,25 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       elem.textContent = footnote;
       elem.setAttribute('style', `padding: 1em; hanging-punctuation: allow-end last;`);
       elem.style.visibility = 'hidden';
+      // Measure the text in the room the popup actually gives it — the seed
+      // less the container border — so the paragraph wraps identically once
+      // mounted (#5999).
       if (viewSettings.vertical) {
-        elem.style.height = `${seed.height}px`;
+        elem.style.height = `${seed.height - 2 * popupBorder}px`;
       } else {
-        elem.style.width = `${seed.width}px`;
+        elem.style.width = `${seed.width - 2 * popupBorder}px`;
       }
       document.body.appendChild(elem);
       const popupSize = elem.getBoundingClientRect();
       if (viewSettings.vertical) {
-        setResponsiveWidth(getResponsivePopupSize(popupSize.width, true));
+        setResponsiveWidth(getResponsivePopupSize(popupSizeForContent(popupSize.width), true));
       } else {
-        setResponsiveHeight(getResponsivePopupSize(popupSize.height, false));
+        setResponsiveHeight(getResponsivePopupSize(popupSizeForContent(popupSize.height), false));
       }
       document.body.removeChild(elem);
 
+      elem.style.width = '';
+      elem.style.height = '';
       elem.style.visibility = 'visible';
       footnoteRef.current.replaceChildren(elem);
       setGridRect(rect);
@@ -686,10 +704,20 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         height={responsiveHeight}
         position={showPopup ? popupPosition! : undefined}
         trianglePosition={showPopup ? trianglePosition! : undefined}
-        className='select-text overflow-y-auto'
+        // Scroll along the note's block axis and clip the other one. A note
+        // that wraps can never need a horizontal scrollbar, but leaving that
+        // axis `visible` promotes it to `auto` (CSS resolves `visible` to
+        // `auto` next to a non-`visible` value), so any stray pixel of
+        // cross-axis overflow bought a second scrollbar (#5999).
+        className={clsx(
+          'select-text',
+          viewSettings.vertical
+            ? 'overflow-x-auto overflow-y-hidden'
+            : 'overflow-y-auto overflow-x-hidden',
+        )}
         onDismiss={handleDismissPopup}
       >
-        {(canGoBack || sourceHref) && (
+        {canGoBack && (
           // The chrome floats over the text rather than pushing it down, so
           // the strip must not swallow taps meant for the words beneath it.
           <div
@@ -700,42 +728,39 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
                 : 'end-2 start-2 top-2 h-8 flex-row items-start',
             )}
           >
-            {canGoBack && (
-              <button
-                type='button'
-                onClick={handleBack}
-                aria-label={_('Back')}
-                title={_('Back')}
-                className={clsx(chromeButtonClassName, 'pointer-events-auto')}
-              >
-                <MdArrowBack size={size18} />
-              </button>
-            )}
-            {sourceHref && (
-              <button
-                type='button'
-                onClick={handleGoToSource}
-                aria-label={_('Jump to Location')}
-                title={_('Jump to Location')}
-                className={clsx(
-                  chromeButtonClassName,
-                  'pointer-events-auto',
-                  !viewSettings.vertical && 'ms-auto',
-                )}
-              >
-                <MdOutlineArrowOutward size={size18} />
-              </button>
-            )}
+            <button
+              type='button'
+              onClick={handleBack}
+              aria-label={_('Back')}
+              title={_('Back')}
+              className={clsx(chromeButtonClassName, 'pointer-events-auto')}
+            >
+              <MdArrowBack size={size18} />
+            </button>
           </div>
         )}
-        <div
-          className='footnote-content'
-          ref={footnoteRef}
-          style={{
-            width: `${responsiveWidth}px`,
-            height: `${responsiveHeight}px`,
-          }}
-        ></div>
+        {sourceHref && (
+          // Park it where the note's last line runs out instead of over its
+          // opening words (#5998). Physical sides, not logical ones: the corner
+          // follows the book's own direction, which the popup's `dir` (the UI
+          // language) does not track.
+          <button
+            type='button'
+            onClick={handleGoToSource}
+            aria-label={_('Jump to Location')}
+            title={_('Jump to Location')}
+            className={clsx(
+              chromeButtonClassName,
+              'absolute bottom-2 z-10',
+              viewSettings.vertical || viewSettings.rtl ? 'left-2' : 'right-2',
+            )}
+          >
+            <MdOutlineArrowOutward size={size18} />
+          </button>
+        )}
+        {/* Fill the popup's content box rather than restating its border-box
+            size, which overflowed it by the border on both axes (#5999). */}
+        <div className='footnote-content h-full w-full' ref={footnoteRef}></div>
       </Popup>
     </div>
   );

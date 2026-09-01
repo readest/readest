@@ -7,6 +7,9 @@ import { act, cleanup, render } from '@testing-library/react';
 // commit and threw that measurement away.
 
 const PARAGRAPH_HEIGHT = 152;
+// The popup box carries a 1px border on each side, and the paragraph is
+// measured for the room inside it, so the box is that much taller (#5999).
+const POPUP_HEIGHT = PARAGRAPH_HEIGHT + 2;
 
 const h = vi.hoisted(() => ({
   viewSettings: { vertical: false, scrolled: false },
@@ -82,7 +85,6 @@ vi.mock('@/utils/event', () => ({
 import FootnotePopup from '@/app/reader/components/FootnotePopup';
 import { BookDoc } from '@/libs/document';
 
-const footnoteBox = () => document.querySelector<HTMLElement>('.footnote-content');
 const popupContainer = () => document.querySelector<HTMLElement>('#popup-container');
 
 // Just enough of a foliate view for the popup's before-render/render wiring.
@@ -153,7 +155,7 @@ describe('footnote popup built from a data/alt attribute', () => {
       });
     });
 
-    expect(footnoteBox()?.style.height).toBe(`${PARAGRAPH_HEIGHT}px`);
+    expect(popupContainer()?.style.height).toBe(`${POPUP_HEIGHT}px`);
   });
 });
 
