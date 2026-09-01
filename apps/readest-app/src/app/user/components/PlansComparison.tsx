@@ -7,6 +7,8 @@ import PlanCard from './PlanCard';
 interface PlansComparisonProps {
   availablePlans: AvailablePlan[];
   userPlan: UserPlan;
+  /** Defaults to false: an unknown state shows the buy button, never hides it. */
+  customizationPurchased?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
@@ -15,6 +17,7 @@ const RECOMMENDED_PLAN: UserPlan = 'plus';
 
 const PlansComparison: React.FC<PlansComparisonProps> = ({
   availablePlans,
+  customizationPurchased = false,
   userPlan,
   onSubscribe,
 }) => {
@@ -45,6 +48,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
             isUserPlan={plan.plan === userPlan}
             recommended={plan.plan === RECOMMENDED_PLAN}
             canSwitchInterval={intervals.length > 1}
+            customizationPurchased={customizationPurchased}
             upgradable={index > 0 && (index > userPlanIndex || userPlan === 'purchase')}
             onSubscribe={onSubscribe}
           />

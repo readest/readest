@@ -93,7 +93,7 @@ const ProfilePage = () => {
 
   useTheme({ systemUIVisible: false });
 
-  const { quotas, userProfilePlan = 'free' } = useQuotaStats();
+  const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
   const {
     handleLogout,
     handleResetPassword,
@@ -373,6 +373,7 @@ const ProfilePage = () => {
                       <PlansComparison
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
+                        customizationPurchased={customizationPurchased}
                         onSubscribe={
                           appService.hasIAP && iapAvailable
                             ? handleIAPSubscribe

@@ -2349,5 +2349,6 @@
   "Monthly": "חודשי",
   "Save {{percent}}%": "חיסכון של {{percent}}%",
   "Change billing period": "שינוי תקופת החיוב",
-  "{{price}} billed yearly": "{{price}} בחיוב שנתי"
+  "{{price}} billed yearly": "{{price}} בחיוב שנתי",
+  "Unlocked": "נפתח"
 }

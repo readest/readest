@@ -7,6 +7,8 @@ import { PlanAccent, PlanDetails } from '../utils/plan';
 interface PurchaseCallToActionsProps {
   plan: PlanDetails;
   accent: PlanAccent;
+  /** Defaults to false: an unknown state shows the buy button, never hides it. */
+  customizationPurchased?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
@@ -23,6 +25,7 @@ const tileTextClass = 'text-sm font-semibold';
 const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
   plan,
   accent,
+  customizationPurchased = false,
   onSubscribe,
 }) => {
   const _ = useTranslation();
@@ -58,7 +61,23 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
         </div>
       )}
 
-      {customizationProducts.length > 0 ? (
+      {customizationPurchased ? (
+        <div className='grid grid-cols-1 gap-2'>
+          {/* Owned: keep the tier colour and the button geometry, same chassis
+              as the Current Plan chip, so the card footers still line up. */}
+          <div
+            aria-disabled='true'
+            className={clsx(
+              'btn eink-bordered pointer-events-none h-12 min-h-12 w-full',
+              accent.current,
+            )}
+          >
+            <span className='text-xs leading-tight font-medium whitespace-normal'>
+              {_('Full Customization')} ({_('Unlocked')})
+            </span>
+          </div>
+        </div>
+      ) : customizationProducts.length > 0 ? (
         <div className='grid grid-cols-1 gap-2'>
           {customizationProducts.map((product) => (
             <button

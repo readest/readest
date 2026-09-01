@@ -14,6 +14,8 @@ interface PlanCardProps {
   recommended?: boolean;
   upgradable?: boolean;
   canSwitchInterval?: boolean;
+  /** Defaults to false: an unknown state shows the buy button, never hides it. */
+  customizationPurchased?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
@@ -22,6 +24,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   interval,
   isUserPlan,
   recommended,
+  customizationPurchased = false,
   upgradable,
   canSwitchInterval,
   onSubscribe,
@@ -126,7 +129,12 @@ const PlanCard: React.FC<PlanCardProps> = ({
 
         <div className='mt-auto'>
           {plan.plan === 'purchase' ? (
-            <PurchaseCallToActions plan={plan} accent={accent} onSubscribe={onSubscribe} />
+            <PurchaseCallToActions
+              plan={plan}
+              accent={accent}
+              customizationPurchased={customizationPurchased}
+              onSubscribe={onSubscribe}
+            />
           ) : (
             <PlanActionButton
               plan={plan}

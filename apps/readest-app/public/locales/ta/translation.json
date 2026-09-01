@@ -2288,5 +2288,6 @@
   "Monthly": "மாதந்தோறும்",
   "Save {{percent}}%": "{{percent}}% சேமிக்கவும்",
   "Change billing period": "கட்டணக் காலத்தை மாற்று",
-  "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்"
+  "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்",
+  "Unlocked": "திறக்கப்பட்டது"
 }

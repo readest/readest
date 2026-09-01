@@ -154,8 +154,8 @@ const TTSPlayerSheet = ({
   // feature: any paid plan can use it; free / signed-out users see the row with
   // a Premium badge that routes to the upgrade page instead of the per-chapter
   // download controls. Mirrors the cloud-sync paywall in IntegrationsPanel.
-  const { userProfilePlan } = useQuotaStats();
-  const isDownloadPremium = isTTSCacheAllowed(userProfilePlan ?? 'free');
+  const { userProfilePlan, customizationPurchased } = useQuotaStats();
+  const isDownloadPremium = isTTSCacheAllowed(userProfilePlan ?? 'free', customizationPurchased);
   // Only badge users who can't use it yet: signed out (known at once), or a
   // resolved plan without the feature. Suppress it while a signed-in user's
   // plan is still loading so it never flashes at an entitled user.

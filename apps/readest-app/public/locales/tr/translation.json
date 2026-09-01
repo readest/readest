@@ -2288,5 +2288,6 @@
   "Monthly": "Aylık",
   "Save {{percent}}%": "%{{percent}} tasarruf",
   "Change billing period": "Faturalandırma dönemini değiştir",
-  "{{price}} billed yearly": "Yıllık {{price}} olarak faturalandırılır"
+  "{{price}} billed yearly": "Yıllık {{price}} olarak faturalandırılır",
+  "Unlocked": "Açıldı"
 }

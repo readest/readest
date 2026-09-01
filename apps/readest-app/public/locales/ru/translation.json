@@ -2410,5 +2410,6 @@
   "Monthly": "Ежемесячно",
   "Save {{percent}}%": "Экономия {{percent}}%",
   "Change billing period": "Изменить период оплаты",
-  "{{price}} billed yearly": "{{price}} при оплате за год"
+  "{{price}} billed yearly": "{{price}} при оплате за год",
+  "Unlocked": "Разблокировано"
 }

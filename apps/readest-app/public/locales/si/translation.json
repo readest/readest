@@ -2288,5 +2288,6 @@
   "Monthly": "මාසික",
   "Save {{percent}}%": "{{percent}}% ඉතිරි කරන්න",
   "Change billing period": "බිල්පත් කාලය වෙනස් කරන්න",
-  "{{price}} billed yearly": "වාර්ෂිකව {{price}} අය කෙරේ"
+  "{{price}} billed yearly": "වාර්ෂිකව {{price}} අය කෙරේ",
+  "Unlocked": "විවෘත කර ඇත"
 }

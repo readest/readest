@@ -2227,5 +2227,6 @@
   "Monthly": "月額",
   "Save {{percent}}%": "{{percent}}%お得",
   "Change billing period": "お支払い間隔を変更",
-  "{{price}} billed yearly": "年額 {{price}} で請求"
+  "{{price}} billed yearly": "年額 {{price}} で請求",
+  "Unlocked": "解除済み"
 }

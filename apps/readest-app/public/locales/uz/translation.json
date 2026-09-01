@@ -2288,5 +2288,6 @@
   "Monthly": "Oylik",
   "Save {{percent}}%": "{{percent}}% tejang",
   "Change billing period": "Hisob-kitob davrini o'zgartirish",
-  "{{price}} billed yearly": "Yiliga {{price}} hisoblanadi"
+  "{{price}} billed yearly": "Yiliga {{price}} hisoblanadi",
+  "Unlocked": "Ochilgan"
 }

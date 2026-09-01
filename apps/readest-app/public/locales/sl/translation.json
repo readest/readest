@@ -2410,5 +2410,6 @@
   "Monthly": "Mesečno",
   "Save {{percent}}%": "Prihranite {{percent}} %",
   "Change billing period": "Spremeni obdobje zaračunavanja",
-  "{{price}} billed yearly": "{{price}} zaračunano letno"
+  "{{price}} billed yearly": "{{price}} zaračunano letno",
+  "Unlocked": "Odklenjeno"
 }

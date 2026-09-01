@@ -2349,5 +2349,6 @@
   "Monthly": "Lunar",
   "Save {{percent}}%": "Economisiți {{percent}}%",
   "Change billing period": "Schimbă perioada de facturare",
-  "{{price}} billed yearly": "{{price}} facturat anual"
+  "{{price}} billed yearly": "{{price}} facturat anual",
+  "Unlocked": "Deblocat"
 }

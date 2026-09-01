@@ -2288,5 +2288,6 @@
   "Monthly": "Havi",
   "Save {{percent}}%": "{{percent}}% megtakarítás",
   "Change billing period": "Számlázási időszak módosítása",
-  "{{price}} billed yearly": "{{price}} évente számlázva"
+  "{{price}} billed yearly": "{{price}} évente számlázva",
+  "Unlocked": "Feloldva"
 }

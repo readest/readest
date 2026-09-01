@@ -2410,5 +2410,6 @@
   "Monthly": "Щомісяця",
   "Save {{percent}}%": "Заощадьте {{percent}}%",
   "Change billing period": "Змінити період оплати",
-  "{{price}} billed yearly": "{{price}} на рік"
+  "{{price}} billed yearly": "{{price}} на рік",
+  "Unlocked": "Відкрито"
 }

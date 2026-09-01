@@ -2410,5 +2410,6 @@
   "Monthly": "Miesięcznie",
   "Save {{percent}}%": "Oszczędź {{percent}}%",
   "Change billing period": "Zmień okres rozliczeniowy",
-  "{{price}} billed yearly": "{{price}} rozliczane rocznie"
+  "{{price}} billed yearly": "{{price}} rozliczane rocznie",
+  "Unlocked": "Odblokowane"
 }

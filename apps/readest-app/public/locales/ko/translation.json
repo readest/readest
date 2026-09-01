@@ -2227,5 +2227,6 @@
   "Monthly": "월간",
   "Save {{percent}}%": "{{percent}}% 할인",
   "Change billing period": "결제 주기 변경",
-  "{{price}} billed yearly": "연 {{price}} 청구"
+  "{{price}} billed yearly": "연 {{price}} 청구",
+  "Unlocked": "잠금 해제됨"
 }

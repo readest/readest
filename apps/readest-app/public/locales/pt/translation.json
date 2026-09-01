@@ -2349,5 +2349,6 @@
   "Monthly": "Mensal",
   "Save {{percent}}%": "Poupe {{percent}}%",
   "Change billing period": "Alterar período de faturação",
-  "{{price}} billed yearly": "{{price}} faturado anualmente"
+  "{{price}} billed yearly": "{{price}} faturado anualmente",
+  "Unlocked": "Desbloqueado"
 }

@@ -2288,5 +2288,6 @@
   "Monthly": "თვიური",
   "Save {{percent}}%": "დაზოგეთ {{percent}}%",
   "Change billing period": "ბილინგის პერიოდის შეცვლა",
-  "{{price}} billed yearly": "{{price}} წლიური გადახდით"
+  "{{price}} billed yearly": "{{price}} წლიური გადახდით",
+  "Unlocked": "გახსნილია"
 }

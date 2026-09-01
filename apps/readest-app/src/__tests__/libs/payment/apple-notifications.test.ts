@@ -118,8 +118,13 @@ function createSupabaseMock(state: {
             },
             insert: (obj: Record<string, unknown>) => {
               captures.paymentInserts.push(obj);
+              // Only the Apple payment row collides on
+              // apple_original_transaction_id; the grace grant is a separate
+              // row with no conflicting unique key.
+              const collides =
+                state.existingPaymentOwner !== undefined && obj['provider'] === 'apple';
               return Promise.resolve(
-                state.existingPaymentOwner !== undefined
+                collides
                   ? { data: null, error: { code: '23505', message: 'duplicate key value' } }
                   : { data: obj, error: null },
               );
@@ -344,7 +349,8 @@ describe('handleAppleNotification — one-time purchases', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: true, status: 'active' });
-    expect(sb.captures.paymentInserts.at(-1)).toMatchObject({
+    const applePayment = sb.captures.paymentInserts.find((row) => row['provider'] === 'apple');
+    expect(applePayment).toMatchObject({
       user_id: 'user-1',
       provider: 'apple',
       product_id: STORAGE_PRODUCT,
@@ -365,7 +371,8 @@ describe('handleAppleNotification — one-time purchases', () => {
 
     await handleAppleNotification('payload');
 
-    expect(sb.captures.paymentInserts.at(-1)).toMatchObject({ amount: 34990, currency: 'EUR' });
+    const applePayment = sb.captures.paymentInserts.find((row) => row['provider'] === 'apple');
+    expect(applePayment).toMatchObject({ amount: 34990, currency: 'EUR' });
   });
 
   it('cannot attribute a purchase with no appAccountToken', async () => {
@@ -379,7 +386,7 @@ describe('handleAppleNotification — one-time purchases', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: false, reason: 'missing_app_account_token' });
-    expect(sb.captures.paymentInserts).toHaveLength(0);
+    expect(sb.captures.paymentInserts.filter((row) => row['provider'] === 'apple')).toHaveLength(0);
   });
 
   it('still ignores unrelated one-time purchase events', async () => {
@@ -391,7 +398,7 @@ describe('handleAppleNotification — one-time purchases', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: false, reason: 'ignored_purchase_event' });
-    expect(sb.captures.paymentInserts).toHaveLength(0);
+    expect(sb.captures.paymentInserts.filter((row) => row['provider'] === 'apple')).toHaveLength(0);
   });
 });
 
@@ -434,7 +441,7 @@ describe('handleAppleNotification — one-time purchase ownership', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: true });
-    expect(sb.captures.paymentInserts).toHaveLength(0);
+    expect(sb.captures.paymentInserts.filter((row) => row['provider'] === 'apple')).toHaveLength(0);
     expect(sb.captures.planUpdates.at(-1)).toMatchObject({
       storage_purchased_bytes: 5 * 1024 * 1024 * 1024,
     });

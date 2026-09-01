@@ -2227,5 +2227,6 @@
   "Monthly": "รายเดือน",
   "Save {{percent}}%": "ประหยัด {{percent}}%",
   "Change billing period": "เปลี่ยนรอบการเรียกเก็บเงิน",
-  "{{price}} billed yearly": "เรียกเก็บ {{price}} ต่อปี"
+  "{{price}} billed yearly": "เรียกเก็บ {{price}} ต่อปี",
+  "Unlocked": "ปลดล็อกแล้ว"
 }

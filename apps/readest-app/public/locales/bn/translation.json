@@ -2288,5 +2288,6 @@
   "Monthly": "মাসিক",
   "Save {{percent}}%": "{{percent}}% সাশ্রয়",
   "Change billing period": "বিলিং সময়কাল পরিবর্তন করুন",
-  "{{price}} billed yearly": "{{price}} বার্ষিক বিল"
+  "{{price}} billed yearly": "{{price}} বার্ষিক বিল",
+  "Unlocked": "আনলক করা হয়েছে"
 }

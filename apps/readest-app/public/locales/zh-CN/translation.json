@@ -2227,5 +2227,6 @@
   "Monthly": "按月",
   "Save {{percent}}%": "省 {{percent}}%",
   "Change billing period": "更改结算周期",
-  "{{price}} billed yearly": "按年收取 {{price}}"
+  "{{price}} billed yearly": "按年收取 {{price}}",
+  "Unlocked": "已解锁"
 }

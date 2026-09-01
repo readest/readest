@@ -2288,5 +2288,6 @@
   "Monthly": "ماهانه",
   "Save {{percent}}%": "{{percent}}٪ صرفه‌جویی",
   "Change billing period": "تغییر دوره صورت‌حساب",
-  "{{price}} billed yearly": "{{price}} به‌صورت سالانه"
+  "{{price}} billed yearly": "{{price}} به‌صورت سالانه",
+  "Unlocked": "باز شد"
 }
