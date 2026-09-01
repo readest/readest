@@ -12,6 +12,7 @@ import {
   buildBookLookupIndex,
   collectKnownSourcePaths,
   normalizeFilePathForIndex,
+  shouldShowImportSuccessToast,
   selectNewImportableFiles,
   toWatchedFolderImports,
 } from '@/services/bookService';
@@ -1058,10 +1059,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         type: 'error',
       });
     }
-    // Surface the success toast when books were imported. In silent (auto-import)
-    // mode failures are suppressed, so show success independently of them; in
-    // interactive mode keep the original behaviour (only when nothing failed).
-    if (successfulImports.length > 0 && (options.silent || failedImports.length === 0)) {
+    // Auto-import runs on focus and stays quiet; only interactive imports show
+    // a success toast (and only when every selected file imported cleanly).
+    if (
+      shouldShowImportSuccessToast({
+        silent: options.silent ?? false,
+        importedCount: successfulImports.length,
+        failedCount: failedImports.length,
+      })
+    ) {
       eventDispatcher.dispatch('toast', {
         message: _('Successfully imported {{count}} book(s)', {
           count: successfulImports.length,

@@ -34,26 +34,12 @@ describe('ImageViewer', () => {
 
   const zoomIn = (img: Element) => fireEvent.doubleClick(img);
 
-  const mockPointerCapture = (element: Element) => {
-    const captured = new Set<number>();
-    const setPointerCapture = vi.fn((pointerId: number) => captured.add(pointerId));
-    const releasePointerCapture = vi.fn((pointerId: number) => captured.delete(pointerId));
-    const hasPointerCapture = vi.fn((pointerId: number) => captured.has(pointerId));
-    Object.defineProperties(element, {
-      setPointerCapture: { configurable: true, value: setPointerCapture },
-      releasePointerCapture: { configurable: true, value: releasePointerCapture },
-      hasPointerCapture: { configurable: true, value: hasPointerCapture },
-    });
-    return { setPointerCapture, releasePointerCapture };
-  };
-
-  it('captures desktop pan on the stable viewport instead of the moving image', () => {
+  it('tracks desktop pan from the stable viewport without pointer capture', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
     const surface = container.querySelector('.image-pan-surface')!;
-    const { setPointerCapture } = mockPointerCapture(surface);
     zoomIn(img);
 
     fireEvent.pointerDown(surface, {
@@ -64,11 +50,8 @@ describe('ImageViewer', () => {
       clientX: 100,
       clientY: 100,
     });
-    expect(setPointerCapture).toHaveBeenCalledWith(7);
 
-    fireEvent.pointerMove(surface, {
-      pointerId: 7,
-      pointerType: 'mouse',
+    fireEvent.mouseMove(window, {
       buttons: 1,
       clientX: 160,
       clientY: 130,
@@ -85,7 +68,6 @@ describe('ImageViewer', () => {
     );
     const img = container.querySelector('img')!;
     const surface = container.querySelector('.image-pan-surface')!;
-    mockPointerCapture(surface);
     zoomIn(img);
 
     expect(img.style.transition).not.toBe('none');
@@ -108,13 +90,12 @@ describe('ImageViewer', () => {
     expect(img.style.transition).not.toBe('none');
   });
 
-  it('ends the drag when viewport pointer capture is lost', () => {
+  it('ends the drag when the window loses focus', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
     const img = container.querySelector('img')!;
     const surface = container.querySelector('.image-pan-surface')!;
-    mockPointerCapture(surface);
     zoomIn(img);
 
     fireEvent.pointerDown(surface, {
@@ -125,9 +106,7 @@ describe('ImageViewer', () => {
       clientX: 100,
       clientY: 100,
     });
-    fireEvent.pointerMove(surface, {
-      pointerId: 9,
-      pointerType: 'mouse',
+    fireEvent.mouseMove(window, {
       buttons: 1,
       clientX: 160,
       clientY: 130,
@@ -135,12 +114,10 @@ describe('ImageViewer', () => {
     const positionAfterDrag = img.style.transform;
     expect(surface.getAttribute('style')).toContain('grabbing');
 
-    fireEvent.lostPointerCapture(surface, { pointerId: 9 });
+    fireEvent.blur(window);
     expect(surface.getAttribute('style')).toContain('grab');
 
-    fireEvent.pointerMove(surface, {
-      pointerId: 9,
-      pointerType: 'mouse',
+    fireEvent.mouseMove(window, {
       buttons: 1,
       clientX: 260,
       clientY: 230,
@@ -154,7 +131,6 @@ describe('ImageViewer', () => {
     );
     const img = container.querySelector('img')!;
     const surface = container.querySelector('.image-pan-surface')!;
-    const { releasePointerCapture } = mockPointerCapture(surface);
     zoomIn(img);
 
     fireEvent.pointerDown(surface, {
@@ -183,7 +159,6 @@ describe('ImageViewer', () => {
     });
     expect(surface.getAttribute('style')).toContain('grab');
     expect(img.style.transform).toBe(positionAfterDrag);
-    expect(releasePointerCapture).toHaveBeenCalledWith(10);
   });
 
   it('uses window mouseup as a redundant drag-end signal', () => {
@@ -192,7 +167,6 @@ describe('ImageViewer', () => {
     );
     const img = container.querySelector('img')!;
     const surface = container.querySelector('.image-pan-surface')!;
-    mockPointerCapture(surface);
     zoomIn(img);
 
     fireEvent.pointerDown(surface, {

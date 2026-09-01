@@ -54,12 +54,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const activePointerId = useRef<number | null>(null);
   const wasDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Mouse panning is captured by this fixed viewport, not the transformed
-  // image. A transformed target moves under the pointer and several WebViews
-  // have been observed to miss its release/capture bookkeeping (#8). Mature
-  // image viewers track gestures on a stable canvas/viewport for the same
-  // reason; the image itself is only the visual transform target.
-  const panSurfaceRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const zoomLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wheelZoomEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -246,16 +240,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
     activePointerId.current = null;
     setIsDragging(false);
-    const surface = panSurfaceRef.current;
-    if (surface?.hasPointerCapture?.(activeId)) {
-      try {
-        surface.releasePointerCapture(activeId);
-      } catch {
-        // Some Android/desktop WebViews throw if capture was implicitly lost
-        // just before our recovery signal. The ref/state cleanup above is the
-        // authoritative end of the gesture.
-      }
-    }
   }, []);
 
   const handlePanPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -264,11 +248,6 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     e.preventDefault();
     e.stopPropagation();
     activePointerId.current = e.pointerId;
-    try {
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {
-      // Window-level release recovery below does not depend on capture support.
-    }
     setIsDragging(true);
     wasDragging.current = false;
     dragStart.current = {
@@ -277,56 +256,55 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     };
   };
 
-  const handlePanPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== 'mouse' || activePointerId.current !== e.pointerId) return;
-    // `buttons` is the physical truth. This specifically heals WebViews that
-    // drop pointerup/lostpointercapture when the mouse is released outside the
-    // window; the first re-entering move ends the gesture instead of sticking.
-    if ((e.buttons & 1) === 0) {
-      finishPointerDrag(e.pointerId);
-      return;
-    }
-    wasDragging.current = true;
-    updatePosition({
-      x: e.clientX - dragStart.current.x,
-      y: e.clientY - dragStart.current.y,
-    });
-  };
-
   const handlePanPointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse') finishPointerDrag(e.pointerId);
   };
 
-  const handlePanLostPointerCapture = (e: React.PointerEvent<HTMLDivElement>) => {
-    finishPointerDrag(e.pointerId);
-  };
-
-  // Capture on a stable element is the primary path. These global/capture-phase
-  // endings are deliberately redundant: browser-grade viewers treat cancel,
-  // blur and physical mouseup as independent terminal signals because native
-  // WebViews can omit any one of them at a window boundary.
+  // Do not use pointer capture for desktop image panning. WebViews can keep a
+  // captured mouse logically pressed after the physical button is released
+  // outside the window. Track movement on the stable window instead, require
+  // the physical left-button bit on every move, and terminate at the window
+  // boundary so a missed mouseup cannot leave the image stuck to the cursor.
   useEffect(() => {
-    const onPointerEnd = (e: PointerEvent) => {
-      if (e.pointerType === 'mouse') finishPointerDrag(e.pointerId);
+    const onMouseMove = (e: MouseEvent) => {
+      if (activePointerId.current === null) return;
+      if ((e.buttons & 1) === 0) {
+        finishPointerDrag();
+        return;
+      }
+      wasDragging.current = true;
+      updatePosition({
+        x: e.clientX - dragStart.current.x,
+        y: e.clientY - dragStart.current.y,
+      });
     };
+    const onPointerEnd = (e: PointerEvent) => finishPointerDrag(e.pointerId);
     const onMouseUp = () => finishPointerDrag();
+    const onWindowExit = (e: MouseEvent) => {
+      if (e.relatedTarget === null) finishPointerDrag();
+    };
     const onBlur = () => finishPointerDrag();
     const onVisibilityChange = () => {
       if (document.visibilityState !== 'visible') finishPointerDrag();
     };
+
+    window.addEventListener('mousemove', onMouseMove, true);
     window.addEventListener('pointerup', onPointerEnd, true);
     window.addEventListener('pointercancel', onPointerEnd, true);
     window.addEventListener('mouseup', onMouseUp, true);
+    window.addEventListener('mouseout', onWindowExit, true);
     window.addEventListener('blur', onBlur);
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
+      window.removeEventListener('mousemove', onMouseMove, true);
       window.removeEventListener('pointerup', onPointerEnd, true);
       window.removeEventListener('pointercancel', onPointerEnd, true);
       window.removeEventListener('mouseup', onMouseUp, true);
+      window.removeEventListener('mouseout', onWindowExit, true);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [finishPointerDrag]);
+  }, [finishPointerDrag, updatePosition]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     const touches = e.touches;
@@ -563,17 +541,14 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       )}
 
       <div
-        ref={panSurfaceRef}
         role='none'
         className={clsx(
           'image-pan-surface relative flex h-full w-full items-center justify-center overflow-hidden',
         )}
         onClick={handleContainerClick}
         onPointerDown={handlePanPointerDown}
-        onPointerMove={handlePanPointerMove}
         onPointerUp={handlePanPointerEnd}
         onPointerCancel={handlePanPointerEnd}
-        onLostPointerCapture={handlePanLostPointerCapture}
         style={{ touchAction: 'none', cursor: cursorStyle }}
       >
         <img

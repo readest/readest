@@ -20,7 +20,12 @@ const initI18n = async () => {
     .init({
       supportedLngs: SUPPORTED_LNGS,
       fallbackLng: {
+        zh: ['zh-CN', 'en'],
+        'zh-Hans': ['zh-CN', 'en'],
+        'zh-SG': ['zh-CN', 'en'],
+        'zh-Hant': ['zh-TW', 'en'],
         'zh-HK': ['zh-TW', 'en'],
+        'zh-MO': ['zh-TW', 'en'],
         'pt-BR': ['pt', 'en'],
         kk: ['ru', 'en'],
         ky: ['ru', 'en'],

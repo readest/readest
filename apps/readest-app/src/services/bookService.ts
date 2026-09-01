@@ -197,6 +197,16 @@ export function collectKnownSourcePaths(books: Book[], osPlatform?: OsPlatform):
   return paths;
 }
 
+export const shouldShowImportSuccessToast = ({
+  silent,
+  importedCount,
+  failedCount,
+}: {
+  silent: boolean;
+  importedCount: number;
+  failedCount: number;
+}): boolean => !silent && importedCount > 0 && failedCount === 0;
+
 /**
  * Move `book.filePath` into `book.altFilePaths` because `nextFilePath` is about
  * to take its place.
