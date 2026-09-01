@@ -1,0 +1,338 @@
+name: Apply final regression fixes
+
+on:
+  push:
+    branches:
+      - fix/lan-sync-pairing-and-image-drag
+    paths:
+      - '.github/workflows/apply-user-regression-fixes.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/lan-sync-pairing-and-image-drag
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Apply targeted source and regression-test changes
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          image_path = Path('apps/readest-app/src/app/reader/components/ImageViewer.tsx')
+          image = image_path.read_text()
+
+          old_ref = """  // Mouse panning is captured by this fixed viewport, not the transformed
+          // image. A transformed target moves under the pointer and several WebViews
+          // have been observed to miss its release/capture bookkeeping (#8). Mature
+          // image viewers track gestures on a stable canvas/viewport for the same
+          // reason; the image itself is only the visual transform target.
+          const panSurfaceRef = useRef<HTMLDivElement>(null);
+          """
+          if image.count(old_ref) != 1:
+              raise SystemExit('ImageViewer panSurfaceRef block did not match exactly once')
+          image = image.replace(old_ref, '', 1)
+
+          start = image.index('  const finishPointerDrag = useCallback')
+          end = image.index('\n  const onTouchStart', start)
+          new_drag = r"""  const finishPointerDrag = useCallback((pointerId?: number) => {
+            const activeId = activePointerId.current;
+            if (activeId === null) return;
+            if (pointerId !== undefined && activeId !== pointerId) return;
+            activePointerId.current = null;
+            setIsDragging(false);
+          }, []);
+
+          const handlePanPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+            if (e.pointerType !== 'mouse' || e.button !== 0 || scale <= 1) return;
+            if (activePointerId.current !== null) return;
+            e.preventDefault();
+            e.stopPropagation();
+            activePointerId.current = e.pointerId;
+            setIsDragging(true);
+            wasDragging.current = false;
+            dragStart.current = {
+              x: e.clientX - positionRef.current.x,
+              y: e.clientY - positionRef.current.y,
+            };
+          };
+
+          const handlePanPointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+            if (e.pointerType === 'mouse') finishPointerDrag(e.pointerId);
+          };
+
+          // Do not use Pointer Capture for desktop image panning. WebView2 can keep
+          // a captured mouse pointer logically pressed after the physical button was
+          // released outside the WebView, which leaves the image following the cursor
+          // until the next click. Track movement on the stable window instead, require
+          // the physical left-button bit on every move, and terminate immediately when
+          // the cursor exits the WebView. Position is always derived from both client
+          // axes, so changing direction mid-drag never enters an axis-locked gesture.
+          useEffect(() => {
+            const onMouseMove = (e: MouseEvent) => {
+              if (activePointerId.current === null) return;
+              if ((e.buttons & 1) === 0) {
+                finishPointerDrag();
+                return;
+              }
+              wasDragging.current = true;
+              updatePosition({
+                x: e.clientX - dragStart.current.x,
+                y: e.clientY - dragStart.current.y,
+              });
+            };
+            const onPointerEnd = (e: PointerEvent) => {
+              if (e.pointerType === 'mouse') finishPointerDrag(e.pointerId);
+            };
+            const onMouseUp = () => finishPointerDrag();
+            const onWindowExit = (e: MouseEvent) => {
+              if (e.relatedTarget === null) finishPointerDrag();
+            };
+            const onBlur = () => finishPointerDrag();
+            const onVisibilityChange = () => {
+              if (document.visibilityState !== 'visible') finishPointerDrag();
+            };
+            window.addEventListener('mousemove', onMouseMove, true);
+            window.addEventListener('pointerup', onPointerEnd, true);
+            window.addEventListener('pointercancel', onPointerEnd, true);
+            window.addEventListener('mouseup', onMouseUp, true);
+            window.addEventListener('mouseout', onWindowExit, true);
+            window.addEventListener('blur', onBlur);
+            document.addEventListener('visibilitychange', onVisibilityChange);
+            return () => {
+              window.removeEventListener('mousemove', onMouseMove, true);
+              window.removeEventListener('pointerup', onPointerEnd, true);
+              window.removeEventListener('pointercancel', onPointerEnd, true);
+              window.removeEventListener('mouseup', onMouseUp, true);
+              window.removeEventListener('mouseout', onWindowExit, true);
+              window.removeEventListener('blur', onBlur);
+              document.removeEventListener('visibilitychange', onVisibilityChange);
+            };
+          }, [finishPointerDrag, updatePosition]);
+          """
+          image = image[:start] + new_drag + image[end:]
+          image = image.replace('        ref={panSurfaceRef}\n', '', 1)
+          image = image.replace('        onPointerMove={handlePanPointerMove}\n', '', 1)
+          image = image.replace('        onLostPointerCapture={handlePanLostPointerCapture}\n', '', 1)
+          if 'panSurfaceRef' in image or 'handlePanPointerMove' in image or 'handlePanLostPointerCapture' in image:
+              raise SystemExit('ImageViewer still contains removed pointer-capture symbols')
+          image_path.write_text(image)
+
+          test_path = Path('apps/readest-app/src/__tests__/components/ImageViewer.test.tsx')
+          test = test_path.read_text()
+          start = test.index('  const mockPointerCapture')
+          end = test.index('\n  const measuredViewer', start)
+          new_tests = r"""  it('tracks desktop pan in both axes on window without pointer capture', () => {
+            const { container } = render(
+              <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+            );
+            const img = container.querySelector('img')!;
+            const surface = container.querySelector('.image-pan-surface')!;
+            zoomIn(img);
+
+            fireEvent.pointerDown(surface, {
+              pointerId: 7,
+              pointerType: 'mouse',
+              button: 0,
+              buttons: 1,
+              clientX: 100,
+              clientY: 100,
+            });
+            fireEvent.mouseMove(window, { buttons: 1, clientX: 160, clientY: 130 });
+            expect(img.style.transform).toContain('scale(2)');
+            expect(img.style.transform).toContain('translate(30px, 15px)');
+
+            // Reverse from a horizontal-biased move into a vertical-biased move.
+            // Both coordinates must remain live; no gesture axis may be locked.
+            fireEvent.mouseMove(window, { buttons: 1, clientX: 130, clientY: 200 });
+            expect(img.style.transform).toContain('translate(15px, 50px)');
+          });
+
+          it('disables the transform transition only while the mouse is physically dragging', () => {
+            const { container } = render(
+              <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+            );
+            const img = container.querySelector('img')!;
+            const surface = container.querySelector('.image-pan-surface')!;
+            zoomIn(img);
+
+            expect(img.style.transition).not.toBe('none');
+            fireEvent.pointerDown(surface, {
+              pointerId: 8,
+              pointerType: 'mouse',
+              button: 0,
+              buttons: 1,
+              clientX: 100,
+              clientY: 100,
+            });
+            expect(img.style.transition).toBe('none');
+            fireEvent.mouseUp(window);
+            expect(img.style.transition).not.toBe('none');
+          });
+
+          it('ends pan immediately when the cursor leaves the WebView boundary', () => {
+            const { container } = render(
+              <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+            );
+            const img = container.querySelector('img')!;
+            const surface = container.querySelector('.image-pan-surface')!;
+            zoomIn(img);
+
+            fireEvent.pointerDown(surface, {
+              pointerId: 9,
+              pointerType: 'mouse',
+              button: 0,
+              buttons: 1,
+              clientX: 100,
+              clientY: 100,
+            });
+            fireEvent.mouseMove(window, { buttons: 1, clientX: 160, clientY: 130 });
+            const positionAfterDrag = img.style.transform;
+            expect(surface.getAttribute('style')).toContain('grabbing');
+
+            fireEvent.mouseOut(window, { relatedTarget: null });
+            expect(surface.getAttribute('style')).toContain('grab');
+            fireEvent.mouseMove(window, { buttons: 1, clientX: 260, clientY: 230 });
+            expect(img.style.transform).toBe(positionAfterDrag);
+          });
+
+          it('recovers from a missed mouseup as soon as a move reports buttons=0', () => {
+            const { container } = render(
+              <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+            );
+            const img = container.querySelector('img')!;
+            const surface = container.querySelector('.image-pan-surface')!;
+            zoomIn(img);
+
+            fireEvent.pointerDown(surface, {
+              pointerId: 10,
+              pointerType: 'mouse',
+              button: 0,
+              buttons: 1,
+              clientX: 100,
+              clientY: 100,
+            });
+            fireEvent.mouseMove(window, { buttons: 1, clientX: 160, clientY: 130 });
+            const positionAfterDrag = img.style.transform;
+            fireEvent.mouseMove(window, { buttons: 0, clientX: 220, clientY: 180 });
+            expect(surface.getAttribute('style')).toContain('grab');
+            expect(img.style.transform).toBe(positionAfterDrag);
+          });
+
+          it('uses pointerup as an independent drag-end signal', () => {
+            const { container } = render(
+              <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+            );
+            const img = container.querySelector('img')!;
+            const surface = container.querySelector('.image-pan-surface')!;
+            zoomIn(img);
+
+            fireEvent.pointerDown(surface, {
+              pointerId: 11,
+              pointerType: 'mouse',
+              button: 0,
+              buttons: 1,
+              clientX: 100,
+              clientY: 100,
+            });
+            expect(surface.getAttribute('style')).toContain('grabbing');
+            fireEvent.pointerUp(window, {
+              pointerId: 11,
+              pointerType: 'mouse',
+              button: 0,
+              buttons: 0,
+            });
+            expect(surface.getAttribute('style')).toContain('grab');
+          });
+          """
+          test = test[:start] + new_tests + test[end:]
+          test_path.write_text(test)
+
+          lan_path = Path('apps/readest-app/src/components/settings/integrations/LanForm.tsx')
+          lan = lan_path.read_text()
+          old_success = """      eventDispatcher.dispatch('toast', {
+                type: 'success',
+                message: _('Connected to {{name}} at {{host}}:{{port}}', {
+                  name: target?.name || peer.name || peer.device_id,
+                  host: trimmedHost,
+                  port: trimmedPort,
+                }),
+              });
+          """
+          new_success = """      eventDispatcher.dispatch('toast', {
+                type: 'success',
+                message: _('Connected to {{name}}', {
+                  name: target?.name || peer.name || peer.device_id,
+                }),
+              });
+          """
+          if lan.count(old_success) != 1:
+              raise SystemExit('LAN success toast block did not match exactly once')
+          lan = lan.replace(old_success, new_success, 1)
+
+          start = lan.index('  const confirmPeerConnection = async')
+          end = lan.index('\n  const handleScanPairingQr', start)
+          lan = lan[:start] + lan[end:]
+
+          old_qr_confirm = """    if (appService) {
+                const confirmed = await appService.ask(_('Connect to this Readest device and enable LAN Sync?'));
+                if (!confirmed) return;
+              }
+
+          """
+          if lan.count(old_qr_confirm) != 1:
+              raise SystemExit('QR confirmation block did not match exactly once')
+          lan = lan.replace(old_qr_confirm, '', 1)
+          lan = lan.replace(
+              '      onSelectPeer={(peer) => void confirmPeerConnection(peer)}',
+              '      onSelectPeer={(peer) => void handleConnect(peer)}',
+              1,
+          )
+          for untranslated in (
+              'Connect to this Readest device and enable LAN Sync?',
+              'Connect to {{name}} at {{host}}:{{port}} and enable LAN Sync?',
+              'Connected to {{name}} at {{host}}:{{port}}',
+          ):
+              if untranslated in lan:
+                  raise SystemExit(f'untranslated LAN UI string remains: {untranslated}')
+          lan_path.write_text(lan)
+          PY
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Prepare frontend vendors
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: Run ImageViewer regressions
+        run: pnpm --filter @readest/readest-app exec vitest run src/__tests__/components/ImageViewer.test.tsx --maxWorkers=2
+
+      - name: TypeScript typecheck
+        run: pnpm --filter @readest/readest-app exec tsc --noEmit
+
+      - name: Commit verified fixes and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/apply-user-regression-fixes.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/readest-app/src/app/reader/components/ImageViewer.tsx \
+                  apps/readest-app/src/__tests__/components/ImageViewer.test.tsx \
+                  apps/readest-app/src/components/settings/integrations/LanForm.tsx
+          git commit -m 'fix: localize QR pairing and harden CBZ mouse pan release'
+          git push origin HEAD:fix/lan-sync-pairing-and-image-drag
