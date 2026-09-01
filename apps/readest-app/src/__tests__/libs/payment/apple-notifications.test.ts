@@ -39,19 +39,48 @@ type Captures = {
   appleSubUpserts: Array<Record<string, unknown>>;
   planUpdates: Array<Record<string, unknown>>;
   paymentUpdates: Array<Record<string, unknown>>;
-  paymentUpserts: Array<Record<string, unknown>>;
+  paymentInserts: Array<Record<string, unknown>>;
+};
+
+// `.update()` is awaited directly by the refund path and chained as
+// `.eq().eq().select()` by the guarded ownership update, so the chain has to be
+// a real promise carrying the extra methods rather than a thenable literal.
+type UpdateChain = Promise<{ data: null; error: null }> & {
+  eq: (column: string, value: unknown) => UpdateChain;
+  select: () => Promise<{ data: Array<{ id: string }>; error: null }>;
+};
+
+const makeUpdateChain = (
+  filters: Record<string, unknown>,
+  owner: string | undefined,
+): UpdateChain => {
+  const chain = Promise.resolve({ data: null, error: null }) as UpdateChain;
+  chain.eq = (column: string, value: unknown) => {
+    filters[column] = value;
+    return makeUpdateChain(filters, owner);
+  };
+  // The guarded update matches only a row that already belongs to the user
+  // being written, which is what makes ownership enforcement atomic.
+  chain.select = () =>
+    Promise.resolve({
+      data: owner !== undefined && filters['user_id'] === owner ? [{ id: 'payment-1' }] : [],
+      error: null,
+    });
+  return chain;
 };
 
 function createSupabaseMock(state: {
   appleSubRow?: unknown;
   paymentRow?: unknown;
   completedPayments?: Array<{ storage_gb: number }>;
+  /** user_id already owning this transaction, if the row exists. */
+  existingPaymentOwner?: string;
 }) {
   const captures: Captures = {
     appleSubUpserts: [],
     planUpdates: [],
     paymentUpdates: [],
-    paymentUpserts: [],
+    paymentInserts: [],
   };
   const client = {
     from(table: string) {
@@ -83,15 +112,17 @@ function createSupabaseMock(state: {
                 in: () => Promise.resolve({ data: state.completedPayments ?? [] }),
               }),
             }),
-            update: (obj: Record<string, unknown>) => ({
-              eq: () => {
-                captures.paymentUpdates.push(obj);
-                return Promise.resolve({ data: null, error: null });
-              },
-            }),
-            upsert: (obj: Record<string, unknown>) => {
-              captures.paymentUpserts.push(obj);
-              return Promise.resolve({ data: obj, error: null });
+            update: (obj: Record<string, unknown>) => {
+              captures.paymentUpdates.push(obj);
+              return makeUpdateChain({}, state.existingPaymentOwner);
+            },
+            insert: (obj: Record<string, unknown>) => {
+              captures.paymentInserts.push(obj);
+              return Promise.resolve(
+                state.existingPaymentOwner !== undefined
+                  ? { data: null, error: { code: '23505', message: 'duplicate key value' } }
+                  : { data: obj, error: null },
+              );
             },
           };
         default:
@@ -313,7 +344,7 @@ describe('handleAppleNotification — one-time purchases', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: true, status: 'active' });
-    expect(sb.captures.paymentUpserts.at(-1)).toMatchObject({
+    expect(sb.captures.paymentInserts.at(-1)).toMatchObject({
       user_id: 'user-1',
       provider: 'apple',
       product_id: STORAGE_PRODUCT,
@@ -334,7 +365,7 @@ describe('handleAppleNotification — one-time purchases', () => {
 
     await handleAppleNotification('payload');
 
-    expect(sb.captures.paymentUpserts.at(-1)).toMatchObject({ amount: 34990, currency: 'EUR' });
+    expect(sb.captures.paymentInserts.at(-1)).toMatchObject({ amount: 34990, currency: 'EUR' });
   });
 
   it('cannot attribute a purchase with no appAccountToken', async () => {
@@ -348,7 +379,7 @@ describe('handleAppleNotification — one-time purchases', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: false, reason: 'missing_app_account_token' });
-    expect(sb.captures.paymentUpserts).toHaveLength(0);
+    expect(sb.captures.paymentInserts).toHaveLength(0);
   });
 
   it('still ignores unrelated one-time purchase events', async () => {
@@ -360,6 +391,52 @@ describe('handleAppleNotification — one-time purchases', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: false, reason: 'ignored_purchase_event' });
-    expect(sb.captures.paymentUpserts).toHaveLength(0);
+    expect(sb.captures.paymentInserts).toHaveLength(0);
+  });
+});
+
+// Ownership must be decided by the write itself. A read-then-upsert lets the
+// client verification flow and the ONE_TIME_CHARGE notification both pass an
+// ownership check and then disagree about who owns the row.
+describe('handleAppleNotification — one-time purchase ownership', () => {
+  const oneTime = () =>
+    buildTransaction({
+      productId: STORAGE_PRODUCT,
+      type: TransactionType.NonConsumable,
+      expiresDate: undefined,
+      subscriptionGroupIdentifier: undefined,
+      appAccountToken: 'user-1',
+      price: 34990,
+      currency: 'EUR',
+    });
+
+  it('refuses to reassign a transaction owned by another user', async () => {
+    mockNotification(NotificationType.OneTimeCharge, undefined, false);
+    appleMocks.decodeTransaction.mockResolvedValue(oneTime());
+    const sb = createSupabaseMock({ existingPaymentOwner: 'user-2' });
+    h.supabase = sb;
+
+    await expect(handleAppleNotification('payload')).rejects.toThrow(
+      /does not belong to the authenticated user/i,
+    );
+    expect(sb.captures.planUpdates).toHaveLength(0);
+  });
+
+  it('credits the same buyer in place rather than inserting a second row', async () => {
+    mockNotification(NotificationType.OneTimeCharge, undefined, false);
+    appleMocks.decodeTransaction.mockResolvedValue(oneTime());
+    const sb = createSupabaseMock({
+      existingPaymentOwner: 'user-1',
+      completedPayments: [{ storage_gb: 5 }],
+    });
+    h.supabase = sb;
+
+    const res = await handleAppleNotification('payload');
+
+    expect(res).toMatchObject({ handled: true });
+    expect(sb.captures.paymentInserts).toHaveLength(0);
+    expect(sb.captures.planUpdates.at(-1)).toMatchObject({
+      storage_purchased_bytes: 5 * 1024 * 1024 * 1024,
+    });
   });
 });
