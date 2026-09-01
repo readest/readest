@@ -6,6 +6,7 @@ import {
   type MangaTextDetectorFactory,
   type TesseractWorker,
 } from '@/app/reader/services/ocr/tesseractEngine';
+import { getTesseractLanguages } from '@/app/reader/services/ocr/tesseractLanguages';
 
 vi.mock('@/app/reader/services/manga/modelAssets', () => ({
   fetchVerifiedModelAsset: vi.fn(async () => new ArrayBuffer(1)),
@@ -81,6 +82,11 @@ const wholePageResult = {
 
 describe('Tesseract manga OCR', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('keeps Japanese OCR isolated from the English model', () => {
+    expect(getTesseractLanguages(undefined, { mangaFallback: true })).toEqual(['jpn', 'jpn_vert']);
+    expect(getTesseractLanguages('ja')).toEqual(['jpn', 'jpn_vert']);
+  });
 
   it('recognizes Mokuro blocks with the matching Tesseract line mode', async () => {
     installCanvas();

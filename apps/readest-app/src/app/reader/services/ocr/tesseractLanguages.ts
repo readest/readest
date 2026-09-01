@@ -2,7 +2,7 @@ interface TesseractLanguageOptions {
   mangaFallback?: boolean;
 }
 
-const JAPANESE_LANGUAGES = ['jpn', 'jpn_vert', 'eng'] as const;
+const JAPANESE_LANGUAGES = ['jpn', 'jpn_vert'] as const;
 const KOREAN_LANGUAGES = ['kor', 'kor_vert', 'eng'] as const;
 const SIMPLIFIED_CHINESE_LANGUAGES = ['chi_sim', 'chi_sim_vert', 'eng'] as const;
 const TRADITIONAL_CHINESE_LANGUAGES = ['chi_tra', 'chi_tra_vert', 'eng'] as const;
