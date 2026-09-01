@@ -67,13 +67,6 @@ interface ViewState {
   viewSettings: ViewSettings | null;
 }
 
-type ReaderOcrSession = Pick<ViewState, 'ocrEnabled' | 'ocrLanguage'>;
-
-interface RecreateViewerOptions {
-  /* Preserve the active OCR mode for an RTL reload. */
-  preserveSession?: boolean;
-}
-
 interface ReaderStore {
   viewStates: { [key: string]: ViewState };
   bookKeys: string[];
@@ -117,7 +110,6 @@ interface ReaderStore {
     key: string,
     isPrimary?: boolean,
     reload?: boolean,
-    ocrSession?: ReaderOcrSession,
   ) => Promise<void>;
   clearViewState: (key: string) => void;
   getViewState: (key: string) => ViewState | null;
@@ -125,7 +117,7 @@ interface ReaderStore {
   setGridInsets: (key: string, insets: Insets | null) => void;
   setViewInited: (key: string, inited: boolean) => void;
   setPreviewMode: (key: string, previewMode: boolean) => void;
-  recreateViewer: (envConfig: EnvConfigType, key: string, options?: RecreateViewerOptions) => void;
+  recreateViewer: (envConfig: EnvConfigType, key: string) => void;
 }
 
 export const useReaderStore = create<ReaderStore>((set, get) => ({
@@ -169,7 +161,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     key: string,
     isPrimary = true,
     reload = false,
-    ocrSession,
   ) => {
     const booksData = useBookDataStore.getState().booksData;
     const bookData = booksData[id];
@@ -340,8 +331,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ribbonVisible: false,
             ttsEnabled: false,
             autoScrollEnabled: false,
-            ocrEnabled: ocrSession?.ocrEnabled ?? false,
-            ocrLanguage: ocrSession?.ocrLanguage ?? '',
+            ocrEnabled: false,
+            ocrLanguage: '',
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -605,7 +596,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       },
     })),
 
-  recreateViewer: (envConfig: EnvConfigType, key: string, options) => {
+  recreateViewer: (envConfig: EnvConfigType, key: string) => {
     const id = key.split('-')[0]!;
     // `initViewState` already mints a fresh `viewerKey` when the reload lands,
     // which is what remounts <FoliateViewer>. Minting a second one here
@@ -615,13 +606,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     // transform chain twice. A twice-transformed stylesheet lost all its
     // font-family declarations, and the book fell back to the app font
     // (readest#5277).
-    const viewState = options?.preserveSession ? get().viewStates[key] : undefined;
-    const ocrSession = viewState
-      ? {
-          ocrEnabled: viewState.ocrEnabled,
-          ocrLanguage: viewState.ocrLanguage,
-        }
-      : undefined;
-    void get().initViewState(envConfig, id, key, true, true, ocrSession);
+    void get().initViewState(envConfig, id, key, true, true);
   },
 }));

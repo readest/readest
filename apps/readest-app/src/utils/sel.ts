@@ -56,6 +56,14 @@ export interface TextSelection {
   popup?: boolean;
 }
 
+export const getOcrRangeLanguage = (range: Range, fallback?: string): string | undefined => {
+  const start = range.startContainer;
+  const element = start.nodeType === Node.ELEMENT_NODE ? (start as Element) : start.parentElement;
+  return (
+    element?.closest('[data-readest-ocr-layer][lang]')?.getAttribute('lang')?.trim() || fallback
+  );
+};
+
 const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {
   if (!rect) return { left: 0, right: 0, top: 0, bottom: 0 };
   const left = sx * rect.left + frame.left;

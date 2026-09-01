@@ -63,8 +63,6 @@ export interface MokuroTextBlock {
 export interface MokuroTextDetectionResult {
   page: MokuroPageSize;
   blocks: readonly MokuroTextBlock[];
-  rawMask: MokuroMask;
-  refinedMask: MokuroMask;
 }
 
 export interface MokuroDetectorTensor {
@@ -134,7 +132,6 @@ export interface MokuroTextDetectorOptions {
   blockIouThreshold?: number;
   lineConfidence?: number;
   lineThreshold?: number;
-  maskThreshold?: number;
   maximumBlocks?: number;
   maximumLines?: number;
   onDownloadProgress?: (progress: ModelDownloadProgress) => void;
@@ -177,7 +174,6 @@ const DEFAULT_BLOCK_CONFIDENCE = 0.4;
 const DEFAULT_BLOCK_IOU_THRESHOLD = 0.35;
 const DEFAULT_LINE_CONFIDENCE = 0.5;
 const DEFAULT_LINE_THRESHOLD = 0.3;
-const DEFAULT_MASK_THRESHOLD = 0.3;
 const DEFAULT_MAXIMUM_BLOCKS = 300;
 const DEFAULT_MAXIMUM_LINES = 1_000;
 const MASK_CHANNEL_SIZE = MOKURO_TEXT_DETECTOR_INPUT_SIZE * MOKURO_TEXT_DETECTOR_INPUT_SIZE;
@@ -220,7 +216,6 @@ const resolveOptions = (options: MokuroTextDetectorOptions = {}) => {
     blockIouThreshold: options.blockIouThreshold ?? DEFAULT_BLOCK_IOU_THRESHOLD,
     lineConfidence: options.lineConfidence ?? DEFAULT_LINE_CONFIDENCE,
     lineThreshold: options.lineThreshold ?? DEFAULT_LINE_THRESHOLD,
-    maskThreshold: options.maskThreshold ?? DEFAULT_MASK_THRESHOLD,
     maximumBlocks: options.maximumBlocks ?? DEFAULT_MAXIMUM_BLOCKS,
     maximumLines: options.maximumLines ?? DEFAULT_MAXIMUM_LINES,
   };
@@ -228,7 +223,6 @@ const resolveOptions = (options: MokuroTextDetectorOptions = {}) => {
   validateOption('block IoU threshold', resolved.blockIouThreshold, 0, 1);
   validateOption('line confidence', resolved.lineConfidence, 0, 1);
   validateOption('line threshold', resolved.lineThreshold, 0, 1);
-  validateOption('mask threshold', resolved.maskThreshold, 0, 1);
   validatePositiveInteger('maximum blocks', resolved.maximumBlocks);
   validatePositiveInteger('maximum lines', resolved.maximumLines);
   return resolved;
@@ -640,43 +634,6 @@ const resampleMask = (
   return { width: page.width, height: page.height, data: result };
 };
 
-const fillPolygon = (mask: MokuroMask, polygon: readonly MokuroPoint[]): void => {
-  if (polygon.length < 3) return;
-  const minY = clamp(Math.floor(Math.min(...polygon.map((point) => point.y))), 0, mask.height - 1);
-  const maxY = clamp(
-    Math.ceil(Math.max(...polygon.map((point) => point.y))),
-    minY + 1,
-    mask.height,
-  );
-  for (let y = minY; y < maxY; y += 1) {
-    const scanY = y + 0.5;
-    const intersections: number[] = [];
-    for (let index = 0; index < polygon.length; index += 1) {
-      const left = polygon[index]!;
-      const right = polygon[(index + 1) % polygon.length]!;
-      if ((left.y <= scanY && right.y > scanY) || (right.y <= scanY && left.y > scanY)) {
-        intersections.push(left.x + ((scanY - left.y) * (right.x - left.x)) / (right.y - left.y));
-      }
-    }
-    intersections.sort((left, right) => left - right);
-    for (let index = 0; index + 1 < intersections.length; index += 2) {
-      const xMin = clamp(Math.ceil(intersections[index]!), 0, mask.width - 1);
-      const xMax = clamp(Math.floor(intersections[index + 1]!), xMin, mask.width - 1);
-      for (let x = xMin; x <= xMax; x += 1) mask.data[y * mask.width + x] = 255;
-    }
-  }
-};
-
-const fillBox = (mask: MokuroMask, box: OcrBoundingBox): void => {
-  const xMin = clamp(Math.floor(box.xMin), 0, mask.width - 1);
-  const yMin = clamp(Math.floor(box.yMin), 0, mask.height - 1);
-  const xMax = clamp(Math.ceil(box.xMax), xMin + 1, mask.width);
-  const yMax = clamp(Math.ceil(box.yMax), yMin + 1, mask.height);
-  for (let y = yMin; y < yMax; y += 1) {
-    for (let x = xMin; x < xMax; x += 1) mask.data[y * mask.width + x] = 255;
-  }
-};
-
 const sortLines = (lines: readonly MokuroTextLine[], vertical: boolean): MokuroTextLine[] =>
   [...lines].sort((left, right) =>
     vertical
@@ -788,23 +745,6 @@ export const groupMokuroText = (
   }));
 };
 
-const makeRefinedMask = (
-  rawMask: MokuroMask,
-  blocks: readonly MokuroTextBlock[],
-  threshold: number,
-): MokuroMask => {
-  const data = new Uint8Array(rawMask.data.length);
-  for (let index = 0; index < rawMask.data.length; index += 1) {
-    data[index] = rawMask.data[index]! / 255 >= threshold ? 255 : 0;
-  }
-  const refined = { width: rawMask.width, height: rawMask.height, data };
-  for (const block of blocks) {
-    if (block.lines.length === 0) fillBox(refined, block.box);
-    else for (const line of block.lines) fillPolygon(refined, line.polygon);
-  }
-  return refined;
-};
-
 export const postprocessMokuroDetectorOutputs = (
   outputs: MokuroDetectorOutputs,
   page: MokuroPageSize,
@@ -821,8 +761,6 @@ export const postprocessMokuroDetectorOutputs = (
   return {
     page: { ...page },
     blocks: grouped,
-    rawMask,
-    refinedMask: makeRefinedMask(rawMask, grouped, resolved.maskThreshold),
   };
 };
 

@@ -153,9 +153,7 @@ describe('ViewMenu right-to-left pages toggle', () => {
         true,
       );
       expect(mockView.book.dir).toBe('rtl');
-      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1', {
-        preserveSession: true,
-      });
+      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
     });
   });
 
@@ -176,44 +174,7 @@ describe('ViewMenu right-to-left pages toggle', () => {
         true,
       );
       expect(mockView.book.dir).toBe('ltr');
-      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1', {
-        preserveSession: true,
-      });
-    });
-  });
-
-  it.each([
-    undefined,
-    'ltr',
-  ] as const)('uses persisted RTL writing mode when the document starts %s', async (bookDocDir) => {
-    currentViewSettings.writingMode = 'horizontal-rl';
-    mockBookData.bookDoc.dir = bookDocDir;
-    mockView.book.dir = 'ltr';
-
-    const firstRender = render(<ViewMenu bookKey='book-1' />);
-    const firstToggle = screen.getByText('Right-to-Left Pages').closest('button');
-    expect(firstToggle?.querySelector('svg')).toBeTruthy();
-
-    firstRender.unmount();
-    render(<ViewMenu bookKey='book-1' />);
-
-    const reopenedToggle = screen.getByText('Right-to-Left Pages').closest('button');
-    expect(reopenedToggle?.querySelector('svg')).toBeTruthy();
-
-    fireEvent.click(reopenedToggle!);
-
-    await waitFor(() => {
-      expect(mockSaveViewSettings).toHaveBeenCalledWith(
-        expect.anything(),
-        'book-1',
-        'writingMode',
-        'horizontal-tb',
-        true,
-      );
-      expect(mockView.book.dir).toBe('ltr');
-      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1', {
-        preserveSession: true,
-      });
+      expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
     });
   });
 });

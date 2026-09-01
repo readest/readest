@@ -12,5 +12,4 @@ Readest loads the following assets for local OCR.
 
 The model files are fetched at runtime from pinned Hugging Face revisions.
 
-- `ogkalu/comic-text-and-bubble-detector`, `detector-v4-s_int8.onnx`, revision `16e8a622f91fabc6b5b65c96d32d1183f8843546`. Attribution: ogkalu. License: [Apache License 2.0](LICENSE-APACHE-2.0.txt). [Source model](https://huggingface.co/ogkalu/comic-text-and-bubble-detector/tree/16e8a622f91fabc6b5b65c96d32d1183f8843546).
 - `mayocream/koharu`, `comictextdetector.onnx`, revision `15439cba09df388c51de6e47c6020bc31edab41f`. Attribution: mayocream and comic-text-detector contributors. License: [GNU Affero General Public License 3.0](https://huggingface.co/mayocream/koharu/blob/15439cba09df388c51de6e47c6020bc31edab41f/LICENSE). [Source model](https://huggingface.co/mayocream/koharu/tree/15439cba09df388c51de6e47c6020bc31edab41f).

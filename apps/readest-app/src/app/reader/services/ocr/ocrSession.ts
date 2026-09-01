@@ -84,11 +84,6 @@ const resizeOcrPage = (page: OcrPage, image: PageImage): OcrPage => {
     xMax: box.xMax * scaleX,
     yMax: box.yMax * scaleY,
   });
-  const resizePoint = (point: { x: number; y: number }) => ({
-    x: point.x * scaleX,
-    y: point.y * scaleY,
-  });
-
   return {
     ...page,
     width: image.width,
@@ -96,12 +91,6 @@ const resizeOcrPage = (page: OcrPage, image: PageImage): OcrPage => {
     blocks: page.blocks.map((block) => ({
       ...block,
       box: resizeBox(block.box),
-      ...(block.bubbleBox ? { bubbleBox: resizeBox(block.bubbleBox) } : {}),
-      ...(block.contentBox ? { contentBox: resizeBox(block.contentBox) } : {}),
-      ...(block.maskBoxes ? { maskBoxes: block.maskBoxes.map(resizeBox) } : {}),
-      ...(block.maskPolygons
-        ? { maskPolygons: block.maskPolygons.map((polygon) => polygon.map(resizePoint)) }
-        : {}),
     })),
   };
 };

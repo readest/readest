@@ -144,7 +144,7 @@ describe('Mokuro detector asset and postprocessing', () => {
     expect(grouped.every((block) => block.vertical)).toBe(true);
   });
 
-  it('returns source-sized raw and refined masks and groups detector outputs', () => {
+  it('groups detector outputs without retaining page masks', () => {
     const outputs = detectorOutputs();
     (outputs.blk.data as Float32Array).set([512, 400, 240, 120, 0.95, 0.05, 0.95], 0);
     fillRectangle(outputs.seg.data as Float32Array, 392, 340, 632, 460, 0.9);
@@ -153,14 +153,9 @@ describe('Mokuro detector asset and postprocessing', () => {
     const result = postprocessMokuroDetectorOutputs(outputs, PAGE);
 
     expect(result.page).toEqual(PAGE);
-    expect(result.rawMask).toMatchObject({ width: 1024, height: 1024 });
-    expect(result.refinedMask).toMatchObject({ width: 1024, height: 1024 });
-    expect(result.rawMask.data).toHaveLength(MASK_SIZE);
-    expect(result.refinedMask.data).toHaveLength(MASK_SIZE);
     expect(result.blocks).toHaveLength(1);
     expect(result.blocks[0]?.language).toBe('ja');
     expect(result.blocks[0]?.lines).not.toHaveLength(0);
-    expect(result.refinedMask.data.some((value) => value === 255)).toBe(true);
   });
 });
 

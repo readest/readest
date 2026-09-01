@@ -6,7 +6,10 @@ import {
   TesseractOcrEngine,
   type OcrEngineProgress,
 } from '@/app/reader/services/ocr/tesseractEngine';
-import { getTesseractLanguages } from '@/app/reader/services/ocr/tesseractLanguages';
+import {
+  getOcrTextLanguage,
+  getTesseractLanguages,
+} from '@/app/reader/services/ocr/tesseractLanguages';
 
 interface UseOcrSessionOptions {
   enabled: boolean;
@@ -83,6 +86,10 @@ export const useOcrSession = ({
     () => getTesseractLanguages(language, { mangaFallback }),
     [language, mangaFallback],
   );
+  const textLanguage = useMemo(
+    () => getOcrTextLanguage(language, { mangaFallback }),
+    [language, mangaFallback],
+  );
 
   useEffect(() => {
     let session!: OcrSession;
@@ -91,6 +98,7 @@ export const useOcrSession = ({
         new TesseractOcrEngine({
           languages,
           mangaMode,
+          textLanguage,
           onProgress: (progress) => {
             if (sessionRef.current === session && enabledRef.current) {
               onProgressRef.current?.(progress);
@@ -116,7 +124,7 @@ export const useOcrSession = ({
       if (sessionRef.current === session) sessionRef.current = null;
       void session.terminate();
     };
-  }, [languages, mangaMode, processKnownDocuments]);
+  }, [languages, mangaMode, processKnownDocuments, textLanguage]);
 
   useEffect(() => {
     const session = sessionRef.current;

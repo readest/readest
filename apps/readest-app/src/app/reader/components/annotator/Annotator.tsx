@@ -38,11 +38,13 @@ import { Point, Position, TextSelection } from '@/utils/sel';
 import {
   getPopupPosition,
   getPosition,
+  getOcrRangeLanguage,
   getRangeRectInWebview,
   getRangeTextStyleInWebview,
   getTextFromRange,
 } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
+import { getPrimaryLanguage } from '@/utils/book';
 import { findTocItemBS } from '@/services/nav';
 import { throttle } from '@/utils/throttle';
 import {
@@ -2132,6 +2134,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // popup (#5815). They belong to the toolbar: hide them while a lookup is
   // open, and let them come back with the toolbar (or go with the dismiss).
   const lookupPopupOpen = showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+  const metadataLanguage = getPrimaryLanguage(bookData.bookDoc?.metadata.language);
+  const dictionaryLanguage = selection
+    ? getOcrRangeLanguage(selection.range, metadataLanguage)
+    : metadataLanguage;
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
@@ -2155,7 +2161,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             return (
               <DictionarySheet
                 word={selection?.text as string}
-                lang={bookData.bookDoc?.metadata.language as string}
+                lang={dictionaryLanguage}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
               />
@@ -2165,7 +2171,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           return (
             <DictionaryPopup
               word={selection?.text as string}
-              lang={bookData.bookDoc?.metadata.language as string}
+              lang={dictionaryLanguage}
               position={dictPopupPosition}
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}

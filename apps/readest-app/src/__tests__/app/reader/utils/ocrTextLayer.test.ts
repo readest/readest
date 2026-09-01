@@ -11,6 +11,7 @@ const makePage = (overrides: Partial<OcrPage> = {}): OcrPage => ({
   pageIndex: 3,
   width: 1000,
   height: 2000,
+  language: 'ja',
   blocks: [
     {
       id: 'horizontal-0',
@@ -39,6 +40,7 @@ describe('mountOcrTextLayer', () => {
     expect(layer).not.toBeNull();
     expect(document.querySelectorAll(OCR_TEXT_LAYER_SELECTOR)).toHaveLength(1);
     expect(layer?.getAttribute('data-readest-ocr-page-index')).toBe('3');
+    expect(layer?.lang).toBe('ja');
     expect(layer?.style.pointerEvents).toBe('none');
 
     const horizontal = layer?.querySelector<HTMLElement>(

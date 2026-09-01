@@ -77,6 +77,7 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
   const layer = doc.createElement('div');
   layer.setAttribute('data-readest-ocr-layer', '');
   layer.setAttribute('data-readest-ocr-page-index', String(page.pageIndex));
+  if (page.language) layer.lang = page.language;
   Object.assign(layer.style, {
     inset: '0',
     lineHeight: '1',

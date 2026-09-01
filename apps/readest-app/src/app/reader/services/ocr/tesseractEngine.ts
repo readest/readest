@@ -8,17 +8,16 @@ import type {
   WorkerParams,
 } from 'tesseract.js';
 
-import { MangaDetector, type MangaBubbleRegion } from '@/app/reader/services/manga/mangaDetector';
+import {
+  MokuroTextDetector,
+  type MokuroTextDetectionResult,
+} from '@/app/reader/services/manga/mokuroTextDetector';
 import {
   fetchVerifiedModelAsset,
   type VerifiedModelAsset,
 } from '@/app/reader/services/manga/modelAssets';
-import type {
-  OcrBoundingBox,
-  OcrPage,
-  OcrTextBlock,
-  OcrWritingMode,
-} from '@/app/reader/services/ocr/types';
+import { makeMangaTextLineCrop, readCanvasRgba } from '@/app/reader/services/ocr/mangaTextCrop';
+import type { OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
 import {
   adaptTesseractPage,
   type TesseractPageData,
@@ -43,7 +42,7 @@ export interface OcrEngineProgress {
 export interface TesseractOcrEngineOptions {
   languages?: readonly string[];
   mangaMode?: boolean;
-  wholePageFallback?: boolean;
+  textLanguage?: string;
   pageSegmentationMode?: PSM;
   minimumConfidence?: number;
   onProgress?: (progress: OcrEngineProgress) => void;
@@ -75,7 +74,7 @@ export interface MangaTextDetector {
   detect: (
     source: CanvasImageSource,
     page: Pick<OcrImagePage, 'width' | 'height'>,
-  ) => Promise<readonly MangaBubbleRegion[]>;
+  ) => Promise<MokuroTextDetectionResult>;
   terminate: () => Promise<void>;
 }
 
@@ -118,7 +117,7 @@ const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
 const loadLocalLanguageAsset: TesseractLanguageAssetLoader = fetchVerifiedModelAsset;
 
 const createMangaDetector: MangaTextDetectorFactory = (onDownloadProgress) =>
-  new MangaDetector({ onDownloadProgress });
+  new MokuroTextDetector({ onDownloadProgress });
 
 const loadMangaImage: MangaImageLoader = (source) =>
   new Promise((resolve, reject) => {
@@ -136,11 +135,14 @@ const isHtmlCanvas = (image: ImageLike): image is HTMLCanvasElement =>
   image.tagName === 'CANVAS' &&
   'ownerDocument' in image;
 
+const getCanvasDocument = (source?: HTMLCanvasElement): Document =>
+  source?.ownerDocument.defaultView?.frameElement?.ownerDocument ??
+  source?.ownerDocument ??
+  document;
+
 const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
   if (!isHtmlCanvas(image)) return { image, page };
-
-  const source = image;
-  const { width, height } = source;
+  const { width, height } = image;
   const longEdge = Math.max(width, height);
   const pixelCount = width * height;
   if (longEdge <= 0 || pixelCount <= 0) return { image, page };
@@ -152,21 +154,15 @@ const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
   const targetHeight = scaleImageDimension(height, scale);
   if (targetWidth === width && targetHeight === height) return { image, page };
 
-  const canvasDocument =
-    source.ownerDocument.defaultView?.frameElement?.ownerDocument ?? source.ownerDocument;
-  const canvas = canvasDocument.createElement('canvas');
+  const canvas = getCanvasDocument(image).createElement('canvas');
   canvas.width = targetWidth;
   canvas.height = targetHeight;
   const context = canvas.getContext('2d');
   if (!context) return { image, page };
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
-  context.drawImage(source, 0, 0, targetWidth, targetHeight);
-
-  return {
-    image: canvas,
-    page: { ...page, width: targetWidth, height: targetHeight },
-  };
+  context.drawImage(image, 0, 0, targetWidth, targetHeight);
+  return { image: canvas, page: { ...page, width: targetWidth, height: targetHeight } };
 };
 
 const getMangaScale = (width: number, height: number): number => {
@@ -177,11 +173,6 @@ const getMangaScale = (width: number, height: number): number => {
   const pixelScale = Math.sqrt(MAXIMUM_OCR_PIXELS / pixelCount);
   return Math.min(MAXIMUM_OCR_SCALE, detailScale, pixelScale);
 };
-
-const getCanvasDocument = (source?: HTMLCanvasElement): Document =>
-  source?.ownerDocument.defaultView?.frameElement?.ownerDocument ??
-  source?.ownerDocument ??
-  document;
 
 const prepareMangaImage = async (
   image: ImageLike,
@@ -217,342 +208,10 @@ const prepareMangaImage = async (
   return { image: canvas, page: { ...page, width: targetWidth, height: targetHeight } };
 };
 
-const unionBoxes = (boxes: readonly OcrBoundingBox[]): OcrBoundingBox => ({
-  xMin: Math.min(...boxes.map((box) => box.xMin)),
-  yMin: Math.min(...boxes.map((box) => box.yMin)),
-  xMax: Math.max(...boxes.map((box) => box.xMax)),
-  yMax: Math.max(...boxes.map((box) => box.yMax)),
-});
-
-const toRectangle = (
-  box: OcrBoundingBox,
-  page: Pick<OcrPage, 'width' | 'height'>,
-): { left: number; top: number; width: number; height: number } | null => {
-  const left = Math.max(0, Math.floor(box.xMin));
-  const top = Math.max(0, Math.floor(box.yMin));
-  const right = Math.min(page.width, Math.ceil(box.xMax));
-  const bottom = Math.min(page.height, Math.ceil(box.yMax));
-  if (right <= left || bottom <= top) return null;
-  return { left, top, width: right - left, height: bottom - top };
-};
-
-interface MangaInkRun {
-  start: number;
-  end: number;
-}
-
-const getMangaVerticalOcrBoxes = (
-  canvas: HTMLCanvasElement,
-  box: OcrBoundingBox,
-  page: Pick<OcrPage, 'width' | 'height'>,
-): OcrBoundingBox[] => {
-  const rectangle = toRectangle(box, page);
-  if (!rectangle || rectangle.width < 24) return [box];
-  const context = canvas.getContext('2d', { willReadFrequently: true });
-  if (!context) return [box];
-
-  let pixels: Uint8ClampedArray;
-  try {
-    pixels = context.getImageData(
-      rectangle.left,
-      rectangle.top,
-      rectangle.width,
-      rectangle.height,
-    ).data;
-  } catch {
-    return [box];
-  }
-  if (pixels.length !== rectangle.width * rectangle.height * 4) return [box];
-
-  const density = Array.from({ length: rectangle.width }, (_, x) => {
-    let ink = 0;
-    for (let y = 0; y < rectangle.height; y += 1) {
-      const offset = (y * rectangle.width + x) * 4;
-      const red = pixels[offset]!;
-      const green = pixels[offset + 1]!;
-      const blue = pixels[offset + 2]!;
-      const luminance = red * 0.2126 + green * 0.7152 + blue * 0.0722;
-      if (luminance < 128) ink += 1;
-    }
-    return ink;
-  });
-  const smoothingRadius = Math.max(1, Math.round(rectangle.width * 0.012));
-  const smoothedDensity = density.map((_, x) => {
-    let sum = 0;
-    let count = 0;
-    for (
-      let sample = Math.max(0, x - smoothingRadius);
-      sample <= Math.min(rectangle.width - 1, x + smoothingRadius);
-      sample += 1
-    ) {
-      sum += density[sample]!;
-      count += 1;
-    }
-    return sum / count;
-  });
-  const peakDensity = Math.max(...smoothedDensity);
-  if (!Number.isFinite(peakDensity) || peakDensity <= 0) return [box];
-  const minimumDensity = Math.max(2, rectangle.height * 0.012, peakDensity * 0.14);
-
-  const runs: MangaInkRun[] = [];
-  let runStart = -1;
-  for (let x = 0; x <= rectangle.width; x += 1) {
-    if (x < rectangle.width && smoothedDensity[x]! >= minimumDensity) {
-      if (runStart < 0) runStart = x;
-    } else if (runStart >= 0) {
-      runs.push({ start: runStart, end: x - 1 });
-      runStart = -1;
-    }
-  }
-
-  const maximumGap = Math.max(2, Math.round(rectangle.width * 0.035));
-  const mergedRuns: MangaInkRun[] = [];
-  for (const run of runs) {
-    const previous = mergedRuns.at(-1);
-    if (previous && run.start - previous.end - 1 <= maximumGap) previous.end = run.end;
-    else mergedRuns.push({ ...run });
-  }
-
-  const edgeWidth = Math.max(2, Math.round(rectangle.width * 0.04));
-  const minimumRunWidth = Math.max(2, Math.round(rectangle.width * 0.04));
-  const textRuns = mergedRuns.filter((run) => {
-    const width = run.end - run.start + 1;
-    if (width < minimumRunWidth) return false;
-    const touchesEdge = run.start <= edgeWidth || run.end >= rectangle.width - 1 - edgeWidth;
-    return !touchesEdge || width >= rectangle.width * 0.14;
-  });
-  if (!textRuns.length || textRuns.length > 8) return [box];
-  if (textRuns.length === 1 && textRuns[0]!.end - textRuns[0]!.start + 1 >= rectangle.width * 0.8) {
-    return [box];
-  }
-
-  return textRuns
-    .map((run) => {
-      const runWidth = run.end - run.start + 1;
-      const padding = Math.max(2, Math.round(runWidth * 0.25));
-      return {
-        xMin: rectangle.left + Math.max(0, run.start - padding),
-        yMin: rectangle.top,
-        xMax: rectangle.left + Math.min(rectangle.width, run.end + 1 + padding),
-        yMax: rectangle.top + rectangle.height,
-      };
-    })
-    .sort((left, right) => right.xMin - left.xMin);
-};
-
-const makeMangaTextCrop = (
-  source: HTMLCanvasElement,
-  box: OcrBoundingBox,
-  page: Pick<OcrPage, 'width' | 'height'>,
-): HTMLCanvasElement | null => {
-  const rectangle = toRectangle(box, page);
-  if (!rectangle) return null;
-  const padding = Math.max(6, Math.min(16, Math.round(rectangle.width * 0.2)));
-  const scale = 2;
-  const canvas = getCanvasDocument(source).createElement('canvas');
-  canvas.width = (rectangle.width + padding * 2) * scale;
-  canvas.height = (rectangle.height + padding * 2) * scale;
-  const context = canvas.getContext('2d');
-  if (!context) return null;
-  context.fillStyle = '#fff';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = 'high';
-  context.drawImage(
-    source,
-    rectangle.left,
-    rectangle.top,
-    rectangle.width,
-    rectangle.height,
-    padding * scale,
-    padding * scale,
-    rectangle.width * scale,
-    rectangle.height * scale,
-  );
-  return canvas;
-};
-
-const trimMangaTrailingPunctuation = (
-  canvas: HTMLCanvasElement,
-  box: OcrBoundingBox,
-  page: Pick<OcrPage, 'width' | 'height'>,
-): OcrBoundingBox | null => {
-  const rectangle = toRectangle(box, page);
-  if (!rectangle || rectangle.height < rectangle.width * 2) return null;
-  const context = canvas.getContext('2d', { willReadFrequently: true });
-  if (!context) return null;
-
-  let pixels: Uint8ClampedArray;
-  try {
-    pixels = context.getImageData(
-      rectangle.left,
-      rectangle.top,
-      rectangle.width,
-      rectangle.height,
-    ).data;
-  } catch {
-    return null;
-  }
-  if (pixels.length !== rectangle.width * rectangle.height * 4) return null;
-
-  const minimumRowInk = Math.max(1, Math.round(rectangle.width * 0.025));
-  const rowHasInk = Array.from({ length: rectangle.height }, (_, y) => {
-    let ink = 0;
-    for (let x = 0; x < rectangle.width; x += 1) {
-      const offset = (y * rectangle.width + x) * 4;
-      const red = pixels[offset]!;
-      const green = pixels[offset + 1]!;
-      const blue = pixels[offset + 2]!;
-      if (red * 0.2126 + green * 0.7152 + blue * 0.0722 < 128) ink += 1;
-    }
-    return ink >= minimumRowInk;
-  });
-  const runs: MangaInkRun[] = [];
-  let runStart = -1;
-  for (let y = 0; y <= rectangle.height; y += 1) {
-    if (y < rectangle.height && rowHasInk[y]) {
-      if (runStart < 0) runStart = y;
-    } else if (runStart >= 0) {
-      runs.push({ start: runStart, end: y - 1 });
-      runStart = -1;
-    }
-  }
-  if (runs.length < 2) return null;
-
-  const minimumGap = Math.max(3, Math.round(rectangle.width * 0.12));
-  let suffixStart = -1;
-  for (let index = 1; index < runs.length; index += 1) {
-    const gap = runs[index]!.start - runs[index - 1]!.end - 1;
-    if (gap >= minimumGap && runs[index]!.start >= rectangle.height * 0.55) {
-      suffixStart = runs[index]!.start;
-      break;
-    }
-  }
-  if (suffixStart < 0) return null;
-
-  let inkLeft = rectangle.width;
-  let inkRight = -1;
-  let inkTop = rectangle.height;
-  let inkBottom = -1;
-  for (let y = suffixStart; y < rectangle.height; y += 1) {
-    for (let x = 0; x < rectangle.width; x += 1) {
-      const offset = (y * rectangle.width + x) * 4;
-      const red = pixels[offset]!;
-      const green = pixels[offset + 1]!;
-      const blue = pixels[offset + 2]!;
-      if (red * 0.2126 + green * 0.7152 + blue * 0.0722 >= 128) continue;
-      inkLeft = Math.min(inkLeft, x);
-      inkRight = Math.max(inkRight, x);
-      inkTop = Math.min(inkTop, y);
-      inkBottom = Math.max(inkBottom, y);
-    }
-  }
-  if (inkRight < inkLeft || inkBottom < inkTop) return null;
-  const inkWidth = inkRight - inkLeft + 1;
-  const inkHeight = inkBottom - inkTop + 1;
-  const maximumSuffixHeight = Math.min(rectangle.height * 0.35, rectangle.width * 1.8);
-  if (
-    inkWidth > rectangle.width * 0.58 ||
-    inkHeight > maximumSuffixHeight ||
-    inkHeight < inkWidth * 1.25
-  ) {
-    return null;
-  }
-
-  return { ...box, yMax: rectangle.top + suffixStart };
-};
-
-const segmentationModeFor = (writingMode: OcrWritingMode): PSM =>
-  writingMode === 'vertical-rl' ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_BLOCK;
-
-const DEFAULT_BUBBLE_COLOR = 'rgb(255 255 255)';
-const MAXIMUM_BACKGROUND_SAMPLES = 12_000;
-
-const isInsideBox = (x: number, y: number, box: OcrBoundingBox): boolean =>
-  x >= box.xMin && x <= box.xMax && y >= box.yMin && y <= box.yMax;
-
-const createMangaBackgroundSampler = (
-  canvas: HTMLCanvasElement,
-): ((bubbleBox: OcrBoundingBox, textBoxes: readonly OcrBoundingBox[]) => string) => {
-  const sampleCanvas = getCanvasDocument(canvas).createElement('canvas');
-  const context = sampleCanvas.getContext('2d', { willReadFrequently: true });
-  let readable = !!context;
-
-  return (bubbleBox, textBoxes) => {
-    if (!context || !readable) return DEFAULT_BUBBLE_COLOR;
-    const rectangle = toRectangle(bubbleBox, { width: canvas.width, height: canvas.height });
-    if (!rectangle) return DEFAULT_BUBBLE_COLOR;
-
-    try {
-      const scale = Math.min(
-        1,
-        Math.sqrt(MAXIMUM_BACKGROUND_SAMPLES / (rectangle.width * rectangle.height)),
-      );
-      const sampleWidth = Math.max(1, Math.floor(rectangle.width * scale));
-      const sampleHeight = Math.max(1, Math.floor(rectangle.height * scale));
-      sampleCanvas.width = sampleWidth;
-      sampleCanvas.height = sampleHeight;
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = 'high';
-      context.drawImage(
-        canvas,
-        rectangle.left,
-        rectangle.top,
-        rectangle.width,
-        rectangle.height,
-        0,
-        0,
-        sampleWidth,
-        sampleHeight,
-      );
-      const pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
-      const buckets = new Map<
-        number,
-        { count: number; red: number; green: number; blue: number }
-      >();
-      for (let y = 0; y < sampleHeight; y += 1) {
-        for (let x = 0; x < sampleWidth; x += 1) {
-          const pageX = rectangle.left + ((x + 0.5) / sampleWidth) * rectangle.width;
-          const pageY = rectangle.top + ((y + 0.5) / sampleHeight) * rectangle.height;
-          if (textBoxes.some((box) => isInsideBox(pageX, pageY, box))) continue;
-          const offset = (y * sampleWidth + x) * 4;
-          const r = pixels[offset];
-          const g = pixels[offset + 1];
-          const b = pixels[offset + 2];
-          const alpha = pixels[offset + 3];
-          if (r === undefined || g === undefined || b === undefined || alpha === undefined)
-            continue;
-          if (alpha < 128) continue;
-          const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
-          const bucket = buckets.get(key) ?? { count: 0, red: 0, green: 0, blue: 0 };
-          bucket.count += 1;
-          bucket.red += r;
-          bucket.green += g;
-          bucket.blue += b;
-          buckets.set(key, bucket);
-        }
-      }
-      const dominant = [...buckets.values()].reduce<
-        { count: number; red: number; green: number; blue: number } | undefined
-      >(
-        (largest, bucket) => (!largest || bucket.count > largest.count ? bucket : largest),
-        undefined,
-      );
-      if (!dominant) return DEFAULT_BUBBLE_COLOR;
-      return `rgb(${Math.round(dominant.red / dominant.count)} ${Math.round(
-        dominant.green / dominant.count,
-      )} ${Math.round(dominant.blue / dominant.count)})`;
-    } catch {
-      readable = false;
-      return DEFAULT_BUBBLE_COLOR;
-    }
-  };
-};
-
 export class TesseractOcrEngine {
   readonly #languages: string[];
   readonly #mangaMode: boolean;
-  readonly #wholePageFallback: boolean;
+  readonly #textLanguage?: string;
   readonly #pageSegmentationMode: PSM;
   readonly #minimumConfidence: number;
   readonly #onProgress?: (progress: OcrEngineProgress) => void;
@@ -575,7 +234,7 @@ export class TesseractOcrEngine {
     this.#languages = options.languages?.length ? [...options.languages] : [...DEFAULT_LANGUAGES];
     this.#pageSegmentationMode = options.pageSegmentationMode ?? PSM.AUTO;
     this.#mangaMode = options.mangaMode ?? false;
-    this.#wholePageFallback = options.wholePageFallback ?? true;
+    this.#textLanguage = options.textLanguage;
     this.#minimumConfidence = options.minimumConfidence ?? 0;
     this.#onProgress = options.onProgress;
     this.#createWorker = workerFactory;
@@ -593,10 +252,11 @@ export class TesseractOcrEngine {
       worker.recognize(prepared.image, {}, { text: true, blocks: true }),
     );
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    return adaptTesseractPage(data, {
+    const result = adaptTesseractPage(data, {
       ...prepared.page,
       minimumConfidence: this.#minimumConfidence,
     });
+    return this.#textLanguage ? { ...result, language: this.#textLanguage } : result;
   }
 
   async terminate(): Promise<void> {
@@ -613,77 +273,41 @@ export class TesseractOcrEngine {
       const termination = this.#terminateWorker(workerRequest);
       if (workerRequest.worker) workerTermination = termination;
     }
-
     await Promise.all([detector?.terminate(), workerTermination]);
   }
 
   async #recognizeManga(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
     const prepared = await prepareMangaImage(image, page, this.#loadMangaImage);
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    this.#onProgress?.({ status: 'detecting speech bubbles', progress: 0 });
-    const regions = await this.#getMangaDetector().detect(prepared.image, {
+    this.#onProgress?.({ status: 'detecting manga text', progress: 0 });
+    const detection = await this.#getMangaDetector().detect(prepared.image, {
       width: prepared.page.width,
       height: prepared.page.height,
     });
-    this.#onProgress?.({ status: 'detecting speech bubbles', progress: 1 });
+    this.#onProgress?.({ status: 'detecting manga text', progress: 1 });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    if (!regions.length) {
-      return this.#wholePageFallback
-        ? this.#recognizeWholePage(prepared)
-        : { ...prepared.page, blocks: [] };
-    }
+    const lines = detection.blocks.flatMap((block, blockIndex) =>
+      block.lines.map((line, lineIndex) => ({ blockIndex, lineIndex, line })),
+    );
+    if (!lines.length) return this.#recognizeWholePage(prepared);
 
     const worker = await this.#getWorker();
+    const imageData = readCanvasRgba(prepared.image);
     const blocks: OcrTextBlock[] = [];
-    const sampleBackground = createMangaBackgroundSampler(prepared.image);
     await this.#runWorkerOperation(worker, async () => {
-      for (const region of regions) {
+      for (const { blockIndex, lineIndex, line } of lines) {
         if (this.#terminated) throw new Error('OCR engine has been terminated');
+        const writingMode = line.vertical ? 'vertical-rl' : 'horizontal-tb';
         await worker.setParameters({
-          tessedit_pageseg_mode: segmentationModeFor(region.writingMode),
+          tessedit_pageseg_mode: line.vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
           preserve_interword_spaces: '1',
         });
-        const parts: string[] = [];
-        const confidences: number[] = [];
-        const recognizedBoxes: OcrBoundingBox[] = [];
-        let incomplete = false;
-        const ocrBoxes = region.textBoxes.flatMap((box) =>
-          region.writingMode === 'vertical-rl'
-            ? getMangaVerticalOcrBoxes(prepared.image, box, prepared.page).map((ocrBox) => ({
-                box: ocrBox,
-                crop: ocrBox !== box,
-              }))
-            : [{ box, crop: false }],
-        );
-        for (const { box, crop } of ocrBoxes) {
-          const result = await this.#recognizeMangaTextBox(
-            worker,
-            prepared.image,
-            prepared.page,
-            box,
-            region.writingMode,
-            crop,
-          );
-          const text = result?.text;
-          if (!text) {
-            incomplete = true;
-            continue;
-          }
-          if (
-            this.#minimumConfidence > 0 &&
-            (result.confidence === undefined || result.confidence < this.#minimumConfidence)
-          ) {
-            incomplete = true;
-            continue;
-          }
-          parts.push(text);
-          recognizedBoxes.push(box);
-          if (result.confidence !== undefined) confidences.push(result.confidence);
-        }
-        if (incomplete || !parts.length) continue;
-        const confidence = confidences.length
-          ? confidences.reduce((total, value) => total + value, 0) / confidences.length
-          : undefined;
+        const crop = makeMangaTextLineCrop(prepared.image, imageData, line);
+        if (!crop) continue;
+        const { data } = await worker.recognize(crop, {}, { text: true, blocks: false });
+        const text = data.text?.trim();
+        if (!text) continue;
+        const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
         if (
           this.#minimumConfidence > 0 &&
           (confidence === undefined || confidence < this.#minimumConfidence)
@@ -691,65 +315,19 @@ export class TesseractOcrEngine {
           continue;
         }
         blocks.push({
-          id: region.id,
-          text: parts.join('\n'),
+          id: `mokuro-line-${blockIndex}-${lineIndex}`,
+          text,
           ...(confidence === undefined ? {} : { confidence }),
-          box: unionBoxes(recognizedBoxes),
-          bubbleBox: region.bubbleBox,
-          maskBoxes: region.textBoxes,
-          backgroundColor: sampleBackground(region.bubbleBox, region.textBoxes),
-          writingMode: region.writingMode,
+          box: line.box,
+          writingMode,
         });
       }
     });
-    return { ...prepared.page, blocks };
-  }
-
-  async #recognizeMangaTextBox(
-    worker: TesseractWorker,
-    image: HTMLCanvasElement,
-    page: OcrImagePage,
-    box: OcrBoundingBox,
-    writingMode: OcrWritingMode,
-    crop: boolean,
-  ): Promise<{ text: string; confidence?: number } | null> {
-    const recognize = async (targetBox: OcrBoundingBox) => {
-      const croppedImage = crop ? makeMangaTextCrop(image, targetBox, page) : null;
-      const rectangle = toRectangle(targetBox, page);
-      if (!rectangle) return null;
-      const { data } = croppedImage
-        ? await worker.recognize(croppedImage, {}, { text: true, blocks: false })
-        : await worker.recognize(image, { rectangle }, { text: true, blocks: false });
-      const text = data.text?.trim();
-      if (!text) return null;
-      return {
-        text,
-        ...(Number.isFinite(data.confidence) ? { confidence: data.confidence! } : {}),
-      };
+    return {
+      ...prepared.page,
+      ...(this.#textLanguage ? { language: this.#textLanguage } : {}),
+      blocks,
     };
-
-    const primary = await recognize(box);
-    if (writingMode !== 'vertical-rl' || !crop) return primary;
-    if (
-      primary?.confidence !== undefined &&
-      (this.#minimumConfidence <= 0 || primary.confidence >= this.#minimumConfidence)
-    ) {
-      return primary;
-    }
-
-    const trimmedBox = trimMangaTrailingPunctuation(image, box, page);
-    if (!trimmedBox) return primary;
-    const retry = await recognize(trimmedBox);
-    if (!retry) return primary;
-    if (
-      this.#minimumConfidence > 0 &&
-      (retry.confidence === undefined || retry.confidence < this.#minimumConfidence)
-    ) {
-      return primary;
-    }
-    const primaryConfidence = primary?.confidence ?? Number.NEGATIVE_INFINITY;
-    const retryConfidence = retry.confidence ?? Number.NEGATIVE_INFINITY;
-    return retryConfidence >= primaryConfidence + 10 ? retry : primary;
   }
 
   async #recognizeWholePage(prepared: PreparedImage): Promise<OcrPage> {
@@ -762,17 +340,18 @@ export class TesseractOcrEngine {
       return worker.recognize(prepared.image, {}, { text: true, blocks: true });
     });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    return adaptTesseractPage(data, {
+    const result = adaptTesseractPage(data, {
       ...prepared.page,
       minimumConfidence: this.#minimumConfidence,
     });
+    return this.#textLanguage ? { ...result, language: this.#textLanguage } : result;
   }
 
   #getMangaDetector(): MangaTextDetector {
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     this.#mangaDetector ??= this.#createMangaDetector(({ loaded, total }) => {
       this.#onProgress?.({
-        status: 'loading manga detector',
+        status: 'loading manga text detector',
         progress: total && total > 0 ? Math.min(1, loaded / total) : 0,
       });
     });

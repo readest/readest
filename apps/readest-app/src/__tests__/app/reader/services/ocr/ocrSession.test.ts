@@ -309,54 +309,6 @@ describe('OcrSession', () => {
     });
   });
 
-  it('scales cached manga masks and polygons with the rendered page', async () => {
-    const engine = makeEngine();
-    const basePage = makePage(6);
-    const page = {
-      ...basePage,
-      blocks: [
-        {
-          ...basePage.blocks[0]!,
-          bubbleBox: { xMin: 80, yMin: 160, xMax: 640, yMax: 640 },
-          contentBox: { xMin: 120, yMin: 220, xMax: 560, yMax: 560 },
-          maskBoxes: [{ xMin: 100, yMin: 200, xMax: 200, yMax: 400 }],
-          maskPolygons: [
-            [
-              { x: 100, y: 200 },
-              { x: 200, y: 200 },
-              { x: 200, y: 400 },
-              { x: 100, y: 400 },
-            ],
-          ],
-        },
-      ],
-    } satisfies OcrPage;
-    vi.mocked(engine.recognize).mockResolvedValueOnce(page);
-    const session = new OcrSession({ createEngine: () => engine });
-    const doc = makePdfDocument();
-    const canvas = doc.querySelector('canvas')!;
-    await session.setEnabled(true);
-    await session.processDocument(doc, 6);
-
-    canvas.width = 2400;
-    canvas.height = 3600;
-    const resizedPage = await session.processDocument(doc, 6);
-
-    expect(resizedPage?.blocks[0]).toMatchObject({
-      bubbleBox: { xMin: 160, yMin: 320, xMax: 1280, yMax: 1280 },
-      contentBox: { xMin: 240, yMin: 440, xMax: 1120, yMax: 1120 },
-      maskBoxes: [{ xMin: 200, yMin: 400, xMax: 400, yMax: 800 }],
-      maskPolygons: [
-        [
-          { x: 200, y: 400 },
-          { x: 400, y: 400 },
-          { x: 400, y: 800 },
-          { x: 200, y: 800 },
-        ],
-      ],
-    });
-  });
-
   it('reuses completed PDF OCR when the same canvas changes size', async () => {
     const engine = makeEngine();
     const session = new OcrSession({ createEngine: () => engine });

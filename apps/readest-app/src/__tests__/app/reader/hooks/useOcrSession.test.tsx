@@ -73,6 +73,7 @@ describe('useOcrSession', () => {
       expect.objectContaining({
         languages: ['jpn', 'jpn_vert', 'eng'],
         mangaMode: false,
+        textLanguage: 'ja',
       }),
     ]);
 

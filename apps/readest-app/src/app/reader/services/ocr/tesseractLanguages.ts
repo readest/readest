@@ -133,3 +133,18 @@ export const getTesseractLanguages = (
   const model = TESSERACT_LANGUAGE_BY_BASE[base];
   return model ? [model] : ['eng'];
 };
+
+export const getOcrTextLanguage = (
+  language: string | readonly string[] | undefined,
+  { mangaFallback = false }: TesseractLanguageOptions = {},
+): string | undefined => {
+  const firstLanguage = (Array.isArray(language) ? language[0] : language) ?? '';
+  const normalized = firstLanguage.trim().replaceAll('_', '-');
+  const base = normalized.toLowerCase().split('-')[0]!;
+  if (UNDEFINED_LANGUAGES.has(base)) return mangaFallback ? 'ja' : undefined;
+  if (base === 'jpn') return 'ja';
+  if (base === 'kor') return 'ko';
+  if (['chi', 'zho'].includes(base))
+    return /(?:hant|hk|mo|tra|tw)/iu.test(normalized) ? 'zh-TW' : 'zh-CN';
+  return normalized;
+};
