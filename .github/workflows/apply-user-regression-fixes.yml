@@ -19,6 +19,7 @@ jobs:
         with:
           ref: fix/lan-sync-pairing-and-image-drag
           fetch-depth: 0
+          submodules: recursive
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
 
