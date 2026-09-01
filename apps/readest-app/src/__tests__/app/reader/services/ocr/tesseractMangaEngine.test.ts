@@ -23,6 +23,17 @@ const line = {
   score: 0.9,
   vertical: true,
 };
+const secondLine = {
+  ...line,
+  box: { xMin: 840, yMin: 100, xMax: 900, yMax: 500 },
+  polygon: [
+    { x: 840, y: 100 },
+    { x: 900, y: 100 },
+    { x: 900, y: 500 },
+    { x: 840, y: 500 },
+  ],
+};
+const blockBox = { xMin: 840, yMin: 100, xMax: 960, yMax: 500 };
 
 const makeWorker = (): TesseractWorker => ({
   setParameters: vi.fn(async () => undefined),
@@ -71,7 +82,7 @@ const wholePageResult = {
 describe('Tesseract manga OCR', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('recognizes Mokuro line geometry with the matching Tesseract mode', async () => {
+  it('recognizes Mokuro blocks with the matching Tesseract line mode', async () => {
     installCanvas();
     const source = document.createElement('canvas');
     source.width = page.width;
@@ -81,17 +92,20 @@ describe('Tesseract manga OCR', () => {
         page,
         blocks: [
           {
-            box: line.box,
+            box: blockBox,
             score: 0.9,
             language: 'ja' as const,
             vertical: true,
-            lines: [line],
+            lines: [line, secondLine],
           },
         ],
       })),
       terminate: vi.fn(async () => undefined),
     };
     const worker = makeWorker();
+    vi.mocked(worker.recognize)
+      .mockResolvedValueOnce({ data: { text: '一行目', confidence: 91 } })
+      .mockResolvedValueOnce({ data: { text: '二行目', confidence: 89 } });
     const engine = new TesseractOcrEngine(
       { mangaMode: true, textLanguage: 'ja' },
       vi.fn(async () => worker),
@@ -106,7 +120,16 @@ describe('Tesseract manga OCR', () => {
     });
     expect(result).toMatchObject({
       language: 'ja',
-      blocks: [{ text: '縦書き', box: line.box, writingMode: 'vertical-rl' }],
+      blocks: [
+        {
+          id: 'mokuro-block-0',
+          text: '一行目二行目',
+          lines: ['一行目', '二行目'],
+          confidence: 90,
+          box: blockBox,
+          writingMode: 'vertical-rl',
+        },
+      ],
     });
   });
 

@@ -1,6 +1,31 @@
 import type { OcrBoundingBox, OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
 
 export const OCR_TEXT_LAYER_SELECTOR = '[data-readest-ocr-layer]';
+const OCR_TEXT_LAYER_STYLE_SELECTOR = '[data-readest-ocr-style]';
+const OCR_TEXT_BLOCK_SELECTOR = '[data-readest-ocr-block-id]';
+const OCR_TEXT_LINE_SELECTOR = '[data-readest-ocr-line]';
+
+const OCR_TEXT_LAYER_STYLES = `
+${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR} {
+  background-color: transparent;
+  color: transparent;
+  transition: background-color 100ms ease-out, color 100ms ease-out;
+}
+${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR}:hover,
+${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR}:active {
+  background-color: #fff;
+  color: #000;
+  z-index: 1;
+}
+${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_LINE_SELECTOR}:not(:last-child)::after {
+  content: '\\A';
+  white-space: pre;
+}
+@media (prefers-reduced-motion: reduce) {
+  ${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR} {
+    transition: none;
+  }
+}`;
 
 const clamp = (value: number, maximum: number) => Math.min(maximum, Math.max(0, value));
 
@@ -24,6 +49,23 @@ const normalizeBox = (
 const toRelativeUnit = (value: number, total: number, unit: '%' | 'vh' | 'vw') =>
   `${(value / total) * 100}${unit}`;
 
+const getFontSize = (
+  lines: readonly string[],
+  width: number,
+  height: number,
+  vertical: boolean,
+): number => {
+  const lineCount = Math.max(1, lines.length);
+  const longestLine = Math.max(1, ...lines.map((line) => Array.from(line).length));
+  return (
+    0.9 *
+    Math.min(
+      vertical ? width / lineCount : height / lineCount,
+      (vertical ? height : width) / longestLine,
+    )
+  );
+};
+
 const createTextBlock = (
   doc: Document,
   page: Pick<OcrPage, 'width' | 'height'>,
@@ -36,6 +78,8 @@ const createTextBlock = (
   const width = box.xMax - box.xMin;
   const height = box.yMax - box.yMin;
   const vertical = block.writingMode.startsWith('vertical');
+  const detectedLines = block.lines?.filter((line) => line.trim());
+  const lines = detectedLines?.length ? detectedLines : [block.text];
   const element = doc.createElement('span');
   element.setAttribute('data-readest-ocr-block-id', block.id);
   Object.assign(element.style, {
@@ -44,15 +88,11 @@ const createTextBlock = (
     top: toRelativeUnit(box.yMin, page.height, '%'),
     width: toRelativeUnit(width, page.width, '%'),
     height: toRelativeUnit(height, page.height, '%'),
-    color: 'transparent',
-    backgroundColor: 'transparent',
-    cursor: 'text',
-    fontFamily: 'sans-serif',
-    fontSize: vertical
-      ? toRelativeUnit(width, page.width, 'vw')
-      : toRelativeUnit(height, page.height, 'vh'),
+    cursor: vertical ? 'vertical-text' : 'text',
+    fontFamily: '"Noto Sans JP", sans-serif',
+    fontSize: toRelativeUnit(getFontSize(lines, width, height, vertical), page.width, 'vw'),
     forcedColorAdjust: 'none',
-    lineHeight: '1',
+    lineHeight: '1.1',
     overflow: 'hidden',
     pointerEvents: 'auto',
     textOrientation: 'mixed',
@@ -61,12 +101,21 @@ const createTextBlock = (
     whiteSpace: 'pre-wrap',
     writingMode: block.writingMode,
   });
-  element.append(doc.createTextNode(block.text));
+  for (const line of lines) {
+    const lineElement = doc.createElement('span');
+    lineElement.setAttribute('data-readest-ocr-line', '');
+    lineElement.append(doc.createTextNode(line));
+    element.append(lineElement);
+  }
   return element;
 };
 
 export const removeOcrTextLayer = (doc: Document): void => {
-  for (const layer of doc.querySelectorAll(OCR_TEXT_LAYER_SELECTOR)) layer.remove();
+  for (const element of doc.querySelectorAll(
+    `${OCR_TEXT_LAYER_SELECTOR}, ${OCR_TEXT_LAYER_STYLE_SELECTOR}`,
+  )) {
+    element.remove();
+  }
 };
 
 export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement | null => {
@@ -90,10 +139,27 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
     zIndex: '1',
   });
 
+  const style = doc.createElement('style');
+  style.setAttribute('data-readest-ocr-style', '');
+  style.textContent = OCR_TEXT_LAYER_STYLES;
+  (doc.head ?? doc.documentElement).append(style);
+
   for (const block of page.blocks) {
     const element = createTextBlock(doc, page, block);
     if (element) layer.append(element);
   }
+  layer.addEventListener('click', (event) => {
+    const block = (event.target as Element | null)?.closest?.(OCR_TEXT_BLOCK_SELECTOR);
+    if (!block || !layer.contains(block)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const selection = doc.getSelection();
+    if (!selection) return;
+    const range = doc.createRange();
+    range.selectNodeContents(block);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
   doc.body.append(layer);
   return layer;
 };

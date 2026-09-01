@@ -307,46 +307,60 @@ export class TesseractOcrEngine {
     }
     this.#onProgress?.({ status: 'detecting manga text', progress: 1 });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    const lines = detection.blocks.flatMap((block, blockIndex) =>
-      block.lines.map((line, lineIndex) => ({ blockIndex, lineIndex, line })),
-    );
-    if (!lines.length) return this.#recognizeWholePage(prepared);
+    const totalLines = detection.blocks.reduce((total, block) => total + block.lines.length, 0);
+    if (!totalLines) return this.#recognizeWholePage(prepared);
 
     const worker = await this.#getWorker();
     const imageData = readCanvasRgba(prepared.image);
     const blocks: OcrTextBlock[] = [];
+    let recognitionIndex = 0;
     await this.#runWorkerOperation(worker, async () => {
-      for (const [recognitionIndex, { blockIndex, lineIndex, line }] of lines.entries()) {
-        if (this.#terminated) throw new Error('OCR engine has been terminated');
-        const writingMode = line.vertical ? 'vertical-rl' : 'horizontal-tb';
-        await worker.setParameters({
-          tessedit_pageseg_mode: line.vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
-          preserve_interword_spaces: '1',
-        });
-        const crop = makeMangaTextLineCrop(prepared.image, imageData, line);
-        if (!crop) continue;
-        this.#mangaLineProgress = { index: recognitionIndex, total: lines.length };
-        let data: TesseractPageData & { text?: string; confidence?: number };
-        try {
-          ({ data } = await worker.recognize(crop, {}, { text: true, blocks: false }));
-        } finally {
-          this.#mangaLineProgress = null;
+      for (const [blockIndex, detectedBlock] of detection.blocks.entries()) {
+        const textLines: string[] = [];
+        const confidences: number[] = [];
+        for (const line of detectedBlock.lines) {
+          if (this.#terminated) throw new Error('OCR engine has been terminated');
+          await worker.setParameters({
+            tessedit_pageseg_mode: line.vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
+            preserve_interword_spaces: '1',
+          });
+          const crop = makeMangaTextLineCrop(prepared.image, imageData, line);
+          if (!crop) {
+            recognitionIndex += 1;
+            continue;
+          }
+          this.#mangaLineProgress = { index: recognitionIndex, total: totalLines };
+          recognitionIndex += 1;
+          let data: TesseractPageData & { text?: string; confidence?: number };
+          try {
+            ({ data } = await worker.recognize(crop, {}, { text: true, blocks: false }));
+          } finally {
+            this.#mangaLineProgress = null;
+          }
+          const text = data.text?.replace(/\s+/g, ' ').trim();
+          if (!text) continue;
+          const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
+          if (
+            this.#minimumConfidence > 0 &&
+            (confidence === undefined || confidence < this.#minimumConfidence)
+          ) {
+            continue;
+          }
+          textLines.push(text);
+          if (confidence !== undefined) confidences.push(confidence);
         }
-        const text = data.text?.trim();
-        if (!text) continue;
-        const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
-        if (
-          this.#minimumConfidence > 0 &&
-          (confidence === undefined || confidence < this.#minimumConfidence)
-        ) {
-          continue;
-        }
+        if (!textLines.length) continue;
         blocks.push({
-          id: `mokuro-line-${blockIndex}-${lineIndex}`,
-          text,
-          ...(confidence === undefined ? {} : { confidence }),
-          box: line.box,
-          writingMode,
+          id: `mokuro-block-${blockIndex}`,
+          text: textLines.join(''),
+          lines: textLines,
+          ...(confidences.length
+            ? {
+                confidence: confidences.reduce((sum, value) => sum + value, 0) / confidences.length,
+              }
+            : {}),
+          box: detectedBlock.box,
+          writingMode: detectedBlock.vertical ? 'vertical-rl' : 'horizontal-tb',
         });
       }
     });
