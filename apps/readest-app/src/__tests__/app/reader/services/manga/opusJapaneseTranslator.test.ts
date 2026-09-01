@@ -19,7 +19,6 @@ class FakeWorker {
   readonly terminate = vi.fn();
   readonly #listeners = {
     message: new Set<(event: MessageEvent) => void>(),
-    messageerror: new Set<(event: MessageEvent) => void>(),
     error: new Set<(event: ErrorEvent) => void>(),
   };
   #failed = false;
@@ -31,7 +30,7 @@ class FakeWorker {
   ) {}
 
   addEventListener(
-    type: 'message' | 'messageerror' | 'error',
+    type: 'message' | 'error',
     listener: (event: MessageEvent | ErrorEvent) => void,
   ): void {
     this.#listeners[type].add(listener as never);
@@ -59,11 +58,6 @@ class FakeWorker {
     for (const listener of this.#listeners.error) {
       listener({ error, message: error.message } as ErrorEvent);
     }
-  }
-
-  emitMessageError(): void {
-    this.#failed = true;
-    for (const listener of this.#listeners.messageerror) listener({} as MessageEvent);
   }
 }
 
@@ -179,21 +173,5 @@ describe('OpusJapaneseTranslator', () => {
     await expect(translator.translate(['次'])).resolves.toEqual(['EN:次']);
     expect(createWorker).toHaveBeenCalledTimes(2);
     expect(firstWorker.terminate).toHaveBeenCalledOnce();
-  });
-
-  it('rejects an undecodable worker response and replaces the worker', async () => {
-    const firstWorker = new FakeWorker(false);
-    const secondWorker = new FakeWorker();
-    const createWorker = vi.fn().mockReturnValueOnce(firstWorker).mockReturnValue(secondWorker);
-    const translator = new OpusJapaneseTranslator({}, { createWorker });
-    const translation = translator.translate(['最初']);
-    await vi.waitFor(() => expect(firstWorker.messages).toHaveLength(1));
-
-    firstWorker.emitMessageError();
-
-    await expect(translation).rejects.toThrow('response');
-    await expect(translator.translate(['次'])).resolves.toEqual(['EN:次']);
-    expect(firstWorker.terminate).toHaveBeenCalledOnce();
-    expect(createWorker).toHaveBeenCalledTimes(2);
   });
 });

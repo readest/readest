@@ -48,8 +48,12 @@ interface ViewState {
   /* True while an Auto Scroll session (#4998) is engaged for this view;
      session-only, never persisted. Drives the View menu checkmark. */
   autoScrollEnabled: boolean;
+  /* True while OCR is active for this view; session-only, never persisted. */
+  ocrEnabled: boolean;
   /* True while local in-bubble manga translation is active; session-only, never persisted. */
   mangaTranslationEnabled: boolean;
+  /* Empty uses book metadata; otherwise a session-only OCR language override. */
+  ocrLanguage: string;
   syncing: boolean;
   gridInsets: Insets | null;
   /* True while the reader is showing a position requested by an external
@@ -65,10 +69,10 @@ interface ViewState {
   viewSettings: ViewSettings | null;
 }
 
-type ReaderMangaSession = Pick<ViewState, 'mangaTranslationEnabled'>;
+type ReaderTextSession = Pick<ViewState, 'ocrEnabled' | 'mangaTranslationEnabled' | 'ocrLanguage'>;
 
 interface RecreateViewerOptions {
-  /* Preserve manga translation during an RTL reload. */
+  /* Preserve the active OCR or manga translation mode for an RTL reload. */
   preserveSession?: boolean;
 }
 
@@ -86,7 +90,9 @@ interface ReaderStore {
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
   setTTSEnabled: (key: string, enabled: boolean) => void;
   setAutoScrollEnabled: (key: string, enabled: boolean) => void;
+  setOcrEnabled: (key: string, enabled: boolean) => void;
   setMangaTranslationEnabled: (key: string, enabled: boolean) => void;
+  setOcrLanguage: (key: string, language: string) => void;
   setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
   setProgress: (
@@ -114,7 +120,7 @@ interface ReaderStore {
     key: string,
     isPrimary?: boolean,
     reload?: boolean,
-    mangaSession?: ReaderMangaSession,
+    textSession?: ReaderTextSession,
   ) => Promise<void>;
   clearViewState: (key: string) => void;
   getViewState: (key: string) => ViewState | null;
@@ -166,7 +172,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     key: string,
     isPrimary = true,
     reload = false,
-    mangaSession,
+    textSession,
   ) => {
     const booksData = useBookDataStore.getState().booksData;
     const bookData = booksData[id];
@@ -184,7 +190,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           ribbonVisible: false,
           ttsEnabled: false,
           autoScrollEnabled: false,
+          ocrEnabled: false,
           mangaTranslationEnabled: false,
+          ocrLanguage: '',
           syncing: false,
           gridInsets: null,
           previewMode: false,
@@ -336,7 +344,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ribbonVisible: false,
             ttsEnabled: false,
             autoScrollEnabled: false,
-            mangaTranslationEnabled: mangaSession?.mangaTranslationEnabled ?? false,
+            ocrEnabled: textSession?.ocrEnabled ?? false,
+            mangaTranslationEnabled: textSession?.mangaTranslationEnabled ?? false,
+            ocrLanguage: textSession?.ocrLanguage ?? '',
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -361,7 +371,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ribbonVisible: false,
             ttsEnabled: false,
             autoScrollEnabled: false,
+            ocrEnabled: false,
             mangaTranslationEnabled: false,
+            ocrLanguage: '',
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -520,6 +532,18 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       },
     })),
 
+  setOcrEnabled: (key: string, enabled: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          ocrEnabled: enabled,
+          ...(enabled ? { mangaTranslationEnabled: false } : {}),
+        },
+      },
+    })),
+
   setMangaTranslationEnabled: (key: string, enabled: boolean) =>
     set((state) => ({
       viewStates: {
@@ -527,6 +551,18 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           mangaTranslationEnabled: enabled,
+          ...(enabled ? { ocrEnabled: false } : {}),
+        },
+      },
+    })),
+
+  setOcrLanguage: (key: string, language: string) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          ocrLanguage: language,
         },
       },
     })),
@@ -599,9 +635,13 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     // font-family declarations, and the book fell back to the app font
     // (readest#5277).
     const viewState = options?.preserveSession ? get().viewStates[key] : undefined;
-    const mangaSession = viewState
-      ? { mangaTranslationEnabled: viewState.mangaTranslationEnabled }
+    const textSession = viewState
+      ? {
+          ocrEnabled: viewState.ocrEnabled,
+          mangaTranslationEnabled: viewState.mangaTranslationEnabled,
+          ocrLanguage: viewState.ocrLanguage,
+        }
       : undefined;
-    void get().initViewState(envConfig, id, key, true, true, mangaSession);
+    void get().initViewState(envConfig, id, key, true, true, textSession);
   },
 }));

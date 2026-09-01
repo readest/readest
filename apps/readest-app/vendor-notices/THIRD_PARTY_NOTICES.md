@@ -6,6 +6,8 @@ Readest loads the following assets for local manga OCR and translation.
 
 - `@huggingface/transformers` 3.8.1 provides browser model loading and inference. It is licensed under the [Apache License 2.0](LICENSE-APACHE-2.0.txt). The corresponding source is [huggingface/transformers.js at tag `3.8.1`, commit `2ec882e739e4cb461f8d440d4d7394cbf5372429`](https://github.com/huggingface/transformers.js/tree/2ec882e739e4cb461f8d440d4d7394cbf5372429).
 - `onnxruntime-web` 1.29.0 provides WebAssembly inference. It is licensed under the [MIT License](LICENSE-MIT-ONNXRUNTIME.txt). Copyright Microsoft Corporation. Its complete upstream [third-party notices](ONNXRUNTIME-ThirdPartyNotices.txt) are included with the runtime assets.
+- `tesseract.js` 7.0.0 and `tesseract.js-core` 7.0.0 provide OCR. Both are licensed under the [Apache License 2.0](LICENSE-APACHE-2.0.txt). The setup script also copies each package's license beside its generated runtime files.
+- `@tesseract.js-data/<language>` 1.0.0 provides the pinned Tesseract traineddata files. The packages declare the [MIT License](LICENSE-MIT-TESSERACT-DATA.txt), are attributed to Balearica and contributors, and are sourced from [naptha/tessdata](https://github.com/naptha/tessdata).
 
 ## Remote models
 

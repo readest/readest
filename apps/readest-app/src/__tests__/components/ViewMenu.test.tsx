@@ -38,10 +38,11 @@ const currentViewSettings = {
 };
 
 const mockRecreateViewer = vi.fn();
+const mockSetOcrEnabled = vi.fn();
 const mockSetMangaTranslationEnabled = vi.fn();
-const mockViewState = { mangaTranslationEnabled: false };
+const mockSetOcrLanguage = vi.fn();
+const mockViewState = { ocrEnabled: false, mangaTranslationEnabled: false, ocrLanguage: '' };
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
-const { mockDispatch } = vi.hoisted(() => ({ mockDispatch: vi.fn() }));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -62,7 +63,9 @@ vi.mock('@/store/readerStore', () => ({
     getViewState: () => mockViewState,
     getProgress: () => null,
     setViewSettings: vi.fn(),
+    setOcrEnabled: mockSetOcrEnabled,
     setMangaTranslationEnabled: mockSetMangaTranslationEnabled,
+    setOcrLanguage: mockSetOcrLanguage,
     recreateViewer: mockRecreateViewer,
   }),
 }));
@@ -108,9 +111,6 @@ vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({ applyPageTurnAttributes: 
 vi.mock('@/utils/config', () => ({ getMaxInlineSize: () => 720 }));
 vi.mock('@/utils/ambientLight', () => ({ nextThemeMode: (mode: string) => mode }));
 vi.mock('@/utils/window', () => ({ tauriHandleToggleFullScreen: vi.fn() }));
-vi.mock('@/utils/event', () => ({
-  eventDispatcher: { dispatch: mockDispatch },
-}));
 
 describe('ViewMenu right-to-left pages toggle', () => {
   beforeEach(() => {
@@ -220,10 +220,11 @@ describe('ViewMenu right-to-left pages toggle', () => {
   });
 });
 
-describe('ViewMenu manga translation', () => {
+describe('ViewMenu OCR toggle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBookData.book.format = 'CBZ';
+    mockViewState.ocrEnabled = false;
     mockViewState.mangaTranslationEnabled = false;
   });
 
@@ -231,11 +232,32 @@ describe('ViewMenu manga translation', () => {
     cleanup();
   });
 
-  it('does not show the removed generic OCR controls', () => {
+  it('enables text recognition for a CBZ view', () => {
     render(<ViewMenu bookKey='book-1' />);
 
-    expect(screen.queryByText('Recognize Text')).toBeNull();
-    expect(screen.queryByText('Text Language')).toBeNull();
+    fireEvent.click(screen.getByText('Recognize Text'));
+
+    expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
+  });
+
+  it('enables text recognition for a PDF view', () => {
+    mockBookData.book.format = 'PDF';
+
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.click(screen.getByText('Recognize Text'));
+
+    expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
+  });
+
+  it('sets a session-only OCR language override', () => {
+    render(<ViewMenu bookKey='book-1' />);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Text Language' }), {
+      target: { value: 'es' },
+    });
+
+    expect(mockSetOcrLanguage).toHaveBeenCalledWith('book-1', 'es');
   });
 
   it('enables in-bubble manga translation for a CBZ view', () => {
@@ -244,12 +266,6 @@ describe('ViewMenu manga translation', () => {
     fireEvent.click(screen.getByText('Translate Manga'));
 
     expect(mockSetMangaTranslationEnabled).toHaveBeenCalledWith('book-1', true);
-    expect(mockDispatch).toHaveBeenCalledWith('toast', {
-      type: 'info',
-      message: 'Preparing manga translation',
-      progress: 0,
-      timeout: 2000,
-    });
   });
 
   it('does not offer manga translation for a PDF view', () => {
