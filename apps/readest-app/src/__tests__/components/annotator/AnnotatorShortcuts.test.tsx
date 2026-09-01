@@ -70,7 +70,12 @@ vi.mock('@/store/bookDataStore', () => {
     }),
     updateBooknotes: h.updateBooknotes,
   };
-  return { useBookDataStore: (selector: (value: typeof state) => unknown) => selector(state) };
+  // Annotator reads this store with selectors; useSaveBooknoteNoteText
+  // destructures it. Serve both call styles.
+  return {
+    useBookDataStore: (selector?: (value: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+  };
 });
 
 vi.mock('@/store/readerStore', () => {
@@ -79,7 +84,10 @@ vi.mock('@/store/readerStore', () => {
     getViewsById: () => [],
     getViewSettings: () => h.viewSettings,
   };
-  return { useReaderStore: (selector: (value: typeof state) => unknown) => selector(state) };
+  return {
+    useReaderStore: (selector?: (value: typeof state) => unknown) =>
+      selector ? selector(state) : state,
+  };
 });
 
 vi.mock('@/store/readerProgressStore', () => ({

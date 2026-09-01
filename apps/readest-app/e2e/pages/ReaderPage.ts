@@ -48,8 +48,9 @@ export class ReaderPage extends BasePage {
     this.dictionaryPopup = page.locator('.popup-container:has([data-testid="dict-title"])');
     this.translatorPopup = page.locator('.popup-container:has(h1:text-is("Original Text"))');
     this.proofreadPopup = page.locator('.popup-container:has-text("Selected text:")');
-    // Attached notes are written in the left Annotations panel: Annotate drops
-    // the new annotation straight into BooknoteItem's inline editor.
+    // Annotate opens the note editor on the selection itself — inside the
+    // toolbar popup at desktop widths, in a bottom sheet on phones. The
+    // sidebar's own inline editor shares the test id; only one is ever open.
     this.noteEditor = page.locator('[data-testid="booknote-note-editor"]');
     this.annotationItems = page.locator('li.booknote-item[role="button"]');
     // The app-drawn range-edit handles (the selection / annotation range

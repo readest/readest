@@ -98,21 +98,10 @@ const makeItem = (overrides: Partial<BookNote> = {}): BookNote => ({
   ...overrides,
 });
 
-const renderItem = (
-  item: BookNote,
-  inlineNoteEditing?: boolean,
-  editTarget?: { placeholderIds: string[]; onFinish: () => void },
-) =>
+const renderItem = (item: BookNote, inlineNoteEditing?: boolean) =>
   render(
     <ul>
-      <BooknoteItem
-        bookKey='hash1-primary'
-        item={item}
-        inlineNoteEditing={inlineNoteEditing}
-        startEditing={!!editTarget}
-        placeholderIds={editTarget?.placeholderIds}
-        onFinishEditing={editTarget?.onFinish}
-      />
+      <BooknoteItem bookKey='hash1-primary' item={item} inlineNoteEditing={inlineNoteEditing} />
     </ul>,
   );
 
@@ -237,33 +226,5 @@ describe('BooknoteItem', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Insert into Notebook' }));
 
     expect(mocks.setNotebookVisible).not.toHaveBeenCalled();
-  });
-
-  it('opens a requested annotation editor and keeps a saved placeholder', () => {
-    const item = makeItem();
-    const onFinish = vi.fn();
-    mocks.state.booknotes = [item];
-    renderItem(item, true, { placeholderIds: [item.id], onFinish });
-
-    const editor = screen.getByRole('textbox');
-    fireEvent.change(editor, { target: { value: 'new thought' } });
-    fireEvent.click(screen.getByText('Save'));
-
-    expect((mocks.state.booknotes[0] as BookNote).note).toBe('new thought');
-    expect((mocks.state.booknotes[0] as BookNote).deletedAt).toBeUndefined();
-    expect(onFinish).toHaveBeenCalledTimes(1);
-  });
-
-  it('removes a new empty placeholder when requested editing is cancelled', () => {
-    const item = makeItem();
-    const onFinish = vi.fn();
-    mocks.state.booknotes = [item];
-    renderItem(item, true, { placeholderIds: [item.id], onFinish });
-
-    fireEvent.click(screen.getByText('Cancel'));
-
-    expect((mocks.state.booknotes[0] as BookNote).deletedAt).toBeTypeOf('number');
-    expect(mocks.saveConfig).toHaveBeenCalledTimes(1);
-    expect(onFinish).toHaveBeenCalledTimes(1);
   });
 });

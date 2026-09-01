@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { MdEdit, MdDelete, MdContentCopy, MdPlaylistAdd } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
@@ -19,10 +19,7 @@ import { buildAnnotationUrl } from '@/utils/deeplink';
 import { buildAnnotationCopyMarkdown } from '@/utils/note';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
-import {
-  removeBookNoteOverlays,
-  removeEmptyAnnotationPlaceholder,
-} from '../../utils/annotatorUtil';
+import { removeBookNoteOverlays } from '../../utils/annotatorUtil';
 import { parseNoteMarkdown } from '../../utils/noteMarkdown';
 import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
 import { useInlineTextEditor } from '../../hooks/useInlineTextEditor';
@@ -35,9 +32,6 @@ interface BooknoteItemProps {
   isNearest?: boolean;
   onClick?: () => void;
   inlineNoteEditing?: boolean;
-  startEditing?: boolean;
-  placeholderIds?: string[];
-  onFinishEditing?: () => void;
 }
 
 const BooknoteItem: React.FC<BooknoteItemProps> = ({
@@ -46,9 +40,6 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   isNearest,
   onClick,
   inlineNoteEditing,
-  startEditing,
-  placeholderIds = [],
-  onFinishEditing,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -82,7 +73,6 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     useInlineTextEditor((draftText) => {
       if (isBookmark) saveBookmarkText(draftText);
       else saveBooknoteNoteText(item.id, draftText);
-      onFinishEditing?.();
     });
   const separatorWidth = useResponsiveSize(3);
   const size18 = useResponsiveSize(18);
@@ -189,30 +179,6 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
 
   const editNoteInline = () => startEdit(item.note || '');
 
-  useEffect(() => {
-    if (startEditing) startEdit(item.note || '');
-  }, [item.note, startEdit, startEditing]);
-
-  const cancelRequestedEdit = () => {
-    if (placeholderIds.length > 0) {
-      const config = getConfig(bookKey);
-      const { booknotes = [] } = config ?? {};
-      const removed = placeholderIds
-        .map((id) => removeEmptyAnnotationPlaceholder(booknotes, id, Date.now()))
-        .filter((placeholder): placeholder is BookNote => placeholder !== null);
-      if (removed.length > 0) {
-        const views = getViewsById(bookKey.split('-')[0]!);
-        removed.forEach((placeholder) => {
-          views.forEach((view) => removeBookNoteOverlays(view, placeholder));
-        });
-        const updatedConfig = updateBooknotes(bookKey, booknotes);
-        if (updatedConfig) saveConfig(envConfig, bookKey, updatedConfig, settings);
-      }
-    }
-    cancelEdit();
-    onFinishEditing?.();
-  };
-
   if (inlineEditMode) {
     return (
       <div
@@ -230,15 +196,13 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
             value={draftText}
             onChange={setDraftText}
             onSave={save}
-            onEscape={startEditing ? cancelRequestedEdit : cancelEdit}
+            onEscape={cancelEdit}
             spellCheck={false}
             autoFocus
           />
         </div>
         <div className='flex justify-end space-x-3 p-2' dir='ltr'>
-          <TextButton onClick={startEditing ? cancelRequestedEdit : cancelEdit}>
-            {_('Cancel')}
-          </TextButton>
+          <TextButton onClick={cancelEdit}>{_('Cancel')}</TextButton>
           <TextButton onClick={save} disabled={isBookmark && !draftText}>
             {_('Save')}
           </TextButton>
