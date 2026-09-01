@@ -22,8 +22,14 @@ const stub = vi.hoisted(() => {
   const render = (
     surface: string,
     noteEditor?: { value: string; onSave: (note: string) => void; onCancel: () => void } | null,
+    onEditNote?: (note: { id: string }) => void,
   ) => {
-    if (!noteEditor) return null;
+    if (!noteEditor) {
+      // The bubble's pencil lives on the popup even with no editor open.
+      return onEditNote ? (
+        <button onClick={() => onEditNote({ id: 'existing-note' })}>stub-edit-note</button>
+      ) : null;
+    }
     return (
       <div data-testid={`note-editor-${surface}`}>
         <span data-testid={`note-editor-${surface}-value`}>{noteEditor.value}</span>
@@ -45,7 +51,9 @@ const h = vi.hoisted(() => ({
   actions: null as null | Record<string, () => boolean>,
   config: { booknotes: [] as BookNote[], viewSettings: {} },
   viewSettings: {
-    annotationToolbarItems: [] as string[],
+    // A non-empty toolbar so the popup actually renders (Annotator suppresses
+    // it entirely when there is nothing to show).
+    annotationToolbarItems: ['copy'] as string[],
     noteExportConfig: {},
     copyToNotebook: false,
     rtl: false,
@@ -56,6 +64,8 @@ const h = vi.hoisted(() => ({
   setConfig: vi.fn(),
   setSideBarVisible: vi.fn(),
   setSearchBarVisible: vi.fn(),
+  deselect: vi.fn(),
+  isTextSelected: { current: true },
 }));
 
 const settings = {
@@ -121,7 +131,7 @@ vi.mock('@/store/bookDataStore', () => {
 
 vi.mock('@/store/readerStore', () => {
   const state = {
-    getView: () => null,
+    getView: () => ({ deselect: h.deselect }),
     getViewsById: () => [],
     getViewSettings: () => h.viewSettings,
   };
@@ -155,9 +165,10 @@ vi.mock('@/store/sidebarStore', () => ({
 }));
 
 vi.mock('@/store/customDictionaryStore', () => ({
-  useCustomDictionaryStore: () => ({
-    loadCustomDictionaries: vi.fn().mockResolvedValue(undefined),
-  }),
+  useCustomDictionaryStore: Object.assign(
+    () => ({ loadCustomDictionaries: vi.fn().mockResolvedValue(undefined) }),
+    { getState: () => ({ settings: { providerEnabled: {} } }) },
+  ),
 }));
 
 vi.mock('@/store/deviceStore', () => ({
@@ -180,7 +191,7 @@ vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
 
 vi.mock('@/app/reader/hooks/useTextSelector', () => ({
   useTextSelector: () => ({
-    isTextSelected: { current: false },
+    isTextSelected: h.isTextSelected,
     isInstantAnnotating: { current: false },
     handleScroll: vi.fn(),
     handleTouchStart: vi.fn(),
@@ -231,8 +242,10 @@ vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
 }));
 
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
-  default: (props: { noteEditor?: NoteEditorStub | null }) =>
-    stub.render('popup', props.noteEditor),
+  default: (props: {
+    noteEditor?: NoteEditorStub | null;
+    onEditNote?: (note: { id: string }) => void;
+  }) => stub.render('popup', props.noteEditor, props.onEditNote),
 }));
 vi.mock('@/app/reader/components/annotator/NoteEditorSheet', () => ({
   default: (props: NoteEditorStub) => stub.render('sheet', props),
@@ -292,6 +305,7 @@ beforeEach(() => {
     return h.config;
   });
   setViewport(1280, 800);
+  h.isTextSelected.current = true;
   vi.clearAllMocks();
 });
 
@@ -350,6 +364,74 @@ describe('Annotate opens the note editor at the selection', () => {
 
     expect(liveAnnotations()).toHaveLength(0);
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
+  });
+
+  const existingNote: BookNote = {
+    id: 'existing-note',
+    type: 'annotation',
+    cfi: 'epubcfi(/6/2!/4/2)',
+    text: 'selected text',
+    note: 'an older thought',
+    style: 'highlight',
+    color: 'yellow',
+    createdAt: 1,
+    updatedAt: 1,
+  };
+
+  const editExistingNote = async () => {
+    h.config.booknotes = [{ ...existingNote }];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText();
+    act(() => {
+      screen.getByText('stub-edit-note').click();
+    });
+  };
+
+  test('drops the selection so the range handles cannot cover the editor (#5815)', async () => {
+    await annotate();
+
+    expect(h.deselect).toHaveBeenCalled();
+    expect(h.isTextSelected.current).toBe(false);
+  });
+
+  test.each([
+    'onDictionarySelection',
+    'onTranslateSelection',
+    'onProofreadSelection',
+  ])('%s drops the selection too', async (action) => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText();
+
+    act(() => {
+      h.actions?.[action]?.();
+    });
+
+    expect(h.deselect).toHaveBeenCalled();
+    expect(h.isTextSelected.current).toBe(false);
+  });
+
+  test('the note bubble pencil opens the same editor, seeded with the existing note', async () => {
+    await editExistingNote();
+    expect(screen.getByTestId('note-editor-popup-value').textContent).toBe('an older thought');
+
+    act(() => {
+      screen.getByText('stub-save').click();
+    });
+    expect(liveAnnotations()).toEqual([
+      expect.objectContaining({ id: 'existing-note', note: 'a thought worth keeping' }),
+    ]);
+  });
+
+  test('cancelling an existing note never deletes it', async () => {
+    await editExistingNote();
+
+    act(() => {
+      screen.getByText('stub-cancel').click();
+    });
+
+    expect(liveAnnotations()).toEqual([
+      expect.objectContaining({ id: 'existing-note', note: 'an older thought' }),
+    ]);
   });
 
   test('cancelling keeps a highlight that already existed before Annotate', async () => {

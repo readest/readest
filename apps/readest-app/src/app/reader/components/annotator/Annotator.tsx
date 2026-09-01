@@ -1494,10 +1494,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // annotations sidebar instead used to strand it: that list is in reading
     // order and virtualized, so a note made further down the page mounted its
     // editor off screen (#5987, #5957).
+    dropSelectionForOverlay();
     setNoteEditorTarget({
       annotationId: target.id,
       placeholderIds: created.map((annotation) => annotation.id),
     });
+  };
+
+  // The pencil on a note bubble edits that note in the same editor the Annotate
+  // action opens, so a note reads and edits the same way wherever it is opened
+  // from. No placeholder to take back: the annotation already existed.
+  const handleEditNote = (note: BookNote) => {
+    dropSelectionForOverlay();
+    setNoteEditorTarget({ annotationId: note.id, placeholderIds: [] });
   };
 
   const handleSaveNote = (note: string) => {
@@ -1542,6 +1551,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     eventDispatcher.dispatch('search-term', { term, bookKey });
   };
 
+  // Every surface that opens over the page — a lookup popup, the note editor —
+  // is painted below both the app-drawn range handles and (on iOS) the native
+  // selection highlight, which sit above web content. Drop the selection as the
+  // surface opens so neither ends up covering it. The flag is cleared first:
+  // the selectionchange that deselect() fires would otherwise dismiss the very
+  // surface we are opening (#5585).
+  const dropSelectionForOverlay = () => {
+    isTextSelected.current = false;
+    view?.deselect();
+    // A popup-window selection lives in its own document (the footnote popup
+    // view's iframe or the host document), out of view.deselect()'s reach.
+    if (selection?.popup) {
+      selection.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
+    }
+  };
+
   const handleDictionary = () => {
     if (!selection || !selection.text) return;
     // System-dictionary path: when the user has opted in via Settings →
@@ -1566,12 +1591,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       return;
     }
     setShowAnnotPopup(false);
+    dropSelectionForOverlay();
     setShowDictionaryPopup(true);
   };
 
   const handleTranslation = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    dropSelectionForOverlay();
     setShowDeepLPopup(true);
   };
 
@@ -1606,6 +1633,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
     setShowAnnotPopup(false);
+    dropSelectionForOverlay();
     setShowProofreadPopup(true);
 
     if (getWordCount(selection.text) > 30) {
@@ -2160,11 +2188,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
-  // The range editors are fixed full-screen overlays rendered after the lookup
-  // popups, so their handles would float on top of the dictionary sheet /
-  // popup (#5815). They belong to the toolbar: hide them while a lookup is
-  // open, and let them come back with the toolbar (or go with the dismiss).
-  const lookupPopupOpen = showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+  // The range editors are fixed full-screen overlays rendered after the popups
+  // and sheets, so their handles would float on top of the dictionary, the
+  // translator, the proofreader or the note editor (#5815). They belong to the
+  // toolbar: hide them while any of those is open, and let them come back with
+  // the toolbar (or go with the dismiss).
+  const overlaySurfaceOpen =
+    showDictionaryPopup || showDeepLPopup || showProofreadPopup || !!noteEditorTarget;
 
   // Below `sm` (or short landscape) the note editor is a bottom sheet rather
   // than a popup pinned to the selection: an anchored editor would sit under
@@ -2252,6 +2282,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             isVertical={viewSettings.vertical}
             buttons={toolButtons}
             notes={annotationNotes}
+            onEditNote={handleEditNote}
             noteEditor={
               noteEditorInPopup
                 ? { value: editedNoteText, onSave: handleSaveNote, onCancel: handleCancelNote }
@@ -2287,7 +2318,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         />
       )}
       {!editingAnnotation &&
-        !lookupPopupOpen &&
+        !overlaySurfaceOpen &&
         selection?.handlesSuppressed &&
         selection.range && (
           <SelectionRangeEditor
@@ -2302,7 +2333,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             onAutoTurn={onAutoTurn}
           />
         )}
-      {editingAnnotation && editingAnnotation.color && selection && !lookupPopupOpen && (
+      {editingAnnotation && editingAnnotation.color && selection && !overlaySurfaceOpen && (
         <AnnotationRangeEditor
           bookKey={bookKey}
           isVertical={viewSettings.vertical}

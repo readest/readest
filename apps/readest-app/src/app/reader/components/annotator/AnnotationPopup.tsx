@@ -33,6 +33,8 @@ interface AnnotationPopupProps {
    * user is typing is the only thing they care about (#5987).
    */
   noteEditor?: AnnotationNoteEditorTarget | null;
+  /** Opens `noteEditor` on an existing note (the bubble's pencil). */
+  onEditNote?: (note: BookNote) => void;
   position: Position;
   trianglePosition: Position;
   highlightOptionsVisible: boolean;
@@ -54,6 +56,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   buttons,
   notes,
   noteEditor,
+  onEditNote,
   position,
   trianglePosition,
   highlightOptionsVisible,
@@ -146,6 +149,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               bookKey={bookKey}
               isVertical={isVertical}
               notes={notes}
+              onEditNote={onEditNote}
               toolsVisible={false}
               triangleDir={trianglePosition.dir!}
               popupWidth={boxWidth}
