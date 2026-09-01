@@ -57,6 +57,8 @@ interface FetchProductsResponse {
 
 interface PurchaseProductRequest {
   productId: string;
+  /** Supabase user id, surfaced by StoreKit as the transaction's appAccountToken. */
+  appAccountToken?: string;
 }
 
 interface PurchaseProductResponse {
@@ -95,12 +97,15 @@ export class IAPService {
     }
   }
 
-  async purchaseProduct(productId: string): Promise<IAPPurchase> {
+  async purchaseProduct(productId: string, appAccountToken?: string): Promise<IAPPurchase> {
     try {
       const response = await invoke<PurchaseProductResponse>(
         'plugin:native-bridge|iap_purchase_product',
         {
-          payload: { productId } as PurchaseProductRequest,
+          payload: {
+            productId,
+            ...(appAccountToken ? { appAccountToken } : {}),
+          } as PurchaseProductRequest,
         },
       );
       return response.purchase;

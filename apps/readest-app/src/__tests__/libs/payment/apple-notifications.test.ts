@@ -39,6 +39,7 @@ type Captures = {
   appleSubUpserts: Array<Record<string, unknown>>;
   planUpdates: Array<Record<string, unknown>>;
   paymentUpdates: Array<Record<string, unknown>>;
+  paymentUpserts: Array<Record<string, unknown>>;
 };
 
 function createSupabaseMock(state: {
@@ -46,7 +47,12 @@ function createSupabaseMock(state: {
   paymentRow?: unknown;
   completedPayments?: Array<{ storage_gb: number }>;
 }) {
-  const captures: Captures = { appleSubUpserts: [], planUpdates: [], paymentUpdates: [] };
+  const captures: Captures = {
+    appleSubUpserts: [],
+    planUpdates: [],
+    paymentUpdates: [],
+    paymentUpserts: [],
+  };
   const client = {
     from(table: string) {
       switch (table) {
@@ -83,6 +89,10 @@ function createSupabaseMock(state: {
                 return Promise.resolve({ data: null, error: null });
               },
             }),
+            upsert: (obj: Record<string, unknown>) => {
+              captures.paymentUpserts.push(obj);
+              return Promise.resolve({ data: obj, error: null });
+            },
           };
         default:
           throw new Error(`unexpected table: ${table}`);
@@ -93,7 +103,7 @@ function createSupabaseMock(state: {
 }
 
 const PLUS_PRODUCT = 'com.bilingify.readest.plus.monthly';
-const STORAGE_PRODUCT = 'com.bilingify.readest.purchase.storage.5gb';
+const STORAGE_PRODUCT = 'com.bilingify.readest.storage.5gb.purchase';
 const BUNDLE_ID = 'com.bilingify.readest';
 const ORIGINAL_TX = 'orig-tx-1';
 
@@ -273,5 +283,83 @@ describe('handleAppleNotification — one-time purchases', () => {
     expect(res).toMatchObject({ handled: true });
     expect(sb.captures.paymentUpdates.at(-1)).toMatchObject({ status: 'refunded' });
     expect(sb.captures.planUpdates.at(-1)).toMatchObject({ storage_purchased_bytes: 0 });
+  });
+});
+
+// ONE_TIME_CHARGE is the only server-side record of a storage add-on when the
+// client verification call never lands (app killed, network drop, or — as on
+// 2026-08-31 — the database being unreachable). Apple carries no user id, so
+// the purchase is attributable only via `appAccountToken`, which the app sets
+// to the Supabase user UUID at purchase time.
+describe('handleAppleNotification — one-time purchases', () => {
+  const oneTimeTransaction = (overrides: Record<string, unknown> = {}) =>
+    buildTransaction({
+      productId: STORAGE_PRODUCT,
+      type: TransactionType.NonConsumable,
+      expiresDate: undefined,
+      subscriptionGroupIdentifier: undefined,
+      appAccountToken: 'user-1',
+      price: 34990,
+      currency: 'EUR',
+      ...overrides,
+    });
+
+  it('records a storage add-on and credits the quota', async () => {
+    mockNotification(NotificationType.OneTimeCharge, undefined, false);
+    appleMocks.decodeTransaction.mockResolvedValue(oneTimeTransaction());
+    const sb = createSupabaseMock({ completedPayments: [{ storage_gb: 5 }] });
+    h.supabase = sb;
+
+    const res = await handleAppleNotification('payload');
+
+    expect(res).toMatchObject({ handled: true, status: 'active' });
+    expect(sb.captures.paymentUpserts.at(-1)).toMatchObject({
+      user_id: 'user-1',
+      provider: 'apple',
+      product_id: STORAGE_PRODUCT,
+      apple_original_transaction_id: ORIGINAL_TX,
+      storage_gb: 5,
+      status: 'completed',
+    });
+    expect(sb.captures.planUpdates.at(-1)).toMatchObject({
+      storage_purchased_bytes: 5 * 1024 * 1024 * 1024,
+    });
+  });
+
+  it('records the paid amount and currency the client flow leaves null', async () => {
+    mockNotification(NotificationType.OneTimeCharge, undefined, false);
+    appleMocks.decodeTransaction.mockResolvedValue(oneTimeTransaction());
+    const sb = createSupabaseMock({ completedPayments: [{ storage_gb: 5 }] });
+    h.supabase = sb;
+
+    await handleAppleNotification('payload');
+
+    expect(sb.captures.paymentUpserts.at(-1)).toMatchObject({ amount: 34990, currency: 'EUR' });
+  });
+
+  it('cannot attribute a purchase with no appAccountToken', async () => {
+    mockNotification(NotificationType.OneTimeCharge, undefined, false);
+    appleMocks.decodeTransaction.mockResolvedValue(
+      oneTimeTransaction({ appAccountToken: undefined }),
+    );
+    const sb = createSupabaseMock({});
+    h.supabase = sb;
+
+    const res = await handleAppleNotification('payload');
+
+    expect(res).toMatchObject({ handled: false, reason: 'missing_app_account_token' });
+    expect(sb.captures.paymentUpserts).toHaveLength(0);
+  });
+
+  it('still ignores unrelated one-time purchase events', async () => {
+    mockNotification(NotificationType.DidChangeRenewalStatus, undefined, false);
+    appleMocks.decodeTransaction.mockResolvedValue(oneTimeTransaction());
+    const sb = createSupabaseMock({});
+    h.supabase = sb;
+
+    const res = await handleAppleNotification('payload');
+
+    expect(res).toMatchObject({ handled: false, reason: 'ignored_purchase_event' });
+    expect(sb.captures.paymentUpserts).toHaveLength(0);
   });
 });

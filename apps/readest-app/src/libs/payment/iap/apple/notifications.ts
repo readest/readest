@@ -15,7 +15,7 @@ import { createSupabaseAdminClient } from '@/utils/supabase';
 import { IAPStatus } from '../types';
 import { mapProductIdToProductName } from '../utils';
 import { markPaymentRefunded } from '../payments';
-import { VerifiedPurchase, createOrUpdateSubscription } from './server';
+import { VerifiedPurchase, createOrUpdatePayment, createOrUpdateSubscription } from './server';
 
 export interface AppleNotificationResult {
   handled: boolean;
@@ -94,8 +94,49 @@ export async function handleAppleNotification(
   const notificationType = payload.notificationType;
 
   if (planType === 'purchase') {
-    // One-time purchases are recorded by the client verification flow; the only
-    // webhook events that matter are refunds/revocations.
+    // ONE_TIME_CHARGE is the server-side safety net for storage add-ons. The
+    // client verification flow is a single request from the purchase-success
+    // page, so a killed app, a dropped network or an unreachable database
+    // loses the purchase with no way to recover it. Apple sends no user id,
+    // so the charge is attributable only through `appAccountToken`, which the
+    // app sets to the Supabase user UUID at purchase time.
+    if (notificationType === NotificationType.OneTimeCharge) {
+      const userId = transaction.appAccountToken;
+      if (!userId) {
+        return { handled: false, reason: 'missing_app_account_token', notificationType };
+      }
+
+      const purchase: VerifiedPurchase = {
+        platform: 'ios',
+        status: 'active',
+        customerEmail: '',
+        orderId: transaction.webOrderLineItemId || transaction.originalTransactionId,
+        planName: mapProductIdToProductName(transaction.productId),
+        planType: 'purchase',
+        productId: transaction.productId,
+        amount: transaction.price,
+        currency: transaction.currency,
+        transactionId: transaction.transactionId,
+        originalTransactionId: transaction.originalTransactionId,
+        purchaseDate: new Date(transaction.purchaseDate).toISOString(),
+        expiresDate: null,
+        quantity: transaction.quantity,
+        environment: String(payload.data.environment).toLowerCase(),
+        bundleId: payload.data.bundleId,
+        webOrderLineItemId: transaction.webOrderLineItemId,
+        type: transaction.type,
+        revocationDate: null,
+        revocationReason: null,
+      };
+
+      // Upsert on apple_original_transaction_id, so a notification that races
+      // or retries against the client flow is deduped rather than doubled.
+      await createOrUpdatePayment(userId, purchase);
+      return { handled: true, status: 'active', notificationType };
+    }
+
+    // Any other one-time event is recorded by the client verification flow;
+    // beyond that only refunds/revocations change the entitlement.
     if (
       notificationType !== NotificationType.Refund &&
       notificationType !== NotificationType.Revoke

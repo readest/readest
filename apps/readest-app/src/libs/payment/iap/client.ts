@@ -1,6 +1,6 @@
 import { AvailablePlan } from '@/types/quota';
 import { getNodeAPIBaseUrl } from '@/services/environment';
-import { getAccessToken } from '@/utils/access';
+import { getAccessToken, getUserID } from '@/utils/access';
 import { IAPService, IAPPurchase, IAPProduct } from '@/utils/iap';
 import { isPurchaseProduct, mapProductIdToInterval, mapProductIdToUserPlan } from './utils';
 
@@ -26,7 +26,12 @@ export const isIAPAvailable = async () => {
 
 export const purchaseIAPProduct = async (productId: string) => {
   const iapService = new IAPService();
-  const purchase = await iapService.purchaseProduct(productId);
+  // Tag the StoreKit transaction with the buyer. Apple's transaction carries no
+  // user identity of its own, so this is the only way a purchase whose
+  // client-side verification never lands can still be credited server-side from
+  // the ONE_TIME_CHARGE notification.
+  const userId = await getUserID();
+  const purchase = await iapService.purchaseProduct(productId, userId ?? undefined);
   return purchase;
 };
 
