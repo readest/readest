@@ -125,7 +125,7 @@ describe('ImageViewer', () => {
     expect(img.style.transform).toBe(positionAfterDrag);
   });
 
-  it('recovers if a WebView misses pointerup but reports buttons=0', () => {
+  it('recovers from a missed pointerup through the window pointermove fallback', () => {
     const { container } = render(
       <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
     );
@@ -141,7 +141,7 @@ describe('ImageViewer', () => {
       clientX: 100,
       clientY: 100,
     });
-    fireEvent.pointerMove(surface, {
+    fireEvent.pointerMove(window, {
       pointerId: 10,
       pointerType: 'mouse',
       buttons: 1,
@@ -150,7 +150,7 @@ describe('ImageViewer', () => {
     });
     const positionAfterDrag = img.style.transform;
 
-    fireEvent.pointerMove(surface, {
+    fireEvent.pointerMove(window, {
       pointerId: 10,
       pointerType: 'mouse',
       buttons: 0,
