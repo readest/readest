@@ -37,7 +37,11 @@ const TextButton: React.FC<TextButtonProps> = ({
     <button
       type={type}
       className={clsx(
-        'content settings-content btn btn-ghost hover:bg-transparent',
+        // daisyUI's btn carries a 1px border that btn-ghost only colours in on
+        // hover, which `hover:bg-transparent` doesn't touch — it read as a box
+        // appearing around Cancel/Save. Keep the border for geometry, keep it
+        // invisible.
+        'content settings-content btn btn-ghost hover:border-transparent hover:bg-transparent',
         'flex items-end p-0',
         sizeClasses[size],
         disabled ? 'btn-disabled bg-transparent!' : '',

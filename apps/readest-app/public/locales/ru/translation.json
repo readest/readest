@@ -2385,7 +2385,6 @@
   "{{count}} Annotations_few": "{{count}} аннотации",
   "{{count}} Annotations_many": "{{count}} аннотаций",
   "{{count}} Annotations_other": "{{count}} аннотаций",
-  "Insert into Notebook": "Вставить в блокнот",
   "Reading": "Читаю",
   "Notion Sync": "Синхронизация с Notion",
   "Notes synced to Notion": "Заметки синхронизированы с Notion",

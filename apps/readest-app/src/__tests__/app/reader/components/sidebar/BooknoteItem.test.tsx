@@ -15,8 +15,6 @@ const mocks = vi.hoisted(() => {
     setNotebookVisible: vi.fn(),
     setNotebookActiveTab: vi.fn(),
     setNotebookEditAnnotation: vi.fn(),
-    insertNotebook: vi.fn(() => ({ accepted: true })),
-    setSideBarVisible: vi.fn(),
     toast: vi.fn(),
     addAnnotation: vi.fn(),
     saveConfig: vi.fn(),
@@ -36,16 +34,6 @@ vi.mock('@/store/notebookStore', () => ({
     setNotebookActiveTab: mocks.setNotebookActiveTab,
     setNotebookEditAnnotation: mocks.setNotebookEditAnnotation,
   }),
-}));
-
-vi.mock('@/store/notebookDocumentStore', () => ({
-  useNotebookDocumentStore: Object.assign(vi.fn(), {
-    getState: () => ({ insert: mocks.insertNotebook }),
-  }),
-}));
-
-vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({ setSideBarVisible: mocks.setSideBarVisible }),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -107,7 +95,6 @@ const renderItem = (item: BookNote, inlineNoteEditing?: boolean) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.insertNotebook.mockReturnValue({ accepted: true });
   mocks.state.booknotes = [];
 });
 
@@ -203,28 +190,5 @@ describe('BooknoteItem', () => {
     renderItem(makeItem());
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add Note' })).toBeNull();
-  });
-
-  it('inserts linked source Markdown into the current book Notebook', () => {
-    renderItem(makeItem({ note: 'my thought' }), true);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Insert into Notebook' }));
-
-    expect(mocks.insertNotebook).toHaveBeenCalledWith(
-      'hash1',
-      expect.stringContaining('highlighted words'),
-    );
-    expect(mocks.setNotebookActiveTab).toHaveBeenCalledWith('notes');
-    expect(mocks.setNotebookVisible).toHaveBeenCalledWith(true);
-    expect(mocks.setSideBarVisible).not.toHaveBeenCalled();
-  });
-
-  it('keeps the Notebook closed when the insertion exceeds the size limit', () => {
-    mocks.insertNotebook.mockReturnValue({ accepted: false });
-    renderItem(makeItem(), true);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Insert into Notebook' }));
-
-    expect(mocks.setNotebookVisible).not.toHaveBeenCalled();
   });
 });

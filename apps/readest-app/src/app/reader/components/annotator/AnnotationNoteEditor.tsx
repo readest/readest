@@ -35,7 +35,11 @@ const AnnotationNoteEditor: React.FC<AnnotationNoteEditorProps> = ({
   const save = () => onSave(draftText);
 
   return (
-    <div data-testid='booknote-note-editor' className={className} style={style}>
+    // `content` carries the responsive base font size (16 / 18.4 / 20px) that
+    // `font-size-sm` inside the editor is relative to. The sidebar's row has it
+    // from `li.content`; without it here the popup and sheet fell back to the
+    // root 16px and rendered a size smaller than the sidebar's editor.
+    <div data-testid='booknote-note-editor' className={clsx('content', className)} style={style}>
       {/* The host sizes this editor (a fixed popup card, or 60% of the screen
           in the sheet), so the text area takes the slack and the action row
           stays pinned to the bottom edge instead of floating under a

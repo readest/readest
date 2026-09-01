@@ -2217,7 +2217,6 @@
   "Notebook draft copied to clipboard": "笔记本草稿已复制到剪贴板",
   "With notes": "含笔记",
   "{{count}} Annotations_other": "{{count}} 条注释",
-  "Insert into Notebook": "插入到笔记本",
   "Reading": "在读",
   "Invalid Notion database ID or URL": "无效的 Notion 数据库 ID 或 URL",
   "This Notion database has multiple data sources. Paste a data source ID instead.": "此 Notion 数据库包含多个数据源。请改为粘贴数据源 ID。",

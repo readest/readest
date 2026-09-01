@@ -2324,7 +2324,6 @@
   "{{count}} Annotations_one": "{{count}} annotation",
   "{{count}} Annotations_many": "{{count}} annotations",
   "{{count}} Annotations_other": "{{count}} annotations",
-  "Insert into Notebook": "Insérer dans le carnet de notes",
   "Reading": "En cours de lecture",
   "Notion Sync": "Synchronisation Notion",
   "Notes synced to Notion": "Notes synchronisées avec Notion",

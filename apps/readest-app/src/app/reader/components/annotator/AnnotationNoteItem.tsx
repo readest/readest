@@ -108,7 +108,7 @@ const AnnotationNoteItem: React.FC<AnnotationNoteItemProps> = ({
                   devices, which have no hover state to reveal it. */}
               <button
                 onClick={handleEditClick}
-                className='btn btn-ghost btn-xs p-0 text-blue-500 hover:bg-transparent'
+                className='btn btn-ghost btn-xs p-0 text-blue-500 hover:border-transparent hover:bg-transparent'
                 aria-label={_('Edit')}
               >
                 <MdEdit size={size16} />

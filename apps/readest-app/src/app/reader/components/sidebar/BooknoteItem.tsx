@@ -1,15 +1,13 @@
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import React, { useMemo } from 'react';
-import { MdEdit, MdDelete, MdContentCopy, MdPlaylistAdd } from 'react-icons/md';
+import { MdEdit, MdDelete, MdContentCopy } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, HighlightColor } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
-import { useNotebookDocumentStore } from '@/store/notebookDocumentStore';
-import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -42,13 +40,11 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   inlineNoteEditing,
 }) => {
   const _ = useTranslation();
-  const { envConfig, appService } = useEnv();
+  const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
-  const { setNotebookActiveTab, setNotebookEditAnnotation, setNotebookVisible } =
-    useNotebookStore();
-  const { setSideBarVisible } = useSidebarStore();
+  const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
 
   const globalReadSettings = settings.globalReadSettings;
   const customColors = globalReadSettings.customHighlightColors;
@@ -157,24 +153,6 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     });
   };
 
-  const handleInsertIntoNotebook = () => {
-    const { bookHash, markdown } = buildSourceMarkdown();
-    const result = useNotebookDocumentStore.getState().insert(bookHash, markdown);
-    if (!result.accepted) {
-      eventDispatcher.dispatch('toast', {
-        type: 'warning',
-        message: _('Notebook is too large to save. Copy or remove some text to continue.'),
-        timeout: 3000,
-      });
-      return;
-    }
-    setNotebookActiveTab('notes');
-    setNotebookVisible(true);
-    if (appService?.isMobile || window.innerWidth < 640 || window.innerHeight < 640) {
-      setSideBarVisible(false);
-    }
-  };
-
   const editBookmark = () => startEdit(text || '');
 
   const editNoteInline = () => startEdit(item.note || '');
@@ -189,7 +167,11 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
           'transition-all duration-300 ease-in-out',
         )}
       >
-        <div className='flex w-full'>
+        {/* Same anatomy as AnnotationNoteEditor — the field, then a
+            bottom-right Cancel/Save row — so a note reads the same whichever
+            editor opened it. This one keeps its content height: it sits in a
+            list row, not in a sized popup or sheet. */}
+        <div className='flex flex-col gap-2 p-2'>
           <TextEditor
             className='leading-normal!'
             ref={editorRef}
@@ -197,15 +179,16 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
             onChange={setDraftText}
             onSave={save}
             onEscape={cancelEdit}
+            placeholder={isBookmark ? undefined : _('Add Note')}
             spellCheck={false}
             autoFocus
           />
-        </div>
-        <div className='flex justify-end space-x-3 p-2' dir='ltr'>
-          <TextButton onClick={cancelEdit}>{_('Cancel')}</TextButton>
-          <TextButton onClick={save} disabled={isBookmark && !draftText}>
-            {_('Save')}
-          </TextButton>
+          <div className='flex shrink-0 justify-end gap-3' dir='ltr'>
+            <TextButton onClick={cancelEdit}>{_('Cancel')}</TextButton>
+            <TextButton onClick={save} disabled={isBookmark && !draftText}>
+              {_('Save')}
+            </TextButton>
+          </div>
         </div>
       </div>
     );
@@ -327,25 +310,15 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
           >
             <button
               onClick={handleCopyLink}
-              className='btn btn-ghost btn-xs text-base-content p-0 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+              className='btn btn-ghost btn-xs text-base-content p-0 opacity-0 transition duration-300 ease-in-out hover:border-transparent hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
               aria-label={_('Copy')}
             >
               <MdContentCopy size={size18} />
             </button>
 
-            {(item.type === 'annotation' || item.type === 'excerpt') && (
-              <button
-                onClick={handleInsertIntoNotebook}
-                className='btn btn-ghost btn-xs text-base-content p-0 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
-                aria-label={_('Insert into Notebook')}
-              >
-                <MdPlaylistAdd size={size18} />
-              </button>
-            )}
-
             <button
               onClick={deleteNote.bind(null, item)}
-              className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+              className='btn btn-ghost btn-xs p-0 text-red-500 opacity-0 transition duration-300 ease-in-out hover:border-transparent hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
               aria-label={_('Delete')}
             >
               <MdDelete size={size18} />
@@ -360,7 +333,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
                       ? editNoteInline
                       : editNote.bind(null, item)
                 }
-                className='btn btn-ghost btn-xs p-0 text-blue-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+                className='btn btn-ghost btn-xs p-0 text-blue-500 opacity-0 transition duration-300 ease-in-out hover:border-transparent hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
                 aria-label={item.note || item.type === 'bookmark' ? _('Edit') : _('Add Note')}
               >
                 <MdEdit size={size18} />

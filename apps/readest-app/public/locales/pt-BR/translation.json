@@ -2324,7 +2324,6 @@
   "{{count}} Annotations_one": "{{count}} anotação",
   "{{count}} Annotations_many": "{{count}} anotações",
   "{{count}} Annotations_other": "{{count}} anotações",
-  "Insert into Notebook": "Inserir no caderno",
   "Reading": "Lendo",
   "Notion Sync": "Sincronização do Notion",
   "Notes synced to Notion": "Notas sincronizadas com o Notion",
