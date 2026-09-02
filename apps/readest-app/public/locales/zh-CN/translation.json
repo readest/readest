@@ -2240,5 +2240,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "设备屏幕关闭后会从列表中消失；保持屏幕点亮以持续可见。",
   "{{name}}'s Readest": "{{name}} 的 Readest",
   "Gamepad Support": "手柄支持",
-  "Navigate with a connected controller": "使用已连接的手柄进行导航"
+  "Navigate with a connected controller": "使用已连接的手柄进行导航",
+  "Lock Horizontal Panning": "锁定水平平移"
 }

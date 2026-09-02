@@ -2540,5 +2540,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "تختفي الأجهزة من القائمة عند إيقاف تشغيل شاشتها؛ أبقِ الشاشة قيد التشغيل لتبقى مرئيًا.",
   "{{name}}'s Readest": "Readest الخاص بـ {{name}}",
   "Gamepad Support": "دعم ذراع الألعاب",
-  "Navigate with a connected controller": "التنقل باستخدام ذراع ألعاب متصل"
+  "Navigate with a connected controller": "التنقل باستخدام ذراع ألعاب متصل",
+  "Lock Horizontal Panning": "قفل التحريك الأفقي"
 }

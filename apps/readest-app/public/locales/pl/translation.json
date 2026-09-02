@@ -2420,5 +2420,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Urządzenia znikają z listy, gdy ich ekran się wyłącza; pozostaw ekran włączony, aby pozostać widocznym.",
   "{{name}}'s Readest": "Readest użytkownika {{name}}",
   "Gamepad Support": "Obsługa gamepada",
-  "Navigate with a connected controller": "Nawigacja podłączonym kontrolerem"
+  "Navigate with a connected controller": "Nawigacja podłączonym kontrolerem",
+  "Lock Horizontal Panning": "Zablokuj przesuwanie poziome"
 }

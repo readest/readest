@@ -2300,5 +2300,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Az eszközök eltűnnek a listáról, amikor a képernyőjük kikapcsol; tartsa bekapcsolva a képernyőt, hogy látható maradjon.",
   "{{name}}'s Readest": "{{name}} Readestje",
   "Gamepad Support": "Kontroller támogatása",
-  "Navigate with a connected controller": "Navigálás csatlakoztatott kontrollerrel"
+  "Navigate with a connected controller": "Navigálás csatlakoztatott kontrollerrel",
+  "Lock Horizontal Panning": "Vízszintes mozgatás zárolása"
 }

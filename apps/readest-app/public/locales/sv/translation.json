@@ -2300,5 +2300,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Enheter försvinner från listan när skärmen stängs av; håll skärmen på för att fortsätta synas.",
   "{{name}}'s Readest": "{{name}}s Readest",
   "Gamepad Support": "Stöd för handkontroll",
-  "Navigate with a connected controller": "Navigera med en ansluten handkontroll"
+  "Navigate with a connected controller": "Navigera med en ansluten handkontroll",
+  "Lock Horizontal Panning": "Lås horisontell panorering"
 }

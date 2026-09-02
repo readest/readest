@@ -2240,5 +2240,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Perangkat menghilang dari daftar saat layarnya mati; biarkan layar menyala agar tetap terlihat.",
   "{{name}}'s Readest": "Readest {{name}}",
   "Gamepad Support": "Dukungan Gamepad",
-  "Navigate with a connected controller": "Navigasi dengan pengontrol yang terhubung"
+  "Navigate with a connected controller": "Navigasi dengan pengontrol yang terhubung",
+  "Lock Horizontal Panning": "Kunci geser horizontal"
 }

@@ -2240,5 +2240,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "སྒྲིག་ཆས་ཀྱི་བརྙན་ཡོལ་ཁ་བརྒྱབ་སྐབས་རེའུ་མིག་ནས་མི་སྣང་བར་འགྱུར། མཐོང་རྒྱུ་ཡོད་པར་གནས་ཆེད་བརྙན་ཡོལ་གསལ་བར་བཞག",
   "{{name}}'s Readest": "{{name}}ཡི་ Readest",
   "Gamepad Support": "རྩེད་མོའི་ཚོད་འཛིན་ཆས་རྒྱབ་སྐྱོར།",
-  "Navigate with a connected controller": "སྦྲེལ་ཟིན་པའི་ཚོད་འཛིན་ཆས་ཐོག་ནས་གནས་སྤོ་བྱེད་པ།"
+  "Navigate with a connected controller": "སྦྲེལ་ཟིན་པའི་ཚོད་འཛིན་ཆས་ཐོག་ནས་གནས་སྤོ་བྱེད་པ།",
+  "Lock Horizontal Panning": "ཐད་ཐིག་སྤོ་འགུལ་བཀག་པ།"
 }

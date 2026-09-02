@@ -2420,5 +2420,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Пристрої зникають зі списку, коли їхній екран вимикається; залиште екран увімкненим, щоб залишатися видимим.",
   "{{name}}'s Readest": "Readest користувача {{name}}",
   "Gamepad Support": "Підтримка геймпада",
-  "Navigate with a connected controller": "Навігація за допомогою підключеного геймпада"
+  "Navigate with a connected controller": "Навігація за допомогою підключеного геймпада",
+  "Lock Horizontal Panning": "Заблокувати горизонтальне переміщення"
 }

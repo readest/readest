@@ -2300,5 +2300,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "მოწყობილობები ქრება სიიდან, როცა მათი ეკრანი გამოირთვება; დატოვეთ ეკრანი ჩართული, რომ ხილვადი დარჩეთ.",
   "{{name}}'s Readest": "{{name}}-ის Readest",
   "Gamepad Support": "გეიმპედის მხარდაჭერა",
-  "Navigate with a connected controller": "ნავიგაცია მიერთებული კონტროლერით"
+  "Navigate with a connected controller": "ნავიგაცია მიერთებული კონტროლერით",
+  "Lock Horizontal Panning": "ჰორიზონტალური გადაადგილების დაბლოკვა"
 }

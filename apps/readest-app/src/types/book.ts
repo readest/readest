@@ -239,6 +239,9 @@ export interface BookLayout {
   scrolled: boolean;
   scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;
+  /* Fixed-layout only: freeze the horizontal pan offset of a zoomed page so it
+     can't drift sideways out of alignment while scrolling (#5976). */
+  lockHorizontalPan: boolean;
   noContinuousScroll: boolean;
   disableClick: boolean;
   disableSwipe: boolean;

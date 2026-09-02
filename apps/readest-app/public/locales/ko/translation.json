@@ -2240,5 +2240,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "화면이 꺼지면 기기가 목록에서 사라집니다. 계속 표시되려면 화면을 켜 두세요.",
   "{{name}}'s Readest": "{{name}}의 Readest",
   "Gamepad Support": "게임패드 지원",
-  "Navigate with a connected controller": "연결된 컨트롤러로 탐색"
+  "Navigate with a connected controller": "연결된 컨트롤러로 탐색",
+  "Lock Horizontal Panning": "가로 이동 잠금"
 }

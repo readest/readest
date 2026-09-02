@@ -2300,5 +2300,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Ekranı kapandığında cihazlar listeden kaybolur; görünür kalmak için ekranı açık tutun.",
   "{{name}}'s Readest": "{{name}} Readest'i",
   "Gamepad Support": "Oyun Kumandası Desteği",
-  "Navigate with a connected controller": "Bağlı bir kumandayla gezinin"
+  "Navigate with a connected controller": "Bağlı bir kumandayla gezinin",
+  "Lock Horizontal Panning": "Yatay hareketi kilitle"
 }

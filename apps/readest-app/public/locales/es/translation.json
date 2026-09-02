@@ -2360,5 +2360,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Los dispositivos desaparecen de la lista cuando se apaga su pantalla; mantén la pantalla encendida para seguir visible.",
   "{{name}}'s Readest": "Readest de {{name}}",
   "Gamepad Support": "Compatibilidad con mando",
-  "Navigate with a connected controller": "Navegar con un mando conectado"
+  "Navigate with a connected controller": "Navegar con un mando conectado",
+  "Lock Horizontal Panning": "Bloquear el movimiento horizontal"
 }

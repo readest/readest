@@ -2240,5 +2240,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "อุปกรณ์จะหายไปจากรายการเมื่อหน้าจอปิด เปิดหน้าจอไว้เพื่อให้ยังคงมองเห็นได้",
   "{{name}}'s Readest": "Readest ของ {{name}}",
   "Gamepad Support": "รองรับเกมแพด",
-  "Navigate with a connected controller": "นำทางด้วยคอนโทรลเลอร์ที่เชื่อมต่อ"
+  "Navigate with a connected controller": "นำทางด้วยคอนโทรลเลอร์ที่เชื่อมต่อ",
+  "Lock Horizontal Panning": "ล็อคการเลื่อนแนวนอน"
 }

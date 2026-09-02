@@ -2300,5 +2300,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "திரை அணைந்தால் சாதனங்கள் பட்டியலிலிருந்து மறைந்துவிடும்; தெரியும் நிலையில் இருக்க திரையை இயக்கத்தில் வைக்கவும்.",
   "{{name}}'s Readest": "{{name}} இன் Readest",
   "Gamepad Support": "கேம்பேட் ஆதரவு",
-  "Navigate with a connected controller": "இணைக்கப்பட்ட கன்ட்ரோலரைக் கொண்டு வழிசெலுத்தவும்"
+  "Navigate with a connected controller": "இணைக்கப்பட்ட கன்ட்ரோலரைக் கொண்டு வழிசெலுத்தவும்",
+  "Lock Horizontal Panning": "கிடைமட்ட நகர்வைப் பூட்டவும்"
 }

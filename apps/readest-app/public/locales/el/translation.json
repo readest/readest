@@ -2300,5 +2300,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Οι συσκευές εξαφανίζονται από τη λίστα όταν σβήσει η οθόνη τους· κρατήστε την οθόνη ανοιχτή για να παραμένετε ορατοί.",
   "{{name}}'s Readest": "Το Readest του {{name}}",
   "Gamepad Support": "Υποστήριξη χειριστηρίου",
-  "Navigate with a connected controller": "Πλοήγηση με συνδεδεμένο χειριστήριο"
+  "Navigate with a connected controller": "Πλοήγηση με συνδεδεμένο χειριστήριο",
+  "Lock Horizontal Panning": "Κλείδωμα οριζόντιας μετακίνησης"
 }

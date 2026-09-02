@@ -2420,5 +2420,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Naprave izginejo s seznama, ko se njihov zaslon izklopi; naj bo zaslon vklopljen, da ostanete vidni.",
   "{{name}}'s Readest": "Readest uporabnika {{name}}",
   "Gamepad Support": "Podpora za igralni plošček",
-  "Navigate with a connected controller": "Krmarjenje s priključenim krmilnikom"
+  "Navigate with a connected controller": "Krmarjenje s priključenim krmilnikom",
+  "Lock Horizontal Panning": "Zakleni vodoravno premikanje"
 }

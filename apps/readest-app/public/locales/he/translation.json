@@ -2360,5 +2360,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "מכשירים נעלמים מהרשימה כשהמסך שלהם כבה; השאירו את המסך דולק כדי להישאר גלויים.",
   "{{name}}'s Readest": "Readest של {{name}}",
   "Gamepad Support": "תמיכה בבקר משחק",
-  "Navigate with a connected controller": "ניווט באמצעות בקר מחובר"
+  "Navigate with a connected controller": "ניווט באמצעות בקר מחובר",
+  "Lock Horizontal Panning": "נעל הזזה אופקית"
 }

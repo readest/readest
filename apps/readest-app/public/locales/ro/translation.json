@@ -2360,5 +2360,6 @@
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Dispozitivele dispar din listă când ecranul lor se stinge; păstrează ecranul pornit ca să rămâi vizibil.",
   "{{name}}'s Readest": "Readest al lui {{name}}",
   "Gamepad Support": "Suport pentru gamepad",
-  "Navigate with a connected controller": "Navigare cu un controler conectat"
+  "Navigate with a connected controller": "Navigare cu un controler conectat",
+  "Lock Horizontal Panning": "Blochează deplasarea orizontală"
 }
