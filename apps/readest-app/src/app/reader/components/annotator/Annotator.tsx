@@ -1941,15 +1941,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         });
         return;
       }
-      if (readEraDoc.citations.length === 0 && readEraDoc.bookmarks.length === 0) {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          message: _('No annotations found in the file.'),
-          timeout: 2000,
-        });
-        return;
-      }
-
       let conversion;
       try {
         conversion = await convertReadEraDocToBookNotes(readEraDoc, bookDoc);
@@ -1959,6 +1950,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           type: 'warning',
           message: _('Failed to import annotations.'),
           timeout: 3000,
+        });
+        return;
+      }
+
+      // A ReadEra document may carry nothing but a reading position, which is
+      // still worth importing.
+      if (conversion.notes.length === 0 && !conversion.location) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('No annotations found in the file.'),
+          timeout: 2000,
         });
         return;
       }

@@ -177,6 +177,24 @@ describe('findReadEraDocForBook', () => {
     expect(findReadEraDocForBook(docs, { title: 'The Little Prince', format: 'PDF' })).toBeNull();
   });
 
+  it('rejects a sequel whose title merely contains the book title', () => {
+    const messiah = {
+      ...littlePrince,
+      uri: 'sha-1:messiah',
+      data: {
+        ...littlePrince.data,
+        doc_title: 'Dune Messiah',
+        doc_file_name_title: 'Frank Herbert - Dune Messiah',
+        doc_authors: 'Frank Herbert',
+        user_authors: 'Frank Herbert',
+      },
+    };
+    const sequels = parseReadEraBackup(backup([messiah]))!;
+    expect(
+      findReadEraDocForBook(sequels, { title: 'Dune', author: 'Frank Herbert', format: 'EPUB' }),
+    ).toBeNull();
+  });
+
   it('rejects an unrelated book', () => {
     expect(findReadEraDocForBook(docs, { title: 'Moby Dick', format: 'EPUB' })).toBeNull();
   });

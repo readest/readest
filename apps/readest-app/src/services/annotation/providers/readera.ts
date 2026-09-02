@@ -138,14 +138,22 @@ const normalizeNeedle = (text: string): string => text.replace(/\s+/g, ' ').trim
  *
  * ReadEra copies the highlighted text with its own whitespace handling and the
  * match often spans several inline elements, so we search a whitespace-collapsed
- * flattening of the document rather than individual text nodes.
+ * flattening of the document rather than individual text nodes. Pass
+ * `requireUnique` when the caller has a locator to fall back on.
  */
-export const findReadEraTextRange = (doc: Document, text: string): Range | null => {
+export const findReadEraTextRange = (
+  doc: Document,
+  text: string,
+  requireUnique = false,
+): Range | null => {
   const needle = normalizeNeedle(text);
   if (!needle) return null;
   const { text: haystack, positions } = buildHaystack(collectTextNodes(doc));
   const start = haystack.indexOf(needle);
   if (start < 0) return null;
+  // A phrase that occurs more than once says nothing about which occurrence was
+  // highlighted, so a note that carries a locator is better served by it.
+  if (requireUnique && haystack.indexOf(needle, start + 1) >= 0) return null;
   const first = positions[start];
   const last = positions[start + needle.length - 1];
   if (!first || !last) return null;
@@ -236,7 +244,7 @@ export const convertReadEraDocToBookNotes = async (
 
     let cfi: string | null = null;
     if (type === 'annotation') {
-      const range = findReadEraTextRange(doc, note.body);
+      const range = findReadEraTextRange(doc, note.body, Boolean(note.position?.xPath));
       if (range) {
         try {
           const rangeCfi = CFI.fromRange(range);
@@ -276,7 +284,11 @@ export const convertReadEraDocToBookNotes = async (
     if (doc) {
       location = cfiFromXPointer(readEraDoc.position, positionIndex, section, doc) ?? undefined;
     }
-    location ??= readEraDoc.position?.xPath ? undefined : sectionStartCfi(positionIndex, section);
+    // A paged locator resolves no finer than the page it names, so the page
+    // start loses nothing. A reflowable XPointer that failed to resolve must
+    // not fall back to the chapter start, per the #5980 rule.
+    const reflowable = readEraDoc.position?.xPath?.startsWith('/body/DocFragment[');
+    location ??= reflowable ? undefined : sectionStartCfi(positionIndex, section);
   }
 
   return { notes, unmatched, total: entries.length, location };

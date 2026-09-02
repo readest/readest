@@ -194,6 +194,18 @@ const normalizeText = (value: string | undefined): string =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
+/**
+ * Whether one title contains the other closely enough to be the same book. An
+ * edition or subtitle suffix keeps most of the longer string ("The Little
+ * Prince" inside "The Little Prince (Illustrated)"); a sequel does not ("Dune"
+ * inside "Dune Messiah"), and importing its annotations would write another
+ * book's highlights into this one.
+ */
+const containsTitle = (a: string, b: string): boolean => {
+  if (!a.includes(b) && !b.includes(a)) return false;
+  return Math.min(a.length, b.length) / Math.max(a.length, b.length) >= 0.5;
+};
+
 /** ReadEra formats that map onto a Readest book format of the same name. */
 const matchesFormat = (docFormat: string | undefined, bookFormat: string | undefined): boolean => {
   if (!docFormat || !bookFormat) return true;
@@ -221,7 +233,7 @@ export const findReadEraDocForBook = (
     for (const title of titles) {
       for (const candidate of candidates) {
         if (candidate === title) score = Math.max(score, 2);
-        else if (candidate.includes(title) || title.includes(candidate)) score = Math.max(score, 1);
+        else if (containsTitle(candidate, title)) score = Math.max(score, 1);
       }
     }
     if (!score) continue;
