@@ -270,6 +270,12 @@ const audioBlobFor = (path: string, data: Uint8Array<ArrayBuffer>): Blob =>
 // `src` afterwards keeps playing on the already-unlocked element.
 let dictAudio: HTMLAudioElement | null = null;
 
+// Resolved audio blob URLs, keyed by the element that plays them. The MDX body
+// is untrusted markup, so a URL parked in one of its attributes and read back
+// out is attacker-supplied text by the time it reaches a media element; keeping
+// the cache off the DOM keeps the value ours.
+const resolvedAudioUrls = new WeakMap<Element, string>();
+
 const primeDictAudio = (): HTMLAudioElement => {
   if (!dictAudio) {
     dictAudio = document.createElement('audio');
@@ -323,7 +329,7 @@ async function wireMdictAudioOnclick(
       e.stopPropagation();
       const audio = primeDictAudio();
 
-      let url = el.getAttribute('data-mdd-audio');
+      let url = resolvedAudioUrls.get(el);
       if (!url) {
         // Candidate paths: vocabulary.com's MDD stores audio as
         // `<KEY>.mp3` (with `/` -> `\` normalisation handled inside
@@ -347,7 +353,7 @@ async function wireMdictAudioOnclick(
                 );
                 url = URL.createObjectURL(audioBlobFor(path, new Uint8Array(located.data)));
                 trackedUrls.push(url);
-                el.setAttribute('data-mdd-audio', url);
+                resolvedAudioUrls.set(el, url);
                 break outer;
               } else {
                 console.log(`[MDD-AUDIO] miss path="${path}" mdd[${i}] ${dt}ms`);
@@ -436,7 +442,7 @@ function wireMdxAnchors(
         }
 
         const audio = primeDictAudio();
-        let url = anchor.getAttribute('data-mdd-resolved');
+        let url = resolvedAudioUrls.get(anchor);
         if (!url) {
           for (const mdd of mdds) {
             try {
@@ -444,7 +450,7 @@ function wireMdxAnchors(
               if (located.data) {
                 url = URL.createObjectURL(audioBlobFor(path, new Uint8Array(located.data)));
                 trackedUrls.push(url);
-                anchor.setAttribute('data-mdd-resolved', url);
+                resolvedAudioUrls.set(anchor, url);
                 break;
               }
             } catch (err) {

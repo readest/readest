@@ -338,7 +338,9 @@ describe('mdictProvider', () => {
 
       expect(locateMock).toHaveBeenCalledWith('test01.mp3');
       expect(playSpy).toHaveBeenCalled();
-      expect(anchor!.getAttribute('data-mdd-resolved')).toMatch(/^blob:/);
+      // The resolved URL is cached off the DOM, so assert on what played.
+      const played = playSpy.mock.instances.at(-1) as HTMLMediaElement;
+      expect(played.src).toMatch(/^blob:/);
 
       // Second click reuses the cached blob URL — no extra MDD read.
       locateMock.mockClear();

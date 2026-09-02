@@ -224,7 +224,13 @@ export function useDictionaryResults({
   }, [cards, manuallyToggled]);
 
   const [zoomedImageSrc, setZoomedImageSrc] = useState<string | null>(null);
-  const closeZoomedImage = useCallback(() => setZoomedImageSrc(null), []);
+  // Reading the image out of the entry is async, so a second tap (or a close)
+  // while the first is still decoding must win. Only the newest request paints.
+  const zoomRequestRef = useRef(0);
+  const closeZoomedImage = useCallback(() => {
+    zoomRequestRef.current += 1;
+    setZoomedImageSrc(null);
+  }, []);
 
   // Click delegation inside provider-rendered DOM. MDict entries render in a
   // shadow root, where `e.target` is retargeted to the host — only the composed
@@ -250,8 +256,11 @@ export function useDictionaryResults({
     const imageSrc = anchor ? null : fullResolutionSrc(image);
     if (imageSrc) {
       e.preventDefault();
+      const request = ++zoomRequestRef.current;
       void convertBlobUrlToDataUrl(imageSrc)
-        .then(setZoomedImageSrc)
+        .then((src) => {
+          if (zoomRequestRef.current === request) setZoomedImageSrc(src);
+        })
         .catch((err) => {
           console.warn('Failed to load dictionary image', imageSrc, err);
         });
