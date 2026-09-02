@@ -106,7 +106,13 @@ import {
   convertAnnotationExportToBookNotes,
   parseAnnotationExport,
 } from '@/services/annotation/providers/readest';
-import { extractReadEraLibrary, findReadEraDocForBook, parseReadEraBackup } from '@/utils/readera';
+import {
+  extractReadEraLibrary,
+  findReadEraDocByFileMd5,
+  findReadEraDocForBook,
+  getReadEraFileMd5,
+  parseReadEraBackup,
+} from '@/utils/readera';
 import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
 
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
@@ -1888,7 +1894,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const importFromReadEra = async () => {
     setShowImportDialog(false);
 
-    const { bookDoc, book } = bookData;
+    const { bookDoc, book, file } = bookData;
     if (!bookDoc || !book) {
       eventDispatcher.dispatch('toast', {
         type: 'warning',
@@ -1930,9 +1936,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return;
       }
 
-      // The backup carries no book files and keys documents by a hash scheme
-      // of its own, so the entry for this book is found by title/author.
-      const readEraDoc = findReadEraDocForBook(docs, book);
+      // The backup carries no book files, so the entry for this book is found
+      // by title/author. When that decides nothing - a renamed file, a title
+      // too short to match on - fall back to the md5 of the whole file, which
+      // is what ReadEra keys its documents by.
+      let readEraDoc = findReadEraDocForBook(docs, book);
+      if (!readEraDoc && file) {
+        readEraDoc = findReadEraDocByFileMd5(docs, await getReadEraFileMd5(book.hash, file));
+      }
       if (!readEraDoc) {
         eventDispatcher.dispatch('toast', {
           type: 'warning',

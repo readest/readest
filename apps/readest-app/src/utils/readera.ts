@@ -5,7 +5,8 @@
  * library: one entry per document with its metadata, reading position,
  * highlights (`citations`) and `bookmarks`. The book files themselves are not
  * part of the backup, so an import can only attach data to books the user
- * already has in Readest — hence the title/author matching below.
+ * already has in Readest — hence the title/author matching below, and the
+ * `doc_md5` fallback for the books it cannot name.
  *
  * Locators come in two shapes:
  * - reflowable formats use CREngine XPointers, the same family KOReader emits
@@ -13,6 +14,8 @@
  * - PDFs use MuPDF page paths (`/page[402]/block[10]/line[0]/char[1]@x:y`)
  *   where the page index is 0-based.
  */
+
+import { fullMD5, isMd5 } from './md5';
 
 export interface ReadEraPosition {
   ratio?: number;
@@ -40,6 +43,8 @@ export interface ReadEraDoc {
   format?: string;
   /** Original file name without extension. */
   fileName?: string;
+  /** md5 of the whole book file, as ReadEra recorded it. */
+  md5?: string;
   title?: string;
   author?: string;
   fileSize?: number;
@@ -123,6 +128,7 @@ const parseDoc = (value: unknown): ReadEraDoc | null => {
   return {
     format: asString(data['doc_format']),
     fileName: asString(data['doc_file_name_title']),
+    md5: asString(data['doc_md5']),
     title: asString(data['user_title']) ?? asString(data['doc_title']),
     author: asString(data['user_authors']) ?? asString(data['doc_authors']),
     fileSize: asNumber(data['doc_file_size']),
@@ -198,12 +204,18 @@ const normalizeText = (value: string | undefined): string =>
  * Whether one title contains the other closely enough to be the same book. An
  * edition or subtitle suffix keeps most of the longer string ("The Little
  * Prince" inside "The Little Prince (Illustrated)"); a sequel does not ("Dune"
- * inside "Dune Messiah"), and importing its annotations would write another
- * book's highlights into this one.
+ * inside "Dune Messiah" or "Dune 2"), and importing its annotations would write
+ * another book's highlights into this one. A short title carries too little of
+ * either signal, so it has to match exactly. Books this rejects are still found
+ * by `findReadEraDocByFileMd5` when the file is the one ReadEra read.
  */
+const MIN_CONTAINED_TITLE_LENGTH = 12;
+
 const containsTitle = (a: string, b: string): boolean => {
+  const shorter = Math.min(a.length, b.length);
+  if (shorter < MIN_CONTAINED_TITLE_LENGTH) return false;
   if (!a.includes(b) && !b.includes(a)) return false;
-  return Math.min(a.length, b.length) / Math.max(a.length, b.length) >= 0.5;
+  return shorter / Math.max(a.length, b.length) >= 0.5;
 };
 
 /** ReadEra formats that map onto a Readest book format of the same name. */
@@ -213,9 +225,10 @@ const matchesFormat = (docFormat: string | undefined, bookFormat: string | undef
 };
 
 /**
- * Pick the backup entry that belongs to `book`. ReadEra keys documents by the
- * sha1/md5 of the whole file while Readest uses a partial md5, so the hashes
- * never line up: we match on title, file name and author instead.
+ * Pick the backup entry that belongs to `book` by title, file name and author.
+ * ReadEra keys documents by the sha1/md5 of the whole file while Readest uses a
+ * partial md5, so the two hashes never line up on their own; when this decides
+ * nothing the caller hashes the file itself and uses `findReadEraDocByFileMd5`.
  */
 export const findReadEraDocForBook = (
   docs: ReadEraDoc[],
@@ -246,4 +259,32 @@ export const findReadEraDocForBook = (
     }
   }
   return best?.doc ?? null;
+};
+
+const fileMd5Cache = new Map<string, Promise<string>>();
+
+/**
+ * The md5 ReadEra keys a document by: of the whole file, not the `partialMD5`
+ * Readest keys books by. Reading a whole book is expensive, so the result is
+ * kept for the session, keyed by the book's own hash.
+ */
+export const getReadEraFileMd5 = (bookHash: string, file: File): Promise<string> => {
+  let hash = fileMd5Cache.get(bookHash);
+  if (!hash) {
+    hash = fullMD5(file);
+    fileMd5Cache.set(bookHash, hash);
+  }
+  return hash;
+};
+
+/**
+ * Pick the backup entry whose file is byte for byte the book being read. This
+ * is exact where the title matching above can only guess, but it costs a full
+ * read of the book, so the import reaches for it only when the titles decide
+ * nothing.
+ */
+export const findReadEraDocByFileMd5 = (docs: ReadEraDoc[], md5: string): ReadEraDoc | null => {
+  const wanted = md5.toLowerCase();
+  if (!isMd5(wanted)) return null;
+  return docs.find((doc) => doc.md5?.toLowerCase() === wanted) ?? null;
 };

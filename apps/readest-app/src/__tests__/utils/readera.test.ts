@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
+  findReadEraDocByFileMd5,
   findReadEraDocForBook,
+  getReadEraFileMd5,
   normalizeReadEraXPointer,
   parseReadEraBackup,
   parseReadEraPosition,
@@ -24,6 +26,7 @@ const littlePrince = {
   data: {
     doc_format: 'EPUB',
     doc_active: 1,
+    doc_md5: 'd867e1b99a55fab2255dff631d7bb572',
     doc_delete_time: 0,
     doc_file_name_title: 'Antoine de Saint-Exupéry - The Little Prince (Illustrated)',
     doc_title: 'The Little Prince',
@@ -94,6 +97,7 @@ describe('parseReadEraBackup', () => {
     expect(doc.title).toBe('The Little Prince');
     expect(doc.fileName).toBe('Antoine de Saint-Exupéry - The Little Prince (Illustrated)');
     expect(doc.author).toBe('Antoine de Saint-Exupéry');
+    expect(doc.md5).toBe('d867e1b99a55fab2255dff631d7bb572');
     expect(doc.position?.xPath).toContain('DocFragment[6]');
 
     expect(doc.citations).toHaveLength(1);
@@ -177,6 +181,24 @@ describe('findReadEraDocForBook', () => {
     expect(findReadEraDocForBook(docs, { title: 'The Little Prince', format: 'PDF' })).toBeNull();
   });
 
+  it('rejects a short title that another title merely starts with', () => {
+    const sequel = {
+      ...littlePrince,
+      uri: 'sha-1:dune-2',
+      data: {
+        ...littlePrince.data,
+        doc_title: 'Dune 2',
+        doc_file_name_title: 'Dune 2',
+        doc_authors: 'Frank Herbert',
+        user_authors: 'Frank Herbert',
+      },
+    };
+    const sequels = parseReadEraBackup(backup([sequel]))!;
+    expect(
+      findReadEraDocForBook(sequels, { title: 'Dune', author: 'Frank Herbert', format: 'EPUB' }),
+    ).toBeNull();
+  });
+
   it('rejects a sequel whose title merely contains the book title', () => {
     const messiah = {
       ...littlePrince,
@@ -209,5 +231,33 @@ describe('findReadEraDocForBook', () => {
     const both = parseReadEraBackup(backup([empty, littlePrince]))!;
     const match = findReadEraDocForBook(both, { title: 'The Little Prince', format: 'EPUB' });
     expect(match?.citations).toHaveLength(1);
+  });
+});
+
+describe('findReadEraDocByFileMd5', () => {
+  const docs = parseReadEraBackup(backup([littlePrince]))!;
+
+  it('matches the document ReadEra stored under the same file md5', () => {
+    expect(findReadEraDocByFileMd5(docs, 'D867E1B99A55FAB2255DFF631D7BB572')).toBe(docs[0]);
+  });
+
+  it('returns null when no document has that md5', () => {
+    expect(findReadEraDocByFileMd5(docs, '0'.repeat(32))).toBeNull();
+  });
+
+  it('never matches a document the backup has no md5 for', () => {
+    const noHash = { ...littlePrince, data: { ...littlePrince.data, doc_md5: undefined } };
+    const parsed = parseReadEraBackup(backup([noHash]))!;
+    expect(parsed[0]!.md5).toBeUndefined();
+    expect(findReadEraDocByFileMd5(parsed, '')).toBeNull();
+  });
+});
+
+describe('getReadEraFileMd5', () => {
+  it('hashes a book only once, however often the import asks for it', async () => {
+    const first = await getReadEraFileMd5('book-hash', new File(['hello world'], 'a.epub'));
+    const second = await getReadEraFileMd5('book-hash', new File(['something else'], 'a.epub'));
+    expect(first).toBe('5eb63bbbe01eeed093cb22bb8f5acdc3');
+    expect(second).toBe(first);
   });
 });
