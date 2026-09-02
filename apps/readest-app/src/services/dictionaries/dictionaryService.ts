@@ -352,6 +352,30 @@ async function importStarDictBundle(
   };
 }
 
+const XML_ENTITIES: Record<string, string> = {
+  amp: '&',
+  apos: "'",
+  gt: '>',
+  lt: '<',
+  quot: '"',
+};
+
+/**
+ * Unescape an MDX header attribute value. The header is XML, so a dictionary
+ * whose title contains an apostrophe ships it as
+ * `Title="Oxford Advanced Learner&apos;s Dictionary 9th edition"`, and the raw
+ * attribute text would be shown verbatim as the dictionary's name (#6018).
+ */
+const decodeXmlEntities = (value: string) =>
+  value.replace(
+    /&(?:#([0-9]+)|#[xX]([0-9a-fA-F]+)|([a-z]+));/g,
+    (entity: string, dec?: string, hex?: string, named?: string) => {
+      if (named) return XML_ENTITIES[named] ?? entity;
+      const code = dec ? Number(dec) : parseInt(hex!, 16);
+      return code <= 0x10ffff ? String.fromCodePoint(code) : entity;
+    },
+  );
+
 /**
  * Read just the XML header from an MDX/MDD file and pull out the fields we
  * need at import time (Title, Encoding, Encrypted bitmap). Avoids triggering
@@ -383,7 +407,7 @@ async function readMdxHeader(file: File): Promise<{
   const xml = new TextDecoder('utf-16le').decode(xmlBuf).replace(/ +$/, '');
   const attrs: Record<string, string> = {};
   for (const m of xml.matchAll(/(\w+)="((?:.|\r|\n)*?)"/g)) {
-    attrs[m[1]!] = m[2]!;
+    attrs[m[1]!] = decodeXmlEntities(m[2]!);
   }
   let encrypt = 0;
   const encVal = attrs['Encrypted'];
