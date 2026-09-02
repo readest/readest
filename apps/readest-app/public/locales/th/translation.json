@@ -2246,5 +2246,6 @@
   "This is not a ReadEra backup file.": "นี่ไม่ใช่ไฟล์สำรองข้อมูลของ ReadEra",
   "This book was not found in the ReadEra backup.": "ไม่พบหนังสือเล่มนี้ในข้อมูลสำรองของ ReadEra",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ไฟล์สำรองข้อมูลของ ReadEra (.bak)"
+  "ReadEra backup file (.bak)": "ไฟล์สำรองข้อมูลของ ReadEra (.bak)",
+  "BookOrbit Sync": "การซิงค์ BookOrbit"
 }

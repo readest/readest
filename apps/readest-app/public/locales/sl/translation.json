@@ -2426,5 +2426,6 @@
   "This is not a ReadEra backup file.": "To ni datoteka varnostne kopije ReadEra.",
   "This book was not found in the ReadEra backup.": "Te knjige ni v varnostni kopiji ReadEra.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "Datoteka varnostne kopije ReadEra (.bak)"
+  "ReadEra backup file (.bak)": "Datoteka varnostne kopije ReadEra (.bak)",
+  "BookOrbit Sync": "Sinhronizacija BookOrbit"
 }

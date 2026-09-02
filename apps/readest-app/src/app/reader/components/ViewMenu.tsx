@@ -151,6 +151,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     eventDispatcher.dispatch('push-file-sync', { bookKey });
     eventDispatcher.dispatch('pull-file-sync', { bookKey });
     eventDispatcher.dispatch('flush-kosync', { bookKey });
+    // BookOrbit may be in manual mode (#6029), where nothing is ever pending
+    // and the flush above does nothing, so ask it for a real push.
+    eventDispatcher.dispatch('push-kosync', { bookKey, provider: 'bookorbit' });
   };
 
   const handleStartRSVP = () => {

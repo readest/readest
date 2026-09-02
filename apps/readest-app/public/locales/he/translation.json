@@ -2366,5 +2366,6 @@
   "This is not a ReadEra backup file.": "זהו אינו קובץ גיבוי של ReadEra.",
   "This book was not found in the ReadEra backup.": "הספר הזה לא נמצא בגיבוי של ReadEra.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "קובץ גיבוי של ReadEra ‏(.bak)"
+  "ReadEra backup file (.bak)": "קובץ גיבוי של ReadEra ‏(.bak)",
+  "BookOrbit Sync": "סנכרון BookOrbit"
 }

@@ -2306,5 +2306,6 @@
   "This is not a ReadEra backup file.": "Αυτό δεν είναι αρχείο αντιγράφου ασφαλείας ReadEra.",
   "This book was not found in the ReadEra backup.": "Αυτό το βιβλίο δεν βρέθηκε στο αντίγραφο ασφαλείας ReadEra.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "Αρχείο αντιγράφου ασφαλείας ReadEra (.bak)"
+  "ReadEra backup file (.bak)": "Αρχείο αντιγράφου ασφαλείας ReadEra (.bak)",
+  "BookOrbit Sync": "Συγχρονισμός BookOrbit"
 }

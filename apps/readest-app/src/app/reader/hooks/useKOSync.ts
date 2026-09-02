@@ -37,8 +37,22 @@ type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
  */
 export interface KosyncProgressProvider {
   name: 'kosync' | 'bookorbit';
-  selectConfig: (settings: SystemSettings) => KOSyncSettings | null;
+  selectConfig: (settings: SystemSettings) => KosyncEngineConfig | null;
 }
+
+/**
+ * What this hook actually drives: the KOSync wire settings plus the knobs a
+ * provider adds on top. `settings.kosync` satisfies it as-is.
+ */
+export type KosyncEngineConfig = KOSyncSettings & {
+  /**
+   * Manual-sync opt-out (#6029), set by BookOrbit only. When false the hook
+   * never pushes on its own; the server hears from us only on an explicit
+   * 'push-kosync'. Pulls stay automatic. Absent means automatic pushes, which
+   * is what KOReader Sync has always done.
+   */
+  autoSync?: boolean;
+};
 
 export const kosyncProvider: KosyncProgressProvider = {
   name: 'kosync',
@@ -397,16 +411,28 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     syncRefs.current = { pushProgress, pullProgress };
   }, [pushProgress, pullProgress]);
 
+  // The KOSync and BookOrbit instances of this hook listen on the same event
+  // names, so a book-menu entry meant for one server would otherwise reach
+  // both. `detail.provider` addresses exactly one instance; an event without
+  // one still broadcasts (book close, the reader's Sync row).
+  const providerName = provider.name;
+  const isAddressedHere = useCallback(
+    (event: CustomEvent) =>
+      event.detail.bookKey === bookKey &&
+      (!event.detail.provider || event.detail.provider === providerName),
+    [bookKey, providerName],
+  );
+
   useEffect(() => {
     const handlePushProgress = (event: CustomEvent) => {
       const { pushProgress } = syncRefs.current;
-      if (event.detail.bookKey !== bookKey) return;
+      if (!isAddressedHere(event)) return;
       pushProgress();
       pushProgress.flush();
     };
     const handleFlush = (event: CustomEvent) => {
       const { pushProgress } = syncRefs.current;
-      if (event.detail.bookKey !== bookKey) return;
+      if (!isAddressedHere(event)) return;
       pushProgress.flush();
     };
     eventDispatcher.on('push-kosync', handlePushProgress);
@@ -417,11 +443,11 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       eventDispatcher.off('flush-kosync', handleFlush);
       pushProgress.flush();
     };
-  }, [bookKey]);
+  }, [isAddressedHere]);
 
   useEffect(() => {
     const handlePullProgress = (event: CustomEvent) => {
-      if (event.detail.bookKey !== bookKey) return;
+      if (!isAddressedHere(event)) return;
       const { pullProgress } = syncRefs.current;
       pullProgress();
     };
@@ -429,7 +455,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     return () => {
       eventDispatcher.off('pull-kosync', handlePullProgress);
     };
-  }, [bookKey]);
+  }, [isAddressedHere]);
 
   // Pull: pull progress once when the book is opened
   useEffect(() => {
@@ -446,7 +472,9 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       // via the 'push-kosync' event are still respected (explicit user intent).
       if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
       const config = provider.selectConfig(settings);
-      if (config?.enabled && config.strategy !== 'receive') {
+      // Auto Sync off (#6029): the server only hears from us when the user
+      // asks, via 'push-kosync'. Pulls below stay automatic.
+      if (config?.enabled && config.strategy !== 'receive' && config.autoSync !== false) {
         syncRefs.current.pushProgress();
       }
     }
@@ -460,6 +488,9 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
       hasPulledOnce.current = false;
       pullProgress();
     } else {
+      // Nothing is ever pending in manual mode, so this pair would be the one
+      // automatic push that still got through — schedule then flush.
+      if (provider.selectConfig(useSettingsStore.getState().settings)?.autoSync === false) return;
       pushProgress();
       pushProgress.flush();
     }

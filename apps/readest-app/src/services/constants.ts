@@ -94,6 +94,7 @@ export const DEFAULT_BOOKORBIT_SETTINGS = {
   syncNotes: true,
   syncStats: true,
   syncBookStates: true,
+  autoSync: true,
 } as BookOrbitSettings;
 
 export const READWISE_API_BASE_URL = 'https://readwise.io/api/v2';

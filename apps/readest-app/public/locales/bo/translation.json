@@ -2246,5 +2246,6 @@
   "This is not a ReadEra backup file.": "འདི་ནི་ ReadEra གྲབས་ཉར་ཡིག་ཆ་མིན།",
   "This book was not found in the ReadEra backup.": "དཔེ་དེབ་འདི་ ReadEra གྲབས་ཉར་ནང་མ་རྙེད།",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ReadEra གྲབས་ཉར་ཡིག་ཆ (.bak)"
+  "ReadEra backup file (.bak)": "ReadEra གྲབས་ཉར་ཡིག་ཆ (.bak)",
+  "BookOrbit Sync": "BookOrbit ཟླ་སྒྲིག"
 }

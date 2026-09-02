@@ -2306,5 +2306,6 @@
   "This is not a ReadEra backup file.": "Bu bir ReadEra yedek dosyası değil.",
   "This book was not found in the ReadEra backup.": "Bu kitap ReadEra yedeğinde bulunamadı.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ReadEra yedek dosyası (.bak)"
+  "ReadEra backup file (.bak)": "ReadEra yedek dosyası (.bak)",
+  "BookOrbit Sync": "BookOrbit Senkronizasyonu"
 }

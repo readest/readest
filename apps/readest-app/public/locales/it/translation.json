@@ -2366,5 +2366,6 @@
   "This is not a ReadEra backup file.": "Questo non è un file di backup di ReadEra.",
   "This book was not found in the ReadEra backup.": "Questo libro non è stato trovato nel backup di ReadEra.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "File di backup di ReadEra (.bak)"
+  "ReadEra backup file (.bak)": "File di backup di ReadEra (.bak)",
+  "BookOrbit Sync": "Sincronizzazione BookOrbit"
 }

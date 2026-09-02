@@ -2306,5 +2306,6 @@
   "This is not a ReadEra backup file.": "Bu ReadEra zaxira nusxa fayli emas.",
   "This book was not found in the ReadEra backup.": "Bu kitob ReadEra zaxira nusxasida topilmadi.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ReadEra zaxira nusxa fayli (.bak)"
+  "ReadEra backup file (.bak)": "ReadEra zaxira nusxa fayli (.bak)",
+  "BookOrbit Sync": "BookOrbit sinxronlash"
 }

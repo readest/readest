@@ -2246,5 +2246,6 @@
   "This is not a ReadEra backup file.": "ReadEra 백업 파일이 아닙니다.",
   "This book was not found in the ReadEra backup.": "이 책을 ReadEra 백업에서 찾을 수 없습니다.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ReadEra 백업 파일 (.bak)"
+  "ReadEra backup file (.bak)": "ReadEra 백업 파일 (.bak)",
+  "BookOrbit Sync": "BookOrbit 동기화"
 }

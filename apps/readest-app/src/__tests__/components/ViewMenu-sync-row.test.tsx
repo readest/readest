@@ -137,6 +137,13 @@ describe('ViewMenu sync row (issue #5910)', () => {
     expect(events).toContain('push-file-sync');
     expect(events).toContain('pull-file-sync');
     expect(events).toContain('flush-kosync');
+    // BookOrbit's Auto Sync (#6029) can be off, and then nothing is ever
+    // pending for the flush above to send — so the row asks for a real push,
+    // addressed to BookOrbit so KOReader Sync keeps its flush-only behaviour.
+    expect(mockDispatch).toHaveBeenCalledWith('push-kosync', {
+      bookKey: 'book-1',
+      provider: 'bookorbit',
+    });
     expect(mockNavigateToLogin).not.toHaveBeenCalled();
   });
 

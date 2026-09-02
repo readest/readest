@@ -2246,5 +2246,6 @@
   "This is not a ReadEra backup file.": "これは ReadEra のバックアップファイルではありません。",
   "This book was not found in the ReadEra backup.": "この本は ReadEra のバックアップに見つかりませんでした。",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ReadEra のバックアップファイル (.bak)"
+  "ReadEra backup file (.bak)": "ReadEra のバックアップファイル (.bak)",
+  "BookOrbit Sync": "BookOrbit同期"
 }

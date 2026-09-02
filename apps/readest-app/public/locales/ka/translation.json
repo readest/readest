@@ -2306,5 +2306,6 @@
   "This is not a ReadEra backup file.": "ეს არ არის ReadEra-ს სარეზერვო ასლის ფაილი.",
   "This book was not found in the ReadEra backup.": "ეს წიგნი ვერ მოიძებნა ReadEra-ს სარეზერვო ასლში.",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ReadEra-ს სარეზერვო ასლის ფაილი (.bak)"
+  "ReadEra backup file (.bak)": "ReadEra-ს სარეზერვო ასლის ფაილი (.bak)",
+  "BookOrbit Sync": "BookOrbit სინქრონიზაცია"
 }

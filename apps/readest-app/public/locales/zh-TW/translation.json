@@ -2246,5 +2246,6 @@
   "This is not a ReadEra backup file.": "這不是 ReadEra 備份檔案。",
   "This book was not found in the ReadEra backup.": "未在 ReadEra 備份中找到本書。",
   "ReadEra": "ReadEra",
-  "ReadEra backup file (.bak)": "ReadEra 備份檔案 (.bak)"
+  "ReadEra backup file (.bak)": "ReadEra 備份檔案 (.bak)",
+  "BookOrbit Sync": "BookOrbit 同步"
 }
