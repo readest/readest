@@ -97,7 +97,7 @@ const LocalSendManager: React.FC = () => {
   const haptic = useCallback(() => {
     if (!appService?.hasHaptics) return;
     try {
-      impactFeedback('medium');
+      void impactFeedback('medium').catch(() => {});
     } catch {
       /* haptics are best-effort */
     }
@@ -175,11 +175,19 @@ const LocalSendManager: React.FC = () => {
     if (!isTauriAppPlatform()) return;
     const sync = () => {
       if (!isLocalSendEnabled()) return;
-      void setLocalSendDiscoverable(document.visibilityState === 'visible').catch(() => {});
+      const visible = document.visibilityState === 'visible';
+      // The OS can reclaim a backgrounded app's listening socket (iOS); the
+      // backend tears the dead service down and reports running:false. Bring it
+      // back on the next foreground before re-announcing presence.
+      if (visible && !useLocalSendStore.getState().status?.running) {
+        void syncServiceState();
+        return;
+      }
+      void setLocalSendDiscoverable(visible).catch(() => {});
     };
     document.addEventListener('visibilitychange', sync);
     return () => document.removeEventListener('visibilitychange', sync);
-  }, []);
+  }, [syncServiceState]);
 
   // The alias change flow restarts the service (stop, then start with the new
   // alias). The settings form dispatches 'localsend-alias-changed' for this.

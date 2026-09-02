@@ -2410,7 +2410,7 @@
   "Receiving from paired device {{alias}}": "Odbieranie ze sparowanego urządzenia {{alias}}",
   "Always accept from {{alias}}": "Zawsze akceptuj od {{alias}}",
   "Transfer Sounds": "Dźwięki przesyłania",
-  "Play a sound when transfers start, finish, or fail": "Odtwarzaj dźwięk, gdy przesyłanie rozpoczyna się, kończy lub nie powiedzie",
+  "Play a sound when transfers start, finish, or fail": "Odtwarzaj dźwięk, gdy przesyłanie rozpoczyna się, kończy lub nie powiedzie się",
   "Paired Devices": "Sparowane urządzenia",
   "Paired {{date}}": "Sparowano {{date}}",
   "Unpair": "Usuń sparowanie",

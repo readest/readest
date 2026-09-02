@@ -188,17 +188,33 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
   const HEARTBEAT_MS = 1500;
   useEffect(() => {
     if (!status?.running || sendState) return;
+    let cancelled = false;
+    let inFlight = false;
     const tick = async () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      // A beat can outlast HEARTBEAT_MS on a multicast-hostile network (the list
+      // read waits on unicast reprobes); skip overlapping runs.
+      if (inFlight) return;
+      inFlight = true;
       try {
         await announceLocalSend(false);
-        useLocalSendStore.getState().setDevices(await listLocalSendDevices());
+        const listed = await listLocalSendDevices();
+        // The read is async: a send may have started, or the dialog closed,
+        // while it was in flight. Don't clobber the frozen list in either case.
+        if (!cancelled && !useLocalSendStore.getState().sendState) {
+          useLocalSendStore.getState().setDevices(listed);
+        }
       } catch {
         /* transient; the next beat retries */
+      } finally {
+        inFlight = false;
       }
     };
     const id = setInterval(() => void tick(), HEARTBEAT_MS);
-    return () => clearInterval(id);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [status?.running, sendState]);
 
   // Close once the transfer this dialog started has ended (the manager

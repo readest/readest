@@ -458,10 +458,29 @@ fn handle_server_event<R: Runtime>(
         }
         ServerEventV2::ListenerFailed { error } => {
             // The OS invalidated the listening socket (e.g. iOS reclaims a
-            // suspended app's sockets) and the core has stopped the server.
-            // Log it; the enable/discoverable lifecycle restarts the service
-            // when the app returns to the foreground.
+            // suspended app's sockets) and the core has stopped the server. The
+            // RunningService still held in state is now dead: it would keep
+            // being announced (peers list it) but can accept no uploads. Tear it
+            // down and report the server stopped, so the foreground lifecycle
+            // starts a fresh one instead of re-announcing a dead listener.
             log::warn!("LocalSend HTTP listener failed: {error}");
+            if let Some(state) = app.try_state::<crate::localsend::LocalSendState>() {
+                let services = state.0.clone();
+                let app = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Some(mut service) = services.lock().await.take() {
+                        stop(&mut service).await;
+                    }
+                    let _ = app.emit(
+                        EV_SERVER_STATE,
+                        ServerStatePayload {
+                            running: false,
+                            port: 0,
+                            error: None,
+                        },
+                    );
+                });
+            }
         }
     }
 }
