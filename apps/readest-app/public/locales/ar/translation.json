@@ -2541,5 +2541,10 @@
   "{{name}}'s Readest": "Readest الخاص بـ {{name}}",
   "Gamepad Support": "دعم ذراع الألعاب",
   "Navigate with a connected controller": "التنقل باستخدام ذراع ألعاب متصل",
-  "Lock Horizontal Panning": "قفل التحريك الأفقي"
+  "Lock Horizontal Panning": "قفل التحريك الأفقي",
+  "Select ReadEra Backup File": "اختر ملف النسخة الاحتياطية من ReadEra",
+  "This is not a ReadEra backup file.": "هذا ليس ملف نسخة احتياطية من ReadEra.",
+  "This book was not found in the ReadEra backup.": "لم يتم العثور على هذا الكتاب في النسخة الاحتياطية من ReadEra.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ملف نسخة احتياطية من ReadEra (.bak)"
 }

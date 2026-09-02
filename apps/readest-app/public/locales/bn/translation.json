@@ -2301,5 +2301,10 @@
   "{{name}}'s Readest": "{{name}}-এর Readest",
   "Gamepad Support": "গেমপ্যাড সমর্থন",
   "Navigate with a connected controller": "সংযুক্ত কন্ট্রোলার দিয়ে নেভিগেট করুন",
-  "Lock Horizontal Panning": "অনুভূমিক প্যানিং লক করুন"
+  "Lock Horizontal Panning": "অনুভূমিক প্যানিং লক করুন",
+  "Select ReadEra Backup File": "ReadEra ব্যাকআপ ফাইল নির্বাচন করুন",
+  "This is not a ReadEra backup file.": "এটি ReadEra ব্যাকআপ ফাইল নয়।",
+  "This book was not found in the ReadEra backup.": "এই বইটি ReadEra ব্যাকআপে পাওয়া যায়নি।",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra ব্যাকআপ ফাইল (.bak)"
 }

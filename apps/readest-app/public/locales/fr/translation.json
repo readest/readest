@@ -2361,5 +2361,10 @@
   "{{name}}'s Readest": "Readest de {{name}}",
   "Gamepad Support": "Prise en charge des manettes",
   "Navigate with a connected controller": "Naviguer avec une manette connectée",
-  "Lock Horizontal Panning": "Verrouiller le panoramique horizontal"
+  "Lock Horizontal Panning": "Verrouiller le panoramique horizontal",
+  "Select ReadEra Backup File": "Sélectionner le fichier de sauvegarde ReadEra",
+  "This is not a ReadEra backup file.": "Ce n'est pas un fichier de sauvegarde ReadEra.",
+  "This book was not found in the ReadEra backup.": "Ce livre n'a pas été trouvé dans la sauvegarde ReadEra.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "Fichier de sauvegarde ReadEra (.bak)"
 }

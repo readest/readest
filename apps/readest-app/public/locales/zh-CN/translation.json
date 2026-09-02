@@ -2241,5 +2241,10 @@
   "{{name}}'s Readest": "{{name}} 的 Readest",
   "Gamepad Support": "手柄支持",
   "Navigate with a connected controller": "使用已连接的手柄进行导航",
-  "Lock Horizontal Panning": "锁定水平平移"
+  "Lock Horizontal Panning": "锁定水平平移",
+  "Select ReadEra Backup File": "选择 ReadEra 备份文件",
+  "This is not a ReadEra backup file.": "这不是 ReadEra 备份文件。",
+  "This book was not found in the ReadEra backup.": "未在 ReadEra 备份中找到本书。",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra 备份文件 (.bak)"
 }

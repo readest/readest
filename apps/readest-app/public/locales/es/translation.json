@@ -2361,5 +2361,10 @@
   "{{name}}'s Readest": "Readest de {{name}}",
   "Gamepad Support": "Compatibilidad con mando",
   "Navigate with a connected controller": "Navegar con un mando conectado",
-  "Lock Horizontal Panning": "Bloquear el movimiento horizontal"
+  "Lock Horizontal Panning": "Bloquear el movimiento horizontal",
+  "Select ReadEra Backup File": "Seleccionar archivo de copia de seguridad de ReadEra",
+  "This is not a ReadEra backup file.": "Este no es un archivo de copia de seguridad de ReadEra.",
+  "This book was not found in the ReadEra backup.": "Este libro no se encontró en la copia de seguridad de ReadEra.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "Archivo de copia de seguridad de ReadEra (.bak)"
 }

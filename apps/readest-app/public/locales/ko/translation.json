@@ -2241,5 +2241,10 @@
   "{{name}}'s Readest": "{{name}}의 Readest",
   "Gamepad Support": "게임패드 지원",
   "Navigate with a connected controller": "연결된 컨트롤러로 탐색",
-  "Lock Horizontal Panning": "가로 이동 잠금"
+  "Lock Horizontal Panning": "가로 이동 잠금",
+  "Select ReadEra Backup File": "ReadEra 백업 파일 선택",
+  "This is not a ReadEra backup file.": "ReadEra 백업 파일이 아닙니다.",
+  "This book was not found in the ReadEra backup.": "이 책을 ReadEra 백업에서 찾을 수 없습니다.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra 백업 파일 (.bak)"
 }

@@ -2301,5 +2301,10 @@
   "{{name}}'s Readest": "{{name}} இன் Readest",
   "Gamepad Support": "கேம்பேட் ஆதரவு",
   "Navigate with a connected controller": "இணைக்கப்பட்ட கன்ட்ரோலரைக் கொண்டு வழிசெலுத்தவும்",
-  "Lock Horizontal Panning": "கிடைமட்ட நகர்வைப் பூட்டவும்"
+  "Lock Horizontal Panning": "கிடைமட்ட நகர்வைப் பூட்டவும்",
+  "Select ReadEra Backup File": "ReadEra காப்புப்பிரதி கோப்பைத் தேர்ந்தெடுக்கவும்",
+  "This is not a ReadEra backup file.": "இது ReadEra காப்புப்பிரதி கோப்பு அல்ல.",
+  "This book was not found in the ReadEra backup.": "இந்தப் புத்தகம் ReadEra காப்புப்பிரதியில் காணப்படவில்லை.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra காப்புப்பிரதி கோப்பு (.bak)"
 }

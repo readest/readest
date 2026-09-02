@@ -2421,5 +2421,10 @@
   "{{name}}'s Readest": "Readest пользователя {{name}}",
   "Gamepad Support": "Поддержка геймпада",
   "Navigate with a connected controller": "Навигация с помощью подключённого геймпада",
-  "Lock Horizontal Panning": "Заблокировать горизонтальное перемещение"
+  "Lock Horizontal Panning": "Заблокировать горизонтальное перемещение",
+  "Select ReadEra Backup File": "Выберите файл резервной копии ReadEra",
+  "This is not a ReadEra backup file.": "Это не файл резервной копии ReadEra.",
+  "This book was not found in the ReadEra backup.": "Эта книга не найдена в резервной копии ReadEra.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "Файл резервной копии ReadEra (.bak)"
 }

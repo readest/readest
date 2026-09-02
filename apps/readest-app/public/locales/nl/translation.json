@@ -2301,5 +2301,10 @@
   "{{name}}'s Readest": "Readest van {{name}}",
   "Gamepad Support": "Gamepad-ondersteuning",
   "Navigate with a connected controller": "Navigeren met een aangesloten controller",
-  "Lock Horizontal Panning": "Horizontaal verschuiven vergrendelen"
+  "Lock Horizontal Panning": "Horizontaal verschuiven vergrendelen",
+  "Select ReadEra Backup File": "ReadEra-back-upbestand selecteren",
+  "This is not a ReadEra backup file.": "Dit is geen ReadEra-back-upbestand.",
+  "This book was not found in the ReadEra backup.": "Dit boek is niet gevonden in de ReadEra-back-up.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra-back-upbestand (.bak)"
 }

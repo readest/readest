@@ -2241,5 +2241,10 @@
   "{{name}}'s Readest": "{{name}}ཡི་ Readest",
   "Gamepad Support": "རྩེད་མོའི་ཚོད་འཛིན་ཆས་རྒྱབ་སྐྱོར།",
   "Navigate with a connected controller": "སྦྲེལ་ཟིན་པའི་ཚོད་འཛིན་ཆས་ཐོག་ནས་གནས་སྤོ་བྱེད་པ།",
-  "Lock Horizontal Panning": "ཐད་ཐིག་སྤོ་འགུལ་བཀག་པ།"
+  "Lock Horizontal Panning": "ཐད་ཐིག་སྤོ་འགུལ་བཀག་པ།",
+  "Select ReadEra Backup File": "ReadEra གྲབས་ཉར་ཡིག་ཆ་འདེམས།",
+  "This is not a ReadEra backup file.": "འདི་ནི་ ReadEra གྲབས་ཉར་ཡིག་ཆ་མིན།",
+  "This book was not found in the ReadEra backup.": "དཔེ་དེབ་འདི་ ReadEra གྲབས་ཉར་ནང་མ་རྙེད།",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra གྲབས་ཉར་ཡིག་ཆ (.bak)"
 }

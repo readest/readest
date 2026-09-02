@@ -2421,5 +2421,10 @@
   "{{name}}'s Readest": "Readest użytkownika {{name}}",
   "Gamepad Support": "Obsługa gamepada",
   "Navigate with a connected controller": "Nawigacja podłączonym kontrolerem",
-  "Lock Horizontal Panning": "Zablokuj przesuwanie poziome"
+  "Lock Horizontal Panning": "Zablokuj przesuwanie poziome",
+  "Select ReadEra Backup File": "Wybierz plik kopii zapasowej ReadEra",
+  "This is not a ReadEra backup file.": "To nie jest plik kopii zapasowej ReadEra.",
+  "This book was not found in the ReadEra backup.": "Nie znaleziono tej książki w kopii zapasowej ReadEra.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "Plik kopii zapasowej ReadEra (.bak)"
 }

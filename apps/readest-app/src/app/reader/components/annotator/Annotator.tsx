@@ -106,6 +106,8 @@ import {
   convertAnnotationExportToBookNotes,
   parseAnnotationExport,
 } from '@/services/annotation/providers/readest';
+import { extractReadEraLibrary, findReadEraDocForBook, parseReadEraBackup } from '@/utils/readera';
+import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
 
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   bookKey,
@@ -1870,6 +1872,143 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
+  /** Read the picked file as bytes on both Web (File) and Tauri (path). */
+  const readSelectedFileBytes = async (selectedFile: SelectedFile): Promise<ArrayBuffer | null> => {
+    try {
+      if (selectedFile.file) return await selectedFile.file.arrayBuffer();
+      if (selectedFile.path) {
+        return (await appService?.readFile(selectedFile.path, 'None', 'binary')) as ArrayBuffer;
+      }
+    } catch (e) {
+      console.warn('Failed to read the selected backup file:', e);
+    }
+    return null;
+  };
+
+  const importFromReadEra = async () => {
+    setShowImportDialog(false);
+
+    const { bookDoc, book } = bookData;
+    if (!bookDoc || !book) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('Book is not ready yet, please try again.'),
+        timeout: 2000,
+      });
+      return;
+    }
+
+    const result = await selectFiles({
+      type: 'generic',
+      accept: '.bak',
+      extensions: ['bak'],
+      multiple: false,
+      dialogTitle: _('Select ReadEra Backup File'),
+    });
+    if (result.error || result.files.length === 0) return;
+
+    setImportingAnnotations(true);
+    try {
+      const data = await readSelectedFileBytes(result.files[0]!);
+      if (!data) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('Failed to read the selected file.'),
+          timeout: 2000,
+        });
+        return;
+      }
+
+      const library = await extractReadEraLibrary(data);
+      const docs = library ? parseReadEraBackup(library) : null;
+      if (!docs) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('This is not a ReadEra backup file.'),
+          timeout: 3000,
+        });
+        return;
+      }
+
+      // The backup carries no book files and keys documents by a hash scheme
+      // of its own, so the entry for this book is found by title/author.
+      const readEraDoc = findReadEraDocForBook(docs, book);
+      if (!readEraDoc) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('This book was not found in the ReadEra backup.'),
+          timeout: 3000,
+        });
+        return;
+      }
+      if (readEraDoc.citations.length === 0 && readEraDoc.bookmarks.length === 0) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('No annotations found in the file.'),
+          timeout: 2000,
+        });
+        return;
+      }
+
+      let conversion;
+      try {
+        conversion = await convertReadEraDocToBookNotes(readEraDoc, bookDoc);
+      } catch (e) {
+        console.warn('Failed to convert ReadEra annotations:', e);
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('Failed to import annotations.'),
+          timeout: 3000,
+        });
+        return;
+      }
+
+      const config = getConfig(bookKey)!;
+      const { merged, applied, added, updated } = mergeImportedBookNotes(
+        config.booknotes ?? [],
+        conversion.notes,
+      );
+      let updatedConfig = updateBooknotes(bookKey, merged);
+      // Same rule as the Readest importer: only adopt ReadEra's reading
+      // position when this book has none of its own, so importing into a book
+      // you are midway through never moves you.
+      if (updatedConfig && conversion.location && !config.location) {
+        const position = { location: conversion.location };
+        setConfig(bookKey, position);
+        updatedConfig = { ...updatedConfig, ...position };
+      }
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+
+      const views = getViewsById(bookKey.split('-')[0]!);
+      for (const note of applied) {
+        try {
+          views.forEach((v) => v?.addAnnotation(note));
+        } catch (err) {
+          console.warn('Failed to add imported annotation', { note, err });
+        }
+      }
+
+      const imported = added + updated;
+      const parts: string[] = [
+        imported > 0
+          ? _('Imported {{count}} annotations', { count: imported })
+          : _('No new annotations to import'),
+      ];
+      if (conversion.unmatched > 0) {
+        parts.push(_('{{count}} not found in this book', { count: conversion.unmatched }));
+      }
+      eventDispatcher.dispatch('toast', {
+        type: conversion.unmatched > 0 ? 'warning' : 'info',
+        message: parts.join(' · '),
+        timeout: 3500,
+      });
+    } finally {
+      setImportingAnnotations(false);
+    }
+  };
+
   const importFromReadest = async () => {
     setShowImportDialog(false);
 
@@ -2407,6 +2546,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           isOpen={showImportDialog}
           onClose={() => setShowImportDialog(false)}
           onImportMoonReader={importFromMoonReader}
+          onImportReadEra={importFromReadEra}
           onImportReadest={importFromReadest}
         />
       )}

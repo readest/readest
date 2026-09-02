@@ -2301,5 +2301,10 @@
   "{{name}}'s Readest": "{{name}}s Readest",
   "Gamepad Support": "Stöd för handkontroll",
   "Navigate with a connected controller": "Navigera med en ansluten handkontroll",
-  "Lock Horizontal Panning": "Lås horisontell panorering"
+  "Lock Horizontal Panning": "Lås horisontell panorering",
+  "Select ReadEra Backup File": "Välj ReadEra-säkerhetskopia",
+  "This is not a ReadEra backup file.": "Det här är inte en ReadEra-säkerhetskopia.",
+  "This book was not found in the ReadEra backup.": "Den här boken hittades inte i ReadEra-säkerhetskopian.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra-säkerhetskopia (.bak)"
 }

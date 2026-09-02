@@ -2421,5 +2421,10 @@
   "{{name}}'s Readest": "Readest uporabnika {{name}}",
   "Gamepad Support": "Podpora za igralni plošček",
   "Navigate with a connected controller": "Krmarjenje s priključenim krmilnikom",
-  "Lock Horizontal Panning": "Zakleni vodoravno premikanje"
+  "Lock Horizontal Panning": "Zakleni vodoravno premikanje",
+  "Select ReadEra Backup File": "Izberite datoteko varnostne kopije ReadEra",
+  "This is not a ReadEra backup file.": "To ni datoteka varnostne kopije ReadEra.",
+  "This book was not found in the ReadEra backup.": "Te knjige ni v varnostni kopiji ReadEra.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "Datoteka varnostne kopije ReadEra (.bak)"
 }

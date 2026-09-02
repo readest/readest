@@ -2241,5 +2241,10 @@
   "{{name}}'s Readest": "Readest ของ {{name}}",
   "Gamepad Support": "รองรับเกมแพด",
   "Navigate with a connected controller": "นำทางด้วยคอนโทรลเลอร์ที่เชื่อมต่อ",
-  "Lock Horizontal Panning": "ล็อคการเลื่อนแนวนอน"
+  "Lock Horizontal Panning": "ล็อคการเลื่อนแนวนอน",
+  "Select ReadEra Backup File": "เลือกไฟล์สำรองข้อมูลของ ReadEra",
+  "This is not a ReadEra backup file.": "นี่ไม่ใช่ไฟล์สำรองข้อมูลของ ReadEra",
+  "This book was not found in the ReadEra backup.": "ไม่พบหนังสือเล่มนี้ในข้อมูลสำรองของ ReadEra",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ไฟล์สำรองข้อมูลของ ReadEra (.bak)"
 }

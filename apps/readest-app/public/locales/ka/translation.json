@@ -2301,5 +2301,10 @@
   "{{name}}'s Readest": "{{name}}-ის Readest",
   "Gamepad Support": "გეიმპედის მხარდაჭერა",
   "Navigate with a connected controller": "ნავიგაცია მიერთებული კონტროლერით",
-  "Lock Horizontal Panning": "ჰორიზონტალური გადაადგილების დაბლოკვა"
+  "Lock Horizontal Panning": "ჰორიზონტალური გადაადგილების დაბლოკვა",
+  "Select ReadEra Backup File": "აირჩიეთ ReadEra-ს სარეზერვო ასლის ფაილი",
+  "This is not a ReadEra backup file.": "ეს არ არის ReadEra-ს სარეზერვო ასლის ფაილი.",
+  "This book was not found in the ReadEra backup.": "ეს წიგნი ვერ მოიძებნა ReadEra-ს სარეზერვო ასლში.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra-ს სარეზერვო ასლის ფაილი (.bak)"
 }

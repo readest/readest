@@ -2301,5 +2301,10 @@
   "{{name}}'s Readest": "{{name}} Readestje",
   "Gamepad Support": "Kontroller támogatása",
   "Navigate with a connected controller": "Navigálás csatlakoztatott kontrollerrel",
-  "Lock Horizontal Panning": "Vízszintes mozgatás zárolása"
+  "Lock Horizontal Panning": "Vízszintes mozgatás zárolása",
+  "Select ReadEra Backup File": "ReadEra biztonsági mentés kiválasztása",
+  "This is not a ReadEra backup file.": "Ez nem ReadEra biztonsági mentés fájl.",
+  "This book was not found in the ReadEra backup.": "Ez a könyv nem található a ReadEra biztonsági mentésben.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra biztonsági mentés fájlja (.bak)"
 }

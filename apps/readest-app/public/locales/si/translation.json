@@ -2301,5 +2301,10 @@
   "{{name}}'s Readest": "{{name}} ගේ Readest",
   "Gamepad Support": "ගේම්පෑඩ් සහාය",
   "Navigate with a connected controller": "සම්බන්ධිත පාලකයක් සමඟ සංචලනය කරන්න",
-  "Lock Horizontal Panning": "තිරස් චලනය අගුළු දමන්න"
+  "Lock Horizontal Panning": "තිරස් චලනය අගුළු දමන්න",
+  "Select ReadEra Backup File": "ReadEra උපස්ථ ගොනුව තෝරන්න",
+  "This is not a ReadEra backup file.": "මෙය ReadEra උපස්ථ ගොනුවක් නොවේ.",
+  "This book was not found in the ReadEra backup.": "මෙම පොත ReadEra උපස්ථයේ හමු නොවීය.",
+  "ReadEra": "ReadEra",
+  "ReadEra backup file (.bak)": "ReadEra උපස්ථ ගොනුව (.bak)"
 }
