@@ -184,6 +184,46 @@ export interface DocumentLoaderOptions {
   nativeFilePath?: string;
 }
 
+type PDFJSGlobal = {
+  GlobalWorkerOptions: { workerSrc: string };
+};
+
+let compatPDFWorkerURL: string | undefined;
+
+async function configurePDFWorker() {
+  if (typeof ArrayBuffer.prototype.transferToFixedLength === 'function') return;
+
+  // PDF.js 6 uses transferToFixedLength inside its worker, but WebKit 16 does
+  // not provide it. PDF.js swallows the resulting worker error and renders an
+  // empty operator list, leaving both the cover and every page blank (#6015).
+  await import('@pdfjs/pdf.min.mjs');
+  const { pdfjsLib } = globalThis as typeof globalThis & { pdfjsLib: PDFJSGlobal };
+  const workerURL = new URL('/vendor/pdfjs/pdf.worker.min.mjs', location.href).href;
+  compatPDFWorkerURL ??= URL.createObjectURL(
+    new Blob(
+      [
+        `if (!ArrayBuffer.prototype.transferToFixedLength) {
+  Object.defineProperty(ArrayBuffer.prototype, 'transferToFixedLength', {
+    configurable: true,
+    writable: true,
+    value(newByteLength = this.byteLength) {
+      const result = new ArrayBuffer(newByteLength);
+      new Uint8Array(result).set(
+        new Uint8Array(this, 0, Math.min(this.byteLength, result.byteLength)),
+      );
+      return result;
+    },
+  });
+}
+const { WorkerMessageHandler } = await import(${JSON.stringify(workerURL)});
+export { WorkerMessageHandler };`,
+      ],
+      { type: 'text/javascript' },
+    ),
+  );
+  pdfjsLib.GlobalWorkerOptions.workerSrc = compatPDFWorkerURL;
+}
+
 export class DocumentLoader {
   private file: File;
   private nativeFilePath?: string;
@@ -469,6 +509,7 @@ export class DocumentLoader {
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {
+        await configurePDFWorker();
         const { makePDF } = await import('foliate-js/pdf.js');
         book = await makePDF(this.file);
         format = 'PDF';
