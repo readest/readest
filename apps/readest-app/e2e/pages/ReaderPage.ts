@@ -452,9 +452,14 @@ export class ReaderPage extends BasePage {
     await this.page.getByRole('menuitem', { name: `Instant ${action}` }).click();
   }
 
-  /** A tool button inside the annotation popup, by its accessible name. */
+  /**
+   * A tool button inside the annotation popup, by its accessible name. The
+   * match is exact for string names: the highlight style/color strip shows
+   * alongside the toolbar since #5983, and its "Select highlight style"
+   * button would also answer to a substring match on 'Highlight'.
+   */
   popupTool(name: string | RegExp): Locator {
-    return this.annotationPopup.getByRole('button', { name });
+    return this.annotationPopup.getByRole('button', { name, exact: typeof name === 'string' });
   }
 
   async highlightSelection(): Promise<void> {
