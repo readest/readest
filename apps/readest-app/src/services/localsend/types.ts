@@ -38,6 +38,12 @@ export interface ReceiveRequest {
     deviceModel: string | null;
     deviceType: string | null;
     fingerprint: string;
+    /**
+     * True when `fingerprint` came from the sender's TLS client cert; false
+     * means the spoofable prepare-upload body fingerprint (cert-less senders
+     * like the stock LocalSend app). Auto-accept requires true.
+     */
+    certVerified: boolean;
   };
   files: LocalSendFile[];
 }

@@ -2041,8 +2041,6 @@
   "Nearby": "Közeli",
   "{{matched}} of {{total}}": "{{matched}} / {{total}}",
   "Purchases restored successfully.": "A vásárlások sikeresen visszaállítva.",
-  "Send {{count}} book(s) to nearby device_one": "{{count}} könyv küldése közeli eszközre",
-  "Send {{count}} book(s) to nearby device_other": "{{count}} könyv küldése közeli eszközre",
   "Refresh devices": "Eszközök frissítése",
   "Enable Nearby BookDrop in Settings to send books.": "A könyvek küldéséhez engedélyezze a Nearby BookDrop funkciót a Beállításokban.",
   "Sending to {{alias}}": "Küldés ide: {{alias}}",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "{{percent}}% megtakarítás",
   "Change billing period": "Számlázási időszak módosítása",
   "{{price}} billed yearly": "{{price}} évente számlázva",
-  "Unlocked": "Feloldva"
+  "Unlocked": "Feloldva",
+  "Receiving from paired device {{alias}}": "Fogadás a párosított eszközről: {{alias}}",
+  "Always accept from {{alias}}": "Mindig fogadd el tőle: {{alias}}",
+  "Transfer Sounds": "Átviteli hangok",
+  "Play a sound when transfers start, finish, or fail": "Hang lejátszása az átvitel indulásakor, befejeződésekor vagy hibájakor",
+  "Paired Devices": "Párosított eszközök",
+  "Paired {{date}}": "Párosítva: {{date}}",
+  "Unpair": "Párosítás törlése",
+  "Books from paired devices are accepted automatically, without asking.": "A párosított eszközökről érkező könyveket rákérdezés nélkül, automatikusan elfogadjuk.",
+  "As {{alias}}": "Mint {{alias}}"
 }

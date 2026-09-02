@@ -2041,8 +2041,6 @@
   "Nearby": "Yakındakiler",
   "{{matched}} of {{total}}": "{{total}} içinde {{matched}}",
   "Purchases restored successfully.": "Satın alımlar başarıyla geri yüklendi.",
-  "Send {{count}} book(s) to nearby device_one": "{{count}} kitabı yakındaki cihaza gönder",
-  "Send {{count}} book(s) to nearby device_other": "{{count}} kitabı yakındaki cihaza gönder",
   "Refresh devices": "Cihazları yenile",
   "Enable Nearby BookDrop in Settings to send books.": "Kitap göndermek için Ayarlar’dan Nearby BookDrop’u etkinleştirin.",
   "Sending to {{alias}}": "{{alias}} cihazına gönderiliyor",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "%{{percent}} tasarruf",
   "Change billing period": "Faturalandırma dönemini değiştir",
   "{{price}} billed yearly": "Yıllık {{price}} olarak faturalandırılır",
-  "Unlocked": "Kilidi açıldı"
+  "Unlocked": "Kilidi açıldı",
+  "Receiving from paired device {{alias}}": "Eşleştirilmiş cihazdan alınıyor: {{alias}}",
+  "Always accept from {{alias}}": "{{alias}} cihazından her zaman kabul et",
+  "Transfer Sounds": "Aktarım Sesleri",
+  "Play a sound when transfers start, finish, or fail": "Aktarımlar başladığında, bittiğinde veya başarısız olduğunda ses çal",
+  "Paired Devices": "Eşleştirilmiş Cihazlar",
+  "Paired {{date}}": "{{date}} tarihinde eşleştirildi",
+  "Unpair": "Eşleştirmeyi Kaldır",
+  "Books from paired devices are accepted automatically, without asking.": "Eşleştirilmiş cihazlardan gelen kitaplar sorulmadan otomatik olarak kabul edilir.",
+  "As {{alias}}": "{{alias}} olarak"
 }

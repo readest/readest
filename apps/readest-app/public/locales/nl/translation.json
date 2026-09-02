@@ -2041,8 +2041,6 @@
   "Nearby": "In de buurt",
   "{{matched}} of {{total}}": "{{matched}} van {{total}}",
   "Purchases restored successfully.": "Aankopen hersteld.",
-  "Send {{count}} book(s) to nearby device_one": "{{count}} boek naar apparaat in de buurt sturen",
-  "Send {{count}} book(s) to nearby device_other": "{{count}} boeken naar apparaat in de buurt sturen",
   "Refresh devices": "Apparaten vernieuwen",
   "Enable Nearby BookDrop in Settings to send books.": "Schakel Nearby BookDrop in bij Instellingen om boeken te versturen.",
   "Sending to {{alias}}": "Versturen naar {{alias}}",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "Bespaar {{percent}}%",
   "Change billing period": "Facturatieperiode wijzigen",
   "{{price}} billed yearly": "{{price}} jaarlijks gefactureerd",
-  "Unlocked": "Ontgrendeld"
+  "Unlocked": "Ontgrendeld",
+  "Receiving from paired device {{alias}}": "Ontvangen van gekoppeld apparaat {{alias}}",
+  "Always accept from {{alias}}": "Altijd accepteren van {{alias}}",
+  "Transfer Sounds": "Overdrachtsgeluiden",
+  "Play a sound when transfers start, finish, or fail": "Geluid afspelen wanneer overdrachten starten, voltooien of mislukken",
+  "Paired Devices": "Gekoppelde apparaten",
+  "Paired {{date}}": "Gekoppeld op {{date}}",
+  "Unpair": "Ontkoppelen",
+  "Books from paired devices are accepted automatically, without asking.": "Boeken van gekoppelde apparaten worden automatisch geaccepteerd, zonder vragen.",
+  "As {{alias}}": "Als {{alias}}"
 }

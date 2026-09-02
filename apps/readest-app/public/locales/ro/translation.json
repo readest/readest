@@ -2087,9 +2087,6 @@
   "Nearby": "În apropiere",
   "{{matched}} of {{total}}": "{{matched}} din {{total}}",
   "Purchases restored successfully.": "Achizițiile au fost restaurate cu succes.",
-  "Send {{count}} book(s) to nearby device_one": "Trimite {{count}} carte către un dispozitiv din apropiere",
-  "Send {{count}} book(s) to nearby device_few": "Trimite {{count}} cărți către un dispozitiv din apropiere",
-  "Send {{count}} book(s) to nearby device_other": "Trimite {{count}} de cărți către un dispozitiv din apropiere",
   "Refresh devices": "Reîmprospătează dispozitivele",
   "Enable Nearby BookDrop in Settings to send books.": "Activați Nearby BookDrop din Setări pentru a trimite cărți.",
   "Sending to {{alias}}": "Se trimite către {{alias}}",
@@ -2349,5 +2346,14 @@
   "Save {{percent}}%": "Economisiți {{percent}}%",
   "Change billing period": "Schimbă perioada de facturare",
   "{{price}} billed yearly": "{{price}} facturat anual",
-  "Unlocked": "Deblocat"
+  "Unlocked": "Deblocat",
+  "Receiving from paired device {{alias}}": "Se primește de la dispozitivul asociat {{alias}}",
+  "Always accept from {{alias}}": "Acceptă întotdeauna de la {{alias}}",
+  "Transfer Sounds": "Sunete de transfer",
+  "Play a sound when transfers start, finish, or fail": "Redă un sunet când transferurile încep, se termină sau eșuează",
+  "Paired Devices": "Dispozitive asociate",
+  "Paired {{date}}": "Asociat la {{date}}",
+  "Unpair": "Anulează asocierea",
+  "Books from paired devices are accepted automatically, without asking.": "Cărțile de la dispozitivele asociate sunt acceptate automat, fără întrebare.",
+  "As {{alias}}": "Ca {{alias}}"
 }

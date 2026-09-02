@@ -2010,7 +2010,6 @@
   "Nearby": "附近设备",
   "{{matched}} of {{total}}": "{{matched}} / {{total}}",
   "Purchases restored successfully.": "购买已成功恢复。",
-  "Send {{count}} book(s) to nearby device_other": "发送 {{count}} 本书到附近设备",
   "Refresh devices": "刷新设备",
   "Enable Nearby BookDrop in Settings to send books.": "请在设置中启用 Nearby BookDrop 以发送图书。",
   "Sending to {{alias}}": "正在发送到 {{alias}}",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "省 {{percent}}%",
   "Change billing period": "更改结算周期",
   "{{price}} billed yearly": "按年收取 {{price}}",
-  "Unlocked": "已解锁"
+  "Unlocked": "已解锁",
+  "Receiving from paired device {{alias}}": "正在接收来自已配对设备 {{alias}} 的传输",
+  "Always accept from {{alias}}": "始终接受来自 {{alias}} 的传输",
+  "Transfer Sounds": "传输提示音",
+  "Play a sound when transfers start, finish, or fail": "在传输开始、完成或失败时播放提示音",
+  "Paired Devices": "已配对设备",
+  "Paired {{date}}": "配对于 {{date}}",
+  "Unpair": "取消配对",
+  "Books from paired devices are accepted automatically, without asking.": "来自已配对设备的书籍将自动接收，无需确认。",
+  "As {{alias}}": "以 {{alias}} 的身份"
 }

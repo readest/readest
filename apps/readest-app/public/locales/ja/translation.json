@@ -1995,7 +1995,6 @@
   "Nearby": "近くに送信",
   "{{matched}} of {{total}}": "{{total}}件中{{matched}}件",
   "Purchases restored successfully.": "購入が正常に復元されました。",
-  "Send {{count}} book(s) to nearby device_other": "{{count}}冊の本を近くのデバイスに送信",
   "Refresh devices": "デバイスを更新",
   "Enable Nearby BookDrop in Settings to send books.": "本を送信するには、設定でNearby BookDropを有効にしてください。",
   "Sending to {{alias}}": "{{alias}}に送信中",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "{{percent}}%お得",
   "Change billing period": "お支払い間隔を変更",
   "{{price}} billed yearly": "年額 {{price}} で請求",
-  "Unlocked": "解除済み"
+  "Unlocked": "解除済み",
+  "Receiving from paired device {{alias}}": "ペアリング済みデバイス {{alias}} から受信中",
+  "Always accept from {{alias}}": "{{alias}} から常に受け入れる",
+  "Transfer Sounds": "転送音",
+  "Play a sound when transfers start, finish, or fail": "転送の開始・完了・失敗時に音を鳴らす",
+  "Paired Devices": "ペアリング済みデバイス",
+  "Paired {{date}}": "{{date}} にペアリング",
+  "Unpair": "ペアリング解除",
+  "Books from paired devices are accepted automatically, without asking.": "ペアリング済みデバイスからの本は確認なしで自動的に受け入れられます。",
+  "As {{alias}}": "{{alias}} として"
 }

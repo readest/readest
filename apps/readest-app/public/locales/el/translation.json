@@ -2041,8 +2041,6 @@
   "Nearby": "Κοντινές",
   "{{matched}} of {{total}}": "{{matched}} από {{total}}",
   "Purchases restored successfully.": "Οι αγορές επαναφέρθηκαν με επιτυχία.",
-  "Send {{count}} book(s) to nearby device_one": "Αποστολή {{count}} βιβλίου σε κοντινή συσκευή",
-  "Send {{count}} book(s) to nearby device_other": "Αποστολή {{count}} βιβλίων σε κοντινή συσκευή",
   "Refresh devices": "Ανανέωση συσκευών",
   "Enable Nearby BookDrop in Settings to send books.": "Ενεργοποιήστε το Nearby BookDrop στις Ρυθμίσεις για να στέλνετε βιβλία.",
   "Sending to {{alias}}": "Αποστολή σε {{alias}}",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "Κερδίστε {{percent}}%",
   "Change billing period": "Αλλαγή περιόδου χρέωσης",
   "{{price}} billed yearly": "{{price}} με ετήσια χρέωση",
-  "Unlocked": "Ξεκλειδώθηκε"
+  "Unlocked": "Ξεκλειδώθηκε",
+  "Receiving from paired device {{alias}}": "Λήψη από τη συζευγμένη συσκευή {{alias}}",
+  "Always accept from {{alias}}": "Να γίνεται πάντα αποδοχή από {{alias}}",
+  "Transfer Sounds": "Ήχοι μεταφοράς",
+  "Play a sound when transfers start, finish, or fail": "Αναπαραγωγή ήχου όταν οι μεταφορές ξεκινούν, ολοκληρώνονται ή αποτυγχάνουν",
+  "Paired Devices": "Συζευγμένες συσκευές",
+  "Paired {{date}}": "Συζεύχθηκε στις {{date}}",
+  "Unpair": "Κατάργηση σύζευξης",
+  "Books from paired devices are accepted automatically, without asking.": "Τα βιβλία από συζευγμένες συσκευές γίνονται αποδεκτά αυτόματα, χωρίς ερώτηση.",
+  "As {{alias}}": "Ως {{alias}}"
 }

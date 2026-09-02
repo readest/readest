@@ -2010,7 +2010,6 @@
   "Nearby": "附近裝置",
   "{{matched}} of {{total}}": "{{matched}} / {{total}}",
   "Purchases restored successfully.": "購買項目已成功還原。",
-  "Send {{count}} book(s) to nearby device_other": "傳送 {{count}} 本書到附近裝置",
   "Refresh devices": "重新整理裝置",
   "Enable Nearby BookDrop in Settings to send books.": "請在設定中啟用 Nearby BookDrop 以傳送書籍。",
   "Sending to {{alias}}": "正在傳送到 {{alias}}",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "省 {{percent}}%",
   "Change billing period": "變更結算週期",
   "{{price}} billed yearly": "按年收取 {{price}}",
-  "Unlocked": "已解鎖"
+  "Unlocked": "已解鎖",
+  "Receiving from paired device {{alias}}": "正在接收來自已配對裝置 {{alias}} 的傳輸",
+  "Always accept from {{alias}}": "一律接受來自 {{alias}} 的傳輸",
+  "Transfer Sounds": "傳輸提示音",
+  "Play a sound when transfers start, finish, or fail": "在傳輸開始、完成或失敗時播放提示音",
+  "Paired Devices": "已配對裝置",
+  "Paired {{date}}": "配對於 {{date}}",
+  "Unpair": "取消配對",
+  "Books from paired devices are accepted automatically, without asking.": "來自已配對裝置的書籍將自動接收，無需確認。",
+  "As {{alias}}": "以 {{alias}} 的身分"
 }

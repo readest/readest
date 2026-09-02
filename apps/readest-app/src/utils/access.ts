@@ -100,6 +100,31 @@ export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased: boolea
   !TTS_CACHE_REQUIRES_PREMIUM || isTTSCacheInPlan(plan, customizationPurchased);
 
 /**
+ * Plans that include Nearby BookDrop device pairing — trusted devices whose
+ * drops skip the per-transfer confirmation dialog: any paid plan (Plus, Pro,
+ * and Lifetime `purchase`). Free users see the pairing affordance with a
+ * Premium badge and an upgrade route; plain confirm-every-time transfers stay
+ * free. This gate is client-side only (LAN transfers have no server in the
+ * path), matching the TTS-cache gate's trust level.
+ */
+export const NEARBY_PAIRING_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+
+export const isNearbyPairingInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
+  isCustomizationAllowed(plan, customizationPurchased);
+
+/**
+ * Master switch for the pairing paywall, mirroring
+ * {@link CLOUD_SYNC_REQUIRES_PREMIUM}. ON: pairing (and therefore
+ * confirmation-free drops) requires a {@link NEARBY_PAIRING_PLANS} plan.
+ * Flipping it off ungates every plan. Existing pairing records always
+ * persist; only the auto-accept behavior is gated.
+ */
+export const NEARBY_PAIRING_REQUIRES_PREMIUM = true;
+
+export const isNearbyPairingAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
+  !NEARBY_PAIRING_REQUIRES_PREMIUM || isNearbyPairingInPlan(plan, customizationPurchased);
+
+/**
  * Whether the account has bought the Full Customization unlock, as minted into
  * the access token by `custom_access_token_hook`. Absent on tokens issued
  * before the claim existed, which reads as not purchased.

@@ -1995,7 +1995,6 @@
   "Nearby": "근처 기기",
   "{{matched}} of {{total}}": "{{total}}개 중 {{matched}}개",
   "Purchases restored successfully.": "구매가 성공적으로 복원되었습니다.",
-  "Send {{count}} book(s) to nearby device_other": "책 {{count}}권을 근처 기기로 보내기",
   "Refresh devices": "기기 새로고침",
   "Enable Nearby BookDrop in Settings to send books.": "책을 보내려면 설정에서 Nearby BookDrop을 활성화하세요.",
   "Sending to {{alias}}": "{{alias}}(으)로 보내는 중",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "{{percent}}% 할인",
   "Change billing period": "결제 주기 변경",
   "{{price}} billed yearly": "연 {{price}} 청구",
-  "Unlocked": "잠금 해제됨"
+  "Unlocked": "잠금 해제됨",
+  "Receiving from paired device {{alias}}": "페어링된 기기 {{alias}}에서 수신 중",
+  "Always accept from {{alias}}": "{{alias}}의 전송 항상 수락",
+  "Transfer Sounds": "전송 소리",
+  "Play a sound when transfers start, finish, or fail": "전송이 시작, 완료 또는 실패할 때 소리 재생",
+  "Paired Devices": "페어링된 기기",
+  "Paired {{date}}": "{{date}}에 페어링됨",
+  "Unpair": "페어링 해제",
+  "Books from paired devices are accepted automatically, without asking.": "페어링된 기기의 책은 확인 없이 자동으로 수락됩니다.",
+  "As {{alias}}": "{{alias}}(으)로 표시"
 }

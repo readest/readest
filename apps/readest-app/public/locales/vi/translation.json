@@ -1995,7 +1995,6 @@
   "Nearby": "Gần đây",
   "{{matched}} of {{total}}": "{{matched}} trên {{total}}",
   "Purchases restored successfully.": "Đã khôi phục các giao dịch mua thành công.",
-  "Send {{count}} book(s) to nearby device_other": "Gửi {{count}} cuốn sách đến thiết bị gần đây",
   "Refresh devices": "Làm mới danh sách thiết bị",
   "Enable Nearby BookDrop in Settings to send books.": "Bật Nearby BookDrop trong Cài đặt để gửi sách.",
   "Sending to {{alias}}": "Đang gửi đến {{alias}}",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "Tiết kiệm {{percent}}%",
   "Change billing period": "Thay đổi chu kỳ thanh toán",
   "{{price}} billed yearly": "Thanh toán {{price}} mỗi năm",
-  "Unlocked": "Đã mở khóa"
+  "Unlocked": "Đã mở khóa",
+  "Receiving from paired device {{alias}}": "Đang nhận từ thiết bị đã ghép nối {{alias}}",
+  "Always accept from {{alias}}": "Luôn chấp nhận từ {{alias}}",
+  "Transfer Sounds": "Âm thanh truyền tệp",
+  "Play a sound when transfers start, finish, or fail": "Phát âm thanh khi quá trình truyền bắt đầu, hoàn tất hoặc thất bại",
+  "Paired Devices": "Thiết bị đã ghép nối",
+  "Paired {{date}}": "Đã ghép nối {{date}}",
+  "Unpair": "Hủy ghép nối",
+  "Books from paired devices are accepted automatically, without asking.": "Sách từ các thiết bị đã ghép nối được tự động chấp nhận mà không cần hỏi.",
+  "As {{alias}}": "Với tên {{alias}}"
 }

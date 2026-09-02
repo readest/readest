@@ -1995,7 +1995,6 @@
   "Nearby": "ཉེ་འཁོར།",
   "{{matched}} of {{total}}": "{{total}} ནང་ནས་ {{matched}}",
   "Purchases restored successfully.": "ཉོ་སྒྲུབ་ལེགས་པར་སོར་ཆུད་སོང་།",
-  "Send {{count}} book(s) to nearby device_other": "དེབ་ {{count}} ཉེ་འཁོར་གྱི་སྒྲིག་ཆས་ལ་སྐུར་བ།",
   "Refresh devices": "སྒྲིག་ཆས་གསར་སྒྱུར།",
   "Enable Nearby BookDrop in Settings to send books.": "དེབ་སྐུར་བར་སྒྲིག་འགོད་ནང་ Nearby BookDrop སྤྱོད་འགོ་ཚུགས་རོགས།",
   "Sending to {{alias}}": "{{alias}} ལ་སྐུར་བཞིན་པ།",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "བརྒྱ་ཆ་{{percent}} གྲོན་ཆུང་།",
   "Change billing period": "རྩིས་སྤྲོད་དུས་ཡུན་བསྒྱུར་བ།",
   "{{price}} billed yearly": "ལོ་རེར་ {{price}} རྩིས་སྤྲོད།",
-  "Unlocked": "ཁ་ཕྱེ་ཟིན།"
+  "Unlocked": "ཁ་ཕྱེ་ཟིན།",
+  "Receiving from paired device {{alias}}": "ཟུང་སྦྲེལ་བྱས་པའི་སྒྲིག་ཆས་ {{alias}} ནས་ལེན་བཞིན་པ།",
+  "Always accept from {{alias}}": "{{alias}} ནས་རྟག་ཏུ་དང་ལེན་བྱེད།",
+  "Transfer Sounds": "སྐྱེལ་འདྲེན་སྒྲ།",
+  "Play a sound when transfers start, finish, or fail": "སྐྱེལ་འདྲེན་འགོ་ཚུགས་པ་དང་། ལེགས་གྲུབ། ཡང་ན་ཕམ་སྐབས་སྒྲ་གཏོང་།",
+  "Paired Devices": "ཟུང་སྦྲེལ་སྒྲིག་ཆས།",
+  "Paired {{date}}": "{{date}} ལ་ཟུང་སྦྲེལ་བྱས།",
+  "Unpair": "ཟུང་སྦྲེལ་འདོར་བ།",
+  "Books from paired devices are accepted automatically, without asking.": "ཟུང་སྦྲེལ་སྒྲིག་ཆས་ནས་འབྱོར་བའི་དཔེ་ཆ་རྣམས་དྲི་བ་མེད་པར་རང་འགུལ་གྱིས་དང་ལེན་བྱེད།",
+  "As {{alias}}": "{{alias}} ཞེས་སུ།"
 }

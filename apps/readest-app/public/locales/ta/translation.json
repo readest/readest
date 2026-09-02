@@ -2041,8 +2041,6 @@
   "Nearby": "அருகில்",
   "{{matched}} of {{total}}": "{{total}}-இல் {{matched}}",
   "Purchases restored successfully.": "கொள்முதல்கள் வெற்றிகரமாக மீட்டமைக்கப்பட்டன.",
-  "Send {{count}} book(s) to nearby device_one": "{{count}} புத்தகத்தை அருகிலுள்ள சாதனத்திற்கு அனுப்பு",
-  "Send {{count}} book(s) to nearby device_other": "{{count}} புத்தகங்களை அருகிலுள்ள சாதனத்திற்கு அனுப்பு",
   "Refresh devices": "சாதனங்களைப் புதுப்பி",
   "Enable Nearby BookDrop in Settings to send books.": "புத்தகங்களை அனுப்ப அமைப்புகளில் Nearby BookDrop-ஐ இயக்கவும்.",
   "Sending to {{alias}}": "{{alias}}-க்கு அனுப்பப்படுகிறது",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "{{percent}}% சேமிக்கவும்",
   "Change billing period": "கட்டணக் காலத்தை மாற்று",
   "{{price}} billed yearly": "ஆண்டுக்கு {{price}} வசூலிக்கப்படும்",
-  "Unlocked": "திறக்கப்பட்டது"
+  "Unlocked": "திறக்கப்பட்டது",
+  "Receiving from paired device {{alias}}": "இணைக்கப்பட்ட சாதனம் {{alias}} இலிருந்து பெறப்படுகிறது",
+  "Always accept from {{alias}}": "{{alias}} இடமிருந்து எப்போதும் ஏற்கவும்",
+  "Transfer Sounds": "பரிமாற்ற ஒலிகள்",
+  "Play a sound when transfers start, finish, or fail": "பரிமாற்றங்கள் தொடங்கும், முடியும் அல்லது தோல்வியடையும் போது ஒலியை இயக்கவும்",
+  "Paired Devices": "இணைக்கப்பட்ட சாதனங்கள்",
+  "Paired {{date}}": "{{date}} அன்று இணைக்கப்பட்டது",
+  "Unpair": "இணைப்பு நீக்கு",
+  "Books from paired devices are accepted automatically, without asking.": "இணைக்கப்பட்ட சாதனங்களிலிருந்து வரும் புத்தகங்கள் கேட்காமல் தானாக ஏற்கப்படும்.",
+  "As {{alias}}": "{{alias}} ஆக"
 }

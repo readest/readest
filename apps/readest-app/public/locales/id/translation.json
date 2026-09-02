@@ -1995,7 +1995,6 @@
   "Nearby": "Terdekat",
   "{{matched}} of {{total}}": "{{matched}} dari {{total}}",
   "Purchases restored successfully.": "Pembelian berhasil dipulihkan.",
-  "Send {{count}} book(s) to nearby device_other": "Kirim {{count}} buku ke perangkat terdekat",
   "Refresh devices": "Segarkan perangkat",
   "Enable Nearby BookDrop in Settings to send books.": "Aktifkan Nearby BookDrop di Pengaturan untuk mengirim buku.",
   "Sending to {{alias}}": "Mengirim ke {{alias}}",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "Hemat {{percent}}%",
   "Change billing period": "Ubah periode penagihan",
   "{{price}} billed yearly": "{{price}} ditagih per tahun",
-  "Unlocked": "Terbuka"
+  "Unlocked": "Terbuka",
+  "Receiving from paired device {{alias}}": "Menerima dari perangkat yang dipasangkan {{alias}}",
+  "Always accept from {{alias}}": "Selalu terima dari {{alias}}",
+  "Transfer Sounds": "Suara Transfer",
+  "Play a sound when transfers start, finish, or fail": "Putar suara saat transfer dimulai, selesai, atau gagal",
+  "Paired Devices": "Perangkat yang Dipasangkan",
+  "Paired {{date}}": "Dipasangkan {{date}}",
+  "Unpair": "Batalkan Pemasangan",
+  "Books from paired devices are accepted automatically, without asking.": "Buku dari perangkat yang dipasangkan diterima secara otomatis, tanpa konfirmasi.",
+  "As {{alias}}": "Sebagai {{alias}}"
 }

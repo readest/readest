@@ -2087,9 +2087,6 @@
   "Nearby": "בקרבת מקום",
   "{{matched}} of {{total}}": "{{matched}} מתוך {{total}}",
   "Purchases restored successfully.": "הרכישות שוחזרו בהצלחה.",
-  "Send {{count}} book(s) to nearby device_one": "שליחת ספר אחד למכשיר קרוב",
-  "Send {{count}} book(s) to nearby device_two": "שליחת {{count}} ספרים למכשיר קרוב",
-  "Send {{count}} book(s) to nearby device_other": "שליחת {{count}} ספרים למכשיר קרוב",
   "Refresh devices": "רענון מכשירים",
   "Enable Nearby BookDrop in Settings to send books.": "הפעילו את Nearby BookDrop בהגדרות כדי לשלוח ספרים.",
   "Sending to {{alias}}": "שולח אל {{alias}}",
@@ -2349,5 +2346,14 @@
   "Save {{percent}}%": "חיסכון של {{percent}}%",
   "Change billing period": "שינוי תקופת החיוב",
   "{{price}} billed yearly": "{{price}} בחיוב שנתי",
-  "Unlocked": "נפתח"
+  "Unlocked": "נפתח",
+  "Receiving from paired device {{alias}}": "מקבל ממכשיר מצומד {{alias}}",
+  "Always accept from {{alias}}": "תמיד לקבל מ-{{alias}}",
+  "Transfer Sounds": "צלילי העברה",
+  "Play a sound when transfers start, finish, or fail": "השמע צליל כאשר העברות מתחילות, מסתיימות או נכשלות",
+  "Paired Devices": "מכשירים מצומדים",
+  "Paired {{date}}": "צומד בתאריך {{date}}",
+  "Unpair": "ביטול צימוד",
+  "Books from paired devices are accepted automatically, without asking.": "ספרים ממכשירים מצומדים מתקבלים אוטומטית, ללא שאלה.",
+  "As {{alias}}": "בתור {{alias}}"
 }

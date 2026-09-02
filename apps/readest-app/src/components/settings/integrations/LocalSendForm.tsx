@@ -7,12 +7,21 @@ import {
   setLocalSendAlias,
   setLocalSendEnabled,
 } from '@/services/localsend/devicePrefs';
+import { getPairedDevices, removePairedDevice } from '@/services/localsend/pairedDevices';
+import { isLocalSendSoundsEnabled, setLocalSendSoundsEnabled } from '@/services/localsend/sounds';
 import { getLocalSendStatus } from '@/services/localsend/service';
 import { ipTag } from '@/services/localsend/deviceModel';
 import type { LocalSendStatus } from '@/services/localsend/types';
 import { eventDispatcher } from '@/utils/event';
 import SubPageHeader from '../SubPageHeader';
-import { BoxedList, SettingsInput, SettingsRow, SettingsSwitchRow, Tips } from '../primitives';
+import {
+  BoxedList,
+  SectionTitle,
+  SettingsInput,
+  SettingsRow,
+  SettingsSwitchRow,
+  Tips,
+} from '../primitives';
 
 /**
  * "#120 macOS"-style tag: the last octet of this host's IPv4 address plus
@@ -39,12 +48,25 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
   const status = useLocalSendStore((state) => state.status);
   const [enabled, setEnabled] = useState(() => isLocalSendEnabled());
   const [alias, setAlias] = useState(() => getLocalSendAlias());
+  const [sounds, setSounds] = useState(() => isLocalSendSoundsEnabled());
+  const [paired, setPaired] = useState(() => getPairedDevices());
 
   const toggleEnabled = () => {
     const next = !enabled;
     setEnabled(next);
     setLocalSendEnabled(next);
     eventDispatcher.dispatch('localsend-prefs-changed', {});
+  };
+
+  const toggleSounds = () => {
+    const next = !sounds;
+    setSounds(next);
+    setLocalSendSoundsEnabled(next);
+  };
+
+  const unpair = (fingerprint: string) => {
+    removePairedDevice(fingerprint);
+    setPaired(getPairedDevices());
   };
 
   const commitAlias = () => {
@@ -94,7 +116,44 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
             }}
           />
         </SettingsRow>
+        <SettingsSwitchRow
+          label={_('Transfer Sounds')}
+          description={_('Play a sound when transfers start, finish, or fail')}
+          checked={sounds}
+          onChange={toggleSounds}
+        />
       </BoxedList>
+
+      {paired.length > 0 && (
+        <div>
+          <SectionTitle className='mb-2'>{_('Paired Devices')}</SectionTitle>
+          <BoxedList>
+            {paired.map((device) => (
+              <SettingsRow
+                key={device.fingerprint}
+                label={device.alias}
+                description={[
+                  device.deviceModel,
+                  _('Paired {{date}}', {
+                    date: new Date(device.pairedAt).toLocaleDateString(),
+                  }),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                asLabel={false}
+              >
+                <button
+                  type='button'
+                  className='btn btn-ghost btn-xs eink-bordered'
+                  onClick={() => unpair(device.fingerprint)}
+                >
+                  {_('Unpair')}
+                </button>
+              </SettingsRow>
+            ))}
+          </BoxedList>
+        </div>
+      )}
 
       {enabled && status?.running && (
         <BoxedList>
@@ -115,6 +174,9 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
           {_('Incoming books are added to your library after you accept each transfer request.')}
         </li>
         <li>{_('Only book files are accepted; other file types are declined automatically.')}</li>
+        {paired.length > 0 && (
+          <li>{_('Books from paired devices are accepted automatically, without asking.')}</li>
+        )}
         {status?.multicastError && (
           <li>
             {_('Device discovery via multicast is unavailable; devices may need a manual refresh.')}

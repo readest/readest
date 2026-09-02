@@ -2225,12 +2225,6 @@
   "Nearby": "الأجهزة القريبة",
   "{{matched}} of {{total}}": "{{matched}} من {{total}}",
   "Purchases restored successfully.": "تمت استعادة المشتريات بنجاح.",
-  "Send {{count}} book(s) to nearby device_zero": "إرسال الكتب إلى جهاز قريب",
-  "Send {{count}} book(s) to nearby device_one": "إرسال كتاب واحد إلى جهاز قريب",
-  "Send {{count}} book(s) to nearby device_two": "إرسال كتابين إلى جهاز قريب",
-  "Send {{count}} book(s) to nearby device_few": "إرسال {{count}} كتب إلى جهاز قريب",
-  "Send {{count}} book(s) to nearby device_many": "إرسال {{count}} كتابًا إلى جهاز قريب",
-  "Send {{count}} book(s) to nearby device_other": "إرسال {{count}} كتاب إلى جهاز قريب",
   "Refresh devices": "تحديث الأجهزة",
   "Enable Nearby BookDrop in Settings to send books.": "فعّل Nearby BookDrop في الإعدادات لإرسال الكتب.",
   "Sending to {{alias}}": "جارٍ الإرسال إلى {{alias}}",
@@ -2532,5 +2526,14 @@
   "Save {{percent}}%": "وفّر {{percent}}٪",
   "Change billing period": "تغيير فترة الفوترة",
   "{{price}} billed yearly": "{{price}} تُحصّل سنويًا",
-  "Unlocked": "تم إلغاء القفل"
+  "Unlocked": "تم إلغاء القفل",
+  "Receiving from paired device {{alias}}": "جارٍ الاستلام من الجهاز المقترن {{alias}}",
+  "Always accept from {{alias}}": "القبول دائمًا من {{alias}}",
+  "Transfer Sounds": "أصوات النقل",
+  "Play a sound when transfers start, finish, or fail": "تشغيل صوت عند بدء عمليات النقل أو اكتمالها أو فشلها",
+  "Paired Devices": "الأجهزة المقترنة",
+  "Paired {{date}}": "تم الاقتران في {{date}}",
+  "Unpair": "إلغاء الاقتران",
+  "Books from paired devices are accepted automatically, without asking.": "تُقبل الكتب من الأجهزة المقترنة تلقائيًا دون سؤال.",
+  "As {{alias}}": "باسم {{alias}}"
 }

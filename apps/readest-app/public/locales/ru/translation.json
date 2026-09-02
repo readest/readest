@@ -2133,10 +2133,6 @@
   "Nearby": "Поблизости",
   "{{matched}} of {{total}}": "{{matched}} из {{total}}",
   "Purchases restored successfully.": "Покупки успешно восстановлены.",
-  "Send {{count}} book(s) to nearby device_one": "Отправить {{count}} книгу на устройство поблизости",
-  "Send {{count}} book(s) to nearby device_few": "Отправить {{count}} книги на устройство поблизости",
-  "Send {{count}} book(s) to nearby device_many": "Отправить {{count}} книг на устройство поблизости",
-  "Send {{count}} book(s) to nearby device_other": "Отправить {{count}} книги на устройство поблизости",
   "Refresh devices": "Обновить список устройств",
   "Enable Nearby BookDrop in Settings to send books.": "Включите Nearby BookDrop в настройках, чтобы отправлять книги.",
   "Sending to {{alias}}": "Отправка на {{alias}}",
@@ -2410,5 +2406,14 @@
   "Save {{percent}}%": "Экономия {{percent}}%",
   "Change billing period": "Изменить период оплаты",
   "{{price}} billed yearly": "{{price}} при оплате за год",
-  "Unlocked": "Разблокировано"
+  "Unlocked": "Разблокировано",
+  "Receiving from paired device {{alias}}": "Приём с сопряжённого устройства {{alias}}",
+  "Always accept from {{alias}}": "Всегда принимать от {{alias}}",
+  "Transfer Sounds": "Звуки передачи",
+  "Play a sound when transfers start, finish, or fail": "Воспроизводить звук при начале, завершении или сбое передачи",
+  "Paired Devices": "Сопряжённые устройства",
+  "Paired {{date}}": "Сопряжено {{date}}",
+  "Unpair": "Разорвать сопряжение",
+  "Books from paired devices are accepted automatically, without asking.": "Книги с сопряжённых устройств принимаются автоматически, без запроса.",
+  "As {{alias}}": "Как {{alias}}"
 }

@@ -1,13 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useLocalSendStore } from '@/store/localsendStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
+import { isNearbyPairingAllowed } from '@/utils/access';
 import { getLocalSendAlias, isLocalSendEnabled } from '@/services/localsend/devicePrefs';
+import {
+  addPairedDevice,
+  canAutoAccept,
+  refreshPairedDevice,
+} from '@/services/localsend/pairedDevices';
+import { playTransferCue, primeTransferCues } from '@/services/localsend/sounds';
 import {
   cancelLocalSendReceive,
   respondLocalSend,
@@ -60,11 +69,41 @@ const LocalSendManager: React.FC = () => {
   const pendingRequest = useLocalSendStore((state) => state.pendingRequest);
   const [sendFiles, setSendFiles] = useState<SendFileInput[] | null>(null);
 
+  // Pairing entitlement, checked at receive time so a lapsed plan brings the
+  // confirmation dialogs back while the pairing records stay intact.
+  const { userProfilePlan, customizationPurchased } = useQuotaStats();
+  const pairingEntitled = isNearbyPairingAllowed(userProfilePlan ?? 'free', customizationPurchased);
+
   const toast = useCallback(
     (message: string, type: 'info' | 'error' | 'success' | 'warning' = 'info') =>
       eventDispatcher.dispatch('toast', { message, type, timeout: 3000 }),
     [],
   );
+
+  const cueOpts = useCallback(
+    () => ({ eink: !!useSettingsStore.getState().settings?.globalViewSettings?.isEink }),
+    [],
+  );
+
+  const haptic = useCallback(() => {
+    if (!appService?.hasHaptics) return;
+    try {
+      impactFeedback('medium');
+    } catch {
+      /* haptics are best-effort */
+    }
+  }, [appService]);
+
+  // Webview autoplay policies block sounds that fire without a user gesture
+  // (transfer complete, auto-accepted receives); unlock the cue elements on
+  // the first gesture. A session with no gesture at all degrades to
+  // toast + haptic, which is the accepted floor.
+  useEffect(() => {
+    if (!isTauriAppPlatform()) return;
+    const prime = () => primeTransferCues();
+    window.addEventListener('pointerdown', prime, { once: true });
+    return () => window.removeEventListener('pointerdown', prime);
+  }, []);
 
   const defaultAlias = useCallback(async (): Promise<string> => {
     try {
@@ -229,6 +268,8 @@ const LocalSendManager: React.FC = () => {
           if (reason === 'cancelled') {
             toast(_('Transfer from {{alias}} cancelled', { alias: owned.alias }));
           } else if (failed > 0) {
+            playTransferCue('fail', cueOpts());
+            haptic();
             toast(
               _('Received {{count}} book(s) from {{alias}}, {{failed}} failed', {
                 count: received,
@@ -238,6 +279,8 @@ const LocalSendManager: React.FC = () => {
               'warning',
             );
           } else {
+            playTransferCue('done', cueOpts());
+            haptic();
             toast(
               _('Received {{count}} book(s) from {{alias}}', {
                 count: received,
@@ -280,7 +323,7 @@ const LocalSendManager: React.FC = () => {
         promise.then((unlisten) => unlisten()).catch(() => {});
       });
     };
-  }, [appService, onFileDone, toast, _]);
+  }, [appService, onFileDone, toast, _, cueOpts, haptic]);
 
   // A request with no importable files is declined without a dialog.
   useEffect(() => {
@@ -293,18 +336,53 @@ const LocalSendManager: React.FC = () => {
     toast(_('No supported book files from {{alias}}', { alias: sender.alias }), 'warning');
   }, [pendingRequest, toast, _]);
 
+  // Paired auto-accept: a cert-verified, paired sender skips the dialog.
+  // Every window runs this; the respond call claims the session for exactly
+  // one of them (the same ownership rule as a manual accept).
+  useEffect(() => {
+    if (!pendingRequest) return;
+    const { supported } = partitionSupportedFiles(pendingRequest.files);
+    if (supported.length === 0) return; // the decline effect handles these
+    const { sessionId, sender } = pendingRequest;
+    if (!canAutoAccept(sender, pairingEntitled)) return;
+    refreshPairedDevice(sender.fingerprint, sender.alias, sender.deviceModel);
+    useLocalSendStore.getState().requestClosed(sessionId);
+    void (async () => {
+      const claimed = await respondLocalSend(
+        sessionId,
+        supported.map((file) => file.id),
+      );
+      if (claimed) {
+        useLocalSendStore.getState().claimSession(sessionId, sender.alias);
+        toast(_('Receiving from paired device {{alias}}', { alias: sender.alias }));
+        playTransferCue('start', cueOpts());
+        haptic();
+      }
+    })();
+  }, [pendingRequest, pairingEntitled, toast, _, cueOpts, haptic]);
+
   if (!isTauriAppPlatform()) return null;
 
   const showRequestDialog =
-    pendingRequest && partitionSupportedFiles(pendingRequest.files).supported.length > 0;
+    pendingRequest &&
+    partitionSupportedFiles(pendingRequest.files).supported.length > 0 &&
+    // Auto-accepted requests never flash the dialog; the effect above answers.
+    !canAutoAccept(pendingRequest.sender, pairingEntitled);
 
   return (
     <>
       {showRequestDialog && (
         <ReceiveRequestDialog
           request={pendingRequest}
-          onAccept={async (fileIds) => {
+          onAccept={async (fileIds, pairDevice) => {
             const { sessionId, sender } = pendingRequest;
+            if (pairDevice && sender.certVerified) {
+              addPairedDevice({
+                fingerprint: sender.fingerprint,
+                alias: sender.alias,
+                deviceModel: sender.deviceModel,
+              });
+            }
             useLocalSendStore.getState().requestClosed(sessionId);
             const claimed = await respondLocalSend(sessionId, fileIds);
             if (claimed) {

@@ -2087,9 +2087,6 @@
   "Nearby": "Próximos",
   "{{matched}} of {{total}}": "{{matched}} de {{total}}",
   "Purchases restored successfully.": "Compras restauradas com sucesso.",
-  "Send {{count}} book(s) to nearby device_one": "Enviar {{count}} livro para um dispositivo próximo",
-  "Send {{count}} book(s) to nearby device_many": "Enviar {{count}} livros para um dispositivo próximo",
-  "Send {{count}} book(s) to nearby device_other": "Enviar {{count}} livros para um dispositivo próximo",
   "Refresh devices": "Atualizar dispositivos",
   "Enable Nearby BookDrop in Settings to send books.": "Ative o Nearby BookDrop nas Definições para enviar livros.",
   "Sending to {{alias}}": "A enviar para {{alias}}",
@@ -2349,5 +2346,14 @@
   "Save {{percent}}%": "Poupe {{percent}}%",
   "Change billing period": "Alterar período de faturação",
   "{{price}} billed yearly": "{{price}} faturado anualmente",
-  "Unlocked": "Desbloqueado"
+  "Unlocked": "Desbloqueado",
+  "Receiving from paired device {{alias}}": "A receber do dispositivo emparelhado {{alias}}",
+  "Always accept from {{alias}}": "Aceitar sempre de {{alias}}",
+  "Transfer Sounds": "Sons de transferência",
+  "Play a sound when transfers start, finish, or fail": "Reproduzir um som quando as transferências começam, terminam ou falham",
+  "Paired Devices": "Dispositivos emparelhados",
+  "Paired {{date}}": "Emparelhado em {{date}}",
+  "Unpair": "Desemparelhar",
+  "Books from paired devices are accepted automatically, without asking.": "Os livros de dispositivos emparelhados são aceites automaticamente, sem perguntar.",
+  "As {{alias}}": "Como {{alias}}"
 }

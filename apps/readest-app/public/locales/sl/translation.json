@@ -2133,10 +2133,6 @@
   "Nearby": "V bližini",
   "{{matched}} of {{total}}": "{{matched}} od {{total}}",
   "Purchases restored successfully.": "Nakupi so bili uspešno obnovljeni.",
-  "Send {{count}} book(s) to nearby device_one": "Pošlji {{count}} knjigo napravi v bližini",
-  "Send {{count}} book(s) to nearby device_two": "Pošlji {{count}} knjigi napravi v bližini",
-  "Send {{count}} book(s) to nearby device_few": "Pošlji {{count}} knjige napravi v bližini",
-  "Send {{count}} book(s) to nearby device_other": "Pošlji {{count}} knjig napravi v bližini",
   "Refresh devices": "Osveži naprave",
   "Enable Nearby BookDrop in Settings to send books.": "Za pošiljanje knjig omogočite Nearby BookDrop v nastavitvah.",
   "Sending to {{alias}}": "Pošiljanje napravi {{alias}}",
@@ -2410,5 +2406,14 @@
   "Save {{percent}}%": "Prihranite {{percent}} %",
   "Change billing period": "Spremeni obdobje zaračunavanja",
   "{{price}} billed yearly": "{{price}} zaračunano letno",
-  "Unlocked": "Odklenjeno"
+  "Unlocked": "Odklenjeno",
+  "Receiving from paired device {{alias}}": "Prejemanje iz seznanjene naprave {{alias}}",
+  "Always accept from {{alias}}": "Vedno sprejmi od {{alias}}",
+  "Transfer Sounds": "Zvoki prenosa",
+  "Play a sound when transfers start, finish, or fail": "Predvajaj zvok ob začetku, koncu ali neuspehu prenosa",
+  "Paired Devices": "Seznanjene naprave",
+  "Paired {{date}}": "Seznanjeno {{date}}",
+  "Unpair": "Prekini seznanitev",
+  "Books from paired devices are accepted automatically, without asking.": "Knjige s seznanjenih naprav so samodejno sprejete, brez vprašanj.",
+  "As {{alias}}": "Kot {{alias}}"
 }

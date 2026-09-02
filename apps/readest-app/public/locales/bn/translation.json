@@ -2041,8 +2041,6 @@
   "Nearby": "কাছাকাছি",
   "{{matched}} of {{total}}": "{{total}}টির মধ্যে {{matched}}টি",
   "Purchases restored successfully.": "ক্রয়সমূহ সফলভাবে পুনরুদ্ধার করা হয়েছে।",
-  "Send {{count}} book(s) to nearby device_one": "{{count}}টি বই কাছাকাছি ডিভাইসে পাঠান",
-  "Send {{count}} book(s) to nearby device_other": "{{count}}টি বই কাছাকাছি ডিভাইসে পাঠান",
   "Refresh devices": "ডিভাইস রিফ্রেশ করুন",
   "Enable Nearby BookDrop in Settings to send books.": "বই পাঠাতে সেটিংসে Nearby BookDrop চালু করুন।",
   "Sending to {{alias}}": "{{alias}}-এ পাঠানো হচ্ছে",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "{{percent}}% সাশ্রয়",
   "Change billing period": "বিলিং সময়কাল পরিবর্তন করুন",
   "{{price}} billed yearly": "{{price}} বার্ষিক বিল",
-  "Unlocked": "আনলক করা হয়েছে"
+  "Unlocked": "আনলক করা হয়েছে",
+  "Receiving from paired device {{alias}}": "পেয়ার করা ডিভাইস {{alias}} থেকে গ্রহণ করা হচ্ছে",
+  "Always accept from {{alias}}": "{{alias}} থেকে সর্বদা গ্রহণ করুন",
+  "Transfer Sounds": "স্থানান্তরের শব্দ",
+  "Play a sound when transfers start, finish, or fail": "স্থানান্তর শুরু, সম্পন্ন বা ব্যর্থ হলে শব্দ বাজান",
+  "Paired Devices": "পেয়ার করা ডিভাইস",
+  "Paired {{date}}": "{{date}} তারিখে পেয়ার করা হয়েছে",
+  "Unpair": "আনপেয়ার করুন",
+  "Books from paired devices are accepted automatically, without asking.": "পেয়ার করা ডিভাইস থেকে আসা বই জিজ্ঞাসা ছাড়াই স্বয়ংক্রিয়ভাবে গ্রহণ করা হয়।",
+  "As {{alias}}": "{{alias}} হিসেবে"
 }

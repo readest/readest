@@ -2041,8 +2041,6 @@
   "Nearby": "نزدیک",
   "{{matched}} of {{total}}": "{{matched}} از {{total}}",
   "Purchases restored successfully.": "خریدها با موفقیت بازیابی شدند.",
-  "Send {{count}} book(s) to nearby device_one": "ارسال {{count}} کتاب به دستگاه نزدیک",
-  "Send {{count}} book(s) to nearby device_other": "ارسال {{count}} کتاب به دستگاه نزدیک",
   "Refresh devices": "به‌روزرسانی دستگاه‌ها",
   "Enable Nearby BookDrop in Settings to send books.": "برای ارسال کتاب، Nearby BookDrop را در تنظیمات فعال کنید.",
   "Sending to {{alias}}": "در حال ارسال به {{alias}}",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "{{percent}}٪ صرفه‌جویی",
   "Change billing period": "تغییر دوره صورت‌حساب",
   "{{price}} billed yearly": "{{price}} به‌صورت سالانه",
-  "Unlocked": "باز شد"
+  "Unlocked": "باز شد",
+  "Receiving from paired device {{alias}}": "در حال دریافت از دستگاه جفت‌شده {{alias}}",
+  "Always accept from {{alias}}": "همیشه از {{alias}} پذیرفته شود",
+  "Transfer Sounds": "صداهای انتقال",
+  "Play a sound when transfers start, finish, or fail": "پخش صدا هنگام شروع، پایان یا شکست انتقال‌ها",
+  "Paired Devices": "دستگاه‌های جفت‌شده",
+  "Paired {{date}}": "جفت‌شده در {{date}}",
+  "Unpair": "لغو جفت‌شدن",
+  "Books from paired devices are accepted automatically, without asking.": "کتاب‌های دستگاه‌های جفت‌شده به‌طور خودکار و بدون پرسش پذیرفته می‌شوند.",
+  "As {{alias}}": "به‌عنوان {{alias}}"
 }

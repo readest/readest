@@ -2133,10 +2133,6 @@
   "Nearby": "W pobliżu",
   "{{matched}} of {{total}}": "{{matched}} z {{total}}",
   "Purchases restored successfully.": "Zakupy zostały przywrócone.",
-  "Send {{count}} book(s) to nearby device_one": "Wyślij {{count}} książkę na urządzenie w pobliżu",
-  "Send {{count}} book(s) to nearby device_few": "Wyślij {{count}} książki na urządzenie w pobliżu",
-  "Send {{count}} book(s) to nearby device_many": "Wyślij {{count}} książek na urządzenie w pobliżu",
-  "Send {{count}} book(s) to nearby device_other": "Wyślij {{count}} książki na urządzenie w pobliżu",
   "Refresh devices": "Odśwież urządzenia",
   "Enable Nearby BookDrop in Settings to send books.": "Włącz Nearby BookDrop w ustawieniach, aby wysyłać książki.",
   "Sending to {{alias}}": "Wysyłanie do {{alias}}",
@@ -2410,5 +2406,14 @@
   "Save {{percent}}%": "Oszczędź {{percent}}%",
   "Change billing period": "Zmień okres rozliczeniowy",
   "{{price}} billed yearly": "{{price}} rozliczane rocznie",
-  "Unlocked": "Odblokowane"
+  "Unlocked": "Odblokowane",
+  "Receiving from paired device {{alias}}": "Odbieranie ze sparowanego urządzenia {{alias}}",
+  "Always accept from {{alias}}": "Zawsze akceptuj od {{alias}}",
+  "Transfer Sounds": "Dźwięki przesyłania",
+  "Play a sound when transfers start, finish, or fail": "Odtwarzaj dźwięk, gdy przesyłanie rozpoczyna się, kończy lub nie powiedzie",
+  "Paired Devices": "Sparowane urządzenia",
+  "Paired {{date}}": "Sparowano {{date}}",
+  "Unpair": "Usuń sparowanie",
+  "Books from paired devices are accepted automatically, without asking.": "Książki ze sparowanych urządzeń są akceptowane automatycznie, bez pytania.",
+  "As {{alias}}": "Jako {{alias}}"
 }

@@ -1229,8 +1229,6 @@
   "View all keyboard shortcuts": "ყველა კლავიატურის მალსახმობის ნახვა",
   "Terms of Service": "მომსახურების პირობები",
   "Privacy Policy": "კონფიდენციალურობის პოლიტიკა",
-  "Send {{count}} book(s) to nearby device_one": "{{count}} წიგნის გაგზავნა ახლომდებარე მოწყობილობაზე",
-  "Send {{count}} book(s) to nearby device_other": "{{count}} წიგნის გაგზავნა ახლომდებარე მოწყობილობაზე",
   "Refresh devices": "მოწყობილობების განახლება",
   "Enable Nearby BookDrop in Settings to send books.": "წიგნების გასაგზავნად ჩართეთ Nearby BookDrop პარამეტრებში.",
   "Open Settings": "პარამეტრების გახსნა",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "დაზოგეთ {{percent}}%",
   "Change billing period": "ბილინგის პერიოდის შეცვლა",
   "{{price}} billed yearly": "{{price}} წლიური გადახდით",
-  "Unlocked": "გახსნილია"
+  "Unlocked": "გახსნილია",
+  "Receiving from paired device {{alias}}": "მიმდინარეობს მიღება დაწყვილებული მოწყობილობიდან {{alias}}",
+  "Always accept from {{alias}}": "ყოველთვის მიიღე {{alias}}-სგან",
+  "Transfer Sounds": "გადაცემის ხმები",
+  "Play a sound when transfers start, finish, or fail": "ხმის დაკვრა გადაცემის დაწყებისას, დასრულებისას ან წარუმატებლობისას",
+  "Paired Devices": "დაწყვილებული მოწყობილობები",
+  "Paired {{date}}": "დაწყვილდა {{date}}",
+  "Unpair": "დაწყვილების გაუქმება",
+  "Books from paired devices are accepted automatically, without asking.": "დაწყვილებული მოწყობილობებიდან წიგნები ავტომატურად მიიღება, კითხვის გარეშე.",
+  "As {{alias}}": "როგორც {{alias}}"
 }

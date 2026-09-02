@@ -1995,7 +1995,6 @@
   "Nearby": "ใกล้เคียง",
   "{{matched}} of {{total}}": "{{matched}} จาก {{total}}",
   "Purchases restored successfully.": "กู้คืนการซื้อเรียบร้อยแล้ว",
-  "Send {{count}} book(s) to nearby device_other": "ส่งหนังสือ {{count}} เล่มไปยังอุปกรณ์ใกล้เคียง",
   "Refresh devices": "รีเฟรชอุปกรณ์",
   "Enable Nearby BookDrop in Settings to send books.": "เปิดใช้งาน Nearby BookDrop ในการตั้งค่าเพื่อส่งหนังสือ",
   "Sending to {{alias}}": "กำลังส่งไปยัง {{alias}}",
@@ -2227,5 +2226,14 @@
   "Save {{percent}}%": "ประหยัด {{percent}}%",
   "Change billing period": "เปลี่ยนรอบการเรียกเก็บเงิน",
   "{{price}} billed yearly": "เรียกเก็บ {{price}} ต่อปี",
-  "Unlocked": "ปลดล็อกแล้ว"
+  "Unlocked": "ปลดล็อกแล้ว",
+  "Receiving from paired device {{alias}}": "กำลังรับจากอุปกรณ์ที่จับคู่ {{alias}}",
+  "Always accept from {{alias}}": "ยอมรับจาก {{alias}} เสมอ",
+  "Transfer Sounds": "เสียงการถ่ายโอน",
+  "Play a sound when transfers start, finish, or fail": "เล่นเสียงเมื่อการถ่ายโอนเริ่มต้น เสร็จสิ้น หรือล้มเหลว",
+  "Paired Devices": "อุปกรณ์ที่จับคู่แล้ว",
+  "Paired {{date}}": "จับคู่เมื่อ {{date}}",
+  "Unpair": "เลิกจับคู่",
+  "Books from paired devices are accepted automatically, without asking.": "หนังสือจากอุปกรณ์ที่จับคู่แล้วจะได้รับการยอมรับโดยอัตโนมัติโดยไม่ถาม",
+  "As {{alias}}": "ในชื่อ {{alias}}"
 }

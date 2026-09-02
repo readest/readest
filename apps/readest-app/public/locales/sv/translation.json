@@ -2041,8 +2041,6 @@
   "Nearby": "I närheten",
   "{{matched}} of {{total}}": "{{matched}} av {{total}}",
   "Purchases restored successfully.": "Köp återställda.",
-  "Send {{count}} book(s) to nearby device_one": "Skicka {{count}} bok till enhet i närheten",
-  "Send {{count}} book(s) to nearby device_other": "Skicka {{count}} böcker till enhet i närheten",
   "Refresh devices": "Uppdatera enheter",
   "Enable Nearby BookDrop in Settings to send books.": "Aktivera Nearby BookDrop i inställningarna för att skicka böcker.",
   "Sending to {{alias}}": "Skickar till {{alias}}",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "Spara {{percent}} %",
   "Change billing period": "Ändra faktureringsperiod",
   "{{price}} billed yearly": "{{price}} faktureras årsvis",
-  "Unlocked": "Upplåst"
+  "Unlocked": "Upplåst",
+  "Receiving from paired device {{alias}}": "Tar emot från parkopplad enhet {{alias}}",
+  "Always accept from {{alias}}": "Acceptera alltid från {{alias}}",
+  "Transfer Sounds": "Överföringsljud",
+  "Play a sound when transfers start, finish, or fail": "Spela upp ett ljud när överföringar startar, slutförs eller misslyckas",
+  "Paired Devices": "Parkopplade enheter",
+  "Paired {{date}}": "Parkopplad {{date}}",
+  "Unpair": "Ta bort parkoppling",
+  "Books from paired devices are accepted automatically, without asking.": "Böcker från parkopplade enheter tas emot automatiskt, utan att fråga.",
+  "As {{alias}}": "Som {{alias}}"
 }

@@ -2041,8 +2041,6 @@
   "Nearby": "Yaqin-atrofda",
   "{{matched}} of {{total}}": "{{total}} tadan {{matched}} ta",
   "Purchases restored successfully.": "Xaridlar muvaffaqiyatli tiklandi.",
-  "Send {{count}} book(s) to nearby device_one": "{{count}} ta kitobni yaqin-atrofdagi qurilmaga yuborish",
-  "Send {{count}} book(s) to nearby device_other": "{{count}} ta kitobni yaqin-atrofdagi qurilmaga yuborish",
   "Refresh devices": "Qurilmalarni yangilash",
   "Enable Nearby BookDrop in Settings to send books.": "Kitob yuborish uchun Sozlamalarda Nearby BookDrop’ni yoqing.",
   "Sending to {{alias}}": "{{alias}}ga yuborilmoqda",
@@ -2288,5 +2286,14 @@
   "Save {{percent}}%": "{{percent}}% tejang",
   "Change billing period": "Hisob-kitob davrini o'zgartirish",
   "{{price}} billed yearly": "Yiliga {{price}} hisoblanadi",
-  "Unlocked": "Ochilgan"
+  "Unlocked": "Ochilgan",
+  "Receiving from paired device {{alias}}": "{{alias}} juftlangan qurilmasidan qabul qilinmoqda",
+  "Always accept from {{alias}}": "{{alias}} qurilmasidan doim qabul qilinsin",
+  "Transfer Sounds": "Uzatish tovushlari",
+  "Play a sound when transfers start, finish, or fail": "Uzatish boshlanganda, tugaganda yoki muvaffaqiyatsiz boʻlganda tovush chalinsin",
+  "Paired Devices": "Juftlangan qurilmalar",
+  "Paired {{date}}": "{{date}} da juftlangan",
+  "Unpair": "Juftlikni bekor qilish",
+  "Books from paired devices are accepted automatically, without asking.": "Juftlangan qurilmalardan kelgan kitoblar soʻralmasdan avtomatik qabul qilinadi.",
+  "As {{alias}}": "{{alias}} sifatida"
 }

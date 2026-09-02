@@ -340,6 +340,10 @@ fn handle_server_event<R: Runtime>(
             files,
             decision_tx,
         } => {
+            // A cert-derived fingerprint is proof of key possession; the body
+            // fingerprint is whatever the sender claimed. The webview gates
+            // paired auto-accept on this distinction.
+            let cert_verified = cert_fingerprint.is_some();
             let sender = SenderTarget {
                 host: ip.ip.to_string(),
                 port: info.port,
@@ -353,6 +357,7 @@ fn handle_server_event<R: Runtime>(
                     device_model: info.device_model.clone(),
                     device_type: device_type_str(&info.device_type),
                     fingerprint: sender.fingerprint.clone(),
+                    cert_verified,
                 },
                 files: files
                     .values()

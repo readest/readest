@@ -2133,10 +2133,6 @@
   "Nearby": "Поблизу",
   "{{matched}} of {{total}}": "{{matched}} з {{total}}",
   "Purchases restored successfully.": "Покупки успішно відновлено.",
-  "Send {{count}} book(s) to nearby device_one": "Надіслати {{count}} книгу на пристрій поблизу",
-  "Send {{count}} book(s) to nearby device_few": "Надіслати {{count}} книги на пристрій поблизу",
-  "Send {{count}} book(s) to nearby device_many": "Надіслати {{count}} книг на пристрій поблизу",
-  "Send {{count}} book(s) to nearby device_other": "Надіслати {{count}} книги на пристрій поблизу",
   "Refresh devices": "Оновити список пристроїв",
   "Enable Nearby BookDrop in Settings to send books.": "Увімкніть Nearby BookDrop у налаштуваннях, щоб надсилати книги.",
   "Sending to {{alias}}": "Надсилання на {{alias}}",
@@ -2410,5 +2406,14 @@
   "Save {{percent}}%": "Заощадьте {{percent}}%",
   "Change billing period": "Змінити період оплати",
   "{{price}} billed yearly": "{{price}} на рік",
-  "Unlocked": "Відкрито"
+  "Unlocked": "Відкрито",
+  "Receiving from paired device {{alias}}": "Отримання зі спареного пристрою {{alias}}",
+  "Always accept from {{alias}}": "Завжди приймати від {{alias}}",
+  "Transfer Sounds": "Звуки передавання",
+  "Play a sound when transfers start, finish, or fail": "Відтворювати звук на початку, після завершення або в разі помилки передавання",
+  "Paired Devices": "Спарені пристрої",
+  "Paired {{date}}": "Спарено {{date}}",
+  "Unpair": "Розірвати пару",
+  "Books from paired devices are accepted automatically, without asking.": "Книги зі спарених пристроїв приймаються автоматично, без запиту.",
+  "As {{alias}}": "Як {{alias}}"
 }
