@@ -627,6 +627,39 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     }
   });
 
+  test('a higher-priority touch interceptor wins before fixed-layout pan claims', () => {
+    const pan = vi.fn();
+    const unregister = registerTouchInterceptor(
+      'fixed-pan-arbitration-test',
+      (_bookKey, detail) => detail.phase === 'move',
+      10,
+    );
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 150,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+    });
+    mocks.getView.mockReturnValue({
+      book: { rendition: { layout: 'pre-paginated' } },
+      isOverflowX: () => true,
+      isOverflowY: () => false,
+      pan,
+      renderer: {},
+    });
+
+    try {
+      const h = renderTouchHook();
+      h.current.onTouchStart(directTouchEvent([touch(200, 300)], 0));
+      h.current.onTouchMove(directTouchEvent([touch(212, 300)], 16));
+
+      expect(pan).not.toHaveBeenCalled();
+    } finally {
+      unregister();
+    }
+  });
+
   test('forwards touch cancellation without toggling the toolbar', () => {
     const details: TouchDetail[] = [];
     const unregister = registerTouchInterceptor('touch-cancel-test', (_bookKey, detail) => {

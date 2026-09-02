@@ -39,7 +39,7 @@ const swapLeftRight = (side: PaginationSide) => {
 const isPanningView = (view: FoliateView | null, viewSettings: ViewSettings | null | undefined) => {
   if (!view || !viewSettings) return false;
   return (
-    view.book.rendition?.layout === 'pre-paginated' &&
+    view.book?.rendition?.layout === 'pre-paginated' &&
     (viewSettings.zoomLevel > 100 || viewSettings.zoomMode !== 'fit-page')
   );
 };
@@ -49,7 +49,11 @@ export const hasHorizontalPanning = (
   viewSettings: ViewSettings | null | undefined,
 ) => {
   if (!view || !viewSettings) return false;
-  return isPanningView(view, viewSettings) && view.isOverflowX();
+  return (
+    isPanningView(view, viewSettings) &&
+    typeof view.isOverflowX === 'function' &&
+    view.isOverflowX()
+  );
 };
 
 export const hasVerticalPanning = (
@@ -163,7 +167,7 @@ export const viewPagination = (
         const snapped =
           viewSettings.vertical ||
           (viewSettings.scrolledDirection === 'horizontal' &&
-            view.book.rendition?.layout === 'pre-paginated')
+            view.book?.rendition?.layout === 'pre-paginated')
             ? distance
             : snapScrolledDistanceToLines(view, distance, forward);
         return forward ? view.next(snapped) : view.prev(snapped);
@@ -236,14 +240,12 @@ export const usePagination = (
     const view = viewRef.current;
     const settings = getViewSettings(bookKey);
     const data = getBookData(bookKey);
+    const horizontal = hasHorizontalPanning(view, settings);
+    const vertical = hasVerticalPanning(view, settings);
     setMousePanArmed(
       bookKey,
-      Boolean(
-        data?.isFixedLayout &&
-          !settings?.scrolled &&
-          isPanningView(view, settings) &&
-          (hasHorizontalPanning(view, settings) || hasVerticalPanning(view, settings)),
-      ),
+      Boolean(data?.isFixedLayout && !settings?.scrolled && (horizontal || vertical)),
+      { horizontal, vertical },
     );
     return () => {
       mousePanRef.current = null;
@@ -280,11 +282,16 @@ export const usePagination = (
         mousePanRef.current = null;
         setMousePanArmed(bookKey, false);
         setMousePanClaimed(bookKey, false);
-        if (state?.claimed && event.screenX != null && event.screenY != null) {
+        if (
+          state?.claimed &&
+          event.type === 'iframe-mouseup' &&
+          event.button === 0 &&
+          event.screenX != null &&
+          event.screenY != null
+        ) {
           suppressMousePanClick(bookKey, event.screenX, event.screenY);
-          return true;
         }
-        return false;
+        return Boolean(state?.claimed);
       };
 
       if (event.type === 'blur') return finish();
@@ -298,10 +305,10 @@ export const usePagination = (
             (hasHorizontalPanning(view, settings) || hasVerticalPanning(view, settings)),
         );
         const canTrack = canPan && event.button === 0 && !event.hasTextSelection;
-        setMousePanArmed(bookKey, canTrack);
-        if (!canTrack) return false;
         const horizontal = hasHorizontalPanning(view, settings);
         const vertical = hasVerticalPanning(view, settings);
+        setMousePanArmed(bookKey, canTrack, { horizontal, vertical });
+        if (!canTrack) return false;
         if ((!horizontal && !vertical) || event.screenX == null || event.screenY == null)
           return false;
         mousePanRef.current = {
@@ -325,11 +332,13 @@ export const usePagination = (
       ) {
         return finish();
       }
+      const horizontalPan = hasHorizontalPanning(view, settings);
+      const verticalPan = hasVerticalPanning(view, settings);
       if (
         !data?.isFixedLayout ||
         settings?.scrolled ||
         !isPanningView(view, settings) ||
-        (!hasHorizontalPanning(view, settings) && !hasVerticalPanning(view, settings))
+        (!horizontalPan && !verticalPan)
       ) {
         mousePanRef.current = null;
         setMousePanClaimed(bookKey, false);
@@ -339,6 +348,8 @@ export const usePagination = (
       const totalX = event.screenX - state.startX;
       const totalY = event.screenY - state.startY;
       if (!state.claimed) {
+        state.horizontal = horizontalPan;
+        state.vertical = verticalPan;
         const distance = Math.hypot(totalX, totalY);
         if (distance < 6) return false;
         const horizontal = state.horizontal && Math.abs(totalX) >= Math.abs(totalY);

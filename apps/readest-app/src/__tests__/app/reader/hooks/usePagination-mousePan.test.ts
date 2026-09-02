@@ -45,6 +45,7 @@ vi.mock('@/store/sidebarStore', () => ({
 vi.mock('@/utils/bridge', () => ({ refreshEinkScreen: vi.fn() }));
 
 import { usePagination } from '@/app/reader/hooks/usePagination';
+import { handleClickCapture } from '@/app/reader/utils/iframeEventHandlers';
 
 const makeView = (x = true, y = true) => ({
   book: { rendition: { layout: 'pre-paginated' } },
@@ -152,6 +153,78 @@ describe('usePagination fixed-layout mouse pan', () => {
       }),
     ).toBe(false);
     expect(view.pan).toHaveBeenCalledOnce();
+  });
+
+  test('only an iframe primary-button release suppresses the compatibility click', () => {
+    const view = makeView();
+    const h = renderHook(() =>
+      usePagination('book-1', { current: view as unknown as FoliateView }, { current: null }),
+    );
+    const click = () =>
+      ({
+        screenX: 120,
+        screenY: 100,
+        preventDefault: vi.fn(),
+        stopImmediatePropagation: vi.fn(),
+      }) as unknown as MouseEvent;
+
+    h.result.current.handleMousePan(point(100, 100));
+    h.result.current.handleMousePan({
+      type: 'mousemove',
+      bookKey: 'book-1',
+      buttons: 1,
+      screenX: 120,
+      screenY: 100,
+    });
+    h.result.current.handleMousePan({
+      type: 'mouseup',
+      bookKey: 'book-1',
+      button: 0,
+      screenX: 120,
+      screenY: 100,
+    });
+    const outsideReleaseClick = click();
+    handleClickCapture('book-1', outsideReleaseClick);
+    expect(outsideReleaseClick.preventDefault).not.toHaveBeenCalled();
+
+    h.result.current.handleMousePan(point(100, 100));
+    h.result.current.handleMousePan({
+      type: 'mousemove',
+      bookKey: 'book-1',
+      buttons: 1,
+      screenX: 120,
+      screenY: 100,
+    });
+    h.result.current.handleMousePan({
+      type: 'mousemove',
+      bookKey: 'book-1',
+      buttons: 0,
+      screenX: 125,
+      screenY: 100,
+    });
+    const recoveryClick = click();
+    handleClickCapture('book-1', recoveryClick);
+    expect(recoveryClick.preventDefault).not.toHaveBeenCalled();
+
+    h.result.current.handleMousePan(point(100, 100));
+    h.result.current.handleMousePan({
+      type: 'mousemove',
+      bookKey: 'book-1',
+      buttons: 1,
+      screenX: 120,
+      screenY: 100,
+    });
+    h.result.current.handleMousePan({
+      type: 'iframe-mouseup',
+      bookKey: 'book-1',
+      button: 0,
+      screenX: 120,
+      screenY: 100,
+    });
+    const iframeReleaseClick = click();
+    handleClickCapture('book-1', iframeReleaseClick);
+    expect(iframeReleaseClick.preventDefault).toHaveBeenCalledOnce();
+    expect(iframeReleaseClick.stopImmediatePropagation).toHaveBeenCalledOnce();
   });
 
   test('does not arm reflowable, scrolled, or non-overflowing views', () => {

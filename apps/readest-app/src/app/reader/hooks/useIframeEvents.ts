@@ -97,11 +97,11 @@ export const useMouseEvent = (
             }
           }
         } else {
-          handlePageFlip(msg);
+          handlePageFlipRef.current(msg);
         }
       }
     } else if (msg.type !== 'wheel') {
-      handlePageFlip(msg);
+      handlePageFlipRef.current(msg);
     }
   };
 
@@ -194,6 +194,8 @@ interface IframeTouchEvent {
   timeStamp: number;
   targetTouches: IframeTouch[];
   changedTouches?: IframeTouch[];
+  interceptorsDispatched?: boolean;
+  interceptorConsumed?: boolean;
 }
 
 // A two-finger gesture only becomes a pinch once the fingers' separation
@@ -205,7 +207,9 @@ const PINCH_ACTIVATION_THRESHOLD = 24;
 // Once the pair has translated this far together we lock the gesture as a
 // two-finger scroll and stop looking for a pinch for the rest of it.
 const TWO_FINGER_PAN_THRESHOLD = 12;
-const FIXED_LAYOUT_PAN_THRESHOLD = 6;
+// Keep the parent pan claim at the ruler's 10px claim distance so a higher-
+// priority touch tool can win before fixed-layout panning latches the gesture.
+const FIXED_LAYOUT_PAN_THRESHOLD = 10;
 
 export const useTouchEvent = (bookKey: string) => {
   const { getBookData } = useBookDataStore();
@@ -301,6 +305,10 @@ export const useTouchEvent = (bookKey: string) => {
     if ('preventDefault' in e) e.preventDefault();
   };
 
+  const hasRawInterceptorDecision = (
+    e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>,
+  ): e is IframeTouchEvent => 'interceptorsDispatched' in e && e.interceptorsDispatched === true;
+
   const latchReflowableMultiTouch = (
     e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>,
     t0: IframeTouch | undefined,
@@ -395,7 +403,7 @@ export const useTouchEvent = (bookKey: string) => {
       touchStartTimeRef.current,
       touchStartTimeRef.current,
     );
-    dispatchTouchInterceptors(bookKey, detail);
+    if (!hasRawInterceptorDecision(e)) dispatchTouchInterceptors(bookKey, detail);
   };
 
   const onTouchMove = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
@@ -444,17 +452,47 @@ export const useTouchEvent = (bookKey: string) => {
     if (touch) {
       touchEndRef.current = touch;
       touchEndTimeRef.current = 'timeStamp' in e ? e.timeStamp : Date.now();
+
+      // Give registered touch tools (for example Reading Ruler) first refusal
+      // before fixed-layout panning claims the same movement.
+      const detail = buildTouchDetail(
+        'move',
+        touch,
+        touchStartRef.current,
+        touchStartTimeRef.current,
+        touchEndTimeRef.current,
+      );
+      const interceptorConsumed = hasRawInterceptorDecision(e)
+        ? e.interceptorConsumed === true
+        : dispatchTouchInterceptors(bookKey, detail);
+      if (interceptorConsumed) {
+        fixedLayoutPanRef.current = null;
+        touchConsumedRef.current = true;
+        preventDirectTouchDefault(e);
+        return;
+      }
+
       const fixedPan = fixedLayoutPanRef.current;
       if (fixedPan) {
         const bookData = getBookData(bookKey);
         const viewSettings = getViewSettings(bookKey);
         const view = getView(bookKey);
-        if (!bookData?.isFixedLayout || viewSettings?.scrolled || !view) {
+        const horizontalPan = hasHorizontalPanning(view, viewSettings);
+        const verticalPan = hasVerticalPanning(view, viewSettings);
+        if (
+          !bookData?.isFixedLayout ||
+          viewSettings?.scrolled ||
+          !view ||
+          typeof view.pan !== 'function' ||
+          (!horizontalPan && !verticalPan)
+        ) {
           fixedLayoutPanRef.current = null;
         } else {
           const totalX = touch.screenX - fixedPan.startX;
           const totalY = touch.screenY - fixedPan.startY;
           if (!fixedPan.claimed) {
+            fixedPan.horizontal = horizontalPan;
+            fixedPan.vertical = verticalPan;
             const distance = Math.hypot(totalX, totalY);
             if (distance >= FIXED_LAYOUT_PAN_THRESHOLD) {
               const horizontal = fixedPan.horizontal && Math.abs(totalX) >= Math.abs(totalY);
@@ -477,20 +515,6 @@ export const useTouchEvent = (bookKey: string) => {
             return;
           }
         }
-      }
-
-      const detail = buildTouchDetail(
-        'move',
-        touch,
-        touchStartRef.current,
-        touchStartTimeRef.current,
-        touchEndTimeRef.current,
-      );
-      if (dispatchTouchInterceptors(bookKey, detail)) {
-        fixedLayoutPanRef.current = null;
-        touchConsumedRef.current = true;
-        preventDirectTouchDefault(e);
-        return;
       }
     }
     if (touchConsumedRef.current) return;
@@ -588,7 +612,9 @@ export const useTouchEvent = (bookKey: string) => {
         touchStartTimeRef.current,
         touchEndTimeRef.current,
       );
-      endConsumed = dispatchTouchInterceptors(bookKey, detail);
+      endConsumed = hasRawInterceptorDecision(e)
+        ? e.interceptorConsumed === true
+        : dispatchTouchInterceptors(bookKey, detail);
     }
 
     if (touchConsumedRef.current || endConsumed) {
@@ -672,7 +698,10 @@ export const useTouchEvent = (bookKey: string) => {
   const onTouchCancel = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
     layeredTurnCandidateRef.current = false;
     fixedLayoutPanRef.current = null;
-    const preventCompatibilityClick = touchConsumedRef.current || layeredTurnOwnedRef.current;
+    const preventCompatibilityClick =
+      touchConsumedRef.current ||
+      layeredTurnOwnedRef.current ||
+      (hasRawInterceptorDecision(e) && e.interceptorConsumed === true);
     cancelLayeredTurnTouch(bookKey);
     if (preventCompatibilityClick) preventDirectTouchDefault(e);
     if (reflowableMultiTouchRef.current) {
@@ -695,7 +724,7 @@ export const useTouchEvent = (bookKey: string) => {
       touchEndRef.current ??
       touchStart;
     const endTime = 'timeStamp' in e ? e.timeStamp : Date.now();
-    if (touchStart && touch) {
+    if (touchStart && touch && !hasRawInterceptorDecision(e)) {
       dispatchTouchInterceptors(
         bookKey,
         buildTouchDetail('cancel', touch, touchStart, touchStartTimeRef.current, endTime),
