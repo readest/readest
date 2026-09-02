@@ -2298,5 +2298,7 @@
   "As {{alias}}": "Ως {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Διατηρήστε αυτήν την οθόνη ανοιχτή ώστε οι κοντινές συσκευές να μπορούν να σας βρουν.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Οι συσκευές εξαφανίζονται από τη λίστα όταν σβήσει η οθόνη τους· κρατήστε την οθόνη ανοιχτή για να παραμένετε ορατοί.",
-  "{{name}}'s Readest": "Το Readest του {{name}}"
+  "{{name}}'s Readest": "Το Readest του {{name}}",
+  "Gamepad Support": "Υποστήριξη χειριστηρίου",
+  "Navigate with a connected controller": "Πλοήγηση με συνδεδεμένο χειριστήριο"
 }

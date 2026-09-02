@@ -431,6 +431,13 @@ export interface SystemSettings {
   autoScreenBrightness: boolean;
   swipeBrightnessGesture: boolean;
   hardwarePageTurner: HardwarePageTurnerSettings;
+  /**
+   * Replay a connected controller's buttons and sticks as key events in the
+   * reader. Off is a real need on handhelds whose own remapper (Steam Input on
+   * the Steam Deck) already binds those buttons to keys, so every press would
+   * otherwise land twice (issue #5979).
+   */
+  gamepadEnabled: boolean;
   alwaysShowStatusBar: boolean;
   openLastBooks: boolean;
   lastOpenBooks: string[];

@@ -89,11 +89,14 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
   const isAndroidApp = appService?.isAndroidApp === true;
-  const androidGamepadConnected = useAndroidGamepadConnection(isAndroidApp);
+  // Settings > Behavior > Device > Gamepad Support. Off when the device's own
+  // remapper already binds the controller to keys (issue #5979).
+  const gamepadEnabled = useSettingsStore((state) => state.settings.gamepadEnabled) !== false;
+  const androidGamepadConnected = useAndroidGamepadConnection(isAndroidApp && gamepadEnabled);
   // Android's native bridge gates the Web Gamepad API so Chromium polls only
   // while a controller exists. Other platforms retain the existing behavior.
   useGamepad({
-    enabled: appService !== null && (!isAndroidApp || androidGamepadConnected),
+    enabled: appService !== null && gamepadEnabled && (!isAndroidApp || androidGamepadConnected),
   });
 
   useEffect(() => {

@@ -204,6 +204,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
       refresh: null,
     },
   },
+  gamepadEnabled: true,
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,

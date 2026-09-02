@@ -2238,5 +2238,7 @@
   "As {{alias}}": "{{alias}} として",
   "Keep this screen on so nearby devices can find you.": "近くのデバイスから見つけてもらえるよう、この画面をオンのままにしてください。",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "デバイスは画面がオフになるとリストから消えます。表示され続けるには画面をオンのままにしてください。",
-  "{{name}}'s Readest": "{{name}}のReadest"
+  "{{name}}'s Readest": "{{name}}のReadest",
+  "Gamepad Support": "ゲームパッド対応",
+  "Navigate with a connected controller": "接続したコントローラーで操作する"
 }

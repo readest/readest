@@ -2238,5 +2238,7 @@
   "As {{alias}}": "Với tên {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Giữ màn hình này bật để các thiết bị ở gần có thể tìm thấy bạn.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Thiết bị sẽ biến mất khỏi danh sách khi màn hình tắt; hãy bật màn hình để luôn hiển thị.",
-  "{{name}}'s Readest": "Readest của {{name}}"
+  "{{name}}'s Readest": "Readest của {{name}}",
+  "Gamepad Support": "Hỗ trợ tay cầm chơi game",
+  "Navigate with a connected controller": "Điều hướng bằng tay cầm đã kết nối"
 }

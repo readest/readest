@@ -2358,5 +2358,7 @@
   "As {{alias}}": "En tant que {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Gardez cet écran allumé pour que les appareils à proximité puissent vous trouver.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Les appareils disparaissent de la liste lorsque leur écran s'éteint ; gardez l'écran allumé pour rester visible.",
-  "{{name}}'s Readest": "Readest de {{name}}"
+  "{{name}}'s Readest": "Readest de {{name}}",
+  "Gamepad Support": "Prise en charge des manettes",
+  "Navigate with a connected controller": "Naviguer avec une manette connectée"
 }

@@ -2298,5 +2298,7 @@
   "As {{alias}}": "{{alias}} হিসেবে",
   "Keep this screen on so nearby devices can find you.": "কাছাকাছি ডিভাইসগুলি যাতে আপনাকে খুঁজে পায় সেজন্য এই স্ক্রিনটি চালু রাখুন।",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "স্ক্রিন বন্ধ হলে ডিভাইসগুলি তালিকা থেকে অদৃশ্য হয়ে যায়; দৃশ্যমান থাকতে স্ক্রিন চালু রাখুন।",
-  "{{name}}'s Readest": "{{name}}-এর Readest"
+  "{{name}}'s Readest": "{{name}}-এর Readest",
+  "Gamepad Support": "গেমপ্যাড সমর্থন",
+  "Navigate with a connected controller": "সংযুক্ত কন্ট্রোলার দিয়ে নেভিগেট করুন"
 }

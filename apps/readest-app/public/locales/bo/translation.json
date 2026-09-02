@@ -2238,5 +2238,7 @@
   "As {{alias}}": "{{alias}} ཞེས་སུ།",
   "Keep this screen on so nearby devices can find you.": "ཉེ་འགྲམ་གྱི་སྒྲིག་ཆས་ཀྱིས་ཁྱེད་རང་རྙེད་ཐུབ་པའི་ཆེད་དུ་བརྙན་ཡོལ་འདི་གསལ་བར་བཞག",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "སྒྲིག་ཆས་ཀྱི་བརྙན་ཡོལ་ཁ་བརྒྱབ་སྐབས་རེའུ་མིག་ནས་མི་སྣང་བར་འགྱུར། མཐོང་རྒྱུ་ཡོད་པར་གནས་ཆེད་བརྙན་ཡོལ་གསལ་བར་བཞག",
-  "{{name}}'s Readest": "{{name}}ཡི་ Readest"
+  "{{name}}'s Readest": "{{name}}ཡི་ Readest",
+  "Gamepad Support": "རྩེད་མོའི་ཚོད་འཛིན་ཆས་རྒྱབ་སྐྱོར།",
+  "Navigate with a connected controller": "སྦྲེལ་ཟིན་པའི་ཚོད་འཛིན་ཆས་ཐོག་ནས་གནས་སྤོ་བྱེད་པ།"
 }

@@ -2298,5 +2298,7 @@
   "As {{alias}}": "به‌عنوان {{alias}}",
   "Keep this screen on so nearby devices can find you.": "این صفحه را روشن نگه دارید تا دستگاه‌های نزدیک بتوانند شما را پیدا کنند.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "وقتی صفحهٔ دستگاه‌ها خاموش می‌شود، از فهرست ناپدید می‌شوند؛ برای دیده‌شدن، صفحه را روشن نگه دارید.",
-  "{{name}}'s Readest": "Readestِ {{name}}"
+  "{{name}}'s Readest": "Readestِ {{name}}",
+  "Gamepad Support": "پشتیبانی از دسته بازی",
+  "Navigate with a connected controller": "پیمایش با دسته بازی متصل"
 }

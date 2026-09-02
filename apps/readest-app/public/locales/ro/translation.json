@@ -2358,5 +2358,7 @@
   "As {{alias}}": "Ca {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Păstrează acest ecran pornit pentru ca dispozitivele din apropiere să te poată găsi.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Dispozitivele dispar din listă când ecranul lor se stinge; păstrează ecranul pornit ca să rămâi vizibil.",
-  "{{name}}'s Readest": "Readest al lui {{name}}"
+  "{{name}}'s Readest": "Readest al lui {{name}}",
+  "Gamepad Support": "Suport pentru gamepad",
+  "Navigate with a connected controller": "Navigare cu un controler conectat"
 }

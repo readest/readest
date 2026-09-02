@@ -2238,5 +2238,7 @@
   "As {{alias}}": "ในชื่อ {{alias}}",
   "Keep this screen on so nearby devices can find you.": "เปิดหน้าจอนี้ไว้เพื่อให้อุปกรณ์ใกล้เคียงค้นหาคุณเจอ",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "อุปกรณ์จะหายไปจากรายการเมื่อหน้าจอปิด เปิดหน้าจอไว้เพื่อให้ยังคงมองเห็นได้",
-  "{{name}}'s Readest": "Readest ของ {{name}}"
+  "{{name}}'s Readest": "Readest ของ {{name}}",
+  "Gamepad Support": "รองรับเกมแพด",
+  "Navigate with a connected controller": "นำทางด้วยคอนโทรลเลอร์ที่เชื่อมต่อ"
 }

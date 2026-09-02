@@ -525,6 +525,12 @@ const controlPanelItems = [
     section: 'Device',
   },
   {
+    id: 'settings.control.gamepadEnabled',
+    labelKey: _('Gamepad Support'),
+    keywords: ['gamepad', 'controller', 'joystick', 'steam', 'deck', 'joypad'],
+    section: 'Device',
+  },
+  {
     id: 'settings.control.allowJavascript',
     labelKey: _('Allow JavaScript'),
     keywords: ['javascript', 'js', 'script', 'security', 'allow'],

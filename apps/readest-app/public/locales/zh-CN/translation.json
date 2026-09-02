@@ -2238,5 +2238,7 @@
   "As {{alias}}": "以 {{alias}} 的身份",
   "Keep this screen on so nearby devices can find you.": "保持此屏幕点亮，附近设备才能找到你。",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "设备屏幕关闭后会从列表中消失；保持屏幕点亮以持续可见。",
-  "{{name}}'s Readest": "{{name}} 的 Readest"
+  "{{name}}'s Readest": "{{name}} 的 Readest",
+  "Gamepad Support": "手柄支持",
+  "Navigate with a connected controller": "使用已连接的手柄进行导航"
 }

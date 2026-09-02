@@ -2358,5 +2358,7 @@
   "As {{alias}}": "בתור {{alias}}",
   "Keep this screen on so nearby devices can find you.": "השאירו מסך זה דולק כדי שמכשירים בקרבת מקום יוכלו למצוא אתכם.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "מכשירים נעלמים מהרשימה כשהמסך שלהם כבה; השאירו את המסך דולק כדי להישאר גלויים.",
-  "{{name}}'s Readest": "Readest של {{name}}"
+  "{{name}}'s Readest": "Readest של {{name}}",
+  "Gamepad Support": "תמיכה בבקר משחק",
+  "Navigate with a connected controller": "ניווט באמצעות בקר מחובר"
 }

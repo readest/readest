@@ -2298,5 +2298,7 @@
   "As {{alias}}": "Als {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Houd dit scherm aan zodat apparaten in de buurt je kunnen vinden.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Apparaten verdwijnen uit de lijst wanneer hun scherm uitgaat; houd het scherm aan om zichtbaar te blijven.",
-  "{{name}}'s Readest": "Readest van {{name}}"
+  "{{name}}'s Readest": "Readest van {{name}}",
+  "Gamepad Support": "Gamepad-ondersteuning",
+  "Navigate with a connected controller": "Navigeren met een aangesloten controller"
 }

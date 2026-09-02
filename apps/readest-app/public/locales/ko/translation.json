@@ -2238,5 +2238,7 @@
   "As {{alias}}": "{{alias}}(으)로 표시",
   "Keep this screen on so nearby devices can find you.": "근처 기기가 나를 찾을 수 있도록 이 화면을 켜 두세요.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "화면이 꺼지면 기기가 목록에서 사라집니다. 계속 표시되려면 화면을 켜 두세요.",
-  "{{name}}'s Readest": "{{name}}의 Readest"
+  "{{name}}'s Readest": "{{name}}의 Readest",
+  "Gamepad Support": "게임패드 지원",
+  "Navigate with a connected controller": "연결된 컨트롤러로 탐색"
 }

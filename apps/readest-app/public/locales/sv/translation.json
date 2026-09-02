@@ -2298,5 +2298,7 @@
   "As {{alias}}": "Som {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Håll den här skärmen på så att enheter i närheten kan hitta dig.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Enheter försvinner från listan när skärmen stängs av; håll skärmen på för att fortsätta synas.",
-  "{{name}}'s Readest": "{{name}}s Readest"
+  "{{name}}'s Readest": "{{name}}s Readest",
+  "Gamepad Support": "Stöd för handkontroll",
+  "Navigate with a connected controller": "Navigera med en ansluten handkontroll"
 }

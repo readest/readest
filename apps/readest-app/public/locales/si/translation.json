@@ -2298,5 +2298,7 @@
   "As {{alias}}": "{{alias}} ලෙස",
   "Keep this screen on so nearby devices can find you.": "අවට උපාංගවලට ඔබව සොයාගත හැකි වන පරිදි මෙම තිරය සක්‍රීයව තබා ගන්න.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "තිරය ක්‍රියාවිරහිත වූ විට උපාංග ලැයිස්තුවෙන් අතුරුදහන් වේ; දෘශ්‍යමානව සිටීමට තිරය සක්‍රීයව තබා ගන්න.",
-  "{{name}}'s Readest": "{{name}} ගේ Readest"
+  "{{name}}'s Readest": "{{name}} ගේ Readest",
+  "Gamepad Support": "ගේම්පෑඩ් සහාය",
+  "Navigate with a connected controller": "සම්බන්ධිත පාලකයක් සමඟ සංචලනය කරන්න"
 }

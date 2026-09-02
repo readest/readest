@@ -2418,5 +2418,7 @@
   "As {{alias}}": "Як {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Залиште цей екран увімкненим, щоб пристрої поблизу могли вас знайти.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Пристрої зникають зі списку, коли їхній екран вимикається; залиште екран увімкненим, щоб залишатися видимим.",
-  "{{name}}'s Readest": "Readest користувача {{name}}"
+  "{{name}}'s Readest": "Readest користувача {{name}}",
+  "Gamepad Support": "Підтримка геймпада",
+  "Navigate with a connected controller": "Навігація за допомогою підключеного геймпада"
 }

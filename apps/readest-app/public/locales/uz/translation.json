@@ -2298,5 +2298,7 @@
   "As {{alias}}": "{{alias}} sifatida",
   "Keep this screen on so nearby devices can find you.": "Yaqin atrofdagi qurilmalar sizni topa olishi uchun bu ekranni yoniq qoldiring.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Qurilmalar ekrani o'chganda ro'yxatdan yo'qoladi; ko'rinib turish uchun ekranni yoniq qoldiring.",
-  "{{name}}'s Readest": "{{name}}ning Readest'i"
+  "{{name}}'s Readest": "{{name}}ning Readest'i",
+  "Gamepad Support": "Geympad qoʻllab-quvvatlashi",
+  "Navigate with a connected controller": "Ulangan boshqaruv pulti bilan harakatlanish"
 }

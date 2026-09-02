@@ -2418,5 +2418,7 @@
   "As {{alias}}": "Kot {{alias}}",
   "Keep this screen on so nearby devices can find you.": "Naj ta zaslon ostane vklopljen, da vas naprave v bližini lahko najdejo.",
   "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Naprave izginejo s seznama, ko se njihov zaslon izklopi; naj bo zaslon vklopljen, da ostanete vidni.",
-  "{{name}}'s Readest": "Readest uporabnika {{name}}"
+  "{{name}}'s Readest": "Readest uporabnika {{name}}",
+  "Gamepad Support": "Podpora za igralni plošček",
+  "Navigate with a connected controller": "Krmarjenje s priključenim krmilnikom"
 }
