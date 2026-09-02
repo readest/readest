@@ -1109,6 +1109,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setProofreadPopupPosition(proofreadPopupPos);
       setTrianglePosition(triangPos);
 
+      // A lookup surface republishes the very selection it is anchored to:
+      // `suppressNativeSelectionHandles` empties the selection for a frame to
+      // shed the platform's grabbers, re-adds the range, and marks it
+      // `handlesSuppressed`. That lands here as a brand-new selection, and
+      // answering it with the toolbar (or, worse, re-running the quick action)
+      // closed the surface on the frame it opened (#6018). Nothing can select
+      // new text while one of these is up — they all sit over the page.
+      if (showDictionaryPopup || showDeepLPopup || showProofreadPopup) return;
+
       const { enableAnnotationQuickActions, annotationQuickAction } = viewSettings;
       if (wantWordLensDict) {
         // Route through handleDictionary so a Word Lens gloss tap honours the
