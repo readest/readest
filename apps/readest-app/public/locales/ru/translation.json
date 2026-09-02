@@ -2415,5 +2415,8 @@
   "Paired {{date}}": "Сопряжено {{date}}",
   "Unpair": "Разорвать сопряжение",
   "Books from paired devices are accepted automatically, without asking.": "Книги с сопряжённых устройств принимаются автоматически, без запроса.",
-  "As {{alias}}": "Как {{alias}}"
+  "As {{alias}}": "Как {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Оставьте этот экран включённым, чтобы устройства поблизости могли вас найти.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Устройства исчезают из списка, когда их экран выключается; оставьте экран включённым, чтобы оставаться видимым.",
+  "{{name}}'s Readest": "Readest пользователя {{name}}"
 }

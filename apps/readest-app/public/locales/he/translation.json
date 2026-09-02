@@ -2355,5 +2355,8 @@
   "Paired {{date}}": "צומד בתאריך {{date}}",
   "Unpair": "ביטול צימוד",
   "Books from paired devices are accepted automatically, without asking.": "ספרים ממכשירים מצומדים מתקבלים אוטומטית, ללא שאלה.",
-  "As {{alias}}": "בתור {{alias}}"
+  "As {{alias}}": "בתור {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "השאירו מסך זה דולק כדי שמכשירים בקרבת מקום יוכלו למצוא אתכם.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "מכשירים נעלמים מהרשימה כשהמסך שלהם כבה; השאירו את המסך דולק כדי להישאר גלויים.",
+  "{{name}}'s Readest": "Readest של {{name}}"
 }

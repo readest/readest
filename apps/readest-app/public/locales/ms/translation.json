@@ -2235,5 +2235,8 @@
   "Paired {{date}}": "Dipasangkan {{date}}",
   "Unpair": "Nyahpasangan",
   "Books from paired devices are accepted automatically, without asking.": "Buku daripada peranti berpasangan diterima secara automatik tanpa bertanya.",
-  "As {{alias}}": "Sebagai {{alias}}"
+  "As {{alias}}": "Sebagai {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Biarkan skrin ini menyala supaya peranti berdekatan dapat menemui anda.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Peranti hilang daripada senarai apabila skrinnya dimatikan; biarkan skrin menyala supaya kekal kelihatan.",
+  "{{name}}'s Readest": "Readest {{name}}"
 }

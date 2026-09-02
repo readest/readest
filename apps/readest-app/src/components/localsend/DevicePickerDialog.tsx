@@ -178,6 +178,29 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
     if (status?.running) void refresh();
   }, [status?.running, refresh]);
 
+  // Presence heartbeat: while the picker is open, re-announce on a short
+  // interval (multicast only, no subnet scan) and re-read the device list.
+  // Live peers keep answering, so they stay; a peer that locked its screen
+  // stops answering and the Rust side prunes it past its presence TTL, so it
+  // disappears within a few seconds - and reappears within one beat when it
+  // wakes. Paused while a send is in flight (the target tile must stay put)
+  // and while the app is hidden (nothing to show, and we go silent anyway).
+  const HEARTBEAT_MS = 1500;
+  useEffect(() => {
+    if (!status?.running || sendState) return;
+    const tick = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      try {
+        await announceLocalSend(false);
+        useLocalSendStore.getState().setDevices(await listLocalSendDevices());
+      } catch {
+        /* transient; the next beat retries */
+      }
+    };
+    const id = setInterval(() => void tick(), HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [status?.running, sendState]);
+
   // Close once the transfer this dialog started has ended (the manager
   // shows the outcome toast).
   const startedRef = React.useRef(false);
@@ -221,143 +244,159 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
   const SelfIcon = appService?.isAndroidApp || appService?.isIOSApp ? MdSmartphone : MdComputer;
 
   return (
-    <div
-      className='localsend-device-picker fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4'
-      style={{ paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px` }}
-    >
+    <div className='localsend-device-picker fixed inset-0 z-50'>
+      {/* Fullscreen scrim: blocks the library behind the sheet so no other
+          book can be selected while picking a target. Tapping it closes the
+          picker, except mid-transfer (matching the Close button). */}
       <div
-        className={clsx(
-          'eink-bordered bg-base-300 flex flex-col gap-3 rounded-lg p-4 shadow-2xl',
-          'w-full max-w-md sm:max-w-lg',
-        )}
+        className='absolute inset-0 bg-black/50'
+        aria-hidden='true'
+        onClick={sendState ? undefined : onClose}
+      />
+      <div
+        className='absolute bottom-0 left-0 right-0 flex justify-center px-4'
+        style={{ paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px` }}
       >
-        {/* AirDrop-style identity header: this device on the start side, the
+        <div
+          className={clsx(
+            'eink-bordered bg-base-300 relative flex flex-col gap-3 rounded-lg p-4 shadow-2xl',
+            'w-full max-w-md sm:max-w-lg',
+          )}
+        >
+          {/* AirDrop-style identity header: this device on the start side, the
             books being sent on the end side. */}
-        <div className='flex items-center justify-between gap-3'>
-          <div className='flex min-w-0 items-center gap-3'>
-            <span className='bg-base-content/10 eink-bordered grid h-11 w-11 shrink-0 place-items-center rounded-full'>
-              <SelfIcon className='text-base-content/80 h-[22px] w-[22px]' />
-            </span>
-            <div className='flex min-w-0 flex-col'>
-              <h3 className='truncate text-sm font-semibold'>{_('Nearby BookDrop')}</h3>
-              {status?.alias && (
-                <span className='text-base-content/60 truncate text-xs'>
-                  {_('As {{alias}}', { alias: status.alias })}
-                </span>
+          <div className='flex items-center justify-between gap-3'>
+            <div className='flex min-w-0 items-center gap-3'>
+              <span className='bg-base-content/10 eink-bordered grid h-11 w-11 shrink-0 place-items-center rounded-full'>
+                <SelfIcon className='text-base-content/80 h-[22px] w-[22px]' />
+              </span>
+              <div className='flex min-w-0 flex-col'>
+                <h3 className='truncate text-sm font-semibold'>{_('Nearby BookDrop')}</h3>
+                {status?.alias && (
+                  <span className='text-base-content/60 truncate text-xs'>
+                    {_('As {{alias}}', { alias: status.alias })}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className='flex shrink-0 items-center gap-2'>
+              {status?.running && !sendState && (
+                <button
+                  type='button'
+                  className={clsx('btn btn-ghost btn-circle btn-sm', refreshing && 'btn-disabled')}
+                  aria-label={_('Refresh devices')}
+                  onClick={() => void refresh()}
+                >
+                  <MdRefresh className={clsx('h-4 w-4', refreshing && 'animate-spin')} />
+                </button>
               )}
+              <span className='relative'>
+                {cover ? (
+                  <img
+                    src={cover}
+                    alt=''
+                    className='eink-bordered h-12 w-9 rounded-sm object-cover shadow-sm'
+                  />
+                ) : (
+                  <span className='bg-base-content/10 eink-bordered grid h-12 w-9 place-items-center rounded-sm'>
+                    <MdMenuBook className='text-base-content/50 h-4 w-4' />
+                  </span>
+                )}
+                {files.length > 1 && (
+                  <span className='bg-base-100 eink-bordered text-base-content absolute -bottom-1.5 -end-1.5 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-medium shadow-sm'>
+                    +{files.length - 1}
+                  </span>
+                )}
+              </span>
             </div>
           </div>
-          <div className='flex shrink-0 items-center gap-2'>
-            {status?.running && !sendState && (
+
+          {!status?.running ? (
+            <div className='flex flex-col items-start gap-2 text-sm'>
+              <span>{_('Enable Nearby BookDrop in Settings to send books.')}</span>
               <button
                 type='button'
-                className={clsx('btn btn-ghost btn-circle btn-sm', refreshing && 'btn-disabled')}
-                aria-label={_('Refresh devices')}
-                onClick={() => void refresh()}
+                className='btn btn-contrast btn-sm'
+                onClick={openLocalSendSettings}
               >
-                <MdRefresh className={clsx('h-4 w-4', refreshing && 'animate-spin')} />
+                {_('Open Settings')}
               </button>
-            )}
-            <span className='relative'>
-              {cover ? (
-                <img
-                  src={cover}
-                  alt=''
-                  className='eink-bordered h-12 w-9 rounded-sm object-cover shadow-sm'
-                />
-              ) : (
-                <span className='bg-base-content/10 eink-bordered grid h-12 w-9 place-items-center rounded-sm'>
-                  <MdMenuBook className='text-base-content/50 h-4 w-4' />
-                </span>
-              )}
-              {files.length > 1 && (
-                <span className='bg-base-100 eink-bordered text-base-content absolute -bottom-1.5 -end-1.5 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-medium shadow-sm'>
-                  +{files.length - 1}
-                </span>
-              )}
-            </span>
-          </div>
-        </div>
-
-        {!status?.running ? (
-          <div className='flex flex-col items-start gap-2 text-sm'>
-            <span>{_('Enable Nearby BookDrop in Settings to send books.')}</span>
-            <button
-              type='button'
-              className='btn btn-contrast btn-sm'
-              onClick={openLocalSendSettings}
-            >
-              {_('Open Settings')}
-            </button>
-          </div>
-        ) : devices.length === 0 ? (
-          <div className='relative grid h-48 w-full place-items-center overflow-hidden'>
-            {/* Scanning ripples while no peer is visible yet. */}
-            <div className='pointer-events-none absolute inset-0' aria-hidden='true'>
-              {[0, 0.8, 1.6].map((delay) => (
-                <span
-                  key={delay}
-                  className={clsx(
-                    'animate-localsend-ripple border-base-content/25 absolute left-1/2 top-1/2',
-                    'h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full border',
-                  )}
-                  style={{ animationDelay: `${-delay}s` }}
-                />
-              ))}
             </div>
-            <span className='text-base-content/70 relative px-6 text-center text-sm'>
-              {_(
-                'No devices found. Make sure Nearby BookDrop or LocalSend is open on the other device.',
+          ) : devices.length === 0 ? (
+            <div className='relative grid h-60 w-full place-items-center overflow-hidden'>
+              {/* Scanning ripples while no peer is visible yet. */}
+              <div className='pointer-events-none absolute inset-0' aria-hidden='true'>
+                {[0, 0.8, 1.6].map((delay) => (
+                  <span
+                    key={delay}
+                    className={clsx(
+                      'animate-localsend-ripple border-base-content/25 absolute left-1/2 top-1/2',
+                      'h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full border',
+                    )}
+                    style={{ animationDelay: `${-delay}s` }}
+                  />
+                ))}
+              </div>
+              <span className='text-base-content/70 relative px-6 text-center text-sm'>
+                {_(
+                  'No devices found. Make sure Nearby BookDrop or LocalSend is open on the other device.',
+                )}
+              </span>
+            </div>
+          ) : (
+            <div
+              className={clsx(
+                'flex h-60 w-full flex-wrap content-start items-start gap-4',
+                'overflow-y-auto px-1 py-3',
               )}
-            </span>
-          </div>
-        ) : (
-          <div
-            className={clsx(
-              'flex max-h-72 min-h-32 w-full flex-wrap content-start items-start gap-4',
-              'overflow-y-auto px-1 py-3',
-            )}
-          >
-            {devices.map((device) => {
-              const isTarget = sendState?.deviceFingerprint === device.fingerprint;
-              return (
-                <PeerTile
-                  key={device.fingerprint}
-                  device={device}
-                  paired={isPairedDevice(device.fingerprint)}
-                  dimmed={!!sendState && !isTarget}
-                  sending={!!sendState && isTarget}
-                  percent={percent}
-                  done={!!sendState && isTarget && percent >= 100}
-                  onPick={() => void pickDevice(device)}
-                />
-              );
-            })}
-          </div>
-        )}
-
-        {status?.running && sendState && (
-          <div className='flex items-center justify-between gap-2 text-sm'>
-            <span className='truncate'>
-              {_('Sending to {{alias}}', { alias: sendState.deviceAlias })} · {percent}%
-            </span>
-            <button
-              type='button'
-              className='btn btn-sm btn-neutral'
-              onClick={() => void cancelLocalSendSend()}
             >
-              {_('Cancel')}
-            </button>
-          </div>
-        )}
+              {devices.map((device) => {
+                const isTarget = sendState?.deviceFingerprint === device.fingerprint;
+                return (
+                  <PeerTile
+                    key={device.fingerprint}
+                    device={device}
+                    paired={isPairedDevice(device.fingerprint)}
+                    dimmed={!!sendState && !isTarget}
+                    sending={!!sendState && isTarget}
+                    percent={percent}
+                    done={!!sendState && isTarget && percent >= 100}
+                    onPick={() => void pickDevice(device)}
+                  />
+                );
+              })}
+            </div>
+          )}
 
-        {!sendState && (
-          <div className='flex justify-end'>
-            <button type='button' className='btn btn-sm btn-neutral' onClick={onClose}>
-              {_('Close')}
-            </button>
-          </div>
-        )}
+          {status?.running && sendState && (
+            <div className='flex items-center justify-between gap-2 text-sm'>
+              <span className='truncate'>
+                {_('Sending to {{alias}}', { alias: sendState.deviceAlias })} · {percent}%
+              </span>
+              <button
+                type='button'
+                className='btn btn-sm btn-neutral'
+                onClick={() => void cancelLocalSendSend()}
+              >
+                {_('Cancel')}
+              </button>
+            </div>
+          )}
+
+          {!sendState && (
+            <p className='text-base-content/50 select-none px-1 text-center text-xs'>
+              {_('Keep this screen on so nearby devices can find you.')}
+            </p>
+          )}
+
+          {!sendState && (
+            <div className='flex justify-end'>
+              <button type='button' className='btn btn-sm btn-neutral' onClick={onClose}>
+                {_('Close')}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

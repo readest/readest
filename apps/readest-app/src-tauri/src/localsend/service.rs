@@ -6,21 +6,21 @@ use crate::localsend::events::*;
 use crate::localsend::identity::Identity;
 use localsend::discovery::{
     DeviceChannel, DiscoveredDevice, DiscoveryConfig, DiscoveryEvent, DiscoveryHandle, HttpChannel,
-    DEFAULT_DISCOVERY_TIMEOUT,
+    StatefulDevice, DEFAULT_DISCOVERY_TIMEOUT,
 };
 use localsend::http::dto_v2::RegisterDtoV2;
 use localsend::http::server::common::save::FileUploadTarget;
 use localsend::http::server::v2::{PrepareUploadDecisionV2, ServerEventV2, SessionEndReasonV2};
-use localsend::http::server::web::{WebConfig, WebI18n};
+use localsend::http::server::web::{WebConfig, WebMode};
 use localsend::http::server::{start_with_port, ServerConfigV2, ServerHandle};
 use localsend::model::discovery::ProtocolType;
 use localsend::model::transfer::FileDto;
-use localsend::multicast::{
-    InterfaceFilter, DEFAULT_MULTICAST_GROUP, DEFAULT_MULTICAST_GROUP_V6, DEFAULT_PORT,
-};
+use localsend::multicast::{DEFAULT_MULTICAST_GROUP, DEFAULT_MULTICAST_GROUP_V6, DEFAULT_PORT};
+use localsend::util::interface::InterfaceFilter;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex as StdMutex};
+use std::time::{Duration, SystemTime};
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
@@ -126,20 +126,19 @@ pub async fn start<R: Runtime>(
                 verify_checksums: true,
                 event_tx: server_tx.clone(),
             }),
-            // The web upload page makes TLS client certificates optional
-            // (upstream `mandatory_client_auth` requires it, and an empty
-            // WebConfig does not flip it because `AppState.web` is derived
-            // from `send` alone): the stable LocalSend app presents no
-            // client certificate, and with mandatory auth its connections
-            // are reset during the handshake. Cert-less senders fall back
-            // to the body fingerprint, exactly like classic protocol v2.1.
-            // The page itself is a bonus: browsers without LocalSend can
-            // send books, gated by the same accept dialog as any transfer.
-            Some(WebConfig {
-                send: None,
-                upload: true,
-                i18n: WebI18n::default(),
-            }),
+            // `WebMode::Upload` makes TLS client certificates optional:
+            // upstream derives `mandatory_client_auth` from the web share
+            // being `Disabled`, so any active web mode flips it off. The
+            // stable LocalSend app presents no client certificate, and with
+            // mandatory auth its connections are reset during the handshake.
+            // Cert-less senders fall back to the body fingerprint, exactly
+            // like classic protocol v2.1. The upload page itself is a bonus:
+            // browsers without LocalSend can send books, gated by the same
+            // accept dialog as any transfer.
+            WebConfig {
+                mode: WebMode::Upload,
+                ..Default::default()
+            },
             stop_rx,
         )
         .await
@@ -283,11 +282,38 @@ pub async fn register_peer(
     discovery.add_device(device).await;
 }
 
+/// A discovered peer is shown only while it keeps answering presence probes.
+/// Once its last confirmation is older than this, the picker drops it, so a
+/// device that locked its screen (and stopped answering) disappears within a
+/// few seconds, AirDrop style. It is a few multiples of the picker's ~1.5s
+/// presence heartbeat, so a single dropped multicast packet never flickers a
+/// live peer out of the list.
+const PRESENCE_TTL: Duration = Duration::from_millis(4500);
+
+/// Whether a peer whose last confirmation was at `last_seen` is still fresh
+/// enough to show. A `None` (a device with no logs, which should not happen)
+/// is treated as absent; a timestamp in the future (clock skew) as present.
+fn device_is_present(last_seen: Option<SystemTime>, now: SystemTime) -> bool {
+    match last_seen {
+        Some(ts) => now
+            .duration_since(ts)
+            .map(|age| age <= PRESENCE_TTL)
+            .unwrap_or(true),
+        None => false,
+    }
+}
+
 pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
+    let now = SystemTime::now();
     discovery
         .devices()
         .into_iter()
         .filter_map(|stateful| {
+            // Prune peers that stopped answering (screen locked / app backgrounded).
+            let last_seen = stateful.logs.last().map(|log| log.timestamp);
+            if !device_is_present(last_seen, now) {
+                return None;
+            }
             let http = stateful.get_best_channel().and_then(|c| c.http())?;
             // The best channel may be IPv6; a multi-homed device usually also
             // has an IPv4 channel, whose last octet is the "#<n>" tag shown
@@ -310,6 +336,26 @@ pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
                 ipv4_host,
             })
         })
+        .collect()
+}
+
+/// The HTTP channels of the currently known peers, for a unicast re-probe.
+///
+/// A peer stays in the picker only while its presence is re-confirmed within
+/// [`PRESENCE_TTL`]. The picker's heartbeat re-confirms peers by announcing
+/// over multicast and letting them answer, but networks that carry the initial
+/// unicast scan yet drop ongoing multicast — Xiaomi/MIUI power management, or
+/// access points that filter or rate-limit multicast — never deliver that
+/// answer, so a peer found once would age out within seconds even while it is
+/// perfectly reachable. Re-probing each known peer's own channel over unicast
+/// re-confirms any that still answer, without the cost of sweeping the whole
+/// `/24` on every beat. A peer that genuinely went away (screen locked with the
+/// process suspended, service stopped) stops answering the probe too, so it
+/// still ages out as before.
+pub fn known_reprobe_channels(devices: &[StatefulDevice]) -> Vec<HttpChannel> {
+    devices
+        .iter()
+        .filter_map(|d| d.device.channel.http().cloned())
         .collect()
 }
 
@@ -409,6 +455,13 @@ fn handle_server_event<R: Runtime>(
                     cancel.token.cancel();
                 }
             }
+        }
+        ServerEventV2::ListenerFailed { error } => {
+            // The OS invalidated the listening socket (e.g. iOS reclaims a
+            // suspended app's sockets) and the core has stopped the server.
+            // Log it; the enable/discoverable lifecycle restarts the service
+            // when the app returns to the foreground.
+            log::warn!("LocalSend HTTP listener failed: {error}");
         }
     }
 }
@@ -814,6 +867,57 @@ pub async fn run_send<R: Runtime>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn presence_ttl_keeps_recent_and_drops_stale() {
+        let now = SystemTime::now();
+        // A peer confirmed just now is present.
+        assert!(device_is_present(Some(now), now));
+        // Within the TTL it stays.
+        assert!(device_is_present(
+            Some(now - PRESENCE_TTL + Duration::from_millis(500)),
+            now
+        ));
+        // Past the TTL (locked screen, stopped answering) it is pruned.
+        assert!(!device_is_present(
+            Some(now - PRESENCE_TTL - Duration::from_millis(500)),
+            now
+        ));
+        // Clock skew (future timestamp) is treated as present, never dropped.
+        assert!(device_is_present(Some(now + Duration::from_secs(10)), now));
+        // A device with no confirmation log is absent.
+        assert!(!device_is_present(None, now));
+    }
+
+    #[test]
+    fn known_reprobe_channels_collects_each_peers_confirmed_http_channel() {
+        let peer = |host: &str, port: u16| StatefulDevice {
+            device: DiscoveredDevice {
+                alias: "peer".into(),
+                version: "2.1".into(),
+                device_model: None,
+                device_type: None,
+                fingerprint: host.into(),
+                channel: DeviceChannel::Http(HttpChannel {
+                    host: host.into(),
+                    port,
+                    protocol: ProtocolType::Https,
+                }),
+                download: false,
+            },
+            channels: HashMap::new(),
+            logs: Vec::new(),
+        };
+        let devices = vec![peer("192.168.2.135", 53318), peer("192.168.2.140", 53318)];
+        let channels = known_reprobe_channels(&devices);
+        assert_eq!(channels.len(), 2);
+        assert_eq!(channels[0].host, "192.168.2.135");
+        assert_eq!(channels[0].port, 53318);
+        assert_eq!(channels[0].protocol, ProtocolType::Https);
+        assert_eq!(channels[1].host, "192.168.2.140");
+        // An empty store yields nothing to re-probe.
+        assert!(known_reprobe_channels(&[]).is_empty());
+    }
 
     #[test]
     fn unique_path_appends_counter_before_extension() {

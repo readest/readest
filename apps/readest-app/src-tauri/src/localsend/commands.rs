@@ -138,6 +138,16 @@ pub async fn localsend_announce(
         service.discovery.clone()
     };
     discovery.announce().await;
+    // Keep already-known peers present over unicast. Multicast alone re-confirms
+    // a peer only when its answer traverses the network; on setups that carry
+    // the initial scan but not ongoing multicast (Xiaomi/MIUI, APs that drop or
+    // rate-limit multicast), a peer found once would age out of the picker at
+    // the presence TTL. Re-probing just the known channels - not a full subnet
+    // scan - re-confirms any that still answer, on every heartbeat beat.
+    let known_channels = service::known_reprobe_channels(&discovery.devices());
+    if !known_channels.is_empty() {
+        let _ = discovery.discover_known_http_channels(known_channels).await;
+    }
     if scan {
         // HTTP fallback for networks/platforms without multicast (iOS):
         // probe every host on each local /24. LocalSend apps sit on the
@@ -153,6 +163,29 @@ pub async fn localsend_announce(
                 }
             }
         }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn localsend_set_discoverable(
+    state: State<'_, LocalSendState>,
+    active: bool,
+) -> Result<(), String> {
+    // Presence gate, not a connection: when this device's screen locks or the
+    // app is backgrounded, it stops answering announcements, so peers age it
+    // out of their pickers within a few seconds (AirDrop style). On return it
+    // answers again and announces once, so open pickers re-list it at once.
+    let discovery = {
+        let guard = state.0.lock().await;
+        let Some(service) = guard.as_ref() else {
+            return Ok(());
+        };
+        service.discovery.clone()
+    };
+    discovery.set_answer_announcements(active);
+    if active {
+        discovery.announce().await;
     }
     Ok(())
 }

@@ -2355,5 +2355,8 @@
   "Paired {{date}}": "Asociat la {{date}}",
   "Unpair": "Anulează asocierea",
   "Books from paired devices are accepted automatically, without asking.": "Cărțile de la dispozitivele asociate sunt acceptate automat, fără întrebare.",
-  "As {{alias}}": "Ca {{alias}}"
+  "As {{alias}}": "Ca {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Păstrează acest ecran pornit pentru ca dispozitivele din apropiere să te poată găsi.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Dispozitivele dispar din listă când ecranul lor se stinge; păstrează ecranul pornit ca să rămâi vizibil.",
+  "{{name}}'s Readest": "Readest al lui {{name}}"
 }

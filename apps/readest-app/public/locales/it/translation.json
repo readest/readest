@@ -2355,5 +2355,8 @@
   "Paired {{date}}": "Associato il {{date}}",
   "Unpair": "Dissocia",
   "Books from paired devices are accepted automatically, without asking.": "I libri dai dispositivi associati vengono accettati automaticamente, senza chiedere.",
-  "As {{alias}}": "Come {{alias}}"
+  "As {{alias}}": "Come {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Tieni acceso questo schermo affinché i dispositivi nelle vicinanze possano trovarti.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "I dispositivi scompaiono dall'elenco quando il loro schermo si spegne; tieni acceso lo schermo per restare visibile.",
+  "{{name}}'s Readest": "Readest di {{name}}"
 }

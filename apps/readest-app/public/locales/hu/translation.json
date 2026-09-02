@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "Párosítva: {{date}}",
   "Unpair": "Párosítás törlése",
   "Books from paired devices are accepted automatically, without asking.": "A párosított eszközökről érkező könyveket rákérdezés nélkül, automatikusan elfogadjuk.",
-  "As {{alias}}": "Mint {{alias}}"
+  "As {{alias}}": "Mint {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Tartsa bekapcsolva ezt a képernyőt, hogy a közeli eszközök megtalálhassák Önt.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Az eszközök eltűnnek a listáról, amikor a képernyőjük kikapcsol; tartsa bekapcsolva a képernyőt, hogy látható maradjon.",
+  "{{name}}'s Readest": "{{name}} Readestje"
 }

@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "{{date}} tarihinde eşleştirildi",
   "Unpair": "Eşleştirmeyi Kaldır",
   "Books from paired devices are accepted automatically, without asking.": "Eşleştirilmiş cihazlardan gelen kitaplar sorulmadan otomatik olarak kabul edilir.",
-  "As {{alias}}": "{{alias}} olarak"
+  "As {{alias}}": "{{alias}} olarak",
+  "Keep this screen on so nearby devices can find you.": "Yakındaki cihazların sizi bulabilmesi için bu ekranı açık tutun.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Ekranı kapandığında cihazlar listeden kaybolur; görünür kalmak için ekranı açık tutun.",
+  "{{name}}'s Readest": "{{name}} Readest'i"
 }

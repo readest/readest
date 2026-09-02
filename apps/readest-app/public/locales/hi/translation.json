@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "{{date}} को युग्मित",
   "Unpair": "युग्मन हटाएँ",
   "Books from paired devices are accepted automatically, without asking.": "युग्मित डिवाइसों से पुस्तकें बिना पूछे स्वचालित रूप से स्वीकार की जाती हैं।",
-  "As {{alias}}": "{{alias}} के रूप में"
+  "As {{alias}}": "{{alias}} के रूप में",
+  "Keep this screen on so nearby devices can find you.": "आस-पास के डिवाइस आपको ढूंढ सकें, इसके लिए इस स्क्रीन को चालू रखें।",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "जब किसी डिवाइस की स्क्रीन बंद हो जाती है तो वह सूची से गायब हो जाता है; दृश्यमान बने रहने के लिए स्क्रीन चालू रखें।",
+  "{{name}}'s Readest": "{{name}} का Readest"
 }

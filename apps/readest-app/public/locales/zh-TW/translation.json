@@ -2235,5 +2235,8 @@
   "Paired {{date}}": "配對於 {{date}}",
   "Unpair": "取消配對",
   "Books from paired devices are accepted automatically, without asking.": "來自已配對裝置的書籍將自動接收，無需確認。",
-  "As {{alias}}": "以 {{alias}} 的身分"
+  "As {{alias}}": "以 {{alias}} 的身分",
+  "Keep this screen on so nearby devices can find you.": "讓此螢幕保持開啟，附近裝置才能找到你。",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "裝置螢幕關閉後會從清單中消失；讓螢幕保持開啟以持續顯示。",
+  "{{name}}'s Readest": "{{name}} 的 Readest"
 }

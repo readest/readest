@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "Gekoppeld op {{date}}",
   "Unpair": "Ontkoppelen",
   "Books from paired devices are accepted automatically, without asking.": "Boeken van gekoppelde apparaten worden automatisch geaccepteerd, zonder vragen.",
-  "As {{alias}}": "Als {{alias}}"
+  "As {{alias}}": "Als {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Houd dit scherm aan zodat apparaten in de buurt je kunnen vinden.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Apparaten verdwijnen uit de lijst wanneer hun scherm uitgaat; houd het scherm aan om zichtbaar te blijven.",
+  "{{name}}'s Readest": "Readest van {{name}}"
 }

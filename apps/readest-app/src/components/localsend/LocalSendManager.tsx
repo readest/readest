@@ -10,7 +10,11 @@ import { useLocalSendStore } from '@/store/localsendStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
 import { isNearbyPairingAllowed } from '@/utils/access';
-import { getLocalSendAlias, isLocalSendEnabled } from '@/services/localsend/devicePrefs';
+import {
+  DEFAULT_ALIAS_NAMED_KEY,
+  getLocalSendAlias,
+  isLocalSendEnabled,
+} from '@/services/localsend/devicePrefs';
 import {
   addPairedDevice,
   canAutoAccept,
@@ -20,6 +24,7 @@ import { playTransferCue, primeTransferCues } from '@/services/localsend/sounds'
 import {
   cancelLocalSendReceive,
   respondLocalSend,
+  setLocalSendDiscoverable,
   startLocalSend,
   stopLocalSend,
 } from '@/services/localsend/service';
@@ -65,6 +70,10 @@ const LocalSendManager: React.FC = () => {
   const { user } = useAuth();
   const userRef = useRef(user);
   userRef.current = user;
+  // Read the translator at call time so the default alias localizes without
+  // rebuilding `defaultAlias` (and restarting the service) on every render.
+  const translateRef = useRef(_);
+  translateRef.current = _;
 
   const pendingRequest = useLocalSendStore((state) => state.pendingRequest);
   const [sendFiles, setSendFiles] = useState<SendFileInput[] | null>(null);
@@ -106,6 +115,13 @@ const LocalSendManager: React.FC = () => {
   }, []);
 
   const defaultAlias = useCallback(async (): Promise<string> => {
+    // Prefer the signed-in user's name, AirDrop style: "<name>'s Readest".
+    // Match the library main menu ("Logged in as {{name}}"): first name only.
+    const fullName: unknown = userRef.current?.user_metadata?.['full_name'];
+    if (typeof fullName === 'string' && fullName.trim()) {
+      const name = fullName.trim().split(' ')[0];
+      return translateRef.current(DEFAULT_ALIAS_NAMED_KEY, { name });
+    }
     try {
       const { hostname } = await import('@tauri-apps/plugin-os');
       const name = await hostname();
@@ -148,6 +164,22 @@ const LocalSendManager: React.FC = () => {
     eventDispatcher.on('localsend-prefs-changed', onPrefsChanged);
     return () => eventDispatcher.off('localsend-prefs-changed', onPrefsChanged);
   }, [syncServiceState]);
+
+  // AirDrop-style presence: this device is discoverable only while its screen
+  // is on and Readest is in the foreground. Locking the screen or backgrounding
+  // the app fires `visibilitychange` -> hidden (on both mobile and desktop),
+  // so we stop answering announcements and peers drop us from their pickers
+  // within a few seconds; returning to the foreground re-announces us at once.
+  // This is presence only - the service keeps running, nothing disconnects.
+  useEffect(() => {
+    if (!isTauriAppPlatform()) return;
+    const sync = () => {
+      if (!isLocalSendEnabled()) return;
+      void setLocalSendDiscoverable(document.visibilityState === 'visible').catch(() => {});
+    };
+    document.addEventListener('visibilitychange', sync);
+    return () => document.removeEventListener('visibilitychange', sync);
+  }, []);
 
   // The alias change flow restarts the service (stop, then start with the new
   // alias). The settings form dispatches 'localsend-alias-changed' for this.

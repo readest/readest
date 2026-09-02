@@ -2415,5 +2415,8 @@
   "Paired {{date}}": "Seznanjeno {{date}}",
   "Unpair": "Prekini seznanitev",
   "Books from paired devices are accepted automatically, without asking.": "Knjige s seznanjenih naprav so samodejno sprejete, brez vprašanj.",
-  "As {{alias}}": "Kot {{alias}}"
+  "As {{alias}}": "Kot {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Naj ta zaslon ostane vklopljen, da vas naprave v bližini lahko najdejo.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Naprave izginejo s seznama, ko se njihov zaslon izklopi; naj bo zaslon vklopljen, da ostanete vidni.",
+  "{{name}}'s Readest": "Readest uporabnika {{name}}"
 }

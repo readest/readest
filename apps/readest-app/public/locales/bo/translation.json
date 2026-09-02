@@ -2235,5 +2235,8 @@
   "Paired {{date}}": "{{date}} ལ་ཟུང་སྦྲེལ་བྱས།",
   "Unpair": "ཟུང་སྦྲེལ་འདོར་བ།",
   "Books from paired devices are accepted automatically, without asking.": "ཟུང་སྦྲེལ་སྒྲིག་ཆས་ནས་འབྱོར་བའི་དཔེ་ཆ་རྣམས་དྲི་བ་མེད་པར་རང་འགུལ་གྱིས་དང་ལེན་བྱེད།",
-  "As {{alias}}": "{{alias}} ཞེས་སུ།"
+  "As {{alias}}": "{{alias}} ཞེས་སུ།",
+  "Keep this screen on so nearby devices can find you.": "ཉེ་འགྲམ་གྱི་སྒྲིག་ཆས་ཀྱིས་ཁྱེད་རང་རྙེད་ཐུབ་པའི་ཆེད་དུ་བརྙན་ཡོལ་འདི་གསལ་བར་བཞག",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "སྒྲིག་ཆས་ཀྱི་བརྙན་ཡོལ་ཁ་བརྒྱབ་སྐབས་རེའུ་མིག་ནས་མི་སྣང་བར་འགྱུར། མཐོང་རྒྱུ་ཡོད་པར་གནས་ཆེད་བརྙན་ཡོལ་གསལ་བར་བཞག",
+  "{{name}}'s Readest": "{{name}}ཡི་ Readest"
 }

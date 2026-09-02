@@ -174,6 +174,11 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
           {_('Incoming books are added to your library after you accept each transfer request.')}
         </li>
         <li>{_('Only book files are accepted; other file types are declined automatically.')}</li>
+        <li>
+          {_(
+            'Devices disappear from the list when their screen turns off; keep the screen on to stay visible.',
+          )}
+        </li>
         {paired.length > 0 && (
           <li>{_('Books from paired devices are accepted automatically, without asking.')}</li>
         )}

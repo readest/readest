@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "Συζεύχθηκε στις {{date}}",
   "Unpair": "Κατάργηση σύζευξης",
   "Books from paired devices are accepted automatically, without asking.": "Τα βιβλία από συζευγμένες συσκευές γίνονται αποδεκτά αυτόματα, χωρίς ερώτηση.",
-  "As {{alias}}": "Ως {{alias}}"
+  "As {{alias}}": "Ως {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Διατηρήστε αυτήν την οθόνη ανοιχτή ώστε οι κοντινές συσκευές να μπορούν να σας βρουν.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Οι συσκευές εξαφανίζονται από τη λίστα όταν σβήσει η οθόνη τους· κρατήστε την οθόνη ανοιχτή για να παραμένετε ορατοί.",
+  "{{name}}'s Readest": "Το Readest του {{name}}"
 }

@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "{{date}} da juftlangan",
   "Unpair": "Juftlikni bekor qilish",
   "Books from paired devices are accepted automatically, without asking.": "Juftlangan qurilmalardan kelgan kitoblar soʻralmasdan avtomatik qabul qilinadi.",
-  "As {{alias}}": "{{alias}} sifatida"
+  "As {{alias}}": "{{alias}} sifatida",
+  "Keep this screen on so nearby devices can find you.": "Yaqin atrofdagi qurilmalar sizni topa olishi uchun bu ekranni yoniq qoldiring.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Qurilmalar ekrani o'chganda ro'yxatdan yo'qoladi; ko'rinib turish uchun ekranni yoniq qoldiring.",
+  "{{name}}'s Readest": "{{name}}ning Readest'i"
 }

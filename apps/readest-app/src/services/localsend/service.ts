@@ -22,6 +22,16 @@ export async function announceLocalSend(scan: boolean): Promise<void> {
 }
 
 /**
+ * Presence gate (not a connection): when this device's screen locks or the app
+ * is backgrounded, `active = false` stops it answering announcements, so peers
+ * age it out of their pickers within a few seconds. `active = true` makes it
+ * answer again and announce once, so open pickers re-list it immediately.
+ */
+export async function setLocalSendDiscoverable(active: boolean): Promise<void> {
+  await invoke('localsend_set_discoverable', { active });
+}
+
+/**
  * Answer a pending receive request. `acceptFileIds` empty/null declines.
  * Returns whether this call claimed the request; a `false` means another
  * window answered first (or the sender aborted) and the caller must not

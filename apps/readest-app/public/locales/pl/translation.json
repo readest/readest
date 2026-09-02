@@ -2415,5 +2415,8 @@
   "Paired {{date}}": "Sparowano {{date}}",
   "Unpair": "Usuń sparowanie",
   "Books from paired devices are accepted automatically, without asking.": "Książki ze sparowanych urządzeń są akceptowane automatycznie, bez pytania.",
-  "As {{alias}}": "Jako {{alias}}"
+  "As {{alias}}": "Jako {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "Pozostaw ten ekran włączony, aby pobliskie urządzenia mogły Cię znaleźć.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "Urządzenia znikają z listy, gdy ich ekran się wyłącza; pozostaw ekran włączony, aby pozostać widocznym.",
+  "{{name}}'s Readest": "Readest użytkownika {{name}}"
 }

@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "დაწყვილდა {{date}}",
   "Unpair": "დაწყვილების გაუქმება",
   "Books from paired devices are accepted automatically, without asking.": "დაწყვილებული მოწყობილობებიდან წიგნები ავტომატურად მიიღება, კითხვის გარეშე.",
-  "As {{alias}}": "როგორც {{alias}}"
+  "As {{alias}}": "როგორც {{alias}}",
+  "Keep this screen on so nearby devices can find you.": "დატოვეთ ეს ეკრანი ჩართული, რომ ახლომდებარე მოწყობილობებმა შეძლონ თქვენი პოვნა.",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "მოწყობილობები ქრება სიიდან, როცა მათი ეკრანი გამოირთვება; დატოვეთ ეკრანი ჩართული, რომ ხილვადი დარჩეთ.",
+  "{{name}}'s Readest": "{{name}}-ის Readest"
 }

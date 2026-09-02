@@ -2295,5 +2295,8 @@
   "Paired {{date}}": "{{date}} তারিখে পেয়ার করা হয়েছে",
   "Unpair": "আনপেয়ার করুন",
   "Books from paired devices are accepted automatically, without asking.": "পেয়ার করা ডিভাইস থেকে আসা বই জিজ্ঞাসা ছাড়াই স্বয়ংক্রিয়ভাবে গ্রহণ করা হয়।",
-  "As {{alias}}": "{{alias}} হিসেবে"
+  "As {{alias}}": "{{alias}} হিসেবে",
+  "Keep this screen on so nearby devices can find you.": "কাছাকাছি ডিভাইসগুলি যাতে আপনাকে খুঁজে পায় সেজন্য এই স্ক্রিনটি চালু রাখুন।",
+  "Devices disappear from the list when their screen turns off; keep the screen on to stay visible.": "স্ক্রিন বন্ধ হলে ডিভাইসগুলি তালিকা থেকে অদৃশ্য হয়ে যায়; দৃশ্যমান থাকতে স্ক্রিন চালু রাখুন।",
+  "{{name}}'s Readest": "{{name}}-এর Readest"
 }

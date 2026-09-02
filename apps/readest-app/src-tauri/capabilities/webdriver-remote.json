@@ -40,6 +40,7 @@
     "allow-localsend-get-status",
     "allow-localsend-list-devices",
     "allow-localsend-announce",
+    "allow-localsend-set-discoverable",
     "allow-localsend-respond",
     "allow-localsend-cancel-receive",
     "allow-localsend-send-files",
