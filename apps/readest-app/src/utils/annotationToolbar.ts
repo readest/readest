@@ -60,6 +60,20 @@ export const getToolbarToolTypes = (
   canShare: boolean,
 ): AnnotationToolType[] => sanitize(items).filter((type) => canShare || type !== 'share');
 
+// One-tap highlighting (#5983): whenever the highlight tool is on the toolbar,
+// the style/color strip shows as soon as text is selected, so picking a color
+// needs no prior tap on Highlight. A popup-window selection without a CFI
+// (synthesized footnote text) can't anchor a highlight and keeps the plain
+// bar; an already-annotated selection always gets the strip, as before.
+export const shouldShowHighlightOptions = (
+  toolTypes: AnnotationToolType[],
+  selection: { annotated?: boolean; popup?: boolean; cfi?: string } | null,
+): boolean => {
+  if (!selection) return false;
+  if (selection.annotated) return true;
+  return toolTypes.includes('highlight') && !(selection.popup && !selection.cfi);
+};
+
 // Hidden tools (the "Available" tray), in canonical order.
 export const getAvailableToolTypes = (
   items: AnnotationToolType[] | undefined,

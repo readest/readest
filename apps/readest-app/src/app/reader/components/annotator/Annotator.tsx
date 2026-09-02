@@ -61,7 +61,11 @@ import { writeTextToClipboard } from '@/utils/clipboard';
 import { buildAnnotationUrl } from '@/utils/deeplink';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { canShareText, shareSelectedText } from '@/utils/share';
-import { getToolbarToolTypes, supportsProofread } from '@/utils/annotationToolbar';
+import {
+  getToolbarToolTypes,
+  shouldShowHighlightOptions,
+  supportsProofread,
+} from '@/utils/annotationToolbar';
 import { AnnotationToolType } from '@/types/annotator';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
@@ -233,17 +237,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const canShare = canShareText(appService);
   // The toolbar is now customizable, so size the selection popup to the number
   // of visible tools (responsive) up to a max — otherwise a 2-tool toolbar
-  // renders a sparse, full-width bar. Annotated selections keep the max width
-  // since they show the wider highlight options / notes instead of the buttons.
+  // renders a sparse, full-width bar. Selections that show the highlight
+  // style/color strip (or an annotated selection's notes) keep the max width,
+  // since the strip needs the room the buttons alone don't.
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
-  const visibleToolCount = getToolbarToolTypes(
-    viewSettings.annotationToolbarItems,
-    canShare,
-  ).length;
-  const annotPopupWidth = selection?.annotated
+  const toolbarToolTypes = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare);
+  const highlightOptionsAvailable = shouldShowHighlightOptions(toolbarToolTypes, selection ?? null);
+  const annotPopupWidth = highlightOptionsAvailable
     ? annotPopupMaxWidth
-    : Math.min(Math.max(visibleToolCount, 1) * annotPopupToolSize, annotPopupMaxWidth);
+    : Math.min(Math.max(toolbarToolTypes.length, 1) * annotPopupToolSize, annotPopupMaxWidth);
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -1059,7 +1062,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   useEffect(() => {
-    setHighlightOptionsVisible(!!(selection && selection.annotated));
+    // One-tap highlighting (#5983): with the highlight tool on the toolbar the
+    // style/color strip opens with the popup, so a color pick highlights the
+    // fresh selection directly (HighlightOptions calls handleHighlight, which
+    // creates the record when none exists at the CFI yet).
+    setHighlightOptionsVisible(highlightOptionsAvailable);
     if (selection && selection.text.trim().length > 0) {
       // Read-and-reset the Word Lens dictionary flag up front so it can never
       // stick to a later selection if an early return below fires (e.g. a gloss
@@ -2204,7 +2211,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
-  const toolButtons = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare)
+  const toolButtons = toolbarToolTypes
     .map(buildToolButton)
     .filter((button): button is NonNullable<typeof button> => button !== null);
 
