@@ -79,7 +79,7 @@ jobs:
             (cd apps/readest-app/src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
           fi
 
-      - name: Build and Export iOS Bundle (.ipa)
+      - name: Archive and Export iOS Bundle (.ipa)
         run: |
           cd apps/readest-app
           
@@ -99,28 +99,45 @@ jobs:
           </plist>
           EOF
 
-          # Build Xcode archive
+          # Build Web Frontend first
+          pnpm build
+
+          # Archive directly with xcodebuild using App Store Connect API Key
           pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
-            'pnpm tauri ios build --export-method app-store-connect' || true
+            'xcodebuild archive \
+              -project src-tauri/gen/apple/Readest.xcodeproj \
+              -scheme Readest_iOS \
+              -configuration release \
+              -archivePath src-tauri/gen/apple/build/Readest_iOS.xcarchive \
+              -allowProvisioningUpdates \
+              -authenticationKeyID $APPLE_API_KEY \
+              -authenticationKeyIssuerID $APPLE_API_ISSUER \
+              -authenticationKeyPath $APPLE_API_KEY_PATH'
 
-          # Patch metadata and SDK headers for App Store Connect validation
-          if [ -d "src-tauri/gen/apple/build/Readest_iOS.xcarchive" ]; then
-            APP_PLIST="src-tauri/gen/apple/build/Readest_iOS.xcarchive/Products/Applications/Yomi.app/Info.plist"
-            APP_BIN="src-tauri/gen/apple/build/Readest_iOS.xcarchive/Products/Applications/Yomi.app/Yomi"
-            
-            plutil -replace ITSAppUsesNonExemptEncryption -bool false "$APP_PLIST"
-            plutil -replace DTPlatformVersion -string "26.0" "$APP_PLIST"
-            plutil -replace DTSDKName -string "iphoneos26.0" "$APP_PLIST"
-            plutil -replace DTSDKBuild -string "26A300" "$APP_PLIST"
-            plutil -replace DTXcode -string "1620" "$APP_PLIST"
-            plutil -replace DTXcodeBuild -string "16C503" "$APP_PLIST"
-            plutil -replace CFBundleVersion -string "${{ github.run_number }}" "$APP_PLIST"
-            
-            vtool -set-build-version 2 15.0 26.0 -replace -output "$APP_BIN" "$APP_BIN"
+          # Patch metadata & Mach-O headers for App Store Connect validation
+          APP_PLIST="src-tauri/gen/apple/build/Readest_iOS.xcarchive/Products/Applications/Yomi.app/Info.plist"
+          APP_BIN="src-tauri/gen/apple/build/Readest_iOS.xcarchive/Products/Applications/Yomi.app/Yomi"
+          
+          plutil -replace ITSAppUsesNonExemptEncryption -bool false "$APP_PLIST"
+          plutil -replace DTPlatformVersion -string "26.0" "$APP_PLIST"
+          plutil -replace DTSDKName -string "iphoneos26.0" "$APP_PLIST"
+          plutil -replace DTSDKBuild -string "26A300" "$APP_PLIST"
+          plutil -replace DTXcode -string "1620" "$APP_PLIST"
+          plutil -replace DTXcodeBuild -string "16C503" "$APP_PLIST"
+          plutil -replace CFBundleVersion -string "${{ github.run_number }}" "$APP_PLIST"
+          
+          vtool -set-build-version 2 15.0 26.0 -replace -output "$APP_BIN" "$APP_BIN"
 
-            pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
-              'xcodebuild -exportArchive -archivePath src-tauri/gen/apple/build/Readest_iOS.xcarchive -exportPath src-tauri/gen/apple/build/arm64 -exportOptionsPlist src-tauri/gen/apple/ExportOptions.plist -allowProvisioningUpdates -authenticationKeyID $APPLE_API_KEY -authenticationKeyIssuerID $APPLE_API_ISSUER -authenticationKeyPath $APPLE_API_KEY_PATH'
-          fi
+          # Export .ipa with explicit ExportOptions.plist & API Key
+          pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
+            'xcodebuild -exportArchive \
+              -archivePath src-tauri/gen/apple/build/Readest_iOS.xcarchive \
+              -exportPath src-tauri/gen/apple/build/arm64 \
+              -exportOptionsPlist src-tauri/gen/apple/ExportOptions.plist \
+              -allowProvisioningUpdates \
+              -authenticationKeyID $APPLE_API_KEY \
+              -authenticationKeyIssuerID $APPLE_API_ISSUER \
+              -authenticationKeyPath $APPLE_API_KEY_PATH'
 
       - name: Upload to App Store Connect
         run: |
