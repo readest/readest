@@ -23,6 +23,7 @@ import {
 import { playTransferCue, primeTransferCues } from '@/services/localsend/sounds';
 import {
   cancelLocalSendReceive,
+  isLocalSendAlive,
   respondLocalSend,
   setLocalSendDiscoverable,
   startLocalSend,
@@ -173,20 +174,30 @@ const LocalSendManager: React.FC = () => {
   // This is presence only - the service keeps running, nothing disconnects.
   useEffect(() => {
     if (!isTauriAppPlatform()) return;
-    const sync = () => {
+    const sync = async () => {
       if (!isLocalSendEnabled()) return;
       const visible = document.visibilityState === 'visible';
-      // The OS can reclaim a backgrounded app's listening socket (iOS); the
-      // backend tears the dead service down and reports running:false. Bring it
-      // back on the next foreground before re-announcing presence.
-      if (visible && !useLocalSendStore.getState().status?.running) {
+      if (!visible) {
+        void setLocalSendDiscoverable(false).catch(() => {});
+        return;
+      }
+      // The OS can reclaim a backgrounded app's listening socket (iOS). When
+      // the core notices, it tears the dead service down and reports
+      // running:false - but iOS never wakes the accept loop to notice, so the
+      // status stays running:true on a service no peer can reach (the picker
+      // showed nothing until the user toggled the setting off and on). Trust a
+      // liveness probe, not the stored flag, and rebuild the service when it
+      // fails: `stop` first, or `start` would hand back the dead one.
+      if (!(await isLocalSendAlive().catch(() => false))) {
+        await stopLocalSend().catch(() => {});
         void syncServiceState();
         return;
       }
-      void setLocalSendDiscoverable(visible).catch(() => {});
+      void setLocalSendDiscoverable(true).catch(() => {});
     };
-    document.addEventListener('visibilitychange', sync);
-    return () => document.removeEventListener('visibilitychange', sync);
+    const onVisibilityChange = () => void sync();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [syncServiceState]);
 
   // The alias change flow restarts the service (stop, then start with the new

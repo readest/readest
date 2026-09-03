@@ -22,6 +22,18 @@ export async function announceLocalSend(scan: boolean): Promise<void> {
 }
 
 /**
+ * Whether the running service can still accept connections.
+ *
+ * iOS reclaims a suspended app's listening socket without ever failing the
+ * accept loop, so the service keeps reporting `running: true` while no peer
+ * can reach it. Probe this on the way back to the foreground rather than
+ * trusting the stored status.
+ */
+export async function isLocalSendAlive(): Promise<boolean> {
+  return await invoke<boolean>('localsend_is_alive');
+}
+
+/**
  * Presence gate (not a connection): when this device's screen locks or the app
  * is backgrounded, `active = false` stops it answering announcements, so peers
  * age it out of their pickers within a few seconds. `active = true` makes it

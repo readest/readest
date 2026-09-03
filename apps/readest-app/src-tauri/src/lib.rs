@@ -445,6 +445,7 @@ pub fn run() {
             localsend::commands::localsend_list_devices,
             localsend::commands::localsend_announce,
             localsend::commands::localsend_set_discoverable,
+            localsend::commands::localsend_is_alive,
             localsend::commands::localsend_respond,
             localsend::commands::localsend_cancel_receive,
             localsend::commands::localsend_send_files,

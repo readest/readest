@@ -4,18 +4,24 @@ use super::LocalSendState;
 use std::collections::{HashMap, HashSet};
 use tauri::{AppHandle, Emitter, Runtime, State};
 
+/// Whether an interface can carry LocalSend peers, i.e. whether its address is
+/// worth reporting as this device's "#<n>" tag.
+///
+/// VPN tunnels (tun0/utun4/ppp0/wg0) and the cellular link (pdp_ip0) carry
+/// addresses no peer on the LAN can reach, so a tag naming one is a number the
+/// user can never match against what a peer shows. An iPhone on Wi-Fi with
+/// cellular up reported three tags for this reason.
+fn is_lan_interface(name: &str) -> bool {
+    !["tun", "utun", "ppp", "wg", "pdp_ip"]
+        .iter()
+        .any(|prefix| name.starts_with(prefix))
+}
+
 fn local_ips() -> Vec<String> {
     if_addrs::get_if_addrs()
         .unwrap_or_default()
         .iter()
-        // VPN tunnels (tun0/utun4/ppp0/wg0) carry addresses peers on the LAN
-        // never see; including them would add misleading "#<n>" device tags.
-        .filter(|iface| {
-            let name = iface.name.as_str();
-            !["tun", "utun", "ppp", "wg"]
-                .iter()
-                .any(|prefix| name.starts_with(prefix))
-        })
+        .filter(|iface| is_lan_interface(iface.name.as_str()))
         .filter_map(|iface| match iface.ip() {
             std::net::IpAddr::V4(ip) if !ip.is_loopback() => Some(ip.to_string()),
             _ => None,
@@ -121,7 +127,7 @@ pub async fn localsend_list_devices(
     let guard = state.0.lock().await;
     Ok(guard
         .as_ref()
-        .map(|s| service::device_payloads(&s.discovery))
+        .map(|s| service::device_payloads(&s.discovery, &s.departed))
         .unwrap_or_default())
 }
 
@@ -167,6 +173,22 @@ pub async fn localsend_announce(
     Ok(())
 }
 
+/// Whether the running service can still be reached. The webview calls this
+/// when the app returns to the foreground: on iOS the listening socket does
+/// not survive suspension, and nothing reports that, so `running: true` alone
+/// is not proof the service works (see [`service::listener_is_alive`]).
+#[tauri::command]
+pub async fn localsend_is_alive(state: State<'_, LocalSendState>) -> Result<bool, String> {
+    let port = {
+        let guard = state.0.lock().await;
+        guard.as_ref().map(|service| service.port)
+    };
+    match port {
+        Some(port) => Ok(service::listener_is_alive(port).await),
+        None => Ok(false),
+    }
+}
+
 #[tauri::command]
 pub async fn localsend_set_discoverable(
     state: State<'_, LocalSendState>,
@@ -176,17 +198,31 @@ pub async fn localsend_set_discoverable(
     // app is backgrounded, it stops answering announcements, so peers age it
     // out of their pickers within a few seconds (AirDrop style). On return it
     // answers again and announces once, so open pickers re-list it at once.
-    let discovery = {
+    let (discovery, identity, port) = {
         let guard = state.0.lock().await;
         let Some(service) = guard.as_ref() else {
             return Ok(());
         };
-        service.discovery.clone()
+        (
+            service.discovery.clone(),
+            service.identity.clone(),
+            service.port,
+        )
     };
     discovery.set_answer_announcements(active);
     if active {
         discovery.announce().await;
     }
+    // Multicast never reaches an iOS peer (no multicast entitlement), and a
+    // device that just went dark keeps answering probes for its whole grace
+    // window, so peers would hold its tile for 10-15s. Tell them directly:
+    // the real port means "back", DEPARTURE_PORT means "going dark".
+    let notify_port = if active {
+        port
+    } else {
+        service::DEPARTURE_PORT
+    };
+    service::notify_peers(&identity, &discovery, notify_port).await;
     Ok(())
 }
 
@@ -367,6 +403,18 @@ pub async fn localsend_cancel_send(state: State<'_, LocalSendState>) -> Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lan_interfaces_exclude_tunnels_and_cellular() {
+        for name in ["en0", "en8", "bridge100", "awdl0", "eth0"] {
+            assert!(is_lan_interface(name), "{name} can carry LAN peers");
+        }
+        // pdp_ip0 is the iPhone's cellular link: reachable by nobody on the
+        // LAN, so its last octet must never become this device's tag.
+        for name in ["tun0", "utun4", "ppp0", "wg0", "pdp_ip0", "pdp_ip1"] {
+            assert!(!is_lan_interface(name), "{name} carries no LAN peers");
+        }
+    }
 
     #[test]
     fn scan_covers_localsend_and_readest_ports() {

@@ -246,6 +246,7 @@
     "allow-localsend-list-devices",
     "allow-localsend-announce",
     "allow-localsend-set-discoverable",
+    "allow-localsend-is-alive",
     "allow-localsend-respond",
     "allow-localsend-cancel-receive",
     "allow-localsend-send-files",

@@ -10,7 +10,7 @@ import {
 import { getPairedDevices, removePairedDevice } from '@/services/localsend/pairedDevices';
 import { isLocalSendSoundsEnabled, setLocalSendSoundsEnabled } from '@/services/localsend/sounds';
 import { getLocalSendStatus } from '@/services/localsend/service';
-import { ipTag } from '@/services/localsend/deviceModel';
+import { preferredIpTag } from '@/services/localsend/deviceModel';
 import type { LocalSendStatus } from '@/services/localsend/types';
 import { eventDispatcher } from '@/utils/event';
 import SubPageHeader from '../SubPageHeader';
@@ -24,14 +24,14 @@ import {
 } from '../primitives';
 
 /**
- * "#120 macOS"-style tag: the last octet of this host's IPv4 address plus
- * the announced OS name, so the user can tell peers which device to pick
- * when aliases collide.
+ * "#120 macOS"-style tag: the last octet of this host's IPv4 address plus the
+ * announced OS name, so the user can tell peers which device to pick when
+ * aliases collide. One tag, matching the single tag every peer shows for this
+ * device - listing each interface instead ("#100 #99 #245") gave the user
+ * three numbers and no way to tell which one a peer meant.
  */
-const deviceTag = (status: LocalSendStatus): string => {
-  const tags = status.localIps.map(ipTag).filter(Boolean);
-  return [...new Set(tags), status.deviceModel].filter(Boolean).join(' ');
-};
+const deviceTag = (status: LocalSendStatus): string =>
+  [preferredIpTag(status.localIps), status.deviceModel].filter(Boolean).join(' ');
 
 interface LocalSendFormProps {
   onBack: () => void;

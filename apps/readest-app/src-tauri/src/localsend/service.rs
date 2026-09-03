@@ -8,6 +8,7 @@ use localsend::discovery::{
     DeviceChannel, DiscoveredDevice, DiscoveryConfig, DiscoveryEvent, DiscoveryHandle, HttpChannel,
     StatefulDevice, DEFAULT_DISCOVERY_TIMEOUT,
 };
+use localsend::http::client::{LsHttpClient, LsHttpClientVersion};
 use localsend::http::dto_v2::RegisterDtoV2;
 use localsend::http::server::common::save::FileUploadTarget;
 use localsend::http::server::v2::{PrepareUploadDecisionV2, ServerEventV2, SessionEndReasonV2};
@@ -91,6 +92,8 @@ pub struct RunningService {
     pub pending: PendingMap,
     pub receiving: ReceivingMap,
     pub send_cancel: SendCancelSlot,
+    /// Peers that said goodbye, and when. See [`DEPARTURE_PORT`].
+    pub departed: DepartedPeers,
     pub multicast_error: Option<String>,
 }
 
@@ -191,6 +194,7 @@ pub async fn start<R: Runtime>(
         pending: Arc::new(StdMutex::new(HashMap::new())),
         receiving: Arc::new(StdMutex::new(HashMap::new())),
         send_cancel: Arc::new(StdMutex::new(None)),
+        departed: Arc::new(StdMutex::new(HashMap::new())),
         multicast_error,
     };
     spawn_event_pump(app, &service, server_rx, discovery_rx);
@@ -219,6 +223,7 @@ fn spawn_event_pump<R: Runtime>(
     let pending = service.pending.clone();
     let receiving = service.receiving.clone();
     let send_cancel = service.send_cancel.clone();
+    let departed = service.departed.clone();
     let self_fingerprint = service.identity.fingerprint.clone();
     tauri::async_runtime::spawn(async move {
         loop {
@@ -234,6 +239,19 @@ fn spawn_event_pump<R: Runtime>(
                             Some(scope_id) => format!("{}%{scope_id}", ip.ip),
                             None => ip.ip.to_string(),
                         };
+                        // A register advertising DEPARTURE_PORT is a goodbye,
+                        // not an arrival: the peer is about to go dark and
+                        // would otherwise keep answering probes (and so keep
+                        // its tile alive) for its whole grace window.
+                        if info.port == DEPARTURE_PORT {
+                            departed
+                                .lock()
+                                .unwrap()
+                                .insert(info.fingerprint.clone(), SystemTime::now());
+                            emit_devices(&app, &discovery, &departed);
+                            continue;
+                        }
+                        departed.lock().unwrap().remove(&info.fingerprint);
                         let discovery = discovery.clone();
                         let self_fingerprint = self_fingerprint.clone();
                         tauri::async_runtime::spawn(async move {
@@ -246,7 +264,7 @@ fn spawn_event_pump<R: Runtime>(
                     None => break,
                 },
                 event = discovery_rx.recv() => match event {
-                    Some(_) => emit_devices(&app, &discovery),
+                    Some(_) => emit_devices(&app, &discovery, &departed),
                     None => break,
                 },
             }
@@ -282,6 +300,73 @@ pub async fn register_peer(
     discovery.add_device(device).await;
 }
 
+/// Peers that told us they are going away, and when they said so.
+pub type DepartedPeers = Arc<StdMutex<HashMap<String, SystemTime>>>;
+
+/// The port a departing device advertises in its goodbye.
+///
+/// Presence is otherwise inferred from "does the peer still answer", which is
+/// too slow: iOS keeps a locked app running for its background grace window,
+/// so a phone whose screen just went off goes on answering re-probes for
+/// several seconds and only then ages out at [`PRESENCE_TTL`] - 10 to 15
+/// seconds in the list after the user pocketed it. So a device about to go
+/// dark says so, over the register route it already speaks, and its peers
+/// drop it on the next beat. Port zero means "not listening": no peer can
+/// dial it, so a LocalSend client that does not know about goodbyes just
+/// records an address it cannot send to until the hello corrects it.
+pub const DEPARTURE_PORT: u16 = 0;
+
+/// How long a goodbye keeps a peer out of the list without a matching hello.
+///
+/// It must outlast the sender's grace window, or the peer's own next answered
+/// probe would put it straight back. It is bounded so a hello lost on the way
+/// back cannot hide a device that is really there: past this, presence falls
+/// back to [`PRESENCE_TTL`], which by then has pruned a peer that truly left.
+pub const DEPARTURE_HOLD: Duration = Duration::from_secs(15);
+
+/// A goodbye is best-effort and races the OS suspending us, so it gets one
+/// short attempt per peer rather than a retry.
+const DEPARTURE_TIMEOUT: Duration = Duration::from_millis(700);
+
+/// Whether a peer that said goodbye at `departed_at` is still held out of the
+/// list.
+pub fn peer_has_departed(departed_at: Option<SystemTime>, now: SystemTime) -> bool {
+    departed_at.is_some_and(|at| {
+        now.duration_since(at)
+            .map(|age| age < DEPARTURE_HOLD)
+            .unwrap_or(true)
+    })
+}
+
+/// Tells every known peer that this device is going dark (`port`
+/// [`DEPARTURE_PORT`]) or is back (its real port), over the register route.
+///
+/// Best-effort: peers that have gone away themselves simply time out, and the
+/// presence TTL still covers every case where this never arrives at all - a
+/// crash, a force-quit, or walking out of range.
+pub async fn notify_peers(identity: &Identity, discovery: &DiscoveryHandle, port: u16) {
+    let channels = known_reprobe_channels(&discovery.devices());
+    if channels.is_empty() {
+        return;
+    }
+    // No pinned fingerprint: this is discovery traffic, and the payload says
+    // nothing a peer does not already know about us.
+    let Ok(client) = LsHttpClient::new(
+        &identity.key_pem,
+        &identity.cert_pem,
+        LsHttpClientVersion::V2,
+        None,
+        Some(DEPARTURE_TIMEOUT),
+    ) else {
+        return;
+    };
+    let dto = identity.client_register_dto(port);
+    let sends = channels
+        .iter()
+        .map(|channel| client.register(channel.protocol, &channel.host, channel.port, dto.clone()));
+    futures::future::join_all(sends).await;
+}
+
 /// A discovered peer is shown only while it keeps answering presence probes.
 /// Once its last confirmation is older than this, the picker drops it, so a
 /// device that locked its screen (and stopped answering) disappears within a
@@ -303,12 +388,21 @@ fn device_is_present(last_seen: Option<SystemTime>, now: SystemTime) -> bool {
     }
 }
 
-pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
+pub fn device_payloads(
+    discovery: &DiscoveryHandle,
+    departed: &DepartedPeers,
+) -> Vec<DevicePayload> {
     let now = SystemTime::now();
+    let departed = departed.lock().unwrap().clone();
     discovery
         .devices()
         .into_iter()
         .filter_map(|stateful| {
+            // A peer that announced it is going dark leaves at once, instead of
+            // lingering on the TTL it goes on refreshing through its grace window.
+            if peer_has_departed(departed.get(&stateful.device.fingerprint).copied(), now) {
+                return None;
+            }
             // Prune peers that stopped answering (screen locked / app backgrounded).
             let last_seen = stateful.logs.last().map(|log| log.timestamp);
             if !device_is_present(last_seen, now) {
@@ -317,14 +411,19 @@ pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
             let http = stateful.get_best_channel().and_then(|c| c.http())?;
             // The best channel may be IPv6; a multi-homed device usually also
             // has an IPv4 channel, whose last octet is the "#<n>" tag shown
-            // in the UI.
+            // in the UI. Channel ranking follows the most recent confirmation,
+            // so picking the first IPv4 there made the tag flicker between a
+            // peer's addresses (an iPhone answers on both Wi-Fi and the
+            // iPhone-USB link). The tag is an identity label, so choose it
+            // deterministically instead: the routable address over an
+            // autoconfigured link-local one, then the lowest address.
             let ipv4_host = stateful
                 .get_ranked_channels()
                 .into_iter()
                 .filter_map(|channel| channel.http())
-                .map(|http| http.host.as_str())
-                .find(|host| host.parse::<std::net::Ipv4Addr>().is_ok())
-                .map(str::to_string);
+                .filter_map(|http| http.host.parse::<std::net::Ipv4Addr>().ok())
+                .min_by_key(|ip| (ip.is_link_local(), *ip))
+                .map(|ip| ip.to_string());
             Some(DevicePayload {
                 alias: stateful.device.alias.clone(),
                 device_model: stateful.device.device_model.clone(),
@@ -338,6 +437,26 @@ pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
         })
         .collect()
 }
+
+/// Whether the HTTP server bound to `port` still accepts connections.
+///
+/// iOS reclaims a suspended app's listening socket, and the accept loop is
+/// never woken to notice: `TcpListener::accept` stays pending forever, so
+/// [`ServerEventV2::ListenerFailed`] is never emitted and the service looks
+/// healthy while no peer can reach it (Nearby BookDrop then went silent until
+/// the user toggled the setting off and on). A loopback connect is the only
+/// thing that tells the two apart - the OS refuses it once the socket is gone.
+pub async fn listener_is_alive(port: u16) -> bool {
+    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    matches!(
+        tokio::time::timeout(LIVENESS_TIMEOUT, tokio::net::TcpStream::connect(addr)).await,
+        Ok(Ok(_))
+    )
+}
+
+/// A loopback connect either completes or is refused at once; anything longer
+/// than this is a wedged socket, which counts as dead.
+const LIVENESS_TIMEOUT: Duration = Duration::from_millis(500);
 
 /// The HTTP channels of the currently known peers, for a unicast re-probe.
 ///
@@ -359,11 +478,15 @@ pub fn known_reprobe_channels(devices: &[StatefulDevice]) -> Vec<HttpChannel> {
         .collect()
 }
 
-fn emit_devices<R: Runtime>(app: &AppHandle<R>, discovery: &DiscoveryHandle) {
+fn emit_devices<R: Runtime>(
+    app: &AppHandle<R>,
+    discovery: &DiscoveryHandle,
+    departed: &DepartedPeers,
+) {
     let _ = app.emit(
         EV_DEVICES,
         DevicesPayload {
-            devices: device_payloads(discovery),
+            devices: device_payloads(discovery, departed),
         },
     );
 }
@@ -887,6 +1010,11 @@ pub async fn run_send<R: Runtime>(
 mod tests {
     use super::*;
 
+    /// No peer has said goodbye in these tests.
+    fn no_departures() -> DepartedPeers {
+        Arc::new(StdMutex::new(HashMap::new()))
+    }
+
     #[test]
     fn presence_ttl_keeps_recent_and_drops_stale() {
         let now = SystemTime::now();
@@ -1006,7 +1134,7 @@ mod tests {
             register_dto("peer-fp"),
         ));
 
-        let devices = device_payloads(&discovery);
+        let devices = device_payloads(&discovery, &no_departures());
         assert_eq!(devices.len(), 1);
         assert_eq!(devices[0].fingerprint, "peer-fp");
         assert_eq!(devices[0].host, "192.168.2.135");
@@ -1039,9 +1167,123 @@ mod tests {
             .await;
         });
 
-        let devices = device_payloads(&discovery);
+        let devices = device_payloads(&discovery, &no_departures());
         assert_eq!(devices.len(), 1);
         assert_eq!(devices[0].ipv4_host.as_deref(), Some("192.168.2.135"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn device_payload_keeps_the_ipv4_tag_stable_for_a_multi_homed_peer() {
+        // A phone on Wi-Fi and on the iPhone-USB link answers on both
+        // addresses in turn. The "#<n>" tag must not follow whichever
+        // confirmation landed last (it flickered between the two), and must
+        // name the routable address rather than the link-local one.
+        let dir = std::env::temp_dir().join(format!("ls-mh-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_file(dir.join("identity.pem"));
+        let identity = Identity::load_or_generate(&dir, "Readest".into(), "macOS".into()).unwrap();
+        let discovery = test_discovery(&identity);
+
+        let confirm = |host: &str| {
+            tauri::async_runtime::block_on(register_peer(
+                &discovery,
+                &identity.fingerprint,
+                host.into(),
+                register_dto("peer-fp"),
+            ));
+        };
+        let tag_host = || {
+            device_payloads(&discovery, &no_departures())[0]
+                .ipv4_host
+                .clone()
+        };
+
+        confirm("192.168.2.99");
+        assert_eq!(tag_host().as_deref(), Some("192.168.2.99"));
+        confirm("169.254.109.245");
+        assert_eq!(
+            tag_host().as_deref(),
+            Some("192.168.2.99"),
+            "a link-local confirmation must not take over the tag"
+        );
+        confirm("192.168.2.99");
+        assert_eq!(tag_host().as_deref(), Some("192.168.2.99"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn listener_is_alive_follows_the_bound_socket() {
+        tauri::async_runtime::block_on(async {
+            let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+                .await
+                .unwrap();
+            let port = listener.local_addr().unwrap().port();
+            assert!(
+                listener_is_alive(port).await,
+                "a bound listener must answer the probe"
+            );
+
+            // Dropping the listener is what the OS does to a suspended iOS
+            // app's socket: the port stops accepting while the service still
+            // believes it is running.
+            drop(listener);
+            assert!(
+                !listener_is_alive(port).await,
+                "a reclaimed socket must fail the probe"
+            );
+        });
+    }
+
+    #[test]
+    fn a_goodbye_hides_a_peer_that_is_still_answering() {
+        // iOS keeps a locked app running for a few seconds, so the phone goes
+        // on answering re-probes after it said goodbye. The hold is what stops
+        // the very next probe from putting it straight back in the list.
+        let now = SystemTime::now();
+        assert!(peer_has_departed(Some(now), now));
+        assert!(peer_has_departed(
+            Some(now - DEPARTURE_HOLD + Duration::from_secs(1)),
+            now
+        ));
+        // Bounded, so a lost hello cannot hide a live device for good.
+        assert!(!peer_has_departed(
+            Some(now - DEPARTURE_HOLD - Duration::from_secs(1)),
+            now
+        ));
+        assert!(!peer_has_departed(None, now));
+    }
+
+    #[test]
+    fn device_payloads_drop_a_peer_that_said_goodbye_until_it_says_hello() {
+        let dir = std::env::temp_dir().join(format!("ls-bye-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_file(dir.join("identity.pem"));
+        let identity = Identity::load_or_generate(&dir, "Readest".into(), "macOS".into()).unwrap();
+        let discovery = test_discovery(&identity);
+        let departed: DepartedPeers = Arc::new(StdMutex::new(HashMap::new()));
+
+        tauri::async_runtime::block_on(register_peer(
+            &discovery,
+            &identity.fingerprint,
+            "192.168.2.99".into(),
+            register_dto("peer-fp"),
+        ));
+        assert_eq!(device_payloads(&discovery, &departed).len(), 1);
+
+        departed
+            .lock()
+            .unwrap()
+            .insert("peer-fp".into(), SystemTime::now());
+        assert!(
+            device_payloads(&discovery, &departed).is_empty(),
+            "a peer that said goodbye must leave the list at once"
+        );
+
+        // The hello clears the hold, even though nothing about the peer's
+        // last-seen timestamp changed.
+        departed.lock().unwrap().remove("peer-fp");
+        assert_eq!(device_payloads(&discovery, &departed).len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1060,7 +1302,7 @@ mod tests {
             register_dto(&identity.fingerprint.clone()),
         ));
 
-        assert!(device_payloads(&discovery).is_empty());
+        assert!(device_payloads(&discovery, &no_departures()).is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
