@@ -26,6 +26,7 @@ import {
   getThemeCode,
   getStyles,
   applyImageStyle,
+  applyNamespacedAttributes,
   keepTextAlignment,
 } from '@/utils/style';
 import {
@@ -635,5 +636,79 @@ describe('keepTextAlignment', () => {
     expect(document.querySelector('p')!.classList.contains('aligned-center')).toBe(true);
     expect(document.querySelector('div')!.classList.contains('aligned-right')).toBe(true);
     expect(document.querySelector('blockquote')!.classList.contains('aligned-justify')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyNamespacedAttributes
+
+describe('applyNamespacedAttributes', () => {
+  const OPS = 'http://www.idpf.org/2007/ops';
+
+  // Sections reach the iframe through `srcdoc`, so they are always parsed as
+  // HTML no matter what the EPUB declares.
+  const parseAsSrcdoc = (body: string, root = 'xmlns:epub="http://www.idpf.org/2007/ops"') =>
+    new DOMParser().parseFromString(
+      `<html xmlns="http://www.w3.org/1999/xhtml" ${root}><body>${body}</body></html>`,
+      'text/html',
+    );
+
+  it('re-attaches the declared namespace to a prefixed attribute (#6038)', () => {
+    const doc = parseAsSrcdoc('<div epub:type="chapter">The Swans.</div>');
+    const div = doc.querySelector('div')!;
+    expect(div.getAttributeNS(OPS, 'type')).toBeNull();
+
+    applyNamespacedAttributes(doc);
+
+    expect(div.getAttributeNS(OPS, 'type')).toBe('chapter');
+  });
+
+  it('keeps the qualified-name lookup working', () => {
+    const doc = parseAsSrcdoc('<aside epub:type="footnote">note</aside>');
+    applyNamespacedAttributes(doc);
+    expect(doc.querySelector('aside')!.getAttribute('epub:type')).toBe('footnote');
+  });
+
+  it('leaves a prefix the document never declared alone', () => {
+    const doc = parseAsSrcdoc('<div ops:type="chapter">x</div>');
+    applyNamespacedAttributes(doc);
+    const div = doc.querySelector('div')!;
+    expect(div.getAttributeNS(OPS, 'type')).toBeNull();
+    expect(div.getAttribute('ops:type')).toBe('chapter');
+  });
+
+  it('matches the namespace URI rather than the prefix the book chose', () => {
+    const doc = parseAsSrcdoc(
+      '<div ops:type="chapter">x</div>',
+      'xmlns:ops="http://www.idpf.org/2007/ops"',
+    );
+    applyNamespacedAttributes(doc);
+    expect(doc.querySelector('div')!.getAttributeNS(OPS, 'type')).toBe('chapter');
+  });
+
+  it('picks up a declaration made further down the document', () => {
+    const doc = parseAsSrcdoc(
+      '<section xmlns:epub="http://www.idpf.org/2007/ops"><div epub:type="chapter">x</div></section>',
+      '',
+    );
+    applyNamespacedAttributes(doc);
+    expect(doc.querySelector('div')!.getAttributeNS(OPS, 'type')).toBe('chapter');
+  });
+
+  it('leaves the reserved xml and xmlns names untouched', () => {
+    const doc = parseAsSrcdoc('<div xml:lang="en">x</div>');
+    applyNamespacedAttributes(doc);
+    const html = doc.documentElement;
+    const div = doc.querySelector('div')!;
+    expect(div.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang')).toBeNull();
+    expect(div.getAttribute('xml:lang')).toBe('en');
+    expect(html.getAttribute('xmlns:epub')).toBe(OPS);
+  });
+
+  it('is a no-op for a document that declares no prefix', () => {
+    const doc = parseAsSrcdoc('<div class="chapter">x</div>', '');
+    const before = doc.body.innerHTML;
+    applyNamespacedAttributes(doc);
+    expect(doc.body.innerHTML).toBe(before);
   });
 });

@@ -1208,6 +1208,23 @@ export const transformStylesheet = (
     return match;
   });
 
+  // `@media (orientation: ...)` inside a section is evaluated against the
+  // iframe, and the paginator sizes that iframe to the whole multi-column strip
+  // rather than to a page: a one-page section reports portrait and a two-page
+  // section landscape. The strip width is itself derived from the content, so a
+  // rule that changes the content's height — `column-count: 2` in the IDPF
+  // media-query sample — flips the query, which flips the page count, which
+  // flips the query straight back, and the layout never settles (#6038).
+  // Resolve the feature against the reader's own viewport, the same thing the
+  // vw/vh rewrite below does and for the same reason, so the book gets the
+  // orientation the reader is actually in and the cycle cannot form.
+  const isLandscape = vw > vh;
+  css = css.replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
+    (mode.toLowerCase() === 'landscape') === isLandscape
+      ? '(min-width: 0px)'
+      : '(min-width: 999999px)',
+  );
+
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
@@ -1283,6 +1300,45 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
 export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
   document.body.classList.remove('scroll-mode', 'paginated-mode');
   document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
+// A prefixed attribute name, e.g. the `epub:type` of `epub:type="chapter"`.
+const PREFIXED_ATTR_REGEX = /^([A-Za-z_][\w.-]*):([A-Za-z_][\w.-]*)$/;
+
+/**
+ * Re-attach the namespaces an XHTML section declared to its prefixed
+ * attributes.
+ *
+ * Sections reach the iframe through `srcdoc` so that browser extensions can
+ * see them, and `srcdoc` is always parsed as HTML. An HTML parser has no
+ * namespaces outside foreign content, so `epub:type="chapter"` lands in the
+ * null namespace under the literal name `epub:type` and every CSS namespace
+ * selector written against it matches nothing: the book's own
+ * `div[epub|type="chapter"]` (which paints the illustration and the page
+ * color of the IDPF media-query sample, #6038) as much as our
+ * `aside[epub|type~="footnote"]`. The original attribute stays in place, and
+ * the twin carries the same qualified name, so `getAttribute('epub:type')`
+ * callers are unaffected either way.
+ */
+export const applyNamespacedAttributes = (document: Document) => {
+  // `xmlns:` declarations survive HTML parsing as ordinary attributes. Elements
+  // come in document order, so a prefix declared on an ancestor is recorded
+  // before anything that uses it.
+  const namespaces = new Map<string, string>();
+  for (const element of document.querySelectorAll('*')) {
+    const attributes = Array.from(element.attributes);
+    for (const { name, value } of attributes) {
+      if (value && name.startsWith('xmlns:')) namespaces.set(name.slice('xmlns:'.length), value);
+    }
+    if (!namespaces.size) continue;
+    for (const { name, value } of attributes) {
+      const [, prefix, localName] = PREFIXED_ATTR_REGEX.exec(name) ?? [];
+      const uri = prefix ? namespaces.get(prefix) : undefined;
+      if (uri && !element.hasAttributeNS(uri, localName!)) {
+        element.setAttributeNS(uri, name, value);
+      }
+    }
+  }
 };
 
 /**
