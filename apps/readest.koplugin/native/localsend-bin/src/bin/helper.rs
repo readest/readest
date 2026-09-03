@@ -216,7 +216,7 @@ fn dispatch(line: &str, svc: &service::Service) -> bool {
         }
         "list_devices" => {
             events::push(&Event::Devices {
-                devices: service::device_payloads(&svc.discovery),
+                devices: service::device_payloads(&svc.discovery, &svc.departed),
             });
         }
         "send" => {
