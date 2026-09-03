@@ -61,11 +61,18 @@ jobs:
       - name: Install Node Dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Initialize iOS Target
+        run: |
+          cd apps/readest-app
+          pnpm tauri ios init
+
       - name: Auto-increment iOS Build Number (CFBundleVersion)
         run: |
           BUILD_NUM=${{ github.run_number }}
-          sed -i '' "s/CFBundleVersion: .*/CFBundleVersion: \"$BUILD_NUM\"/" apps/readest-app/src-tauri/gen/apple/project.yml
-          (cd apps/readest-app/src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
+          if [ -f "apps/readest-app/src-tauri/gen/apple/project.yml" ]; then
+            sed -i '' "s/CFBundleVersion: .*/CFBundleVersion: \"$BUILD_NUM\"/" apps/readest-app/src-tauri/gen/apple/project.yml
+            (cd apps/readest-app/src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
+          fi
 
       - name: Build iOS Production Bundle (.ipa)
         run: |
@@ -128,6 +135,11 @@ jobs:
 
       - name: Install Node Dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Initialize Android Target
+        run: |
+          cd apps/readest-app
+          pnpm tauri android init
 
       - name: Build Android Production App Bundle (.aab)
         run: |
