@@ -2160,11 +2160,6 @@
   "Transfer failed": "Prenos ni uspel",
   "No supported book files from {{alias}}": "Ni podprtih datotek knjig od {{alias}}",
   "Receiving from {{alias}}": "Prejemanje od {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} vam želi poslati knjige",
-  "{{count}} book(s), {{size}}_one": "{{count}} knjiga, {{size}}",
-  "{{count}} book(s), {{size}}_two": "{{count}} knjigi, {{size}}",
-  "{{count}} book(s), {{size}}_few": "{{count}} knjige, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} knjig, {{size}}",
   "Accept": "Sprejmi",
   "and {{count}} more_one": "in še {{count}}",
   "and {{count}} more_two": "in še {{count}}",
@@ -2428,5 +2423,9 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "Datoteka varnostne kopije ReadEra (.bak)",
   "BookOrbit Sync": "Sinhronizacija BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Shranite knjižnico, napredek branja in označbe v svoj račun Readest. To lahko kadar koli spremenite v Nastavitvah."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Shranite knjižnico, napredek branja in označbe v svoj račun Readest. To lahko kadar koli spremenite v Nastavitvah.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} vam želi poslati {{count}} knjigo",
+  "{{alias}} wants to send you {{count}} book(s)_two": "{{alias}} vam želi poslati {{count}} knjigi",
+  "{{alias}} wants to send you {{count}} book(s)_few": "{{alias}} vam želi poslati {{count}} knjige",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vam želi poslati {{count}} knjig"
 }

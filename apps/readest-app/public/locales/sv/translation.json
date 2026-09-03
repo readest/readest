@@ -2060,9 +2060,6 @@
   "Transfer failed": "Överföringen misslyckades",
   "No supported book files from {{alias}}": "Inga bokfiler som stöds från {{alias}}",
   "Receiving from {{alias}}": "Tar emot från {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} vill skicka böcker till dig",
-  "{{count}} book(s), {{size}}_one": "{{count}} bok, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} böcker, {{size}}",
   "Accept": "Acceptera",
   "and {{count}} more_one": "och {{count}} till",
   "and {{count}} more_other": "och {{count}} till",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra-säkerhetskopia (.bak)",
   "BookOrbit Sync": "BookOrbit-synkronisering",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Lagra ditt bibliotek, dina läsframsteg och markeringar i ditt Readest-konto. Du kan ändra detta när som helst i Inställningar."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Lagra ditt bibliotek, dina läsframsteg och markeringar i ditt Readest-konto. Du kan ändra detta när som helst i Inställningar.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} vill skicka {{count}} bok till dig",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vill skicka {{count}} böcker till dig"
 }

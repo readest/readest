@@ -2010,8 +2010,6 @@
   "Transfer failed": "전송에 실패했습니다",
   "No supported book files from {{alias}}": "{{alias}}에서 지원되는 책 파일이 없습니다",
   "Receiving from {{alias}}": "{{alias}}에서 받는 중",
-  "{{alias}} wants to send you books": "{{alias}}이(가) 책을 보내려고 합니다",
-  "{{count}} book(s), {{size}}_other": "책 {{count}}권, {{size}}",
   "Accept": "수락",
   "and {{count}} more_other": "외 {{count}}개",
   "{{count}} unsupported file(s) will be skipped_other": "지원되지 않는 파일 {{count}}개는 건너뜁니다",
@@ -2248,5 +2246,6 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra 백업 파일 (.bak)",
   "BookOrbit Sync": "BookOrbit 동기화",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "라이브러리, 읽기 진행 상황, 하이라이트를 Readest 계정에 저장합니다. 설정에서 언제든지 변경할 수 있습니다."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "라이브러리, 읽기 진행 상황, 하이라이트를 Readest 계정에 저장합니다. 설정에서 언제든지 변경할 수 있습니다.",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}}이(가) 책 {{count}}권을 보내려고 합니다"
 }

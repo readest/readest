@@ -2010,8 +2010,6 @@
   "Transfer failed": "การถ่ายโอนล้มเหลว",
   "No supported book files from {{alias}}": "ไม่มีไฟล์หนังสือที่รองรับจาก {{alias}}",
   "Receiving from {{alias}}": "กำลังรับจาก {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} ต้องการส่งหนังสือให้คุณ",
-  "{{count}} book(s), {{size}}_other": "หนังสือ {{count}} เล่ม, {{size}}",
   "Accept": "ยอมรับ",
   "and {{count}} more_other": "และอีก {{count}} รายการ",
   "{{count}} unsupported file(s) will be skipped_other": "จะข้ามไฟล์ที่ไม่รองรับ {{count}} ไฟล์",
@@ -2248,5 +2246,6 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ไฟล์สำรองข้อมูลของ ReadEra (.bak)",
   "BookOrbit Sync": "การซิงค์ BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "จัดเก็บคลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณไว้ในบัญชี Readest ของคุณ คุณสามารถเปลี่ยนได้ทุกเมื่อในการตั้งค่า"
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "จัดเก็บคลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณไว้ในบัญชี Readest ของคุณ คุณสามารถเปลี่ยนได้ทุกเมื่อในการตั้งค่า",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ต้องการส่งหนังสือ {{count}} เล่มให้คุณ"
 }

@@ -2060,9 +2060,6 @@
   "Transfer failed": "Aktarım başarısız oldu",
   "No supported book files from {{alias}}": "{{alias}} cihazından desteklenen kitap dosyası yok",
   "Receiving from {{alias}}": "{{alias}} cihazından alınıyor",
-  "{{alias}} wants to send you books": "{{alias}} size kitap göndermek istiyor",
-  "{{count}} book(s), {{size}}_one": "{{count}} kitap, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} kitap, {{size}}",
   "Accept": "Kabul et",
   "and {{count}} more_one": "ve {{count}} tane daha",
   "and {{count}} more_other": "ve {{count}} tane daha",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra yedek dosyası (.bak)",
   "BookOrbit Sync": "BookOrbit Senkronizasyonu",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı Readest hesabınızda saklayın. Bunu istediğiniz zaman Ayarlar'dan değiştirebilirsiniz."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı Readest hesabınızda saklayın. Bunu istediğiniz zaman Ayarlar'dan değiştirebilirsiniz.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} size {{count}} kitap göndermek istiyor",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} size {{count}} kitap göndermek istiyor"
 }

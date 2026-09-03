@@ -2160,11 +2160,6 @@
   "Transfer failed": "Ошибка передачи",
   "No supported book files from {{alias}}": "Нет поддерживаемых файлов книг от {{alias}}",
   "Receiving from {{alias}}": "Приём от {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} хочет отправить вам книги",
-  "{{count}} book(s), {{size}}_one": "{{count}} книга, {{size}}",
-  "{{count}} book(s), {{size}}_few": "{{count}} книги, {{size}}",
-  "{{count}} book(s), {{size}}_many": "{{count}} книг, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} книги, {{size}}",
   "Accept": "Принять",
   "and {{count}} more_one": "и ещё {{count}}",
   "and {{count}} more_few": "и ещё {{count}}",
@@ -2428,5 +2423,9 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "Файл резервной копии ReadEra (.bak)",
   "BookOrbit Sync": "Синхронизация BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Храните свою библиотеку, прогресс чтения и выделения в своей учётной записи Readest. Это можно изменить в любой момент в Настройках."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Храните свою библиотеку, прогресс чтения и выделения в своей учётной записи Readest. Это можно изменить в любой момент в Настройках.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} хочет отправить вам {{count}} книгу",
+  "{{alias}} wants to send you {{count}} book(s)_few": "{{alias}} хочет отправить вам {{count}} книги",
+  "{{alias}} wants to send you {{count}} book(s)_many": "{{alias}} хочет отправить вам {{count}} книг",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} хочет отправить вам {{count}} книги"
 }

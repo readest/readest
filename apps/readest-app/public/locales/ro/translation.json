@@ -2110,10 +2110,6 @@
   "Transfer failed": "Transferul a eșuat",
   "No supported book files from {{alias}}": "Niciun fișier de carte acceptat de la {{alias}}",
   "Receiving from {{alias}}": "Se primește de la {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} vrea să vă trimită cărți",
-  "{{count}} book(s), {{size}}_one": "{{count}} carte, {{size}}",
-  "{{count}} book(s), {{size}}_few": "{{count}} cărți, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} de cărți, {{size}}",
   "Accept": "Acceptă",
   "and {{count}} more_one": "și încă {{count}}",
   "and {{count}} more_few": "și încă {{count}}",
@@ -2368,5 +2364,8 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "Fișier de backup ReadEra (.bak)",
   "BookOrbit Sync": "Sincronizare BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Stochează-ți biblioteca, progresul citirii și evidențierile în contul tău Readest. Poți schimba această opțiune oricând în Setări."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Stochează-ți biblioteca, progresul citirii și evidențierile în contul tău Readest. Poți schimba această opțiune oricând în Setări.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} vrea să vă trimită {{count}} carte",
+  "{{alias}} wants to send you {{count}} book(s)_few": "{{alias}} vrea să vă trimită {{count}} cărți",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vrea să vă trimită {{count}} de cărți"
 }

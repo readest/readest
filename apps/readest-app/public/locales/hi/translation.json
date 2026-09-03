@@ -2060,9 +2060,6 @@
   "Transfer failed": "स्थानांतरण विफल रहा",
   "No supported book files from {{alias}}": "{{alias}} से कोई समर्थित पुस्तक फ़ाइल नहीं",
   "Receiving from {{alias}}": "{{alias}} से प्राप्त हो रहा है",
-  "{{alias}} wants to send you books": "{{alias}} आपको पुस्तकें भेजना चाहता है",
-  "{{count}} book(s), {{size}}_one": "{{count}} पुस्तक, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} पुस्तकें, {{size}}",
   "Accept": "स्वीकार करें",
   "and {{count}} more_one": "और {{count}} अन्य",
   "and {{count}} more_other": "और {{count}} अन्य",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra बैकअप फ़ाइल (.bak)",
   "BookOrbit Sync": "BookOrbit सिंक",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को अपने Readest खाते में संग्रहीत करें। आप इसे कभी भी सेटिंग्स में बदल सकते हैं।"
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को अपने Readest खाते में संग्रहीत करें। आप इसे कभी भी सेटिंग्स में बदल सकते हैं।",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} आपको {{count}} पुस्तक भेजना चाहता है",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} आपको {{count}} पुस्तकें भेजना चाहता है"
 }

@@ -15,6 +15,14 @@ import clsx from 'clsx';
 
 const MAX_LISTED_FILES = 8;
 
+/** Row chassis for the pairing opt-in; `items-start` keeps the box and the
+ *  Premium badge on the first line when the label wraps. `pe-0` is load
+ *  bearing: the badge is `ms-auto`, so any end padding here would inset it
+ *  from the dialog's content edge and break its alignment with the Accept
+ *  button below. */
+const PAIR_ROW =
+  'flex cursor-pointer items-start gap-2 rounded-md ps-1 pe-0 py-2 text-start text-sm';
+
 interface ReceiveRequestDialogProps {
   request: ReceiveRequest;
   onAccept: (fileIds: string[], pairDevice: boolean) => void;
@@ -26,11 +34,11 @@ interface ReceiveRequestDialogProps {
  * import; other offered files are declined via protocol partial-accept, with
  * a note so the user knows the sender sees the split.
  *
- * Cert-verified senders can be paired ("Always accept from this device"):
- * future drops then skip this dialog. The checkbox is hidden entirely for
- * cert-less senders (their fingerprint is spoofable, so they can never be
- * trusted), and shows a Premium badge routing to the upgrade page for users
- * without the pairing entitlement.
+ * Cert-verified senders can be paired via "Always accept from <device>":
+ * ticking it makes future drops from that device skip this dialog. The opt-in
+ * is hidden entirely for cert-less senders (their fingerprint is spoofable, so
+ * they can never be trusted); users without the pairing entitlement see it
+ * inert behind a Premium badge that routes to the upgrade page.
  */
 const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
   request,
@@ -49,12 +57,12 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
 
   // Mirrors the TTS-cache paywall: badge only users who can't pair yet —
   // signed out (known at once), or a resolved plan without the feature.
-  // While a signed-in user's plan is still loading, show neither the
-  // checkbox nor the badge so nothing flashes.
+  // While a signed-in user's plan is still loading, show neither the scope
+  // choice nor the badge so nothing flashes.
   const { userProfilePlan, customizationPurchased } = useQuotaStats();
   const pairingEntitled = isNearbyPairingAllowed(userProfilePlan ?? 'free', customizationPurchased);
-  const showPairCheckbox = request.sender.certVerified && pairingEntitled;
-  const showPairLocked =
+  const canPair = request.sender.certVerified && pairingEntitled;
+  const pairLocked =
     request.sender.certVerified && !pairingEntitled && (!user || userProfilePlan !== undefined);
 
   const openUpgrade = () => {
@@ -64,8 +72,6 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
       navigateToLogin(router);
     }
   };
-
-  const totalSize = supported.reduce((sum, file) => sum + file.size, 0);
 
   return (
     <div
@@ -77,10 +83,9 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
       style={{ paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px` }}
     >
       <Alert
-        title={_('{{alias}} wants to send you books', { alias: request.sender.alias })}
-        message={_('{{count}} book(s), {{size}}', {
+        title={_('{{alias}} wants to send you {{count}} book(s)', {
+          alias: request.sender.alias,
           count: supported.length,
-          size: formatBytes(totalSize),
         })}
         confirmLabel={_('Accept')}
         confirmButtonClassName='btn-contrast'
@@ -123,34 +128,40 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
               {_('{{count}} unsupported file(s) will be skipped', { count: skipped.length })}
             </div>
           )}
-          {showPairCheckbox && (
-            <label className='mt-1 flex cursor-pointer items-center gap-2'>
+          {canPair && (
+            <label className={clsx(PAIR_ROW, 'mt-2')}>
               <input
                 type='checkbox'
-                className='checkbox checkbox-sm eink-bordered'
+                className='checkbox checkbox-sm eink-bordered mt-0.5 shrink-0'
                 checked={pairDevice}
                 onChange={(event) => setPairDevice(event.target.checked)}
               />
-              <span>{_('Always accept from {{alias}}', { alias: request.sender.alias })}</span>
-            </label>
-          )}
-          {showPairLocked && (
-            <button
-              type='button'
-              className='mt-1 flex items-center gap-2 text-start'
-              onClick={openUpgrade}
-            >
-              <input
-                type='checkbox'
-                className='checkbox checkbox-sm'
-                disabled
-                checked={false}
-                readOnly
-              />
-              <span className='text-base-content/70'>
+              <span className='select-none'>
                 {_('Always accept from {{alias}}', { alias: request.sender.alias })}
               </span>
-              <span className='badge badge-sm badge-ghost shrink-0'>{_('Premium')}</span>
+            </label>
+          )}
+          {pairLocked && (
+            <button type='button' className={clsx(PAIR_ROW, 'mt-2 w-full')} onClick={openUpgrade}>
+              {/* Decorative, never `disabled`: daisyUI drops a disabled box to
+                  `opacity: .2` on top of an already 20%-opacity border, which
+                  left the control indistinguishable from the surface. Keep it
+                  at full opacity with an explicit border and take it out of
+                  the tab order instead - the row itself is the control. */}
+              <input
+                type='checkbox'
+                className='checkbox checkbox-sm eink-bordered border-base-content/45 pointer-events-none mt-0.5 shrink-0'
+                checked={false}
+                readOnly
+                tabIndex={-1}
+                aria-hidden='true'
+              />
+              <span className='text-base-content/60 select-none'>
+                {_('Always accept from {{alias}}', { alias: request.sender.alias })}
+              </span>
+              <span className='badge badge-sm badge-ghost ms-auto mt-0.5 shrink-0'>
+                {_('Premium')}
+              </span>
             </button>
           )}
         </div>

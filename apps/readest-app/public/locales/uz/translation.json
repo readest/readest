@@ -2060,9 +2060,6 @@
   "Transfer failed": "Uzatish muvaffaqiyatsiz tugadi",
   "No supported book files from {{alias}}": "{{alias}}dan qo‘llab-quvvatlanadigan kitob fayllari yo‘q",
   "Receiving from {{alias}}": "{{alias}}dan qabul qilinmoqda",
-  "{{alias}} wants to send you books": "{{alias}} sizga kitob yubormoqchi",
-  "{{count}} book(s), {{size}}_one": "{{count}} ta kitob, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} ta kitob, {{size}}",
   "Accept": "Qabul qilish",
   "and {{count}} more_one": "va yana {{count}} ta",
   "and {{count}} more_other": "va yana {{count}} ta",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra zaxira nusxa fayli (.bak)",
   "BookOrbit Sync": "BookOrbit sinxronlash",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni Readest hisobingizda saqlang. Buni istalgan vaqtda Sozlamalarda oʻzgartirishingiz mumkin."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni Readest hisobingizda saqlang. Buni istalgan vaqtda Sozlamalarda oʻzgartirishingiz mumkin.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} sizga {{count}} ta kitob yubormoqchi",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} sizga {{count}} ta kitob yubormoqchi"
 }

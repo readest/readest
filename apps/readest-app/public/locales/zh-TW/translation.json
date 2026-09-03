@@ -2025,8 +2025,6 @@
   "Transfer failed": "傳輸失敗",
   "No supported book files from {{alias}}": "{{alias}} 傳送的檔案中沒有支援的書籍檔案",
   "Receiving from {{alias}}": "正在從 {{alias}} 接收",
-  "{{alias}} wants to send you books": "{{alias}} 想要傳送書籍給您",
-  "{{count}} book(s), {{size}}_other": "{{count}} 本書，{{size}}",
   "Accept": "接受",
   "and {{count}} more_other": "及另外 {{count}} 個",
   "{{count}} unsupported file(s) will be skipped_other": "將略過 {{count}} 個不支援的檔案",
@@ -2248,5 +2246,6 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra 備份檔案 (.bak)",
   "BookOrbit Sync": "BookOrbit 同步",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "將您的書庫、閱讀進度和高亮儲存在您的 Readest 帳戶中。您可以隨時在設定中變更。"
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "將您的書庫、閱讀進度和高亮儲存在您的 Readest 帳戶中。您可以隨時在設定中變更。",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} 想要傳送 {{count}} 本書給您"
 }

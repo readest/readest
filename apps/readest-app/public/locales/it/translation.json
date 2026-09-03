@@ -2110,10 +2110,6 @@
   "Transfer failed": "Trasferimento non riuscito",
   "No supported book files from {{alias}}": "Nessun file di libro supportato da {{alias}}",
   "Receiving from {{alias}}": "Ricezione da {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} vuole inviarti dei libri",
-  "{{count}} book(s), {{size}}_one": "{{count}} libro, {{size}}",
-  "{{count}} book(s), {{size}}_many": "{{count}} libri, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} libri, {{size}}",
   "Accept": "Accetta",
   "and {{count}} more_one": "e {{count}} altro",
   "and {{count}} more_many": "e altri {{count}}",
@@ -2368,5 +2364,8 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "File di backup di ReadEra (.bak)",
   "BookOrbit Sync": "Sincronizzazione BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Archivia la tua biblioteca, il progresso di lettura e le evidenziazioni nel tuo account Readest. Puoi modificarlo in qualsiasi momento nelle Impostazioni."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Archivia la tua biblioteca, il progresso di lettura e le evidenziazioni nel tuo account Readest. Puoi modificarlo in qualsiasi momento nelle Impostazioni.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} vuole inviarti {{count}} libro",
+  "{{alias}} wants to send you {{count}} book(s)_many": "{{alias}} vuole inviarti {{count}} libri",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vuole inviarti {{count}} libri"
 }

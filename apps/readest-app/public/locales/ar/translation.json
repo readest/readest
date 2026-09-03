@@ -2260,13 +2260,6 @@
   "Transfer failed": "فشل النقل",
   "No supported book files from {{alias}}": "لا توجد ملفات كتب مدعومة من {{alias}}",
   "Receiving from {{alias}}": "جارٍ الاستلام من {{alias}}",
-  "{{alias}} wants to send you books": "يريد {{alias}} إرسال كتب إليك",
-  "{{count}} book(s), {{size}}_zero": "لا كتب، {{size}}",
-  "{{count}} book(s), {{size}}_one": "كتاب واحد، {{size}}",
-  "{{count}} book(s), {{size}}_two": "كتابان، {{size}}",
-  "{{count}} book(s), {{size}}_few": "{{count}} كتب، {{size}}",
-  "{{count}} book(s), {{size}}_many": "{{count}} كتابًا، {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} كتاب، {{size}}",
   "Accept": "قبول",
   "and {{count}} more_zero": "ولا مزيد",
   "and {{count}} more_one": "وواحد آخر",
@@ -2548,5 +2541,11 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ملف نسخة احتياطية من ReadEra (.bak)",
   "BookOrbit Sync": "مزامنة BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "احفظ مكتبتك وتقدم القراءة والتمييزات في حساب Readest الخاص بك. يمكنك تغيير ذلك في أي وقت من الإعدادات."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "احفظ مكتبتك وتقدم القراءة والتمييزات في حساب Readest الخاص بك. يمكنك تغيير ذلك في أي وقت من الإعدادات.",
+  "{{alias}} wants to send you {{count}} book(s)_zero": "يريد {{alias}} إرسال {{count}} كتاب إليك",
+  "{{alias}} wants to send you {{count}} book(s)_one": "يريد {{alias}} إرسال كتاب واحد إليك",
+  "{{alias}} wants to send you {{count}} book(s)_two": "يريد {{alias}} إرسال كتابين إليك",
+  "{{alias}} wants to send you {{count}} book(s)_few": "يريد {{alias}} إرسال {{count}} كتب إليك",
+  "{{alias}} wants to send you {{count}} book(s)_many": "يريد {{alias}} إرسال {{count}} كتابًا إليك",
+  "{{alias}} wants to send you {{count}} book(s)_other": "يريد {{alias}} إرسال {{count}} كتاب إليك"
 }

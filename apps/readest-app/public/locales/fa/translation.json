@@ -2060,9 +2060,6 @@
   "Transfer failed": "انتقال ناموفق بود",
   "No supported book files from {{alias}}": "هیچ فایل کتاب پشتیبانی‌شده‌ای از {{alias}} وجود ندارد",
   "Receiving from {{alias}}": "در حال دریافت از {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} می‌خواهد برای شما کتاب بفرستد",
-  "{{count}} book(s), {{size}}_one": "{{count}} کتاب، {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} کتاب، {{size}}",
   "Accept": "پذیرفتن",
   "and {{count}} more_one": "و {{count}} مورد دیگر",
   "and {{count}} more_other": "و {{count}} مورد دیگر",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "فایل پشتیبان ReadEra ‏(.bak)",
   "BookOrbit Sync": "همگام‌سازی BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "کتابخانه، وضعیت مطالعه و هایلایت‌های خود را در حساب Readest خود ذخیره کنید. می‌توانید این را هر زمان در تنظیمات تغییر دهید."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "کتابخانه، وضعیت مطالعه و هایلایت‌های خود را در حساب Readest خود ذخیره کنید. می‌توانید این را هر زمان در تنظیمات تغییر دهید.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} می‌خواهد {{count}} کتاب برای شما بفرستد",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} می‌خواهد {{count}} کتاب برای شما بفرستد"
 }

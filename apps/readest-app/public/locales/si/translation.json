@@ -2060,9 +2060,6 @@
   "Transfer failed": "හුවමාරුව අසාර්ථක විය",
   "No supported book files from {{alias}}": "{{alias}} වෙතින් සහාය දක්වන පොත් ගොනු නැත",
   "Receiving from {{alias}}": "{{alias}} වෙතින් ලැබෙමින්",
-  "{{alias}} wants to send you books": "{{alias}} ඔබට පොත් යැවීමට කැමතියි",
-  "{{count}} book(s), {{size}}_one": "පොත් {{count}}ක්, {{size}}",
-  "{{count}} book(s), {{size}}_other": "පොත් {{count}}ක්, {{size}}",
   "Accept": "පිළිගන්න",
   "and {{count}} more_one": "තවත් {{count}}ක්",
   "and {{count}} more_other": "තවත් {{count}}ක්",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra උපස්ථ ගොනුව (.bak)",
   "BookOrbit Sync": "BookOrbit සමමුහුර්තකරණය",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Readest ගිණුමේ ගබඩා කරන්න. ඔබට ඕනෑම වේලාවක සැකසුම් තුළ මෙය වෙනස් කළ හැකිය."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Readest ගිණුමේ ගබඩා කරන්න. ඔබට ඕනෑම වේලාවක සැකසුම් තුළ මෙය වෙනස් කළ හැකිය.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} ඔබට පොත් {{count}}ක් යැවීමට කැමතියි",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ඔබට පොත් {{count}}ක් යැවීමට කැමතියි"
 }

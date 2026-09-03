@@ -2060,9 +2060,6 @@
   "Transfer failed": "Az átvitel sikertelen",
   "No supported book files from {{alias}}": "Nincs támogatott könyvfájl tőle: {{alias}}",
   "Receiving from {{alias}}": "Fogadás tőle: {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} könyveket szeretne küldeni Önnek",
-  "{{count}} book(s), {{size}}_one": "{{count}} könyv, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} könyv, {{size}}",
   "Accept": "Elfogadás",
   "and {{count}} more_one": "és még {{count}}",
   "and {{count}} more_other": "és még {{count}}",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra biztonsági mentés fájlja (.bak)",
   "BookOrbit Sync": "BookOrbit szinkronizálás",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Tárolja könyvtárát, olvasási haladását és kiemeléseit a Readest-fiókjában. Ezt bármikor megváltoztathatja a Beállításokban."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Tárolja könyvtárát, olvasási haladását és kiemeléseit a Readest-fiókjában. Ezt bármikor megváltoztathatja a Beállításokban.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} {{count}} könyvet szeretne küldeni Önnek",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} {{count}} könyvet szeretne küldeni Önnek"
 }

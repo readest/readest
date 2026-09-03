@@ -2060,9 +2060,6 @@
   "Transfer failed": "Η μεταφορά απέτυχε",
   "No supported book files from {{alias}}": "Δεν υπάρχουν υποστηριζόμενα αρχεία βιβλίων από {{alias}}",
   "Receiving from {{alias}}": "Λήψη από {{alias}}",
-  "{{alias}} wants to send you books": "Ο/Η {{alias}} θέλει να σας στείλει βιβλία",
-  "{{count}} book(s), {{size}}_one": "{{count}} βιβλίο, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} βιβλία, {{size}}",
   "Accept": "Αποδοχή",
   "and {{count}} more_one": "και {{count}} ακόμη",
   "and {{count}} more_other": "και {{count}} ακόμη",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "Αρχείο αντιγράφου ασφαλείας ReadEra (.bak)",
   "BookOrbit Sync": "Συγχρονισμός BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Αποθηκεύστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας στον λογαριασμό σας Readest. Μπορείτε να το αλλάξετε ανά πάσα στιγμή στις Ρυθμίσεις."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Αποθηκεύστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας στον λογαριασμό σας Readest. Μπορείτε να το αλλάξετε ανά πάσα στιγμή στις Ρυθμίσεις.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "Ο/Η {{alias}} θέλει να σας στείλει {{count}} βιβλίο",
+  "{{alias}} wants to send you {{count}} book(s)_other": "Ο/Η {{alias}} θέλει να σας στείλει {{count}} βιβλία"
 }

@@ -2060,9 +2060,6 @@
   "Transfer failed": "பரிமாற்றம் தோல்வியடைந்தது",
   "No supported book files from {{alias}}": "{{alias}}-இடமிருந்து ஆதரிக்கப்படும் புத்தகக் கோப்புகள் இல்லை",
   "Receiving from {{alias}}": "{{alias}}-இடமிருந்து பெறப்படுகிறது",
-  "{{alias}} wants to send you books": "{{alias}} உங்களுக்குப் புத்தகங்களை அனுப்ப விரும்புகிறார்",
-  "{{count}} book(s), {{size}}_one": "{{count}} புத்தகம், {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} புத்தகங்கள், {{size}}",
   "Accept": "ஏற்றுக்கொள்",
   "and {{count}} more_one": "மேலும் {{count}}",
   "and {{count}} more_other": "மேலும் {{count}}",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra காப்புப்பிரதி கோப்பு (.bak)",
   "BookOrbit Sync": "BookOrbit ஒத்திசைவு",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை உங்கள் Readest கணக்கில் சேமிக்கவும். இதை எப்போது வேண்டுமானாலும் அமைப்புகளில் மாற்றலாம்."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை உங்கள் Readest கணக்கில் சேமிக்கவும். இதை எப்போது வேண்டுமானாலும் அமைப்புகளில் மாற்றலாம்.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} உங்களுக்கு {{count}} புத்தகத்தை அனுப்ப விரும்புகிறார்",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} உங்களுக்கு {{count}} புத்தகங்களை அனுப்ப விரும்புகிறார்"
 }

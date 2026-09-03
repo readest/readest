@@ -2060,9 +2060,6 @@
   "Transfer failed": "Overdracht mislukt",
   "No supported book files from {{alias}}": "Geen ondersteunde boekbestanden van {{alias}}",
   "Receiving from {{alias}}": "Ontvangen van {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} wil u boeken sturen",
-  "{{count}} book(s), {{size}}_one": "{{count}} boek, {{size}}",
-  "{{count}} book(s), {{size}}_other": "{{count}} boeken, {{size}}",
   "Accept": "Accepteren",
   "and {{count}} more_one": "en {{count}} meer",
   "and {{count}} more_other": "en {{count}} meer",
@@ -2308,5 +2305,7 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra-back-upbestand (.bak)",
   "BookOrbit Sync": "BookOrbit-synchronisatie",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Sla je bibliotheek, leesvoortgang en markeringen op in je Readest-account. Je kunt dit altijd wijzigen in Instellingen."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Sla je bibliotheek, leesvoortgang en markeringen op in je Readest-account. Je kunt dit altijd wijzigen in Instellingen.",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} wil u {{count}} boek sturen",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} wil u {{count}} boeken sturen"
 }

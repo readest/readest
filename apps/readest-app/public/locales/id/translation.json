@@ -2010,8 +2010,6 @@
   "Transfer failed": "Transfer gagal",
   "No supported book files from {{alias}}": "Tidak ada berkas buku yang didukung dari {{alias}}",
   "Receiving from {{alias}}": "Menerima dari {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} ingin mengirimi Anda buku",
-  "{{count}} book(s), {{size}}_other": "{{count}} buku, {{size}}",
   "Accept": "Terima",
   "and {{count}} more_other": "dan {{count}} lainnya",
   "{{count}} unsupported file(s) will be skipped_other": "{{count}} berkas yang tidak didukung akan dilewati",
@@ -2248,5 +2246,6 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "File cadangan ReadEra (.bak)",
   "BookOrbit Sync": "Sinkronisasi BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Simpan perpustakaan, progres membaca, dan sorotan Anda di akun Readest Anda. Anda dapat mengubahnya kapan saja di Pengaturan."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Simpan perpustakaan, progres membaca, dan sorotan Anda di akun Readest Anda. Anda dapat mengubahnya kapan saja di Pengaturan.",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ingin mengirimi Anda {{count}} buku"
 }

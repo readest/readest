@@ -2010,8 +2010,6 @@
   "Transfer failed": "Truyền tệp thất bại",
   "No supported book files from {{alias}}": "Không có tệp sách được hỗ trợ từ {{alias}}",
   "Receiving from {{alias}}": "Đang nhận từ {{alias}}",
-  "{{alias}} wants to send you books": "{{alias}} muốn gửi sách cho bạn",
-  "{{count}} book(s), {{size}}_other": "{{count}} cuốn sách, {{size}}",
   "Accept": "Chấp nhận",
   "and {{count}} more_other": "và {{count}} mục khác",
   "{{count}} unsupported file(s) will be skipped_other": "{{count}} tệp không được hỗ trợ sẽ bị bỏ qua",
@@ -2248,5 +2246,6 @@
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "Tệp sao lưu ReadEra (.bak)",
   "BookOrbit Sync": "Đồng bộ BookOrbit",
-  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Lưu trữ thư viện, tiến trình đọc và điểm nổi bật của bạn trong tài khoản Readest của bạn. Bạn có thể thay đổi tùy chọn này bất cứ lúc nào trong Cài đặt."
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Lưu trữ thư viện, tiến trình đọc và điểm nổi bật của bạn trong tài khoản Readest của bạn. Bạn có thể thay đổi tùy chọn này bất cứ lúc nào trong Cài đặt.",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} muốn gửi cho bạn {{count}} cuốn sách"
 }
