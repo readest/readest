@@ -645,6 +645,21 @@ describe('transformStylesheet', () => {
       const css = '[data-q="(max-width: 480px)"] { padding: 1em; }';
       expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain('[data-q="(max-width: 480px)"]');
     });
+
+    it('leaves a whole prelude alone when it sits inside a quoted value', () => {
+      const css = '.note::before { content: "@media (orientation: landscape)"; }';
+      expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain(
+        'content: "@media (orientation: landscape)"',
+      );
+    });
+
+    it('does not let a quoted at-rule swallow the rules that follow it', () => {
+      const css =
+        '.note::before { content: "@media screen"; } @media (max-width: 480px) { p { margin: 0; } }';
+      const result = transformStylesheet(css, 390, 800, VERTICAL);
+      expect(result).toContain('content: "@media screen"');
+      expect(result).toContain('@media (min-width: 0px) {');
+    });
   });
 });
 

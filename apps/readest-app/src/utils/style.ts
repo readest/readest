@@ -1227,6 +1227,13 @@ export const transformStylesheet = (
   const isLandscape = vw > vh;
   const always = '(min-width: 0px)';
   const never = '(min-width: 999999px)';
+  // Park quoted values first, the same way the url() pass above does, so an
+  // at-rule quoted inside a declaration is never mistaken for a real prelude.
+  const quoted: string[] = [];
+  css = css.replace(/"[^"\n]*"|'[^'\n]*'/g, (value) => {
+    quoted.push(value);
+    return `READEST_STR_${quoted.length - 1}_PLACEHOLDER`;
+  });
   css = css.replace(/@media[^{]*/gi, (prelude) =>
     prelude
       .replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
@@ -1247,6 +1254,7 @@ export const transformStylesheet = (
         },
       ),
   );
+  css = css.replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
 
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
