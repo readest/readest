@@ -213,7 +213,10 @@ jobs:
       - name: Initialize Android Target
         run: |
           cd apps/readest-app
+          rm -rf src-tauri/gen/android
           pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+          git checkout src-tauri/gen/android
 
       - name: Build Android Production App Bundle (.aab)
         run: |
