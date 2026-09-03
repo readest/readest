@@ -310,7 +310,16 @@ pub fn device_payloads(
     departed: &DepartedPeers,
 ) -> Vec<DevicePayload> {
     let now = SystemTime::now();
-    let departed = lock(departed).clone();
+    // Only a hello removes a fingerprint, so a peer that said goodbye and never
+    // came back would be held for the life of the service. Dropping the lapsed
+    // entries here -- the one place that reads the ledger -- bounds it by the
+    // departures still in force, and leaves every survivor departed by
+    // definition, so the check below is a lookup rather than a comparison.
+    let departed = {
+        let mut departed = lock(departed);
+        departed.retain(|_, at| peer_has_departed(Some(*at), now));
+        departed
+    };
     discovery
         .devices()
         .into_iter()
@@ -319,7 +328,7 @@ pub fn device_payloads(
             // this side re-confirms peers on a heartbeat, so a TTL would age
             // every peer out and never bring it back. A goodbye is the only
             // signal this device gets that a peer has gone.
-            if peer_has_departed(departed.get(&stateful.device.fingerprint).copied(), now) {
+            if departed.contains_key(&stateful.device.fingerprint) {
                 return None;
             }
             let http = stateful.get_best_channel().and_then(|c| c.http())?;
@@ -1247,6 +1256,36 @@ mod tests {
         // stored channel changed.
         lock(&departed).remove("peer-fp");
         assert_eq!(device_payloads(&discovery, &departed).len(), 1);
+    }
+
+    // Only a later hello removes a fingerprint, so a peer that says goodbye and
+    // never comes back would sit in the ledger for the life of the service --
+    // and every list_devices would carry it. An expired hold must be forgotten,
+    // not merely ignored.
+    #[tokio::test]
+    async fn an_expired_departure_is_forgotten_not_just_ignored() {
+        let discovery = test_discovery("Reader").await;
+        let departed = no_departures();
+        register_peer(
+            &discovery,
+            "self-fp",
+            "192.168.2.135".into(),
+            register_dto("peer-fp"),
+        )
+        .await;
+
+        let stale = SystemTime::now() - DEPARTURE_HOLD - Duration::from_secs(1);
+        lock(&departed).insert("peer-fp".into(), stale);
+        lock(&departed).insert("peer-that-never-came-back".into(), stale);
+
+        // The hold has lapsed, so the peer is listed again ...
+        assert_eq!(device_payloads(&discovery, &departed).len(), 1);
+        // ... and neither entry is still held, including the one for a peer
+        // that is not in the discovery store at all.
+        assert!(
+            lock(&departed).is_empty(),
+            "an expired departure must not be retained for the life of the service"
+        );
     }
 
     // A goodbye must not be stored as a channel: port 0 is unsendable, and it
