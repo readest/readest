@@ -1,0 +1,137 @@
+name: Deploy Mobile Apps (iOS & Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_track:
+        description: 'Google Play Release Track (internal, beta, production)'
+        required: true
+        default: 'internal'
+        type: choice
+        options:
+          - internal
+          - beta
+          - production
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ==========================================
+  # iOS App Store Build & Deploy Job
+  # ==========================================
+  deploy-ios:
+    name: Build & Deploy iOS (.ipa)
+    runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Restore App Store Credentials
+        run: |
+          mkdir -p apps/readest-app/private_keys
+          echo "${{ secrets.APPLE_API_KEY_P8_BASE64 }}" | base64 --decode > apps/readest-app/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
+
+          cat <<EOF > apps/readest-app/.env.ios-appstore.local
+          APPLE_API_KEY=${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER=${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_PATH=$GITHUB_WORKSPACE/apps/readest-app/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
+          EOF
+
+      - name: Install Node Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Auto-increment iOS Build Number (CFBundleVersion)
+        run: |
+          BUILD_NUM=${{ github.run_number }}
+          sed -i '' "s/CFBundleVersion: .*/CFBundleVersion: \"$BUILD_NUM\"/" apps/readest-app/src-tauri/gen/apple/project.yml
+          (cd apps/readest-app/src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
+
+      - name: Build iOS Production Bundle (.ipa)
+        run: |
+          cd apps/readest-app
+          pnpm run build-ios-appstore
+
+      - name: Upload to App Store Connect
+        run: |
+          cd apps/readest-app
+          pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
+            'xcrun altool --upload-app --type ios --file src-tauri/gen/apple/build/arm64/Yomi.ipa --apiKey $APPLE_API_KEY --apiIssuer $APPLE_API_ISSUER'
+
+  # ==========================================
+  # Android Google Play Build & Deploy Job
+  # ==========================================
+  deploy-android:
+    name: Build & Deploy Android (.aab)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Restore Google Play Secrets & Keystore
+        run: |
+          mkdir -p fastlane
+          echo "${{ secrets.GOOGLE_PLAY_KEY_JSON_BASE64 }}" | base64 --decode > fastlane/google-play-key.json
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > apps/readest-app/release.keystore
+
+          cat <<EOF > apps/readest-app/.env.google-play.local
+          PACKAGE_NAME=com.biblophile.yomi
+          GOOGLE_PLAY_JSON_KEY_FILE=$GITHUB_WORKSPACE/fastlane/google-play-key.json
+          ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/apps/readest-app/release.keystore
+          ANDROID_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Install Node Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Android Production App Bundle (.aab)
+        run: |
+          cd apps/readest-app
+          pnpm tauri android build --target aarch64 --bundle aab
+
+      - name: Deploy to Google Play Console via Fastlane
+        run: |
+          TRACK="${{ github.event.inputs.release_track || 'internal' }}"
+          cd apps/readest-app
+          pnpm exec dotenv -e .env.google-play.local -- fastlane android upload_$TRACK
