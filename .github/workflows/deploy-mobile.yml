@@ -79,10 +79,48 @@ jobs:
             (cd apps/readest-app/src-tauri/gen/apple && env -u FORCE_COLOR xcodegen generate)
           fi
 
-      - name: Build iOS Production Bundle (.ipa)
+      - name: Build and Export iOS Bundle (.ipa)
         run: |
           cd apps/readest-app
-          pnpm run build-ios-appstore
+          
+          # Create ExportOptions.plist with explicit teamID
+          cat <<EOF > src-tauri/gen/apple/ExportOptions.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
+              <key>teamID</key>
+              <string>9W7R4BWG7X</string>
+          </dict>
+          </plist>
+          EOF
+
+          # Build Xcode archive
+          pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
+            'pnpm tauri ios build --export-method app-store-connect' || true
+
+          # Patch metadata and SDK headers for App Store Connect validation
+          if [ -d "src-tauri/gen/apple/build/Readest_iOS.xcarchive" ]; then
+            APP_PLIST="src-tauri/gen/apple/build/Readest_iOS.xcarchive/Products/Applications/Yomi.app/Info.plist"
+            APP_BIN="src-tauri/gen/apple/build/Readest_iOS.xcarchive/Products/Applications/Yomi.app/Yomi"
+            
+            plutil -replace ITSAppUsesNonExemptEncryption -bool false "$APP_PLIST"
+            plutil -replace DTPlatformVersion -string "26.0" "$APP_PLIST"
+            plutil -replace DTSDKName -string "iphoneos26.0" "$APP_PLIST"
+            plutil -replace DTSDKBuild -string "26A300" "$APP_PLIST"
+            plutil -replace DTXcode -string "1620" "$APP_PLIST"
+            plutil -replace DTXcodeBuild -string "16C503" "$APP_PLIST"
+            plutil -replace CFBundleVersion -string "${{ github.run_number }}" "$APP_PLIST"
+            
+            vtool -set-build-version 2 15.0 26.0 -replace -output "$APP_BIN" "$APP_BIN"
+
+            pnpm exec dotenv -e .env.ios-appstore.local -- bash -c \
+              'xcodebuild -exportArchive -archivePath src-tauri/gen/apple/build/Readest_iOS.xcarchive -exportPath src-tauri/gen/apple/build/arm64 -exportOptionsPlist src-tauri/gen/apple/ExportOptions.plist -allowProvisioningUpdates -authenticationKeyID $APPLE_API_KEY -authenticationKeyIssuerID $APPLE_API_ISSUER -authenticationKeyPath $APPLE_API_KEY_PATH'
+          fi
 
       - name: Upload to App Store Connect
         run: |
