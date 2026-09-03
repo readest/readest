@@ -396,7 +396,6 @@ class WebViewLifecycleManager: NSObject {
     }
 
     lastBackgroundTime = nil
-    #endif
   }
 
   func handleAppWillResignActive() {
@@ -472,7 +471,6 @@ class WebViewLifecycleManager: NSObject {
       logger.log("WebViewLifecycleManager: No saved URL, performing standard reload")
       webView.reload()
     }
-    #endif
   }
 }
 

@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Yomi",
   "mainBinaryName": "readest",
-  "identifier": "com.biblophile.readest",
+  "identifier": "com.biblophile.yomi",
   "version": "../package.json",
   "build": {
     "frontendDist": "../out",
