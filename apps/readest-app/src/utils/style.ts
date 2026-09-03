@@ -1240,17 +1240,17 @@ export const transformStylesheet = (
     .replace(/([\s;])-ms-user-select\s*:\s*none/gi, '$1-ms-user-select: unset')
     .replace(/([\s;])-o-user-select\s*:\s*none/gi, '$1-o-user-select: unset')
     .replace(/([\s;])user-select\s*:\s*none/gi, '$1user-select: unset')
-    // Park the `var(--x, x)` chunks an earlier pass already produced: their
-    // inner keywords would otherwise be rewritten again into
-    // `var(--var(--serif, serif), serif)`, which is invalid, so the CSS parser
-    // drops the whole declaration and the book loses its fonts (readest#5277).
-    // The placeholders are underscore-wrapped so `\b` never matches inside them.
-    .replace(/var\(\s*--(sans-serif|serif|monospace)\s*,\s*\1\s*\)/gi, 'READEST_GF_$1_PLACEHOLDER')
-    .replace(/(font-family\s*:[^;]*?)\bsans-serif\b/gi, '$1READEST_SS_PLACEHOLDER')
-    .replace(/(font-family\s*:[^;]*?)\bserif\b(?!-)/gi, '$1var(--serif, serif)')
-    .replace(/READEST_SS_PLACEHOLDER/g, 'var(--sans-serif, sans-serif)')
-    .replace(/(font-family\s*:[^;]*?)\bmonospace\b/gi, '$1var(--monospace, monospace)')
-    .replace(/READEST_GF_(sans-serif|serif|monospace)_PLACEHOLDER/gi, 'var(--$1, $1)')
+    // Do NOT rewrite generic families (serif/sans-serif/monospace) inside the
+    // book's font-family declarations. That rewriting made the user's per-
+    // category font choice apply to books that declare e.g.
+    // `font-family: Source Han Serif CN`, but the keyword regexes also matched
+    // the word "Serif"/"Sans-Serif" inside the font NAME itself: the rewritten
+    // name embedded a real `var()` into the declaration, which drops the whole
+    // `@font-face` rule (descriptors cannot contain var()) and detaches the
+    // book's only reference to its embedded font — so with "Override Book
+    // Font" off, the embedded font silently never applied. Cascade-based
+    // fallbacks below (html font-family + the body generic-unset pass) already
+    // cover books that rely on generic families, without touching names.
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')

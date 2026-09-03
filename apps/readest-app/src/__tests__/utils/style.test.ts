@@ -163,44 +163,51 @@ describe('transformStylesheet', () => {
     });
   });
 
-  describe('font-family replacements', () => {
-    it('replaces serif with var(--serif, serif)', () => {
-      const css = '.text { font-family: serif; }';
+  describe('font-family passthrough', () => {
+    // Regression tests for the embedded-font corruption: the generic-family
+    // rewriting used to match the words serif/sans-serif/monospace INSIDE the
+    // book's font names, which embedded a real var() into the declaration,
+    // dropped the @font-face rule and detached the book's embedded font.
+    it('leaves an unquoted font name containing "Serif" untouched', () => {
+      const css =
+        '@font-face { font-family: Source Han Serif CN; src: url("f.ttf"); }\n' +
+        'body { font-family: Source Han Serif CN, serif; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('var(--serif, serif)');
+      expect(result).toContain('Source Han Serif CN');
+      expect(result).not.toContain('var(--serif');
     });
 
-    it('replaces sans-serif with var(--sans-serif, sans-serif)', () => {
-      const css = '.text { font-family: sans-serif; }';
+    it('leaves a quoted font name containing "Serif" untouched', () => {
+      const css = 'body { font-family: "Comic Serif Face", serif; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('var(--sans-serif, sans-serif)');
+      expect(result).toContain('"Comic Serif Face"');
+      expect(result).not.toContain('var(--serif');
     });
 
-    it('replaces monospace with var(--monospace, monospace)', () => {
-      const css = '.code { font-family: monospace; }';
+    it('leaves font names containing sans-serif/monospace words untouched', () => {
+      const css = '@font-face { font-family: "Ovo Sans-Serif Mono"; src: url(f.woff); }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
-      expect(result).toContain('var(--monospace, monospace)');
+      expect(result).toContain('"Ovo Sans-Serif Mono"');
+      expect(result).not.toContain('var(--sans-serif');
+      expect(result).not.toContain('var(--monospace');
     });
 
-    // Regression test for #5277: a stylesheet can be handed to this transform
-    // more than once. Rewriting the generic families again turned them into
     // `var(--var(--serif, serif), serif)`, which the CSS parser drops - the
     // book's font-family declarations vanished and the reader's own font
     // showed through instead.
     describe('idempotence', () => {
       const cases = [
-        ['.text { font-family: serif; }', 'var(--serif, serif)'],
-        ['.text { font-family: sans-serif; }', 'var(--sans-serif, sans-serif)'],
-        ['.code { font-family: monospace; }', 'var(--monospace, monospace)'],
-        ['.text { font-family: "FZSongTi", serif; }', 'var(--serif, serif)'],
-        ['.text { font-family: Helvetica, sans-serif; }', 'var(--sans-serif, sans-serif)'],
+        '.text { font-family: serif; }',
+        '.text { font-family: sans-serif; }',
+        '.code { font-family: monospace; }',
+        '.text { font-family: "FZSongTi", serif; }',
+        '.text { font-family: Helvetica, sans-serif; }',
       ] as const;
 
-      cases.forEach(([css, expected]) => {
+      cases.forEach((css) => {
         it(`keeps ${css} stable across repeated transforms`, () => {
           const once = transformStylesheet(css, VW, VH, VERTICAL);
           const twice = transformStylesheet(once, VW, VH, VERTICAL);
-          expect(once).toContain(expected);
           expect(twice).toBe(once);
           expect(twice).not.toContain('var(--var(');
         });
