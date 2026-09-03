@@ -112,6 +112,19 @@ describe('getFontStyles branches (via getStyles)', () => {
     expect(css).not.toContain('font-family: revert !important');
   });
 
+  // Regression: the app default font used to be injected as a plain `html`
+  // rule, tying on specificity with ebook CSS that also declares its font on
+  // the html element (Pandoc-style EPUBs) and winning purely by injection
+  // order — the book's embedded font silently never applied with "Override
+  // Book Font" off. :where() drops the rule's specificity to zero so any book
+  // declaration beats it.
+  it('injects the default font at zero specificity via :where(html)', () => {
+    const vs = makeViewSettings({ overrideFont: false, defaultFont: 'Serif' });
+    const css = getStyles(vs, theme);
+    expect(css).toContain(':where(html)');
+    expect(css).toMatch(/:where\(html\)\s*\{\s*font-family: var\(--serif\)/);
+  });
+
   it('sets font-size according to defaultFontSize', () => {
     const vs = makeViewSettings({ defaultFontSize: 20 });
     const css = getStyles(vs, theme);
