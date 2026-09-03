@@ -216,7 +216,7 @@ jobs:
           rm -rf src-tauri/gen/android
           pnpm tauri android init
           pnpm tauri icon ../../data/icons/readest-book.png
-          git checkout src-tauri/gen/android
+          git checkout .
 
       - name: Build Android Production App Bundle (.aab)
         run: |
