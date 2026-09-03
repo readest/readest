@@ -95,6 +95,7 @@ CREATE TABLE public.book_notes (
   note text NULL,
   page integer NULL,
   global boolean NULL,
+  reaction text NULL,
   created_at timestamp with time zone NULL DEFAULT now(),
   updated_at timestamp with time zone NULL DEFAULT now(),
   deleted_at timestamp with time zone NULL,
