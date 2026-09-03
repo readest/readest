@@ -27,7 +27,17 @@ import { hasAnyThirdPartyEnabled, isReadestCloudEnabled } from '@/services/sync/
  * whether to pin or clear from the same empty object. The auth page hydrates
  * on mount; this guard keeps the wrong state off the screen until it does.
  */
-export default function ReadestCloudOptIn() {
+interface ReadestCloudOptInProps {
+  /**
+   * Reports the in-flight settings write. Web OAuth leaves the page with a full
+   * redirect, so the sign-in handlers await this before navigating: a torn-off
+   * write would silently drop the opt-out and start the very upload this
+   * control exists to prevent.
+   */
+  onPendingWrite?: (write: Promise<unknown>) => void;
+}
+
+export default function ReadestCloudOptIn({ onPendingWrite }: ReadestCloudOptInProps) {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const settings = useSettingsStore((state) => state.settings);
@@ -40,7 +50,15 @@ export default function ReadestCloudOptIn() {
     // Cloud off instead of mirroring the library to both. Pin only when the
     // derivation would disagree with what the user just chose.
     const derivesToChecked = !hasAnyThirdPartyEnabled(settings);
-    void persistReadestCloudChoice(envConfig, next && derivesToChecked ? undefined : next);
+    const write = persistReadestCloudChoice(
+      envConfig,
+      next && derivesToChecked ? undefined : next,
+    ).catch((error) => {
+      // Swallowed so awaiting this in AuthPanel can never reject the sign-in
+      // it is gating; the checkbox falls back to the stored value on re-render.
+      console.error('Failed to save the Readest Cloud choice:', error);
+    });
+    onPendingWrite?.(write);
   };
 
   if (!hydrated) return null;
