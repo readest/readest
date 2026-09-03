@@ -36,5 +36,19 @@ underline but Highlights=`གཙོ་གནད།` key-points; zh-TW has Highli
 Highlights=`標記`) - those have no established term, so leave them and ask rather than
 guessing.
 
-Related: [[i18n-extract-prunes-keys]], [[i18n-label-rename-workflow]],
-[[notion-sync-pr-5949-review]]
+**Limit of the rule: it applies to the SAME concept, not to a near-neighbour.** On
+PR #6030 CodeRabbit asked for tr `Lock Horizontal Panning` = "Yatay kaydirmayi
+kilitle" because `Horizontal Scrolling` = "Yatay Kaydirma". Rejected: panning a
+zoomed page and the horizontal-scrolling reading mode are different features
+sitting in the SAME menu (the pan-lock row is even `disabled` in that mode), so
+reusing the term would collide, not harmonize. The audit is what settled it -
+30+ locales already render Panning with a movement word distinct from their
+scrolling word (de Schwenken/Scrollen, fr panoramique/Defilement, es
+movimiento/Desplazamiento, it movimento/Scorrimento, ru peremeshchenie/prokrutka,
+ja idou/scroll, zh pingyi/gundong, sv panorering/rullning), so adopting the
+suggestion would have made Turkish the one outlier. Run the cross-locale audit
+before accepting a single-locale terminology finding: the majority pattern tells
+you whether the reviewer found an inconsistency or the intended distinction.
+
+Related: [[pdf-lock-horizontal-pan-5976]], [[i18n-extract-prunes-keys]],
+[[i18n-label-rename-workflow]], [[notion-sync-pr-5949-review]]

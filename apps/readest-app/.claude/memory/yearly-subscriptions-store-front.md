@@ -1,24 +1,44 @@
 ---
 name: yearly-subscriptions-store-front
-description: Yearly Stripe/App Store/Play subscription tiers + modernized plans grid on the user page; branch feat/yearly-subscriptions, SKUs not yet created
+description: Yearly Stripe/App Store/Play subscription tiers + modernized plans grid on the user page; MERGED #5989, Stripe yearly prices live, mobile SKUs still to create
 metadata:
   node_type: memory
   type: project
 ---
 
-Work done 2026-08-30 on `feat/yearly-subscriptions` (worktree
-`/Users/chrox/dev/readest-feat-yearly-subscriptions`). **Uncommitted** at
-session end; all gates green (lint, 10463 unit, 406 browser, 4 Kotlin).
+**MERGED #5989 and DEPLOYED.**
 
-**The store SKUs do not exist yet** — chrox creates them. Shape agreed:
-- Stripe: two new *recurring yearly prices on the existing Plus/Pro products*
-  (never new products — `getSubscriptionPlan` reads `product.metadata.plan`).
-- App Store / Play: standalone `com.bilingify.readest.yearly.plus` / `.pro`,
-  Apple in the **same subscription group** as monthly (free crossgrade), Play as
-  separate subscription ids (NOT base plans — base plans would need offer-token
-  work in BillingManager).
-Shipping is safe before they exist: the Yearly toggle only renders when the
-store actually returns a yearly price (`getSubscriptionIntervals`).
+**Stripe yearly prices are LIVE** (created 2026-09-01): recurring yearly prices
+on the **existing** Plus and Pro products, never new ones, because
+`getSubscriptionPlan` reads `product.metadata.plan` and a new product would
+carry no plan. Verified against the deployed `/api/stripe/plans`: monthly
+occupies the first slots and yearly follows, which is the ordering that keeps
+clients <= 0.9.67 on the price they have always been shown.
+
+**The mobile SKUs still do not exist** — chrox creates them. Shape agreed:
+standalone `com.bilingify.readest.yearly.plus` / `.pro`, Apple in the **same
+subscription group** as monthly (free crossgrade, Apple handles proration), Play
+as separate subscription ids (NOT base plans, which would need offer-token work
+in BillingManager).
+
+**Enable "Customers can switch plans" in the Stripe Billing Portal config**, or
+`shouldUseBillingPortal` sends a yearly upgrader to a portal that only offers
+Cancel.
+
+**"Donate to Readest" reaches `/api/stripe/plans` with `plan: null`** and always
+has. **Do NOT deactivate it** - it belongs to the separate donation page, which
+is not in this repo, and killing the price would break that flow. It is inert in
+the app (`purchasableProducts` filters on `plan === 'purchase'`, and clients
+<= 0.9.67 cannot match a null plan), so it was left alone deliberately.
+
+If it ever needs removing from the app's store front, filter it server-side in
+`/api/stripe/plans` on `!!product.metadata.plan`, never in Stripe. That also
+restores an invariant the route already assumes: `StripeProductMetadata` types
+`plan` as required, and the cast quietly lies for this product. Two smaller
+reasons it might be worth doing later: it consumes a slot in the price page
+(the catalog sits at 10, exactly Stripe's old default, so the `limit:100` fix is
+load-bearing), and `purchasableProducts` sorts on `a.price - b.price`, which
+would go NaN if a null-priced product ever gained `plan: 'purchase'`.
 
 **Two latent `/api/stripe/plans` bugs found and fixed, both about OLD clients:**
 1. `stripe.prices.list()` had no `limit`, so Stripe's default of **10** applied.

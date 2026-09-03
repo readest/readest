@@ -78,3 +78,39 @@ The verified improvement is only for content arriving after the first relocate.
 
 Related: [[footnote-popup-jump-to-location-5766]],
 [[footnote-popup-revokes-section-blobs]], [[footnote-popup-selection-5646]].
+
+
+## 2026-09-01: root cause measured in Chrome
+
+Both a horizontal AND a vertical scrollbar render on every footnote popup, even a
+one-line one. They are **mutually induced by a 2px sizing error**, not by content
+length, so the popup looks identical for short and long notes.
+
+`Popup.tsx` (~L183) sets `.popup-container` to `width: ${width}px` with
+`box-sizing: border-box` and a 1px `border`, and the content is sized to that same
+number. Measured live: `offset 360x58`, `scroll 360x58` (the content iframe),
+`client 343x41`, border 1px all round, padding 0, scrollbar thickness **15px on
+both axes** (space-consuming, not overlay).
+
+The deadlock: content 360 wide vs 358 usable -> horizontal bar appears and eats
+15px of height -> 41 usable vs 58 tall -> vertical bar appears and eats 15px of
+width -> 343 usable, which keeps the horizontal bar justified. Each bar holds the
+other up. Remove the borders from the equation and 360 <= 360 / 58 <= 58, so
+NEITHER bar should show.
+
+Fix direction: size the content to the container's CONTENT box, not its
+border-box (or give the popup body `width/height: 100%` inside a container that
+owns its borders, instead of passing a pixel width to both). Regression assertion:
+`popup.scrollWidth <= popup.clientWidth` and `scrollHeight <= clientHeight`.
+
+**`Popup.tsx` is shared** by FootnotePopup, AnnotationPopup, TranslatorPopup and
+DictionaryPopup, so check whether all four pass the width the same way before
+treating this as a one-line fix.
+
+Diagnostic traps hit on the way: `elementFromPoint` at the popup's right/bottom
+edge is what identifies the drawer as `.popup-container` rather than the content;
+probing `overflow:auto` with content that fits reports a 0 gutter and tells you
+NOTHING about scrollbar thickness (use `overflow:scroll`); and the reader's book
+iframe is one wide horizontal strip (w ~24000, negative left), so noteref pixel
+coordinates from `getBoundingClientRect` do not map to the screen. Click the
+`a[epub:type=noteref]` element directly instead.
