@@ -124,11 +124,10 @@ export const Toast = () => {
     toastMessage && (
       <div
         data-capture-invalidating-overlay='true'
-        // No width utility here: daisyUI 5 sizes the toast with
-        // `width: max-content`, and `width: auto` on a box pinned to
-        // `inset-inline: 50%` (toast-center) resolves to zero.
+        // Keep daisyUI's content-sized width, but retain the desktop cap
+        // without allowing it to override the mobile viewport gutters.
         className={clsx(
-          'toast z-[130] max-w-(--breakpoint-sm) transition-all duration-300',
+          'toast z-[130] max-w-[min(var(--breakpoint-sm),calc(100vw-2rem))] transition-all duration-300',
           toastClassMap[toastType],
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}

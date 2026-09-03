@@ -28,6 +28,7 @@ await import('@/styles/globals.css');
 // 1rem `.toast` padding daisyUI 4 drew between that offset and the alert.
 const TOP_BAR = 44;
 const TOAST_GAP = 16;
+const TOAST_MAX_WIDTH = 640;
 
 beforeAll(async () => {
   await page.viewport(1024, 768);
@@ -84,5 +85,29 @@ describe('Toast layout', () => {
     expect(screen.getByText('Something went wrong').getBoundingClientRect().width).toBeGreaterThan(
       0,
     );
+  });
+
+  it('keeps a long error toast inside the mobile viewport gutters', async () => {
+    await page.viewport(390, 844);
+    const toast = await showToast({
+      type: 'error',
+      message:
+        'The connection could not be completed because the remote server returned an unexpected response.',
+    });
+    const alert = toast.querySelector('.alert') as HTMLElement;
+    const box = alert.getBoundingClientRect();
+
+    expect(box.left).toBeGreaterThanOrEqual(TOAST_GAP);
+    expect(box.right).toBeLessThanOrEqual(window.innerWidth - TOAST_GAP);
+  });
+
+  it('keeps a long info toast within the desktop width cap', async () => {
+    await page.viewport(1024, 768);
+    const toast = await showToast({
+      type: 'info',
+      message: 'A'.repeat(200),
+    });
+
+    expect(toast.getBoundingClientRect().width).toBeLessThanOrEqual(TOAST_MAX_WIDTH);
   });
 });
