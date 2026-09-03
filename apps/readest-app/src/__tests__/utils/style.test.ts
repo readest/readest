@@ -575,9 +575,75 @@ describe('transformStylesheet', () => {
       expect(result.startsWith('@media screen and ')).toBe(true);
     });
 
-    it('leaves a media query without an orientation feature alone', () => {
-      const css = '@media screen and (max-width: 480px) { div { padding: 1em; } }';
-      expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain('(max-width: 480px)');
+    it('leaves a media query with no viewport feature alone', () => {
+      const css = '@media print { div { padding: 1em; } }';
+      expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain('@media print {');
+    });
+
+    it('leaves the literal alone in a declaration value', () => {
+      const css = '.q::after { content: "(orientation: landscape)"; }';
+      expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain(
+        'content: "(orientation: landscape)"',
+      );
+    });
+
+    it('leaves the literal alone in an attribute selector', () => {
+      const css = '[data-q="(orientation: portrait)"] { padding: 1em; }';
+      expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain(
+        '[data-q="(orientation: portrait)"]',
+      );
+    });
+  });
+
+  // Same circular dependency as the orientation feature: a two-page section
+  // makes the strip twice as wide, so a width query can flip on the page count
+  // it is itself deciding. The IDPF sample's `(max-width: 480px)` block does
+  // exactly that through `h1 { margin: 50% auto 0 0 }`.
+  describe('width and height media queries', () => {
+    const small = (feature: string) => `@media screen and (${feature}) { h1 { margin: 50%; } }`;
+
+    it('drops a max-width block when the reader viewport is wider', () => {
+      expect(transformStylesheet(small('max-width: 480px'), 1000, 800, VERTICAL)).toContain(
+        '(min-width: 999999px)',
+      );
+    });
+
+    it('keeps a max-width block when the reader viewport is narrower', () => {
+      expect(transformStylesheet(small('max-width:480px'), 390, 800, VERTICAL)).toContain(
+        '@media screen and (min-width: 0px)',
+      );
+    });
+
+    it('keeps a min-width block when the reader viewport is wide enough', () => {
+      expect(transformStylesheet(small('min-width: 600px'), 1000, 800, VERTICAL)).toContain(
+        '@media screen and (min-width: 0px)',
+      );
+    });
+
+    it('drops a min-width block when the reader viewport is too narrow', () => {
+      expect(transformStylesheet(small('min-width: 600px'), 390, 800, VERTICAL)).toContain(
+        '(min-width: 999999px)',
+      );
+    });
+
+    it('resolves height features against the reader viewport height', () => {
+      expect(transformStylesheet(small('max-height: 500px'), 1000, 800, VERTICAL)).toContain(
+        '(min-width: 999999px)',
+      );
+      expect(transformStylesheet(small('min-height: 500px'), 1000, 800, VERTICAL)).toContain(
+        '@media screen and (min-width: 0px)',
+      );
+    });
+
+    it('leaves a length it cannot resolve to px alone', () => {
+      expect(transformStylesheet(small('max-width: 30em'), 1000, 800, VERTICAL)).toContain(
+        '(max-width: 30em)',
+      );
+    });
+
+    it('leaves the same feature alone outside a media prelude', () => {
+      const css = '[data-q="(max-width: 480px)"] { padding: 1em; }';
+      expect(transformStylesheet(css, VW, VH, VERTICAL)).toContain('[data-q="(max-width: 480px)"]');
     });
   });
 });

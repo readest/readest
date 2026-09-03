@@ -1218,11 +1218,34 @@ export const transformStylesheet = (
   // Resolve the feature against the reader's own viewport, the same thing the
   // vw/vh rewrite below does and for the same reason, so the book gets the
   // orientation the reader is actually in and the cycle cannot form.
+  // Width and height features are the same trap: a two-page section makes the
+  // strip twice as wide, so the sample's `(max-width: 480px)` block flips on the
+  // page count it is itself deciding. Both rewrites are confined to the prelude,
+  // between `@media` and the `{` that opens its block, so the same literal in a
+  // declaration value or an attribute selector is left as the book wrote it. The
+  // two sentinels below resolve to themselves, so the passes are order-free.
   const isLandscape = vw > vh;
-  css = css.replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
-    (mode.toLowerCase() === 'landscape') === isLandscape
-      ? '(min-width: 0px)'
-      : '(min-width: 999999px)',
+  const always = '(min-width: 0px)';
+  const never = '(min-width: 999999px)';
+  css = css.replace(/@media[^{]*/gi, (prelude) =>
+    prelude
+      .replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
+        (mode.toLowerCase() === 'landscape') === isLandscape ? always : never,
+      )
+      .replace(
+        /\(\s*(min|max)-(width|height)\s*:\s*([^)]+?)\s*\)/gi,
+        (feature, bound: string, axis: string, length: string) => {
+          // Only lengths that are already px can be resolved without guessing at
+          // the book's root font size; anything else keeps the authored feature.
+          const px = /^(\d*\.?\d+)(?:px)?$/.exec(length);
+          if (!px) return feature;
+          const viewport = axis.toLowerCase() === 'width' ? vw : vh;
+          const bounds = parseFloat(px[1]!);
+          return (bound.toLowerCase() === 'min' ? viewport >= bounds : viewport <= bounds)
+            ? always
+            : never;
+        },
+      ),
   );
 
   // replace absolute font sizes with rem units
@@ -1321,19 +1344,23 @@ const PREFIXED_ATTR_REGEX = /^([A-Za-z_][\w.-]*):([A-Za-z_][\w.-]*)$/;
  * callers are unaffected either way.
  */
 export const applyNamespacedAttributes = (document: Document) => {
-  // `xmlns:` declarations survive HTML parsing as ordinary attributes. Elements
-  // come in document order, so a prefix declared on an ancestor is recorded
-  // before anything that uses it.
-  const namespaces = new Map<string, string>();
-  for (const element of document.querySelectorAll('*')) {
-    const attributes = Array.from(element.attributes);
-    for (const { name, value } of attributes) {
-      if (value && name.startsWith('xmlns:')) namespaces.set(name.slice('xmlns:'.length), value);
+  // `xmlns:` declarations survive HTML parsing as ordinary attributes, but only
+  // as attributes: nothing scopes them any more, so a prefix has to be resolved
+  // the way XML would resolve it, from the element's own ancestor chain. A flat
+  // document-order map would carry a nested rebinding past the end of its
+  // subtree and on to later siblings.
+  const lookupNamespace = (element: Element, prefix: string) => {
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      const uri = node.getAttribute(`xmlns:${prefix}`);
+      if (uri) return uri;
     }
-    if (!namespaces.size) continue;
-    for (const { name, value } of attributes) {
+    return null;
+  };
+  for (const element of document.querySelectorAll('*')) {
+    for (const { name, value } of Array.from(element.attributes)) {
       const [, prefix, localName] = PREFIXED_ATTR_REGEX.exec(name) ?? [];
-      const uri = prefix ? namespaces.get(prefix) : undefined;
+      if (!prefix) continue;
+      const uri = lookupNamespace(element, prefix);
       if (uri && !element.hasAttributeNS(uri, localName!)) {
         element.setAttributeNS(uri, name, value);
       }

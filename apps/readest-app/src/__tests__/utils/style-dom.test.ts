@@ -705,6 +705,29 @@ describe('applyNamespacedAttributes', () => {
     expect(html.getAttribute('xmlns:epub')).toBe(OPS);
   });
 
+  it('does not let a declaration reach a sibling that is out of its scope', () => {
+    const doc = parseAsSrcdoc(
+      '<section xmlns:epub="http://www.idpf.org/2007/ops"><div id="a" epub:type="chapter"></div></section>' +
+        '<section><div id="b" epub:type="chapter"></div></section>',
+      '',
+    );
+    applyNamespacedAttributes(doc);
+    expect(doc.querySelector('#a')!.getAttributeNS(OPS, 'type')).toBe('chapter');
+    expect(doc.querySelector('#b')!.getAttributeNS(OPS, 'type')).toBeNull();
+  });
+
+  it('restores the outer binding once a rebinding subtree ends', () => {
+    const OTHER = 'http://example.com/ns';
+    const doc = parseAsSrcdoc(
+      `<span xmlns:epub="${OTHER}"><i id="deep" epub:type="note"></i></span>` +
+        '<i id="after" epub:type="chapter"></i>',
+    );
+    applyNamespacedAttributes(doc);
+    expect(doc.querySelector('#deep')!.getAttributeNS(OTHER, 'type')).toBe('note');
+    expect(doc.querySelector('#after')!.getAttributeNS(OPS, 'type')).toBe('chapter');
+    expect(doc.querySelector('#after')!.getAttributeNS(OTHER, 'type')).toBeNull();
+  });
+
   it('is a no-op for a document that declares no prefix', () => {
     const doc = parseAsSrcdoc('<div class="chapter">x</div>', '');
     const before = doc.body.innerHTML;
