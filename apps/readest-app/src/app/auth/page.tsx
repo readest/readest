@@ -11,6 +11,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { getBaseUrl, isTauriAppPlatform } from '@/services/environment';
@@ -51,6 +52,9 @@ export default function AuthPage() {
   const headerRef = useRef<HTMLDivElement>(null);
 
   useTheme({ systemUIVisible: false });
+  // The OAuth return and any deep link land here cold; hydrate before the
+  // Readest Cloud opt-in or handleGoBack's keepLogin write reads the store.
+  useEnsureSettingsLoaded();
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
     // For custom OAuth mode, use a local server to handle the OAuth callback

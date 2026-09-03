@@ -5,6 +5,7 @@ import { FaApple, FaGithub, FaDiscord } from 'react-icons/fa';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ProviderLogin, type OAuthProvider } from './ProviderLogin';
 import EmailPasswordAuth from './EmailPasswordAuth';
+import ReadestCloudOptIn from './ReadestCloudOptIn';
 
 interface AuthPanelProps {
   supabaseClient: SupabaseClient;
@@ -68,6 +69,7 @@ export default function AuthPanel({
         redirectTo={redirectTo}
         magicLink={magicLink}
       />
+      <ReadestCloudOptIn />
     </div>
   );
 }

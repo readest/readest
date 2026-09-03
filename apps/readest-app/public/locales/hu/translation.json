@@ -2307,5 +2307,6 @@
   "This book was not found in the ReadEra backup.": "Ez a könyv nem található a ReadEra biztonsági mentésben.",
   "ReadEra": "ReadEra",
   "ReadEra backup file (.bak)": "ReadEra biztonsági mentés fájlja (.bak)",
-  "BookOrbit Sync": "BookOrbit szinkronizálás"
+  "BookOrbit Sync": "BookOrbit szinkronizálás",
+  "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Tárolja könyvtárát, olvasási haladását és kiemeléseit a Readest-fiókjában. Ezt bármikor megváltoztathatja a Beállításokban."
 }
