@@ -58,6 +58,12 @@ jobs:
           APPLE_API_KEY_PATH=$GITHUB_WORKSPACE/apps/readest-app/private_keys/AuthKey_${{ secrets.APPLE_API_KEY }}.p8
           EOF
 
+      - name: Install iOS Provisioning Profile
+        run: |
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          echo "${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > "$PROFILES_DIR/Yomi_AppStore.mobileprovision"
+
       - name: Install Node Dependencies
         run: pnpm install --no-frozen-lockfile
 
@@ -70,6 +76,34 @@ jobs:
         run: |
           cd apps/readest-app
           pnpm tauri ios init
+
+      - name: Configure iOS ExportOptions
+        run: |
+          cat <<EOF > apps/readest-app/src-tauri/gen/apple/ExportOptions.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>teamID</key>
+              <string>9W7R4BWG7X</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>signingCertificate</key>
+              <string>Apple Distribution</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.biblophile.yomi</key>
+                  <string>Yomi App Store Distribution</string>
+              </dict>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>compileBitcode</key>
+              <false/>
+          </dict>
+          </plist>
+          EOF
 
       - name: Auto-increment iOS Build Number (CFBundleVersion)
         run: |
