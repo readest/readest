@@ -1,0 +1,109 @@
+name: Build Android APK (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type (release or debug)'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+      target_arch:
+        description: 'Target Architecture'
+        required: true
+        default: 'universal'
+        type: choice
+        options:
+          - universal
+          - aarch64 (arm64)
+          - all (separate arm64, armv7, x86_64, universal)
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Install Node Dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Setup Vendor Assets (PDF.js, SimpleCC WASM, Jieba)
+        run: |
+          cd apps/readest-app
+          pnpm setup-vendors
+
+      - name: Initialize Android Target
+        run: |
+          cd apps/readest-app
+          pnpm tauri android init
+
+      - name: Configure Keystore (for Release builds)
+        if: ${{ inputs.build_type == 'release' }}
+        run: |
+          KEYSTORE_BASE64="${{ secrets.ANDROID_KEYSTORE_BASE64 || secrets.ANDROID_KEY_BASE64 }}"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > $RUNNER_TEMP/release.keystore
+            cat <<EOF > apps/readest-app/src-tauri/gen/android/keystore.properties
+            keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+            password=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+            keyPassword=${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+            storeFile=$RUNNER_TEMP/release.keystore
+          EOF
+          fi
+
+      - name: Build Android APK
+        run: |
+          cd apps/readest-app
+          EXTRA_FLAGS=""
+          if [ "${{ inputs.build_type }}" == "debug" ]; then
+            EXTRA_FLAGS="--debug"
+          fi
+
+          TARGET="${{ inputs.target_arch }}"
+          if [ "$TARGET" == "universal" ]; then
+            pnpm tauri android build $EXTRA_FLAGS
+          elif [ "$TARGET" == "aarch64 (arm64)" ]; then
+            pnpm tauri android build -t aarch64 $EXTRA_FLAGS
+          elif [ "$TARGET" == "all" ]; then
+            pnpm tauri android build $EXTRA_FLAGS
+            pnpm tauri android build -t aarch64 $EXTRA_FLAGS
+            pnpm tauri android build -t armv7 $EXTRA_FLAGS
+            pnpm tauri android build -t x86_64 $EXTRA_FLAGS
+          fi
+
+      - name: Upload Android APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: yomi-android-apk-${{ inputs.build_type }}
+          path: apps/readest-app/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 30

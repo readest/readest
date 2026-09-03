@@ -140,6 +140,14 @@ jobs:
           cd apps/readest-app
           pnpm run build-ios-appstore
 
+      - name: Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: yomi-ios-ipa
+          path: apps/readest-app/src-tauri/gen/apple/build/arm64/*.ipa
+          if-no-files-found: warn
+
       - name: Upload to App Store Connect
         run: |
           cd apps/readest-app
@@ -211,6 +219,14 @@ jobs:
         run: |
           cd apps/readest-app
           pnpm tauri android build --target aarch64 --bundle aab
+
+      - name: Upload Android AAB Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: yomi-android-aab
+          path: apps/readest-app/src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          if-no-files-found: warn
 
       - name: Deploy to Google Play Console via Fastlane
         run: |
