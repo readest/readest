@@ -30,7 +30,10 @@ const Tips: React.FC<TipsProps> = ({ title, children, className }) => {
           {title ?? _('Tips')}
         </div>
         <ul className='space-y-0.5'>
-          {React.Children.map(children, (child, i) => {
+          {/* `toArray` (unlike `Children.map`) drops null/undefined/boolean
+              slots, so a caller's `{cond && <li>...</li>}` disappears when
+              `cond` is false instead of rendering a dot with no text. */}
+          {React.Children.toArray(children).map((child, i) => {
             const content =
               React.isValidElement(child) &&
               (child as React.ReactElement<{ children?: React.ReactNode }>).type === 'li'
