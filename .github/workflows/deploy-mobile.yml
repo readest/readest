@@ -61,6 +61,11 @@ jobs:
       - name: Install Node Dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Setup Vendor Assets (PDF.js, SimpleCC WASM, Jieba)
+        run: |
+          cd apps/readest-app
+          pnpm setup-vendors
+
       - name: Initialize iOS Target
         run: |
           cd apps/readest-app
@@ -135,6 +140,11 @@ jobs:
 
       - name: Install Node Dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Setup Vendor Assets (PDF.js, SimpleCC WASM, Jieba)
+        run: |
+          cd apps/readest-app
+          pnpm setup-vendors
 
       - name: Initialize Android Target
         run: |
