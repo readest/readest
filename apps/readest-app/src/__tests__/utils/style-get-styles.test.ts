@@ -126,16 +126,19 @@ describe('getFontStyles branches (via getStyles)', () => {
   });
 
   // The monospace injection is zero-specificity too, so a book's own code font
-  // wins when Override Book Font is off. With the toggle ON it must still be
-  // forced, which zero specificity alone cannot do - it needs !important.
-  it('forces the monospace fallback only when overrideFont is on', () => {
+  // wins when Override Book Font is off. With the toggle ON the rule has to
+  // swap sides and outrank the book, which !important alone cannot do:
+  // specificity still breaks ties between important author declarations.
+  // The resolved cascade is asserted in code-font-override.browser.test.ts.
+  it('swaps the monospace rule above the book only when overrideFont is on', () => {
     const off = getStyles(makeViewSettings({ overrideFont: false }), theme);
     expect(off).toMatch(/:where\(pre, code, kbd\)\s*\{\s*font-family: var\(--monospace\)\s*;/);
 
     const on = getStyles(makeViewSettings({ overrideFont: true }), theme);
     expect(on).toMatch(
-      /:where\(pre, code, kbd\)\s*\{\s*font-family: var\(--monospace\) !important\s*;/,
+      /html body :is\(pre, code, kbd\)\s*\{\s*font-family: var\(--monospace\) !important\s*;/,
     );
+    expect(on).not.toContain(':where(pre, code, kbd)');
   });
 
   it('sets font-size according to defaultFontSize', () => {

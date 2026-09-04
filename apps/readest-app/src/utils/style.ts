@@ -156,11 +156,12 @@ const getFontStyles = (
     [style*="font-size: 16px"], [style*="font-size:16px"] {
       font-size: 1rem !important;
     }
-    /* Zero specificity so a book's own code font wins when Override Book Font
-       is off. The rule below deliberately excludes pre/code/kbd from the
-       revert pass, so this is the only place that forces the app monospace:
-       it needs !important to keep working once specificity is gone. */
-    :where(pre, code, kbd) {
+    /* The revert pass below deliberately excludes pre/code/kbd, so this is the
+       only rule that applies the app's code font and it has to swap sides with
+       the toggle. Off: zero specificity, so a book's own code font wins. On:
+       above the book, and !important is not enough on its own because
+       specificity still breaks ties between important author declarations. */
+    ${overrideFont ? 'html body :is(pre, code, kbd)' : ':where(pre, code, kbd)'} {
       font-family: var(--monospace) ${overrideFont ? '!important' : ''};
       font-variant-ligatures: none;
     }
