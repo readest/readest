@@ -1353,9 +1353,6 @@ const EPUB_OPS_NAMESPACE = 'http://www.idpf.org/2007/ops';
  * callers are unaffected either way.
  */
 export const applyNamespacedAttributes = (document: Document) => {
-  const hasNamespaceDeclaration = Array.from(document.querySelectorAll('*')).some((element) =>
-    Array.from(element.attributes).some(({ name }) => name.startsWith('xmlns:')),
-  );
   // `xmlns:` declarations survive HTML parsing as ordinary attributes, but only
   // as attributes: nothing scopes them any more, so a prefix has to be resolved
   // the way XML would resolve it, from the element's own ancestor chain. A flat
@@ -1377,8 +1374,7 @@ export const applyNamespacedAttributes = (document: Document) => {
       // `epub` has one fixed namespace in EPUB, which is enough to restore the
       // selectors used by the book's stylesheet (including noteref markers).
       const uri =
-        lookupNamespace(element, prefix) ??
-        (!hasNamespaceDeclaration && prefix === 'epub' ? EPUB_OPS_NAMESPACE : null);
+        lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null);
       if (uri && !element.hasAttributeNS(uri, localName!)) {
         element.setAttributeNS(uri, name, value);
       }
