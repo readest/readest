@@ -31,6 +31,9 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const [ttsHighlightGranularity, setTtsHighlightGranularity] = useState<TTSHighlightGranularity>(
     viewSettings.ttsHighlightGranularity ?? 'word',
   );
+  const [ttsSkipInlineAnnotations, setTtsSkipInlineAnnotations] = useState(
+    viewSettings.ttsSkipInlineAnnotations ?? false,
+  );
   const [ttsHighlightStyle, setTtsHighlightStyle] = useState(
     viewSettings.ttsHighlightOptions.style,
   );
@@ -57,6 +60,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
       ttsHighlightGranularity: setTtsHighlightGranularity as React.Dispatch<
         React.SetStateAction<string>
       >,
+      ttsSkipInlineAnnotations: setTtsSkipInlineAnnotations,
     });
   };
 
@@ -89,6 +93,19 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsHighlightGranularity]);
+
+  useEffect(() => {
+    if (ttsSkipInlineAnnotations === viewSettings.ttsSkipInlineAnnotations) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'ttsSkipInlineAnnotations',
+      ttsSkipInlineAnnotations,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsSkipInlineAnnotations]);
 
   const handleTTSStyleChange = (style: TTSHighlightStyle) => {
     setTtsHighlightStyle(style);
@@ -138,6 +155,16 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
         onCustomColorsChange={handleCustomTtsColorsChange}
         data-setting-id='settings.tts.ttsHighlightStyle'
       />
+
+      <BoxedList title={_('Speech')} data-setting-id='settings.tts.speech'>
+        <SettingsSwitchRow
+          label={_('Skip Parenthetical Readings')}
+          description={_('Do not speak kana or Han readings shown after Han text')}
+          checked={ttsSkipInlineAnnotations}
+          onChange={() => setTtsSkipInlineAnnotations(!ttsSkipInlineAnnotations)}
+          data-setting-id='settings.tts.skipInlineAnnotations'
+        />
+      </BoxedList>
 
       <BoxedList title={_('Media Info')} data-setting-id='settings.tts.mediaMetadata'>
         <SettingsRow label={_('Player Style')} data-setting-id='settings.tts.playerStyle'>
