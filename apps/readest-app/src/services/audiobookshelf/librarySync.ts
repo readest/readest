@@ -88,6 +88,7 @@ export const reconcileAbsBooks = (input: {
       ? (item.media.metadata.author ?? '')
       : (item.media.metadata.authorName ?? '');
     const duration = podcast || ebook ? undefined : item.media.duration;
+    const absMediaType = podcast ? 'podcast' : ebook ? 'ebook' : undefined;
     const primaryLanguage = item.media.metadata.language ?? undefined;
     const numEpisodes = podcast ? episodeCount(item) : undefined;
     // A show's own progress is never mapped — per-episode progress is a
@@ -127,6 +128,7 @@ export const reconcileAbsBooks = (input: {
         existing.title !== title ||
         existing.author !== author ||
         existing.duration !== duration ||
+        existing.absMediaType !== absMediaType ||
         existing.episodeCount !== numEpisodes ||
         !progressEqual(existing.progress, bookProgress) ||
         (existing.deletedAt ?? null) !== null ||
@@ -142,6 +144,7 @@ export const reconcileAbsBooks = (input: {
         author,
         sourceTitle: title,
         duration,
+        absMediaType,
         episodeCount: numEpisodes,
         primaryLanguage,
         progress: bookProgress,
@@ -159,7 +162,7 @@ export const reconcileAbsBooks = (input: {
         author: serverAuthor,
         sourceTitle: serverTitle,
         duration,
-        absMediaType: podcast ? 'podcast' : ebook ? 'ebook' : undefined,
+        absMediaType,
         episodeCount: numEpisodes,
         primaryLanguage,
         progress: podcast ? undefined : serverProgress,
