@@ -686,6 +686,12 @@ describe('applyNamespacedAttributes', () => {
     expect(doc.querySelector('div')!.getAttributeNS(OPS, 'type')).toBe('chapter');
   });
 
+  it('restores the standard EPUB namespace when a section fragment lost its declaration', () => {
+    const doc = parseAsSrcdoc('<a epub:type="noteref">1</a>', '');
+    applyNamespacedAttributes(doc);
+    expect(doc.querySelector('a')!.getAttributeNS(OPS, 'type')).toBe('noteref');
+  });
+
   it('picks up a declaration made further down the document', () => {
     const doc = parseAsSrcdoc(
       '<section xmlns:epub="http://www.idpf.org/2007/ops"><div epub:type="chapter">x</div></section>',
