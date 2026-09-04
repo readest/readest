@@ -34,8 +34,10 @@ const isValidAbsUrl = (url: string): boolean => /^https?:\/\//i.test(url);
 const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const isWeb = isWebAppPlatform();
   const servers = useABSServerStore((state) => state.servers).filter((server) => !server.deletedAt);
   const [activeServerId, setActiveServerId] = useState<string | null>(null);
+  const [webOrigin, setWebOrigin] = useState('');
 
   const [url, setUrl] = useState('');
   const [username, setUsername] = useState('');
@@ -44,6 +46,10 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
   const [connectError, setConnectError] = useState('');
 
   const activeServer = servers.find((server) => server.id === activeServerId);
+
+  useEffect(() => {
+    if (isWeb) setWebOrigin(window.location.origin);
+  }, [isWeb]);
 
   const handleConnect = async () => {
     const trimmedUrl = normalizeAbsUrl(url);
@@ -218,11 +224,12 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                 </button>
               </div>
             </form>
-            {isWebAppPlatform() && (
+            {isWeb && webOrigin && (
               <Tips>
                 <li>
                   {_(
-                    "Using Readest on the web? Add this site's origin to Allowed CORS Origins in your Audiobookshelf server settings.",
+                    'Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.',
+                    { origin: webOrigin },
                   )}{' '}
                   <a
                     href='https://audiobookshelf.org/docs/documentation/server-management/cors/'

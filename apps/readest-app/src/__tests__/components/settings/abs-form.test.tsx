@@ -34,7 +34,8 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (key: string) => key,
+  useTranslation: () => (key: string, options?: Record<string, string>) =>
+    key.replace('{{origin}}', options?.['origin'] ?? '{{origin}}'),
 }));
 
 vi.mock('@/utils/settingsSync', () => ({
@@ -132,7 +133,7 @@ describe('ABSForm', () => {
       name: 'View the Audiobookshelf CORS setup guide',
     });
     expect(setupGuide.parentElement?.textContent).toContain(
-      "Using Readest on the web? Add this site's origin to Allowed CORS Origins in your Audiobookshelf server settings.",
+      `Using Readest on the web? Add ${window.location.origin} to Allowed CORS Origins in your Audiobookshelf server settings.`,
     );
     expect(setupGuide.getAttribute('href')).toBe(
       'https://audiobookshelf.org/docs/documentation/server-management/cors/',
