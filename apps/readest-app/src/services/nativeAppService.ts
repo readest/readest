@@ -26,6 +26,7 @@ import {
   tempDir,
 } from '@tauri-apps/api/path';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { shareFile } from '@choochmeque/tauri-plugin-sharekit-api';
 
 import {
@@ -303,7 +304,7 @@ export const nativeFileSystem: FileSystem = {
     const { fp, baseDir } = this.resolvePath(normalizedPath, base);
     let fname = safeDecodePath(name || getFilename(fp));
     if (isValidURL(path)) {
-      return await new RemoteFile(path, fname).open();
+      return await new RemoteFile(path, fname, '', Date.now(), tauriFetch).open();
     } else if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
       fname = safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {

@@ -272,7 +272,16 @@ export class ABSClient {
       if (data.results.length === 0 || items.length >= data.total) break;
       page += 1;
     }
-    return items;
+    return Promise.all(
+      items.map((item) =>
+        item.mediaType === 'book' &&
+        (item.media.numAudioFiles ?? item.media.numTracks ?? item.media.tracks?.length ?? 0) ===
+          0 &&
+        !item.media.ebookFile
+          ? this.getItemExpanded(item.id)
+          : item,
+      ),
+    );
   }
 
   async getItemExpanded(itemId: string): Promise<ABSLibraryItem> {
