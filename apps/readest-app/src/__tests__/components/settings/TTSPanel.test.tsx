@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { ViewSettings } from '@/types/book';
 
 const state = vi.hoisted(() => ({
+  uiLocale: 'ja',
   viewSettings: {
     ttsMediaMetadata: 'sentence',
     ttsPlayerStyle: 'full',
@@ -14,6 +15,11 @@ const state = vi.hoisted(() => ({
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (value: string) => value,
+}));
+
+vi.mock('@/utils/misc', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/misc')>()),
+  getLocale: () => state.uiLocale,
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -58,6 +64,7 @@ import TTSPanel from '@/components/settings/TTSPanel';
 describe('TTSPanel inline reading annotations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    state.uiLocale = 'ja';
     state.viewSettings.ttsSkipInlineAnnotations = false;
   });
 
@@ -81,5 +88,13 @@ describe('TTSPanel inline reading annotations', () => {
         false,
       ),
     );
+  });
+
+  it('hides the switch when the UI language is not Japanese', () => {
+    state.uiLocale = 'en-US';
+
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+
+    expect(screen.queryByText('Skip Parenthetical Readings')).toBeNull();
   });
 });

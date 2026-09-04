@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
+import { getLocale } from '@/utils/misc';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import {
   TTSHighlightGranularity,
@@ -21,6 +22,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const { getViewSettings } = useReaderStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
+  const isJapaneseUI = getLocale().toLowerCase().split('-')[0] === 'ja';
 
   const [ttsMediaMetadata, setTtsMediaMetadata] = useState<TTSMediaMetadataMode>(
     viewSettings.ttsMediaMetadata ?? 'sentence',
@@ -156,15 +158,17 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
         data-setting-id='settings.tts.ttsHighlightStyle'
       />
 
-      <BoxedList title={_('Speech')} data-setting-id='settings.tts.speech'>
-        <SettingsSwitchRow
-          label={_('Skip Parenthetical Readings')}
-          description={_('Do not speak kana or Han readings shown after Han text')}
-          checked={ttsSkipInlineAnnotations}
-          onChange={() => setTtsSkipInlineAnnotations(!ttsSkipInlineAnnotations)}
-          data-setting-id='settings.tts.skipInlineAnnotations'
-        />
-      </BoxedList>
+      {isJapaneseUI && (
+        <BoxedList title={_('Speech')} data-setting-id='settings.tts.speech'>
+          <SettingsSwitchRow
+            label={_('Skip Parenthetical Readings')}
+            description={_('Do not speak kana or Han readings shown after Han text')}
+            checked={ttsSkipInlineAnnotations}
+            onChange={() => setTtsSkipInlineAnnotations(!ttsSkipInlineAnnotations)}
+            data-setting-id='settings.tts.skipInlineAnnotations'
+          />
+        </BoxedList>
+      )}
 
       <BoxedList title={_('Media Info')} data-setting-id='settings.tts.mediaMetadata'>
         <SettingsRow label={_('Player Style')} data-setting-id='settings.tts.playerStyle'>
