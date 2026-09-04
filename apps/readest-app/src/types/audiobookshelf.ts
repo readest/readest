@@ -80,6 +80,11 @@ export interface ABSLibraryItem {
     tracks?: ABSTrack[];
     chapters?: ABSChapter[];
     episodes?: ABSEpisode[];
+    /** Primary ebook file, present for ebook-backed book items. */
+    ebookFile?: {
+      ino?: string;
+      ebookFormat?: string;
+    };
   };
 }
 

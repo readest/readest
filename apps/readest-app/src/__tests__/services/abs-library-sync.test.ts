@@ -61,6 +61,30 @@ describe('reconcileAbsBooks', () => {
     expect(upserts).toEqual([]);
   });
 
+  it('creates a streaming ebook stub when ABS exposes a primary ebook file', () => {
+    const ebookOnly: ABSLibraryItem = {
+      id: 'i3',
+      mediaType: 'book',
+      media: {
+        metadata: { title: 'Streamed EPUB', authorName: 'Author E' },
+        ebookFile: { ino: '123', ebookFormat: 'epub' },
+      },
+    };
+    const { upserts } = reconcileAbsBooks({
+      server,
+      items: [ebookOnly],
+      progress: [],
+      library: [],
+      lastPlayedAtByHash: new Map(),
+      now: 1,
+    });
+    expect(upserts[0]).toMatchObject({
+      format: 'ABS',
+      absMediaType: 'ebook',
+      filePath: makeAbsFilePath('srv1', 'i3'),
+    });
+  });
+
   describe('podcast shows', () => {
     it('creates a podcast show stub with absMediaType, undefined duration, and author from metadata.author', () => {
       const { upserts } = reconcileAbsBooks({
