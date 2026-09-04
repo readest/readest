@@ -110,6 +110,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllEnvs();
 });
 
 const fillAndConnect = () => {
@@ -122,6 +123,32 @@ const fillAndConnect = () => {
 };
 
 describe('ABSForm', () => {
+  test('shows Audiobookshelf CORS setup guidance on the web', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
+
+    render(<ABSForm onBack={vi.fn()} />);
+
+    const setupGuide = screen.getByRole('link', {
+      name: 'View the Audiobookshelf CORS setup guide',
+    });
+    expect(setupGuide.parentElement?.textContent).toContain(
+      "Using Readest on the web? Add this site's origin to Allowed CORS Origins in your Audiobookshelf server settings.",
+    );
+    expect(setupGuide.getAttribute('href')).toBe(
+      'https://audiobookshelf.org/docs/documentation/server-management/cors/',
+    );
+  });
+
+  test('hides Audiobookshelf CORS setup guidance in the native app', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+
+    render(<ABSForm onBack={vi.fn()} />);
+
+    expect(
+      screen.queryByRole('link', { name: 'View the Audiobookshelf CORS setup guide' }),
+    ).toBeNull();
+  });
+
   test('renders the empty-state connect form when no server is configured', () => {
     render(<ABSForm onBack={vi.fn()} />);
     expect(screen.getByLabelText('Server URL')).not.toBeNull();
