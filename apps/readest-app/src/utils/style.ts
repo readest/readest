@@ -156,8 +156,12 @@ const getFontStyles = (
     [style*="font-size: 16px"], [style*="font-size:16px"] {
       font-size: 1rem !important;
     }
+    /* Zero specificity so a book's own code font wins when Override Book Font
+       is off. The rule below deliberately excludes pre/code/kbd from the
+       revert pass, so this is the only place that forces the app monospace:
+       it needs !important to keep working once specificity is gone. */
     :where(pre, code, kbd) {
-      font-family: var(--monospace);
+      font-family: var(--monospace) ${overrideFont ? '!important' : ''};
       font-variant-ligatures: none;
     }
     body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
@@ -1246,17 +1250,35 @@ export const transformStylesheet = (
     .replace(/([\s;])-ms-user-select\s*:\s*none/gi, '$1-ms-user-select: unset')
     .replace(/([\s;])-o-user-select\s*:\s*none/gi, '$1-o-user-select: unset')
     .replace(/([\s;])user-select\s*:\s*none/gi, '$1user-select: unset')
-    // Do NOT rewrite generic families (serif/sans-serif/monospace) inside the
-    // book's font-family declarations. That rewriting made the user's per-
-    // category font choice apply to books that declare e.g.
-    // `font-family: Source Han Serif CN`, but the keyword regexes also matched
-    // the word "Serif"/"Sans-Serif" inside the font NAME itself: the rewritten
-    // name embedded a real `var()` into the declaration, which drops the whole
-    // `@font-face` rule (descriptors cannot contain var()) and detaches the
-    // book's only reference to its embedded font — so with "Override Book
-    // Font" off, the embedded font silently never applied. Cascade-based
-    // fallbacks below (html font-family + the body generic-unset pass) already
-    // cover books that rely on generic families, without touching names.
+    // Point the generic families at the user's per-category font choice, so a
+    // book that asks for `serif` gets the configured serif chain (which also
+    // carries the CJK font) instead of the platform default.
+    //
+    // Only a list item that IS the bare keyword may be rewritten. Matching the
+    // word anywhere in the declaration also hit the book's own family names:
+    // `font-family: Source Han Serif CN` became `Source Han var(--serif, serif) CN`,
+    // and since CSS descriptors cannot contain var() the engine dropped the
+    // whole @font-face rule, detaching the book's only reference to its
+    // embedded font (readest#6047).
+    //
+    // Parking the keyword inside the var() fallback also makes this idempotent:
+    // a stylesheet can be handed to this transform more than once, and a second
+    // pass no longer sees a bare generic to rewrite into
+    // `var(--var(--serif, serif), serif)` (readest#5277).
+    .replace(/(font-family\s*:\s*)([^;{}]*)/gi, (_match: string, prefix: string, value: string) => {
+      const important = /\s*!\s*important\s*$/i.exec(value);
+      const families = important ? value.slice(0, important.index) : value;
+      const rewritten = families
+        .split(',')
+        .map((family: string) => {
+          const generic = /^(serif|sans-serif|monospace)$/i.exec(family.trim());
+          if (!generic) return family;
+          const name = generic[1]!.toLowerCase();
+          return family.replace(generic[1]!, `var(--${name}, ${name})`);
+        })
+        .join(',');
+      return prefix + rewritten + (important ? important[0] : '');
+    })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')

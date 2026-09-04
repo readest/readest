@@ -125,6 +125,19 @@ describe('getFontStyles branches (via getStyles)', () => {
     expect(css).toMatch(/:where\(html\)\s*\{\s*font-family: var\(--serif\)/);
   });
 
+  // The monospace injection is zero-specificity too, so a book's own code font
+  // wins when Override Book Font is off. With the toggle ON it must still be
+  // forced, which zero specificity alone cannot do - it needs !important.
+  it('forces the monospace fallback only when overrideFont is on', () => {
+    const off = getStyles(makeViewSettings({ overrideFont: false }), theme);
+    expect(off).toMatch(/:where\(pre, code, kbd\)\s*\{\s*font-family: var\(--monospace\)\s*;/);
+
+    const on = getStyles(makeViewSettings({ overrideFont: true }), theme);
+    expect(on).toMatch(
+      /:where\(pre, code, kbd\)\s*\{\s*font-family: var\(--monospace\) !important\s*;/,
+    );
+  });
+
   it('sets font-size according to defaultFontSize', () => {
     const vs = makeViewSettings({ defaultFontSize: 20 });
     const css = getStyles(vs, theme);
