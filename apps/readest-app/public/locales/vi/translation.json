@@ -2247,5 +2247,8 @@
   "ReadEra backup file (.bak)": "Tệp sao lưu ReadEra (.bak)",
   "BookOrbit Sync": "Đồng bộ BookOrbit",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Lưu trữ thư viện, tiến trình đọc và điểm nổi bật của bạn trong tài khoản Readest của bạn. Bạn có thể thay đổi tùy chọn này bất cứ lúc nào trong Cài đặt.",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} muốn gửi cho bạn {{count}} cuốn sách"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} muốn gửi cho bạn {{count}} cuốn sách",
+  "Speech": "Giọng đọc",
+  "Skip Parenthetical Readings": "Bỏ qua cách đọc trong ngoặc",
+  "Do not speak kana or Han readings shown after Han text": "Không đọc cách đọc bằng kana hoặc Hán tự hiển thị sau văn bản Hán tự"
 }

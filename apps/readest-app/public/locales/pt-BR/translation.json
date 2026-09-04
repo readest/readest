@@ -2367,5 +2367,8 @@
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Armazene sua biblioteca, progresso de leitura e destaques na sua conta Readest. Você pode alterar isso a qualquer momento nas Configurações.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} quer enviar {{count}} livro para você",
   "{{alias}} wants to send you {{count}} book(s)_many": "{{alias}} quer enviar {{count}} livros para você",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} quer enviar {{count}} livros para você"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} quer enviar {{count}} livros para você",
+  "Speech": "Fala",
+  "Skip Parenthetical Readings": "Ignorar leituras entre parênteses",
+  "Do not speak kana or Han readings shown after Han text": "Não falar leituras em kana ou han exibidas após texto em han"
 }

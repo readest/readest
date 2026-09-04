@@ -2427,5 +2427,8 @@
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} chce wysłać Ci {{count}} książkę",
   "{{alias}} wants to send you {{count}} book(s)_few": "{{alias}} chce wysłać Ci {{count}} książki",
   "{{alias}} wants to send you {{count}} book(s)_many": "{{alias}} chce wysłać Ci {{count}} książek",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} chce wysłać Ci {{count}} książki"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} chce wysłać Ci {{count}} książki",
+  "Speech": "Mowa",
+  "Skip Parenthetical Readings": "Pomijaj odczyty w nawiasach",
+  "Do not speak kana or Han readings shown after Han text": "Nie odczytuj zapisów kana ani han wyświetlanych po tekście han"
 }

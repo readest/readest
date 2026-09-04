@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit szinkronizálás",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Tárolja könyvtárát, olvasási haladását és kiemeléseit a Readest-fiókjában. Ezt bármikor megváltoztathatja a Beállításokban.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} {{count}} könyvet szeretne küldeni Önnek",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} {{count}} könyvet szeretne küldeni Önnek"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} {{count}} könyvet szeretne küldeni Önnek",
+  "Speech": "Beszéd",
+  "Skip Parenthetical Readings": "Zárójeles olvasatok kihagyása",
+  "Do not speak kana or Han readings shown after Han text": "A han szöveg után megjelenő kana- vagy han-olvasatokat ne olvassa fel"
 }

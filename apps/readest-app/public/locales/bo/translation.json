@@ -2247,5 +2247,8 @@
   "ReadEra backup file (.bak)": "ReadEra གྲབས་ཉར་ཡིག་ཆ (.bak)",
   "BookOrbit Sync": "BookOrbit ཟླ་སྒྲིག",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ཁྱེད་ཀྱི་ Readest རྩིས་ཐོའི་ནང་ཉར་ཚགས་བྱེད། འདི་ནི་དུས་ནམ་ཡིན་ཡང་སྒྲིག་སྟངས་ནང་བསྒྱུར་བཅོས་བྱེད་ཐུབ།",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ཡིས་ཁྱེད་ལ་དེབ་ {{count}} སྐུར་འདོད་ཡོད།"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ཡིས་ཁྱེད་ལ་དེབ་ {{count}} སྐུར་འདོད་ཡོད།",
+  "Speech": "སྐད་ཆ།",
+  "Skip Parenthetical Readings": "གུག་རྟགས་ནང་གི་ཀློག་ཚུལ་སྐྱུར་བ།",
+  "Do not speak kana or Han readings shown after Han text": "ཧན་ཡི་གེའི་རྗེས་སུ་བསྟན་པའི་ཀ་ནའམ་ཧན་གྱི་ཀློག་ཚུལ་མ་ཀློག"
 }

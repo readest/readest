@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit-synkronisering",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Lagra ditt bibliotek, dina läsframsteg och markeringar i ditt Readest-konto. Du kan ändra detta när som helst i Inställningar.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} vill skicka {{count}} bok till dig",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vill skicka {{count}} böcker till dig"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vill skicka {{count}} böcker till dig",
+  "Speech": "Tal",
+  "Skip Parenthetical Readings": "Hoppa över läsningar inom parentes",
+  "Do not speak kana or Han readings shown after Han text": "Läs inte upp kana- eller han-läsningar som visas efter han-text"
 }

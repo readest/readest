@@ -2427,5 +2427,8 @@
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} vam želi poslati {{count}} knjigo",
   "{{alias}} wants to send you {{count}} book(s)_two": "{{alias}} vam želi poslati {{count}} knjigi",
   "{{alias}} wants to send you {{count}} book(s)_few": "{{alias}} vam želi poslati {{count}} knjige",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vam želi poslati {{count}} knjig"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vam želi poslati {{count}} knjig",
+  "Speech": "Govor",
+  "Skip Parenthetical Readings": "Preskoči branja v oklepajih",
+  "Do not speak kana or Han readings shown after Han text": "Ne izgovori zapisov v kani ali hanu, prikazanih za besedilom han"
 }

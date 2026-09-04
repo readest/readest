@@ -2427,5 +2427,8 @@
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} хочет отправить вам {{count}} книгу",
   "{{alias}} wants to send you {{count}} book(s)_few": "{{alias}} хочет отправить вам {{count}} книги",
   "{{alias}} wants to send you {{count}} book(s)_many": "{{alias}} хочет отправить вам {{count}} книг",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} хочет отправить вам {{count}} книги"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} хочет отправить вам {{count}} книги",
+  "Speech": "Речь",
+  "Skip Parenthetical Readings": "Пропускать чтения в скобках",
+  "Do not speak kana or Han readings shown after Han text": "Не произносить чтения каной или ханскими иероглифами после текста хан"
 }

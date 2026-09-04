@@ -2247,5 +2247,8 @@
   "ReadEra backup file (.bak)": "ไฟล์สำรองข้อมูลของ ReadEra (.bak)",
   "BookOrbit Sync": "การซิงค์ BookOrbit",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "จัดเก็บคลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณไว้ในบัญชี Readest ของคุณ คุณสามารถเปลี่ยนได้ทุกเมื่อในการตั้งค่า",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ต้องการส่งหนังสือ {{count}} เล่มให้คุณ"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ต้องการส่งหนังสือ {{count}} เล่มให้คุณ",
+  "Speech": "เสียงพูด",
+  "Skip Parenthetical Readings": "ข้ามคำอ่านในวงเล็บ",
+  "Do not speak kana or Han readings shown after Han text": "ไม่อ่านคำอ่านคานะหรือฮั่นที่แสดงหลังข้อความฮั่น"
 }

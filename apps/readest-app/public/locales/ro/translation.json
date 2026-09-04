@@ -2367,5 +2367,8 @@
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Stochează-ți biblioteca, progresul citirii și evidențierile în contul tău Readest. Poți schimba această opțiune oricând în Setări.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} vrea să vă trimită {{count}} carte",
   "{{alias}} wants to send you {{count}} book(s)_few": "{{alias}} vrea să vă trimită {{count}} cărți",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vrea să vă trimită {{count}} de cărți"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vrea să vă trimită {{count}} de cărți",
+  "Speech": "Vorbire",
+  "Skip Parenthetical Readings": "Omite citirile dintre paranteze",
+  "Do not speak kana or Han readings shown after Han text": "Nu rosti citirile kana sau han afișate după textul han"
 }

@@ -2247,5 +2247,8 @@
   "ReadEra backup file (.bak)": "ReadEra 备份文件 (.bak)",
   "BookOrbit Sync": "BookOrbit 同步",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "将您的书库、阅读进度和高亮存储在您的 Readest 账户中。您可以随时在设置中更改。",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} 想要向您发送 {{count}} 本书"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} 想要向您发送 {{count}} 本书",
+  "Speech": "语音",
+  "Skip Parenthetical Readings": "跳过括号内的读音",
+  "Do not speak kana or Han readings shown after Han text": "不朗读汉字文本后显示的假名或汉字读音"
 }

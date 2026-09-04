@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit-Synchronisierung",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Speichern Sie Ihre Bibliothek, Ihren Lesefortschritt und Ihre Markierungen in Ihrem Readest-Konto. Sie können dies jederzeit in den Einstellungen ändern.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} möchte Ihnen {{count}} Buch senden",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} möchte Ihnen {{count}} Bücher senden"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} möchte Ihnen {{count}} Bücher senden",
+  "Speech": "Sprachausgabe",
+  "Skip Parenthetical Readings": "Lesungen in Klammern überspringen",
+  "Do not speak kana or Han readings shown after Han text": "Kana- oder Han-Lesungen nach Han-Text nicht vorlesen"
 }

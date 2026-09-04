@@ -2247,5 +2247,8 @@
   "ReadEra backup file (.bak)": "File cadangan ReadEra (.bak)",
   "BookOrbit Sync": "Sinkronisasi BookOrbit",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Simpan perpustakaan, progres membaca, dan sorotan Anda di akun Readest Anda. Anda dapat mengubahnya kapan saja di Pengaturan.",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ingin mengirimi Anda {{count}} buku"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ingin mengirimi Anda {{count}} buku",
+  "Speech": "Ucapan",
+  "Skip Parenthetical Readings": "Lewati Bacaan dalam Tanda Kurung",
+  "Do not speak kana or Han readings shown after Han text": "Jangan ucapkan bacaan kana atau Han yang ditampilkan setelah teks Han"
 }

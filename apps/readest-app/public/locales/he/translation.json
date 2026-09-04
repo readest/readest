@@ -2367,5 +2367,8 @@
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "אחסן את הספרייה, התקדמות הקריאה וההדגשות שלך בחשבון Readest שלך. תוכל לשנות זאת בכל עת בהגדרות.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} רוצה לשלוח לכם ספר אחד",
   "{{alias}} wants to send you {{count}} book(s)_two": "{{alias}} רוצה לשלוח לכם {{count}} ספרים",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} רוצה לשלוח לכם {{count}} ספרים"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} רוצה לשלוח לכם {{count}} ספרים",
+  "Speech": "דיבור",
+  "Skip Parenthetical Readings": "דלג על קריאות בסוגריים",
+  "Do not speak kana or Han readings shown after Han text": "אל תקריא קריאות בקאנה או בהאן המוצגות אחרי טקסט בהאן"
 }

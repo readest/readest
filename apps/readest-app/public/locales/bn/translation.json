@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit সিঙ্ক",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "আপনার লাইব্রেরি, পড়ার অগ্রগতি এবং হাইলাইটগুলি আপনার Readest অ্যাকাউন্টে সংরক্ষণ করুন। আপনি যেকোনো সময় সেটিংসে এটি পরিবর্তন করতে পারেন।",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} আপনাকে {{count}}টি বই পাঠাতে চায়",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} আপনাকে {{count}}টি বই পাঠাতে চায়"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} আপনাকে {{count}}টি বই পাঠাতে চায়",
+  "Speech": "কথন",
+  "Skip Parenthetical Readings": "বন্ধনীর মধ্যের পাঠ এড়িয়ে যান",
+  "Do not speak kana or Han readings shown after Han text": "হান পাঠ্যের পরে দেখানো কানা বা হান পাঠ উচ্চারণ করবেন না"
 }

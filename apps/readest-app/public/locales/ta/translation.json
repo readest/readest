@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit ஒத்திசைவு",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை உங்கள் Readest கணக்கில் சேமிக்கவும். இதை எப்போது வேண்டுமானாலும் அமைப்புகளில் மாற்றலாம்.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} உங்களுக்கு {{count}} புத்தகத்தை அனுப்ப விரும்புகிறார்",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} உங்களுக்கு {{count}} புத்தகங்களை அனுப்ப விரும்புகிறார்"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} உங்களுக்கு {{count}} புத்தகங்களை அனுப்ப விரும்புகிறார்",
+  "Speech": "பேச்சு",
+  "Skip Parenthetical Readings": "அடைப்புக்குறி வாசிப்புகளைத் தவிர்",
+  "Do not speak kana or Han readings shown after Han text": "ஹான் உரைக்குப் பின் காட்டப்படும் கனா அல்லது ஹான் வாசிப்புகளைப் பேச வேண்டாம்"
 }

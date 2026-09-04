@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit සමමුහුර්තකරණය",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Readest ගිණුමේ ගබඩා කරන්න. ඔබට ඕනෑම වේලාවක සැකසුම් තුළ මෙය වෙනස් කළ හැකිය.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} ඔබට පොත් {{count}}ක් යැවීමට කැමතියි",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ඔබට පොත් {{count}}ක් යැවීමට කැමතියි"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ඔබට පොත් {{count}}ක් යැවීමට කැමතියි",
+  "Speech": "කථනය",
+  "Skip Parenthetical Readings": "වරහන් තුළ ඇති කියවීම් මඟ හරින්න",
+  "Do not speak kana or Han readings shown after Han text": "හන් පෙළට පසුව පෙන්වන කනා හෝ හන් කියවීම් උච්චාරණය නොකරන්න"
 }

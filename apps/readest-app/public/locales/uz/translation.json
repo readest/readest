@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit sinxronlash",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni Readest hisobingizda saqlang. Buni istalgan vaqtda Sozlamalarda oʻzgartirishingiz mumkin.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} sizga {{count}} ta kitob yubormoqchi",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} sizga {{count}} ta kitob yubormoqchi"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} sizga {{count}} ta kitob yubormoqchi",
+  "Speech": "Nutq",
+  "Skip Parenthetical Readings": "Qavs ichidagi o‘qilishlarni o‘tkazib yuborish",
+  "Do not speak kana or Han readings shown after Han text": "Han matnidan keyin ko‘rsatilgan kana yoki Han o‘qilishlarini talaffuz qilmaslik"
 }

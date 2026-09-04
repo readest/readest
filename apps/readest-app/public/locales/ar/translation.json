@@ -2547,5 +2547,8 @@
   "{{alias}} wants to send you {{count}} book(s)_two": "يريد {{alias}} إرسال كتابين إليك",
   "{{alias}} wants to send you {{count}} book(s)_few": "يريد {{alias}} إرسال {{count}} كتب إليك",
   "{{alias}} wants to send you {{count}} book(s)_many": "يريد {{alias}} إرسال {{count}} كتابًا إليك",
-  "{{alias}} wants to send you {{count}} book(s)_other": "يريد {{alias}} إرسال {{count}} كتاب إليك"
+  "{{alias}} wants to send you {{count}} book(s)_other": "يريد {{alias}} إرسال {{count}} كتاب إليك",
+  "Speech": "النطق",
+  "Skip Parenthetical Readings": "تخطي القراءات بين قوسين",
+  "Do not speak kana or Han readings shown after Han text": "عدم نطق قراءات الكانا أو الهان الظاهرة بعد نص الهان"
 }

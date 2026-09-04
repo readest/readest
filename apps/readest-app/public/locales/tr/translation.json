@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit Senkronizasyonu",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı Readest hesabınızda saklayın. Bunu istediğiniz zaman Ayarlar'dan değiştirebilirsiniz.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} size {{count}} kitap göndermek istiyor",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} size {{count}} kitap göndermek istiyor"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} size {{count}} kitap göndermek istiyor",
+  "Speech": "Konuşma",
+  "Skip Parenthetical Readings": "Parantez İçindeki Okunuşları Atla",
+  "Do not speak kana or Han readings shown after Han text": "Han metninden sonra gösterilen kana veya Han okunuşlarını seslendirme"
 }

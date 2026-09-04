@@ -2307,5 +2307,8 @@
   "BookOrbit Sync": "BookOrbit სინქრონიზაცია",
   "Store your library, reading progress, and highlights in your Readest account. You can change this any time in Settings.": "შეინახეთ თქვენი ბიბლიოთეკა, კითხვის პროგრესი და მარკირებები თქვენს Readest ანგარიშში. ამის შეცვლა ნებისმიერ დროს შეგიძლიათ პარამეტრებში.",
   "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}}-ს სურს გამოგიგზავნოთ {{count}} წიგნი",
-  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}}-ს სურს გამოგიგზავნოთ {{count}} წიგნი"
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}}-ს სურს გამოგიგზავნოთ {{count}} წიგნი",
+  "Speech": "მეტყველება",
+  "Skip Parenthetical Readings": "ფრჩხილებში მოცემული წაკითხვის გამოტოვება",
+  "Do not speak kana or Han readings shown after Han text": "არ წაიკითხოს ჰანის ტექსტის შემდეგ ნაჩვენები კანა ან ჰანის წაკითხვები"
 }
