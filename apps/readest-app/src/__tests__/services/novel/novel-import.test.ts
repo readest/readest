@@ -461,6 +461,18 @@ describe('decodeHtmlBody', () => {
     expect(decodeHtmlBody(body, 'text/html; charset=x-nonsense')).toContain('福尔摩斯');
   });
 
+  it('accepts a single-quoted charset attribute', () => {
+    const body = bytesOf("<html><head><meta charset='big5'><title>", BIG5_HOLMES, '</title>');
+    expect(decodeHtmlBody(body, 'text/html')).toContain('福爾摩斯');
+  });
+
+  it('ignores a charset declaration inside a comment', () => {
+    const body = bytesOf(
+      '<html><head><!-- <meta charset="gbk"> --><title>福尔摩斯</title></head></html>',
+    );
+    expect(decodeHtmlBody(body, 'text/html')).toContain('<title>福尔摩斯</title>');
+  });
+
   it('ignores a charset declared past the sniffing window', () => {
     const body = bytesOf(
       `<html><head><!--${'p'.repeat(1100)}--><meta charset="gbk"><title>`,

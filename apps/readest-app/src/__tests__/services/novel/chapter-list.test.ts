@@ -221,6 +221,10 @@ describe('byline author fallback', () => {
     expect(toc.weak.author).toBe(false);
   });
 
+  it('does not adopt a later field or a chapter title when the byline is empty', () => {
+    expect(authorOf('<span>作者：</span><span>日期：2026-08-24</span>')).toBe('');
+  });
+
   it('reports no author when the page has no byline', () => {
     expect(authorOf('<p>\u6700\u65b0\u66f4\u65b0</p>')).toBe('');
   });

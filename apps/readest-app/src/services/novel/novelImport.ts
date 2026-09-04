@@ -131,7 +131,7 @@ const CHARSET_SNIFF_BYTES = 1024;
 
 /** `charset=` out of a `Content-Type` value, quoted or bare. */
 const charsetOf = (contentType: string | null | undefined): string | null =>
-  contentType?.match(/charset\s*=\s*"?([^";,\s]+)/i)?.[1] ?? null;
+  contentType?.match(/charset\s*=\s*['"]?([^'";,\s]+)/i)?.[1] ?? null;
 
 const decoderFor = (label: string | null): TextDecoder | null => {
   if (!label) return null;
@@ -143,13 +143,22 @@ const decoderFor = (label: string | null): TextDecoder | null => {
   }
 };
 
-/** `<meta charset=…>` or `<meta http-equiv=content-type content="…charset=…">`
- *  from the head of the document. The prescan is ASCII-only by design: every
- *  encoding this matters for is ASCII-compatible in its markup. */
+/**
+ * `<meta charset=…>` or `<meta http-equiv=content-type content="…charset=…">`
+ * from the head of the document. The window is parsed rather than pattern
+ * matched, so a declaration sitting in a comment or a script string cannot be
+ * mistaken for a real one and the parser handles attribute quoting for us.
+ * Decoding it as windows-1252 first is safe: every encoding this matters for
+ * is ASCII-compatible in its markup.
+ */
 const sniffMetaCharset = (bytes: Uint8Array): string | null => {
   const head = new TextDecoder('windows-1252').decode(bytes.subarray(0, CHARSET_SNIFF_BYTES));
-  for (const tag of head.match(/<meta\b[^>]*>/gi) ?? []) {
-    const charset = tag.match(/\bcharset\s*=\s*"?([^";,>\s]+)/i)?.[1];
+  const doc = new DOMParser().parseFromString(head, 'text/html');
+  for (const meta of doc.querySelectorAll('meta')) {
+    const declared = /^content-type$/i.test(meta.getAttribute('http-equiv') || '')
+      ? charsetOf(meta.getAttribute('content'))
+      : meta.getAttribute('charset');
+    const charset = declared?.trim();
     if (charset) return charset;
   }
   return null;

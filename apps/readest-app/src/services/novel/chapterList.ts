@@ -185,9 +185,6 @@ const AUTHOR_LABEL = /(?:作者|著者)\s*[:：]\s*/;
  * where such a name ends, so the labels worth cutting at are named here.
  */
 const NEXT_FIELD_LABEL = /(?:日期|时间|更新|状态|字数|分类|类别|类型|标签|来源|最新)\s*[:：]/;
-/** Text nodes to look past for the name when the label ends its own node. */
-const BYLINE_LOOKAHEAD = 3;
-
 /** Trim a byline candidate down to the name. A byline name runs up to the
  *  first separator — whitespace included, since the rest of the line is other
  *  fields, not more name. */
@@ -211,10 +208,17 @@ const bylineAuthor = (doc: Document): string | null => {
     const label = text.match(AUTHOR_LABEL);
     if (label?.index === undefined) continue;
     let name = cleanAuthorName(text.slice(label.index + label[0].length));
-    // The label can end its own node, with the name in a following one — and
-    // markup indentation often puts a whitespace node in between.
-    for (let ahead = 0; !name && ahead < BYLINE_LOOKAHEAD; ahead++) {
-      name = cleanAuthorName(walker.nextNode()?.textContent || '');
+    if (!name) {
+      // The label can end its own node, with the name in a following one, and
+      // markup indentation often puts whitespace nodes in between. Only the
+      // first non-blank node can be the name: anything past it is the next
+      // field, so an empty byline must not reach for the date or a chapter.
+      for (let ahead = walker.nextNode(); ahead; ahead = walker.nextNode()) {
+        const candidate = (ahead.textContent || '').trim();
+        if (!candidate) continue;
+        name = cleanAuthorName(candidate);
+        break;
+      }
     }
     if (name) return name;
   }
