@@ -176,6 +176,51 @@ const WORK_TITLE_META = [
 ];
 const WORK_AUTHOR_META = ['meta[property="og:novel:author"]', 'meta[property="books:author"]'];
 
+/** Labels a novel site uses to introduce the writer's name. */
+const AUTHOR_LABEL = /(?:作者|著者)\s*[:：]\s*/;
+/**
+ * Field labels that sit right after the byline on the same line. The flattened
+ * text runs them into the name with no separator at all — "作者：五月不行"
+ * immediately followed by "日期：2026-08-24" — and no generic rule can tell
+ * where such a name ends, so the labels worth cutting at are named here.
+ */
+const NEXT_FIELD_LABEL = /(?:日期|时间|更新|状态|字数|分类|类别|类型|标签|来源|最新)\s*[:：]/;
+/** Text nodes to look past for the name when the label ends its own node. */
+const BYLINE_LOOKAHEAD = 3;
+
+/** Trim a byline candidate down to the name. A byline name runs up to the
+ *  first separator — whitespace included, since the rest of the line is other
+ *  fields, not more name. */
+const cleanAuthorName = (raw: string): string => {
+  const field = raw.trim().split(/[\s，,。；;、|/]/)[0] ?? '';
+  return (field.split(NEXT_FIELD_LABEL)[0] ?? '').slice(0, 32);
+};
+
+/**
+ * The writer's name from an on-page byline. Walks text nodes instead of
+ * matching the flattened `body.textContent`, so the name can be read out of the
+ * link that usually wraps it (`作者：<a>NAME</a></span>日期：…`) without the
+ * neighbouring field bleeding into it.
+ */
+const bylineAuthor = (doc: Document): string | null => {
+  const body = doc.body;
+  if (!body) return null;
+  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node.textContent || '';
+    const label = text.match(AUTHOR_LABEL);
+    if (label?.index === undefined) continue;
+    let name = cleanAuthorName(text.slice(label.index + label[0].length));
+    // The label can end its own node, with the name in a following one — and
+    // markup indentation often puts a whitespace node in between.
+    for (let ahead = 0; !name && ahead < BYLINE_LOOKAHEAD; ahead++) {
+      name = cleanAuthorName(walker.nextNode()?.textContent || '');
+    }
+    if (name) return name;
+  }
+  return null;
+};
+
 const extractMetadata = (
   doc: Document,
   pageUrl: string,
@@ -189,11 +234,7 @@ const extractMetadata = (
   // `meta[name=author]` is routinely set site-wide (to the operator, not the
   // writer), so it counts as a guess rather than work metadata.
   const workAuthor = metaContent(doc, WORK_AUTHOR_META);
-  const author =
-    workAuthor ||
-    metaContent(doc, ['meta[name="author"]']) ||
-    doc.body?.textContent?.match(/作者[:：]\s*([^\s，,。；;、]{1,32})/)?.[1] ||
-    '';
+  const author = workAuthor || metaContent(doc, ['meta[name="author"]']) || bylineAuthor(doc) || '';
 
   const rawCover = metaContent(doc, ['meta[property="og:image"]']);
   let coverUrl: string | null = null;
