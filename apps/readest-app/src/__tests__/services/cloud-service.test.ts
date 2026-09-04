@@ -2,6 +2,8 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { deleteBook, uploadBook } from '@/services/cloudService';
 import { Book, BookFormat } from '@/types/book';
 import { BaseDir, FileSystem } from '@/types/system';
+import { useABSServerStore } from '@/store/absServerStore';
+import { makeAbsFilePath } from '@/utils/audiobook';
 
 // Mock external dependencies
 vi.mock('@/utils/book', () => ({
@@ -393,6 +395,31 @@ describe('cloudService', () => {
   });
 
   describe('uploadBook', () => {
+    test('materializes an ABS ebook before uploading it', async () => {
+      const server = useABSServerStore.getState().addServer({
+        name: 'ABS',
+        url: 'https://abs.example.test',
+        accessToken: 'token',
+      });
+      const book = createMockBook({
+        format: 'ABS' as BookFormat,
+        filePath: makeAbsFilePath(server.id, 'item-1'),
+        metadata: { title: 'Test Book', author: 'Author', language: 'en', absMediaType: 'ebook' },
+      });
+      vi.mocked(mockFs.exists).mockImplementation(async (path, base) => {
+        return base === 'Books' && path === `${book.hash}/cover.png`;
+      });
+      const resolveFilePath = vi.fn(async (path: string, base: BaseDir) => `${base}:${path}`);
+
+      await uploadBook(mockFs, resolveFilePath, book);
+
+      expect(mockFs.openFile).toHaveBeenNthCalledWith(
+        1,
+        'https://abs.example.test/api/items/item-1/ebook?token=token',
+        'None',
+      );
+    });
+
     test('clears stale file-sync deletion authorization when reviving a book', async () => {
       const book = createMockBook({
         deletedAt: 100,
