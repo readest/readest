@@ -1,5 +1,6 @@
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
+import { runWithConcurrency } from '@/utils/concurrency';
 import type {
   ABSLibrary,
   ABSLibraryItem,
@@ -9,6 +10,7 @@ import type {
 } from '@/types/audiobookshelf';
 
 const PAGE_SIZE = 100;
+const EXPANDED_ITEM_CONCURRENCY = 8;
 const ABS_DEVICE_ID_KEY = 'readest-abs-device-id';
 
 /**
@@ -272,16 +274,17 @@ export class ABSClient {
       if (data.results.length === 0 || items.length >= data.total) break;
       page += 1;
     }
-    return Promise.all(
-      items.map((item) =>
-        item.mediaType === 'book' &&
-        (item.media.numAudioFiles ?? item.media.numTracks ?? item.media.tracks?.length ?? 0) ===
-          0 &&
-        !item.media.ebookFile
-          ? this.getItemExpanded(item.id)
-          : item,
-      ),
+    const results = await runWithConcurrency(items, EXPANDED_ITEM_CONCURRENCY, async (item) =>
+      item.mediaType === 'book' &&
+      (item.media.numAudioFiles ?? item.media.numTracks ?? item.media.tracks?.length ?? 0) === 0 &&
+      !item.media.ebookFile
+        ? this.getItemExpanded(item.id)
+        : item,
     );
+    return results.map((outcome) => {
+      if ('error' in outcome) throw outcome.error;
+      return outcome.result;
+    });
   }
 
   async getItemExpanded(itemId: string): Promise<ABSLibraryItem> {

@@ -154,6 +154,36 @@ describe('ABSClient', () => {
     expect(fetchMock.mock.calls[1]![0]).toBe('http://abs.local:13378/api/items/ebook1?expanded=1');
   });
 
+  it('bounds expanded-item requests for large libraries', async () => {
+    let active = 0;
+    let maxActive = 0;
+    fetchMock.mockImplementation(async (url: string) => {
+      active++;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active--;
+      if (url.includes('/api/libraries/')) {
+        return jsonResponse(200, {
+          total: 9,
+          results: Array.from({ length: 9 }, (_, i) => ({
+            id: `ebook${i}`,
+            mediaType: 'book',
+            media: { metadata: {}, numAudioFiles: 0 },
+          })),
+        });
+      }
+      return jsonResponse(200, {
+        mediaType: 'book',
+        media: { metadata: {}, numAudioFiles: 0, ebookFile: { ino: url, ebookFormat: 'epub' } },
+      });
+    });
+
+    const items = await client.getLibraryItems('l1');
+
+    expect(items).toHaveLength(9);
+    expect(maxActive).toBeLessThanOrEqual(8);
+  });
+
   it('openPlaybackSession posts to the book play path when no episodeId is given', async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse(200, { id: 'sess1', currentTime: 12, audioTracks: [] }),
