@@ -21,6 +21,7 @@ import {
   MAX_CONTRAST,
   MIN_CONTRAST,
   CONTRAST_STEP,
+  TRANSLATED_LANGS,
 } from '@/services/constants';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -41,6 +42,8 @@ import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
+import Select from '@/components/Select';
+import { OCR_LANGUAGE_CODES } from '@/app/reader/services/ocr/tesseractLanguages';
 
 interface ViewMenuProps {
   bookKey: string;
@@ -59,8 +62,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
-  const { getView, getViewSettings, getViewState, getProgress, setViewSettings, recreateViewer } =
-    useReaderStore();
+  const {
+    getView,
+    getViewSettings,
+    getViewState,
+    getProgress,
+    setViewSettings,
+    setOcrEnabled,
+    setOcrLanguage,
+    recreateViewer,
+  } = useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
   const viewSettings = getViewSettings(bookKey)!;
@@ -88,6 +99,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   );
   const [applyThemeToPDF, setApplyThemeToPDF] = useState(viewSettings!.applyThemeToPDF!);
   const [rtlSpread, setRtlSpread] = useState(bookData?.bookDoc?.dir === 'rtl');
+  const supportsOcr = bookData.book?.format === 'CBZ' || bookData.book?.format === 'PDF';
+  const ocrLanguageOptions = supportsOcr
+    ? [
+        { value: '', label: _('Auto') },
+        ...OCR_LANGUAGE_CODES.flatMap((value) => {
+          const label = TRANSLATED_LANGS[value];
+          return typeof label === 'string' ? [{ value, label }] : [];
+        }),
+      ]
+    : [];
 
   const zoomIn = () => setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM_LEVEL));
   const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
@@ -500,6 +521,24 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           Icon={isScrolledMode ? MdCheck : undefined}
           onClick={toggleScrolledMode}
         />
+      )}
+
+      {supportsOcr && (
+        <>
+          <MenuItem
+            label={_('Recognize Text')}
+            Icon={viewState?.ocrEnabled ? MdCheck : undefined}
+            onClick={() => setOcrEnabled(bookKey, !viewState?.ocrEnabled)}
+          />
+          <label className='hover:bg-base-300 text-base-content flex items-center justify-between rounded-md px-3 py-2'>
+            <span className='ms-6 text-base sm:text-sm'>{_('Text Language')}</span>
+            <Select
+              value={viewState?.ocrLanguage ?? ''}
+              onChange={(event) => setOcrLanguage(bookKey, event.target.value)}
+              options={ocrLanguageOptions}
+            />
+          </label>
+        </>
       )}
 
       <MenuItem

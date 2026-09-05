@@ -90,6 +90,8 @@ import { observeDynamicResources } from '@/utils/dynamicResources';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
+import { useOcrSession } from '../hooks/useOcrSession';
+import { prioritizeCurrentDocument } from '../utils/ocrDocumentPriority';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
@@ -130,6 +132,8 @@ const FoliateViewer: React.FC<{
   const getProgress = useReaderStore((s) => s.getProgress);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
+  const ocrLanguage = useReaderStore((s) => s.viewStates[bookKey]?.ocrLanguage ?? '');
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const { applyBackgroundTexture } = useBackgroundTexture();
@@ -137,6 +141,7 @@ const FoliateViewer: React.FC<{
   const { registerBrightnessListeners, overlayVisible, overlayLevel } =
     useBrightnessGesture(bookKey);
   const bookData = getBookData(bookKey);
+  const bookFormat = bookData?.book?.format;
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -149,12 +154,84 @@ const FoliateViewer: React.FC<{
   const [navigating, setNavigating] = useState(false);
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ocrProgressKeyRef = useRef('');
+  const ocrToastDoneRef = useRef(false);
+  const ocrErrorShownRef = useRef(false);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
+  const getOnDeviceTextDocuments = useCallback(() => {
+    const renderer = viewRef.current?.renderer;
+    if (!renderer) return [];
+    return prioritizeCurrentDocument(renderer);
+  }, []);
 
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
+  const processOcrDocument = useOcrSession({
+    enabled: (bookFormat === 'CBZ' || bookFormat === 'PDF') && ocrEnabled,
+    language: ocrLanguage || bookDoc.metadata.language,
+    mangaFallback: bookFormat === 'CBZ' || (bookFormat === 'PDF' && bookDoc.dir === 'rtl'),
+    mangaMode: bookFormat === 'CBZ',
+    getDocuments: getOnDeviceTextDocuments,
+    onProgress: ({ status, progress }) => {
+      if (ocrToastDoneRef.current) return;
+      const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+      const phase = status === 'recognizing text' ? 'recognizing' : 'preparing';
+      const progressKey = `${phase}-${Math.floor(percentage / 5)}`;
+      if (ocrProgressKeyRef.current === progressKey) return;
+      ocrProgressKeyRef.current = progressKey;
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        placement: 'top',
+        progress: percentage,
+        message:
+          phase === 'recognizing'
+            ? _('Recognizing text: {{progress}}%', { progress: percentage })
+            : _('Preparing text recognition: {{progress}}%', { progress: percentage }),
+        timeout: 60_000,
+      });
+    },
+    onError: (error, pageIndex) => {
+      console.error(`Failed to recognize text on page ${pageIndex}`, error);
+      if (
+        ocrErrorShownRef.current ||
+        (pageIndex >= 0 && getOnDeviceTextDocuments()[0]?.index !== pageIndex)
+      ) {
+        return;
+      }
+      ocrErrorShownRef.current = true;
+      ocrToastDoneRef.current = true;
+      ocrProgressKeyRef.current = '';
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        placement: 'top',
+        message:
+          pageIndex >= 0
+            ? _('Text recognition failed on page {{page}}', { page: pageIndex + 1 })
+            : _('Text recognition failed'),
+        timeout: 5000,
+      });
+    },
+    onPageRecognized: () => {
+      if (ocrToastDoneRef.current) return;
+      ocrToastDoneRef.current = true;
+      ocrProgressKeyRef.current = 'recognizing-20';
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        placement: 'top',
+        progress: 100,
+        message: _('Recognizing text: {{progress}}%', { progress: 100 }),
+        timeout: 1500,
+      });
+    },
+  });
+
+  useEffect(() => {
+    ocrProgressKeyRef.current = '';
+    ocrToastDoneRef.current = false;
+    ocrErrorShownRef.current = false;
+  }, [ocrEnabled, ocrLanguage]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {
@@ -219,6 +296,12 @@ const FoliateViewer: React.FC<{
     pendingRelocateRef.current = null;
     if (!event) return;
     const detail = event.detail;
+    if (ocrEnabled) {
+      const current = getOnDeviceTextDocuments()[0];
+      if (current?.doc && typeof current.index === 'number') {
+        void processOcrDocument(current.doc, current.index);
+      }
+    }
     const atEnd = viewRef.current?.renderer.atEnd || false;
     const { current, next, total } = detail.location as PageInfo;
     const currentPage = atEnd && total > 0 ? total - 1 : current;
@@ -234,7 +317,7 @@ const FoliateViewer: React.FC<{
       detail.range,
       detail.fraction,
     );
-  }, [bookKey, setProgress]);
+  }, [bookKey, getOnDeviceTextDocuments, ocrEnabled, processOcrDocument, setProgress]);
 
   const progressRelocateHandler = (event: Event) => {
     // Always stash the latest detail; if another rAF is already pending
@@ -385,6 +468,9 @@ const FoliateViewer: React.FC<{
 
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         applyFixedlayoutStyles(detail.doc, viewSettings, undefined, bookData.book?.format);
+        if (bookData.book?.format === 'CBZ') {
+          void processOcrDocument(detail.doc, detail.index);
+        }
         const themeCode = getThemeCode();
         if (bookData.book?.format === 'PDF' && themeCode && renderer) {
           renderer.pageColors = viewSettings.applyThemeToPDF
@@ -486,6 +572,12 @@ const FoliateViewer: React.FC<{
         registerBookmarkPullDoc(bookKey, detail.doc);
       }
     }
+  };
+
+  const pdfPageRenderedHandler = (event: Event) => {
+    if (bookFormat !== 'PDF') return;
+    const { doc, index } = (event as CustomEvent<{ doc?: Document; index?: number }>).detail;
+    if (doc && typeof index === 'number') void processOcrDocument(doc, index);
   };
 
   const evalInlineScripts = (doc: Document) => {
@@ -686,6 +778,7 @@ const FoliateViewer: React.FC<{
     onStabilized: stabilizedHandler,
     onRelocate: progressRelocateHandler,
     onRendererRelocate: docRelocateHandler,
+    onRendererCreateOverlayer: pdfPageRenderedHandler,
     onNavigateStart: navigateStartHandler,
     onNavigateEnd: navigateEndHandler,
   });

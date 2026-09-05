@@ -42,7 +42,7 @@ const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() 
 // animation of its own. Both move the box while they run and
 // `getBoundingClientRect` sees them, so run every animation under the toast to
 // its end state instead of waiting on the clock.
-const showToast = async (detail: Record<string, unknown>) => {
+const showToast = async (detail: Record<string, unknown>, finishAnimations = true) => {
   render(<Toast />);
   await act(async () => {
     await eventDispatcher.dispatch('toast', detail);
@@ -50,15 +50,21 @@ const showToast = async (detail: Record<string, unknown>) => {
   const toast = document.querySelector('.toast') as HTMLElement;
   await waitFor(() => expect(toast.className).toContain('opacity-100'));
   await nextFrame();
-  for (const animation of toast.getAnimations({ subtree: true })) animation.finish();
+  if (finishAnimations) {
+    for (const animation of toast.getAnimations({ subtree: true })) animation.finish();
+  }
   await nextFrame();
   return toast;
 };
 
 describe('Toast layout', () => {
-  it('sizes an info toast to its message', async () => {
-    const toast = await showToast({ type: 'info', message: 'Copied to clipboard' });
-    const message = screen.getByText('Copied to clipboard');
+  it('keeps OCR progress and errors in one stable toast', async () => {
+    const toast = await showToast(
+      { type: 'info', message: 'Recognizing text', placement: 'top', progress: 42, timeout: 40 },
+      false,
+    );
+    const message = screen.getByText('Recognizing text');
+    const progress = screen.getByRole('progressbar') as HTMLProgressElement;
 
     expect(message.getBoundingClientRect().width).toBeGreaterThan(0);
     // The whole message fits: `truncate` hides any overflow, so a collapsed
@@ -67,6 +73,45 @@ describe('Toast layout', () => {
     expect(toast.getBoundingClientRect().width).toBeGreaterThanOrEqual(
       message.getBoundingClientRect().width,
     );
+    expect(progress.value).toBe(42);
+    expect(toast.className).toContain('toast-top');
+    expect(getComputedStyle(toast).transitionProperty).not.toBe('all');
+    const alert = toast.querySelector('.alert')!;
+    for (let frame = 0; frame < 5; frame += 1) {
+      expect(alert.getBoundingClientRect().top).toBeCloseTo(TOP_BAR + TOAST_GAP, 0);
+      expect(alert.getBoundingClientRect().right).toBeCloseTo(window.innerWidth - TOAST_GAP, 0);
+      await nextFrame();
+    }
+    await act(async () => {
+      await eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: 'Recognizing text: 80%',
+        placement: 'top',
+        progress: 80,
+      });
+    });
+    expect(document.querySelectorAll('.toast')).toHaveLength(1);
+    expect(document.querySelector('.toast')).toBe(toast);
+    expect(progress.value).toBe(80);
+    expect(alert.getBoundingClientRect().top).toBeCloseTo(TOP_BAR + TOAST_GAP, 0);
+    expect(alert.getBoundingClientRect().right).toBeCloseTo(window.innerWidth - TOAST_GAP, 0);
+    await new Promise<void>((resolve) => setTimeout(resolve, 350));
+    expect(document.querySelector('.toast')).toBe(toast);
+    expect(toast.className).toContain('opacity-100');
+    await act(async () => {
+      await eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: 'Text recognition failed',
+        placement: 'top',
+      });
+    });
+    expect(document.querySelectorAll('.toast')).toHaveLength(1);
+    expect(document.querySelector('.toast')).toBe(toast);
+    for (let frame = 0; frame < 5; frame += 1) {
+      expect(alert.getBoundingClientRect().top).toBeCloseTo(TOP_BAR + TOAST_GAP, 0);
+      expect(alert.getBoundingClientRect().right).toBeCloseTo(window.innerWidth - TOAST_GAP, 0);
+      await nextFrame();
+    }
   });
 
   it('centers the info toast on the viewport', async () => {

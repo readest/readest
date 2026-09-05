@@ -12,6 +12,7 @@ const mockView = {
 };
 
 const mockBookData = {
+  book: { format: 'CBZ' },
   isFixedLayout: true,
   bookDoc: {
     dir: undefined as string | undefined,
@@ -37,6 +38,9 @@ const currentViewSettings = {
 };
 
 const mockRecreateViewer = vi.fn();
+const mockSetOcrEnabled = vi.fn();
+const mockSetOcrLanguage = vi.fn();
+const mockViewState = { ocrEnabled: false, ocrLanguage: '' };
 const mockSaveViewSettings = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('next/navigation', () => ({
@@ -55,9 +59,11 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => mockView,
     getViewSettings: () => currentViewSettings,
-    getViewState: () => ({}),
+    getViewState: () => mockViewState,
     getProgress: () => null,
     setViewSettings: vi.fn(),
+    setOcrEnabled: mockSetOcrEnabled,
+    setOcrLanguage: mockSetOcrLanguage,
     recreateViewer: mockRecreateViewer,
   }),
 }));
@@ -89,6 +95,12 @@ vi.mock('@/services/constants', () => ({
   MAX_CONTRAST: 200,
   MIN_CONTRAST: 50,
   CONTRAST_STEP: 10,
+  TRANSLATED_LANGS: {
+    en: 'English',
+    es: 'Español',
+    ja: '日本語',
+    'zh-CN': '简体中文',
+  },
 }));
 vi.mock('@/utils/style', () => ({ getStyles: vi.fn() }));
 vi.mock('@/utils/nav', () => ({ navigateToLogin: vi.fn() }));
