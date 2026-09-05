@@ -43,6 +43,7 @@ export const useTTSDownloads = (
 ): UseTTSDownloadsResult => {
   const _ = useTranslation();
   const { getBookData } = useBookDataStore();
+  const [chapters, setChapters] = useState<DownloadChapter[]>([]);
   const [statuses, setStatuses] = useState<Map<number, SectionCacheStatus>>(new Map());
   const [cacheBytes, setCacheBytes] = useState(0);
   const [clearing, setClearing] = useState(false);
@@ -68,24 +69,32 @@ export const useTTSDownloads = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supported, bookHash]);
 
-  const chapters = useMemo(() => {
-    if (!controller) return [];
+  useEffect(() => {
+    let cancelled = false;
+    setChapters([]);
+    if (!controller) return;
     const toc = getBookData(bookKey)?.bookDoc?.toc ?? [];
     const view = controller.view;
     const sectionCount = view?.book?.sections?.length ?? 0;
-    if (!sectionCount) return [];
-    return deriveDownloadChapters(
+    if (!sectionCount) return;
+    // PDF destinations resolve asynchronously; never start this work during render.
+    void deriveDownloadChapters(
       toc,
-      (href) => {
+      async (href) => {
         try {
-          return view.resolveNavigation(href)?.index ?? null;
+          return (await view.resolveNavigation(href))?.index ?? null;
         } catch {
           return null;
         }
       },
       sectionCount,
       (n) => _('Section {{index}}', { index: n }),
-    );
+    ).then((nextChapters) => {
+      if (!cancelled) setChapters(nextChapters);
+    });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, controller, isOpen]);
 
