@@ -76,7 +76,8 @@ describe('OcrSession', () => {
       })),
       terminate: vi.fn(async () => undefined),
     };
-    const session = new OcrSession({ createEngine: () => engine });
+    const onError = vi.fn();
+    const session = new OcrSession({ createEngine: () => engine, onError });
 
     try {
       await session.processDocument(firstPage.doc, 3);
@@ -115,9 +116,99 @@ describe('OcrSession', () => {
       expect(engine.recognize).toHaveBeenCalledTimes(2);
       expect(secondPage.doc.querySelector(OCR_TEXT_LAYER_SELECTOR)).not.toBe(oldLayer);
       expect(replacementAppend).toHaveBeenCalledOnce();
+
+      secondPage.doc.querySelector('img')!.src = 'blob:failed-page';
+      vi.mocked(engine.recognize).mockRejectedValueOnce(new Error('Recognition failed'));
+      await Promise.all([
+        session.processDocument(secondPage.doc, 3),
+        session.processDocument(secondPage.doc, 3, { priority: true }),
+      ]);
+      expect(onError).toHaveBeenCalledOnce();
+
+      let failStale!: (error: Error) => void;
+      vi.mocked(engine.recognize).mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            failStale = reject;
+          }),
+      );
+      const stale = session.processDocument(secondPage.doc, 3);
+      await vi.waitFor(() => expect(failStale).toBeDefined());
+      secondPage.doc.querySelector('img')!.src = 'blob:recovered-page';
+      const recovered = session.processDocument(secondPage.doc, 3);
+      failStale(new Error('Obsolete recognition failed'));
+      await Promise.all([stale, recovered]);
+      expect(onError).toHaveBeenCalledOnce();
     } finally {
       await session.terminate();
       for (const { iframe } of pages) iframe.remove();
+    }
+  });
+
+  it('skips obsolete queued pages and releases unloaded canvas results', async () => {
+    const frames = [0, 1, 2].map(() => {
+      const iframe = document.createElement('iframe');
+      document.body.append(iframe);
+      return iframe;
+    });
+    const [active, changed, hidden] = frames.map((frame) => frame.contentDocument!);
+    for (const doc of [active!, hidden!]) {
+      const container = doc.createElement('div');
+      container.id = 'canvas';
+      const canvas = doc.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 1800;
+      container.append(canvas);
+      doc.body.append(container);
+    }
+    const image = changed!.createElement('img');
+    image.src = 'blob:obsolete-page';
+    Object.defineProperties(image, {
+      naturalWidth: { value: 1200 },
+      naturalHeight: { value: 1800 },
+    });
+    changed!.body.append(image);
+
+    let finishFirst!: () => void;
+    const firstRun = new Promise<void>((resolve) => {
+      finishFirst = resolve;
+    });
+    const engine: OcrEngine = {
+      recognize: vi.fn(async (_source, page) => {
+        if (page.pageIndex === 0) await firstRun;
+        return { ...page, blocks: [] };
+      }),
+      terminate: vi.fn(async () => undefined),
+    };
+    const session = new OcrSession({ createEngine: () => engine });
+    try {
+      await session.setEnabled(true);
+      const current = session.processDocument(active!, 0);
+      await vi.waitFor(() => expect(engine.recognize).toHaveBeenCalledOnce());
+      const canceled: unknown[] = [];
+      const obsolete = session.processDocument(changed!, 1).then((page) => canceled.push(page));
+      image.src = 'blob:current-page';
+      const replacement = session.processDocument(changed!, 1);
+      const unloaded = session.processDocument(hidden!, 2).then((page) => canceled.push(page));
+      frames[2]!.contentWindow!.dispatchEvent(new Event('pagehide'));
+      await vi.waitFor(() => expect(canceled).toEqual([null, null]));
+
+      finishFirst();
+      await Promise.all([current, obsolete, replacement, unloaded]);
+      expect(
+        vi.mocked(engine.recognize).mock.calls.map(([source, page]) => [source, page.pageIndex]),
+      ).toEqual([
+        [active!.querySelector('canvas'), 0],
+        ['blob:current-page', 1],
+      ]);
+
+      frames[0]!.contentWindow!.dispatchEvent(new Event('pagehide'));
+      await session.processDocument(active!, 0);
+      expect(engine.recognize).toHaveBeenCalledTimes(3);
+    } finally {
+      finishFirst();
+      await session.terminate();
+      for (const frame of frames) frame.remove();
     }
   });
 });

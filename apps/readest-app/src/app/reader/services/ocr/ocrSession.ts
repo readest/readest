@@ -183,14 +183,17 @@ export class OcrSession {
     const generation = this.#generation;
     const pendingPage = this.#pending.get(pageIndex);
     let recognition: Promise<OcrPage | null>;
+    let ownsRecognition = false;
     if (pendingPage && isSamePageImage(pendingPage, doc, image)) {
       if (priority) this.#promoteTask(pendingPage.task);
       recognition = pendingPage.promise;
     } else {
       removeOcrTextLayer(doc);
-      if (pendingPage && isSamePdfPage(pendingPage, doc, image)) {
+      if (pendingPage) {
+        this.#pending.delete(pageIndex);
         this.#cancelQueuedTask(pendingPage.task);
       }
+      ownsRecognition = true;
       recognition = this.#recognize(doc, image, pageIndex, generation, priority);
     }
 
@@ -198,7 +201,18 @@ export class OcrSession {
     try {
       page = await recognition;
     } catch (error) {
-      if (this.#enabled && generation === this.#generation) this.#onError?.(error, pageIndex);
+      const currentDocument = this.#documents.get(pageIndex);
+      const currentImage = currentDocument && getPageImage(currentDocument);
+      if (
+        ownsRecognition &&
+        this.#enabled &&
+        generation === this.#generation &&
+        currentDocument &&
+        currentImage &&
+        isSamePageImage({ document: doc, image }, currentDocument, currentImage)
+      ) {
+        this.#onError?.(error, pageIndex);
+      }
       return null;
     }
     if (!page || !this.#enabled || generation !== this.#generation) return page;
@@ -253,9 +267,19 @@ export class OcrSession {
     doc.defaultView?.addEventListener(
       'pagehide',
       () => {
-        if (this.#documents.get(pageIndex) === doc) this.#documents.delete(pageIndex);
+        if (this.#documents.get(pageIndex) === doc) {
+          this.#documents.delete(pageIndex);
+          const pendingPage = this.#pending.get(pageIndex);
+          if (pendingPage) {
+            this.#pending.delete(pageIndex);
+            this.#cancelQueuedTask(pendingPage.task);
+          }
+        }
         const cachedPage = this.#pages.get(pageIndex);
-        if (cachedPage?.document === doc) cachedPage.document = undefined;
+        if (cachedPage?.document === doc) {
+          if (typeof cachedPage.image.source === 'string') cachedPage.document = undefined;
+          else this.#pages.delete(pageIndex);
+        }
       },
       { once: true },
     );
@@ -279,6 +303,7 @@ export class OcrSession {
         if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
         await this.#engineTermination;
         if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
+        if (this.#pending.get(pageIndex)?.task !== task) return null;
         const page = await this.#getEngine().recognize(image.source, {
           pageIndex,
           width: image.width,
