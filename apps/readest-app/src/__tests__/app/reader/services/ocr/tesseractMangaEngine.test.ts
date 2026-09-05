@@ -119,8 +119,9 @@ describe('Tesseract manga OCR', () => {
         .mockResolvedValueOnce({ text: '二行目', confidence: 89 }),
       terminate: vi.fn(async () => undefined),
     };
+    const onProgress = vi.fn();
     const engine = new TesseractOcrEngine(
-      { mangaMode: true, textLanguage: 'ja' },
+      { mangaMode: true, textLanguage: 'ja', onProgress },
       createWorker,
       () => detector,
       undefined,
@@ -132,6 +133,7 @@ describe('Tesseract manga OCR', () => {
 
     expect(createWorker).not.toHaveBeenCalled();
     expect(recognizer.recognize).toHaveBeenCalledTimes(2);
+    expect(onProgress).toHaveBeenCalledWith({ status: 'recognizing text', progress: 0.5 });
     expect(result).toMatchObject({
       language: 'ja',
       blocks: [

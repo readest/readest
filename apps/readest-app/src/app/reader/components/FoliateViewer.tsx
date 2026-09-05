@@ -156,6 +156,7 @@ const FoliateViewer: React.FC<{
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ocrProgressKeyRef = useRef('');
   const ocrToastDoneRef = useRef(false);
+  const ocrErrorShownRef = useRef(false);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
   const getOnDeviceTextDocuments = useCallback(() => {
@@ -193,10 +194,18 @@ const FoliateViewer: React.FC<{
     },
     onError: (error, pageIndex) => {
       console.error(`Failed to recognize text on page ${pageIndex}`, error);
+      if (
+        ocrErrorShownRef.current ||
+        (pageIndex >= 0 && getOnDeviceTextDocuments()[0]?.index !== pageIndex)
+      ) {
+        return;
+      }
+      ocrErrorShownRef.current = true;
       ocrToastDoneRef.current = true;
       ocrProgressKeyRef.current = '';
       eventDispatcher.dispatch('toast', {
         type: 'error',
+        placement: 'top',
         message:
           pageIndex >= 0
             ? _('Text recognition failed on page {{page}}', { page: pageIndex + 1 })
@@ -221,6 +230,7 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     ocrProgressKeyRef.current = '';
     ocrToastDoneRef.current = false;
+    ocrErrorShownRef.current = false;
   }, [ocrEnabled, ocrLanguage]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.

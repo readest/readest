@@ -22,6 +22,7 @@ export const Toast = () => {
   const [messageClass, setMessageClass] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const toastDismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastClearTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toastClassMap = {
     info: 'toast-info toast-center toast-middle',
@@ -91,7 +92,7 @@ export const Toast = () => {
     if (toastMessage) {
       const timeout = setTimeout(() => {
         setIsVisible(false);
-        setTimeout(() => setToastMessage(''), 300);
+        toastClearTimeout.current = setTimeout(() => setToastMessage(''), 300);
       }, toastTimeout);
       toastDismissTimeout.current = timeout;
       return () => {
@@ -111,6 +112,10 @@ export const Toast = () => {
       className = '',
       callback = null,
     } = event.detail;
+    if (placement === 'top' && toastClearTimeout.current) {
+      clearTimeout(toastClearTimeout.current);
+      toastClearTimeout.current = null;
+    }
     setToastMessage(message);
     setToastType(type);
     setToastPlacement(placement === 'top' ? 'top' : null);
@@ -130,12 +135,13 @@ export const Toast = () => {
     eventDispatcher.on('toast', handleShowToast);
     return () => {
       eventDispatcher.off('toast', handleShowToast);
+      if (toastClearTimeout.current) clearTimeout(toastClearTimeout.current);
     };
   }, []);
 
   const handleDismiss = () => {
     setIsVisible(false);
-    setTimeout(() => setToastMessage(''), 300);
+    toastClearTimeout.current = setTimeout(() => setToastMessage(''), 300);
     if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
   };
 
@@ -146,9 +152,11 @@ export const Toast = () => {
         // Keep daisyUI's content-sized width, but retain the desktop cap
         // without allowing it to override the mobile viewport gutters.
         className={clsx(
-          'toast z-[130] max-w-[min(var(--breakpoint-sm),calc(100vw-2rem))] transition-[opacity,transform] duration-300',
+          'toast z-[130] max-w-[min(var(--breakpoint-sm),calc(100vw-2rem))] duration-300',
+          toastPlacement === 'top' ? 'transition-opacity' : 'transition-[opacity,transform]',
           toastPositionClass,
-          isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
+          isVisible ? 'opacity-100' : 'opacity-0',
+          toastPlacement !== 'top' && (isVisible ? 'scale-100' : 'scale-95'),
         )}
         style={{
           top: toastPositionClass.includes('toast-top')
@@ -162,6 +170,7 @@ export const Toast = () => {
             'min-h-0 rounded-2xl px-5 py-4',
             'not-eink:bg-linear-to-r border-0',
             alertClassMap[toastType],
+            toastPlacement === 'top' && 'animate-none',
             'eink:bg-base-100 eink:border eink:border-base-content',
             toastType !== 'info' && 'text-white',
           )}

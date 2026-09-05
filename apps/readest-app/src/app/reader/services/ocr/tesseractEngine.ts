@@ -388,6 +388,7 @@ export class TesseractOcrEngine {
           return tesseractCrops[cropIndex] ?? crop;
         };
         this.#mangaLineProgress = { index: recognitionIndex, total: totalLines };
+        this.#reportWorkerProgress('recognizing text', 0);
         recognitionIndex += 1;
         try {
           const recognizedChunks: Array<{ text: string; confidence: number }> = [];
