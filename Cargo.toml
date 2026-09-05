@@ -8,7 +8,12 @@ members = [
   "apps/readest-app/src-tauri"
 ]
 exclude = [
-  "packages/qcms"
+  "packages/qcms",
+  # The tauri fork is its own cargo workspace and its crates use
+  # `workspace = true` inheritance. Keep it out of this workspace so those
+  # resolve against packages/tauri/Cargo.toml; it still reaches the build
+  # through [patch.crates-io] below.
+  "packages/tauri"
 ]
 resolver = "2"
 
@@ -38,18 +43,14 @@ license = "AGPL-3.0"
 repository = "https://github.com/readest/readest"
 categories = []
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.90"
 
 [patch.crates-io]
 tauri = { path = "packages/tauri/crates/tauri" }
-# Xcode 26.2 (Swift 6.2) broke upstream swift-rs 1.0.7's per-swiftc target
+# Xcode 26.x (Swift 6.2) broke upstream swift-rs's per-swiftc target
 # override; the vendored copy cross-compiles via `--triple`/`--sdk` instead.
-# Upstream is unmaintained (last release 2024). See packages/swift-rs.
+# Upstream 1.0.8 (2026-08) only takes that path on Xcode 27, so the vendored
+# copy stays. It is labelled 1.0.8 to satisfy tauri's `swift-rs = "1.0.8"`;
+# without that cargo cannot unify swift-rs and silently drops the tauri patch
+# above in favour of crates.io tauri. See packages/swift-rs.
 swift-rs = { path = "packages/swift-rs" }
-# tao 0.35.3 + a use-after-free fix in the iOS scene-configuration callback
-# (configuration_for_connecting_scene_session returned a raw borrow of a
-# Retained it dropped; UIKit then retained a freed UISceneConfiguration and
-# the app SIGSEGVed at launch on real devices whenever an
-# UIApplicationSceneManifest is present - i.e. the CarPlay scene). See
-# packages/tao/src/platform_impl/ios/view.rs; worth an upstream PR.
-tao = { path = "packages/tao" }
