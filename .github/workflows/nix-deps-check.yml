@@ -24,4 +24,4 @@ jobs:
       # fetches must actually run so that a stale hash fails here with the
       # "specified:" / "got:" pair, instead of silently reusing an old cached
       # store and failing much later on main with ERR_PNPM_NO_OFFLINE_TARBALL.
-      run: nix build -L .#default.pnpmDeps .#default.tursoPluginDeps .#default.cargoDeps
+      run: nix build -L --keep-going .#default.pnpmDeps .#default.tursoPluginDeps .#default.cargoDeps
