@@ -343,6 +343,23 @@ describe('readerStore', () => {
       }
     });
 
+    test.each([
+      { key: '', loading: true, error: null },
+      { key: '', loading: false, error: 'Failed to load book.' },
+      { key: 'another-book', loading: false, error: null },
+    ])('does not reload an invalid stored view: %j', (viewState) => {
+      seedViewState('book-1', viewState);
+      const initViewState = vi.fn().mockResolvedValue(undefined);
+      const original = useReaderStore.getState().initViewState;
+      useReaderStore.setState({ initViewState });
+      try {
+        useReaderStore.getState().recreateViewer({} as never, 'book-1');
+        expect(initViewState).not.toHaveBeenCalled();
+      } finally {
+        useReaderStore.setState({ initViewState: original });
+      }
+    });
+
     // Regression test for #5277: `initViewState` already mints a fresh
     // viewerKey, so minting a second one here remounted <FoliateViewer> twice.
     // The abandoned first mount kept opening the same bookDoc and left an extra
