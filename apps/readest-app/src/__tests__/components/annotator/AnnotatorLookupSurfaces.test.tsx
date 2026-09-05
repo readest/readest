@@ -1,4 +1,7 @@
 /**
+ * When a lookup surface (dictionary / translator / proofread) may open, and when
+ * it must stay shut.
+ *
  * #6018 — the dictionary flashed open and vanished on Android.
  *
  * `handleDictionary` (and its translator / proofread siblings) calls
@@ -30,6 +33,12 @@ const h = vi.hoisted(() => ({
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(),
   isTextSelected: { current: true },
+  // Swapped per test: the fixed-layout branch of `onLoad` used to wire PDF-only
+  // listeners, so a regression there is only visible with this on.
+  book: { format: 'EPUB', isFixedLayout: false },
+  // `onLoad` and friends, captured from the `useFoliateEvents` call so a test can
+  // fire a section load and drive the listeners it registers on the section doc.
+  foliateHandlers: null as null | Record<string, (event: Event) => void>,
   // Annotator's own `setSelection`, captured from the `useTextSelector` call
   // so a test can republish the selection exactly as the hook does.
   setSelection: null as
@@ -84,9 +93,9 @@ vi.mock('@/store/bookDataStore', () => {
     setConfig: vi.fn(),
     saveConfig: h.saveConfig,
     getBookData: () => ({
-      book: { format: 'EPUB', primaryLanguage: 'en' },
+      book: { format: h.book.format, primaryLanguage: 'en' },
       bookDoc: { metadata: { language: 'en' } },
-      isFixedLayout: false,
+      isFixedLayout: h.book.isFixedLayout,
     }),
     updateBooknotes: h.updateBooknotes,
   };
@@ -98,7 +107,7 @@ vi.mock('@/store/bookDataStore', () => {
 
 vi.mock('@/store/readerStore', () => {
   const state = {
-    getView: () => ({ deselect: vi.fn() }),
+    getView: () => ({ deselect: vi.fn(), getCFI: () => 'epubcfi(/6/2!/4/2)' }),
     getViewsById: () => [],
     getViewSettings: () => h.viewSettings,
   };
@@ -151,7 +160,11 @@ vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSy
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
-vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
+vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
+  useFoliateEvents: (_view: unknown, handlers: Record<string, (event: Event) => void>) => {
+    h.foliateHandlers = handlers;
+  },
+}));
 vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
   useRendererInputListeners: () => {},
 }));
@@ -262,6 +275,8 @@ const republishSelectionWithSuppressedHandles = async () => {
 
 beforeEach(() => {
   h.actions = null;
+  h.book = { format: 'EPUB', isFixedLayout: false };
+  h.foliateHandlers = null;
   h.config.booknotes = [];
   h.isTextSelected.current = true;
   h.setSelection = null;
@@ -289,5 +304,54 @@ describe('a lookup surface survives the selection it is anchored to being republ
 
     expect(screen.queryByTestId(testId)).toBeTruthy();
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+});
+
+/**
+ * #5821 — every PDF word selection on Android opened the translator popup.
+ *
+ * Fixed-layout books used to wire their own `contextmenu` listener in `onLoad`
+ * that forced the translator surface open, from back when PDFs had no annotation
+ * toolbar of their own. Android dispatches `contextmenu` for the long press that
+ * selects a word, so the shortcut fired on every selection and buried the word —
+ * and the dictionary the reader had asked for — under an unrequested
+ * translation. iOS never reproduced it: WebKit dispatches no `contextmenu` for a
+ * long-press selection.
+ */
+describe('a context menu never opens a lookup surface by itself', () => {
+  // The ambient jsdom document, because jsdom implements `getSelection` only on
+  // the window's own document — a `createHTMLDocument` section doc has none, and
+  // the handler under test bails on it before doing anything at all.
+  const loadSection = async () => {
+    const doc = document;
+    const paragraph = doc.createElement('p');
+    paragraph.textContent = 'selected text';
+    doc.body.append(paragraph);
+    await act(async () => {
+      h.foliateHandlers?.['onLoad']?.(
+        new CustomEvent('load', { detail: { doc, index: 0 } }) as Event,
+      );
+    });
+    return { doc, paragraph };
+  };
+
+  test.each([
+    ['a fixed-layout book', true, 'PDF'],
+    ['a reflowable book', false, 'EPUB'],
+  ])('%s answers a contextmenu with no translator', async (_label, isFixedLayout, format) => {
+    h.book = { format, isFixedLayout };
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const { doc, paragraph } = await loadSection();
+
+    const range = doc.createRange();
+    range.selectNodeContents(paragraph);
+    doc.getSelection()?.removeAllRanges();
+    doc.getSelection()?.addRange(range);
+
+    await act(async () => {
+      paragraph.dispatchEvent(new Event('contextmenu', { bubbles: true, cancelable: true }));
+    });
+
+    expect(screen.queryByTestId('translator-surface')).toBeNull();
   });
 });
