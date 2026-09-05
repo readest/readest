@@ -125,11 +125,26 @@ test.describe('Annotation', () => {
     const layers = await reader.page.evaluate(() => {
       const zIndexOf = (el: Element | null | undefined) =>
         el ? getComputedStyle(el).zIndex : null;
+      // Find each band by what actually makes it one — the nearest ancestor
+      // that sets a z-index — rather than by the wrapper's positioning class.
+      // `div.fixed` used to stand in for that, and it silently stopped
+      // matching the toolbar when its wrapper became `absolute` (it has to
+      // be: the popup's coordinates are book-cell relative, so a fixed
+      // wrapper anchors it to the viewport and drags it off the selection).
+      // Reading the z-index directly pins the bands this test cares about
+      // without caring how either layer is positioned.
+      const layerOf = (el: Element | null | undefined) => {
+        for (let node = el?.parentElement; node; node = node.parentElement) {
+          const z = getComputedStyle(node).zIndex;
+          if (z !== 'auto') return z;
+        }
+        return null;
+      };
       const handle = document.querySelector('[data-testid="selection-handle"]');
       const popup = document.querySelector('.selection-popup');
       return {
-        handles: zIndexOf(handle?.closest('div.fixed')),
-        toolbar: zIndexOf(popup?.closest('div.fixed')),
+        handles: layerOf(handle),
+        toolbar: layerOf(popup),
         // Where the lookup popups and the note editor sheet sit. They unmount
         // the handles, but the layer they share must still outrank them.
         popupLayer: zIndexOf(popup),
