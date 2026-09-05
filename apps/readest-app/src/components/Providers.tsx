@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { IconContext } from 'react-icons';
 import { AuthProvider } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
+import WindowResizeHandles from '@/components/WindowResizeHandles';
 import { CSPostHogProvider } from '@/context/PHContext';
 import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
@@ -242,6 +243,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <CommandPalette />
                   <AtmosphereOverlay />
                   <PassphrasePrompt />
+                  <WindowResizeHandles />
                 </div>
                 <AppLockDialog />
                 <TelemetryConsentDialog

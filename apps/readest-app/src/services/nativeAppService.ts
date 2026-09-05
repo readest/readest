@@ -38,6 +38,7 @@ import {
   DistChannel,
 } from '@/types/system';
 import type { Book } from '@/types/book';
+import { needsQueryRangeReads } from '@/utils/ua';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -326,13 +327,14 @@ export const nativeFileSystem: FileSystem = {
       }
     } else if (isFileURI(path)) {
       return await new NativeFile(fp, fname, baseDir ? baseDir : null).open();
-    } else if (OS_TYPE === 'android') {
-      // Android can't use the asset protocol for ranged reads — its WebView
-      // re-applies a `Range` header's offset to intercepted bodies and corrupts
-      // non-zero-start reads (Chromium 40739128). Instead route reads through
-      // the `rangefile` custom scheme, which carries the range in the URL query
-      // (no `Range` header) so the WebView delivers the bytes verbatim, still
-      // over the network stack rather than the slow Tauri IPC bridge.
+    } else if (needsQueryRangeReads(OS_TYPE, navigator.userAgent)) {
+      // Android and the Linux CEF build can't use the asset protocol for
+      // ranged reads — Chromium re-applies a `Range` header's offset to
+      // intercepted bodies and fails non-zero-start reads (Chromium 40739128).
+      // Instead route reads through the `rangefile` custom scheme, which
+      // carries the range in the URL query (no `Range` header) so the WebView
+      // delivers the bytes verbatim, still over the network stack rather than
+      // the slow Tauri IPC bridge.
       // Falls back to NativeFile if the path is outside the asset scope.
       try {
         const prefix = await this.getPrefix(base);

@@ -7,7 +7,7 @@ Readest is a cross-platform ebook reader built as a **Next.js 16 + Tauri v2** hy
 ```bash
 # Development
 pnpm dev-web               # Web-only dev server (no Rust compilation needed)
-pnpm tauri dev             # Desktop dev with Tauri (compiles Rust backend)
+pnpm tauri dev             # Desktop dev with Tauri (compiles Rust backend); on Linux this is the CEF runtime (needs Rust >= 1.95)
 
 # Building
 pnpm build                 # Build Next.js for Tauri

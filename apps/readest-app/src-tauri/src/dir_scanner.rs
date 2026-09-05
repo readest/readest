@@ -10,8 +10,8 @@ pub struct ScannedFile {
 }
 
 #[tauri::command]
-pub async fn read_dir(
-    app: AppHandle,
+pub async fn read_dir<R: tauri::Runtime>(
+    app: AppHandle<R>,
     path: String,
     recursive: bool,
     extensions: Vec<String>,

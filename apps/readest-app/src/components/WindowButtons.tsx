@@ -3,7 +3,8 @@ import React, { useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 
 import { tauriHandleMinimize, tauriHandleToggleMaximize, tauriHandleClose } from '@/utils/window';
-import { isTauriAppPlatform } from '@/services/environment';
+import { isTauriAppPlatform, needsPointerWindowControls } from '@/services/environment';
+import { startPointerWindowMove } from '@/utils/windowPointerDrag';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface WindowButtonsProps {
@@ -77,6 +78,8 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
     if (e.buttons === 1) {
       if (e.detail === 2) {
         getCurrentWindow().toggleMaximize();
+      } else if (needsPointerWindowControls()) {
+        startPointerWindowMove(e);
       } else {
         getCurrentWindow().startDragging();
       }

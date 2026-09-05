@@ -56,7 +56,7 @@ use tauri_plugin_opener::OpenerExt;
 use transfer_file::{download_file, upload_file};
 
 #[cfg(any(desktop, target_os = "ios"))]
-fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
+fn allow_file_in_scopes<R: tauri::Runtime>(app: &AppHandle<R>, files: Vec<PathBuf>) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
     for file in &files {
@@ -73,7 +73,7 @@ fn allow_file_in_scopes(app: &AppHandle, files: Vec<PathBuf>) {
     }
 }
 
-fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
+fn allow_dir_in_scopes<R: tauri::Runtime>(app: &AppHandle<R>, dir: &PathBuf) {
     let fs_scope = app.fs_scope();
     let asset_protocol_scope = app.asset_protocol_scope();
     if let Err(e) = fs_scope.allow_directory(dir, true) {
@@ -133,7 +133,11 @@ fn allow_dir_in_scopes(app: &AppHandle, dir: &PathBuf) {
 ///     every launch, so the in-memory scope set stays in sync with
 ///     the user's persisted intent.
 #[command]
-fn allow_paths_in_scopes(_app: AppHandle, _paths: Vec<String>, _is_directory: bool) {
+fn allow_paths_in_scopes<R: tauri::Runtime>(
+    _app: AppHandle<R>,
+    _paths: Vec<String>,
+    _is_directory: bool,
+) {
     #[cfg(desktop)]
     {
         let fs_scope = _app.fs_scope();
@@ -209,7 +213,7 @@ fn get_files_from_argv(argv: Vec<String>) -> Vec<PathBuf> {
 }
 
 #[cfg(desktop)]
-fn set_window_open_with_files(app: &AppHandle, files: Vec<PathBuf>) {
+fn set_window_open_with_files<R: tauri::Runtime>(app: &AppHandle<R>, files: Vec<PathBuf>) {
     let files = files
         .into_iter()
         .map(|f| {
@@ -229,7 +233,7 @@ fn set_window_open_with_files(app: &AppHandle, files: Vec<PathBuf>) {
 }
 
 #[command]
-async fn start_server(window: Window) -> Result<u16, String> {
+async fn start_server<R: tauri::Runtime>(window: Window<R>) -> Result<u16, String> {
     start(move |url| {
         // Because of the unprotected localhost port, you must verify the URL here.
         // Preferebly send back only the token, or nothing at all if you can handle everything else in Rust.
@@ -315,7 +319,17 @@ struct SingleInstancePayload {
     cwd: String,
 }
 
+/// The webview runtime this build drives: CEF for the Linux CEF build, Wry
+/// everywhere else. Named explicitly because several plugins pull in tauri's
+/// default `wry` feature even when CEF is selected, which leaves
+/// `Builder::default()` ambiguous there.
+#[cfg(feature = "cef")]
+type AppRuntime = tauri::Cef;
+#[cfg(not(feature = "cef"))]
+type AppRuntime = tauri::Wry;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[cfg_attr(feature = "cef", tauri::cef_entry_point)]
 pub fn run() {
     // Initialize Sentry as early as possible so panics during startup are
     // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
@@ -394,7 +408,21 @@ pub fn run() {
         ))
     });
 
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::<AppRuntime>::new();
+
+    // A fresh profile is Chromium's "first run", and on Linux the first-run
+    // preferences default to requiring a EULA dialog. CEF has no way to show
+    // it, so the browser process exits with result code 28 and tauri reports
+    // `WebviewRuntimeNotInstalled`; every first launch of a fresh install would
+    // fail. `--no-first-run` skips the first-run tasks altogether. (Keep the
+    // dashes: the runtime appends a dash-less, value-less entry as a positional
+    // argument rather than a switch.)
+    #[cfg(feature = "cef")]
+    let builder = builder.runtime_init_attrs(
+        tauri::CefRuntimeAttributes::default().command_line_arg("--no-first-run", None::<String>),
+    );
+
+    let builder = builder
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)

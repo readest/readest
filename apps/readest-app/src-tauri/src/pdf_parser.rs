@@ -40,8 +40,8 @@ pub struct ParsedPdfMetadata {
 }
 
 #[tauri::command]
-pub async fn parse_pdf_metadata(
-    app: AppHandle,
+pub async fn parse_pdf_metadata<R: tauri::Runtime>(
+    app: AppHandle<R>,
     file_path: String,
 ) -> Result<ParsedPdfMetadata, String> {
     ensure_path_allowed(&app, &file_path)?;
@@ -52,8 +52,8 @@ pub async fn parse_pdf_metadata(
 }
 
 #[tauri::command]
-pub async fn render_pdf_cover(
-    app: AppHandle,
+pub async fn render_pdf_cover<R: tauri::Runtime>(
+    app: AppHandle<R>,
     payload: RenderPdfCoverRequest,
 ) -> Result<RenderPdfCoverResponse, String> {
     ensure_path_allowed(&app, &payload.file_path)?;
@@ -62,7 +62,10 @@ pub async fn render_pdf_cover(
         .map_err(|e| e.to_string())
 }
 
-fn ensure_path_allowed(app: &AppHandle, file_path: &str) -> Result<(), String> {
+fn ensure_path_allowed<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    file_path: &str,
+) -> Result<(), String> {
     #[cfg(feature = "webdriver")]
     let _ = (app, file_path);
 
@@ -81,7 +84,7 @@ fn ensure_path_allowed(app: &AppHandle, file_path: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn open_pdf_source(app: &AppHandle, file_path: &str) -> Result<File, String> {
+fn open_pdf_source<R: tauri::Runtime>(app: &AppHandle<R>, file_path: &str) -> Result<File, String> {
     #[cfg(not(target_os = "android"))]
     let _ = app;
 

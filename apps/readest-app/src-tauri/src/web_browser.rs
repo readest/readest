@@ -202,8 +202,8 @@ fn is_browser_label(label: &str) -> bool {
 /// (see `WebBrowserDownload`).
 #[cfg(desktop)]
 #[tauri::command]
-pub async fn open_web_browser(
-    app: AppHandle,
+pub async fn open_web_browser<R: tauri::Runtime>(
+    app: AppHandle<R>,
     url: String,
     options: Option<WebBrowserOptions>,
 ) -> Result<WebBrowserResult, String> {
@@ -357,7 +357,10 @@ pub async fn open_web_browser(
 /// every open browser window's chrome.
 #[cfg(desktop)]
 #[tauri::command]
-pub fn set_web_browser_status(app: AppHandle, status: WebBrowserStatus) -> Result<(), String> {
+pub fn set_web_browser_status<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    status: WebBrowserStatus,
+) -> Result<(), String> {
     let js = status_eval(&status);
     for (label, window) in app.webview_windows() {
         if is_browser_label(&label) {

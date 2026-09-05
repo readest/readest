@@ -425,8 +425,8 @@ jobs:
         if: steps.changes.outputs.tauri == 'true'
         with:
           # cache-workspace-crates caches the path/workspace crates too: the
-          # vendored tauri fork (packages/tauri, packages/tauri-plugins, wired
-          # via [patch.crates-io]) and the local src-tauri/plugins/*. These are
+          # vendored tauri fork (packages/tauri, wired via [patch.crates-io])
+          # and the local src-tauri/plugins/*. These are
           # workspace members that rust-cache prunes by default, so the whole
           # tauri stack — plus every crates.io plugin that depends on the
           # patched `tauri` — rebuilt on every run. They change only

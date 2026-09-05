@@ -1,6 +1,6 @@
 # Nightly builds. Mirrors the build matrix and build/signing steps of
 # release.yml — keep cert/NDK/toolchain bumps, secret names, and the
-# truly-portable AppImage + portable-Windows steps in sync between the two.
+# Linux CEF + portable-Windows steps in sync between the two.
 #
 # Differences from release.yml: this workflow (1) stamps a nightly version
 # `<base>-<YYYYMMDDHH>` (Asia/Shanghai), (2) publishes to Cloudflare R2 only (no
@@ -218,37 +218,10 @@ jobs:
           pnpm tauri signer sign $arm64_apk
 
       # ──────────────────────────── DESKTOP ────────────────────────────
-      # Linux uses the truly-portable AppImage tauri CLI fork (mirrors
-      # release.yml). The nightly version is patched BEFORE `tauri build` so the
-      # bundle filenames carry the stamp.
-      #
-      # PINNED to a rev, not the branch tip: on 2026-07-31 the fork rewrote the
-      # sharun bundler to re-download quick-sharun.sh on EVERY build instead of
-      # only when it is missing from the cache. That defeated the cache seed
-      # below, so both Linux legs pulled the moving main-branch script again and
-      # hung under Xvfb until the 45min step timeout (#4906). This rev is the
-      # last one that keeps the cache check, and it built every nightly through
-      # 2026-07-30. Bump it only together with a Linux AppImage build check.
-      - name: Override tauri-cli with custom AppImage format (Linux)
-        if: matrix.config.release == 'linux'
-        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --rev 162626969b382d52faebdf6c7264460bd9a47d1f --force
-
-      # The truly-portable AppImage bundler at the rev pinned above downloads
-      # quick-sharun.sh from Anylinux-AppImages@main ONLY when it is not already
-      # in the tauri tools cache. An upstream strace-mode change (2026-06-29)
-      # made bundling launch the app under Xvfb and hang forever, timing out the
-      # Linux legs (#4906). Seed the cache with the last known-good revision so
-      # the bundler never fetches the moving main-branch script.
-      - name: pin quick-sharun.sh for AppImage bundling (Linux)
-        if: matrix.config.release == 'linux'
-        run: |
-          set -euo pipefail
-          cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tauri"
-          mkdir -p "$cache_dir"
-          curl -fsSL --retry 3 -o "$cache_dir/quick-sharun.sh" \
-            "https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/b3a9e985cdedf7efa81d172f182cd13983743147/useful-tools/quick-sharun.sh"
-          chmod +x "$cache_dir/quick-sharun.sh"
-
+      # Linux ships on the CEF runtime: `pnpm tauri` (mirrors release.yml; see
+      # apps/readest-app/scripts/tauri.mjs) runs the feat/cef tauri CLI there.
+      # The nightly version is patched BEFORE `tauri build` so the bundle
+      # filenames carry the stamp.
       - name: build desktop bundles
         if: matrix.config.release != 'android'
         shell: bash
@@ -258,7 +231,8 @@ jobs:
         # latest.json for ALL platforms (#4906).
         timeout-minutes: 45
         env:
-          TAURI_BUNDLER_NEW_APPIMAGE_FORMAT: 'true'
+          # See release.yml: keep quick-sharun from running the app under Xvfb.
+          STRACE_MODE: '0'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -272,13 +246,7 @@ jobs:
           version="${{ needs.compute-version.outputs.nightly_version }}"
           node -e "const f='apps/readest-app/package.json';const j=require('./'+f);j.version='${version}';require('fs').writeFileSync(f, JSON.stringify(j,null,2)+'\n')"
           cd apps/readest-app
-          # On Linux use the cargo `tauri` CLI (the truly-portable AppImage fork
-          # installed above); elsewhere the npm @tauri-apps/cli.
-          if [ "${{ matrix.config.release }}" = "linux" ]; then
-            cargo tauri build ${{ matrix.config.args }}
-          else
-            pnpm tauri build ${{ matrix.config.args }}
-          fi
+          pnpm tauri build ${{ matrix.config.args }}
 
       # Portable Windows build: rebuild with NEXT_PUBLIC_PORTABLE_APP=true and
       # ship the raw exe (mirrors release.yml). Runs after the NSIS build above.
@@ -409,7 +377,7 @@ jobs:
               add_entry "$portable_name" "$portable_name" "$portable_key"
               ;;
             linux)
-              # Truly-portable AppImage: bundle/appimage/Readest_<ver>_<amd64|aarch64>.AppImage
+              # CEF (sharun) AppImage: bundle/appimage/Readest_<ver>_<amd64|aarch64>.AppImage
               if [ "$arch" = "x86_64" ]; then
                 appimage_name="Readest_${version}_amd64.AppImage"
                 key="linux-x86_64-appimage"
@@ -417,7 +385,7 @@ jobs:
                 appimage_name="Readest_${version}_aarch64.AppImage"
                 key="linux-aarch64-appimage"
               fi
-              # The Linux leg builds with `cargo tauri build` WITHOUT `--target`
+              # The Linux leg builds with `pnpm tauri build` WITHOUT `--target`
               # (no matrix args), so cargo emits bundles under target/release/
               # (host-target default) — NOT target/<triple>/release/ like the
               # macOS/Windows legs, which DO pass `--target`. So there is no
