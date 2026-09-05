@@ -21,6 +21,7 @@ export default defineConfig({
     },
   },
   test: {
+    server: { deps: { inline: ['next-view-transitions'] } },
     environment: 'jsdom',
     silent: 'passed-only',
     setupFiles: ['./vitest.setup.ts'],

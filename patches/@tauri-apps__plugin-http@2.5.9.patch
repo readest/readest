@@ -1,0 +1,188 @@
+diff --git a/dist-js/index.cjs b/dist-js/index.cjs
+index f1bba4502af349efbde8b94ac1b1773a490f4836..ad62edf88b978959349d3807155c607c0e3414ca 100644
+--- a/dist-js/index.cjs
++++ b/dist-js/index.cjs
+@@ -103,7 +103,7 @@ async function fetch(input, init) {
+             danger
+         }
+     });
+-    const abort = () => core.invoke('plugin:http|fetch_cancel', { rid });
++    const abort = () => core.invoke('plugin:http|fetch_cancel', { rid }).catch(() => {});
+     // Optimistically check for abort signal
+     // and avoid doing any work after doing intial work on the Rust side
+     if (signal?.aborted) {
+@@ -112,14 +112,28 @@ async function fetch(input, init) {
+         abort();
+         throw new Error(ERROR_REQUEST_CANCELLED);
+     }
+-    signal?.addEventListener('abort', () => void abort());
+-    const { status, statusText, url, headers: responseHeaders, rid: responseRid } = await core.invoke('plugin:http|fetch_send', {
+-        rid
+-    });
++    signal?.addEventListener('abort', abort, { once: true });
++    let response;
++    try {
++        response = await core.invoke('plugin:http|fetch_send', { rid });
++    } finally {
++        signal?.removeEventListener('abort', abort);
++    }
++    const { status, statusText, url, headers: responseHeaders, rid: responseRid } = response;
++    let bodyDone = false;
++    let abortBody;
++    const finishBody = () => {
++        bodyDone = true;
++        if (abortBody) signal?.removeEventListener('abort', abortBody);
++    };
+     const dropBody = () => {
+-        return core.invoke('plugin:http|fetch_cancel_body', { rid: responseRid });
++        if (bodyDone) return Promise.resolve();
++        finishBody();
++        // A pending native read may already have closed the resource.
++        return core.invoke('plugin:http|fetch_cancel_body', { rid: responseRid }).catch(() => {});
+     };
+     const readChunk = async (controller) => {
++        if (bodyDone) return;
+         let data;
+         try {
+             data = await core.invoke('plugin:http|fetch_read_body', {
+@@ -129,15 +143,19 @@ async function fetch(input, init) {
+         catch (e) {
+             // close the stream if an error occurs
+             // and drop the body on Rust side
+-            controller.error(e);
+-            void dropBody();
++            if (!bodyDone) {
++                controller.error(e);
++                await dropBody();
++            }
+             return;
+         }
++        if (bodyDone) return;
+         const dataUint8 = new Uint8Array(data);
+         const lastByte = dataUint8[dataUint8.byteLength - 1];
+         const actualData = dataUint8.slice(0, dataUint8.byteLength - 1);
+         // close when the signal to close (last byte is 1) is sent from the IPC.
+         if (lastByte === 1) {
++            finishBody();
+             controller.close();
+             return;
+         }
+@@ -150,17 +168,21 @@ async function fetch(input, init) {
+         : new ReadableStream({
+             start: (controller) => {
+                 // listen for abort events to cancel reading
+-                signal?.addEventListener('abort', () => {
++                abortBody = () => {
++                    if (bodyDone) return;
+                     controller.error(ERROR_REQUEST_CANCELLED);
+                     void dropBody();
+-                });
++                };
++                signal?.addEventListener('abort', abortBody, { once: true });
++                if (signal?.aborted) abortBody();
+             },
+             pull: (controller) => readChunk(controller),
+             cancel: () => {
+                 // Ensure body resources are released on stream cancellation
+-                void dropBody();
++                return dropBody();
+             }
+         });
++    if (body === null) await dropBody();
+     const res = new Response(body, {
+         status,
+         statusText
+diff --git a/dist-js/index.js b/dist-js/index.js
+index 01f0ea49e0fe45425adcb8596f57e97a92c8c958..fdfa1d10429c7ca0aa4c1e0f358ee17097f49e10 100644
+--- a/dist-js/index.js
++++ b/dist-js/index.js
+@@ -101,7 +101,7 @@ async function fetch(input, init) {
+             danger
+         }
+     });
+-    const abort = () => invoke('plugin:http|fetch_cancel', { rid });
++    const abort = () => invoke('plugin:http|fetch_cancel', { rid }).catch(() => {});
+     // Optimistically check for abort signal
+     // and avoid doing any work after doing intial work on the Rust side
+     if (signal?.aborted) {
+@@ -110,14 +110,28 @@ async function fetch(input, init) {
+         abort();
+         throw new Error(ERROR_REQUEST_CANCELLED);
+     }
+-    signal?.addEventListener('abort', () => void abort());
+-    const { status, statusText, url, headers: responseHeaders, rid: responseRid } = await invoke('plugin:http|fetch_send', {
+-        rid
+-    });
++    signal?.addEventListener('abort', abort, { once: true });
++    let response;
++    try {
++        response = await invoke('plugin:http|fetch_send', { rid });
++    } finally {
++        signal?.removeEventListener('abort', abort);
++    }
++    const { status, statusText, url, headers: responseHeaders, rid: responseRid } = response;
++    let bodyDone = false;
++    let abortBody;
++    const finishBody = () => {
++        bodyDone = true;
++        if (abortBody) signal?.removeEventListener('abort', abortBody);
++    };
+     const dropBody = () => {
+-        return invoke('plugin:http|fetch_cancel_body', { rid: responseRid });
++        if (bodyDone) return Promise.resolve();
++        finishBody();
++        // A pending native read may already have closed the resource.
++        return invoke('plugin:http|fetch_cancel_body', { rid: responseRid }).catch(() => {});
+     };
+     const readChunk = async (controller) => {
++        if (bodyDone) return;
+         let data;
+         try {
+             data = await invoke('plugin:http|fetch_read_body', {
+@@ -127,15 +141,19 @@ async function fetch(input, init) {
+         catch (e) {
+             // close the stream if an error occurs
+             // and drop the body on Rust side
+-            controller.error(e);
+-            void dropBody();
++            if (!bodyDone) {
++                controller.error(e);
++                await dropBody();
++            }
+             return;
+         }
++        if (bodyDone) return;
+         const dataUint8 = new Uint8Array(data);
+         const lastByte = dataUint8[dataUint8.byteLength - 1];
+         const actualData = dataUint8.slice(0, dataUint8.byteLength - 1);
+         // close when the signal to close (last byte is 1) is sent from the IPC.
+         if (lastByte === 1) {
++            finishBody();
+             controller.close();
+             return;
+         }
+@@ -148,17 +166,21 @@ async function fetch(input, init) {
+         : new ReadableStream({
+             start: (controller) => {
+                 // listen for abort events to cancel reading
+-                signal?.addEventListener('abort', () => {
++                abortBody = () => {
++                    if (bodyDone) return;
+                     controller.error(ERROR_REQUEST_CANCELLED);
+                     void dropBody();
+-                });
++                };
++                signal?.addEventListener('abort', abortBody, { once: true });
++                if (signal?.aborted) abortBody();
+             },
+             pull: (controller) => readChunk(controller),
+             cancel: () => {
+                 // Ensure body resources are released on stream cancellation
+-                void dropBody();
++                return dropBody();
+             }
+         });
++    if (body === null) await dropBody();
+     const res = new Response(body, {
+         status,
+         statusText
