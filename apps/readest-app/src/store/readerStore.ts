@@ -563,6 +563,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     })),
 
   recreateViewer: (envConfig: EnvConfigType, key: string) => {
+    if (!key || !get().viewStates[key]) return;
     const id = key.split('-')[0]!;
     // `initViewState` already mints a fresh `viewerKey` when the reload lands,
     // which is what remounts <FoliateViewer>. Minting a second one here
