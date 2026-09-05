@@ -31,8 +31,13 @@ const currentViewState = {
   inited: true,
 };
 
+const currentBookData = {
+  isFixedLayout: false,
+};
+
 const currentViewSettings = {
   defaultFontSize: 16,
+  zoomLevel: 100,
   lineHeight: 1.5,
   readingRulerEnabled: true,
   writingMode: 'horizontal-tb',
@@ -81,16 +86,27 @@ vi.mock('@/store/sidebarStore', () => ({
 
 const mockSetSettingsDialogOpen = vi.fn();
 const mockSetSettingsDialogBookKey = vi.fn();
+const globalViewSettings = { defaultFontSize: 16 };
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
+    settings: { globalViewSettings },
     setSettingsDialogOpen: mockSetSettingsDialogOpen,
     setSettingsDialogBookKey: mockSetSettingsDialogBookKey,
   }),
 }));
 
+const mockSaveViewSettings = vi.fn();
+vi.mock('@/helpers/settings', () => ({
+  saveViewSettings: (...args: unknown[]) => mockSaveViewSettings(...args),
+}));
+
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ envConfig: { appPlatform: 'web' } }),
+}));
+
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
-    getBookData: vi.fn(),
+    getBookData: () => currentBookData,
     getConfig: mockGetConfig,
     setConfig: mockSetConfig,
   }),
@@ -138,6 +154,10 @@ vi.mock('@/services/constants', () => ({
   MAX_ZOOM_LEVEL: 200,
   MIN_ZOOM_LEVEL: 50,
   ZOOM_STEP: 10,
+  MAX_FONT_SIZE: 120,
+  MIN_FONT_SIZE: 8,
+  FONT_SIZE_STEP: 1,
+  DEFAULT_BOOK_FONT: { defaultFontSize: 16 },
 }));
 
 vi.mock('@/app/reader/hooks/useBooksManager', () => ({
@@ -161,6 +181,10 @@ describe('useBookShortcuts', () => {
     currentViewSettings.rtl = false;
     currentViewSettings.paragraphMode.enabled = false;
     currentViewState.inited = true;
+    currentBookData.isFixedLayout = false;
+    currentViewSettings.defaultFontSize = 16;
+    currentViewSettings.zoomLevel = 100;
+    globalViewSettings.defaultFontSize = 16;
     mockView.book.dir = 'ltr';
     sideBarState.isSideBarPinned = false;
     sideBarState.isSideBarVisible = false;
@@ -316,5 +340,79 @@ describe('useBookShortcuts', () => {
     } else {
       expect(mockSetConfig).not.toHaveBeenCalled();
     }
+  });
+
+  describe('zoom shortcuts on reflowable books (#5694)', () => {
+    it('steps the font size up and keeps the change on the book', () => {
+      render(<Harness />);
+      shortcutState.actions?.['onZoomIn']?.();
+
+      expect(mockSaveViewSettings).toHaveBeenCalledWith(
+        { appPlatform: 'web' },
+        'book-1',
+        'defaultFontSize',
+        17,
+        true,
+      );
+      expect(mockView.renderer.setAttribute).not.toHaveBeenCalled();
+    });
+
+    it('steps the font size down', () => {
+      render(<Harness />);
+      shortcutState.actions?.['onZoomOut']?.();
+
+      expect(mockSaveViewSettings).toHaveBeenCalledWith(
+        { appPlatform: 'web' },
+        'book-1',
+        'defaultFontSize',
+        15,
+        true,
+      );
+    });
+
+    it('scales the step with the pinch factor', () => {
+      render(<Harness />);
+      eventDispatcher.dispatch('zoom-in', { factor: 4 });
+
+      expect(mockSaveViewSettings).toHaveBeenCalledWith(
+        { appPlatform: 'web' },
+        'book-1',
+        'defaultFontSize',
+        20,
+        true,
+      );
+    });
+
+    it('clamps the font size to the allowed range', () => {
+      currentViewSettings.defaultFontSize = 8;
+      render(<Harness />);
+      shortcutState.actions?.['onZoomOut']?.();
+
+      expect(mockSaveViewSettings).not.toHaveBeenCalled();
+    });
+
+    it('restores the global default font size on reset zoom', () => {
+      currentViewSettings.defaultFontSize = 24;
+      globalViewSettings.defaultFontSize = 18;
+      render(<Harness />);
+      shortcutState.actions?.['onResetZoom']?.();
+
+      expect(mockSaveViewSettings).toHaveBeenCalledWith(
+        { appPlatform: 'web' },
+        'book-1',
+        'defaultFontSize',
+        18,
+        true,
+      );
+    });
+
+    it('keeps scaling fixed-layout books instead of resizing text', () => {
+      currentBookData.isFixedLayout = true;
+      render(<Harness />);
+      shortcutState.actions?.['onZoomIn']?.();
+
+      expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('scale-factor', 110);
+      expect(mockSaveViewSettings).not.toHaveBeenCalled();
+    });
   });
 });

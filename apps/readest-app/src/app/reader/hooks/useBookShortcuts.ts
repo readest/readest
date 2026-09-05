@@ -7,7 +7,17 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
+import { useEnv } from '@/context/EnvContext';
+import { saveViewSettings } from '@/helpers/settings';
+import {
+  DEFAULT_BOOK_FONT,
+  FONT_SIZE_STEP,
+  MAX_FONT_SIZE,
+  MAX_ZOOM_LEVEL,
+  MIN_FONT_SIZE,
+  MIN_ZOOM_LEVEL,
+  ZOOM_STEP,
+} from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
@@ -27,7 +37,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     useReaderStore();
   const { toggleSideBar, setSideBarBookKey, setSideBarVisible, setSearchBarVisible } =
     useSidebarStore();
-  const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
+  const { settings, setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
+  const { envConfig } = useEnv();
   const { getBookData, getConfig, setConfig } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
@@ -294,9 +305,25 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
   };
 
+  // Reflowable books scale by text, not by page (issue #5694). The new size is
+  // saved with skipGlobal so zooming one book never resizes the whole library.
+  const applyFontSize = (fontSize: number) => {
+    const viewSettings = sideBarBookKey ? getViewSettings(sideBarBookKey) : null;
+    if (!sideBarBookKey || !viewSettings) return;
+    const clamped = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.round(fontSize)));
+    if (clamped === viewSettings.defaultFontSize) return;
+    saveViewSettings(envConfig, sideBarBookKey, 'defaultFontSize', clamped, true);
+  };
+
+  const isFixedLayout = () => !!getBookData(sideBarBookKey ?? '')?.isFixedLayout;
+
   const zoomInFactor = (factor = 1.0) => {
     if (!sideBarBookKey) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
+    if (!isFixedLayout()) {
+      applyFontSize(viewSettings.defaultFontSize + FONT_SIZE_STEP * factor);
+      return;
+    }
     const zoomLevel = viewSettings!.zoomLevel + ZOOM_STEP * factor;
     applyZoomLevel(Math.min(zoomLevel, MAX_ZOOM_LEVEL));
   };
@@ -304,6 +331,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const zoomOutFactor = (factor = 1.0) => {
     if (!sideBarBookKey) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
+    if (!isFixedLayout()) {
+      applyFontSize(viewSettings.defaultFontSize - FONT_SIZE_STEP * factor);
+      return;
+    }
     const zoomLevel = viewSettings!.zoomLevel - ZOOM_STEP * factor;
     applyZoomLevel(Math.max(zoomLevel, MIN_ZOOM_LEVEL));
   };
@@ -328,6 +359,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const resetZoom = () => {
     if (!sideBarBookKey) return;
+    if (!isFixedLayout()) {
+      applyFontSize(
+        settings.globalViewSettings?.defaultFontSize ?? DEFAULT_BOOK_FONT.defaultFontSize,
+      );
+      return;
+    }
     applyZoomLevel(100);
   };
 

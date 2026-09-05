@@ -55,6 +55,25 @@ test.describe('Reading', () => {
     expect(Number(after)).toBeGreaterThan(Number(before));
   });
 
+  test('zoom shortcuts step the font size of a reflowable book (#5694)', async ({ openBook }) => {
+    const reader = await openBook();
+    await reader.openTocChapter(3);
+    const before = await reader.bookFontSize();
+
+    await reader.pressZoomShortcut('=');
+    await expect.poll(() => reader.bookFontSize()).toBe(before + 1);
+
+    await reader.pressZoomShortcut('-');
+    await expect.poll(() => reader.bookFontSize()).toBe(before);
+
+    await reader.pressZoomShortcut('=');
+    await reader.pressZoomShortcut('=');
+    await expect.poll(() => reader.bookFontSize()).toBe(before + 2);
+
+    await reader.pressZoomShortcut('0');
+    await expect.poll(() => reader.bookFontSize()).toBe(before);
+  });
+
   test('adds and removes a bookmark', async ({ openBook }) => {
     const reader = await openBook();
     await reader.revealHeader();
