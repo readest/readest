@@ -17,8 +17,10 @@
 // platform builds, and it can only write one Cargo.lock. So for the duration
 // of the command the repo's Cargo.cef.lock is swapped in as Cargo.lock and the
 // original is put back afterwards; the CEF resolution is saved back to
-// Cargo.cef.lock, which is committed like Cargo.lock. If a run is killed hard
-// (SIGKILL) before the swap back, `git checkout Cargo.lock` restores it.
+// Cargo.cef.lock, which is committed like Cargo.lock. The original is parked
+// in Cargo.lock.wry meanwhile, created exclusively so two CEF commands in one
+// checkout cannot swap over each other; if a run is killed hard (SIGKILL)
+// before the swap back, `mv Cargo.lock.wry Cargo.lock` restores it.
 //
 // Mobile commands (`tauri android ...`, `tauri ios ...`) and the tauri
 // webdriver test harness (scripts/test-tauri.sh, which needs WebKitWebDriver)
@@ -38,6 +40,7 @@ const repoRoot = path.resolve(appDir, '../..');
 const cargoConfig = path.join(appDir, 'src-tauri/.cargo/cef.toml');
 const lockPath = path.join(repoRoot, 'Cargo.lock');
 const cefLockPath = path.join(repoRoot, 'Cargo.cef.lock');
+const savedLockPath = path.join(repoRoot, 'Cargo.lock.wry');
 
 const [command, ...rest] = process.argv.slice(2);
 const useCef = process.platform === 'linux' && ['dev', 'build', 'bundle'].includes(command);
@@ -74,15 +77,26 @@ if (!useCef) {
     ...cargoArgs,
   ];
 
-  let originalLock = fs.readFileSync(lockPath);
+  try {
+    fs.writeFileSync(savedLockPath, fs.readFileSync(lockPath), { flag: 'wx' });
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+    console.error(
+      `${savedLockPath} exists: another CEF build is running from this checkout, or an earlier ` +
+        'one was killed before it could restore Cargo.lock. Wait for it to finish, or run ' +
+        '`mv Cargo.lock.wry Cargo.lock`.',
+    );
+    process.exit(1);
+  }
   if (fs.existsSync(cefLockPath)) {
     fs.copyFileSync(cefLockPath, lockPath);
   }
+  let swapped = true;
   const restoreLock = () => {
-    if (originalLock === null) return;
+    if (!swapped) return;
     fs.copyFileSync(lockPath, cefLockPath);
-    fs.writeFileSync(lockPath, originalLock);
-    originalLock = null;
+    fs.renameSync(savedLockPath, lockPath);
+    swapped = false;
   };
 
   // Ctrl-C reaches the child through the process group; stay alive until it

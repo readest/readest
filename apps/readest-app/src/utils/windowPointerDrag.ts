@@ -62,16 +62,43 @@ const trackPointer = (
   const onUp = () => {
     window.removeEventListener('mousemove', onMove, true);
     window.removeEventListener('mouseup', onUp, true);
-    if (frame !== null) cancelAnimationFrame(frame);
+    if (frame !== null) {
+      // A quick drag can end before its only frame runs; apply it anyway.
+      cancelAnimationFrame(frame);
+      frame = null;
+      onDelta(latest);
+    }
   };
   window.addEventListener('mousemove', onMove, true);
   window.addEventListener('mouseup', onUp, true);
 };
 
+/**
+ * Reports whether the button went up while the window state was being read;
+ * tracking must not start after that, or the next unrelated pointer move would
+ * drag the window from the stale origin.
+ */
+const watchRelease = () => {
+  let released = false;
+  const onUp = () => {
+    released = true;
+  };
+  window.addEventListener('mouseup', onUp, true);
+  return () => {
+    window.removeEventListener('mouseup', onUp, true);
+    return released;
+  };
+};
+
 export const startPointerWindowMove = async (startEvent: MouseEvent) => {
+  const released = watchRelease();
   const win = getCurrentWindow();
-  if (await win.isMaximized()) return;
+  if (await win.isMaximized()) {
+    released();
+    return;
+  }
   const [start, scale] = await Promise.all([win.outerPosition(), win.scaleFactor()]);
+  if (released()) return;
   trackPointer(startEvent, ({ dx, dy }) => {
     win.setPosition(
       new PhysicalPosition(Math.round(start.x + dx * scale), Math.round(start.y + dy * scale)),
@@ -80,13 +107,18 @@ export const startPointerWindowMove = async (startEvent: MouseEvent) => {
 };
 
 export const startPointerWindowResize = async (startEvent: MouseEvent, edge: ResizeEdge) => {
+  const released = watchRelease();
   const win = getCurrentWindow();
-  if (await win.isMaximized()) return;
+  if (await win.isMaximized()) {
+    released();
+    return;
+  }
   const [position, size, scale] = await Promise.all([
     win.outerPosition(),
     win.outerSize(),
     win.scaleFactor(),
   ]);
+  if (released()) return;
   const start: Frame = { x: position.x, y: position.y, width: size.width, height: size.height };
   const min = { width: MIN_WINDOW_SIZE.width * scale, height: MIN_WINDOW_SIZE.height * scale };
   trackPointer(startEvent, ({ dx, dy }) => {

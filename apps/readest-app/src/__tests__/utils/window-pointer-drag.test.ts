@@ -1,6 +1,10 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { isLinuxCefRuntime } from '@/utils/ua';
-import { computeResizedFrame, type ResizeEdge } from '@/utils/windowPointerDrag';
+import {
+  computeResizedFrame,
+  type ResizeEdge,
+  startPointerWindowMove,
+} from '@/utils/windowPointerDrag';
 
 const CEF_UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
@@ -42,5 +46,78 @@ describe('computeResizedFrame', () => {
     expect(frame('e', -500, 0)).toEqual({ x: 100, y: 200, width: 400, height: 600 });
     expect(frame('w', 500, 0)).toEqual({ x: 500, y: 200, width: 400, height: 600 });
     expect(frame('n', 0, 500)).toEqual({ x: 100, y: 500, width: 800, height: 300 });
+  });
+});
+
+const windowMock = {
+  isMaximized: vi.fn(),
+  outerPosition: vi.fn(),
+  outerSize: vi.fn(),
+  scaleFactor: vi.fn(),
+  setPosition: vi.fn(),
+  setSize: vi.fn(),
+};
+
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: () => windowMock,
+  PhysicalPosition: class {
+    constructor(
+      public x: number,
+      public y: number,
+    ) {}
+  },
+  PhysicalSize: class {
+    constructor(
+      public width: number,
+      public height: number,
+    ) {}
+  },
+}));
+
+const mouse = (type: string, screenX: number, screenY: number) =>
+  window.dispatchEvent(new MouseEvent(type, { screenX, screenY }));
+
+describe('startPointerWindowMove', () => {
+  let frames: FrameRequestCallback[];
+
+  beforeEach(() => {
+    frames = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    windowMock.isMaximized.mockResolvedValue(false);
+    windowMock.outerPosition.mockResolvedValue({ x: 100, y: 200 });
+    windowMock.scaleFactor.mockResolvedValue(1);
+    windowMock.setPosition.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  test('applies the final pointer delta when the button is released before the next frame', async () => {
+    await startPointerWindowMove(new MouseEvent('mousedown', { screenX: 10, screenY: 10 }));
+    mouse('mousemove', 40, 25);
+    mouse('mouseup', 40, 25);
+    expect(windowMock.setPosition).toHaveBeenCalledTimes(1);
+    expect(windowMock.setPosition.mock.calls[0]![0]).toMatchObject({ x: 130, y: 215 });
+  });
+
+  test('does not track the pointer when the button was released while the window state loaded', async () => {
+    let resolvePosition: (value: { x: number; y: number }) => void = () => {};
+    windowMock.outerPosition.mockReturnValue(
+      new Promise<{ x: number; y: number }>((resolve) => {
+        resolvePosition = resolve;
+      }),
+    );
+    const started = startPointerWindowMove(
+      new MouseEvent('mousedown', { screenX: 10, screenY: 10 }),
+    );
+    await Promise.resolve();
+    mouse('mouseup', 10, 10);
+    resolvePosition({ x: 100, y: 200 });
+    await started;
+    mouse('mousemove', 60, 60);
+    frames.forEach((cb) => cb(0));
+    expect(windowMock.setPosition).not.toHaveBeenCalled();
   });
 });

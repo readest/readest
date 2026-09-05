@@ -320,16 +320,16 @@ struct SingleInstancePayload {
 }
 
 /// The webview runtime this build drives: CEF for the Linux CEF build, Wry
-/// everywhere else. Named explicitly because several plugins pull in tauri's
+/// everywhere else (the `cef` feature is a no-op off Linux, see Cargo.toml). Named explicitly because several plugins pull in tauri's
 /// default `wry` feature even when CEF is selected, which leaves
 /// `Builder::default()` ambiguous there.
-#[cfg(feature = "cef")]
+#[cfg(all(feature = "cef", target_os = "linux"))]
 type AppRuntime = tauri::Cef;
-#[cfg(not(feature = "cef"))]
+#[cfg(not(all(feature = "cef", target_os = "linux")))]
 type AppRuntime = tauri::Wry;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-#[cfg_attr(feature = "cef", tauri::cef_entry_point)]
+#[cfg_attr(all(feature = "cef", target_os = "linux"), tauri::cef_entry_point)]
 pub fn run() {
     // Initialize Sentry as early as possible so panics during startup are
     // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
@@ -417,7 +417,7 @@ pub fn run() {
     // fail. `--no-first-run` skips the first-run tasks altogether. (Keep the
     // dashes: the runtime appends a dash-less, value-less entry as a positional
     // argument rather than a switch.)
-    #[cfg(feature = "cef")]
+    #[cfg(all(feature = "cef", target_os = "linux"))]
     let builder = builder.runtime_init_attrs(
         tauri::CefRuntimeAttributes::default().command_line_arg("--no-first-run", None::<String>),
     );
