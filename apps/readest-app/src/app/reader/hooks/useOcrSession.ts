@@ -143,9 +143,9 @@ export const useOcrSession = ({
   return useCallback(
     (doc: Document, pageIndex: number) => {
       rememberDocument(doc, pageIndex);
+      const priority = getDocumentsRef.current?.()[0]?.index === pageIndex;
       return (
-        sessionRef.current?.processDocument(doc, pageIndex, { priority: true }) ??
-        Promise.resolve(null)
+        sessionRef.current?.processDocument(doc, pageIndex, { priority }) ?? Promise.resolve(null)
       );
     },
     [rememberDocument],

@@ -282,8 +282,11 @@ export const makeMangaTextLineCrops = (
     dimensions.height,
   );
   if (!warped) return [];
+  const normalized = vertical ? rotateCounterClockwise(warped) : warped;
+  const maximumRatio = vertical ? MAXIMUM_VERTICAL_RATIO : MAXIMUM_HORIZONTAL_RATIO;
+  const needsSplit = normalized.width > normalized.height * maximumRatio;
   const maskPolygon =
-    options.mask && options.page
+    needsSplit && options.mask && options.page
       ? scalePolygon(polygon, options.page, {
           width: options.mask.width,
           height: options.mask.height,
@@ -298,13 +301,8 @@ export const makeMangaTextLineCrops = (
           dimensions.height,
         ) ?? undefined)
       : undefined;
-  const normalized = vertical ? rotateCounterClockwise(warped) : warped;
   const normalizedMask = vertical && warpedMask ? rotateCounterClockwise(warpedMask) : warpedMask;
-  const chunks = splitRaster(
-    normalized,
-    normalizedMask,
-    vertical ? MAXIMUM_VERTICAL_RATIO : MAXIMUM_HORIZONTAL_RATIO,
-  );
+  const chunks = splitRaster(normalized, normalizedMask, maximumRatio);
   return chunks.flatMap((chunk) => {
     const oriented = vertical && options.keepVertical ? rotateClockwise(chunk) : chunk;
     const canvas = makeCanvas(source, oriented);

@@ -881,7 +881,6 @@ export class MokuroTextDetector {
     if (this.#terminated)
       return Promise.reject(new Error('Mokuro text detector has been terminated'));
     if (this.#sessionPromise) return this.#sessionPromise;
-    runtime.env.wasm.numThreads = 1;
     runtime.env.wasm.proxy = true;
     runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
     const sessionPromise = this.#loadModel(

@@ -152,7 +152,6 @@ export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
       }),
       this.#loadAsset({ ...PADDLE_JAPANESE_DICTIONARY_ASSET, signal }),
     ]).then(async ([runtime, model, dictionaryData]) => {
-      runtime.env.wasm.numThreads = 1;
       runtime.env.wasm.proxy = true;
       runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
       const session = await runtime.InferenceSession.create(model, {
