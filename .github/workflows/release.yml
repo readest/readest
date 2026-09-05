@@ -496,11 +496,11 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=8192'
         with:
           projectPath: apps/readest-app
-          # Linux ships on the CEF runtime: `pnpm tauri:cef` runs the tauri CLI
-          # from upstream's feat/cef branch, which bundles CEF into the deb, rpm
-          # and (sharun) AppImage. See apps/readest-app/scripts/tauri-cef.mjs.
-          # Without this, tauri-action falls back to the npm @tauri-apps/cli.
-          tauriScript: ${{ matrix.config.release == 'linux' && 'pnpm tauri:cef' || '' }}
+          # `pnpm tauri` (apps/readest-app/scripts/tauri.mjs) runs the npm
+          # @tauri-apps/cli, except on Linux, which ships on the CEF runtime:
+          # there it runs the tauri CLI from upstream's feat/cef branch, which
+          # bundles CEF into the deb, rpm and (sharun) AppImage.
+          tauriScript: pnpm tauri
           releaseId: ${{ needs.get-release.outputs.release_id }}
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}

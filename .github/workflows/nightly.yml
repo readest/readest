@@ -218,10 +218,10 @@ jobs:
           pnpm tauri signer sign $arm64_apk
 
       # ──────────────────────────── DESKTOP ────────────────────────────
-      # Linux ships on the CEF runtime through `pnpm tauri:cef` (mirrors
-      # release.yml; see apps/readest-app/scripts/tauri-cef.mjs). The nightly
-      # version is patched BEFORE `tauri build` so the bundle filenames carry
-      # the stamp.
+      # Linux ships on the CEF runtime: `pnpm tauri` (mirrors release.yml; see
+      # apps/readest-app/scripts/tauri.mjs) runs the feat/cef tauri CLI there.
+      # The nightly version is patched BEFORE `tauri build` so the bundle
+      # filenames carry the stamp.
       - name: build desktop bundles
         if: matrix.config.release != 'android'
         shell: bash
@@ -246,13 +246,7 @@ jobs:
           version="${{ needs.compute-version.outputs.nightly_version }}"
           node -e "const f='apps/readest-app/package.json';const j=require('./'+f);j.version='${version}';require('fs').writeFileSync(f, JSON.stringify(j,null,2)+'\n')"
           cd apps/readest-app
-          # On Linux use the feat/cef tauri CLI wrapper (CEF runtime); elsewhere
-          # the npm @tauri-apps/cli.
-          if [ "${{ matrix.config.release }}" = "linux" ]; then
-            pnpm tauri:cef build ${{ matrix.config.args }}
-          else
-            pnpm tauri build ${{ matrix.config.args }}
-          fi
+          pnpm tauri build ${{ matrix.config.args }}
 
       # Portable Windows build: rebuild with NEXT_PUBLIC_PORTABLE_APP=true and
       # ship the raw exe (mirrors release.yml). Runs after the NSIS build above.
@@ -391,7 +385,7 @@ jobs:
                 appimage_name="Readest_${version}_aarch64.AppImage"
                 key="linux-aarch64-appimage"
               fi
-              # The Linux leg builds with `pnpm tauri:cef build` WITHOUT `--target`
+              # The Linux leg builds with `pnpm tauri build` WITHOUT `--target`
               # (no matrix args), so cargo emits bundles under target/release/
               # (host-target default) — NOT target/<triple>/release/ like the
               # macOS/Windows legs, which DO pass `--target`. So there is no
