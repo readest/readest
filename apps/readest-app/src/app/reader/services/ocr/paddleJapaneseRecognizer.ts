@@ -103,7 +103,12 @@ export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
     const context = source.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('Japanese manga recognizer could not read the text crop');
     const rgba = context.getImageData(0, 0, source.width, source.height).data;
-    const image = new PaddleImage(source.width, source.height, 4, Uint8Array.from(rgba));
+    const image = new PaddleImage(
+      source.width,
+      source.height,
+      4,
+      new Uint8Array(rgba.buffer, rgba.byteOffset, rgba.byteLength),
+    );
     const run = service
       .run(image, [{ x: 0, y: 0, width: source.width, height: source.height }], {
         ordering: { sortByReadingOrder: false },

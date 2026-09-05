@@ -36,22 +36,6 @@ const GAUSSIAN_SIGMA = TEXT_THICKNESS / 8;
 const pointDistance = (left: MokuroPoint, right: MokuroPoint): number =>
   Math.hypot(right.x - left.x, right.y - left.y);
 
-const channelAt = (image: RasterImage, x: number, y: number, channel: number): number => {
-  const x0 = Math.max(0, Math.min(image.width - 1, Math.floor(x)));
-  const y0 = Math.max(0, Math.min(image.height - 1, Math.floor(y)));
-  const x1 = Math.min(image.width - 1, x0 + 1);
-  const y1 = Math.min(image.height - 1, y0 + 1);
-  const xWeight = Math.max(0, Math.min(1, x - Math.floor(x)));
-  const yWeight = Math.max(0, Math.min(1, y - Math.floor(y)));
-  const top =
-    Number(image.data[(y0 * image.width + x0) * image.channels + channel]) * (1 - xWeight) +
-    Number(image.data[(y0 * image.width + x1) * image.channels + channel]) * xWeight;
-  const bottom =
-    Number(image.data[(y1 * image.width + x0) * image.channels + channel]) * (1 - xWeight) +
-    Number(image.data[(y1 * image.width + x1) * image.channels + channel]) * xWeight;
-  return top * (1 - yWeight) + bottom * yWeight;
-};
-
 const getWarpDimensions = (
   polygon: readonly MokuroPoint[],
   vertical: boolean,
@@ -109,9 +93,25 @@ const perspectiveWarp = (
       const scale = g * u + h * v + 1;
       const sourceX = (a * u + b * v + c) / scale;
       const sourceY = (d * u + e * v + f) / scale;
+      const x0 = Math.max(0, Math.min(image.width - 1, Math.floor(sourceX)));
+      const y0 = Math.max(0, Math.min(image.height - 1, Math.floor(sourceY)));
+      const x1 = Math.min(image.width - 1, x0 + 1);
+      const y1 = Math.min(image.height - 1, y0 + 1);
+      const xWeight = Math.max(0, Math.min(1, sourceX - Math.floor(sourceX)));
+      const yWeight = Math.max(0, Math.min(1, sourceY - Math.floor(sourceY)));
+      const topLeft = (y0 * image.width + x0) * image.channels;
+      const topRight = (y0 * image.width + x1) * image.channels;
+      const bottomLeft = (y1 * image.width + x0) * image.channels;
+      const bottomRight = (y1 * image.width + x1) * image.channels;
       const target = (y * width + x) * image.channels;
       for (let channel = 0; channel < image.channels; channel += 1) {
-        data[target + channel] = channelAt(image, sourceX, sourceY, channel);
+        const top =
+          Number(image.data[topLeft + channel]) * (1 - xWeight) +
+          Number(image.data[topRight + channel]) * xWeight;
+        const bottom =
+          Number(image.data[bottomLeft + channel]) * (1 - xWeight) +
+          Number(image.data[bottomRight + channel]) * xWeight;
+        data[target + channel] = top * (1 - yWeight) + bottom * yWeight;
       }
     }
   }

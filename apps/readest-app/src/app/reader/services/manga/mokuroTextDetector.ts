@@ -157,7 +157,6 @@ interface BlockCandidate extends MokuroTextBlock {
 }
 
 interface LineComponent {
-  pixels: readonly number[];
   count: number;
   score: number;
   minX: number;
@@ -408,6 +407,7 @@ const componentPolygon = (
   component: LineComponent,
   page: MokuroPageSize,
   transform: LetterboxTransform,
+  pixels: ArrayLike<number>,
 ): { polygon: MokuroPoint[]; vertical: boolean } => {
   const meanX = component.sumX / component.count;
   const meanY = component.sumY / component.count;
@@ -426,7 +426,8 @@ const componentPolygon = (
   let maxU = Number.NEGATIVE_INFINITY;
   let minV = Number.POSITIVE_INFINITY;
   let maxV = Number.NEGATIVE_INFINITY;
-  for (const pixel of component.pixels) {
+  for (let index = 0; index < component.count; index += 1) {
+    const pixel = Number(pixels[index]);
     const x = pixel % MOKURO_TEXT_DETECTOR_INPUT_SIZE;
     const y = Math.floor(pixel / MOKURO_TEXT_DETECTOR_INPUT_SIZE);
     const centeredX = x - meanX;
@@ -488,13 +489,11 @@ const collectLineComponent = (
   let sumXX = 0;
   let sumYY = 0;
   let sumXY = 0;
-  const pixels: number[] = [];
   while (head < tail) {
     const pixel = queue[head++]!;
     const x = pixel % MOKURO_TEXT_DETECTOR_INPUT_SIZE;
     const y = Math.floor(pixel / MOKURO_TEXT_DETECTOR_INPUT_SIZE);
     const value = Number(map[pixel]);
-    pixels.push(pixel);
     count += 1;
     score += Number.isFinite(value) ? value : threshold;
     minX = Math.min(minX, x);
@@ -528,7 +527,6 @@ const collectLineComponent = (
     }
   }
   return {
-    pixels,
     count,
     score: score / Math.max(1, count),
     minX,
@@ -566,19 +564,15 @@ export const extractMokuroLinePolygons = (
 
   const visited = new Uint8Array(MASK_CHANNEL_SIZE);
   const queue = new Int32Array(MASK_CHANNEL_SIZE);
-  const components: LineComponent[] = [];
+  const lines: MokuroTextLine[] = [];
   for (let pixel = 0; pixel < MASK_CHANNEL_SIZE; pixel += 1) {
     if (visited[pixel] || Number(data[pixel]) <= lineThreshold) continue;
     const component = collectLineComponent(pixel, data, visited, queue, lineThreshold);
     if (component.maxX - component.minX < 1 || component.maxY - component.minY < 1) continue;
     if (component.score < lineConfidence) continue;
-    components.push(component);
+    const { polygon, vertical } = componentPolygon(component, page, transform, queue);
+    lines.push({ polygon, box: getLineBox(polygon), score: component.score, vertical });
   }
-
-  const lines = components.map((component) => {
-    const { polygon, vertical } = componentPolygon(component, page, transform);
-    return { polygon, box: getLineBox(polygon), score: component.score, vertical };
-  });
   return lines
     .sort(
       (left, right) =>
