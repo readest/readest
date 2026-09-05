@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PSM } from 'tesseract.js';
 
 import { makeMangaTextLineCrops } from '@/app/reader/services/ocr/mangaTextCrop';
 import {
@@ -145,6 +146,76 @@ describe('Tesseract manga OCR', () => {
         },
       ],
     });
+  });
+
+  it('uses vertical Tesseract crops when Japanese Paddle output is unavailable', async () => {
+    installCanvas();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const longLine = {
+      ...line,
+      box: { xMin: 900, yMin: 100, xMax: 960, yMax: 1380 },
+      polygon: [
+        { x: 900, y: 100 },
+        { x: 960, y: 100 },
+        { x: 960, y: 1380 },
+        { x: 900, y: 1380 },
+      ],
+    };
+
+    for (const failure of ['low confidence', 'throws'] as const) {
+      const source = document.createElement('canvas');
+      source.width = page.width;
+      source.height = page.height;
+      const detector = {
+        detect: vi.fn(async () => ({
+          page,
+          blocks: [
+            {
+              box: longLine.box,
+              score: 0.9,
+              language: 'ja' as const,
+              vertical: true,
+              lines: [longLine],
+            },
+          ],
+        })),
+        terminate: vi.fn(async () => undefined),
+      };
+      const worker = makeWorker();
+      vi.mocked(worker.recognize).mockResolvedValue({
+        data: { text: '二', confidence: 90 },
+      });
+      const recognizer = {
+        recognize: vi
+          .fn()
+          .mockResolvedValueOnce({ text: '一', confidence: 90 })
+          .mockImplementationOnce(async () => {
+            if (failure === 'throws') throw new Error('recognizer failed');
+            return { text: '弱い', confidence: 10 };
+          }),
+        terminate: vi.fn(async () => undefined),
+      };
+      const engine = new TesseractOcrEngine(
+        { mangaMode: true, textLanguage: 'ja-JP' },
+        vi.fn(async () => worker),
+        () => detector,
+        undefined,
+        undefined,
+        () => recognizer,
+      );
+
+      const result = await engine.recognize(source, page);
+      const fallbackCrop = vi.mocked(worker.recognize).mock.calls[0]?.[0] as HTMLCanvasElement;
+
+      expect(result).toMatchObject({ language: 'ja-JP', blocks: [{ text: '一二' }] });
+      expect(recognizer.recognize).toHaveBeenCalledTimes(2);
+      expect(fallbackCrop.width).toBeLessThan(fallbackCrop.height);
+      expect(worker.setParameters).toHaveBeenCalledWith({
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK_VERT_TEXT,
+        preserve_interword_spaces: '1',
+      });
+      await engine.terminate();
+    }
   });
 
   it('rejects mixed-script garbage from Japanese manga recognition', async () => {

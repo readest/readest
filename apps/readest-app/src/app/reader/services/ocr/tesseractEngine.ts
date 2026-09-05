@@ -36,6 +36,11 @@ const MAXIMUM_OCR_SCALE = 3;
 const MAXIMUM_OCR_PIXELS = 3_000_000;
 const MINIMUM_MANGA_CONFIDENCE = 35;
 
+const isJapaneseLanguage = (language?: string): boolean => {
+  const base = language?.trim().replaceAll('_', '-').toLowerCase().split('-')[0];
+  return base === 'ja' || base === 'jpn';
+};
+
 const scaleImageDimension = (value: number, scale: number): number =>
   Math.max(1, scale < 1 ? Math.floor(value * scale) : Math.round(value * scale));
 
@@ -361,21 +366,36 @@ export class TesseractOcrEngine {
       const fontSize = getMokuroFontSize(detectedBlock);
       for (const line of detectedBlock.lines) {
         if (this.#terminated) throw new Error('OCR engine has been terminated');
-        const useJapaneseRecognizer = this.#textLanguage === 'ja';
+        const useJapaneseRecognizer = isJapaneseLanguage(this.#textLanguage);
         const crops = makeMangaTextLineCrops(prepared.image, imageData, line, {
           keepVertical: !useJapaneseRecognizer,
           mask: detection.mask,
           page: detection.page,
           vertical: detectedBlock.vertical,
         });
+        let tesseractCrops: HTMLCanvasElement[] | undefined;
+        const getTesseractCrop = (
+          cropIndex: number,
+          crop: HTMLCanvasElement,
+        ): HTMLCanvasElement => {
+          if (!useJapaneseRecognizer || !detectedBlock.vertical) return crop;
+          tesseractCrops ??= makeMangaTextLineCrops(prepared.image, imageData, line, {
+            keepVertical: true,
+            mask: detection.mask,
+            page: detection.page,
+            vertical: detectedBlock.vertical,
+          });
+          return tesseractCrops[cropIndex] ?? crop;
+        };
         this.#mangaLineProgress = { index: recognitionIndex, total: totalLines };
         recognitionIndex += 1;
         try {
           const recognizedChunks: Array<{ text: string; confidence: number }> = [];
-          for (const crop of crops) {
+          for (const [cropIndex, crop] of crops.entries()) {
             const result = await this.#recognizeMangaCrop(
               crop,
-              detectedBlock.vertical && !useJapaneseRecognizer,
+              () => getTesseractCrop(cropIndex, crop),
+              detectedBlock.vertical,
               useJapaneseRecognizer,
             );
             if (!result) {
@@ -416,14 +436,14 @@ export class TesseractOcrEngine {
 
   async #recognizeMangaCrop(
     crop: HTMLCanvasElement,
+    getTesseractCrop: () => HTMLCanvasElement,
     vertical: boolean,
     useJapaneseRecognizer: boolean,
   ): Promise<{ text: string; confidence: number } | null> {
     if (useJapaneseRecognizer && !this.#japaneseMangaRecognizerUnavailable) {
       try {
         const result = await this.#getJapaneseMangaRecognizer().recognize(crop);
-        if (!result || result.confidence < this.#minimumConfidence) return null;
-        return result;
+        if (result?.text && result.confidence >= this.#minimumConfidence) return result;
       } catch (error) {
         if (this.#terminated || this.#abortController.signal.aborted) {
           throw new Error('OCR engine has been terminated');
@@ -442,7 +462,7 @@ export class TesseractOcrEngine {
         tessedit_pageseg_mode: vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
         preserve_interword_spaces: '1',
       });
-      return worker.recognize(crop, {}, { text: true, blocks: false });
+      return worker.recognize(getTesseractCrop(), {}, { text: true, blocks: false });
     });
     const text = data.text?.replace(/\s+/gu, ' ').trim();
     const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
@@ -454,7 +474,7 @@ export class TesseractOcrEngine {
     text: string,
     detectedLanguage: MokuroTextDetectionResult['blocks'][number]['language'],
   ): boolean {
-    if (this.#textLanguage !== 'ja' || detectedLanguage === 'eng') return true;
+    if (!isJapaneseLanguage(this.#textLanguage) || detectedLanguage === 'eng') return true;
     let japanese = 0;
     let latin = 0;
     for (const character of text) {
