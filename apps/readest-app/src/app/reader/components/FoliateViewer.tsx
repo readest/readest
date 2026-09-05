@@ -238,6 +238,10 @@ const FoliateViewer: React.FC<{
   }, [bookKey, setProgress]);
 
   const progressRelocateHandler = (event: Event) => {
+    // Foliate can emit a late relocation after close() clears its progress
+    // resolver. Keep any valid pending position instead of replacing it.
+    if (!(event as CustomEvent).detail.location) return;
+
     // Always stash the latest detail; if another rAF is already pending
     // it'll pick this up and the intermediate states are skipped.
     pendingRelocateRef.current = event as CustomEvent;
