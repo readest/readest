@@ -90,6 +90,11 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
 let wasMaximizedBeforeFullscreen = false;
 
 export const tauriHandleToggleFullScreen = async () => {
+  // Reader/library shortcuts also run on mobile, where Tauri does not
+  // register the desktop fullscreen commands (READEST-10K).
+  const platform = await osType();
+  if (platform === 'android' || platform === 'ios') return;
+
   const currentWindow = getCurrentWindow();
   const isFullscreen = await currentWindow.isFullscreen();
   // Toggle fullscreen regardless of the maximized state. Previously a maximized
@@ -109,14 +114,13 @@ export const tauriHandleToggleFullScreen = async () => {
     // Unmaximize first and restore the maximized state on exit. Other
     // platforms must keep entering fullscreen straight from the maximized
     // state (Phosh windows are always maximized).
-    wasMaximizedBeforeFullscreen =
-      (await osType()) === 'windows' && (await currentWindow.isMaximized());
+    wasMaximizedBeforeFullscreen = platform === 'windows' && (await currentWindow.isMaximized());
     if (wasMaximizedBeforeFullscreen) {
       await currentWindow.unmaximize();
     }
     await currentWindow.setFullscreen(true);
   }
-  if ((await osType()) === 'linux') {
+  if (platform === 'linux') {
     linuxWindowRestoreTransparentBg();
   }
 };
