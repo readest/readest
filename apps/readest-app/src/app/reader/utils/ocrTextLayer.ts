@@ -161,7 +161,13 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
     const block = (event.target as Element | null)?.closest?.(OCR_TEXT_BLOCK_SELECTOR);
     if (!block || !layer.contains(block)) return;
     const selection = doc.getSelection();
-    if (!selection || !selection.isCollapsed) return;
+    if (!selection) return;
+    if (!selection.isCollapsed) {
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      if (!range || !layer.contains(range.startContainer) || !layer.contains(range.endContainer)) {
+        return;
+      }
+    }
     event.preventDefault();
     event.stopPropagation();
     const range = doc.createRange();

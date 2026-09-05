@@ -1,5 +1,9 @@
 import type { OcrPage } from '@/app/reader/services/ocr/types';
-import { mountOcrTextLayer, removeOcrTextLayer } from '@/app/reader/utils/ocrTextLayer';
+import {
+  mountOcrTextLayer,
+  OCR_TEXT_LAYER_SELECTOR,
+  removeOcrTextLayer,
+} from '@/app/reader/utils/ocrTextLayer';
 
 interface OcrImagePage {
   pageIndex: number;
@@ -31,7 +35,7 @@ interface PageImage {
 }
 
 interface PageImageIdentity {
-  document: Document;
+  document: Document | undefined;
   image: PageImage;
 }
 
@@ -74,6 +78,10 @@ const isSamePdfPage = (left: PageImageIdentity, document: Document, image: PageI
   left.document === document &&
   typeof left.image.source !== 'string' &&
   typeof image.source !== 'string';
+
+const hasOcrTextLayer = (doc: Document, pageIndex: number): boolean =>
+  doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.getAttribute('data-readest-ocr-page-index') ===
+  String(pageIndex);
 
 const resizeOcrPage = (page: OcrPage, image: PageImage): OcrPage => {
   const scaleX = image.width / page.width;
@@ -159,7 +167,8 @@ export class OcrSession {
     const cachedPage = this.#pages.get(pageIndex);
     if (cachedPage) {
       if (isSamePageImage(cachedPage, doc, image)) {
-        mountOcrTextLayer(doc, cachedPage.page);
+        cachedPage.document = doc;
+        if (!hasOcrTextLayer(doc, pageIndex)) mountOcrTextLayer(doc, cachedPage.page);
         return cachedPage.page;
       }
       if (isSamePdfPage(cachedPage, doc, image)) {
@@ -244,6 +253,8 @@ export class OcrSession {
       'pagehide',
       () => {
         if (this.#documents.get(pageIndex) === doc) this.#documents.delete(pageIndex);
+        const cachedPage = this.#pages.get(pageIndex);
+        if (cachedPage?.document === doc) cachedPage.document = undefined;
       },
       { once: true },
     );
