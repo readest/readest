@@ -231,6 +231,8 @@ jobs:
         # latest.json for ALL platforms (#4906).
         timeout-minutes: 45
         env:
+          # See release.yml: keep quick-sharun from running the app under Xvfb.
+          STRACE_MODE: '0'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}

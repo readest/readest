@@ -13,29 +13,29 @@
 # crates.io build, and the four scoped plugins (fs, http, opener, shell) then
 # fail to compile against `feat/cef`'s schemars-1 `tauri-plugin`.
 [patch.crates-io]
-tauri = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
-tauri-build = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
-tauri-codegen = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
-tauri-macros = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
-tauri-plugin = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
-tauri-runtime = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
-tauri-utils = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
+tauri = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
+tauri-build = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
+tauri-codegen = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
+tauri-macros = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
+tauri-plugin = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
+tauri-runtime = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
+tauri-utils = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
 
-tauri-plugin-biometric = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-cli = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-clipboard-manager = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-deep-link = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-fs = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-haptics = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-http = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-opener = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-os = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-persisted-scope = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-process = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-shell = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-updater = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-websocket = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-biometric = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-cli = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-clipboard-manager = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-deep-link = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-dialog = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-fs = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-haptics = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-http = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-log = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-opener = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-os = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-persisted-scope = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-process = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-shell = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-single-instance = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-updater = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-websocket = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
+tauri-plugin-window-state = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }

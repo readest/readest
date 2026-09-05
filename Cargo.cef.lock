@@ -8355,7 +8355,7 @@ checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 [[package]]
 name = "tauri"
 version = "2.11.5"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "anyhow",
  "bytes",
@@ -8407,7 +8407,7 @@ dependencies = [
 [[package]]
 name = "tauri-build"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "anyhow",
  "cargo_toml",
@@ -8427,7 +8427,7 @@ dependencies = [
 [[package]]
 name = "tauri-codegen"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "base64 0.22.1",
  "brotli",
@@ -8453,7 +8453,7 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -8466,7 +8466,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "anyhow",
  "glob",
@@ -8481,7 +8481,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-biometric"
 version = "2.3.2"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "log",
  "serde",
@@ -8495,7 +8495,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-cli"
 version = "2.4.1"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "clap",
  "log",
@@ -8509,7 +8509,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-clipboard-manager"
 version = "2.3.2"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "arboard",
  "log",
@@ -8523,7 +8523,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-deep-link"
 version = "2.4.9"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "dunce",
  "plist",
@@ -8564,7 +8564,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-dialog"
 version = "2.7.1"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "log",
  "raw-window-handle",
@@ -8581,7 +8581,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-fs"
 version = "2.5.1"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "anyhow",
  "dunce",
@@ -8602,7 +8602,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-haptics"
 version = "2.3.2"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "log",
  "serde",
@@ -8615,7 +8615,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-http"
 version = "2.5.9"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "bytes",
  "cookie_store",
@@ -8638,7 +8638,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-log"
 version = "2.8.0"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "android_logger",
  "fern",
@@ -8705,7 +8705,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-opener"
 version = "2.5.4"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "dunce",
  "glob",
@@ -8726,7 +8726,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-os"
 version = "2.3.2"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "gethostname",
  "log",
@@ -8743,7 +8743,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-persisted-scope"
 version = "2.3.7"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "aho-corasick",
  "bincode",
@@ -8758,7 +8758,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-process"
 version = "2.3.1"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "tauri",
  "tauri-plugin",
@@ -8803,7 +8803,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-shell"
 version = "2.3.5"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "encoding_rs",
  "log",
@@ -8835,7 +8835,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-single-instance"
 version = "2.4.2"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "serde",
  "serde_json",
@@ -8865,7 +8865,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-updater"
 version = "2.10.1"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "base64 0.22.1",
  "dirs",
@@ -8930,7 +8930,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-websocket"
 version = "2.4.2"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "futures-util",
  "http",
@@ -8957,7 +8957,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-window-state"
 version = "2.4.1"
-source = "git+https://github.com/tauri-apps/plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
 dependencies = [
  "bitflags 2.13.0",
  "log",
@@ -8971,7 +8971,7 @@ dependencies = [
 [[package]]
 name = "tauri-runtime"
 version = "2.11.3"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "cookie",
  "dpi",
@@ -8992,7 +8992,7 @@ dependencies = [
 [[package]]
 name = "tauri-runtime-cef"
 version = "0.1.0"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "base64 0.22.1",
  "cef",
@@ -9027,7 +9027,7 @@ dependencies = [
 [[package]]
 name = "tauri-runtime-wry"
 version = "2.11.4"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "gtk",
  "http",
@@ -9053,7 +9053,7 @@ dependencies = [
 [[package]]
 name = "tauri-utils"
 version = "2.9.3"
-source = "git+https://github.com/tauri-apps/tauri?branch=feat/cef#73f69b13fa3e979f81ecd659a4660f50c7bc62a8"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#93e5453b9b95aa2f175d63d926e2e268afb4bbde"
 dependencies = [
  "anyhow",
  "brotli",

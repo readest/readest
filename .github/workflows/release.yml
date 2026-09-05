@@ -481,6 +481,10 @@ jobs:
         if: matrix.config.release != 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The CEF AppImage bundler (quick-sharun) otherwise launches the app
+          # under Xvfb to discover dlopen'ed libraries and never gets it to
+          # exit, hanging the Linux legs (#4906); ldd-based discovery only.
+          STRACE_MODE: '0'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
