@@ -72,7 +72,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   };
 
   cargoRoot = "../..";
-  cargoHash = "sha256-mWIV+gE+j0VfpOovotML0XoEvuqZguAIVRl6mRqkJ/M=";
+  cargoHash = "sha256-rymU61FzIKp1XOQjSWWdk+PIn6gb2uUKRn8lBe0Cg3I=";
 
   buildAndTestSubdir = "src-tauri";
 
