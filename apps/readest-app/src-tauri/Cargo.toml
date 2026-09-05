@@ -99,7 +99,7 @@ if-addrs = "0.15"
 # across the JS<->Rust IPC boundary. Pure-Rust crates so they ship to
 # every Tauri target (desktop, iOS, Android) without extra system deps.
 zip = { version = "2", default-features = false, features = ["deflate"] }
-quick-xml = "0.36"
+quick-xml = "0.41"
 md-5 = "0.10"
 # Used by `epub_parser::read_zip_entry` as a fallback when an OPF/manifest
 # href is percent-encoded (e.g. spaces as %20, CJK paths) but the zip stores

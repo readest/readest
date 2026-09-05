@@ -169,7 +169,7 @@
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
     "dompurify": "^3.4.0",
-    "fflate": "^0.8.2",
+    "fflate": "^0.8.3",
     "foliate-js": "workspace:*",
     "franc-min": "^6.2.0",
     "fzf": "^0.5.2",
