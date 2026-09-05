@@ -25,6 +25,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const CLI = '@tauri-apps/cli-cef@3.0.0-alpha.26';
+// Offline builds (Flatpak) cannot `pnpm dlx`; they point this at an unpacked
+// copy of the CLI package's `tauri.js` instead.
+const localCli = process.env['TAURI_CEF_CLI'];
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(appDir, '../..');
 const cargoConfig = path.join(appDir, 'src-tauri/.cargo/cef.toml');
@@ -73,7 +76,9 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
   process.on(signal, () => {});
 }
 
-const child = spawn('pnpm', ['dlx', CLI, ...args], { stdio: 'inherit' });
+const child = localCli
+  ? spawn('node', [localCli, ...args], { stdio: 'inherit' })
+  : spawn('pnpm', ['dlx', CLI, ...args], { stdio: 'inherit' });
 child.on('exit', (code, signal) => {
   restoreLock();
   process.exit(code ?? (signal ? 1 : 0));
