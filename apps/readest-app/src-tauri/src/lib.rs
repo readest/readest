@@ -410,18 +410,6 @@ pub fn run() {
 
     let builder = tauri::Builder::<AppRuntime>::new();
 
-    // A fresh profile is Chromium's "first run", and on Linux the first-run
-    // preferences default to requiring a EULA dialog. CEF has no way to show
-    // it, so the browser process exits with result code 28 and tauri reports
-    // `WebviewRuntimeNotInstalled`; every first launch of a fresh install would
-    // fail. `--no-first-run` skips the first-run tasks altogether. (Keep the
-    // dashes: the runtime appends a dash-less, value-less entry as a positional
-    // argument rather than a switch.)
-    #[cfg(all(feature = "cef", target_os = "linux"))]
-    let builder = builder.runtime_init_attrs(
-        tauri::CefRuntimeAttributes::default().command_line_arg("--no-first-run", None::<String>),
-    );
-
     let builder = builder
         .plugin(
             tauri_plugin_log::Builder::new()
