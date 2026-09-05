@@ -45,6 +45,7 @@
     "tauri:dev:test": "dotenv -e .env.tauri -- tauri dev --features webdriver",
     "tauri:build:test": "dotenv -e .env.tauri -- tauri build --debug --features webdriver",
     "tauri": "tauri",
+    "tauri:cef": "node scripts/tauri-cef.mjs",
     "fmt:check": "cargo fmt -p Readest --check",
     "clippy:check": "cargo clippy -p Readest --no-deps -- -D warnings",
     "test:rust": "cargo test -p Readest --lib",

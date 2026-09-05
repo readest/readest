@@ -535,8 +535,8 @@ android/, macos/,
 windows/            -> per-platform glue
 ```
 
-Everything else is delegated to **Tauri plugins**, mostly bundled in
-`packages/tauri-plugins/plugins`:
+Everything else is delegated to **Tauri plugins**, mostly the published
+`tauri-plugin-*` crates:
 
 - standard plugins: `fs`, `dialog`, `http`, `opener`, `os`, `process`, `shell`,
   `cli`, `deep-link`, `haptics`, `log`, `updater`, `websocket`, `oauth`,

@@ -491,8 +491,8 @@ fn fingerprint_mask_script() -> String {
 ///   `close()` raced the script.
 #[cfg(desktop)]
 #[tauri::command]
-pub async fn clip_url(
-    app: AppHandle,
+pub async fn clip_url<R: tauri::Runtime>(
+    app: AppHandle<R>,
     url: String,
     options: Option<ClipOptions>,
 ) -> Result<String, String> {
