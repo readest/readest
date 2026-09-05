@@ -84,12 +84,19 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
     // under the toolbar their covered part stops dragging and fires whichever
     // tool button it landed on instead. Hence z-[43], below the handle layer
     // (z-[44]) but still above the paragraph/TTS chrome (z-40). Every other
-    // popup surface stays at z-50 and above the handles, which is why the
-    // wrapper is `fixed inset-0`: it makes the stacking context without
-    // moving the popup, whose containing block is still the viewport.
-    // `pointer-events-none` keeps the full-screen wrapper from swallowing the
-    // taps outside the popup that dismiss it.
-    <div dir={dir} className='pointer-events-none fixed inset-0 z-[43]'>
+    // popup surface stays at z-50 and above the handles, so the wrapper is
+    // only here to put this one at 43.
+    //
+    // `absolute`, never `fixed`: `position` is in the book cell's coordinate
+    // space (Annotator subtracts `#gridcell-<bookKey>`'s rect), and the cell
+    // is the popup's `relative` ancestor. A fixed wrapper re-anchors the popup
+    // to the viewport, which drops it `cell.left` px to the left of the
+    // selection the moment the cell leaves the viewport origin — sidebar open,
+    // or any book past the first in a split view. Inset to the cell, this
+    // still makes the stacking context without moving anything.
+    // `pointer-events-none` keeps the cell-covering wrapper from swallowing
+    // the taps outside the popup that dismiss it.
+    <div dir={dir} className='pointer-events-none absolute inset-0 z-[43]'>
       <Popup
         width={boxWidth}
         height={boxHeight}
