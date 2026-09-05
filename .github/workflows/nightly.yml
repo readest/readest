@@ -159,7 +159,7 @@ jobs:
           elif [ "$RUNNER_OS" = "macOS" ]; then
             brew install rclone
           else
-            choco install rclone -y
+            choco install rclone --version=1.75.0 --require-checksums -y
           fi
 
       - name: configure rclone
@@ -474,7 +474,7 @@ jobs:
         run: |
           rustup target add armv7-unknown-linux-musleabi
           rustup target add aarch64-unknown-linux-musl
-          pip3 install --break-system-packages ziglang cargo-zigbuild
+          pip3 install --break-system-packages --require-hashes -r .github/requirements/zigbuild.txt
           node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only armv7
           node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only arm64
 
