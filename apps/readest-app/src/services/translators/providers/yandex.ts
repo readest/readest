@@ -113,11 +113,29 @@ const getRequestTarget = (endpoint: 'session' | 'translate', token?: string | nu
 const withParams = (base: string, params: URLSearchParams) =>
   `${base}${base.includes('?') ? '&' : '?'}${params}`;
 
-const requestSignal = (direct: boolean, signal?: AbortSignal) => {
-  if (!direct) return signal;
-  const timeout = AbortSignal.timeout(TRANSPORT_TIMEOUT_MS);
-  return signal ? AbortSignal.any([signal, timeout]) : timeout;
-};
+async function withRequestSignal<T>(
+  direct: boolean,
+  signal: AbortSignal | undefined,
+  request: (signal?: AbortSignal) => Promise<T>,
+): Promise<T> {
+  if (!direct) return request(signal);
+  signal?.throwIfAborted();
+  const controller = new AbortController();
+  const abort = () => controller.abort(signal?.reason);
+  signal?.addEventListener('abort', abort, { once: true });
+  const timeout = setTimeout(
+    () => controller.abort(new DOMException('Translation request timed out', 'TimeoutError')),
+    TRANSPORT_TIMEOUT_MS,
+  );
+  try {
+    // Keep cancellation active through body consumption, then detach it so
+    // later timeouts/caller aborts cannot reach completed native resources.
+    return await request(controller.signal);
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener('abort', abort);
+  }
+}
 
 // yu — random Yandex UID, yum — Metrika timestamp in microseconds
 const genYandexUID = () => BigInt(Math.floor(Math.random() * 1e19)).toString();
@@ -132,20 +150,18 @@ const baseParams = () => ({
 async function createSession(token?: string | null): Promise<string> {
   const { fetchImpl, url, headers, direct } = getRequestTarget('session', token);
   const params = new URLSearchParams(baseParams());
-  const signal = requestSignal(direct);
-  const response = await withRequestLimit(
-    () =>
-      fetchImpl(withParams(url, params), {
-        method: 'POST',
-        headers,
-        signal,
-      }),
-    signal,
-  );
-  if (!response.ok) {
-    throw new Error(`yandex session request failed with status ${response.status}`);
-  }
-  const data = await response.json();
+  const data = await withRequestSignal(direct, undefined, async (signal) => {
+    const response = await withRequestLimit(
+      () => fetchImpl(withParams(url, params), { method: 'POST', headers, signal }),
+      signal,
+    );
+    if (!response.ok) {
+      // Drain the native response before releasing its cancellation deadline.
+      await response.text().catch(() => {});
+      throw new Error(`yandex session request failed with status ${response.status}`);
+    }
+    return response.json();
+  });
   const session = data?.session;
   if (
     typeof session?.id !== 'string' ||
@@ -210,18 +226,20 @@ async function translateChunk(
   ]);
 
   const { fetchImpl, url, headers, direct } = getRequestTarget('translate', token);
-  const transportSignal = requestSignal(direct, signal);
-  const response = await withRequestLimit(
-    () =>
-      fetchImpl(withParams(url, params), {
-        method: 'POST',
-        headers,
-        body: body.toString(),
-        signal: transportSignal,
-      }),
-    transportSignal,
-  );
-  const data = await response.json().catch(() => null);
+  const { response, data } = await withRequestSignal(direct, signal, async (transportSignal) => {
+    const response = await withRequestLimit(
+      () =>
+        fetchImpl(withParams(url, params), {
+          method: 'POST',
+          headers,
+          body: body.toString(),
+          signal: transportSignal,
+        }),
+      transportSignal,
+    );
+    const data = await response.json().catch(() => null);
+    return { response, data };
+  });
   if (response.ok && !data) {
     throw new Error('yandex translate failed: malformed response');
   }

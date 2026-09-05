@@ -20,9 +20,7 @@ onlyBuiltDependencies:
 
 patchedDependencies:
   '@ai-sdk/provider-utils@4.0.27': patches/@ai-sdk__provider-utils@4.0.27.patch
-  '@tauri-apps/plugin-http@2.5.9': patches/@tauri-apps__plugin-http@2.5.9.patch
   mdast-util-gfm-autolink-literal@2.0.1: patches/mdast-util-gfm-autolink-literal@2.0.1.patch
-  next-view-transitions@0.3.5: patches/next-view-transitions@0.3.5.patch
 
 overrides:
   deepmerge-ts: '>=8.0.1 <9'
