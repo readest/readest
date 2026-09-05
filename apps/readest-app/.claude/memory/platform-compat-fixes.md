@@ -51,6 +51,23 @@
 - `src/store/trafficLightStore.ts`
 - `src/hooks/useTrafficLight.ts`
 
+### mix-blend-mode does NOT cross the iframe boundary in WebKit (#5790/#5930/#5943)
+
+An element with `mix-blend-mode` that sits OUTSIDE an `<iframe>` blends against
+the iframe's painted content in **Chromium** (Android WebView, WebView2, web)
+but NOT in **WebKit** (Safari, WKWebView on macOS/iOS), where it degrades to
+`normal`. Probed directly in Chrome 152 vs Safari 18.6.
+
+This is why the reader's annotation overlay (`Overlayer` SVG, a sibling of the
+content iframe) rendered PDF highlights correctly on Apple platforms and wrong
+everywhere else. WebKitGTK behaves like Chromium here per the #5790 reporter
+(Flathub build reproduced).
+
+**How to apply:** never rely on `mix-blend-mode` across an iframe boundary for
+anything load-bearing, and never verify such an effect on macOS/iOS alone: the
+Apple result is the degraded path, so it looks right when the CSS is wrong.
+Related: [[overlayer-blend-mode-follows-page-not-theme-5790]].
+
 ## Linux
 
 ### WebKitGTK Issues
