@@ -1630,7 +1630,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setShowDeepLPopup(true);
   };
 
-  const handleSpeakText = async (oneTime = false) => {
+  // `oneTime` is required rather than defaulted: it decides whether this reads
+  // the selection and stops or starts an open-ended session from it, and every
+  // entry point here means the former. Defaulting it silently turned Ctrl/Cmd+R
+  // into "start the book from this paragraph" (#5011).
+  const handleSpeakText = async (oneTime: boolean) => {
     if (!selection || !selection.text) return;
     // TTS walks the main view's documents; a popup-window range can't seed it
     // (the toolbar button is disabled, this guards the keyboard shortcut).
@@ -1718,7 +1722,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       },
       onReadAloudSelection: () => {
         if (!selection?.text || selection.popup) return false;
-        handleSpeakText();
+        handleSpeakText(true);
         return true;
       },
       onProofreadSelection: () => {
@@ -2322,7 +2326,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return {
           tooltipText: _(label),
           Icon,
-          onClick: handleSpeakText,
+          onClick: () => handleSpeakText(true),
           disabled: !!selection?.popup,
         };
       case 'proofread':
