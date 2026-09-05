@@ -94,6 +94,7 @@ export const DEFAULT_BOOKORBIT_SETTINGS = {
   syncNotes: true,
   syncStats: true,
   syncBookStates: true,
+  autoSync: true,
 } as BookOrbitSettings;
 
 export const READWISE_API_BASE_URL = 'https://readwise.io/api/v2';
@@ -204,6 +205,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
       refresh: null,
     },
   },
+  gamepadEnabled: true,
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,
@@ -342,6 +344,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   scrolled: false,
   scrolledDirection: 'vertical',
   webtoonMode: false,
+  lockHorizontalPan: false,
   noContinuousScroll: false,
   disableClick: false,
   disableSwipe: false,
@@ -483,6 +486,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsHighlightGranularity: 'word',
   ttsMediaMetadata: 'sentence',
   ttsPlayerStyle: 'full',
+  ttsSkipInlineAnnotations: false,
 };
 
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {

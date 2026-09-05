@@ -49,6 +49,10 @@ import {
   type NarratedAudioChapter,
 } from './pairedAudiobook';
 import { SKIP_BACKWARD_SEC, SKIP_FORWARD_SEC } from '@/services/playback/playbackSource';
+import {
+  stripInlineReadingAnnotations,
+  stripInlineReadingAnnotationsFromSSML,
+} from './inlineAnnotations';
 
 // App-wide monotonic sequence for 'tts-position' events. A fresh TTSController
 // is constructed per `tts-speak`, so a per-instance counter would restart at 0
@@ -147,6 +151,7 @@ export class TTSController extends EventTarget {
   #awaitingAudio = false;
   #ttsDoc: Document | null = null;
   #ttsGranularity: TTSGranularity = 'sentence';
+  #skipInlineAnnotations = false;
 
   // Word-level highlight state for the currently spoken chunk. Armed by a
   // successful dispatchSpeakMark, populated by prepareSpeakWords when a TTS
@@ -612,6 +617,13 @@ export class TTSController extends EventTarget {
     this.#highlightGranularity = granularity;
   }
 
+  setSkipInlineAnnotations(enabled: boolean) {
+    if (this.#skipInlineAnnotations === enabled) return;
+    this.#skipInlineAnnotations = enabled;
+    this.#sectionTimeline = null;
+    this.#timelineSectionIndex = -1;
+  }
+
   // The reader's visible section can intentionally diverge from the section
   // queued by Read Aloud (for example while paused at a chapter boundary).
   // Expose the session cursor so player surfaces never have to infer it from
@@ -806,7 +818,11 @@ export class TTSController extends EventTarget {
         createTTSNodeFilter(),
         this.#ttsGranularity,
       )) {
-        sentences.push({ ...entry, text: entry.range.toString() });
+        const text = entry.range.toString();
+        sentences.push({
+          ...entry,
+          text: this.#skipInlineAnnotations ? stripInlineReadingAnnotations(text) : text,
+        });
       }
     }
     // The section moved on while this was being enumerated: these sentences
@@ -1448,6 +1464,10 @@ export class TTSController extends EventTarget {
 
     if (this.preprocessCallback) {
       ssml = await this.preprocessCallback(ssml);
+    }
+
+    if (this.#skipInlineAnnotations) {
+      ssml = stripInlineReadingAnnotationsFromSSML(ssml);
     }
 
     return ssml;

@@ -11,7 +11,6 @@ beforeEach(() => {
     searchNavStates: {},
     booknotesNavStates: {},
     searchStatuses: {},
-    annotationEditTargets: {},
   });
 });
 
@@ -80,22 +79,6 @@ describe('sidebarStore', () => {
     test('sets the active book key', () => {
       useSidebarStore.getState().setSideBarBookKey('book-abc');
       expect(useSidebarStore.getState().sideBarBookKey).toBe('book-abc');
-    });
-  });
-
-  describe('annotation edit targets', () => {
-    test('tracks and clears a per-book inline editor target', () => {
-      useSidebarStore.getState().setAnnotationEditTarget('book1', {
-        annotationId: 'annotation-1',
-        placeholderIds: ['annotation-1'],
-      });
-      expect(useSidebarStore.getState().annotationEditTargets['book1']).toEqual({
-        annotationId: 'annotation-1',
-        placeholderIds: ['annotation-1'],
-      });
-
-      useSidebarStore.getState().setAnnotationEditTarget('book1', null);
-      expect(useSidebarStore.getState().annotationEditTargets['book1']).toBeUndefined();
     });
   });
 

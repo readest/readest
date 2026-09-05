@@ -152,3 +152,49 @@ is over-visible rather than invisible.
 
 Regression test: `src/__tests__/styles/modal-box-standalone.browser.test.ts`
 (browser, real stylesheet -- a jsdom test cannot see this).
+
+## Bracket-stripping an arbitrary value only works for values Tailwind NAMES (2026-08-31, PR #5985 `d49fd8ba5`)
+
+"Canonicalizing" `p-[Npx]` -> `p-Npx` by deleting the brackets produces a class
+that matches NOTHING and emits NO CSS -- silently, since Tailwind has no unknown-class
+diagnostic and `pnpm lint` (biome + tsc) cannot see into a string literal. Caught in
+`BookItem.tsx` where a staged edit had turned `pt-[2px] sm:pt-[1px]` into
+`pt-2px sm:pt-1px`, dropping the optical-alignment nudge under both library icons.
+
+The spacing scale has exactly ONE named non-numeric key, `px` (= 1px hairline), so:
+
+| class | emitted |
+| --- | --- |
+| `pt-px`, `sm:pt-px` | `padding-top: 1px` |
+| `pt-0.5` / `-mt-0.5` | `calc(var(--spacing) * ±0.5)` = ±2px at the default 0.25rem `--spacing` |
+| `pt-[1px]`, `pt-[2px]` | correct, just non-canonical |
+| `pt-1px`, `pt-2px` | **nothing** |
+
+So VS Code's `tailwindcss(suggestCanonicalClasses)` hint on `sm:pt-[1px]` reads
+`sm:pt-px`, NOT `sm:pt-1px` -- the shorthand is the scale key, never the raw length.
+`pt-[2px]` draws no hint at all because 2px has no key; `pt-0.5` is the rem-based
+near-equivalent (chrox's preferred landing form here, and for `sm:mt-[-2px]` ->
+`sm:-mt-0.5` in `HighlightOptions.tsx`) but it TRACKS root font size where the
+bracket form is pinned, so it is a behaviour change, not a pure rename.
+
+**Verify recipe (no dev server, no Next build, ~1s):** drive the project's own
+compiler over the candidate list and read back which rules exist. `tailwindcss`
+resolves only from the app dir, so the script must live there (not in the scratchpad):
+```js
+// apps/readest-app/tw-check.mjs
+import { compile } from 'tailwindcss';
+import fs from 'node:fs/promises'; import path from 'node:path';
+const c = await compile('@import "tailwindcss";', {
+  base: process.cwd(),
+  loadStylesheet: async () => {
+    const p = path.resolve(process.cwd(), 'node_modules/tailwindcss/index.css');
+    return { path: p, base: path.dirname(p), content: await fs.readFile(p, 'utf8') };
+  },
+});
+console.log(c.build(['pt-px','pt-1px','aspect-28/41']).split('@layer utilities')[1]);
+```
+A class absent from that output emits nothing. (`npx @tailwindcss/cli -i
+src/styles/globals.css` from the diagnosis recipe above renders the full app cascade
+instead, and is the tool when the question is which rule WON rather than whether a
+class exists.) `aspect-[28/41]` -> `aspect-28/41` IS a real v4 shorthand (bare
+fractions are ratios) and was kept.

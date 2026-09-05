@@ -156,6 +156,46 @@ describe.runIf(env)('Android text selection over CDP (#1553)', () => {
     expect(sel.text.endsWith(targets.dragWord.word)).toBe(true);
   });
 
+  // The toolbar opens against the selection, which is exactly where the end
+  // handle's stem and ball hang. When the toolbar won that overlap the covered
+  // part of the handle stopped dragging and started firing whichever tool
+  // button was under the finger: the drag test above fails, but only after a
+  // 15s timeout that says nothing about why. Pin the hit test itself.
+  it('keeps the annotation toolbar out of the handles grab area', async () => {
+    await longPressWord(page, targets.prefix, targets.firstWord);
+    await waitFor(async () => (await getCustomHandles(page)).length === 2, {
+      label: 'app handles',
+    });
+
+    const probe = await page.evaluate<{ overlapping: number; swallowed: string[] }>(`
+      const popup = document.querySelector('.selection-popup')?.getBoundingClientRect();
+      const swallowed = [];
+      let overlapping = 0;
+      for (const handle of document.querySelectorAll('[data-testid="selection-handle"]')) {
+        const r = handle.getBoundingClientRect();
+        if (!popup || r.left >= popup.right || r.right <= popup.left ||
+            r.top >= popup.bottom || r.bottom <= popup.top) continue;
+        overlapping++;
+        for (const [fx, fy] of [[0.5, 0.2], [0.5, 0.5], [0.5, 0.8], [0.25, 0.5], [0.75, 0.5]]) {
+          const x = r.left + r.width * fx;
+          const y = r.top + r.height * fy;
+          if (document.elementFromPoint(x, y)?.closest('.selection-popup')) {
+            swallowed.push(Math.round(x) + ',' + Math.round(y));
+          }
+        }
+      }
+      return { overlapping, swallowed };
+    `);
+
+    // Guard the premise: with no overlap there is nothing for the layer order
+    // to decide and the assertion below would pass for the wrong reason.
+    expect(probe.overlapping).toBeGreaterThan(0);
+    expect(
+      probe.swallowed,
+      `the toolbar intercepts points inside a handle: ${probe.swallowed.join(' ')}`,
+    ).toEqual([]);
+  });
+
   it('keeps native selection handles for mid-paragraph selections', async () => {
     await longPressWord(page, targets.prefix, targets.midWord);
     const sel = await getSelectionState(page);

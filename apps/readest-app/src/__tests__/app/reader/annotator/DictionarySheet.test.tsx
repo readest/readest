@@ -92,6 +92,27 @@ vi.mock('@tauri-apps/plugin-opener', () => ({
   openUrl: (...args: unknown[]) => mockOpenUrl(...args),
 }));
 
+// Blob -> data URL conversion needs a real `fetch` for `blob:` URLs, which
+// jsdom doesn't provide; the viewer only cares that it receives a data URL.
+const mockConvertBlobUrlToDataUrl = vi.fn(async (src: string) => `data:image/png;base64,${src}`);
+vi.mock('@/libs/document', async () => {
+  const actual = await vi.importActual<typeof import('@/libs/document')>('@/libs/document');
+  return {
+    ...actual,
+    convertBlobUrlToDataUrl: (src: string) => mockConvertBlobUrlToDataUrl(src),
+  };
+});
+
+// Thin stand-in for the reader's full-screen image viewer.
+vi.mock('@/app/reader/components/ImageViewer', () => ({
+  default: ({ src, onClose }: { src: string | null; onClose: () => void }) =>
+    src ? (
+      <div data-testid='dict-image-viewer' data-src={src}>
+        <button type='button' aria-label='Close image viewer' onClick={onClose} />
+      </div>
+    ) : null,
+}));
+
 vi.mock('@/services/environment', async () => {
   const actual =
     await vi.importActual<typeof import('@/services/environment')>('@/services/environment');
@@ -204,6 +225,53 @@ const buildSlowProvider = (abortObserver: { aborted: boolean }): DictionaryProvi
   },
 });
 
+// Mimics the MDict provider's rendering: the entry body lives in a shadow
+// root, so a click's `target` is retargeted to the host and only the composed
+// path names the image that was actually tapped.
+const buildShadowImageProvider = (): DictionaryProvider => ({
+  id: 'shadow-img',
+  kind: 'mdict',
+  label: 'Shadow Image Dict',
+  async lookup(word, ctx) {
+    const host = document.createElement('div');
+    host.setAttribute('data-testid', 'img-shadow-host');
+    ctx.container.appendChild(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const img = document.createElement('img');
+    img.setAttribute('src', 'blob:test/pic-1');
+    shadow.appendChild(img);
+    const linked = document.createElement('a');
+    linked.setAttribute('href', 'https://example.com/more');
+    const linkedImg = document.createElement('img');
+    linkedImg.setAttribute('src', 'blob:test/pic-2');
+    linked.appendChild(linkedImg);
+    shadow.appendChild(linked);
+    // OALD9 wraps its illustrations in a hrefless `<a class="topic no-href">`,
+    // so the wrapper is markup, not a link, and must not swallow the tap.
+    const hrefless = document.createElement('a');
+    hrefless.className = 'topic no-href';
+    const heldImg = document.createElement('img');
+    heldImg.setAttribute('src', 'blob:test/pic-3');
+    hrefless.appendChild(heldImg);
+    shadow.appendChild(hrefless);
+    // OALD9 ships each illustration twice inside `<div class="ox-enlarge">`: a
+    // hidden full-resolution copy followed by the `thumb` that is laid out.
+    const pair = document.createElement('a');
+    pair.className = 'topic no-href';
+    const fullsize = document.createElement('img');
+    fullsize.setAttribute('src', 'blob:test/pic-fullsize');
+    fullsize.style.display = 'none';
+    Object.defineProperty(fullsize, 'naturalWidth', { value: 720 });
+    const thumb = document.createElement('img');
+    thumb.className = 'thumb';
+    thumb.setAttribute('src', 'blob:test/pic-thumb');
+    Object.defineProperty(thumb, 'naturalWidth', { value: 100 });
+    pair.append(fullsize, thumb);
+    shadow.appendChild(pair);
+    return { ok: true, headword: word, sourceLabel: 'Shadow Image Dict' };
+  },
+});
+
 const buildEmptyProvider = (id: string, label: string): DictionaryProvider => ({
   id,
   kind: 'stardict',
@@ -268,6 +336,7 @@ const resetStoreToEmpty = () => {
 beforeEach(() => {
   providersForNextRender.length = 0;
   mockOpenUrl.mockClear();
+  mockConvertBlobUrlToDataUrl.mockClear();
   resetStoreToEmpty();
 });
 
@@ -586,5 +655,83 @@ describe('DictionarySheet — abort on unmount', () => {
     await waitFor(() => {
       expect(observer.aborted).toBe(true);
     });
+  });
+});
+
+describe('DictionarySheet - image zoom', () => {
+  it('opens the full-screen viewer when an image in a shadow-rendered entry is tapped (#6018)', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const img = host.shadowRoot!.querySelector('img[src="blob:test/pic-1"]') as HTMLImageElement;
+
+    fireEvent.click(img);
+
+    const viewer = await waitFor(() => screen.getByTestId('dict-image-viewer'));
+    expect(viewer.getAttribute('data-src')).toBe('data:image/png;base64,blob:test/pic-1');
+
+    fireEvent.click(screen.getByLabelText('Close image viewer'));
+    await waitFor(() => expect(screen.queryByTestId('dict-image-viewer')).toBeNull());
+  });
+
+  it('leaves an image wrapped in a link to the link handler', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const linkedImg = host.shadowRoot!.querySelector(
+      'img[src="blob:test/pic-2"]',
+    ) as HTMLImageElement;
+
+    fireEvent.click(linkedImg);
+
+    await act(async () => {});
+    expect(screen.queryByTestId('dict-image-viewer')).toBeNull();
+    expect(mockConvertBlobUrlToDataUrl).not.toHaveBeenCalled();
+  });
+
+  it('zooms an image wrapped in an anchor that has no href (#6018)', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const heldImg = host.shadowRoot!.querySelector(
+      'img[src="blob:test/pic-3"]',
+    ) as HTMLImageElement;
+
+    fireEvent.click(heldImg);
+
+    const viewer = await waitFor(() => screen.getByTestId('dict-image-viewer'));
+    expect(viewer.getAttribute('data-src')).toBe('data:image/png;base64,blob:test/pic-3');
+  });
+
+  it('zooms the hidden full-resolution twin, not the thumbnail (#6018)', async () => {
+    providersForNextRender.push(buildShadowImageProvider());
+    renderSheet({ word: 'hello' });
+
+    const host = await waitFor(() => {
+      const el = screen.getByTestId('img-shadow-host');
+      if (!el.shadowRoot) throw new Error('shadow root not attached');
+      return el;
+    });
+    const thumb = host.shadowRoot!.querySelector('img.thumb') as HTMLImageElement;
+
+    fireEvent.click(thumb);
+
+    const viewer = await waitFor(() => screen.getByTestId('dict-image-viewer'));
+    expect(viewer.getAttribute('data-src')).toBe('data:image/png;base64,blob:test/pic-fullsize');
   });
 });

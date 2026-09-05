@@ -14,18 +14,18 @@ use localsend::discovery::{
 use localsend::http::dto_v2::RegisterDtoV2;
 use localsend::http::server::common::save::FileUploadTarget;
 use localsend::http::server::v2::{PrepareUploadDecisionV2, ServerEventV2, SessionEndReasonV2};
-use localsend::http::server::web::{WebConfig, WebI18n};
+use localsend::http::server::web::{WebConfig, WebMode};
 use localsend::http::server::{start_with_port, ServerConfigV2, ServerHandle};
 use localsend::model::discovery::ProtocolType;
 use localsend::model::transfer::FileDto;
-use localsend::multicast::{
-    InterfaceFilter, DEFAULT_MULTICAST_GROUP, DEFAULT_MULTICAST_GROUP_V6, DEFAULT_PORT,
-};
+use localsend::multicast::{DEFAULT_MULTICAST_GROUP, DEFAULT_MULTICAST_GROUP_V6, DEFAULT_PORT};
 use localsend::util::filename::{sanitize_with, Options, Rules};
+use localsend::util::interface::InterfaceFilter;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
+use std::time::{Duration, SystemTime};
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
@@ -54,6 +54,34 @@ pub struct ReceiveSession {
 pub type PendingMap = Arc<Mutex<HashMap<String, PendingReceive>>>;
 pub type ReceivingMap = Arc<Mutex<HashMap<String, ReceiveSession>>>;
 pub type SendCancelSlot = Arc<Mutex<Option<SendCancel>>>;
+/// Peers that said goodbye, and when. See [`DEPARTURE_PORT`].
+pub type DepartedPeers = Arc<Mutex<HashMap<String, SystemTime>>>;
+
+/// The port a departing device advertises in its goodbye.
+///
+/// The Readest app tells its peers over the register route when it is about to
+/// go dark, so they can drop it instead of waiting for it to stop answering.
+/// Port zero means "not listening": stored as a channel it would be both
+/// unsendable and, being the most recent confirmation, ranked above the peer's
+/// real address.
+pub const DEPARTURE_PORT: u16 = 0;
+
+/// How long a goodbye keeps a peer out of the list without a matching hello.
+///
+/// Bounded, because unlike the app this device runs no presence heartbeat and
+/// has no TTL to fall back on: a hello lost on the way back would otherwise
+/// hide a peer that is really there for as long as the service runs.
+pub const DEPARTURE_HOLD: Duration = Duration::from_secs(15);
+
+/// Whether a peer that said goodbye at `departed_at` is still held out of the
+/// list. A timestamp in the future (clock skew) counts as departed.
+pub fn peer_has_departed(departed_at: Option<SystemTime>, now: SystemTime) -> bool {
+    departed_at.is_some_and(|at| {
+        now.duration_since(at)
+            .map(|age| age < DEPARTURE_HOLD)
+            .unwrap_or(true)
+    })
+}
 
 /// A file offered for sending, resolved from a Lua-supplied path.
 pub struct SendFileJob {
@@ -87,6 +115,8 @@ pub struct Service {
     pub pending: PendingMap,
     pub receiving: ReceivingMap,
     pub send_cancel: SendCancelSlot,
+    /// Peers that said goodbye, and when. See [`DEPARTURE_PORT`].
+    pub departed: DepartedPeers,
     pub multicast_error: Option<String>,
     pub download_dir: PathBuf,
 }
@@ -137,11 +167,10 @@ pub async fn start(config: StartConfig) -> Result<Service, String> {
             // Cert-less senders (the stable LocalSend app) fall back to the
             // body fingerprint; without this WebConfig the server demands a
             // TLS client certificate and resets their handshake.
-            Some(WebConfig {
-                send: None,
-                upload: true,
-                i18n: WebI18n::default(),
-            }),
+            WebConfig {
+                mode: WebMode::Upload,
+                ..Default::default()
+            },
             stop_rx,
         )
         .await
@@ -197,6 +226,7 @@ pub async fn start(config: StartConfig) -> Result<Service, String> {
         pending: Arc::new(Mutex::new(HashMap::new())),
         receiving: Arc::new(Mutex::new(HashMap::new())),
         send_cancel: Arc::new(Mutex::new(None)),
+        departed: Arc::new(Mutex::new(HashMap::new())),
         multicast_error,
         download_dir,
     };
@@ -275,11 +305,32 @@ pub fn local_ips() -> Vec<String> {
 /// Peers discovered so far, as reported to Lua by `list_devices`. Ported
 /// from `device_payloads` in
 /// apps/readest-app/src-tauri/src/localsend/service.rs.
-pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
+pub fn device_payloads(
+    discovery: &DiscoveryHandle,
+    departed: &DepartedPeers,
+) -> Vec<DevicePayload> {
+    let now = SystemTime::now();
+    // Only a hello removes a fingerprint, so a peer that said goodbye and never
+    // came back would be held for the life of the service. Dropping the lapsed
+    // entries here -- the one place that reads the ledger -- bounds it by the
+    // departures still in force, and leaves every survivor departed by
+    // definition, so the check below is a lookup rather than a comparison.
+    let departed = {
+        let mut departed = lock(departed);
+        departed.retain(|_, at| peer_has_departed(Some(*at), now));
+        departed
+    };
     discovery
         .devices()
         .into_iter()
         .filter_map(|stateful| {
+            // Deliberately no presence TTL here, unlike the app: nothing on
+            // this side re-confirms peers on a heartbeat, so a TTL would age
+            // every peer out and never bring it back. A goodbye is the only
+            // signal this device gets that a peer has gone.
+            if departed.contains_key(&stateful.device.fingerprint) {
+                return None;
+            }
             let http = stateful.get_best_channel().and_then(|c| c.http())?;
             // The best channel may be IPv6; a multi-homed device usually also
             // has an IPv4 channel, whose last octet is the "#<n>" tag shown
@@ -311,6 +362,7 @@ fn spawn_event_pump(service: &Service, mut server_rx: mpsc::Receiver<ServerEvent
     let send_cancel = service.send_cancel.clone();
     let download_dir = service.download_dir.clone();
     let discovery = service.discovery.clone();
+    let departed = service.departed.clone();
     let self_fingerprint = service.identity.fingerprint.clone();
     tokio::spawn(async move {
         while let Some(event) = server_rx.recv().await {
@@ -326,12 +378,36 @@ fn spawn_event_pump(service: &Service, mut server_rx: mpsc::Receiver<ServerEvent
                     Some(scope_id) => format!("{}%{scope_id}", ip.ip),
                     None => ip.ip.to_string(),
                 };
-                register_peer(&discovery, &self_fingerprint, host, info).await;
+                apply_register(&discovery, &departed, &self_fingerprint, host, info).await;
             } else {
                 handle_server_event(&pending, &receiving, &send_cancel, &download_dir, event);
             }
         }
     });
+}
+
+/// Applies a peer's register, telling an arrival from a goodbye.
+///
+/// A register advertising [`DEPARTURE_PORT`] means the peer is about to go
+/// dark; it is recorded as a departure and deliberately never reaches the
+/// discovery store, so the peer's real channel survives for the hello that
+/// clears the hold. Any other register is an arrival and cancels a hold.
+pub async fn apply_register(
+    discovery: &DiscoveryHandle,
+    departed: &DepartedPeers,
+    self_fingerprint: &str,
+    host: String,
+    info: RegisterDtoV2,
+) {
+    if info.fingerprint == self_fingerprint {
+        return;
+    }
+    if info.port == DEPARTURE_PORT {
+        lock(departed).insert(info.fingerprint, SystemTime::now());
+        return;
+    }
+    lock(departed).remove(&info.fingerprint);
+    register_peer(discovery, self_fingerprint, host, info).await;
 }
 
 /// Puts a peer that registered with this device's HTTP server into the
@@ -429,6 +505,15 @@ fn handle_server_event(
                 session.ended = Some(reason);
                 maybe_push_receive_end(&mut sessions, &session_id, download_dir);
             }
+        }
+        ServerEventV2::ListenerFailed { error } => {
+            // The OS invalidated the listening socket and the core stopped the
+            // server; it would still be announced but could accept nothing.
+            // Kindles do not reclaim sockets the way iOS does, so this is
+            // effectively dormant here -- surface it rather than dying quietly.
+            events::push(&Event::Error {
+                message: format!("LocalSend server stopped: {error}"),
+            });
         }
         ServerEventV2::CancelReceived { ip, session_id } => {
             // The peer cancelled a session this device is sending.
@@ -1033,13 +1118,15 @@ mod tests {
     /// `test_discovery` in
     /// apps/readest-app/src-tauri/src/localsend/service.rs's own tests.
     async fn test_discovery(alias: &str) -> Arc<DiscoveryHandle> {
+        // Three tests share the alias "Reader", and the clock is too coarse
+        // to separate two that start together: they built the SAME path, and
+        // whichever finished first removed the directory out from under the
+        // other (`could not save identity.pem`). A counter is exact.
+        static NEXT_DIR: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let dir = std::env::temp_dir().join(format!(
             "lsffi-disc-{alias}-{}-{}",
             std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
+            NEXT_DIR.fetch_add(1, Ordering::Relaxed)
         ));
         std::fs::create_dir_all(&dir).unwrap();
         let identity = Identity::load_or_generate(
@@ -1070,6 +1157,10 @@ mod tests {
         discovery
     }
 
+    fn no_departures() -> DepartedPeers {
+        Arc::new(Mutex::new(HashMap::new()))
+    }
+
     fn register_dto(fingerprint: &str) -> RegisterDtoV2 {
         RegisterDtoV2 {
             alias: "Phone".into(),
@@ -1097,7 +1188,7 @@ mod tests {
         )
         .await;
 
-        let devices = device_payloads(&discovery);
+        let devices = device_payloads(&discovery, &no_departures());
         assert_eq!(devices.len(), 1);
         assert_eq!(devices[0].fingerprint, "peer-fp");
         assert_eq!(devices[0].host, "192.168.2.135");
@@ -1117,7 +1208,124 @@ mod tests {
         )
         .await;
 
-        assert!(device_payloads(&discovery).is_empty());
+        assert!(device_payloads(&discovery, &no_departures()).is_empty());
+    }
+
+    // The Readest app announces `port: 0` over the register route when it is
+    // about to go dark (DEPARTURE_PORT, app-side #6049). Without a guard the
+    // koplugin stored that as a real channel and kept offering an unsendable
+    // peer.
+    #[test]
+    fn a_goodbye_hides_a_peer_that_is_still_answering() {
+        let now = SystemTime::now();
+        assert!(peer_has_departed(Some(now), now));
+        assert!(peer_has_departed(
+            Some(now - DEPARTURE_HOLD + Duration::from_secs(1)),
+            now
+        ));
+        // Bounded, so a lost hello cannot hide a live device for good. The
+        // koplugin has no presence TTL to fall back on, so this is the only
+        // thing that ever puts the peer back.
+        assert!(!peer_has_departed(
+            Some(now - DEPARTURE_HOLD - Duration::from_secs(1)),
+            now
+        ));
+        assert!(!peer_has_departed(None, now));
+    }
+
+    #[tokio::test]
+    async fn device_payloads_drop_a_peer_that_said_goodbye_until_it_says_hello() {
+        let discovery = test_discovery("Reader").await;
+        let departed = no_departures();
+        register_peer(
+            &discovery,
+            "self-fp",
+            "192.168.2.135".into(),
+            register_dto("peer-fp"),
+        )
+        .await;
+        assert_eq!(device_payloads(&discovery, &departed).len(), 1);
+
+        lock(&departed).insert("peer-fp".into(), SystemTime::now());
+        assert!(
+            device_payloads(&discovery, &departed).is_empty(),
+            "a peer that said goodbye must leave the list at once"
+        );
+
+        // The hello clears the hold, even though nothing about the peer's
+        // stored channel changed.
+        lock(&departed).remove("peer-fp");
+        assert_eq!(device_payloads(&discovery, &departed).len(), 1);
+    }
+
+    // Only a later hello removes a fingerprint, so a peer that says goodbye and
+    // never comes back would sit in the ledger for the life of the service --
+    // and every list_devices would carry it. An expired hold must be forgotten,
+    // not merely ignored.
+    #[tokio::test]
+    async fn an_expired_departure_is_forgotten_not_just_ignored() {
+        let discovery = test_discovery("Reader").await;
+        let departed = no_departures();
+        register_peer(
+            &discovery,
+            "self-fp",
+            "192.168.2.135".into(),
+            register_dto("peer-fp"),
+        )
+        .await;
+
+        let stale = SystemTime::now() - DEPARTURE_HOLD - Duration::from_secs(1);
+        lock(&departed).insert("peer-fp".into(), stale);
+        lock(&departed).insert("peer-that-never-came-back".into(), stale);
+
+        // The hold has lapsed, so the peer is listed again ...
+        assert_eq!(device_payloads(&discovery, &departed).len(), 1);
+        // ... and neither entry is still held, including the one for a peer
+        // that is not in the discovery store at all.
+        assert!(
+            lock(&departed).is_empty(),
+            "an expired departure must not be retained for the life of the service"
+        );
+    }
+
+    // A goodbye must not be stored as a channel: port 0 is unsendable, and it
+    // would outrank the peer's real channel as the most recent confirmation.
+    #[tokio::test]
+    async fn a_goodbye_register_never_becomes_a_channel() {
+        let discovery = test_discovery("Reader").await;
+        let departed = no_departures();
+        register_peer(
+            &discovery,
+            "self-fp",
+            "192.168.2.135".into(),
+            register_dto("peer-fp"),
+        )
+        .await;
+
+        let mut goodbye = register_dto("peer-fp");
+        goodbye.port = DEPARTURE_PORT;
+        apply_register(
+            &discovery,
+            &departed,
+            "self-fp",
+            "192.168.2.135".into(),
+            goodbye,
+        )
+        .await;
+
+        assert!(device_payloads(&discovery, &departed).is_empty());
+        // And the real channel is still what a later hello restores.
+        apply_register(
+            &discovery,
+            &departed,
+            "self-fp",
+            "192.168.2.135".into(),
+            register_dto("peer-fp"),
+        )
+        .await;
+        let devices = device_payloads(&discovery, &departed);
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].port, FIRST_PORT);
     }
 
     #[tokio::test]
@@ -1142,7 +1350,7 @@ mod tests {
             })
             .await;
 
-        let devices = device_payloads(&discovery);
+        let devices = device_payloads(&discovery, &no_departures());
         assert_eq!(devices.len(), 1);
         assert_eq!(devices[0].fingerprint, "peer-fp");
         assert_eq!(devices[0].device_type.as_deref(), Some("mobile"));

@@ -103,6 +103,45 @@ test.describe('Annotation', () => {
   // range editor: app-drawn handles in a fixed overlay painted after the lookup
   // popups, so they floated on top of the dictionary (#5815). A lookup hides
   // them; they come back only with the toolbar.
+  // #5815 unmounts the handles for the lookup popups, but the reason they were
+  // ever on top is that both layers were z-50 in one stacking context, so the
+  // tie broke on DOM order and the range editors are rendered last. Any surface
+  // that forgets to join that gate — the note editor did — gets handles drawn
+  // over it. The selection toolbar is the exception: it opens against the
+  // selection, so it overlaps the handles hanging off it, and the handles must
+  // keep those pixels or the covered part of a handle stops dragging and fires
+  // a tool button instead. Pin both halves of that order, read off the live DOM.
+  test('draws the range-edit handles above the selection toolbar', async ({ openBook }) => {
+    const reader = await openBook();
+
+    await reader.selectText();
+    await reader.highlightSelection();
+    await reader.dismissPopup();
+    await reader.clickHighlight();
+
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(reader.rangeHandles).toHaveCount(2);
+
+    const layers = await reader.page.evaluate(() => {
+      const zIndexOf = (el: Element | null | undefined) =>
+        el ? getComputedStyle(el).zIndex : null;
+      const handle = document.querySelector('[data-testid="selection-handle"]');
+      const popup = document.querySelector('.selection-popup');
+      return {
+        handles: zIndexOf(handle?.closest('div.fixed')),
+        toolbar: zIndexOf(popup?.closest('div.fixed')),
+        // Where the lookup popups and the note editor sheet sit. They unmount
+        // the handles, but the layer they share must still outrank them.
+        popupLayer: zIndexOf(popup),
+      };
+    });
+
+    expect(layers.handles).not.toBeNull();
+    expect(layers.toolbar).not.toBeNull();
+    expect(Number(layers.toolbar)).toBeLessThan(Number(layers.handles));
+    expect(Number(layers.handles)).toBeLessThan(Number(layers.popupLayer));
+  });
+
   test('hides the range-edit handles while the dictionary popup is open (#5815)', async ({
     openBook,
   }) => {

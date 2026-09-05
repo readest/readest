@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-localsend-set-discoverable"
+description = "Enables the localsend_set_discoverable command without any pre-configured scope."
+commands.allow = ["localsend_set_discoverable"]
+
+[[permission]]
+identifier = "deny-localsend-set-discoverable"
+description = "Denies the localsend_set_discoverable command without any pre-configured scope."
+commands.deny = ["localsend_set_discoverable"]

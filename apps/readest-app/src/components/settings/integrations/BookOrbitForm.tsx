@@ -178,6 +178,13 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
     await saveSettings(envConfig, newSettings);
   };
 
+  const handleToggleAutoSync = async () => {
+    const bookorbit = { ...settings.bookorbit, autoSync: settings.bookorbit.autoSync === false };
+    const newSettings = { ...settings, bookorbit };
+    setSettings(newSettings);
+    await saveSettings(envConfig, newSettings);
+  };
+
   const handleStrategyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const bookorbit = { ...settings.bookorbit, strategy: e.target.value as KOSyncStrategy };
     const newSettings = { ...settings, bookorbit };
@@ -205,6 +212,17 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
               <label className='flex min-h-14 items-center justify-between px-4'>
                 <SettingLabel>{_('Sync Server Connected')}</SettingLabel>
                 <Toggle checked={settings.bookorbit.enabled} onChange={handleToggleEnabled} />
+              </label>
+              {/* Off = manual sync (#6029): progress is only pushed from the
+                  book menu's "Push Progress" or the reader's Sync row, so the
+                  server's reading log isn't filled with debounce-sized
+                  updates. Pulls stay automatic. */}
+              <label className='flex min-h-14 items-center justify-between px-4'>
+                <SettingLabel>{_('Auto Sync')}</SettingLabel>
+                <Toggle
+                  checked={settings.bookorbit.autoSync !== false}
+                  onChange={handleToggleAutoSync}
+                />
               </label>
               <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
                 <SettingLabel>{_('Sync Strategy')}</SettingLabel>

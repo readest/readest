@@ -9,15 +9,17 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
-import { useInlineTextEditor } from '../../hooks/useInlineTextEditor';
 import { parseNoteMarkdown } from '../../utils/noteMarkdown';
-import TextButton from '@/components/TextButton';
-import TextEditor from '@/components/TextEditor';
 
 interface AnnotationNoteItemProps {
   bookKey: string;
   note: BookNote;
+  /**
+   * Hands the note to the shared editor the Annotate action uses (a popup body
+   * on desktop, a bottom sheet on phones) instead of editing it in place, so a
+   * note is written the same way wherever the editor is opened from.
+   */
+  onEdit?: (note: BookNote) => void;
   isVertical: boolean;
   popupHeight: number;
   onDismiss: () => void;
@@ -31,6 +33,7 @@ const cardClassName = clsx(
 const AnnotationNoteItem: React.FC<AnnotationNoteItemProps> = ({
   bookKey,
   note,
+  onEdit,
   isVertical,
   popupHeight,
   onDismiss,
@@ -40,15 +43,11 @@ const AnnotationNoteItem: React.FC<AnnotationNoteItemProps> = ({
   const { getConfig, setConfig } = useBookDataStore();
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible } = useSidebarStore();
-  const saveBooknoteNoteText = useSaveBooknoteNoteText(bookKey);
   const size16 = useResponsiveSize(16);
   // Same parser (and sanitizer) as the sidebar so a note previews identically
   // in both places (#5785); cached because the popup re-renders on every
   // reposition and parsing long notes is not free.
   const noteHtml = useMemo(() => (note.note ? parseNoteMarkdown(note.note) : ''), [note.note]);
-
-  const { editorRef, draftText, setDraftText, inlineEditMode, startEdit, cancelEdit, save } =
-    useInlineTextEditor((noteText) => saveBooknoteNoteText(note.id, noteText));
 
   const cardStyle = isVertical
     ? { minWidth: 'max-content', height: `${popupHeight}px`, maxHeight: `${popupHeight}px` }
@@ -75,30 +74,8 @@ const AnnotationNoteItem: React.FC<AnnotationNoteItemProps> = ({
     // Editing must not also trigger the card's own click handler
     // (handleShowAnnotation), which would open the sidebar underneath it.
     event.stopPropagation();
-    startEdit(note.note || '');
+    onEdit?.(note);
   };
-
-  if (inlineEditMode) {
-    return (
-      <div className={cardClassName} style={cardStyle}>
-        <div className='m-4 flex flex-col gap-2'>
-          <TextEditor
-            ref={editorRef}
-            value={draftText}
-            onChange={setDraftText}
-            onSave={save}
-            onEscape={cancelEdit}
-            spellCheck={false}
-            autoFocus
-          />
-          <div className='flex justify-end gap-3' dir='ltr'>
-            <TextButton onClick={cancelEdit}>{_('Cancel')}</TextButton>
-            <TextButton onClick={save}>{_('Save')}</TextButton>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -131,7 +108,7 @@ const AnnotationNoteItem: React.FC<AnnotationNoteItemProps> = ({
                   devices, which have no hover state to reveal it. */}
               <button
                 onClick={handleEditClick}
-                className='btn btn-ghost btn-xs p-0 text-blue-500 hover:bg-transparent'
+                className='btn btn-ghost btn-xs p-0 text-blue-500 hover:border-transparent hover:bg-transparent'
                 aria-label={_('Edit')}
               >
                 <MdEdit size={size16} />

@@ -60,6 +60,8 @@ fn main() {
             "localsend_get_status",
             "localsend_list_devices",
             "localsend_announce",
+            "localsend_set_discoverable",
+            "localsend_is_alive",
             "localsend_respond",
             "localsend_cancel_receive",
             "localsend_send_files",

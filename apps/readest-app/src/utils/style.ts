@@ -117,8 +117,14 @@ const getFontStyles = (
       -webkit-text-size-adjust: none;
       text-size-adjust: none;
     }
-    /* lower specificity than ebook built-in font styles */
-    html {
+    /* Zero specificity (:where) so ANY ebook font-family declaration — even
+       one on the html element itself, at equal (0,0,1) specificity — wins the
+       cascade regardless of injection order. Books like Pandoc-generated
+       EPUBs declare their font on the html element; a plain html rule here
+       ties on specificity and wins only by being appended later, silently
+       overriding the book's embedded font with the app's default font
+       (mobile especially, whose default font is sans-serif). */
+    :where(html) {
       font-family: var(${defaultFontFamily}) ${overrideFont ? '!important' : ''};
     }
     /* higher specificity than ebook built-in font styles */
@@ -150,8 +156,13 @@ const getFontStyles = (
     [style*="font-size: 16px"], [style*="font-size:16px"] {
       font-size: 1rem !important;
     }
-    pre, code, kbd {
-      font-family: var(--monospace);
+    /* The revert pass below deliberately excludes pre/code/kbd, so this is the
+       only rule that applies the app's code font and it has to swap sides with
+       the toggle. Off: zero specificity, so a book's own code font wins. On:
+       above the book, and !important is not enough on its own because
+       specificity still breaks ties between important author declarations. */
+    ${overrideFont ? 'html body :is(pre, code, kbd)' : ':where(pre, code, kbd)'} {
+      font-family: var(--monospace) ${overrideFont ? '!important' : ''};
       font-variant-ligatures: none;
     }
     body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
@@ -1208,6 +1219,54 @@ export const transformStylesheet = (
     return match;
   });
 
+  // `@media (orientation: ...)` inside a section is evaluated against the
+  // iframe, and the paginator sizes that iframe to the whole multi-column strip
+  // rather than to a page: a one-page section reports portrait and a two-page
+  // section landscape. The strip width is itself derived from the content, so a
+  // rule that changes the content's height — `column-count: 2` in the IDPF
+  // media-query sample — flips the query, which flips the page count, which
+  // flips the query straight back, and the layout never settles (#6038).
+  // Resolve the feature against the reader's own viewport, the same thing the
+  // vw/vh rewrite below does and for the same reason, so the book gets the
+  // orientation the reader is actually in and the cycle cannot form.
+  // Width and height features are the same trap: a two-page section makes the
+  // strip twice as wide, so the sample's `(max-width: 480px)` block flips on the
+  // page count it is itself deciding. Both rewrites are confined to the prelude,
+  // between `@media` and the `{` that opens its block, so the same literal in a
+  // declaration value or an attribute selector is left as the book wrote it. The
+  // two sentinels below resolve to themselves, so the passes are order-free.
+  const isLandscape = vw > vh;
+  const always = '(min-width: 0px)';
+  const never = '(min-width: 999999px)';
+  // Park quoted values first, the same way the url() pass above does, so an
+  // at-rule quoted inside a declaration is never mistaken for a real prelude.
+  const quoted: string[] = [];
+  css = css.replace(/"[^"\n]*"|'[^'\n]*'/g, (value) => {
+    quoted.push(value);
+    return `READEST_STR_${quoted.length - 1}_PLACEHOLDER`;
+  });
+  css = css.replace(/@media[^{]*/gi, (prelude) =>
+    prelude
+      .replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
+        (mode.toLowerCase() === 'landscape') === isLandscape ? always : never,
+      )
+      .replace(
+        /\(\s*(min|max)-(width|height)\s*:\s*([^)]+?)\s*\)/gi,
+        (feature, bound: string, axis: string, length: string) => {
+          // Only lengths that are already px can be resolved without guessing at
+          // the book's root font size; anything else keeps the authored feature.
+          const px = /^(\d*\.?\d+)(?:px)?$/.exec(length);
+          if (!px) return feature;
+          const viewport = axis.toLowerCase() === 'width' ? vw : vh;
+          const bounds = parseFloat(px[1]!);
+          return (bound.toLowerCase() === 'min' ? viewport >= bounds : viewport <= bounds)
+            ? always
+            : never;
+        },
+      ),
+  );
+  css = css.replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
+
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
@@ -1240,17 +1299,35 @@ export const transformStylesheet = (
     .replace(/([\s;])-ms-user-select\s*:\s*none/gi, '$1-ms-user-select: unset')
     .replace(/([\s;])-o-user-select\s*:\s*none/gi, '$1-o-user-select: unset')
     .replace(/([\s;])user-select\s*:\s*none/gi, '$1user-select: unset')
-    // Park the `var(--x, x)` chunks an earlier pass already produced: their
-    // inner keywords would otherwise be rewritten again into
-    // `var(--var(--serif, serif), serif)`, which is invalid, so the CSS parser
-    // drops the whole declaration and the book loses its fonts (readest#5277).
-    // The placeholders are underscore-wrapped so `\b` never matches inside them.
-    .replace(/var\(\s*--(sans-serif|serif|monospace)\s*,\s*\1\s*\)/gi, 'READEST_GF_$1_PLACEHOLDER')
-    .replace(/(font-family\s*:[^;]*?)\bsans-serif\b/gi, '$1READEST_SS_PLACEHOLDER')
-    .replace(/(font-family\s*:[^;]*?)\bserif\b(?!-)/gi, '$1var(--serif, serif)')
-    .replace(/READEST_SS_PLACEHOLDER/g, 'var(--sans-serif, sans-serif)')
-    .replace(/(font-family\s*:[^;]*?)\bmonospace\b/gi, '$1var(--monospace, monospace)')
-    .replace(/READEST_GF_(sans-serif|serif|monospace)_PLACEHOLDER/gi, 'var(--$1, $1)')
+    // Point the generic families at the user's per-category font choice, so a
+    // book that asks for `serif` gets the configured serif chain (which also
+    // carries the CJK font) instead of the platform default.
+    //
+    // Only a list item that IS the bare keyword may be rewritten. Matching the
+    // word anywhere in the declaration also hit the book's own family names:
+    // `font-family: Source Han Serif CN` became `Source Han var(--serif, serif) CN`,
+    // and since CSS descriptors cannot contain var() the engine dropped the
+    // whole @font-face rule, detaching the book's only reference to its
+    // embedded font (readest#6047).
+    //
+    // Parking the keyword inside the var() fallback also makes this idempotent:
+    // a stylesheet can be handed to this transform more than once, and a second
+    // pass no longer sees a bare generic to rewrite into
+    // `var(--var(--serif, serif), serif)` (readest#5277).
+    .replace(/(font-family\s*:\s*)([^;{}]*)/gi, (_match: string, prefix: string, value: string) => {
+      const important = /\s*!\s*important\s*$/i.exec(value);
+      const families = important ? value.slice(0, important.index) : value;
+      const rewritten = families
+        .split(',')
+        .map((family: string) => {
+          const generic = /^(serif|sans-serif|monospace)$/i.exec(family.trim());
+          if (!generic) return family;
+          const name = generic[1]!.toLowerCase();
+          return family.replace(generic[1]!, `var(--${name}, ${name})`);
+        })
+        .join(',');
+      return prefix + rewritten + (important ? important[0] : '');
+    })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')
@@ -1283,6 +1360,55 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
 export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
   document.body.classList.remove('scroll-mode', 'paginated-mode');
   document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
+// A prefixed attribute name, e.g. the `epub:type` of `epub:type="chapter"`.
+const PREFIXED_ATTR_REGEX = /^([A-Za-z_][\w.-]*):([A-Za-z_][\w.-]*)$/;
+const EPUB_OPS_NAMESPACE = 'http://www.idpf.org/2007/ops';
+
+/**
+ * Re-attach the namespaces an XHTML section declared to its prefixed
+ * attributes.
+ *
+ * Sections reach the iframe through `srcdoc` so that browser extensions can
+ * see them, and `srcdoc` is always parsed as HTML. An HTML parser has no
+ * namespaces outside foreign content, so `epub:type="chapter"` lands in the
+ * null namespace under the literal name `epub:type` and every CSS namespace
+ * selector written against it matches nothing: the book's own
+ * `div[epub|type="chapter"]` (which paints the illustration and the page
+ * color of the IDPF media-query sample, #6038) as much as our
+ * `aside[epub|type~="footnote"]`. The original attribute stays in place, and
+ * the twin carries the same qualified name, so `getAttribute('epub:type')`
+ * callers are unaffected either way.
+ */
+export const applyNamespacedAttributes = (document: Document) => {
+  // `xmlns:` declarations survive HTML parsing as ordinary attributes, but only
+  // as attributes: nothing scopes them any more, so a prefix has to be resolved
+  // the way XML would resolve it, from the element's own ancestor chain. A flat
+  // document-order map would carry a nested rebinding past the end of its
+  // subtree and on to later siblings.
+  const lookupNamespace = (element: Element, prefix: string) => {
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      const uri = node.getAttribute(`xmlns:${prefix}`);
+      if (uri) return uri;
+    }
+    return null;
+  };
+  for (const element of document.querySelectorAll('*')) {
+    for (const { name, value } of Array.from(element.attributes)) {
+      const [, prefix, localName] = PREFIXED_ATTR_REGEX.exec(name) ?? [];
+      if (!prefix) continue;
+      // Foliate can hand us a section fragment rather than the source XHTML
+      // document, so the declaration on the original <html> may be gone.
+      // `epub` has one fixed namespace in EPUB, which is enough to restore the
+      // selectors used by the book's stylesheet (including noteref markers).
+      const uri =
+        lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null);
+      if (uri && !element.hasAttributeNS(uri, localName!)) {
+        element.setAttributeNS(uri, name, value);
+      }
+    }
+  }
 };
 
 /**

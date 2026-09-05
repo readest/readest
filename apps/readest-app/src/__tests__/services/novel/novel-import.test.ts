@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { configureZip } from '@/utils/zip';
-import { downloadNovel, fetchNovelToc, isNovelImportCancelled } from '@/services/novel/novelImport';
+import {
+  decodeHtmlBody,
+  downloadNovel,
+  fetchNovelToc,
+  isNovelImportCancelled,
+} from '@/services/novel/novelImport';
 import { stableIdentifier } from '@/services/send/conversion/convertToEpub';
 import { ConversionError } from '@/services/send/conversion/types';
 import type { NovelToc } from '@/services/novel/chapterList';
@@ -382,6 +387,129 @@ describe('transient upstream failures', () => {
       expect(files.get('OEBPS/chapter3.xhtml')).not.toContain('could not be downloaded');
     } finally {
       vi.useRealTimers();
+    }
+  });
+});
+
+/**
+ * GB2312 bytes for 福尔摩斯 — the opening of the title on the page from the
+ * report (https://www.trxs.cc/tongren/11542.html), which serves gb2312 with
+ * no charset on the HTTP response.
+ */
+const GB2312_HOLMES = Uint8Array.from([0xb8, 0xa3, 0xb6, 0xfb, 0xc4, 0xa6, 0xcb, 0xb9]);
+const BIG5_HOLMES = Uint8Array.from([0xba, 0xd6, 0xba, 0xb8, 0xbc, 0xaf, 0xb4, 0xb5]);
+/** GB2312 bytes for 第 and 章, so a fixture chapter row reads "第 N 章". */
+const GB2312_DI = Uint8Array.from([0xb5, 0xda]);
+const GB2312_ZHANG = Uint8Array.from([0xd5, 0xc2]);
+
+const bytesOf = (...parts: (string | Uint8Array)[]): Uint8Array<ArrayBuffer> => {
+  const chunks = parts.map((part) =>
+    typeof part === 'string' ? new TextEncoder().encode(part) : part,
+  );
+  const out = new Uint8Array(chunks.reduce((n, chunk) => n + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
+};
+
+describe('decodeHtmlBody', () => {
+  it('honors a meta http-equiv charset when the response header has none', () => {
+    const body = bytesOf(
+      '<html><head><meta http-equiv="Content-Type" content="text/html; charset=gb2312" />',
+      '<title>',
+      GB2312_HOLMES,
+      '</title></head><body></body></html>',
+    );
+    expect(decodeHtmlBody(body, 'text/html')).toContain('<title>福尔摩斯</title>');
+  });
+
+  it('honors a short meta charset tag', () => {
+    const body = bytesOf('<html><head><meta charset="gbk"><title>', GB2312_HOLMES, '</title>');
+    expect(decodeHtmlBody(body, null)).toContain('福尔摩斯');
+  });
+
+  it('prefers the response header charset over the meta tag', () => {
+    const body = bytesOf('<html><head><meta charset="utf-8"><title>', BIG5_HOLMES, '</title>');
+    expect(decodeHtmlBody(body, 'text/html; charset=big5')).toContain('福爾摩斯');
+  });
+
+  it('leaves a UTF-8 page untouched', () => {
+    const body = bytesOf('<html><head><title>福尔摩斯</title></head></html>');
+    expect(decodeHtmlBody(body, 'text/html; charset=utf-8')).toContain('福尔摩斯');
+  });
+
+  it('strips a UTF-8 BOM and ignores a contradicting declaration', () => {
+    const body = bytesOf(
+      new Uint8Array([0xef, 0xbb, 0xbf]),
+      '<html><head><meta charset="gbk"><title>福尔摩斯</title>',
+    );
+    const html = decodeHtmlBody(body, 'text/html; charset=gbk');
+    expect(html).toContain('福尔摩斯');
+    expect(html.startsWith('<html>')).toBe(true);
+  });
+
+  it('falls back to gb18030 for undeclared bytes that are not valid UTF-8', () => {
+    const body = bytesOf('<html><head><title>', GB2312_HOLMES, '</title></head></html>');
+    expect(decodeHtmlBody(body, 'text/html')).toContain('福尔摩斯');
+  });
+
+  it('falls back to UTF-8 for an unknown charset label', () => {
+    const body = bytesOf('<html><head><meta charset="x-nonsense"><title>福尔摩斯</title>');
+    expect(decodeHtmlBody(body, 'text/html; charset=x-nonsense')).toContain('福尔摩斯');
+  });
+
+  it('accepts a single-quoted charset attribute', () => {
+    const body = bytesOf("<html><head><meta charset='big5'><title>", BIG5_HOLMES, '</title>');
+    expect(decodeHtmlBody(body, 'text/html')).toContain('福爾摩斯');
+  });
+
+  it('ignores a charset declaration inside a comment', () => {
+    const body = bytesOf(
+      '<html><head><!-- <meta charset="gbk"> --><title>福尔摩斯</title></head></html>',
+    );
+    expect(decodeHtmlBody(body, 'text/html')).toContain('<title>福尔摩斯</title>');
+  });
+
+  it('ignores a charset declared past the sniffing window', () => {
+    const body = bytesOf(
+      `<html><head><!--${'p'.repeat(1100)}--><meta charset="gbk"><title>`,
+      GB2312_HOLMES,
+      '</title>',
+    );
+    // Undeclared within the window, so the invalid-UTF-8 fallback still saves it.
+    expect(decodeHtmlBody(body, 'text/html')).toContain('福尔摩斯');
+  });
+});
+
+describe('defaultFetchPage charset handling', () => {
+  it('decodes a gb2312 chapter list served without a header charset', async () => {
+    const listing = Array.from({ length: 6 }, (_, i) => [
+      `<li><a href="/tongren/11542/${i + 1}.html">`,
+      GB2312_DI,
+      ` ${i + 1} `,
+      GB2312_ZHANG,
+      '</a></li>',
+    ]).flat();
+    const page = bytesOf(
+      '<html><head><meta http-equiv="Content-Type" content="text/html; charset=gb2312" /><title>',
+      GB2312_HOLMES,
+      '</title></head><body><ul>',
+      ...listing,
+      '</ul></body></html>',
+    );
+    const tauriFetch = vi.fn(
+      async () => new Response(page, { status: 200, headers: { 'content-type': 'text/html' } }),
+    );
+    vi.doMock('@tauri-apps/plugin-http', () => ({ fetch: tauriFetch }));
+    try {
+      const parsed = await fetchNovelToc('https://www.trxs.cc/tongren/11542.html');
+      expect(parsed.title).toBe('福尔摩斯');
+      expect(parsed.chapters[0]!.title).toBe('第 1 章');
+    } finally {
+      vi.doUnmock('@tauri-apps/plugin-http');
     }
   });
 });

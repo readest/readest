@@ -330,7 +330,14 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   const showLoupe = appService?.isMobile && !viewSettings?.isEink && !viewSettings?.vertical;
 
   return (
-    <div className='pointer-events-none fixed inset-0 z-50'>
+    // The handle layer sits BELOW the popup/sheet layer. Both used to be z-50
+    // in the same stacking context, so the tie broke on DOM order — and the
+    // range editors are rendered after the popups, which put their handles on
+    // top of the dictionary, the translator and the note editor sheet. z-[44]
+    // keeps them over the book and the paragraph/TTS chrome (z-40) while
+    // leaving the popups (z-50), dialogs (z-50) and the side panels' overlay
+    // (z-[45]) above them.
+    <div className='pointer-events-none fixed inset-0 z-[44]'>
       <Handle
         hidden={activeHandle === 'end' || loupeDragPoint !== null}
         position={currentStart}

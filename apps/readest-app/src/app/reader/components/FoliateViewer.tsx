@@ -33,6 +33,7 @@ import {
   applyEinkModeAttribute,
   applyFixedlayoutStyles,
   applyImageStyle,
+  applyNamespacedAttributes,
   applyScrollbarStyle,
   applyScrollModeClass,
   applyThemeModeClass,
@@ -416,6 +417,9 @@ const FoliateViewer: React.FC<{
     const detail = (event as CustomEvent).detail;
     console.log('doc index loaded:', detail.index);
     if (detail.doc) {
+      // Repair the parsed DOM before anything reads it: the renderer and the
+      // fix-ups below both resolve styles off this document.
+      applyNamespacedAttributes(detail.doc);
       const renderer = viewRef.current?.renderer;
       const writingDir = renderer?.setStyles && getDirection(detail.doc);
       const viewSettings = getViewSettings(bookKey)!;
@@ -880,6 +884,7 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('spread', viewSettings.spreadMode);
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
         view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
+        view.renderer.toggleAttribute('lock-pan-x', !!viewSettings.lockHorizontalPan);
       } else {
         view.renderer.setAttribute('max-column-count', maxColumnCount);
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);

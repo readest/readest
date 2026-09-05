@@ -288,14 +288,6 @@ export const useProgressSync = (bookKey: string) => {
         const configCFI = config?.location;
         let remoteCFILocation = exactConfig.location;
         const xpointer = exactConfig.xpointer;
-        // The Readest KOReader plugin pushes `progress` + `xpointer` and never a
-        // `location`, so its [page, total] is CREngine's own pagination. That
-        // doubles as the anchor that corrects CREngine<->foliate DocFragment
-        // drift and as the last-resort target when the XPointer won't convert.
-        // A config that carries a CFI came from Readest, whose [page, total] is
-        // foliate's pagination and whose xpointer was derived from that same
-        // CFI — re-anchoring on it would only move the target off (#5109).
-        const remoteFraction = exactConfig.location ? undefined : getConfigFraction(exactConfig);
         let xpointerUnresolved = false;
         if (xpointer && view && bookData && bookData.bookDoc) {
           const pContents = view.renderer.getContents();
@@ -307,7 +299,6 @@ export const useProgressSync = (bookKey: string) => {
               content?.doc,
               content?.index,
               bookData.bookDoc,
-              remoteFraction,
             );
             if (!remoteCFILocation || CFI.compare(remoteCFILocation, candidateCFI) < 0) {
               remoteCFILocation = candidateCFI;
@@ -333,15 +324,16 @@ export const useProgressSync = (bookKey: string) => {
             view.goTo(remoteCFILocation);
             announceSynced();
           }
-        } else if (xpointerUnresolved && remoteFraction !== undefined) {
-          // No CFI anywhere and the XPointer didn't resolve: the reported
-          // fraction is all that's left. CREngine and foliate paginate
-          // differently, so it's approximate — only ever move FORWARD with it,
-          // matching the CFI branch, so an imprecise jump can't lose the
-          // reader's place.
-          if (view && !isPreviewing() && localFraction < remoteFraction) {
-            view.goToFraction(remoteFraction);
-            announceSynced();
+        } else if (xpointerUnresolved) {
+          // No CFI anywhere and the XPointer didn't resolve. The koplugin's
+          // [page, total] is CREngine's own pagination, so jumping by it is a
+          // guess that routinely lands in the wrong chapter — worse than not
+          // syncing (#5980). Stay put and say so. #5625's real damage was the
+          // debounced auto-push overwriting the newer remote position with the
+          // local one; that is prevented by the pull continuing below (the
+          // config still merges), not by moving the reader.
+          if (view && !isPreviewing()) {
+            eventDispatcher.dispatch('hint', { bookKey, message: _('Sync failed') });
           }
         }
       }

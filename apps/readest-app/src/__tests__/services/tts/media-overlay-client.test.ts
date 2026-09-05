@@ -524,14 +524,71 @@ describe('MediaOverlayClient playback', () => {
       await pending;
     }
     const el = audio();
-    // The reader scrubs somewhere unrelated before the next block plays.
-    el.advanceTo(120);
+    // The reader scrubs back before the start of the block about to play.
+    el.advanceTo(0.2);
 
     const second = client.speak(section.ssmlForBlock(1)!, signal);
     await second.next();
 
     expect(el.seeks.at(-1)).toBe(3);
     expect(el.currentTime).toBe(3);
+  });
+
+  // A backward navigation (scrub back, previous-paragraph) targets a clip the
+  // recording has already passed, and there the seek IS the point: without it
+  // the button does nothing audible.
+  test('seeks back when the block itself is behind the playhead', async () => {
+    await setup();
+    const signal = new AbortController().signal;
+
+    const first = client.speak(section.ssmlForBlock(0)!, signal);
+    await first.next();
+    for (const t of [1, 2, 3.04]) {
+      const pending = first.next();
+      audio().advanceTo(t);
+      await pending;
+    }
+    const el = audio();
+    el.advanceTo(4.5);
+
+    // Back to block 0, whose clips (0s-3s) are all behind the playhead.
+    const again = client.speak(section.ssmlForBlock(0)!, signal);
+    await again.next();
+
+    expect(el.seeks.at(-1)).toBe(0);
+    expect(el.currentTime).toBe(0);
+  });
+
+  // The native mobile player runs in-process, not in the WebView, so it keeps
+  // playing while the WebView's main thread is stalled or its timers throttled
+  // (a page-turn relayout, a section preload, the screen off). The block cursor
+  // — advanced by a JS poll of the clock — then falls behind the recording, and
+  // the next block's clip is already in the past. Seeking back to its clipBegin
+  // replays paragraphs the listener has already heard, which is what a reader
+  // hears as the narration jumping back every few paragraphs. The recording is
+  // the master clock: let the marks catch up to it instead.
+  test('does not rewind when the recording ran past the block during a stall', async () => {
+    await setup();
+    const signal = new AbortController().signal;
+
+    const first = client.speak(section.ssmlForBlock(0)!, signal);
+    await first.next();
+    for (const t of [1, 2, 3.04]) {
+      const pending = first.next();
+      audio().advanceTo(t);
+      await pending;
+    }
+    const el = audio();
+    const seeksAfterBlock0 = [...el.seeks];
+    // The stall: the recording rolled through block 1 (3s-6s) and beyond before
+    // the client was asked to speak it.
+    el.advanceTo(7.5);
+
+    const second = client.speak(section.ssmlForBlock(1)!, signal);
+    await second.next();
+
+    expect(el.seeks).toEqual(seeksAfterBlock0);
+    expect(el.currentTime).toBeCloseTo(7.5, 5);
   });
 
   test('preloading warms the audio file without starting playback', async () => {

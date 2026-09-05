@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-localsend-is-alive"
+description = "Enables the localsend_is_alive command without any pre-configured scope."
+commands.allow = ["localsend_is_alive"]
+
+[[permission]]
+identifier = "deny-localsend-is-alive"
+description = "Denies the localsend_is_alive command without any pre-configured scope."
+commands.deny = ["localsend_is_alive"]

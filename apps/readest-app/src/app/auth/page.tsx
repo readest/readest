@@ -11,6 +11,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { getBaseUrl, isTauriAppPlatform } from '@/services/environment';
@@ -51,6 +52,9 @@ export default function AuthPage() {
   const headerRef = useRef<HTMLDivElement>(null);
 
   useTheme({ systemUIVisible: false });
+  // The OAuth return and any deep link land here cold; hydrate before the
+  // Readest Cloud opt-in or handleGoBack's keepLogin write reads the store.
+  const settingsLoaded = useEnsureSettingsLoaded();
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
     // For custom OAuth mode, use a local server to handle the OAuth callback
@@ -228,10 +232,22 @@ export default function AuthPage() {
   };
 
   const handleGoBack = () => {
-    // Keep login false to avoid infinite loop to redirect to the login page
-    settings.keepLogin = false;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    // Keep login false to avoid infinite loop to redirect to the login page.
+    // On a cold load the store is still an empty object, so read through to
+    // disk first: persisting that would overwrite the real settings file with
+    // a lone `keepLogin`. Building a new object rather than mutating in place
+    // also keeps the settingsStore subscriber's identity check meaningful.
+    void (async () => {
+      try {
+        const appService = await envConfig.getAppService();
+        const current = settingsLoaded ? settings : await appService.loadSettings();
+        const next = { ...current, keepLogin: false };
+        setSettings(next);
+        await saveSettings(envConfig, next);
+      } catch (error) {
+        console.error('Failed to clear keepLogin:', error);
+      }
+    })();
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
     if (redirectTo) {
       router.push(redirectTo);

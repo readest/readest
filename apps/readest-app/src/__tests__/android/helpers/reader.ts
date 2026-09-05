@@ -428,10 +428,16 @@ export const getSelectionState = (page: CdpPage) =>
     return { exists: false, collapsed: true, text: '', startOffset: -1, startText: '' };
   `);
 
-/** The app's own selection drag handles (SelectionRangeEditor) in the top document. */
+/**
+ * The app's own selection drag handles (SelectionRangeEditor) in the top
+ * document. Keyed on the handle's test id, not on its `cursor-grab` class:
+ * the highlight style/color strip in the annotation popup carries the same
+ * class, so a class-based query counts it as a third handle whenever the
+ * highlight tool is on the toolbar (#6031).
+ */
 export const getCustomHandles = (page: CdpPage) =>
   page.evaluate<{ x: number; y: number }[]>(`
-    return [...document.querySelectorAll('div.cursor-grab')].map((el) => {
+    return [...document.querySelectorAll('[data-testid="selection-handle"]')].map((el) => {
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y, w: r.width, h: r.height };
     });

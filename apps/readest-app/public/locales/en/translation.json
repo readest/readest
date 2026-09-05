@@ -111,5 +111,9 @@
   "{{count}} server_one": "{{count}} server",
   "{{count}} server_other": "{{count}} servers",
   "Includes {{count}} orphaned book file(s) not in your library_one": "Includes {{count}} orphaned book file not in your library",
-  "Includes {{count}} orphaned book file(s) not in your library_other": "Includes {{count}} orphaned book files not in your library"
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Includes {{count}} orphaned book files not in your library",
+  "{{alias}} wants to send you {{count}} book(s)_one": "{{alias}} wants to send you {{count}} book",
+  "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} wants to send you {{count}} books",
+  "{{count}} unsupported file(s) will be skipped_one": "{{count}} unsupported file will be skipped",
+  "{{count}} unsupported file(s) will be skipped_other": "{{count}} unsupported files will be skipped"
 }

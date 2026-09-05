@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { MdCloudSync } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
-import type { EnvConfigType } from '@/services/environment';
+import { isWebAppPlatform, type EnvConfigType } from '@/services/environment';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useABSServerStore } from '@/store/absServerStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -15,7 +15,7 @@ import type { AppService } from '@/types/system';
 import { parseAbsFilePath } from '@/utils/audiobook';
 import { eventDispatcher } from '@/utils/event';
 import SubPageHeader from '../SubPageHeader';
-import { BoxedList, NavigationRow, SectionTitle, SettingsSwitchRow } from '../primitives';
+import { BoxedList, NavigationRow, SectionTitle, SettingsSwitchRow, Tips } from '../primitives';
 
 interface ABSFormProps {
   onBack: () => void;
@@ -34,8 +34,10 @@ const isValidAbsUrl = (url: string): boolean => /^https?:\/\//i.test(url);
 const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const isWeb = isWebAppPlatform();
   const servers = useABSServerStore((state) => state.servers).filter((server) => !server.deletedAt);
   const [activeServerId, setActiveServerId] = useState<string | null>(null);
+  const [webOrigin, setWebOrigin] = useState('');
 
   const [url, setUrl] = useState('');
   const [username, setUsername] = useState('');
@@ -44,6 +46,10 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
   const [connectError, setConnectError] = useState('');
 
   const activeServer = servers.find((server) => server.id === activeServerId);
+
+  useEffect(() => {
+    if (isWeb) setWebOrigin(window.location.origin);
+  }, [isWeb]);
 
   const handleConnect = async () => {
     const trimmedUrl = normalizeAbsUrl(url);
@@ -218,6 +224,25 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                 </button>
               </div>
             </form>
+            {isWeb && webOrigin && (
+              <Tips>
+                <li>
+                  {_(
+                    'Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.',
+                    { origin: webOrigin },
+                  )}{' '}
+                  <a
+                    href='https://audiobookshelf.org/docs/documentation/server-management/cors/'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='link link-primary'
+                  >
+                    {_('View the Audiobookshelf CORS setup guide')}
+                  </a>
+                  .
+                </li>
+              </Tips>
+            )}
           </div>
         </div>
       )}

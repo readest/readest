@@ -8,6 +8,9 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { convertBlobUrlToDataUrl } from '@/libs/document';
+import ModalPortal from '@/components/ModalPortal';
+import ImageViewer from '@/app/reader/components/ImageViewer';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
@@ -22,8 +25,24 @@ import type {
   DictionaryProvider,
   WebSearchEntry,
 } from '@/services/dictionaries/types';
+import type { Insets } from '@/types/misc';
 
 const isTauri = isTauriAppPlatform();
+const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+/**
+ * The `src` worth blowing up for a tapped entry image. MDX bodies ship an
+ * illustration twice — a hidden full-resolution copy beside the `thumb` that is
+ * actually laid out (OALD9's `<div class="ox-enlarge">`) — and zooming the
+ * 100px thumb is no enlargement at all. Take the largest decoded twin.
+ */
+const fullResolutionSrc = (image: HTMLImageElement | null) => {
+  if (!image) return null;
+  const wrapper = image.closest('a') ?? image.parentElement;
+  const twins = wrapper ? [...wrapper.querySelectorAll('img')] : [];
+  const largest = twins.reduce((a, b) => (b.naturalWidth > a.naturalWidth ? b : a), image);
+  return largest.getAttribute('src');
+};
 
 interface CardState {
   state: 'loading' | 'loaded' | 'empty' | 'unsupported' | 'error';
@@ -54,6 +73,9 @@ export interface DictionaryResultsState {
   noProvidersAtAll: boolean;
   /** Dictionary popup font-size multiplier (#4443); `1` = default sizes. */
   fontScale: number;
+  /** Data URL of the entry image being shown full screen, or `null` (#6018). */
+  zoomedImageSrc: string | null;
+  closeZoomedImage: () => void;
   /** Whether the current word is being fetched/spoken by the TTS engine (#4876). */
   isSpeaking: boolean;
   /** Pronounce the current word via Edge TTS (falling back to platform speech). */
@@ -201,14 +223,53 @@ export function useDictionaryResults({
     });
   }, [cards, manuallyToggled]);
 
-  // External-link delegation inside provider-rendered DOM: on Tauri we
-  // route http(s) anchors through `openUrl` because target="_blank" doesn't
-  // work; on web we let the anchor handle it natively.
+  const [zoomedImageSrc, setZoomedImageSrc] = useState<string | null>(null);
+  // Reading the image out of the entry is async, so a second tap (or a close)
+  // while the first is still decoding must win. Only the newest request paints.
+  const zoomRequestRef = useRef(0);
+  const closeZoomedImage = useCallback(() => {
+    zoomRequestRef.current += 1;
+    setZoomedImageSrc(null);
+  }, []);
+
+  // Click delegation inside provider-rendered DOM. MDict entries render in a
+  // shadow root, where `e.target` is retargeted to the host — only the composed
+  // path names the element that was actually clicked.
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
-    if (!isTauri) return;
     if (e.defaultPrevented) return;
-    const anchor = (e.target as Element | null)?.closest?.('a');
-    if (!anchor) return;
+    let image: HTMLImageElement | null = null;
+    let anchor: HTMLAnchorElement | null = null;
+    for (const node of e.nativeEvent.composedPath()) {
+      if (node === e.currentTarget) break;
+      if (!(node instanceof Element)) continue;
+      if (!image && node.tagName === 'IMG') image = node as HTMLImageElement;
+      // Only a real link claims the tap: MDX bodies wrap illustrations in
+      // hrefless anchors (OALD9 uses `<a class="topic no-href">`), which are
+      // markup, not navigation.
+      if (!anchor && node.tagName === 'A' && node.hasAttribute('href')) {
+        anchor = node as HTMLAnchorElement;
+      }
+    }
+
+    // Tap an illustration to blow it up, as in the book itself (#6018). An
+    // image wrapped in a link belongs to the link.
+    const imageSrc = anchor ? null : fullResolutionSrc(image);
+    if (imageSrc) {
+      e.preventDefault();
+      const request = ++zoomRequestRef.current;
+      void convertBlobUrlToDataUrl(imageSrc)
+        .then((src) => {
+          if (zoomRequestRef.current === request) setZoomedImageSrc(src);
+        })
+        .catch((err) => {
+          console.warn('Failed to load dictionary image', imageSrc, err);
+        });
+      return;
+    }
+
+    // External links: on Tauri we route http(s) anchors through `openUrl`
+    // because target="_blank" doesn't work; on web the anchor handles it.
+    if (!isTauri || !anchor) return;
     const rawHref = anchor.getAttribute('href');
     if (!rawHref || !/^https?:\/\//i.test(rawHref)) return;
     e.preventDefault();
@@ -361,6 +422,8 @@ export function useDictionaryResults({
     onWebSearchClickTauri,
     noProvidersAtAll,
     fontScale: settings.fontScale ?? 1,
+    zoomedImageSrc,
+    closeZoomedImage,
     isSpeaking,
     speakWord,
   };
@@ -455,8 +518,11 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   onWebSearchClickTauri,
   noProvidersAtAll,
   fontScale,
+  zoomedImageSrc,
+  closeZoomedImage,
 }) => {
   const _ = useTranslation();
+  const safeAreaInsets = useThemeStore((s) => s.safeAreaInsets);
 
   // `first:pt-2` keeps the leading section's tighter top padding whichever of
   // the two comes first.
@@ -585,6 +651,15 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
           </>
         )}
       </div>
+      {zoomedImageSrc && (
+        <ModalPortal showOverlay={false}>
+          <ImageViewer
+            gridInsets={safeAreaInsets ?? ZERO_INSETS}
+            src={zoomedImageSrc}
+            onClose={closeZoomedImage}
+          />
+        </ModalPortal>
+      )}
     </div>
   );
 };

@@ -49,18 +49,11 @@ const BooknoteView: React.FC<{
   const _ = useTranslation();
   const { getConfig } = useBookDataStore();
   const { getProgress } = useReaderStore();
-  const {
-    setActiveBooknoteType,
-    setBooknoteResults,
-    isSearchBarVisible,
-    setSearchBarVisible,
-    annotationEditTargets,
-    setAnnotationEditTarget,
-  } = useSidebarStore();
+  const { setActiveBooknoteType, setBooknoteResults, isSearchBarVisible, setSearchBarVisible } =
+    useSidebarStore();
   const config = getConfig(bookKey)!;
   const progress = getProgress(bookKey);
   const allNotes = config.booknotes ?? [];
-  const editTarget = annotationEditTargets[bookKey];
 
   const [filterKind, setFilterKind] = useState<AnnotationFilterKind>('all');
   const [searchInput, setSearchInput] = useState('');
@@ -361,22 +354,11 @@ const BooknoteView: React.FC<{
             isNearest={row.item.cfi === nearestCfi}
             onClick={handleBrowseBookNotes}
             inlineNoteEditing={type === 'annotation'}
-            startEditing={type === 'annotation' && editTarget?.annotationId === row.item.id}
-            placeholderIds={editTarget?.placeholderIds}
-            onFinishEditing={() => setAnnotationEditTarget(bookKey, null)}
           />
         </ul>
       );
     },
-    [
-      flatItems,
-      bookKey,
-      nearestCfi,
-      handleBrowseBookNotes,
-      type,
-      editTarget,
-      setAnnotationEditTarget,
-    ],
+    [flatItems, bookKey, nearestCfi, handleBrowseBookNotes, type],
   );
 
   // Always mount the listHostRef host so the height-measurement effect (and

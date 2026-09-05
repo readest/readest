@@ -338,7 +338,9 @@ describe('mdictProvider', () => {
 
       expect(locateMock).toHaveBeenCalledWith('test01.mp3');
       expect(playSpy).toHaveBeenCalled();
-      expect(anchor!.getAttribute('data-mdd-resolved')).toMatch(/^blob:/);
+      // The resolved URL is cached off the DOM, so assert on what played.
+      const played = playSpy.mock.instances.at(-1) as HTMLMediaElement;
+      expect(played.src).toMatch(/^blob:/);
 
       // Second click reuses the cached blob URL — no extra MDD read.
       locateMock.mockClear();
@@ -451,6 +453,196 @@ describe('mdictProvider', () => {
       expect(onNavigate).toHaveBeenLastCalledWith('hello world');
     } finally {
       jsmdict.MDX.create = origMDXCreate;
+    }
+  });
+
+  it('jumps within the entry for entry://#anchor instead of looking it up as a headword', async () => {
+    const jsmdict = await import('js-mdict');
+    const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+    type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+    jsmdict.MDX.create = async () =>
+      ({
+        meta: { encrypt: 0 },
+        header: {},
+        lookup: async (word: string) => ({
+          keyText: word,
+          definition:
+            `<a href="entry://#pos-noun">noun</a>` +
+            `<a href="entry://#pos-verb">verb</a>` +
+            `<div id="pos-noun">noun senses</div>` +
+            `<a name="pos-verb"></a><div>verb senses</div>`,
+        }),
+      }) as unknown as FakeMDX;
+    const scrollSpy = vi.fn();
+    (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = scrollSpy;
+
+    try {
+      const provider = createMdictProvider({ dict: buildDict(false), fs: makeFs() });
+      const container = document.createElement('div');
+      const onNavigate = vi.fn();
+      await provider.lookup('bank', {
+        signal: new AbortController().signal,
+        container,
+        onNavigate,
+      });
+
+      const shadow = getMdictShadow(container);
+      const nounLink = shadow.querySelector('a[href="entry://#pos-noun"]') as HTMLAnchorElement;
+      const verbLink = shadow.querySelector('a[href="entry://#pos-verb"]') as HTMLAnchorElement;
+      expect(nounLink).not.toBeNull();
+
+      // `#anchor` is a section of the entry that is already rendered, not a
+      // headword — forwarding it to onNavigate looks up the literal string and
+      // leaves an empty card titled `#pos-noun` (#6018).
+      nounLink.click();
+      expect(onNavigate).not.toHaveBeenCalled();
+      expect(scrollSpy.mock.instances[0]).toBe(shadow.querySelector('#pos-noun'));
+
+      // Legacy `<a name="...">` targets resolve too — MDX bodies predate `id`.
+      verbLink.click();
+      expect(onNavigate).not.toHaveBeenCalled();
+      expect(scrollSpy.mock.instances[1]).toBe(shadow.querySelector('a[name="pos-verb"]'));
+    } finally {
+      jsmdict.MDX.create = origMDXCreate;
+      delete (Element.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it('jumps within the entry for a bare #anchor href', async () => {
+    const jsmdict = await import('js-mdict');
+    const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+    type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+    jsmdict.MDX.create = async () =>
+      ({
+        meta: { encrypt: 0 },
+        header: {},
+        lookup: async (word: string) => ({
+          keyText: word,
+          definition: `<a href="#idm140">adjective</a><div id="idm140">adjective senses</div>`,
+        }),
+      }) as unknown as FakeMDX;
+    const scrollSpy = vi.fn();
+    (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = scrollSpy;
+
+    try {
+      const provider = createMdictProvider({ dict: buildDict(false), fs: makeFs() });
+      const container = document.createElement('div');
+      const onNavigate = vi.fn();
+      await provider.lookup('fine', {
+        signal: new AbortController().signal,
+        container,
+        onNavigate,
+      });
+
+      const shadow = getMdictShadow(container);
+      const link = shadow.querySelector('a[href="#idm140"]') as HTMLAnchorElement;
+      expect(link).not.toBeNull();
+
+      // Default fragment navigation can't reach a target inside the card's
+      // shadow root, so the jump has to be performed explicitly.
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      link.dispatchEvent(clickEvent);
+      expect(clickEvent.defaultPrevented).toBe(true);
+      expect(onNavigate).not.toHaveBeenCalled();
+      expect(scrollSpy.mock.instances[0]).toBe(shadow.querySelector('#idm140'));
+    } finally {
+      jsmdict.MDX.create = origMDXCreate;
+      delete (Element.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it('still navigates for entry://word#anchor, which names another headword', async () => {
+    const jsmdict = await import('js-mdict');
+    const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+    type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+    jsmdict.MDX.create = async () =>
+      ({
+        meta: { encrypt: 0 },
+        header: {},
+        lookup: async (word: string) => ({
+          keyText: word,
+          definition: `<a href="entry://timid#pos-adj">timid</a>`,
+        }),
+      }) as unknown as FakeMDX;
+
+    try {
+      const provider = createMdictProvider({ dict: buildDict(false), fs: makeFs() });
+      const container = document.createElement('div');
+      const onNavigate = vi.fn();
+      await provider.lookup('shy', {
+        signal: new AbortController().signal,
+        container,
+        onNavigate,
+      });
+
+      const link = getMdictShadow(container).querySelector(
+        'a[href^="entry://timid"]',
+      ) as HTMLAnchorElement;
+      link.click();
+      expect(onNavigate).toHaveBeenCalledWith('timid');
+    } finally {
+      jsmdict.MDX.create = origMDXCreate;
+    }
+  });
+
+  it('types sound:// audio blobs and starts the element inside the click gesture', async () => {
+    const jsmdict = await import('js-mdict');
+    const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+    const origMDDCreate = jsmdict.MDD.create.bind(jsmdict.MDD);
+    const locateMock = vi.fn(async (key: string) => ({
+      keyText: key,
+      data: new Uint8Array([0xff, 0xfb, 0x90, 0x00]),
+    }));
+    const playSpy = vi
+      .spyOn(window.HTMLMediaElement.prototype, 'play')
+      .mockResolvedValue(undefined);
+    const blobs: Blob[] = [];
+    const outerCreateObjectURL = globalThis.URL.createObjectURL;
+    globalThis.URL.createObjectURL = (blob: Blob) => {
+      blobs.push(blob);
+      return outerCreateObjectURL(blob);
+    };
+    type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+    type FakeMDD = ReturnType<typeof origMDDCreate> extends Promise<infer T> ? T : never;
+    jsmdict.MDX.create = async () =>
+      ({
+        meta: { encrypt: 0 },
+        header: {},
+        lookup: async (word: string) => ({
+          keyText: word,
+          definition: `<a href="sound://us/hello.wav">play</a>`,
+        }),
+      }) as unknown as FakeMDX;
+    jsmdict.MDD.create = async () => ({ locateBytes: locateMock }) as unknown as FakeMDD;
+
+    try {
+      const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+      const container = document.createElement('div');
+      await provider.lookup('hello', {
+        signal: new AbortController().signal,
+        container,
+      });
+
+      const anchor = getMdictShadow(container).querySelector(
+        'a[href^="sound://"]',
+      ) as HTMLAnchorElement;
+      anchor.click();
+      // WebKit only lets a media element start from inside the user gesture,
+      // and the MDD read below is async — so playback must be started (on a
+      // reused element) synchronously, before the first await (#6018).
+      expect(playSpy).toHaveBeenCalled();
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // A media element refuses to decode a typeless blob URL on WebKit, so
+      // the MIME type has to come from the resource path.
+      const audioBlob = blobs.find((b) => b.type.startsWith('audio/'));
+      expect(audioBlob?.type).toBe('audio/wav');
+    } finally {
+      globalThis.URL.createObjectURL = outerCreateObjectURL;
+      jsmdict.MDX.create = origMDXCreate;
+      jsmdict.MDD.create = origMDDCreate;
+      playSpy.mockRestore();
     }
   });
 

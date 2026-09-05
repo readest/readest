@@ -113,6 +113,15 @@ export interface BookOrbitSettings {
   syncStats: boolean;
   syncBookStates: boolean;
   customHeaders?: Record<string, string>;
+  /**
+   * Manual-sync opt-out (#6029). BookOrbit records a reading log entry per
+   * push, so a few hours of reading buries the real sessions under
+   * debounce-sized updates. With this off nothing is pushed until the user
+   * asks; pulls stay automatic (they add nothing server-side and are what
+   * keeps a second device in step). Default ON — settings written before this
+   * option existed keep the automatic pushes they already had.
+   */
+  autoSync?: boolean;
 }
 
 export interface ReadwiseSettings {
@@ -431,6 +440,13 @@ export interface SystemSettings {
   autoScreenBrightness: boolean;
   swipeBrightnessGesture: boolean;
   hardwarePageTurner: HardwarePageTurnerSettings;
+  /**
+   * Replay a connected controller's buttons and sticks as key events in the
+   * reader. Off is a real need on handhelds whose own remapper (Steam Input on
+   * the Steam Deck) already binds those buttons to keys, so every press would
+   * otherwise land twice (issue #5979).
+   */
+  gamepadEnabled: boolean;
   alwaysShowStatusBar: boolean;
   openLastBooks: boolean;
   lastOpenBooks: string[];

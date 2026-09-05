@@ -59,6 +59,7 @@ const mockViewSettings = {
   ttsSentenceGap: 0.15,
   ttsParagraphGap: 0.3,
   ttsHighlightOptions: { style: 'highlight', color: '#ffff00' },
+  ttsSkipInlineAnnotations: false,
   isEink: false,
   ttsMediaMetadata: 'sentence',
   translationEnabled: false,
@@ -155,6 +156,7 @@ vi.mock('@/services/tts', () => ({
       initViewTTS: vi.fn().mockResolvedValue(undefined),
       updateHighlightOptions: vi.fn(),
       setHighlightGranularity: vi.fn(),
+      setSkipInlineAnnotations: vi.fn(),
       setLang: vi.fn(),
       setRate: vi.fn(),
       setSentenceGap: vi.fn(),
@@ -395,6 +397,13 @@ describe('useTTSControl concurrent tts-speak events', () => {
 
       // The assertion that matters: exactly one controller was constructed.
       expect(ttsControllerInstances.length).toBe(1);
+      expect(
+        (
+          ttsControllerInstances[0] as {
+            setSkipInlineAnnotations: ReturnType<typeof vi.fn>;
+          }
+        ).setSkipInlineAnnotations,
+      ).toHaveBeenCalledWith(false);
 
       // Release any pending init() promises so the dispatch chain can unwind
       // cleanly (otherwise the act() would never settle).
@@ -1115,6 +1124,7 @@ describe('useTTSControl background session lifecycle', () => {
       getSpokenSentence: vi.fn().mockReturnValue(null),
       updateHighlightOptions: vi.fn(),
       setHighlightGranularity: vi.fn(),
+      setSkipInlineAnnotations: vi.fn(),
       getVoiceId: vi.fn().mockReturnValue(''),
       setTargetLang: vi.fn(),
       setLang: vi.fn(),
@@ -1150,6 +1160,7 @@ describe('useTTSControl background session lifecycle', () => {
       mockView,
       expect.objectContaining({ bookKey: 'book-1' }),
     );
+    expect(liveController.setSkipInlineAnnotations).toHaveBeenCalledWith(false);
   });
 });
 

@@ -171,6 +171,10 @@ export class MediaOverlayClient implements TTSClient {
   #objectUrl: string | null = null;
   #audioLoad: { href: string; promise: Promise<NarrationClock> } | null = null;
   #currentPar: NarrationPar | null = null;
+  // Last par the recording actually rode, kept across the handover that ends
+  // every block (unlike #currentPar) so speak() can tell a stalled cursor
+  // catching up from a navigation backwards. Cleared with the clock itself.
+  #playedPar: NarrationPar | null = null;
   #nextChunkPosition: number | null = null;
   #handoverTimer: ReturnType<typeof setTimeout> | null = null;
   #rate = 1;
@@ -325,6 +329,7 @@ export class MediaOverlayClient implements TTSClient {
     this.#audio = null;
     this.#audioHref = null;
     this.#objectUrl = null;
+    this.#playedPar = null;
     if (this.#native && this.#player) {
       void this.#player.release();
     }
@@ -340,6 +345,7 @@ export class MediaOverlayClient implements TTSClient {
     // recording plays on under the engine that took over.
     this.#audio?.pause();
     this.#currentPar = null;
+    this.#playedPar = null;
     this.#audioLoad = null;
     this.#audio = null;
     this.#audioHref = null;
@@ -451,10 +457,24 @@ export class MediaOverlayClient implements TTSClient {
         runIndex === 0 && requestedStart !== null
           ? first.clipBegin + Math.min(Math.max(requestedStart, 0), first.clipEnd - first.clipBegin)
           : null;
+      const playhead = audio.currentTime;
       const alreadyRolling =
-        audio.currentTime >= first.clipBegin - CLIP_CONTINUITY_TOLERANCE_SEC &&
-        audio.currentTime < first.clipEnd;
-      if (requestedPosition !== null || !alreadyRolling) {
+        playhead >= first.clipBegin - CLIP_CONTINUITY_TOLERANCE_SEC && playhead < first.clipEnd;
+      // ...and the recording can be further along still. The native mobile
+      // player runs in-process rather than in the WebView, so it keeps playing
+      // while the WebView's main thread is stalled or its timers throttled (a
+      // page-turn relayout, a section preload, the screen off) and the block
+      // cursor — advanced by a JS poll of this clock — falls a paragraph or
+      // more behind. Seeking back to clipBegin then replays audio the listener
+      // has already heard. The recording is the master clock: leave it rolling
+      // and let the marks catch up as the clip loop walks the passed pars.
+      // Only clips strictly after the last one played count, so a deliberate
+      // backward navigation — and a replay of the par just heard — still seeks.
+      const ranPastWhileStalled =
+        playhead >= first.clipEnd &&
+        this.#playedPar?.audioHref === first.audioHref &&
+        first.clipBegin > this.#playedPar.clipBegin;
+      if (requestedPosition !== null || !(alreadyRolling || ranPastWhileStalled)) {
         await seekClock(audio, requestedPosition ?? first.clipBegin);
       }
       try {
@@ -472,6 +492,7 @@ export class MediaOverlayClient implements TTSClient {
           return;
         }
         this.#currentPar = par;
+        this.#playedPar = par;
         this.controller?.dispatchSpeakMark({
           offset: 0,
           name: par.markName,

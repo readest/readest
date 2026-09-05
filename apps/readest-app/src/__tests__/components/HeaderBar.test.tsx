@@ -141,6 +141,17 @@ describe('HeaderBar font button', () => {
   });
 });
 
+describe('HeaderBar mobile toolbar stability', () => {
+  it('reserves room for the bookmark and translation touch halos inside the scroller', () => {
+    setViewport(392, 872);
+    const { container } = renderHeader();
+    const scroller = container.querySelector('.header-tools-start > .no-scrollbar');
+
+    expect(scroller).not.toBeNull();
+    expect(scroller!.classList.contains('px-1.5')).toBe(true);
+  });
+});
+
 describe('HeaderBar book metadata data attributes (#5776)', () => {
   // The desktop header only prints the title; series readers want "Book 2"
   // next to it. Exposed on .header-title as inert data attributes so Custom

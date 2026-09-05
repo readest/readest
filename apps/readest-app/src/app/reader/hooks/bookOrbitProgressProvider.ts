@@ -28,6 +28,9 @@ export const bookOrbitProgressProvider: KosyncProgressProvider = {
       deviceName: bookorbit.deviceName,
       checksumMethod: 'binary',
       strategy: bookorbit.strategy,
+      // Settings saved before Auto Sync existed carry no flag; those users
+      // keep the automatic pushes they already had.
+      autoSync: bookorbit.autoSync ?? true,
     };
   },
 };

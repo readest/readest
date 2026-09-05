@@ -152,7 +152,7 @@ vi.mock('@/utils/event', () => ({
   },
 }));
 
-import { useKOSync } from '@/app/reader/hooks/useKOSync';
+import { useKOSync, type KosyncProgressProvider } from '@/app/reader/hooks/useKOSync';
 
 const flushMicrotasks = async () => {
   for (let i = 0; i < 30; i++) await Promise.resolve();
@@ -240,6 +240,48 @@ describe('useKOSync — no clobbering when the pull is unresolved (#5065)', () =
     // The reader must stay in a conflict state — never silently PUT its stale
     // local position over the remote one.
     expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  // #5980 review: the 'silent' strategy takes a different branch from 'prompt'
+  // and never built a conflict, so `applyRemoteProgress` failing used to fall
+  // straight through to setSyncState('synced'). That releases the debounced
+  // auto-push, which then PUTs the stale local position over the newer remote
+  // XPointer -- the exact #5065 damage, on the path #5065's test didn't cover.
+  test('does NOT auto-push (PUT) when a silent pull cannot resolve the XPointer', async () => {
+    h.settings.kosync.strategy = 'silent';
+    h.cfiResolves = false;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    // The reader must not have moved, and a later page turn must not push.
+    expect(h.goTo).not.toHaveBeenCalled();
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/4!/4/2/8)',
+    };
+    rerender();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('still auto-pushes after a silent pull that DID apply', async () => {
+    // Positive control for the branch above: a resolvable XPointer applies,
+    // reaches 'synced', and auto-push keeps working.
+    h.settings.kosync.strategy = 'silent';
+    h.cfiResolves = true;
+    const { rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/650!/4/2/6)');
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/4!/4/2/8)',
+    };
+    rerender();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+
+    expect(h.updateProgressMock).toHaveBeenCalled();
   });
 
   test('still auto-pushes for a genuine non-conflict (resolved position matches)', async () => {
@@ -342,5 +384,126 @@ describe('useKOSync — no phantom re-prompt after resolving (#5527)', () => {
     });
 
     expect(result.current.syncState).toBe('conflict');
+  });
+});
+
+describe('useKOSync — manual sync mode (#6029)', () => {
+  // Turning BookOrbit's Auto Sync off must stop every push Readest makes on
+  // its own, so the server stops accumulating a progress log entry every few
+  // minutes. Pulls stay automatic — they add no server-side clutter and are
+  // what keeps a second device in step. BookOrbit reaches this hook as a
+  // provider whose config carries the flag; KOReader Sync never sets it.
+  const manualBookOrbit: KosyncProgressProvider = {
+    name: 'bookorbit',
+    selectConfig: (settings) => ({ ...settings.kosync, autoSync: false }),
+  };
+  const turnPage = async (rerender: () => void) => {
+    h.localProgress = {
+      ...(h.localProgress as Record<string, unknown>),
+      location: 'epubcfi(/6/4!/4/2/8)',
+    };
+    rerender();
+    await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
+  };
+
+  const fire = async (name: string, detail: Record<string, unknown>) => {
+    await act(async () => {
+      for (const listener of h.eventListeners.get(name) ?? []) {
+        listener({ detail } as CustomEvent);
+      }
+      await flushMicrotasks();
+    });
+  };
+
+  beforeEach(() => {
+    h.settings.kosync.strategy = 'silent';
+  });
+
+  test('does NOT auto-push on a page turn', async () => {
+    const { rerender } = renderHook(() => useKOSync('h1-view1', manualBookOrbit));
+    await settle();
+    await turnPage(rerender);
+
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('does NOT push when the window is deactivated', async () => {
+    renderHook(() => useKOSync('h1-view1', manualBookOrbit));
+    await settle();
+
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('still pulls automatically on open', async () => {
+    renderHook(() => useKOSync('h1-view1', manualBookOrbit));
+    await settle();
+
+    expect(h.getProgressMock).toHaveBeenCalled();
+    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/650!/4/2/6)');
+  });
+
+  test('still pushes on an explicit push-kosync request', async () => {
+    const { rerender } = renderHook(() => useKOSync('h1-view1', manualBookOrbit));
+    await settle();
+    await turnPage(rerender);
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+
+    await fire('push-kosync', { bookKey: 'h1-view1' });
+
+    expect(h.updateProgressMock).toHaveBeenCalled();
+  });
+});
+
+describe('useKOSync — provider-scoped manual sync events (#6029)', () => {
+  // Both the KOSync and the BookOrbit hook instances listen on the same
+  // event names, so a menu entry meant for one server would otherwise push
+  // to both. A `provider` in the detail addresses exactly one instance;
+  // an event without one still broadcasts (book close, the Sync row).
+  const fire = async (name: string, detail: Record<string, unknown>) => {
+    await act(async () => {
+      for (const listener of h.eventListeners.get(name) ?? []) {
+        listener({ detail } as CustomEvent);
+      }
+      await flushMicrotasks();
+    });
+  };
+
+  beforeEach(() => {
+    h.settings.kosync.strategy = 'silent';
+  });
+
+  test('ignores a push addressed to another provider', async () => {
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.updateProgressMock.mockClear();
+
+    await fire('push-kosync', { bookKey: 'h1-view1', provider: 'bookorbit' });
+
+    expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test('honours a push addressed to this provider', async () => {
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.updateProgressMock.mockClear();
+
+    await fire('push-kosync', { bookKey: 'h1-view1', provider: 'kosync' });
+
+    expect(h.updateProgressMock).toHaveBeenCalled();
+  });
+
+  test('ignores a pull addressed to another provider', async () => {
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.getProgressMock.mockClear();
+
+    await fire('pull-kosync', { bookKey: 'h1-view1', provider: 'bookorbit' });
+
+    expect(h.getProgressMock).not.toHaveBeenCalled();
   });
 });

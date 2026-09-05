@@ -1600,6 +1600,45 @@ describe('TTSController', () => {
   });
 
   describe('preloadNextSSML', () => {
+    test('keeps inline readings in synthesized speech when the option is disabled', async () => {
+      mockView.tts = {
+        next: vi
+          .fn()
+          .mockReturnValueOnce('<speak>彼は憂鬱（ゆううつ）な気分だった。</speak>')
+          .mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+
+      await controller.preloadNextSSML(1);
+
+      expect(controller.ttsClient.speak).toHaveBeenCalledWith(
+        expect.stringContaining('（ゆううつ）'),
+        expect.anything(),
+        true,
+      );
+    });
+
+    test('removes inline readings from synthesized speech when the option is enabled', async () => {
+      mockView.tts = {
+        next: vi
+          .fn()
+          .mockReturnValueOnce('<speak>彼は憂鬱（ゆううつ）な気分だった。</speak>')
+          .mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      controller.setSkipInlineAnnotations(true);
+
+      await controller.preloadNextSSML(1);
+
+      expect(controller.ttsClient.speak).toHaveBeenCalledWith(
+        expect.not.stringContaining('（ゆううつ）'),
+        expect.anything(),
+        true,
+      );
+    });
+
     test('calls tts.next() and tts.prev() synchronously without async gaps between them', async () => {
       // This test verifies the fix for a race condition where async gaps between
       // tts.next() calls in preloadNextSSML allowed #speak() to interleave and

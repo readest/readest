@@ -124,6 +124,77 @@ const withTransientRetry =
   };
 
 /**
+ * The number of leading bytes scanned for a `<meta>` charset declaration.
+ * Matches the prescan window browsers use for the same purpose.
+ */
+const CHARSET_SNIFF_BYTES = 1024;
+
+/** `charset=` out of a `Content-Type` value, quoted or bare. */
+const charsetOf = (contentType: string | null | undefined): string | null =>
+  contentType?.match(/charset\s*=\s*['"]?([^'";,\s]+)/i)?.[1] ?? null;
+
+const decoderFor = (label: string | null): TextDecoder | null => {
+  if (!label) return null;
+  try {
+    return new TextDecoder(label, { ignoreBOM: false });
+  } catch {
+    // An unregistered label ("x-nonsense", a typo) — treat it as undeclared.
+    return null;
+  }
+};
+
+/**
+ * `<meta charset=…>` or `<meta http-equiv=content-type content="…charset=…">`
+ * from the head of the document. The window is parsed rather than pattern
+ * matched, so a declaration sitting in a comment or a script string cannot be
+ * mistaken for a real one and the parser handles attribute quoting for us.
+ * Decoding it as windows-1252 first is safe: every encoding this matters for
+ * is ASCII-compatible in its markup.
+ */
+const sniffMetaCharset = (bytes: Uint8Array): string | null => {
+  const head = new TextDecoder('windows-1252').decode(bytes.subarray(0, CHARSET_SNIFF_BYTES));
+  const doc = new DOMParser().parseFromString(head, 'text/html');
+  for (const meta of doc.querySelectorAll('meta')) {
+    const declared = /^content-type$/i.test(meta.getAttribute('http-equiv') || '')
+      ? charsetOf(meta.getAttribute('content'))
+      : meta.getAttribute('charset');
+    const charset = declared?.trim();
+    if (charset) return charset;
+  }
+  return null;
+};
+
+/**
+ * Decode a fetched page body the way a browser would.
+ *
+ * `Response.text()` always decodes as UTF-8 regardless of what the page says,
+ * so it turns a legacy-encoded site into mojibake — and Chinese web-novel
+ * sites overwhelmingly still serve GB2312/GBK, usually declaring it only in a
+ * `<meta>` tag because the HTTP `Content-Type` carries no charset. Follow the
+ * sniffing order that gets those pages right: BOM, then the response header,
+ * then the `<meta>` prescan.
+ */
+export function decodeHtmlBody(bytes: Uint8Array, contentType: string | null): string {
+  // A BOM outranks every declaration, and `TextDecoder` strips it for us.
+  const [b0, b1, b2] = bytes;
+  if (b0 === 0xff && b1 === 0xfe) return new TextDecoder('utf-16le').decode(bytes);
+  if (b0 === 0xfe && b1 === 0xff) return new TextDecoder('utf-16be').decode(bytes);
+  if (b0 === 0xef && b1 === 0xbb && b2 === 0xbf) return new TextDecoder('utf-8').decode(bytes);
+
+  const declared = decoderFor(charsetOf(contentType)) ?? decoderFor(sniffMetaCharset(bytes));
+  if (declared) return declared.decode(bytes);
+
+  // Nothing declared. UTF-8 when the bytes actually are UTF-8; otherwise
+  // GB18030, which decodes every byte sequence and is what an undeclared
+  // legacy page on this part of the web almost always turns out to be.
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return new TextDecoder('gb18030').decode(bytes);
+  }
+}
+
+/**
  * Fetch a page over the Tauri HTTP client with browser-shaped headers.
  * Novel-site chapter pages are server-rendered, so plain HTTP is enough —
  * spawning a `clip_url` webview per chapter would never scale to hundreds
@@ -150,7 +221,11 @@ const defaultFetchPage: FetchPage = async (url, signal) => {
       'fetch_failed',
     );
   }
-  return { html: await res.text(), finalUrl: res.url || url };
+  const body = new Uint8Array(await res.arrayBuffer());
+  return {
+    html: decodeHtmlBody(body, res.headers.get('content-type')),
+    finalUrl: res.url || url,
+  };
 };
 
 const defaultFetchCover: FetchCover = (url, referer) =>

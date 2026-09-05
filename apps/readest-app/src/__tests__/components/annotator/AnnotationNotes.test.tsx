@@ -62,6 +62,8 @@ const makeBooknote = (overrides: Partial<BookNote> = {}): BookNote => ({
   ...overrides,
 });
 
+const onEditNote = vi.fn();
+
 const renderNotes = (notes: BookNote[]) => {
   h.booknotes = notes;
   return render(
@@ -69,6 +71,7 @@ const renderNotes = (notes: BookNote[]) => {
       bookKey='test'
       isVertical={false}
       notes={notes}
+      onEditNote={onEditNote}
       toolsVisible={false}
       triangleDir='up'
       popupWidth={240}
@@ -100,7 +103,7 @@ describe('AnnotationNotes', () => {
     expect(cardTexts[1]).toContain('older note');
   });
 
-  it('entering edit mode on one note does not affect a sibling note in the same popup', () => {
+  it('routes each note pencil to the shared editor with that note', () => {
     const first = makeBooknote({ id: 'first', note: 'first note', updatedAt: 2000 });
     const second = makeBooknote({ id: 'second', note: 'second note', updatedAt: 1000 });
 
@@ -110,9 +113,10 @@ describe('AnnotationNotes', () => {
     expect(editButtons).toHaveLength(2);
     fireEvent.click(editButtons[0]!);
 
-    const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
-    expect(textbox.value).toBe('first note');
+    expect(onEditNote).toHaveBeenCalledWith(first);
+    // Both cards stay intact: nothing is edited in place any more.
+    screen.getByText('first note');
     screen.getByText('second note');
-    expect(screen.getAllByRole('button', { name: 'Edit' })).toHaveLength(1);
+    expect(screen.queryByRole('textbox')).toBeNull();
   });
 });
