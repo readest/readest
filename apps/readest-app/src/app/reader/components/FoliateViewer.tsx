@@ -161,7 +161,7 @@ const FoliateViewer: React.FC<{
   const getOnDeviceTextDocuments = useCallback(() => {
     const renderer = viewRef.current?.renderer;
     if (!renderer) return [];
-    return prioritizeCurrentDocument(renderer.getContents(), renderer.primaryIndex);
+    return prioritizeCurrentDocument(renderer);
   }, []);
 
   const autoScroll = useAutoScroll(bookKey, viewRef);
@@ -286,6 +286,12 @@ const FoliateViewer: React.FC<{
     pendingRelocateRef.current = null;
     if (!event) return;
     const detail = event.detail;
+    if (ocrEnabled) {
+      const current = getOnDeviceTextDocuments()[0];
+      if (current?.doc && typeof current.index === 'number') {
+        void processOcrDocument(current.doc, current.index);
+      }
+    }
     const atEnd = viewRef.current?.renderer.atEnd || false;
     const { current, next, total } = detail.location as PageInfo;
     const currentPage = atEnd && total > 0 ? total - 1 : current;
@@ -301,7 +307,7 @@ const FoliateViewer: React.FC<{
       detail.range,
       detail.fraction,
     );
-  }, [bookKey, setProgress]);
+  }, [bookKey, getOnDeviceTextDocuments, ocrEnabled, processOcrDocument, setProgress]);
 
   const progressRelocateHandler = (event: Event) => {
     // Always stash the latest detail; if another rAF is already pending

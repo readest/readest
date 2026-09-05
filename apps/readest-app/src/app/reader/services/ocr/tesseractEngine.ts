@@ -406,7 +406,6 @@ export class TesseractOcrEngine {
           }
           if (!recognizedChunks.length) continue;
           const text = recognizedChunks.map((chunk) => chunk.text).join('');
-          if (!this.#isPlausibleMangaText(text, detectedBlock.language)) continue;
           textLines.push(text);
           confidences.push(
             recognizedChunks.reduce((sum, chunk) => sum + chunk.confidence, 0) /
@@ -468,23 +467,6 @@ export class TesseractOcrEngine {
     const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
     if (!text || confidence === undefined || confidence < this.#minimumConfidence) return null;
     return { text, confidence };
-  }
-
-  #isPlausibleMangaText(
-    text: string,
-    detectedLanguage: MokuroTextDetectionResult['blocks'][number]['language'],
-  ): boolean {
-    if (!isJapaneseLanguage(this.#textLanguage) || detectedLanguage === 'eng') return true;
-    let japanese = 0;
-    let latin = 0;
-    for (const character of text) {
-      if (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(character)) {
-        japanese += 1;
-      } else if (/\p{Script=Latin}/u.test(character)) {
-        latin += 1;
-      }
-    }
-    return japanese > 0 && latin <= Math.max(1, Math.floor(japanese / 4));
   }
 
   async #recognizeWholePage(prepared: PreparedImage): Promise<OcrPage> {

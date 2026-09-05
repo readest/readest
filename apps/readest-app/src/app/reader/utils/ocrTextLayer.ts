@@ -164,7 +164,12 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
     if (!selection) return;
     if (!selection.isCollapsed) {
       const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-      if (!range || !layer.contains(range.startContainer) || !layer.contains(range.endContainer)) {
+      if (
+        !range ||
+        !layer.contains(range.startContainer) ||
+        !layer.contains(range.endContainer) ||
+        range.intersectsNode(block)
+      ) {
         return;
       }
     }

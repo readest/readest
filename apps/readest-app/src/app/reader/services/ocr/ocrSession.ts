@@ -187,6 +187,7 @@ export class OcrSession {
       if (priority) this.#promoteTask(pendingPage.task);
       recognition = pendingPage.promise;
     } else {
+      removeOcrTextLayer(doc);
       if (pendingPage && isSamePdfPage(pendingPage, doc, image)) {
         this.#cancelQueuedTask(pendingPage.task);
       }
@@ -205,7 +206,7 @@ export class OcrSession {
     const currentImage = getPageImage(doc);
     if (!currentImage || !isSamePageImage({ document: doc, image }, doc, currentImage)) return page;
 
-    mountOcrTextLayer(doc, page);
+    if (!hasOcrTextLayer(doc, pageIndex)) mountOcrTextLayer(doc, page);
     return page;
   }
 

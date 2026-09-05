@@ -80,7 +80,11 @@ describe('OcrSession', () => {
 
     try {
       await session.processDocument(firstPage.doc, 3);
-      await session.setEnabled(true);
+      const append = vi.spyOn(firstPage.doc.body, 'append');
+      const enabled = session.setEnabled(true);
+      const pending = session.processDocument(firstPage.doc, 3, { priority: true });
+      await Promise.all([enabled, pending]);
+      expect(append).toHaveBeenCalledOnce();
 
       const layer = firstPage.doc.querySelector(OCR_TEXT_LAYER_SELECTOR)!;
       const block = layer.querySelector('[data-readest-ocr-block-id]')!;
@@ -100,6 +104,17 @@ describe('OcrSession', () => {
       await session.processDocument(secondPage.doc, 3);
       expect(engine.recognize).toHaveBeenCalledOnce();
       expect(secondPage.doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('日本語');
+
+      const oldLayer = secondPage.doc.querySelector(OCR_TEXT_LAYER_SELECTOR);
+      secondPage.doc.querySelector('img')!.src = 'blob:replacement-page';
+      const replacementAppend = vi.spyOn(secondPage.doc.body, 'append');
+      await Promise.all([
+        session.processDocument(secondPage.doc, 3),
+        session.processDocument(secondPage.doc, 3),
+      ]);
+      expect(engine.recognize).toHaveBeenCalledTimes(2);
+      expect(secondPage.doc.querySelector(OCR_TEXT_LAYER_SELECTOR)).not.toBe(oldLayer);
+      expect(replacementAppend).toHaveBeenCalledOnce();
     } finally {
       await session.terminate();
       for (const { iframe } of pages) iframe.remove();

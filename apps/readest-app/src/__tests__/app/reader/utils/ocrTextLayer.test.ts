@@ -43,16 +43,15 @@ describe('OCR text layer', () => {
     expect(click.defaultPrevented).toBe(true);
     expect(document.getSelection()?.toString()).toBe('縦書き<img src=x>');
     const manualRange = document.createRange();
-    const nativeText = document.createElement('p');
-    nativeText.textContent = 'native selection';
-    document.body.append(nativeText);
-    manualRange.selectNodeContents(nativeText);
+    const nativeText = text!.querySelector('[data-readest-ocr-line]')!.firstChild!;
+    manualRange.setStart(nativeText, 0);
+    manualRange.setEnd(nativeText, 2);
     document.getSelection()?.removeAllRanges();
     document.getSelection()?.addRange(manualRange);
     const dragEndClick = new MouseEvent('click', { bubbles: true, cancelable: true });
     text?.dispatchEvent(dragEndClick);
     expect(dragEndClick.defaultPrevented).toBe(false);
-    expect(document.getSelection()?.toString()).toBe('native selection');
+    expect(document.getSelection()?.toString()).toBe('縦書');
     expect(document.querySelector('[data-readest-ocr-style]')?.textContent).toContain(
       'background-color: #fff',
     );

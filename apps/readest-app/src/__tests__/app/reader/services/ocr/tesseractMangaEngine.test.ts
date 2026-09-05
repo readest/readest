@@ -218,7 +218,7 @@ describe('Tesseract manga OCR', () => {
     }
   });
 
-  it('rejects mixed-script garbage from Japanese manga recognition', async () => {
+  it('preserves confident mixed-script text in Japanese manga', async () => {
     installCanvas();
     const source = document.createElement('canvas');
     source.width = page.width;
@@ -239,7 +239,7 @@ describe('Tesseract manga OCR', () => {
       terminate: vi.fn(async () => undefined),
     };
     const recognizer = {
-      recognize: vi.fn(async () => ({ text: 'むかしむかしBwNrIni', confidence: 89 })),
+      recognize: vi.fn(async () => ({ text: '第1話DRAGON BALL', confidence: 89 })),
       terminate: vi.fn(async () => undefined),
     };
     const createRecognizer = vi.fn<JapaneseMangaRecognizerFactory>(() => recognizer);
@@ -255,7 +255,7 @@ describe('Tesseract manga OCR', () => {
     const result = await engine.recognize(source, page);
 
     expect(createRecognizer).toHaveBeenCalledOnce();
-    expect(result.blocks).toEqual([]);
+    expect(result.blocks).toMatchObject([{ text: '第1話DRAGON BALL' }]);
   });
 
   it('splits long vertical text before recognition', () => {
