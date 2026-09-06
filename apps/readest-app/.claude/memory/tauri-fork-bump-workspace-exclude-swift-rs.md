@@ -53,9 +53,9 @@ iOS home indicator). Upstream ba3490b3e "Use workspace dependency management
    CarPlay and showed the CPNowPlaying template with the current book, process
    alive, no crash report, no NSGenericException. So upstream 0.37.0 is FINE
    for CarPlay despite the TaoSceneDelegate override; the theoretical concern
-   above did NOT materialize. `packages/tao` submodule REMOVED in local dev
-   commit a362ac598 (2026-09-06, `git submodule deinit` + `git rm`, workflow
-   comment updated; NOT pushed). Not yet checked: iOS 26.3 sim, real device.
+   above did NOT materialize. `packages/tao` submodule REMOVED: PR #6085
+   (branch `chore/remove-tao-submodule` on origin, rebased onto 77e44eb92;
+   `git submodule deinit` + `git rm`, workflow comment updated). Not yet checked: iOS 26.3 sim, real device.
 
 Also: `rust-version` bumped 1.77.2 -> 1.90 in root `[workspace.package]` and
 `src-tauri/Cargo.toml` (user request). MSRV-aware fallback is NOT active with
