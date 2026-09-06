@@ -50,8 +50,15 @@ docker compose up -d
 ```
 
 this pulls `${READEST_IMAGE}` (default: `ghcr.io/readest/readest:latest`) instead of building the client locally.
-the web client now reads `SUPABASE_PUBLIC_URL`, `SUPABASE_ANON_KEY`, `API_BASE_URL`, `OBJECT_STORAGE_TYPE`, `STORAGE_FIXED_QUOTA`, and `TRANSLATION_FIXED_QUOTA` from runtime
+the web client now reads `SUPABASE_PUBLIC_URL`, `SUPABASE_ANON_KEY`, `API_BASE_URL`, `OBJECT_STORAGE_TYPE`, `SELF_HOSTED`, `STORAGE_FIXED_QUOTA`, and `TRANSLATION_FIXED_QUOTA` from runtime
 container env, so custom self-hosted values work with pulled images.
+
+`SELF_HOSTED` unlocks every premium feature — third-party cloud sync (WebDAV,
+Google Drive, S3, OneDrive), offline Read Aloud downloads, Send to Readest —
+with or without a signed-in user. the image defaults it to `true`, so a pulled
+image is unlocked even if your `compose.yaml` predates the variable. set
+`SELF_HOSTED=false` in `docker/.env` only if you run a hosted service that sells
+the plans.
 
 if you prefer Docker Hub, set `READEST_IMAGE` in `docker/.env`, for example:
 

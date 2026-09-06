@@ -3,6 +3,7 @@ import {
   canToggleCloudProvider,
   getReadestCloudRowStatus,
   getThirdPartyRowStatus,
+  shouldShowCloudProviderBadge,
 } from '@/components/settings/integrations/cloudSyncStatus';
 
 const _ = (key: string) => key;
@@ -138,5 +139,39 @@ describe('canToggleCloudProvider', () => {
     expect(canToggleCloudProvider({ isPremium: true, isConfigured: false, isEnabled: true })).toBe(
       true,
     );
+  });
+});
+
+describe('shouldShowCloudProviderBadge', () => {
+  test('signed out on a hosted deployment sees the tier chip', () => {
+    expect(
+      shouldShowCloudProviderBadge({ signedIn: false, planLoading: false, isPremium: false }),
+    ).toBe(true);
+  });
+
+  test('signed out on a self-hosted deployment does not (#6093)', () => {
+    // Self-hosting unlocks cloud sync with or without a signed-in user, so the
+    // chip would label a feature the operator already has as premium.
+    expect(
+      shouldShowCloudProviderBadge({ signedIn: false, planLoading: false, isPremium: true }),
+    ).toBe(false);
+  });
+
+  test('stays hidden while a signed-in user plan is still resolving', () => {
+    expect(
+      shouldShowCloudProviderBadge({ signedIn: true, planLoading: true, isPremium: false }),
+    ).toBe(false);
+  });
+
+  test('a resolved free plan sees the tier chip', () => {
+    expect(
+      shouldShowCloudProviderBadge({ signedIn: true, planLoading: false, isPremium: false }),
+    ).toBe(true);
+  });
+
+  test('an entitled user never sees it', () => {
+    expect(
+      shouldShowCloudProviderBadge({ signedIn: true, planLoading: false, isPremium: true }),
+    ).toBe(false);
   });
 });
