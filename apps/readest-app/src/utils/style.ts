@@ -1365,6 +1365,7 @@ export const applyScrollModeClass = (document: Document, isScrollMode: boolean) 
 // A prefixed attribute name, e.g. the `epub:type` of `epub:type="chapter"`.
 const PREFIXED_ATTR_REGEX = /^([A-Za-z_][\w.-]*):([A-Za-z_][\w.-]*)$/;
 const EPUB_OPS_NAMESPACE = 'http://www.idpf.org/2007/ops';
+const XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace';
 
 /**
  * Re-attach the namespaces an XHTML section declared to its prefixed
@@ -1402,8 +1403,12 @@ export const applyNamespacedAttributes = (document: Document) => {
       // document, so the declaration on the original <html> may be gone.
       // `epub` has one fixed namespace in EPUB, which is enough to restore the
       // selectors used by the book's stylesheet (including noteref markers).
+      // `xml` is bound by XML itself and is never declared, so `xml:lang`
+      // needs the same treatment for a book's `[xml|lang="en"]` rule to match.
       const uri =
-        lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null);
+        prefix === 'xml'
+          ? XML_NAMESPACE
+          : (lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null));
       if (uri && !element.hasAttributeNS(uri, localName!)) {
         element.setAttributeNS(uri, name, value);
       }

@@ -701,14 +701,23 @@ describe('applyNamespacedAttributes', () => {
     expect(doc.querySelector('a')!.getAttributeNS(OPS, 'type')).toBe('noteref');
   });
 
-  it('leaves the reserved xml and xmlns names untouched', () => {
-    const doc = parseAsSrcdoc('<div xml:lang="en">x</div>');
+  // The `xml` prefix is bound by the XML spec itself and never declared with
+  // `xmlns:xml`, so a book's `@namespace xml` + `[xml|lang="en"]` rule needs
+  // the implicit binding restored the same way.
+  it('binds the implicit xml prefix so [xml|lang] selectors can match', () => {
+    const doc = parseAsSrcdoc('<div xml:lang="en">x</div>', '');
+    applyNamespacedAttributes(doc);
+    const div = doc.querySelector('div')!;
+    expect(div.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang')).toBe('en');
+    expect(div.getAttribute('xml:lang')).toBe('en');
+  });
+
+  it('leaves xmlns declarations untouched', () => {
+    const doc = parseAsSrcdoc('<div>x</div>');
     applyNamespacedAttributes(doc);
     const html = doc.documentElement;
-    const div = doc.querySelector('div')!;
-    expect(div.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang')).toBeNull();
-    expect(div.getAttribute('xml:lang')).toBe('en');
     expect(html.getAttribute('xmlns:epub')).toBe(OPS);
+    expect(html.getAttributeNS('http://www.w3.org/2000/xmlns/', 'epub')).toBeNull();
   });
 
   it('does not let a declaration reach a sibling that is out of its scope', () => {
