@@ -243,9 +243,6 @@ export class WebSpeechClient implements TTSClient {
 
   async getVoices(lang: string) {
     const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
-    const isValidVoice = (id: string) => {
-      return !id.includes('com.apple') || id.includes('com.apple.voice.compact');
-    };
     const isNotBlacklisted = (voice: SpeechSynthesisVoice) => {
       return WEB_SPEECH_BLACKLISTED_VOICES.some((name) => voice.name.includes(name)) === false;
     };
@@ -254,7 +251,6 @@ export class WebSpeechClient implements TTSClient {
     // body text); the requested locale's voices sort first. See #4033.
     const filteredVoices = this.#voices
       .filter((voice) => isSameLang(voice.lang, lang))
-      .filter((voice) => isValidVoice(voice.voiceURI || ''))
       .filter(isNotBlacklisted);
     const seenIds = new Set<string>();
     const voices = filteredVoices
