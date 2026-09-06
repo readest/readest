@@ -138,6 +138,47 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1 libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
+      # The CEF AppImage bundles the build host's glibc, so anything it does
+      # NOT bundle is resolved from the host at run time, against a glibc the
+      # bundled one cannot satisfy on any distro newer than the builder. NSS is
+      # the fatal case: Chromium dlopens libsoftokn3.so, gets the host copy and
+      # aborts on first use (FATAL crypto/nss_util.cc, nss_error=-5925).
+      #
+      # quick-sharun's own DEPLOY_CHROMIUM rules cover these modules, but the
+      # bundler in cli-cef 3.0.0-alpha.26 downloads a fork of that script
+      # (FabianLars/Anylinux-AppImages, taken on feat/cef to fix spaces in
+      # paths) which is ~1100 lines behind pkgforge upstream and expands its
+      # deployment array without `eval`: every path keeps its literal quotes,
+      # so EVERY DEPLOY_* extra is skipped and only ldd-derived libraries land
+      # in the bundle. tauri-apps/tauri#12491 drops that fork for a pinned,
+      # checksummed upstream revision (facb95e8, which has the `eval`). Once it
+      # reaches feat/cef and a new cli-cef ships, bump CEF_CLI in
+      # apps/readest-app/scripts/tauri.mjs, lift the STRACE_MODE pin in the
+      # build step and drop the jq call below. Keep the flatten unless dlopen
+      # discovery is doing the finding: upstream globs only Arch's flat layout,
+      # so a Debian builder hides these modules from it either way.
+      #
+      # Until then, hand the modules over as appimage.files: the bundler passes
+      # files targeted at /usr/lib to quick-sharun as plain ELF arguments, the
+      # injection channel #12491 keeps. Sources must sit directly in the triple
+      # lib dir (Debian hides them in <triple>/nss/) because the destination
+      # inside the bundle mirrors the source dir, and only a flat source lands
+      # next to the libnss3.so that loads it.
+      - name: stage CEF AppImage runtime libraries (linux only)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y libnss3
+          nss_dir=$(dirname "$(ls /usr/lib/*-linux-gnu/nss/libsoftokn3.so)")
+          lib_dir=${nss_dir%/nss}
+          sudo cp -f --remove-destination "$nss_dir"/*.so "$lib_dir/"
+          conf=apps/readest-app/src-tauri/tauri.conf.json
+          jq --arg d "$lib_dir" '.bundle.linux.appimage.files = {
+              "/usr/lib/libsoftokn3.so": ($d + "/libsoftokn3.so"),
+              "/usr/lib/libfreeblpriv3.so": ($d + "/libfreeblpriv3.so"),
+              "/usr/lib/libnssckbi.so": ($d + "/libnssckbi.so")
+            }' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
+
       - name: create .env.local file for Next.js
         run: |
           echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> .env.local
@@ -231,7 +272,9 @@ jobs:
         # latest.json for ALL platforms (#4906).
         timeout-minutes: 45
         env:
-          # See release.yml: keep quick-sharun from running the app under Xvfb.
+          # See release.yml: keep quick-sharun from running the app under
+          # Xvfb. Lift this together with the AppImage library staging above,
+          # once cli-cef carries tauri-apps/tauri#12491.
           STRACE_MODE: '0'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -247,6 +290,21 @@ jobs:
           node -e "const f='apps/readest-app/package.json';const j=require('./'+f);j.version='${version}';require('fs').writeFileSync(f, JSON.stringify(j,null,2)+'\n')"
           cd apps/readest-app
           pnpm tauri build ${{ matrix.config.args }}
+
+      # quick-sharun skips anything it cannot find without failing, which is
+      # how the AppImage shipped with no NSS modules at all. Fail the leg
+      # instead of shipping a bundle that crashes on first use. The path is the
+      # AppDir quick-sharun packed, left next to the AppImage in the WORKSPACE
+      # target dir (see the collect step below). libsqlite3 is not staged
+      # explicitly — it must arrive as libsoftokn3.so's own ldd dependency.
+      - name: verify the AppImage bundled its NSS modules (linux only)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          lib=target/release/bundle/appimage/Readest.AppDir/lib
+          for so in libsoftokn3.so libfreeblpriv3.so libnssckbi.so libsqlite3.so.0; do
+            [ -e "$lib/$so" ] || { echo "::error::$so is missing from the AppImage bundle"; exit 1; }
+          done
 
       # Portable Windows build: rebuild with NEXT_PUBLIC_PORTABLE_APP=true and
       # ship the raw exe (mirrors release.yml). Runs after the NSIS build above.
