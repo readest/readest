@@ -308,7 +308,12 @@ export const useBooksSync = () => {
     const oldBooksBatchSize = 100;
     for (let i = 0; i < oldBooksNeedsDownload.length; i += oldBooksBatchSize) {
       const batch = oldBooksNeedsDownload.slice(i, i + oldBooksBatchSize);
-      await appService?.downloadBookCovers(batch);
+      await appService?.downloadBookCovers(batch).catch((error) => {
+        console.warn('Cover refresh failed; continuing library sync:', error);
+        // The merge adopts the remote cover hash below. Keep failed covers
+        // eligible for retry even after their metadata clocks match.
+        for (const book of batch) book.coverDownloadedAt = null;
+      });
     }
 
     const updatedLibrary = await Promise.all(liveLibrary.map(processOldBook));
@@ -353,7 +358,9 @@ export const useBooksSync = () => {
       const batchSize = 10;
       for (let i = 0; i < newBooks.length; i += batchSize) {
         const batch = newBooks.slice(i, i + batchSize);
-        await appService?.downloadBookCovers(batch);
+        await appService?.downloadBookCovers(batch).catch((error) => {
+          console.warn('Cover download failed; continuing library sync:', error);
+        });
         await Promise.all(batch.map(processNewBook));
         const progress = Math.min((i + batchSize) / newBooks.length, 1);
         setSyncProgress(progress);

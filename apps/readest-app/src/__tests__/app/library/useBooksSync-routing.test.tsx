@@ -25,7 +25,7 @@ import type { Book } from '@/types/book';
 const appService = vi.hoisted(() => ({
   saveLibraryBooks: vi.fn(async () => {}),
   generateCoverImageUrl: vi.fn(async () => 'blob:cover'),
-  downloadBookCovers: vi.fn(async () => {}),
+  downloadBookCovers: vi.fn(async (_books: Book[]) => {}),
 }));
 
 const syncState = vi.hoisted(() => ({
@@ -96,11 +96,74 @@ const { eventDispatcher } = await import('@/utils/event');
 
 beforeEach(() => {
   vi.clearAllMocks();
+  appService.downloadBookCovers.mockReset().mockResolvedValue(undefined);
   syncState.syncedBooks = null;
   syncState.lastSyncedAtBooks = 0;
   routing.readestEnabled = true;
   routing.backends = [];
   useLibraryStore.setState({ library: [], libraryLoaded: true, isSyncing: false });
+});
+
+describe('useBooksSync cover download failures', () => {
+  const makeBook = (overrides: Partial<Book> = {}): Book =>
+    ({
+      hash: 'book-1',
+      title: 'Book',
+      author: 'Author',
+      format: 'EPUB',
+      createdAt: 100,
+      updatedAt: 100,
+      uploadedAt: 100,
+      ...overrides,
+    }) as Book;
+
+  it('merges metadata despite a failed cover refresh and retries the cover on the next sync', async () => {
+    useLibraryStore.setState({
+      library: [
+        makeBook({
+          coverHash: 'old-cover',
+          coverUpdatedAt: 100,
+          coverDownloadedAt: 100,
+        }),
+      ],
+    });
+    const cloudBook = makeBook({
+      title: 'Updated title',
+      updatedAt: 200,
+      coverHash: 'new-cover',
+      coverUpdatedAt: 200,
+    });
+    syncState.syncedBooks = [cloudBook];
+    appService.downloadBookCovers.mockRejectedValueOnce(new Error('Cover URLs unavailable'));
+    const { rerender } = renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(useLibraryStore.getState().library[0]?.title).toBe('Updated title'));
+    expect(useLibraryStore.getState().library[0]?.coverDownloadedAt).toBeFalsy();
+    expect(appService.saveLibraryBooks).toHaveBeenCalled();
+
+    appService.downloadBookCovers.mockImplementationOnce(async (books) => {
+      for (const book of books) book.coverDownloadedAt = 300;
+    });
+    syncState.syncedBooks = [{ ...cloudBook }];
+    rerender();
+    await waitFor(() => expect(useLibraryStore.getState().library[0]?.coverDownloadedAt).toBe(300));
+    expect(appService.downloadBookCovers).toHaveBeenCalledTimes(2);
+  });
+
+  it('adds new books and continues later batches when a cover batch fails', async () => {
+    syncState.syncedBooks = Array.from({ length: 11 }, (_, index) =>
+      makeBook({ hash: `book-${index + 1}` }),
+    );
+    appService.downloadBookCovers.mockRejectedValueOnce(new Error('Cover URLs unavailable'));
+    renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(useLibraryStore.getState().library).toHaveLength(11));
+    expect(useLibraryStore.getState().library[0]?.hash).toBe('book-1');
+    expect(useLibraryStore.getState().library[0]?.coverDownloadedAt).toBeFalsy();
+    expect(useLibraryStore.getState().isSyncing).toBe(false);
+    expect(appService.saveLibraryBooks).toHaveBeenCalled();
+    expect(appService.downloadBookCovers).toHaveBeenCalledTimes(2);
+  });
 });
 
 afterEach(() => {
