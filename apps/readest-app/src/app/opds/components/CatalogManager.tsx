@@ -342,6 +342,17 @@ interface CatalogManagerProps {
   inSubPage?: boolean;
 }
 
+/**
+ * Box size shared by the catalog manager dialog (`OPDSDialog`) and the
+ * Add/Edit Catalog form it opens on top of itself. The form used to take
+ * daisyUI's `modal-box` default — narrower than the manager behind it, and
+ * tall enough to run off the bottom of a 1280x800 window — so both windows now
+ * size from this one string. `sm:`-only: below that breakpoint each dialog
+ * keeps its own full-width mobile treatment.
+ */
+export const CATALOG_DIALOG_BOX_CLASS =
+  'sm:min-w-[520px] sm:w-3/4 sm:h-[85%] sm:max-w-(--breakpoint-sm)!';
+
 export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) {
   const _ = useTranslation();
   const router = useRouter();
@@ -772,7 +783,9 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
       {showAddDialog && (
         <ModalPortal>
           <dialog className='modal modal-open'>
-            <div className='modal-box'>
+            <div
+              className={clsx('modal-box sm:max-h-full sm:max-w-full', CATALOG_DIALOG_BOX_CLASS)}
+            >
               <h3 className='mb-4 text-lg font-semibold tracking-tight'>
                 {editingCatalogId ? _('Edit OPDS Catalog') : _('Add OPDS Catalog')}
               </h3>
