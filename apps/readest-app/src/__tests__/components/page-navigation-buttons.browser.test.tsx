@@ -71,7 +71,7 @@ afterEach(() => {
   mockPlatform.showPaginationButtons = false;
 });
 
-describe('PageNavigationButtons Android hit areas', () => {
+describe('PageNavigationButtons hit areas', () => {
   it('shrinks all four hidden controls so they do not cover selectable text', () => {
     render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
 
@@ -84,22 +84,43 @@ describe('PageNavigationButtons Android hit areas', () => {
     }
   });
 
-  it('keeps the hidden controls tappable so screen readers can reach them', () => {
+  it('lets taps fall through the hidden controls with the setting off', () => {
     render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
 
     for (const label of navigationLabels) {
       const button = screen.getByRole('button', { name: label });
-      expect(button.contains(hitTargetAt(button, 4)), label).toBe(true);
+      expect(button.contains(hitTargetAt(button, 4)), label).toBe(false);
     }
   });
 
-  it('lets taps fall through when the visible navigation buttons are enabled', () => {
+  it('lets taps fall through the hidden controls with the setting on', () => {
     mockPlatform.showPaginationButtons = true;
     render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
 
     for (const label of navigationLabels) {
       const button = screen.getByRole('button', { name: label });
       expect(button.contains(hitTargetAt(button, 4)), label).toBe(false);
+    }
+  });
+
+  it('lets taps fall through the hidden controls off Android too', () => {
+    mockPlatform.isAndroidApp = false;
+    render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
+
+    for (const label of navigationLabels) {
+      const button = screen.getByRole('button', { name: label });
+      expect(button.contains(hitTargetAt(button, 4)), label).toBe(false);
+    }
+  });
+
+  it('takes taps once the controls are actually visible', () => {
+    mockPlatform.showPaginationButtons = true;
+    mockPlatform.hoveredBookKey = 'book';
+    render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
+
+    for (const label of navigationLabels) {
+      const button = screen.getByRole('button', { name: label });
+      expect(button.contains(hitTargetAt(button, 4)), label).toBe(true);
     }
   });
 
