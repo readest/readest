@@ -256,6 +256,32 @@ fn get_executable_dir() -> String {
         .unwrap_or_default()
 }
 
+/// Logical size of the main window the first time the app runs. Later launches
+/// restore whatever the user left behind (`tauri_plugin_window_state`), so this
+/// is a starting point, not a preference. macOS has always opened at this size;
+/// Windows and Linux used to open at 800x600, which is cramped for the library
+/// grid and a two-page spread. It clears a 1080p work area whole.
+#[cfg(desktop)]
+const DEFAULT_WINDOW_SIZE: (f64, f64) = (1280.0, 800.0);
+
+// The first-launch window size, shrunk to fit `work_area` — the monitor minus
+// its taskbar/panels, in logical pixels — when the default is too big for it.
+// A fixed 1280x800 hangs off the bottom of a 1366x768 laptop screen, and a
+// window that opens partly off-screen can be impossible to resize back.
+// `None` (no monitor reported, or one reporting an empty work area) keeps the
+// default: a window that is too large stays reachable, one sized from a bogus
+// zero-height screen does not.
+#[cfg(desktop)]
+fn default_window_size(work_area: Option<(f64, f64)>) -> (f64, f64) {
+    let Some((width, height)) = work_area.filter(|(w, h)| *w > 0.0 && *h > 0.0) else {
+        return DEFAULT_WINDOW_SIZE;
+    };
+    (
+        DEFAULT_WINDOW_SIZE.0.min(width * 0.9),
+        DEFAULT_WINDOW_SIZE.1.min(height * 0.9),
+    )
+}
+
 // Pure decision for whether the in-app updater should be hidden. Kept
 // dependency-free so it can be unit tested for every platform combination.
 //
@@ -713,10 +739,18 @@ pub fn run() {
                     true
                 });
 
-            #[cfg(target_os = "macos")]
-            let win_builder = win_builder.inner_size(1280.0, 800.0).resizable(true);
-            #[cfg(all(not(target_os = "macos"), desktop))]
-            let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);
+            #[cfg(desktop)]
+            let win_builder = {
+                let work_area = app.primary_monitor().ok().flatten().map(|monitor| {
+                    let size = monitor
+                        .work_area()
+                        .size
+                        .to_logical::<f64>(monitor.scale_factor());
+                    (size.width, size.height)
+                });
+                let (width, height) = default_window_size(work_area);
+                win_builder.inner_size(width, height).resizable(true)
+            };
 
             // The overlay title bar draws its title over the app's own header,
             // so `macos::window::init()` hides the title text and the window
@@ -852,7 +886,38 @@ pub fn run() {
 
 #[cfg(all(test, desktop))]
 mod tests {
-    use super::compute_updater_disabled;
+    use super::{compute_updater_disabled, default_window_size, DEFAULT_WINDOW_SIZE};
+
+    #[test]
+    fn monitor_with_room_keeps_the_shipped_default() {
+        // 1080p minus a taskbar is the everyday case, and the default is picked
+        // to fit it whole; anything larger fits too.
+        assert_eq!(
+            default_window_size(Some((1920.0, 1040.0))),
+            DEFAULT_WINDOW_SIZE
+        );
+        assert_eq!(
+            default_window_size(Some((2560.0, 1400.0))),
+            DEFAULT_WINDOW_SIZE
+        );
+    }
+
+    #[test]
+    fn small_laptop_screen_shrinks_the_window() {
+        // 1366x768 is the screen the old 800x600 default was sized for, and the
+        // one a fixed 1280x800 would hang off the bottom of.
+        let (width, height) = default_window_size(Some((1366.0, 728.0)));
+        assert!((width - 1229.4).abs() < 0.01, "width {width}");
+        assert!((height - 655.2).abs() < 0.01, "height {height}");
+    }
+
+    #[test]
+    fn unknown_or_empty_work_area_falls_back_to_the_default() {
+        // No monitor reported, or one reporting nothing usable (a display that
+        // is off, or a compositor that has not laid out the screen yet).
+        assert_eq!(default_window_size(None), DEFAULT_WINDOW_SIZE);
+        assert_eq!(default_window_size(Some((0.0, 0.0))), DEFAULT_WINDOW_SIZE);
+    }
 
     #[test]
     fn env_opt_out_disables_on_any_desktop() {
