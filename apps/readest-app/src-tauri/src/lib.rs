@@ -410,6 +410,21 @@ pub fn run() {
 
     let builder = tauri::Builder::<AppRuntime>::new();
 
+    // `READEST_CDP_PORT=9222` hands the port to CEF as `--remote-debugging-port`,
+    // so a debugger or test driver can attach over the Chrome DevTools Protocol
+    // on 127.0.0.1 (see docs/testing.md). CEF also honours the switch straight
+    // off argv, but tauri-plugin-cli parses the same argv for open-with paths and
+    // warns about the unknown argument on every launch, so the env var is the
+    // supported way in.
+    #[cfg(all(feature = "cef", target_os = "linux"))]
+    let builder = match std::env::var("READEST_CDP_PORT") {
+        Ok(port) if !port.is_empty() => builder.runtime_init_attrs(
+            tauri::CefRuntimeAttributes::default()
+                .command_line_arg("remote-debugging-port", Some(port)),
+        ),
+        _ => builder,
+    };
+
     let builder = builder
         .plugin(
             tauri_plugin_log::Builder::new()

@@ -153,6 +153,54 @@ pnpm test:e2e
 - **Connects to:** port 4445 (embedded WebDriver server)
 - **Use for:** UI interaction tests, window management, navigation flows.
 
+## Debugging the Linux CEF Build (CDP)
+
+The Linux CEF runtime is Chromium, so the app window is a normal Chrome DevTools
+Protocol target — the same interface Chrome, Playwright and Puppeteer speak. This
+is the only way to inspect the running desktop app on Linux (WebKitWebDriver, used
+by `pnpm tauri:dev:test`, drives the wry runtime instead).
+
+```bash
+# Terminal 1: dev build with the CDP endpoint on 127.0.0.1:9222
+pnpm tauri:dev:cdp
+
+# Terminal 2
+pnpm cdp targets                                     # list debuggable targets
+pnpm cdp eval 'document.title'                       # run JS in the app window
+pnpm cdp eval 'window.__TAURI_INTERNALS__.invoke("plugin:app|version")'
+pnpm cdp click 'button[aria-label="Import Books"]'   # real pointer events
+pnpm cdp screenshot /tmp/library.png
+pnpm cdp logs 30                                     # tail the app console
+```
+
+`pnpm tauri:dev:cdp` is `pnpm tauri dev` with `READEST_CDP_PORT=9222`. Any CEF
+build honours that variable — a packaged `.deb`, the Flatpak, or `tauri build`
+output — so the same tooling works against release binaries:
+
+```bash
+READEST_CDP_PORT=9222 readest
+CDP_PORT=9222 pnpm cdp targets
+```
+
+`scripts/cdp.mjs` is dependency-free (node's global `fetch` and `WebSocket`); the
+endpoint listens on loopback only. For anything richer, connect a real client to
+the same port — `chrome://inspect` in a local Chrome, or
+`chromium.connectOverCDP('http://127.0.0.1:9222')`.
+
+### Limits
+
+- **The IPC bridge cannot be stubbed.** `window.__TAURI_INTERNALS__.invoke` is
+  defined non-writable and non-configurable, so assigning over it from `eval`
+  fails silently and the real command still runs. You can *call* it, not fake it.
+- **Native dialogs are outside the page.** The file picker is an XDG portal
+  window (`org.gnome.Nautilus` on GNOME), not a CEF surface, so CDP cannot see or
+  click it. Driving an import end-to-end needs X11 input (XTEST via python-xlib:
+  focus the chooser, `Ctrl+L`, type the path, `Return` to select, `Return` to
+  open) — or skip the picker and dispatch the app's own `import-book-files` event.
+- **Passing `--remote-debugging-port` on argv works too**, but `tauri-plugin-cli`
+  parses the same argv for open-with paths and warns on every launch. Prefer the
+  env var.
+
 ## Test File Naming
 
 | Suffix              | Runner              | Environment           |
