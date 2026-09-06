@@ -469,10 +469,6 @@ const getPageLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
-  body {
-    line-height: unset;
-  }
-
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
@@ -591,6 +587,13 @@ const getParagraphLayoutStyles = (
   [align="right"] { text-align: right; }
   [align="center"] { text-align: center; }
   [align="justify"] { text-align: justify; }
+  /* Some badly designed EPUBs put their line-height on body; drop it so the
+     Line Spacing setting below, not an inherited value, spaces the text. It
+     lives in this chunk so Use Book Layout lets the book's body value
+     inherit (#6088). */
+  body {
+    line-height: unset;
+  }
   :is(hgroup, header) p {
       text-align: unset;
       hyphens: unset;
