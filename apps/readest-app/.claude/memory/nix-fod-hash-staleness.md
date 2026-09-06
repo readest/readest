@@ -17,3 +17,14 @@ metadata:
 Third hit 2026-08-26: PR #5893 (TypeScript 7 + Next 16.3) changed pnpm-lock.yaml; the fod-hashes job failed in 5m17s with `specified: sha256-jQoa1YvCJU2bmEkr70u8MENxS1cGb2ahai53TfI6DQE=` / `got: sha256-zEq7gAPixg8P9DeRtEKS0rCVlphJfBSVl7LOvvAQj+g=`, bumped in `40bda11b9`. Recipe holds exactly: push first, then read `got:`. Fastest way to the value is `gh run view --repo readest/readest --job <job-id> --log-failed | grep -iE "specified:|got:"` -- the run-level `--log-failed` also works but the job id from the PR check URL is more direct. There is no local nix on chrox's Mac (`which nix` = not found), so this cannot be pre-computed before opening the PR.
 
 Second hit 2026-08-25: PR #5865 changed Cargo.lock (image crate `webp` feature -> image-webp); the fod-hashes PR check failed with specified/got, cargoHash bumped in `50d57e30d` from the got: line, check green in one round.
+
+Fourth hit 2026-09-06: PR #6081 (tauri fork bump, Cargo.lock + pnpm-lock.yaml
+both changed) failed fod-hashes on cargoHash first (`got:` sha256-5uavqv6V...),
+and only after that bump did the next run report pnpmDeps (`got:`
+sha256-E6z6mXT4...): `nix build` stopped at the first FOD failure. dcf5d1e9a
+added `--keep-going` to the `nix-deps-check.yml` build so ONE run now prints
+every stale hash; still expect one push per unknown hash, never precompute.
+Both bumped in dcf5d1e9a + 555c887bf. GOTCHA: this PR's head is
+`chrox/readest-app:dev` (remote `chrox`), NOT `readest/readest:dev`; a push to
+`origin dev` created a stray branch on the main repo (deleted right away).
+Check `gh pr view N --json isCrossRepository,headRepositoryOwner` before pushing.

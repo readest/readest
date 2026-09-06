@@ -35,10 +35,27 @@ iOS home indicator). Upstream ba3490b3e "Use workspace dependency management
    uses `--triple` on Xcode 27 and keeps the legacy path on Xcode 26.x, which
    is what Readest found broken, so the vendored copy stays for now.
 3. `tao = { path = "packages/tao" }` (0.35.3 + 2 iOS scene fixes) can never
-   match `^0.37` again. Upstream tao 0.37.0 carries both fixes (#1245
-   `f2163508` autorelease UISceneConfiguration, `a3ff3f03` connecting-scene
-   role), so the patch line was REMOVED. The `packages/tao` submodule is still
-   in `.gitmodules` and should be deleted in a follow-up.
+   match `^0.37` again, so the patch line was REMOVED in #6081. CORRECTION
+   (verified against tao-0.37.0 sources 2026-09-06): upstream ports only ONE
+   half. `f2163508` (#1245, velocitysystems) = the use-after-free fix
+   (`Retained::autorelease_ptr`). `a3ff3f03` (Lucas Nogueira) passes the
+   connecting session's ROLE through but STILL calls
+   `setDelegateClass(TaoSceneDelegate)` for EVERY role. The fork's 419f5bba
+   returns a name-less config WITHOUT a delegate override for non-window roles
+   so UIKit takes the Info.plist manifest entry; with plain 0.37.0 a CarPlay
+   session gets TaoSceneDelegate -> NSGenericException "does not implement
+   CarPlay template application lifecycle methods" on connect (fork comment,
+   real device). No upstream PR from chrox/readest exists; the fork patch does
+   NOT apply cleanly onto 0.37.0 (context moved). VERIFIED 2026-09-06 on the
+   iOS 18.5 simulator (iPhone 16 Pro, `pnpm dev-ios-sim` of main 34e4ebeeb,
+   binary contains tao-0.37.0): app launches and renders; CarPlay display
+   attached via Simulator I/O > External Displays > CarPlay; Readest opened on
+   CarPlay and showed the CPNowPlaying template with the current book, process
+   alive, no crash report, no NSGenericException. So upstream 0.37.0 is FINE
+   for CarPlay despite the TaoSceneDelegate override; the theoretical concern
+   above did NOT materialize. `packages/tao` submodule REMOVED in local dev
+   commit a362ac598 (2026-09-06, `git submodule deinit` + `git rm`, workflow
+   comment updated; NOT pushed). Not yet checked: iOS 26.3 sim, real device.
 
 Also: `rust-version` bumped 1.77.2 -> 1.90 in root `[workspace.package]` and
 `src-tauri/Cargo.toml` (user request). MSRV-aware fallback is NOT active with
@@ -87,3 +104,28 @@ superproject ref still pins; tag it first. `.gitmodules` pins no branch. CLAUDE.
   version-pinned and a newer crates.io release silently drops them.
 - Cargo.lock changed a lot (fork crates' dev-deps left the lock); expect the
   Nix FOD hash to need refreshing, see [[nix-fod-hash-staleness]].
+
+Outcome: shipped as PR #6081 "chore: bump tauri to version 2.11.5" (head on the
+`chrox/readest-app` fork, squash-merged ee86510cc 2026-09-05T20:32Z) after two
+CI fixes: cargoHash + pnpmDeps hash bumps and the `as_chunks` clippy rewrite in
+epub_parser.rs. Main then took #6083 (nix Linux package on CEF). The temporary
+fork tag `cef-stub-old-base` was DELETED once main pinned 3156d92b7; the
+leftover `packages/tauri-plugins/` dir is gone. STILL OPEN: `packages/tao`
+submodule is registered in .gitmodules but unused (remove in a follow-up PR);
+iOS build with the relabelled swift-rs + upstream tao 0.37 not yet verified.
+
+Sim recipe that worked (2026-09-06): boot `xcrun simctl boot <udid>` + `open -a
+Simulator` FIRST, `pnpm dev-ios-sim` (Next export + cargo sim build + xcodebuild
++ `simctl install booted`, ~12 min; the install is the LAST step, so check the
+installed binary mtime before launching or you test the stale July app),
+`xcrun simctl launch booted com.bilingify.readest`, log via `xcrun simctl spawn
+booted log stream --predicate 'process == "Readest" OR eventMessage CONTAINS
+"Readest"'`. CarPlay: `osascript -e 'tell application "System Events" to tell
+process "Simulator" to click menu item "CarPlay" of menu "External Displays" of
+menu item "External Displays" of menu "I/O" of menu bar 1'` WORKS from this
+session (older memory said TCC blocked osascript; not the case now); computer-
+use screenshots hide menus and non-allowlisted windows, and its clicks on the
+CarPlay window did not register as touches; `System Events click at` needs the
+window raised (AXRaise errored -25204). chrox tapped the CarPlay icon by hand.
+`xcrun simctl io booted screenshot --display external` captures the CarPlay
+framebuffer (800x480).

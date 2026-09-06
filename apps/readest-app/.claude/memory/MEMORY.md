@@ -61,9 +61,9 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - Resolved/stable → [Sync Fixes](sync-fixes.md)
 
 ## Build, Testing & CI
-- [tauri fork bump: exclude + swift-rs relabel](tauri-fork-bump-workspace-exclude-swift-rs.md) root must EXCLUDE packages/tauri; `patch not used` = fork silently dropped; tao patch REMOVED; cef stub PUSHED 3156d92b7 to readest + feat/cef-feature-stub; force-push BROKE nix CI (#6080), tag cef-stub-old-base repaired; NEVER orphan a pinned fork commit; iOS build UNVERIFIED
+- [tauri fork bump: exclude + swift-rs relabel](tauri-fork-bump-workspace-exclude-swift-rs.md) MERGED #6081; root must EXCLUDE packages/tauri; `patch not used` = fork silently dropped; NEVER orphan a pinned fork commit; tao patch dropped; upstream 0.37.0 CarPlay VERIFIED on iOS 18.5 sim (Now Playing rendered, no crash); packages/tao submodule REMOVED (a362ac598, unpushed); iOS 26 sim + device unchecked
 - [TypeScript 7 upgrade #5260](typescript-7-upgrade-5260.md) MERGED #5893; no tsserver/tsgo (lint = `tsc`); next 16.3.3; rootDir fix
-- [Nix FOD hash staleness](nix-fod-hash-staleness.md) MERGED #5779; hash from the PR check's `got:` line, NEVER docker/OrbStack
+- [Nix FOD hash staleness](nix-fod-hash-staleness.md) MERGED #5779; hash from the PR check's `got:` line, NEVER docker/OrbStack; `--keep-going` since #6081; PR head may be chrox/readest-app (remote `chrox`)
 - [git push needs the SOCKS proxy](git-push-socks-proxy.md) ssh ProxyCommand only; `--no-verify` + ServerAliveInterval
 - [worktree:new REBASES a PR branch](worktree-new-rebases-pr-force-push.md) pushing to a fork from it = FORCE push; use the real head
 - [Workflow-file pushes need SSH](push-workflow-file-needs-ssh-not-gh-oauth.md) gh OAuth lacks `workflow` scope
