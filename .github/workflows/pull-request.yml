@@ -411,10 +411,10 @@ jobs:
         with:
           toolchain: stable
           # This action defaults RUSTFLAGS to -D warnings. Path-patched
-          # dependencies (packages/tao, packages/tauri) build without
-          # cap-lints, so upstream warnings in them (e.g. glib deprecations
-          # in tao's Linux backend) would fail the app build. Warnings in
-          # our own crate are enforced by the rust_lint job instead.
+          # dependencies (packages/tauri, packages/swift-rs) build without
+          # cap-lints, so upstream warnings in them would fail the app
+          # build. Warnings in our own crate are enforced by the rust_lint
+          # job instead.
           rustflags: ''
           # Disable this action's built-in rust-cache so the explicit
           # Swatinem/rust-cache below is the single cache (it's the one
