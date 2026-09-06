@@ -61,11 +61,19 @@ const connect = async () => {
   const send = (method, params = {}) =>
     new Promise((resolve, reject) => {
       const id = ++lastId;
-      pending.set(id, (m) =>
-        m.error ? reject(new Error(`${method}: ${JSON.stringify(m.error)}`)) : resolve(m.result),
-      );
+      // A pending timer keeps node's event loop alive, so it has to be cleared
+      // once the reply lands: otherwise the command prints its answer and then
+      // sits there for the rest of the 30s before the process can exit.
+      const timeout = setTimeout(() => {
+        pending.delete(id);
+        reject(new Error(`${method}: timed out`));
+      }, 30000);
+      pending.set(id, (m) => {
+        clearTimeout(timeout);
+        if (m.error) reject(new Error(`${method}: ${JSON.stringify(m.error)}`));
+        else resolve(m.result);
+      });
       ws.send(JSON.stringify({ id, method, params }));
-      setTimeout(() => reject(new Error(`${method}: timed out`)), 30000);
     });
   const evaluate = async (expression) => {
     const { result, exceptionDetails } = await send('Runtime.evaluate', {
