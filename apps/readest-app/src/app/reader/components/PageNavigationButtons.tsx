@@ -37,6 +37,10 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
 
   const isPageNavigationButtonsVisible =
     (hoveredBookKey === bookKey || isDropdownOpen) && viewSettings?.showPaginationButtons;
+  // Android screen readers only announce the hidden controls if they still hit-test,
+  // so they keep their taps there. Once the visible navigation buttons are enabled
+  // those serve the same purpose and the hidden ones let taps through instead.
+  const captureHiddenTaps = !!appService?.isAndroidApp && !viewSettings?.showPaginationButtons;
   const navigationButtonSize =
     !isPageNavigationButtonsVisible && appService?.isAndroidApp
       ? 'h-2 w-2 overflow-hidden'
@@ -95,7 +99,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           'absolute left-2 -translate-y-1/2',
           'flex items-center gap-1',
           isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-2 opacity-0',
-          !isPageNavigationButtonsVisible && !appService?.isAndroidApp ? 'pointer-events-none' : '',
+          !isPageNavigationButtonsVisible && !captureHiddenTaps ? 'pointer-events-none' : '',
         )}
       >
         <button
@@ -147,7 +151,7 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
           'absolute right-2 -translate-y-1/2',
           'flex items-center gap-1',
           isPageNavigationButtonsVisible ? 'top-1/2 opacity-100' : 'bottom-2 opacity-0',
-          !isPageNavigationButtonsVisible && !appService?.isAndroidApp ? 'pointer-events-none' : '',
+          !isPageNavigationButtonsVisible && !captureHiddenTaps ? 'pointer-events-none' : '',
         )}
       >
         <button

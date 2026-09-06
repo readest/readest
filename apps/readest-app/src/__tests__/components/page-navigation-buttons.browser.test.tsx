@@ -6,6 +6,7 @@ import '@/styles/globals.css';
 const mockPlatform = vi.hoisted(() => ({
   isAndroidApp: true,
   hoveredBookKey: null as string | null,
+  showPaginationButtons: false,
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -22,7 +23,10 @@ vi.mock('@/store/readerStore', () => ({
   ) =>
     selector({
       getView: () => null,
-      getViewSettings: () => ({ rtl: false, showPaginationButtons: true }),
+      getViewSettings: () => ({
+        rtl: false,
+        showPaginationButtons: mockPlatform.showPaginationButtons,
+      }),
       hoveredBookKey: mockPlatform.hoveredBookKey,
     }),
 }));
@@ -50,10 +54,21 @@ const { default: PageNavigationButtons } = await import(
 
 const navigationLabels = ['Previous Section', 'Previous Page', 'Next Page', 'Next Section'];
 
+// Returns whatever actually answers a tap at the given point. Never null in a
+// laid-out page, so a `false` from `button.contains()` means the tap really did
+// land on something else rather than on nothing at all.
+const hitTargetAt = (button: Element, offsetY: number) => {
+  const bounds = button.getBoundingClientRect();
+  const target = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + offsetY);
+  expect(target).not.toBeNull();
+  return target;
+};
+
 afterEach(() => {
   cleanup();
   mockPlatform.isAndroidApp = true;
   mockPlatform.hoveredBookKey = null;
+  mockPlatform.showPaginationButtons = false;
 });
 
 describe('PageNavigationButtons Android hit areas', () => {
@@ -65,12 +80,31 @@ describe('PageNavigationButtons Android hit areas', () => {
       const bounds = button.getBoundingClientRect();
       expect([bounds.width, bounds.height], label).toEqual([8, 8]);
 
-      const hitTarget = document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top - 1);
-      expect(button.contains(hitTarget), label).toBe(false);
+      expect(button.contains(hitTargetAt(button, -1)), label).toBe(false);
+    }
+  });
+
+  it('keeps the hidden controls tappable so screen readers can reach them', () => {
+    render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
+
+    for (const label of navigationLabels) {
+      const button = screen.getByRole('button', { name: label });
+      expect(button.contains(hitTargetAt(button, 4)), label).toBe(true);
+    }
+  });
+
+  it('lets taps fall through when the visible navigation buttons are enabled', () => {
+    mockPlatform.showPaginationButtons = true;
+    render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
+
+    for (const label of navigationLabels) {
+      const button = screen.getByRole('button', { name: label });
+      expect(button.contains(hitTargetAt(button, 4)), label).toBe(false);
     }
   });
 
   it('keeps the four visible controls large and distinctly labelled', () => {
+    mockPlatform.showPaginationButtons = true;
     mockPlatform.hoveredBookKey = 'book';
     render(<PageNavigationButtons bookKey='book' isDropdownOpen={false} />);
 
