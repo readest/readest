@@ -186,7 +186,7 @@ const Dialog: React.FC<DialogProps> = ({
     }
   };
 
-  const handleDragEnd = (data: { velocity: number; clientY: number }) => {
+  const handleDragEnd = (data: { velocity: number; clientY: number; canceled: boolean }) => {
     if (!dismissible || !isMobile || !dialogRef.current) return;
     const modal = dialogRef.current.querySelector('.modal-box') as HTMLElement;
     const overlay = dialogRef.current.querySelector('.overlay') as HTMLElement;
@@ -195,9 +195,12 @@ const Dialog: React.FC<DialogProps> = ({
     const top = data.clientY - dragOffsetRef.current;
     const snapUpper = snapHeight ? 1 - snapHeight - SNAP_THRESHOLD : 0.5;
     const snapLower = snapHeight ? 1 - snapHeight + SNAP_THRESHOLD : 0.5;
+    // A cancelled drag is the system taking the touch away, not the user letting
+    // go: put the sheet back where it was rather than reading a decision into it.
     if (
-      data.velocity > VELOCITY_THRESHOLD ||
-      (data.velocity >= 0 && top >= window.innerHeight * snapLower)
+      !data.canceled &&
+      (data.velocity > VELOCITY_THRESHOLD ||
+        (data.velocity >= 0 && top >= window.innerHeight * snapLower))
     ) {
       // dialog is dismissed
       const transitionDuration = 0.15 / Math.max(data.velocity, 0.5);
@@ -212,8 +215,8 @@ const Dialog: React.FC<DialogProps> = ({
       }, 300);
     } else if (
       snapHeight &&
-      top > window.innerHeight * snapUpper &&
-      top < window.innerHeight * snapLower
+      (data.canceled ||
+        (top > window.innerHeight * snapUpper && top < window.innerHeight * snapLower))
     ) {
       // dialog is snapped
       overlay.style.transition = `opacity 0.3s ease-out`;
@@ -230,7 +233,7 @@ const Dialog: React.FC<DialogProps> = ({
       modal.style.transform = `translateY(0%)`;
       overlay.style.opacity = '0';
     }
-    if (appService?.hasHaptics) {
+    if (appService?.hasHaptics && !data.canceled) {
       impactFeedback('medium');
     }
   };

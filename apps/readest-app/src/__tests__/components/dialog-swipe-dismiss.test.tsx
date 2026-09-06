@@ -123,6 +123,30 @@ describe('Dialog swipe-to-dismiss', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  // The system can take the touch away after the swipe has already become a
+  // drag — an edge-swipe back gesture, the notification shade. That is not a
+  // decision to dismiss, and it must not leave the drag half-finished: the
+  // viewport-wide shield useDrag installs would swallow every later tap.
+  it('restores the sheet when the system cancels a swipe already under way', () => {
+    const onClose = vi.fn();
+    render(<Sheet onClose={onClose} />);
+    const modal = document.querySelector('.modal-box') as HTMLElement;
+
+    const entry = screen.getByTestId('entry');
+    entry.dispatchEvent(touchEvent('touchstart', 100, 300));
+    entry.dispatchEvent(touchEvent('touchmove', 100, 320));
+    window.dispatchEvent(touchEvent('touchmove', 100, 700));
+    expect(document.querySelector('.drag-shield')).not.toBeNull();
+
+    window.dispatchEvent(touchEvent('touchcancel', 100, 700));
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(document.querySelector('.drag-shield')).toBeNull();
+    // Back to its resting snap, not left wherever the finger was.
+    expect(modal.style.height).toBe('75%');
+    expect(modal.style.transform).toBe('');
+  });
+
   it('does not dismiss on a desktop-sized viewport', () => {
     setViewport(1440, 900);
     const onClose = vi.fn();
