@@ -223,6 +223,16 @@ rustPlatform.buildRustPackage (finalAttrs: {
     gst_all_1.gst-plugins-bad
   ];
 
+  # ld resolves the DT_NEEDED entries of a library it links against through
+  # -rpath-link and that library's own RUNPATH, never through the -L search
+  # path. libcef.so is a Chromium prebuilt whose RUNPATH is just `$ORIGIN`,
+  # so the final link cannot find libnss3.so, libnspr4.so, libdbus-1.so.3,
+  # libcups.so.2, libudev.so.1 or libasound.so.2, and fails with "undefined
+  # reference to `PK11_SignatureLen@NSS_3.2'" and friends. Nix libraries carry
+  # a RUNPATH and resolve on their own; point the linker at the buildInputs
+  # for the ones libcef.so needs.
+  NIX_LDFLAGS = "-rpath-link=${lib.makeLibraryPath finalAttrs.buildInputs}";
+
   preBuild = lib.optionalString stdenv.hostPlatform.isLinux ''
     # Lay the CEF distribution out the way download-cef caches it (Release/
     # and Resources/ flattened, plus archive.json) and point cef-dll-sys at
