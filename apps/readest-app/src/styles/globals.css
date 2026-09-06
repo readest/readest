@@ -1004,6 +1004,24 @@
     display: none;
   }
 
+  /* Virtuoso owns the scroller inside every OverlayScrollbars root we set up
+     (bookshelf, TOC, book notes) and gives it `overflow-y: auto` inline, so the
+     platform scrollbar paints for as long as OverlayScrollbars' deferred init
+     takes — then vanishes when OS marks the same element
+     `data-overlayscrollbars-viewport="scrollbarHidden ..."`, widening the
+     content by the scrollbar's width and shifting the whole grid. OS ships
+     hiding rules for `[data-overlayscrollbars-initialize]`, but that attribute
+     sits on the root we hand it, never on the child that actually scrolls.
+     Hide it there too, until OS takes the root over. */
+  [data-overlayscrollbars-initialize]:not([data-overlayscrollbars]) [data-virtuoso-scroller] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  [data-overlayscrollbars-initialize]:not([data-overlayscrollbars])
+    [data-virtuoso-scroller]::-webkit-scrollbar {
+    display: none;
+  }
+
   [data-eink='true'] input.search-input,
   [data-eink='true'] input.search-input:focus {
     border-width: 1px !important;
