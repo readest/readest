@@ -143,10 +143,15 @@ describe('canToggleCloudProvider', () => {
 });
 
 describe('shouldShowCloudProviderBadge', () => {
-  test('signed out on a hosted deployment sees the tier chip', () => {
+  test('signed out on a hosted deployment sees the tier chip and stays gated', () => {
+    // The chip and the gate have to move together: a signed-out visitor to a
+    // hosted deployment is not entitled, so the row is badged AND unusable.
     expect(
       shouldShowCloudProviderBadge({ signedIn: false, planLoading: false, isPremium: false }),
     ).toBe(true);
+    expect(canToggleCloudProvider({ isPremium: false, isConfigured: true, isEnabled: false })).toBe(
+      false,
+    );
   });
 
   test('signed out on a self-hosted deployment does not (#6093)', () => {

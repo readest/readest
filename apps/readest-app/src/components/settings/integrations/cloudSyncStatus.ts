@@ -76,9 +76,11 @@ export interface CloudProviderBadgeInputs {
  * noise. Suppressed while a signed-in user's plan is still resolving, which
  * would otherwise flash the chip at a premium user on every open.
  *
- * Entitlement is the deciding input, not sign-in state: self-hosting unlocks
- * cloud sync with or without a signed-in user, and labelling it Premium there
- * reads as "not available in this deployment" (#6093).
+ * Signed out on a hosted deployment still carries the chip, and the row stays
+ * gated behind {@link canToggleCloudProvider} and the upgrade route — that
+ * cohort is not entitled. What #6093 changed is which input removes the chip:
+ * entitlement, not sign-in. `!user` used to short-circuit it ON, so a
+ * self-hoster who could already open every provider was told it was Premium.
  */
 export const shouldShowCloudProviderBadge = (s: CloudProviderBadgeInputs): boolean =>
   !s.isPremium && (!s.signedIn || !s.planLoading);
