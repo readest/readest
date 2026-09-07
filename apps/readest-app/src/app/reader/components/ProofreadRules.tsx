@@ -120,7 +120,7 @@ const RuleItem: React.FC<{
           </label>
           <input
             className={clsx(
-              'input input-sm border-transparent text-sm',
+              'input input-sm text-sm eink-bordered focus:outline-hidden',
               isSelection && 'bg-base-200 opacity-60',
             )}
             value={editingData.pattern}
@@ -133,7 +133,7 @@ const RuleItem: React.FC<{
         <div className='flex flex-col gap-1.5'>
           <label className='text-base-content/70 text-xs font-medium'>{_('Replace with:')}</label>
           <input
-            className='input input-sm border-transparent text-sm'
+            className='input input-sm text-sm eink-bordered focus:outline-hidden'
             value={editingData.replacement}
             spellCheck='false'
             onChange={(e) => onEditChange({ replacement: e.target.value })}
