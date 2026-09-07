@@ -7,7 +7,7 @@ metadata:
 
 **Done 2026-09-02** (OP had two accounts and wanted the space on the one carrying the subscription): a 2 GB Apple add-on moved from an Apple-sign-in free account to a Google-sign-in plus account. Buyer emails, user ids, the payment id and the `apple_original_transaction_id` are deliberately omitted - see [[feedback-no-prod-metrics-in-public]]; re-resolve them from the DB with `scripts/db/inspect-accounts.mjs`. Result: source back to 0 GB purchased (free-tier quota), target +2 GB.
 
-**Script: `scripts/db/transfer-storage-purchase.mjs`** (`--from` / `--to` emails, dry run by default, `--apply` writes), plus read-only `scripts/db/inspect-accounts.mjs`. Both need `node --env-file=.env --env-file=.env.local` and must live in the repo, not the scratchpad (ESM resolves `node_modules` from the FILE).
+**Script: `scripts/db/transfer-storage-purchase.mjs`** (NEVER COMMITTED, gone by 2026-09-07; `inspect-accounts.mjs` was rebuilt, see [[account-merge-recipe]]) (`--from` / `--to` emails, dry run by default, `--apply` writes), plus read-only `scripts/db/inspect-accounts.mjs`. Both need `node --env-file=.env --env-file=.env.local` and must live in the repo, not the scratchpad (ESM resolves `node_modules` from the FILE).
 
 **Reassign the store row, do NOT credit the target with a synthetic +N and cancel the source with a -N.** The store dedupe key has to follow the entitlement:
 - Left on the source, a Restore Purchases re-verifies that transaction and `createOrUpdatePayment` rewrites `status`/`storage_gb` from the product id, so a `refunded`/zeroed row silently re-credits.
