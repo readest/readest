@@ -221,13 +221,15 @@ const RuleItem: React.FC<{
         </div>
       </div>
       <div className='absolute right-2 top-2 flex items-center gap-1'>
-        <input
-          type='checkbox'
-          className='toggle toggle-sm'
-          checked={rule.enabled !== false}
-          onChange={onToggle}
-          aria-label={rule.enabled !== false ? _('Disable rule') : _('Enable rule')}
-        />
+        {scope !== 'library' && (
+          <input
+            type='checkbox'
+            className='toggle toggle-sm'
+            checked={rule.enabled !== false}
+            onChange={onToggle}
+            aria-label={rule.enabled !== false ? _('Disable rule') : _('Enable rule')}
+          />
+        )}
         <button
           className='btn btn-ghost btn-sm h-8 w-8 p-0'
           onClick={onEdit}
