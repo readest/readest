@@ -132,18 +132,13 @@ jobs:
         with:
           key: nightly-${{ matrix.config.os }}-${{ matrix.config.release }}-${{ matrix.config.arch }}-cargo
 
-      # The published @tauri-apps/cli-cef (3.0.0-alpha.26, pinned in
-      # apps/readest-app/scripts/tauri.mjs) bundles the AppImage with a fork of
-      # quick-sharun whose deployment array is broken — see the staging step
-      # below — and re-downloads that fork on every build with no way to point
-      # it elsewhere. The Linux legs build the CLI from readest/tauri instead,
-      # where sharun_cef.rs fetches a pinned, checksummed pkgforge revision and
-      # runs the tooling with bash and streamed output (the fix behind the
-      # STRACE_MODE hang, tauri-apps/tauri#12491). Pinned to a rev, not the
-      # branch tip, so a release cannot change behaviour under us; rust-cache
-      # keeps ~/.cargo/bin, and the marker file skips the ~6 minute rebuild
-      # while the pin is unchanged. TAURI_CEF_CARGO=1 in the build step makes
-      # scripts/tauri.mjs run `cargo tauri` with the same command line.
+      # The npm cli-cef bundles the AppImage with a broken quick-sharun fork
+      # and cannot be pointed elsewhere. Build the CLI from readest/tauri
+      # instead: its sharun_cef.rs pins a pkgforge revision (the one
+      # tauri-apps/tauri#12491 uses) and runs the tooling with bash and
+      # streamed output. Rev-pinned; the marker skips the rebuild while
+      # rust-cache keeps ~/.cargo/bin. scripts/tauri.mjs runs `cargo tauri`
+      # when TAURI_CEF_CARGO=1.
       - name: install the CEF tauri CLI from readest/tauri (linux only)
         if: matrix.config.release == 'linux'
         run: |
@@ -163,38 +158,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1 libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
-      # The CEF AppImage bundles the build host's glibc, so anything it does
-      # NOT bundle is resolved from the host at run time, against a glibc the
-      # bundled one cannot satisfy on any distro newer than the builder. The
-      # libraries Chromium dlopens by soname are the ones at risk; when they
-      # were missing, NSS aborted the app on first use (FATAL
-      # crypto/nss_util.cc, nss_error=-5925) and there was no audio output.
-      #
-      # quick-sharun deploys them itself: DEPLOY_CHROMIUM (which the bundler
-      # sets) covers the NSS modules and, via DEPLOY_PIPEWIRE -> DEPLOY_PULSE,
-      # libpulse and the ALSA pulse plugins. Verified with the pinned pkgforge
-      # revision the CLI above uses. This step only fills the two gaps no rule
-      # covers, the way the script itself prescribes — pass the file to
-      # quick-sharun rather than copy it in — through appimage.files entries
-      # under /usr/lib, which the bundler hands over as plain arguments:
-      #   - Debian keeps the NSS PKCS#11 modules in <triple>/nss/, and the
-      #     globs only know Arch's flat layout; copy them up a level so
-      #     `"$LIB_DIR"/libsoftokn3.so*` and friends match on the runner.
-      #   - nothing deploys libspeechd.so.2, without which the Web Speech TTS
-      #     engine has no system voices.
-      #
-      # Why the npm cli-cef could not do this (local builds still use it): its
-      # bundler downloads a fork of the script (FabianLars/Anylinux-AppImages,
-      # re-fetched from main on every build) whose HEAD, 3e280d1b "fix handling
-      # of spaces in input paths", turned
-      #   eval set -- "$TO_DEPLOY_ARRAY" "$@"   into   set -- $TO_DEPLOY_ARRAY "$@"
-      # The array entries come single-quoted from _save_array, so without the
-      # eval each keeps its literal quotes, fails `[ -f ]`, and EVERY DEPLOY_*
-      # extra is silently skipped — only ldd-derived libraries land. (Upstream's
-      # line does split positional paths on spaces; quoting them through the
-      # same helper keeps both.) tauri-apps/tauri#12491 takes the same route as
-      # the CLI above and also fixes the CI hang behind the STRACE_MODE pin in
-      # the build step; lift that pin when a cli-cef carries it.
+      # Chromium dlopens NSS, libpulse and libspeechd by soname; whatever the
+      # bundle lacks comes from the host at run time and fails against the
+      # bundled glibc on any newer distro (NSS: FATAL crypto/nss_util.cc).
+      # quick-sharun's DEPLOY_CHROMIUM deploys NSS and, via DEPLOY_PIPEWIRE,
+      # pulse — with the pinned pkgforge script the CLI above uses. Two gaps
+      # remain, passed as appimage.files under /usr/lib, which the bundler
+      # hands to quick-sharun as arguments: Debian keeps the NSS modules in
+      # <triple>/nss/ where the Arch-layout globs miss them, and nothing
+      # deploys libspeechd. The npm cli-cef could do none of this: its
+      # quick-sharun fork drops the `eval` that rebuilds the deploy array
+      # (FabianLars/Anylinux-AppImages@3e280d1b), so every DEPLOY_* extra is
+      # silently skipped.
       - name: stage CEF AppImage runtime libraries (linux only)
         if: matrix.config.release == 'linux'
         run: |
@@ -203,9 +178,7 @@ jobs:
           nss_dir=$(dirname "$(ls /usr/lib/*-linux-gnu/nss/libsoftokn3.so)")
           lib_dir=${nss_dir%/nss}
           sudo cp -f --remove-destination "$nss_dir"/*.so "$lib_dir/"
-          # Merge, don't assign: tauri.conf.json already ships an appimage.files
-          # entry for the AppRun hook that keeps the bundler's namespace hook
-          # from prompting for a root password (src-tauri/appimage/).
+          # +=: tauri.conf.json already ships the AppRun hook entry.
           conf=apps/readest-app/src-tauri/tauri.conf.json
           jq --arg d "$lib_dir" '.bundle.linux.appimage.files += {
               "/usr/lib/libspeechd.so.2": ($d + "/libspeechd.so.2")
@@ -305,9 +278,7 @@ jobs:
         timeout-minutes: 45
         env:
           TAURI_CEF_CARGO: '1'
-          # See release.yml: keep quick-sharun from running the app under
-          # Xvfb. Lift this together with the AppImage library staging above,
-          # once cli-cef carries tauri-apps/tauri#12491.
+          # See release.yml.
           STRACE_MODE: '0'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -324,12 +295,8 @@ jobs:
           cd apps/readest-app
           pnpm tauri build ${{ matrix.config.args }}
 
-      # quick-sharun skips anything it cannot find without failing, which is
-      # how the AppImage shipped with no NSS modules at all. Fail the leg
-      # instead of shipping a bundle that crashes on first use. The path is the
-      # AppDir quick-sharun packed, left next to the AppImage in the WORKSPACE
-      # target dir (see the collect step below). libsqlite3 is not staged
-      # explicitly — it must arrive as libsoftokn3.so's own ldd dependency.
+      # quick-sharun skips what it cannot find without failing; catch that
+      # before it ships.
       - name: verify the AppImage bundle contents (linux only)
         if: matrix.config.release == 'linux'
         run: |
@@ -339,16 +306,13 @@ jobs:
                     libpulse.so.0 libspeechd.so.2; do
             [ -e "$lib/$so" ] || { echo "::error::$so is missing from the AppImage bundle"; exit 1; }
           done
-          # libpulse keeps its private half in a subdir and finds it by RUNPATH,
-          # which points at the HOST dir; only sharun's own library path (built
-          # from lib.path) makes it load the bundled copy instead.
+          # libpulse finds its private half through a host RUNPATH; lib.path
+          # has to cover the bundled copy for it to win.
           ls "$lib"/pulseaudio/libpulsecommon-*.so > /dev/null 2>&1 \
             || { echo "::error::libpulsecommon is missing from the AppImage bundle"; exit 1; }
           grep -qx '+/pulseaudio' "$lib/lib.path" \
             || { echo "::error::lib.path does not cover lib/pulseaudio, so libpulse cannot load"; exit 1; }
-          # Ships through appimage.files, so it lands before quick-sharun adds
-          # the bundler's own hooks; without it every new AppImage asks for a
-          # root password on first launch.
+          # Without this hook every new AppImage asks for a root password.
           [ -e "${lib%/lib}/bin/00-no-userns-prompt.hook" ] \
             || { echo "::error::the no-userns-prompt hook is missing from the AppImage bundle"; exit 1; }
 
