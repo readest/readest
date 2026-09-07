@@ -132,6 +132,31 @@ jobs:
         with:
           key: nightly-${{ matrix.config.os }}-${{ matrix.config.release }}-${{ matrix.config.arch }}-cargo
 
+      # The published @tauri-apps/cli-cef (3.0.0-alpha.26, pinned in
+      # apps/readest-app/scripts/tauri.mjs) bundles the AppImage with a fork of
+      # quick-sharun whose deployment array is broken — see the staging step
+      # below — and re-downloads that fork on every build with no way to point
+      # it elsewhere. The Linux legs build the CLI from readest/tauri instead,
+      # where sharun_cef.rs fetches a pinned, checksummed pkgforge revision and
+      # runs the tooling with bash and streamed output (the fix behind the
+      # STRACE_MODE hang, tauri-apps/tauri#12491). Pinned to a rev, not the
+      # branch tip, so a release cannot change behaviour under us; rust-cache
+      # keeps ~/.cargo/bin, and the marker file skips the ~6 minute rebuild
+      # while the pin is unchanged. TAURI_CEF_CARGO=1 in the build step makes
+      # scripts/tauri.mjs run `cargo tauri` with the same command line.
+      - name: install the CEF tauri CLI from readest/tauri (linux only)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          rev=c62e9f90c1f5759a4e3795cc56b0b9a1273a5773
+          marker="$HOME/.cargo/bin/.cargo-tauri-rev"
+          if [ -x "$HOME/.cargo/bin/cargo-tauri" ] && [ "$(cat "$marker" 2>/dev/null)" = "$rev" ]; then
+            echo "cargo-tauri at $rev already installed"
+            exit 0
+          fi
+          cargo install tauri-cli --git https://github.com/readest/tauri --rev "$rev" --locked --force
+          echo "$rev" > "$marker"
+
       - name: install dependencies (ubuntu only)
         if: contains(matrix.config.os, 'ubuntu') && matrix.config.release != 'android'
         run: |
@@ -140,51 +165,36 @@ jobs:
 
       # The CEF AppImage bundles the build host's glibc, so anything it does
       # NOT bundle is resolved from the host at run time, against a glibc the
-      # bundled one cannot satisfy on any distro newer than the builder. Only
-      # libraries Chromium links against are bundled; the ones it dlopens by
-      # soname are not, and each one it misses fails that way:
-      #   libsoftokn3.so  NSS aborts the app on first use (FATAL
-      #                   crypto/nss_util.cc, nss_error=-5925)
-      #   libpulse.so.0   no audio output at all — the ALSA fallback then dies
-      #                   too, because its `default` PCM is a config hook that
-      #                   loads the host's libasound_module_conf_pulse.so
-      #   libspeechd.so.2 no system voices for the Web Speech TTS engine
+      # bundled one cannot satisfy on any distro newer than the builder. The
+      # libraries Chromium dlopens by soname are the ones at risk; when they
+      # were missing, NSS aborted the app on first use (FATAL
+      # crypto/nss_util.cc, nss_error=-5925) and there was no audio output.
       #
-      # quick-sharun's own DEPLOY_CHROMIUM rules cover the NSS modules and, via
-      # DEPLOY_PIPEWIRE -> DEPLOY_PULSE, libpulse. None of it reaches the
-      # bundle: the bundler in cli-cef 3.0.0-alpha.26 downloads a fork of the
-      # script (FabianLars/Anylinux-AppImages, re-fetched from its main on
-      # every build) whose HEAD, 3e280d1b "fix handling of spaces in input
-      # paths", is the one-line change
-      #   eval set -- "$TO_DEPLOY_ARRAY" "$@"   ->   set -- $TO_DEPLOY_ARRAY "$@"
-      # Upstream's line does split positional paths on spaces, and tauri names
-      # the AppDir after the product, so the change fixed something real — but
-      # the array entries come single-quoted from _save_array, so without the
+      # quick-sharun deploys them itself: DEPLOY_CHROMIUM (which the bundler
+      # sets) covers the NSS modules and, via DEPLOY_PIPEWIRE -> DEPLOY_PULSE,
+      # libpulse and the ALSA pulse plugins. Verified with the pinned pkgforge
+      # revision the CLI above uses. This step only fills the two gaps no rule
+      # covers, the way the script itself prescribes — pass the file to
+      # quick-sharun rather than copy it in — through appimage.files entries
+      # under /usr/lib, which the bundler hands over as plain arguments:
+      #   - Debian keeps the NSS PKCS#11 modules in <triple>/nss/, and the
+      #     globs only know Arch's flat layout; copy them up a level so
+      #     `"$LIB_DIR"/libsoftokn3.so*` and friends match on the runner.
+      #   - nothing deploys libspeechd.so.2, without which the Web Speech TTS
+      #     engine has no system voices.
+      #
+      # Why the npm cli-cef could not do this (local builds still use it): its
+      # bundler downloads a fork of the script (FabianLars/Anylinux-AppImages,
+      # re-fetched from main on every build) whose HEAD, 3e280d1b "fix handling
+      # of spaces in input paths", turned
+      #   eval set -- "$TO_DEPLOY_ARRAY" "$@"   into   set -- $TO_DEPLOY_ARRAY "$@"
+      # The array entries come single-quoted from _save_array, so without the
       # eval each keeps its literal quotes, fails `[ -f ]`, and EVERY DEPLOY_*
-      # extra is silently skipped. Only ldd-derived libraries land. The fix
-      # that keeps both halves is to quote the positional args the same way:
-      #   eval set -- "$TO_DEPLOY_ARRAY" "$(_save_array "$@")"
-      # Once that (or any restored eval) is on the fork's main, the next build
-      # deploys NSS and libpulse by itself and those entries below turn
-      # redundant — harmlessly, the tooling keeps files it already has.
-      # tauri-apps/tauri#12491 sidesteps the fork altogether (pinned pkgforge
-      # revision, no whitespace in the AppDir path) and fixes the CI hang the
-      # STRACE_MODE pin in the build step works around; lift that pin and bump
-      # CEF_CLI in apps/readest-app/scripts/tauri.mjs when cli-cef carries it.
-      # Keep the nss/ flatten and the libspeechd entry either way: every
-      # quick-sharun globs only Arch's flat layout, so a Debian builder hides
-      # the NSS modules from it, and no rule deploys libspeechd at all.
-      # libpipewire is deliberately not staged — Chromium needs it for the
-      # screen-share portal, not for audio — and neither are ALSA plugins:
-      # with libpulse in the bundle Chromium talks to PulseAudio/PipeWire
-      # directly, and a pure-ALSA host resolves `default` with built-ins.
-      #
-      # Until then, hand the modules over as appimage.files: the bundler passes
-      # files targeted at /usr/lib to quick-sharun as plain ELF arguments, the
-      # injection channel #12491 keeps. Sources must sit directly in the triple
-      # lib dir (Debian hides them in <triple>/nss/) because the destination
-      # inside the bundle mirrors the source dir, and only a flat source lands
-      # next to the libnss3.so that loads it.
+      # extra is silently skipped — only ldd-derived libraries land. (Upstream's
+      # line does split positional paths on spaces; quoting them through the
+      # same helper keeps both.) tauri-apps/tauri#12491 takes the same route as
+      # the CLI above and also fixes the CI hang behind the STRACE_MODE pin in
+      # the build step; lift that pin when a cli-cef carries it.
       - name: stage CEF AppImage runtime libraries (linux only)
         if: matrix.config.release == 'linux'
         run: |
@@ -198,10 +208,6 @@ jobs:
           # from prompting for a root password (src-tauri/appimage/).
           conf=apps/readest-app/src-tauri/tauri.conf.json
           jq --arg d "$lib_dir" '.bundle.linux.appimage.files += {
-              "/usr/lib/libsoftokn3.so": ($d + "/libsoftokn3.so"),
-              "/usr/lib/libfreeblpriv3.so": ($d + "/libfreeblpriv3.so"),
-              "/usr/lib/libnssckbi.so": ($d + "/libnssckbi.so"),
-              "/usr/lib/libpulse.so.0": ($d + "/libpulse.so.0"),
               "/usr/lib/libspeechd.so.2": ($d + "/libspeechd.so.2")
             }' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
 
@@ -298,6 +304,7 @@ jobs:
         # latest.json for ALL platforms (#4906).
         timeout-minutes: 45
         env:
+          TAURI_CEF_CARGO: '1'
           # See release.yml: keep quick-sharun from running the app under
           # Xvfb. Lift this together with the AppImage library staging above,
           # once cli-cef carries tauri-apps/tauri#12491.

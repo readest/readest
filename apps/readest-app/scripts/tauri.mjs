@@ -35,6 +35,11 @@ const CEF_CLI = '@tauri-apps/cli-cef@3.0.0-alpha.26';
 // Offline builds (Flatpak) cannot `pnpm dlx`; they point this at an unpacked
 // copy of the CLI package's `tauri.js` instead.
 const localCefCli = process.env['TAURI_CEF_CLI'];
+// CI builds the CLI from readest/tauri instead (`cargo install tauri-cli`),
+// because the published cli-cef's AppImage bundler fetches a broken fork of
+// quick-sharun; see the "install the CEF tauri CLI" step in the workflows.
+// The cargo-installed `cargo tauri` takes the same command line as the npm CLI.
+const cargoCefCli = process.env['TAURI_CEF_CARGO'] === '1';
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(appDir, '../..');
 const cargoConfig = path.join(appDir, 'src-tauri/.cargo/cef.toml');
@@ -105,7 +110,9 @@ if (!useCef) {
     process.on(signal, () => {});
   }
 
-  if (localCefCli) {
+  if (cargoCefCli) {
+    run('cargo', ['tauri', ...args], restoreLock);
+  } else if (localCefCli) {
     run('node', [localCefCli, ...args], restoreLock);
   } else {
     run('pnpm', ['dlx', CEF_CLI, ...args], restoreLock);
