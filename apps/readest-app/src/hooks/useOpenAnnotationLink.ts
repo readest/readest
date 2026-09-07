@@ -8,6 +8,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { parseAnnotationDeepLink, AnnotationDeepLink } from '@/utils/deeplink';
+import { isMainAppWindow } from '@/utils/window';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped — survives hook remounts (library → reader → library on
@@ -109,7 +110,11 @@ export function useOpenAnnotationLink() {
       resolveAndNavigate(parsed);
     };
 
-    if (!coldStartConsumed) {
+    // Only the launch window reads the cold-start URL: the deep-link plugin
+    // keeps it in process-global state for the whole session, so a window the
+    // app spawns later would treat it as its own cold start and navigate away
+    // from what the user just opened (#6104).
+    if (!coldStartConsumed && isMainAppWindow()) {
       coldStartConsumed = true;
       getCurrent()
         .then((urls) => urls?.forEach(handle))

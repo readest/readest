@@ -11,6 +11,7 @@ import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { parseBookDeepLink } from '@/utils/deeplink';
 import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
+import { isMainAppWindow } from '@/utils/window';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped: survives hook remounts (library <-> reader). getCurrent()
@@ -120,7 +121,11 @@ export function useOpenBookLink() {
       void resolveAndNavigate(parsed.bookHash);
     };
 
-    if (!coldStartConsumed) {
+    // Only the launch window reads the cold-start URL: it stays in the plugin's
+    // process-global state forever, and a reader window spawned later would
+    // otherwise treat it as its own cold start and replace the book the user
+    // just clicked with the deep-linked one (#6104).
+    if (!coldStartConsumed && isMainAppWindow()) {
       coldStartConsumed = true;
       getCurrent()
         .then((urls) => urls?.forEach((u) => handle(u, true)))
