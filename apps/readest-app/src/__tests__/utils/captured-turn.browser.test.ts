@@ -1583,7 +1583,7 @@ describe('CapturedPageTurn two-column curl (browser)', () => {
   const rightHalf = { x: 10 + W / 2, y: 20, width: W / 2, height: H };
   const overlay = () => host.querySelector<HTMLElement>('div[aria-hidden="true"]');
   const isInner = (rect: { width: number }) => rect.width === W / 2;
-  const makeController = (overrides: Partial<CapturedTurnHost> = {}) => {
+  const makeController = (overrides: Partial<CapturedTurnHost> = {}, duration = 40) => {
     controller = new CapturedPageTurn(
       {
         getHostElement: () => host,
@@ -1594,7 +1594,7 @@ describe('CapturedPageTurn two-column curl (browser)', () => {
         coverRegion,
         ...overrides,
       },
-      { duration: 40 },
+      { duration },
     );
     return controller;
   };
@@ -1737,9 +1737,15 @@ describe('CapturedPageTurn two-column curl (browser)', () => {
   it('commits the incoming column when no overlay interferes', async () => {
     const setIncoming = vi.spyOn(PageCurlRenderer.prototype, 'setIncoming');
     try {
-      await makeController().turn(true, false, 'curl');
-      await vi.waitFor(() => expect(setIncoming).toHaveBeenCalledTimes(1));
+      // The turn waits INCOMING_WAIT_MS for the capture, then lands the leaf
+      // and rightly drops a bitmap that arrives after that. The capture needs
+      // four paint frames plus a decode, so on a loaded runner a 40 ms leaf
+      // lands first. Keep the leaf in flight until the bitmap is in.
+      const turning = makeController({}, 5_000).turn(true, false, 'curl');
+      await vi.waitFor(() => expect(setIncoming).toHaveBeenCalledTimes(1), { timeout: 3_000 });
       expect(setIncoming.mock.calls[0]![0]).toBeInstanceOf(ImageBitmap);
+      controller!.dispose();
+      await turning;
     } finally {
       setIncoming.mockRestore();
     }
