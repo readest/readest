@@ -5,6 +5,7 @@ on:
     paths:
       - 'pnpm-lock.yaml'
       - 'Cargo.lock'
+      - 'Cargo.cef.lock'
       - 'nix/**'
       - 'flake.nix'
       - 'flake.lock'

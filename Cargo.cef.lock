@@ -34,6 +34,7 @@ dependencies = [
  "pdf",
  "pem 4.0.0",
  "percent-encoding",
+ "psl",
  "quick-xml 0.41.0",
  "rand 0.8.7",
  "read-progress-stream",
@@ -6249,6 +6250,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
+]
+
+[[package]]
+name = "psl"
+version = "2.1.231"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62697aa3f75e221e1ecfa35146237f7a3fa7f234b523816734deb198a1b23418"
+dependencies = [
+ "psl-types",
 ]
 
 [[package]]
