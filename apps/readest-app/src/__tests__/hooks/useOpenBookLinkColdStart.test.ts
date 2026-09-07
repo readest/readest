@@ -118,16 +118,29 @@ describe('useOpenBookLink — cold-start deep link ownership (#6104)', () => {
   });
 });
 
-// The launch URL also comes back as a LIVE delivery: Android re-reads the sticky
-// `activity.intent` and re-emits it every time the OS recreates the Activity, so
-// the replay lands on `app-incoming-url` — the path that is deliberately never
-// deduped. It has to be ignored without breaking the reporter's actual workflow,
-// which is opening the same `readest://book/<hash>` bookmark over and over.
-describe('useOpenBookLink — launch-URL replay after a resume (#6104)', () => {
-  const LAUNCH_URL = 'readest://book/linkedBook';
+// A document reload within one app run - iOS recycling the WebContent process,
+// Android recreating the Activity - re-reads getCurrent(), which still holds
+// whatever URL the plugin last stored. The consume marker has to survive that
+// reload, remember every URL the run acted on (a single last-seen stamp lets a
+// replayed A through once B has been opened), and never touch live deliveries:
+// re-tapping the same `readest://book/<hash>` bookmark is the reporter's whole
+// workflow.
+describe('useOpenBookLink — launch URL replayed after a reload (#6104)', () => {
+  const URL_A = 'readest://book/linkedBook';
+  const URL_B = 'readest://book/clickedBook';
+
+  // Boot a document on `/library` with getCurrent() reporting `urls`, and
+  // return the eventDispatcher so a live delivery can follow.
+  const bootDocument = async (urls: string[]) => {
+    coldStartUrls = urls;
+    window.history.replaceState({}, '', '/library');
+    const { useOpenBookLink, eventDispatcher } = await loadHook();
+    renderHook(() => useOpenBookLink());
+    await flush();
+    return eventDispatcher;
+  };
 
   beforeEach(() => {
-    coldStartUrls = [LAUNCH_URL];
     currentWindowLabel = 'main';
     navigateToReaderMock.mockReset();
     routerPushMock.mockReset();
@@ -138,38 +151,66 @@ describe('useOpenBookLink — launch-URL replay after a resume (#6104)', () => {
   afterEach(() => {
     cleanup();
     delete window.__READEST_APP_RUN_ID__;
-    vi.restoreAllMocks();
     window.history.replaceState({}, '', '/');
   });
 
-  it('ignores the launch URL replayed as a live event during startup', async () => {
-    window.history.replaceState({}, '', '/library');
-    const { useOpenBookLink, eventDispatcher } = await loadHook();
-    renderHook(() => useOpenBookLink());
-    await flush();
-    expect(navigateToReaderMock).toHaveBeenCalledTimes(1);
+  it('does not re-open the launch book when a reload re-reports it', async () => {
+    await bootDocument([URL_A]);
+    expect(navigateToReaderMock).toHaveBeenCalledWith(expect.anything(), ['linkedBook']);
 
     navigateToReaderMock.mockReset();
-    await eventDispatcher.dispatch('app-incoming-url', { urls: [LAUNCH_URL] });
-    await flush();
+    cleanup();
+    await bootDocument([URL_A]);
 
     expect(navigateToReaderMock).not.toHaveBeenCalled();
   });
 
-  it('still opens the book when the user taps the same bookmark later', async () => {
-    const start = Date.now();
-    const now = vi.spyOn(Date, 'now').mockReturnValue(start);
-    window.history.replaceState({}, '', '/library');
-    const { useOpenBookLink, eventDispatcher } = await loadHook();
-    renderHook(() => useOpenBookLink());
-    await flush();
-    expect(navigateToReaderMock).toHaveBeenCalledTimes(1);
-
-    // Well past startup: this is the user acting on their bookmark, not a replay.
-    now.mockReturnValue(start + 11_000);
+  it('always acts on a live delivery, even one repeating the launch URL', async () => {
+    const eventDispatcher = await bootDocument([URL_A]);
     navigateToReaderMock.mockReset();
-    await eventDispatcher.dispatch('app-incoming-url', { urls: [LAUNCH_URL] });
+
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [URL_A] });
     await flush();
+
+    expect(navigateToReaderMock).toHaveBeenCalledWith(expect.anything(), ['linkedBook']);
+  });
+
+  it('still rejects the replayed launch URL after a different link was opened live', async () => {
+    // A -> B -> A: the plugin replays the LAUNCH URL, which a last-seen stamp
+    // would have forgotten once B was recorded.
+    const eventDispatcher = await bootDocument([URL_A]);
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [URL_B] });
+    await flush();
+    expect(navigateToReaderMock).toHaveBeenLastCalledWith(expect.anything(), ['clickedBook']);
+
+    navigateToReaderMock.mockReset();
+    cleanup();
+    await bootDocument([URL_A]);
+
+    expect(navigateToReaderMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reload re-reporting a link that was opened live', async () => {
+    // macOS/iOS store the LAST delivered URL, so after a live B the reload
+    // reports B, not A. Live deliveries must be recorded for this to hold.
+    const eventDispatcher = await bootDocument([URL_A]);
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [URL_B] });
+    await flush();
+
+    navigateToReaderMock.mockReset();
+    cleanup();
+    await bootDocument([URL_B]);
+
+    expect(navigateToReaderMock).not.toHaveBeenCalled();
+  });
+
+  it('acts on the launch URL again after a real relaunch', async () => {
+    await bootDocument([URL_A]);
+    navigateToReaderMock.mockReset();
+    cleanup();
+
+    window.__READEST_APP_RUN_ID__ = 'run-2';
+    await bootDocument([URL_A]);
 
     expect(navigateToReaderMock).toHaveBeenCalledWith(expect.anything(), ['linkedBook']);
   });

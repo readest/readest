@@ -12,7 +12,7 @@ import { eventDispatcher } from '@/utils/event';
 import { parseBookDeepLink } from '@/utils/deeplink';
 import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
 import { isMainAppWindow } from '@/utils/window';
-import { consumeLaunchUrl, isLaunchReplayWindow } from '@/utils/deeplinkConsume';
+import { markLaunchUrl } from '@/utils/deeplinkConsume';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped: survives hook remounts (library <-> reader). getCurrent()
@@ -102,18 +102,13 @@ export function useOpenBookLink() {
       // Android Auto cold-resume: remember to start read-aloud once this book's
       // view inits (consumed in useBooksManager). Harmless if it never opens.
       if (parsed.autoplay) setPendingTTSAutoplay(parsed.bookHash);
-      // Dedupe ONLY launch deliveries. The OS persists the launch deep link and
-      // keeps re-delivering it: getCurrent() returns it all run, and Android
-      // re-emits the sticky intent as a live event whenever it recreates the
-      // Activity (#6104) - which is why a live delivery landing during startup
-      // counts as one too. A genuine later tap (the user opening the same
-      // bookmark again) is never suppressed.
-      if (
-        (coldStart || isLaunchReplayWindow()) &&
-        !consumeLaunchUrl('consumedLaunchBookUrl', url)
-      ) {
-        return;
-      }
+      // Dedupe ONLY the cold-start path. The OS persists the launch deep link
+      // and getCurrent() re-reports it to every fresh document for the whole
+      // app run (#6104). Live taps (app-incoming-url) are genuine user actions
+      // and must always be processed - they are only recorded, so a later
+      // reload re-reporting one of them is recognised as a replay.
+      const fresh = markLaunchUrl('launchBookUrls', url);
+      if (coldStart && !fresh) return;
       if (!useLibraryStore.getState().libraryLoaded) {
         pending.current = parsed.bookHash;
         return;

@@ -9,7 +9,7 @@ import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { parseAnnotationDeepLink, AnnotationDeepLink } from '@/utils/deeplink';
 import { isMainAppWindow } from '@/utils/window';
-import { consumeLaunchUrl, isLaunchReplayWindow } from '@/utils/deeplinkConsume';
+import { markLaunchUrl } from '@/utils/deeplinkConsume';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped — survives hook remounts (library → reader → library on
@@ -104,14 +104,11 @@ export function useOpenAnnotationLink() {
     const handle = (url: string, coldStart = false) => {
       const parsed = parseAnnotationDeepLink(url);
       if (!parsed) return;
-      // See useOpenBookLink: the launch URL keeps coming back, so a launch
-      // delivery is acted on once per app run (#6104).
-      if (
-        (coldStart || isLaunchReplayWindow()) &&
-        !consumeLaunchUrl('consumedLaunchAnnotationUrl', url)
-      ) {
-        return;
-      }
+      // See useOpenBookLink: getCurrent() re-reports the launch URL to every
+      // fresh document, so a cold-start read is acted on once per app run;
+      // live deliveries are only recorded (#6104).
+      const fresh = markLaunchUrl('launchAnnotationUrls', url);
+      if (coldStart && !fresh) return;
       if (!useLibraryStore.getState().libraryLoaded) {
         pending.current = parsed;
         return;
