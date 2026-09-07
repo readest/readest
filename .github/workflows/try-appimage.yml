@@ -1,0 +1,159 @@
+# Manual build of the Linux CEF AppImage for a branch, to validate bundler
+# changes before they hit the nightly: same steps as nightly.yml's Linux leg
+# (kept in sync by hand), no version stamp, no R2, no manifest — the AppImage
+# is uploaded as a workflow artifact instead.
+name: Try Linux AppImage
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  appimage:
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - os: ubuntu-22.04
+            arch: x86_64
+            rust_target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04-arm
+            arch: aarch64
+            rust_target: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: initialize git submodules
+        run: git submodule update --init --recursive
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: copy pdfjs-dist and simplecc-dist to public directory
+        run: pnpm --filter @readest/readest-app setup-vendors
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: ${{ matrix.config.rust_target }}
+
+      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: try-appimage-${{ matrix.config.os }}-${{ matrix.config.arch }}-cargo
+
+      # The npm cli-cef bundles the AppImage with a broken quick-sharun fork
+      # and cannot be pointed elsewhere. Build the CLI from readest/tauri
+      # instead: its sharun_cef.rs pins a pkgforge revision (the one
+      # tauri-apps/tauri#12491 uses) and runs the tooling with bash and
+      # streamed output. Rev-pinned; the marker skips the rebuild while
+      # rust-cache keeps ~/.cargo/bin. scripts/tauri.mjs runs `cargo tauri`
+      # when TAURI_CEF_CARGO=1.
+      - name: install the CEF tauri CLI from readest/tauri (linux only)
+        run: |
+          set -euo pipefail
+          rev=c62e9f90c1f5759a4e3795cc56b0b9a1273a5773
+          marker="$HOME/.cargo/bin/.cargo-tauri-rev"
+          if [ -x "$HOME/.cargo/bin/cargo-tauri" ] && [ "$(cat "$marker" 2>/dev/null)" = "$rev" ]; then
+            echo "cargo-tauri at $rev already installed"
+            exit 0
+          fi
+          cargo install tauri-cli --git https://github.com/readest/tauri --rev "$rev" --locked --force
+          echo "$rev" > "$marker"
+
+      - name: install dependencies (ubuntu only)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libfontconfig-dev libgtk-3-dev libwebkit2gtk-4.1 libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      # Chromium dlopens NSS, libpulse and libspeechd by soname; whatever the
+      # bundle lacks comes from the host at run time and fails against the
+      # bundled glibc on any newer distro (NSS: FATAL crypto/nss_util.cc).
+      # quick-sharun's DEPLOY_CHROMIUM deploys NSS and, via DEPLOY_PIPEWIRE,
+      # pulse — with the pinned pkgforge script the CLI above uses. Two gaps
+      # remain, passed as appimage.files under /usr/lib, which the bundler
+      # hands to quick-sharun as arguments: Debian keeps the NSS modules in
+      # <triple>/nss/ where the Arch-layout globs miss them, and nothing
+      # deploys libspeechd. The npm cli-cef could do none of this: its
+      # quick-sharun fork drops the `eval` that rebuilds the deploy array
+      # (FabianLars/Anylinux-AppImages@3e280d1b), so every DEPLOY_* extra is
+      # silently skipped.
+      - name: stage CEF AppImage runtime libraries (linux only)
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y libnss3 libpulse0 libspeechd2
+          nss_dir=$(dirname "$(ls /usr/lib/*-linux-gnu/nss/libsoftokn3.so)")
+          lib_dir=${nss_dir%/nss}
+          sudo cp -f --remove-destination "$nss_dir"/*.so "$lib_dir/"
+          # +=: tauri.conf.json already ships the AppRun hook entry.
+          conf=apps/readest-app/src-tauri/tauri.conf.json
+          jq --arg d "$lib_dir" '.bundle.linux.appimage.files += {
+              "/usr/lib/libspeechd.so.2": ($d + "/libspeechd.so.2")
+            }' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
+
+      - name: create .env.local file for Next.js
+        run: |
+          echo "NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env.local
+          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env.local
+          echo "SENTRY_ORG=readest" >> .env.local
+          echo "SENTRY_PROJECT=readest" >> .env.local
+          cp .env.local apps/readest-app/.env.local
+
+      - name: build desktop bundles
+        shell: bash
+        timeout-minutes: 45
+        env:
+          TAURI_CEF_CARGO: '1'
+          # See release.yml.
+          STRACE_MODE: '0'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: |
+          cd apps/readest-app
+          pnpm tauri build --bundles appimage
+
+      # quick-sharun skips what it cannot find without failing; catch that
+      # before it ships.
+      - name: verify the AppImage bundle contents (linux only)
+        run: |
+          set -euo pipefail
+          lib=target/release/bundle/appimage/Readest.AppDir/lib
+          for so in libsoftokn3.so libfreeblpriv3.so libnssckbi.so libsqlite3.so.0 \
+                    libpulse.so.0 libspeechd.so.2; do
+            [ -e "$lib/$so" ] || { echo "::error::$so is missing from the AppImage bundle"; exit 1; }
+          done
+          # libpulse finds its private half through a host RUNPATH; lib.path
+          # has to cover the bundled copy for it to win.
+          ls "$lib"/pulseaudio/libpulsecommon-*.so > /dev/null 2>&1 \
+            || { echo "::error::libpulsecommon is missing from the AppImage bundle"; exit 1; }
+          grep -qx '+/pulseaudio' "$lib/lib.path" \
+            || { echo "::error::lib.path does not cover lib/pulseaudio, so libpulse cannot load"; exit 1; }
+          # Without this hook every new AppImage asks for a root password.
+          [ -e "${lib%/lib}/bin/00-no-userns-prompt.hook" ] \
+            || { echo "::error::the no-userns-prompt hook is missing from the AppImage bundle"; exit 1; }
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Readest-AppImage-${{ matrix.config.arch }}
+          path: target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
