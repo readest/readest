@@ -1654,13 +1654,18 @@ describe('CapturedPageTurn two-column curl (browser)', () => {
     uncover.mockImplementation(async () => {
       clipAtUncover = overlay()?.style.clipPath ?? null;
     });
-    await makeController().turn(true, false, 'curl');
+    // Hold the leaf until uncover instead of racing the 40 ms turn against
+    // capture and paint frames on a loaded runner.
+    const turn = makeController();
+    expect(await turn.beginDrag(true, false, 'curl')).toBe(true);
     await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
 
     // The left (inner) column is cut away, the right leaf stays covered.
     expect(clipDuringCapture).toMatch(/^inset\(0(px)? 0(px)? 0(px)? 50%\)$/);
     // Restored before the native cover comes down.
     expect(clipAtUncover).toBe('');
+    await turn.endDrag(true);
+    expect(overlay()).toBeNull();
   });
 
   it('lands a backward leaf on the right column', async () => {
