@@ -300,12 +300,12 @@ export const nativeFileSystem: FileSystem = {
   async getImageURL(path: string) {
     return this.getURL(path);
   },
-  async openFile(path: string, base: BaseDir, name?: string) {
+  async openFile(path: string, base: BaseDir, name?: string, fetcher?: typeof fetch) {
     const normalizedPath = OS_TYPE === 'ios' ? safeDecodePath(path) : path;
     const { fp, baseDir } = this.resolvePath(normalizedPath, base);
     let fname = safeDecodePath(name || getFilename(fp));
     if (isValidURL(path)) {
-      return await new RemoteFile(path, fname, '', Date.now(), tauriFetch).open();
+      return await new RemoteFile(path, fname, '', Date.now(), fetcher ?? tauriFetch).open();
     } else if (isContentURI(path) || (isFileURI(path) && OS_TYPE === 'ios')) {
       fname = safeDecodePath(await basename(path));
       if (path.includes('com.android.externalstorage')) {
