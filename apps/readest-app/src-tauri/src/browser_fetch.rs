@@ -64,6 +64,16 @@ fn valid_response_cookie(header: &str, url: &Url) -> bool {
         && (host == domain || host.ends_with(&format!(".{domain}")))
 }
 
+#[cfg(any(target_os = "windows", test))]
+fn preserve_windows_cookie_domain(cookie: &mut tauri::webview::Cookie<'_>) {
+    // Wry passes Cookie::domain() to WebView2, but that getter strips one dot.
+    // Keep a dot at the native boundary so explicit Domain cookies retain
+    // subdomain scope. This in-memory adapter is never serialized as a header.
+    if let Some(domain) = cookie.domain() {
+        cookie.set_domain(format!("..{}", domain.trim_start_matches('.')));
+    }
+}
+
 async fn browser_cookies<R: tauri::Runtime>(
     webview: tauri::Webview<R>,
     url: Url,
@@ -97,6 +107,8 @@ async fn browser_cookies<R: tauri::Runtime>(
                         if host != domain && !host.ends_with(&format!(".{domain}")) {
                             continue;
                         }
+                        #[cfg(target_os = "windows")]
+                        preserve_windows_cookie_domain(&mut cookie);
                     } else {
                         cookie.set_domain(host.to_string());
                     }
@@ -259,6 +271,24 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn windows_cookie_renewal_preserves_domain_scope_at_the_wry_boundary() {
+        for header in [
+            "session=renewed; Domain=.example.org",
+            "session=renewed; Domain=example.org",
+        ] {
+            let mut cookie = tauri::webview::Cookie::parse(header).unwrap();
+            preserve_windows_cookie_domain(&mut cookie);
+            // Wry passes domain() directly to WebView2 CreateCookie.
+            assert_eq!(cookie.domain(), Some(".example.org"));
+        }
+        let mut host_only = tauri::webview::Cookie::parse("session=renewed; Path=/").unwrap();
+        preserve_windows_cookie_domain(&mut host_only);
+        assert_eq!(host_only.domain(), None);
+        host_only.set_domain("www.example.org");
+        assert_eq!(host_only.domain(), Some("www.example.org"));
+    }
+
     #[test]
     fn disallows_non_http_and_embedded_credentials() {
         for url in [
