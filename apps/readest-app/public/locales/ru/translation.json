@@ -2439,5 +2439,14 @@
   "Changes the spoken text only": "Меняет только произносимый текст",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Используете Readest в браузере? Добавьте {{origin}} в список разрешённых источников CORS в настройках сервера Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "Открыть руководство по настройке CORS для Audiobookshelf",
-  "Selected text": "Выделенный текст"
+  "Selected text": "Выделенный текст",
+  "Use Chapter List": "Использовать список глав",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Вставьте ссылку на список глав веб-романа. Для сайтов только для участников войдите в систему с помощью браузера, откройте список глав, затем выберите Использовать список глав.",
+  "Sign in with Browser": "Войти через браузер",
+  "Preparing your book…": "Подготовка книги…",
+  "Keep Readest open until the import is complete.": "Держите Readest открытым до завершения импорта.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Откройте веб-сайт, при необходимости войдите в систему, затем выберите Сохранить страницу, чтобы сохранить его в своей библиотеке. Скачиваемые вами книги также импортируются.",
+  "Web URL": "URL-адрес веб-страницы",
+  "Loading chapter…": "Загрузка главы…",
+  "Clip Page": "Сохранить страницу"
 }

@@ -2439,5 +2439,14 @@
   "Changes the spoken text only": "Zmienia tylko tekst czytany na głos",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Używasz Readest w przeglądarce? Dodaj {{origin}} do dozwolonych źródeł CORS w ustawieniach serwera Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "Zobacz przewodnik konfiguracji CORS dla Audiobookshelf",
-  "Selected text": "Zaznaczony tekst"
+  "Selected text": "Zaznaczony tekst",
+  "Use Chapter List": "Użyj listy rozdziałów",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Wklej link do listy rozdziałów powieści internetowej. W przypadku witryn tylko dla członków zaloguj się za pomocą przeglądarki, otwórz listę rozdziałów, a następnie wybierz Użyj listy rozdziałów.",
+  "Sign in with Browser": "Zaloguj się za pomocą przeglądarki",
+  "Preparing your book…": "Przygotowuję książkę…",
+  "Keep Readest open until the import is complete.": "Pozostaw aplikację Readest otwartą do zakończenia importowania.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Otwórz stronę internetową, zaloguj się w razie potrzeby, a następnie wybierz Przytnij stronę, aby zapisać ją w swojej bibliotece. Pobrane książki również zostaną zaimportowane.",
+  "Web URL": "Adres internetowy",
+  "Loading chapter…": "Ładowanie rozdziału…",
+  "Clip Page": "Przytnij stronę"
 }

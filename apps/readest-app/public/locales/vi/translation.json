@@ -2259,5 +2259,14 @@
   "Changes the spoken text only": "Chỉ thay đổi văn bản được đọc lên",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Bạn đang dùng Readest trên web? Hãy thêm {{origin}} vào Allowed CORS Origins trong cài đặt máy chủ Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "Xem hướng dẫn thiết lập CORS cho Audiobookshelf",
-  "Selected text": "Văn bản đã chọn"
+  "Selected text": "Văn bản đã chọn",
+  "Use Chapter List": "Sử dụng danh sách chương",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Dán liên kết vào danh sách chương của tiểu thuyết trên web. Đối với các trang web chỉ dành cho thành viên, hãy đăng nhập bằng Trình duyệt, mở danh sách chương, sau đó chọn Sử dụng danh sách chương.",
+  "Sign in with Browser": "Đăng nhập bằng trình duyệt",
+  "Preparing your book…": "Đang chuẩn bị sách của bạn…",
+  "Keep Readest open until the import is complete.": "Giữ Readest mở cho đến khi quá trình nhập hoàn tất.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Mở một trang web, đăng nhập nếu cần, sau đó chọn Trang Clip để lưu vào thư viện của bạn. Sách bạn tải xuống cũng được nhập.",
+  "Web URL": "URL web",
+  "Loading chapter…": "Đang tải chương…",
+  "Clip Page": "Trang Clip"
 }

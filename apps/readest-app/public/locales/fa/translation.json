@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "فقط متن خوانده‌شده را تغییر می‌دهد",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "از Readest در وب استفاده می‌کنید؟ {{origin}} را در تنظیمات سرور Audiobookshelf به مبدأهای مجاز CORS اضافه کنید.",
   "View the Audiobookshelf CORS setup guide": "مشاهدهٔ راهنمای پیکربندی CORS در Audiobookshelf",
-  "Selected text": "متن انتخاب‌شده"
+  "Selected text": "متن انتخاب‌شده",
+  "Use Chapter List": "از فهرست فصل استفاده کنید",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "پیوند را به فهرست فصل یک رمان وب بچسبانید. برای سایت‌های مختص اعضا، با مرورگر وارد شوید، فهرست فصل را باز کنید، سپس از فهرست فصل استفاده کنید را انتخاب کنید.",
+  "Sign in with Browser": "با مرورگر وارد شوید",
+  "Preparing your book…": "در حال آماده کردن کتاب…",
+  "Keep Readest open until the import is complete.": "Readest را باز نگه دارید تا وارد کردن کامل شود.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "وب سایتی را باز کنید، در صورت نیاز وارد شوید، سپس صفحه کلیپ را انتخاب کنید تا آن را در کتابخانه خود ذخیره کنید. کتاب هایی که دانلود می کنید نیز وارد می شوند.",
+  "Web URL": "آدرس وب",
+  "Loading chapter…": "در حال بارگیری فصل…",
+  "Clip Page": "صفحه کلیپ"
 }

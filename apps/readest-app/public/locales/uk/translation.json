@@ -2439,5 +2439,14 @@
   "Changes the spoken text only": "Змінює лише озвучений текст",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Використовуєте Readest у браузері? Додайте {{origin}} до дозволених джерел CORS у налаштуваннях сервера Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "Переглянути посібник із налаштування CORS для Audiobookshelf",
-  "Selected text": "Виділений текст"
+  "Selected text": "Виділений текст",
+  "Use Chapter List": "Використовуйте список розділів",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Вставте посилання на список розділів веб-роману. Для сайтів лише для учасників увійдіть за допомогою браузера, відкрийте список розділів і виберіть Використовуйте список розділів.",
+  "Sign in with Browser": "Увійдіть за допомогою браузера",
+  "Preparing your book…": "Підготовка вашої книги…",
+  "Keep Readest open until the import is complete.": "Тримайте Readest відкритим, доки імпорт не завершиться.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Відкрийте веб-сайт, увійдіть, якщо потрібно, а потім виберіть Сторінка кліпу, щоб зберегти його у своїй бібліотеці. Книги, які ви завантажуєте, також імпортуються.",
+  "Web URL": "Веб-адреса",
+  "Loading chapter…": "Завантаження розділу…",
+  "Clip Page": "Сторінка кліпу"
 }

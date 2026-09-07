@@ -2259,5 +2259,14 @@
   "Changes the spoken text only": "仅更改朗读的文本",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "在网页版使用 Readest？请在 Audiobookshelf 服务器设置中将 {{origin}} 添加到允许的 CORS 来源。",
   "View the Audiobookshelf CORS setup guide": "查看 Audiobookshelf CORS 设置指南",
-  "Selected text": "选中文本"
+  "Selected text": "选中文本",
+  "Use Chapter List": "使用章节列表",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "将链接粘贴到网络小说的章节列表。对于仅限会员的网站，请使用浏览器登录，打开章节列表，然后选择 使用章节列表。",
+  "Sign in with Browser": "使用浏览器登录",
+  "Preparing your book…": "正在准备你的书……",
+  "Keep Readest open until the import is complete.": "保持 Readest 打开，直到导入完成。",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "打开网站，根据需要登录，然后选择 剪藏页面 将其保存到您的库中。您下载的书籍也会导入。",
+  "Web URL": "网址",
+  "Loading chapter…": "正在加载章节…",
+  "Clip Page": "剪藏页面"
 }

@@ -2259,5 +2259,14 @@
   "Changes the spoken text only": "เปลี่ยนเฉพาะข้อความที่อ่านออกเสียง",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "ใช้ Readest บนเว็บอยู่ใช่ไหม เพิ่ม {{origin}} ใน Allowed CORS Origins ในการตั้งค่าเซิร์ฟเวอร์ Audiobookshelf ของคุณ",
   "View the Audiobookshelf CORS setup guide": "ดูคู่มือการตั้งค่า CORS ของ Audiobookshelf",
-  "Selected text": "ข้อความที่เลือก"
+  "Selected text": "ข้อความที่เลือก",
+  "Use Chapter List": "ใช้รายการบท",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "วางลิงก์ไปยังรายการบทของนวนิยายบนเว็บ สำหรับไซต์เฉพาะสมาชิก ให้ลงชื่อเข้าใช้ด้วยเบราว์เซอร์ เปิดรายการบท จากนั้นเลือก ใช้รายการบท",
+  "Sign in with Browser": "ลงชื่อเข้าใช้ด้วยเบราว์เซอร์",
+  "Preparing your book…": "กำลังเตรียมหนังสือของคุณ…",
+  "Keep Readest open until the import is complete.": "เปิด Readest ไว้จนกว่าการนำเข้าจะเสร็จสมบูรณ์",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "เปิดเว็บไซต์ ลงชื่อเข้าใช้หากจำเป็น จากนั้นเลือก หน้าคลิป เพื่อบันทึกลงในห้องสมุดของคุณ หนังสือที่คุณดาวน์โหลดจะถูกนำเข้าด้วย",
+  "Web URL": "URL ของเว็บ",
+  "Loading chapter…": "กำลังโหลดบท…",
+  "Clip Page": "หน้าคลิป"
 }

@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "ცვლის მხოლოდ წაკითხულ ტექსტს",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "იყენებთ Readest-ს ვებში? დაამატეთ {{origin}} ნებადართულ CORS წყაროებში თქვენი Audiobookshelf სერვერის პარამეტრებში.",
   "View the Audiobookshelf CORS setup guide": "იხილეთ Audiobookshelf-ის CORS კონფიგურაციის სახელმძღვანელო",
-  "Selected text": "არჩეული ტექსტი"
+  "Selected text": "არჩეული ტექსტი",
+  "Use Chapter List": "გამოიყენეთ თავების სია",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "ჩასვით ბმული ვებ რომანის თავების სიაში. მხოლოდ წევრებისთვის განკუთვნილი საიტებისთვის შედით ბრაუზერით, გახსენით თავების სია და აირჩიეთ გამოიყენეთ თავების სია.",
+  "Sign in with Browser": "შედით ბრაუზერით",
+  "Preparing your book…": "თქვენი წიგნის მომზადება…",
+  "Keep Readest open until the import is complete.": "შეინახეთ Readest ღია იმპორტის დასრულებამდე.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "გახსენით ვებსაიტი, შედით სისტემაში საჭიროების შემთხვევაში, შემდეგ აირჩიეთ გვერდის შენახვა თქვენს ბიბლიოთეკაში შესანახად. თქვენ მიერ გადმოწერილი წიგნები ასევე იმპორტირებულია.",
+  "Web URL": "ვებ URL",
+  "Loading chapter…": "იტვირთება თავი…",
+  "Clip Page": "გვერდის შენახვა"
 }

@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "Csak a felolvasott szöveget módosítja",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "A Readestet a weben használja? Vegye fel a(z) {{origin}} címet az engedélyezett CORS-eredetek közé az Audiobookshelf kiszolgáló beállításaiban.",
   "View the Audiobookshelf CORS setup guide": "Az Audiobookshelf CORS-beállítási útmutatójának megtekintése",
-  "Selected text": "Kijelölt szöveg"
+  "Selected text": "Kijelölt szöveg",
+  "Use Chapter List": "A fejezetlista használata",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Illessze be a linket egy webregény fejezetlistájára. Csak tagoknak szánt webhelyek esetén jelentkezzen be a böngészővel, nyissa meg a fejezetlistát, majd válassza a A fejezetlista használata lehetőséget.",
+  "Sign in with Browser": "Jelentkezzen be a böngészővel",
+  "Preparing your book…": "A könyv előkészítése…",
+  "Keep Readest open until the import is complete.": "Tartsa nyitva a Readestet, amíg az importálás be nem fejeződik.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Nyisson meg egy webhelyet, jelentkezzen be, ha szükséges, majd válassza a Oldal mentése lehetőséget, hogy elmentse a könyvtárába. A letöltött könyveket is importálja a rendszer.",
+  "Web URL": "Web URL",
+  "Loading chapter…": "Fejezet betöltése…",
+  "Clip Page": "Oldal mentése"
 }

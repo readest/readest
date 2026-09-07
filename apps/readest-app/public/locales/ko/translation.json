@@ -2259,5 +2259,14 @@
   "Changes the spoken text only": "음성으로 읽는 텍스트만 변경합니다",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "웹에서 Readest를 사용하시나요? Audiobookshelf 서버 설정의 허용된 CORS 원본에 {{origin}}을(를) 추가하세요.",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf CORS 설정 가이드 보기",
-  "Selected text": "선택한 텍스트"
+  "Selected text": "선택한 텍스트",
+  "Use Chapter List": "챕터 목록 사용",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "웹소설의 챕터 목록 링크를 붙여넣으세요. 회원 전용 사이트의 경우 브라우저로 로그인하고 장 목록을 연 다음 챕터 목록 사용를 선택하세요.",
+  "Sign in with Browser": "브라우저로 로그인",
+  "Preparing your book…": "책을 준비하는 중…",
+  "Keep Readest open until the import is complete.": "가져오기가 완료될 때까지 Readest를 열어두세요.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "웹사이트를 열고 필요한 경우 로그인한 다음 페이지 클립를 선택하여 라이브러리에 저장하세요. 다운로드한 책도 가져옵니다.",
+  "Web URL": "웹 URL",
+  "Loading chapter…": "챕터 로드 중…",
+  "Clip Page": "페이지 클립"
 }

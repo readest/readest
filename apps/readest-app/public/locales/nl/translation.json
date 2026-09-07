@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "Wijzigt alleen de voorgelezen tekst",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Gebruik je Readest op het web? Voeg {{origin}} toe aan de toegestane CORS-origins in de instellingen van je Audiobookshelf-server.",
   "View the Audiobookshelf CORS setup guide": "Bekijk de handleiding voor CORS-instellingen van Audiobookshelf",
-  "Selected text": "Geselecteerde tekst"
+  "Selected text": "Geselecteerde tekst",
+  "Use Chapter List": "Gebruik Hoofdstukkenlijst",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Plak de link naar de hoofdstukkenlijst van een webroman. Voor sites die alleen voor leden zijn, meldt u zich aan met Browser, opent u de hoofdstukkenlijst en kiest u vervolgens Gebruik Hoofdstukkenlijst.",
+  "Sign in with Browser": "Meld u aan met Browser",
+  "Preparing your book…": "Je boek voorbereiden…",
+  "Keep Readest open until the import is complete.": "Houd Readest open totdat het importeren is voltooid.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Open een website, log indien nodig in en kies vervolgens Clippagina om deze in uw bibliotheek op te slaan. Boeken die u downloadt, worden ook geïmporteerd.",
+  "Web URL": "Web-URL",
+  "Loading chapter…": "Hoofdstuk laden…",
+  "Clip Page": "Clippagina"
 }

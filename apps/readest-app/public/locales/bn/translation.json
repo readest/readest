@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "শুধু পড়ে শোনানো লেখাই বদলায়",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "ওয়েবে Readest ব্যবহার করছেন? আপনার Audiobookshelf সার্ভার সেটিংসে অনুমোদিত CORS অরিজিনে {{origin}} যোগ করুন।",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf CORS সেটআপ নির্দেশিকা দেখুন",
-  "Selected text": "নির্বাচিত টেক্সট"
+  "Selected text": "নির্বাচিত টেক্সট",
+  "Use Chapter List": "অধ্যায় তালিকা ব্যবহার করুন",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "একটি ওয়েব উপন্যাসের অধ্যায়ের তালিকায় লিঙ্কটি আটকান। শুধুমাত্র সদস্যদের জন্য সাইট, ব্রাউজার দিয়ে সাইন ইন করুন, অধ্যায় তালিকা খুলুন, তারপর অধ্যায় তালিকা ব্যবহার করুন নির্বাচন করুন।",
+  "Sign in with Browser": "ব্রাউজার দিয়ে সাইন ইন করুন",
+  "Preparing your book…": "আপনার বই প্রস্তুত করা হচ্ছে…",
+  "Keep Readest open until the import is complete.": "আমদানি সম্পূর্ণ না হওয়া পর্যন্ত Readest খোলা রাখুন।",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "একটি ওয়েবসাইট খুলুন, প্রয়োজনে সাইন ইন করুন, তারপর আপনার লাইব্রেরিতে সংরক্ষণ করতে ক্লিপ পৃষ্ঠা চয়ন করুন৷ আপনার ডাউনলোড করা বইগুলিও আমদানি করা হয়।",
+  "Web URL": "ওয়েব URL",
+  "Loading chapter…": "অধ্যায় লোড হচ্ছে…",
+  "Clip Page": "ক্লিপ পৃষ্ঠা"
 }

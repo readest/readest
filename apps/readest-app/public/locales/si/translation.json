@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "හඬනඟා කියවන පෙළ පමණක් වෙනස් කරයි",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "ඔබ Readest වෙබයේ භාවිත කරනවාද? ඔබේ Audiobookshelf සේවාදායක සැකසුම්වල අවසර දී ඇති CORS මූලාශ්‍රවලට {{origin}} එක් කරන්න.",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf CORS සැකසුම් මාර්ගෝපදේශය බලන්න",
-  "Selected text": "තේරූ පෙළ"
+  "Selected text": "තේරූ පෙළ",
+  "Use Chapter List": "පරිච්ඡේද ලැයිස්තුව භාවිතා කරන්න",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "වෙබ් නවකතාවක පරිච්ඡේද ලැයිස්තුවට සබැඳිය අලවන්න. සාමාජිකයින්ට-පමණි අඩවි සඳහා, බ්‍රව්සරය සමඟින් පුරනය වන්න, පරිච්ඡේද ලැයිස්තුව විවෘත කරන්න, ඉන්පසු පරිච්ඡේද ලැයිස්තුව භාවිතා කරන්න තෝරන්න.",
+  "Sign in with Browser": "බ්‍රව්සරය සමඟින් පුරනය වන්න",
+  "Preparing your book…": "ඔබේ පොත සූදානම් කරමින්…",
+  "Keep Readest open until the import is complete.": "ආයාත කිරීම සම්පූර්ණ වන තෙක් Readest විවෘතව තබන්න.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "වෙබ් අඩවියක් විවෘත කරන්න, අවශ්‍ය නම් පුරනය වන්න, ඉන්පසු එය ඔබගේ පුස්තකාලයට සුරැකීමට ක්ලිප් පිටුව තෝරන්න. ඔබ බාගත කරන පොත් ද ආනයනය කරනු ලැබේ.",
+  "Web URL": "වෙබ් URL",
+  "Loading chapter…": "පරිච්ඡේදය පූරණය වෙමින්…",
+  "Clip Page": "ක්ලිප් පිටුව"
 }

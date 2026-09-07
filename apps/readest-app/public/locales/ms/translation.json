@@ -2259,5 +2259,14 @@
   "Changes the spoken text only": "Hanya mengubah teks yang dibacakan",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Menggunakan Readest di web? Tambah {{origin}} ke Allowed CORS Origins dalam tetapan pelayan Audiobookshelf anda.",
   "View the Audiobookshelf CORS setup guide": "Lihat panduan persediaan CORS Audiobookshelf",
-  "Selected text": "Teks dipilih"
+  "Selected text": "Teks dipilih",
+  "Use Chapter List": "Gunakan Senarai Bab",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Tampalkan pautan ke senarai bab novel web. Untuk tapak ahli sahaja, log masuk dengan Penyemak Imbas, buka senarai bab, kemudian pilih Gunakan Senarai Bab.",
+  "Sign in with Browser": "Log masuk dengan Penyemak Imbas",
+  "Preparing your book…": "Menyediakan buku anda…",
+  "Keep Readest open until the import is complete.": "Pastikan Readest dibuka sehingga import selesai.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Buka tapak web, log masuk jika perlu, kemudian pilih Halaman Klip untuk menyimpannya ke pustaka anda. Buku yang anda muat turun juga diimport.",
+  "Web URL": "URL web",
+  "Loading chapter…": "Memuatkan bab…",
+  "Clip Page": "Halaman Klip"
 }

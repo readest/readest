@@ -2259,5 +2259,14 @@
   "Changes the spoken text only": "読み上げのテキストのみを変更します",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Readest をウェブで使用していますか？ Audiobookshelf サーバーの設定で、許可する CORS オリジンに {{origin}} を追加してください。",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf の CORS 設定ガイドを見る",
-  "Selected text": "選択されたテキスト"
+  "Selected text": "選択されたテキスト",
+  "Use Chapter List": "章一覧を使用",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Web 小説の章リストへのリンクを貼り付けます。会員限定サイトの場合は、ブラウザでサインインしてチャプターリストを開き、章一覧を使用を選択してください。",
+  "Sign in with Browser": "ブラウザでサインインする",
+  "Preparing your book…": "本を準備しています…",
+  "Keep Readest open until the import is complete.": "インポートが完了するまで Readest を開いたままにしてください。",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Web サイトを開き、必要に応じてサインインし、ページをクリップ を選択してライブラリに保存します。ダウンロードした書籍もインポートされます。",
+  "Web URL": "ウェブURL",
+  "Loading chapter…": "章を読み込んでいます…",
+  "Clip Page": "ページをクリップ"
 }

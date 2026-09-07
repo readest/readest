@@ -2379,5 +2379,14 @@
   "Changes the spoken text only": "משנה רק את הטקסט המוקרא",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "משתמשים ב-Readest בדפדפן? הוסיפו את {{origin}} למקורות ה-CORS המורשים בהגדרות שרת Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "הצגת מדריך הגדרת CORS של Audiobookshelf",
-  "Selected text": "טקסט שנבחר"
+  "Selected text": "טקסט שנבחר",
+  "Use Chapter List": "השתמש ברשימת פרקים",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "הדבק את הקישור לרשימת הפרקים של רומן אינטרנט. עבור אתרים לחברים בלבד, היכנס באמצעות דפדפן, פתח את רשימת הפרקים ולאחר מכן בחר השתמש ברשימת פרקים.",
+  "Sign in with Browser": "היכנס באמצעות דפדפן",
+  "Preparing your book…": "מכין את הספר שלך…",
+  "Keep Readest open until the import is complete.": "השאר את Readest פתוח עד להשלמת הייבוא.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "פתח אתר, היכנס במידת הצורך ולאחר מכן בחר דף קליפ כדי לשמור אותו בספרייה שלך. גם ספרים שאתה מוריד מיובאים.",
+  "Web URL": "כתובת אתר אינטרנט",
+  "Loading chapter…": "טוען פרק…",
+  "Clip Page": "דף קליפ"
 }

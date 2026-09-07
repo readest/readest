@@ -2379,5 +2379,14 @@
   "Changes the spoken text only": "Modifică doar textul citit cu voce tare",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Folosești Readest pe web? Adaugă {{origin}} la originile CORS permise în setările serverului Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "Vezi ghidul de configurare CORS pentru Audiobookshelf",
-  "Selected text": "Textul selectat"
+  "Selected text": "Textul selectat",
+  "Use Chapter List": "Utilizați Lista de capitole",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Lipiți linkul către lista de capitole a unui roman web. Pentru site-urile destinate exclusiv membrilor, conectați-vă cu Browser, deschideți lista de capitole, apoi alegeți Utilizați Lista de capitole.",
+  "Sign in with Browser": "Conectați-vă cu Browser",
+  "Preparing your book…": "Îți pregătesc cartea…",
+  "Keep Readest open until the import is complete.": "Țineți Readest deschis până la finalizarea importului.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Deschideți un site web, conectați-vă dacă este necesar, apoi alegeți Salvează pagina pentru a-l salva în bibliotecă. Cărțile pe care le descărcați sunt de asemenea importate.",
+  "Web URL": "Adresa URL web",
+  "Loading chapter…": "Se încarcă capitolul…",
+  "Clip Page": "Salvează pagina"
 }

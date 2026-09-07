@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "வாசித்துக் காட்டப்படும் உரையை மட்டும் மாற்றும்",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Readest ஐ இணையத்தில் பயன்படுத்துகிறீர்களா? உங்கள் Audiobookshelf சேவையக அமைப்புகளில் அனுமதிக்கப்பட்ட CORS மூலங்களில் {{origin}} ஐச் சேர்க்கவும்.",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf CORS அமைவு வழிகாட்டியைப் பார்க்கவும்",
-  "Selected text": "தேர்ந்தெடுக்கப்பட்ட உரை"
+  "Selected text": "தேர்ந்தெடுக்கப்பட்ட உரை",
+  "Use Chapter List": "அத்தியாயப் பட்டியலைப் பயன்படுத்தவும்",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "வலை நாவலின் அத்தியாயப் பட்டியலில் இணைப்பை ஒட்டவும். உறுப்பினர்களுக்கு மட்டுமேயான தளங்களுக்கு, உலாவியில் உள்நுழைந்து, அத்தியாயப் பட்டியலைத் திறந்து, அத்தியாயப் பட்டியலைப் பயன்படுத்தவும் என்பதைத் தேர்ந்தெடுக்கவும்.",
+  "Sign in with Browser": "உலாவி மூலம் உள்நுழையவும்",
+  "Preparing your book…": "உங்கள் புத்தகத்தைத் தயாரிக்கிறது…",
+  "Keep Readest open until the import is complete.": "இறக்குமதி முடியும் வரை Readest ஐத் திறந்து வைக்கவும்.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "இணையதளத்தைத் திறந்து, தேவைப்பட்டால் உள்நுழைந்து, அதை உங்கள் நூலகத்தில் சேமிக்க கிளிப் பக்கம் என்பதைத் தேர்ந்தெடுக்கவும். நீங்கள் பதிவிறக்கும் புத்தகங்களும் இறக்குமதி செய்யப்படுகின்றன.",
+  "Web URL": "இணைய URL",
+  "Loading chapter…": "அத்தியாயத்தை ஏற்றுகிறது…",
+  "Clip Page": "கிளிப் பக்கம்"
 }

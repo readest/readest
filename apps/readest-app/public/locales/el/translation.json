@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "Αλλάζει μόνο το εκφωνούμενο κείμενο",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Χρησιμοποιείτε το Readest στο web; Προσθέστε το {{origin}} στις επιτρεπόμενες προελεύσεις CORS στις ρυθμίσεις του διακομιστή Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "Δείτε τον οδηγό ρύθμισης CORS του Audiobookshelf",
-  "Selected text": "Επιλεγμένο κείμενο"
+  "Selected text": "Επιλεγμένο κείμενο",
+  "Use Chapter List": "Χρησιμοποιήστε τη Λίστα κεφαλαίων",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Επικολλήστε τον σύνδεσμο στη λίστα κεφαλαίων ενός διαδικτυακού μυθιστορήματος. Για ιστότοπους μόνο για μέλη, συνδεθείτε με το πρόγραμμα περιήγησης, ανοίξτε τη λίστα κεφαλαίων και, στη συνέχεια, επιλέξτε Χρησιμοποιήστε τη Λίστα κεφαλαίων.",
+  "Sign in with Browser": "Συνδεθείτε με το πρόγραμμα περιήγησης",
+  "Preparing your book…": "Προετοιμασία του βιβλίου σας…",
+  "Keep Readest open until the import is complete.": "Διατηρήστε το Readest ανοιχτό μέχρι να ολοκληρωθεί η εισαγωγή.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Ανοίξτε έναν ιστότοπο, συνδεθείτε εάν χρειάζεται και, στη συνέχεια, επιλέξτε Κλιπ σελίδας για να τον αποθηκεύσετε στη βιβλιοθήκη σας. Τα βιβλία που κατεβάζετε εισάγονται επίσης.",
+  "Web URL": "Διεύθυνση URL Ιστού",
+  "Loading chapter…": "Φόρτωση κεφαλαίου…",
+  "Clip Page": "Κλιπ σελίδας"
 }

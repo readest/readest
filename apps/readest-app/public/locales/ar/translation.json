@@ -2559,5 +2559,14 @@
   "Changes the spoken text only": "يغيّر النص المنطوق فقط",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "هل تستخدم Readest على الويب؟ أضف {{origin}} إلى مصادر CORS المسموح بها في إعدادات خادم Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "عرض دليل إعداد CORS الخاص بـ Audiobookshelf",
-  "Selected text": "النص المحدد"
+  "Selected text": "النص المحدد",
+  "Use Chapter List": "استخدام قائمة الفصول",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "الصق الرابط إلى قائمة فصول رواية الويب. بالنسبة للمواقع المخصصة للأعضاء فقط، قم بتسجيل الدخول باستخدام المتصفح، وافتح قائمة الفصول، ثم اختر استخدام قائمة الفصول.",
+  "Sign in with Browser": "قم بتسجيل الدخول باستخدام المتصفح",
+  "Preparing your book…": "تحضير كتابك…",
+  "Keep Readest open until the import is complete.": "أبقِ Readest مفتوحًا حتى اكتمال الاستيراد.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "افتح موقعًا إلكترونيًا، وقم بتسجيل الدخول إذا لزم الأمر، ثم اختر حفظ الصفحة لحفظه في مكتبتك. يتم أيضًا استيراد الكتب التي تقوم بتنزيلها.",
+  "Web URL": "عنوان URL للويب",
+  "Loading chapter…": "جارٍ تحميل الفصل…",
+  "Clip Page": "حفظ الصفحة"
 }

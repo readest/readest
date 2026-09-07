@@ -2259,5 +2259,14 @@
   "Changes the spoken text only": "སྒྲ་ཐོན་པའི་ཡི་གེ་ཁོ་ན་བསྒྱུར་བ།",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "ཁྱེད་ཀྱིས་དྲ་ཐོག་ཏུ་ Readest བཀོལ་བཞིན་ཡོད་དམ། ཁྱེད་ཀྱི་ Audiobookshelf ཞབས་ཞུ་བའི་སྒྲིག་འགོད་ནང་ཆོག་མཆན་ཡོད་པའི་ CORS འབྱུང་ཁུངས་སུ་ {{origin}} ཁ་སྣོན་གནང་རོགས།",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf CORS སྒྲིག་འགོད་ལམ་སྟོན་ལ་གཟིགས།",
-  "Selected text": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།"
+  "Selected text": "དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།",
+  "Use Chapter List": "ལེའུ་ཐོ་བཀོལ་སྤྱོད།",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "དྲ་རྒྱའི་སྒྲུང་རིང་གི་ལེའུ་ཐོ་གཞུང་ལ་འབྲེལ་མཐུད་སྦྱར་རོགས། ཚོགས་མི་ཁོ་ནའི་དྲ་ཚིགས་ལ་དྲ་ཚིགས་བཀོལ་ནས་ཐོ་འགོད་བྱས་ནས་སློབ་ཚན་ཐོ་གཞུང་ཁ་ཕྱེ་ནས་ལེའུ་ཐོ་བཀོལ་སྤྱོད།འདེམས།",
+  "Sign in with Browser": "དྲ་མིག་བརྒྱུད་ནས་ཐོ་འགོད་བྱེད་པ།",
+  "Preparing your book…": "ཁྱེད་རང་གི་དེབ་གྲ་སྒྲིག་བྱེད་བཞིན་ཡོད།",
+  "Keep Readest open until the import is complete.": "ནང་འདྲེན་མ་ཚར་བར་དུ་Readestཁ་ཕྱེ་ནས་བསྡད་རོགས།",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "དྲ་ཚིགས་ཁ་ཕྱེ་ནས་དགོས་མཁོ་བྱུང་ན་ཐོ་འགོད་བྱེད་དགོས། དེ་ནས་ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་དུ་གསོག་འཇོག་བྱེད་པར་ཤོག་ངོས་ཉར་ཚགས། འདེམས། ཁྱེད་ཀྱིས་ཕབ་ལེན་བྱས་པའི་དེབ་རྣམས་ཀྱང་ནང་འདྲེན་བྱེད་ཀྱི་ཡོད།",
+  "Web URL": "དྲ་རྒྱའི་ཁ་བྱང་།",
+  "Loading chapter…": "ལེའུ་མངོན་བཞིན་ཡོད།",
+  "Clip Page": "ཤོག་ངོས་ཉར་ཚགས།"
 }

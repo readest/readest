@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "Faqat ovoz chiqarib oʻqiladigan matnni oʻzgartiradi",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Readest’dan vebda foydalanyapsizmi? Audiobookshelf server sozlamalarida ruxsat etilgan CORS manbalariga {{origin}} ni qoʻshing.",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf CORS sozlash qoʻllanmasini koʻrish",
-  "Selected text": "Tanlangan matn"
+  "Selected text": "Tanlangan matn",
+  "Use Chapter List": "Boblar ro‘yxatidan foydalanish",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Havolani veb-romanning bo'limlari ro'yxatiga joylashtiring. Faqat aʼzolar uchun moʻljallangan saytlar uchun brauzer orqali tizimga kiring, boʻlimlar roʻyxatini oching, soʻng Boblar ro‘yxatidan foydalanish ni tanlang.",
+  "Sign in with Browser": "Brauzer bilan tizimga kiring",
+  "Preparing your book…": "Kitobingiz tayyorlanmoqda…",
+  "Keep Readest open until the import is complete.": "Import tugaguncha Readest-ni ochiq saqlang.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Veb-saytni oching, agar kerak bo'lsa tizimga kiring, keyin uni kutubxonangizga saqlash uchun Sahifani saqlash ni tanlang. Siz yuklab olgan kitoblar ham import qilinadi.",
+  "Web URL": "Veb URL",
+  "Loading chapter…": "Bob yuklanmoqda…",
+  "Clip Page": "Sahifani saqlash"
 }

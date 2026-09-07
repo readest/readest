@@ -2319,5 +2319,14 @@
   "Changes the spoken text only": "Yalnızca seslendirilen metni değiştirir",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Readest'i web'de mi kullanıyorsunuz? Audiobookshelf sunucu ayarlarınızda {{origin}} adresini izin verilen CORS kaynaklarına ekleyin.",
   "View the Audiobookshelf CORS setup guide": "Audiobookshelf CORS kurulum kılavuzunu görüntüle",
-  "Selected text": "Seçili metin"
+  "Selected text": "Seçili metin",
+  "Use Chapter List": "Bölüm Listesini Kullan",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Bağlantıyı bir web romanının bölüm listesine yapıştırın. Yalnızca üyelere özel siteler için Tarayıcı ile oturum açın, bölüm listesini açın ve ardından Bölüm Listesini Kullan'yu seçin.",
+  "Sign in with Browser": "Tarayıcıyla oturum açın",
+  "Preparing your book…": "Kitabınız hazırlanıyor…",
+  "Keep Readest open until the import is complete.": "İçe aktarma tamamlanana kadar Readest'i açık tutun.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Bir web sitesi açın, gerekiyorsa oturum açın ve ardından kitaplığınıza kaydetmek için Sayfayı Kırp öğesini seçin. İndirdiğiniz kitaplar da içe aktarılır.",
+  "Web URL": "Web URL'si",
+  "Loading chapter…": "Bölüm yükleniyor…",
+  "Clip Page": "Sayfayı Kırp"
 }

@@ -2439,5 +2439,14 @@
   "Changes the spoken text only": "Spremeni samo prebrano besedilo",
   "Using Readest on the web? Add {{origin}} to Allowed CORS Origins in your Audiobookshelf server settings.": "Ali Readest uporabljate v spletu? Dodajte {{origin}} med dovoljene izvore CORS v nastavitvah strežnika Audiobookshelf.",
   "View the Audiobookshelf CORS setup guide": "Oglejte si vodnik za nastavitev CORS za Audiobookshelf",
-  "Selected text": "Izbrano besedilo"
+  "Selected text": "Izbrano besedilo",
+  "Use Chapter List": "Uporabite seznam poglavij",
+  "Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.": "Prilepite povezavo do seznama poglavij spletnega romana. Za spletna mesta samo za člane se prijavite z brskalnikom, odprite seznam poglavij in izberite Uporabite seznam poglavij.",
+  "Sign in with Browser": "Prijavite se z brskalnikom",
+  "Preparing your book…": "Priprava vaše knjige …",
+  "Keep Readest open until the import is complete.": "Pustite Readest odprto, dokler uvoz ni končan.",
+  "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Odprite spletno mesto, po potrebi se prijavite in izberite Stran posnetka, da ga shranite v knjižnico. Uvožene so tudi knjige, ki jih prenesete.",
+  "Web URL": "Spletni URL",
+  "Loading chapter…": "Nalaganje poglavja …",
+  "Clip Page": "Stran posnetka"
 }
