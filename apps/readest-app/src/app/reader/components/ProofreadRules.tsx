@@ -360,6 +360,7 @@ export const ProofreadRulesManager: React.FC = () => {
   const [addScope, setAddScope] = useState<Exclude<ProofreadScope, 'selection'>>('book');
   const [addIsRegex, setAddIsRegex] = useState(false);
   const [addCaseSensitive, setAddCaseSensitive] = useState(true);
+  const [addOnlyForTTS, setAddOnlyForTTS] = useState(false);
   const [editing, setEditing] = useState<{
     id: string | null;
     scope: ProofreadScope | null;
@@ -488,12 +489,16 @@ export const ProofreadRulesManager: React.FC = () => {
       isRegex: addIsRegex,
       caseSensitive: addCaseSensitive,
       enabled: true,
+      onlyForTTS: addOnlyForTTS,
     });
 
     setAddPattern('');
     setAddReplacement('');
     setAddIsRegex(false);
-    recreateViewer(envConfig, sideBarBookKey);
+    setAddOnlyForTTS(false);
+    if (!addOnlyForTTS) {
+      recreateViewer(envConfig, sideBarBookKey);
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent, list: ProofreadRule[]) => {
@@ -623,6 +628,15 @@ export const ProofreadRulesManager: React.FC = () => {
                     className='toggle toggle-sm'
                     checked={addCaseSensitive}
                     onChange={(e) => setAddCaseSensitive(e.target.checked)}
+                  />
+                </label>
+                <label className='flex cursor-pointer items-center gap-2'>
+                  <span className='text-base-content/70 text-sm'>{_('Only for TTS:')}</span>
+                  <input
+                    type='checkbox'
+                    className='toggle toggle-sm'
+                    checked={addOnlyForTTS}
+                    onChange={(e) => setAddOnlyForTTS(e.target.checked)}
                   />
                 </label>
               </div>
