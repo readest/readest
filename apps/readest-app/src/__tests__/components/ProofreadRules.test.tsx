@@ -160,7 +160,7 @@ describe('ProofreadRulesManager', () => {
     expect(dialog).toBeTruthy();
     // Library (global) rules
     expect(screen.getByText('foo')).toBeTruthy();
-    expect(screen.getByText("'bar'")).toBeTruthy();
+    expect(screen.getByText('bar')).toBeTruthy();
     expect(screen.getByText('hello')).toBeTruthy();
     expect(screen.getByText("'world'")).toBeTruthy();
   });
@@ -241,7 +241,7 @@ describe('ProofreadRulesManager', () => {
     // Single Instance Rules section
     expect(screen.getByText('Selected Text Rules')).toBeTruthy();
     expect(screen.getByText('only-once')).toBeTruthy();
-    expect(screen.getByText("'single-hit'")).toBeTruthy();
+    expect(screen.getByText('single-hit')).toBeTruthy();
 
     // Book section should still show book-wide rule
     expect(screen.getByText('book-wide')).toBeTruthy();
