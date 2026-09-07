@@ -93,8 +93,10 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
 
       if (scope === 'selection') {
         range.deleteContents();
-        const textNode = document.createTextNode(replacementText);
-        range.insertNode(textNode);
+        if (replacementText) {
+          const textNode = document.createTextNode(replacementText);
+          range.insertNode(textNode);
+        }
       }
 
       const options: CreateProofreadRuleOptions = {
@@ -175,7 +177,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
                 value={replacementText}
                 onChange={handleInputChange}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && replacementText) {
+                  if (e.key === 'Enter') {
                     handleApply();
                   }
                 }}
@@ -184,7 +186,6 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
               />
               <button
                 onClick={handleApply}
-                disabled={!replacementText}
                 className='btn btn-sm btn-contrast shrink-0 font-medium px-2'
               >
                 {_('Apply')}
