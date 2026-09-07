@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, opts?: Record<string, unknown>) =>
@@ -15,6 +15,9 @@ vi.mock('@/context/EnvContext', () => ({
     appService: { isMobile: false, hasSafeAreaInset: false },
   }),
 }));
+
+let resizeCallback: ResizeObserverCallback;
+const disconnectObserver = vi.fn();
 
 let viewSettingsOverride: Record<string, unknown> = {};
 const readerState = {
@@ -71,6 +74,16 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
 
 describe('TTSMiniPlayer', () => {
   beforeEach(() => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resizeCallback = callback;
+        }
+        observe = vi.fn();
+        disconnect = disconnectObserver;
+      },
+    );
     viewSettingsOverride = {};
     readerState.hoveredBookKey = '';
     readerState.bottomBarTab = '';
@@ -81,6 +94,7 @@ describe('TTSMiniPlayer', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   // #5310: the minimal card is down to one time. Elapsed is the half nobody
@@ -327,22 +341,59 @@ describe('TTSMiniPlayer', () => {
     expect(card.className).not.toContain('pointer-events-none');
   });
 
-  test('rides above an expanded action panel while one is open', () => {
+  test.each([
+    { initialTab: '', cellTop: 0 },
+    { initialTab: 'progress', cellTop: 0 },
+    { initialTab: 'progress', cellTop: 100 },
+  ])('stacks above sliding chrome ($initialTab, cell top $cellTop), then follows folding and resizing', ({
+    initialTab,
+    cellTop,
+  }) => {
+    readerState.bottomBarTab = initialTab;
     readerState.hoveredBookKey = 'b1';
-    readerState.bottomBarTab = 'font';
     const cell = document.createElement('div');
     cell.id = 'gridcell-b1';
+    const footer = document.createElement('div');
+    footer.className = 'footer-bar';
+    footer.style.translate = '0 100%';
     const panel = document.createElement('div');
-    panel.className = 'footerbar-font-mobile';
-    cell.appendChild(panel);
+    panel.className = 'footerbar-progress-mobile';
+    panel.style.translate = '0 100%';
+    footer.appendChild(panel);
+    cell.appendChild(footer);
     document.body.appendChild(cell);
-    cell.getBoundingClientRect = () => ({ bottom: 800, top: 0, height: 800 }) as DOMRect;
-    // Panel settled at 600..736 above the nav bar; no transform in jsdom.
-    panel.getBoundingClientRect = () => ({ top: 600, bottom: 736, height: 136 }) as DOMRect;
+    cell.getBoundingClientRect = () =>
+      ({ bottom: cellTop + 800, top: cellTop, height: 800 }) as DOMRect;
+    Object.defineProperty(footer, 'offsetParent', { value: cellTop ? cell : null });
+    // Fixed footer: offsetTop ignores its own slide. Its 84px height includes
+    // the Android system navigation inset rather than the assumed 64px.
+    Object.defineProperty(footer, 'offsetTop', { value: 716 });
+    footer.getBoundingClientRect = () => ({ top: 800, height: 84 }) as DOMRect;
+    let panelHeight = 200;
+    Object.defineProperty(panel, 'offsetTop', { get: () => -panelHeight });
+    panel.getBoundingClientRect = () => ({ top: 800, height: panelHeight }) as DOMRect;
     try {
-      render(<TTSMiniPlayer {...makeProps()} />);
-      // 800 - 600 + 8px gap; beats the plain above-the-bar offset.
-      expect(screen.getByRole('status').style.bottom).toBe('208px');
+      const { rerender, unmount } = render(<TTSMiniPlayer {...makeProps()} />);
+      expect(screen.getByRole('status').style.bottom).toBe(initialTab ? '292px' : '92px');
+      readerState.bottomBarTab = 'progress';
+      rerender(<TTSMiniPlayer {...makeProps()} />);
+      expect(screen.getByRole('status').style.bottom).toBe('292px');
+
+      // Content/font-size changes can resize the open panel without a tab change.
+      panelHeight = 240;
+      act(() => resizeCallback([], {} as ResizeObserver));
+      expect(screen.getByRole('status').style.bottom).toBe('332px');
+
+      readerState.bottomBarTab = '';
+      rerender(<TTSMiniPlayer {...makeProps()} />);
+      expect(screen.getByRole('status').style.bottom).toBe('92px');
+      readerState.hoveredBookKey = '';
+      rerender(<TTSMiniPlayer {...makeProps()} />);
+      expect(screen.getByRole('status').style.bottom).toBe(
+        `${DEFAULT_BOOK_LAYOUT.marginBottomPx}px`,
+      );
+      unmount();
+      expect(disconnectObserver).toHaveBeenCalled();
     } finally {
       cell.remove();
     }
