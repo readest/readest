@@ -201,6 +201,32 @@ the same port — `chrome://inspect` in a local Chrome, or
   parses the same argv for open-with paths and warns on every launch. Prefer the
   env var.
 
+## crengine XPointer Oracle (KOReader sync)
+
+KOReader stores positions as crengine XPointers; `src/utils/xcfi.ts` converts them to and from
+CFIs. The only trustworthy reference for what crengine emits is crengine itself, so
+`apps/readest.koplugin/scripts/xpointer-oracle.lua` runs headlessly inside a KOReader emulator
+build and dumps crengine's XPointer pair and text for every visible word of an EPUB:
+
+```bash
+cd <koreader-emulator>/koreader
+KO_HOME=/tmp/ko-oracle ./luajit /path/to/readest/apps/readest.koplugin/scripts/xpointer-oracle.lua \
+  /path/to/book.epub /path/to/book.crengine.json 40   # keep one word in 40
+```
+
+`src/__tests__/utils/xcfi.crengine-oracle.test.ts` then checks both sync directions for every
+sampled word: crengine's pointers must resolve to exactly that word, and a highlight on that word
+must convert back to exactly crengine's pointers. Committed fixtures live in
+`src/__tests__/fixtures/crengine/` (generated from EPUBs under `fixtures/data/`). To validate a
+local book that cannot be committed:
+
+```bash
+XPOINTER_ORACLE=/path/to/book.crengine.json pnpm test src/__tests__/utils/xcfi.crengine-oracle.test.ts
+```
+
+The JSON's `epub` field is an absolute path or a file next to the JSON. The emulator is a local
+build (`kodev` in a KOReader checkout); nothing in CI needs it.
+
 ## Test File Naming
 
 | Suffix              | Runner              | Environment           |
