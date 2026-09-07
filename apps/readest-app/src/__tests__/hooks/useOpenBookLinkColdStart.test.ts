@@ -117,3 +117,60 @@ describe('useOpenBookLink — cold-start deep link ownership (#6104)', () => {
     expect(navigateToReaderMock).toHaveBeenCalledWith(expect.anything(), ['linkedBook']);
   });
 });
+
+// The launch URL also comes back as a LIVE delivery: Android re-reads the sticky
+// `activity.intent` and re-emits it every time the OS recreates the Activity, so
+// the replay lands on `app-incoming-url` — the path that is deliberately never
+// deduped. It has to be ignored without breaking the reporter's actual workflow,
+// which is opening the same `readest://book/<hash>` bookmark over and over.
+describe('useOpenBookLink — launch-URL replay after a resume (#6104)', () => {
+  const LAUNCH_URL = 'readest://book/linkedBook';
+
+  beforeEach(() => {
+    coldStartUrls = [LAUNCH_URL];
+    currentWindowLabel = 'main';
+    navigateToReaderMock.mockReset();
+    routerPushMock.mockReset();
+    sessionStorage.clear();
+    localStorage.clear();
+    window.__READEST_APP_RUN_ID__ = 'run-1';
+  });
+  afterEach(() => {
+    cleanup();
+    delete window.__READEST_APP_RUN_ID__;
+    vi.restoreAllMocks();
+    window.history.replaceState({}, '', '/');
+  });
+
+  it('ignores the launch URL replayed as a live event during startup', async () => {
+    window.history.replaceState({}, '', '/library');
+    const { useOpenBookLink, eventDispatcher } = await loadHook();
+    renderHook(() => useOpenBookLink());
+    await flush();
+    expect(navigateToReaderMock).toHaveBeenCalledTimes(1);
+
+    navigateToReaderMock.mockReset();
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [LAUNCH_URL] });
+    await flush();
+
+    expect(navigateToReaderMock).not.toHaveBeenCalled();
+  });
+
+  it('still opens the book when the user taps the same bookmark later', async () => {
+    const start = Date.now();
+    const now = vi.spyOn(Date, 'now').mockReturnValue(start);
+    window.history.replaceState({}, '', '/library');
+    const { useOpenBookLink, eventDispatcher } = await loadHook();
+    renderHook(() => useOpenBookLink());
+    await flush();
+    expect(navigateToReaderMock).toHaveBeenCalledTimes(1);
+
+    // Well past startup: this is the user acting on their bookmark, not a replay.
+    now.mockReturnValue(start + 11_000);
+    navigateToReaderMock.mockReset();
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [LAUNCH_URL] });
+    await flush();
+
+    expect(navigateToReaderMock).toHaveBeenCalledWith(expect.anything(), ['linkedBook']);
+  });
+});

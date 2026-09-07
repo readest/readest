@@ -11,6 +11,7 @@ import { ShareApiError, confirmDownload, importShare } from '@/libs/share';
 import { ensureSharedBookLocal } from '@/libs/shareImport';
 import { parseShareDeepLink, type ShareDeepLink } from '@/utils/share';
 import { isMainAppWindow } from '@/utils/window';
+import { consumeLaunchUrl, isLaunchReplayWindow } from '@/utils/deeplinkConsume';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped flag matches the useOpenAnnotationLink pattern. Tauri's
@@ -99,9 +100,17 @@ export function useOpenShareLink() {
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
 
-    const handle = (url: string) => {
+    const handle = (url: string, coldStart = false) => {
       const parsed = parseShareDeepLink(url);
       if (!parsed) return;
+      // See useOpenBookLink: the launch URL keeps coming back, so a launch
+      // delivery is acted on once per app run (#6104).
+      if (
+        (coldStart || isLaunchReplayWindow()) &&
+        !consumeLaunchUrl('consumedLaunchShareUrl', url)
+      ) {
+        return;
+      }
       if (!useLibraryStore.getState().libraryLoaded) {
         pending.current = parsed;
         return;
@@ -116,7 +125,7 @@ export function useOpenShareLink() {
     if (!coldStartConsumed && isMainAppWindow()) {
       coldStartConsumed = true;
       getCurrent()
-        .then((urls) => urls?.forEach(handle))
+        .then((urls) => urls?.forEach((u) => handle(u, true)))
         .catch(() => {
           // Plugin not available on this platform — live channel still works.
         });
@@ -124,7 +133,7 @@ export function useOpenShareLink() {
 
     const onIncoming = (event: CustomEvent) => {
       const { urls } = event.detail as { urls: string[] };
-      urls.forEach(handle);
+      urls.forEach((u) => handle(u));
     };
     eventDispatcher.on('app-incoming-url', onIncoming);
 

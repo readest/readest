@@ -73,6 +73,10 @@ const collectSwitch = () => {
 
 describe('useOpenAnnotationLink — reader already mounted', () => {
   beforeEach(() => {
+    // Each case is its own app run: a launch-URL delivery is consumed once per
+    // run (#6104), so leave no marker behind for the next test.
+    sessionStorage.clear();
+    localStorage.clear();
     navigateToReaderMock.mockReset();
     readerState.setPreviewMode.mockReset();
     readerState.bookKeys = ['bookA-1'];

@@ -9,6 +9,7 @@ import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { parseAnnotationDeepLink, AnnotationDeepLink } from '@/utils/deeplink';
 import { isMainAppWindow } from '@/utils/window';
+import { consumeLaunchUrl, isLaunchReplayWindow } from '@/utils/deeplinkConsume';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped — survives hook remounts (library → reader → library on
@@ -100,9 +101,17 @@ export function useOpenAnnotationLink() {
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
 
-    const handle = (url: string) => {
+    const handle = (url: string, coldStart = false) => {
       const parsed = parseAnnotationDeepLink(url);
       if (!parsed) return;
+      // See useOpenBookLink: the launch URL keeps coming back, so a launch
+      // delivery is acted on once per app run (#6104).
+      if (
+        (coldStart || isLaunchReplayWindow()) &&
+        !consumeLaunchUrl('consumedLaunchAnnotationUrl', url)
+      ) {
+        return;
+      }
       if (!useLibraryStore.getState().libraryLoaded) {
         pending.current = parsed;
         return;
@@ -117,7 +126,7 @@ export function useOpenAnnotationLink() {
     if (!coldStartConsumed && isMainAppWindow()) {
       coldStartConsumed = true;
       getCurrent()
-        .then((urls) => urls?.forEach(handle))
+        .then((urls) => urls?.forEach((u) => handle(u, true)))
         .catch(() => {
           // Plugin not available on this platform — live channel still works.
         });
@@ -125,7 +134,7 @@ export function useOpenAnnotationLink() {
 
     const onIncoming = (event: CustomEvent) => {
       const { urls } = event.detail as { urls: string[] };
-      urls.forEach(handle);
+      urls.forEach((u) => handle(u));
     };
     eventDispatcher.on('app-incoming-url', onIncoming);
 
