@@ -159,10 +159,11 @@ const selectFileTauri = async (
     // audio or dictionary pick.
     if (options.type === 'books' && kept.length < files.length) {
       const skipped = files.filter((file) => !kept.includes(file));
+      const filenames = skipped.map(({ name, path }) => name || getFilename(path!)).join(', ');
       eventDispatcher.dispatch('toast', {
         type: 'error',
         message: _('Failed to import book(s): {{filenames}}', {
-          filenames: skipped.map(({ name, path }) => name || getFilename(path!)).join(', '),
+          filenames,
         }),
         timeout: 5000,
       });
