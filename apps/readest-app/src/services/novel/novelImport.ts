@@ -1,5 +1,5 @@
-import { renderNovelPage } from './renderNovelPage';
-import { bundleAssets } from '@/services/send/conversion/assetBundler';
+import { assertNovelUrlAllowed, renderNovelPage } from './renderNovelPage';
+import { bundleAssets, MAX_TOTAL_ASSET_BYTES } from '@/services/send/conversion/assetBundler';
 import { Readability } from '@mozilla/readability';
 import { sanitizeHtml } from '@/utils/sanitize';
 import { detectLanguage } from '@/utils/lang';
@@ -90,6 +90,7 @@ const TRANSIENT_BACKOFF_MS = 1000;
 const withTransientRetry =
   (fetchPage: FetchPage): FetchPage =>
   async (url, signal) => {
+    assertNovelUrlAllowed(url);
     for (let attempt = 0; ; attempt++) {
       const deadline = new AbortController();
       const onAbort = () => deadline.abort();
@@ -250,6 +251,7 @@ export async function fetchNovelToc(
 ): Promise<NovelToc> {
   const fetchPage = withTransientRetry(options.fetchPage ?? defaultFetchPage);
   const { html, finalUrl } = options.page ?? (await fetchPage(url, options.signal));
+  assertNovelUrlAllowed(finalUrl);
   const toc = parseChapterList(html, finalUrl);
   if (!toc) {
     throw new ConversionError(
@@ -384,7 +386,7 @@ export async function downloadNovel(
     const total = chapters.length;
     const results: EpubChapter[] = new Array(total);
     const images: EpubImage[][] = new Array(total);
-    let remainingAssetBytes = 30 * 1024 * 1024;
+    let remainingAssetBytes = MAX_TOTAL_ASSET_BYTES;
     let assetQueue: Promise<unknown> = Promise.resolve();
     const renderPage =
       options.renderPage ??
@@ -418,6 +420,7 @@ export async function downloadNovel(
         const link = chapters[index]!;
         let html: string | null = null;
         try {
+          assertNovelUrlAllowed(link.url);
           let page: FetchedPage;
           let rendered = false;
           try {
@@ -441,6 +444,7 @@ export async function downloadNovel(
           }
           html = extractChapterHtml(page.html, link.title, page.finalUrl);
           if (html === null && renderPage && !rendered) {
+            assertNovelUrlAllowed(page.finalUrl);
             page = await renderPage(page.finalUrl, signal);
             html = extractChapterHtml(page.html, link.title, page.finalUrl);
           }

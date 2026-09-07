@@ -26,6 +26,8 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import app.tauri.annotation.InvokeArg
 import org.json.JSONObject
 import java.lang.ref.WeakReference
@@ -175,7 +177,6 @@ class ClipUrlController(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
             ))
             webView = wv
-            wv.evaluateJavascript(FINGERPRINT_MASK_JS, null)
             wv.loadUrl(urlStr)
             mainHandler.postDelayed(timeoutRunnable, HARD_TIMEOUT_MS)
             return
@@ -206,7 +207,6 @@ class ClipUrlController(
 
         val root: View
         if (interactiveMode) {
-            dlg.setOnCancelListener { finish(ClipUrlResult.Failure(CANCELLED_MESSAGE)) }
             dlg.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             // Back navigates the page history first — sign-in flows hop
             // through several redirects — and only cancels once exhausted.
@@ -272,10 +272,6 @@ class ClipUrlController(
         dialog = dlg
         webView = wv
 
-        // Inject the fingerprint mask before the first navigation so
-        // navigator.webdriver and friends look right when the page's
-        // own scripts run.
-        wv.evaluateJavascript(FINGERPRINT_MASK_JS, null)
         wv.loadUrl(urlStr)
 
         // Interactive capture waits for the user's tap — no deadline.
@@ -294,6 +290,11 @@ class ClipUrlController(
         settings.mediaPlaybackRequiresUserGesture = true
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         wv.setBackgroundColor(parseHexColor(args.background ?: DEFAULT_BACKGROUND) ?: Color.BLACK)
+        // Register for every document, including login redirects. Evaluating on
+        // the initial about:blank page loses the mask at the first navigation.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(wv, FINGERPRINT_MASK_JS, setOf("*"))
+        }
 
         // The CookieManager is app-wide and persistent, so a session the
         // user establishes in the interactive capture flow authenticates

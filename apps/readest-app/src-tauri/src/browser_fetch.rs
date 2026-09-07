@@ -28,7 +28,49 @@ fn resource_url(value: &str) -> Result<Url, String> {
     {
         return Err("Invalid URL".into());
     }
+    // Reject explicit private destinations, including redirect targets. DNS and
+    // proxy resolution are unchanged; this is not a DNS-rebinding defense.
+    let host = url.host_str().unwrap_or_default();
+    let host = host.trim_end_matches('.');
+    let blocked = match host
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .parse::<std::net::IpAddr>()
+    {
+        Ok(std::net::IpAddr::V4(ip)) => blocked_ipv4(ip),
+        Ok(std::net::IpAddr::V6(ip)) => ip.to_ipv4().map(blocked_ipv4).unwrap_or_else(|| {
+            let first = ip.segments()[0];
+            ip.is_unspecified()
+                || ip.is_loopback()
+                || ip.is_multicast()
+                || first & 0xfe00 == 0xfc00
+                || first & 0xffc0 == 0xfe80
+                || first & 0xffc0 == 0xfec0
+        }),
+        Err(_) => {
+            !host.contains('.')
+                || ["localhost", "local", "internal", "lan"]
+                    .iter()
+                    .any(|suffix| host == *suffix || host.ends_with(&format!(".{suffix}")))
+        }
+    };
+    if blocked {
+        return Err("Cannot import from a private network URL".into());
+    }
     Ok(url)
+}
+
+fn blocked_ipv4(ip: std::net::Ipv4Addr) -> bool {
+    let [a, b, c, _] = ip.octets();
+    ip.is_private()
+        || ip.is_loopback()
+        || ip.is_link_local()
+        || ip.is_documentation()
+        || a == 0
+        || a >= 224
+        || (a == 100 && (64..=127).contains(&b))
+        || (a == 192 && b == 0 && c == 0)
+        || (a == 198 && (b == 18 || b == 19))
 }
 
 #[cfg(any(desktop, test))]
@@ -301,6 +343,43 @@ mod tests {
         assert!(resource_url("https://example.org/chapter").is_ok());
     }
     #[test]
+    fn disallows_explicit_private_network_targets() {
+        for url in [
+            "http://localhost/",
+            "http://localhost./",
+            "http://site.local/",
+            "http://intranet/",
+            "http://127.1/",
+            "http://0x7f000001/",
+            "http://10.0.0.1/",
+            "http://172.16.0.1/",
+            "http://192.168.1.1/",
+            "http://169.254.169.254/",
+            "http://100.64.0.1/",
+            "http://198.18.0.1/",
+            "http://224.0.0.1/",
+            "http://240.0.0.1/",
+            "http://[::]/",
+            "http://[::1]/",
+            "http://[fd00::1]/",
+            "http://[fe80::1]/",
+            "http://[ff02::1]/",
+            "http://[::ffff:127.0.0.1]/",
+            "http://[::127.0.0.1]/",
+        ] {
+            assert!(resource_url(url).is_err(), "accepted {url}");
+        }
+        for url in [
+            "https://example.org/",
+            "https://example.org./",
+            "https://1.1.1.1/",
+            "https://[2606:4700:4700::1111]/",
+        ] {
+            assert!(resource_url(url).is_ok(), "rejected {url}");
+        }
+    }
+
+    #[test]
     fn response_cookies_cannot_write_other_sites_or_public_suffixes() {
         let url = Url::parse("https://www.example.co.uk/novel").unwrap();
         assert!(valid_response_cookie(
@@ -339,7 +418,7 @@ mod tests {
                     }
                     1 => {
                         assert!(request.contains("cookie: session=renewed"));
-                        format!("HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{port}/image\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                        format!("HTTP/1.1 302 Found\r\nLocation: http://images.example.org:{port}/image\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                     }
                     _ => {
                         assert!(!request.contains("cookie:"));
@@ -354,21 +433,23 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(
             "referer",
-            HeaderValue::from_static("http://localhost/private"),
+            HeaderValue::from_static("http://novels.example.org/private"),
         );
         let client = reqwest::Client::builder()
+            .resolve("novels.example.org", ([127, 0, 0, 1], port).into())
+            .resolve("images.example.org", ([127, 0, 0, 1], port).into())
             .no_proxy()
             .redirect(reqwest::redirect::Policy::none())
             .build()
             .unwrap();
         let result = fetch_resource(
             &client,
-            Url::parse(&format!("http://localhost:{port}/chapter")).unwrap(),
+            Url::parse(&format!("http://novels.example.org:{port}/chapter")).unwrap(),
             headers,
             move |url, updated| {
                 let session = session.clone();
                 async move {
-                    if url.host_str() != Some("localhost") {
+                    if url.host_str() != Some("novels.example.org") {
                         return Ok(String::new());
                     }
                     let mut session = session.lock().unwrap();
@@ -385,6 +466,38 @@ mod tests {
         assert_eq!(result.status, 200);
         assert_eq!(result.content_type, "image/png");
         assert_eq!(result.body, "aW1hZ2U=");
+    }
+
+    #[tokio::test]
+    async fn rejects_redirects_to_private_network_targets() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut bytes = [0; 4096];
+            stream.read(&mut bytes).await.unwrap();
+            stream.write_all(b"HTTP/1.1 302 Found\r\nLocation: http://169.254.169.254/latest/meta-data/\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").await.unwrap();
+        });
+        let client = reqwest::Client::builder()
+            .resolve("novels.example.org", address)
+            .no_proxy()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+            .unwrap();
+        let result = fetch_resource(
+            &client,
+            resource_url(&format!(
+                "http://novels.example.org:{}/chapter",
+                address.port()
+            ))
+            .unwrap(),
+            HeaderMap::new(),
+            |_, _| async { Ok(String::new()) },
+        )
+        .await;
+        server.await.unwrap();
+        assert!(matches!(result, Err(message) if message.contains("private network")));
     }
 
     #[test]

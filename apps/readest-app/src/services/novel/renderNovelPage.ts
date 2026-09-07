@@ -1,7 +1,24 @@
 import { invoke } from '@tauri-apps/api/core';
 import { stubTranslation as _ } from '@/utils/misc';
 import { getClipOptions } from '@/services/send/clipOptions';
+import { isBlockedHost } from '@/utils/network';
 import type { FetchedPage } from './novelImport';
+
+// This rejects explicit private hosts; DNS and browser redirect resolution remain native.
+export function assertNovelUrlAllowed(value: string): void {
+  const url = new URL(value);
+  const host = url.hostname.replace(/\.+$/, '').replace(/^\[|\]$/g, '');
+  // Feed IPv4-compatible literals through the shared IPv4-mapped guard too.
+  const compatible = host.match(/^::(?:([a-f0-9]{1,4}):)?([a-f0-9]{1,4})$/i);
+  const checkedHost = compatible ? `::ffff:${compatible[1] ?? '0'}:${compatible[2]}` : host;
+  if (
+    !['http:', 'https:'].includes(url.protocol) ||
+    isBlockedHost(checkedHost) ||
+    /^(?:ff[0-9a-f]{2}|fe[c-f][0-9a-f]):/i.test(host)
+  ) {
+    throw new Error('Cannot import from a private or unsupported URL');
+  }
+}
 
 // Mobile can present only one capture controller at a time. Keep fallback
 // rendering serialized while ordinary HTTP chapter requests stay concurrent.
@@ -14,6 +31,7 @@ export function renderNovelPage(
 ): Promise<FetchedPage> {
   const result = pending.then(async () => {
     signal?.throwIfAborted();
+    assertNovelUrlAllowed(url);
     let html: string;
     try {
       html = await invoke<string>('clip_url', {

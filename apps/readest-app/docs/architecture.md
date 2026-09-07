@@ -537,6 +537,14 @@ android/, macos/,
 windows/            -> per-platform glue
 ```
 
+Novel imports and browser-session resource requests reject explicit private IPs
+and local hostnames; native HTTP redirects are checked again before fetching.
+This is a URL guard, not a network sandbox: DNS/proxy resolution and browser
+navigation redirects remain platform-managed. Cancelling a novel import returns
+to its preview immediately; an in-flight rendered capture finishes its bounded
+native cleanup before the next queued capture starts. Desktop capture listeners
+are owned by the command and released on completion, cancellation, or timeout.
+
 Everything else is delegated to **Tauri plugins**, mostly the published
 `tauri-plugin-*` crates:
 

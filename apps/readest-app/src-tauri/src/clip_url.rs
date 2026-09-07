@@ -49,8 +49,6 @@ use tauri::{Url, WebviewUrl, WebviewWindowBuilder};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 #[cfg(desktop)]
 use tokio::net::TcpListener;
-#[cfg(desktop)]
-use tokio::sync::oneshot;
 
 /// Localised strings and theme colours supplied by the JS caller. Defaults
 /// are English / Readest's dark palette so a caller that omits a field
@@ -180,18 +178,16 @@ fn parse_content_length(headers: &str) -> usize {
 /// `GET /clip/{token}?d={base64-HTML}` — top-level navigation isn't
 /// governed by CSP `connect-src` / `form-action`, and the URL itself
 /// carries the data (so we don't need any cross-origin storage trick).
-/// Server decodes the base64, signals the oneshot, returns a tiny
+/// Server decodes the base64, returns the HTML and a tiny
 /// "captured" page so the user can see the round-trip worked.
 #[cfg(desktop)]
 async fn capture_one(
     listener: TcpListener,
     token: String,
-    tx: oneshot::Sender<String>,
     saved_title: String,
     background: String,
     foreground: String,
-) {
-    let mut tx = Some(tx);
+) -> Option<String> {
     let expected_prefix = format!("/clip/{}", token);
     let saved_title_safe = escape_html(&saved_title);
     // CSS-context escape: the caller-provided colour goes into a
@@ -312,11 +308,9 @@ stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points
         response.extend_from_slice(confirmation.as_bytes());
         let _ = stream.write_all(&response).await;
 
-        if let Some(tx) = tx.take() {
-            let _ = tx.send(html);
-        }
-        break;
+        return Some(html);
     }
+    None
 }
 
 /// Decode a URL-safe base64 string (the JS side uses `btoa` which
@@ -515,22 +509,19 @@ pub async fn clip_url<R: tauri::Runtime>(
         .port();
 
     let token = next_token();
-    let (tx, rx) = oneshot::channel::<String>();
     let token_for_server = token.clone();
     let saved_title_for_server = options.saved_title().to_string();
     let bg_for_server = options.background().to_string();
     let fg_for_server = options.foreground().to_string();
-    tokio::spawn(async move {
-        capture_one(
-            listener,
-            token_for_server,
-            tx,
-            saved_title_for_server,
-            bg_for_server,
-            fg_for_server,
-        )
-        .await;
-    });
+    // Keep the listener owned by this command. Dropping the future on any
+    // early error, cancellation, or timeout closes it instead of detaching it.
+    let capture = capture_one(
+        listener,
+        token_for_server,
+        saved_title_for_server,
+        bg_for_server,
+        fg_for_server,
+    );
 
     let label = format!("clip-{}", token);
     let token_json = serde_json::to_string(&token).map_err(|e| e.to_string())?;
@@ -694,7 +685,7 @@ pub async fn clip_url<R: tauri::Runtime>(
         }
     });
     let result = tokio::select! {
-        result = tokio::time::timeout(Duration::from_secs(30), rx) => result,
+        result = tokio::time::timeout(Duration::from_secs(30), capture) => result,
         _ = cancel_rx => return Err("Capture cancelled".into()),
     };
 
@@ -705,8 +696,8 @@ pub async fn clip_url<R: tauri::Runtime>(
     let _ = webview.close();
 
     match result {
-        Ok(Ok(html)) => Ok(html),
-        Ok(Err(_)) => Err("Webview closed before capture".into()),
+        Ok(Some(html)) => Ok(html),
+        Ok(None) => Err("Webview closed before capture".into()),
         Err(_) => Err("Page took too long to load".into()),
     }
 }
@@ -750,4 +741,68 @@ pub async fn clip_url(
         .clip_url(request)
         .map(|r| r.html)
         .map_err(|e| e.to_string())
+}
+
+#[cfg(all(test, desktop))]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn capture_server_releases_its_port_on_timeout() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let result = tokio::time::timeout(
+            Duration::from_millis(10),
+            capture_one(
+                listener,
+                "token".into(),
+                "Saved".into(),
+                "#000".into(),
+                "#fff".into(),
+            ),
+        )
+        .await;
+        assert!(result.is_err());
+        // A timed-out capture must not leave a detached accept task holding the port.
+        assert!(TcpListener::bind(address).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn capture_server_releases_its_port_when_cancelled() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::select! {
+            _ = capture_one(listener, "token".into(), "Saved".into(), "#000".into(), "#fff".into()) => panic!("capture should wait for a page"),
+            _ = tokio::task::yield_now() => {},
+        }
+        assert!(TcpListener::bind(address).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn capture_server_returns_html_and_releases_its_port() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let request = async {
+            let mut stream = tokio::net::TcpStream::connect(address).await.unwrap();
+            stream
+                .write_all(b"GET /clip/token?d=aHRtbA== HTTP/1.1\r\nHost: localhost\r\n\r\n")
+                .await
+                .unwrap();
+            let mut response = Vec::new();
+            stream.read_to_end(&mut response).await.unwrap();
+            assert!(response.starts_with(b"HTTP/1.1 200"));
+        };
+        let (html, ()) = tokio::join!(
+            capture_one(
+                listener,
+                "token".into(),
+                "Saved".into(),
+                "#000".into(),
+                "#fff".into()
+            ),
+            request,
+        );
+        assert_eq!(html.as_deref(), Some("html"));
+        assert!(TcpListener::bind(address).await.is_ok());
+    }
 }

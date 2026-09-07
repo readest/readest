@@ -65,3 +65,15 @@ it('cancels promptly while keeping native captures serialized until cleanup', as
   await next;
   expect(invoke).toHaveBeenCalledTimes(2);
 });
+
+it.each([
+  'http://127.0.0.1/chapter',
+  'http://localhost./chapter',
+  'http://[::ffff:7f00:1]/chapter',
+  'http://[::127.0.0.1]/chapter',
+  'http://[fec0::1]/chapter',
+  'http://[ff02::1]/chapter',
+])('rejects private capture targets without opening a native view: %s', async (url) => {
+  await expect(renderNovelPage(url)).rejects.toThrow('private');
+  expect(invoke).not.toHaveBeenCalled();
+});

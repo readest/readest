@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name="com.readest.native_bridge.ClipUrlTestActivity" android:exported="true" />
+    </application>
+</manifest>
