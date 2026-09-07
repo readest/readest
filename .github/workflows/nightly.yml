@@ -140,9 +140,15 @@ jobs:
 
       # The CEF AppImage bundles the build host's glibc, so anything it does
       # NOT bundle is resolved from the host at run time, against a glibc the
-      # bundled one cannot satisfy on any distro newer than the builder. NSS is
-      # the fatal case: Chromium dlopens libsoftokn3.so, gets the host copy and
-      # aborts on first use (FATAL crypto/nss_util.cc, nss_error=-5925).
+      # bundled one cannot satisfy on any distro newer than the builder. Only
+      # libraries Chromium links against are bundled; the ones it dlopens by
+      # soname are not, and each one it misses fails that way:
+      #   libsoftokn3.so  NSS aborts the app on first use (FATAL
+      #                   crypto/nss_util.cc, nss_error=-5925)
+      #   libpulse.so.0   no audio output at all — the ALSA fallback then dies
+      #                   too, because its `default` PCM is a config hook that
+      #                   loads the host's libasound_module_conf_pulse.so
+      #   libspeechd.so.2 no system voices for the Web Speech TTS engine
       #
       # quick-sharun's own DEPLOY_CHROMIUM rules cover these modules, but the
       # bundler in cli-cef 3.0.0-alpha.26 downloads a fork of that script
@@ -153,10 +159,11 @@ jobs:
       # in the bundle. tauri-apps/tauri#12491 drops that fork for a pinned,
       # checksummed upstream revision (facb95e8, which has the `eval`). Once it
       # reaches feat/cef and a new cli-cef ships, bump CEF_CLI in
-      # apps/readest-app/scripts/tauri.mjs, lift the STRACE_MODE pin in the
-      # build step and drop the jq call below. Keep the flatten unless dlopen
-      # discovery is doing the finding: upstream globs only Arch's flat layout,
-      # so a Debian builder hides these modules from it either way.
+      # apps/readest-app/scripts/tauri.mjs and lift the STRACE_MODE pin in the
+      # build step — upstream's own rules then cover NSS and libpulse. Keep the
+      # nss/ flatten and the libspeechd entry either way: upstream globs only
+      # Arch's flat layout, so a Debian builder hides the NSS modules from it,
+      # and nothing in it deploys libspeechd at all.
       #
       # Until then, hand the modules over as appimage.files: the bundler passes
       # files targeted at /usr/lib to quick-sharun as plain ELF arguments, the
@@ -168,7 +175,7 @@ jobs:
         if: matrix.config.release == 'linux'
         run: |
           set -euo pipefail
-          sudo apt-get install -y libnss3
+          sudo apt-get install -y libnss3 libpulse0 libspeechd2
           nss_dir=$(dirname "$(ls /usr/lib/*-linux-gnu/nss/libsoftokn3.so)")
           lib_dir=${nss_dir%/nss}
           sudo cp -f --remove-destination "$nss_dir"/*.so "$lib_dir/"
@@ -176,7 +183,9 @@ jobs:
           jq --arg d "$lib_dir" '.bundle.linux.appimage.files = {
               "/usr/lib/libsoftokn3.so": ($d + "/libsoftokn3.so"),
               "/usr/lib/libfreeblpriv3.so": ($d + "/libfreeblpriv3.so"),
-              "/usr/lib/libnssckbi.so": ($d + "/libnssckbi.so")
+              "/usr/lib/libnssckbi.so": ($d + "/libnssckbi.so"),
+              "/usr/lib/libpulse.so.0": ($d + "/libpulse.so.0"),
+              "/usr/lib/libspeechd.so.2": ($d + "/libspeechd.so.2")
             }' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
 
       - name: create .env.local file for Next.js
@@ -302,9 +311,17 @@ jobs:
         run: |
           set -euo pipefail
           lib=target/release/bundle/appimage/Readest.AppDir/lib
-          for so in libsoftokn3.so libfreeblpriv3.so libnssckbi.so libsqlite3.so.0; do
+          for so in libsoftokn3.so libfreeblpriv3.so libnssckbi.so libsqlite3.so.0 \
+                    libpulse.so.0 libspeechd.so.2; do
             [ -e "$lib/$so" ] || { echo "::error::$so is missing from the AppImage bundle"; exit 1; }
           done
+          # libpulse keeps its private half in a subdir and finds it by RUNPATH,
+          # which points at the HOST dir; only sharun's own library path (built
+          # from lib.path) makes it load the bundled copy instead.
+          ls "$lib"/pulseaudio/libpulsecommon-*.so > /dev/null 2>&1 \
+            || { echo "::error::libpulsecommon is missing from the AppImage bundle"; exit 1; }
+          grep -qx '+/pulseaudio' "$lib/lib.path" \
+            || { echo "::error::lib.path does not cover lib/pulseaudio, so libpulse cannot load"; exit 1; }
 
       # Portable Windows build: rebuild with NEXT_PUBLIC_PORTABLE_APP=true and
       # ship the raw exe (mirrors release.yml). Runs after the NSIS build above.
