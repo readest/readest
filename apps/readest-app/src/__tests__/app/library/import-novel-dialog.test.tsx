@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ImportNovelDialog from '@/app/library/components/ImportNovelDialog';
@@ -195,8 +195,14 @@ describe('ImportNovelDialog', () => {
     expect(titleInput.value).toBe('My Novel (2 chapters)');
   });
 
-  it('sets download progress to the selected chapter count', async () => {
-    downloadNovelMock.mockImplementation(() => new Promise(() => {}));
+  it('keeps one progress indicator as the selected chapters complete', async () => {
+    let report!: NonNullable<NovelDownloadOptions['onProgress']>;
+    downloadNovelMock.mockImplementation(
+      (_toc: NovelToc, _url: string, options: NovelDownloadOptions) => {
+        report = options.onProgress!;
+        return new Promise(() => {});
+      },
+    );
     setup();
     await goToPreview();
 
@@ -206,6 +212,13 @@ describe('ImportNovelDialog', () => {
 
     await screen.findByText('Downloading chapters…');
     expect(screen.getByText('0 / 4')).toBeTruthy();
+    const progress = screen.getByRole('progressbar', { name: 'Downloading chapters…' });
+    act(() => report(1, 4));
+    expect(screen.getByRole('progressbar')).toBe(progress);
+    expect(screen.getByText('1 / 4')).toBeTruthy();
+    expect(screen.getByText('25%')).toBeTruthy();
+    act(() => report(4, 4));
+    expect(screen.getByText('Preparing your book…')).toBeTruthy();
   });
 
   it('resets selection and title suggestions when reopened', async () => {

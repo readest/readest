@@ -1645,7 +1645,17 @@ class NativeBridgePlugin: Plugin {
           invoke.reject(err.message)
         }
       }
-      presenter.present(controller, animated: true)
+      if args.backgroundCapture == true && args.interactive != true {
+        presenter.addChild(controller)
+        controller.view.frame = presenter.view.bounds
+        controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        controller.view.isUserInteractionEnabled = false
+        controller.view.accessibilityElementsHidden = true
+        presenter.view.insertSubview(controller.view, at: 0)
+        controller.didMove(toParent: presenter)
+      } else {
+        presenter.present(controller, animated: true)
+      }
     }
   }
 

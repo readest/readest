@@ -20,6 +20,7 @@ export function renderNovelPage(
         url,
         options: {
           ...getClipOptions(translate),
+          backgroundCapture: true,
           windowTitle: translate(_('Import Web Novel')),
           overlayTitle: translate(_('Import Web Novel')),
           loadingStatus: translate(_('Loading chapter…')),
@@ -36,5 +37,13 @@ export function renderNovelPage(
     return { html, finalUrl };
   });
   pending = result.catch(() => {});
-  return result;
+  if (!signal) return result;
+  // Return to the chapter list immediately on cancel. Keep the native render
+  // in the queue until it has cleaned up, so a retry cannot overlap it.
+  return new Promise<FetchedPage>((resolve, reject) => {
+    const abort = () => reject(new DOMException('Capture cancelled', 'AbortError'));
+    signal.addEventListener('abort', abort, { once: true });
+    result.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+    if (signal.aborted) abort();
+  });
 }

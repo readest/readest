@@ -71,6 +71,8 @@ pub struct ClipOptions {
     /// Cancel/Capture bar instead of the opaque overlay so the user can
     /// sign in before capturing. Desktop ignores it.
     pub interactive: Option<bool>,
+    /// Render behind the app while its existing import UI shows progress.
+    pub background_capture: Option<bool>,
     pub sign_in_hint: Option<String>,
     pub capture_label: Option<String>,
     pub cancel_label: Option<String>,
@@ -493,6 +495,7 @@ fn fingerprint_mask_script() -> String {
 #[tauri::command]
 pub async fn clip_url<R: tauri::Runtime>(
     app: AppHandle<R>,
+    _caller: tauri::Window<R>,
     url: String,
     options: Option<ClipOptions>,
 ) -> Result<String, String> {
@@ -603,19 +606,14 @@ pub async fn clip_url<R: tauri::Runtime>(
     const BROWSER_UA: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
                               (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-    // macOS doesn't honour `.visible(false)` for a WKWebView that needs
-    // its JS timers to keep firing — the public Tauri API can't reach
-    // the private NSWindow flags that would hide it without freezing
-    // scripts. The window IS going to be on screen briefly. Match the
-    // chrome style Readest's main/reader windows use so it doesn't read
-    // as a foreign popup: on macOS the standard window frame with an
-    // overlay (transparent) title bar; on other desktops, decorationless
-    // with a drop shadow. The loading overlay (injected via initialization
-    // script) covers the article render so the user sees a deliberate
-    // "Saving…" state rather than the article flashing by.
+    // macOS novel captures are ordered beneath the caller below, keeping
+    // animation frames active. Other desktops retain visible capture until
+    // their background rendering can be verified as well.
+    let background_capture = cfg!(target_os = "macos") && options.background_capture == Some(true);
     let win_builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(parsed))
         .title(options.window_title())
-        .visible(true)
+        .visible(!background_capture)
+        .focused(!background_capture)
         .center()
         .resizable(false)
         .inner_size(640.0, 480.0)
@@ -661,6 +659,28 @@ pub async fn clip_url<R: tauri::Runtime>(
         Ok(w) => w,
         Err(e) => return Err(format!("Could not create clip webview: {}", e)),
     };
+
+    #[cfg(target_os = "macos")]
+    if options.background_capture == Some(true) {
+        let capture = webview.clone();
+        app.run_on_main_thread(move || {
+            use cocoa::appkit::{NSWindow, NSWindowOrderingMode};
+            use cocoa::base::{id, NO};
+            use cocoa::foundation::NSInteger;
+            use objc::{msg_send, sel, sel_impl};
+            let (Ok(capture), Ok(caller)) = (capture.ns_window(), _caller.ns_window()) else {
+                return;
+            };
+            unsafe {
+                let capture = capture as id;
+                let caller = caller as id;
+                let number: NSInteger = msg_send![caller, windowNumber];
+                capture.setFrame_display_(caller.frame(), NO);
+                capture.orderFrontWindow_relativeTo_(NSWindowOrderingMode::NSWindowBelow, number);
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    }
 
     // 30 s covers a slow page load and a Cloudflare-style JS challenge
     // (5–15 s on bad networks) with margin for the settle delay.
@@ -721,6 +741,7 @@ pub async fn clip_url(
         background: options.background,
         foreground: options.foreground,
         interactive: options.interactive,
+        background_capture: options.background_capture,
         sign_in_hint: options.sign_in_hint,
         capture_label: options.capture_label,
         cancel_label: options.cancel_label,

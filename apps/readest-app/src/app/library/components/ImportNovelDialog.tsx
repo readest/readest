@@ -385,28 +385,48 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
         )}
 
         {phase === 'downloading' && (
-          <>
-            <p className='text-base-content/60 text-sm leading-relaxed'>
-              {_('Downloading chapters…')}
-            </p>
-            <progress
-              className='progress eink-bordered w-full'
-              value={progress.done}
-              max={progress.total || 1}
-            />
-            <p className='text-base-content/60 text-sm'>
-              {progress.done} / {progress.total}
-            </p>
-            <div className='flex justify-end gap-2 pt-1'>
+          <div className='flex flex-col gap-8 py-6'>
+            <div className='flex items-start gap-4'>
+              <MdMenuBook
+                aria-hidden='true'
+                className='text-base-content/70 mt-1 h-8 w-8 shrink-0'
+              />
+              <div className='min-w-0 space-y-1'>
+                <p className='break-words text-lg font-semibold leading-snug'>{bookTitle}</p>
+                <p className='text-base-content/60 text-sm'>{_('Downloading chapters…')}</p>
+              </div>
+            </div>
+            <div className='space-y-3'>
+              <div className='flex justify-between gap-4 text-sm tabular-nums' role='status'>
+                <span className='text-base-content/70'>
+                  {progress.done} / {progress.total}
+                </span>
+                <span className='font-medium'>
+                  {Math.round((progress.done / (progress.total || 1)) * 100)}%
+                </span>
+              </div>
+              <progress
+                aria-label={_('Downloading chapters…')}
+                className='progress eink-bordered block h-2 w-full'
+                value={progress.done}
+                max={progress.total || 1}
+              />
+              <p className='text-base-content/60 text-sm leading-relaxed'>
+                {progress.done === progress.total
+                  ? _('Preparing your book…')
+                  : _('Keep Readest open until the import is complete.')}
+              </p>
+            </div>
+            <div className='flex justify-center'>
               <button
                 type='button'
-                className='btn btn-ghost btn-sm eink-bordered'
+                className='btn btn-ghost eink-bordered min-h-11 px-6'
                 onClick={() => abortRef.current?.abort()}
               >
                 {_('Cancel')}
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </Dialog>

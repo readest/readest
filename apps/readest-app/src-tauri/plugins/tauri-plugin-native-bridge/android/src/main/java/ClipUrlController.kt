@@ -49,6 +49,7 @@ class ClipUrlArgs {
     // Interactive mode: show the page with a Cancel/Capture bar instead
     // of the opaque overlay so the user can sign in before capturing.
     var interactive: Boolean? = null
+    var backgroundCapture: Boolean? = null
     var signInHint: String? = null
     var captureLabel: String? = null
     var cancelLabel: String? = null
@@ -143,6 +144,7 @@ class ClipUrlController(
     private var statusLabel: TextView? = null
     private var didFinishOrFail = false
     private var captureFired = false
+    private var completed = false
     private var settled = false
     private val timeoutRunnable = Runnable { onTimeout() }
 
@@ -161,6 +163,23 @@ class ClipUrlController(
     }
 
     private fun presentDialog(act: Activity, urlStr: String) {
+        if (args.backgroundCapture == true && !interactiveMode) {
+            // Keep a real viewport behind the app for layout and lazy loading.
+            // The React import sheet stays visible, focused, and interactive.
+            val wv = WebView(act)
+            configureWebView(wv)
+            wv.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+            wv.isFocusable = false
+            val host = act.findViewById<ViewGroup>(android.R.id.content)
+            host.addView(wv, 0, ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+            ))
+            webView = wv
+            wv.evaluateJavascript(FINGERPRINT_MASK_JS, null)
+            wv.loadUrl(urlStr)
+            mainHandler.postDelayed(timeoutRunnable, HARD_TIMEOUT_MS)
+            return
+        }
         val bg = parseHexColor(args.background ?: DEFAULT_BACKGROUND) ?: Color.BLACK
         val fg = parseHexColor(args.foreground ?: DEFAULT_FOREGROUND) ?: Color.WHITE
 
@@ -439,7 +458,7 @@ class ClipUrlController(
     }
 
     private fun captureOuterHtml() {
-        if (captureFired) return
+        if (captureFired || completed) return
         captureFired = true
         settled = true
         val wv = webView ?: return finish(ClipUrlResult.Failure("WebView vanished before capture"))
@@ -469,6 +488,8 @@ class ClipUrlController(
     }
 
     private fun finish(result: ClipUrlResult) {
+        if (completed) return
+        completed = true
         mainHandler.removeCallbacks(timeoutRunnable)
         try {
             // Persist any session the page established (interactive
@@ -481,6 +502,10 @@ class ClipUrlController(
             webView?.stopLoading()
             webView?.webViewClient = WebViewClient()  // detach our delegate
             dialog?.dismiss()
+            webView?.let { wv ->
+                (wv.parent as? ViewGroup)?.removeView(wv)
+                wv.destroy()
+            }
         } catch (e: Exception) {
             Log.w(TAG, "error tearing down clip_url dialog", e)
         }

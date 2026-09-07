@@ -400,6 +400,8 @@ pub struct ClipUrlRequest {
     #[serde(default)]
     pub interactive: Option<bool>,
     #[serde(default)]
+    pub background_capture: Option<bool>,
+    #[serde(default)]
     pub sign_in_hint: Option<String>,
     #[serde(default)]
     pub capture_label: Option<String>,
