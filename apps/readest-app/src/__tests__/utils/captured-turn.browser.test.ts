@@ -4,6 +4,7 @@ import {
   CapturedTurnHost,
   type CapturedTurnStyle,
 } from '@/app/reader/utils/capturedTurn';
+import { PageCurlRenderer } from '@/utils/pageCurl';
 
 // Choreography tests for the captured page-turn controller (readest#555):
 // capture the page → overlay the captured bitmap → instantly navigate the
@@ -1704,6 +1705,44 @@ describe('CapturedPageTurn two-column curl (browser)', () => {
     expect(await makeController().turn(true, false, 'curl')).toBe(true);
     await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
     expect(overlay()).toBeNull();
+  });
+
+  it('drops the incoming column when a blocking overlay opens during its capture', async () => {
+    // A dialog that opens while the platform snapshot is pending is part of
+    // the composited pixels. The turn keeps going, but that bitmap must never
+    // reach the renderer, and the cover still comes down.
+    let allowed = true;
+    let finishCapture: (() => void) | null = null;
+    capture.mockImplementation((rect) =>
+      isInner(rect)
+        ? new Promise<ArrayBuffer>((resolve) => {
+            finishCapture = () => resolve(png);
+          })
+        : Promise.resolve(png),
+    );
+    const setIncoming = vi.spyOn(PageCurlRenderer.prototype, 'setIncoming');
+    try {
+      const turning = makeController({ isCaptureAllowed: () => allowed }).turn(true, false, 'curl');
+      await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
+      allowed = false;
+      finishCapture!();
+      expect(await turning).toBe(true);
+      await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+      expect(setIncoming).not.toHaveBeenCalled();
+    } finally {
+      setIncoming.mockRestore();
+    }
+  });
+
+  it('commits the incoming column when no overlay interferes', async () => {
+    const setIncoming = vi.spyOn(PageCurlRenderer.prototype, 'setIncoming');
+    try {
+      await makeController().turn(true, false, 'curl');
+      await vi.waitFor(() => expect(setIncoming).toHaveBeenCalledTimes(1));
+      expect(setIncoming.mock.calls[0]![0]).toBeInstanceOf(ImageBitmap);
+    } finally {
+      setIncoming.mockRestore();
+    }
   });
 
   it('lifts the cover when the turn is disposed mid-capture', async () => {

@@ -826,6 +826,11 @@ export class CapturedPageTurn {
       if (this.#active !== active) return;
       const restorePixels = await this.#host.preparePixelCapture?.();
       try {
+        // A modal can open during any of these awaits, and the platform
+        // snapshot would include its composited pixels. Re-check the gate at
+        // every step, as the outgoing capture does, so a dialog never ends up
+        // on the back of the leaf.
+        if (this.#active !== active || this.#host.isCaptureAllowed?.() === false) return;
         image = await this.#host.capture(inner);
       } finally {
         await restorePixels?.();
@@ -835,10 +840,10 @@ export class CapturedPageTurn {
       await waitForPaint();
       await uncover();
     }
-    if (!image || this.#active !== active) return;
+    if (!image || this.#active !== active || this.#host.isCaptureAllowed?.() === false) return;
     const bitmap = await createImageBitmap(new Blob([image]));
     try {
-      if (this.#active !== active) return;
+      if (this.#active !== active || this.#host.isCaptureAllowed?.() === false) return;
       active.renderer.setIncoming?.(bitmap);
       active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
     } finally {
