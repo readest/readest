@@ -134,8 +134,8 @@ jobs:
 
       # The npm cli-cef bundles the AppImage with a broken quick-sharun fork
       # and cannot be pointed elsewhere. Build the CLI from readest/tauri
-      # instead: its sharun_cef.rs pins a pkgforge revision (the one
-      # tauri-apps/tauri#12491 uses) and runs the tooling with bash and
+      # instead: its sharun_cef.rs pins pkgforge's deployment-array quoting
+      # fix (Anylinux-AppImages#855) and runs the tooling with bash and
       # streamed output. Rev-pinned; the marker skips the rebuild while
       # rust-cache keeps ~/.cargo/bin. scripts/tauri.mjs runs `cargo tauri`
       # when TAURI_CEF_CARGO=1.
@@ -143,7 +143,7 @@ jobs:
         if: matrix.config.release == 'linux'
         run: |
           set -euo pipefail
-          rev=c62e9f90c1f5759a4e3795cc56b0b9a1273a5773
+          rev=2b8315bd14882471b6567b1ceba84c0c0238f156
           marker="$HOME/.cargo/bin/.cargo-tauri-rev"
           if [ -x "$HOME/.cargo/bin/cargo-tauri" ] && [ "$(cat "$marker" 2>/dev/null)" = "$rev" ]; then
             echo "cargo-tauri at $rev already installed"
