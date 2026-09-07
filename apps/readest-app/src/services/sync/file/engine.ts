@@ -49,6 +49,13 @@ export interface PushBookFileResult {
   uploaded: boolean;
   /** Reason for the skip, when applicable — surfaced for diagnostics. */
   reason?: 'remote-matches' | 'no-source' | 'disabled';
+  /**
+   * Whether the HEAD probe found a remote copy. Only populated by
+   * {@link FileSyncEngine.pushBookCover}, whose caller uses it to decide
+   * whether a cover missing from this device is worth pulling back down —
+   * without paying a speculative GET for a book the remote has no cover for.
+   */
+  remoteExists?: boolean;
 }
 
 export interface DeleteRemoteBookDirResult {
@@ -77,6 +84,8 @@ export interface SyncLibraryResult {
   filesUploaded: number;
   filesAlreadyInSync: number;
   coversUploaded: number;
+  /** Covers pulled back down because this device's copy was missing (#5931). */
+  coversDownloaded: number;
   /** Remote-only books added to the local shelf without downloading their files (#5009). */
   booksAdded: number;
   /** Local books removed because a peer's tombstone propagated to this device (#4860). */
@@ -428,9 +437,9 @@ export class FileSyncEngine {
     }
 
     const local = await this.store.loadBookCover(book);
-    if (!local) return { uploaded: false, reason: 'no-source' };
+    if (!local) return { uploaded: false, reason: 'no-source', remoteExists: !!remoteHead };
     if (remoteHead && remoteHead.size === local.size) {
-      return { uploaded: false, reason: 'remote-matches' };
+      return { uploaded: false, reason: 'remote-matches', remoteExists: true };
     }
     await this.ensureDirs(dirs);
     try {
@@ -537,6 +546,7 @@ export class FileSyncEngine {
       filesUploaded: 0,
       filesAlreadyInSync: 0,
       coversUploaded: 0,
+      coversDownloaded: 0,
       booksAdded: 0,
       booksDeleted: 0,
       metadataUpdated: 0,
@@ -1145,6 +1155,33 @@ export class FileSyncEngine {
                 if (coverResult.uploaded) {
                   result.coversUploaded += 1;
                   syncedHashes.add(book.hash);
+                } else if (
+                  coverResult.reason === 'no-source' &&
+                  coverResult.remoteExists &&
+                  canPull
+                ) {
+                  // The row is in the library but its cover file isn't on this
+                  // device — the state a metadata-only Readest Cloud restore
+                  // leaves behind when the book files live in the file-sync
+                  // provider instead (#5931). Membership in `allBooksMap` only
+                  // proves the row exists, so discovery skips it and this push
+                  // has nothing to upload: repair the cover from the remote
+                  // rather than leaving a generated placeholder forever.
+                  // Gated on the HEAD probe pushBookCover already paid, so a
+                  // book with no remote cover costs no extra request.
+                  const coverBytes = await this.pullBookCover(book.hash);
+                  if (coverBytes) {
+                    const current = allBooksMap.get(book.hash) ?? book;
+                    const repaired: Book = { ...current, coverDownloadedAt: Date.now() };
+                    await this.store.saveBookCover(repaired, coverBytes);
+                    // Persist through the store, not just to disk: the shelf
+                    // renders a cached cover URL, so a row that isn't written
+                    // back keeps showing the placeholder until the next reload.
+                    await this.store.updateBookMetadata(repaired);
+                    allBooksMap.set(book.hash, repaired);
+                    result.coversDownloaded += 1;
+                    syncedHashes.add(book.hash);
+                  }
                 }
               } catch (e) {
                 console.warn('file sync: cover failed', book.hash, e);
