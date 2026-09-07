@@ -569,6 +569,21 @@ pub struct CaptureWebviewRegionResponse {
     pub data: String,
 }
 
+/// Token for the native cover layer put up by `cover_webview_region`
+/// (#6106): the two-column page curl freezes the on-screen pixels of the
+/// incoming column behind it while the column is captured underneath.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CoverWebviewRegionResponse {
+    pub token: u32,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UncoverWebviewRegionRequest {
+    pub token: u32,
+}
+
 /// iCloud ubiquity-container probe result. `documents_path` is the absolute
 /// path of the container's Documents folder (created on first probe);
 /// `available: false` covers no-iCloud-session, missing entitlement, and

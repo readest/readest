@@ -448,6 +448,22 @@ impl<R: Runtime> NativeBridge<R> {
         }
     }
 
+    /// Native cover for the two-column page curl (#6106): not implemented on
+    /// desktop, where the leaf keeps a paper back.
+    pub fn cover_webview_region(
+        &self,
+        _payload: CaptureWebviewRegionRequest,
+    ) -> crate::Result<CoverWebviewRegionResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn uncover_webview_region(
+        &self,
+        _payload: UncoverWebviewRegionRequest,
+    ) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     /// Probe the iCloud ubiquity container. Non-macOS desktops report
     /// unavailable rather than erroring: the JS side treats `available:
     /// false` as "this backend cannot run here", the same shape as a Mac

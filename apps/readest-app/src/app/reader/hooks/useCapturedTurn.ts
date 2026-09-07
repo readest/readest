@@ -6,7 +6,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
-import { captureWebviewRegion } from '@/utils/bridge';
+import { captureWebviewRegion, coverWebviewRegion, uncoverWebviewRegion } from '@/utils/bridge';
 import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { detectViewTransitionGroup } from '@/utils/viewTransition';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from '../utils/brightnessGesture';
@@ -364,6 +364,20 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         restoreToolbarOnCancelRef.current = useReaderStore.getState().hoveredBookKey === bookKey;
       },
       capture: captureWebviewRegion,
+      // A two-column spread turns only its outer column, hinged at the spine
+      // (readest#6106). Vertical writing stacks its columns instead, which
+      // the leaf model does not describe.
+      getColumnCount: () =>
+        getViewSettings(bookKey)?.vertical ? 1 : (view.renderer.columnCount ?? 1),
+      // The leaf's back shows the incoming column, captured under the overlay
+      // behind a native cover. Only iOS has the cover so far; elsewhere the
+      // back is theme paper.
+      coverRegion: getInitializedAppService()?.isIOSApp
+        ? async (rect) => {
+            const { token } = await coverWebviewRegion(rect);
+            return () => uncoverWebviewRegion({ token });
+          }
+        : undefined,
       preparePixelCapture: async () => {
         const transientVisible =
           document.querySelector(CAPTURE_INVALIDATING_OVERLAY_SELECTOR) !== null;

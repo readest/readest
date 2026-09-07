@@ -96,6 +96,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::refresh_eink_screen,
             commands::update_reading_widget,
             commands::capture_webview_region,
+            commands::cover_webview_region,
+            commands::uncover_webview_region,
             commands::set_selection_suppressed,
             commands::set_multicast_lock,
             commands::read_share_clip_html,

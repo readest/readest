@@ -51,6 +51,8 @@ const COMMANDS: &[&str] = &[
     "refresh_eink_screen",
     "update_reading_widget",
     "capture_webview_region",
+    "cover_webview_region",
+    "uncover_webview_region",
     "set_selection_suppressed",
     "set_multicast_lock",
     "read_share_clip_html",

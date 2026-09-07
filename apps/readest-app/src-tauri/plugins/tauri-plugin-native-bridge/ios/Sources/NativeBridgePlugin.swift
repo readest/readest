@@ -570,6 +570,13 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
 
 class NativeBridgePlugin: Plugin {
   private var webView: WKWebView?
+  // Native cover for the two-column page curl (#6106): a snapshot view of a
+  // region, placed as a sibling above the webview so `capture_webview_region`
+  // (which renders the webview's own layer tree) does not see it while the
+  // user keeps seeing the frozen pixels. Tokens keep a stale uncover from an
+  // interrupted turn from removing the next turn's cover.
+  private var turnCoverView: UIView?
+  private var turnCoverToken: Int = 0
   private var authSession: ASWebAuthenticationSession?
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
@@ -1909,6 +1916,55 @@ class NativeBridgePlugin: Plugin {
       }
     }
   }
+
+  /// Freeze the on-screen pixels of a region of the webview (CSS px of the
+  /// JS viewport) behind a snapshot of what is currently presented there,
+  /// for the two-column page curl (#6106). The snapshot view is a sibling
+  /// above the webview: `takeSnapshot` renders the webview's own layer tree,
+  /// so the JS side can expose the incoming column underneath, capture it
+  /// with `capture_webview_region`, and restore its overlay — all while the
+  /// user still sees the frozen old pixels. Resolves a token for
+  /// `uncover_webview_region`.
+  @objc public func cover_webview_region(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(CaptureWebviewRegionArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let webView = self.webView, let container = webView.superview else {
+        return invoke.reject("WebView not available")
+      }
+      let rect = CGRect(x: args.x, y: args.y, width: args.width, height: args.height)
+      guard
+        let cover = webView.resizableSnapshotView(
+          from: rect, afterScreenUpdates: false, withCapInsets: .zero)
+      else {
+        return invoke.reject("Snapshot view unavailable")
+      }
+      self.turnCoverView?.removeFromSuperview()
+      cover.frame = webView.convert(rect, to: container)
+      cover.isUserInteractionEnabled = false
+      container.addSubview(cover)
+      self.turnCoverToken += 1
+      self.turnCoverView = cover
+      invoke.resolve(["token": self.turnCoverToken])
+    }
+  }
+
+  /// Remove the cover put up by `cover_webview_region`. A token from an
+  /// earlier, already replaced cover is ignored.
+  @objc public func uncover_webview_region(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(UncoverWebviewRegionArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return invoke.resolve() }
+      if args.token == self.turnCoverToken {
+        self.turnCoverView?.removeFromSuperview()
+        self.turnCoverView = nil
+      }
+      invoke.resolve()
+    }
+  }
 }
 
 /// Persistent store for security-scoped folder bookmarks.
@@ -2156,6 +2212,10 @@ struct CaptureWebviewRegionArgs: Decodable {
   let y: Double
   let width: Double
   let height: Double
+}
+
+struct UncoverWebviewRegionArgs: Decodable {
+  let token: Int
 }
 
 @_cdecl("init_plugin_native_bridge")
