@@ -527,7 +527,9 @@ is small and focused:
 ```
 lib.rs              -> command registration, scope grants, deep links, builder
 main.rs             -> entrypoint
-clip_url.rs         -> clipboard URL extraction
+clip_url.rs         -> rendered web-page capture
+browser_fetch.rs    -> resource requests using the browser session
+browser_cookies_macos.rs -> access to the WebKit cookie store
 dir_scanner.rs      -> recursive directory scan (used by library import)
 transfer_file.rs    -> chunked upload/download for big files
 discord_rpc.rs      -> Discord Rich Presence (desktop only)
