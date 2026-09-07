@@ -1,0 +1,23 @@
+#!/bin/sh
+# Sourced by the AppImage's AppRun before the bundler's own hooks — AppRun runs
+# `for hook in $APPDIR/bin/*.hook`, so the 00- prefix is what puts this first.
+#
+# Readest's CEF runtime is built without tauri-runtime-cef's `sandbox` feature,
+# so CefSettings.no_sandbox is set and every Chromium child process runs with
+# --no-sandbox: the app never asks the kernel for an unprivileged user
+# namespace. The AppImage bundler's fix-namespaces.hook cannot know that. On
+# distros that restrict unprivileged userns (Ubuntu 24.04+ and friends) it
+# blocks startup with a dialog and offers to install an AppArmor profile
+# through pkexec — a root password prompt for a capability this build does not
+# use, and one that comes back with every new AppImage, because the profile it
+# writes is keyed to the file's exact path.
+#
+# Stubbing the two helpers it prompts through (both live in AppRun.lib, and
+# nothing else in the bundle calls them) leaves the rest of that hook harmless:
+# its checks still run, they just cannot reach the user.
+#
+# If Readest ever enables the CEF sandbox on Linux, delete this file and the
+# appimage.files entry that ships it: the namespace requirement becomes real,
+# and deb/rpm should then ship /etc/apparmor.d/readest the way Chrome does.
+notify() { return 1; }
+run_gui_sudo() { return 1; }

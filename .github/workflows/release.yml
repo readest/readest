@@ -419,8 +419,11 @@ jobs:
           nss_dir=$(dirname "$(ls /usr/lib/*-linux-gnu/nss/libsoftokn3.so)")
           lib_dir=${nss_dir%/nss}
           sudo cp -f --remove-destination "$nss_dir"/*.so "$lib_dir/"
+          # Merge, don't assign: tauri.conf.json already ships an appimage.files
+          # entry for the AppRun hook that keeps the bundler's namespace hook
+          # from prompting for a root password (src-tauri/appimage/).
           conf=apps/readest-app/src-tauri/tauri.conf.json
-          jq --arg d "$lib_dir" '.bundle.linux.appimage.files = {
+          jq --arg d "$lib_dir" '.bundle.linux.appimage.files += {
               "/usr/lib/libsoftokn3.so": ($d + "/libsoftokn3.so"),
               "/usr/lib/libfreeblpriv3.so": ($d + "/libfreeblpriv3.so"),
               "/usr/lib/libnssckbi.so": ($d + "/libnssckbi.so"),
@@ -567,7 +570,7 @@ jobs:
       # the AppDir quick-sharun packed, left next to the AppImage in the
       # WORKSPACE target dir. libsqlite3 is not staged explicitly — it must
       # arrive as libsoftokn3.so's own ldd dependency.
-      - name: verify the AppImage bundled its NSS modules (linux only)
+      - name: verify the AppImage bundle contents (linux only)
         if: matrix.config.release == 'linux'
         run: |
           set -euo pipefail
@@ -583,6 +586,11 @@ jobs:
             || { echo "::error::libpulsecommon is missing from the AppImage bundle"; exit 1; }
           grep -qx '+/pulseaudio' "$lib/lib.path" \
             || { echo "::error::lib.path does not cover lib/pulseaudio, so libpulse cannot load"; exit 1; }
+          # Ships through appimage.files, so it lands before quick-sharun adds
+          # the bundler's own hooks; without it every new AppImage asks for a
+          # root password on first launch.
+          [ -e "${lib%/lib}/bin/00-no-userns-prompt.hook" ] \
+            || { echo "::error::the no-userns-prompt hook is missing from the AppImage bundle"; exit 1; }
 
       # Attest the freshly built desktop bundles (installers, AppImage, dmg,
       # updater archives + their .sig). tauri-action reports their on-disk paths
