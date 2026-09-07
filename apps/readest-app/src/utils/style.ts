@@ -1469,6 +1469,7 @@ export const applyImageStyle = (document: Document) => {
       heightAttr && (heightAttr.endsWith('%') || heightAttr.endsWith('vh'))
         ? parseFloat(heightAttr)
         : NaN;
+    const noEnlarge = img.getAttribute('zy-enlarge-src') === 'none';
 
     let inlineWithText = false;
     let keepBaseline = false;
@@ -1491,10 +1492,24 @@ export const applyImageStyle = (document: Document) => {
         keepBaseline = valign === '' || valign === 'baseline';
       }
     }
-    return { img, percentWidth, percentHeight, inlineWithText, keepBaseline };
+    return {
+      img,
+      percentWidth,
+      percentHeight,
+      inlineWithText,
+      keepBaseline,
+      noEnlarge,
+    };
   });
 
-  for (const { img, percentWidth, percentHeight, inlineWithText, keepBaseline } of plans) {
+  for (const {
+    img,
+    percentWidth,
+    percentHeight,
+    inlineWithText,
+    keepBaseline,
+    noEnlarge,
+  } of plans) {
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
       img.removeAttribute('width');
@@ -1506,6 +1521,9 @@ export const applyImageStyle = (document: Document) => {
     if (inlineWithText) {
       img.classList.add('has-text-siblings');
       if (keepBaseline) img.classList.add('has-text-siblings-baseline');
+    }
+    if (noEnlarge) {
+      img.style.setProperty('pointer-events', 'none');
     }
   }
   document.querySelectorAll('hr').forEach((hr) => {

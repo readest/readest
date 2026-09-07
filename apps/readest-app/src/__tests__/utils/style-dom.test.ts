@@ -578,6 +578,29 @@ describe('applyImageStyle', () => {
     expect(img.classList.contains('has-text-siblings')).toBe(true);
     expect(img.classList.contains('has-text-siblings-baseline')).toBe(false);
   });
+
+  it('sets pointer-events: none on img[zy-enlarge-src="none"] and keeps the attribute', () => {
+    document.body.innerHTML = '<img zy-enlarge-src="none" src="a.png" />';
+
+    applyImageStyle(document);
+
+    const img = document.querySelector('img')!;
+    expect(img.getAttribute('zy-enlarge-src')).toBe('none');
+    expect(img.style.pointerEvents).toBe('none');
+  });
+
+  it('leaves img[zy-enlarge-src="self"] without pointer-events changes', () => {
+    document.body.innerHTML = `
+      <img zy-enlarge-src="self" src="a.png"/>
+      <img src="b.png"/>
+    `;
+
+    applyImageStyle(document);
+
+    document.querySelectorAll('img').forEach((img) => {
+      expect(img.style.pointerEvents).toBe('');
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
