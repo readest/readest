@@ -663,14 +663,16 @@ export class XCFI {
     const textParent = textNode.parentElement || this.document.documentElement;
     const basePath = this.buildXPointerPath(textParent);
     const siblings = XCFI.crengineTextChildren(textParent);
+    const index = siblings.indexOf(textNode);
+    // Dropped whitespace belongs at the block start, before any inline content.
+    if (index < 0) return basePath;
     const collapsed = XCFI.crengineOffset(textNode, offsetInNode);
 
     // Omit [1] when there is only one direct text node (matches KOReader format)
     if (siblings.length <= 1) {
       return `${basePath}/text().${collapsed}`;
     }
-    const index = siblings.indexOf(textNode);
-    return `${basePath}/text()[${index < 0 ? 1 : index + 1}].${collapsed}`;
+    return `${basePath}/text()[${index + 1}].${collapsed}`;
   }
 
   /**

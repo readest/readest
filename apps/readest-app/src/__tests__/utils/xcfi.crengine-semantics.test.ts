@@ -89,6 +89,26 @@ describe('indexed /text()[K].N counts text children the way crengine keeps them'
   });
 });
 
+describe('dropped leading whitespace stays at the block start', () => {
+  it.each([
+    '',
+    '\nepsilon',
+    '\nepsilon<em>zeta</em>eta',
+  ])('preserves a selection starting before inline content with trailing text %j', (trailingText) => {
+    const doc = html(`<p>\n<em>delta</em>${trailingText}</p>`);
+    const converter = new XCFI(doc, 0);
+    const range = doc.createRange();
+    range.setStart(doc.querySelector('p')!.firstChild!, 0);
+    range.setEnd(doc.querySelector('em')!.firstChild!, 5);
+    const cfi = CFI.joinIndir(CFI.fake.fromIndex(0), CFI.fromRange(range));
+
+    const xp = converter.cfiToXPointer(cfi);
+
+    expect(xp.pos0).toBe('/body/DocFragment[1]/body/p');
+    expect(rangeText(doc, converter.xPointerToCFI(xp.pos0!, xp.pos1!)).trim()).toBe('delta');
+  });
+});
+
 describe('offsets count crengine’s whitespace-collapsed text, not the raw source', () => {
   // crengine keeps "lambda   mu     nu" as "lambda mu nu": "mu" is text().7..9
   // there, while the raw DOM text node has it at 9..11.
