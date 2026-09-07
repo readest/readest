@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.12.8": {
+      "date": "2026-09-08",
+      "notes": [
+        "Reading: Customize the information shown in headers and footers, resize text with zoom shortcuts",
+        "Sync: You can choose whether to use Readest Cloud before signing in, and recover missing covers during sync",
+        "Annotations: You can now import highlights, bookmarks, and reading progress from ReadEra, and sync your notes and highlights to Notion",
+        "Audiobooks: You can now stream ebook-only titles from Audiobookshelf",
+        "Text-to-Speech: use Apple Enhanced and Premium voices on the web, and optionally skip parenthetical readings in Japanese books",
+        "Web Imports: You can now clip signed-in pages and import web novels that require an account, with more reliable text decoding",
+        "Styling: Your library and reader can now use separate theme modes and colors, and e-ink mode is available on every platform",
+        "PDF: You can lock horizontal panning while zoomed, highlights stay visible in dark mode, and PDFs work on older devices",
+        "Dictionary: Dictionary entries can now play embedded audio, jump to parts of speech, and enlarge images",
+        "Sharing: Nearby BookDrop now offers easier pairing, transfer sounds, and more reliable device discovery and reconnection"
+      ]
+    },
     "0.12.6": {
       "date": "2026-08-29",
       "notes": [
