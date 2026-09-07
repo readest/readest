@@ -188,7 +188,7 @@ const RuleItem: React.FC<{
           <span className='text-base-content/80 mr-1.5 text-xs font-medium'>
             {_('Replace with:')}
           </span>
-          <span className='text-base-content/90 text-xs'>{"'" + rule.replacement + "'"}</span>
+          <span className='text-base-content/90 text-xs'>{rule.replacement}</span>
         </div>
         <div className='text-base-content/60 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs'>
           <span className='inline-flex items-center gap-1'>
