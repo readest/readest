@@ -150,20 +150,34 @@ jobs:
       #                   loads the host's libasound_module_conf_pulse.so
       #   libspeechd.so.2 no system voices for the Web Speech TTS engine
       #
-      # quick-sharun's own DEPLOY_CHROMIUM rules cover these modules, but the
-      # bundler in cli-cef 3.0.0-alpha.26 downloads a fork of that script
-      # (FabianLars/Anylinux-AppImages, taken on feat/cef to fix spaces in
-      # paths) which is ~1100 lines behind pkgforge upstream and expands its
-      # deployment array without `eval`: every path keeps its literal quotes,
-      # so EVERY DEPLOY_* extra is skipped and only ldd-derived libraries land
-      # in the bundle. tauri-apps/tauri#12491 drops that fork for a pinned,
-      # checksummed upstream revision (facb95e8, which has the `eval`). Once it
-      # reaches feat/cef and a new cli-cef ships, bump CEF_CLI in
-      # apps/readest-app/scripts/tauri.mjs and lift the STRACE_MODE pin in the
-      # build step — upstream's own rules then cover NSS and libpulse. Keep the
-      # nss/ flatten and the libspeechd entry either way: upstream globs only
-      # Arch's flat layout, so a Debian builder hides the NSS modules from it,
-      # and nothing in it deploys libspeechd at all.
+      # quick-sharun's own DEPLOY_CHROMIUM rules cover the NSS modules and, via
+      # DEPLOY_PIPEWIRE -> DEPLOY_PULSE, libpulse. None of it reaches the
+      # bundle: the bundler in cli-cef 3.0.0-alpha.26 downloads a fork of the
+      # script (FabianLars/Anylinux-AppImages, re-fetched from its main on
+      # every build) whose HEAD, 3e280d1b "fix handling of spaces in input
+      # paths", is the one-line change
+      #   eval set -- "$TO_DEPLOY_ARRAY" "$@"   ->   set -- $TO_DEPLOY_ARRAY "$@"
+      # Upstream's line does split positional paths on spaces, and tauri names
+      # the AppDir after the product, so the change fixed something real — but
+      # the array entries come single-quoted from _save_array, so without the
+      # eval each keeps its literal quotes, fails `[ -f ]`, and EVERY DEPLOY_*
+      # extra is silently skipped. Only ldd-derived libraries land. The fix
+      # that keeps both halves is to quote the positional args the same way:
+      #   eval set -- "$TO_DEPLOY_ARRAY" "$(_save_array "$@")"
+      # Once that (or any restored eval) is on the fork's main, the next build
+      # deploys NSS and libpulse by itself and those entries below turn
+      # redundant — harmlessly, the tooling keeps files it already has.
+      # tauri-apps/tauri#12491 sidesteps the fork altogether (pinned pkgforge
+      # revision, no whitespace in the AppDir path) and fixes the CI hang the
+      # STRACE_MODE pin in the build step works around; lift that pin and bump
+      # CEF_CLI in apps/readest-app/scripts/tauri.mjs when cli-cef carries it.
+      # Keep the nss/ flatten and the libspeechd entry either way: every
+      # quick-sharun globs only Arch's flat layout, so a Debian builder hides
+      # the NSS modules from it, and no rule deploys libspeechd at all.
+      # libpipewire is deliberately not staged — Chromium needs it for the
+      # screen-share portal, not for audio — and neither are ALSA plugins:
+      # with libpulse in the bundle Chromium talks to PulseAudio/PipeWire
+      # directly, and a pure-ALSA host resolves `default` with built-ins.
       #
       # Until then, hand the modules over as appimage.files: the bundler passes
       # files targeted at /usr/lib to quick-sharun as plain ELF arguments, the
