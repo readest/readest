@@ -193,3 +193,5 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [stat_pages slow query + disk growth](stat-pages-slow-query-disk-growth.md) #5835+#5844 DEPLOYED; cron FLIPPED 3719ec648
 - [No prod metrics in public issues/PRs](feedback-no-prod-metrics-in-public.md) #5834 DELETED for exposing prod data
 - [KOReader emulator headless verify](koreader-emulator-headless-verify.md) HttpInspector recipe; never mv the stats DB
+- [Scrolled-mode cover never relocates = no progress sync](scrolled-cover-no-relocate-progress-sync.md) UNCOMMITTED foliate `#getVisibleRange` collapsed fallback + hook no-local-CFI; needs foliate PR + re-pin
+- [Chrome MCP tab hidden = no rAF/scroll](chrome-mcp-hidden-tab-no-raf.md) check visibilityState first; probe with renderer.goTo
