@@ -1,6 +1,6 @@
 ---
 name: xml-lang-namespace-selector-6088
-description: "#6088 book CSS [xml|lang=\"en\"] and :lang() never matched xml:lang in EPUB sections; the srcdoc HTML parse drops the namespace and applyNamespacedAttributes only knew declared prefixes; body{color} loss in the same report is BY DESIGN; body{line-height:unset} moved under Use Book Layout so the book's body line-height inherits"
+description: "#6088 book CSS [xml|lang=\"en\"] and :lang() never matched xml:lang in EPUB sections; the srcdoc HTML parse drops the namespace and applyNamespacedAttributes only knew declared prefixes; body{color} loss in the same report is BY DESIGN; getParagraphLayoutStyles is omitted when Use Book Layout is ON, so body{line-height:unset} is not applied and the book's body line-height inherits"
 metadata:
   type: project
 ---
@@ -31,16 +31,6 @@ OFF unchanged 22.4px. Color stays theme-controlled BY DESIGN. foliate's fork
 has an UNUSED `setStyles([before, after])` slot ("defaults the book can override") if this is ever
 revisited; moving `html,body{color}` there would make dark-mode books with `body{color:#333}`
 unreadable, which is why it was declined.
-
-**Getting Gmail attachments without computer-use:** computer-use grants browsers READ-ONLY (no
-clicks, and it forbids AppleScript/System Events workarounds), so the native Save dialog is
-unreachable; `chrome://` pages are unreachable from the extension too. Chrome MCP coordinate
-clicks miss while the "Claude started debugging this browser" infobar shifts the viewport; use
-`find` -> ref clicks. With "Ask where to save" ON the user must click Save; chrox turned it OFF, so
-Download lands in `~/Downloads` (History DB lags; check the folder). Gmail "Show original" strips
-attachment bodies, but its "Download Original" link is same-origin and `fetch`-able from page JS;
-the JS tool then BLOCKS base64/query-string output, so bytes need another channel (localhost
-receiver POST) if that route is ever needed.
 
 Related: [[srcdoc-html-parsing-namespaced-attrs-6038]], [[footnote-aside-namespace-order-4438]],
 [[css-style-fixes]].

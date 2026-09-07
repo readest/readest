@@ -8,12 +8,11 @@ metadata:
   modified: 2026-09-06T06:46:45.304Z
 ---
 
-Support mail from Noel Enriquez (n-enriquez@outlook.com, 2026-08-25, Spanish): on e-ink,
-selecting a word produces ghosting and a grey dither that makes the selected text
-illegible; asks for a high-contrast mode with 100% solid backgrounds. Two photos plus the
-PDF he was reading (The Farlex Grammar Book).
+Support case EINK-PDF-01: on e-ink, selecting a word produces ghosting and a grey
+dither that makes the selected text illegible. Selection needs high contrast with
+100% solid backgrounds.
 
-**Verified on the Boox Leaf5 (adb `ec8fafd`) with his own PDF, 2026-09-06.**
+**Verified on the Boox Leaf5 with a sample PDF.**
 
 **Root cause (CONFIRMED).** `getEinkSelectionStyles()` in `src/utils/style.ts` injects a
 bare `::selection { color: var(--theme-bg-color); background: var(--theme-fg-color) }`

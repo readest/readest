@@ -110,9 +110,9 @@ Outcome: shipped as PR #6081 "chore: bump tauri to version 2.11.5" (head on the
 CI fixes: cargoHash + pnpmDeps hash bumps and the `as_chunks` clippy rewrite in
 epub_parser.rs. Main then took #6083 (nix Linux package on CEF). The temporary
 fork tag `cef-stub-old-base` was DELETED once main pinned 3156d92b7; the
-leftover `packages/tauri-plugins/` dir is gone. STILL OPEN: `packages/tao`
-submodule is registered in .gitmodules but unused (remove in a follow-up PR);
-iOS build with the relabelled swift-rs + upstream tao 0.37 not yet verified.
+leftover `packages/tauri-plugins/` dir is gone. `packages/tao` was removed by
+PR #6085. The iOS 18.5 simulator build and CarPlay check passed as recorded above;
+iOS 26.3 simulator and real-device verification remain open.
 
 Sim recipe that worked (2026-09-06): boot `xcrun simctl boot <udid>` + `open -a
 Simulator` FIRST, `pnpm dev-ios-sim` (Next export + cargo sim build + xcodebuild
