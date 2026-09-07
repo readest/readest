@@ -40,3 +40,16 @@ describe('cover thumbnail app-command ACL (#5632)', () => {
     expect(readCapabilityPermissions('webdriver-remote.json')).toContain(PERMISSION);
   });
 });
+
+it('allows browser-session requests only in local app windows', () => {
+  expect(manifestCommands).toContain('fetch_web_browser_resource');
+  expect(readCapabilityPermissions('default.json')).toContain('allow-fetch-web-browser-resource');
+  expect(readCapabilityPermissions('webdriver-remote.json')).not.toContain(
+    'allow-fetch-web-browser-resource',
+  );
+  const capability = JSON.parse(
+    readFileSync(resolve(process.cwd(), 'src-tauri/capabilities/default.json'), 'utf-8'),
+  ) as { windows: string[] };
+  expect(capability.windows).not.toContain('browser-*');
+  expect(capability.windows).not.toContain('*');
+});

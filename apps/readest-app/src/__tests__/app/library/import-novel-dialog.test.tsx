@@ -30,6 +30,13 @@ vi.mock('@/components/Dialog', () => ({
     ) : null,
 }));
 
+const openWebBrowserMock = vi.fn();
+vi.mock('@/services/webBrowser/webBrowser', () => ({
+  openWebBrowser: (...args: unknown[]) => openWebBrowserMock(...args),
+}));
+vi.mock('@/services/webBrowser/webBrowserOptions', () => ({
+  getWebBrowserOptions: () => ({ labels: {} }),
+}));
 const fetchNovelTocMock = vi.fn();
 const downloadNovelMock = vi.fn();
 vi.mock('@/services/novel/novelImport', () => ({
@@ -98,7 +105,10 @@ describe('ImportNovelDialog', () => {
   it('shows the detected novel in the preview phase', async () => {
     setup();
     await goToPreview();
-    expect(fetchNovelTocMock).toHaveBeenCalledWith('https://n.example.org/toc');
+    expect(fetchNovelTocMock).toHaveBeenCalledWith(
+      'https://n.example.org/toc',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     expect(screen.getByText('Author X')).toBeTruthy();
     expect(screen.getByText('6 chapters')).toBeTruthy();
     expect(screen.getByText('Chapter 1')).toBeTruthy();
@@ -258,4 +268,42 @@ describe('ImportNovelDialog', () => {
     await screen.findByText('No chapters could be downloaded.');
     expect(onImport).not.toHaveBeenCalled();
   });
+});
+
+it('uses the signed-in chapter list and its navigated URL', async () => {
+  setup();
+  const page = { url: 'https://n.example.org/private/toc', html: '<main>Private chapters</main>' };
+  openWebBrowserMock.mockResolvedValue({ page });
+  fireEvent.change(screen.getByPlaceholderText('https://example.com/novel'), {
+    target: { value: 'https://n.example.org/login' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Sign in with Browser' }));
+  await screen.findByText('My Novel');
+  expect(openWebBrowserMock).toHaveBeenCalledWith(
+    'https://n.example.org/login',
+    expect.objectContaining({ labels: expect.objectContaining({ clipPage: 'Use Chapter List' }) }),
+  );
+  expect(fetchNovelTocMock).toHaveBeenCalledWith(
+    page.url,
+    expect.objectContaining({ page: { html: page.html, finalUrl: page.url } }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+  await waitFor(() =>
+    expect(downloadNovelMock).toHaveBeenCalledWith(expect.anything(), page.url, expect.anything()),
+  );
+});
+
+it('closing the sign-in browser without capturing does not fetch chapters', async () => {
+  setup();
+  openWebBrowserMock.mockResolvedValue({});
+  fireEvent.change(screen.getByPlaceholderText('https://example.com/novel'), {
+    target: { value: 'https://n.example.org/login' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Sign in with Browser' }));
+  await waitFor(() =>
+    expect(
+      (screen.getByRole('button', { name: 'Fetch Chapters' }) as HTMLButtonElement).disabled,
+    ).toBe(false),
+  );
+  expect(fetchNovelTocMock).not.toHaveBeenCalled();
 });

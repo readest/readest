@@ -1,4 +1,4 @@
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { browserFetch as tauriFetch } from '@/services/webBrowser/browserFetch';
 import { isTauriAppPlatform } from '@/services/environment';
 import { imageFetchHeaders } from './httpHeaders';
 import type { EpubImage } from './types';
@@ -11,10 +11,11 @@ import type { EpubImage } from './types';
 // paywalled / member-only CDN hosts — without that, an authenticated
 // Substack image returns a placeholder. In Tauri we also fold in the
 // full image-fetch header set (UA + Sec-Ch-Ua + Sec-Fetch-* + Referer)
+// and use the browser's native cookie store, including HttpOnly cookies,
 // so CDNs that gate images on the browser shape — NYT, WSJ, paywalled
 // CDNs — cooperate.
 const httpFetch = (url: string, referer: string | null, init?: RequestInit): Promise<Response> => {
-  if (!isTauriAppPlatform()) {
+  if (!isTauriAppPlatform() || url.startsWith('data:')) {
     return globalThis.fetch(url, { credentials: 'include', ...init });
   }
   const baseHeaders = imageFetchHeaders(referer);
@@ -222,8 +223,15 @@ interface FetchedAsset {
   mime: string;
 }
 
-async function fetchAsset(url: string, referer: string | null): Promise<FetchedAsset | null> {
+async function fetchAsset(
+  url: string,
+  referer: string | null,
+  signal?: AbortSignal,
+): Promise<FetchedAsset | null> {
+  signal?.throwIfAborted();
   const ac = new AbortController();
+  const onAbort = () => ac.abort();
+  signal?.addEventListener('abort', onAbort, { once: true });
   const timer = setTimeout(() => ac.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await httpFetch(url, referer, { signal: ac.signal, redirect: 'follow' });
@@ -239,6 +247,7 @@ async function fetchAsset(url: string, referer: string | null): Promise<FetchedA
     return { url, path, bytes, mime };
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
   }
 }
 
@@ -265,7 +274,10 @@ export interface BundleAssetsResult {
 export async function bundleAssets(
   contentHtml: string,
   pageUrl: string,
+  options: { maxBytes?: number; signal?: AbortSignal } = {},
 ): Promise<BundleAssetsResult> {
+  const maxBytes = Math.min(options.maxBytes ?? MAX_TOTAL_ASSET_BYTES, MAX_TOTAL_ASSET_BYTES);
+  options.signal?.throwIfAborted();
   const doc = new DOMParser().parseFromString(`<div id="root">${contentHtml}</div>`, 'text/html');
   const root = doc.getElementById('root');
   if (!root) return { html: contentHtml, images: [], missing: 0 };
@@ -374,11 +386,12 @@ export async function bundleAssets(
   let cursor = 0;
   const worker = async () => {
     while (cursor < uniqueUrls.length) {
+      options.signal?.throwIfAborted();
       const i = cursor++;
       const url = uniqueUrls[i]!;
-      if (isFetchableAssetUrl(url, pageUrl) && settledPrefixBytes() < MAX_TOTAL_ASSET_BYTES) {
+      if (isFetchableAssetUrl(url, pageUrl) && settledPrefixBytes() < maxBytes) {
         try {
-          settled[i] = await fetchAsset(url, pageUrl);
+          settled[i] = await fetchAsset(url, pageUrl, options.signal);
         } catch (err) {
           console.warn('[clip/bundle] image fetch failed', {
             url,
@@ -391,10 +404,11 @@ export async function bundleAssets(
   };
   await Promise.all(Array.from({ length: MAX_CONCURRENCY }, worker));
 
+  options.signal?.throwIfAborted();
   // Apply the budget strictly in document order.
   for (let i = 0; i < uniqueUrls.length; i++) {
     const asset = settled[i];
-    if (!asset || totalBytes + asset.bytes.byteLength > MAX_TOTAL_ASSET_BYTES) {
+    if (!asset || totalBytes + asset.bytes.byteLength > maxBytes) {
       missing++;
       continue;
     }

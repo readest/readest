@@ -65,7 +65,7 @@ async function convertInWorker(input: ConvertInput, timeoutMs: number): Promise<
  * conversion when Web Workers are unavailable or the worker fails.
  *
  * `kind: 'page'` is the exception — its asset bundler uses the
- * `@tauri-apps/plugin-http` fetch to bypass CORS, and that binding lives on
+ * native browser-session fetch to bypass CORS, and that binding lives on
  * `window.__TAURI_INTERNALS__` which a Web Worker can't reach. So page
  * clips always run on the main thread.
  */

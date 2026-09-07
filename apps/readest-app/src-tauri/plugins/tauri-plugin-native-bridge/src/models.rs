@@ -620,3 +620,15 @@ pub struct ICloudEnsureDownloadedResponse {
     /// "ready" | "notFound" | "timeout"
     pub status: String,
 }
+
+/// Native-only cookie exchange for Android, whose Tauri cookie API is unsupported.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebBrowserCookiesRequest {
+    pub url: String,
+    pub set_cookies: Vec<String>,
+}
+#[derive(Debug, Deserialize)]
+pub struct WebBrowserCookiesResponse {
+    pub cookies: String,
+}

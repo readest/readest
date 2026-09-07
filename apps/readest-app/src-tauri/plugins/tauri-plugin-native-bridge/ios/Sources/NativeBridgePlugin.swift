@@ -1692,6 +1692,44 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  /// Native-only exchange; session cookies never reach the frontend.
+  @objc public func web_browser_cookies(_ invoke: Invoke) {
+    struct Args: Decodable { let url: String; let setCookies: [String] }
+    let args: Args
+    do { args = try invoke.parseArgs(Args.self) }
+    catch { invoke.reject(error.localizedDescription); return }
+    guard let url = URL(string: args.url), let host = url.host,
+      url.scheme == "https" || url.scheme == "http" else { invoke.reject("Invalid URL"); return }
+    func matchesDomain(_ domain: String) -> Bool {
+      if domain.hasPrefix(".") {
+        return host == String(domain.dropFirst()) || host.hasSuffix(domain)
+      }
+      return domain == host
+    }
+    DispatchQueue.main.async {
+      let store = WKWebsiteDataStore.default().httpCookieStore
+      let group = DispatchGroup()
+      for header in args.setCookies {
+        for cookie in HTTPCookie.cookies(withResponseHeaderFields: ["Set-Cookie": header], for: url) where matchesDomain(cookie.domain) {
+          group.enter()
+          store.setCookie(cookie) { group.leave() }
+        }
+      }
+      group.notify(queue: .main) {
+        store.getAllCookies { cookies in
+          let matching = cookies.filter { cookie in
+            let path = cookie.path
+            let requestPath = url.path.isEmpty ? "/" : url.path
+            return matchesDomain(cookie.domain) && (!cookie.isSecure || url.scheme == "https")
+              && (cookie.expiresDate == nil || cookie.expiresDate! > Date())
+              && (requestPath == path || (requestPath.hasPrefix(path) && (path.hasSuffix("/") || requestPath.dropFirst(path.count).hasPrefix("/"))))
+          }.sorted { $0.path.count > $1.path.count }
+          invoke.resolve(["cookies": matching.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")])
+        }
+      }
+    }
+  }
+
   /// Push an import status (importing / added / failed / unsupported) into
   /// the open browser's banner. No-op when no browser is presented.
   @objc public func set_web_browser_status(_ invoke: Invoke) {

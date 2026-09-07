@@ -438,6 +438,10 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
+    pub fn web_browser_cookies(&self, payload: WebBrowserCookiesRequest) -> crate::Result<WebBrowserCookiesResponse> {
+        self.0.run_mobile_plugin("web_browser_cookies", payload).map_err(Into::into)
+    }
+
     /// Push an import status into the open browser's banner.
     pub fn set_web_browser_status(&self, payload: WebBrowserStatusRequest) -> crate::Result<()> {
         self.0

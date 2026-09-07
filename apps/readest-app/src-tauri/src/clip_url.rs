@@ -549,7 +549,9 @@ pub async fn clip_url<R: tauri::Runtime>(
               if (window.__readest_setStatus__) {{
                 window.__readest_setStatus__(CAPTURING_STATUS);
               }}
-              var html = document.documentElement.outerHTML;
+              var root = document.documentElement.cloneNode(true);
+              root.setAttribute('data-readest-url', location.href);
+              var html = root.outerHTML;
               console.log('[readest-clip] capturing reason=' + reason +
                 ' bytes=' + html.length);
               // Transfer the HTML through the navigation URL itself —
@@ -662,7 +664,19 @@ pub async fn clip_url<R: tauri::Runtime>(
 
     // 30 s covers a slow page load and a Cloudflare-style JS challenge
     // (5–15 s on bad networks) with margin for the settle delay.
-    let result = tokio::time::timeout(Duration::from_secs(30), rx).await;
+    let (cancel_tx, cancel_rx) = tokio::sync::oneshot::channel::<()>();
+    let cancel_tx = std::sync::Mutex::new(Some(cancel_tx));
+    webview.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::Destroyed) {
+            if let Some(tx) = cancel_tx.lock().unwrap_or_else(|e| e.into_inner()).take() {
+                let _ = tx.send(());
+            }
+        }
+    });
+    let result = tokio::select! {
+        result = tokio::time::timeout(Duration::from_secs(30), rx) => result,
+        _ = cancel_rx => return Err("Capture cancelled".into()),
+    };
 
     // Always close the clip window after capture (or timeout) — the
     // window flashing on screen for a few seconds is the brief mode

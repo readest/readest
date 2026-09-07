@@ -22,6 +22,9 @@ use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+#[cfg(target_os = "macos")]
+mod browser_cookies_macos;
+mod browser_fetch;
 mod clip_url;
 mod cover_thumbnail;
 mod dir_scanner;
@@ -516,6 +519,7 @@ pub fn run() {
             discord_rpc::clear_book_presence,
             clip_url::clip_url,
             web_browser::open_web_browser,
+            browser_fetch::fetch_web_browser_resource,
             web_browser::set_web_browser_status,
             localsend::commands::localsend_start,
             localsend::commands::localsend_stop,

@@ -288,6 +288,21 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
       status.leadingAnchor.constraint(greaterThanOrEqualTo: overlay.leadingAnchor, constant: 24),
       status.trailingAnchor.constraint(lessThanOrEqualTo: overlay.trailingAnchor, constant: -24),
     ])
+    let cancel = UIButton(type: .system)
+    cancel.setTitle(args.resolvedCancelLabel, for: .normal)
+    cancel.setTitleColor(fg, for: .normal)
+    cancel.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
+    cancel.translatesAutoresizingMaskIntoConstraints = false
+    cancel.layer.borderWidth = 1
+    cancel.layer.borderColor = fg.cgColor
+    cancel.layer.cornerRadius = 6
+    overlay.addSubview(cancel)
+    NSLayoutConstraint.activate([
+      cancel.widthAnchor.constraint(greaterThanOrEqualToConstant: 96),
+      cancel.topAnchor.constraint(equalTo: status.bottomAnchor, constant: 16),
+      cancel.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+      cancel.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+    ])
     self.overlayView = overlay
   }
 
@@ -362,7 +377,7 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
   private func captureOuterHtml() {
     guard !captureFired else { return }
     captureFired = true
-    webView.evaluateJavaScript("document.documentElement.outerHTML") { [weak self] result, error in
+    webView.evaluateJavaScript("(function() { var root = document.documentElement.cloneNode(true); root.setAttribute('data-readest-url', location.href); return root.outerHTML; })()") { [weak self] result, error in
       guard let self = self else { return }
       if let html = result as? String, !html.isEmpty {
         clipLogger.log("clip_url: captured \(html.count, privacy: .public) chars")

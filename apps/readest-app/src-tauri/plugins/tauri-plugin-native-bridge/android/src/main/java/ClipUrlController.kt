@@ -21,6 +21,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -174,7 +175,8 @@ class ClipUrlController(
             android.R.style.Theme_Black_NoTitleBar_Fullscreen
         }
         val dlg = Dialog(act, theme)
-        dlg.setCancelable(interactiveMode)
+        dlg.setCancelable(true)
+        dlg.setOnCancelListener { finish(ClipUrlResult.Failure(CANCELLED_MESSAGE)) }
         dlg.setCanceledOnTouchOutside(false)
         dlg.window?.also { window ->
             window.setBackgroundDrawable(ColorDrawable(bg))
@@ -421,6 +423,17 @@ class ClipUrlController(
         status.layoutParams = statusParams
         column.addView(status)
         statusLabel = status
+        val cancel = Button(act)
+        cancel.text = args.cancelLabel ?: "Cancel"
+        cancel.setTextColor(fg)
+        cancel.background = GradientDrawable().apply {
+            setColor(bg)
+            setStroke(dp(act, 1), fg)
+            cornerRadius = dp(act, 6).toFloat()
+        }
+        cancel.minHeight = dp(act, 44)
+        cancel.setOnClickListener { finish(ClipUrlResult.Failure(CANCELLED_MESSAGE)) }
+        column.addView(cancel)
 
         return column
     }
@@ -430,7 +443,7 @@ class ClipUrlController(
         captureFired = true
         settled = true
         val wv = webView ?: return finish(ClipUrlResult.Failure("WebView vanished before capture"))
-        wv.evaluateJavascript("document.documentElement.outerHTML") { result ->
+        wv.evaluateJavascript("(function() { var root = document.documentElement.cloneNode(true); root.setAttribute('data-readest-url', location.href); return root.outerHTML; })()") { result ->
             // `evaluateJavascript` returns the value JSON-encoded, so
             // an HTML string comes back wrapped in quotes with escapes.
             // Parse via JSONObject to recover the raw HTML.

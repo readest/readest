@@ -244,6 +244,8 @@ pub async fn open_web_browser<R: tauri::Runtime>(
 
     let builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(parsed))
         .title(&title)
+        // Match the session-backed HTTP and rendered chapter fetchers.
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
         .inner_size(1100.0, 800.0)
         .min_inner_size(480.0, 360.0)
         .center()
