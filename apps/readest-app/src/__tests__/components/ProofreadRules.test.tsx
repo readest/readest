@@ -162,7 +162,7 @@ describe('ProofreadRulesManager', () => {
     expect(screen.getByText('foo')).toBeTruthy();
     expect(screen.getByText('bar')).toBeTruthy();
     expect(screen.getByText('hello')).toBeTruthy();
-    expect(screen.getByText("'world'")).toBeTruthy();
+    expect(screen.getByText('world')).toBeTruthy();
   });
 
   it('renders selection rules separately from book/library rules', async () => {
@@ -245,7 +245,7 @@ describe('ProofreadRulesManager', () => {
 
     // Book section should still show book-wide rule
     expect(screen.getByText('book-wide')).toBeTruthy();
-    expect(screen.getByText("'book-hit'")).toBeTruthy();
+    expect(screen.getByText('book-hit')).toBeTruthy();
   });
 
   it('hides tombstoned (deleted) book rules from the list', async () => {
