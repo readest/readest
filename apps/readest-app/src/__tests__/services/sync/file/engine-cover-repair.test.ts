@@ -116,11 +116,12 @@ describe('FileSyncEngine cover repair for existing local rows (#5931)', () => {
     expect(updateBookMetadata.mock.calls[0]![0]!.coverDownloadedAt).toBeTruthy();
   });
 
-  test('does not GET a cover the remote does not have', async () => {
+  test('a cover the remote does not have costs one GET and saves nothing', async () => {
     const book = makeBook();
     const provider = makeProvider(makeIndex([book]), null);
     const saveBookCover = vi.fn(async (_book: Book, _bytes: ArrayBuffer) => {});
-    const store = makeStore({ saveBookCover });
+    const updateBookMetadata = vi.fn(async (_book: Book) => {});
+    const store = makeStore({ saveBookCover, updateBookMetadata });
 
     const engine = new FileSyncEngine(provider, store);
     const result = await engine.syncLibrary([book], {
@@ -130,12 +131,61 @@ describe('FileSyncEngine cover repair for existing local rows (#5931)', () => {
       deviceId: 'phone',
     });
 
+    // The repair is one probe per cover-less row, not a retry loop, and a 404
+    // must not write a row back (that would be a library write per book on
+    // every Full Sync).
+    const coverGets = (provider.readBinary as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (call) => typeof call[0] === 'string' && (call[0] as string).endsWith(COVER_PATH_SUFFIX),
+    );
+    expect(coverGets).toHaveLength(1);
+    expect(saveBookCover).not.toHaveBeenCalled();
+    expect(updateBookMetadata).not.toHaveBeenCalled();
+    expect(result.coversDownloaded).toBe(0);
+  });
+
+  test('incremental sync leaves the repair to Full Sync', async () => {
+    const book = makeBook();
+    const provider = makeProvider(makeIndex([book]), new ArrayBuffer(64));
+    const saveBookCover = vi.fn(async (_book: Book, _bytes: ArrayBuffer) => {});
+    const store = makeStore({ saveBookCover });
+
+    const engine = new FileSyncEngine(provider, store);
+    const result = await engine.syncLibrary([book], {
+      strategy: 'silent',
+      syncBooks: false,
+      fullSync: false,
+      deviceId: 'phone',
+    });
+
+    // The default path is O(changed): a row whose clock matches the index is
+    // untouched, so a placeholder cover waits for the user's Full Sync.
     const coverGets = (provider.readBinary as ReturnType<typeof vi.fn>).mock.calls.filter(
       (call) => typeof call[0] === 'string' && (call[0] as string).endsWith(COVER_PATH_SUFFIX),
     );
     expect(coverGets).toHaveLength(0);
     expect(saveBookCover).not.toHaveBeenCalled();
     expect(result.coversDownloaded).toBe(0);
+  });
+
+  test('receive-only full sync repairs a missing local cover', async () => {
+    const book = makeBook();
+    const provider = makeProvider(makeIndex([book]), new ArrayBuffer(64));
+    const saveBookCover = vi.fn(async (_book: Book, _bytes: ArrayBuffer) => {});
+    const store = makeStore({ saveBookCover });
+
+    const engine = new FileSyncEngine(provider, store);
+    const result = await engine.syncLibrary([book], {
+      strategy: 'receive',
+      syncBooks: false,
+      fullSync: true,
+      deviceId: 'phone',
+    });
+
+    // Receive Only never enters the push pass, so the repair must not live
+    // there: pull-only is exactly the mode a secondary device restores in.
+    expect(saveBookCover).toHaveBeenCalledTimes(1);
+    expect(result.coversDownloaded).toBe(1);
+    expect(provider.writeBinary).not.toHaveBeenCalled();
   });
 
   test('send-only never pulls a cover down', async () => {

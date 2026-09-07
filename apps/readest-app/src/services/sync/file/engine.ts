@@ -49,13 +49,6 @@ export interface PushBookFileResult {
   uploaded: boolean;
   /** Reason for the skip, when applicable — surfaced for diagnostics. */
   reason?: 'remote-matches' | 'no-source' | 'disabled';
-  /**
-   * Whether the HEAD probe found a remote copy. Only populated by
-   * {@link FileSyncEngine.pushBookCover}, whose caller uses it to decide
-   * whether a cover missing from this device is worth pulling back down —
-   * without paying a speculative GET for a book the remote has no cover for.
-   */
-  remoteExists?: boolean;
 }
 
 export interface DeleteRemoteBookDirResult {
@@ -437,9 +430,9 @@ export class FileSyncEngine {
     }
 
     const local = await this.store.loadBookCover(book);
-    if (!local) return { uploaded: false, reason: 'no-source', remoteExists: !!remoteHead };
+    if (!local) return { uploaded: false, reason: 'no-source' };
     if (remoteHead && remoteHead.size === local.size) {
-      return { uploaded: false, reason: 'remote-matches', remoteExists: true };
+      return { uploaded: false, reason: 'remote-matches' };
     }
     await this.ensureDirs(dirs);
     try {
@@ -859,6 +852,52 @@ export class FileSyncEngine {
       });
     }
 
+    // Cover repair (#5931). A row Readest Cloud restored as metadata-only is in
+    // the library but has no cover file on this device, and nothing above
+    // reconnects the two: discovery only materialises hashes the shelf lacks,
+    // the metadata pass only re-pulls a cover when the remote clock is newer,
+    // and the push pass has no local cover to upload. Membership in
+    // `allBooksMap` proves the row exists, not that its cover does. Full Sync
+    // is the audit pass, so this is where the shelf is repaired: pull the
+    // remote cover for every live indexed row whose local cover is missing.
+    // It sits on the pull side rather than in the push loop so Receive Only —
+    // exactly the mode a secondary device restores in — repairs too. One GET
+    // per cover-less row (404 = the remote has none either); the push pass's
+    // HEAD then matches the freshly written local copy and never bounces it
+    // back up. Never on the incremental path, which must stay O(changed).
+    if (fullSync && canPull && remoteIndex?.books) {
+      const liveIndexed = remoteIndex.books.filter((rb) => {
+        if (rb.deletedAt) return false;
+        const local = allBooksMap.get(rb.hash);
+        return !!local && !local.deletedAt;
+      });
+      await runPool(
+        liveIndexed,
+        concurrency,
+        async (rb) => {
+          const local = allBooksMap.get(rb.hash)!;
+          try {
+            if (await this.store.loadBookCover(local)) return;
+            const coverBytes = await this.pullBookCover(rb.hash);
+            if (!coverBytes) return;
+            const repaired: Book = { ...local, coverDownloadedAt: Date.now() };
+            await this.store.saveBookCover(repaired, coverBytes);
+            // Persist through the store, not just to disk: the shelf renders a
+            // cached cover URL, so a row that isn't written back keeps showing
+            // the placeholder until the next reload.
+            await this.store.updateBookMetadata(repaired);
+            allBooksMap.set(rb.hash, repaired);
+            result.coversDownloaded += 1;
+            syncedHashes.add(rb.hash);
+          } catch (e) {
+            noteAbort(e);
+            console.warn('file sync: cover repair failed', rb.hash, e);
+          }
+        },
+        aborted,
+      );
+    }
+
     // Revival stamp (#5900) — the send-mode dual of deletion propagation above.
     // 'send' keeps its live row and republishes it over the peer's tombstone,
     // but it republished the row's OLD `updatedAt`, and a peer only revives on
@@ -1155,33 +1194,6 @@ export class FileSyncEngine {
                 if (coverResult.uploaded) {
                   result.coversUploaded += 1;
                   syncedHashes.add(book.hash);
-                } else if (
-                  coverResult.reason === 'no-source' &&
-                  coverResult.remoteExists &&
-                  canPull
-                ) {
-                  // The row is in the library but its cover file isn't on this
-                  // device — the state a metadata-only Readest Cloud restore
-                  // leaves behind when the book files live in the file-sync
-                  // provider instead (#5931). Membership in `allBooksMap` only
-                  // proves the row exists, so discovery skips it and this push
-                  // has nothing to upload: repair the cover from the remote
-                  // rather than leaving a generated placeholder forever.
-                  // Gated on the HEAD probe pushBookCover already paid, so a
-                  // book with no remote cover costs no extra request.
-                  const coverBytes = await this.pullBookCover(book.hash);
-                  if (coverBytes) {
-                    const current = allBooksMap.get(book.hash) ?? book;
-                    const repaired: Book = { ...current, coverDownloadedAt: Date.now() };
-                    await this.store.saveBookCover(repaired, coverBytes);
-                    // Persist through the store, not just to disk: the shelf
-                    // renders a cached cover URL, so a row that isn't written
-                    // back keeps showing the placeholder until the next reload.
-                    await this.store.updateBookMetadata(repaired);
-                    allBooksMap.set(book.hash, repaired);
-                    result.coversDownloaded += 1;
-                    syncedHashes.add(book.hash);
-                  }
                 }
               } catch (e) {
                 console.warn('file sync: cover failed', book.hash, e);
