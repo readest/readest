@@ -423,6 +423,7 @@ pub struct ClipUrlResponse {
 pub struct WebBrowserRequest {
     pub url: String,
     pub download_dir: String,
+    pub capture_script: String,
     #[serde(default)]
     pub background: Option<String>,
     #[serde(default)]
@@ -439,6 +440,14 @@ pub struct WebBrowserResponse {
     /// Set when the user tapped [Open] on an imported book in the chrome.
     #[serde(default)]
     pub open_book_hash: Option<String>,
+    #[serde(default)]
+    pub page: Option<WebBrowserPage>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct WebBrowserPage {
+    pub url: String,
+    pub html: String,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]

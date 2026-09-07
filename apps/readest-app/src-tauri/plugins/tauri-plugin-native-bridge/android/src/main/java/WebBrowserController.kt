@@ -40,12 +40,14 @@ import java.io.IOException
 import java.lang.ref.WeakReference
 import java.net.HttpURLConnection
 import java.net.URL
+import org.json.JSONObject
 
 /** Mirrors `WebBrowserRequest` in the plugin's models.rs. */
 @InvokeArg
 class WebBrowserArgs {
     var url: String? = null
     var downloadDir: String? = null
+    var captureScript: String? = null
     var background: String? = null
     var foreground: String? = null
     var isEink: Boolean? = null
@@ -67,6 +69,8 @@ data class WebBrowserDownloadEvent(
     val error: String?,
 )
 
+data class WebBrowserPage(val url: String, val html: String)
+
 /**
  * Full-screen in-app browser (#5775): header bar (close, back, title + host,
  * reload/stop, menu), 2 dp progress line, import-status banner and a
@@ -78,7 +82,7 @@ class WebBrowserController(
     activity: Activity,
     private val args: WebBrowserArgs,
     private val onDownload: (WebBrowserDownloadEvent) -> Unit,
-    private val completion: (String?) -> Unit,
+    private val completion: (String?, WebBrowserPage?) -> Unit,
 ) {
     companion object {
         private const val TAG = "WebBrowser"
@@ -88,6 +92,7 @@ class WebBrowserController(
         private const val MENU_OPEN_EXTERNAL = 2
         private const val MENU_COPY_LINK = 3
         private const val MENU_SIGN_OUT = 4
+        private const val MENU_CLIP_PAGE = 5
     }
 
     private val activityRef = WeakReference(activity)
@@ -111,6 +116,7 @@ class WebBrowserController(
     private var openBookHash: String? = null
     private var loading = false
     private var finished = false
+    private var capturing = false
     private val hideBannerRunnable = Runnable { banner?.visibility = View.GONE }
 
     private fun label(key: String, fallback: String): String =
@@ -119,12 +125,12 @@ class WebBrowserController(
     fun show() {
         val urlStr = args.url
         if (urlStr.isNullOrBlank() || !(urlStr.startsWith("http://") || urlStr.startsWith("https://"))) {
-            completion(null)
+            completion(null, null)
             return
         }
         val act = activityRef.get()
         if (act == null || act.isFinishing || act.isDestroyed) {
-            completion(null)
+            completion(null, null)
             return
         }
         mainHandler.post { present(act, urlStr) }
@@ -290,12 +296,14 @@ class WebBrowserController(
         val anchor = menuButton ?: return
         val wv = webView ?: return
         val popup = PopupMenu(act, anchor)
+        popup.menu.add(0, MENU_CLIP_PAGE, 0, label("clipPage", "Clip Page"))
         popup.menu.add(0, MENU_FORWARD, 0, label("forward", "Forward")).isEnabled = wv.canGoForward()
         popup.menu.add(0, MENU_OPEN_EXTERNAL, 1, label("openInBrowser", "Open in Browser"))
         popup.menu.add(0, MENU_COPY_LINK, 2, label("copyLink", "Copy Link"))
         popup.menu.add(0, MENU_SIGN_OUT, 3, label("signOut", "Sign out of this site"))
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                MENU_CLIP_PAGE -> capturePage(wv)
                 MENU_FORWARD -> wv.goForward()
                 MENU_OPEN_EXTERNAL -> wv.url?.let { openExternal(act, it) }
                 MENU_COPY_LINK -> wv.url?.let {
@@ -314,6 +322,25 @@ class WebBrowserController(
             act.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
             Log.w(TAG, "no activity for $url", e)
+        }
+    }
+
+    private fun capturePage(wv: WebView) {
+        if (finished || capturing) return
+        val script = args.captureScript ?: return
+        capturing = true
+        wv.evaluateJavascript(script) { value ->
+            if (finished) return@evaluateJavascript
+            capturing = false
+            try {
+                val page = JSONObject(value)
+                val url = page.getString("url")
+                val html = page.getString("html")
+                require(html.isNotEmpty())
+                finish(null, WebBrowserPage(url, html))
+            } catch (e: Exception) {
+                setStatus("failed", label("clipPage", "Clip Page"), null)
+            }
         }
     }
 
@@ -522,7 +549,7 @@ class WebBrowserController(
 
     // MARK: lifecycle
 
-    private fun finish(hash: String?) {
+    private fun finish(hash: String?, page: WebBrowserPage? = null) {
         if (finished) return
         finished = true
         mainHandler.removeCallbacks(hideBannerRunnable)
@@ -544,7 +571,7 @@ class WebBrowserController(
         }
         dialog = null
         webView = null
-        completion(hash)
+        completion(hash, page)
     }
 
     private fun isLight(color: Int): Boolean =

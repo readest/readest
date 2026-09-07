@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::Url;
+use tauri_plugin_native_bridge::WebBrowserPage;
+
+const CAPTURE_JS: &str = include_str!("web_browser_capture.js");
 
 #[derive(Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase", default)]
@@ -44,6 +47,8 @@ pub struct WebBrowserStatus {
 pub struct WebBrowserResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub open_book_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page: Option<WebBrowserPage>,
 }
 
 pub const SENTINEL_HOST: &str = "readest-browser.invalid";
@@ -52,6 +57,7 @@ pub const SENTINEL_HOST: &str = "readest-browser.invalid";
 pub enum SentinelAction {
     Open(String),
     Close,
+    Capture,
 }
 
 /// Accept only http(s). A bare host ("calibre.example.com") gets `https://`.
@@ -132,7 +138,7 @@ pub fn unique_path(dir: &Path, name: &str) -> PathBuf {
         .expect("unbounded counter")
 }
 
-/// The injected chrome signals "Open book" / "Close" by navigating to a
+/// The injected chrome signals "Open book", "Close", or "Clip Page" by navigating to a
 /// sentinel host; `on_navigation` blocks the request and acts instead.
 pub fn sentinel_action(url: &Url) -> Option<SentinelAction> {
     if url.host_str() != Some(SENTINEL_HOST) {
@@ -144,6 +150,7 @@ pub fn sentinel_action(url: &Url) -> Option<SentinelAction> {
             Some(SentinelAction::Open(hash.to_string()))
         }
         (Some("close"), _) => Some(SentinelAction::Close),
+        (Some("capture"), None) => Some(SentinelAction::Capture),
         _ => None,
     }
 }
@@ -219,7 +226,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
 
     let (close_tx, close_rx) = tokio::sync::oneshot::channel::<WebBrowserResult>();
     let close_tx = Arc::new(Mutex::new(Some(close_tx)));
-    let open_hash: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let result = Arc::new(Mutex::new(WebBrowserResult::default()));
     // url -> destination chosen in `Requested`; macOS never reports the
     // finished path (wry limitation), so we remember it ourselves.
     let pending: Arc<Mutex<HashMap<String, PathBuf>>> = Arc::new(Mutex::new(HashMap::new()));
@@ -228,7 +235,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
 
     let nav_app = app.clone();
     let nav_label = label.clone();
-    let nav_hash = open_hash.clone();
+    let nav_result = result.clone();
     let new_window_app = app.clone();
     let new_window_label = label.clone();
     let dl_app = app.clone();
@@ -244,11 +251,22 @@ pub async fn open_web_browser<R: tauri::Runtime>(
         .initialization_script(chrome_script(&options))
         .on_navigation(move |url| {
             if let Some(action) = sentinel_action(url) {
-                if let SentinelAction::Open(hash) = action {
-                    *nav_hash.lock().unwrap_or_else(|e| e.into_inner()) = Some(hash);
-                }
                 if let Some(window) = nav_app.get_webview_window(&nav_label) {
+                    let result = nav_result.clone();
                     tauri::async_runtime::spawn(async move {
+                        match action {
+                            SentinelAction::Capture => {
+                                capture_browser_page(window, result);
+                                return;
+                            }
+                            SentinelAction::Open(hash) => {
+                                result
+                                    .lock()
+                                    .unwrap_or_else(|e| e.into_inner())
+                                    .open_book_hash = Some(hash);
+                            }
+                            SentinelAction::Close => {}
+                        }
                         let _ = window.close();
                     });
                 }
@@ -340,10 +358,8 @@ pub async fn open_web_browser<R: tauri::Runtime>(
     window.on_window_event(move |event| {
         if let WindowEvent::Destroyed = event {
             if let Some(tx) = done_tx.lock().unwrap_or_else(|e| e.into_inner()).take() {
-                let hash = open_hash.lock().unwrap_or_else(|e| e.into_inner()).take();
-                let _ = tx.send(WebBrowserResult {
-                    open_book_hash: hash,
-                });
+                let result = std::mem::take(&mut *result.lock().unwrap_or_else(|e| e.into_inner()));
+                let _ = tx.send(result);
             }
         }
     });
@@ -351,6 +367,40 @@ pub async fn open_web_browser<R: tauri::Runtime>(
     close_rx
         .await
         .map_err(|_| "Browser window closed".to_string())
+}
+
+/// Read the displayed DOM through the native evaluation callback. The remote
+/// page gets no Tauri IPC permissions and the HTML never travels over a URL.
+#[cfg(desktop)]
+fn capture_browser_page<R: tauri::Runtime>(
+    window: tauri::WebviewWindow<R>,
+    result: Arc<Mutex<WebBrowserResult>>,
+) {
+    let failed = status_eval(&WebBrowserStatus {
+        state: "failed".into(),
+        filename: String::new(),
+        book_hash: None,
+    });
+    let callback_window = window.clone();
+    let callback_failed = failed.clone();
+    if window
+        .eval_with_callback(CAPTURE_JS, move |json| {
+            if let Ok(page) = serde_json::from_str::<WebBrowserPage>(&json) {
+                if parse_browsable_url(&page.url).is_ok() && !page.html.is_empty() {
+                    result.lock().unwrap_or_else(|e| e.into_inner()).page = Some(page);
+                    let window = callback_window.clone();
+                    tauri::async_runtime::spawn(async move {
+                        let _ = window.close();
+                    });
+                    return;
+                }
+            }
+            let _ = callback_window.eval(&callback_failed);
+        })
+        .is_err()
+    {
+        let _ = window.eval(&failed);
+    }
 }
 
 /// Push an import status (importing / added / failed / unsupported) into
@@ -393,6 +443,7 @@ pub async fn open_web_browser(
     let request = WebBrowserRequest {
         url: parsed.to_string(),
         download_dir: download_dir.to_string_lossy().into_owned(),
+        capture_script: CAPTURE_JS.to_string(),
         background: options.background,
         foreground: options.foreground,
         is_eink: options.is_eink,
@@ -407,6 +458,7 @@ pub async fn open_web_browser(
             .map_err(|e| e.to_string())?;
     Ok(WebBrowserResult {
         open_book_hash: response.open_book_hash,
+        page: response.page,
     })
 }
 
@@ -489,8 +541,32 @@ mod tests {
         );
         let close = Url::parse("https://readest-browser.invalid/close").unwrap();
         assert_eq!(sentinel_action(&close), Some(SentinelAction::Close));
+        let capture = Url::parse("https://readest-browser.invalid/capture").unwrap();
+        assert_eq!(sentinel_action(&capture), Some(SentinelAction::Capture));
+        let other_capture = Url::parse("https://calibre.example.com/capture").unwrap();
+        assert_eq!(sentinel_action(&other_capture), None);
         let other = Url::parse("https://calibre.example.com/open/abc").unwrap();
         assert_eq!(sentinel_action(&other), None);
+    }
+
+    #[test]
+    fn browser_result_preserves_captured_page_and_omits_absent_fields() {
+        let page: WebBrowserPage = serde_json::from_str(
+            r#"{"url":"https://example.com/members/chapter-2","html":"<article>日本語</article>"}"#,
+        )
+        .unwrap();
+        let result = WebBrowserResult {
+            page: Some(page),
+            ..Default::default()
+        };
+        let json = serde_json::to_value(result).unwrap();
+        assert_eq!(json["page"]["url"], "https://example.com/members/chapter-2");
+        assert_eq!(json["page"]["html"], "<article>日本語</article>");
+        assert!(json.get("openBookHash").is_none());
+        assert_eq!(
+            serde_json::to_value(WebBrowserResult::default()).unwrap(),
+            serde_json::json!({})
+        );
     }
 
     #[test]

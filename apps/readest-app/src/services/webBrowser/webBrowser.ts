@@ -32,6 +32,13 @@ export interface WebBrowserStatus {
 
 export interface WebBrowserResult {
   openBookHash?: string;
+  /** Rendered page at the moment the user chooses Clip Page. */
+  page?: WebBrowserPage;
+}
+
+export interface WebBrowserPage {
+  url: string;
+  html: string;
 }
 
 export async function openWebBrowser(

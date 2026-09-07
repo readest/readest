@@ -21,7 +21,7 @@ type Phase = 'url' | 'preview' | 'downloading';
  * Modal for the Library import-menu's "From Web Novel" entry. Three phases:
  * paste the TOC URL, confirm the detected chapter list (heuristics can
  * misfire — never start a hundreds-of-requests download unconfirmed), then
- * a cancellable download progress bar. Tauri-only, like "From Web URL" — a
+ * a cancellable download progress bar. Tauri-only, like "From Web Browser" — a
  * web build can't fetch cross-origin pages.
  */
 const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, onImport }) => {
@@ -185,7 +185,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
       isOpen={isOpen}
       onClose={close}
       title={_('Import Web Novel')}
-      // Size to content — same override as ImportFromUrlDialog.
+      // Size to content — same override as WebSourcesDialog.
       boxClassName='sm:w-[480px]! sm:max-w-[480px]! sm:h-auto! sm:max-h-[80vh]!'
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
