@@ -6,6 +6,9 @@ export interface DocumentImage {
   alt: string;
 }
 
+const isImageExcluded = (el: Element): boolean =>
+  el.getAttribute('zy-enlarge-src') === 'none' || el.hasAttribute('zy-footnote');
+
 // Every image of the rendered sections, in document order, so the image viewer
 // can page through them and caption each one with its own description (#5232).
 export const collectDocumentImages = (
@@ -23,6 +26,7 @@ export const collectDocumentImages = (
       };
       if (el.localName === 'img') {
         const img = el as HTMLImageElement;
+        if (isImageExcluded(img)) return;
         if (img.src && img.parentNode) {
           images.push({ src: img.src, cfi: cfiOf(img), alt: (img.alt || '').trim() });
         }

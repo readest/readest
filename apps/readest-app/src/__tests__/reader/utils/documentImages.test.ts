@@ -56,4 +56,33 @@ describe('collectDocumentImages', () => {
       { src: 'https://book/diagram.png', cfi: 'cfi-1', alt: 'Diagram of the habit loop' },
     ]);
   });
+
+  // non-enlargeable artwork with `zy-enlarge-src="none"` must not appear in the document image queue.
+  it('excludes zy-enlarge-src="none" images from the queue but keeps the rest', () => {
+    const doc = docFromBody(`
+      <img zy-enlarge-src="self" src="https://book/normal.jpg"/>
+      <img zy-enlarge-src="none" src="https://book/no-zoom.jpg"/>
+      <img src="https://book/plain.jpg"/>
+    `);
+
+    const images = collectDocumentImages([{ doc, index: 0 }], getCFI);
+
+    expect(images.map((image) => image.src)).toEqual([
+      'https://book/normal.jpg',
+      'https://book/plain.jpg',
+    ]);
+  });
+
+  // inline footnote marker images must not appear in the document image queue.
+  it('excludes footnote-marker images from the queue', () => {
+    const doc = docFromBody(`
+      <img class="zhangyue-footnote" zy-footnote="note text" src="https://book/fn.jpg"/>
+      <img zy-footnote="note text" src="https://book/fn2.jpg"/>
+      <img src="https://book/plain.jpg"/>
+    `);
+
+    const images = collectDocumentImages([{ doc, index: 0 }], getCFI);
+
+    expect(images.map((image) => image.src)).toEqual(['https://book/plain.jpg']);
+  });
 });
