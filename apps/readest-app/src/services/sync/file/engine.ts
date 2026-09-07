@@ -77,6 +77,8 @@ export interface SyncLibraryResult {
   filesUploaded: number;
   filesAlreadyInSync: number;
   coversUploaded: number;
+  /** Covers pulled back down because this device's copy was missing (#5931). */
+  coversDownloaded: number;
   /** Remote-only books added to the local shelf without downloading their files (#5009). */
   booksAdded: number;
   /** Local books removed because a peer's tombstone propagated to this device (#4860). */
@@ -537,6 +539,7 @@ export class FileSyncEngine {
       filesUploaded: 0,
       filesAlreadyInSync: 0,
       coversUploaded: 0,
+      coversDownloaded: 0,
       booksAdded: 0,
       booksDeleted: 0,
       metadataUpdated: 0,
@@ -847,6 +850,52 @@ export class FileSyncEngine {
           console.warn('file sync: local delete failed', rb.hash, e);
         }
       });
+    }
+
+    // Cover repair (#5931). A row Readest Cloud restored as metadata-only is in
+    // the library but has no cover file on this device, and nothing above
+    // reconnects the two: discovery only materialises hashes the shelf lacks,
+    // the metadata pass only re-pulls a cover when the remote clock is newer,
+    // and the push pass has no local cover to upload. Membership in
+    // `allBooksMap` proves the row exists, not that its cover does. Full Sync
+    // is the audit pass, so this is where the shelf is repaired: pull the
+    // remote cover for every live indexed row whose local cover is missing.
+    // It sits on the pull side rather than in the push loop so Receive Only —
+    // exactly the mode a secondary device restores in — repairs too. One GET
+    // per cover-less row (404 = the remote has none either); the push pass's
+    // HEAD then matches the freshly written local copy and never bounces it
+    // back up. Never on the incremental path, which must stay O(changed).
+    if (fullSync && canPull && remoteIndex?.books) {
+      const liveIndexed = remoteIndex.books.filter((rb) => {
+        if (rb.deletedAt) return false;
+        const local = allBooksMap.get(rb.hash);
+        return !!local && !local.deletedAt;
+      });
+      await runPool(
+        liveIndexed,
+        concurrency,
+        async (rb) => {
+          const local = allBooksMap.get(rb.hash)!;
+          try {
+            if (await this.store.loadBookCover(local)) return;
+            const coverBytes = await this.pullBookCover(rb.hash);
+            if (!coverBytes) return;
+            const repaired: Book = { ...local, coverDownloadedAt: Date.now() };
+            await this.store.saveBookCover(repaired, coverBytes);
+            // Persist through the store, not just to disk: the shelf renders a
+            // cached cover URL, so a row that isn't written back keeps showing
+            // the placeholder until the next reload.
+            await this.store.updateBookMetadata(repaired);
+            allBooksMap.set(rb.hash, repaired);
+            result.coversDownloaded += 1;
+            syncedHashes.add(rb.hash);
+          } catch (e) {
+            noteAbort(e);
+            console.warn('file sync: cover repair failed', rb.hash, e);
+          }
+        },
+        aborted,
+      );
     }
 
     // Revival stamp (#5900) — the send-mode dual of deletion propagation above.

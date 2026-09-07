@@ -10,6 +10,8 @@ import { navigateToReader } from '@/utils/nav';
 import { ShareApiError, confirmDownload, importShare } from '@/libs/share';
 import { ensureSharedBookLocal } from '@/libs/shareImport';
 import { parseShareDeepLink, type ShareDeepLink } from '@/utils/share';
+import { isMainAppWindow } from '@/utils/window';
+import { markLaunchUrl } from '@/utils/deeplinkConsume';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped flag matches the useOpenAnnotationLink pattern. Tauri's
@@ -98,9 +100,14 @@ export function useOpenShareLink() {
   useEffect(() => {
     if (!isTauriAppPlatform() || !appService) return;
 
-    const handle = (url: string) => {
+    const handle = (url: string, coldStart = false) => {
       const parsed = parseShareDeepLink(url);
       if (!parsed) return;
+      // See useOpenBookLink: getCurrent() re-reports the launch URL to every
+      // fresh document, so a cold-start read is acted on once per app run;
+      // live deliveries are only recorded (#6104).
+      const fresh = markLaunchUrl('launchShareUrls', url);
+      if (coldStart && !fresh) return;
       if (!useLibraryStore.getState().libraryLoaded) {
         pending.current = parsed;
         return;
@@ -108,10 +115,14 @@ export function useOpenShareLink() {
       void handleShareLink(parsed);
     };
 
-    if (!coldStartConsumed) {
+    // Only the launch window reads the cold-start URL: the deep-link plugin
+    // keeps it in process-global state for the whole session, so a window the
+    // app spawns later would treat it as its own cold start and navigate away
+    // from what the user just opened (#6104).
+    if (!coldStartConsumed && isMainAppWindow()) {
       coldStartConsumed = true;
       getCurrent()
-        .then((urls) => urls?.forEach(handle))
+        .then((urls) => urls?.forEach((u) => handle(u, true)))
         .catch(() => {
           // Plugin not available on this platform — live channel still works.
         });
@@ -119,7 +130,7 @@ export function useOpenShareLink() {
 
     const onIncoming = (event: CustomEvent) => {
       const { urls } = event.detail as { urls: string[] };
-      urls.forEach(handle);
+      urls.forEach((u) => handle(u));
     };
     eventDispatcher.on('app-incoming-url', onIncoming);
 
