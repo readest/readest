@@ -507,23 +507,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       </BoxedList>
 
       <BoxedList title={_('Device')} data-setting-id='settings.control.device'>
-        {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
-          <SettingsSwitchRow
-            label={_('E-Ink Mode')}
-            checked={isEink}
-            onChange={() => setIsEink(!isEink)}
-            data-setting-id='settings.control.einkMode'
-          />
-        )}
-        {(appService?.isAndroidApp || appService?.appPlatform === 'web') && (
-          <SettingsSwitchRow
-            label={_('Color E-Ink Mode')}
-            checked={isColorEink}
-            disabled={!isEink}
-            onChange={() => setIsColorEink(!isColorEink)}
-            data-setting-id='settings.control.colorEinkMode'
-          />
-        )}
+        <SettingsSwitchRow
+          label={_('E-Ink Mode')}
+          checked={isEink}
+          onChange={() => setIsEink(!isEink)}
+          data-setting-id='settings.control.einkMode'
+        />
+        <SettingsSwitchRow
+          label={_('Color E-Ink Mode')}
+          checked={isColorEink}
+          disabled={!isEink}
+          onChange={() => setIsColorEink(!isColorEink)}
+          data-setting-id='settings.control.colorEinkMode'
+        />
         {appService?.isMobileApp && (
           <SettingsSwitchRow
             label={_('System Screen Brightness')}
