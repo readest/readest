@@ -81,6 +81,9 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
     if (!selection) return;
 
     const range = selection?.range;
+    // The rule persists the trimmed text, so the live edit has to use the same
+    // value or this session shows something the replay will never reproduce.
+    const replacement = replacementText.trim();
 
     if (range) {
       // A regex pattern defines its own boundaries, so the whole-word
@@ -106,7 +109,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
           eventDispatcher.dispatch('toast', {
             type: 'warning',
             message: _(
-              'Please select text within a single paragraph, or choose another replacement scope.',
+              'This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.',
             ),
             timeout: 5000,
           });
@@ -118,7 +121,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
         const textNode = range.startContainer as Text;
         const text = textNode.textContent ?? '';
         textNode.textContent =
-          text.slice(0, range.startOffset) + replacementText + text.slice(range.endOffset);
+          text.slice(0, range.startOffset) + replacement + text.slice(range.endOffset);
       }
 
       // Anchor to the spine item href, which is what every section load hands
@@ -132,7 +135,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
       const options: CreateProofreadRuleOptions = {
         scope,
         pattern: selection.text,
-        replacement: replacementText.trim(),
+        replacement,
         cfi: selection.cfi,
         sectionHref,
         isRegex,

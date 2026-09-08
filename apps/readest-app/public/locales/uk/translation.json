@@ -2444,5 +2444,5 @@
   "Web URL": "Веб-адреса",
   "Loading chapter…": "Завантаження розділу…",
   "Clip Page": "Сторінка кліпу",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Виберіть текст у межах одного абзацу або оберіть іншу область заміни."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Це виділення перетинає межі форматування або абзацу. Виділіть коротший фрагмент тексту або оберіть іншу область застосування заміни."
 }

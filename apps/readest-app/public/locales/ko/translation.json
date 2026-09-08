@@ -2264,5 +2264,5 @@
   "Web URL": "웹 URL",
   "Loading chapter…": "챕터 로드 중…",
   "Clip Page": "페이지 클립",
-  "Please select text within a single paragraph, or choose another replacement scope.": "한 문단 안에서 텍스트를 선택하거나 다른 바꾸기 범위를 선택하세요."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "이 선택 영역이 서식 또는 단락 경계를 넘습니다. 더 짧은 텍스트를 선택하거나 다른 바꾸기 적용 범위를 선택하세요."
 }

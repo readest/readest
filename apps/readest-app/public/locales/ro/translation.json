@@ -2384,5 +2384,5 @@
   "Web URL": "Adresa URL web",
   "Loading chapter…": "Se încarcă capitolul…",
   "Clip Page": "Salvează pagina",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Selectați text dintr-un singur paragraf sau alegeți alt domeniu de înlocuire."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Această selecție depășește limite de formatare sau de paragraf. Selectați o porțiune de text mai scurtă sau alegeți alt domeniu de aplicare a înlocuirii."
 }

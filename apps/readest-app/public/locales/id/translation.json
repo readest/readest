@@ -2264,5 +2264,5 @@
   "Web URL": "URL web",
   "Loading chapter…": "Memuat bab…",
   "Clip Page": "Halaman Klip",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Pilih teks dalam satu paragraf, atau pilih cakupan penggantian lain."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Pilihan ini melintasi batas pemformatan atau paragraf. Pilih potongan teks yang lebih pendek, atau pilih cakupan penggantian lain."
 }

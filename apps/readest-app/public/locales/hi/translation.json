@@ -2324,5 +2324,5 @@
   "Web URL": "वेब यूआरएल",
   "Loading chapter…": "अध्याय लोड हो रहा है…",
   "Clip Page": "क्लिप पेज",
-  "Please select text within a single paragraph, or choose another replacement scope.": "कृपया एक ही अनुच्छेद के भीतर का पाठ चुनें, या कोई दूसरा प्रतिस्थापन दायरा चुनें।"
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "यह चयन फ़ॉर्मैटिंग या पैराग्राफ की सीमाओं को पार करता है। छोटा पाठ चुनें, या कोई दूसरा प्रतिस्थापन क्षेत्र चुनें।"
 }

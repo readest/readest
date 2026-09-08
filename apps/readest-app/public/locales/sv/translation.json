@@ -2324,5 +2324,5 @@
   "Web URL": "Webb-URL",
   "Loading chapter…": "Laddar kapitel…",
   "Clip Page": "Klippsida",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Markera text inom ett enda stycke eller välj ett annat ersättningsomfång."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Markeringen sträcker sig över formaterings- eller styckegränser. Markera en kortare textbit eller välj en annan omfattning för ersättningen."
 }

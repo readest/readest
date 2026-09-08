@@ -2324,5 +2324,5 @@
   "Web URL": "ওয়েব URL",
   "Loading chapter…": "অধ্যায় লোড হচ্ছে…",
   "Clip Page": "ক্লিপ পৃষ্ঠা",
-  "Please select text within a single paragraph, or choose another replacement scope.": "অনুগ্রহ করে একটি অনুচ্ছেদের মধ্যেকার লেখা নির্বাচন করুন, অথবা অন্য একটি প্রতিস্থাপনের পরিসর বেছে নিন।"
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "এই নির্বাচন ফরম্যাটিং বা অনুচ্ছেদের সীমানা অতিক্রম করেছে। ছোট একটি অংশ নির্বাচন করুন, অথবা অন্য একটি প্রতিস্থাপনের পরিসর বেছে নিন।"
 }

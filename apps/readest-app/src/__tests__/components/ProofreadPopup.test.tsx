@@ -416,6 +416,34 @@ describe('ProofreadPopup Component', () => {
       expect(p.childNodes.length).toBe(3);
     });
 
+    it('splices the same trimmed text the rule will persist', async () => {
+      // The rule stores the trimmed replacement, so an untrimmed live edit
+      // would show text this session that no later replay reproduces.
+      const p = document.createElement('p');
+      p.innerHTML = 'Hello <em>brave</em> world';
+      const tail = p.lastChild as Text;
+      const range = rangeOver(p, tail, 1, 6);
+
+      renderWithProviders(
+        <ProofreadPopup
+          {...defaultProps}
+          selection={{ ...defaultProps.selection, text: 'world', range }}
+        />,
+      );
+
+      fireEvent.change(screen.getByPlaceholderText('Enter text...'), {
+        target: { value: '  planet  ' },
+      });
+      fireEvent.click(screen.getByText('Apply'));
+
+      await waitFor(() => {
+        expect(mockOnConfirm).toHaveBeenCalledWith(
+          expect.objectContaining({ replacement: 'planet' }),
+        );
+      });
+      expect(p.innerHTML).toBe('Hello <em>brave</em> planet');
+    });
+
     it('refuses a selection rule the transformer could never replay', async () => {
       const toast = vi.spyOn(eventDispatcher, 'dispatch');
       const p = document.createElement('p');

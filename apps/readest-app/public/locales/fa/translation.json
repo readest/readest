@@ -2324,5 +2324,5 @@
   "Web URL": "آدرس وب",
   "Loading chapter…": "در حال بارگیری فصل…",
   "Clip Page": "صفحه کلیپ",
-  "Please select text within a single paragraph, or choose another replacement scope.": "لطفاً متنی را در یک پاراگراف واحد انتخاب کنید یا محدودهٔ جایگزینی دیگری برگزینید."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "این انتخاب از مرزهای قالب‌بندی یا پاراگراف عبور می‌کند. بخش کوتاه‌تری از متن را انتخاب کنید یا دامنهٔ جایگزینی دیگری برگزینید."
 }

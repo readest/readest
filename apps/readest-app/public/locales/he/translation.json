@@ -2384,5 +2384,5 @@
   "Web URL": "כתובת אתר אינטרנט",
   "Loading chapter…": "טוען פרק…",
   "Clip Page": "דף קליפ",
-  "Please select text within a single paragraph, or choose another replacement scope.": "יש לבחור טקסט בתוך פסקה אחת, או לבחור טווח החלפה אחר."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "הבחירה חוצה גבולות של עיצוב או פסקה. יש לבחור קטע טקסט קצר יותר, או לבחור טווח החלפה אחר."
 }

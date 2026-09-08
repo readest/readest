@@ -2264,5 +2264,5 @@
   "Web URL": "ウェブURL",
   "Loading chapter…": "章を読み込んでいます…",
   "Clip Page": "ページをクリップ",
-  "Please select text within a single paragraph, or choose another replacement scope.": "1つの段落内のテキストを選択するか、別の置換範囲を選んでください。"
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "この選択範囲は書式や段落の境界をまたいでいます。より短い範囲を選択するか、別の置換の適用範囲を選んでください。"
 }

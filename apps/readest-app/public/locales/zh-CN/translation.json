@@ -2264,5 +2264,5 @@
   "Web URL": "网址",
   "Loading chapter…": "正在加载章节…",
   "Clip Page": "剪藏页面",
-  "Please select text within a single paragraph, or choose another replacement scope.": "请选择同一段落内的文本，或改用其他替换范围。"
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "所选内容跨越了格式或段落边界。请选择更短的文本，或改用其他替换作用范围。"
 }

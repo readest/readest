@@ -2444,5 +2444,5 @@
   "Web URL": "Adres internetowy",
   "Loading chapter…": "Ładowanie rozdziału…",
   "Clip Page": "Przytnij stronę",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Zaznacz tekst w obrębie jednego akapitu lub wybierz inny zakres zamiany."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "To zaznaczenie wykracza poza granice formatowania lub akapitu. Zaznacz krótszy fragment tekstu albo wybierz inny zakres zamiany."
 }

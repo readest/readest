@@ -2264,5 +2264,5 @@
   "Web URL": "URL web",
   "Loading chapter…": "Đang tải chương…",
   "Clip Page": "Trang Clip",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Vui lòng chọn văn bản trong cùng một đoạn, hoặc chọn phạm vi thay thế khác."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Vùng chọn này vượt qua ranh giới định dạng hoặc đoạn văn. Hãy chọn một đoạn văn bản ngắn hơn, hoặc chọn phạm vi thay thế khác."
 }

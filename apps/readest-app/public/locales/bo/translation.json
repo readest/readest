@@ -2264,5 +2264,5 @@
   "Web URL": "དྲ་རྒྱའི་ཁ་བྱང་།",
   "Loading chapter…": "ལེའུ་མངོན་བཞིན་ཡོད།",
   "Clip Page": "ཤོག་ངོས་ཉར་ཚགས།",
-  "Please select text within a single paragraph, or choose another replacement scope.": "ཚིག་ལེའུ་གཅིག་གི་ནང་གི་ཡི་གེ་འདེམས་རོགས། ཡང་ན་ཚབ་བརྗེའི་ཁྱབ་ཁོངས་གཞན་ཞིག་འདེམས་རོགས།"
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "འདེམས་ཟིན་པའི་ཡི་གེ་འདི་བཟོ་བཀོད་དམ་དོན་ཚན་གྱི་མཚམས་བརྒལ་འདུག འདེམས་ཡུལ་ཐུང་བ་ཞིག་འདེམས་རོགས། ཡང་ན་ཚབ་བརྗེའི་གནས་ཚུལ་གཞན་ཞིག་འདེམས་རོགས།"
 }

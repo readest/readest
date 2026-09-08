@@ -2444,5 +2444,5 @@
   "Web URL": "Spletni URL",
   "Loading chapter…": "Nalaganje poglavja …",
   "Clip Page": "Stran posnetka",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Izberite besedilo znotraj enega odstavka ali izberite drug obseg zamenjave."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Ta izbira sega čez meje oblikovanja ali odstavka. Izberite krajši del besedila ali izberite drug obseg zamenjave."
 }

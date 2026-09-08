@@ -2324,5 +2324,5 @@
   "Web URL": "இணைய URL",
   "Loading chapter…": "அத்தியாயத்தை ஏற்றுகிறது…",
   "Clip Page": "கிளிப் பக்கம்",
-  "Please select text within a single paragraph, or choose another replacement scope.": "ஒரே பத்திக்குள் உள்ள உரையைத் தேர்ந்தெடுக்கவும், அல்லது வேறு மாற்று வரம்பைத் தேர்வுசெய்யவும்."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "இந்தத் தேர்வு வடிவமைப்பு அல்லது பத்தி எல்லைகளைத் தாண்டுகிறது. சிறிய உரைப் பகுதியைத் தேர்ந்தெடுக்கவும், அல்லது வேறு மாற்று வளயத்தைத் தேர்வுசெய்யவும்."
 }

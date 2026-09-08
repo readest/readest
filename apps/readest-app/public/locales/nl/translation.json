@@ -2324,5 +2324,5 @@
   "Web URL": "Web-URL",
   "Loading chapter…": "Hoofdstuk laden…",
   "Clip Page": "Clippagina",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Selecteer tekst binnen één alinea of kies een ander vervangingsbereik."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Deze selectie loopt over opmaak- of alineagrenzen heen. Selecteer een kleiner stuk tekst of kies een ander vervangingsbereik."
 }

@@ -2384,5 +2384,5 @@
   "Web URL": "URL Web",
   "Loading chapter…": "Caricamento capitolo…",
   "Clip Page": "Ritaglia pagina",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Seleziona il testo all’interno di un solo paragrafo oppure scegli un altro ambito di sostituzione."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Questa selezione attraversa confini di formattazione o di paragrafo. Seleziona una porzione di testo più breve oppure scegli un altro ambito di sostituzione."
 }

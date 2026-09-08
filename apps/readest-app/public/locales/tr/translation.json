@@ -2324,5 +2324,5 @@
   "Web URL": "Web URL'si",
   "Loading chapter…": "Bölüm yükleniyor…",
   "Clip Page": "Sayfayı Kırp",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Lütfen tek bir paragraf içindeki metni seçin veya başka bir değiştirme kapsamı seçin."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Bu seçim biçimlendirme veya paragraf sınırlarını aşıyor. Daha kısa bir metin parçası seçin ya da başka bir değiştirme kapsamı belirleyin."
 }

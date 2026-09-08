@@ -2324,5 +2324,5 @@
   "Web URL": "Veb URL",
   "Loading chapter…": "Bob yuklanmoqda…",
   "Clip Page": "Sahifani saqlash",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Iltimos, bitta xatboshi ichidagi matnni tanlang yoki boshqa almashtirish doirasini tanlang."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Bu tanlov formatlash yoki xatboshi chegaralaridan chiqib ketadi. Qisqaroq matn qismini tanlang yoki boshqa almashtirish qamrovini tanlang."
 }

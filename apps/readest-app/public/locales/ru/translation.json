@@ -2444,5 +2444,5 @@
   "Web URL": "URL-адрес веб-страницы",
   "Loading chapter…": "Загрузка главы…",
   "Clip Page": "Сохранить страницу",
-  "Please select text within a single paragraph, or choose another replacement scope.": "Выделите текст в пределах одного абзаца или выберите другую область замены."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Это выделение пересекает границы форматирования или абзаца. Выделите более короткий фрагмент текста или выберите другую область применения замены."
 }

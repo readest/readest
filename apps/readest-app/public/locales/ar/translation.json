@@ -2564,5 +2564,5 @@
   "Web URL": "عنوان URL للويب",
   "Loading chapter…": "جارٍ تحميل الفصل…",
   "Clip Page": "حفظ الصفحة",
-  "Please select text within a single paragraph, or choose another replacement scope.": "يرجى تحديد نص داخل فقرة واحدة، أو اختيار نطاق استبدال آخر."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "يتجاوز هذا التحديد حدود التنسيق أو الفقرة. حدِّد جزءًا أصغر من النص، أو اختر نطاق استبدال آخر."
 }

@@ -2324,5 +2324,5 @@
   "Web URL": "ვებ URL",
   "Loading chapter…": "იტვირთება თავი…",
   "Clip Page": "გვერდის შენახვა",
-  "Please select text within a single paragraph, or choose another replacement scope.": "აირჩიეთ ტექსტი ერთი აბზაცის ფარგლებში, ან აირჩიეთ ჩანაცვლების სხვა არეალი."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "მონიშნული ტექსტი სცილდება ფორმატირების ან აბზაცის საზღვრებს. მონიშნეთ უფრო მოკლე ფრაგმენტი, ან აირჩიეთ ჩანაცვლების სხვა არეალი."
 }

@@ -2264,5 +2264,5 @@
   "Web URL": "URL ของเว็บ",
   "Loading chapter…": "กำลังโหลดบท…",
   "Clip Page": "หน้าคลิป",
-  "Please select text within a single paragraph, or choose another replacement scope.": "โปรดเลือกข้อความภายในย่อหน้าเดียว หรือเลือกขอบเขตการแทนที่อื่น"
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "การเลือกนี้คร่อมขอบเขตของการจัดรูปแบบหรือย่อหน้า เลือกข้อความที่สั้นลง หรือเลือกขอบเขตการแทนที่อื่น"
 }
