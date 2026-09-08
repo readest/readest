@@ -4,7 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLongPress } from '@/hooks/useLongPress';
-import { Menu } from '@tauri-apps/api/menu';
+import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { LogicalPosition } from '@tauri-apps/api/dpi';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
@@ -108,13 +108,38 @@ const trackPopup = async (popup: Promise<void>) => {
   if (openPopup === settled) openPopup = null;
 };
 
-const releaseMenu = (menu: Promise<Menu>) => {
+interface NativeMenu {
+  menu: Menu;
+  items: MenuItem[];
+}
+
+// Menu.new({ items: [{ text, action }] }) builds each inline item as a Rust
+// temporary: the action's channel is registered under the item id and then
+// unregistered again the moment the built menu drops the last reference to
+// that wrapper, so the menu pops up with every entry dead (issue #6142, from
+// the tauri 2.11.5 bump in #6081). Items created through MenuItem.new are
+// owned by the webview's resource table, so their channels outlive the build.
+const buildNativeMenu = async (items: BookContextMenuItem[]): Promise<NativeMenu> => {
+  // Create every item before the single Menu.new({ items }) call so the order
+  // is whatever the list says — see the Menu.append() IPC race in #4389.
+  const menuItems = await Promise.all(items.map((item) => MenuItem.new(item)));
+  return { menu: await Menu.new({ items: menuItems }), items: menuItems };
+};
+
+const releaseMenu = (built: Promise<NativeMenu>) => {
   const close = () => {
     if (openPopup) {
       void openPopup.then(close);
       return;
     }
-    void menu.then((m) => m.close()).catch(() => {});
+    // The items are owned separately from the menu, so closing the menu alone
+    // would leak one resource per entry on every rebuild.
+    void built
+      .then(async ({ menu, items }) => {
+        await menu.close();
+        await Promise.all(items.map((item) => item.close()));
+      })
+      .catch(() => {});
   };
   close();
 };
@@ -350,11 +375,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   // that the popup visibly lags the right-click (issue #5181). Cache the
   // built menu so popup() fires immediately; hovering the item prewarms the
   // cache so even the first opening is instant.
-  const cachedMenuRef = useRef<Promise<Menu> | null>(null);
+  const cachedMenuRef = useRef<Promise<NativeMenu> | null>(null);
 
   const ensureMenu = () => {
     if (!cachedMenuRef.current) {
-      const building = Menu.new({ items: buildMenuItems() });
+      const building = buildNativeMenu(buildMenuItems());
       building.catch(() => {
         // A failed build must not poison the cache with a rejected promise.
         if (cachedMenuRef.current === building) cachedMenuRef.current = null;
@@ -415,7 +440,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         setInAppMenuPosition(position);
         return;
       }
-      const menu = await ensureMenu();
+      const { menu } = await ensureMenu();
       // Pop up at an explicit position so keyboard invocation (ContextMenu /
       // Shift+F10) anchors the menu to the item instead of wherever the mouse
       // happens to sit. On macOS and Windows — the only platforms still on the

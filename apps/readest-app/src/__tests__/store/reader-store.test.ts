@@ -6,8 +6,17 @@ import type { ViewSettings } from '@/types/book';
 vi.mock('@/store/bookDataStore', async () => {
   const { create } = await import('zustand');
   return {
-    useBookDataStore: create(() => ({
-      booksData: {} as Record<string, unknown>,
+    useBookDataStore: create<{
+      booksData: Record<string, unknown>;
+      clearBookData: (keyOrId: string) => void;
+    }>((set) => ({
+      booksData: {},
+      clearBookData: (keyOrId: string) =>
+        set((state) => {
+          const booksData = { ...state.booksData };
+          delete booksData[keyOrId.split('-')[0]!];
+          return { booksData };
+        }),
     })),
   };
 });
@@ -69,7 +78,8 @@ vi.mock('@/services/rss/feedReader', () => ({
 }));
 
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, type BookData } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { uniqueId } from '@/utils/misc';
 
 /**
@@ -403,5 +413,45 @@ describe('readerStore', () => {
       expect(mountedKeys).toEqual(['book-1-uid-1']);
       uniqueIdMock.mockImplementation(() => 'mock-uid-123');
     });
+  });
+});
+
+describe('clearViewState and the streamed ABS ebook cache', () => {
+  const absEbook = { format: 'ABS', metadata: { absMediaType: 'ebook' } };
+  const epub = { format: 'EPUB' };
+
+  beforeEach(() => {
+    useReaderStore.setState({ viewStates: {}, bookKeys: [], hoveredBookKey: null });
+    const cached = { bookDoc: {} } as unknown as BookData;
+    useBookDataStore.setState({ booksData: { abc: cached, def: cached } });
+  });
+
+  test('drops the cached book data of an ABS ebook when its last view closes', () => {
+    vi.mocked(useLibraryStore.getState().getBookByHash).mockReturnValue(absEbook as never);
+    seedViewState('abc-view1');
+
+    useReaderStore.getState().clearViewState('abc-view1');
+
+    expect(useBookDataStore.getState().booksData['abc']).toBeUndefined();
+    expect(useBookDataStore.getState().booksData['def']).toBeDefined();
+  });
+
+  test('keeps the cache while another view of the same ABS ebook is still open', () => {
+    vi.mocked(useLibraryStore.getState().getBookByHash).mockReturnValue(absEbook as never);
+    seedViewState('abc-view1');
+    seedViewState('abc-view2');
+
+    useReaderStore.getState().clearViewState('abc-view1');
+
+    expect(useBookDataStore.getState().booksData['abc']).toBeDefined();
+  });
+
+  test('keeps the cache of a local book so a reopen stays instant', () => {
+    vi.mocked(useLibraryStore.getState().getBookByHash).mockReturnValue(epub as never);
+    seedViewState('abc-view1');
+
+    useReaderStore.getState().clearViewState('abc-view1');
+
+    expect(useBookDataStore.getState().booksData['abc']).toBeDefined();
   });
 });

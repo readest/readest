@@ -146,3 +146,50 @@ describe('RemoteFile chunk cache', () => {
     expect(Array.from(got)).toEqual(Array.from(data.subarray(start, endExclusive)));
   });
 });
+
+describe('RemoteFile fetcher injection', () => {
+  const url = 'http://abs.local/api/items/i1/ebook?token=t1';
+
+  const makeFetcher = () => {
+    const calls: Array<{ self: unknown; input: unknown; init?: RequestInit }> = [];
+    // A plain function (not vi.fn) so the `this` it observes is exactly what
+    // RemoteFile invoked it with.
+    const fetcher = async function (this: unknown, input: unknown, init?: RequestInit) {
+      calls.push({ self: this, input, init });
+      const range = (init?.headers as Record<string, string> | undefined)?.['Range'];
+      const body = new Uint8Array(range ? 4 : 0);
+      return {
+        ok: true,
+        status: range ? 206 : 200,
+        headers: new Headers({
+          'Content-Length': '4096',
+          'Content-Range': range ? 'bytes 0-3/4096' : '',
+          'Content-Type': 'application/epub+zip',
+        }),
+        arrayBuffer: async () => body.buffer,
+      } as unknown as Response;
+    } as unknown as typeof fetch;
+    return { fetcher, calls };
+  };
+
+  it('opens and reads ranges through the injected fetcher', async () => {
+    const { fetcher, calls } = makeFetcher();
+    const file = new RemoteFile(url, 'book.epub', '', 0, fetcher);
+    await file.open();
+    expect(file.size).toBe(4096);
+    await file.fetchRangePart(0, 3);
+    expect(calls.map((c) => c.input)).toEqual([url, url]);
+    expect(calls[0]!.init).toEqual({ method: 'HEAD' });
+    expect(calls[1]!.init?.headers).toEqual({ Range: 'bytes=0-3' });
+  });
+
+  it('calls the fetcher unbound so a native window.fetch default is not an illegal invocation', async () => {
+    const { fetcher, calls } = makeFetcher();
+    const file = new RemoteFile(url, 'book.epub', '', 0, fetcher);
+    await file.open();
+    await file.fetchRangePart(0, 3);
+    // Chromium/WebKit throw "Illegal invocation" when window.fetch runs with a
+    // non-Window `this`, which is exactly what `this.#fetch(...)` passes.
+    expect(calls.map((c) => c.self)).toEqual([undefined, undefined]);
+  });
+});

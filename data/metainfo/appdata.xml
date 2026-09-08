@@ -70,6 +70,22 @@
   </supports>
 
   <releases>
+    <release version="0.12.8" date="2026-09-08">
+      <description>
+        <ul>
+          <li>Reading: Customize the information shown in headers and footers, resize text with zoom shortcuts</li>
+          <li>Sync: You can choose whether to use Readest Cloud before signing in, and recover missing covers during sync</li>
+          <li>Annotations: You can now import highlights, bookmarks, and reading progress from ReadEra, and sync your notes and highlights to Notion</li>
+          <li>Audiobooks: You can now stream ebook-only titles from Audiobookshelf</li>
+          <li>Text-to-Speech: use Apple Enhanced and Premium voices on the web, and optionally skip parenthetical readings in Japanese books</li>
+          <li>Web Imports: You can now clip signed-in pages and import web novels that require an account, with more reliable text decoding</li>
+          <li>Styling: Your library and reader can now use separate theme modes and colors, and e-ink mode is available on every platform</li>
+          <li>PDF: You can lock horizontal panning while zoomed, highlights stay visible in dark mode, and PDFs work on older devices</li>
+          <li>Dictionary: Dictionary entries can now play embedded audio, jump to parts of speech, and enlarge images</li>
+          <li>Sharing: Nearby BookDrop now offers easier pairing, transfer sounds, and more reliable device discovery and reconnection</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.12.6" date="2026-08-29">
       <description>
         <ul>
@@ -206,22 +222,6 @@
           <li>iOS: Fixed the reader not updating when you switch between light and dark mode</li>
           <li>Android: Fixed an issue where highlighting text could trigger unintended page turns</li>
           <li>Fixes: Many improvements across PDFs, EPUBs, Sync, Scrolling, Highlighting</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.11.1" date="2026-05-11">
-      <description>
-        <ul>
-          <li>Dictionaries: You can now import your own StarDict and MDict dictionaries</li>
-          <li>Sync: Your custom dictionaries, custom fonts, background textures and OPDS catalogs now sync across devices</li>
-          <li>KOReader Sync: Browse your full Readest Library from inside KOReader, with improved sync diagnostics</li>
-          <li>OPDS: Stream books over OPDS-PSE and optionally auto-download new titles from feeds</li>
-          <li>Sharing: Create share links for books, jump directly to book via deep links in exported annotations</li>
-          <li>Library: Added an optional 4-digit PIN lock at app launch to keep your library private</li>
-          <li>Library: You can now drag entire folders to import books</li>
-          <li>Reading: Added support for inline CJK ruby annotations (warichu/Gezhu), improved footnote detection</li>
-          <li>Speed Reading: Reading position now resumes correctly across devices and inside long sections</li>
-          <li>Fixes: Many fixes across PDFs, MOBIs, EPUBs, TTS, scrolling, and accessibility</li>
         </ul>
       </description>
     </release>

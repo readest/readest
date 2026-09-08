@@ -329,6 +329,17 @@ export class RemoteFile extends File implements ClosableFile {
     return file;
   }
 
+  /**
+   * Invoke the fetcher unbound. `this.#fetch(...)` would run the default
+   * `window.fetch` with this File as `this`, which Chromium and WebKit reject
+   * with "Illegal invocation" — the web build and the desktop fast path both
+   * rely on that default.
+   */
+  #call(input: string, init?: RequestInit): Promise<Response> {
+    const fetcher = this.#fetch;
+    return fetcher(input, init);
+  }
+
   override get name() {
     return this.#name;
   }
@@ -346,7 +357,7 @@ export class RemoteFile extends File implements ClosableFile {
   }
 
   async _open_with_head() {
-    const response = await this.#fetch(this.url, { method: 'HEAD' });
+    const response = await this.#call(this.url, { method: 'HEAD' });
     if (!response.ok) {
       throw new Error(`Failed to fetch file size: ${response.status}`);
     }
@@ -356,7 +367,7 @@ export class RemoteFile extends File implements ClosableFile {
   }
 
   async _open_with_range() {
-    const response = await this.#fetch(this.url, { headers: { Range: `bytes=${0}-${1023}` } });
+    const response = await this.#call(this.url, { headers: { Range: `bytes=${0}-${1023}` } });
     if (!response.ok) {
       throw new Error(`Failed to fetch file size: ${response.status}`);
     }
@@ -368,7 +379,7 @@ export class RemoteFile extends File implements ClosableFile {
   async _open_with_query() {
     // No `Range` header — the rangefile handler returns the file size in
     // `X-Total-Size` and the requested bytes as a plain 200 body.
-    const response = await this.#fetch(`${this.url}&start=0&end=0`);
+    const response = await this.#call(`${this.url}&start=0&end=0`);
     if (!response.ok) {
       throw new Error(`Failed to fetch file size: ${response.status}`);
     }
@@ -399,8 +410,8 @@ export class RemoteFile extends File implements ClosableFile {
     end = Math.min(this.size - 1, end);
     // console.log(`Fetching range: ${start}-${end}, size: ${end - start + 1}`);
     const response = this.#queryRange
-      ? await this.#fetch(`${this.url}&start=${start}&end=${end}`)
-      : await this.#fetch(this.url, { headers: { Range: `bytes=${start}-${end}` } });
+      ? await this.#call(`${this.url}&start=${start}&end=${end}`)
+      : await this.#call(this.url, { headers: { Range: `bytes=${start}-${end}` } });
     if (!response.ok) {
       throw new Error(`Failed to fetch range: ${response.status}`);
     }
