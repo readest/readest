@@ -84,25 +84,30 @@ jobs:
       # bundle lacks comes from the host at run time and fails against the
       # bundled glibc on any newer distro (NSS: FATAL crypto/nss_util.cc).
       # quick-sharun's DEPLOY_CHROMIUM deploys NSS and, via DEPLOY_PIPEWIRE,
-      # pulse — with the pinned pkgforge script the CLI above uses. Two gaps
+      # pulse — with the pinned pkgforge script the CLI above uses. Three gaps
       # remain, passed as appimage.files under /usr/lib, which the bundler
       # hands to quick-sharun as arguments: Debian keeps the NSS modules in
       # <triple>/nss/ where the Arch-layout globs miss them, and nothing
-      # deploys libspeechd. The npm cli-cef could do none of this: its
+      # deploys libspeechd. winit dlopens libxkbcommon-x11 by soname when it
+      # opens its X11 event loop (the CEF runtime forces X11 even on Wayland),
+      # and quick-sharun's Chromium rule would deploy it, but the runner image
+      # has no copy to deploy; without it every launch panics before the first
+      # log line (#6144). The npm cli-cef could do none of this: its
       # quick-sharun fork drops the `eval` that rebuilds the deploy array
       # (FabianLars/Anylinux-AppImages@3e280d1b), so every DEPLOY_* extra is
       # silently skipped.
       - name: stage CEF AppImage runtime libraries (linux only)
         run: |
           set -euo pipefail
-          sudo apt-get install -y libnss3 libpulse0 libspeechd2
+          sudo apt-get install -y libnss3 libpulse0 libspeechd2 libxkbcommon-x11-0
           nss_dir=$(dirname "$(ls /usr/lib/*-linux-gnu/nss/libsoftokn3.so)")
           lib_dir=${nss_dir%/nss}
           sudo cp -f --remove-destination "$nss_dir"/*.so "$lib_dir/"
           # +=: tauri.conf.json already ships the AppRun hook entry.
           conf=apps/readest-app/src-tauri/tauri.conf.json
           jq --arg d "$lib_dir" '.bundle.linux.appimage.files += {
-              "/usr/lib/libspeechd.so.2": ($d + "/libspeechd.so.2")
+              "/usr/lib/libspeechd.so.2": ($d + "/libspeechd.so.2"),
+              "/usr/lib/libxkbcommon-x11.so.0": ($d + "/libxkbcommon-x11.so.0")
             }' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
 
       - name: create .env.local file for Next.js
@@ -139,7 +144,7 @@ jobs:
           set -euo pipefail
           lib=target/release/bundle/appimage/Readest.AppDir/lib
           for so in libsoftokn3.so libfreeblpriv3.so libnssckbi.so libsqlite3.so.0 \
-                    libpulse.so.0 libspeechd.so.2; do
+                    libpulse.so.0 libspeechd.so.2 libxkbcommon-x11.so.0; do
             [ -e "$lib/$so" ] || { echo "::error::$so is missing from the AppImage bundle"; exit 1; }
           done
           # libpulse finds its private half through a host RUNPATH; lib.path
