@@ -18,6 +18,7 @@ import type { Book } from '@/types/book';
 
 vi.mock('@tauri-apps/api/menu', () => ({
   Menu: { new: vi.fn(async () => ({ popup: vi.fn(), close: vi.fn() })) },
+  MenuItem: { new: vi.fn(async (options: { text: string }) => ({ ...options, close: vi.fn() })) },
 }));
 
 vi.mock('@tauri-apps/plugin-opener', () => ({
