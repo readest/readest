@@ -2323,5 +2323,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Öffnen Sie eine Website, melden Sie sich bei Bedarf an und wählen Sie dann Clip-Seite aus, um sie in Ihrer Bibliothek zu speichern. Von Ihnen heruntergeladene Bücher werden ebenfalls importiert.",
   "Web URL": "Web-URL",
   "Loading chapter…": "Kapitel wird geladen…",
-  "Clip Page": "Clip-Seite"
+  "Clip Page": "Clip-Seite",
+  "Please select text within a single paragraph, or choose another replacement scope.": "Bitte wählen Sie Text innerhalb eines einzelnen Absatzes aus oder wählen Sie einen anderen Ersetzungsbereich."
 }

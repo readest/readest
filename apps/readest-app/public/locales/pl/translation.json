@@ -2443,5 +2443,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Otwórz stronę internetową, zaloguj się w razie potrzeby, a następnie wybierz Przytnij stronę, aby zapisać ją w swojej bibliotece. Pobrane książki również zostaną zaimportowane.",
   "Web URL": "Adres internetowy",
   "Loading chapter…": "Ładowanie rozdziału…",
-  "Clip Page": "Przytnij stronę"
+  "Clip Page": "Przytnij stronę",
+  "Please select text within a single paragraph, or choose another replacement scope.": "Zaznacz tekst w obrębie jednego akapitu lub wybierz inny zakres zamiany."
 }

@@ -2323,5 +2323,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "இணையதளத்தைத் திறந்து, தேவைப்பட்டால் உள்நுழைந்து, அதை உங்கள் நூலகத்தில் சேமிக்க கிளிப் பக்கம் என்பதைத் தேர்ந்தெடுக்கவும். நீங்கள் பதிவிறக்கும் புத்தகங்களும் இறக்குமதி செய்யப்படுகின்றன.",
   "Web URL": "இணைய URL",
   "Loading chapter…": "அத்தியாயத்தை ஏற்றுகிறது…",
-  "Clip Page": "கிளிப் பக்கம்"
+  "Clip Page": "கிளிப் பக்கம்",
+  "Please select text within a single paragraph, or choose another replacement scope.": "ஒரே பத்திக்குள் உள்ள உரையைத் தேர்ந்தெடுக்கவும், அல்லது வேறு மாற்று வரம்பைத் தேர்வுசெய்யவும்."
 }

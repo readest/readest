@@ -2323,5 +2323,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "एक वेबसाइट खोलें, यदि आवश्यक हो तो साइन इन करें, फिर इसे अपनी लाइब्रेरी में सहेजने के लिए क्लिप पेज चुनें। आपके द्वारा डाउनलोड की जाने वाली पुस्तकें भी आयातित होती हैं।",
   "Web URL": "वेब यूआरएल",
   "Loading chapter…": "अध्याय लोड हो रहा है…",
-  "Clip Page": "क्लिप पेज"
+  "Clip Page": "क्लिप पेज",
+  "Please select text within a single paragraph, or choose another replacement scope.": "कृपया एक ही अनुच्छेद के भीतर का पाठ चुनें, या कोई दूसरा प्रतिस्थापन दायरा चुनें।"
 }

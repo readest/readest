@@ -2263,5 +2263,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Mở một trang web, đăng nhập nếu cần, sau đó chọn Trang Clip để lưu vào thư viện của bạn. Sách bạn tải xuống cũng được nhập.",
   "Web URL": "URL web",
   "Loading chapter…": "Đang tải chương…",
-  "Clip Page": "Trang Clip"
+  "Clip Page": "Trang Clip",
+  "Please select text within a single paragraph, or choose another replacement scope.": "Vui lòng chọn văn bản trong cùng một đoạn, hoặc chọn phạm vi thay thế khác."
 }

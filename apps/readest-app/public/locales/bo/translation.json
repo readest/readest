@@ -2263,5 +2263,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "དྲ་ཚིགས་ཁ་ཕྱེ་ནས་དགོས་མཁོ་བྱུང་ན་ཐོ་འགོད་བྱེད་དགོས། དེ་ནས་ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་དུ་གསོག་འཇོག་བྱེད་པར་ཤོག་ངོས་ཉར་ཚགས། འདེམས། ཁྱེད་ཀྱིས་ཕབ་ལེན་བྱས་པའི་དེབ་རྣམས་ཀྱང་ནང་འདྲེན་བྱེད་ཀྱི་ཡོད།",
   "Web URL": "དྲ་རྒྱའི་ཁ་བྱང་།",
   "Loading chapter…": "ལེའུ་མངོན་བཞིན་ཡོད།",
-  "Clip Page": "ཤོག་ངོས་ཉར་ཚགས།"
+  "Clip Page": "ཤོག་ངོས་ཉར་ཚགས།",
+  "Please select text within a single paragraph, or choose another replacement scope.": "ཚིག་ལེའུ་གཅིག་གི་ནང་གི་ཡི་གེ་འདེམས་རོགས། ཡང་ན་ཚབ་བརྗེའི་ཁྱབ་ཁོངས་གཞན་ཞིག་འདེམས་རོགས།"
 }

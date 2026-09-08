@@ -2383,5 +2383,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Deschideți un site web, conectați-vă dacă este necesar, apoi alegeți Salvează pagina pentru a-l salva în bibliotecă. Cărțile pe care le descărcați sunt de asemenea importate.",
   "Web URL": "Adresa URL web",
   "Loading chapter…": "Se încarcă capitolul…",
-  "Clip Page": "Salvează pagina"
+  "Clip Page": "Salvează pagina",
+  "Please select text within a single paragraph, or choose another replacement scope.": "Selectați text dintr-un singur paragraf sau alegeți alt domeniu de înlocuire."
 }

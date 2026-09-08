@@ -2383,5 +2383,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "Abra um site, faça login se necessário e escolha Recortar página para salvá-lo em sua biblioteca. Os livros que você baixa também são importados.",
   "Web URL": "URL da Web",
   "Loading chapter…": "Carregando capítulo…",
-  "Clip Page": "Recortar página"
+  "Clip Page": "Recortar página",
+  "Please select text within a single paragraph, or choose another replacement scope.": "Selecione texto dentro de um único parágrafo ou escolha outro escopo de substituição."
 }

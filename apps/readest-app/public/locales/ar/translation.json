@@ -2563,5 +2563,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "افتح موقعًا إلكترونيًا، وقم بتسجيل الدخول إذا لزم الأمر، ثم اختر حفظ الصفحة لحفظه في مكتبتك. يتم أيضًا استيراد الكتب التي تقوم بتنزيلها.",
   "Web URL": "عنوان URL للويب",
   "Loading chapter…": "جارٍ تحميل الفصل…",
-  "Clip Page": "حفظ الصفحة"
+  "Clip Page": "حفظ الصفحة",
+  "Please select text within a single paragraph, or choose another replacement scope.": "يرجى تحديد نص داخل فقرة واحدة، أو اختيار نطاق استبدال آخر."
 }

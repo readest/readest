@@ -2263,5 +2263,6 @@
   "Open a website, sign in if needed, then choose Clip Page to save it to your library. Books you download are also imported.": "打開網站，根據需要登錄，然後選擇 剪藏頁面 將其儲存到您的庫中。您下載的書籍也會匯入。",
   "Web URL": "網址",
   "Loading chapter…": "正在載入章節…",
-  "Clip Page": "剪藏頁面"
+  "Clip Page": "剪藏頁面",
+  "Please select text within a single paragraph, or choose another replacement scope.": "請選擇同一段落內的文字，或改用其他替換範圍。"
 }
