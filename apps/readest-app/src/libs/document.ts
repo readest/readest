@@ -198,8 +198,7 @@ async function configurePDFWorker() {
   // empty operator list, leaving both the cover and every page blank (#6015).
   await import('@pdfjs/pdf.min.mjs');
   const { pdfjsLib } = globalThis as typeof globalThis & { pdfjsLib: PDFJSGlobal };
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-  const workerURL = new URL(`${basePath}/vendor/pdfjs/pdf.worker.min.mjs`, location.href).href;
+  const workerURL = new URL('/vendor/pdfjs/pdf.worker.min.mjs', location.href).href;
   compatPDFWorkerURL ??= URL.createObjectURL(
     new Blob(
       [
