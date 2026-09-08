@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { RiEditLine, RiDeleteBin7Line } from 'react-icons/ri';
-import { MdDragIndicator } from 'react-icons/md';
+import { MdDragIndicator, MdOutlineArrowOutward } from 'react-icons/md';
 import {
   DndContext,
   closestCenter,
@@ -197,6 +197,7 @@ const RuleItem: React.FC<{
   }
 
   const isDisabled = rule.enabled === false;
+  const canNavigate = scope === 'selection' && !!rule.cfi;
   const scopeLabel =
     scope === 'selection' ? _('Selection') : scope === 'book' ? _('Book') : _('Library');
 
@@ -205,7 +206,10 @@ const RuleItem: React.FC<{
       <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
         <div
           className={clsx(
-            'break-words pe-28 font-medium leading-snug',
+            'break-words font-medium leading-snug',
+            // Reserve the width of the absolutely-positioned action cluster,
+            // which is one button wider on selection rules.
+            canNavigate ? 'pe-36' : 'pe-28',
             isDisabled && 'text-base-content/60',
           )}
         >
@@ -226,17 +230,7 @@ const RuleItem: React.FC<{
           )}
         </div>
         <div className='flex flex-wrap items-center gap-1.5'>
-          {scope === 'selection' ? (
-            <button
-              type='button'
-              onClick={navigateToSelection}
-              className='badge badge-sm badge-ghost eink-bordered hover:bg-base-300 shrink-0 transition-colors duration-150'
-            >
-              {scopeLabel}
-            </button>
-          ) : (
-            <RuleChip>{scopeLabel}</RuleChip>
-          )}
+          <RuleChip>{scopeLabel}</RuleChip>
           {rule.isRegex && <RuleChip>{_('Regex')}</RuleChip>}
           {rule.caseSensitive !== false && <RuleChip>{_('Case sensitive')}</RuleChip>}
           {rule.onlyForTTS && <RuleChip>{_('Only for TTS')}</RuleChip>}
@@ -249,6 +243,20 @@ const RuleItem: React.FC<{
           onChange={onToggle}
           aria-label={isDisabled ? _('Enable rule') : _('Disable rule')}
         />
+        {canNavigate && (
+          // A selection rule is anchored to one spot in the book, so it gets
+          // its own action alongside edit/delete. It used to ride on the
+          // `Selection` chip, which reads as a label like every chip beside
+          // it, so nobody found it (#6148).
+          <button
+            className='btn btn-ghost btn-sm h-8 w-8 p-0'
+            onClick={navigateToSelection}
+            aria-label={_('Jump to Location')}
+            title={_('Jump to Location')}
+          >
+            <MdOutlineArrowOutward className='h-4 w-4' />
+          </button>
+        )}
         <button
           className='btn btn-ghost btn-sm h-8 w-8 p-0'
           onClick={onEdit}

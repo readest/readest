@@ -1,5 +1,5 @@
 import * as CFI from 'foliate-js/epubcfi.js';
-import type { Transformer } from './types';
+import type { Transformer, TransformContext } from './types';
 import { ProofreadRule } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -193,6 +193,27 @@ function applyReplacementSingle(
   }
 }
 
+// Spine step of a CFI: everything before the first indirection (`!`), or the
+// whole path for a section CFI, which has none. `sections[i].cfi` is
+// `epubcfi(/6/14)` and a selection made in it is `epubcfi(/6/14!/4/2,...)`.
+const cfiSpineStep = (cfi?: string): string | undefined =>
+  cfi?.match(/^epubcfi\((.*?)(?:!|\)$)/)?.[1];
+
+/**
+ * Whether a selection-scoped rule belongs to the section being transformed.
+ * The rule's own CFI names its spine item, so prefer that: `sectionHref` holds
+ * the TOC href at the reading position, which resolves to the nearest
+ * preceding nav entry and therefore names a different file whenever a spine
+ * item has no TOC entry of its own (#6148). Formats without spine CFIs
+ * (markdown, where section ids are the spine index) fall back to the href.
+ */
+const inThisSection = (rule: ProofreadRule, ctx: TransformContext): boolean => {
+  const ruleSpine = cfiSpineStep(rule.cfi);
+  const ctxSpine = cfiSpineStep(ctx.sectionCfi);
+  if (ruleSpine && ctxSpine) return ruleSpine === ctxSpine;
+  return ctx.sectionHref?.split('#')[0] === rule.sectionHref?.split('#')[0];
+};
+
 function getTextNodes(doc: Document): Text[] {
   const walker = document.createTreeWalker(doc.body || doc.documentElement, NodeFilter.SHOW_TEXT, {
     acceptNode: (node) => {
@@ -251,11 +272,7 @@ export const proofreadTransformer: Transformer = {
     const ordered = [...byScope.selection, ...byScope.book, ...byScope.library];
 
     for (const rule of ordered) {
-      if (rule.scope === 'selection') {
-        const ruleBase = rule.sectionHref?.split('#')[0];
-        const ctxBase = ctx.sectionHref?.split('#')[0];
-        if (ctxBase !== ruleBase) continue;
-      }
+      if (rule.scope === 'selection' && !inThisSection(rule, ctx)) continue;
       if (rule.scope === 'selection') {
         applyReplacementSingle(doc, rule);
       } else {

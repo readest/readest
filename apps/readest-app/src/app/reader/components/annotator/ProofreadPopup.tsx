@@ -23,6 +23,11 @@ const toggleClassName = (isDarkMode: boolean) =>
     !isDarkMode && 'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
   );
 
+// The precondition `applyReplacementSingle` puts on a selection rule: both
+// ends of the CFI must land in the same text node.
+const isSingleTextNodeRange = (range: Range) =>
+  range.startContainer === range.endContainer && range.startContainer?.nodeType === Node.TEXT_NODE;
+
 interface ProofreadPopupProps {
   bookKey: string;
   selection?: TextSelection;
@@ -92,19 +97,44 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
       }
 
       if (scope === 'selection') {
-        range.deleteContents();
-        if (replacementText) {
-          const textNode = document.createTextNode(replacementText);
-          range.insertNode(textNode);
+        // On every later load the rule is replayed by `applyReplacementSingle`,
+        // which resolves the CFI and splices the replacement into ONE text
+        // node -- it can do nothing with a selection that spans elements. So
+        // refuse that selection here instead of creating a rule that only ever
+        // works the one time the popup edits the live DOM.
+        if (!isSingleTextNodeRange(range)) {
+          eventDispatcher.dispatch('toast', {
+            type: 'warning',
+            message: _(
+              'Please select text within a single paragraph, or choose another replacement scope.',
+            ),
+            timeout: 5000,
+          });
+          return;
         }
+        // Splice the text in place rather than deleteContents() + insertNode():
+        // deleting across the selection strips any markup it touches and splits
+        // the node into three, and the transformer's own replay does neither.
+        const textNode = range.startContainer as Text;
+        const text = textNode.textContent ?? '';
+        textNode.textContent =
+          text.slice(0, range.startOffset) + replacementText + text.slice(range.endOffset);
       }
+
+      // Anchor to the spine item href, which is what every section load hands
+      // the proofread transformer (foliate's `detail.name`). `progress` carries
+      // the TOC href, which resolves to the nearest preceding nav entry and so
+      // names a different file whenever a spine item has no TOC entry of its
+      // own -- the rule then never matched on reload (#6148).
+      const sectionHref =
+        getView(bookKey)?.book?.sections?.[selection.index]?.id ?? progress?.sectionHref;
 
       const options: CreateProofreadRuleOptions = {
         scope,
         pattern: selection.text,
         replacement: replacementText.trim(),
         cfi: selection.cfi,
-        sectionHref: progress?.sectionHref,
+        sectionHref,
         isRegex,
         enabled: true,
         caseSensitive,

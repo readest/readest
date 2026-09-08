@@ -89,6 +89,7 @@ describe('proofreadTransformer', () => {
     rules: ProofreadRule[] | undefined,
     content: string,
     sectionHref?: string,
+    sectionCfi?: string,
   ): TransformContext => {
     const viewSettings = {
       proofreadRules: rules,
@@ -101,6 +102,7 @@ describe('proofreadTransformer', () => {
       content,
       isFixedLayout: false,
       sectionHref,
+      sectionCfi,
       transformers: ['proofread'],
     };
   };
@@ -356,6 +358,51 @@ describe('proofreadTransformer', () => {
   });
 
   describe('selection scope', () => {
+    // A rule's sectionHref is the TOC href captured at the reading position,
+    // which names the nearest preceding nav entry -- a different file whenever
+    // the spine item has no TOC entry of its own. The rule's own CFI names its
+    // spine item, so the section match rides on that when the book has spine
+    // CFIs (#6148).
+    const selectionRule = (over: Partial<ProofreadRule> = {}): ProofreadRule => ({
+      id: '1',
+      scope: 'selection',
+      pattern: 'test',
+      replacement: 'REPLACED',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+      sectionHref: 'chapter1.html',
+      cfi: 'epubcfi(/6/14!/4/2,/1:0,/1:4)',
+      ...over,
+    });
+
+    test('applies a rule whose stale sectionHref names another file in the same spine item', async () => {
+      const ctx = createMockContext(
+        [selectionRule({ sectionHref: 'contents.html' })],
+        '<html><body><p>test content</p></body></html>',
+        'chapter7.html',
+        'epubcfi(/6/14)',
+      );
+      const result = await proofreadTransformer.transform(ctx);
+
+      expect(result).toContain('REPLACED');
+    });
+
+    test('skips a rule anchored in a different spine item even when the href matches', async () => {
+      const ctx = createMockContext(
+        [selectionRule()],
+        '<html><body><p>test content</p></body></html>',
+        'chapter1.html',
+        'epubcfi(/6/16)',
+      );
+      const result = await proofreadTransformer.transform(ctx);
+
+      expect(result).toContain('test content');
+      expect(result).not.toContain('REPLACED');
+    });
+
     test('should skip selection rules without matching sectionHref', async () => {
       const rules: ProofreadRule[] = [
         {
