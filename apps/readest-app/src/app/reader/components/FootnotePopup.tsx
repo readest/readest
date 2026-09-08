@@ -698,70 +698,88 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
       {showPopup && <Overlay onDismiss={handleDismissPopup} />}
-      <Popup
-        isOpen={showPopup}
-        width={responsiveWidth}
-        height={responsiveHeight}
-        position={showPopup ? popupPosition! : undefined}
-        trianglePosition={showPopup ? trianglePosition! : undefined}
-        // Scroll along the note's block axis and clip the other one. A note
-        // that wraps can never need a horizontal scrollbar, but leaving that
-        // axis `visible` promotes it to `auto` (CSS resolves `visible` to
-        // `auto` next to a non-`visible` value), so any stray pixel of
-        // cross-axis overflow bought a second scrollbar (#5999).
-        className={clsx(
-          'select-text',
-          viewSettings.vertical
-            ? 'overflow-x-auto overflow-y-hidden'
-            : 'overflow-y-auto overflow-x-hidden',
-        )}
-        onDismiss={handleDismissPopup}
-      >
-        {canGoBack && (
-          // The chrome floats over the text rather than pushing it down, so
-          // the strip must not swallow taps meant for the words beneath it.
-          <div
-            className={clsx(
-              'pointer-events-none absolute z-10 flex gap-1',
-              viewSettings.vertical
-                ? 'bottom-2 end-2 top-2 w-8 flex-col items-end'
-                : 'end-2 start-2 top-2 h-8 flex-row items-start',
-            )}
-          >
+      {/* The note's text is selectable, so the selection toolbar and the range
+          handles open against a selection that lives inside this popup — they
+          have to draw over it, exactly as they do over the book page. That used
+          to fall out of DOM order (BooksGrid mounts Annotator after this) while
+          both surfaces were z-50, until #6036 moved the toolbar into its own
+          `z-[43]` band and this popup's z-50 buried it along with the
+          dictionary button (#6145). So this popup gets a band of its own:
+          below the toolbar (z-[43]) and the handles (z-[44]), above the
+          paragraph overlay and the TTS mini player (z-40). The lookup popups
+          opened from the toolbar stay at z-50 and still cover the note.
+
+          `absolute`, never `fixed`: the popup's coordinates are book-cell
+          relative, and the cell is its `relative` ancestor, so insetting the
+          wrapper to the cell makes the stacking context without moving
+          anything. `pointer-events-none` keeps the cell-covering wrapper from
+          swallowing the outside taps the Overlay above dismisses on. */}
+      <div className='pointer-events-none absolute inset-0 z-[42]'>
+        <Popup
+          isOpen={showPopup}
+          width={responsiveWidth}
+          height={responsiveHeight}
+          position={showPopup ? popupPosition! : undefined}
+          trianglePosition={showPopup ? trianglePosition! : undefined}
+          // Scroll along the note's block axis and clip the other one. A note
+          // that wraps can never need a horizontal scrollbar, but leaving that
+          // axis `visible` promotes it to `auto` (CSS resolves `visible` to
+          // `auto` next to a non-`visible` value), so any stray pixel of
+          // cross-axis overflow bought a second scrollbar (#5999).
+          className={clsx(
+            'select-text pointer-events-auto',
+            viewSettings.vertical
+              ? 'overflow-x-auto overflow-y-hidden'
+              : 'overflow-y-auto overflow-x-hidden',
+          )}
+          onDismiss={handleDismissPopup}
+        >
+          {canGoBack && (
+            // The chrome floats over the text rather than pushing it down, so
+            // the strip must not swallow taps meant for the words beneath it.
+            <div
+              className={clsx(
+                'pointer-events-none absolute z-10 flex gap-1',
+                viewSettings.vertical
+                  ? 'bottom-2 end-2 top-2 w-8 flex-col items-end'
+                  : 'end-2 start-2 top-2 h-8 flex-row items-start',
+              )}
+            >
+              <button
+                type='button'
+                onClick={handleBack}
+                aria-label={_('Back')}
+                title={_('Back')}
+                className={clsx(chromeButtonClassName, 'pointer-events-auto')}
+              >
+                <MdArrowBack size={size18} />
+              </button>
+            </div>
+          )}
+          {sourceHref && (
+            // Park it where the note's last line runs out instead of over its
+            // opening words (#5998). Physical sides, not logical ones: the corner
+            // follows the book's own direction, which the popup's `dir` (the UI
+            // language) does not track.
             <button
               type='button'
-              onClick={handleBack}
-              aria-label={_('Back')}
-              title={_('Back')}
-              className={clsx(chromeButtonClassName, 'pointer-events-auto')}
+              onClick={handleGoToSource}
+              aria-label={_('Jump to Location')}
+              title={_('Jump to Location')}
+              className={clsx(
+                chromeButtonClassName,
+                'absolute bottom-2 z-10',
+                viewSettings.vertical || viewSettings.rtl ? 'left-2' : 'right-2',
+              )}
             >
-              <MdArrowBack size={size18} />
+              <MdOutlineArrowOutward size={size18} />
             </button>
-          </div>
-        )}
-        {sourceHref && (
-          // Park it where the note's last line runs out instead of over its
-          // opening words (#5998). Physical sides, not logical ones: the corner
-          // follows the book's own direction, which the popup's `dir` (the UI
-          // language) does not track.
-          <button
-            type='button'
-            onClick={handleGoToSource}
-            aria-label={_('Jump to Location')}
-            title={_('Jump to Location')}
-            className={clsx(
-              chromeButtonClassName,
-              'absolute bottom-2 z-10',
-              viewSettings.vertical || viewSettings.rtl ? 'left-2' : 'right-2',
-            )}
-          >
-            <MdOutlineArrowOutward size={size18} />
-          </button>
-        )}
-        {/* Fill the popup's content box rather than restating its border-box
-            size, which overflowed it by the border on both axes (#5999). */}
-        <div className='footnote-content h-full w-full' ref={footnoteRef}></div>
-      </Popup>
+          )}
+          {/* Fill the popup's content box rather than restating its border-box
+              size, which overflowed it by the border on both axes (#5999). */}
+          <div className='footnote-content h-full w-full' ref={footnoteRef}></div>
+        </Popup>
+      </div>
     </div>
   );
 };

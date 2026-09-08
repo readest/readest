@@ -83,9 +83,10 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
     // wins owns those pixels. The handles are grab targets, so they take it —
     // under the toolbar their covered part stops dragging and fires whichever
     // tool button it landed on instead. Hence z-[43], below the handle layer
-    // (z-[44]) but still above the paragraph/TTS chrome (z-40). Every other
-    // popup surface stays at z-50 and above the handles, so the wrapper is
-    // only here to put this one at 43.
+    // (z-[44]) but still above the paragraph/TTS chrome (z-40) and the
+    // footnote popup (z-[42]), whose text this toolbar also opens against
+    // (#6145). Every popup opened *from* the toolbar stays at z-50 and above
+    // the handles, so the wrapper is only here to put this one at 43.
     //
     // `absolute`, never `fixed`: `position` is in the book cell's coordinate
     // space (Annotator subtracts `#gridcell-<bookKey>`'s rect), and the cell
