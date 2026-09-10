@@ -68,16 +68,25 @@ const Slider: React.FC<SliderProps> = ({
     }
   };
 
+  // Resolved on every render, not once on mount: the reader's footer bar renders
+  // dir='ltr' until the book's view settings load and then switches to 'rtl' for
+  // a right-to-left book, and the direction can also be toggled while the panel
+  // stays mounted. The native range input follows the inherited direction either
+  // way, so a stale value here leaves the track and thumb unmirrored while the
+  // input is mirrored, and the control then moves against the drag (#6157).
+  // The walk starts above the slider because this component sets its own dir.
   useEffect(() => {
-    let node: HTMLElement | null = sliderRef.current;
+    let node: HTMLElement | null = sliderRef.current?.parentElement ?? null;
     while (node) {
-      if (node.getAttribute('dir') === 'rtl') {
-        setIsRtl(true);
-        break;
+      const dir = node.getAttribute('dir');
+      if (dir === 'rtl' || dir === 'ltr') {
+        setIsRtl(dir === 'rtl');
+        return;
       }
       node = node.parentElement;
     }
-  }, []);
+    setIsRtl(false);
+  });
 
   useEffect(() => {
     setValue(initialValue);
