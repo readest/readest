@@ -43,6 +43,63 @@ describe('Slider', () => {
     expect(thumb.style.left).toBe('calc(75% - 11px)');
   });
 
+  it('mirrors the track when the surrounding direction turns right-to-left after mount', async () => {
+    // The reader's footer bar renders dir='ltr' until the book's view settings
+    // load, then switches to 'rtl' for a right-to-left book. The native range
+    // input follows that change, so the track and thumb have to follow it too.
+    const { container, getByRole, rerender } = render(
+      <div dir='ltr'>
+        <Slider label='Reading Progress' initialValue={100} heightPx={44} />
+      </div>,
+    );
+    getByRole('slider');
+    expect(container.querySelector<HTMLElement>('.slider-thumb')!.style.left).toBe(
+      'calc(100% - 22px)',
+    );
+
+    rerender(
+      <div dir='rtl'>
+        <Slider label='Reading Progress' initialValue={100} heightPx={44} />
+      </div>,
+    );
+
+    await waitFor(() =>
+      expect(container.querySelector<HTMLElement>('.slider-thumb')!.style.right).toBe(
+        'calc(100% - 22px)',
+      ),
+    );
+    expect(container.querySelector<HTMLElement>('.slider-thumb')!.style.left).toBe('');
+    expect(container.querySelector<HTMLElement>('.slider-fill')!.style.right).toBe('0px');
+  });
+
+  it('restores the left edge when the surrounding direction turns back to left-to-right', async () => {
+    const { container, getByRole, rerender } = render(
+      <div dir='rtl'>
+        <Slider label='Reading Progress' initialValue={100} heightPx={44} />
+      </div>,
+    );
+    getByRole('slider');
+    await waitFor(() =>
+      expect(container.querySelector<HTMLElement>('.slider-thumb')!.style.right).toBe(
+        'calc(100% - 22px)',
+      ),
+    );
+
+    rerender(
+      <div dir='ltr'>
+        <Slider label='Reading Progress' initialValue={100} heightPx={44} />
+      </div>,
+    );
+
+    await waitFor(() =>
+      expect(container.querySelector<HTMLElement>('.slider-thumb')!.style.left).toBe(
+        'calc(100% - 22px)',
+      ),
+    );
+    expect(container.querySelector<HTMLElement>('.slider-thumb')!.style.right).toBe('');
+    expect(container.querySelector<HTMLElement>('.slider-fill')!.style.left).toBe('0px');
+  });
+
   it('uses the right edge as the endpoint in right-to-left layouts', async () => {
     const { container, getByRole } = render(
       <div dir='rtl'>
