@@ -86,6 +86,69 @@ export const parseWebViewInfo = (appService: AppService | null): string => {
   }
 };
 
+/**
+ * The brand a Chromium engine reports in User-Agent Client Hints'
+ * `fullVersionList`, keyed by the same engine labels `parseWebViewInfo`
+ * emits. WebKit engines have no Client Hints (their UA already carries the
+ * real version), so they are absent here.
+ */
+/**
+ * Whether this Chromium engine reports its real build in User-Agent Client
+ * Hints, and which `fullVersionList` brand carries it. WebKit engines have no
+ * Client Hints (their UA already carries the real version), so they are
+ * absent. The UA token decides the runtime flavor, the `OS` part decides
+ * desktop-vs-mobile only where the brands differ (desktop Edge vs WebView2
+ * share the `Microsoft Edge` brand; Android WebView reports both a
+ * `Android WebView` and a `Google Chrome` entry).
+ */
+const clientHintsBrandFor = (ua: string): RegExp | null => {
+  if (!/Chrome\/|Edg\//.test(ua)) return null; // WebKit engines: no Client Hints
+  if (/Edg\//.test(ua)) return /Microsoft Edge/i;
+  return /(Chromium|Google Chrome|Android WebView)/i;
+};
+
+/**
+ * The real full build number (e.g. `138.0.3351.62`) behind a UA-reduced
+ * version string. Chromium freezes the minor/build/patch tokens in the UA
+ * itself (`Edg/138.0.0.0`), so on WebView2/Android WebView/Chrome the parsed
+ * version is incomplete; the full build is only in the high-entropy
+ * `fullVersionList` Client Hint. Returns null when the engine has no Client
+ * Hints entry or the API is unavailable (WebKit, older WebViews).
+ */
+export const getWebViewFullVersion = async (): Promise<string | null> => {
+  const brandPattern = clientHintsBrandFor(navigator.userAgent);
+  if (!brandPattern) return null;
+  try {
+    const uaData = (
+      navigator as unknown as {
+        userAgentData?: {
+          getHighEntropyValues?: (hints: string[]) => Promise<{
+            fullVersionList?: { brand: string; version: string }[];
+          }>;
+        };
+      }
+    ).userAgentData;
+    const getHighEntropyValues = uaData?.getHighEntropyValues;
+    if (typeof getHighEntropyValues !== 'function') return null;
+    const { fullVersionList } = await getHighEntropyValues.call(uaData, ['fullVersionList']);
+    return fullVersionList?.find((entry) => brandPattern.test(entry.brand))?.version ?? null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * `parseWebViewInfo` with the UA-reduced version upgraded to the real build
+ * via Client Hints when available. Async only because of that round-trip;
+ * falls back to the sync label verbatim (WebKit engines, older WebViews).
+ */
+export const parseWebViewInfoAsync = async (appService: AppService | null): Promise<string> => {
+  const info = parseWebViewInfo(appService);
+  const fullVersion = await getWebViewFullVersion();
+  if (!fullVersion) return info;
+  return info.replace(/\s+[0-9]+(?:\.[0-9]+)*$/, ` ${fullVersion}`);
+};
+
 export const parseWebViewVersion = (appService: AppService | null): number => {
   const webViewInfo = parseWebViewInfo(appService);
   const versionMatch = webViewInfo.match(/([0-9]+)\./);

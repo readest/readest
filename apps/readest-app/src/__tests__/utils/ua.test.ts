@@ -1,5 +1,10 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { parseWebViewInfo, parseWebViewVersion } from '@/utils/ua';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import {
+  getWebViewFullVersion,
+  parseWebViewInfo,
+  parseWebViewInfoAsync,
+  parseWebViewVersion,
+} from '@/utils/ua';
 
 type AppServiceParam = Parameters<typeof parseWebViewInfo>[0];
 
@@ -16,6 +21,7 @@ const originalUA = navigator.userAgent;
 
 afterEach(() => {
   setUserAgent(originalUA);
+  vi.unstubAllGlobals();
 });
 
 describe('parseWebViewInfo', () => {
@@ -148,5 +154,102 @@ describe('parseWebViewVersion', () => {
     const appService = { isAndroidApp: true } as unknown as AppServiceParam;
     const result = parseWebViewVersion(appService);
     expect(result).toBe(120);
+  });
+
+  describe('getWebViewFullVersion / parseWebViewInfoAsync (Client Hints)', () => {
+    const stubUAData = (data?: { fullVersionList?: { brand: string; version: string }[] }) => {
+      vi.stubGlobal(
+        'navigator',
+        Object.create(navigator, {
+          userAgent: { value: navigator.userAgent, configurable: true },
+          userAgentData: {
+            value: data
+              ? {
+                  getHighEntropyValues: async () => ({
+                    fullVersionList: data.fullVersionList,
+                  }),
+                }
+              : undefined,
+            configurable: true,
+          },
+        }),
+      );
+    };
+
+    it('returns the real build from fullVersionList for Edge/WebView2', async () => {
+      setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+      );
+      stubUAData({
+        fullVersionList: [
+          { brand: 'Microsoft Edge', version: '138.0.3351.62' },
+          { brand: 'Chromium', version: '138.0.7204.0' },
+          { brand: 'Not/A)Brand', version: '24' },
+        ],
+      });
+      expect(await getWebViewFullVersion()).toBe('138.0.3351.62');
+    });
+
+    it('falls back to null when userAgentData is missing (WebKit/older WebViews)', async () => {
+      setUserAgent(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+      );
+      stubUAData(undefined);
+      expect(await getWebViewFullVersion()).toBeNull();
+    });
+
+    it('returns null when no brand matches', async () => {
+      setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+      );
+      stubUAData({
+        fullVersionList: [{ brand: 'Not/A)Brand', version: '24' }],
+      });
+      expect(await getWebViewFullVersion()).toBeNull();
+    });
+
+    it('surfaces getHighEntropyValues rejections as null', async () => {
+      setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+      );
+      vi.stubGlobal(
+        'navigator',
+        Object.create(navigator, {
+          userAgent: { value: navigator.userAgent, configurable: true },
+          userAgentData: {
+            value: {
+              getHighEntropyValues: async () => {
+                throw new Error('denied');
+              },
+            },
+            configurable: true,
+          },
+        }),
+      );
+      expect(await getWebViewFullVersion()).toBeNull();
+    });
+
+    it('parseWebViewInfoAsync upgrades the reduced build in the label', async () => {
+      setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0',
+      );
+      stubUAData({
+        fullVersionList: [{ brand: 'Microsoft Edge', version: '138.0.3351.62' }],
+      });
+      const appService = {
+        appPlatform: 'tauri',
+        osPlatform: 'windows',
+      } as unknown as AppServiceParam;
+      expect(await parseWebViewInfoAsync(appService)).toBe('Edge 138.0.3351.62');
+    });
+
+    it('parseWebViewInfoAsync keeps the UA label when Client Hints are unavailable', async () => {
+      setUserAgent(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+      );
+      stubUAData(undefined);
+      const appService = { isMacOSApp: true } as unknown as AppServiceParam;
+      expect(await parseWebViewInfoAsync(appService)).toBe('WebView 605.1.15');
+    });
   });
 });

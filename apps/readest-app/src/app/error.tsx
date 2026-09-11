@@ -4,7 +4,7 @@ import posthog from 'posthog-js';
 import { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { parseWebViewInfo } from '@/utils/ua';
+import { parseWebViewInfo, parseWebViewInfoAsync } from '@/utils/ua';
 import { handleGlobalError } from '@/utils/error';
 
 interface ErrorPageProps {
@@ -18,7 +18,20 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   const [browserInfo, setBrowserInfo] = useState('');
 
   useEffect(() => {
-    setBrowserInfo(parseWebViewInfo(appService));
+    let mounted = true;
+    // Async for the Client Hints round-trip: on Chromium engines the UA's
+    // build number is frozen (x.0.0.0) and the real build lives in
+    // fullVersionList; fall back to the UA-parsed label on any failure.
+    parseWebViewInfoAsync(appService)
+      .then((info) => {
+        if (mounted) setBrowserInfo(info);
+      })
+      .catch(() => {
+        if (mounted) setBrowserInfo(parseWebViewInfo(appService));
+      });
+    return () => {
+      mounted = false;
+    };
   }, [appService]);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
-import { parseWebViewInfo } from '@/utils/ua';
+import { parseWebViewInfo, parseWebViewInfoAsync } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { eventDispatcher } from '@/utils/event';
@@ -34,7 +34,15 @@ export const AboutWindow = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    setBrowserInfo(parseWebViewInfo(appService));
+    let mounted = true;
+    // Async: on Chromium engines the UA string's build number is frozen by UA
+    // Reduction (Edg/138.0.0.0); the real build needs a Client Hints
+    // round-trip, so the label settles a tick later than the dialog mount.
+    parseWebViewInfoAsync(appService)
+      .then((info) => {
+        if (mounted) setBrowserInfo(info);
+      })
+      .catch(() => setBrowserInfo(parseWebViewInfo(appService)));
 
     const handleCustomEvent = (event: CustomEvent) => {
       setIsOpen(event.detail.visible);
@@ -46,6 +54,7 @@ export const AboutWindow = () => {
     }
 
     return () => {
+      mounted = false;
       if (el) {
         el.removeEventListener('setDialogVisibility', handleCustomEvent as EventListener);
       }

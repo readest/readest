@@ -34,6 +34,8 @@ vi.mock('@/helpers/updater', () => ({
 
 vi.mock('@/utils/ua', () => ({
   parseWebViewInfo: () => 'Chrome 148',
+  // Same label: the mocked UA path resolves without Client Hints.
+  parseWebViewInfoAsync: async () => 'Chrome 148',
 }));
 
 vi.mock('@/utils/version', () => ({
