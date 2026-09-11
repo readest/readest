@@ -20,7 +20,7 @@ vi.mock('@/context/EnvContext', () => ({
 // ZoomControls reaches into the theme store and Tauri window APIs; stub it out.
 vi.mock('@/app/reader/components/ZoomControls', () => ({
   __esModule: true,
-  default: () => null,
+  default: () => <div data-testid='zoom-controls' />,
 }));
 
 afterEach(cleanup);
@@ -252,6 +252,65 @@ describe('ImageViewer', () => {
           vi.advanceTimersByTime(500);
         });
         expect(img.style.width).toBe('4096px');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  // #6154: the close/save/zoom buttons sit over the top-right corner of the
+  // artwork, where they can cover the image itself. They are chrome, so the
+  // tap that already clears the caption and the arrows clears them too.
+  describe('top-right controls', () => {
+    const zoomControls = (container: HTMLElement) =>
+      container.querySelector('[data-testid="zoom-controls"]');
+
+    it('toggles the controls when the image is tapped', () => {
+      const { container } = render(
+        <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+      );
+      const img = container.querySelector('img')!;
+      expect(zoomControls(container)).toBeTruthy();
+
+      fireEvent.click(img);
+      expect(zoomControls(container)).toBeNull();
+
+      fireEvent.click(img);
+      expect(zoomControls(container)).toBeTruthy();
+    });
+
+    // The zoom badge and the arrows hide themselves 2s after a zoom, so their
+    // state no longer matches the chrome's. A single tap must still hide
+    // everything rather than bring the auto-hidden pieces back.
+    it('hides every chrome element with one tap after the zoom badge timed out', () => {
+      vi.useFakeTimers();
+      try {
+        const { container } = render(
+          <ImageViewer
+            src='blob:test-image'
+            caption='A caption'
+            onClose={vi.fn()}
+            onNext={vi.fn()}
+            gridInsets={gridInsets}
+          />,
+        );
+        const img = container.querySelector('img')!;
+
+        act(() => {
+          fireEvent.doubleClick(img);
+        });
+        act(() => {
+          vi.advanceTimersByTime(2000);
+        });
+        expect(container.querySelector('[aria-label="Zoom level"]')).toBeNull();
+
+        act(() => {
+          fireEvent.click(img);
+        });
+        expect(zoomControls(container)).toBeNull();
+        expect(container.querySelector('.image-caption')).toBeNull();
+        expect(container.querySelector('[aria-label="Next Image"]')).toBeNull();
+        expect(container.querySelector('[aria-label="Zoom level"]')).toBeNull();
       } finally {
         vi.useRealTimers();
       }
