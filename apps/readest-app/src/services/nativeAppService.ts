@@ -38,7 +38,7 @@ import {
   DistChannel,
 } from '@/types/system';
 import type { Book } from '@/types/book';
-import { clientHintsBrandFor, getWebViewFullVersion, needsQueryRangeReads } from '@/utils/ua';
+import { getWebViewFullVersion, needsQueryRangeReads, withWebViewFullVersion } from '@/utils/ua';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -635,23 +635,16 @@ export class NativeAppService extends BaseAppService {
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
     // Report the WebView engine/version so Sentry can tag crashes with it
-    // (the injected browser SDK's UA context isn't forwarded). On Chromium
-    // engines the UA's build number is frozen by UA Reduction (Edg/138.0.0.0);
-    // splice the real Client Hints build into the token the engine actually
-    // reports, so the webview.version tag carries the full x.y.z.w build.
+    // (the injected browser SDK's UA context isn't forwarded). The UA rewrite
+    // (withWebViewFullVersion in utils/ua.ts) splices the real Client Hints
+    // build into the engine's own token, so the webview.version tag carries
+    // the full x.y.z.w build — the same upgrade the About/error labels show.
     try {
       const fullVersion = await getWebViewFullVersion();
-      if (fullVersion) {
-        const ua = navigator.userAgent;
-        const brand = clientHintsBrandFor(ua);
-        const token = brand?.uaToken ?? 'Chrome';
-        const rewritten = new RegExp(`${token}/\\d+\\.\\d+\\.\\d+\\.\\d+`).test(ua)
-          ? ua.replace(new RegExp(`(${token}/)\\d+\\.\\d+\\.\\d+\\.\\d+`), `$1${fullVersion}`)
-          : ua;
-        await invoke('set_webview_info', { userAgent: rewritten });
-      } else {
-        await invoke('set_webview_info', { userAgent: navigator.userAgent });
-      }
+      const userAgent = fullVersion
+        ? withWebViewFullVersion(navigator.userAgent, fullVersion)
+        : navigator.userAgent;
+      await invoke('set_webview_info', { userAgent });
     } catch (err) {
       console.warn('[nativeAppService] set_webview_info failed:', err);
     }

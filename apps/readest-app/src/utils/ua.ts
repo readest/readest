@@ -133,6 +133,30 @@ export const getWebViewFullVersion = async (): Promise<string | null> => {
 };
 
 /**
+ * The single definition of "splice the real Client Hints build into a UA
+ * string": the rewrite lands on the token `clientHintsBrandFor` matched (an
+ * Edg/ UA carries both a reduced `Chrome/` and an `Edg/` token — it must go
+ * to the brand's own token, not the first match). The Sentry reporter
+ * (nativeAppService) routes through this so the webview.version tag shows
+ * exactly the same build the About/error labels resolve to.
+ */
+export const withWebViewFullVersion = (ua: string, fullVersion: string): string => {
+  const brand = clientHintsBrandFor(ua);
+  if (!brand) return ua;
+  const tokenPattern = new RegExp(`(${brand.uaToken}/)(\\d+(?:\\.\\d+)*)`);
+  return tokenPattern.test(ua) ? ua.replace(tokenPattern, `$1${fullVersion}`) : ua;
+};
+
+/**
+ * The version half of a `parseWebViewInfo` label (`Edge 138.0.0.0` ->
+ * `138.0.0.0`). The label carries the engine name plus one trailing version,
+ * so upgrading it means replacing that trailing token — a different shape
+ * than splicing a raw UA, which is `withWebViewFullVersion`'s job.
+ */
+const upgradeLabelVersion = (label: string, fullVersion: string): string =>
+  label.replace(/\s+[0-9]+(?:\.[0-9]+)*$/, ` ${fullVersion}`);
+
+/**
  * `parseWebViewInfo` with the UA-reduced version upgraded to the real build
  * via Client Hints when available. Async only because of that round-trip;
  * falls back to the sync label verbatim (WebKit engines, older WebViews).
@@ -140,8 +164,7 @@ export const getWebViewFullVersion = async (): Promise<string | null> => {
 export const parseWebViewInfoAsync = async (appService: AppService | null): Promise<string> => {
   const info = parseWebViewInfo(appService);
   const fullVersion = await getWebViewFullVersion();
-  if (!fullVersion) return info;
-  return info.replace(/\s+[0-9]+(?:\.[0-9]+)*$/, ` ${fullVersion}`);
+  return fullVersion ? upgradeLabelVersion(info, fullVersion) : info;
 };
 
 export const parseWebViewVersion = (appService: AppService | null): number => {

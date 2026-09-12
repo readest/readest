@@ -159,11 +159,11 @@ fn ua_token_version(user_agent: &str, token: &str) -> Option<String> {
         .chars()
         .take_while(|c| c.is_ascii_digit() || *c == '.')
         .collect();
-    if version.is_empty() {
-        None
-    } else {
-        Some(version)
-    }
+    // Trim stray trailing dots (`Chrome/140.`) and require at least one digit
+    // so a malformed token never reaches the webview.version tag.
+    let version = version.trim_end_matches('.');
+    (!version.is_empty() && version.contains(|c: char| c.is_ascii_digit()))
+        .then(|| version.to_string())
 }
 
 /// C-ABI accessor for the compile-time Sentry DSN, used by the iOS native

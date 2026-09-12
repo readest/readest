@@ -15,13 +15,11 @@ export const useWebViewInfo = (appService: AppService | null): string => {
   useEffect(() => {
     let mounted = true;
     setInfo(parseWebViewInfo(appService));
-    parseWebViewInfoAsync(appService)
-      .then((label) => {
-        if (mounted) setInfo(label);
-      })
-      .catch(() => {
-        if (mounted) setInfo(parseWebViewInfo(appService));
-      });
+    // parseWebViewInfoAsync never rejects (it resolves to the sync label when
+    // Client Hints are unavailable), so no catch path is needed here.
+    parseWebViewInfoAsync(appService).then((label) => {
+      if (mounted) setInfo(label);
+    });
     return () => {
       mounted = false;
     };

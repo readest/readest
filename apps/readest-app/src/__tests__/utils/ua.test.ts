@@ -4,6 +4,7 @@ import {
   parseWebViewInfo,
   parseWebViewInfoAsync,
   parseWebViewVersion,
+  withWebViewFullVersion,
 } from '@/utils/ua';
 
 type AppServiceParam = Parameters<typeof parseWebViewInfo>[0];
@@ -251,5 +252,18 @@ describe('parseWebViewVersion', () => {
       const appService = { isMacOSApp: true } as unknown as AppServiceParam;
       expect(await parseWebViewInfoAsync(appService)).toBe('WebView 605.1.15');
     });
+  });
+  it("withWebViewFullVersion rewrites the brand's own token (Edg, not the reduced Chrome)", () => {
+    const ua =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0';
+    expect(withWebViewFullVersion(ua, '138.0.3351.62')).toBe(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.3351.62',
+    );
+  });
+
+  it('withWebViewFullVersion leaves a UA without a matching token untouched', () => {
+    const ua =
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/2.44.0 Safari/605.1.15';
+    expect(withWebViewFullVersion(ua, '138.0.3351.62')).toBe(ua);
   });
 });
