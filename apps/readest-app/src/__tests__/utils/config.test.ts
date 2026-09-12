@@ -2,8 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getMaxInlineSize } from '@/utils/config';
 import type { ViewSettings } from '@/types/book';
 
-const viewSettings = (vertical: boolean) =>
-  ({ vertical, maxInlineSize: 720 } as ViewSettings);
+const viewSettings = (vertical: boolean) => ({ vertical, maxInlineSize: 720 }) as ViewSettings;
 
 describe('getMaxInlineSize', () => {
   afterEach(() => vi.unstubAllGlobals());

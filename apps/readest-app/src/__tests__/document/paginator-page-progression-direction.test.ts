@@ -12,12 +12,9 @@ describe('paginator page progression direction', () => {
     ['ltr', true, false],
     [undefined, true, true],
     [undefined, false, false],
-  ] as const)(
-    'uses book direction %s before document rtl %s',
-    (bookDir, documentRTL, expected) => {
-      expect(getPageProgressionRTL(bookDir, documentRTL)).toBe(expected);
-    },
-  );
+  ] as const)('uses book direction %s before document rtl %s', (bookDir, documentRTL, expected) => {
+    expect(getPageProgressionRTL(bookDir, documentRTL)).toBe(expected);
+  });
 
   it('keeps progression rtl across mixed horizontal and vertical spine items', () => {
     const bookDir = 'rtl';
