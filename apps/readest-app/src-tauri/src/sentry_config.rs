@@ -159,10 +159,11 @@ fn ua_token_version(user_agent: &str, token: &str) -> Option<String> {
         .chars()
         .take_while(|c| c.is_ascii_digit() || *c == '.')
         .collect();
-    // Trim stray trailing dots (`Chrome/140.`) and require at least one digit
-    // so a malformed token never reaches the webview.version tag.
-    let version = version.trim_end_matches('.');
-    (!version.is_empty() && version.contains(|c: char| c.is_ascii_digit()))
+    // A well-formed version starts with a digit: this rejects the empty
+    // string, a stray trailing dot (`Chrome/140.`), and a leading dot
+    // (`Chrome/.5`) — none of which may reach the webview.version tag.
+    version
+        .starts_with(|c: char| c.is_ascii_digit())
         .then(|| version.to_string())
 }
 

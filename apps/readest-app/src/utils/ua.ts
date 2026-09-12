@@ -20,6 +20,10 @@ export const isLinuxCefRuntime = (userAgent: string) =>
   /\bLinux\b/.test(userAgent) && !/\bAndroid\b/.test(userAgent) && /\bChrome\//.test(userAgent);
 
 export const parseWebViewInfo = (appService: AppService | null): string => {
+  // SSR/prerender (Next.js server render, static export) has no navigator;
+  // this hook also runs during render via useWebViewInfo's initializer, so
+  // the guard must live here and not only in effect-scoped callers.
+  if (typeof navigator === 'undefined') return 'Unknown';
   const ua = navigator.userAgent;
 
   if (appService?.isAndroidApp) {
@@ -99,7 +103,13 @@ export const parseWebViewInfo = (appService: AppService | null): string => {
 export const clientHintsBrandFor = (ua: string): { brand: RegExp; uaToken: string } | null => {
   if (!/Chrome\/|Chromium\/|Edg\//.test(ua)) return null; // WebKit engines: no Client Hints
   if (/Edg\//.test(ua)) return { brand: /Microsoft Edge/i, uaToken: 'Edg' };
-  return { brand: /(Chromium|Google Chrome|Android WebView)/i, uaToken: 'Chrome' };
+  // Return the token actually present: a bare `Chromium/<v>` UA (no Chrome/)
+  // would otherwise map to a Chrome token the splice can never find, leaving
+  // the Sentry tag on the reduced value while the label upgrades.
+  if (/Chrome\//.test(ua)) {
+    return { brand: /(Google Chrome|Chromium|Android WebView)/i, uaToken: 'Chrome' };
+  }
+  return { brand: /Chromium/i, uaToken: 'Chromium' };
 };
 
 /**
