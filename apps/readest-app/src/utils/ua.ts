@@ -20,6 +20,10 @@ export const isLinuxCefRuntime = (userAgent: string) =>
   /\bLinux\b/.test(userAgent) && !/\bAndroid\b/.test(userAgent) && /\bChrome\//.test(userAgent);
 
 export const parseWebViewInfo = (appService: AppService | null): string => {
+  // SSR/prerender (Next.js server render, static export) has no navigator;
+  // this hook also runs during render via useWebViewInfo's initializer, so
+  // the guard must live here and not only in effect-scoped callers.
+  if (typeof navigator === 'undefined') return 'Unknown';
   const ua = navigator.userAgent;
 
   if (appService?.isAndroidApp) {
@@ -35,9 +39,11 @@ export const parseWebViewInfo = (appService: AppService | null): string => {
     const webkitMatch = ua.match(/AppleWebKit\/([0-9.]+)/);
     return webkitMatch ? `WebView ${webkitMatch[1]}` : 'macOS WebView';
   } else if (appService?.appPlatform === 'tauri' && appService?.osPlatform === 'windows') {
-    // Windows WebView2
+    // Windows WebView2 runtime. The UA token says `Edg/` (WebView2 is an Edge
+    // distribution) but the component's own name is WebView2 — matching the
+    // `WebView <version>` naming used for the Android/iOS system WebViews.
     const match = ua.match(/Edg\/([0-9.]+)/);
-    return match ? `Edge ${match[1]}` : 'Edge WebView2';
+    return match ? `WebView2 ${match[1]}` : 'WebView2';
   } else if (appService?.appPlatform === 'tauri' && appService?.osPlatform === 'linux') {
     // Linux: the CEF build reports Chromium (its user agent is reduced to the
     // major version, e.g. Chrome/151.0.0.0); otherwise WebKitGTK.
@@ -84,6 +90,95 @@ export const parseWebViewInfo = (appService: AppService | null): string => {
   } else {
     return 'Unknown';
   }
+};
+
+/**
+ * Which `fullVersionList` brand a Chromium engine reports for itself, and the
+ * UA token carrying the (reduced) build for the same engine. WebKit engines
+ * have no Client Hints (their UA already carries the real version), so they
+ * are absent. Returning the token alongside the brand keeps the Sentry-rewrite
+ * in nativeAppService from patching a different token than the one the brand
+ * version came from (a WebView2 UA carries both `Chrome/` and `Edg/`).
+ */
+export const clientHintsBrandFor = (ua: string): { brand: RegExp; uaToken: string } | null => {
+  if (!/Chrome\/|Chromium\/|Edg\//.test(ua)) return null; // WebKit engines: no Client Hints
+  if (/Edg\//.test(ua)) return { brand: /Microsoft Edge/i, uaToken: 'Edg' };
+  // Return the token actually present: a bare `Chromium/<v>` UA (no Chrome/)
+  // would otherwise map to a Chrome token the splice can never find, leaving
+  // the Sentry tag on the reduced value while the label upgrades.
+  if (/Chrome\//.test(ua)) {
+    return { brand: /(Google Chrome|Chromium|Android WebView)/i, uaToken: 'Chrome' };
+  }
+  return { brand: /Chromium/i, uaToken: 'Chromium' };
+};
+
+/**
+ * The real full build number (e.g. `138.0.3351.62`) behind a UA-reduced
+ * version string. Chromium freezes the minor/build/patch tokens in the UA
+ * itself (`Edg/138.0.0.0`), so on WebView2/Android WebView/Chrome the parsed
+ * version is incomplete; the full build is only in the high-entropy
+ * `fullVersionList` Client Hint. Returns null when the engine has no Client
+ * Hints entry or the API is unavailable (WebKit, older WebViews).
+ */
+export const getWebViewFullVersion = async (): Promise<string | null> => {
+  // SSR/prerender parity with parseWebViewInfo: this is called outside
+  // try/catch below, and useWebViewInfo relies on parseWebViewInfoAsync
+  // (which composes both) never rejecting.
+  if (typeof navigator === 'undefined') return null;
+  const brand = clientHintsBrandFor(navigator.userAgent);
+  if (!brand) return null;
+  try {
+    const uaData = (
+      navigator as unknown as {
+        userAgentData?: {
+          getHighEntropyValues?: (hints: string[]) => Promise<{
+            fullVersionList?: { brand: string; version: string }[];
+          }>;
+        };
+      }
+    ).userAgentData;
+    const getHighEntropyValues = uaData?.getHighEntropyValues;
+    if (typeof getHighEntropyValues !== 'function') return null;
+    const { fullVersionList } = await getHighEntropyValues.call(uaData, ['fullVersionList']);
+    return fullVersionList?.find((entry) => brand.brand.test(entry.brand))?.version ?? null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * The single definition of "splice the real Client Hints build into a UA
+ * string": the rewrite lands on the token `clientHintsBrandFor` matched (an
+ * Edg/ UA carries both a reduced `Chrome/` and an `Edg/` token — it must go
+ * to the brand's own token, not the first match). The Sentry reporter
+ * (nativeAppService) routes through this so the webview.version tag shows
+ * exactly the same build the About/error labels resolve to.
+ */
+export const withWebViewFullVersion = (ua: string, fullVersion: string): string => {
+  const brand = clientHintsBrandFor(ua);
+  if (!brand) return ua;
+  const tokenPattern = new RegExp(`(${brand.uaToken}/)(\\d+(?:\\.\\d+)*)`);
+  return tokenPattern.test(ua) ? ua.replace(tokenPattern, `$1${fullVersion}`) : ua;
+};
+
+/**
+ * The version half of a `parseWebViewInfo` label (`Edge 138.0.0.0` ->
+ * `138.0.0.0`). The label carries the engine name plus one trailing version,
+ * so upgrading it means replacing that trailing token — a different shape
+ * than splicing a raw UA, which is `withWebViewFullVersion`'s job.
+ */
+const upgradeLabelVersion = (label: string, fullVersion: string): string =>
+  label.replace(/\s+[0-9]+(?:\.[0-9]+)*$/, ` ${fullVersion}`);
+
+/**
+ * `parseWebViewInfo` with the UA-reduced version upgraded to the real build
+ * via Client Hints when available. Async only because of that round-trip;
+ * falls back to the sync label verbatim (WebKit engines, older WebViews).
+ */
+export const parseWebViewInfoAsync = async (appService: AppService | null): Promise<string> => {
+  const info = parseWebViewInfo(appService);
+  const fullVersion = await getWebViewFullVersion();
+  return fullVersion ? upgradeLabelVersion(info, fullVersion) : info;
 };
 
 export const parseWebViewVersion = (appService: AppService | null): number => {

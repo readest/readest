@@ -129,28 +129,46 @@ pub fn webview_info() -> Option<&'static (String, String)> {
     WEBVIEW_INFO.get()
 }
 
-/// Parse the WebView engine and major version from a User-Agent string. Chromium
+/// Parse the WebView engine and version from a User-Agent string. Chromium
 /// WebViews (Android System WebView, Windows WebView2, Linux Chrome) carry a
-/// `Chrome/<v>` token; WebKit ones (iOS/macOS WKWebView, Linux WebKitGTK) carry
-/// `Version/<v>` and no `Chrome/`. Chrome is checked first because Android
-/// WebViews also include a legacy `Version/4.0`. `None` if neither is present.
+/// `Chrome/<v>` or `Edg/<v>` token; WebKit ones (iOS/macOS WKWebView, Linux
+/// WebKitGTK) carry `Version/<v>` and no `Chrome/`. Edge is checked first
+/// because a WebView2 UA carries both `Edg/` and a reduced `Chrome/` token,
+/// and Android WebViews include a legacy `Version/4.0` that must not win over
+/// `Chrome/`. The version is kept in full (not just the major); note that
+/// Chromium's UA Reduction freezes those tokens to `x.0.0.0` — the app
+/// rewrites its reported token with the real Client Hints build before
+/// invoking `set_webview_info`, so desktop WebView2 tags arrive complete.
+/// `None` if neither token family is present.
 pub fn parse_webview_info(user_agent: &str) -> Option<(String, String)> {
-    if let Some(v) = ua_major_version(user_agent, "Chrome/") {
+    if let Some(v) = ua_token_version(user_agent, "Edg/") {
+        return Some(("WebView2".to_string(), v));
+    }
+    if let Some(v) = ua_token_version(user_agent, "Chrome/") {
         return Some(("Chromium".to_string(), v));
     }
-    if let Some(v) = ua_major_version(user_agent, "Version/") {
+    if let Some(v) = ua_token_version(user_agent, "Version/") {
         return Some(("WebKit".to_string(), v));
     }
     None
 }
 
-fn ua_major_version(user_agent: &str, token: &str) -> Option<String> {
+fn ua_token_version(user_agent: &str, token: &str) -> Option<String> {
     let rest = &user_agent[user_agent.find(token)? + token.len()..];
-    let major: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-    if major.is_empty() {
-        None
+    let version: String = rest
+        .chars()
+        .take_while(|c| c.is_ascii_digit() || *c == '.')
+        .collect();
+    // A well-formed version starts with a digit and every dot-separated
+    // segment is non-empty: this rejects the empty string, a bare or leading
+    // dot (`Chrome/.5`), a trailing dot (`Chrome/140.`), and consecutive dots
+    // (`Chrome/140..6099`) — none of which may reach the webview.version tag.
+    if version.starts_with(|c: char| c.is_ascii_digit())
+        && version.split('.').all(|s| !s.is_empty())
+    {
+        Some(version)
     } else {
-        Some(major)
+        None
     }
 }
 
@@ -346,13 +364,27 @@ mod tests {
 
     #[test]
     fn parses_chromium_webview_version() {
-        // Android System WebView carries a legacy `Version/4.0` AND `Chrome/140`;
-        // Chrome must win.
+        // Android System WebView carries a legacy `Version/4.0` AND
+        // `Chrome/140.0.6099.230`; Chrome must win, and the full version is
+        // kept.
         let ua = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) \
-                  Version/4.0 Chrome/140.0.0.0 Mobile Safari/537.36";
+                  Version/4.0 Chrome/140.0.6099.230 Mobile Safari/537.36";
         assert_eq!(
             parse_webview_info(ua),
-            Some(("Chromium".to_string(), "140".to_string()))
+            Some(("Chromium".to_string(), "140.0.6099.230".to_string()))
+        );
+    }
+
+    #[test]
+    fn parses_edge_webview2_engine_and_full_version() {
+        // A WebView2 UA carries both a reduced `Chrome/` and an `Edg/` token;
+        // the Edge engine wins and its (Client-Hints-rewritten) build is kept.
+        let ua =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+                  Chrome/138.0.0.0 Safari/537.36 Edg/138.0.3351.62";
+        assert_eq!(
+            parse_webview_info(ua),
+            Some(("WebView2".to_string(), "138.0.3351.62".to_string()))
         );
     }
 
@@ -362,13 +394,13 @@ mod tests {
                    AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1";
         assert_eq!(
             parse_webview_info(ios),
-            Some(("WebKit".to_string(), "17".to_string()))
+            Some(("WebKit".to_string(), "17.4".to_string()))
         );
         let gtk = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) \
                    Version/2.44.0 Safari/605.1.15";
         assert_eq!(
             parse_webview_info(gtk),
-            Some(("WebKit".to_string(), "2".to_string()))
+            Some(("WebKit".to_string(), "2.44.0".to_string()))
         );
     }
 
@@ -376,5 +408,19 @@ mod tests {
     fn webview_info_is_none_for_unrecognized_ua() {
         assert_eq!(parse_webview_info("curl/8.0"), None);
         assert_eq!(parse_webview_info(""), None);
+    }
+
+    #[test]
+    fn webview_info_is_none_for_malformed_version_tokens() {
+        // Consecutive dots, leading/trailing dots, and dot-less garbage after
+        // the token must never reach the webview.version tag.
+        for ua in [
+            "Mozilla/5.0 Version/2.44..0 Safari/605.1.15",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140..6099 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140. Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/.5 Safari/537.36",
+        ] {
+            assert_eq!(parse_webview_info(ua), None, "ua: {ua}");
+        }
     }
 }

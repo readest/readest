@@ -1,11 +1,11 @@
 'use client';
 
 import posthog from 'posthog-js';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { parseWebViewInfo } from '@/utils/ua';
 import { handleGlobalError } from '@/utils/error';
+import { useWebViewInfo } from '@/hooks/useWebViewInfo';
 
 interface ErrorPageProps {
   error: Error & { digest?: string };
@@ -15,11 +15,7 @@ interface ErrorPageProps {
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const [browserInfo, setBrowserInfo] = useState('');
-
-  useEffect(() => {
-    setBrowserInfo(parseWebViewInfo(appService));
-  }, [appService]);
+  const browserInfo = useWebViewInfo(appService);
 
   useEffect(() => {
     posthog.captureException(error);

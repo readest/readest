@@ -38,7 +38,7 @@ import {
   DistChannel,
 } from '@/types/system';
 import type { Book } from '@/types/book';
-import { needsQueryRangeReads } from '@/utils/ua';
+import { getWebViewFullVersion, needsQueryRangeReads, withWebViewFullVersion } from '@/utils/ua';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -634,10 +634,17 @@ export class NativeAppService extends BaseAppService {
     void this.startCoverThumbnailListener().catch(() => {});
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
-    // Report the WebView User-Agent so Sentry can tag crashes with the
-    // engine/version (the injected browser SDK's UA context isn't forwarded).
+    // Report the WebView engine/version so Sentry can tag crashes with it
+    // (the injected browser SDK's UA context isn't forwarded). The UA rewrite
+    // (withWebViewFullVersion in utils/ua.ts) splices the real Client Hints
+    // build into the engine's own token, so the webview.version tag carries
+    // the full x.y.z.w build — the same upgrade the About/error labels show.
     try {
-      await invoke('set_webview_info', { userAgent: navigator.userAgent });
+      const fullVersion = await getWebViewFullVersion();
+      const userAgent = fullVersion
+        ? withWebViewFullVersion(navigator.userAgent, fullVersion)
+        : navigator.userAgent;
+      await invoke('set_webview_info', { userAgent });
     } catch (err) {
       console.warn('[nativeAppService] set_webview_info failed:', err);
     }

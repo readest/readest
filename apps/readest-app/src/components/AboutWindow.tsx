@@ -4,10 +4,10 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
-import { parseWebViewInfo } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { eventDispatcher } from '@/utils/event';
+import { useWebViewInfo } from '@/hooks/useWebViewInfo';
 import SupportLinks from './SupportLinks';
 import LegalLinks from './LegalLinks';
 import Dialog from './Dialog';
@@ -30,12 +30,10 @@ export const AboutWindow = () => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
-  const [browserInfo, setBrowserInfo] = useState('');
+  const browserInfo = useWebViewInfo(appService);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    setBrowserInfo(parseWebViewInfo(appService));
-
     const handleCustomEvent = (event: CustomEvent) => {
       setIsOpen(event.detail.visible);
     };
@@ -82,7 +80,10 @@ export const AboutWindow = () => {
     setUpdateStatus(null);
   };
 
-  const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
+  // The label doubles as the bug-report string, so it stays locale-neutral
+  // ("Readest 0.12.8 (WebView2 152.0.4191.66)") — a localized "Version …"
+  // prefix would paste translated text into issues and hide the app name.
+  const versionInfo = `Readest ${getAppVersion()} (${browserInfo})`;
 
   // Mobile users can't select the version string to paste it into a bug
   // report, so the label itself copies it.

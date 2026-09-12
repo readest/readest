@@ -34,6 +34,8 @@ vi.mock('@/helpers/updater', () => ({
 
 vi.mock('@/utils/ua', () => ({
   parseWebViewInfo: () => 'Chrome 148',
+  // Same label: the mocked UA path resolves without Client Hints.
+  parseWebViewInfoAsync: async () => 'Chrome 148',
 }));
 
 vi.mock('@/utils/version', () => ({
@@ -71,7 +73,7 @@ const openDialog = async () => {
     </>,
   );
   setAboutDialogVisible(true);
-  return screen.findByText(/Version 0\.11\.20/);
+  return screen.findByText(/Readest 0\.11\.20/);
 };
 
 describe('AboutWindow version label', () => {
@@ -90,7 +92,7 @@ describe('AboutWindow version label', () => {
     fireEvent.click(label);
 
     await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
-    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Version 0.11.20 (Chrome 148)');
+    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Readest 0.11.20 (Chrome 148)');
   });
 
   it('shows a toast confirming the copy', async () => {
