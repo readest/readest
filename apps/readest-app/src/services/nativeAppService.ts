@@ -38,7 +38,7 @@ import {
   DistChannel,
 } from '@/types/system';
 import type { Book } from '@/types/book';
-import { getWebViewFullVersion, needsQueryRangeReads } from '@/utils/ua';
+import { clientHintsBrandFor, getWebViewFullVersion, needsQueryRangeReads } from '@/utils/ua';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -634,24 +634,24 @@ export class NativeAppService extends BaseAppService {
     void this.startCoverThumbnailListener().catch(() => {});
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
-    // Report the WebView User-Agent so Sentry can tag crashes with the
-    // engine/version (the injected browser SDK's UA context isn't forwarded).
-    // On Chromium engines the UA's build number is frozen by UA Reduction
-    // (Edg/138.0.0.0); swap in the real build from Client Hints so the
-    // webview.version tag carries the full x.y.z.w build, not a stub.
+    // Report the WebView engine/version so Sentry can tag crashes with it
+    // (the injected browser SDK's UA context isn't forwarded). On Chromium
+    // engines the UA's build number is frozen by UA Reduction (Edg/138.0.0.0);
+    // splice the real Client Hints build into the token the engine actually
+    // reports, so the webview.version tag carries the full x.y.z.w build.
     try {
       const fullVersion = await getWebViewFullVersion();
-      // Rewrite the reduced build tokens (Edg/138.0.0.0) to the real build so
-      // the Rust-side parse (Chrome/ or Version/ token, major only) picks up
-      // the full version string. No token to rewrite => pass the UA through.
-      const userAgent =
-        fullVersion && /(Edg|Chrome|Chromium)\/\d+\.\d+\.\d+\.\d+/.test(navigator.userAgent)
-          ? navigator.userAgent.replace(
-              /((?:Edg|Chrome|Chromium)\/)(\d+\.\d+\.\d+\.\d+)/,
-              `$1${fullVersion}`,
-            )
-          : navigator.userAgent;
-      await invoke('set_webview_info', { userAgent });
+      if (fullVersion) {
+        const ua = navigator.userAgent;
+        const brand = clientHintsBrandFor(ua);
+        const token = brand?.uaToken ?? 'Chrome';
+        const rewritten = new RegExp(`${token}/\\d+\\.\\d+\\.\\d+\\.\\d+`).test(ua)
+          ? ua.replace(new RegExp(`(${token}/)\\d+\\.\\d+\\.\\d+\\.\\d+`), `$1${fullVersion}`)
+          : ua;
+        await invoke('set_webview_info', { userAgent: rewritten });
+      } else {
+        await invoke('set_webview_info', { userAgent: navigator.userAgent });
+      }
     } catch (err) {
       console.warn('[nativeAppService] set_webview_info failed:', err);
     }

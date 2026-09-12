@@ -87,24 +87,17 @@ export const parseWebViewInfo = (appService: AppService | null): string => {
 };
 
 /**
- * The brand a Chromium engine reports in User-Agent Client Hints'
- * `fullVersionList`, keyed by the same engine labels `parseWebViewInfo`
- * emits. WebKit engines have no Client Hints (their UA already carries the
- * real version), so they are absent here.
+ * Which `fullVersionList` brand a Chromium engine reports for itself, and the
+ * UA token carrying the (reduced) build for the same engine. WebKit engines
+ * have no Client Hints (their UA already carries the real version), so they
+ * are absent. Returning the token alongside the brand keeps the Sentry-rewrite
+ * in nativeAppService from patching a different token than the one the brand
+ * version came from (a WebView2 UA carries both `Chrome/` and `Edg/`).
  */
-/**
- * Whether this Chromium engine reports its real build in User-Agent Client
- * Hints, and which `fullVersionList` brand carries it. WebKit engines have no
- * Client Hints (their UA already carries the real version), so they are
- * absent. The UA token decides the runtime flavor, the `OS` part decides
- * desktop-vs-mobile only where the brands differ (desktop Edge vs WebView2
- * share the `Microsoft Edge` brand; Android WebView reports both a
- * `Android WebView` and a `Google Chrome` entry).
- */
-const clientHintsBrandFor = (ua: string): RegExp | null => {
-  if (!/Chrome\/|Edg\//.test(ua)) return null; // WebKit engines: no Client Hints
-  if (/Edg\//.test(ua)) return /Microsoft Edge/i;
-  return /(Chromium|Google Chrome|Android WebView)/i;
+export const clientHintsBrandFor = (ua: string): { brand: RegExp; uaToken: string } | null => {
+  if (!/Chrome\/|Chromium\/|Edg\//.test(ua)) return null; // WebKit engines: no Client Hints
+  if (/Edg\//.test(ua)) return { brand: /Microsoft Edge/i, uaToken: 'Edg' };
+  return { brand: /(Chromium|Google Chrome|Android WebView)/i, uaToken: 'Chrome' };
 };
 
 /**
@@ -116,8 +109,8 @@ const clientHintsBrandFor = (ua: string): RegExp | null => {
  * Hints entry or the API is unavailable (WebKit, older WebViews).
  */
 export const getWebViewFullVersion = async (): Promise<string | null> => {
-  const brandPattern = clientHintsBrandFor(navigator.userAgent);
-  if (!brandPattern) return null;
+  const brand = clientHintsBrandFor(navigator.userAgent);
+  if (!brand) return null;
   try {
     const uaData = (
       navigator as unknown as {
@@ -131,7 +124,7 @@ export const getWebViewFullVersion = async (): Promise<string | null> => {
     const getHighEntropyValues = uaData?.getHighEntropyValues;
     if (typeof getHighEntropyValues !== 'function') return null;
     const { fullVersionList } = await getHighEntropyValues.call(uaData, ['fullVersionList']);
-    return fullVersionList?.find((entry) => brandPattern.test(entry.brand))?.version ?? null;
+    return fullVersionList?.find((entry) => brand.brand.test(entry.brand))?.version ?? null;
   } catch {
     return null;
   }
