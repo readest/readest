@@ -142,7 +142,7 @@ pub fn webview_info() -> Option<&'static (String, String)> {
 /// `None` if neither token family is present.
 pub fn parse_webview_info(user_agent: &str) -> Option<(String, String)> {
     if let Some(v) = ua_token_version(user_agent, "Edg/") {
-        return Some(("Edge WebView2".to_string(), v));
+        return Some(("WebView2".to_string(), v));
     }
     if let Some(v) = ua_token_version(user_agent, "Chrome/") {
         return Some(("Chromium".to_string(), v));
@@ -377,7 +377,7 @@ mod tests {
                   Chrome/138.0.0.0 Safari/537.36 Edg/138.0.3351.62";
         assert_eq!(
             parse_webview_info(ua),
-            Some(("Edge WebView2".to_string(), "138.0.3351.62".to_string()))
+            Some(("WebView2".to_string(), "138.0.3351.62".to_string()))
         );
     }
 

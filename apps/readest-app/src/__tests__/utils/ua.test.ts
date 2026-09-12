@@ -68,7 +68,7 @@ describe('parseWebViewInfo', () => {
       osPlatform: 'windows',
     } as unknown as AppServiceParam;
     const result = parseWebViewInfo(appService);
-    expect(result).toBe('Edge 120.0.2210.91');
+    expect(result).toBe('WebView2 120.0.2210.91');
   });
 
   it('should detect the Linux CEF (Chromium) webview', () => {
@@ -240,7 +240,7 @@ describe('parseWebViewVersion', () => {
         appPlatform: 'tauri',
         osPlatform: 'windows',
       } as unknown as AppServiceParam;
-      expect(await parseWebViewInfoAsync(appService)).toBe('Edge 138.0.3351.62');
+      expect(await parseWebViewInfoAsync(appService)).toBe('WebView2 138.0.3351.62');
     });
 
     it('parseWebViewInfoAsync keeps the UA label when Client Hints are unavailable', async () => {

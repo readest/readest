@@ -35,9 +35,11 @@ export const parseWebViewInfo = (appService: AppService | null): string => {
     const webkitMatch = ua.match(/AppleWebKit\/([0-9.]+)/);
     return webkitMatch ? `WebView ${webkitMatch[1]}` : 'macOS WebView';
   } else if (appService?.appPlatform === 'tauri' && appService?.osPlatform === 'windows') {
-    // Windows WebView2
+    // Windows WebView2 runtime. The UA token says `Edg/` (WebView2 is an Edge
+    // distribution) but the component's own name is WebView2 — matching the
+    // `WebView <version>` naming used for the Android/iOS system WebViews.
     const match = ua.match(/Edg\/([0-9.]+)/);
-    return match ? `Edge ${match[1]}` : 'Edge WebView2';
+    return match ? `WebView2 ${match[1]}` : 'WebView2';
   } else if (appService?.appPlatform === 'tauri' && appService?.osPlatform === 'linux') {
     // Linux: the CEF build reports Chromium (its user agent is reduced to the
     // major version, e.g. Chrome/151.0.0.0); otherwise WebKitGTK.
