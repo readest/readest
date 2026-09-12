@@ -80,7 +80,10 @@ export const AboutWindow = () => {
     setUpdateStatus(null);
   };
 
-  const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
+  // The label doubles as the bug-report string, so it stays locale-neutral
+  // ("Readest 0.12.8 (WebView2 152.0.4191.66)") — a localized "Version …"
+  // prefix would paste translated text into issues and hide the app name.
+  const versionInfo = `Readest ${getAppVersion()} (${browserInfo})`;
 
   // Mobile users can't select the version string to paste it into a bug
   // report, so the label itself copies it.
