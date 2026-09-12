@@ -551,6 +551,7 @@ pub fn run() {
         .plugin(tauri_plugin_turso::init())
         .plugin(tauri_plugin_native_bridge::init())
         .plugin(tauri_plugin_native_tts::init())
+        .plugin(tauri_plugin_piper_tts::init())
         .plugin(tauri_plugin_webview_upgrade::init())
         // Serves local file byte-ranges to `RemoteFile` via `?path=&start=&end=`
         // (range-in-URL, not a `Range` header) so Android's WebView doesn't

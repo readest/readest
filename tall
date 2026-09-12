@@ -1,0 +1,24 @@
+[1mdiff --git a/apps/readest-app/src-tauri/Cargo.toml b/apps/readest-app/src-tauri/Cargo.toml[m
+[1mindex 5c6db8bf8..16832c55a 100644[m
+[1m--- a/apps/readest-app/src-tauri/Cargo.toml[m
+[1m+++ b/apps/readest-app/src-tauri/Cargo.toml[m
+[36m@@ -88,6 +88,7 @@[m [mtauri-plugin-biometric = "2"[m
+ tauri-plugin-persisted-scope = "2"[m
+ tauri-plugin-native-bridge = { path = "./plugins/tauri-plugin-native-bridge" }[m
+ tauri-plugin-native-tts = { path = "./plugins/tauri-plugin-native-tts" }[m
+[32m+[m[32mtauri-plugin-piper-tts = { path = "./plugins/tauri-plugin-piper-tts" }[m
+ tauri-plugin-webview-upgrade = { path = "./plugins/tauri-plugin-webview-upgrade" }[m
+ tauri-plugin-websocket = "2"[m
+ tauri-plugin-sharekit = "0.3"[m
+[1mdiff --git a/apps/readest-app/src-tauri/src/lib.rs b/apps/readest-app/src-tauri/src/lib.rs[m
+[1mindex 8353b0ccf..d4fcd118b 100644[m
+[1m--- a/apps/readest-app/src-tauri/src/lib.rs[m
+[1m+++ b/apps/readest-app/src-tauri/src/lib.rs[m
+[36m@@ -551,6 +551,7 @@[m [mpub fn run() {[m
+         .plugin(tauri_plugin_turso::init())[m
+         .plugin(tauri_plugin_native_bridge::init())[m
+         .plugin(tauri_plugin_native_tts::init())[m
+[32m+[m[32m        .plugin(tauri_plugin_piper_tts::init())[m
+         .plugin(tauri_plugin_webview_upgrade::init())[m
+         // Serves local file byte-ranges to `RemoteFile` via `?path=&start=&end=`[m
+         // (range-in-URL, not a `Range` header) so Android's WebView doesn't[m

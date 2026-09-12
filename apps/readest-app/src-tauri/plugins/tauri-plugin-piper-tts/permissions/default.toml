@@ -1,0 +1,12 @@
+[default]
+description = "Default permissions for the plugin"
+permissions = [
+  "allow-list-voices",
+  "allow-download-voice",
+  "allow-cancel-download",
+  "allow-delete-voice",
+  "allow-load-voice",
+  "allow-unload-voice",
+  "allow-synthesize",
+  "allow-stop",
+]

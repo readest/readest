@@ -15,10 +15,11 @@ import {
 import { getTTSCacheConfig, setTTSCacheConfig } from '@/services/tts/providers/bookCacheStore';
 import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './theme/TTSHighlightStyleEditor';
+import PiperVoicesSection from './PiperVoicesSection';
 
 const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { appService, envConfig } = useEnv();
   const { getViewSettings } = useReaderStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
@@ -157,6 +158,8 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
         onCustomColorsChange={handleCustomTtsColorsChange}
         data-setting-id='settings.tts.ttsHighlightStyle'
       />
+
+      {appService?.isAndroidApp && <PiperVoicesSection />}
 
       {isJapaneseUI && (
         <BoxedList title={_('Speech')} data-setting-id='settings.tts.speech'>

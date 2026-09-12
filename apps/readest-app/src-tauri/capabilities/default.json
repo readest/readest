@@ -210,6 +210,7 @@
     "device-info:default",
     "turso:default",
     "native-tts:default",
+    "piper-tts:default",
     "native-bridge:default",
     "sentry:default",
     "allow-start-server",

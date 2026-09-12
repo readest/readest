@@ -17,6 +17,7 @@ import { createTTSNodeFilter } from './nodeFilter';
 import { expandRangeOverRuby } from '@/utils/ruby';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
+import { PiperTTSClient } from './PiperTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
 import { hydrateProvisionalDurations } from './ttsDuration';
@@ -195,10 +196,12 @@ export class TTSController extends EventTarget {
   ttsWebClient: TTSClient;
   ttsEdgeClient: EdgeTTSClient;
   ttsNativeClient: TTSClient | null = null;
+  ttsPiperClient: PiperTTSClient | null = null;
   ttsMediaOverlayClient: MediaOverlayClient;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
+  ttsPiperVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
 
   options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
@@ -217,6 +220,12 @@ export class TTSController extends EventTarget {
     // TODO: implement native TTS client for desktop platforms.
     if (appService?.isAndroidApp || appService?.isIOSApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
+    }
+    // Embedded offline Piper voices, Android only (see tauri-plugin-piper-tts).
+    // Degrades to unavailable on its own via init() everywhere else, but
+    // there is no point even constructing it off-Android.
+    if (appService?.isAndroidApp) {
+      this.ttsPiperClient = new PiperTTSClient(this, appService);
     }
     this.ttsMediaOverlayClient = new MediaOverlayClient(this);
     this.ttsClient = this.ttsWebClient;
@@ -403,6 +412,10 @@ export class TTSController extends EventTarget {
     if (this.ttsNativeClient && (await this.ttsNativeClient.init())) {
       availableClients.push(this.ttsNativeClient);
       this.ttsNativeVoices = await this.ttsNativeClient.getAllVoices();
+    }
+    if (this.ttsPiperClient && (await this.ttsPiperClient.init())) {
+      availableClients.push(this.ttsPiperClient);
+      this.ttsPiperVoices = await this.ttsPiperClient.getAllVoices();
     }
     if (await this.ttsWebClient.init()) {
       availableClients.push(this.ttsWebClient);
@@ -1763,6 +1776,7 @@ export class TTSController extends EventTarget {
     if (this.ttsEdgeClient.initialized) this.ttsEdgeClient.setPrimaryLang(lang);
     if (this.ttsWebClient.initialized) this.ttsWebClient.setPrimaryLang(lang);
     if (this.ttsNativeClient?.initialized) this.ttsNativeClient?.setPrimaryLang(lang);
+    if (this.ttsPiperClient?.initialized) this.ttsPiperClient?.setPrimaryLang(lang);
     if (this.ttsMediaOverlayClient.initialized) this.ttsMediaOverlayClient.setPrimaryLang(lang);
   }
 
@@ -1779,6 +1793,7 @@ export class TTSController extends EventTarget {
     const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
     const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
     const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
+    const ttsPiperVoices = (await this.ttsPiperClient?.getVoices(lang)) ?? [];
     // The book's own narrator leads the list when there is one: it is the best
     // voice available for that book by a wide margin.
     const narrationVoices = this.narrationAvailable
@@ -1788,6 +1803,7 @@ export class TTSController extends EventTarget {
     const voicesGroups = [
       ...narrationVoices,
       ...ttsNativeVoices,
+      ...ttsPiperVoices,
       ...ttsEdgeVoices,
       ...ttsWebVoices,
     ];
@@ -1823,6 +1839,9 @@ export class TTSController extends EventTarget {
     const useNativeTTS = !!this.ttsNativeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
+    const usePiperTTS = !!this.ttsPiperVoices.find(
+      (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
+    );
     if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
       await this.ttsClient.setRate(this.ttsRate);
@@ -1831,6 +1850,12 @@ export class TTSController extends EventTarget {
         throw new Error('Native TTS client is not available');
       }
       this.ttsClient = this.ttsNativeClient;
+      await this.ttsClient.setRate(this.ttsRate);
+    } else if (usePiperTTS) {
+      if (!this.ttsPiperClient) {
+        throw new Error('Piper TTS client is not available');
+      }
+      this.ttsClient = this.ttsPiperClient;
       await this.ttsClient.setRate(this.ttsRate);
     } else {
       this.ttsClient = this.ttsWebClient;
@@ -2168,6 +2193,9 @@ export class TTSController extends EventTarget {
     }
     if (this.ttsNativeClient?.initialized) {
       await this.ttsNativeClient.shutdown();
+    }
+    if (this.ttsPiperClient?.initialized) {
+      await this.ttsPiperClient.shutdown();
     }
     if (this.ttsMediaOverlayClient.initialized) {
       await this.ttsMediaOverlayClient.shutdown();
