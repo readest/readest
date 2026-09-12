@@ -376,10 +376,15 @@ const FoliateViewer: React.FC<{
         viewSettings.writingMode.includes('rl') ||
         false;
       const newRtl = bookDoc.dir === 'rtl' ? true : bookDoc.dir === 'ltr' ? false : documentRtl;
+      const verticalChanged = viewSettings.vertical !== newVertical;
       if (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl) {
         viewSettings.vertical = newVertical;
         viewSettings.rtl = newRtl;
         setViewSettings(bookKey, { ...viewSettings });
+        if (verticalChanged && renderer?.setStyles) {
+          renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
+          applyMarginAndGap();
+        }
       }
 
       if (!bookData?.isFixedLayout) {
