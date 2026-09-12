@@ -121,6 +121,10 @@ export const clientHintsBrandFor = (ua: string): { brand: RegExp; uaToken: strin
  * Hints entry or the API is unavailable (WebKit, older WebViews).
  */
 export const getWebViewFullVersion = async (): Promise<string | null> => {
+  // SSR/prerender parity with parseWebViewInfo: this is called outside
+  // try/catch below, and useWebViewInfo relies on parseWebViewInfoAsync
+  // (which composes both) never rejecting.
+  if (typeof navigator === 'undefined') return null;
   const brand = clientHintsBrandFor(navigator.userAgent);
   if (!brand) return null;
   try {

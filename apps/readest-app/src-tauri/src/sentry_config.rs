@@ -159,12 +159,14 @@ fn ua_token_version(user_agent: &str, token: &str) -> Option<String> {
         .chars()
         .take_while(|c| c.is_ascii_digit() || *c == '.')
         .collect();
-    // A well-formed version starts with a digit: this rejects the empty
-    // string, a stray trailing dot (`Chrome/140.`), and a leading dot
-    // (`Chrome/.5`) — none of which may reach the webview.version tag.
-    version
-        .starts_with(|c: char| c.is_ascii_digit())
-        .then(|| version.to_string())
+    // A well-formed version starts with a digit and never ends with a dot:
+    // this rejects the empty string, `Chrome/.5`, and `Chrome/140.` — none of
+    // which may reach the webview.version tag.
+    if version.starts_with(|c: char| c.is_ascii_digit()) && !version.ends_with('.') {
+        Some(version)
+    } else {
+        None
+    }
 }
 
 /// C-ABI accessor for the compile-time Sentry DSN, used by the iOS native
