@@ -366,15 +366,16 @@ const FoliateViewer: React.FC<{
 
       const newVertical =
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
-      const newRtl =
+      // Fixed-layout books carry no writing mode; their direction may come
+      // from the document itself (PDF ViewerPreferences /Direction /R2L).
+      // For reflowable books without an explicit progression direction, keep
+      // the existing document/UI/writing-mode fallback.
+      const documentRtl =
         writingDir?.rtl ||
-        // Fixed-layout books carry no writing mode; their direction may come
-        // from the document itself (PDF ViewerPreferences /Direction /R2L),
-        // and page-turn taps and swipes must follow it.
-        bookDoc.dir === 'rtl' ||
         getDirFromUILanguage() === 'rtl' ||
         viewSettings.writingMode.includes('rl') ||
         false;
+      const newRtl = bookDoc.dir === 'rtl' ? true : bookDoc.dir === 'ltr' ? false : documentRtl;
       if (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl) {
         viewSettings.vertical = newVertical;
         viewSettings.rtl = newRtl;
