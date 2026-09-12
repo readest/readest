@@ -159,10 +159,12 @@ fn ua_token_version(user_agent: &str, token: &str) -> Option<String> {
         .chars()
         .take_while(|c| c.is_ascii_digit() || *c == '.')
         .collect();
-    // A well-formed version starts with a digit and never ends with a dot:
-    // this rejects the empty string, `Chrome/.5`, and `Chrome/140.` — none of
-    // which may reach the webview.version tag.
-    if version.starts_with(|c: char| c.is_ascii_digit()) && !version.ends_with('.') {
+    // A well-formed version starts with a digit and every dot-separated
+    // segment is non-empty: this rejects the empty string, a bare or leading
+    // dot (`Chrome/.5`), a trailing dot (`Chrome/140.`), and consecutive dots
+    // (`Chrome/140..6099`) — none of which may reach the webview.version tag.
+    if version.starts_with(|c: char| c.is_ascii_digit()) && version.split('.').all(|s| !s.is_empty())
+    {
         Some(version)
     } else {
         None
@@ -404,5 +406,19 @@ mod tests {
     fn webview_info_is_none_for_unrecognized_ua() {
         assert_eq!(parse_webview_info("curl/8.0"), None);
         assert_eq!(parse_webview_info(""), None);
+    }
+
+    #[test]
+    fn webview_info_is_none_for_malformed_version_tokens() {
+        // Consecutive dots, leading/trailing dots, and dot-less garbage after
+        // the token must never reach the webview.version tag.
+        for ua in [
+            "Mozilla/5.0 Version/2.44..0 Safari/605.1.15",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140..6099 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140. Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/.5 Safari/537.36",
+        ] {
+            assert_eq!(parse_webview_info(ua), None, "ua: {ua}");
+        }
     }
 }
