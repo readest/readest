@@ -163,7 +163,8 @@ fn ua_token_version(user_agent: &str, token: &str) -> Option<String> {
     // segment is non-empty: this rejects the empty string, a bare or leading
     // dot (`Chrome/.5`), a trailing dot (`Chrome/140.`), and consecutive dots
     // (`Chrome/140..6099`) — none of which may reach the webview.version tag.
-    if version.starts_with(|c: char| c.is_ascii_digit()) && version.split('.').all(|s| !s.is_empty())
+    if version.starts_with(|c: char| c.is_ascii_digit())
+        && version.split('.').all(|s| !s.is_empty())
     {
         Some(version)
     } else {
@@ -378,7 +379,8 @@ mod tests {
     fn parses_edge_webview2_engine_and_full_version() {
         // A WebView2 UA carries both a reduced `Chrome/` and an `Edg/` token;
         // the Edge engine wins and its (Client-Hints-rewritten) build is kept.
-        let ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+        let ua =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
                   Chrome/138.0.0.0 Safari/537.36 Edg/138.0.3351.62";
         assert_eq!(
             parse_webview_info(ua),
