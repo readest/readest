@@ -52,6 +52,11 @@ describe('OCR text layer', () => {
     text?.dispatchEvent(dragEndClick);
     expect(dragEndClick.defaultPrevented).toBe(false);
     expect(document.getSelection()?.toString()).toBe('縦書');
+    // An instant lookup can consume the native selection on pointerup, before click.
+    text?.dispatchEvent(new Event('pointerup', { bubbles: true }));
+    document.getSelection()?.removeAllRanges();
+    text?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(document.getSelection()?.toString()).toBe('');
     expect(document.querySelector('[data-readest-ocr-style]')?.textContent).toContain(
       'background-color: #fff',
     );

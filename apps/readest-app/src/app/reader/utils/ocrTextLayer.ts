@@ -157,7 +157,17 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
     const element = createTextBlock(doc, page, block);
     if (element) layer.append(element);
   }
+  let selectedOnRelease = false;
+  layer.addEventListener('pointerup', () => {
+    const selection = doc.getSelection();
+    selectedOnRelease = !!selection && !selection.isCollapsed;
+  });
   layer.addEventListener('click', (event) => {
+    // An instant lookup may clear a dragged selection before this trailing click.
+    if (selectedOnRelease) {
+      selectedOnRelease = false;
+      return;
+    }
     const block = (event.target as Element | null)?.closest?.(OCR_TEXT_BLOCK_SELECTOR);
     if (!block || !layer.contains(block)) return;
     const selection = doc.getSelection();
