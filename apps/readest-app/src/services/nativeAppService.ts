@@ -38,7 +38,7 @@ import {
   DistChannel,
 } from '@/types/system';
 import type { Book } from '@/types/book';
-import { needsQueryRangeReads } from '@/utils/ua';
+import { isLinuxCefRuntime, needsQueryRangeReads } from '@/utils/ua';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -605,7 +605,9 @@ export class NativeAppService extends BaseAppService {
   override canReadExternalDir = DIST_CHANNEL !== 'appstore';
   override supportsCoverThumbnailOptimization = true;
   override supportsCanvasContext2DFilter =
-    OS_TYPE !== 'ios' && OS_TYPE !== 'macos' && OS_TYPE !== 'linux';
+    OS_TYPE !== 'ios' &&
+    OS_TYPE !== 'macos' &&
+    (OS_TYPE !== 'linux' || isLinuxCefRuntime(navigator.userAgent));
   // WebKitGTK on Linux crashes when a View Transition snapshots the window,
   // so both capabilities are unavailable there regardless of what the engine
   // reports; every other webview is gated on the real feature probe.

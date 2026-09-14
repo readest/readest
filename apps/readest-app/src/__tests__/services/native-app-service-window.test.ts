@@ -107,12 +107,37 @@ vi.mock('@/services/settingsService', () => ({
   saveSettings: vi.fn().mockResolvedValue(undefined),
 }));
 
-async function loadServiceWithOS(os: 'macos' | 'windows' | 'linux' | 'ios' | 'android') {
+async function loadServiceWithOS(
+  os: 'macos' | 'windows' | 'linux' | 'ios' | 'android',
+  userAgent = '',
+) {
   osTypeMock.mockReturnValue(os);
+  vi.stubGlobal('navigator', { userAgent });
+
   vi.resetModules();
   const mod = await import('@/services/nativeAppService');
   return new mod.NativeAppService();
 }
+
+describe('NativeAppService canvas filter capability', () => {
+  const CEF_UA =
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
+
+  const WEBKITGTK_UA =
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+
+  test('supports canvas filters on Linux CEF', async () => {
+    const service = await loadServiceWithOS('linux', CEF_UA);
+
+    expect(service.supportsCanvasContext2DFilter).toBe(true);
+  });
+
+  test('does not support canvas filters on Linux WebKitGTK', async () => {
+    const service = await loadServiceWithOS('linux', WEBKITGTK_UA);
+
+    expect(service.supportsCanvasContext2DFilter).toBe(false);
+  });
+});
 
 describe('NativeAppService cover optimization', () => {
   test('keeps original covers and only queues a visible cover on demand', async () => {
