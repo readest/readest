@@ -58,17 +58,13 @@ const getFontSize = (
 ): number => {
   const lineCount = Math.max(1, lines.length);
   const crossAxisFit = (vertical ? width : height) / lineCount / 1.1;
-  if (detectedFontSize !== undefined && Number.isFinite(detectedFontSize)) {
-    return Math.min(detectedFontSize, crossAxisFit);
-  }
   const longestLine = Math.max(1, ...lines.map((line) => Array.from(line).length));
-  return (
-    0.9 *
-    Math.min(
-      vertical ? width / lineCount : height / lineCount,
-      (vertical ? height : width) / longestLine,
-    )
-  );
+  const inlineFit = (vertical ? height : width) / longestLine;
+  if (detectedFontSize !== undefined && Number.isFinite(detectedFontSize)) {
+    // Allow for font metrics, as in the size estimate below.
+    return Math.min(detectedFontSize, crossAxisFit, 0.9 * inlineFit);
+  }
+  return 0.9 * Math.min(vertical ? width / lineCount : height / lineCount, inlineFit);
 };
 
 const createTextBlock = (
