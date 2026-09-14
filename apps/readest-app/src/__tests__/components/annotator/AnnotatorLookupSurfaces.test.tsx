@@ -13,7 +13,7 @@
  * surface on the frame it opened.
  */
 
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import type { TextSelection } from '@/utils/sel';
@@ -31,6 +31,7 @@ const h = vi.hoisted(() => ({
     vertical: false,
   },
   saveConfig: vi.fn(),
+  deselect: vi.fn(),
   updateBooknotes: vi.fn(),
   isTextSelected: { current: true },
   // Swapped per test: the fixed-layout branch of `onLoad` used to wire PDF-only
@@ -107,7 +108,10 @@ vi.mock('@/store/bookDataStore', () => {
 
 vi.mock('@/store/readerStore', () => {
   const state = {
-    getView: () => ({ deselect: vi.fn(), getCFI: () => 'epubcfi(/6/2!/4/2)' }),
+    getView: () => ({
+      deselect: h.deselect,
+      getCFI: () => 'epubcfi(/6/2!/4/2)',
+    }),
     getViewsById: () => [],
     getViewSettings: () => h.viewSettings,
   };
@@ -244,7 +248,7 @@ vi.mock('@/app/reader/components/annotator/ProofreadPopup', () => ({
 
 import Annotator from '@/app/reader/components/annotator/Annotator';
 
-const selectText = async () => {
+const selectText = async (ocr = false) => {
   // The selection effect needs the book's grid cell to measure against.
   if (!document.querySelector('#gridcell-book-1')) {
     const gridCell = document.createElement('div');
@@ -253,6 +257,7 @@ const selectText = async () => {
   }
   const paragraph = document.createElement('p');
   paragraph.textContent = 'selected text';
+  if (ocr) paragraph.setAttribute('data-readest-ocr-layer', '');
   document.body.append(paragraph);
   const range = document.createRange();
   range.selectNodeContents(paragraph);
@@ -305,6 +310,22 @@ describe('a lookup surface survives the selection it is anchored to being republ
     expect(screen.queryByTestId(testId)).toBeTruthy();
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   });
+});
+
+test('dismisses OCR selection from the reader margin, but keeps popup interactions working', async () => {
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  await selectText(true);
+  await act(async () => {
+    h.setSelection?.((prev) => (prev ? { ...prev, popup: false } : prev));
+  });
+  h.deselect.mockClear();
+  fireEvent.pointerDown(screen.getByTestId('annotation-toolbar'));
+  expect(h.deselect).not.toHaveBeenCalled();
+  expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+
+  fireEvent.pointerDown(document.querySelector('#gridcell-book-1')!);
+  expect(h.deselect).toHaveBeenCalledOnce();
+  expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
 });
 
 /**

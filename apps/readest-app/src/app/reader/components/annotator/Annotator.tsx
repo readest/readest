@@ -407,6 +407,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     isTextSelected.current = false;
   };
 
+  useEffect(() => {
+    if (!selectionIsOcr) return;
+    // Reader margins live outside the page iframe and its selection listeners.
+    const handleOutsidePointerDown = (event: PointerEvent) => {
+      if (containerRef.current?.contains(event.target as Node)) return;
+      handleDismissPopup();
+      view?.deselect();
+      isTextSelected.current = false;
+    };
+    document.addEventListener('pointerdown', handleOutsidePointerDown, true);
+    return () => document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
+  }, [selectionIsOcr, handleDismissPopup, view, isTextSelected]);
+
   // Whether the currently shown selection came from the footnote popup, for
   // event handlers that only know the incoming event, not the selection state.
   const selectionIsPopupRef = useRef(false);
