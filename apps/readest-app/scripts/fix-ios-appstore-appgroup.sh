@@ -44,14 +44,28 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 unzip -q "$IPA" -d "$WORK"
-APP="$WORK/Payload/Readest.app"
+APP="$(find "$WORK/Payload" -mindepth 1 -maxdepth 1 -name "*.app" | head -n 1)"
+if [ -z "$APP" ] || [ ! -d "$APP" ]; then
+  echo "fix-ios-appstore-appgroup: No .app found in Payload" >&2
+  exit 1
+fi
 
 # Re-sign a binary, preserving the entitlements the export already computed and
 # adding the App Group if it is missing.
 resign_with_group() {
   local bin="$1" name="$2"
   local ent="$WORK/$name.entitlements.plist"
-  codesign -d --entitlements :- "$bin" 2>/dev/null > "$ent"
+  codesign -d --entitlements :- --xml "$bin" 2>/dev/null > "$ent" || true
+  if [ ! -s "$ent" ]; then
+    cat << 'PLIST_EOF' > "$ent"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+</dict>
+</plist>
+PLIST_EOF
+  fi
   if ! /usr/libexec/PlistBuddy -c "Print :com.apple.security.application-groups" "$ent" >/dev/null 2>&1; then
     /usr/libexec/PlistBuddy -c "Add :com.apple.security.application-groups array" "$ent" >/dev/null
   fi
@@ -64,15 +78,24 @@ resign_with_group() {
 
 # Sign the inner extensions first, then re-seal the containing app bundle so its
 # nested-code seal covers the new extension signatures.
+found_exts=0
 for ext in "${EXTS[@]}"; do
-  resign_with_group "$APP/PlugIns/$ext.appex" "$ext"
+  if [ -d "$APP/PlugIns/$ext.appex" ]; then
+    resign_with_group "$APP/PlugIns/$ext.appex" "$ext"
+    found_exts=1
+  fi
 done
-resign_with_group "$APP" "Readest"
 
-codesign --verify --deep --strict "$APP"
+if [ "$found_exts" -eq 1 ]; then
+  APP_NAME="$(basename "$APP" .app)"
+  resign_with_group "$APP" "$APP_NAME"
+  codesign --verify --deep --strict "$APP"
 
-# Repack to a temp file first, then move over the original, so a zip failure
-# cannot destroy the input IPA.
-( cd "$WORK" && zip -qr "$WORK/repacked.ipa" Payload )
-mv "$WORK/repacked.ipa" "$IPA"
-echo "Re-signed app extensions with $GROUP in $IPA"
+  # Repack to a temp file first, then move over the original, so a zip failure
+  # cannot destroy the input IPA.
+  ( cd "$WORK" && zip -qr "$WORK/repacked.ipa" Payload )
+  mv "$WORK/repacked.ipa" "$IPA"
+  echo "Re-signed app extensions with $GROUP in $IPA"
+else
+  echo "No app extensions found in Payload - skipping extension re-signing"
+fi

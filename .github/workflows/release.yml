@@ -440,6 +440,7 @@ jobs:
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env.local
           echo "SENTRY_ORG=readest" >> .env.local
           echo "SENTRY_PROJECT=readest" >> .env.local
+          echo "NEXT_PUBLIC_BIBLO_API_URL=${{ secrets.NEXT_PUBLIC_BIBLO_API_URL }}" >> .env.local
           cp .env.local apps/readest-app/.env.local
 
       - name: build and upload Android apks
@@ -459,6 +460,7 @@ jobs:
           pushd src-tauri/gen/android
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
           echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
           base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
           echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
 

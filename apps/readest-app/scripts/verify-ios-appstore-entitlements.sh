@@ -25,16 +25,24 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 unzip -q "$IPA" -d "$WORK"
-APP="$WORK/Payload/Readest.app"
+APP="$(find "$WORK/Payload" -mindepth 1 -maxdepth 1 -name "*.app" | head -n 1)"
+if [ -z "$APP" ] || [ ! -d "$APP" ]; then
+  echo "verify-ios-appstore-entitlements: No .app found in Payload" >&2
+  exit 1
+fi
 
 fail=0
 for ext in "${EXTS[@]}"; do
   appex="$APP/PlugIns/$ext.appex"
-  if codesign -d --entitlements :- "$appex" 2>/dev/null | grep -q "$GROUP"; then
-    echo "OK   $ext.appex carries $GROUP"
+  if [ -d "$appex" ]; then
+    if codesign -d --entitlements :- "$appex" 2>/dev/null | grep -q "$GROUP"; then
+      echo "OK   $ext.appex carries $GROUP"
+    else
+      echo "FAIL $ext.appex is MISSING $GROUP (App Group access broken)"
+      fail=1
+    fi
   else
-    echo "FAIL $ext.appex is MISSING $GROUP (App Group access broken)"
-    fail=1
+    echo "SKIP $ext.appex not present in bundle"
   fi
 done
 

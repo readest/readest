@@ -168,7 +168,7 @@ pnpm run submit-appstore-ios
 Compile the Android release bundle:
 ```bash
 cd apps/readest-app
-pnpm tauri android build --target aarch64 --bundle aab
+pnpm tauri android build --target aarch64 --aab
 ```
 The output AAB bundle will be placed at:
 `src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab`

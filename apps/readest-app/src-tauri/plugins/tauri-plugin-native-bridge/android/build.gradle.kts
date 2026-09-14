@@ -3,6 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val storeFlavor = (project.findProperty("storeFlavor") as? String)?.takeIf { it.isNotEmpty() }
+    ?: System.getenv("STORE_FLAVOR")?.takeIf { it.isNotEmpty() }
+    ?: "foss"
+
 android {
     namespace = "com.readest.native_bridge"
     compileSdk = 36
@@ -32,21 +36,19 @@ android {
         jvmTarget = "1.8"
     }
 
-    flavorDimensions += "store"
-    productFlavors {
-        create("foss") {
-            dimension = "store"
-        }
-        create("googleplay") {
-            dimension = "store"
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/java", "src/$storeFlavor/java")
         }
     }
 }
 
 dependencies {
-    "googleplayImplementation"("com.android.billingclient:billing:9.1.0")
-    "googleplayImplementation"("com.google.android.gms:play-services-base:18.5.0")
-    "googleplayImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    if (storeFlavor == "googleplay") {
+        implementation("com.android.billingclient:billing:9.1.0")
+        implementation("com.google.android.gms:play-services-base:18.5.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    }
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.browser:browser:1.8.0")

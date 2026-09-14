@@ -204,7 +204,8 @@
       "mobile": [
         {
           "scheme": ["https"],
-          "host": "web.readest.com",
+          "host": "biblophile.com",
+          "pathPrefix": ["/yomi"],
           "appLink": true
         },
         {

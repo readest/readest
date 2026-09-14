@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildAnnotationUrl } from '../../utils/deeplink';
+import { buildAnnotationUrl, parseAnnotationDeepLink } from '../../utils/deeplink';
 
 describe('buildAnnotationUrl', () => {
   const link = { bookHash: 'abc', noteId: 'n1', cfi: '/6/4!/4/2' };
@@ -24,5 +24,36 @@ describe('buildAnnotationUrl', () => {
   it('omits the cfi query when no cfi is provided', () => {
     const url = buildAnnotationUrl({ bookHash: 'abc', noteId: 'n1' }, 'app');
     expect(url).toBe('readest://book/abc/annotation/n1');
+  });
+});
+
+describe('parseAnnotationDeepLink', () => {
+  it('parses custom-scheme annotation URL', () => {
+    const parsed = parseAnnotationDeepLink('readest://book/abc/annotation/n1?cfi=%2F6%2F4');
+    expect(parsed).toEqual({
+      bookHash: 'abc',
+      noteId: 'n1',
+      cfi: '/6/4',
+    });
+  });
+
+  it('parses biblophile.com/yomi web annotation URL', () => {
+    const parsed = parseAnnotationDeepLink(
+      'https://biblophile.com/yomi/o/book/abc/annotation/n1?cfi=%2F6%2F4',
+    );
+    expect(parsed).toEqual({
+      bookHash: 'abc',
+      noteId: 'n1',
+      cfi: '/6/4',
+    });
+  });
+
+  it('parses web.readest.com legacy web annotation URL', () => {
+    const parsed = parseAnnotationDeepLink('https://web.readest.com/o/book/abc/annotation/n1');
+    expect(parsed).toEqual({
+      bookHash: 'abc',
+      noteId: 'n1',
+      cfi: undefined,
+    });
   });
 });

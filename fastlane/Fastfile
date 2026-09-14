@@ -3,7 +3,15 @@ require "json"
 default_platform(:android)
 
 platform :android do
-  aab_file = "./apps/readest-app/src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab"
+  # When ORG_GRADLE_PROJECT_storeFlavor=googleplay is set (deploy-mobile.yml),
+  # Gradle outputs the AAB under universalGoogleplayRelease/ instead of
+  # universalRelease/. Try the flavored path first, fall back to non-flavored.
+  aab_base = "./apps/readest-app/src-tauri/gen/android/app/build/outputs/bundle"
+  aab_file = if File.exist?("#{aab_base}/universalGoogleplayRelease/app-universal-googleplay-release.aab")
+    "#{aab_base}/universalGoogleplayRelease/app-universal-googleplay-release.aab"
+  else
+    "#{aab_base}/universalRelease/app-universal-release.aab"
+  end
 
   # Listing text and imagery live in fastlane/metadata-play, NOT fastlane/metadata:
   # metadata/android is F-Droid's (plain screenshots, app name "Readest"), while

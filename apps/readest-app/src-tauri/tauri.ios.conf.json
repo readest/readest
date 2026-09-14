@@ -1,0 +1,27 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "plugins": {
+    "deep-link": {
+      "mobile": [
+        {
+          "scheme": ["https"],
+          "host": "biblophile.com",
+          "pathPrefix": ["/yomi"],
+          "appLink": true
+        },
+        {
+          "scheme": ["readest"],
+          "appLink": false
+        },
+        {
+          "scheme": ["readest-onedrive"],
+          "appLink": false
+        },
+        {
+          "scheme": ["com.googleusercontent.apps.209390247301-ctpmep68ppfa56r1b8tr35e4qi4p60kq"],
+          "appLink": false
+        }
+      ]
+    }
+  }
+}

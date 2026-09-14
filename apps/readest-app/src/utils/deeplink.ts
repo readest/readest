@@ -8,6 +8,11 @@ const getWebHost = (): string => {
   }
 };
 
+const isMatchingWebHost = (host: string): boolean => {
+  const currentHost = getWebHost();
+  return host === currentHost || host === 'biblophile.com' || host === 'web.readest.com';
+};
+
 export type AnnotationDeepLink = {
   bookHash: string;
   noteId: string;
@@ -67,7 +72,7 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
 
   const isCustomScheme = parsed.protocol === 'readest:';
   const isWebHost =
-    (parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.host === getWebHost();
+    (parsed.protocol === 'https:' || parsed.protocol === 'http:') && isMatchingWebHost(parsed.host);
   if (!isCustomScheme && !isWebHost) return null;
 
   // For readest:// URLs the URL parser stores the first path segment in the
@@ -76,8 +81,11 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
     ? [parsed.host, ...parsed.pathname.split('/')].filter(Boolean)
     : parsed.pathname.split('/').filter(Boolean);
 
-  // HTTPS landing page is prefixed with /o/. Strip it for uniform parsing.
+  // HTTPS landing page is prefixed with /yomi/o/ or /o/. Strip for uniform parsing.
   if (isWebHost) {
+    if (segments[0] === 'yomi') {
+      segments.shift();
+    }
     if (segments[0] !== 'o') return null;
     segments.shift();
   }
@@ -114,7 +122,7 @@ export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: b
 
   const isCustomScheme = parsed.protocol === 'readest:';
   const isWebHost =
-    (parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.host === getWebHost();
+    (parsed.protocol === 'https:' || parsed.protocol === 'http:') && isMatchingWebHost(parsed.host);
   if (!isCustomScheme && !isWebHost) return null;
 
   const segments: string[] = isCustomScheme
@@ -122,8 +130,12 @@ export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: b
     : parsed.pathname.split('/').filter(Boolean);
 
   if (isWebHost) {
-    if (segments[0] !== 'o') return null;
-    segments.shift();
+    if (segments[0] === 'yomi') {
+      segments.shift();
+    }
+    if (segments[0] === 'o') {
+      segments.shift();
+    }
   }
 
   if (segments.length === 2 && segments[0] === 'book' && segments[1]) {

@@ -9,6 +9,12 @@ describe('parseBookDeepLink', () => {
     expect(parseBookDeepLink('https://web.readest.com/o/book/abc123')).toEqual({
       bookHash: 'abc123',
     });
+    expect(parseBookDeepLink('https://biblophile.com/yomi/o/book/abc123')).toEqual({
+      bookHash: 'abc123',
+    });
+    expect(parseBookDeepLink('https://biblophile.com/yomi/book/abc123')).toEqual({
+      bookHash: 'abc123',
+    });
   });
   it('surfaces the Android Auto autoplay flag', () => {
     expect(parseBookDeepLink('readest://book/abc123?autoplay=tts')).toEqual({
