@@ -1016,7 +1016,8 @@ async function openBookFileContent(
   if (!isBookFileContentSource(source)) {
     throw new BookFileNotFoundError();
   }
-  return { source, file: await fs.openFile(source.path, source.base) };
+  const fetcher = source.kind === 'url' ? source.fetcher : undefined;
+  return { source, file: await fs.openFile(source.path, source.base, undefined, fetcher) };
 }
 
 export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookContent> {

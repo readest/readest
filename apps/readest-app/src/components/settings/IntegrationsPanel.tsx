@@ -58,6 +58,7 @@ import {
   canToggleCloudProvider,
   getReadestCloudRowStatus,
   getThirdPartyRowStatus,
+  shouldShowCloudProviderBadge,
 } from './integrations/cloudSyncStatus';
 import {
   getCloudSyncProviders,
@@ -142,13 +143,13 @@ const IntegrationsPanel: React.FC = () => {
   // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
   const { userProfilePlan, customizationPurchased } = useQuotaStats();
   const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free', customizationPurchased);
-  // Only surface the tier chip to users who cannot use the feature yet — signed
-  // out (known immediately), or signed in on a plan without cloud sync (known
-  // once the plan resolves). An entitled user already has it, so the badge is
-  // noise. Suppressing it while a signed-in user's plan is still loading avoids
-  // flashing the chip at a premium user on every open.
-  const premiumBadge =
-    !user || (userProfilePlan !== undefined && !isCloudSyncPremium) ? _('Premium') : undefined;
+  const premiumBadge = shouldShowCloudProviderBadge({
+    signedIn: !!user,
+    planLoading: userProfilePlan === undefined,
+    isPremium: isCloudSyncPremium,
+  })
+    ? _('Premium')
+    : undefined;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 

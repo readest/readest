@@ -346,6 +346,19 @@ export class ReaderPage extends BasePage {
     throw new Error('no visible book section found in the viewer');
   }
 
+  /** Press one of the reader's zoom shortcuts. */
+  async pressZoomShortcut(key: '=' | '-' | '0'): Promise<void> {
+    await this.page.keyboard.press(`Control+${key}`);
+  }
+
+  /** The px font size the book text is currently rendered at. */
+  async bookFontSize(): Promise<number> {
+    const frame = await this.visibleSectionFrame();
+    return frame
+      .locator('body')
+      .evaluate((body) => Number.parseFloat(getComputedStyle(body).fontSize));
+  }
+
   /**
    * Select a paragraph of book text and raise the annotation popup.
    *

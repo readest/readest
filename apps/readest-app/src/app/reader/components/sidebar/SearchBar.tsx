@@ -97,7 +97,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
     localStorage.removeItem(historyStorageKey);
   };
 
-  const view = getView(bookKey)!;
+  const view = getView(bookKey);
   // Reader search runs against the same per-book search.db the library page
   // uses; the session caches the opened book and index handle across queries.
   const searchSessionRef = useRef<LibrarySearchSession | null>(null);
@@ -206,7 +206,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       setSearchProgress(bookKey, 0);
       setSearchStatus(bookKey, 'searching');
       setSearchError(bookKey, null);
-      view.clearSearch();
+      getView(bookKey)?.clearSearch();
 
       // progress is null until the book emits its first relocate event, so a
       // search fired right after opening has no current section to scope to.
@@ -288,8 +288,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
         // Replay the resolved matches through the view so every CFI gets its
         // search highlight; the view does no searching of its own here.
-        if (!stopped() && results.length > 0) {
-          for await (const item of view.search({ ...searchConfig, query: term, results })) {
+        const currentView = getView(bookKey);
+        if (!stopped() && currentView && results.length > 0) {
+          for await (const item of currentView.search({ ...searchConfig, query: term, results })) {
             if (stopped()) return;
             if (item === 'done') break;
           }
@@ -310,6 +311,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       bookData,
       appService,
       getConfig,
+      getView,
       setSearchResults,
       setSearchProgress,
       setSearchError,

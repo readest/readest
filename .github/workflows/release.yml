@@ -176,7 +176,7 @@ jobs:
         run: |
           rustup target add armv7-unknown-linux-musleabi
           rustup target add aarch64-unknown-linux-musl
-          pip3 install --break-system-packages ziglang cargo-zigbuild
+          pip3 install --break-system-packages --require-hashes -r .github/requirements/zigbuild.txt
           node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only armv7
           node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only arm64
 
@@ -246,7 +246,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: setup node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
@@ -322,7 +322,7 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: setup node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
@@ -360,6 +360,26 @@ jobs:
         with:
           key: ${{ matrix.config.os }}-${{ matrix.config.release }}-${{ matrix.config.arch }}-cargo
 
+      # The npm cli-cef bundles the AppImage with a broken quick-sharun fork
+      # and cannot be pointed elsewhere. Build the CLI from readest/tauri
+      # instead: its sharun_cef.rs pins pkgforge's deployment-array quoting
+      # fix (Anylinux-AppImages#855) and runs the tooling with bash and
+      # streamed output. Rev-pinned; the marker skips the rebuild while
+      # rust-cache keeps ~/.cargo/bin. scripts/tauri.mjs runs `cargo tauri`
+      # when TAURI_CEF_CARGO=1.
+      - name: install the CEF tauri CLI from readest/tauri (linux only)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          rev=2b8315bd14882471b6567b1ceba84c0c0238f156
+          marker="$HOME/.cargo/bin/.cargo-tauri-rev"
+          if [ -x "$HOME/.cargo/bin/cargo-tauri" ] && [ "$(cat "$marker" 2>/dev/null)" = "$rev" ]; then
+            echo "cargo-tauri at $rev already installed"
+            exit 0
+          fi
+          cargo install tauri-cli --git https://github.com/readest/tauri --rev "$rev" --locked --force
+          echo "$rev" > "$marker"
+
       - name: install dependencies (ubuntu only)
         if: contains(matrix.config.os, 'ubuntu') && matrix.config.release != 'android' && matrix.config.arch != 'armhf'
         run: |
@@ -377,6 +397,37 @@ jobs:
           echo 'PKG_CONFIG_SYSROOT_DIR=/usr/arm-linux-gnueabihf' >> $GITHUB_ENV
           echo 'CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc' >> $GITHUB_ENV
           echo 'CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_RUSTFLAGS=--cfg=io_uring_skip_arch_check' >> $GITHUB_ENV
+
+      # Chromium dlopens NSS, libpulse and libspeechd by soname; whatever the
+      # bundle lacks comes from the host at run time and fails against the
+      # bundled glibc on any newer distro (NSS: FATAL crypto/nss_util.cc).
+      # quick-sharun's DEPLOY_CHROMIUM deploys NSS and, via DEPLOY_PIPEWIRE,
+      # pulse — with the pinned pkgforge script the CLI above uses. Three gaps
+      # remain, passed as appimage.files under /usr/lib, which the bundler
+      # hands to quick-sharun as arguments: Debian keeps the NSS modules in
+      # <triple>/nss/ where the Arch-layout globs miss them, and nothing
+      # deploys libspeechd. winit dlopens libxkbcommon-x11 by soname when it
+      # opens its X11 event loop (the CEF runtime forces X11 even on Wayland),
+      # and quick-sharun's Chromium rule would deploy it, but the runner image
+      # has no copy to deploy; without it every launch panics before the first
+      # log line (#6144). The npm cli-cef could do none of this: its
+      # quick-sharun fork drops the `eval` that rebuilds the deploy array
+      # (FabianLars/Anylinux-AppImages@3e280d1b), so every DEPLOY_* extra is
+      # silently skipped.
+      - name: stage CEF AppImage runtime libraries (linux only)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y libnss3 libpulse0 libspeechd2 libxkbcommon-x11-0
+          nss_dir=$(dirname "$(ls /usr/lib/*-linux-gnu/nss/libsoftokn3.so)")
+          lib_dir=${nss_dir%/nss}
+          sudo cp -f --remove-destination "$nss_dir"/*.so "$lib_dir/"
+          # +=: tauri.conf.json already ships the AppRun hook entry.
+          conf=apps/readest-app/src-tauri/tauri.conf.json
+          jq --arg d "$lib_dir" '.bundle.linux.appimage.files += {
+              "/usr/lib/libspeechd.so.2": ($d + "/libspeechd.so.2"),
+              "/usr/lib/libxkbcommon-x11.so.0": ($d + "/libxkbcommon-x11.so.0")
+            }' "$conf" > "$conf.tmp" && mv "$conf.tmp" "$conf"
 
       - name: create .env.local file for Next.js
         run: |
@@ -476,37 +527,16 @@ jobs:
           echo "Uploading updated latest.json to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
 
-      # PINNED to a rev, not the branch tip: on 2026-07-31 the fork rewrote the
-      # sharun bundler to re-download quick-sharun.sh on EVERY build instead of
-      # only when it is missing from the cache, which defeats the cache seed
-      # below and hangs the Linux legs under Xvfb (#4906). This rev is the last
-      # one that keeps the cache check. Keep in sync with nightly.yml.
-      - name: Override tauri-cli with custom AppImage format (Linux)
-        if: matrix.config.release == 'linux'
-        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --rev 162626969b382d52faebdf6c7264460bd9a47d1f --force
-
-      # The truly-portable AppImage bundler at the rev pinned above downloads
-      # quick-sharun.sh from Anylinux-AppImages@main ONLY when it is not already
-      # in the tauri tools cache. An upstream strace-mode change (2026-06-29)
-      # made bundling launch the app under Xvfb and hang forever (#4906). Seed
-      # the cache with the last known-good revision so the bundler never fetches
-      # the moving main-branch script. Keep in sync with nightly.yml.
-      - name: pin quick-sharun.sh for AppImage bundling (Linux)
-        if: matrix.config.release == 'linux'
-        run: |
-          set -euo pipefail
-          cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tauri"
-          mkdir -p "$cache_dir"
-          curl -fsSL --retry 3 -o "$cache_dir/quick-sharun.sh" \
-            "https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/b3a9e985cdedf7efa81d172f182cd13983743147/useful-tools/quick-sharun.sh"
-          chmod +x "$cache_dir/quick-sharun.sh"
-
       - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         id: tauri
         if: matrix.config.release != 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_BUNDLER_NEW_APPIMAGE_FORMAT: 'true'
+          TAURI_CEF_CARGO: '1'
+          # quick-sharun would otherwise run the app under Xvfb to find dlopen'ed
+          # libraries and hung CI (#4906). The CLI now runs it with bash and
+          # streamed output, which fixes that; lifting this is its own change.
+          STRACE_MODE: '0'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -518,13 +548,35 @@ jobs:
           NODE_OPTIONS: '--max-old-space-size=8192'
         with:
           projectPath: apps/readest-app
-          # On Linux, build with the Rust `cargo tauri` CLI installed in the
-          # step above so the new (truly-portable AppImage) bundler is used.
-          # Without this, tauri-action falls back to the npm @tauri-apps/cli.
-          tauriScript: ${{ matrix.config.release == 'linux' && 'cargo tauri' || '' }}
+          # `pnpm tauri` (apps/readest-app/scripts/tauri.mjs) runs the npm
+          # @tauri-apps/cli, except on Linux, which ships on the CEF runtime:
+          # there it runs the tauri CLI from upstream's feat/cef branch, which
+          # bundles CEF into the deb, rpm and (sharun) AppImage.
+          tauriScript: pnpm tauri
           releaseId: ${{ needs.get-release.outputs.release_id }}
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
+
+      # quick-sharun skips what it cannot find without failing; catch that
+      # before it ships.
+      - name: verify the AppImage bundle contents (linux only)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          lib=target/release/bundle/appimage/Readest.AppDir/lib
+          for so in libsoftokn3.so libfreeblpriv3.so libnssckbi.so libsqlite3.so.0 \
+                    libpulse.so.0 libspeechd.so.2 libxkbcommon-x11.so.0; do
+            [ -e "$lib/$so" ] || { echo "::error::$so is missing from the AppImage bundle"; exit 1; }
+          done
+          # libpulse finds its private half through a host RUNPATH; lib.path
+          # has to cover the bundled copy for it to win.
+          ls "$lib"/pulseaudio/libpulsecommon-*.so > /dev/null 2>&1 \
+            || { echo "::error::libpulsecommon is missing from the AppImage bundle"; exit 1; }
+          grep -qx '+/pulseaudio' "$lib/lib.path" \
+            || { echo "::error::lib.path does not cover lib/pulseaudio, so libpulse cannot load"; exit 1; }
+          # Without this hook every new AppImage asks for a root password.
+          [ -e "${lib%/lib}/bin/00-no-userns-prompt.hook" ] \
+            || { echo "::error::the no-userns-prompt hook is missing from the AppImage bundle"; exit 1; }
 
       # Attest the freshly built desktop bundles (installers, AppImage, dmg,
       # updater archives + their .sig). tauri-action reports their on-disk paths

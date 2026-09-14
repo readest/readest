@@ -104,7 +104,7 @@ export type BookMetadata = {
   // they ride across inside this synced metadata payload, exactly as a feed
   // book carries `feedUrl`. Built and read back in src/utils/audiobook.ts.
   absSource?: string;
-  absMediaType?: 'podcast';
+  absMediaType?: 'podcast' | 'ebook';
   absEpisodeCount?: number;
   absDuration?: number;
 };

@@ -4,6 +4,7 @@ import {
   CapturedTurnHost,
   type CapturedTurnStyle,
 } from '@/app/reader/utils/capturedTurn';
+import { PageCurlRenderer } from '@/utils/pageCurl';
 
 // Choreography tests for the captured page-turn controller (readest#555):
 // capture the page → overlay the captured bitmap → instantly navigate the
@@ -1560,4 +1561,218 @@ describe('CapturedPageTurn (browser)', () => {
     expect(pending.active).toBe(false);
     expect(host.querySelector('canvas')).toBeNull();
   });
+});
+
+// Two-column curl (readest#6106): the outer column turns as one leaf hinged
+// at the spine, and its back shows the incoming inner column. That column
+// sits under the overlay, so after the instant navigation the controller
+// asks the host to freeze the region's on-screen pixels natively, clips the
+// overlay to the leaf side to expose the live column to the platform
+// snapshot, captures it, restores the overlay, then lifts the cover.
+describe('CapturedPageTurn two-column curl (browser)', () => {
+  let host: HTMLDivElement;
+  let png: ArrayBuffer;
+  let capture: ReturnType<typeof vi.fn<CapturedTurnHost['capture']>>;
+  let navigate: ReturnType<typeof vi.fn<CapturedTurnHost['navigate']>>;
+  let uncover: ReturnType<typeof vi.fn<() => Promise<void>>>;
+  let coverRegion: ReturnType<typeof vi.fn<NonNullable<CapturedTurnHost['coverRegion']>>>;
+  let controller: CapturedPageTurn | null;
+
+  const contentRect = () => new DOMRect(10, 20, W, H);
+  const leftHalf = { x: 10, y: 20, width: W / 2, height: H };
+  const rightHalf = { x: 10 + W / 2, y: 20, width: W / 2, height: H };
+  const overlay = () => host.querySelector<HTMLElement>('div[aria-hidden="true"]');
+  const isInner = (rect: { width: number }) => rect.width === W / 2;
+  const makeController = (overrides: Partial<CapturedTurnHost> = {}, duration = 40) => {
+    controller = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        navigate,
+        getColumnCount: () => 2,
+        coverRegion,
+        ...overrides,
+      },
+      { duration },
+    );
+    return controller;
+  };
+
+  beforeEach(async () => {
+    host = document.createElement('div');
+    Object.assign(host.style, {
+      position: 'absolute',
+      left: '0',
+      top: '0',
+      width: '400px',
+      height: '300px',
+    });
+    document.body.appendChild(host);
+    png = await makePngBuffer();
+    capture = vi.fn<CapturedTurnHost['capture']>().mockResolvedValue(png);
+    navigate = vi.fn<CapturedTurnHost['navigate']>().mockResolvedValue(undefined);
+    uncover = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    coverRegion = vi
+      .fn<NonNullable<CapturedTurnHost['coverRegion']>>()
+      .mockImplementation(async () => uncover);
+    controller = null;
+  });
+
+  afterEach(() => {
+    controller?.dispose();
+    host.remove();
+  });
+
+  it('captures the incoming inner column under a cover after navigating', async () => {
+    await makeController().turn(true, false, 'curl');
+    await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith(true);
+    expect(capture).toHaveBeenCalledTimes(2);
+    expect(capture.mock.calls[0]![0]).toEqual({ x: 10, y: 20, width: W, height: H });
+    // Forward, LTR: the right leaf lands on the left column.
+    expect(capture.mock.calls[1]![0]).toEqual(leftHalf);
+    expect(coverRegion).toHaveBeenCalledTimes(1);
+    expect(coverRegion).toHaveBeenCalledWith(leftHalf);
+    // navigate → cover → capture the live column → uncover.
+    const order = (mock: { mock: { invocationCallOrder: number[] } }, i = 0) =>
+      mock.mock.invocationCallOrder[i]!;
+    expect(order(navigate)).toBeLessThan(order(coverRegion));
+    expect(order(coverRegion)).toBeLessThan(order(capture, 1));
+    expect(order(capture, 1)).toBeLessThan(order(uncover));
+  });
+
+  it('exposes only the leaf side of the overlay while the live column is captured', async () => {
+    let clipDuringCapture: string | null = null;
+    let clipAtUncover: string | null = null;
+    capture.mockImplementation(async (rect) => {
+      if (isInner(rect)) clipDuringCapture = overlay()?.style.clipPath ?? null;
+      return png;
+    });
+    uncover.mockImplementation(async () => {
+      clipAtUncover = overlay()?.style.clipPath ?? null;
+    });
+    // Hold the leaf until uncover instead of racing the 40 ms turn against
+    // capture and paint frames on a loaded runner.
+    const turn = makeController();
+    expect(await turn.beginDrag(true, false, 'curl')).toBe(true);
+    await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+
+    // The left (inner) column is cut away, the right leaf stays covered.
+    expect(clipDuringCapture).toMatch(/^inset\(0(px)? 0(px)? 0(px)? 50%\)$/);
+    // Restored before the native cover comes down.
+    expect(clipAtUncover).toBe('');
+    await turn.endDrag(true);
+    expect(overlay()).toBeNull();
+  });
+
+  it('lands a backward leaf on the right column', async () => {
+    await makeController().turn(false, false, 'curl');
+    await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+    expect(navigate).toHaveBeenCalledWith(false);
+    expect(capture.mock.calls[1]![0]).toEqual(rightHalf);
+    expect(coverRegion).toHaveBeenCalledWith(rightHalf);
+  });
+
+  it('lands an rtl forward leaf on the right column', async () => {
+    await makeController().turn(true, true, 'curl');
+    await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+    expect(capture.mock.calls[1]![0]).toEqual(rightHalf);
+  });
+
+  it('turns a single column with one capture and no cover', async () => {
+    await makeController({ getColumnCount: () => 1 }).turn(true, false, 'curl');
+    await waitForTurnIdle();
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(coverRegion).not.toHaveBeenCalled();
+  });
+
+  it('leaves the slide style out of the leaf pipeline', async () => {
+    await makeController().turn(true, false, 'slide');
+    await waitForTurnIdle();
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(coverRegion).not.toHaveBeenCalled();
+  });
+
+  it('turns with a paper back where the host cannot cover', async () => {
+    expect(await makeController({ coverRegion: undefined }).turn(true, false, 'curl')).toBe(true);
+    await waitForTurnIdle();
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
+
+  it('finishes the turn and lifts the cover when the incoming capture fails', async () => {
+    capture.mockImplementation(async (rect) => {
+      if (isInner(rect)) throw new Error('snapshot failed');
+      return png;
+    });
+    expect(await makeController().turn(true, false, 'curl')).toBe(true);
+    await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+    expect(overlay()).toBeNull();
+  });
+
+  it('drops the incoming column when a blocking overlay opens during its capture', async () => {
+    // A dialog that opens while the platform snapshot is pending is part of
+    // the composited pixels. The turn keeps going, but that bitmap must never
+    // reach the renderer, and the cover still comes down.
+    let allowed = true;
+    let finishCapture: (() => void) | null = null;
+    capture.mockImplementation((rect) =>
+      isInner(rect)
+        ? new Promise<ArrayBuffer>((resolve) => {
+            finishCapture = () => resolve(png);
+          })
+        : Promise.resolve(png),
+    );
+    const setIncoming = vi.spyOn(PageCurlRenderer.prototype, 'setIncoming');
+    try {
+      const turning = makeController({ isCaptureAllowed: () => allowed }).turn(true, false, 'curl');
+      await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
+      allowed = false;
+      finishCapture!();
+      expect(await turning).toBe(true);
+      await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+      expect(setIncoming).not.toHaveBeenCalled();
+    } finally {
+      setIncoming.mockRestore();
+    }
+  });
+
+  it('commits the incoming column when no overlay interferes', async () => {
+    const setIncoming = vi.spyOn(PageCurlRenderer.prototype, 'setIncoming');
+    try {
+      // The turn waits INCOMING_WAIT_MS for the capture, then lands the leaf
+      // and rightly drops a bitmap that arrives after that. The capture needs
+      // four paint frames plus a decode, so on a loaded runner a 40 ms leaf
+      // lands first. Keep the leaf in flight until the bitmap is in.
+      const turning = makeController({}, 5_000).turn(true, false, 'curl');
+      await vi.waitFor(() => expect(setIncoming).toHaveBeenCalledTimes(1), { timeout: 3_000 });
+      expect(setIncoming.mock.calls[0]![0]).toBeInstanceOf(ImageBitmap);
+      controller!.dispose();
+      await turning;
+    } finally {
+      setIncoming.mockRestore();
+    }
+  });
+
+  it('lifts the cover when the turn is disposed mid-capture', async () => {
+    let finishCapture: (() => void) | null = null;
+    capture.mockImplementation((rect) =>
+      isInner(rect)
+        ? new Promise<ArrayBuffer>((resolve) => {
+            finishCapture = () => resolve(png);
+          })
+        : Promise.resolve(png),
+    );
+    const turning = makeController().turn(true, false, 'curl');
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledTimes(2));
+    controller!.dispose();
+    finishCapture!();
+    await turning;
+    await vi.waitFor(() => expect(uncover).toHaveBeenCalledTimes(1));
+    expect(overlay()).toBeNull();
+  });
+
+  const waitForTurnIdle = () => new Promise<void>((resolve) => setTimeout(resolve, 150));
 });

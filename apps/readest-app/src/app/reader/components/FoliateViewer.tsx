@@ -38,6 +38,7 @@ import {
   applyScrollModeClass,
   applyThemeModeClass,
   applyTranslationStyle,
+  getOverlayerBlendMode,
   getStyles,
   getThemeCode,
   keepTextAlignment,
@@ -320,6 +321,10 @@ const FoliateViewer: React.FC<{
   }, [bookKey, getOnDeviceTextDocuments, ocrEnabled, processOcrDocument, setProgress]);
 
   const progressRelocateHandler = (event: Event) => {
+    // Foliate can emit a late relocation after close() clears its progress
+    // resolver. Keep any valid pending position instead of replacing it.
+    if (!(event as CustomEvent).detail.location) return;
+
     // Always stash the latest detail; if another rAF is already pending
     // it'll pick this up and the intermediate states are skipped.
     pendingRelocateRef.current = event as CustomEvent;
@@ -386,6 +391,7 @@ const FoliateViewer: React.FC<{
               userLocale: getLocale(),
               content: data,
               sectionHref: detail.name,
+              sectionCfi: bookData.bookDoc?.sections?.find((s) => s.id === detail.name)?.cfi,
               transformers: [
                 'epubSwitch',
                 'style',
@@ -887,14 +893,12 @@ const FoliateViewer: React.FC<{
       if (appService?.isIOSApp) {
         view.renderer.setAttribute('gpu-composite', '');
       }
-      if (appService?.isAndroidApp) {
-        if (eink) {
-          view.renderer.setAttribute('eink', '');
-        } else {
-          view.renderer.removeAttribute('eink');
-        }
-        applyEinkMode(eink);
+      if (eink) {
+        view.renderer.setAttribute('eink', '');
+      } else {
+        view.renderer.removeAttribute('eink');
       }
+      applyEinkMode(eink);
       if (bookDoc?.rendition?.layout === 'pre-paginated') {
         view.renderer.setAttribute('zoom', viewSettings.zoomMode);
         view.renderer.setAttribute('spread', viewSettings.spreadMode);
@@ -1087,6 +1091,33 @@ const FoliateViewer: React.FC<{
     viewSettings?.contrast,
     viewSettings?.hideScrollbar,
     viewSettings?.isEink,
+  ]);
+
+  // The annotation overlay lives outside the content iframe, so its blend mode
+  // has to follow the page the highlight sits on rather than the app theme: a
+  // PDF keeps its own white bitmap in a dark theme unless the reader asked us
+  // to darken it (#5790, #5930, #5943). Scoped to this view so the library and
+  // reflowable books keep the global default from useTheme.
+  useEffect(() => {
+    if (!containerRef.current || !viewSettings) return;
+    containerRef.current.style.setProperty(
+      '--overlayer-highlight-blend-mode',
+      getOverlayerBlendMode({
+        isDarkMode,
+        isBwEink: !!viewSettings.isEink && !viewSettings.isColorEink,
+        isFixedLayout: bookDoc.rendition?.layout === 'pre-paginated',
+        invertImgColorInDark: !!viewSettings.invertImgColorInDark,
+        applyThemeToPDF: !!viewSettings.applyThemeToPDF,
+        format: bookData?.book?.format,
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isDarkMode,
+    viewSettings?.isEink,
+    viewSettings?.isColorEink,
+    viewSettings?.invertImgColorInDark,
+    viewSettings?.applyThemeToPDF,
   ]);
 
   useEffect(() => {

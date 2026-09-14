@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- RemoteViews must not inherit the launcher's theme. Resource qualifiers
+       select the system appearance without an AppCompatDelegate. -->
+  <style name="ReadingWidgetTheme" parent="android:style/Theme.Material.Light.NoActionBar" />
+</resources>

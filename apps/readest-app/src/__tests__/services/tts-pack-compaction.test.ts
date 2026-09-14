@@ -90,6 +90,43 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     expect(bytes[80]).toBe(3);
   });
 
+  test('a queued compaction retries after a preceding database query fails', async () => {
+    await cacheSection(3, ['m1'], ['k1']);
+    const error = new Error('Database query failed');
+    vi.spyOn(db, 'select').mockRejectedValueOnce(error);
+
+    const results = await Promise.allSettled([store.compact(), store.compact()]);
+
+    expect(results).toEqual([
+      { status: 'rejected', reason: error },
+      { status: 'fulfilled', value: 1 },
+    ]);
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(1);
+    expect(await store.get('k1')).toMatchObject(sentence(1));
+  });
+
+  test('queued compaction includes sections completed during an earlier run', async () => {
+    await cacheSection(3, ['m1'], ['k1']);
+    const writing = Promise.withResolvers<void>();
+    const resume = Promise.withResolvers<void>();
+    const write = packFs.write.bind(packFs);
+    vi.spyOn(packFs, 'write').mockImplementationOnce(async (name, data) => {
+      writing.resolve();
+      await resume.promise;
+      await write(name, data);
+    });
+    const first = store.compact();
+    await writing.promise;
+    await cacheSection(4, ['m2'], ['k2']);
+    const second = store.compact();
+    resume.resolve();
+
+    expect(await Promise.all([first, second])).toEqual([1, 1]);
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(2);
+    expect(await store.get('k1')).toMatchObject(sentence(1));
+    expect(await store.get('k2')).toMatchObject(sentence(1));
+  });
+
   test('a section sharing a sentence key with an already-packed section still packs (regression)', async () => {
     // Section A packs first, adopting the shared key k1 into its pack. From
     // then on k1's entry is pack-backed (audio NULL pointing at pack A).

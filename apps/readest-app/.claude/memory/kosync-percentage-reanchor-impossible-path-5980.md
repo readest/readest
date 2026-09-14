@@ -164,3 +164,66 @@ drift can only put the true section at or AFTER the nominal one, never before.
 neither is reachable by any CREngine rule. Also note its reference fixture was circular: the
 only evidence the fragment "should be" chapter 9 was the percentage, which is the signal in
 question, so the test asserted the heuristic agrees with itself.
+
+## #6051 — the same bug, second report, and the sharpest reproduction of it
+
+Issue #6051 (2026-09-04, Readest 0.12.1 on iOS + Windows, KOReader Sync Server). "Reading progress
+mismatch"; position offset/rolled back on both platforms. CLOSED as a duplicate on 2026-09-04
+(issuecomment-5541704831) — c81bd0bee was already on `main` but unreleased (0.12.6 shipped
+2026-08-29, the fix landed 2026-09-01), so both 0.12.1 and 0.12.6 still carry the anchor.
+
+Reproduction file: *Apple: The First 50 Years* (David Pogue), md5 `0e68389632918567417e1033269cdc8a`,
+saved at `~/Documents/books/issues/6051/apple-first-50-years.epub` (39 MB, Google Drive link in the
+issue). A **calibre** EPUB, 121-item spine, every item `application/xhtml+xml`, no `linear="no"`.
+
+**Why this book is the cleanest demonstration of the anchor's flaw.** Its three index files
+(`index_split_000/001`, `index01`) are **519,455 of 2,149,592 spine XHTML bytes = 24.2%**, but only
+~6.3% of the text, because an index is almost entirely `<a>` markup. foliate weights by
+`section.size` (uncompressed zip entry size), so its byte table and KOReader's page-based percentage
+diverge monotonically across the whole book, up to **19 points**:
+
+| section | foliate byte range | text range |
+| --- | --- | --- |
+| ch25 (31) | 34.07-35.77% | 43.15-45.29% |
+| ch34 (41) | 45.67-48.63% | 57.98-61.83% |
+| ch50 (58) | 67.47-70.00% | 86.11-89.44% |
+| index_split_000 (116) | 74.81-81.21% | 92.76-94.46% |
+
+So the `tol = 1e-4` check fails for essentially EVERY position past chapter 5, and the re-anchor
+fires everywhere. Running v0.12.1's `resolveSpineSectionIndex` verbatim on the real spine sizes
+(KOReader percentage proxied by text fraction):
+
+```
+ 31 ch25  koPct=44.22% -> 39  ch32                  DRIFT +8
+ 41 ch34  koPct=59.90% -> 51  ch43                  DRIFT +10
+ 55 ch47  koPct=82.67% -> 117 index_split_001       DRIFT +62
+ 58 ch50  koPct=87.78% -> 117 index_split_001       DRIFT +59
+```
+
+Direction is ALWAYS forward here (text fraction > byte fraction throughout the body), which is the
+opposite of #5111's two claimed cases and another confirmation of the "direction test" above.
+
+**The double failure.** Conversion in the re-anchored section throws
+(`Element index 4 out of bounds for tag p`), and 0.12.1's `catch` left `navigated` false, falling
+through to `goToFraction(remote.percentage)` — which uses the SAME byte table, so it lands in the
+index too. Both paths ended in the same wrong place, which is why the user saw a position rather
+than an error, and why it reproduced identically on iOS and Windows: pure position math, zero
+platform code.
+
+**Verified post-fix on the real book** (temp vitest + jsdom, deleted after):
+`/body/DocFragment[56]/body/section/p[4]/text().0` -> `epubcfi(/6/112!/4/2/12/1:0)` = spine 55 = ch47;
+`/body/DocFragment[32]/body/section/p[5]/text().0` -> `epubcfi(/6/64!/4/2/16/3:0)` = spine 31 = ch25.
+No source change needed. `xcfi.kosync-nominal-docfragment` + `kosyncProgress` + `useKOSync` = 25 passed.
+
+**Gotcha when hand-building a test XPointer for a calibre book:** chapters are nested
+`<body><section><span/><h2/><p/>...<section>...</section></section>`, so only ~9 `<p>` are DIRECT
+children of the outer `<section>` even when the file has 107. `/body/section/p[10]` is structurally
+impossible; crengine would emit `/body/section/section[3]/p[2]`. Probe the DOM before asserting.
+`console.log` inside vitest is swallowed here — write findings to a file and `cat` it.
+
+**Residual, NOT fixed and deliberately not attempted (would be a foliate change with book-wide
+blast radius):** even landing on the right paragraph, Readest shows ~70% at the end of this book's
+main text where KOReader shows ~89%, because `SectionProgress` (`packages/foliate-js/progress.js:171`)
+weights by raw file size including markup. Any calibre book with a large index has this standing
+percentage gap. Changing the weighting moves every book's stored progress, location numbers and
+sync comparisons.

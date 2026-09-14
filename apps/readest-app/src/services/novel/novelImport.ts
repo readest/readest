@@ -1,11 +1,14 @@
+import { assertNovelUrlAllowed, renderNovelPage } from './renderNovelPage';
+import { bundleAssets, MAX_TOTAL_ASSET_BYTES } from '@/services/send/conversion/assetBundler';
 import { Readability } from '@mozilla/readability';
-import { sanitizeHtml, sanitizeForParsing } from '@/utils/sanitize';
+import { sanitizeHtml } from '@/utils/sanitize';
 import { detectLanguage } from '@/utils/lang';
 import { stubTranslation as _ } from '@/utils/misc';
 import { buildEpub } from '@/services/send/conversion/buildEpub';
 import { generateCoverSvg } from '@/services/send/conversion/coverGenerator';
 import { fetchAuthorImage } from '@/services/send/conversion/faviconFetcher';
 import {
+  parsePageDocument,
   safeFileName,
   stableIdentifier,
   stripTags,
@@ -54,6 +57,9 @@ export interface NovelDownloadOptions {
   identityKey?: string;
   fetchPage?: FetchPage;
   fetchCover?: FetchCover;
+  renderPage?: FetchPage;
+  /** Sign-in imports render every chapter, including sites with long public previews. */
+  renderChapters?: boolean;
   /** Runtime translator for text baked into the EPUB (failure placeholders).
    *  Strings are declared with `stubTranslation` so the i18n scanner sees
    *  them; pass the app's `_` to localize. */
@@ -84,6 +90,7 @@ const TRANSIENT_BACKOFF_MS = 1000;
 const withTransientRetry =
   (fetchPage: FetchPage): FetchPage =>
   async (url, signal) => {
+    assertNovelUrlAllowed(url);
     for (let attempt = 0; ; attempt++) {
       const deadline = new AbortController();
       const onAbort = () => deadline.abort();
@@ -195,13 +202,12 @@ export function decodeHtmlBody(bytes: Uint8Array, contentType: string | null): s
 }
 
 /**
- * Fetch a page over the Tauri HTTP client with browser-shaped headers.
- * Novel-site chapter pages are server-rendered, so plain HTTP is enough —
- * spawning a `clip_url` webview per chapter would never scale to hundreds
- * of requests.
+ * Fetch server-rendered chapters with the browser session and browser-shaped
+ * headers. JavaScript-only chapters fall back to the native renderer; imports
+ * started through sign-in render every chapter so public previews cannot win.
  */
 const defaultFetchPage: FetchPage = async (url, signal) => {
-  const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+  const { browserFetch: tauriFetch } = await import('@/services/webBrowser/browserFetch');
   const res = await tauriFetch(url, {
     headers: pageNavigateHeaders(),
     signal,
@@ -232,6 +238,8 @@ const defaultFetchCover: FetchCover = (url, referer) =>
   fetchAuthorImage(url, referer).catch(() => null);
 
 export interface FetchNovelTocOptions {
+  /** The chapter list captured after the user signs in and navigates. */
+  page?: FetchedPage;
   fetchPage?: FetchPage;
   signal?: AbortSignal;
 }
@@ -242,7 +250,8 @@ export async function fetchNovelToc(
   options: FetchNovelTocOptions = {},
 ): Promise<NovelToc> {
   const fetchPage = withTransientRetry(options.fetchPage ?? defaultFetchPage);
-  const { html, finalUrl } = await fetchPage(url, options.signal);
+  const { html, finalUrl } = options.page ?? (await fetchPage(url, options.signal));
+  assertNovelUrlAllowed(finalUrl);
   const toc = parseChapterList(html, finalUrl);
   if (!toc) {
     throw new ConversionError(
@@ -312,21 +321,24 @@ const normalizeTitle = (s: string): string => s.replace(/\s+/g, ' ').trim().toLo
 
 /**
  * Extract one chapter's prose. Readability first, known content selectors as
- * fallback; images are stripped (a novel EPUB stays self-contained without an
- * unbounded asset download) and the TOC's chapter title is prepended as the
+ * fallback; assets are bundled separately and the TOC's chapter title is prepended as the
  * canonical heading.
  */
-export function extractChapterHtml(pageHtml: string, chapterTitle: string): string | null {
+export function extractChapterHtml(
+  pageHtml: string,
+  chapterTitle: string,
+  pageUrl: string,
+): string | null {
   let content: string | null = null;
   try {
     // Readability mutates the document it scores, so give it its own parse.
-    const doc = new DOMParser().parseFromString(sanitizeForParsing(pageHtml), 'text/html');
+    const doc = parsePageDocument(pageHtml, pageUrl);
     content = new Readability(doc).parse()?.content ?? null;
   } catch {
     content = null;
   }
   if (!content || stripTags(content).length < CHAPTER_QUALITY_FLOOR) {
-    const doc = new DOMParser().parseFromString(sanitizeForParsing(pageHtml), 'text/html');
+    const doc = parsePageDocument(pageHtml, pageUrl);
     for (const selector of CHAPTER_CONTENT_SELECTORS) {
       const el = doc.querySelector(selector);
       if (el && stripTags(el.innerHTML).length >= CHAPTER_QUALITY_FLOOR) {
@@ -338,7 +350,7 @@ export function extractChapterHtml(pageHtml: string, chapterTitle: string): stri
   if (!content || stripTags(content).length < CHAPTER_QUALITY_FLOOR) return null;
 
   const body = new DOMParser().parseFromString(content, 'text/html').body;
-  body.querySelectorAll('img, picture, figure, svg, video, audio').forEach((el) => el.remove());
+  body.querySelectorAll('video, audio').forEach((el) => el.remove());
   // Drop a leading heading that duplicates the TOC title — the canonical
   // heading is prepended below.
   const heading = body.querySelector('h1, h2, h3');
@@ -361,98 +373,176 @@ export async function downloadNovel(
   const fetchPage = withTransientRetry(options.fetchPage ?? defaultFetchPage);
   const fetchCover = options.fetchCover ?? defaultFetchCover;
   const translate = options.translate ?? ((key: string) => key);
-  const { onProgress, signal, identityKey = sourceUrl } = options;
+  const { onProgress, identityKey = sourceUrl } = options;
+  const controller = new AbortController();
+  const signal = controller.signal;
+  const onAbort = () => controller.abort();
+  options.signal?.addEventListener('abort', onAbort, { once: true });
+  if (options.signal?.aborted) controller.abort();
+  try {
+    signal.throwIfAborted();
 
-  const chapters = toc.chapters.slice(0, MAX_NOVEL_CHAPTERS);
-  const total = chapters.length;
-  const results: EpubChapter[] = new Array(total);
-  let failures = 0;
-  let done = 0;
-  let cursor = 0;
+    const chapters = toc.chapters.slice(0, MAX_NOVEL_CHAPTERS);
+    const total = chapters.length;
+    const results: EpubChapter[] = new Array(total);
+    const images: EpubImage[][] = new Array(total);
+    let remainingAssetBytes = MAX_TOTAL_ASSET_BYTES;
+    let assetQueue: Promise<unknown> = Promise.resolve();
+    const renderPage =
+      options.renderPage ??
+      (!options.fetchPage
+        ? (url: string, signal?: AbortSignal) => renderNovelPage(url, signal, translate)
+        : undefined);
+    let failures = 0;
+    let done = 0;
+    let cursor = 0;
 
-  const fetchChapter = async (url: string): Promise<FetchedPage> => {
-    try {
-      return await fetchPage(url, signal);
-    } catch (err) {
-      // One retry on transient network errors; user cancellation propagates.
-      if (isNovelImportCancelled(err) || signal?.aborted) throw abortError();
-      // A 52x has already been retried with backoff — don't double up.
-      if (isTransientFetchError(err)) throw err;
-      return await fetchPage(url, signal);
-    }
-  };
-
-  const worker = async () => {
-    while (true) {
-      if (signal?.aborted) throw abortError();
-      const index = cursor++;
-      if (index >= total) return;
-      const link = chapters[index]!;
-      let html: string | null = null;
+    const fetchChapter = async (url: string): Promise<FetchedPage> => {
       try {
-        const page = await fetchChapter(link.url);
-        html = extractChapterHtml(page.html, link.title);
+        return await fetchPage(url, signal);
       } catch (err) {
-        if (isNovelImportCancelled(err) || signal?.aborted) throw abortError();
-        html = null;
+        // One retry on transient network errors; user cancellation propagates.
+        if (isNovelImportCancelled(err) || signal.aborted) {
+          controller.abort();
+          throw abortError();
+        }
+        // A 52x has already been retried with backoff — don't double up.
+        if (isTransientFetchError(err)) throw err;
+        return await fetchPage(url, signal);
       }
-      if (html === null) {
-        failures++;
-        html =
-          `<h1>${escapeHtml(link.title)}</h1>` +
-          `<p>${escapeHtml(translate(_('This chapter could not be downloaded.')))}</p>` +
-          `<p><a href="${escapeHtml(link.url)}">${escapeHtml(link.url)}</a></p>`;
+    };
+
+    const worker = async () => {
+      while (true) {
+        if (signal?.aborted) throw abortError();
+        const index = cursor++;
+        if (index >= total) return;
+        const link = chapters[index]!;
+        let html: string | null = null;
+        try {
+          assertNovelUrlAllowed(link.url);
+          let page: FetchedPage;
+          let rendered = false;
+          try {
+            if (options.renderChapters && renderPage) {
+              page = await renderPage(link.url, signal);
+              rendered = true;
+            } else {
+              page = await fetchChapter(link.url);
+            }
+          } catch (err) {
+            if (
+              signal?.aborted ||
+              isNovelImportCancelled(err) ||
+              !renderPage ||
+              options.renderChapters ||
+              isTransientFetchError(err)
+            )
+              throw err;
+            page = await renderPage(link.url, signal);
+            rendered = true;
+          }
+          html = extractChapterHtml(page.html, link.title, page.finalUrl);
+          if (html === null && renderPage && !rendered) {
+            assertNovelUrlAllowed(page.finalUrl);
+            page = await renderPage(page.finalUrl, signal);
+            html = extractChapterHtml(page.html, link.title, page.finalUrl);
+          }
+          if (html !== null) {
+            const content = html;
+            const bundled = assetQueue.then(async () => {
+              if (signal?.aborted) throw abortError();
+              const bundle = await bundleAssets(content, page.finalUrl, {
+                maxBytes: remainingAssetBytes,
+                signal,
+              });
+              remainingAssetBytes -= bundle.images.reduce(
+                (sum, image) => sum + image.bytes.byteLength,
+                0,
+              );
+              return bundle;
+            });
+            assetQueue = bundled.catch(() => {});
+            const bundle = await bundled;
+            html = bundle.html;
+            images[index] = bundle.images;
+          }
+        } catch (err) {
+          if (isNovelImportCancelled(err) || signal.aborted) {
+            controller.abort();
+            throw abortError();
+          }
+          html = null;
+        }
+        if (html === null) {
+          failures++;
+          html =
+            `<h1>${escapeHtml(link.title)}</h1>` +
+            `<p>${escapeHtml(translate(_('This chapter could not be downloaded.')))}</p>` +
+            `<p><a href="${escapeHtml(link.url)}">${escapeHtml(link.url)}</a></p>`;
+        }
+        results[index] = { title: link.title, html };
+        done++;
+        onProgress?.(done, total);
+        // Extraction is main-thread CPU work (Tauri IPC can't run in a Worker) —
+        // yield between chapters so a long download doesn't freeze the UI.
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      results[index] = { title: link.title, html };
-      done++;
-      onProgress?.(done, total);
-      // Extraction is main-thread CPU work (Tauri IPC can't run in a Worker) —
-      // yield between chapters so a long download doesn't freeze the UI.
-      await new Promise((resolve) => setTimeout(resolve, 0));
+    };
+    await Promise.all(Array.from({ length: Math.min(CHAPTER_CONCURRENCY, total) }, worker));
+
+    let cover: EpubImage | undefined;
+    if (toc.coverUrl) {
+      const fetched = await fetchCover(toc.coverUrl, sourceUrl);
+      if (fetched) {
+        const ext = fetched.mime.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+        cover = { path: `cover.${ext}`, bytes: fetched.bytes, mime: fetched.mime };
+      }
     }
-  };
-  await Promise.all(Array.from({ length: Math.min(CHAPTER_CONCURRENCY, total) }, worker));
-
-  let cover: EpubImage | undefined;
-  if (toc.coverUrl) {
-    const fetched = await fetchCover(toc.coverUrl, sourceUrl);
-    if (fetched) {
-      const ext = fetched.mime.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-      cover = { path: `cover.${ext}`, bytes: fetched.bytes, mime: fetched.mime };
+    if (!cover) {
+      const siteName = (() => {
+        try {
+          return new URL(sourceUrl).hostname.replace(/^www\./, '');
+        } catch {
+          return '';
+        }
+      })();
+      cover = generateCoverSvg({ title: toc.title, author: toc.author, siteName });
     }
-  }
-  if (!cover) {
-    const siteName = (() => {
-      try {
-        return new URL(sourceUrl).hostname.replace(/^www\./, '');
-      } catch {
-        return '';
-      }
-    })();
-    cover = generateCoverSvg({ title: toc.title, author: toc.author, siteName });
-  }
 
-  // Sample prose (not placeholder text) for language detection.
-  let sample = '';
-  for (const chapter of results) {
-    sample += ` ${stripTags(chapter.html)}`;
-    if (sample.length >= 2048) break;
-  }
-  const language = detectLanguage(`${toc.title} ${sample}`.slice(0, 2048)) || 'en';
+    // Sample prose (not placeholder text) for language detection.
+    let sample = '';
+    for (const chapter of results) {
+      sample += ` ${stripTags(chapter.html)}`;
+      if (sample.length >= 2048) break;
+    }
+    const language = detectLanguage(`${toc.title} ${sample}`.slice(0, 2048)) || 'en';
 
-  const blob = await buildEpub(
-    results,
-    {
-      title: toc.title,
-      author: toc.author,
-      language,
-      identifier: stableIdentifier(identityKey),
-    },
-    [],
-    cover,
-  );
-  const file = new File([blob], `${safeFileName(toc.title)}.epub`, {
-    type: 'application/epub+zip',
-  });
-  return { file, title: toc.title, author: toc.author, chapterCount: total, failures };
+    signal.throwIfAborted();
+    const blob = await buildEpub(
+      results,
+      {
+        title: toc.title,
+        author: toc.author,
+        language,
+        identifier: stableIdentifier(identityKey),
+      },
+      [
+        ...new Map(
+          images
+            .flat()
+            .filter(Boolean)
+            .map((image) => [image.path, image]),
+        ).values(),
+      ],
+      cover,
+    );
+    const file = new File([blob], `${safeFileName(toc.title)}.epub`, {
+      type: 'application/epub+zip',
+    });
+    signal.throwIfAborted();
+    return { file, title: toc.title, author: toc.author, chapterCount: total, failures };
+  } finally {
+    options.signal?.removeEventListener('abort', onAbort);
+  }
 }

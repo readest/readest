@@ -1,5 +1,24 @@
 import { AppService } from '@/types/system';
 
+/**
+ * Whether local files must be read through the `rangefile` query-range scheme
+ * instead of the asset protocol with a `Range` header. Chromium re-applies a
+ * `Range` header's offset to the body of an intercepted custom-protocol
+ * response (Chromium 40739128), so every non-zero-start read fails: that is the
+ * Android WebView and, on Linux, the CEF runtime, which is the only Linux
+ * webview that carries a `Chrome/` token (WebKitGTK never does).
+ */
+export const needsQueryRangeReads = (osType: string, userAgent: string) =>
+  osType === 'android' || (osType === 'linux' && isLinuxCefRuntime(userAgent));
+
+/**
+ * The Linux CEF (Chromium) build. WebKitGTK never sends a `Chrome/` token and
+ * Android identifies itself in the platform part, so this only matches the
+ * desktop Linux Chromium runtime.
+ */
+export const isLinuxCefRuntime = (userAgent: string) =>
+  /\bLinux\b/.test(userAgent) && !/\bAndroid\b/.test(userAgent) && /\bChrome\//.test(userAgent);
+
 export const parseWebViewInfo = (appService: AppService | null): string => {
   const ua = navigator.userAgent;
 
@@ -20,7 +39,10 @@ export const parseWebViewInfo = (appService: AppService | null): string => {
     const match = ua.match(/Edg\/([0-9.]+)/);
     return match ? `Edge ${match[1]}` : 'Edge WebView2';
   } else if (appService?.appPlatform === 'tauri' && appService?.osPlatform === 'linux') {
-    // Linux WebView
+    // Linux: the CEF build reports Chromium (its user agent is reduced to the
+    // major version, e.g. Chrome/151.0.0.0); otherwise WebKitGTK.
+    const chromeMatch = ua.match(/Chrome\/([0-9.]+)/);
+    if (chromeMatch) return `Chromium ${chromeMatch[1]}`;
     const match = ua.match(/AppleWebKit\/([0-9.]+)/);
     return match ? `WebView ${match[1]}` : 'Linux WebView';
   } else if (ua.includes('CriOS') && ua.includes('Mobile/') && ua.includes('Safari')) {

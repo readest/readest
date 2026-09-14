@@ -11,6 +11,8 @@ import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { parseBookDeepLink } from '@/utils/deeplink';
 import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
+import { isMainAppWindow } from '@/utils/window';
+import { markLaunchUrl } from '@/utils/deeplinkConsume';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped: survives hook remounts (library <-> reader). getCurrent()
@@ -101,18 +103,12 @@ export function useOpenBookLink() {
       // view inits (consumed in useBooksManager). Harmless if it never opens.
       if (parsed.autoplay) setPendingTTSAutoplay(parsed.bookHash);
       // Dedupe ONLY the cold-start path. The OS persists the launch deep link
-      // and re-delivers it via getCurrent() on every reader reload, which would
-      // re-open the book in a loop. Live taps (app-incoming-url) are genuine
-      // user actions and must always be processed. sessionStorage survives
-      // reloads (module state does not).
-      if (coldStart) {
-        try {
-          if (sessionStorage.getItem('consumedColdStartBookUrl') === url) return;
-          sessionStorage.setItem('consumedColdStartBookUrl', url);
-        } catch {
-          // sessionStorage unavailable - proceed.
-        }
-      }
+      // and getCurrent() re-reports it to every fresh document for the whole
+      // app run (#6104). Live taps (app-incoming-url) are genuine user actions
+      // and must always be processed - they are only recorded, so a later
+      // reload re-reporting one of them is recognised as a replay.
+      const fresh = markLaunchUrl('launchBookUrls', url);
+      if (coldStart && !fresh) return;
       if (!useLibraryStore.getState().libraryLoaded) {
         pending.current = parsed.bookHash;
         return;
@@ -120,7 +116,11 @@ export function useOpenBookLink() {
       void resolveAndNavigate(parsed.bookHash);
     };
 
-    if (!coldStartConsumed) {
+    // Only the launch window reads the cold-start URL: it stays in the plugin's
+    // process-global state forever, and a reader window spawned later would
+    // otherwise treat it as its own cold start and replace the book the user
+    // just clicked with the deep-linked one (#6104).
+    if (!coldStartConsumed && isMainAppWindow()) {
       coldStartConsumed = true;
       getCurrent()
         .then((urls) => urls?.forEach((u) => handle(u, true)))

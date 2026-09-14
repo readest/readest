@@ -21,10 +21,13 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import app.tauri.annotation.InvokeArg
 import org.json.JSONObject
 import java.lang.ref.WeakReference
@@ -48,6 +51,7 @@ class ClipUrlArgs {
     // Interactive mode: show the page with a Cancel/Capture bar instead
     // of the opaque overlay so the user can sign in before capturing.
     var interactive: Boolean? = null
+    var backgroundCapture: Boolean? = null
     var signInHint: String? = null
     var captureLabel: String? = null
     var cancelLabel: String? = null
@@ -142,6 +146,7 @@ class ClipUrlController(
     private var statusLabel: TextView? = null
     private var didFinishOrFail = false
     private var captureFired = false
+    private var completed = false
     private var settled = false
     private val timeoutRunnable = Runnable { onTimeout() }
 
@@ -160,6 +165,22 @@ class ClipUrlController(
     }
 
     private fun presentDialog(act: Activity, urlStr: String) {
+        if (args.backgroundCapture == true && !interactiveMode) {
+            // Keep a real viewport behind the app for layout and lazy loading.
+            // The React import sheet stays visible, focused, and interactive.
+            val wv = WebView(act)
+            configureWebView(wv)
+            wv.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+            wv.isFocusable = false
+            val host = act.findViewById<ViewGroup>(android.R.id.content)
+            host.addView(wv, 0, ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+            ))
+            webView = wv
+            wv.loadUrl(urlStr)
+            mainHandler.postDelayed(timeoutRunnable, HARD_TIMEOUT_MS)
+            return
+        }
         val bg = parseHexColor(args.background ?: DEFAULT_BACKGROUND) ?: Color.BLACK
         val fg = parseHexColor(args.foreground ?: DEFAULT_FOREGROUND) ?: Color.WHITE
 
@@ -174,7 +195,8 @@ class ClipUrlController(
             android.R.style.Theme_Black_NoTitleBar_Fullscreen
         }
         val dlg = Dialog(act, theme)
-        dlg.setCancelable(interactiveMode)
+        dlg.setCancelable(true)
+        dlg.setOnCancelListener { finish(ClipUrlResult.Failure(CANCELLED_MESSAGE)) }
         dlg.setCanceledOnTouchOutside(false)
         dlg.window?.also { window ->
             window.setBackgroundDrawable(ColorDrawable(bg))
@@ -185,7 +207,6 @@ class ClipUrlController(
 
         val root: View
         if (interactiveMode) {
-            dlg.setOnCancelListener { finish(ClipUrlResult.Failure(CANCELLED_MESSAGE)) }
             dlg.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             // Back navigates the page history first — sign-in flows hop
             // through several redirects — and only cancels once exhausted.
@@ -251,10 +272,6 @@ class ClipUrlController(
         dialog = dlg
         webView = wv
 
-        // Inject the fingerprint mask before the first navigation so
-        // navigator.webdriver and friends look right when the page's
-        // own scripts run.
-        wv.evaluateJavascript(FINGERPRINT_MASK_JS, null)
         wv.loadUrl(urlStr)
 
         // Interactive capture waits for the user's tap — no deadline.
@@ -273,6 +290,11 @@ class ClipUrlController(
         settings.mediaPlaybackRequiresUserGesture = true
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         wv.setBackgroundColor(parseHexColor(args.background ?: DEFAULT_BACKGROUND) ?: Color.BLACK)
+        // Register for every document, including login redirects. Evaluating on
+        // the initial about:blank page loses the mask at the first navigation.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(wv, FINGERPRINT_MASK_JS, setOf("*"))
+        }
 
         // The CookieManager is app-wide and persistent, so a session the
         // user establishes in the interactive capture flow authenticates
@@ -421,16 +443,27 @@ class ClipUrlController(
         status.layoutParams = statusParams
         column.addView(status)
         statusLabel = status
+        val cancel = Button(act)
+        cancel.text = args.cancelLabel ?: "Cancel"
+        cancel.setTextColor(fg)
+        cancel.background = GradientDrawable().apply {
+            setColor(bg)
+            setStroke(dp(act, 1), fg)
+            cornerRadius = dp(act, 6).toFloat()
+        }
+        cancel.minHeight = dp(act, 44)
+        cancel.setOnClickListener { finish(ClipUrlResult.Failure(CANCELLED_MESSAGE)) }
+        column.addView(cancel)
 
         return column
     }
 
     private fun captureOuterHtml() {
-        if (captureFired) return
+        if (captureFired || completed) return
         captureFired = true
         settled = true
         val wv = webView ?: return finish(ClipUrlResult.Failure("WebView vanished before capture"))
-        wv.evaluateJavascript("document.documentElement.outerHTML") { result ->
+        wv.evaluateJavascript("(function() { var root = document.documentElement.cloneNode(true); root.setAttribute('data-readest-url', location.href); return root.outerHTML; })()") { result ->
             // `evaluateJavascript` returns the value JSON-encoded, so
             // an HTML string comes back wrapped in quotes with escapes.
             // Parse via JSONObject to recover the raw HTML.
@@ -456,6 +489,8 @@ class ClipUrlController(
     }
 
     private fun finish(result: ClipUrlResult) {
+        if (completed) return
+        completed = true
         mainHandler.removeCallbacks(timeoutRunnable)
         try {
             // Persist any session the page established (interactive
@@ -468,6 +503,10 @@ class ClipUrlController(
             webView?.stopLoading()
             webView?.webViewClient = WebViewClient()  // detach our delegate
             dialog?.dismiss()
+            webView?.let { wv ->
+                (wv.parent as? ViewGroup)?.removeView(wv)
+                wv.destroy()
+            }
         } catch (e: Exception) {
             Log.w(TAG, "error tearing down clip_url dialog", e)
         }

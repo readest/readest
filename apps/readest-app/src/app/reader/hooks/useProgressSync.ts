@@ -315,12 +315,13 @@ export const useProgressSync = (bookKey: string) => {
         // Reading progress applies below. Proofread (find/replace) rules merge
         // separately just after; other config fields remain device-local.
         // TODO: general config sync via a more robust profile-based solution.
-        if (remoteCFILocation && configCFI) {
+        if (remoteCFILocation) {
+          const remoteIsAhead = !configCFI || CFI.compare(configCFI, remoteCFILocation) < 0;
           // While previewing a deep-link target, do NOT yank the view to the
           // remote position — the user came here to look at a specific
           // annotation. The local config still gets updated; the next open
           // resolves to the synced position normally.
-          if (CFI.compare(configCFI, remoteCFILocation) < 0 && view && !isPreviewing()) {
+          if (remoteIsAhead && view && !isPreviewing()) {
             view.goTo(remoteCFILocation);
             announceSynced();
           }

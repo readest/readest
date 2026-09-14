@@ -17,9 +17,13 @@ import type { Book } from '@/types/book';
 const popupSpy = vi.hoisted(() => vi.fn(async () => {}));
 const closeSpy = vi.hoisted(() => vi.fn(async () => {}));
 const menuNew = vi.hoisted(() => vi.fn(async () => ({ popup: popupSpy, close: closeSpy })));
+const menuItemNew = vi.hoisted(() =>
+  vi.fn(async (options: { text: string }) => ({ ...options, close: vi.fn(async () => {}) })),
+);
 
 vi.mock('@tauri-apps/api/menu', () => ({
   Menu: { new: menuNew },
+  MenuItem: { new: menuItemNew },
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({

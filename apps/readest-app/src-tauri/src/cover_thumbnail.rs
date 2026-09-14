@@ -88,11 +88,11 @@ struct CoverThumbnailReadyPayload {
 
 static QUEUE: OnceLock<Mutex<QueueState>> = OnceLock::new();
 
-struct WorkerRunningGuard {
-    app: AppHandle,
+struct WorkerRunningGuard<R: tauri::Runtime> {
+    app: AppHandle<R>,
 }
 
-impl Drop for WorkerRunningGuard {
+impl<R: tauri::Runtime> Drop for WorkerRunningGuard<R> {
     fn drop(&mut self) {
         if lock_queue().finish_worker() {
             spawn_worker(self.app.clone());
@@ -110,7 +110,7 @@ fn lock_queue() -> std::sync::MutexGuard<'static, QueueState> {
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-fn spawn_worker(app: AppHandle) {
+fn spawn_worker<R: tauri::Runtime>(app: AppHandle<R>) {
     tauri::async_runtime::spawn_blocking(move || run_worker(app));
 }
 
@@ -163,8 +163,8 @@ fn build_jobs(
 /// decoding happens on the detached blocking worker, never on the webview/UI
 /// thread or in the command future.
 #[tauri::command]
-pub fn optimize_cover_thumbnails(
-    app: AppHandle,
+pub fn optimize_cover_thumbnails<R: tauri::Runtime>(
+    app: AppHandle<R>,
     books_dir: String,
     cache_dir: String,
     covers: Vec<CoverThumbnailRequest>,
@@ -180,7 +180,7 @@ pub fn optimize_cover_thumbnails(
     Ok(())
 }
 
-fn run_worker(app: AppHandle) {
+fn run_worker<R: tauri::Runtime>(app: AppHandle<R>) {
     let _running = WorkerRunningGuard { app: app.clone() };
 
     loop {

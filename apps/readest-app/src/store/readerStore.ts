@@ -12,6 +12,7 @@ import {
 import { Insets } from '@/types/misc';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
+import { isAbsEbook } from '@/utils/audiobook';
 import { DocumentLoader, TOCItem } from '@/libs/document';
 import {
   isPseStreamFileName,
@@ -153,6 +154,14 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       delete viewStates[key];
       return { viewStates };
     });
+    // A streamed ABS ebook reads through a RemoteFile that authenticates with
+    // a short-lived access token, so its cached BookDoc must not outlive the
+    // last open view: the next open resolves the stream afresh against the
+    // store's current token. Local books keep their cache for instant reopens.
+    const id = key.split('-')[0]!;
+    if (Object.keys(get().viewStates).some((k) => k.split('-')[0] === id)) return;
+    const book = useLibraryStore.getState().getBookByHash(id);
+    if (book && isAbsEbook(book)) useBookDataStore.getState().clearBookData(id);
   },
   getViewState: (key: string) => get().viewStates[key] || null,
   initViewState: async (
@@ -597,6 +606,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     })),
 
   recreateViewer: (envConfig: EnvConfigType, key: string) => {
+    if (!key || get().viewStates[key]?.key !== key) return;
     const id = key.split('-')[0]!;
     // `initViewState` already mints a fresh `viewerKey` when the reload lands,
     // which is what remounts <FoliateViewer>. Minting a second one here

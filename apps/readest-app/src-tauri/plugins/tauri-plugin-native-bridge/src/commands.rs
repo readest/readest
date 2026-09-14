@@ -363,6 +363,26 @@ pub(crate) async fn capture_webview_region<R: Runtime>(
     Ok(tauri::ipc::Response::new(png))
 }
 
+/// Freeze the on-screen pixels of a webview region behind a native layer
+/// that `capture_webview_region` does not see, for the two-column page curl
+/// (#6106). iOS only so far; other platforms reject and the JS side keeps
+/// a paper back on the leaf.
+#[command]
+pub(crate) async fn cover_webview_region<R: Runtime>(
+    app: AppHandle<R>,
+    payload: CaptureWebviewRegionRequest,
+) -> Result<CoverWebviewRegionResponse> {
+    app.native_bridge().cover_webview_region(payload)
+}
+
+#[command]
+pub(crate) async fn uncover_webview_region<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UncoverWebviewRegionRequest,
+) -> Result<()> {
+    app.native_bridge().uncover_webview_region(payload)
+}
+
 #[command]
 pub(crate) async fn icloud_container_status<R: Runtime>(
     app: AppHandle<R>,

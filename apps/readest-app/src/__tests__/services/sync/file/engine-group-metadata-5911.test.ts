@@ -414,6 +414,9 @@ describe('FileSyncEngine.syncLibrary — incremental stays O(changed)', () => {
     await new FileSyncEngine(
       provider,
       fakeStore({
+        // The cover is already on this device: only a row whose cover file is
+        // missing may cost a Full Sync cover GET (#5931), never a field repair.
+        loadBookCover: async () => ({ bytes: new ArrayBuffer(8), size: 8 }),
         updateBookMetadata: async (b) => {
           applied.push(b);
         },

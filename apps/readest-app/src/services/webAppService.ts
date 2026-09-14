@@ -81,9 +81,9 @@ const indexedDBFileSystem: FileSystem = {
   async getImageURL(path: string) {
     return await this.getBlobURL(path, 'None');
   },
-  async openFile(path: string, base: BaseDir, filename?: string) {
+  async openFile(path: string, base: BaseDir, filename?: string, fetcher?: typeof fetch) {
     if (isValidURL(path)) {
-      return await new RemoteFile(path, filename).open();
+      return await new RemoteFile(path, filename, '', Date.now(), fetcher).open();
     } else {
       const content = await this.readFile(path, base, 'binary');
       return new File([content], filename || path);

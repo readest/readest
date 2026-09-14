@@ -156,3 +156,151 @@ describe('PageCurlRenderer (browser)', () => {
     expect(right[3]).toBe(255);
   });
 });
+
+// Two-column spreads turn one leaf hinged at the spine (readest#6106): the
+// outer column curls, stops at the middle, and lands on the inner column as
+// an exact mirror, showing the incoming page on its back. The incoming
+// texture is the inner column of the NEXT spread: a different two-tone
+// bitmap (cyan | magenta across its width) so the mirror mapping is
+// checkable — once landed, the leaf's back must read like the live page it
+// is about to hand over to, pixel for pixel.
+describe('PageCurlRenderer two-column leaf (browser)', () => {
+  let renderer: PageCurlRenderer;
+  let host: HTMLDivElement;
+  const HALF = W / 2;
+
+  const makeIncomingBitmap = async (): Promise<ImageBitmap> => {
+    const canvas = document.createElement('canvas');
+    canvas.width = HALF;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = 'rgb(0, 200, 200)';
+    ctx.fillRect(0, 0, HALF / 2, H);
+    ctx.fillStyle = 'rgb(200, 0, 200)';
+    ctx.fillRect(HALF / 2, 0, HALF / 2, H);
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), 'image/png'),
+    );
+    return createImageBitmap(blob);
+  };
+
+  const near = (px: number[], rgb: [number, number, number], tolerance = 12) =>
+    Math.abs(px[0]! - rgb[0]) <= tolerance &&
+    Math.abs(px[1]! - rgb[1]) <= tolerance &&
+    Math.abs(px[2]! - rgb[2]) <= tolerance;
+
+  beforeEach(async () => {
+    host = document.createElement('div');
+    Object.assign(host.style, {
+      position: 'absolute',
+      left: '0',
+      top: '0',
+      width: `${W}px`,
+      height: `${H}px`,
+    });
+    document.body.appendChild(host);
+    renderer = new PageCurlRenderer();
+    renderer.attach(host, W, H, 1);
+    renderer.setTexture(await makePageBitmap());
+    renderer.setColumns(2);
+  });
+
+  afterEach(() => {
+    renderer?.dispose();
+    host?.remove();
+  });
+
+  it('covers both columns exactly at progress 0', () => {
+    renderer.render(0, { x: 1, y: 0.5 });
+    expect(renderer.readPixel(20, 20).slice(0, 3)).toEqual([0, 160, 0]);
+    expect(renderer.readPixel(W - 20, 20).slice(0, 3)).toEqual([0, 0, 160]);
+    expect(renderer.readPixel(20, H - 20).slice(0, 3)).toEqual([160, 0, 0]);
+    expect(renderer.readPixel(W - 20, H - 20).slice(0, 3)).toEqual([160, 160, 0]);
+    expect(renderer.canvasOpacity).toBe('');
+  });
+
+  it('keeps the inner column flat while the outer leaf curls', () => {
+    renderer.render(0.35, { x: 1, y: 0.5 });
+    // The outer edge has lifted away: transparent, live page beneath.
+    expect(renderer.readPixel(W - 12, 75)[3]).toBe(0);
+    // The inner column is untouched and unshaded: exact green / red.
+    expect(renderer.readPixel(30, 75).slice(0, 3)).toEqual([0, 160, 0]);
+    expect(renderer.readPixel(30, H - 30).slice(0, 3)).toEqual([160, 0, 0]);
+    // Just inside the spine the leaf's own flat front is still there (blue).
+    const spineSide = renderer.readPixel(HALF + 12, 75);
+    expect(spineSide[3]).toBe(255);
+    expect(spineSide[2]).toBeGreaterThan(120);
+  });
+
+  it('lands the leaf on the inner column as an exact mirror of the incoming page', async () => {
+    renderer.setIncoming(await makeIncomingBitmap());
+    renderer.render(1, { x: 1, y: 0.5 });
+    // The outer column has turned away completely.
+    for (const x of [HALF + 20, HALF + HALF / 2, W - 20]) {
+      expect(renderer.readPixel(x, 150)[3]).toBe(0);
+    }
+    // The inner column now shows the incoming page, unmirrored and unshaded:
+    // cyan on its left half, magenta on its right half, at every row.
+    for (const y of [10, 75, 150, 225, H - 10]) {
+      const left = renderer.readPixel(HALF / 4, y);
+      const right = renderer.readPixel((3 * HALF) / 4, y);
+      expect(left[3]).toBe(255);
+      expect(right[3]).toBe(255);
+      expect(near(left, [0, 200, 200])).toBe(true);
+      expect(near(right, [200, 0, 200])).toBe(true);
+    }
+    // The spine edge and the outer edge of the incoming column both land.
+    expect(near(renderer.readPixel(HALF - 3, 150), [200, 0, 200])).toBe(true);
+    expect(near(renderer.readPixel(3, 150), [0, 200, 200])).toBe(true);
+    expect(renderer.canvasOpacity).toBe('');
+  });
+
+  it('shows the incoming page on the back of the leaf mid-turn', async () => {
+    renderer.setIncoming(await makeIncomingBitmap());
+    renderer.render(0.7, { x: 1, y: 0.5 });
+    // The landed part of the leaf lies over the inner column left of the
+    // spine. The leaf carries its content: the outer edge of the leaf is
+    // heading for the far edge of the inner column, so what has landed so
+    // far is the incoming page's far (cyan) half, unshaded.
+    const landed = renderer.readPixel(HALF - 20, 150);
+    expect(landed[3]).toBe(255);
+    expect(near(landed, [0, 200, 200])).toBe(true);
+    // Far from the spine the old inner page is still uncovered (green).
+    expect(renderer.readPixel(20, 75).slice(0, 3)).toEqual([0, 160, 0]);
+  });
+
+  it('fades out at the end when no incoming page is available', () => {
+    renderer.render(0.5, { x: 1, y: 0.5 });
+    expect(renderer.canvasOpacity).toBe('');
+    renderer.render(0.9, { x: 1, y: 0.5 });
+    expect(parseFloat(renderer.canvasOpacity)).toBeCloseTo(0.5, 1);
+    renderer.render(1, { x: 1, y: 0.5 });
+    expect(renderer.canvasOpacity).toBe('0');
+    // The paper back still lands on the inner column (whitened blue/yellow),
+    // never mirrored-away transparency, so the fade has something to fade.
+    const landed = renderer.readPixel(HALF / 2, 75);
+    expect(landed[3]).toBe(255);
+    expect(landed[0]).toBeGreaterThan(140);
+  });
+
+  it('turns the left column onto the right for rtl / backward leaves', async () => {
+    renderer.setIncoming(await makeIncomingBitmap());
+    renderer.render(1, { x: 0, y: 0.5 }, true);
+    // The left column has turned away; the right column shows the incoming
+    // page unmirrored: cyan on its left half, magenta on its right half.
+    expect(renderer.readPixel(20, 150)[3]).toBe(0);
+    expect(renderer.readPixel(HALF - 20, 150)[3]).toBe(0);
+    expect(near(renderer.readPixel(HALF + HALF / 4, 150), [0, 200, 200])).toBe(true);
+    expect(near(renderer.readPixel(HALF + (3 * HALF) / 4, 150), [200, 0, 200])).toBe(true);
+  });
+
+  it('leaves single-column pages untouched by leaf state', async () => {
+    renderer.setIncoming(await makeIncomingBitmap());
+    renderer.setColumns(1);
+    renderer.render(1, { x: 1, y: 0.5 });
+    for (const x of [20, W / 2, W - 20]) {
+      expect(renderer.readPixel(x, 150)[3]).toBe(0);
+    }
+    expect(renderer.canvasOpacity).toBe('');
+  });
+});

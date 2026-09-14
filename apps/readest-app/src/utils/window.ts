@@ -17,6 +17,28 @@ export const formatAppWindowTitle = (bookTitle?: string) => {
   return title ? `${APP_NAME} - ${title}` : APP_NAME;
 };
 
+/**
+ * Whether this webview is the window the OS launched the app into.
+ *
+ * Cold-start deep links belong to that window alone. tauri-plugin-deep-link
+ * keeps the launch URL in process-global state for the whole session — macOS
+ * replaces it on every `RunEvent::Opened` and nothing ever clears it — so
+ * `getCurrent()` keeps returning it long after the link was acted on. The
+ * consume-once guards on the JS side are per-webview (a module flag, a
+ * sessionStorage key), so every window the app spawns itself (`reader-N` from
+ * showReaderWindow / showLibraryWindow) starts out believing the stale URL is
+ * its own cold start and hijacks whatever the user actually opened (#6104).
+ * Those windows carry their own intent in their URL, so they never need it.
+ */
+export const isMainAppWindow = () => {
+  try {
+    return getCurrentWindow().label === 'main';
+  } catch {
+    // No Tauri window API (web build): nothing spawns extra webviews there.
+    return true;
+  }
+};
+
 export const tauriSetWindowTitle = async (bookTitle?: string) => {
   await getCurrentWindow().setTitle(formatAppWindowTitle(bookTitle));
 };
@@ -90,6 +112,11 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
 let wasMaximizedBeforeFullscreen = false;
 
 export const tauriHandleToggleFullScreen = async () => {
+  // Reader/library shortcuts also run on mobile, where Tauri does not
+  // register the desktop fullscreen commands (READEST-10K).
+  const platform = await osType();
+  if (platform === 'android' || platform === 'ios') return;
+
   const currentWindow = getCurrentWindow();
   const isFullscreen = await currentWindow.isFullscreen();
   // Toggle fullscreen regardless of the maximized state. Previously a maximized
@@ -109,14 +136,13 @@ export const tauriHandleToggleFullScreen = async () => {
     // Unmaximize first and restore the maximized state on exit. Other
     // platforms must keep entering fullscreen straight from the maximized
     // state (Phosh windows are always maximized).
-    wasMaximizedBeforeFullscreen =
-      (await osType()) === 'windows' && (await currentWindow.isMaximized());
+    wasMaximizedBeforeFullscreen = platform === 'windows' && (await currentWindow.isMaximized());
     if (wasMaximizedBeforeFullscreen) {
       await currentWindow.unmaximize();
     }
     await currentWindow.setFullscreen(true);
   }
-  if ((await osType()) === 'linux') {
+  if (platform === 'linux') {
     linuxWindowRestoreTransparentBg();
   }
 };

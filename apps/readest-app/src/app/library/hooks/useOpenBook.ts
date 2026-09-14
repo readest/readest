@@ -7,7 +7,7 @@ import { useAppRouter } from '@/hooks/useAppRouter';
 import { hasFileSyncMirror, useMakeBookAvailable } from '@/hooks/useMakeBookAvailable';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader, showReaderWindow } from '@/utils/nav';
-import { isAudiobook } from '@/utils/audiobook';
+import { isAbsEbook, isAudiobook } from '@/utils/audiobook';
 
 interface UseOpenBookOptions {
   setLoading: Dispatch<SetStateAction<boolean>>;
@@ -54,7 +54,13 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       // missing LOCAL file is not evidence that the user wants the REMOTE copy
       // destroyed, and there the book is very likely still on the mirror;
       // `makeBookAvailable` below fetches it back instead.
-      if (book.filePath && !book.uploadedAt && !book.deletedAt && !hasFileSyncMirror()) {
+      if (
+        book.filePath &&
+        !isAbsEbook(book) &&
+        !book.uploadedAt &&
+        !book.deletedAt &&
+        !hasFileSyncMirror()
+      ) {
         const available = await appService?.isBookAvailable(book);
         if (!available) {
           eventDispatcher.dispatch('toast', {

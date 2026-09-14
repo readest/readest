@@ -6,6 +6,9 @@ import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { downloadNovel, fetchNovelToc, isNovelImportCancelled } from '@/services/novel/novelImport';
+import { openWebBrowser } from '@/services/webBrowser/webBrowser';
+import { getWebBrowserOptions } from '@/services/webBrowser/webBrowserOptions';
+import type { WebBrowserPage } from '@/services/webBrowser/webBrowser';
 import type { NovelToc } from '@/services/novel/chapterList';
 
 interface ImportNovelDialogProps {
@@ -21,7 +24,7 @@ type Phase = 'url' | 'preview' | 'downloading';
  * Modal for the Library import-menu's "From Web Novel" entry. Three phases:
  * paste the TOC URL, confirm the detected chapter list (heuristics can
  * misfire — never start a hundreds-of-requests download unconfirmed), then
- * a cancellable download progress bar. Tauri-only, like "From Web URL" — a
+ * a cancellable download progress bar. Tauri-only, like "From Web Browser" — a
  * web build can't fetch cross-origin pages.
  */
 const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, onImport }) => {
@@ -30,6 +33,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
   const [phase, setPhase] = useState<Phase>('url');
   const [toc, setToc] = useState<NovelToc | null>(null);
   const [sourceUrl, setSourceUrl] = useState('');
+  const [renderChapters, setRenderChapters] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -39,6 +43,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
   const [bookTitle, setBookTitle] = useState('');
   const [titleEdited, setTitleEdited] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const requestRef = useRef(0);
 
   const chapters = toc?.chapters ?? [];
 
@@ -49,15 +54,21 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
     setPhase('url');
     setToc(null);
     setSourceUrl('');
+    setRenderChapters(false);
     setBusy(false);
     setError(null);
     setProgress({ done: 0, total: 0 });
     setSelectedChapterIndexes(new Set());
     setBookTitle('');
     setTitleEdited(false);
+    return () => {
+      requestRef.current++;
+      abortRef.current?.abort();
+    };
   }, [isOpen]);
 
   const close = () => {
+    requestRef.current++;
     abortRef.current?.abort();
     onClose();
   };
@@ -99,27 +110,63 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
     if (toc && !titleEdited) setBookTitle(suggestedBookTitle(toc, selected));
   };
 
-  const fetchToc = async () => {
-    const target = url.trim();
+  const fetchToc = async (page?: WebBrowserPage) => {
+    const target = page?.url ?? url.trim();
     if (!/^https?:\/\//i.test(target)) {
       setError(_('Enter a URL starting with http:// or https://'));
       return;
     }
+    const request = ++requestRef.current;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setBusy(true);
     setError(null);
     try {
-      const parsed = await fetchNovelToc(target);
+      const parsed = await fetchNovelToc(target, {
+        signal: controller.signal,
+        ...(page ? { page: { html: page.html, finalUrl: page.url } } : {}),
+      });
+      if (request !== requestRef.current || controller.signal.aborted) return;
       const selected = new Set(parsed.chapters.map((_, index) => index));
       setToc(parsed);
       setSourceUrl(target);
+      setRenderChapters(!!page);
       setSelectedChapterIndexes(selected);
       setBookTitle(suggestedBookTitle(parsed, selected));
       setTitleEdited(false);
       setPhase('preview');
     } catch (e) {
-      surfaceError(e);
+      if (request === requestRef.current && !isNovelImportCancelled(e)) surfaceError(e);
     } finally {
-      setBusy(false);
+      if (request === requestRef.current) {
+        setBusy(false);
+        abortRef.current = null;
+      }
+    }
+  };
+
+  const signIn = async () => {
+    const target = url.trim();
+    if (busy || !/^https?:\/\//i.test(target)) {
+      if (!busy) setError(_('Enter a URL starting with http:// or https://'));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const request = ++requestRef.current;
+    try {
+      const options = getWebBrowserOptions(_, document.documentElement.dataset['eink'] === 'true');
+      options.labels.clipPage = _('Use Chapter List');
+      const result = await openWebBrowser(target, options);
+      if (request !== requestRef.current) return;
+      if (result.page) {
+        setUrl(result.page.url);
+        await fetchToc(result.page);
+      }
+    } catch (e) {
+      if (request === requestRef.current) surfaceError(e);
+    } finally {
+      if (request === requestRef.current) setBusy(false);
     }
   };
 
@@ -142,6 +189,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
       const book = await downloadNovel(selectedToc, sourceUrl, {
         signal: controller.signal,
         identityKey,
+        renderChapters,
         translate: _,
         onProgress: (done, total) => setProgress({ done, total }),
       });
@@ -150,6 +198,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
         setError(_('No chapters could be downloaded.'));
         return;
       }
+      if (controller.signal.aborted) return;
       await onImport(book.file);
       if (book.failures > 0) {
         eventDispatcher.dispatch('toast', {
@@ -185,7 +234,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
       isOpen={isOpen}
       onClose={close}
       title={_('Import Web Novel')}
-      // Size to content — same override as ImportFromUrlDialog.
+      // Size to content — same override as WebSourcesDialog.
       boxClassName='sm:w-[480px]! sm:max-w-[480px]! sm:h-auto! sm:max-h-[80vh]!'
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
@@ -193,7 +242,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
           <>
             <p className='text-base-content/60 text-sm leading-relaxed'>
               {_(
-                'Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.',
+                'Paste the link to a web novel’s chapter list. For members-only sites, sign in with Browser, open the chapter list, then choose Use Chapter List.',
               )}
             </p>
             <input
@@ -209,7 +258,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
               }}
             />
             {error && <p className='text-error text-sm leading-relaxed'>{error}</p>}
-            <div className='flex justify-end gap-2 pt-1'>
+            <div className='flex flex-wrap justify-end gap-2 pt-1'>
               <button
                 type='button'
                 className='btn btn-ghost btn-sm eink-bordered'
@@ -217,6 +266,14 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
                 disabled={busy}
               >
                 {_('Cancel')}
+              </button>
+              <button
+                type='button'
+                className='btn btn-ghost btn-sm eink-bordered'
+                onClick={() => void signIn()}
+                disabled={busy || !url.trim()}
+              >
+                {_('Sign in with Browser')}
               </button>
               <button
                 type='button'
@@ -328,28 +385,48 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
         )}
 
         {phase === 'downloading' && (
-          <>
-            <p className='text-base-content/60 text-sm leading-relaxed'>
-              {_('Downloading chapters…')}
-            </p>
-            <progress
-              className='progress eink-bordered w-full'
-              value={progress.done}
-              max={progress.total || 1}
-            />
-            <p className='text-base-content/60 text-sm'>
-              {progress.done} / {progress.total}
-            </p>
-            <div className='flex justify-end gap-2 pt-1'>
+          <div className='flex flex-col gap-8 py-6'>
+            <div className='flex items-start gap-4'>
+              <MdMenuBook
+                aria-hidden='true'
+                className='text-base-content/70 mt-1 h-8 w-8 shrink-0'
+              />
+              <div className='min-w-0 space-y-1'>
+                <p className='break-words text-lg font-semibold leading-snug'>{bookTitle}</p>
+                <p className='text-base-content/60 text-sm'>{_('Downloading chapters…')}</p>
+              </div>
+            </div>
+            <div className='space-y-3'>
+              <div className='flex justify-between gap-4 text-sm tabular-nums' role='status'>
+                <span className='text-base-content/70'>
+                  {progress.done} / {progress.total}
+                </span>
+                <span className='font-medium'>
+                  {Math.round((progress.done / (progress.total || 1)) * 100)}%
+                </span>
+              </div>
+              <progress
+                aria-label={_('Downloading chapters…')}
+                className='progress eink-bordered block h-2 w-full'
+                value={progress.done}
+                max={progress.total || 1}
+              />
+              <p className='text-base-content/60 text-sm leading-relaxed'>
+                {progress.done === progress.total
+                  ? _('Preparing your book…')
+                  : _('Keep Readest open until the import is complete.')}
+              </p>
+            </div>
+            <div className='flex justify-center'>
               <button
                 type='button'
-                className='btn btn-ghost btn-sm eink-bordered'
+                className='btn btn-ghost eink-bordered min-h-11 px-6'
                 onClick={() => abortRef.current?.abort()}
               >
                 {_('Cancel')}
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </Dialog>

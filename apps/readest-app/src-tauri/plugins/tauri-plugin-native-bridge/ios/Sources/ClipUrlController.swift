@@ -21,6 +21,7 @@ class ClipUrlArgs: Decodable {
   // Interactive mode: show the page with a Cancel/Capture bar instead of
   // the opaque overlay so the user can sign in before capturing.
   let interactive: Bool?
+  let backgroundCapture: Bool?
   let signInHint: String?
   let captureLabel: String?
   let cancelLabel: String?
@@ -91,9 +92,10 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
 
   private var webView: WKWebView!
   private var overlayView: UIView!
-  private var statusLabel: UILabel!
+  private var statusLabel: UILabel?
   private var didFinishOrFail = false
   private var captureFired = false
+  private var completed = false
   private var timeoutWorkItem: DispatchWorkItem?
 
   init(args: ClipUrlArgs, completion: @escaping (Result<String, ClipUrlError>) -> Void) {
@@ -123,7 +125,7 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
       setUpWebView(below: bar)
     } else {
       setUpWebView(below: nil)
-      setUpOverlay()
+      if args.backgroundCapture != true { setUpOverlay() }
     }
     startCapture()
   }
@@ -288,6 +290,21 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
       status.leadingAnchor.constraint(greaterThanOrEqualTo: overlay.leadingAnchor, constant: 24),
       status.trailingAnchor.constraint(lessThanOrEqualTo: overlay.trailingAnchor, constant: -24),
     ])
+    let cancel = UIButton(type: .system)
+    cancel.setTitle(args.resolvedCancelLabel, for: .normal)
+    cancel.setTitleColor(fg, for: .normal)
+    cancel.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
+    cancel.translatesAutoresizingMaskIntoConstraints = false
+    cancel.layer.borderWidth = 1
+    cancel.layer.borderColor = fg.cgColor
+    cancel.layer.cornerRadius = 6
+    overlay.addSubview(cancel)
+    NSLayoutConstraint.activate([
+      cancel.widthAnchor.constraint(greaterThanOrEqualToConstant: 96),
+      cancel.topAnchor.constraint(equalTo: status.bottomAnchor, constant: 16),
+      cancel.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+      cancel.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+    ])
     self.overlayView = overlay
   }
 
@@ -328,7 +345,7 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     guard !interactiveMode else { return }
     guard !didFinishOrFail else { return }
     didFinishOrFail = true
-    statusLabel.text = args.resolvedCapturingStatus
+    statusLabel?.text = args.resolvedCapturingStatus
     // Settle then capture. Matches the 3 s post-load delay in the
     // desktop init script — long enough for in-flight asset fetches
     // and lazy-load IntersectionObservers to fire.
@@ -360,9 +377,9 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
   }
 
   private func captureOuterHtml() {
-    guard !captureFired else { return }
+    guard !captureFired && !completed else { return }
     captureFired = true
-    webView.evaluateJavaScript("document.documentElement.outerHTML") { [weak self] result, error in
+    webView.evaluateJavaScript("(function() { var root = document.documentElement.cloneNode(true); root.setAttribute('data-readest-url', location.href); return root.outerHTML; })()") { [weak self] result, error in
       guard let self = self else { return }
       if let html = result as? String, !html.isEmpty {
         clipLogger.log("clip_url: captured \(html.count, privacy: .public) chars")
@@ -375,6 +392,8 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
   }
 
   private func finish(_ result: Result<String, ClipUrlError>) {
+    guard !completed else { return }
+    completed = true
     timeoutWorkItem?.cancel()
     timeoutWorkItem = nil
     // Stop the WebView before dismissing — otherwise its JS keeps
@@ -383,6 +402,13 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     webView?.stopLoading()
     webView?.navigationDelegate = nil
 
+    if args.backgroundCapture == true && !interactiveMode {
+      willMove(toParent: nil)
+      view.removeFromSuperview()
+      removeFromParent()
+      completion(result)
+      return
+    }
     dismiss(animated: true) { [completion] in
       completion(result)
     }

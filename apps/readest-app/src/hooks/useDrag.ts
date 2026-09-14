@@ -12,6 +12,10 @@ export const useDrag = (
     clientY: number;
     deltaX: number;
     deltaY: number;
+    // The system took the touch away (edge-swipe back gesture, notification
+    // shade, incoming call) instead of the user releasing it. A cancelled drag
+    // carries no decision — restore, never act on where it stopped.
+    canceled: boolean;
   }) => void,
   cursor: string = 'col-resize',
 ) => {
@@ -86,7 +90,7 @@ export const useDrag = (
         }
       };
 
-      const handleEnd = (event: MouseEvent | TouchEvent) => {
+      const handleEnd = (event: MouseEvent | TouchEvent, canceled = false) => {
         isDragging.current = false;
 
         shield.remove();
@@ -114,19 +118,26 @@ export const useDrag = (
         const velocity = deltaY / deltaT;
 
         if (onDragEnd) {
-          onDragEnd({ velocity, deltaT, clientX, clientY, deltaX, deltaY });
+          onDragEnd({ velocity, deltaT, clientX, clientY, deltaX, deltaY, canceled });
         }
 
         window.removeEventListener('mousemove', handleMove);
         window.removeEventListener('mouseup', handleEnd);
         window.removeEventListener('touchmove', handleMove);
         window.removeEventListener('touchend', handleEnd);
+        window.removeEventListener('touchcancel', handleCancel);
       };
+
+      // A cancelled touch never fires `touchend`, so without this the shield
+      // above stays in the DOM and swallows every tap until some later touch
+      // happens to end on the window.
+      const handleCancel = (event: TouchEvent) => handleEnd(event, true);
 
       window.addEventListener('mousemove', handleMove, { passive: true });
       window.addEventListener('mouseup', handleEnd);
       window.addEventListener('touchmove', handleMove, { passive: true });
       window.addEventListener('touchend', handleEnd);
+      window.addEventListener('touchcancel', handleCancel);
     },
     [onDragMove, onDragEnd, cursor],
   );

@@ -447,6 +447,15 @@ const getPageLayoutStyles = (
     display: table !important;
     max-width: 100%;
   }
+  /* A scroll container is monolithic in CSS fragmentation, so a scrolling
+     wrapper can't break across columns: taller than the page, it overflows the
+     column and every row past the first page is clipped and unreachable
+     (#6129). Clamp the wrapper — not the table, whose max-height Chromium and
+     WebKit treat as a minimum — to one page so it scrolls vertically in place.
+     A fit wrapper is overflow:visible and its rows paginate normally. */
+  body.paginated-mode .${SCROLL_WRAPPER_CLASS}:not(.${SCROLL_WRAPPER_FIT_CLASS}) {
+    max-height: calc(var(--available-height) * 1px);
+  }
   pre, code {
     white-space: pre-wrap !important;
     scrollbar-width: none;
@@ -454,10 +463,10 @@ const getPageLayoutStyles = (
   math {
     overflow: auto;
     scrollbar-width: none;
+    max-height: calc(var(--available-height) * 1px);
   }
   table, math {
     max-width: calc(var(--available-width) * 1px);
-    max-height: calc(var(--available-height) * 1px);
   }
 
   .epubtype-footnote,
@@ -469,10 +478,6 @@ const getPageLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
-  body {
-    line-height: unset;
-  }
-
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
@@ -591,6 +596,13 @@ const getParagraphLayoutStyles = (
   [align="right"] { text-align: right; }
   [align="center"] { text-align: center; }
   [align="justify"] { text-align: justify; }
+  /* Some badly designed EPUBs put their line-height on body; drop it so the
+     Line Spacing setting below, not an inherited value, spaces the text. It
+     lives in this chunk so Use Book Layout lets the book's body value
+     inherit (#6088). */
+  body {
+    line-height: unset;
+  }
   :is(hgroup, header) p {
       text-align: unset;
       hyphens: unset;
@@ -1365,6 +1377,7 @@ export const applyScrollModeClass = (document: Document, isScrollMode: boolean) 
 // A prefixed attribute name, e.g. the `epub:type` of `epub:type="chapter"`.
 const PREFIXED_ATTR_REGEX = /^([A-Za-z_][\w.-]*):([A-Za-z_][\w.-]*)$/;
 const EPUB_OPS_NAMESPACE = 'http://www.idpf.org/2007/ops';
+const XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace';
 
 /**
  * Re-attach the namespaces an XHTML section declared to its prefixed
@@ -1402,8 +1415,12 @@ export const applyNamespacedAttributes = (document: Document) => {
       // document, so the declaration on the original <html> may be gone.
       // `epub` has one fixed namespace in EPUB, which is enough to restore the
       // selectors used by the book's stylesheet (including noteref markers).
+      // `xml` is bound by XML itself and is never declared, so `xml:lang`
+      // needs the same treatment for a book's `[xml|lang="en"]` rule to match.
       const uri =
-        lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null);
+        prefix === 'xml'
+          ? XML_NAMESPACE
+          : (lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null));
       if (uri && !element.hasAttributeNS(uri, localName!)) {
         element.setAttributeNS(uri, name, value);
       }
@@ -1461,6 +1478,7 @@ export const applyImageStyle = (document: Document) => {
       heightAttr && (heightAttr.endsWith('%') || heightAttr.endsWith('vh'))
         ? parseFloat(heightAttr)
         : NaN;
+    const noEnlarge = img.getAttribute('zy-enlarge-src') === 'none';
 
     let inlineWithText = false;
     let keepBaseline = false;
@@ -1483,10 +1501,24 @@ export const applyImageStyle = (document: Document) => {
         keepBaseline = valign === '' || valign === 'baseline';
       }
     }
-    return { img, percentWidth, percentHeight, inlineWithText, keepBaseline };
+    return {
+      img,
+      percentWidth,
+      percentHeight,
+      inlineWithText,
+      keepBaseline,
+      noEnlarge,
+    };
   });
 
-  for (const { img, percentWidth, percentHeight, inlineWithText, keepBaseline } of plans) {
+  for (const {
+    img,
+    percentWidth,
+    percentHeight,
+    inlineWithText,
+    keepBaseline,
+    noEnlarge,
+  } of plans) {
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
       img.removeAttribute('width');
@@ -1498,6 +1530,9 @@ export const applyImageStyle = (document: Document) => {
     if (inlineWithText) {
       img.classList.add('has-text-siblings');
       if (keepBaseline) img.classList.add('has-text-siblings-baseline');
+    }
+    if (noEnlarge) {
+      img.style.setProperty('pointer-events', 'none');
     }
   }
   document.querySelectorAll('hr').forEach((hr) => {
@@ -1543,6 +1578,41 @@ export const keepTextAlignment = (document: Document) => {
     const cls = alignClasses[i];
     if (cls) els[i]!.classList.add(cls);
   }
+};
+
+/**
+ * Blend mode for the annotation overlay (`--overlayer-highlight-blend-mode`).
+ *
+ * The overlay is an SVG sibling of the content iframe, so it blends against
+ * whatever the page paints behind it — the mode has to follow the *page*
+ * background, not the app theme. `screen` lightens a dark page, but over a
+ * white one it is a no-op on the background and only tints the glyphs, which is
+ * how highlights went missing on PDFs in dark mode (#5790, #5930, #5943). A
+ * pre-paginated page keeps the book's own bitmap unless the reader asked us to
+ * invert it or to re-render it in the theme colors, so a dark theme alone says
+ * nothing about how dark the page is. Blending does not cross the iframe
+ * boundary in WebKit, which is why Apple platforms never showed the bug.
+ */
+export const getOverlayerBlendMode = ({
+  isDarkMode,
+  isBwEink,
+  isFixedLayout = false,
+  invertImgColorInDark = false,
+  applyThemeToPDF = false,
+  format,
+}: {
+  isDarkMode: boolean;
+  isBwEink: boolean;
+  isFixedLayout?: boolean;
+  invertImgColorInDark?: boolean;
+  applyThemeToPDF?: boolean;
+  format?: BookFormat;
+}): 'difference' | 'screen' | 'multiply' => {
+  if (isBwEink) return 'difference';
+  if (!isDarkMode) return 'multiply';
+  const isDarkPage =
+    !isFixedLayout || invertImgColorInDark || (format === 'PDF' && applyThemeToPDF);
+  return isDarkPage ? 'screen' : 'multiply';
 };
 
 export const applyFixedlayoutStyles = (

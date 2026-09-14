@@ -1901,15 +1901,46 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 event.error?.let { payload.put("error", it) }
                 emitOrQueue("web-browser-download", payload)
             },
-            completion = { hash ->
+            completion = { hash, page ->
                 activeWebBrowser = null
                 val ret = JSObject()
                 if (hash != null) ret.put("openBookHash", hash)
+                if (page != null) {
+                    val captured = JSObject()
+                    captured.put("url", page.url)
+                    captured.put("html", page.html)
+                    ret.put("page", captured)
+                }
                 invoke.resolve(ret)
             },
         )
         activeWebBrowser = controller
         controller.show()
+    }
+
+    /** Called only from Rust. The WebView owns cookie scoping, HttpOnly and persistence. */
+    @Command
+    fun web_browser_cookies(invoke: Invoke) {
+        val args = invoke.parseArgs(WebBrowserCookiesArgs::class.java)
+        activity.runOnUiThread {
+            val manager = android.webkit.CookieManager.getInstance()
+            val updates = args.setCookies ?: emptyArray()
+            fun resolve() {
+                val result = JSObject()
+                result.put("cookies", manager.getCookie(args.url) ?: "")
+                invoke.resolve(result)
+            }
+            if (updates.isEmpty()) resolve()
+            else {
+                var pending = updates.size
+                updates.forEach { cookie ->
+                    manager.setCookie(args.url, cookie) {
+                        pending--
+                        if (pending == 0) resolve()
+                    }
+                }
+            }
+        }
     }
 
     /** Push an import status into the open browser's banner. */
@@ -2037,4 +2068,10 @@ class SecureItemSetArgs {
 @app.tauri.annotation.InvokeArg
 class SecureItemGetArgs {
     lateinit var key: String
+}
+
+@InvokeArg
+class WebBrowserCookiesArgs {
+    lateinit var url: String
+    var setCookies: Array<String>? = null
 }

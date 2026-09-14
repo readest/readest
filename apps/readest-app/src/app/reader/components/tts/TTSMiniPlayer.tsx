@@ -137,12 +137,6 @@ const TTSMiniPlayer = ({
   const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
   const usesMobileBar = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
 
-  // Distance from the bottom edge (safe-area margin excluded) to the top of
-  // the expanded action panel, so the card rides above it. Measured from the
-  // DOM because panel heights are content-driven and their anchor differs per
-  // platform. The panels' paddings are constant and the slide is
-  // transform-only, so subtracting the in-flight translate yields the settled
-  // top edge even mid-animation.
   // A book can carry a coverImageUrl that no longer resolves (cover never
   // extracted, file pruned). Showing the browser's broken-image glyph in the
   // card is worse than showing no cover at all.
@@ -151,19 +145,34 @@ const TTSMiniPlayer = ({
   const [panelTopOffset, setPanelTopOffset] = useState(0);
   useLayoutEffect(() => {
     const cell = document.getElementById(`gridcell-${bookKey}`);
-    const panel =
-      barVisible && bottomBarTab ? cell?.querySelector(`.footerbar-${bottomBarTab}-mobile`) : null;
-    const rect = panel?.getBoundingClientRect();
-    if (!cell || !panel || !rect || rect.height === 0) {
+    const footer = barVisible ? cell?.querySelector<HTMLElement>('.footer-bar') : null;
+    if (!cell || !footer) {
       setPanelTopOffset(0);
       return;
     }
-    const transform = getComputedStyle(panel).transform;
-    const translateY = transform && transform !== 'none' ? new DOMMatrixReadOnly(transform).m42 : 0;
-    const settledTop = rect.top - translateY;
-    setPanelTopOffset(
-      Math.max(0, Math.round(cell.getBoundingClientRect().bottom - settledTop - safeAreaMargin)),
-    );
+    const panel = bottomBarTab
+      ? footer.querySelector<HTMLElement>(`.footerbar-${bottomBarTab}-mobile`)
+      : null;
+    const measure = () => {
+      // offsetTop ignores both the footer's slide and the panel's CSS translate.
+      // A fixed footer uses viewport coordinates; an absolute footer is relative
+      // to its offset parent (the book cell, including when a sidebar is pinned).
+      const parent = footer.offsetParent;
+      const footerTop =
+        footer.offsetTop + (parent ? parent.getBoundingClientRect().top + parent.clientTop : 0);
+      const settledTop = panel?.getBoundingClientRect().height
+        ? footerTop + footer.clientTop + panel.offsetTop
+        : footerTop;
+      setPanelTopOffset(
+        Math.max(0, Math.round(cell.getBoundingClientRect().bottom - settledTop - safeAreaMargin)),
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(cell);
+    observer.observe(footer);
+    if (panel) observer.observe(panel);
+    return () => observer.disconnect();
   }, [barVisible, bottomBarTab, bookKey, safeAreaMargin]);
 
   const bottomOffset = viewSettings

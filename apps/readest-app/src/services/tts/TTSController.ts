@@ -1699,7 +1699,14 @@ export class TTSController extends EventTarget {
     await this.stop(isPlaying);
     if (!isPlaying) this.state = 'backward-paused';
 
-    const ssml = byMark ? this.#getTts()?.prevMark(!isPlaying) : this.#getTts()?.prev(!isPlaying);
+    const tts = this.#getTts();
+    // Mark navigation needs a current paragraph. resume() positions a fresh
+    // iterator without resetting an existing position; empty sections return no SSML.
+    const ssml = byMark
+      ? tts?.resume()
+        ? tts.prevMark(!isPlaying)
+        : undefined
+      : tts?.prev(!isPlaying);
     if (!ssml) {
       await this.#handleNavigationWithoutSSML(() => this.#initTTSForPrevSection(), isPlaying);
     } else {
@@ -1728,7 +1735,14 @@ export class TTSController extends EventTarget {
     await this.stop(isPlaying);
     if (!isPlaying) this.state = 'forward-paused';
 
-    const ssml = byMark ? this.#getTts()?.nextMark(!isPlaying) : this.#getTts()?.next(!isPlaying);
+    const tts = this.#getTts();
+    // Mark navigation needs a current paragraph. resume() positions a fresh
+    // iterator without resetting an existing position; empty sections return no SSML.
+    const ssml = byMark
+      ? tts?.resume()
+        ? tts.nextMark(!isPlaying)
+        : undefined
+      : tts?.next(!isPlaying);
     if (!ssml) {
       if (isAutoAdvance && isPlaying && this.stopAtChapterEnd) {
         return await this.#stopAtChapterBoundary();

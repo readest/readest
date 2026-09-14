@@ -49,8 +49,6 @@ use tauri::{Url, WebviewUrl, WebviewWindowBuilder};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 #[cfg(desktop)]
 use tokio::net::TcpListener;
-#[cfg(desktop)]
-use tokio::sync::oneshot;
 
 /// Localised strings and theme colours supplied by the JS caller. Defaults
 /// are English / Readest's dark palette so a caller that omits a field
@@ -71,6 +69,8 @@ pub struct ClipOptions {
     /// Cancel/Capture bar instead of the opaque overlay so the user can
     /// sign in before capturing. Desktop ignores it.
     pub interactive: Option<bool>,
+    /// Render behind the app while its existing import UI shows progress.
+    pub background_capture: Option<bool>,
     pub sign_in_hint: Option<String>,
     pub capture_label: Option<String>,
     pub cancel_label: Option<String>,
@@ -178,18 +178,16 @@ fn parse_content_length(headers: &str) -> usize {
 /// `GET /clip/{token}?d={base64-HTML}` — top-level navigation isn't
 /// governed by CSP `connect-src` / `form-action`, and the URL itself
 /// carries the data (so we don't need any cross-origin storage trick).
-/// Server decodes the base64, signals the oneshot, returns a tiny
+/// Server decodes the base64, returns the HTML and a tiny
 /// "captured" page so the user can see the round-trip worked.
 #[cfg(desktop)]
 async fn capture_one(
     listener: TcpListener,
     token: String,
-    tx: oneshot::Sender<String>,
     saved_title: String,
     background: String,
     foreground: String,
-) {
-    let mut tx = Some(tx);
+) -> Option<String> {
     let expected_prefix = format!("/clip/{}", token);
     let saved_title_safe = escape_html(&saved_title);
     // CSS-context escape: the caller-provided colour goes into a
@@ -310,11 +308,9 @@ stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points
         response.extend_from_slice(confirmation.as_bytes());
         let _ = stream.write_all(&response).await;
 
-        if let Some(tx) = tx.take() {
-            let _ = tx.send(html);
-        }
-        break;
+        return Some(html);
     }
+    None
 }
 
 /// Decode a URL-safe base64 string (the JS side uses `btoa` which
@@ -491,8 +487,9 @@ fn fingerprint_mask_script() -> String {
 ///   `close()` raced the script.
 #[cfg(desktop)]
 #[tauri::command]
-pub async fn clip_url(
-    app: AppHandle,
+pub async fn clip_url<R: tauri::Runtime>(
+    app: AppHandle<R>,
+    _caller: tauri::Window<R>,
     url: String,
     options: Option<ClipOptions>,
 ) -> Result<String, String> {
@@ -512,22 +509,19 @@ pub async fn clip_url(
         .port();
 
     let token = next_token();
-    let (tx, rx) = oneshot::channel::<String>();
     let token_for_server = token.clone();
     let saved_title_for_server = options.saved_title().to_string();
     let bg_for_server = options.background().to_string();
     let fg_for_server = options.foreground().to_string();
-    tokio::spawn(async move {
-        capture_one(
-            listener,
-            token_for_server,
-            tx,
-            saved_title_for_server,
-            bg_for_server,
-            fg_for_server,
-        )
-        .await;
-    });
+    // Keep the listener owned by this command. Dropping the future on any
+    // early error, cancellation, or timeout closes it instead of detaching it.
+    let capture = capture_one(
+        listener,
+        token_for_server,
+        saved_title_for_server,
+        bg_for_server,
+        fg_for_server,
+    );
 
     let label = format!("clip-{}", token);
     let token_json = serde_json::to_string(&token).map_err(|e| e.to_string())?;
@@ -549,7 +543,9 @@ pub async fn clip_url(
               if (window.__readest_setStatus__) {{
                 window.__readest_setStatus__(CAPTURING_STATUS);
               }}
-              var html = document.documentElement.outerHTML;
+              var root = document.documentElement.cloneNode(true);
+              root.setAttribute('data-readest-url', location.href);
+              var html = root.outerHTML;
               console.log('[readest-clip] capturing reason=' + reason +
                 ' bytes=' + html.length);
               // Transfer the HTML through the navigation URL itself —
@@ -601,19 +597,14 @@ pub async fn clip_url(
     const BROWSER_UA: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
                               (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-    // macOS doesn't honour `.visible(false)` for a WKWebView that needs
-    // its JS timers to keep firing — the public Tauri API can't reach
-    // the private NSWindow flags that would hide it without freezing
-    // scripts. The window IS going to be on screen briefly. Match the
-    // chrome style Readest's main/reader windows use so it doesn't read
-    // as a foreign popup: on macOS the standard window frame with an
-    // overlay (transparent) title bar; on other desktops, decorationless
-    // with a drop shadow. The loading overlay (injected via initialization
-    // script) covers the article render so the user sees a deliberate
-    // "Saving…" state rather than the article flashing by.
+    // macOS novel captures are ordered beneath the caller below, keeping
+    // animation frames active. Other desktops retain visible capture until
+    // their background rendering can be verified as well.
+    let background_capture = cfg!(target_os = "macos") && options.background_capture == Some(true);
     let win_builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(parsed))
         .title(options.window_title())
-        .visible(true)
+        .visible(!background_capture)
+        .focused(!background_capture)
         .center()
         .resizable(false)
         .inner_size(640.0, 480.0)
@@ -660,9 +651,43 @@ pub async fn clip_url(
         Err(e) => return Err(format!("Could not create clip webview: {}", e)),
     };
 
+    #[cfg(target_os = "macos")]
+    if options.background_capture == Some(true) {
+        let capture = webview.clone();
+        app.run_on_main_thread(move || {
+            use cocoa::appkit::{NSWindow, NSWindowOrderingMode};
+            use cocoa::base::{id, NO};
+            use cocoa::foundation::NSInteger;
+            use objc::{msg_send, sel, sel_impl};
+            let (Ok(capture), Ok(caller)) = (capture.ns_window(), _caller.ns_window()) else {
+                return;
+            };
+            unsafe {
+                let capture = capture as id;
+                let caller = caller as id;
+                let number: NSInteger = msg_send![caller, windowNumber];
+                capture.setFrame_display_(caller.frame(), NO);
+                capture.orderFrontWindow_relativeTo_(NSWindowOrderingMode::NSWindowBelow, number);
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    }
+
     // 30 s covers a slow page load and a Cloudflare-style JS challenge
     // (5–15 s on bad networks) with margin for the settle delay.
-    let result = tokio::time::timeout(Duration::from_secs(30), rx).await;
+    let (cancel_tx, cancel_rx) = tokio::sync::oneshot::channel::<()>();
+    let cancel_tx = std::sync::Mutex::new(Some(cancel_tx));
+    webview.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::Destroyed) {
+            if let Some(tx) = cancel_tx.lock().unwrap_or_else(|e| e.into_inner()).take() {
+                let _ = tx.send(());
+            }
+        }
+    });
+    let result = tokio::select! {
+        result = tokio::time::timeout(Duration::from_secs(30), capture) => result,
+        _ = cancel_rx => return Err("Capture cancelled".into()),
+    };
 
     // Always close the clip window after capture (or timeout) — the
     // window flashing on screen for a few seconds is the brief mode
@@ -671,8 +696,8 @@ pub async fn clip_url(
     let _ = webview.close();
 
     match result {
-        Ok(Ok(html)) => Ok(html),
-        Ok(Err(_)) => Err("Webview closed before capture".into()),
+        Ok(Some(html)) => Ok(html),
+        Ok(None) => Err("Webview closed before capture".into()),
         Err(_) => Err("Page took too long to load".into()),
     }
 }
@@ -707,6 +732,7 @@ pub async fn clip_url(
         background: options.background,
         foreground: options.foreground,
         interactive: options.interactive,
+        background_capture: options.background_capture,
         sign_in_hint: options.sign_in_hint,
         capture_label: options.capture_label,
         cancel_label: options.cancel_label,
@@ -715,4 +741,68 @@ pub async fn clip_url(
         .clip_url(request)
         .map(|r| r.html)
         .map_err(|e| e.to_string())
+}
+
+#[cfg(all(test, desktop))]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn capture_server_releases_its_port_on_timeout() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let result = tokio::time::timeout(
+            Duration::from_millis(10),
+            capture_one(
+                listener,
+                "token".into(),
+                "Saved".into(),
+                "#000".into(),
+                "#fff".into(),
+            ),
+        )
+        .await;
+        assert!(result.is_err());
+        // A timed-out capture must not leave a detached accept task holding the port.
+        assert!(TcpListener::bind(address).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn capture_server_releases_its_port_when_cancelled() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::select! {
+            _ = capture_one(listener, "token".into(), "Saved".into(), "#000".into(), "#fff".into()) => panic!("capture should wait for a page"),
+            _ = tokio::task::yield_now() => {},
+        }
+        assert!(TcpListener::bind(address).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn capture_server_returns_html_and_releases_its_port() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let request = async {
+            let mut stream = tokio::net::TcpStream::connect(address).await.unwrap();
+            stream
+                .write_all(b"GET /clip/token?d=aHRtbA== HTTP/1.1\r\nHost: localhost\r\n\r\n")
+                .await
+                .unwrap();
+            let mut response = Vec::new();
+            stream.read_to_end(&mut response).await.unwrap();
+            assert!(response.starts_with(b"HTTP/1.1 200"));
+        };
+        let (html, ()) = tokio::join!(
+            capture_one(
+                listener,
+                "token".into(),
+                "Saved".into(),
+                "#000".into(),
+                "#fff".into()
+            ),
+            request,
+        );
+        assert_eq!(html.as_deref(), Some("html"));
+        assert!(TcpListener::bind(address).await.is_ok());
+    }
 }

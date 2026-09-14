@@ -66,7 +66,16 @@
     },
     "linux": {
       "deb": {
-        "section": "text"
+        "section": "text",
+        "depends": ["libwebkit2gtk-4.1-0"]
+      },
+      "rpm": {
+        "depends": ["libwebkit2gtk-4.1.so.0()(64bit)"]
+      },
+      "appimage": {
+        "files": {
+          "bin/00-no-userns-prompt.hook": "appimage/00-no-userns-prompt.hook"
+        }
       }
     },
     "android": {

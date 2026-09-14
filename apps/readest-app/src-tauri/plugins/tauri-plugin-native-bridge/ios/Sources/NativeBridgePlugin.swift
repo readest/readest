@@ -570,6 +570,13 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
 
 class NativeBridgePlugin: Plugin {
   private var webView: WKWebView?
+  // Native cover for the two-column page curl (#6106): a snapshot view of a
+  // region, placed as a sibling above the webview so `capture_webview_region`
+  // (which renders the webview's own layer tree) does not see it while the
+  // user keeps seeing the frozen pixels. Tokens keep a stale uncover from an
+  // interrupted turn from removing the next turn's cover.
+  private var turnCoverView: UIView?
+  private var turnCoverToken: Int = 0
   private var authSession: ASWebAuthenticationSession?
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
@@ -1638,7 +1645,17 @@ class NativeBridgePlugin: Plugin {
           invoke.reject(err.message)
         }
       }
-      presenter.present(controller, animated: true)
+      if args.backgroundCapture == true && args.interactive != true {
+        presenter.addChild(controller)
+        controller.view.frame = presenter.view.bounds
+        controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        controller.view.isUserInteractionEnabled = false
+        controller.view.accessibilityElementsHidden = true
+        presenter.view.insertSubview(controller.view, at: 0)
+        controller.didMove(toParent: presenter)
+      } else {
+        presenter.present(controller, animated: true)
+      }
     }
   }
 
@@ -1673,14 +1690,53 @@ class NativeBridgePlugin: Plugin {
         if let error = event.error { data["error"] = error }
         self?.trigger("web-browser-download", data: data)
       }
-      controller.onFinish = { [weak self] hash in
+      controller.onFinish = { [weak self] hash, page in
         self?.activeWebBrowser = nil
         var ret = JSObject()
         if let hash = hash { ret["openBookHash"] = hash }
+        if let page = page { ret["page"] = ["url": page.url, "html": page.html] }
         invoke.resolve(ret)
       }
       self.activeWebBrowser = controller
       presenter.present(controller, animated: true)
+    }
+  }
+
+  /// Native-only exchange; session cookies never reach the frontend.
+  @objc public func web_browser_cookies(_ invoke: Invoke) {
+    struct Args: Decodable { let url: String; let setCookies: [String] }
+    let args: Args
+    do { args = try invoke.parseArgs(Args.self) }
+    catch { invoke.reject(error.localizedDescription); return }
+    guard let url = URL(string: args.url), let host = url.host,
+      url.scheme == "https" || url.scheme == "http" else { invoke.reject("Invalid URL"); return }
+    func matchesDomain(_ domain: String) -> Bool {
+      if domain.hasPrefix(".") {
+        return host == String(domain.dropFirst()) || host.hasSuffix(domain)
+      }
+      return domain == host
+    }
+    DispatchQueue.main.async {
+      let store = WKWebsiteDataStore.default().httpCookieStore
+      let group = DispatchGroup()
+      for header in args.setCookies {
+        for cookie in HTTPCookie.cookies(withResponseHeaderFields: ["Set-Cookie": header], for: url) where matchesDomain(cookie.domain) {
+          group.enter()
+          store.setCookie(cookie) { group.leave() }
+        }
+      }
+      group.notify(queue: .main) {
+        store.getAllCookies { cookies in
+          let matching = cookies.filter { cookie in
+            let path = cookie.path
+            let requestPath = url.path.isEmpty ? "/" : url.path
+            return matchesDomain(cookie.domain) && (!cookie.isSecure || url.scheme == "https")
+              && (cookie.expiresDate == nil || cookie.expiresDate! > Date())
+              && (requestPath == path || (requestPath.hasPrefix(path) && (path.hasSuffix("/") || requestPath.dropFirst(path.count).hasPrefix("/"))))
+          }.sorted { $0.path.count > $1.path.count }
+          invoke.resolve(["cookies": matching.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")])
+        }
+      }
     }
   }
 
@@ -1907,6 +1963,55 @@ class NativeBridgePlugin: Plugin {
           invoke.resolve(["data": data.base64EncodedString()])
         }
       }
+    }
+  }
+
+  /// Freeze the on-screen pixels of a region of the webview (CSS px of the
+  /// JS viewport) behind a snapshot of what is currently presented there,
+  /// for the two-column page curl (#6106). The snapshot view is a sibling
+  /// above the webview: `takeSnapshot` renders the webview's own layer tree,
+  /// so the JS side can expose the incoming column underneath, capture it
+  /// with `capture_webview_region`, and restore its overlay — all while the
+  /// user still sees the frozen old pixels. Resolves a token for
+  /// `uncover_webview_region`.
+  @objc public func cover_webview_region(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(CaptureWebviewRegionArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let webView = self.webView, let container = webView.superview else {
+        return invoke.reject("WebView not available")
+      }
+      let rect = CGRect(x: args.x, y: args.y, width: args.width, height: args.height)
+      guard
+        let cover = webView.resizableSnapshotView(
+          from: rect, afterScreenUpdates: false, withCapInsets: .zero)
+      else {
+        return invoke.reject("Snapshot view unavailable")
+      }
+      self.turnCoverView?.removeFromSuperview()
+      cover.frame = webView.convert(rect, to: container)
+      cover.isUserInteractionEnabled = false
+      container.addSubview(cover)
+      self.turnCoverToken += 1
+      self.turnCoverView = cover
+      invoke.resolve(["token": self.turnCoverToken])
+    }
+  }
+
+  /// Remove the cover put up by `cover_webview_region`. A token from an
+  /// earlier, already replaced cover is ignored.
+  @objc public func uncover_webview_region(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(UncoverWebviewRegionArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return invoke.resolve() }
+      if args.token == self.turnCoverToken {
+        self.turnCoverView?.removeFromSuperview()
+        self.turnCoverView = nil
+      }
+      invoke.resolve()
     }
   }
 }
@@ -2156,6 +2261,10 @@ struct CaptureWebviewRegionArgs: Decodable {
   let y: Double
   let width: Double
   let height: Double
+}
+
+struct UncoverWebviewRegionArgs: Decodable {
+  let token: Int
 }
 
 @_cdecl("init_plugin_native_bridge")

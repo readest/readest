@@ -578,6 +578,29 @@ describe('applyImageStyle', () => {
     expect(img.classList.contains('has-text-siblings')).toBe(true);
     expect(img.classList.contains('has-text-siblings-baseline')).toBe(false);
   });
+
+  it('sets pointer-events: none on img[zy-enlarge-src="none"] and keeps the attribute', () => {
+    document.body.innerHTML = '<img zy-enlarge-src="none" src="a.png" />';
+
+    applyImageStyle(document);
+
+    const img = document.querySelector('img')!;
+    expect(img.getAttribute('zy-enlarge-src')).toBe('none');
+    expect(img.style.pointerEvents).toBe('none');
+  });
+
+  it('leaves img[zy-enlarge-src="self"] without pointer-events changes', () => {
+    document.body.innerHTML = `
+      <img zy-enlarge-src="self" src="a.png"/>
+      <img src="b.png"/>
+    `;
+
+    applyImageStyle(document);
+
+    document.querySelectorAll('img').forEach((img) => {
+      expect(img.style.pointerEvents).toBe('');
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -701,14 +724,23 @@ describe('applyNamespacedAttributes', () => {
     expect(doc.querySelector('a')!.getAttributeNS(OPS, 'type')).toBe('noteref');
   });
 
-  it('leaves the reserved xml and xmlns names untouched', () => {
-    const doc = parseAsSrcdoc('<div xml:lang="en">x</div>');
+  // The `xml` prefix is bound by the XML spec itself and never declared with
+  // `xmlns:xml`, so a book's `@namespace xml` + `[xml|lang="en"]` rule needs
+  // the implicit binding restored the same way.
+  it('binds the implicit xml prefix so [xml|lang] selectors can match', () => {
+    const doc = parseAsSrcdoc('<div xml:lang="en">x</div>', '');
+    applyNamespacedAttributes(doc);
+    const div = doc.querySelector('div')!;
+    expect(div.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang')).toBe('en');
+    expect(div.getAttribute('xml:lang')).toBe('en');
+  });
+
+  it('leaves xmlns declarations untouched', () => {
+    const doc = parseAsSrcdoc('<div>x</div>');
     applyNamespacedAttributes(doc);
     const html = doc.documentElement;
-    const div = doc.querySelector('div')!;
-    expect(div.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang')).toBeNull();
-    expect(div.getAttribute('xml:lang')).toBe('en');
     expect(html.getAttribute('xmlns:epub')).toBe(OPS);
+    expect(html.getAttributeNS('http://www.w3.org/2000/xmlns/', 'epub')).toBeNull();
   });
 
   it('does not let a declaration reach a sibling that is out of its scope', () => {

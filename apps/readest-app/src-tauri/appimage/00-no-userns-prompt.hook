@@ -1,0 +1,9 @@
+#!/bin/sh
+# Sourced by AppRun before the bundler's own hooks (glob order). Its
+# fix-namespaces hook asks for a root password to enable unprivileged user
+# namespaces, which this build never needs: CEF runs without the sandbox
+# feature, every child with --no-sandbox. Stub the two helpers it prompts
+# through; nothing else calls them. Delete this if the CEF sandbox is ever
+# enabled on Linux.
+notify() { return 1; }
+run_gui_sudo() { return 1; }

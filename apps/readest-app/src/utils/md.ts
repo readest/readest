@@ -197,9 +197,10 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
         data: str,
         type: 'application/xhtml+xml',
       };
-      // Readonly, mirroring foliate's Loader.createURL dispatch. Selection
-      // scoped proofread rules compare their TOC-style sectionHref
-      // ("<index>#<anchor>") against this name via split('#')[0].
+      // Readonly, mirroring foliate's Loader.createURL dispatch. Markdown
+      // sections carry no spine CFI, so selection-scoped proofread rules fall
+      // back to matching their sectionHref against this name; both are the
+      // section index ("<index>", or "<index>#<anchor>" via split('#')[0]).
       Object.defineProperty(detail, 'name', { value: String(index) });
       transformTarget.dispatchEvent(new CustomEvent('data', { detail }));
       const out = await detail.data;

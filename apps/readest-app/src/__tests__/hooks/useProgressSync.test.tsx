@@ -313,6 +313,28 @@ describe('useProgressSync', () => {
     expect(h.view.goTo).toHaveBeenCalledWith('epubcfi(/6/24!/4/20/1:58)');
   });
 
+  test('navigates to the synced location when the local config has no location yet', async () => {
+    // First open on this device: nothing has been read here, so the local
+    // config carries no CFI. The remote position is trivially ahead and must
+    // move the reader without consulting CFI.compare.
+    const config = h.config as { location?: string };
+    const savedLocation = config.location;
+    config.location = undefined;
+    h.cfiCompareMock.mockReturnValue(1);
+    h.state.syncedConfigs = [
+      { bookHash: 'h1', metaHash: 'm1', location: 'epubcfi(/6/24!/4/20/1:58)', updatedAt: 3000 },
+    ];
+    try {
+      renderHook(() => useProgressSync('h1-view1'));
+      await advance(0);
+
+      expect(h.view.goTo).toHaveBeenCalledWith('epubcfi(/6/24!/4/20/1:58)');
+      expect(h.cfiCompareMock).not.toHaveBeenCalled();
+    } finally {
+      config.location = savedLocation;
+    }
+  });
+
   test('sync-book-progress event resets and re-runs the pull chain', async () => {
     h.state.syncedConfigs = null;
     renderHook(() => useProgressSync('h1-view1'));

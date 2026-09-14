@@ -160,9 +160,9 @@ describe('ProofreadRulesManager', () => {
     expect(dialog).toBeTruthy();
     // Library (global) rules
     expect(screen.getByText('foo')).toBeTruthy();
-    expect(screen.getByText("'bar'")).toBeTruthy();
+    expect(screen.getByText('bar')).toBeTruthy();
     expect(screen.getByText('hello')).toBeTruthy();
-    expect(screen.getByText("'world'")).toBeTruthy();
+    expect(screen.getByText('world')).toBeTruthy();
   });
 
   it('renders selection rules separately from book/library rules', async () => {
@@ -241,11 +241,71 @@ describe('ProofreadRulesManager', () => {
     // Single Instance Rules section
     expect(screen.getByText('Selected Text Rules')).toBeTruthy();
     expect(screen.getByText('only-once')).toBeTruthy();
-    expect(screen.getByText("'single-hit'")).toBeTruthy();
+    expect(screen.getByText('single-hit')).toBeTruthy();
 
     // Book section should still show book-wide rule
     expect(screen.getByText('book-wide')).toBeTruthy();
-    expect(screen.getByText("'book-hit'")).toBeTruthy();
+    expect(screen.getByText('book-hit')).toBeTruthy();
+  });
+
+  it('gives a selection rule its own jump action and leaves the scope chip inert', async () => {
+    // The jump used to live on the `Selection` chip, which looks exactly like
+    // the inert Regex/Case sensitive chips beside it, so nobody found it
+    // (#6148). It is an action, so it belongs with edit/delete.
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+
+    const selectionRule: ProofreadRule = {
+      id: 's1',
+      scope: 'selection',
+      pattern: 'only-once',
+      replacement: 'single-hit',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+      cfi: 'epubcfi(/6/14!/4/2,/1:0,/1:4)',
+      sectionHref: 'OEBPS/Text/ch1.xhtml',
+    };
+
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: [selectionRule] } } },
+    });
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
+      booksData: {
+        book1: {
+          id: 'book1',
+          book: null,
+          file: null,
+          config: { viewSettings: { proofreadRules: [selectionRule] } },
+          bookDoc: null,
+          isFixedLayout: false,
+        },
+      },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    await act(async () => setProofreadRulesVisibility(true));
+
+    const dialog = await screen.findByRole('dialog');
+    const chip = within(dialog).getByText('Selection');
+    expect(chip.tagName).toBe('SPAN');
+
+    const jump = within(dialog).getByLabelText('Jump to Location');
+    await act(async () => {
+      fireEvent.click(jump);
+    });
+
+    expect(dispatch).toHaveBeenCalledWith(
+      'navigate',
+      expect.objectContaining({ bookKey: 'book1', cfi: selectionRule.cfi }),
+    );
   });
 
   it('hides tombstoned (deleted) book rules from the list', async () => {
@@ -401,6 +461,111 @@ describe('ProofreadRulesManager', () => {
 
     expect(toggleSpy).toHaveBeenCalledWith(expect.anything(), 'book1', 'b1');
     expect(recreateSpy).toHaveBeenCalled();
+  });
+
+  it('keeps the enable/disable switch on library rules', async () => {
+    // A library rule's `enabled` flag is a property of the rule itself, so the
+    // switch has to stay reachable — it used to look dead only because
+    // toggleRule dropped the scope from its update patch.
+    const libraryRule: ProofreadRule = {
+      id: 'g1',
+      scope: 'library',
+      pattern: 'library-rule',
+      replacement: 'LIB',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+    };
+
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        globalViewSettings: { proofreadRules: [libraryRule] },
+      },
+    });
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: [] } } },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    const toggleSpy = vi
+      .spyOn(useProofreadStore.getState(), 'toggleRule')
+      .mockResolvedValue(undefined);
+    vi.spyOn(useReaderStore.getState(), 'recreateViewer').mockResolvedValue(undefined as never);
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    await act(async () => setProofreadRulesVisibility(true));
+    await screen.findByRole('dialog');
+
+    const row = screen.getByText('library-rule').closest('li');
+    fireEvent.click(within(row!).getByLabelText('Disable rule'));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(toggleSpy).toHaveBeenCalledWith(expect.anything(), 'book1', 'g1');
+  });
+
+  it('labels an empty replacement as a deletion instead of rendering a blank', async () => {
+    const deletingRule: ProofreadRule = {
+      id: 'b1',
+      scope: 'book',
+      pattern: 'noise',
+      replacement: '',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+    };
+
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: [deletingRule] } } },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    await act(async () => setProofreadRulesVisibility(true));
+    await screen.findByRole('dialog');
+
+    const row = screen.getByText('noise').closest('li');
+    expect(within(row!).getByText('(removes the text)')).toBeTruthy();
+  });
+
+  it('quotes a whitespace-only replacement so it stays visible', async () => {
+    const collapsingRule: ProofreadRule = {
+      id: 'b2',
+      scope: 'book',
+      pattern: '\\s{2,}',
+      replacement: ' ',
+      enabled: true,
+      isRegex: true,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: false,
+    };
+
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: [collapsingRule] } } },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    await act(async () => setProofreadRulesVisibility(true));
+    await screen.findByRole('dialog');
+
+    const row = screen.getByText('\\s{2,}').closest('li');
+    expect(within(row!).getByText("' '")).toBeTruthy();
   });
 
   it('edits a book rule Find pattern and saves via updateRule', async () => {
@@ -787,13 +952,13 @@ describe('ProofreadRulesManager', () => {
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeTruthy();
 
+    // Attribute chips only render for the flags that are on, so a
+    // case-insensitive rule carries no "Case sensitive" chip at all.
     const csRuleElement = screen.getByText('case-sensitive').closest('li');
-    expect(within(csRuleElement!).getByText(/Case sensitive:/)).toBeTruthy();
-    expect(within(csRuleElement!).getAllByText(/Yes/)).toBeTruthy();
+    expect(within(csRuleElement!).getByText('Case sensitive')).toBeTruthy();
 
     const ciRuleElement = screen.getByText('case-insensitive').closest('li');
-    expect(within(ciRuleElement!).getByText(/Case sensitive:/)).toBeTruthy();
-    expect(within(ciRuleElement!).getAllByText(/No/)).toBeTruthy();
+    expect(within(ciRuleElement!).queryByText('Case sensitive')).toBeNull();
   });
 
   it('opens when BookMenu item is clicked (integration)', async () => {
@@ -922,7 +1087,7 @@ describe('ProofreadRulesManager', () => {
       fireEvent.change(screen.getByPlaceholderText('Replace with...'), {
         target: { value: '#' },
       });
-      const regexLabel = screen.getByText('Regex:');
+      const regexLabel = screen.getByText('Regex');
       const regexCheckbox = regexLabel
         .closest('label')!
         .querySelector('input[type="checkbox"]') as HTMLInputElement;
@@ -952,12 +1117,39 @@ describe('ProofreadRulesManager', () => {
       expect(button.disabled).toBe(false);
     });
 
+    it('creates a TTS-only rule without rebuilding the viewer', async () => {
+      const { addRuleSpy, recreateSpy } = await openManagerForAdd();
+
+      fireEvent.change(screen.getByPlaceholderText('Find...'), { target: { value: 'Dr.' } });
+      fireEvent.change(screen.getByPlaceholderText('Replace with...'), {
+        target: { value: 'Doctor' },
+      });
+      const ttsCheckbox = screen
+        .getByText('Only for TTS')
+        .closest('label')!
+        .querySelector('input[type="checkbox"]') as HTMLInputElement;
+      fireEvent.click(ttsCheckbox);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add Rule' }));
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(addRuleSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        'book1',
+        expect.objectContaining({ pattern: 'Dr.', replacement: 'Doctor', onlyForTTS: true }),
+      );
+      // A TTS-only rule leaves the rendered text alone, so the expensive
+      // viewer rebuild must be skipped.
+      expect(recreateSpy).not.toHaveBeenCalled();
+    });
+
     it('warns and does not add when the regex is invalid', async () => {
       const { addRuleSpy } = await openManagerForAdd();
       const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
 
       fireEvent.change(screen.getByPlaceholderText('Find...'), { target: { value: '(' } });
-      const regexLabel = screen.getByText('Regex:');
+      const regexLabel = screen.getByText('Regex');
       const regexCheckbox = regexLabel
         .closest('label')!
         .querySelector('input[type="checkbox"]') as HTMLInputElement;

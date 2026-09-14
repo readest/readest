@@ -9,6 +9,7 @@ android {
 
     defaultConfig {
         minSdk = 21
+        targetSdk = 36 // Keep the instrumented test APK aligned with the app.
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -49,6 +50,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.webkit:webkit:1.14.0")
     implementation("com.google.android.material:material:1.7.0")
     // EncryptedSharedPreferences (sync passphrase keychain backing).
     // Stays on the 1.1.0-alpha line because the stable 1.0.x release

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { configureZip } from '@/utils/zip';
 import {
   decodeHtmlBody,
+  extractChapterHtml,
   downloadNovel,
   fetchNovelToc,
   isNovelImportCancelled,
@@ -145,7 +146,7 @@ describe('downloadNovel', () => {
     expect(stableIdentifier(firstIdentity)).not.toBe(stableIdentifier(secondIdentity));
   });
 
-  it('strips images from chapter content', async () => {
+  it('keeps failed images as placeholders without remote URLs', async () => {
     const page = chapterPage(1).replace(
       '<div id="content">',
       '<div id="content"><img src="https://cdn.example.org/x.jpg"/><figure><img src="/y.png"/></figure>',
@@ -154,7 +155,8 @@ describe('downloadNovel', () => {
       fetchPage: makeFetchPage({ [`${BASE}/novel/7/1`]: page }),
     });
     const files = await unzipEpub(book.file);
-    expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('<img');
+    expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('src="https://cdn.example.org');
+    expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('src="/y.png');
   });
 
   it('keeps going when a chapter fails and inserts a placeholder', async () => {
@@ -503,13 +505,135 @@ describe('defaultFetchPage charset handling', () => {
     const tauriFetch = vi.fn(
       async () => new Response(page, { status: 200, headers: { 'content-type': 'text/html' } }),
     );
-    vi.doMock('@tauri-apps/plugin-http', () => ({ fetch: tauriFetch }));
+    vi.doMock('@/services/webBrowser/browserFetch', () => ({ browserFetch: tauriFetch }));
     try {
       const parsed = await fetchNovelToc('https://www.trxs.cc/tongren/11542.html');
       expect(parsed.title).toBe('福尔摩斯');
       expect(parsed.chapters[0]!.title).toBe('第 1 章');
     } finally {
-      vi.doUnmock('@tauri-apps/plugin-http');
+      vi.doUnmock('@/services/webBrowser/browserFetch');
     }
   });
+});
+
+it('uses a captured authenticated table of contents without refetching the login URL', async () => {
+  const fetchPage = vi.fn(makeFetchPage());
+  const parsed = await fetchNovelToc(`${BASE}/login`, {
+    page: { html: tocPage, finalUrl: TOC_URL },
+    fetchPage,
+  });
+  expect(parsed.chapters[0]?.url).toBe(`${BASE}/novel/7/1`);
+  expect(fetchPage.mock.calls.map(([url]) => url)).not.toContain(`${BASE}/login`);
+});
+
+it('renders a JavaScript-only chapter using the browser session', async () => {
+  const renderPage = vi.fn(async (url: string) => ({ html: chapterPage(1), finalUrl: url }));
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage: async (url) => ({
+      html: '<html><body><div id="app"></div></body></html>',
+      finalUrl: url,
+    }),
+    renderPage,
+  });
+  expect(renderPage).toHaveBeenCalledTimes(1);
+  expect(book.failures).toBe(0);
+  const files = await unzipEpub(book.file);
+  expect([...files.values()].some((html) => html.includes('Chapter 1 paragraph'))).toBe(true);
+});
+
+it('renders a chapter when the HTTP client cannot pass the site challenge', async () => {
+  const renderPage = vi.fn(async (url: string) => ({ html: chapterPage(1), finalUrl: url }));
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage: async () => {
+      throw new ConversionError('Forbidden', 'fetch_failed');
+    },
+    renderPage,
+  });
+  expect(renderPage).toHaveBeenCalledTimes(1);
+  expect(book.failures).toBe(0);
+});
+
+it('cancels the whole import when a rendered chapter is cancelled', async () => {
+  await expect(
+    downloadNovel(toc(), TOC_URL, {
+      fetchPage: async () => {
+        throw new Error('Login required');
+      },
+      renderPage: async () => {
+        throw new DOMException('Capture cancelled', 'AbortError');
+      },
+    }),
+  ).rejects.toMatchObject({ name: 'AbortError' });
+});
+
+it('bundles chapter illustrations into the EPUB', async () => {
+  const page = chapterPage(1).replace(
+    '<div id="content">',
+    '<div id="content"><img src="data:image/png;base64,aW1hZ2U=" alt="Illustration"/>',
+  );
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage: makeFetchPage({ [`${BASE}/novel/7/1`]: page }),
+  });
+  const files = await unzipEpub(book.file);
+  expect(files.get('OEBPS/chapter1.xhtml')).toMatch(/src="images\/[a-f0-9]+\.png"/);
+  expect([...files.keys()].some((path) => /images\/[a-f0-9]+\.png$/.test(path))).toBe(true);
+});
+
+it('renders signed-in imports even when HTTP would return a long public preview', async () => {
+  const fetchPage = vi.fn(makeFetchPage());
+  const renderPage = vi.fn(async (url: string) => ({
+    html: chapterPage(1).replaceAll('paragraph', 'PRIVATE paragraph'),
+    finalUrl: url,
+  }));
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage,
+    renderPage,
+    renderChapters: true,
+  });
+  expect(fetchPage).not.toHaveBeenCalled();
+  const files = await unzipEpub(book.file);
+  expect(files.get('OEBPS/chapter1.xhtml')).toContain('PRIVATE paragraph');
+});
+
+it('resolves chapter images against the final website URL instead of the app origin', () => {
+  const page = chapterPage(1).replace(
+    '<div id="content">',
+    '<div id="content"><img src="/private/cover.png"/><img src="../figure.png"/>',
+  );
+  const html = extractChapterHtml(
+    page,
+    'Chapter 1',
+    'https://members.example.org/novel/chapters/1',
+  );
+  expect(html).toContain('src="https://members.example.org/private/cover.png"');
+  expect(html).toContain('src="https://members.example.org/novel/figure.png"');
+});
+
+it.each([
+  false,
+  true,
+])('does not fetch or render private chapter URLs (signed in: %s)', async (renderChapters) => {
+  const fetchPage = vi.fn(makeFetchPage());
+  const renderPage = vi.fn(async (url: string) => ({ html: chapterPage(1), finalUrl: url }));
+  const chapters = [
+    'http://127.0.0.1/private',
+    'http://localhost./private',
+    'http://[::ffff:7f00:1]/private',
+  ].map((url) => ({ title: 'Chapter 1', url }));
+  const book = await downloadNovel(toc({ chapters }), TOC_URL, {
+    fetchPage,
+    renderPage,
+    renderChapters,
+  });
+  expect(book.failures).toBe(chapters.length);
+  expect(fetchPage).not.toHaveBeenCalled();
+  expect(renderPage).not.toHaveBeenCalled();
+});
+
+it('rejects a private table of contents before fetching', async () => {
+  const fetchPage = vi.fn(makeFetchPage());
+  await expect(fetchNovelToc('http://localhost./novel/7/', { fetchPage })).rejects.toThrow(
+    'private',
+  );
+  expect(fetchPage).not.toHaveBeenCalled();
 });

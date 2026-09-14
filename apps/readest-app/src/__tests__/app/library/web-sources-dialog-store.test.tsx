@@ -28,7 +28,9 @@ afterEach(() => cleanup());
 describe('WebSourcesDialog with the real settings store', () => {
   it('renders when settings.webSources is undefined', () => {
     useSettingsStore.setState({ settings: {} as SystemSettings });
-    expect(() => render(<WebSourcesDialog isOpen onClose={() => {}} />)).not.toThrow();
+    expect(() =>
+      render(<WebSourcesDialog isOpen onClose={() => {}} onClip={vi.fn()} />),
+    ).not.toThrow();
     expect(screen.getByRole('button', { name: 'Add Source' })).toBeTruthy();
     // A store update unrelated to sources must not re-trigger a loop either.
     useSettingsStore.setState({ settings: { fontFamily: 'x' } as unknown as SystemSettings });

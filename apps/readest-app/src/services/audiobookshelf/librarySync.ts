@@ -24,6 +24,10 @@ const audioTrackCount = (item: ABSLibraryItem): number =>
 const isAudiobookItem = (item: ABSLibraryItem): boolean =>
   item.mediaType === 'book' && audioTrackCount(item) > 0;
 
+/** True for book-type items with a primary ebook and no audio tracks. */
+const isEbookItem = (item: ABSLibraryItem): boolean =>
+  item.mediaType === 'book' && audioTrackCount(item) === 0 && !!item.media.ebookFile;
+
 /** True for podcast show items. */
 const isPodcastItem = (item: ABSLibraryItem): boolean => item.mediaType === 'podcast';
 
@@ -73,7 +77,8 @@ export const reconcileAbsBooks = (input: {
 
   for (const item of items) {
     const podcast = isPodcastItem(item);
-    if (!podcast && !isAudiobookItem(item)) continue;
+    const ebook = isEbookItem(item);
+    if (!podcast && !isAudiobookItem(item) && !ebook) continue;
 
     const filePath = makeAbsFilePath(server.id, item.id);
     seenFilePaths.add(filePath);
@@ -82,12 +87,13 @@ export const reconcileAbsBooks = (input: {
     const serverAuthor = podcast
       ? (item.media.metadata.author ?? '')
       : (item.media.metadata.authorName ?? '');
-    const duration = podcast ? undefined : item.media.duration;
+    const duration = podcast || ebook ? undefined : item.media.duration;
+    const absMediaType = podcast ? 'podcast' : ebook ? 'ebook' : undefined;
     const primaryLanguage = item.media.metadata.language ?? undefined;
     const numEpisodes = podcast ? episodeCount(item) : undefined;
     // A show's own progress is never mapped — per-episode progress is a
     // later task, so a podcast item never looks up or applies server progress.
-    const itemProgress = podcast ? undefined : progressByItemId.get(item.id);
+    const itemProgress = podcast || ebook ? undefined : progressByItemId.get(item.id);
     const serverProgress: Book['progress'] = itemProgress
       ? [Math.round(itemProgress.currentTime), Math.round(itemProgress.duration)]
       : undefined;
@@ -122,6 +128,7 @@ export const reconcileAbsBooks = (input: {
         existing.title !== title ||
         existing.author !== author ||
         existing.duration !== duration ||
+        existing.absMediaType !== absMediaType ||
         existing.episodeCount !== numEpisodes ||
         !progressEqual(existing.progress, bookProgress) ||
         (existing.deletedAt ?? null) !== null ||
@@ -137,6 +144,7 @@ export const reconcileAbsBooks = (input: {
         author,
         sourceTitle: title,
         duration,
+        absMediaType,
         episodeCount: numEpisodes,
         primaryLanguage,
         progress: bookProgress,
@@ -154,7 +162,7 @@ export const reconcileAbsBooks = (input: {
         author: serverAuthor,
         sourceTitle: serverTitle,
         duration,
-        absMediaType: podcast ? 'podcast' : undefined,
+        absMediaType,
         episodeCount: numEpisodes,
         primaryLanguage,
         progress: podcast ? undefined : serverProgress,
