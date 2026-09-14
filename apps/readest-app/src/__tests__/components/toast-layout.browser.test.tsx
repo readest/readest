@@ -34,7 +34,10 @@ beforeAll(async () => {
   await page.viewport(1024, 768);
 });
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -60,7 +63,7 @@ const showToast = async (detail: Record<string, unknown>, finishAnimations = tru
 describe('Toast layout', () => {
   it('keeps OCR progress and errors in one stable toast', async () => {
     const toast = await showToast(
-      { type: 'info', message: 'Recognizing text', placement: 'top', progress: 42, timeout: 40 },
+      { type: 'info', message: 'Recognizing text', placement: 'top', progress: 42 },
       false,
     );
     const message = screen.getByText('Recognizing text');
@@ -82,6 +85,18 @@ describe('Toast layout', () => {
       expect(alert.getBoundingClientRect().right).toBeCloseTo(window.innerWidth - TOAST_GAP, 0);
       await nextFrame();
     }
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    await act(async () => {
+      await eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: 'Recognizing text',
+        placement: 'top',
+        progress: 42,
+        timeout: 40,
+      });
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(40));
+    expect(toast.className).toContain('opacity-0');
     await act(async () => {
       await eventDispatcher.dispatch('toast', {
         type: 'info',
@@ -95,7 +110,7 @@ describe('Toast layout', () => {
     expect(progress.value).toBe(80);
     expect(alert.getBoundingClientRect().top).toBeCloseTo(TOP_BAR + TOAST_GAP, 0);
     expect(alert.getBoundingClientRect().right).toBeCloseTo(window.innerWidth - TOAST_GAP, 0);
-    await new Promise<void>((resolve) => setTimeout(resolve, 350));
+    await act(async () => vi.advanceTimersByTimeAsync(350));
     expect(document.querySelector('.toast')).toBe(toast);
     expect(toast.className).toContain('opacity-100');
     await act(async () => {
