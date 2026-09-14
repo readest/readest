@@ -133,6 +133,9 @@ describe('Tesseract manga OCR', () => {
 
     expect(createWorker).not.toHaveBeenCalled();
     expect(recognizer.recognize).toHaveBeenCalledTimes(2);
+    const [fastCrop, getMangaCrop] = recognizer.recognize.mock.calls[0]!;
+    expect(fastCrop).toMatchObject({ width: 443, height: 80 });
+    expect(getMangaCrop()).toMatchObject({ width: 64, height: 427 });
     expect(onProgress).toHaveBeenCalledWith({ status: 'recognizing text', progress: 0.5 });
     expect(result).toMatchObject({
       language: 'ja',
@@ -150,7 +153,7 @@ describe('Tesseract manga OCR', () => {
     });
   });
 
-  it('uses vertical Tesseract crops when Japanese Paddle output is unavailable', async () => {
+  it('uses vertical Tesseract crops when Japanese recognition is unavailable', async () => {
     installCanvas();
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const longLine = {

@@ -18,9 +18,9 @@ import {
 } from '@/app/reader/services/manga/modelAssets';
 import { makeMangaTextLineCrops, readCanvasRgba } from '@/app/reader/services/ocr/mangaTextCrop';
 import {
-  PaddleJapaneseRecognizer,
+  MangaOcrRecognizer,
   type JapaneseMangaRecognizer,
-} from '@/app/reader/services/ocr/paddleJapaneseRecognizer';
+} from '@/app/reader/services/ocr/mangaOcrRecognizer';
 import type { OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
 import {
   adaptTesseractPage,
@@ -161,7 +161,7 @@ const createMangaDetector: MangaTextDetectorFactory = (onDownloadProgress) =>
   new MokuroTextDetector({ onDownloadProgress });
 
 const createJapaneseMangaRecognizer: JapaneseMangaRecognizerFactory = (onDownloadProgress) =>
-  new PaddleJapaneseRecognizer({ onDownloadProgress });
+  new MangaOcrRecognizer({ onDownloadProgress });
 
 const loadMangaImage: MangaImageLoader = (source) =>
   new Promise((resolve, reject) => {
@@ -374,6 +374,17 @@ export class TesseractOcrEngine {
           vertical: detectedBlock.vertical,
         });
         let tesseractCrops: HTMLCanvasElement[] | undefined;
+        let mangaCrops: HTMLCanvasElement[] | undefined;
+        const getMangaCrop = (cropIndex: number): HTMLCanvasElement => {
+          mangaCrops ??= makeMangaTextLineCrops(prepared.image, imageData, line, {
+            keepVertical: true,
+            border: 0,
+            mask: detection.mask,
+            page: detection.page,
+            vertical: detectedBlock.vertical,
+          });
+          return mangaCrops[cropIndex]!;
+        };
         const getTesseractCrop = (
           cropIndex: number,
           crop: HTMLCanvasElement,
@@ -398,6 +409,7 @@ export class TesseractOcrEngine {
               () => getTesseractCrop(cropIndex, crop),
               detectedBlock.vertical,
               useJapaneseRecognizer,
+              () => getMangaCrop(cropIndex),
             );
             if (!result) {
               recognizedChunks.length = 0;
@@ -439,10 +451,11 @@ export class TesseractOcrEngine {
     getTesseractCrop: () => HTMLCanvasElement,
     vertical: boolean,
     useJapaneseRecognizer: boolean,
+    getMangaCrop: () => HTMLCanvasElement,
   ): Promise<{ text: string; confidence: number } | null> {
     if (useJapaneseRecognizer && !this.#japaneseMangaRecognizerUnavailable) {
       try {
-        const result = await this.#getJapaneseMangaRecognizer().recognize(crop);
+        const result = await this.#getJapaneseMangaRecognizer().recognize(crop, getMangaCrop);
         if (result?.text && result.confidence >= this.#minimumConfidence) return result;
       } catch (error) {
         if (this.#terminated || this.#abortController.signal.aborted) {

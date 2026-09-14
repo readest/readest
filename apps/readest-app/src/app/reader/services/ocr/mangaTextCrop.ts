@@ -19,6 +19,7 @@ interface RasterImage {
 }
 
 interface MangaTextCropOptions {
+  border?: number;
   keepVertical?: boolean;
   mask?: MokuroMask;
   page?: MokuroPageSize;
@@ -234,19 +235,23 @@ const scalePolygon = (
     y: (y * to.height) / from.height,
   }));
 
-const makeCanvas = (source: HTMLCanvasElement, image: RasterImage): HTMLCanvasElement | null => {
+const makeCanvas = (
+  source: HTMLCanvasElement,
+  image: RasterImage,
+  border: number,
+): HTMLCanvasElement | null => {
   if (image.channels !== 4) return null;
   const doc = source.ownerDocument.defaultView?.frameElement?.ownerDocument ?? source.ownerDocument;
   const canvas = doc.createElement('canvas');
-  canvas.width = image.width + BORDER * 2;
-  canvas.height = image.height + BORDER * 2;
+  canvas.width = image.width + border * 2;
+  canvas.height = image.height + border * 2;
   const context = canvas.getContext('2d');
   if (!context) return null;
   context.fillStyle = '#fff';
   context.fillRect(0, 0, canvas.width, canvas.height);
   const imageData = context.createImageData(image.width, image.height);
   imageData.data.set(image.data);
-  context.putImageData(imageData, BORDER, BORDER);
+  context.putImageData(imageData, border, border);
   return canvas;
 };
 
@@ -305,7 +310,7 @@ export const makeMangaTextLineCrops = (
   const chunks = splitRaster(normalized, normalizedMask, maximumRatio);
   return chunks.flatMap((chunk) => {
     const oriented = vertical && options.keepVertical ? rotateClockwise(chunk) : chunk;
-    const canvas = makeCanvas(source, oriented);
+    const canvas = makeCanvas(source, oriented, options.border ?? BORDER);
     return canvas ? [canvas] : [];
   });
 };

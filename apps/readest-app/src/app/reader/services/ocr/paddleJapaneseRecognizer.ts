@@ -56,7 +56,10 @@ export interface JapaneseMangaRecognition {
 }
 
 export interface JapaneseMangaRecognizer {
-  recognize: (source: HTMLCanvasElement) => Promise<JapaneseMangaRecognition | null>;
+  recognize: (
+    source: HTMLCanvasElement,
+    getMangaCrop: () => HTMLCanvasElement,
+  ) => Promise<JapaneseMangaRecognition | null>;
   terminate: () => Promise<void>;
 }
 
