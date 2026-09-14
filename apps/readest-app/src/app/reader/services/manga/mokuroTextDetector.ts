@@ -163,11 +163,6 @@ interface LineComponent {
   minY: number;
   maxX: number;
   maxY: number;
-  sumX: number;
-  sumY: number;
-  sumXX: number;
-  sumYY: number;
-  sumXY: number;
 }
 
 const DEFAULT_BLOCK_CONFIDENCE = 0.4;
@@ -409,36 +404,86 @@ const componentPolygon = (
   transform: LetterboxTransform,
   pixels: ArrayLike<number>,
 ): { polygon: MokuroPoint[]; vertical: boolean } => {
-  const meanX = component.sumX / component.count;
-  const meanY = component.sumY / component.count;
-  const covarianceXX = component.sumXX / component.count - meanX * meanX;
-  const covarianceYY = component.sumYY / component.count - meanY * meanY;
-  const covarianceXY = component.sumXY / component.count - meanX * meanY;
-  const angle =
-    Math.abs(covarianceXX - covarianceYY) + Math.abs(covarianceXY) > 1e-6
-      ? 0.5 * Math.atan2(2 * covarianceXY, covarianceXX - covarianceYY)
-      : 0;
-  const ux = Math.cos(angle);
-  const uy = Math.sin(angle);
-  const vx = -uy;
-  const vy = ux;
-  let minU = Number.POSITIVE_INFINITY;
-  let maxU = Number.NEGATIVE_INFINITY;
-  let minV = Number.POSITIVE_INFINITY;
-  let maxV = Number.NEGATIVE_INFINITY;
+  // Row endpoints preserve the pixel hull without sorting every foreground pixel.
+  const rowCount = component.maxY - component.minY + 1;
+  const leftEdges = new Int32Array(rowCount).fill(MOKURO_TEXT_DETECTOR_INPUT_SIZE);
+  const rightEdges = new Int32Array(rowCount).fill(-1);
   for (let index = 0; index < component.count; index += 1) {
     const pixel = Number(pixels[index]);
     const x = pixel % MOKURO_TEXT_DETECTOR_INPUT_SIZE;
-    const y = Math.floor(pixel / MOKURO_TEXT_DETECTOR_INPUT_SIZE);
-    const centeredX = x - meanX;
-    const centeredY = y - meanY;
-    const projectionU = centeredX * ux + centeredY * uy;
-    const projectionV = centeredX * vx + centeredY * vy;
-    minU = Math.min(minU, projectionU);
-    maxU = Math.max(maxU, projectionU);
-    minV = Math.min(minV, projectionV);
-    maxV = Math.max(maxV, projectionV);
+    const row = Math.floor(pixel / MOKURO_TEXT_DETECTOR_INPUT_SIZE) - component.minY;
+    leftEdges[row] = Math.min(leftEdges[row]!, x);
+    rightEdges[row] = Math.max(rightEdges[row]!, x);
   }
+  const endpoints: MokuroPoint[] = [];
+  for (let row = 0; row < rowCount; row += 1) {
+    if (rightEdges[row]! < 0) continue;
+    endpoints.push({ x: leftEdges[row]!, y: row + component.minY });
+    if (rightEdges[row] !== leftEdges[row]) {
+      endpoints.push({ x: rightEdges[row]!, y: row + component.minY });
+    }
+  }
+  endpoints.sort((a, b) => a.x - b.x || a.y - b.y);
+  const hull: MokuroPoint[] = [];
+  for (const chain of [endpoints, [...endpoints].reverse()]) {
+    const start = hull.length;
+    for (const point of chain) {
+      while (hull.length >= start + 2) {
+        const a = hull[hull.length - 2]!;
+        const b = hull[hull.length - 1]!;
+        if ((b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x) > 0) break;
+        hull.pop();
+      }
+      hull.push(point);
+    }
+    hull.pop();
+  }
+
+  // Rotating calipers visit each support point once per axis around the hull.
+  const supports = [0, 0, 0, 0];
+  let area = Number.POSITIVE_INFINITY;
+  let ux = 1;
+  let uy = 0;
+  let minU = 0;
+  let maxU = 0;
+  let minV = 0;
+  let maxV = 0;
+  for (let edge = 0; edge < hull.length; edge += 1) {
+    const a = hull[edge]!;
+    const b = hull[(edge + 1) % hull.length]!;
+    const length = Math.hypot(b.x - a.x, b.y - a.y);
+    const dx = (b.x - a.x) / length;
+    const dy = (b.y - a.y) / length;
+    const bounds = [
+      [dx, dy],
+      [-dx, -dy],
+      [-dy, dx],
+      [dy, -dx],
+    ].map(([x, y], axis) => {
+      const dot = (index: number) => hull[index]!.x * x! + hull[index]!.y * y!;
+      let support = supports[axis]!;
+      if (edge === 0) {
+        for (let index = 1; index < hull.length; index += 1) {
+          if (dot(index) > dot(support)) support = index;
+        }
+      } else {
+        while (dot((support + 1) % hull.length) > dot(support) + 1e-9) {
+          support = (support + 1) % hull.length;
+        }
+      }
+      supports[axis] = support;
+      return dot(support);
+    });
+    const candidateArea = (bounds[0]! + bounds[1]!) * (bounds[2]! + bounds[3]!);
+    if (candidateArea < area) {
+      area = candidateArea;
+      ux = dx;
+      uy = dy;
+      [maxU, minU, maxV, minV] = [bounds[0]!, -bounds[1]!, bounds[2]!, -bounds[3]!];
+    }
+  }
+  const vx = -uy;
+  const vy = ux;
   const width = Math.max(1, maxU - minU + 1);
   const height = Math.max(1, maxV - minV + 1);
   const unclipDistance = (width * height * 1.5) / (2 * (width + height));
@@ -447,16 +492,16 @@ const componentPolygon = (
   minV -= unclipDistance;
   maxV += unclipDistance;
   const points = [
-    { x: meanX + ux * minU + vx * minV, y: meanY + uy * minU + vy * minV },
-    { x: meanX + ux * maxU + vx * minV, y: meanY + uy * maxU + vy * minV },
-    { x: meanX + ux * maxU + vx * maxV, y: meanY + uy * maxU + vy * maxV },
-    { x: meanX + ux * minU + vx * maxV, y: meanY + uy * minU + vy * maxV },
+    { x: ux * minU + vx * minV, y: uy * minU + vy * minV },
+    { x: ux * maxU + vx * minV, y: uy * maxU + vy * minV },
+    { x: ux * maxU + vx * maxV, y: uy * maxU + vy * maxV },
+    { x: ux * minU + vx * maxV, y: uy * minU + vy * maxV },
   ].sort((left, right) => left.x - right.x || left.y - right.y);
   const left = points.slice(0, 2).sort((first, second) => first.y - second.y);
   const right = points.slice(2).sort((first, second) => first.y - second.y);
   const inputPolygon = [left[0]!, right[0]!, right[1]!, left[1]!];
   const polygon = inputPolygon.map(({ x, y }) => mapInputPoint(x, y, page, transform));
-  const vertical = Math.abs(uy) > Math.abs(ux);
+  const vertical = width >= height ? Math.abs(uy) > Math.abs(ux) : Math.abs(vy) > Math.abs(vx);
   return { polygon, vertical };
 };
 
@@ -484,11 +529,6 @@ const collectLineComponent = (
   let minY = MOKURO_TEXT_DETECTOR_INPUT_SIZE;
   let maxX = 0;
   let maxY = 0;
-  let sumX = 0;
-  let sumY = 0;
-  let sumXX = 0;
-  let sumYY = 0;
-  let sumXY = 0;
   while (head < tail) {
     const pixel = queue[head++]!;
     const x = pixel % MOKURO_TEXT_DETECTOR_INPUT_SIZE;
@@ -500,11 +540,6 @@ const collectLineComponent = (
     minY = Math.min(minY, y);
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
-    sumX += x;
-    sumY += y;
-    sumXX += x * x;
-    sumYY += y * y;
-    sumXY += x * y;
     for (let dy = -1; dy <= 1; dy += 1) {
       for (let dx = -1; dx <= 1; dx += 1) {
         if (dx === 0 && dy === 0) continue;
@@ -533,11 +568,6 @@ const collectLineComponent = (
     minY,
     maxX,
     maxY,
-    sumX,
-    sumY,
-    sumXX,
-    sumYY,
-    sumXY,
   };
 };
 

@@ -5,6 +5,7 @@ import {
   MOKURO_TEXT_DETECTOR_MODEL_ASSET,
   MOKURO_TEXT_DETECTOR_MODEL_SHA256,
   MOKURO_TEXT_DETECTOR_MODEL_URL,
+  extractMokuroLinePolygons,
   postprocessMokuroDetectorOutputs,
 } from '@/app/reader/services/manga/mokuroTextDetector';
 
@@ -23,6 +24,17 @@ const fillRectangle = (
 };
 
 describe('Mokuro text detection', () => {
+  it('keeps an uneven text component in its minimum enclosing rectangle', () => {
+    const lines = new Float32Array(1024 * 1024);
+    fillRectangle(lines, 100, 100, 120, 160);
+    fillRectangle(lines, 100, 100, 140, 110);
+
+    const [line] = extractMokuroLinePolygons(lines, { width: 1024, height: 1024 });
+
+    expect(line?.vertical).toBe(true);
+    expect(line?.box).toEqual({ xMin: 82, yMin: 82, xMax: 157, yMax: 177 });
+  });
+
   it('maps the pinned detector output to ordered Japanese text lines', () => {
     expect(MOKURO_TEXT_DETECTOR_MODEL_ASSET).toMatchObject({
       url: MOKURO_TEXT_DETECTOR_MODEL_URL,
