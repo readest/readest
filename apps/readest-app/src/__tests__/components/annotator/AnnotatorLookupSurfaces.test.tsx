@@ -320,12 +320,19 @@ test('dismisses OCR selection from the reader margin, but keeps popup interactio
   });
   h.deselect.mockClear();
   fireEvent.pointerDown(screen.getByTestId('annotation-toolbar'));
+  fireEvent.click(screen.getByTestId('annotation-toolbar'));
   expect(h.deselect).not.toHaveBeenCalled();
   expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
 
-  fireEvent.pointerDown(document.querySelector('#gridcell-book-1')!);
+  const margin = document.querySelector('#gridcell-book-1')!;
+  const turnPage = vi.fn();
+  margin.addEventListener('click', turnPage);
+  fireEvent.pointerDown(margin);
+  fireEvent.click(margin);
   expect(h.deselect).toHaveBeenCalledOnce();
   expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  expect(turnPage).not.toHaveBeenCalled();
+  margin.removeEventListener('click', turnPage);
 });
 
 /**
