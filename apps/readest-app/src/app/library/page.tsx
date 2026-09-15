@@ -116,7 +116,6 @@ import FailedImportsDialog, { FailedImport } from './components/FailedImportsDia
 import ImportFromFolderDialog, {
   ImportFromFolderResult,
 } from './components/ImportFromFolderDialog';
-import ImportFromUrlDialog from './components/ImportFromUrlDialog';
 import ImportNovelDialog from './components/ImportNovelDialog';
 import NowPlayingBar from './components/NowPlayingBar';
 import { ttsSessionManager } from '@/services/tts';
@@ -253,7 +252,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   );
   const [showFeeds, setShowFeeds] = useState(false);
   const [showAddFeed, setShowAddFeed] = useState(false);
-  const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [showImportNovel, setShowImportNovel] = useState(false);
   const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1372,6 +1370,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     console.log('[clip] done');
   };
 
+  // Lightweight replacement for ImportFromUrlDialog: prompt the user for a URL
+  // then hand it straight to the existing clip pipeline.
+  const handleImportBookFromUrlPrompt = () => {
+    const url = window.prompt(_('Enter the article URL to import'));
+    if (url && url.trim()) {
+      void handleImportBookFromUrl(url.trim());
+    }
+  };
+
   // The dialog fetches the chapter list and assembles the EPUB itself
   // (with its own progress/cancel UI) — from here on the built file takes
   // exactly the local-file import path, same as a clipped page.
@@ -1918,7 +1925,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
-          onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
+          onImportFromWebBrowser={isTauriAppPlatform() ? handleImportBookFromUrlPrompt : undefined}
           onImportBookFromNovelUrl={
             isTauriAppPlatform() ? () => setShowImportNovel(true) : undefined
           }
@@ -2156,7 +2163,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onImportBooksFromDirectory={
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
-          onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
+          onImportFromWebBrowser={isTauriAppPlatform() ? handleImportBookFromUrlPrompt : undefined}
           onImportBookFromNovelUrl={
             isTauriAppPlatform() ? () => setShowImportNovel(true) : undefined
           }
@@ -2274,11 +2281,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           }}
         />
       )}
-      <ImportFromUrlDialog
-        isOpen={showImportFromUrl}
-        onClose={() => setShowImportFromUrl(false)}
-        onSubmit={handleImportBookFromUrl}
-      />
       <ImportNovelDialog
         isOpen={showImportNovel}
         onClose={() => setShowImportNovel(false)}

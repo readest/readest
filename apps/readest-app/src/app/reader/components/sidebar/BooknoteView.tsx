@@ -25,7 +25,7 @@ import { eventDispatcher } from '@/utils/event';
 import {
   filterBooknotes,
   collectAnnotationFacets,
-  summarizeAnnotationHub,
+  summarizeAnnotations,
   AnnotationFilterKind,
 } from '../../utils/annotatorUtil';
 import AnnotationsToolbar from './AnnotationsToolbar';
@@ -114,7 +114,7 @@ const BooknoteView: React.FC<{
     [allNotes],
   );
   const facets = useMemo(() => collectAnnotationFacets(liveAnnotations), [liveAnnotations]);
-  const counts = useMemo(() => summarizeAnnotationHub(liveAnnotations), [liveAnnotations]);
+  const counts = useMemo(() => summarizeAnnotations(liveAnnotations), [liveAnnotations]);
 
   // Filter active notes of this type, then apply the hub's kind/query/facet
   // filter (annotation tab only). useMemo so referential stability flows
