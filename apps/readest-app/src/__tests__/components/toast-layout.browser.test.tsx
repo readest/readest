@@ -129,6 +129,24 @@ describe('Toast layout', () => {
     }
   });
 
+  it('dismisses an owned toast without touching unrelated toasts', async () => {
+    await showToast({ type: 'info', message: 'OCR progress', placement: 'top', id: 'ocr-toast' });
+
+    await act(async () => {
+      await eventDispatcher.dispatch('toast-dismiss', { id: 'other-toast' });
+    });
+    expect(screen.getByText('OCR progress')).toBeTruthy();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('toast-dismiss', { id: 'ocr-toast' });
+      await eventDispatcher.dispatch('toast-dismiss', { id: 'ocr-toast' });
+      await eventDispatcher.dispatch('toast', { type: 'info', message: 'Copied to clipboard' });
+    });
+    await waitFor(() => expect(screen.getByText('Copied to clipboard')).toBeTruthy());
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    expect(screen.getByText('Copied to clipboard')).toBeTruthy();
+  });
+
   it('centers the info toast on the viewport', async () => {
     const toast = await showToast({ type: 'info', message: 'Copied to clipboard' });
     const box = toast.getBoundingClientRect();

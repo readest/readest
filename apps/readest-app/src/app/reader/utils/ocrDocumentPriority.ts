@@ -10,7 +10,9 @@ export const prioritizeCurrentDocument = <T extends RenderedDocument>(renderer: 
   const documents = renderer.getContents();
   const primaryIndex = renderer.primaryIndex ?? renderer.index;
   if (typeof primaryIndex !== 'number') return [...documents];
-  const current = documents.find((document) => document.index === primaryIndex);
-  if (!current) return [...documents];
-  return [current, ...documents.filter((document) => document !== current)];
+  return [...documents].sort((left, right) => {
+    const a = left.index ?? Infinity;
+    const b = right.index ?? Infinity;
+    return Math.abs(a - primaryIndex) - Math.abs(b - primaryIndex) || b - a;
+  });
 };

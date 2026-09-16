@@ -49,6 +49,7 @@ interface PendingOcrPage extends PageImageIdentity {
 }
 
 interface OcrQueueTask {
+  pageIndex: number;
   run: () => Promise<OcrPage | null>;
   resolve: (page: OcrPage | null) => void;
   reject: (error: unknown) => void;
@@ -140,6 +141,7 @@ export class OcrSession {
   #generation = 0;
   #enabled = false;
   #terminated = false;
+  #currentPageIndex: number | null = null;
 
   constructor({ createEngine, onError, onPageRecognized }: OcrSessionOptions) {
     this.#createEngine = createEngine;
@@ -153,6 +155,15 @@ export class OcrSession {
     { priority = false }: OcrProcessOptions = {},
   ): Promise<OcrPage | null> {
     this.#registerDocument(doc, pageIndex);
+    if (priority) {
+      this.#currentPageIndex = pageIndex;
+      for (const [index, pending] of this.#pending) {
+        if (Math.abs(index - pageIndex) <= 2 || pending.task === this.#runningTask) continue;
+        this.#pending.delete(index);
+        this.#cancelQueuedTask(pending.task);
+      }
+      this.#sortQueue();
+    }
     if (this.#terminated || !this.#enabled) {
       removeOcrTextLayer(doc);
       return null;
@@ -169,17 +180,23 @@ export class OcrSession {
       if (isSamePageImage(cachedPage, doc, image)) {
         cachedPage.document = doc;
         if (!hasOcrTextLayer(doc, pageIndex)) mountOcrTextLayer(doc, cachedPage.page);
+        if (priority) this.#onPageRecognized?.(cachedPage.page);
         return cachedPage.page;
       }
       if (isSamePdfPage(cachedPage, doc, image)) {
         const resizedPage = resizeOcrPage(cachedPage.page, image);
         this.#pages.set(pageIndex, { document: doc, image, page: resizedPage });
         mountOcrTextLayer(doc, resizedPage);
+        if (priority) this.#onPageRecognized?.(resizedPage);
         return resizedPage;
       }
       this.#pages.delete(pageIndex);
     }
 
+    // Reuse the reader's loaded pages, with at most two neighbours on either side.
+    if (this.#currentPageIndex !== null && Math.abs(pageIndex - this.#currentPageIndex) > 2) {
+      return null;
+    }
     const generation = this.#generation;
     const pendingPage = this.#pending.get(pageIndex);
     let recognition: Promise<OcrPage | null>;
@@ -299,6 +316,7 @@ export class OcrSession {
       rejectRecognition = reject;
     });
     const task: OcrQueueTask = {
+      pageIndex,
       run: async () => {
         if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
         await this.#engineTermination;
@@ -330,6 +348,7 @@ export class OcrSession {
     this.#pending.set(pageIndex, pendingPage);
     if (priority) this.#queue.unshift(task);
     else this.#queue.push(task);
+    this.#sortQueue();
     void this.#drainQueue();
     void recognition.then(
       () => {
@@ -348,6 +367,16 @@ export class OcrSession {
     if (index <= 0) return;
     this.#queue.splice(index, 1);
     this.#queue.unshift(task);
+  }
+
+  #sortQueue(): void {
+    const current = this.#currentPageIndex;
+    if (current === null) return;
+    this.#queue.sort(
+      (a, b) =>
+        Math.abs(a.pageIndex - current) - Math.abs(b.pageIndex - current) ||
+        b.pageIndex - a.pageIndex,
+    );
   }
 
   #cancelQueuedTask(task: OcrQueueTask): void {

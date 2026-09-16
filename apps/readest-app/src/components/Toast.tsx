@@ -21,6 +21,7 @@ export const Toast = () => {
   const [toastTimeout, setToastTimeout] = useState(5000);
   const [messageClass, setMessageClass] = useState('');
   const [isVisible, setIsVisible] = useState(false);
+  const toastIdRef = useRef<string | undefined>(undefined);
   const toastDismissTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastClearTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,6 +105,7 @@ export const Toast = () => {
 
   const handleShowToast = async (event: CustomEvent) => {
     const {
+      id,
       message,
       type = 'info',
       placement,
@@ -112,10 +114,11 @@ export const Toast = () => {
       className = '',
       callback = null,
     } = event.detail;
-    if (placement === 'top' && toastClearTimeout.current) {
+    if (toastClearTimeout.current) {
       clearTimeout(toastClearTimeout.current);
       toastClearTimeout.current = null;
     }
+    toastIdRef.current = typeof id === 'string' ? id : undefined;
     setToastMessage(message);
     setToastType(type);
     setToastPlacement(placement === 'top' ? 'top' : null);
@@ -131,19 +134,31 @@ export const Toast = () => {
     setMessageClass(className);
   };
 
+  const handleDismiss = () => {
+    setIsVisible(false);
+    if (toastClearTimeout.current) clearTimeout(toastClearTimeout.current);
+    toastClearTimeout.current = setTimeout(() => {
+      setToastMessage('');
+      toastIdRef.current = undefined;
+    }, 300);
+    if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
+  };
+
+  const handleDismissOwnedToast = (event: CustomEvent) => {
+    const id = event.detail?.id;
+    if (typeof id !== 'string' || id !== toastIdRef.current) return;
+    handleDismiss();
+  };
+
   useEffect(() => {
     eventDispatcher.on('toast', handleShowToast);
+    eventDispatcher.on('toast-dismiss', handleDismissOwnedToast);
     return () => {
       eventDispatcher.off('toast', handleShowToast);
+      eventDispatcher.off('toast-dismiss', handleDismissOwnedToast);
       if (toastClearTimeout.current) clearTimeout(toastClearTimeout.current);
     };
   }, []);
-
-  const handleDismiss = () => {
-    setIsVisible(false);
-    toastClearTimeout.current = setTimeout(() => setToastMessage(''), 300);
-    if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
-  };
 
   return (
     toastMessage && (

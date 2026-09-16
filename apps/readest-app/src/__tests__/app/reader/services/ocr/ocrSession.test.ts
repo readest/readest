@@ -4,6 +4,49 @@ import { OcrSession, type OcrEngine } from '@/app/reader/services/ocr/ocrSession
 import { OCR_TEXT_LAYER_SELECTOR } from '@/app/reader/utils/ocrTextLayer';
 
 describe('OcrSession', () => {
+  it('bounds background work and reprioritizes a rapid page reversal without duplicate inference', async () => {
+    const docs = Array.from({ length: 10 }, (_, index) => {
+      const doc = document.implementation.createHTMLDocument();
+      const image = doc.createElement('img');
+      image.src = `blob:page-${index}`;
+      Object.defineProperties(image, {
+        naturalWidth: { value: 1200 },
+        naturalHeight: { value: 1800 },
+      });
+      doc.body.append(image);
+      return doc;
+    });
+    let finish!: () => void;
+    const running = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const engine: OcrEngine = {
+      recognize: vi.fn(async (_source, page) => {
+        if (page.pageIndex === 4) await running;
+        return { ...page, blocks: [] };
+      }),
+      terminate: vi.fn(async () => undefined),
+    };
+    const session = new OcrSession({ createEngine: () => engine });
+    try {
+      await session.setEnabled(true);
+      const first = session.processDocument(docs[4]!, 4, { priority: true });
+      await vi.waitFor(() => expect(engine.recognize).toHaveBeenCalledOnce());
+      const queued = docs.map((doc, index) => session.processDocument(doc, index));
+      const jump = session.processDocument(docs[9]!, 9, { priority: true });
+      const reverse = session.processDocument(docs[3]!, 3, { priority: true });
+      const nearby = docs.map((doc, index) => session.processDocument(doc, index));
+      finish();
+      await Promise.all([first, jump, reverse, ...queued, ...nearby]);
+      expect(vi.mocked(engine.recognize).mock.calls.map(([, page]) => page.pageIndex)).toEqual([
+        4, 3, 2, 5, 1,
+      ]);
+    } finally {
+      finish();
+      await session.terminate();
+    }
+  });
+
   it('keeps recognition and its selectable layer inside the active session', async () => {
     const doc = document.implementation.createHTMLDocument();
     const image = doc.createElement('img');

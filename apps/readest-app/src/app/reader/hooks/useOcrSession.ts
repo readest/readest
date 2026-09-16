@@ -111,7 +111,11 @@ export const useOcrSession = ({
         }
       },
       onPageRecognized: (page) => {
-        if (sessionRef.current === session && enabledRef.current) {
+        if (
+          sessionRef.current === session &&
+          enabledRef.current &&
+          (!getDocumentsRef.current || getDocumentsRef.current()[0]?.index === page.pageIndex)
+        ) {
           onPageRecognizedRef.current?.(page);
         }
       },
@@ -144,10 +148,12 @@ export const useOcrSession = ({
     (doc: Document, pageIndex: number) => {
       rememberDocument(doc, pageIndex);
       const priority = getDocumentsRef.current?.()[0]?.index === pageIndex;
-      return (
-        sessionRef.current?.processDocument(doc, pageIndex, { priority }) ?? Promise.resolve(null)
-      );
+      const session = sessionRef.current;
+      if (!session) return Promise.resolve(null);
+      const result = session.processDocument(doc, pageIndex, { priority });
+      if (priority) processKnownDocuments(session);
+      return result;
     },
-    [rememberDocument],
+    [rememberDocument, processKnownDocuments],
   );
 };
