@@ -67,7 +67,8 @@ vi.mock('@/utils/supabase', () => ({
         return {
           select: () => ({
             eq: () => ({
-              single: () => Promise.resolve({ data: { stripe_customer_id: 'cus_1' }, error: null }),
+              maybeSingle: () =>
+                Promise.resolve({ data: { stripe_customer_id: 'cus_1' }, error: null }),
             }),
           }),
         };

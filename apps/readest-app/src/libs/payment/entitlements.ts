@@ -67,11 +67,17 @@ export const getHighestActiveStripePlan = async (
   let customerId = stripeCustomerId;
   if (!customerId) {
     const supabase = createSupabaseAdminClient();
-    const { data } = await supabase
+    // `maybeSingle`, so that "this user has no Stripe customer" comes back as a
+    // null row rather than as an error the way `single` reports it — otherwise
+    // the two are indistinguishable here. And as with the IAP reads above, a
+    // failed lookup must never be mistaken for "no Stripe subscription": that
+    // would persist a downgrade for a user who is still paying by card.
+    const { data, error } = await supabase
       .from('customers')
       .select('stripe_customer_id')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+    if (error) throw error;
     customerId = data?.stripe_customer_id;
   }
   if (!customerId) return 'free';

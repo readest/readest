@@ -18,6 +18,7 @@ const stripeMocks = vi.hoisted(() => ({
 const db = vi.hoisted(() => ({
   planUpdates: [] as Array<Record<string, unknown>>,
   customer: null as { stripe_customer_id: string } | null,
+  customerError: null as { message: string } | null,
   google: [] as Array<{ product_id: string; status: string }>,
   apple: [] as Array<{ product_id: string; status: string }>,
   existingStripeSubscription: null as unknown,
@@ -65,7 +66,13 @@ vi.mock('@/utils/supabase', () => ({
       if (table === 'customers') {
         return {
           select: () => ({
-            eq: () => ({ single: () => Promise.resolve({ data: db.customer, error: null }) }),
+            eq: () => ({
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: db.customerError ? null : db.customer,
+                  error: db.customerError,
+                }),
+            }),
           }),
         };
       }
@@ -129,6 +136,7 @@ beforeEach(() => {
   stripeMocks.subscriptionsList.mockReset();
   db.planUpdates = [];
   db.customer = { stripe_customer_id: 'cus_1' };
+  db.customerError = null;
   db.google = [];
   db.apple = [];
   db.existingStripeSubscription = null;
@@ -181,6 +189,18 @@ describe('resolveUserPlan', () => {
     db.apple = [{ product_id: PRO_APPLE_SKU, status: 'revoked' }];
 
     expect(await resolveUserPlan('user-1')).toBe('free');
+  });
+
+  it('throws rather than downgrading when the customer lookup fails', async () => {
+    // A failed lookup is indistinguishable from "no Stripe customer", and
+    // returning `free` here would persist a downgrade for a user who is still
+    // paying by card. Let the provider retry the webhook instead.
+    db.customerError = { message: 'connection reset' };
+    db.google = [];
+
+    await expect(resolveUserPlan('user-1')).rejects.toMatchObject({
+      message: 'connection reset',
+    });
   });
 
   it('handles a user who never had a Stripe customer record', async () => {

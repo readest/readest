@@ -91,7 +91,8 @@ function createSupabaseMock(state: {
           return {
             select: () => ({
               eq: () => ({
-                single: () => Promise.resolve({ data: state.customerRow ?? null, error: null }),
+                maybeSingle: () =>
+                  Promise.resolve({ data: state.customerRow ?? null, error: null }),
               }),
             }),
           };
