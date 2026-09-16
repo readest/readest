@@ -24,7 +24,7 @@ multicol document that the previous iteration's write had just dirtied — once
 per image. And `marginTop`/`marginBottom` are read unconditionally even though
 only the `vertical` branch uses them.
 
-**Fix** (foliate-js#96, `packages/foliate-js/paginator.js`, `setImageSize`): three phases —
+**Fix** (foliate-js#96, merged b9dcd03, `packages/foliate-js/paginator.js`, `setImageSize`): three phases —
 clear inline constraints, then read every element's computed style into an
 array, then write. One layout for the whole pass.
 
