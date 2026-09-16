@@ -127,6 +127,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setIsDropdownOpen?.(false);
   };
 
+  const toggleOcr = () => {
+    setOcrEnabled(bookKey, !viewState?.ocrEnabled);
+    setIsDropdownOpen?.(false);
+  };
+
   const openSettingsDialog = () => {
     setIsDropdownOpen?.(false);
     setSettingsDialogBookKey(bookKey);
@@ -528,7 +533,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           <MenuItem
             label={_('Recognize Text')}
             Icon={viewState?.ocrEnabled ? MdCheck : undefined}
-            onClick={() => setOcrEnabled(bookKey, !viewState?.ocrEnabled)}
+            onClick={toggleOcr}
           />
           <label className='hover:bg-base-300 text-base-content flex items-center justify-between rounded-md px-3 py-2'>
             <span className='ms-6 text-base sm:text-sm'>{_('Text Language')}</span>

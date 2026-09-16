@@ -4,6 +4,8 @@ export const OCR_TEXT_LAYER_SELECTOR = '[data-readest-ocr-layer]';
 const OCR_TEXT_LAYER_STYLE_SELECTOR = '[data-readest-ocr-style]';
 const OCR_TEXT_BLOCK_SELECTOR = '[data-readest-ocr-block-id]';
 const OCR_TEXT_LINE_SELECTOR = '[data-readest-ocr-line]';
+const OCR_TEXT_SELECTED_ATTRIBUTE = 'data-readest-ocr-selected';
+const OCR_TEXT_LAYER_CLEANUPS = new WeakMap<HTMLDivElement, () => void>();
 
 const OCR_TEXT_LAYER_STYLES = `
 ${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR} {
@@ -12,7 +14,8 @@ ${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR} {
   transition: background-color 100ms ease-out, color 100ms ease-out;
 }
 ${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR}:hover,
-${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR}:active {
+${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR}:active,
+${OCR_TEXT_LAYER_SELECTOR} ${OCR_TEXT_BLOCK_SELECTOR}[${OCR_TEXT_SELECTED_ATTRIBUTE}] {
   background-color: #fff;
   color: #000;
   z-index: 1;
@@ -119,6 +122,9 @@ export const removeOcrTextLayer = (doc: Document): void => {
   for (const element of doc.querySelectorAll(
     `${OCR_TEXT_LAYER_SELECTOR}, ${OCR_TEXT_LAYER_STYLE_SELECTOR}`,
   )) {
+    if (element.matches(OCR_TEXT_LAYER_SELECTOR)) {
+      OCR_TEXT_LAYER_CLEANUPS.get(element as HTMLDivElement)?.();
+    }
     element.remove();
   }
 };
@@ -153,6 +159,20 @@ export const mountOcrTextLayer = (doc: Document, page: OcrPage): HTMLDivElement 
     const element = createTextBlock(doc, page, block);
     if (element) layer.append(element);
   }
+  const syncSelectedBlocks = () => {
+    const selection = doc.getSelection();
+    const range =
+      selection && selection.rangeCount > 0 && !selection.isCollapsed && selection.toString().trim()
+        ? selection.getRangeAt(0)
+        : null;
+    for (const block of layer.querySelectorAll(OCR_TEXT_BLOCK_SELECTOR)) {
+      block.toggleAttribute(OCR_TEXT_SELECTED_ATTRIBUTE, !!range && range.intersectsNode(block));
+    }
+  };
+  doc.addEventListener('selectionchange', syncSelectedBlocks);
+  OCR_TEXT_LAYER_CLEANUPS.set(layer, () =>
+    doc.removeEventListener('selectionchange', syncSelectedBlocks),
+  );
   let selectedOnRelease = false;
   layer.addEventListener('pointerup', () => {
     const selection = doc.getSelection();

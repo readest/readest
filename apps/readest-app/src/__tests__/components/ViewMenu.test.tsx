@@ -177,4 +177,15 @@ describe('ViewMenu right-to-left pages toggle', () => {
       expect(mockRecreateViewer).toHaveBeenCalledWith(expect.anything(), 'book-1');
     });
   });
+
+  it('closes the menu when toggling text recognition', () => {
+    const setIsDropdownOpen = vi.fn();
+
+    render(<ViewMenu bookKey='book-1' setIsDropdownOpen={setIsDropdownOpen} />);
+
+    fireEvent.click(screen.getByText('Recognize Text'));
+
+    expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
+    expect(setIsDropdownOpen).toHaveBeenCalledWith(false);
+  });
 });
