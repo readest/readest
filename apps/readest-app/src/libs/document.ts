@@ -569,6 +569,33 @@ export const getDirection = (doc: Document) => {
   return { vertical, rtl };
 };
 
+/**
+ * Which way the reader turns pages, for a section whose own direction is
+ * `documentRtl` (from {@link getDirection}).
+ *
+ * `page-progression-direction` is a publication-wide declaration, so it settles
+ * the direction for every section: a book that mixes vertical and horizontal
+ * chapters must not turn its pages one way in one and the other way in the
+ * next. Only `ltr`/`rtl` bind — `default`, or no attribute at all, leaves the
+ * choice to us, and there the document decides.
+ *
+ * A writing mode the reader picked in Settings stays above all of it: it is an
+ * explicit instruction, and `vertical-rl` reads right-to-left by definition,
+ * whatever the book's spine says.
+ */
+export const getPageProgressionRTL = (
+  writingMode: string,
+  bookDir: string | undefined,
+  documentRtl: boolean,
+) =>
+  writingMode.includes('rl')
+    ? true
+    : bookDir === 'rtl'
+      ? true
+      : bookDir === 'ltr'
+        ? false
+        : documentRtl;
+
 export const getFileExtFromMimeType = (mimeType?: string): string => {
   if (!mimeType) return '';
 
