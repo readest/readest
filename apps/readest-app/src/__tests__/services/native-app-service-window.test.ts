@@ -107,35 +107,42 @@ vi.mock('@/services/settingsService', () => ({
   saveSettings: vi.fn().mockResolvedValue(undefined),
 }));
 
-async function loadServiceWithOS(
-  os: 'macos' | 'windows' | 'linux' | 'ios' | 'android',
-  userAgent = '',
-) {
+async function loadServiceWithOS(os: 'macos' | 'windows' | 'linux' | 'ios' | 'android') {
   osTypeMock.mockReturnValue(os);
-  vi.stubGlobal('navigator', { userAgent });
-
   vi.resetModules();
   const mod = await import('@/services/nativeAppService');
   return new mod.NativeAppService();
 }
 
 describe('NativeAppService canvas filter capability', () => {
-  const CEF_UA =
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36';
-
-  const WEBKITGTK_UA =
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
-
-  test('supports canvas filters on Linux CEF', async () => {
-    const service = await loadServiceWithOS('linux', CEF_UA);
-
-    expect(service.supportsCanvasContext2DFilter).toBe(true);
+  test('the Chromium platforms support canvas filters', async () => {
+    for (const os of ['linux', 'windows', 'android'] as const) {
+      expect((await loadServiceWithOS(os)).supportsCanvasContext2DFilter).toBe(true);
+    }
   });
 
-  test('does not support canvas filters on Linux WebKitGTK', async () => {
-    const service = await loadServiceWithOS('linux', WEBKITGTK_UA);
+  test('the Apple platforms do not, because WKWebView ignores the filter', async () => {
+    for (const os of ['macos', 'ios'] as const) {
+      expect((await loadServiceWithOS(os)).supportsCanvasContext2DFilter).toBe(false);
+    }
+  });
+});
 
-    expect(service.supportsCanvasContext2DFilter).toBe(false);
+describe('NativeAppService view transition capabilities', () => {
+  test('follow the engine probe on every platform, Linux included', async () => {
+    const startViewTransition = vi.fn();
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: startViewTransition,
+    });
+    try {
+      for (const os of ['linux', 'windows', 'macos'] as const) {
+        expect((await loadServiceWithOS(os)).supportsViewTransitionsAPI).toBe(true);
+      }
+    } finally {
+      // @ts-expect-error - removing the property the probe looks for
+      delete document.startViewTransition;
+    }
   });
 });
 
