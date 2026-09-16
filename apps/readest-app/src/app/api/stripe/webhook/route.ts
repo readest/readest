@@ -4,8 +4,8 @@ import {
   getStripe,
   createOrUpdateSubscription,
   createOrUpdatePayment,
-  getHighestActivePlan,
 } from '@/libs/payment/stripe/server';
+import { resolveUserPlan } from '@/libs/payment/entitlements';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
 export async function POST(request: NextRequest) {
@@ -196,10 +196,13 @@ async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
     .single();
 
   if (subscriptionData?.user_id) {
-    // The user may still hold other active subscriptions (e.g. cancelling the
-    // old Plus subscription after upgrading to Pro). Reflect the highest plan
-    // that remains active rather than always dropping to free.
-    const plan = await getHighestActivePlan(getStripe(), subscriptionData.stripe_customer_id);
+    // The user may still hold other active subscriptions — another Stripe one
+    // (e.g. cancelling the old Plus after upgrading to Pro), or a Google Play
+    // / App Store one they migrated to. Reflect the highest plan that remains
+    // entitled anywhere rather than always dropping to free.
+    const plan = await resolveUserPlan(subscriptionData.user_id, {
+      stripeCustomerId: subscriptionData.stripe_customer_id,
+    });
     await supabase
       .from('plans')
       .update({
