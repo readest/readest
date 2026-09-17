@@ -112,6 +112,10 @@ jobs:
       - name: setup Android SDK (for Android build only)
         if: matrix.config.release == 'android'
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+        with:
+          # The legacy `tools` package (part of the action's default) no longer
+          # exists in the SDK repository and makes sdkmanager fail.
+          packages: 'platform-tools'
 
       - name: install NDK (for Android build only)
         if: matrix.config.release == 'android'

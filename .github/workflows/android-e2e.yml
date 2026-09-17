@@ -53,6 +53,10 @@ jobs:
 
       - name: setup Android SDK
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+        with:
+          # The legacy `tools` package (part of the action's default) no longer
+          # exists in the SDK repository and makes sdkmanager fail.
+          packages: 'platform-tools'
 
       - name: install NDK
         run: sdkmanager "ndk;28.2.13676358"
