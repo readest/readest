@@ -131,6 +131,47 @@ describe('paginator page progression direction (browser)', () => {
     expect(isOnScreen(el, '#last')).toBe(false);
   });
 
+  it('keeps the progression when a re-render lands while the section loads', async () => {
+    const el = document.createElement('foliate-paginator') as Renderer;
+    Object.assign(el.style, {
+      width: '800px',
+      height: '600px',
+      position: 'absolute',
+      left: '0',
+      top: '0',
+    });
+    document.body.appendChild(el);
+    paginator = el;
+    el.setAttribute('max-inline-size', '720px');
+    el.setAttribute('max-column-count', '1');
+    el.open({
+      dir: 'rtl',
+      sections: [makeSection('horizontal-tb', 'ltr')],
+    } as unknown as BookDoc);
+
+    // A resize or a settings change re-renders every view that already has a
+    // document, and the iframe reports an incoming section as its document as
+    // soon as it commits — before the load event the progression reads the
+    // document's own direction at. Re-render as fast as the event loop allows
+    // until the section has loaded so one lands in that window; `setTimeout`
+    // is clamped to 4ms and steps over it, a message channel does not.
+    let loaded = false;
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      if (loaded) return;
+      const wide = el.getAttribute('max-inline-size') === '720px';
+      el.setAttribute('max-inline-size', wide ? '719px' : '720px');
+      channel.port2.postMessage(0);
+    };
+    channel.port2.postMessage(0);
+    await el.goTo({ index: 0 });
+    loaded = true;
+    el.setAttribute('max-inline-size', '720px');
+
+    expect(styleOf(el, 'body').direction).toBe('rtl');
+    expect(await settledPages(el)).toBeGreaterThan(1);
+  });
+
   it('gives a horizontal section the progression its vertical neighbour has', async () => {
     const el = await open(
       {
