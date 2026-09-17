@@ -380,7 +380,10 @@ export const useTouchEvent = (bookKey: string) => {
       const deltaY = touchEnd.screenY - touchStart.screenY;
       const deltaX = touchEnd.screenX - touchStart.screenX;
       if (Math.hypot(deltaX, deltaY) < TOUCH_TAP_SLOP_PX) return;
-      if (!viewSettings!.scrolled && !viewSettings!.vertical) {
+      // Paginated books turn pages with horizontal swipes in every writing mode
+      // (vertical ones included, readest#624), so only that hides the bars; a
+      // vertical swipe is left to the swipe-up toggle on touchend.
+      if (!viewSettings!.scrolled) {
         if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD_PX) {
           setHoveredBookKey(null);
         }
@@ -515,7 +518,6 @@ export const useTouchEvent = (bookKey: string) => {
         // is a pan, not a toggle-the-bars gesture (#5142).
         if (
           !viewSettings!.scrolled &&
-          !viewSettings!.vertical &&
           (!bookData.isFixedLayout || !hasVerticalPanning(getView(bookKey), viewSettings))
         ) {
           setHoveredBookKey(hoveredBookKey ? null : bookKey);

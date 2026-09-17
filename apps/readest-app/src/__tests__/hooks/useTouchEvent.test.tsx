@@ -737,3 +737,60 @@ describe('useTouchEvent swipe-up bar toggle on fixed-layout', () => {
     expect(mocks.setHoveredBookKey).toHaveBeenCalledWith('book-1');
   });
 });
+
+// Vertical books used to page along the block axis, so a swipe up there was a
+// page turn and could not also toggle the bars. They now page with horizontal
+// swipes like every other book (readest#624), which leaves the vertical swipe
+// free for the same toggle.
+describe('useTouchEvent swipe-up bar toggle on vertical writing', () => {
+  const swipeUp = (h: { current: Handlers }) => {
+    h.current.onTouchStart(touchEvent([touch(100, 500)], 0));
+    h.current.onTouchMove(touchEvent([touch(100, 300)], 50));
+    h.current.onTouchEnd(touchEvent([], 100));
+  };
+
+  beforeEach(() => {
+    mocks.hoveredBookKey = null;
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getView.mockReturnValue({ renderer: {} });
+    mocks.getViewSettings.mockReturnValue({ zoomLevel: 100, scrolled: false, vertical: true });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  test('swipe up shows the bars on a vertical book', () => {
+    const h = renderTouchHook();
+    swipeUp(h);
+
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith('book-1');
+  });
+
+  test('swipe up hides the bars again on a vertical book', () => {
+    mocks.hoveredBookKey = 'book-1';
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(100, 500)], 0));
+    h.current.onTouchMove(touchEvent([touch(100, 300)], 50));
+    // A vertical move is not a page turn any more, so it must not hide the bars
+    // mid-gesture — on device that re-rendered the hook and the touchend toggle
+    // then read the bars as hidden and showed them again.
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+
+    h.current.onTouchEnd(touchEvent([], 100));
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledTimes(1);
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith(null);
+  });
+
+  test('a horizontal page-turn swipe still hides the bars on a vertical book', () => {
+    mocks.hoveredBookKey = 'book-1';
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(300, 500)], 0));
+    h.current.onTouchMove(touchEvent([touch(100, 505)], 50));
+
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith(null);
+  });
+});
