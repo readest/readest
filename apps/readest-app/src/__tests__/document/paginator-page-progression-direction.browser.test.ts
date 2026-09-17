@@ -84,6 +84,18 @@ describe('paginator page progression direction (browser)', () => {
     return el;
   };
 
+  /** The page count once `expand()` has grown the section. `stabilized` can fire
+   *  before that on a cold runner, so poll rather than read it once: a section
+   *  whose columns run against the scroll stays collapsed at one page for good,
+   *  and this still times out on it. */
+  const settledPages = async (el: Renderer, timeout = 5000) => {
+    const deadline = Date.now() + timeout;
+    while (el.pages <= 1 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    return el.pages;
+  };
+
   const styleOf = (el: Renderer, selector: string) => {
     const { doc } = el.getContents()[0]!;
     return doc.defaultView!.getComputedStyle(doc.querySelector(selector)!);
@@ -114,7 +126,7 @@ describe('paginator page progression direction (browser)', () => {
     // The guard against a false pass: a section whose columns run against the
     // scroll also fails to expand, collapsing to a single page that happens to
     // show the top of the text.
-    expect(el.pages).toBeGreaterThan(1);
+    expect(await settledPages(el)).toBeGreaterThan(1);
     expect(isOnScreen(el, '#first')).toBe(true);
     expect(isOnScreen(el, '#last')).toBe(false);
   });
@@ -129,14 +141,14 @@ describe('paginator page progression direction (browser)', () => {
     );
 
     expect(el.getAttribute('dir')).toBe('rtl');
-    expect(el.pages).toBeGreaterThan(1);
+    expect(await settledPages(el)).toBeGreaterThan(1);
     expect(isOnScreen(el, '#first')).toBe(true);
   });
 
   it('keeps the same progression for an RTL section of the same book', async () => {
     const el = await open({ dir: 'rtl', sections: [makeSection('horizontal-tb', 'rtl')] });
 
-    expect(el.pages).toBeGreaterThan(1);
+    expect(await settledPages(el)).toBeGreaterThan(1);
     expect(isOnScreen(el, '#first')).toBe(true);
     expect(isOnScreen(el, '#last')).toBe(false);
   });
@@ -145,7 +157,7 @@ describe('paginator page progression direction (browser)', () => {
     const el = await open({ sections: [makeSection('horizontal-tb', 'ltr')] });
 
     expect(el.getAttribute('dir')).toBe('ltr');
-    expect(el.pages).toBeGreaterThan(1);
+    expect(await settledPages(el)).toBeGreaterThan(1);
     expect(isOnScreen(el, '#first')).toBe(true);
     expect(styleOf(el, 'body').direction).toBe('ltr');
   });
