@@ -495,6 +495,8 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             macos::traffic_light::set_traffic_lights,
             #[cfg(target_os = "macos")]
+            macos::traffic_light::set_window_title,
+            #[cfg(target_os = "macos")]
             macos::system_dictionary::show_lookup_popover,
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             discord_rpc::update_book_presence,
