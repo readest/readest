@@ -119,13 +119,21 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
     if (hoveredBookKey === bookKey && isTopLeft) {
       setTrafficLightVisibility(true);
-    } else if (!hoveredBookKey) {
-      setTimeout(() => {
-        if (!getIsSideBarVisible()) {
-          setTrafficLightVisibility(false);
-        }
-      }, 100);
+      return;
     }
+    if (hoveredBookKey) return;
+    // The hide is deferred so a pointer crossing from one hover target to the
+    // next doesn't flash the buttons off. Cancel it on unmount: closing the
+    // last book writes `hoveredBookKey = null` and then routes to the library,
+    // so an uncancelled timer comes due after the library header has already
+    // asked for the buttons and hides them there (#6222). `getIsSideBarVisible`
+    // is why an open sidebar masked this — it short-circuits the same hide.
+    const timeout = setTimeout(() => {
+      if (!getIsSideBarVisible()) {
+        setTrafficLightVisibility(false);
+      }
+    }, 100);
+    return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService, hoveredBookKey]);
 
