@@ -7,6 +7,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { setSelectionSuppressed } from '@/utils/bridge';
+import { LINK_TOUCH_HOLD_CLASS } from '@/utils/style';
 import {
   focusCaretWindowPos,
   getCaretPointFromPoint,
@@ -593,6 +594,9 @@ export const useTextSelector = (
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
     lastPointerType.current = ev.pointerType;
+    if (appService?.isAndroidApp && ev.pointerType === 'touch') {
+      doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
+    }
     isPointerDown.current = true;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -741,8 +745,9 @@ export const useTextSelector = (
     noteCorner(corner, (c) => inCorner(c, doc));
   };
 
-  const handlePointerCancel = (_doc: Document, _index: number, _ev: PointerEvent) => {
+  const handlePointerCancel = (doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
+    doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     mouseDoubleClickRef.current = null;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -870,6 +875,7 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
+    doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     endSelectionDrag();
     const mouseDoubleClick = mouseDoubleClickRef.current;
     mouseDoubleClickRef.current = null;

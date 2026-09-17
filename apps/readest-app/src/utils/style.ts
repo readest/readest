@@ -379,6 +379,8 @@ const getColorStyles = (
   return colorStyles;
 };
 
+export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
+
 const getPageLayoutStyles = (
   marginTop: number,
   marginRight: number,
@@ -412,6 +414,11 @@ const getPageLayoutStyles = (
   img {
     -webkit-touch-callout: none;
     -webkit-user-drag: none;
+  }
+  /* Chromium snaps a long press onto any link in reach of the finger, and a
+     link long press starts no selection (#6242); set while a touch is held */
+  html.${LINK_TOUCH_HOLD_CLASS} a[href] {
+    pointer-events: none !important;
   }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;

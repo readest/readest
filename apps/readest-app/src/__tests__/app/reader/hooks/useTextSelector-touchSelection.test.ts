@@ -77,6 +77,7 @@ const setup = () => {
 
 let currentSel: Selection | null = null;
 const doc = {
+  documentElement: document.createElement('html'),
   getSelection: () => currentSel,
   createRange: () => ({
     setStart: () => {},
