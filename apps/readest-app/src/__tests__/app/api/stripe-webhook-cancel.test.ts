@@ -11,6 +11,7 @@ const hooks = vi.hoisted(() => ({
   getHighestActivePlan: vi.fn(),
   planUpdates: [] as Array<Record<string, unknown>>,
   subscriptionData: { user_id: 'user-1', stripe_customer_id: 'cus_1' } as unknown,
+  googleRows: [] as Array<{ product_id: string; status: string }>,
 }));
 
 vi.mock('@/libs/payment/stripe/server', () => ({
@@ -41,6 +42,26 @@ vi.mock('@/utils/supabase', () => ({
           }),
         };
       }
+      if (table === 'google_iap_subscriptions') {
+        return {
+          select: () => ({
+            eq: () => ({
+              in: (_col: string, statuses: string[]) =>
+                Promise.resolve({
+                  data: hooks.googleRows.filter((r) => statuses.includes(r.status)),
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      }
+      if (table === 'apple_iap_subscriptions') {
+        return {
+          select: () => ({
+            eq: () => ({ in: () => Promise.resolve({ data: [], error: null }) }),
+          }),
+        };
+      }
       throw new Error(`unexpected table: ${table}`);
     },
   }),
@@ -60,6 +81,7 @@ beforeEach(() => {
   hooks.getHighestActivePlan.mockReset();
   hooks.planUpdates = [];
   hooks.subscriptionData = { user_id: 'user-1', stripe_customer_id: 'cus_1' };
+  hooks.googleRows = [];
   process.env['STRIPE_WEBHOOK_SECRET'] = 'whsec_dummy';
   hooks.constructEvent.mockReturnValue({
     type: 'customer.subscription.deleted',
@@ -75,6 +97,18 @@ describe('POST /api/stripe/webhook — subscription cancelled', () => {
 
     expect(res.status).toBe(200);
     expect(hooks.getHighestActivePlan).toHaveBeenCalledWith(expect.anything(), 'cus_1');
+    expect(hooks.planUpdates.at(-1)).toEqual({ plan: 'pro', status: 'active' });
+  });
+
+  it('keeps Pro when Stripe has nothing left but Google Play is still active', async () => {
+    // The production incident: a user migrated from card billing to Google
+    // Play, and cancelling the leftover Stripe subscription wiped their plan.
+    hooks.getHighestActivePlan.mockResolvedValue('free');
+    hooks.googleRows = [{ product_id: 'com.bilingify.readest.monthly.pro', status: 'active' }];
+
+    const res = await POST(makeReq());
+
+    expect(res.status).toBe(200);
     expect(hooks.planUpdates.at(-1)).toEqual({ plan: 'pro', status: 'active' });
   });
 

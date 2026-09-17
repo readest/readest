@@ -56,6 +56,23 @@ vi.mock('@/utils/supabase', () => ({
           insert: () => Promise.resolve({ data: null, error: null }),
         };
       }
+      if (table === 'google_iap_subscriptions' || table === 'apple_iap_subscriptions') {
+        return {
+          select: () => ({
+            eq: () => ({ in: () => Promise.resolve({ data: [], error: null }) }),
+          }),
+        };
+      }
+      if (table === 'customers') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () =>
+                Promise.resolve({ data: { stripe_customer_id: 'cus_1' }, error: null }),
+            }),
+          }),
+        };
+      }
       throw new Error(`unexpected table: ${table}`);
     },
   }),

@@ -348,10 +348,14 @@ struct SingleInstancePayload {
     cwd: String,
 }
 
-/// The webview runtime this build drives: CEF for the Linux CEF build, Wry
-/// everywhere else (the `cef` feature is a no-op off Linux, see Cargo.toml). Named explicitly because several plugins pull in tauri's
-/// default `wry` feature even when CEF is selected, which leaves
-/// `Builder::default()` ambiguous there.
+/// The webview runtime this build drives: CEF on Linux, Wry everywhere else
+/// (the `cef` feature is a no-op off Linux, see Cargo.toml). Named explicitly
+/// because several plugins pull in tauri's default `wry` feature even when CEF
+/// is selected, which leaves `Builder::default()` ambiguous there.
+///
+/// The one Linux build that is still Wry is the webdriver test harness
+/// (scripts/test-tauri.sh): tauri-plugin-webdriver drives the webview through
+/// webkit2gtk there and has no CEF backend.
 #[cfg(all(feature = "cef", target_os = "linux"))]
 type AppRuntime = tauri::Cef;
 #[cfg(not(all(feature = "cef", target_os = "linux")))]
@@ -360,27 +364,6 @@ type AppRuntime = tauri::Wry;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[cfg_attr(all(feature = "cef", target_os = "linux"), tauri::cef_entry_point)]
 pub fn run() {
-    // WebKitGTK's native-Wayland surface handling has a longstanding GTK/Mutter
-    // bug where a webview's first `configure` event can report a 0 height
-    // (`gdk_wayland_window_configure: assertion 'height > 0' failed`), and
-    // subsequent frames get cropped/rescaled until the compositor forces a
-    // relayout (e.g. on focus change). It reproduces on GNOME's Wayland
-    // session but not XWayland, and only affects the WebKitGTK (`wry`)
-    // runtime used by non-CEF Linux builds such as Flatpak; the CEF runtime
-    // that ships in our official deb/rpm/AppImage builds is unaffected (see
-    // #6096). This must run before GTK/webkit initialize (i.e. before
-    // `tauri::Builder::run`), so force XWayland here unless the user already
-    // picked a backend. This mirrors the same workaround already applied to
-    // the Nix dev shell in flake.nix.
-    #[cfg(all(target_os = "linux", not(feature = "cef")))]
-    if std::env::var_os("GDK_BACKEND").is_none() && std::env::var_os("WAYLAND_DISPLAY").is_some() {
-        // SAFETY: this is the first thing `run()` does, before any other
-        // thread (tauri's async runtime, GTK, etc.) exists to race with it.
-        unsafe {
-            std::env::set_var("GDK_BACKEND", "x11");
-        }
-    }
-
     // Initialize Sentry as early as possible so panics during startup are
     // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
     // builds don't report. This client covers Rust panics and the events the

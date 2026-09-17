@@ -33,6 +33,7 @@ function createSupabaseMock(state: {
   googleSubRow?: unknown;
   paymentRow?: unknown;
   completedPayments?: Array<{ storage_gb: number }>;
+  customerRow?: { stripe_customer_id: string } | null;
 }) {
   const captures: Captures = {
     googleSubUpserts: [],
@@ -40,13 +41,30 @@ function createSupabaseMock(state: {
     planUpdates: [],
     paymentUpdates: [],
   };
+  // Latest upsert per purchase token, i.e. what the table now holds.
+  const entitledUpserts = (statuses: string[]) => {
+    const byToken = new Map<string, Record<string, unknown>>();
+    for (const row of captures.googleSubUpserts) {
+      byToken.set(String(row['purchase_token']), row);
+    }
+    return [...byToken.values()]
+      .filter((row) => statuses.includes(String(row['status'])))
+      .map((row) => ({ product_id: row['product_id'], status: row['status'] }));
+  };
+
   const client = {
     from(table: string) {
       switch (table) {
         case 'google_iap_subscriptions':
           return {
             select: () => ({
-              eq: () => ({ single: () => Promise.resolve({ data: state.googleSubRow ?? null }) }),
+              eq: () => ({
+                single: () => Promise.resolve({ data: state.googleSubRow ?? null }),
+                // The entitlement resolver reads this table back after the
+                // handler has upserted its row, so serve what was written.
+                in: (_col: string, statuses: string[]) =>
+                  Promise.resolve({ data: entitledUpserts(statuses), error: null }),
+              }),
             }),
             upsert: (obj: Record<string, unknown>, options?: Record<string, unknown>) => {
               captures.googleSubUpserts.push(obj);
@@ -61,6 +79,21 @@ function createSupabaseMock(state: {
                 captures.planUpdates.push(obj);
                 return Promise.resolve({ data: null, error: null });
               },
+            }),
+          };
+        case 'apple_iap_subscriptions':
+          return {
+            select: () => ({
+              eq: () => ({ in: () => Promise.resolve({ data: [], error: null }) }),
+            }),
+          };
+        case 'customers':
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: () =>
+                  Promise.resolve({ data: state.customerRow ?? null, error: null }),
+              }),
             }),
           };
         case 'payments':

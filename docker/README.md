@@ -9,8 +9,8 @@
 | **kong**        | `kong:2.8.1`                | api gateway routing requests to supabase services |
 | **auth**        | `supabase/gotrue:v2.185.0`  | auth service (email, JWT)                         |
 | **rest**        | `postgrest/postgrest:v14.3` | psql rest api                                     |
-| **minio**       | `minio/minio`               | s3 storage                                        |
-| **minio-setup** | `minio/mc`                  | helper container to create s3 buckets             |
+| **minio**       | `quay.io/minio/minio`       | s3 storage                                        |
+| **minio-setup** | `quay.io/minio/mc`          | helper container to create s3 buckets             |
 
 ### Exposed ports
 
