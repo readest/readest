@@ -2324,5 +2324,6 @@
   "Web URL": "Web URL",
   "Loading chapter…": "Fejezet betöltése…",
   "Clip Page": "Oldal mentése",
-  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "A kijelölés formázási vagy bekezdéshatárokon nyúlik át. Jelöljön ki rövidebb szövegrészt, vagy válasszon másik cserehatókört."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "A kijelölés formázási vagy bekezdéshatárokon nyúlik át. Jelöljön ki rövidebb szövegrészt, vagy válasszon másik cserehatókört.",
+  "Open External Link": "Külső hivatkozás megnyitása"
 }

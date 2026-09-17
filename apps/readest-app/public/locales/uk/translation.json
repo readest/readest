@@ -2444,5 +2444,6 @@
   "Web URL": "Веб-адреса",
   "Loading chapter…": "Завантаження розділу…",
   "Clip Page": "Сторінка кліпу",
-  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Це виділення перетинає межі форматування або абзацу. Виділіть коротший фрагмент тексту або оберіть іншу область застосування заміни."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Це виділення перетинає межі форматування або абзацу. Виділіть коротший фрагмент тексту або оберіть іншу область застосування заміни.",
+  "Open External Link": "Відкрити зовнішнє посилання"
 }
