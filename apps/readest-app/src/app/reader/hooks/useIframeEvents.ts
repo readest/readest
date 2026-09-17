@@ -176,7 +176,7 @@ export const useTouchEvent = (bookKey: string) => {
       renderer?.getAttribute?.('turn-style') ??
       renderer?.getAttribute?.(NATIVE_CAPTURED_TURN_ATTRIBUTE);
     return (
-      (turnStyle === 'slide' || turnStyle === 'curl') &&
+      (turnStyle === 'slide' || turnStyle === 'curl' || turnStyle === 'push') &&
       viewSettings.animated &&
       !viewSettings.scrolled &&
       !viewSettings.isEink &&

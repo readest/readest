@@ -482,6 +482,33 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
   });
 
+  test('defers captured-push toolbar changes on a fixed-layout book', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle: 'push',
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'captured-turn-style' ? 'push' : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(10, 300)], 100));
+    h.current.onTouchMove(touchEvent([touch(60, 300)], 132));
+
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
   // A zoomed or fit-width fixed layout pans instead of turning, so the swipe is
   // not a layered turn and the toolbar hides the ordinary way.
   test('hides the toolbar normally on a panning fixed-layout book', () => {
