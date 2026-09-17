@@ -10,6 +10,7 @@ import {
   endLayeredTurnTouch,
 } from '@/app/reader/utils/iframeEventHandlers';
 import { NATIVE_CAPTURED_TURN_ATTRIBUTE } from '@/app/reader/utils/turnGestureArena';
+import { getCapturedTurnStyle } from '@/app/reader/hooks/useCapturedTurn';
 import {
   dispatchTouchInterceptors,
   isLayeredTurnGestureActive,
@@ -163,7 +164,13 @@ export const useTouchEvent = (bookKey: string) => {
   const isLifecycleManagedLayeredTurn = () => isLayeredTurnGestureActive(bookKey);
   const isLayeredTurnCandidate = () => {
     const viewSettings = getViewSettings(bookKey);
-    if (!viewSettings || getBookData(bookKey)?.isFixedLayout) return false;
+    if (!viewSettings) return false;
+    // `fixed-layout.js` animates nothing of its own and ignores `turn-style`,
+    // so a fixed-layout book is only a candidate where the Tauri captured
+    // pipeline drives its turn — and not while it pans (readest#6239).
+    if (getBookData(bookKey)?.isFixedLayout && !getCapturedTurnStyle(viewSettings, true)) {
+      return false;
+    }
     const renderer = getView(bookKey)?.renderer;
     const turnStyle =
       renderer?.getAttribute?.('turn-style') ??
@@ -224,6 +231,23 @@ export const useTouchEvent = (bookKey: string) => {
     if ('preventDefault' in e) e.preventDefault();
   };
 
+  // A native captured turn has already claimed only when its move was consumed.
+  // Cancel it exactly once before a second finger discards the single-finger
+  // baseline; unclaimed starts need no synthetic lifecycle event.
+  const cancelClaimedSingleTouch = (
+    e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>,
+    fallbackTouch: IframeTouch,
+  ) => {
+    const touchStart = touchStartRef.current;
+    if (!touchConsumedRef.current || !touchStart) return;
+    const touch = touchEndRef.current ?? fallbackTouch;
+    const endTime = 'timeStamp' in e ? e.timeStamp : Date.now();
+    dispatchTouchInterceptors(
+      bookKey,
+      buildTouchDetail('cancel', touch, touchStart, touchStartTimeRef.current, endTime),
+    );
+  };
+
   const latchReflowableMultiTouch = (
     e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>,
     t0: IframeTouch | undefined,
@@ -233,18 +257,7 @@ export const useTouchEvent = (bookKey: string) => {
     cancelLayeredTurnTouch(bookKey);
     if (!reflowableMultiTouchRef.current) {
       reflowableMultiTouchRef.current = true;
-      const touchStart = touchStartRef.current;
-      // A native captured turn has already claimed only when its move was
-      // consumed. Cancel it exactly once before discarding the single-finger
-      // baseline; unclaimed starts need no synthetic lifecycle event.
-      if (touchConsumedRef.current && touchStart) {
-        const touch = touchEndRef.current ?? t0;
-        const endTime = 'timeStamp' in e ? e.timeStamp : Date.now();
-        dispatchTouchInterceptors(
-          bookKey,
-          buildTouchDetail('cancel', touch, touchStart, touchStartTimeRef.current, endTime),
-        );
-      }
+      cancelClaimedSingleTouch(e, t0);
     }
     clearSingleTouchState();
     return true;
@@ -267,6 +280,10 @@ export const useTouchEvent = (bookKey: string) => {
       const bookData = getBookData(bookKey);
       if (bookData?.isFixedLayout) {
         cancelLayeredTurnTouch(bookKey);
+        // The pinch branch owns the gesture from here. A captured curl the
+        // first finger already claimed would otherwise sit frozen over the
+        // page until the next touchstart (readest#6239).
+        cancelClaimedSingleTouch(e, t0);
         pinchPendingRef.current = true;
         isPinchingRef.current = false;
         initialTouch0Ref.current = t0;
@@ -274,8 +291,7 @@ export const useTouchEvent = (bookKey: string) => {
         initialPinchDistRef.current = getTouchDistance(t0, t1);
         initialZoomRef.current = getViewSettings(bookKey)?.zoomLevel ?? 100;
         lastPinchRatioRef.current = 1;
-        touchStartRef.current = null;
-        touchEndRef.current = null;
+        clearSingleTouchState();
         return;
       }
       latchReflowableMultiTouch(e, t0, t1);

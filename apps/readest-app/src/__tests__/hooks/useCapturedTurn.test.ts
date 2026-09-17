@@ -38,6 +38,8 @@ const settings = (pageTurnStyle: ViewSettings['pageTurnStyle']) =>
     scrolled: false,
     disableSwipe: false,
     isEink: false,
+    zoomLevel: 100,
+    zoomMode: 'fit-page',
   }) as ViewSettings;
 
 afterEach(() => {
@@ -63,6 +65,58 @@ describe('getCapturedTurnStyle', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
     stubEngine({ startViewTransition: true, nestedGroups: true });
     expect(getCapturedTurnStyle(settings('slide'), false, true)).toBe('slide');
+  });
+
+  // Fixed-layout books (PDF, CBZ/CBR, fixed-layout EPUB/MOBI) share the
+  // captured pipeline: `fixed-layout.js` has no turn animation of its own, and
+  // its next()/prev() are already the instant jump the overlay hides
+  // (readest#6239).
+  it('captures the curl for fixed-layout books that fit the page', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    expect(getCapturedTurnStyle(settings('curl'), true, false)).toBe('curl');
+  });
+
+  it('captures the slide for fixed-layout books on mobile Tauri', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    expect(getCapturedTurnStyle(settings('slide'), true, true)).toBe('slide');
+  });
+
+  // Zoomed or fit-width fixed layouts pan instead of turning: a horizontal drag
+  // moves the page, and `usePagination`'s swipe-flip already refuses to flip
+  // there. Leave those on push rather than curl a page the finger is panning.
+  it('leaves zoomed fixed-layout books on push', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const zoomed = settings('curl');
+    zoomed.zoomLevel = 150;
+    expect(getCapturedTurnStyle(zoomed, true, false)).toBeNull();
+  });
+
+  it('leaves fit-width fixed-layout books on push', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const fitWidth = settings('curl');
+    fitWidth.zoomMode = 'fit-width';
+    expect(getCapturedTurnStyle(fitWidth, true, false)).toBeNull();
+  });
+
+  it('keeps reflowable books captured whatever the fixed-layout zoom fields say', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const zoomed = settings('curl');
+    zoomed.zoomLevel = 150;
+    zoomed.zoomMode = 'fit-width';
+    expect(getCapturedTurnStyle(zoomed, false, false)).toBe('curl');
+  });
+
+  it('never captures a scrolled fixed-layout book', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const scrolled = settings('curl');
+    scrolled.scrolled = true;
+    expect(getCapturedTurnStyle(scrolled, true, false)).toBeNull();
   });
 
   it('never captures outside Tauri platforms', () => {
@@ -123,6 +177,25 @@ describe('applyPageTurnAttributes', () => {
     expect(renderer.hasAttribute('turn-style')).toBe(false);
     expect(renderer.hasAttribute('no-swipe')).toBe(true);
     expect(renderer.getAttribute('captured-turn-style')).toBe('slide');
+  });
+
+  it('publishes the captured arena for fixed-layout books', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const { view, renderer } = makeView();
+    applyPageTurnAttributes(view, settings('curl'), true, false);
+    expect(renderer.getAttribute('captured-turn-style')).toBe('curl');
+    expect(renderer.hasAttribute('turn-style')).toBe(false);
+  });
+
+  it('withholds the captured arena from a zoomed fixed-layout book', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const { view, renderer } = makeView();
+    const zoomed = settings('curl');
+    zoomed.zoomLevel = 150;
+    applyPageTurnAttributes(view, zoomed, true, false);
+    expect(renderer.hasAttribute('captured-turn-style')).toBe(false);
   });
 
   it('does not publish the native touch arena when swipe navigation is disabled', () => {

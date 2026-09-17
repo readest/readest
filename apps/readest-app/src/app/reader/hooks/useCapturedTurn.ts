@@ -34,14 +34,28 @@ import {
 let captureBroken = false;
 
 /**
+ * A fixed-layout view whose page does not fit the cell pans instead of
+ * turning: a horizontal drag moves the page, which is why `usePagination`'s
+ * swipe-flip refuses to flip there. The same predicate keeps the captured
+ * pipeline off those views (readest#6239).
+ */
+const isPanningFixedLayout = (viewSettings: ViewSettings) =>
+  viewSettings.zoomLevel > 100 || viewSettings.zoomMode !== 'fit-page';
+
+/**
  * The turn style the captured-page pipeline should drive for this view, or
- * null when the paginator's own turns apply. The pipeline needs a native
- * webview snapshot (Tauri only) and only makes sense for animated,
- * paginated, reflowable books. The curl always turns from a capture (a
- * flat snapshot cannot mesh-bend). Mobile Tauri also keeps slide on this path
- * so a renderer-ready surface can be prepared while the page is idle. Desktop
- * and web builds retain the browser View Transition implementation when it is
- * available.
+ * null when the renderer's own turns apply. The pipeline needs a native
+ * webview snapshot (Tauri only) and only makes sense for animated, paginated
+ * books. The curl always turns from a capture (a flat snapshot cannot
+ * mesh-bend). Mobile Tauri also keeps slide on this path so a renderer-ready
+ * surface can be prepared while the page is idle. Desktop and web builds
+ * retain the browser View Transition implementation when it is available.
+ *
+ * Fixed-layout books (PDF, CBZ/CBR, fixed-layout EPUB/MOBI) ride the same
+ * pipeline: `fixed-layout.js` animates nothing itself, and its next()/prev()
+ * are already the instant jump the overlay hides. They only drop out while the
+ * view is panning — the web/desktop View Transition turns live in
+ * `paginator.js` alone, so off Tauri they stay on push.
  */
 export const getCapturedTurnStyle = (
   viewSettings: ViewSettings,
@@ -49,9 +63,8 @@ export const getCapturedTurnStyle = (
   prepareNativeSlide = getInitializedAppService()?.isMobileApp === true,
 ): CapturedTurnStyle | null => {
   if (!isTauriAppPlatform() || captureBroken) return null;
-  if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink || isFixedLayout) {
-    return null;
-  }
+  if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink) return null;
+  if (isFixedLayout && isPanningFixedLayout(viewSettings)) return null;
   if (viewSettings.pageTurnStyle === 'curl') return 'curl';
   if (
     viewSettings.pageTurnStyle === 'slide' &&
