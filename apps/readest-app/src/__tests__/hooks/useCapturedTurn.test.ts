@@ -119,6 +119,29 @@ describe('getCapturedTurnStyle', () => {
     expect(getCapturedTurnStyle(scrolled, true, false)).toBeNull();
   });
 
+  // Push on fixed layout is the captured pipeline's third style: the outgoing
+  // capture slides out while the live view is translated in beside it. A
+  // reflowable book keeps the paginator's native strip scroll (readest#6239).
+  it('captures the push for fixed-layout books', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    expect(getCapturedTurnStyle(settings('push'), true, false)).toBe('push');
+  });
+
+  it('leaves the push to the paginator for reflowable books', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    expect(getCapturedTurnStyle(settings('push'), false, false)).toBeNull();
+  });
+
+  it('leaves a panning fixed-layout book on the instant push', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const zoomed = settings('push');
+    zoomed.zoomLevel = 150;
+    expect(getCapturedTurnStyle(zoomed, true, false)).toBeNull();
+  });
+
   it('never captures outside Tauri platforms', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
     stubEngine({ startViewTransition: true, nestedGroups: false });
@@ -196,6 +219,24 @@ describe('applyPageTurnAttributes', () => {
     zoomed.zoomLevel = 150;
     applyPageTurnAttributes(view, zoomed, true, false);
     expect(renderer.hasAttribute('captured-turn-style')).toBe(false);
+  });
+
+  it('publishes the captured push arena for fixed-layout books', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const { view, renderer } = makeView();
+    applyPageTurnAttributes(view, settings('push'), true, false);
+    expect(renderer.getAttribute('captured-turn-style')).toBe('push');
+    expect(renderer.hasAttribute('turn-style')).toBe(false);
+  });
+
+  it('keeps reflowable push off the captured arena', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const { view, renderer } = makeView();
+    applyPageTurnAttributes(view, settings('push'), false, false);
+    expect(renderer.hasAttribute('captured-turn-style')).toBe(false);
+    expect(renderer.hasAttribute('turn-style')).toBe(false);
   });
 
   it('does not publish the native touch arena when swipe navigation is disabled', () => {
