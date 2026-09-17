@@ -91,6 +91,44 @@ describe('OPDS auto-download orchestrator', () => {
     appService = createMockAppService();
   });
 
+  // Regression (large first sync on memory-constrained devices): a catalog with
+  // many entries must persist progress WHILE downloading, not only after every
+  // item has resolved. Android's low-memory killer terminates the app partway
+  // through a several-hundred-book first sync; if state is written only at the
+  // end, every completed import is discarded and the next run restarts from
+  // zero, so the sync can never converge no matter how often it is retried.
+  it('persists progress incrementally during a large sync', async () => {
+    const TOTAL = 30;
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    const pendingItems: PendingItem[] = Array.from({ length: TOTAL }, (_, i) => ({
+      entryId: `urn:shelf:${i}`,
+      title: `Book ${i}`,
+      acquisitionHref: `/dl/${i}.epub`,
+      mimeType: 'application/epub+zip',
+      baseURL: 'https://shelf.example.com/opds',
+    }));
+    vi.mocked(checkFeedForNewItems).mockResolvedValue(pendingItems);
+
+    let completed = 0;
+    let completedAtFirstSave: number | null = null;
+    vi.mocked(downloadFile).mockImplementation(async () => {
+      completed += 1;
+      return { 'content-disposition': '' };
+    });
+    vi.mocked(saveSubscriptionState).mockImplementation(async () => {
+      if (completedAtFirstSave === null) completedAtFirstSave = completed;
+    });
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(completedAtFirstSave).not.toBeNull();
+    // On the unbatched implementation this equals TOTAL: nothing is written
+    // until the whole catalog finishes, so a kill at item N loses all N.
+    expect(completedAtFirstSave).toBeLessThan(TOTAL);
+  });
+
   it('skips catalogs without autoDownload enabled', async () => {
     const catalogs: OPDSCatalog[] = [
       { id: 'cat-1', name: 'Test', url: 'https://example.com/opds' },
