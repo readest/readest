@@ -97,7 +97,7 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [daisyUI 5 + Tailwind 4 migration](daisyui-v5-tailwind-v4-migration.md) MERGED #5884; custom CSS MUST be `@layer utilities`; 4 regressions fixed; bracket-stripping `p-[Npx]`->`p-Npx` emits NO CSS; compile-check recipe inside
 - [#480 IDPF EPUB3 sample sweep](epub3-samples-idpf-480.md) MERGED #5872 + foliate#84; 42 samples Chrome-verified
 - [#1812 Kotobee EPUB embedded video](epub-embedded-video-kotobee-1812.md) MERGED #5868 + foliate#83; blob: base resolution; ALWAYS re-pin foliate
-- [#6227 video controls but 0:00](epub-undeclared-media-manifest-6227.md) mp4 in zip, NOT in OPF manifest; loadHref probed only images/fonts; PR #6245 + foliate#97 OPEN; RE-PIN after the foliate squash
+- [#6227 video controls but 0:00](epub-undeclared-media-manifest-6227.md) mp4 in zip, NOT in OPF manifest; loadHref probed only images/fonts; foliate#97 MERGED c319c90 + re-pinned; readest #6245 OPEN; not device-verified
 - [#6018 MDD dict audio/POS/image + `&apos;` name](mdict-audio-pos-image-6018.md) MERGED #6021 (211cb2b67); ALL 3 ANDROID-VERIFIED (OALD9 `house`); iOS audio typeless blob + play() after await; image zoom reuses ModalPortal+ImageViewer, take the hidden ox-enlarge twin; `composedPath()` for shadow retarget
 - [Lookup surfaces flashed shut on mobile](lookup-surface-flash-suppress-handles-6013.md) MERGED #6022 (7413386ce); REGRESSION from #6013; suppressNativeSelectionHandles republished the selection -> toolbar closed the sheet; fix = early-return while any lookup surface is up
 - [#6145 toolbar behind footnote popup](footnote-popup-under-selection-toolbar-6145.md) MERGED #6146 (ef234c5bb), Chrome-VERIFIED; regression from #6036; FootnotePopup now z-[42] under the toolbar band
