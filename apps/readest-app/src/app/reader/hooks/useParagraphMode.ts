@@ -62,10 +62,16 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstMountRef = useRef(true);
   const toggleInFlightRef = useRef(false);
+  // The paragraph focused when paragraph mode was last exited, so re-entering
+  // on the same page resumes there rather than at the page's first paragraph
+  // (#6200). Remembered by its position in the iterator plus its text as a
+  // check — both stable for the same document, unlike the CFI of a block
+  // range, which could come out malformed and resolve to an empty range (#4717).
   const lastParagraphRef = useRef<{
     progressLocation: string;
-    paragraphCfi: string;
     docIndex: number;
+    index: number;
+    text: string;
   } | null>(null);
   // TTS-sync (one-way follower): TTS is the clock, paragraph mode follows it.
   const followingTtsRef = useRef(false);
@@ -203,7 +209,6 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         const progressRange = progress?.range;
         const progressLocation = progress?.location;
         const isSameDoc = progressRange?.startContainer?.ownerDocument === doc;
-        const lastParagraph = lastParagraphRef.current;
 
         // Resolve a CFI against the CURRENT document. A CFI is document-instance
         // independent, so this survives the section iframe being recreated when
@@ -228,35 +233,41 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
           return null;
         };
 
-        const resolveRangeFromLastParagraph = (): Range | null => {
-          if (!lastParagraph || !progressLocation) return null;
-          if (lastParagraph.progressLocation !== progressLocation) return null;
-          if (lastParagraph.docIndex !== docIndex) return null;
-          return resolveRangeFromCfi(lastParagraph.paragraphCfi);
+        // Re-entering on the page paragraph mode was left from resumes at the
+        // paragraph that was focused then (#6200); a page turn in between
+        // changes the progress location and falls through to the page itself.
+        const resumeLastParagraph = (): boolean => {
+          const last = lastParagraphRef.current;
+          const iterator = iteratorRef.current;
+          if (!last || !iterator || !progressLocation) return false;
+          if (last.progressLocation !== progressLocation || last.docIndex !== docIndex) {
+            return false;
+          }
+          const range = iterator.goTo(last.index);
+          return !!range && range.toString() === last.text;
         };
 
-        // Resume from the freshest current position. The view's live lastLocation
-        // CFI is set synchronously by foliate on every relocate; the readerStore
-        // progress is rAF-debounced and can lag, which sent resume to a stale page
-        // (the chapter start) and let repeated enter/exit walk further back (#4717).
-        // The view's live lastLocation CFI is foliate-generated and well-formed,
-        // so it's the most reliable resume target. The stored last-paragraph CFI
-        // is `view.getCFI` of a paragraph block range, which can come out malformed
-        // and resolve to an empty range — so it must NOT take priority (#4717).
+        // Otherwise resume from the freshest current position. The view's live
+        // lastLocation CFI is set synchronously by foliate on every relocate; the
+        // readerStore progress is rAF-debounced and can lag, which sent resume to
+        // a stale page (the chapter start) and let repeated enter/exit walk
+        // further back (#4717). The view's live lastLocation CFI is
+        // foliate-generated and well-formed, so it's the most reliable target.
         const targetRange =
           resolveRangeFromCfi(view.lastLocation?.cfi) ??
-          resolveRangeFromLastParagraph() ??
           (isSameDoc ? progressRange : null) ??
           resolveRangeFromCfi(progressLocation);
 
-        if (targetRange && iteratorRef.current) {
-          try {
-            await iteratorRef.current.findByRangeAsync(targetRange);
-          } catch {
+        if (!resumeLastParagraph()) {
+          if (targetRange && iteratorRef.current) {
+            try {
+              await iteratorRef.current.findByRangeAsync(targetRange);
+            } catch {
+              iteratorRef.current.first();
+            }
+          } else {
             iteratorRef.current.first();
           }
-        } else {
-          iteratorRef.current.first();
         }
 
         updateStateFromIterator(false);
@@ -658,25 +669,22 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         setViewSettings(bookKeyRef.current, { ...settings, paragraphMode: newConfig });
         saveViewSettings(envConfig, bookKeyRef.current, 'paragraphMode', newConfig, true, false);
 
-        const view = viewRef.current;
         const iterator = iteratorRef.current;
-        if (view && iterator) {
-          const range = iterator.current();
-          if (range) {
-            const progressLocation = getProgress(bookKeyRef.current)?.location;
-            const docIndex = currentDocIndexRef.current;
-            if (progressLocation && docIndex !== undefined) {
-              const paragraphCfi = view.getCFI(docIndex, range);
-              lastParagraphRef.current = {
-                progressLocation,
-                paragraphCfi,
-                docIndex,
-              };
-            }
-            // Don't scroll to the paragraph on exit: navigation already moved the
-            // view to the focused paragraph, and re-anchoring to its start rewinds
-            // the reading position when it began on an earlier page (#4717).
+        const range = iterator?.current();
+        if (iterator && range) {
+          const progressLocation = getProgress(bookKeyRef.current)?.location;
+          const docIndex = currentDocIndexRef.current;
+          if (progressLocation && docIndex !== undefined) {
+            lastParagraphRef.current = {
+              progressLocation,
+              docIndex,
+              index: iterator.currentIndex,
+              text: range.toString(),
+            };
           }
+          // Don't scroll to the paragraph on exit: navigation already moved the
+          // view to the focused paragraph, and re-anchoring to its start rewinds
+          // the reading position when it began on an earlier page (#4717).
         }
         eventDispatcher.dispatch('paragraph-mode-disabled', { bookKey: bookKeyRef.current });
         iteratorRef.current = null;
@@ -692,7 +700,6 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     envConfig,
     initIterator,
     focusCurrentParagraph,
-    viewRef,
     updateStateFromIterator,
   ]);
 

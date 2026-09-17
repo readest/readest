@@ -403,11 +403,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     selectionIsPopupRef.current = !!selection?.popup;
   }, [selection]);
 
-  // Selections made inside the footnote popup window (FootnotePopup) arrive
-  // via this event: the popup renders its own foliate view (or a host-document
-  // element for data-attribute footnotes), so the per-section listeners
-  // attached in onLoad below never see them. A detail without a range means
-  // the popup selection was cleared or the popup closed.
+  // Selections made outside the book's section documents arrive via this
+  // event: the footnote popup renders its own foliate view (or a host-document
+  // element for data-attribute footnotes), and paragraph mode renders a clone
+  // of the focused paragraph in the host document (ParagraphOverlay, #6200), so
+  // the per-section listeners attached in onLoad below never see them. A
+  // detail without a range means the selection was cleared or the surface
+  // closed.
   const footnoteSelectionEpochRef = useRef(0);
   useEffect(() => {
     const onFootnoteSelection = async (event: CustomEvent) => {
