@@ -39,11 +39,14 @@ import { Point, Position, TextSelection } from '@/utils/sel';
 import {
   getPopupPosition,
   getPosition,
+  getOcrRangeLanguage,
   getRangeRectInWebview,
   getRangeTextStyleInWebview,
   getTextFromRange,
+  isOcrRange,
 } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
+import { getPrimaryLanguage } from '@/utils/book';
 import { findTocItemBS } from '@/services/nav';
 import { throttle } from '@/utils/throttle';
 import {
@@ -174,6 +177,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [selection, setSelection] = useState<TextSelection | null>(null);
+  const selectionIsOcr = !!selection && isOcrRange(selection.range);
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
@@ -250,8 +254,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // since the strip needs the room the buttons alone don't.
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
-  const toolbarToolTypes = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare);
-  const highlightOptionsAvailable = shouldShowHighlightOptions(toolbarToolTypes, selection ?? null);
+  const toolbarToolTypes = getToolbarToolTypes(
+    viewSettings.annotationToolbarItems,
+    canShare,
+  ).filter(
+    (type) =>
+      !selectionIsOcr || !['copylink', 'highlight', 'annotate', 'tts', 'proofread'].includes(type),
+  );
+  const highlightOptionsAvailable =
+    !selectionIsOcr && shouldShowHighlightOptions(toolbarToolTypes, selection ?? null);
   const annotPopupWidth = highlightOptionsAvailable
     ? annotPopupMaxWidth
     : Math.min(Math.max(toolbarToolTypes.length, 1) * annotPopupToolSize, annotPopupMaxWidth);
@@ -396,6 +407,20 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
     isTextSelected.current = false;
   };
+
+  useEffect(() => {
+    if (!selectionIsOcr) return;
+    // Reader margins live outside the page iframe and its selection listeners.
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (containerRef.current?.contains(event.target as Node)) return;
+      event.stopPropagation();
+      handleDismissPopup();
+      view?.deselect();
+      isTextSelected.current = false;
+    };
+    document.addEventListener('click', handleOutsideClick, true);
+    return () => document.removeEventListener('click', handleOutsideClick, true);
+  }, [selectionIsOcr, handleDismissPopup, view, isTextSelected]);
 
   // Whether the currently shown selection came from the footnote popup, for
   // event handlers that only know the incoming event, not the selection state.
@@ -1018,6 +1043,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           handleDismissPopupAndSelection();
           break;
         case 'highlight':
+          if (selectionIsOcr) {
+            handleShowAnnotPopup();
+            break;
+          }
           // highlight is already applied in instant annotating
           handleDismissPopupAndSelection();
           break;
@@ -1047,6 +1076,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           handleTranslation();
           break;
         case 'tts':
+          if (selectionIsOcr) {
+            handleShowAnnotPopup();
+            break;
+          }
           handleSpeakText(true);
           break;
         case 'share':
@@ -1247,7 +1280,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       handleDismissPopupAndSelection();
     }
 
-    if (!viewSettings?.copyToNotebook) return;
+    if (!viewSettings?.copyToNotebook || selectionIsOcr) return;
 
     // A popup-window range is not in a main view document; use the CFI the
     // popup mapped into the pristine section (absent for data-attribute
@@ -1301,7 +1334,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // points at the position — resolution keys off the cfi, the note id is only
   // required to be present.
   const handleCopyLink = () => {
-    if (!selection) return;
+    if (!selection || selectionIsOcr) return;
     const cfi =
       selection.cfi || (selection.popup ? null : view?.getCFI(selection.index, selection.range));
     if (!cfi) return;
@@ -1338,7 +1371,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // selection): only those are placeholders the note-cancel flow may remove;
   // restyling/toggling an existing one must never tear down the user's record.
   const handleHighlight = (update = false, highlightStyle?: HighlightStyle): BookNote[] => {
-    if (!selection || !selection.text) return [];
+    if (!selection || !selection.text || selectionIsOcr) return [];
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
@@ -1514,7 +1547,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const handleAnnotate = () => {
-    if (!selection || !selection.text) return;
+    if (!selection || !selection.text || selectionIsOcr) return;
     // A popup selection without a CFI has nothing to anchor a note to (the
     // toolbar button is disabled, this guards the keyboard shortcut).
     if (selection.popup && !selection.cfi) return;
@@ -1654,7 +1687,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // entry point here means the former. Defaulting it silently turned Ctrl/Cmd+R
   // into "start the book from this paragraph" (#5011).
   const handleSpeakText = async (oneTime: boolean) => {
-    if (!selection || !selection.text) return;
+    if (!selection || !selection.text || selectionIsOcr) return;
     // TTS walks the main view's documents; a popup-window range can't seed it
     // (the toolbar button is disabled, this guards the keyboard shortcut).
     if (selection.popup) return;
@@ -1680,6 +1713,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setProofreadRulesVisibility(true);
       return;
     }
+    if (selectionIsOcr) return;
     // Proofread rules anchor to a CFI; a popup selection without one (data-
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
@@ -1705,17 +1739,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   useShortcuts(
     {
       onHighlightSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'highlight');
         return true;
       },
       onUnderlineSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'underline');
         return true;
       },
       onAnnotateSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleAnnotate();
         return true;
       },
@@ -1740,17 +1774,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return true;
       },
       onReadAloudSelection: () => {
-        if (!selection?.text || selection.popup) return false;
+        if (!selection?.text || selectionIsOcr || selection.popup) return false;
         handleSpeakText(true);
         return true;
       },
       onProofreadSelection: () => {
-        if (selection?.popup && !selection.cfi) return false;
+        if (selectionIsOcr || (selection?.popup && !selection.cfi)) return false;
         handleProofread();
         return true;
       },
     },
-    [selection?.text, selection?.cfi, selection?.popup],
+    [selection?.text, selection?.cfi, selection?.popup, selectionIsOcr],
   );
 
   const handleImportAnnotations = (event: CustomEvent) => {
@@ -2400,6 +2434,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const editedNoteText =
     config.booknotes?.find((annotation) => annotation.id === noteEditorTarget?.annotationId)
       ?.note || '';
+  const metadataLanguage = getPrimaryLanguage(bookData.bookDoc?.metadata.language);
+  const dictionaryLanguage = selection
+    ? getOcrRangeLanguage(selection.range, metadataLanguage)
+    : metadataLanguage;
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
@@ -2423,7 +2461,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             return (
               <DictionarySheet
                 word={selection?.text as string}
-                lang={bookData.bookDoc?.metadata.language as string}
+                lang={dictionaryLanguage}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
               />
@@ -2433,7 +2471,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           return (
             <DictionaryPopup
               word={selection?.text as string}
-              lang={bookData.bookDoc?.metadata.language as string}
+              lang={dictionaryLanguage}
               position={dictPopupPosition}
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}

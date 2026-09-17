@@ -10,6 +10,7 @@ const { setProgress, readerState } = vi.hoisted(() => {
     setProgress,
     readerState: {
       setProgress,
+      viewStates: {},
       getViewState: () => ({}),
       getViewSettings: () => ({}),
     },
@@ -76,7 +77,7 @@ vi.mock('@/app/reader/components/TableViewer', () => ({ default: () => null }));
 
 const props = {
   bookKey: 'test-book',
-  bookDoc: {},
+  bookDoc: { metadata: {} },
   config: {},
   gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
   contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },
