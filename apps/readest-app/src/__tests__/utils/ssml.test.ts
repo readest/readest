@@ -41,7 +41,7 @@ describe('parseSSMLLang', () => {
   // book. Regional en variants are the same "nobody set this" default as bare
   // en, so the book's own language wins.
   it('should use primaryLang when xml:lang is a regional en variant but primaryLang differs', () => {
-    const ssml = ssmlWithLang('EN-US', '<mark name="0"/>Ch\u01b0\u01a1ng 1: H\u00f9 Ng\u01b0\u1eddi Sao?');
+    const ssml = ssmlWithLang('EN-US', '<mark name="0"/>Chương 1: Hù Người Sao?');
     expect(parseSSMLLang(ssml, 'vi')).toBe('vi');
   });
 
