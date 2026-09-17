@@ -1059,6 +1059,84 @@ describe('CapturedPageTurn (browser)', () => {
     await turned;
   });
 
+  // Push (readest#6239): the captured page slides out while the host's push
+  // target — the live view, already on the incoming page — is translated in
+  // beside it, so both pages move as one strip like the paginator's native push.
+  it('pushes the live view in beside the outgoing page on a forward LTR turn', async () => {
+    const live = document.createElement('div');
+    host.appendChild(live);
+    const slow = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        navigate,
+        getPushTarget: () => live,
+      },
+      { duration: 5000 },
+    );
+    const turned = slow.turn(true, false, 'push');
+    await vi.waitFor(() => {
+      expect(host.querySelector('canvas')).not.toBeNull();
+    });
+    const sheet = slideSheet();
+    // A strip has no overlapping sheet, so no edge shadow.
+    expect(host.querySelector('[data-page-slide-shadow]')).toBeNull();
+    await vi.waitFor(() => {
+      const outgoing = new DOMMatrixReadOnly(getComputedStyle(sheet).transform).e;
+      const incoming = new DOMMatrixReadOnly(getComputedStyle(live).transform).e;
+      expect(outgoing).toBeLessThan(0);
+      expect(incoming).toBeGreaterThan(0);
+      // Edge to edge: the incoming page starts where the outgoing one ends.
+      expect(Math.abs(incoming - (W + outgoing))).toBeLessThan(1);
+    });
+    slow.dispose();
+    await turned;
+    expect(host.querySelector('canvas')).toBeNull();
+    expect(live.style.transform).toBe('');
+  });
+
+  it('does not shift the live view while a push surface is merely prepared', async () => {
+    const live = document.createElement('div');
+    host.appendChild(live);
+    const pushing = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        navigate,
+        getPushTarget: () => live,
+      },
+      { duration: 40 },
+    );
+    expect(await pushing.prepareCapture('push')).toBe(true);
+    expect(host.querySelector('[data-captured-turn-prepared="true"]')).not.toBeNull();
+    // The reader is idle on the current page under the warm surface.
+    expect(live.style.transform).toBe('');
+    pushing.dispose();
+    expect(live.style.transform).toBe('');
+  });
+
+  it('leaves the live view flat after a completed push', async () => {
+    const live = document.createElement('div');
+    host.appendChild(live);
+    const pushing = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        navigate,
+        getPushTarget: () => live,
+      },
+      { duration: 40 },
+    );
+    expect(await pushing.turn(true, false, 'push')).toBe(true);
+    expect(navigate).toHaveBeenCalledWith(true);
+    expect(live.style.transform).toBe('');
+    expect(live.getAnimations().length).toBe(0);
+    pushing.dispose();
+  });
+
   it('propagates capture failures without navigating or leaving an overlay', async () => {
     capture.mockRejectedValueOnce(new Error('no capture'));
     await expect(controller.turn(true, false)).rejects.toThrow('no capture');

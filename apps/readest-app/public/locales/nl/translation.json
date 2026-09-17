@@ -858,8 +858,8 @@
   "Select Voice": "Stem selecteren",
   "Display what I'm reading on Discord": "Toon wat ik lees op Discord",
   "Show on Discord": "Toon op Discord",
-  "Instant {{action}}": "Directe {{action}}",
-  "Instant {{action}} Disabled": "Directe {{action}} uitgeschakeld",
+  "Instant {{action}}": "Direct {{action}}",
+  "Instant {{action}} Disabled": "Direct {{action}} uitgeschakeld",
   "Annotation": "Annotatie",
   "Reset Template": "Sjabloon resetten",
   "Annotation style": "Annotatiestijl",
@@ -2324,5 +2324,6 @@
   "Web URL": "Web-URL",
   "Loading chapter…": "Hoofdstuk laden…",
   "Clip Page": "Clippagina",
-  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Deze selectie loopt over opmaak- of alineagrenzen heen. Selecteer een kleiner stuk tekst of kies een ander vervangingsbereik."
+  "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Deze selectie loopt over opmaak- of alineagrenzen heen. Selecteer een kleiner stuk tekst of kies een ander vervangingsbereik.",
+  "Open External Link": "Externe link openen"
 }

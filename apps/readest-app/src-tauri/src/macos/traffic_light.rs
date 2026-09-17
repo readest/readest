@@ -65,6 +65,34 @@ pub fn set_traffic_lights(window: Window, visible: bool, header_height: f64) {
     }
 }
 
+/// Sets the window title and re-applies the traffic-light layout in the
+/// same main-thread pass.
+///
+/// `-[NSWindow setTitle:]` makes AppKit re-lay out the title bar, which
+/// restores the standard 28pt container: the buttons drop to their default
+/// 6pt below the window top (ours centers them at 14 for the 44pt header),
+/// or come back on screen where the reader had parked them off the top.
+/// Every page sets the title on mount, and any correction issued from the
+/// frontend arrives an IPC round-trip later — after AppKit has already
+/// painted the default — so the buttons visibly flicked between the two
+/// positions on every library <-> reader navigation (#6222). Doing both
+/// here, before control returns to the run loop, means the default layout
+/// is never painted.
+#[command]
+pub fn set_window_title(window: Window, title: String) -> Result<(), String> {
+    let handle = UnsafeWindowHandle(window.ns_window().map_err(|e| e.to_string())?);
+    window
+        .run_on_main_thread(move || unsafe {
+            use cocoa::appkit::NSWindow;
+            use cocoa::foundation::NSString;
+            let ns_window = handle.0 as cocoa::base::id;
+            let ns_title = NSString::alloc(cocoa::base::nil).init_str(&title);
+            ns_window.setTitle_(ns_title);
+            position_traffic_lights(handle, TRAFFIC_LIGHTS_VISIBLE);
+        })
+        .map_err(|e| e.to_string())
+}
+
 /// Centers the close button vertically inside `header_height`.
 ///
 /// `y` (the value tao forwards to `[NSWindowButton setFrameOrigin:]`)

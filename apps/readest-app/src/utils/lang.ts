@@ -148,9 +148,15 @@ export const inferLangFromScript = (text: string, lang: string): string => {
 
 export const detectLanguage = (content: string): string => {
   try {
-    const iso6393Lang = franc(content.substring(0, 1000));
-    const iso6391Lang = code6393to6391(iso6393Lang) || 'en';
-    return iso6391Lang;
+    const sample = content.substring(0, 1000);
+    const iso6393Lang = franc(sample);
+    const iso6391Lang = code6393to6391(iso6393Lang);
+    if (iso6391Lang) return iso6391Lang;
+    // franc returns "und" for short CJK text such as a TXT title line. Defaulting
+    // to English there sends the caller down the wrong path (e.g. TXT chapter
+    // detection never applies the Chinese regexps), so read the script instead.
+    // See issue #6172.
+    return inferLangFromScript(sample, '') || 'en';
   } catch {
     console.warn('Language detection failed, defaulting to en.');
     return 'en';

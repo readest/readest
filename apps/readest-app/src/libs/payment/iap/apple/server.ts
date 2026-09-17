@@ -1,6 +1,7 @@
 import { ApplePaymentData } from '@/types/payment';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
+import { resolveUserPlan } from '@/libs/payment/entitlements';
 import {
   isEntitledStatus,
   isStoragePurchase,
@@ -69,11 +70,20 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
       throw new Error(`Database update failed: ${error.message}`);
     }
 
-    const plan = mapProductIdToUserPlan(purchase.productId, true);
+    // Resolved across every provider, not just this one: a Stripe or
+    // other-store subscription the user still pays for must keep its
+    // entitlement instead of being cancelled out by this write. This purchase's
+    // own entitlement is passed in rather than read back, because the row above
+    // stores a grace period as `expired`.
+    const plan = await resolveUserPlan(userId, {
+      entitledPlan: isEntitledStatus(purchase.status)
+        ? mapProductIdToUserPlan(purchase.productId, true)
+        : 'free',
+    });
     await supabase
       .from('plans')
       .update({
-        plan: isEntitledStatus(purchase.status) ? plan : 'free',
+        plan,
         status: purchase.status,
       })
       .eq('id', userId);

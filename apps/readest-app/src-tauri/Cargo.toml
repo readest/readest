@@ -16,10 +16,12 @@ crate-type = ["staticlib", "cdylib", "lib"]
 
 [features]
 default = ["wry"]
-# WebKitGTK / WebView2 / WKWebView runtime. The Linux CEF build turns it off
-# (`--no-default-features --features cef`, see scripts/tauri-cef.mjs).
+# WebView2 / WKWebView runtime, and on Linux the WebKitGTK one, which is left
+# only for the webdriver test harness (scripts/test-tauri.sh) — every Linux
+# build that ships runs on CEF and turns this off
+# (`--no-default-features --features cef`, see scripts/tauri.mjs).
 wry = ["tauri/wry"]
-# Chromium Embedded Framework runtime, Linux only (`pnpm tauri:cef`). The
+# Chromium Embedded Framework runtime, the Linux runtime (`pnpm tauri`). The
 # tauri CLI keys CEF bundling off this app feature, and it only becomes the
 # real runtime when `tauri` resolves to upstream's feat/cef through
 # .cargo/cef.toml; the readest fork carries a no-op stub of the same name so
@@ -53,7 +55,7 @@ reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "stream",
 ] }
-# `default-features = false` so the Linux CEF build (`pnpm tauri:cef`) can pick
+# `default-features = false` so the Linux CEF build (`pnpm tauri`) can pick
 # the webview runtime: tauri's defaults are spelled out here and `wry` comes
 # back through this crate's own `default` feature, so every other build is
 # unchanged. See .cargo/cef.toml.

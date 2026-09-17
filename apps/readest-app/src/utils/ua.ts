@@ -4,20 +4,11 @@ import { AppService } from '@/types/system';
  * Whether local files must be read through the `rangefile` query-range scheme
  * instead of the asset protocol with a `Range` header. Chromium re-applies a
  * `Range` header's offset to the body of an intercepted custom-protocol
- * response (Chromium 40739128), so every non-zero-start read fails: that is the
- * Android WebView and, on Linux, the CEF runtime, which is the only Linux
- * webview that carries a `Chrome/` token (WebKitGTK never does).
+ * response (Chromium 40739128), so every non-zero-start read fails. That is
+ * every Chromium-backed build: the Android WebView and Linux, which runs on
+ * CEF (see scripts/tauri.mjs).
  */
-export const needsQueryRangeReads = (osType: string, userAgent: string) =>
-  osType === 'android' || (osType === 'linux' && isLinuxCefRuntime(userAgent));
-
-/**
- * The Linux CEF (Chromium) build. WebKitGTK never sends a `Chrome/` token and
- * Android identifies itself in the platform part, so this only matches the
- * desktop Linux Chromium runtime.
- */
-export const isLinuxCefRuntime = (userAgent: string) =>
-  /\bLinux\b/.test(userAgent) && !/\bAndroid\b/.test(userAgent) && /\bChrome\//.test(userAgent);
+export const needsQueryRangeReads = (osType: string) => osType === 'android' || osType === 'linux';
 
 export const parseWebViewInfo = (appService: AppService | null): string => {
   const ua = navigator.userAgent;

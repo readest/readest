@@ -358,6 +358,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    handleTouchCancel,
     handleMouseDown,
     handlePointerDown,
     handlePointerMove,
@@ -524,6 +525,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // Bound to the section so a selectionchange deferred during the drag can
     // be processed (and the popup shown once) when the gesture ends.
     detail.doc?.addEventListener('touchend', handleTouchEnd.bind(null, doc, index));
+    if (!appService?.isIOSApp && !appService?.isAndroidApp) {
+      detail.doc?.addEventListener('touchcancel', handleTouchCancel);
+    }
     // Re-arm the instant quick action at the start of each gesture. Android does
     // this via the native-touch touchstart above; iOS/desktop have no such path,
     // and a single iOS long-press emits multiple selectionchange events for the
@@ -699,8 +703,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     onRelocate,
   });
 
-  // Android native-touch handler (the per-gesture engagement signal bridged from
-  // MainActivity.kt). Registered once per view by useRendererInputListeners; it
+  // Mobile native-touch handler (Android MainActivity / iOS touch observer).
+  // Registered once per view by useRendererInputListeners; it
   // resolves the CURRENT primary section's doc/index at fire time rather than
   // capturing them at load time, because foliate also fires `load` for preloaded
   // neighbour sections, whose doc/index would be off-screen.
@@ -709,6 +713,21 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const content = contents.find((c) => c.index === view?.renderer?.primaryIndex) ?? contents[0];
     const doc = content?.doc;
     const index = content?.index;
+    // Release/cancel must clear a pending dwell even if a page turn unloaded
+    // the section the gesture began in.
+    if (ev.type === 'touchcancel') {
+      handleTouchCancel();
+      return;
+    }
+    if (appService?.isIOSApp) {
+      if (ev.type === 'touchstart') handleTouchStart();
+      else if (ev.type === 'touchmove' && doc) {
+        // Native events also cover popup controls: hide only for a drag
+        // that has actually changed the book selection.
+        if (handleNativeTouchMove(ev.x, ev.y, doc)) setShowAnnotPopup(false);
+      } else if (ev.type === 'touchend') handleTouchEnd(doc, index);
+      return;
+    }
     if (!doc || index === undefined) return;
     if (ev.type === 'touchstart') {
       androidTouchEndRef.current = false;
@@ -724,13 +743,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
-  // Register the renderer `scroll` listener and (on Android) the `native-touch`
+  // Register the renderer `scroll` listener and mobile `native-touch`
   // bridge once per view, with cleanup — see the hook for why attaching these in
   // onLoad leaked listeners and degraded paragraph mode over a long session.
   useRendererInputListeners(view, {
     onRendererScroll: handleScroll,
     onNativeTouch: handleNativeTouch,
-    enableNativeTouch: !!appService?.isAndroidApp,
+    enableNativeTouch: !!(appService?.isAndroidApp || appService?.isIOSApp),
     listenToNativeTouchEvents,
   });
 

@@ -95,7 +95,7 @@ services:
 
   minio:
     container_name: readest-minio
-    image: minio/minio
+    image: quay.io/minio/minio
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -113,7 +113,7 @@ services:
       retries: 5
 
   minio-setup:
-    image: minio/mc
+    image: quay.io/minio/mc
     depends_on:
       minio:
         condition: service_healthy

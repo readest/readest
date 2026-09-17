@@ -2282,5 +2282,6 @@
   "Downloading covers…": "正在下载封面…",
   "Check the server for new books every few minutes. Large libraries may prefer manual sync.": "每隔幾分鐘檢查伺服器上的新書。大型書庫建議改用手動同步。",
   "Year": "年份",
-  "Rating": "評分"
+  "Rating": "評分",
+  "Open External Link": "開啟外部連結"
 }

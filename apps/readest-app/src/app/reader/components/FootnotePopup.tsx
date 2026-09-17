@@ -260,6 +260,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           setShowPopup(false);
         });
       });
+      // Hand external links to the main view so they get its confirmation.
+      popupView.addEventListener('external-link', (e: Event) => {
+        e.preventDefault();
+        const { detail } = e as CustomEvent;
+        getView(bookKey)?.dispatchEvent(new CustomEvent('external-link', { detail }));
+      });
       popupView.addEventListener('load', (e: CustomEvent) => {
         const { doc, index } = e.detail as { doc: Document; index: number };
         const bookData = getBookData(bookKey)!;

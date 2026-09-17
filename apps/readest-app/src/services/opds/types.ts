@@ -13,6 +13,15 @@ export const MAX_KNOWN_ENTRIES = 2000;
 export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_BACKOFF_MS = 60_000;
 export const DOWNLOAD_CONCURRENCY = 3;
+
+/**
+ * How many entries are downloaded before progress is written to disk.
+ *
+ * Bounds how much work a mid-sync process kill can discard. Large first syncs
+ * run for minutes and are a prime low-memory-killer target on Android, so the
+ * whole run must not be a single all-or-nothing unit of work.
+ */
+export const PERSIST_BATCH_SIZE = 10;
 export const OPDS_SUBSCRIPTIONS_DIR = 'OPDS';
 // How often to check subscribed feeds for new items, in addition to the
 // app-startup check and pull-to-refresh trigger.

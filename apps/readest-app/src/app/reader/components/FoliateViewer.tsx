@@ -1,7 +1,12 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { convertBlobUrlToDataUrl, BookDoc, getDirection } from '@/libs/document';
+import {
+  convertBlobUrlToDataUrl,
+  BookDoc,
+  getDirection,
+  getPageProgressionRTL,
+} from '@/libs/document';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { BookConfig, PageInfo } from '@/types/book';
 import { FoliateView, wrappedFoliateView } from '@/types/view';
@@ -100,6 +105,7 @@ import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
+import ExternalLinkConfirm from './ExternalLinkConfirm';
 import { getTTSMiniPlayerClearance } from '../utils/ttsMiniPlayerPosition';
 
 declare global {
@@ -368,15 +374,11 @@ const FoliateViewer: React.FC<{
 
       const newVertical =
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
-      const newRtl =
-        writingDir?.rtl ||
-        // Fixed-layout books carry no writing mode; their direction may come
-        // from the document itself (PDF ViewerPreferences /Direction /R2L),
-        // and page-turn taps and swipes must follow it.
-        bookDoc.dir === 'rtl' ||
-        getDirFromUILanguage() === 'rtl' ||
-        viewSettings.writingMode.includes('rl') ||
-        false;
+      // Fixed-layout books carry no writing mode; their direction may come
+      // from the document itself (PDF ViewerPreferences /Direction /R2L). The
+      // UI language is the last resort, for a book that says nothing at all.
+      const documentRtl = writingDir?.rtl || getDirFromUILanguage() === 'rtl' || false;
+      const newRtl = getPageProgressionRTL(viewSettings.writingMode, bookDoc.dir, documentRtl);
       if (viewSettings.vertical !== newVertical || viewSettings.rtl !== newRtl) {
         viewSettings.vertical = newVertical;
         viewSettings.rtl = newRtl;
@@ -1077,6 +1079,17 @@ const FoliateViewer: React.FC<{
     }
   }, [viewSettings?.disableDoubleClick]);
 
+  // A section can flip the writing axis mid-book — a vertical chapter inside an
+  // otherwise horizontal one. `getMaxInlineSize` measures the other screen axis
+  // for vertical writing, so the ceiling the renderer was opened with is the
+  // wrong one from that section on.
+  useEffect(() => {
+    const renderer = viewRef.current?.renderer;
+    if (!renderer || !viewSettings || bookDoc.rendition?.layout === 'pre-paginated') return;
+    renderer.setAttribute('max-inline-size', `${getMaxInlineSize(viewSettings)}px`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewSettings?.vertical]);
+
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer && viewSettings) {
       applyMarginAndGap();
@@ -1087,6 +1100,9 @@ const FoliateViewer: React.FC<{
     insets.right,
     insets.bottom,
     insets.left,
+    // getViewInsets swaps the full top/bottom bands for the compact ones once
+    // the page turns sideways, so the margins follow the axis too.
+    viewSettings?.vertical,
     viewSettings?.doubleBorder,
     viewSettings?.showHeader,
     viewSettings?.showFooter,
@@ -1125,6 +1141,7 @@ const FoliateViewer: React.FC<{
           onClose={() => setSelectedTableHtml(null)}
         />
       )}
+      <ExternalLinkConfirm view={viewRef.current} />
       <div
         ref={containerRef}
         role='main'

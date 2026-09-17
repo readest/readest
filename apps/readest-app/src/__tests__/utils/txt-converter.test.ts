@@ -554,3 +554,79 @@ describe('author resolution during conversion (issue #4390)', () => {
     expect(metadata?.author).toBe('月夜银狐');
   });
 });
+
+describe('Chinese chapter numerals beyond 一二三 (issue #6172)', () => {
+  const zhMetadata: TestMetadata = {
+    bookTitle: 'Test',
+    author: '',
+    language: 'zh',
+    identifier: 'test',
+  };
+  const option = { linesBetweenSegments: 8, fallbackParagraphsPerChapter: 100 };
+
+  it('detects headings that spell two as 两', () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const text = [
+      '第两百一十八章 塞浦路斯领主炙手可热',
+      '这是第二百一十八章的内容。',
+      '第两百一十九章 宴会',
+      '这是第二百一十九章的内容。',
+    ].join('\n');
+
+    const chapters = converter.extractChapters(text, zhMetadata, option);
+
+    expect(chapters.map((c) => c.title)).toEqual([
+      '第两百一十八章 塞浦路斯领主炙手可热',
+      '第两百一十九章 宴会',
+    ]);
+  });
+
+  it('detects headings that use uppercase numerals', () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const text = [
+      '第壹章 开篇',
+      '这是第一章的内容。',
+      '第贰章 承接',
+      '这是第二章的内容。',
+      '第拾叁章 收束',
+      '这是第十三章的内容。',
+    ].join('\n');
+
+    const chapters = converter.extractChapters(text, zhMetadata, option);
+
+    expect(chapters.map((c) => c.title)).toEqual(['第壹章 开篇', '第贰章 承接', '第拾叁章 收束']);
+  });
+
+  it('marks uppercase-numeral volume headings as volumes', () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    const text = ['第贰卷 远征', '卷首语。', '第壹章 开篇', '这是第一章的内容。'].join('\n');
+
+    const chapters = converter.extractChapters(text, zhMetadata, option);
+
+    expect(chapters.map((c) => [c.title, c.isVolume])).toEqual([
+      ['第贰卷 远征', true],
+      ['第壹章 开篇', false],
+    ]);
+  });
+
+  it('keeps the whole book split when a long run of 第两百N章 chapters follows (issue #6172)', () => {
+    const converter = new TxtToEpubConverter() as unknown as TxtConverterFlowPrivateAPI;
+    // A single undetected heading style glues its chapters into one oversized
+    // part, which isGoodMatches rejects — dropping the TOC for the entire book.
+    const body = Array.from({ length: 40 }, (_, i) => `段落${i + 1}${'正文内容'.repeat(20)}`).join(
+      '\n',
+    );
+    const lines = ['第一章 开篇', '这是第一章的内容。'];
+    for (let i = 0; i < 60; i++) {
+      lines.push(`第两百${i + 1}章 远征`, body);
+    }
+    const text = lines.join('\n');
+
+    const chapters = converter.extractChapters(text, zhMetadata, option);
+
+    expect(chapters.every((c) => c.title.startsWith('第'))).toBe(true);
+    expect(chapters.length).toBe(61);
+    expect(chapters[0]!.title).toBe('第一章 开篇');
+    expect(chapters[60]!.title).toBe('第两百60章 远征');
+  });
+});

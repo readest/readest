@@ -3,6 +3,7 @@ import { UserPlan } from '@/types/quota';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { PaymentStatus, StripePaymentData, StripeProductMetadata } from '@/types/payment';
 import { updateUserStorage } from '../storage';
+import { resolveUserPlan } from '../entitlements';
 
 let stripe: Stripe | null;
 
@@ -114,7 +115,9 @@ export const createOrUpdateSubscription = async (
     console.error('Error checking existing subscription:', error);
   }
 
-  const plan = await getHighestActivePlan(stripe, customerId);
+  // Across every provider, not just Stripe: this user may also hold a Google
+  // Play or App Store subscription that must not be cancelled out from here.
+  const plan = await resolveUserPlan(userId, { stripeCustomerId: customerId });
   await supabase
     .from('plans')
     .update({

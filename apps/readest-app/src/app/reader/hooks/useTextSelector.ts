@@ -7,6 +7,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { setSelectionSuppressed } from '@/utils/bridge';
+import { LINK_TOUCH_HOLD_CLASS } from '@/utils/style';
 import {
   focusCaretWindowPos,
   getCaretPointFromPoint,
@@ -593,6 +594,9 @@ export const useTextSelector = (
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
     lastPointerType.current = ev.pointerType;
+    if (appService?.isAndroidApp && ev.pointerType === 'touch') {
+      doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
+    }
     isPointerDown.current = true;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -719,8 +723,8 @@ export const useTextSelector = (
     noteCorner(corner, (c) => inCorner(c, doc));
   };
 
-  // Android native touchmove — the pointer engagement signal during a native
-  // selection drag (the iframe pointermove doesn't fire there). The native x/y
+  // Native touchmove — the pointer engagement signal during a native
+  // selection drag when the webview withholds DOM moves. The native x/y
   // are physical device pixels relative to the window; convert to CSS px.
   const handleNativeTouchMove = (x: number, y: number, doc: Document) => {
     const dpr = window.devicePixelRatio || 1;
@@ -739,10 +743,12 @@ export const useTextSelector = (
     const armed = valid && pointerDragActive.current && selectionDragging.current;
     const corner = !viewSettings?.scrolled && armed ? pointerCornerNow() : null;
     noteCorner(corner, (c) => inCorner(c, doc));
+    return armed;
   };
 
-  const handlePointerCancel = (_doc: Document, _index: number, _ev: PointerEvent) => {
+  const handlePointerCancel = (doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
+    doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     mouseDoubleClickRef.current = null;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -750,13 +756,12 @@ export const useTextSelector = (
     // (Android fires pointercancel when the browser starts scrolling) keeps its
     // native page-turn instead of being swallowed.
     cancelInstantHold();
-    // In the Android app pointercancel fires mid edge-drag (the browser takes
-    // over for scrolling) while the finger keeps going, and the native-touch
-    // bridge still reports the rest of the gesture — its touchend is the real
-    // release, so leave the pending turn and the drag latches alone there.
+    // In the mobile apps the native-touch bridge reports the real release,
+    // even when the webview cancels DOM pointer events during a selection
+    // handle drag. Keep the dwell and drag latches until that native release.
     // Everywhere else pointercancel IS the end: no pointerup or touchend
     // follows it, so this is the only chance to drop the turn and the edge mark.
-    if (!appService?.isAndroidApp) endSelectionDrag();
+    if (!appService?.isAndroidApp && !appService?.isIOSApp) endSelectionDrag();
     if (isInstantAnnotating.current) {
       stopInstantAnnotating();
       handleInstantAnnotationPointerCancel();
@@ -870,6 +875,7 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
+    doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     endSelectionDrag();
     const mouseDoubleClick = mouseDoubleClickRef.current;
     mouseDoubleClickRef.current = null;
@@ -962,6 +968,7 @@ export const useTextSelector = (
     }
   };
   const handleTouchStart = () => {
+    lastPointerType.current = 'touch';
     isTouchStarted.current = true;
     beginSelectionDrag();
     pendingTouchSelection.current = false;
@@ -982,6 +989,8 @@ export const useTextSelector = (
   // Android native-touch bridge calls this without a doc (it never defers).
   const handleTouchEnd = (doc?: Document, index?: number) => {
     isTouchStarted.current = false;
+    isPointerDown.current = false;
+    cancelInstantHold();
     endSelectionDrag();
     if (!pendingTouchSelection.current) return;
     pendingTouchSelection.current = false;
@@ -996,6 +1005,14 @@ export const useTextSelector = (
       handleDismissPopup();
       isTextSelected.current = false;
     }
+  };
+
+  const handleTouchCancel = () => {
+    isTouchStarted.current = false;
+    isPointerDown.current = false;
+    pendingTouchSelection.current = false;
+    endSelectionDrag();
+    cancelInstantHold();
   };
 
   // The corner the latest pointer (pointermove / native touchmove) position is
@@ -1177,6 +1194,7 @@ export const useTextSelector = (
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    handleTouchCancel,
     handleMouseDown,
     handlePointerDown,
     handlePointerMove,

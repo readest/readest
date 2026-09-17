@@ -1,4 +1,5 @@
 import { CurlGrab, PageCurlRenderer } from '@/utils/pageCurl';
+import { PagePushRenderer } from '@/utils/pagePush';
 import { PageSlideRenderer, type PageSlideSettleOptions } from '@/utils/pageSlide';
 
 /**
@@ -80,9 +81,16 @@ export interface CapturedTurnHost {
    * Resolves to the function that removes the layer again.
    */
   coverRegion?: (rect: CaptureRect) => Promise<() => Promise<void>>;
+  /**
+   * The live element a push turn translates in beside the outgoing capture
+   * (readest#6239): the reader view, already showing the incoming page
+   * underneath the overlay. Resolved per frame, so a replaced view is never
+   * left shifted.
+   */
+  getPushTarget?: () => HTMLElement | null;
 }
 
-export type CapturedTurnStyle = 'curl' | 'slide';
+export type CapturedTurnStyle = 'curl' | 'slide' | 'push';
 
 /** What the overlay draws each frame; PageCurlRenderer and PageSlideRenderer. */
 interface TurnRenderer {
@@ -177,6 +185,7 @@ const RELEASE_SETTLE_CONFIG = {
   // Keep a visible momentum lift without compressing a half-page tail into
   // the ~90ms range, which looks choppy even when every display frame lands.
   slide: { minSpeed: 0.2, maxSpeed: 1, maxPlaybackRate: 2 },
+  push: { minSpeed: 0.2, maxSpeed: 1, maxPlaybackRate: 2 },
   curl: { minSpeed: 0.3, maxSpeed: 1.5, maxPlaybackRate: 1.5 },
 } as const satisfies Record<
   CapturedTurnStyle,
@@ -1010,7 +1019,9 @@ export class CapturedPageTurn {
     const renderer: TurnRenderer =
       style === 'slide'
         ? new PageSlideRenderer()
-        : new PageCurlRenderer({ preserveDrawingBuffer: false });
+        : style === 'push'
+          ? new PagePushRenderer(() => this.#host.getPushTarget?.() ?? null)
+          : new PageCurlRenderer({ preserveDrawingBuffer: false });
     overlay.setAttribute('aria-hidden', 'true');
     overlay.dataset['capturedTurnPrepared'] = String(preMount);
     Object.assign(overlay.style, {

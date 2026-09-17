@@ -7,6 +7,7 @@ import StoreKit
 import SwiftRs
 import Tauri
 import UIKit
+import UIKit.UIGestureRecognizerSubclass
 import UniformTypeIdentifiers
 import WebKit
 import os
@@ -343,6 +344,78 @@ class PencilGestureHandler: NSObject, UIPencilInteractionDelegate {
   }
 }
 
+// WebKit suppresses DOM touchmove AND touchend near native selection handles
+// (311216@main, iPadOS 27). Observe the UIKit stream without recognizing or
+// preventing a gesture, so the reader can dwell at an edge and cancel on release.
+private final class SelectionTouchObserver: UIGestureRecognizer {
+  private weak var webView: WKWebView?
+  private var trackedTouch: UITouch?
+  private var lastMoveTime: TimeInterval = 0
+
+  init(webView: WKWebView) {
+    self.webView = webView
+    super.init(target: nil, action: nil)
+    cancelsTouchesInView = false
+    delaysTouchesBegan = false
+    delaysTouchesEnded = false
+    allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue)]
+  }
+
+  override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+  override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool {
+    false
+  }
+
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+    // A second finger is a pinch, not a selection-handle drag.
+    guard trackedTouch == nil, touches.count == 1, let touch = touches.first else {
+      if let touch = trackedTouch { forward("touchcancel", touch: touch) }
+      state = .failed
+      return
+    }
+    trackedTouch = touch
+    lastMoveTime = 0
+    forward("touchstart", touch: touch)
+  }
+
+  override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+    guard let touch = trackedTouch, touches.contains(touch) else { return }
+    // Match Android's ~10/s bridge rate; start/end/cancel are never throttled.
+    guard touch.timestamp - lastMoveTime >= 0.1 else { return }
+    lastMoveTime = touch.timestamp
+    forward("touchmove", touch: touch)
+  }
+
+  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+    guard let touch = trackedTouch, touches.contains(touch) else { return }
+    forward("touchend", touch: touch)
+    state = .failed
+  }
+
+  override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+    if let touch = trackedTouch { forward("touchcancel", touch: touch) }
+    state = .failed
+  }
+
+  override func reset() {
+    trackedTouch = nil
+    super.reset()
+  }
+
+  private func forward(_ type: String, touch: UITouch) {
+    guard let webView = webView else { return }
+    let point = touch.location(in: webView)
+    // The shared native-touch contract uses device pixels, not UIKit points.
+    let scale = webView.window?.screen.scale ?? UIScreen.main.scale
+    webView.evaluateJavaScript(
+      """
+      window.onNativeTouch?.({type: '\(type)', pointerId: 0,
+        x: \(point.x * scale), y: \(point.y * scale), pressure: \(touch.force),
+        pointerCount: 1, timestamp: \(touch.timestamp * 1000)});
+      """, completionHandler: nil)
+  }
+}
+
 class WebViewLifecycleManager: NSObject {
   private weak var webView: WKWebView?
   private var originalNavigationDelegate: WKNavigationDelegate?
@@ -604,6 +677,7 @@ class NativeBridgePlugin: Plugin {
     // Suppress the iOS system text-selection edit menu so it never
     // covers Readest's annotation toolbar. See ContextMenuSuppressor.
     ContextMenuSuppressor.installIfNeeded()
+    webview.addGestureRecognizer(SelectionTouchObserver(webView: webview))
 
     // Register a WKScriptMessageHandler so JS can signal when its
     // share-extension hook has mounted. On `{type: 'ready'}` we run a
