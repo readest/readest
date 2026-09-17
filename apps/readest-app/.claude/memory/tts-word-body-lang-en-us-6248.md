@@ -27,7 +27,7 @@ Reported 2026-09-17 against a Vietnamese EPUB (`Chí Tôn Đặc Công`, local b
 5. `BufferedTTSClient.getVoiceIdFromLang('en')` then picked the stored
    `edge-tts-en` preferred voice.
 
-**Fix (MERGED into working tree, not yet committed):** gate on the base subtag —
+**Fix (PR #6247, branch `fix/tts-regional-en-book-language`, UNMERGED):** gate on the base subtag —
 `lang.split('-')[0] === 'en'` — so `en`, `en-US`, `en-GB` all defer to the book's
 declared language. An English book keeps its region variant because
 `isSameLang('en-US','en')` is true.
