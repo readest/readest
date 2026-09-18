@@ -16,7 +16,7 @@ const h = vi.hoisted(() => ({
     getCFI: vi.fn(() => 'cfi'),
     renderer: { containerPosition: 100 },
   },
-  appService: { isAndroidApp: false, isMobile: false },
+  appService: { isAndroidApp: false, isIOSApp: false, isMobile: false },
   osPlatform: 'macos',
   viewSettings: { scrolled: false } as { scrolled: boolean },
 }));
@@ -140,7 +140,7 @@ beforeEach(() => {
   fv.getBoundingClientRect = () => areaRect as DOMRect;
   cell.appendChild(fv);
   document.body.appendChild(cell);
-  h.appService = { isAndroidApp: false, isMobile: false };
+  h.appService = { isAndroidApp: false, isIOSApp: false, isMobile: false };
   h.osPlatform = 'macos';
   h.viewSettings = { scrolled: false };
   h.view.renderer.containerPosition = 100;
@@ -149,6 +149,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.runOnlyPendingTimers();
   vi.useRealTimers();
+  vi.restoreAllMocks();
   document.getElementById('gridcell-book-1')?.remove();
   cleanup();
 });
@@ -266,7 +267,7 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
   test('pointercancel mid-drag keeps the pending turn (Android scroll takeover)', async () => {
     // Only the Android app has a native-touch bridge that reports the rest of
     // the gesture, so only there is pointercancel not the end of it.
-    h.appService = { isAndroidApp: true, isMobile: true };
+    h.appService = { isAndroidApp: true, isIOSApp: false, isMobile: true };
     h.osPlatform = 'android';
     const { result } = setup();
     result.current.handleTouchStart();
@@ -429,5 +430,77 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
     await advance();
 
     expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('iPadOS native handle drag (#6226)', () => {
+  const startDrag = () => {
+    h.appService = { isAndroidApp: false, isIOSApp: true, isMobile: true };
+    h.osPlatform = 'ios';
+    const hook = setup();
+    // WebKit delivers the start, then withholds DOM moves AND the end.
+    hook.result.current.handleTouchStart();
+    setSelection(true);
+    caretRect = { left: 500, right: 500, top: 495, bottom: 505 };
+    return hook;
+  };
+
+  const dragToEdge = (result: Handlers, x = 990) => {
+    // Native coordinates are device pixels; iPad's CSS viewport is scaled.
+    const dpr = window.devicePixelRatio;
+    result.current.handleNativeTouchMove(500 * dpr, 500 * dpr, doc);
+    result.current.handleNativeTouchMove(x * dpr, 500 * dpr, doc);
+    result.current.handleSelectionchange(doc, 0);
+    result.current.handleNativeTouchMove(x * dpr, 500 * dpr, doc);
+  };
+
+  test('keeps the edge dwell through WebKit pointer cancellation', async () => {
+    vi.spyOn(window, 'devicePixelRatio', 'get').mockReturnValue(2);
+    areaRect = { left: 20, top: 20, right: 980, bottom: 980, width: 960, height: 960 };
+    const { result } = startDrag();
+    dragToEdge(result);
+    result.current.handlePointerCancel(doc, 0, {} as PointerEvent);
+    await advance();
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('native release cancels the dwell even without a DOM touchend', async () => {
+    areaRect = { left: 20, top: 20, right: 980, bottom: 980, width: 960, height: 960 };
+    const { result } = startDrag();
+    dragToEdge(result);
+    result.current.handleTouchEnd(doc, 0);
+    await advance();
+    expect(h.view.next).not.toHaveBeenCalled();
+    expect(result.current.turnHint).toBeNull();
+  });
+
+  test('native cancellation cancels the dwell', async () => {
+    areaRect = { left: 20, top: 20, right: 980, bottom: 980, width: 960, height: 960 };
+    const { result } = startDrag();
+    dragToEdge(result);
+    result.current.handleTouchCancel();
+    await advance();
+    expect(h.view.next).not.toHaveBeenCalled();
+    expect(result.current.turnHint).toBeNull();
+  });
+
+  test('native movement only dismisses the toolbar after the book selection changes', () => {
+    const { result } = startDrag();
+    // Scrolling the annotation toolbar also produces native movement, but
+    // leaves the book selection unchanged and must keep the toolbar open.
+    result.current.handleNativeTouchMove(500, 500, doc);
+    expect(result.current.handleNativeTouchMove(540, 500, doc)).toBe(false);
+    result.current.handleSelectionchange(doc, 0);
+    expect(result.current.handleNativeTouchMove(580, 500, doc)).toBe(true);
+  });
+
+  test('native long-press jitter does not turn the page', async () => {
+    const { result } = startDrag();
+    caretRect = { left: 970, right: 970, top: 965, bottom: 975 };
+    result.current.handleNativeTouchMove(969, 969, doc);
+    result.current.handleSelectionchange(doc, 0);
+    result.current.handleNativeTouchMove(970, 970, doc);
+    await advance();
+    expect(h.view.next).not.toHaveBeenCalled();
   });
 });

@@ -104,6 +104,7 @@ import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
+import ExternalLinkConfirm from './ExternalLinkConfirm';
 import { getTTSMiniPlayerClearance } from '../utils/ttsMiniPlayerPosition';
 
 declare global {
@@ -1138,6 +1139,7 @@ const FoliateViewer: React.FC<{
           onClose={() => setSelectedTableHtml(null)}
         />
       )}
+      <ExternalLinkConfirm view={viewRef.current} />
       <div
         ref={containerRef}
         role='main'
