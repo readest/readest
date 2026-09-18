@@ -118,6 +118,14 @@ export function useDictionaryResults({
 
   const definitionProviders = useMemo(() => providers.filter((p) => p.kind !== 'web'), [providers]);
   const webSearchProviders = useMemo(() => providers.filter((p) => p.kind === 'web'), [providers]);
+  // Every provider looks the word up concurrently, but they all speak through
+  // one shared <audio> element — arming more than one lets whichever resolves
+  // its bytes last cut off the others, in an order nobody chose. Arm only the
+  // highest-ranked dictionary that can carry recordings (#6265).
+  const autoPlayProviderId = useMemo(
+    () => definitionProviders.find((p) => p.kind === 'mdict')?.id,
+    [definitionProviders],
+  );
   // Web entries live in their own section, so `providerOrder` alone can't lift
   // one above the dictionary cards (#5083). Let the top-most enabled provider
   // decide which section leads. Derived from the full enabled list rather than
@@ -330,7 +338,7 @@ export function useDictionaryResults({
                 isDarkMode,
                 bg: themeCode.bg,
                 fg: themeCode.fg,
-                autoPlayPronunciation,
+                autoPlayPronunciation: autoPlayPronunciation && provider.id === autoPlayProviderId,
               });
               if (controller.signal.aborted) return;
               if (outcome.ok || outcome.reason !== 'empty') break;
@@ -370,6 +378,7 @@ export function useDictionaryResults({
     themeCode.bg,
     themeCode.fg,
     autoPlayPronunciation,
+    autoPlayProviderId,
   ]);
 
   // Visible cards = providers that are still loading or finished with a

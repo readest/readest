@@ -297,21 +297,38 @@ const playDictAudio = (audio: HTMLAudioElement, url: string, label: string): voi
 };
 
 /**
- * A pronunciation the rendered entry can play, in document order. The click
- * handlers call these; with "auto-play pronunciation" on (#6265) the first one
- * is also fired as soon as the entry finishes rendering.
+ * A pronunciation the rendered entry can play. The click handlers call these;
+ * with "auto-play pronunciation" on (#6265) the entry's first one is also
+ * fired as soon as it finishes rendering.
  *
  * Each trigger primes the shared element synchronously before its first
  * `await`, so calling it straight out of a click handler keeps the WebKit
- * user-gesture unlock (#6018) intact.
+ * user-gesture unlock (#6018) intact. It resolves `true` only once playback
+ * has actually started, so auto-play can move on to the next candidate when a
+ * control's recording turns out to be missing from the MDD.
  */
-type AudioTrigger = () => Promise<void>;
+interface AudioCandidate {
+  /** The control that plays it — the sort key for document order. */
+  el: Element;
+  play: () => Promise<boolean>;
+}
+
+/**
+ * The two wiring passes each sweep the whole entry, so their candidates
+ * interleave in the markup even though the arrays don't. Sorting by DOM
+ * position is what makes "the entry's first pronunciation" mean the first one
+ * a reader sees, whichever mechanism the dictionary used for it.
+ */
+const inDocumentOrder = (candidates: AudioCandidate[]): AudioCandidate[] =>
+  [...candidates].sort((a, b) =>
+    a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+  );
 
 async function wireMdictAudioOnclick(
   container: HTMLElement,
   mdds: MDDInstance[],
   trackedUrls: string[],
-  audioTriggers: AudioTrigger[],
+  audioCandidates: AudioCandidate[],
 ): Promise<void> {
   // Note: we deliberately leave `<script>` tags and other inline `onclick`
   // attributes in place. innerHTML parsing does NOT execute scripts, and
@@ -336,7 +353,7 @@ async function wireMdictAudioOnclick(
     el.removeAttribute('onclick');
 
     el.style.cursor ||= 'pointer';
-    const play: AudioTrigger = async () => {
+    const play = async (): Promise<boolean> => {
       const audio = primeDictAudio();
 
       let url = resolvedAudioUrls.get(el);
@@ -382,15 +399,16 @@ async function wireMdictAudioOnclick(
       } else {
         console.log(`[MDD-AUDIO] cache hit key=${key}`);
       }
-      if (!url) return;
+      if (!url) return false;
       playDictAudio(audio, url, key);
+      return true;
     };
     el.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       void play();
     });
-    audioTriggers.push(play);
+    audioCandidates.push({ el, play });
   }
 }
 
@@ -428,7 +446,7 @@ function wireMdxAnchors(
   mdds: MDDInstance[],
   trackedUrls: string[],
   onNavigate: ((word: string) => void) | undefined,
-  audioTriggers: AudioTrigger[],
+  audioCandidates: AudioCandidate[],
 ): void {
   const anchors = Array.from(container.querySelectorAll<HTMLAnchorElement>('a[href]'));
   for (const anchor of anchors) {
@@ -442,7 +460,7 @@ function wireMdxAnchors(
       // no longer decoded by any major browser. A click says so with a toast;
       // auto-play stays silent rather than nagging on every lookup.
       const isSpeex = /\.spx$/i.test(path);
-      const play: AudioTrigger = async () => {
+      const play = async (): Promise<boolean> => {
         const audio = primeDictAudio();
         let url = resolvedAudioUrls.get(anchor);
         if (!url) {
@@ -460,8 +478,9 @@ function wireMdxAnchors(
             }
           }
         }
-        if (!url) return;
+        if (!url) return false;
         playDictAudio(audio, url, path);
+        return true;
       };
       anchor.addEventListener('click', (e) => {
         e.preventDefault();
@@ -479,7 +498,7 @@ function wireMdxAnchors(
         }
         void play();
       });
-      if (!isSpeex) audioTriggers.push(play);
+      if (!isSpeex) audioCandidates.push({ el: anchor, play });
       continue;
     }
 
@@ -713,17 +732,16 @@ export const createMdictProvider = ({
           rawMddStylesheets.map((css) => resolveCssUrls(css, mdds, ctx.signal, trackedUrls)),
         );
         if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
-        // Pronunciations this entry can play, in the order the two wiring
-        // passes find them. Anchors run first, so a dictionary that ships
-        // both styles auto-plays its `sound://` link (#6265).
-        const audioTriggers: AudioTrigger[] = [];
-        wireMdxAnchors(body, mdds, trackedUrls, ctx.onNavigate, audioTriggers);
+        // Pronunciations this entry can play (#6265). Each pass appends its
+        // own finds; `inDocumentOrder` reconciles them at auto-play time.
+        const audioCandidates: AudioCandidate[] = [];
+        wireMdxAnchors(body, mdds, trackedUrls, ctx.onNavigate, audioCandidates);
         // Some MDicts (notably Vocabulary.com-derived ones) wire audio
         // playback through inline `onclick="v0r.v(this,'KEY')"` handlers
         // that depend on the dict's own `j.js` script. We never run
         // MDX-supplied JS inside the shadow root (XSS surface), so parse
         // the audio key ourselves and bind a CSP-safe replacement.
-        await wireMdictAudioOnclick(body, mdds, trackedUrls, audioTriggers);
+        await wireMdictAudioOnclick(body, mdds, trackedUrls, audioCandidates);
 
         // Attach a shadow root to a dedicated host so the dict's CSS (loose
         // .css files imported alongside + `<link>` references resolved from
@@ -774,8 +792,15 @@ export const createMdictProvider = ({
         // the MDD. On WebKit this only makes a sound once the shared element
         // has been unlocked by a real tap (the autoplay policy rejects it
         // otherwise, which `playDictAudio` logs and swallows).
-        if (ctx.autoPlayPronunciation && audioTriggers.length) {
-          void audioTriggers[0]!();
+        // A control's recording can be absent from the MDD, so walk the
+        // entry until one actually starts rather than giving up on the first.
+        if (ctx.autoPlayPronunciation && audioCandidates.length) {
+          void (async () => {
+            for (const candidate of inDocumentOrder(audioCandidates)) {
+              if (ctx.signal.aborted) return;
+              if (await candidate.play()) return;
+            }
+          })();
         }
 
         return { ok: true, headword: result.keyText, sourceLabel: dict.name };
