@@ -73,6 +73,10 @@ const makeCbz = async (pages: [name: string, data: Uint8Array, level?: number][]
   });
 };
 
+// A comic page's own loader (comic-book.js), which the renderer calls.
+const loadPage = (book: BookDoc, index: number) =>
+  (book.sections[index] as unknown as { load: () => Promise<string> }).load();
+
 const pageSpreads = (book: BookDoc) =>
   Object.fromEntries(book.sections.map((section) => [section.id, section.pageSpread]));
 
@@ -91,7 +95,7 @@ describe('CBZ double-page spreads (#6210)', () => {
       ['04.png', png(2400, 1800), 0],
       ['ComicInfo.xml', new Uint8Array(ascii('<ComicInfo/>'))],
     ]);
-    const { book } = await new DocumentLoader(file, { detectWidePages: true }).open();
+    const { book } = await new DocumentLoader(file, { widePages: {} }).open();
     expect(pageSpreads(book)).toEqual({
       '01.png': undefined,
       '02.jpg': 'center',
@@ -109,10 +113,41 @@ describe('CBZ double-page spreads (#6210)', () => {
       ['01.jpg', bomb],
       ['02.png', png(2400, 1800)],
     ]);
-    const { book } = await new DocumentLoader(file, { detectWidePages: true }).open();
+    const { book } = await new DocumentLoader(file, { widePages: {} }).open();
     expect(pageSpreads(book)).toEqual({ '01.jpg': undefined, '02.png': 'center' });
     const longest = Math.max(...vi.mocked(getImageSize).mock.calls.map(([data]) => data.length));
     expect(longest).toBeLessThanOrEqual(64 * 1024);
+  });
+
+  it('takes the wide pages an earlier open found instead of measuring again', async () => {
+    const file = await makeCbz([
+      ['01.png', png(2400, 1800)],
+      ['02.png', png(1200, 1829)],
+    ]);
+    const { book } = await new DocumentLoader(file, {
+      widePages: { known: ['02.png'] },
+    }).open();
+    expect(pageSpreads(book)).toEqual({ '01.png': undefined, '02.png': 'center' });
+  });
+
+  it('measures a page as its image loads and reports the wide ones', async () => {
+    // A streamed comic can only be measured then; `known: []` skips the
+    // measuring up front, as a streamed file does.
+    URL.createObjectURL ??= () => 'blob:page';
+    const onFound = vi.fn();
+    const file = await makeCbz([
+      ['01.png', png(1200, 1829)],
+      ['02.png', png(2400, 1800)],
+    ]);
+    const { book } = await new DocumentLoader(file, {
+      widePages: { known: [], onFound },
+    }).open();
+    expect(pageSpreads(book)).toEqual({ '01.png': undefined, '02.png': undefined });
+    await loadPage(book, 0);
+    await loadPage(book, 1);
+    expect(pageSpreads(book)).toEqual({ '01.png': undefined, '02.png': 'center' });
+    expect(onFound).toHaveBeenCalledTimes(1);
+    expect(onFound).toHaveBeenCalledWith(['02.png']);
   });
 
   it('leaves the pages unmeasured unless asked', async () => {
@@ -130,7 +165,7 @@ describe('CBZ double-page spreads (#6210)', () => {
     ]);
     const { book } = await new DocumentLoader(file, {
       nativeFilePath: '/books/spreads.cbz',
-      detectWidePages: true,
+      widePages: {},
     }).open();
     expect(invoke).toHaveBeenCalledWith('get_comic_page_sizes', {
       filePath: '/books/spreads.cbz',

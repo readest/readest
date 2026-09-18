@@ -48,6 +48,8 @@ const readPageSize = async (file: File, entry: Entry): Promise<[number, number] 
   return null;
 };
 
+type Section = Pick<SectionItem, 'id' | 'pageSpread'>;
+
 // The native app measures the pages in Rust. On the web an in-memory file is
 // read here; a streamed one is left alone, as each page would cost a request.
 const getPageSizes = async (
@@ -71,22 +73,59 @@ const getPageSizes = async (
   return sizes;
 };
 
+/** Paths of the pages in a comic archive that are wider than they are tall. */
+export const measureWidePages = async (file: File, entries: Entry[], nativeFilePath?: string) =>
+  Object.entries(await getPageSizes(file, entries, nativeFilePath))
+    .filter(([, [width, height]]) => width > height)
+    .map(([path]) => path);
+
+export interface WidePagesOptions {
+  /** The wide pages an earlier open found: no page is measured up front. */
+  known?: string[];
+  /** Hears of a page found wide as it loaded, with every wide page so far. */
+  onFound?: (ids: string[]) => void;
+}
+
+/** The pages laid out on their own, by id: the value `BookConfig.widePages` caches. */
+export const getWidePages = (sections: Section[]) =>
+  sections.filter((section) => section.pageSpread === 'center').map((section) => section.id);
+
 /**
  * Lays out each wide page of a comic on its own. A double-page spread is
  * usually stored as one wide image; paired with the next page it would show at
  * half size and push every later page onto the wrong side.
+ *
+ * The returned loader measures each page as its image loads. A streamed comic
+ * can only be measured then, and the renderer regroups the spreads when a page
+ * it loads comes back wide; `onFound` then gets every wide page so far. Once
+ * the book is built, `attach` marks the pages already known to be wide.
  */
-export const markWidePages = async (
-  sections: Pick<SectionItem, 'id' | 'pageSpread'>[],
-  file: File,
-  entries: Entry[],
-  nativeFilePath?: string,
+export const trackWidePages = <L extends { loadBlob: (name: string) => Promise<unknown> | null }>(
+  loader: L,
+  onFound?: (ids: string[]) => void,
 ) => {
-  const sizes = await getPageSizes(file, entries, nativeFilePath);
-  for (const section of sections) {
-    const size = sizes[section.id];
-    if (size && size[0] > size[1]) section.pageSpread = 'center';
-  }
+  let sections: Section[] = [];
+  return {
+    loader: {
+      ...loader,
+      loadBlob: async (name: string) => {
+        const blob = await loader.loadBlob(name);
+        const section = sections.find((s) => s.id === name);
+        if (blob instanceof Blob && section && section.pageSpread !== 'center') {
+          const size = getImageSize(new Uint8Array(await blob.slice(0, HEAD_LIMIT).arrayBuffer()));
+          if (size && size.width > size.height) {
+            section.pageSpread = 'center';
+            onFound?.(getWidePages(sections));
+          }
+        }
+        return blob;
+      },
+    },
+    attach: (bookSections: Section[], wide: string[]) => {
+      sections = bookSections;
+      for (const section of sections) if (wide.includes(section.id)) section.pageSpread = 'center';
+    },
+  };
 };
 
 /**

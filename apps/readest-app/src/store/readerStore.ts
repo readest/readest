@@ -31,6 +31,7 @@ import { BookData, useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
 import { clearBookProgress, getBookProgress, setBookProgress } from './readerProgressStore';
 import { uniqueId } from '@/utils/misc';
+import { getWidePages, type WidePagesOptions } from '@/utils/spread';
 
 interface ViewState {
   /* Unique key for each book view */
@@ -203,11 +204,18 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const isFeed = !!book.url && isFeedBookUrl(book.url);
       let bookDoc = bookData?.bookDoc;
       let file: File | null = bookData?.file ?? null;
+      const config = await appService.loadBookConfig(book, settings);
+      // A comic's wide pages are cached in its config: those an open measured,
+      // and those found as streamed pages load.
+      const widePages: WidePagesOptions = {
+        known: config.widePages,
+        onFound: (ids) => useBookDataStore.getState().setConfig(id, { widePages: ids }),
+      };
       if (!bookDoc || (!isPseStream && !isFeed && !file) || reload) {
         console.log('Loading book', key);
         if (isPseStream) {
           const data = parsePseStreamFileName(book.url!);
-          const doc = await openPseStreamBook(data);
+          const doc = await openPseStreamBook(data, widePages);
           bookDoc = doc.book;
           file = null;
         } else if (isFeed) {
@@ -227,12 +235,12 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           }
           const doc = await new DocumentLoader(file, {
             nativeFilePath: nativeFilePath ?? undefined,
-            detectWidePages: true,
+            widePages,
           }).open();
           bookDoc = doc.book;
+          if (doc.format === 'CBZ') config.widePages = getWidePages(bookDoc.sections);
         }
       }
-      const config = await appService.loadBookConfig(book, settings);
       // Import annotations from third-party readers on first open
       if (bookDoc.metadata.identifier) {
         const { getAnnotationProviders } = await import('@/services/annotation');

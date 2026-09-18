@@ -633,6 +633,13 @@ export interface BookConfig {
    */
   audiobook?: PairedAudiobook;
   hardcover?: HardcoverBookLink;
+  /**
+   * The pages of a comic laid out as spreads of their own (wide images), by
+   * page path: a device-local cache of measuring them, so a later open skips
+   * it and a streamed comic keeps what earlier reading found. Neither sync
+   * carries it; both copy an explicit list of fields.
+   */
+  widePages?: string[];
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
