@@ -97,6 +97,12 @@ export interface ABSMediaProgress {
   duration: number; // seconds
   isFinished: boolean;
   lastUpdate: number; // ms epoch
+  /** Overall completion 0..1, what the ABS library UI draws its progress bar from. */
+  progress?: number;
+  /** Ebook reading position: an EPUB CFI, or a format-specific locator such as a PDF page. */
+  ebookLocation?: string | null;
+  /** Ebook completion 0..1, tracked separately from the audio `progress`. */
+  ebookProgress?: number;
 }
 
 /** Subset of POST /api/items/:id/play response. */

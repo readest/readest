@@ -57,6 +57,26 @@ export const readLocalLastPlayedAt = (bookHash: string, episodeId?: string): num
 };
 
 /**
+ * Record that this device wrote progress for `bookHash` (and, for a podcast
+ * episode, `episodeId`) at `timestamp`. The reader's ebook sync
+ * (services/audiobookshelf/ebookProgress.ts) stamps this on every push, the
+ * same way playback does, so both media types answer "who read this last"
+ * from one place.
+ */
+export const writeLocalLastPlayedAt = (
+  bookHash: string,
+  timestamp: number,
+  episodeId?: string,
+): void => {
+  try {
+    localStorage.setItem(lastPlayedAtKey(bookHash, episodeId), String(timestamp));
+  } catch (err) {
+    // Best-effort: a book still reads and plays fine without the resume cache.
+    console.warn(err);
+  }
+};
+
+/**
  * The single newest-wins comparison for ABS progress: local wins only when
  * it is strictly newer, so the server wins ties. Every place that chooses
  * between a local and a server position goes through this — the resume rule
@@ -213,11 +233,6 @@ export class AbsProgressSyncer {
       }
     }
 
-    try {
-      localStorage.setItem(lastPlayedAtKey(this.#bookHash, this.#episodeId), String(Date.now()));
-    } catch (err) {
-      // Best-effort: a book still plays fine without the local resume cache.
-      console.warn(err);
-    }
+    writeLocalLastPlayedAt(this.#bookHash, Date.now(), this.#episodeId);
   }
 }
