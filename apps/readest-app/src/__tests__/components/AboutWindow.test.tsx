@@ -9,10 +9,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-const { mockWriteTextToClipboard, mockDispatch } = vi.hoisted(() => ({
-  mockWriteTextToClipboard: vi.fn(async () => true),
-  mockDispatch: vi.fn(),
-}));
+const { mockWriteTextToClipboard, mockDispatch, mockIsTauriAppPlatform, mockInvoke } = vi.hoisted(
+  () => ({
+    mockWriteTextToClipboard: vi.fn(async () => true),
+    mockDispatch: vi.fn(),
+    mockIsTauriAppPlatform: vi.fn(() => false),
+    mockInvoke: vi.fn(),
+  }),
+);
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string, params?: Record<string, unknown>) =>
@@ -37,7 +41,11 @@ vi.mock('@/utils/ua', () => ({
 }));
 
 vi.mock('@/services/environment', () => ({
-  isTauriAppPlatform: () => false,
+  isTauriAppPlatform: () => mockIsTauriAppPlatform(),
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: (...args: unknown[]) => mockInvoke(...args),
 }));
 
 vi.mock('@/utils/version', () => ({
@@ -82,6 +90,8 @@ describe('AboutWindow version label', () => {
   beforeEach(() => {
     mockWriteTextToClipboard.mockClear();
     mockDispatch.mockClear();
+    mockIsTauriAppPlatform.mockReturnValue(false);
+    mockInvoke.mockReset();
   });
 
   afterEach(() => {
@@ -91,6 +101,32 @@ describe('AboutWindow version label', () => {
   it('copies the version and webview info when clicked', async () => {
     const label = await openDialog();
 
+    fireEvent.click(label);
+
+    await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
+    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Readest 0.11.20 (Chrome 148)');
+  });
+
+  it('upgrades the label with the native webview version when available', async () => {
+    mockIsTauriAppPlatform.mockReturnValue(true);
+    mockInvoke.mockResolvedValue({ engine: 'WebView2', version: '152.0.4191.66' });
+    await openDialog();
+
+    const label = await screen.findByText(/WebView2 152\.0\.4191\.66/);
+    fireEvent.click(label);
+
+    await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
+    expect(mockWriteTextToClipboard).toHaveBeenCalledWith(
+      'Readest 0.11.20 (WebView2 152.0.4191.66)',
+    );
+  });
+
+  it('keeps the UA-derived label when the native query fails', async () => {
+    mockIsTauriAppPlatform.mockReturnValue(true);
+    mockInvoke.mockRejectedValue(new Error('not allowed'));
+    await openDialog();
+
+    const label = await screen.findByText(/Chrome 148/);
     fireEvent.click(label);
 
     await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
