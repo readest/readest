@@ -1011,3 +1011,19 @@ describe('link touch hold (#6242)', () => {
     );
   });
 });
+
+describe('paragraph indent exemption for image-only paragraphs', () => {
+  // A full-width inline image that takes the paragraph indent overhangs the
+  // column by the indent and paints a strip on the next page (#6198). The
+  // exemption must also see an image wrapped in a link, which is how Wikipedia
+  // (and most sites) mark up a figure: <p><span><a><img></a></span></p>.
+  it('drops the indent for an image wrapped in a link, with or without a span', () => {
+    const css = getStyles(makeViewSettings({ textIndent: 2 }));
+    const rule = css
+      .split('}')
+      .find((block) => block.includes('text-indent: initial !important') && block.includes('img'));
+    expect(rule).toBeDefined();
+    expect(rule).toContain('p:has(> a:only-child > img:only-child)');
+    expect(rule).toContain('p:has(> span:only-child > a:only-child > img:only-child)');
+  });
+});
