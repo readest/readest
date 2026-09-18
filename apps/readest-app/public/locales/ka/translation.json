@@ -2325,5 +2325,8 @@
   "Loading chapter…": "იტვირთება თავი…",
   "Clip Page": "გვერდის შენახვა",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "მონიშნული ტექსტი სცილდება ფორმატირების ან აბზაცის საზღვრებს. მონიშნეთ უფრო მოკლე ფრაგმენტი, ან აირჩიეთ ჩანაცვლების სხვა არეალი.",
-  "Open External Link": "გარე ბმულის გახსნა"
+  "Open External Link": "გარე ბმულის გახსნა",
+  "Available Offline": "ხელმისაწვდომია ოფლაინ",
+  "Download for Offline": "ჩამოტვირთვა ოფლაინ გამოსაყენებლად",
+  "Remove Offline Download": "ოფლაინ ჩამოტვირთვის წაშლა"
 }

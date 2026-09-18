@@ -2445,5 +2445,8 @@
   "Loading chapter…": "Завантаження розділу…",
   "Clip Page": "Сторінка кліпу",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Це виділення перетинає межі форматування або абзацу. Виділіть коротший фрагмент тексту або оберіть іншу область застосування заміни.",
-  "Open External Link": "Відкрити зовнішнє посилання"
+  "Open External Link": "Відкрити зовнішнє посилання",
+  "Available Offline": "Доступно офлайн",
+  "Download for Offline": "Завантажити для офлайн-доступу",
+  "Remove Offline Download": "Видалити офлайн-завантаження"
 }

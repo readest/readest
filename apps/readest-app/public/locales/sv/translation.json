@@ -2325,5 +2325,8 @@
   "Loading chapter…": "Laddar kapitel…",
   "Clip Page": "Klippsida",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Markeringen sträcker sig över formaterings- eller styckegränser. Markera en kortare textbit eller välj en annan omfattning för ersättningen.",
-  "Open External Link": "Öppna extern länk"
+  "Open External Link": "Öppna extern länk",
+  "Available Offline": "Tillgänglig offline",
+  "Download for Offline": "Ladda ned för offlineanvändning",
+  "Remove Offline Download": "Ta bort offlinenedladdning"
 }

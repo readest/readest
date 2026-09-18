@@ -36,6 +36,8 @@ export interface ABSTrack {
   mimeType: string;
   /** The audio file's name, e.g. `20686-01.mp3`. */
   title?: string;
+  /** The audio file on the server; `size` in bytes. */
+  metadata?: { filename?: string; size?: number };
 }
 
 export interface ABSChapter {
@@ -84,6 +86,7 @@ export interface ABSLibraryItem {
     ebookFile?: {
       ino?: string;
       ebookFormat?: string;
+      metadata?: { filename?: string; size?: number };
     };
   };
 }

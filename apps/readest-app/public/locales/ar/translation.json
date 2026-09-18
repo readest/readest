@@ -2565,5 +2565,8 @@
   "Loading chapter…": "جارٍ تحميل الفصل…",
   "Clip Page": "حفظ الصفحة",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "يتجاوز هذا التحديد حدود التنسيق أو الفقرة. حدِّد جزءًا أصغر من النص، أو اختر نطاق استبدال آخر.",
-  "Open External Link": "فتح رابط خارجي"
+  "Open External Link": "فتح رابط خارجي",
+  "Available Offline": "متاح دون اتصال",
+  "Download for Offline": "التنزيل للاستخدام دون اتصال",
+  "Remove Offline Download": "إزالة التنزيل دون اتصال"
 }

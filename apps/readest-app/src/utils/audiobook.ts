@@ -17,6 +17,15 @@ export const isAbsEbook = (book: {
   metadata?: Book['metadata'];
 }): boolean => book.format === 'ABS' && book.metadata?.absMediaType === 'ebook';
 
+/** True when an ABS book's media can be downloaded for offline use: audiobooks and ebooks, not podcast shows. */
+export const isAbsOfflineCapable = (book: {
+  format: Book['format'];
+  metadata?: Book['metadata'];
+}): boolean => book.format === 'ABS' && book.metadata?.absMediaType !== 'podcast';
+
+/** Books-relative folder holding an ABS audiobook downloaded for offline use. */
+export const getAbsOfflineDir = (bookHash: string): string => `${bookHash}/abs-offline`;
+
 /** Builds the synthetic filePath for an ABS book: `abs://<serverId>/<itemId>`. */
 export const makeAbsFilePath = (serverId: string, itemId: string): string =>
   `${ABS_FILE_SCHEME}${serverId}/${itemId}`;

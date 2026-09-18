@@ -2445,5 +2445,8 @@
   "Loading chapter…": "Ładowanie rozdziału…",
   "Clip Page": "Przytnij stronę",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "To zaznaczenie wykracza poza granice formatowania lub akapitu. Zaznacz krótszy fragment tekstu albo wybierz inny zakres zamiany.",
-  "Open External Link": "Otwórz link zewnętrzny"
+  "Open External Link": "Otwórz link zewnętrzny",
+  "Available Offline": "Dostępne offline",
+  "Download for Offline": "Pobierz do użytku offline",
+  "Remove Offline Download": "Usuń pobraną wersję offline"
 }

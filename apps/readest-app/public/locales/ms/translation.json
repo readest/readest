@@ -2265,5 +2265,8 @@
   "Loading chapter…": "Memuatkan bab…",
   "Clip Page": "Halaman Klip",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Pilihan ini merentasi sempadan pemformatan atau perenggan. Pilih petikan teks yang lebih pendek, atau pilih skop penggantian lain.",
-  "Open External Link": "Buka pautan luaran"
+  "Open External Link": "Buka pautan luaran",
+  "Available Offline": "Tersedia di luar talian",
+  "Download for Offline": "Muat turun untuk kegunaan luar talian",
+  "Remove Offline Download": "Alih keluar muat turun luar talian"
 }

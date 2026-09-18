@@ -162,6 +162,10 @@ export interface Book {
   // episode-count badge and lets reconcileAbsBooks detect a new episode as a
   // change even though title/author/duration are otherwise unchanged.
   episodeCount?: number;
+  // When this device finished downloading an ABS stub's media for offline use
+  // (audio tracks, or an ebook-only item's file). Device-local like
+  // `downloadedAt`: the files exist only here, so it never syncs.
+  absDownloadedAt?: number | null;
 
   metadata?: BookMetadata;
   // Field-level LWW timestamp for the metadata group (title, author, tags,

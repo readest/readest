@@ -1,6 +1,5 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
 import type { ProgressHandler } from '@/utils/transfer';
-import { isAudiobook } from '@/utils/audiobook';
 import { FileHead, FileSyncError, FileSyncProvider } from './provider';
 import { LocalStore } from './localStore';
 import {
@@ -347,10 +346,10 @@ export class FileSyncEngine {
    * sync into a full per-book request storm. `no-source` costs zero requests.
    */
   async pushBookFile(book: Book): Promise<PushBookFileResult> {
-    // ABS books stream from the server and never have a local file to push —
-    // guard here too, not just in syncLibrary's needsFilePush, since this is
-    // also called directly by the explicit per-book Upload action.
-    if (isAudiobook(book)) return { uploaded: false, reason: 'no-source' };
+    // ABS books stream from the server; an offline copy (#6256) stays on this
+    // device — guard here too, not just in syncLibrary's needsFilePush, since
+    // this is also called directly by the explicit per-book Upload action.
+    if (book.format === 'ABS') return { uploaded: false, reason: 'no-source' };
     const dirPath = buildBookDirPath(this.provider.rootPath, book.hash);
     const path = buildBookFilePath(this.provider.rootPath, book);
     const dirs = [...ancestorsOf(`${dirPath}/.placeholder`), dirPath];
@@ -699,7 +698,7 @@ export class FileSyncEngine {
     // full sync or otherwise — their config/cover still sync normally below.
     const needsFilePush = (book: Book): boolean =>
       options.syncBooks &&
-      !isAudiobook(book) &&
+      book.format !== 'ABS' &&
       (fullSync ||
         (!uploadedHashes.has(book.hash) &&
           hasLocalFile(book) &&

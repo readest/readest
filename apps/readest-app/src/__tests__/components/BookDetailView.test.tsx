@@ -286,3 +286,38 @@ describe('BookDetailView cover viewer', () => {
     expect(container.querySelector('button[aria-label="View Book Cover"]')).toBeTruthy();
   });
 });
+
+describe('BookDetailView offline Audiobookshelf download (#6256)', () => {
+  const absBook = (overrides?: Partial<Book>) =>
+    makeBook({
+      format: 'ABS',
+      filePath: 'abs://srv1/item1',
+      downloadedAt: null,
+      uploadedAt: null,
+      ...overrides,
+    });
+
+  it('offers the download with a Premium badge for users who need to upgrade', () => {
+    const onDownloadOffline = vi.fn();
+    const { getByRole, getByText } = renderView({
+      book: absBook(),
+      onDownloadOffline,
+      offlinePremiumLabel: 'Premium',
+    });
+
+    fireEvent.click(getByRole('button', { name: /Download for Offline/ }));
+    expect(onDownloadOffline).toHaveBeenCalledTimes(1);
+    expect(getByText('Premium')).toBeTruthy();
+  });
+
+  it('swaps the download for Remove from Device Only once the book is on the device', () => {
+    const { queryByRole, container, getByText } = renderView({
+      book: absBook({ absDownloadedAt: 1 }),
+      onDownloadOffline: vi.fn(),
+    });
+
+    expect(queryByRole('button', { name: /Download for Offline/ })).toBeNull();
+    fireEvent.click(container.querySelector('button[aria-label="Delete Book Options"]')!);
+    expect(getByText('Remove from Device Only').closest('button')!.disabled).toBe(false);
+  });
+});

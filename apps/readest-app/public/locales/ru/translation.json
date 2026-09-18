@@ -2445,5 +2445,8 @@
   "Loading chapter…": "Загрузка главы…",
   "Clip Page": "Сохранить страницу",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Это выделение пересекает границы форматирования или абзаца. Выделите более короткий фрагмент текста или выберите другую область применения замены.",
-  "Open External Link": "Открыть внешнюю ссылку"
+  "Open External Link": "Открыть внешнюю ссылку",
+  "Available Offline": "Доступно офлайн",
+  "Download for Offline": "Скачать для офлайн-доступа",
+  "Remove Offline Download": "Удалить офлайн-загрузку"
 }

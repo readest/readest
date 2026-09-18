@@ -2385,5 +2385,8 @@
   "Loading chapter…": "Chargement du chapitre…",
   "Clip Page": "Capturer la page",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Cette sélection franchit des limites de mise en forme ou de paragraphe. Sélectionnez un fragment de texte plus court ou choisissez une autre portée de remplacement.",
-  "Open External Link": "Ouvrir le lien externe"
+  "Open External Link": "Ouvrir le lien externe",
+  "Available Offline": "Disponible hors ligne",
+  "Download for Offline": "Télécharger pour une utilisation hors ligne",
+  "Remove Offline Download": "Supprimer le téléchargement hors ligne"
 }

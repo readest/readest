@@ -19,7 +19,17 @@ const mocks = vi.hoisted(() => ({
   controllerCtor: vi.fn(),
   getOSPlatform: vi.fn((): OsPlatform => 'macos'),
   isTauriAppPlatform: vi.fn(() => false),
+  loadAbsOfflineManifest: vi.fn(async () => null as unknown),
 }));
+
+vi.mock('@/services/audiobookshelf/offline', () => ({
+  loadAbsOfflineManifest: mocks.loadAbsOfflineManifest,
+}));
+
+vi.mock('@tauri-apps/api/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tauri-apps/api/core')>();
+  return { ...actual, convertFileSrc: (path: string) => `asset://localhost${path}` };
+});
 
 vi.mock('@/services/audiobookshelf/client', () => ({
   ABSClient: vi.fn().mockImplementation(function (
@@ -571,5 +581,114 @@ describe('loadAbsEpisodes', () => {
       'toast',
       expect.objectContaining({ type: 'error', message: 'Unable to connect to Home' }),
     );
+  });
+});
+
+describe('openAudiobookSession — offline download (#6256)', () => {
+  const offlineBook: Book = { ...book, absDownloadedAt: 1, progress: [120, 36000] };
+  const manifest = {
+    itemId: 'item1',
+    duration: 36000,
+    chapters: [{ id: 0, start: 0, end: 100, title: 'Chapter One' }],
+    tracks: [
+      {
+        index: 1,
+        startOffset: 0,
+        duration: 18000,
+        contentUrl: 'h1/abs-offline/1-01.mp3',
+        mimeType: 'audio/mpeg',
+      },
+    ],
+  };
+  const localAppService = {
+    resolveFilePath: vi.fn(async (path: string) => `/data/Books/${path}`),
+  } as unknown as AppService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getSessionByHash.mockReturnValue(null);
+    mocks.getItemExpanded.mockResolvedValue(item);
+    mocks.syncerBegin.mockResolvedValue(42);
+    mocks.getOSPlatform.mockReturnValue('macos');
+    mocks.isTauriAppPlatform.mockReturnValue(true);
+    mocks.loadAbsOfflineManifest.mockResolvedValue(manifest);
+    useABSServerStore.setState({ servers: [server] });
+    useSettingsStore.setState({ settings: { absServers: [] } as unknown as SystemSettings });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    useABSServerStore.setState({ servers: [] });
+  });
+
+  const openedSource = () => mocks.controllerCtor.mock.calls[0]![0] as AudiobookSource;
+
+  it('plays the downloaded tracks without asking the server for the item', async () => {
+    const result = await openAudiobookSession({ appService: localAppService, book: offlineBook });
+
+    expect(result).not.toBeNull();
+    expect(mocks.loadAbsOfflineManifest).toHaveBeenCalledWith(localAppService, 'h1');
+    expect(mocks.getItemExpanded).not.toHaveBeenCalled();
+    const source = openedSource();
+    expect(source.chapters).toEqual(manifest.chapters);
+    expect(source.tracks[0]!.contentUrl).toBe('/data/Books/h1/abs-offline/1-01.mp3');
+    // Desktop plays through the WebView element, which needs an asset URL.
+    expect(source.resolveUrl(source.tracks[0]!.contentUrl)).toBe(
+      'asset://localhost/data/Books/h1/abs-offline/1-01.mp3',
+    );
+    expect(mocks.controllerCtor.mock.calls[0]![1]).toBeInstanceOf(HtmlAudioClock);
+    // Still opens the ABS session so listening progress keeps syncing.
+    expect(source.startAt).toBe(42);
+  });
+
+  it('hands Android the plain file path through the native player, which owns audio focus', async () => {
+    mocks.getOSPlatform.mockReturnValue('android');
+
+    await openAudiobookSession({ appService: localAppService, book: offlineBook });
+
+    const source = openedSource();
+    expect(mocks.controllerCtor.mock.calls[0]![1]).toBeInstanceOf(NativeAudiobookClock);
+    expect(source.resolveUrl(source.tracks[0]!.contentUrl)).toBe(
+      '/data/Books/h1/abs-offline/1-01.mp3',
+    );
+    const [, , meta] = mocks.claim.mock.calls[0]!;
+    expect(meta.ownsAudioFocus).toBe(true);
+  });
+
+  it('resumes from the local position when the server is unreachable', async () => {
+    mocks.syncerBegin.mockRejectedValue(new Error('offline'));
+    const toastSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    const result = await openAudiobookSession({ appService: localAppService, book: offlineBook });
+
+    expect(result).not.toBeNull();
+    expect(openedSource().startAt).toBe(120);
+    expect(toastSpy).not.toHaveBeenCalledWith('toast', expect.anything());
+  });
+
+  it('does not wait on a server that never answers', async () => {
+    vi.useFakeTimers();
+    mocks.syncerBegin.mockReturnValue(new Promise<number>(() => {}));
+
+    const opening = openAudiobookSession({ appService: localAppService, book: offlineBook });
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(await opening).not.toBeNull();
+    expect(openedSource().startAt).toBe(120);
+  });
+
+  it('streams as before when the download is gone', async () => {
+    mocks.loadAbsOfflineManifest.mockResolvedValue(null);
+
+    await openAudiobookSession({ appService: localAppService, book: offlineBook });
+
+    expect(mocks.getItemExpanded).toHaveBeenCalledWith('item1');
+    expect(openedSource().tracks[0]!.contentUrl).toBe('/api/items/item1/file/1');
+  });
+
+  it('does not look for a download the book never had', async () => {
+    await openAudiobookSession({ appService: localAppService, book });
+
+    expect(mocks.loadAbsOfflineManifest).not.toHaveBeenCalled();
   });
 });

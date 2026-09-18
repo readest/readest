@@ -2265,5 +2265,8 @@
   "Loading chapter…": "Đang tải chương…",
   "Clip Page": "Trang Clip",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Vùng chọn này vượt qua ranh giới định dạng hoặc đoạn văn. Hãy chọn một đoạn văn bản ngắn hơn, hoặc chọn phạm vi thay thế khác.",
-  "Open External Link": "Mở liên kết bên ngoài"
+  "Open External Link": "Mở liên kết bên ngoài",
+  "Available Offline": "Có sẵn ngoại tuyến",
+  "Download for Offline": "Tải xuống để dùng ngoại tuyến",
+  "Remove Offline Download": "Xóa bản tải xuống ngoại tuyến"
 }

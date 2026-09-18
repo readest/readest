@@ -2325,5 +2325,8 @@
   "Loading chapter…": "Bölüm yükleniyor…",
   "Clip Page": "Sayfayı Kırp",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Bu seçim biçimlendirme veya paragraf sınırlarını aşıyor. Daha kısa bir metin parçası seçin ya da başka bir değiştirme kapsamı belirleyin.",
-  "Open External Link": "Harici bağlantıyı aç"
+  "Open External Link": "Harici bağlantıyı aç",
+  "Available Offline": "Çevrimdışı kullanılabilir",
+  "Download for Offline": "Çevrimdışı kullanım için indir",
+  "Remove Offline Download": "Çevrimdışı indirmeyi kaldır"
 }

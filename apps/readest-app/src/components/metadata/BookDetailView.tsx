@@ -4,6 +4,7 @@ import {
   MdOutlineCloudDownload,
   MdOutlineCloudUpload,
   MdOutlineDelete,
+  MdOutlineDownloadForOffline,
   MdOutlineEdit,
   MdMenu,
   MdExpandMore,
@@ -47,6 +48,10 @@ interface BookDetailViewProps {
   onUpload?: () => void;
   onShare?: () => void;
   onExport?: () => void;
+  /** Download an Audiobookshelf book for offline use (#6256). */
+  onDownloadOffline?: () => void;
+  /** Set when the offline download needs an upgrade; shown as a badge. */
+  offlinePremiumLabel?: string;
   onMetadataValueClick?: (type: 'tag' | 'subject', value: string) => void;
 }
 
@@ -63,6 +68,8 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   onUpload,
   onShare,
   onExport,
+  onDownloadOffline,
+  offlinePremiumLabel,
   onMetadataValueClick,
 }) => {
   const _ = useTranslation();
@@ -153,6 +160,19 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 <MdOutlineCloudUpload className='fill-base-content' />
               </button>
             )}
+            {onDownloadOffline && !book.absDownloadedAt && (
+              <button
+                onClick={onDownloadOffline}
+                title={_('Download for Offline')}
+                aria-label={_('Download for Offline')}
+                className='flex items-center gap-1'
+              >
+                <MdOutlineDownloadForOffline className='fill-base-content' />
+                {offlinePremiumLabel && (
+                  <span className='badge badge-sm badge-ghost'>{offlinePremiumLabel}</span>
+                )}
+              </button>
+            )}
             {onDelete && (
               <Dropdown
                 label={_('Delete Book Options')}
@@ -189,7 +209,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     transient
                     label={_('Remove from Device Only')}
                     onClick={onDeleteLocalCopy}
-                    disabled={!book.downloadedAt}
+                    disabled={!book.downloadedAt && !book.absDownloadedAt}
                   />
                 </div>
               </Dropdown>

@@ -5,11 +5,17 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import { getBookDirOfPath, getLibraryFilename } from '@/utils/book';
+import { getAbsOfflineDir } from '@/utils/audiobook';
 import { stampBookConfigSchema } from '@/utils/serializer';
 import { configureZip } from '@/utils/zip';
 
 /** Book file extensions for identifying book files in backup directories. */
 const BOOK_EXTS = new Set(Object.values(EXTS));
+
+const isAbsOfflineEntry = (entryName: string): boolean => {
+  const dir = getBookDirOfPath(entryName);
+  return !!dir && entryName.startsWith(`${getAbsOfflineDir(dir)}/`);
+};
 
 /** Root-level zip entry name for the backed-up global settings snapshot. */
 export const SETTINGS_BACKUP_FILENAME = 'settings.json';
@@ -326,7 +332,10 @@ export async function addBackupEntriesToZip(
   // book's files by `${hash}/` (see `restoreFromBackupZip`). Issue #4703.
   const bookFiles = files
     .filter((file) => file.size > 0 && isExported(file.path))
-    .map((file) => ({ file, entryName: file.path.replace(/\\/g, '/') }));
+    .map((file) => ({ file, entryName: file.path.replace(/\\/g, '/') }))
+    // Offline Audiobookshelf audio (#6256) is re-downloadable and can run to
+    // gigabytes, each file read into memory here.
+    .filter(({ entryName }) => !isAbsOfflineEntry(entryName));
   const total = bookFiles.length;
 
   for (let i = 0; i < bookFiles.length; i++) {

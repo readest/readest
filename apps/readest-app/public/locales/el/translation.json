@@ -2325,5 +2325,8 @@
   "Loading chapter…": "Φόρτωση κεφαλαίου…",
   "Clip Page": "Κλιπ σελίδας",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Αυτή η επιλογή εκτείνεται πέρα από όρια μορφοποίησης ή παραγράφου. Επιλέξτε μικρότερο τμήμα κειμένου ή επιλέξτε άλλο εύρος εφαρμογής αντικατάστασης.",
-  "Open External Link": "Άνοιγμα εξωτερικού συνδέσμου"
+  "Open External Link": "Άνοιγμα εξωτερικού συνδέσμου",
+  "Available Offline": "Διαθέσιμο εκτός σύνδεσης",
+  "Download for Offline": "Λήψη για χρήση εκτός σύνδεσης",
+  "Remove Offline Download": "Κατάργηση λήψης εκτός σύνδεσης"
 }

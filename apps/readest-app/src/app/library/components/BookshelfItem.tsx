@@ -307,6 +307,19 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           eventDispatcher.dispatch('show-share-dialog', { book });
         },
       },
+      offlineDownload: {
+        text: _('Download for Offline'),
+        action: async () => {
+          // The library page owns the premium gate (useAbsOfflineDownload).
+          eventDispatcher.dispatch('abs-offline-download', { book });
+        },
+      },
+      offlineRemove: {
+        text: _('Remove Offline Download'),
+        action: async () => {
+          eventDispatcher.dispatch('abs-offline-remove', { book });
+        },
+      },
       sendNearby: {
         text: _('Send to Nearby Device'),
         action: async () => {
@@ -323,6 +336,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     };
     return getBookContextMenuItemIds(book, {
       localSend: isTauriAppPlatform() && isLocalSendEnabled(),
+      absOffline: isTauriAppPlatform(),
     }).map((id) => itemOptions[id]);
   };
 

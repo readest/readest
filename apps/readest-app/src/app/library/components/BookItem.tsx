@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
-import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
+import { MdCheckCircle, MdCheckCircleOutline, MdOutlineOfflinePin } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
   LiaCloudDownloadAltSolid,
@@ -242,6 +242,15 @@ const BookItem: React.FC<BookItemProps> = ({
                 aria-label={isAbsBook ? _('Audiobook') : _('Includes narration')}
               >
                 <LiaHeadphonesSolid size={iconSize15} />
+              </div>
+            )}
+            {book.absDownloadedAt && (
+              <div
+                className='pt-0.5 sm:pt-px'
+                title={_('Available Offline')}
+                aria-label={_('Available Offline')}
+              >
+                <MdOutlineOfflinePin size={iconSize15} />
               </div>
             )}
             {isTransferring

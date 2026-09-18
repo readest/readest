@@ -2265,5 +2265,8 @@
   "Loading chapter…": "ལེའུ་མངོན་བཞིན་ཡོད།",
   "Clip Page": "ཤོག་ངོས་ཉར་ཚགས།",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "འདེམས་ཟིན་པའི་ཡི་གེ་འདི་བཟོ་བཀོད་དམ་དོན་ཚན་གྱི་མཚམས་བརྒལ་འདུག འདེམས་ཡུལ་ཐུང་བ་ཞིག་འདེམས་རོགས། ཡང་ན་ཚབ་བརྗེའི་གནས་ཚུལ་གཞན་ཞིག་འདེམས་རོགས།",
-  "Open External Link": "ཕྱི་ཕྱོགས་ཀྱི་སྦྲེལ་ཐག་ཁ་ཕྱེ།"
+  "Open External Link": "ཕྱི་ཕྱོགས་ཀྱི་སྦྲེལ་ཐག་ཁ་ཕྱེ།",
+  "Available Offline": "དྲ་མེད་ཐོག་སྤྱོད་ཆོག",
+  "Download for Offline": "དྲ་མེད་སྤྱོད་པར་ཕབ་ལེན།",
+  "Remove Offline Download": "དྲ་མེད་ཕབ་ལེན་སུབ་པ།"
 }

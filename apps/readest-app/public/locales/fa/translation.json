@@ -2325,5 +2325,8 @@
   "Loading chapter…": "در حال بارگیری فصل…",
   "Clip Page": "صفحه کلیپ",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "این انتخاب از مرزهای قالب‌بندی یا پاراگراف عبور می‌کند. بخش کوتاه‌تری از متن را انتخاب کنید یا دامنهٔ جایگزینی دیگری برگزینید.",
-  "Open External Link": "باز کردن پیوند خارجی"
+  "Open External Link": "باز کردن پیوند خارجی",
+  "Available Offline": "در دسترس به‌صورت آفلاین",
+  "Download for Offline": "دانلود برای استفادهٔ آفلاین",
+  "Remove Offline Download": "حذف دانلود آفلاین"
 }

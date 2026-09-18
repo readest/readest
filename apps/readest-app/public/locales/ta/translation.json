@@ -2325,5 +2325,8 @@
   "Loading chapter…": "அத்தியாயத்தை ஏற்றுகிறது…",
   "Clip Page": "கிளிப் பக்கம்",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "இந்தத் தேர்வு வடிவமைப்பு அல்லது பத்தி எல்லைகளைத் தாண்டுகிறது. சிறிய உரைப் பகுதியைத் தேர்ந்தெடுக்கவும், அல்லது வேறு மாற்று வளயத்தைத் தேர்வுசெய்யவும்.",
-  "Open External Link": "வெளிப்புற இணைப்பைத் திற"
+  "Open External Link": "வெளிப்புற இணைப்பைத் திற",
+  "Available Offline": "ஆஃப்லைனில் கிடைக்கும்",
+  "Download for Offline": "ஆஃப்லைன் பயன்பாட்டிற்குப் பதிவிறக்கு",
+  "Remove Offline Download": "ஆஃப்லைன் பதிவிறக்கத்தை அகற்று"
 }

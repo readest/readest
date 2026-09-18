@@ -2445,5 +2445,8 @@
   "Loading chapter…": "Nalaganje poglavja …",
   "Clip Page": "Stran posnetka",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Ta izbira sega čez meje oblikovanja ali odstavka. Izberite krajši del besedila ali izberite drug obseg zamenjave.",
-  "Open External Link": "Odpri zunanjo povezavo"
+  "Open External Link": "Odpri zunanjo povezavo",
+  "Available Offline": "Na voljo brez povezave",
+  "Download for Offline": "Prenesi za uporabo brez povezave",
+  "Remove Offline Download": "Odstrani prenos za uporabo brez povezave"
 }

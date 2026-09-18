@@ -2385,5 +2385,8 @@
   "Loading chapter…": "טוען פרק…",
   "Clip Page": "דף קליפ",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "הבחירה חוצה גבולות של עיצוב או פסקה. יש לבחור קטע טקסט קצר יותר, או לבחור טווח החלפה אחר.",
-  "Open External Link": "פתיחת קישור חיצוני"
+  "Open External Link": "פתיחת קישור חיצוני",
+  "Available Offline": "זמין במצב לא מקוון",
+  "Download for Offline": "הורדה לשימוש לא מקוון",
+  "Remove Offline Download": "הסרת ההורדה לשימוש לא מקוון"
 }

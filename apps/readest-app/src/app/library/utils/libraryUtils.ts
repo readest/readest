@@ -14,6 +14,7 @@ import { md5Fingerprint } from '@/utils/md5';
 import { stubTranslation as _ } from '@/utils/misc';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
+import { isAbsOfflineCapable } from '@/utils/audiobook';
 
 /** Valid sort types for the library */
 const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
@@ -896,6 +897,8 @@ export type BookContextMenuItemId =
   | 'upload'
   | 'share'
   | 'sendNearby'
+  | 'offlineDownload'
+  | 'offlineRemove'
   | 'delete';
 
 /**
@@ -1009,7 +1012,7 @@ export const pickFresherMetadata = (
  */
 export const getBookContextMenuItemIds = (
   book: Book,
-  opts?: { localSend?: boolean },
+  opts?: { localSend?: boolean; absOffline?: boolean },
 ): BookContextMenuItemId[] => {
   const ids: BookContextMenuItemId[] = ['select', 'group'];
   ids.push(book.readingStatus === 'finished' ? 'markUnread' : 'markFinished');
@@ -1033,6 +1036,11 @@ export const getBookContextMenuItemIds = (
     if (book.downloadedAt || book.uploadedAt) ids.push('share');
     // LocalSend needs the file on this device; cloud-only books are excluded.
     if (opts?.localSend && (book.downloadedAt || book.filePath)) ids.push('sendNearby');
+  }
+  // Keep an Audiobookshelf book's media on the device (#6256); needs a native
+  // filesystem, so the caller enables it on Tauri only.
+  if (opts?.absOffline && isAbsOfflineCapable(book)) {
+    ids.push(book.absDownloadedAt ? 'offlineRemove' : 'offlineDownload');
   }
   ids.push('delete');
   return ids;

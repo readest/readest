@@ -2265,5 +2265,8 @@
   "Loading chapter…": "챕터 로드 중…",
   "Clip Page": "페이지 클립",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "이 선택 영역이 서식 또는 단락 경계를 넘습니다. 더 짧은 텍스트를 선택하거나 다른 바꾸기 적용 범위를 선택하세요.",
-  "Open External Link": "외부 링크 열기"
+  "Open External Link": "외부 링크 열기",
+  "Available Offline": "오프라인 사용 가능",
+  "Download for Offline": "오프라인용으로 다운로드",
+  "Remove Offline Download": "오프라인 다운로드 삭제"
 }

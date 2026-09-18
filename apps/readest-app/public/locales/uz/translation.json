@@ -2325,5 +2325,8 @@
   "Loading chapter…": "Bob yuklanmoqda…",
   "Clip Page": "Sahifani saqlash",
   "This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.": "Bu tanlov formatlash yoki xatboshi chegaralaridan chiqib ketadi. Qisqaroq matn qismini tanlang yoki boshqa almashtirish qamrovini tanlang.",
-  "Open External Link": "Tashqi havolani ochish"
+  "Open External Link": "Tashqi havolani ochish",
+  "Available Offline": "Oflayn mavjud",
+  "Download for Offline": "Oflayn foydalanish uchun yuklab olish",
+  "Remove Offline Download": "Oflayn yuklamani oʻchirish"
 }
