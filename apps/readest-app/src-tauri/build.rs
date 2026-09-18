@@ -46,6 +46,7 @@ fn main() {
             "auth_with_safari",
             "start_apple_sign_in",
             "set_traffic_lights",
+            "set_window_title",
             "show_lookup_popover",
             "update_book_presence",
             "clear_book_presence",

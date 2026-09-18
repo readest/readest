@@ -232,6 +232,7 @@
     "allow-auth-with-safari",
     "allow-start-apple-sign-in",
     "allow-set-traffic-lights",
+    "allow-set-window-title",
     "allow-show-lookup-popover",
     "allow-update-book-presence",
     "allow-clear-book-presence",
