@@ -341,11 +341,8 @@ fn is_updater_disabled() -> bool {
 #[tauri::command]
 fn set_webview_info(user_agent: String) {
     let parsed = sentry_config::parse_webview_info(&user_agent);
-    let version = tauri::webview_version()
-        .ok()
-        .map(|version| version.trim().to_string())
-        .filter(|version| !version.is_empty())
-        .or_else(|| parsed.as_ref().map(|(_, version)| version.clone()));
+    let version =
+        runtime_webview_version().or_else(|| parsed.as_ref().map(|(_, version)| version.clone()));
     if let (Some((engine, _)), Some(version)) = (&parsed, version) {
         sentry_config::set_webview_info(engine.clone(), version);
     }
@@ -365,11 +362,25 @@ fn get_webview_version() -> Option<WebViewInfo> {
     if std::env::consts::OS != "windows" {
         return None;
     }
-    let version = tauri::webview_version().ok()?;
     Some(WebViewInfo {
         engine: "WebView2".to_string(),
-        version: version.trim().to_string(),
+        version: runtime_webview_version()?,
     })
+}
+
+// `tauri::webview_version()` is wry's query. On Linux the app runs on CEF, where
+// it would report the WebKitGTK version instead, and referencing it keeps the
+// WebKitGTK libraries linked, which the Nix package strips so Chromium's zygote
+// stays single-threaded. CEF's User-Agent carries the full Chromium version.
+#[cfg(not(target_os = "linux"))]
+fn runtime_webview_version() -> Option<String> {
+    let version = tauri::webview_version().ok()?;
+    Some(version.trim().to_string()).filter(|version| !version.is_empty())
+}
+
+#[cfg(target_os = "linux")]
+fn runtime_webview_version() -> Option<String> {
+    None
 }
 
 #[derive(Clone, serde::Serialize)]
