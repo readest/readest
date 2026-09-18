@@ -111,7 +111,8 @@ export interface ABSProgressPatch {
   currentTime?: number;
   duration?: number;
   progress?: number;
-  ebookLocation?: string;
+  /** Null clears a previously stored position; an omitted field leaves it as it was. */
+  ebookLocation?: string | null;
   ebookProgress?: number;
 }
 

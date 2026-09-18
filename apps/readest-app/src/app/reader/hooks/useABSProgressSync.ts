@@ -82,12 +82,27 @@ export const useABSProgressSync = (bookKey: string) => {
     }
   }, [bookKey, getTarget]);
 
+  const pushProgressRef = useRef(pushProgress);
+  pushProgressRef.current = pushProgress;
+
+  // Created once: re-creating the debounced function would drop a pending push.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleAutoPush = useCallback(
+    debounce(() => {
+      void pushProgressRef.current();
+    }, SYNC_PROGRESS_INTERVAL_SEC * 1000),
+    [],
+  );
+
   const pullProgress = useCallback(async () => {
     const target = await getTarget();
     if (!target) {
       pullSettled.current = true;
       return;
     }
+    // Where the reader sat when the pull began, so the release below can tell
+    // whether the user read on while it was in flight.
+    const locationAtPullStart = getBookProgress(bookKey)?.location;
     try {
       const me = await target.client.getMe();
       const remote = findAbsEbookProgress(me?.mediaProgress, target.itemId);
@@ -114,21 +129,15 @@ export const useABSProgressSync = (bookKey: string) => {
       // Releases the push gate below whatever the outcome, so an unreachable
       // server can't strand this device's own progress forever.
       pullSettled.current = true;
+      // A page turned while the pull was open was refused by that gate, and a
+      // ref flipping re-renders nothing, so the effect will not reconsider it.
+      // Schedule it here or closing the book right now would lose the position.
+      if (getBookProgress(bookKey)?.location !== locationAtPullStart) {
+        handleAutoPush();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKey, getConfig, getTarget, getView]);
-
-  const pushProgressRef = useRef(pushProgress);
-  pushProgressRef.current = pushProgress;
-
-  // Created once: re-creating the debounced function would drop a pending push.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleAutoPush = useCallback(
-    debounce(() => {
-      void pushProgressRef.current();
-    }, SYNC_PROGRESS_INTERVAL_SEC * 1000),
-    [],
-  );
+  }, [bookKey, getConfig, getTarget, getView, handleAutoPush]);
 
   // Pull: once, as soon as the view reports a position (i.e. the book is
   // rendered and can be moved).

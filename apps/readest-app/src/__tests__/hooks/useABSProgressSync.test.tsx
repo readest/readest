@@ -216,6 +216,38 @@ describe('useABSProgressSync', () => {
     expect(client.patchProgress).toHaveBeenCalledTimes(1);
   });
 
+  it('pushes a page turned while the first pull was still in flight', async () => {
+    let releaseGetMe: (value: { mediaProgress: unknown[] }) => void = () => {};
+    client.getMe.mockReturnValue(
+      new Promise((resolve) => {
+        releaseGetMe = resolve as typeof releaseGetMe;
+      }),
+    );
+
+    renderHook(() => useABSProgressSync(BOOK_KEY));
+    await settle();
+    // The page turn lands while the pull is still open, so the push effect
+    // refuses it — and a ref flipping to "settled" re-renders nothing, so
+    // without the pull scheduling it, closing here would lose the position.
+    seedProgress({ location: 'epubcfi(/6/8!/4/2/6/1:0)', fraction: 0.33 });
+    await settle();
+
+    await act(async () => {
+      releaseGetMe({ mediaProgress: [] });
+    });
+    await settle();
+    await act(async () => {
+      await eventDispatcher.dispatch('sync-book-progress', { bookKey: BOOK_KEY });
+    });
+    await settle();
+
+    expect(client.patchProgress).toHaveBeenCalledWith('item1', {
+      ebookLocation: 'epubcfi(/6/8!/4/2/6/1:0)',
+      ebookProgress: 0.33,
+      progress: 0.33,
+    });
+  });
+
   it('flushes the pending push when the book is closed', async () => {
     renderHook(() => useABSProgressSync(BOOK_KEY));
     await settle();

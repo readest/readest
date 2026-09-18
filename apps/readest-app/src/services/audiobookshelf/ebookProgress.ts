@@ -87,10 +87,13 @@ export const resolveAbsEbookResume = (input: {
 export const buildAbsEbookProgressPatch = (input: {
   location?: string;
   fraction: number;
-}): { ebookLocation?: string; ebookProgress: number; progress: number } => {
+}): { ebookLocation: string | null; ebookProgress: number; progress: number } => {
   const fraction = Math.min(1, Math.max(0, input.fraction));
   return {
-    ...(input.location ? { ebookLocation: input.location } : {}),
+    // Sent even when empty: ABS keeps a field the patch omits, so a
+    // fraction-only push would leave an older CFI in the record, and the
+    // resume rule prefers a CFI over the fraction standing next to it.
+    ebookLocation: input.location ?? null,
     ebookProgress: fraction,
     progress: fraction,
   };

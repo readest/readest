@@ -165,8 +165,12 @@ describe('buildAbsEbookProgressPatch', () => {
     });
   });
 
-  it('omits the location when there is none', () => {
+  it('clears a stale location when this push has none', () => {
+    // ABS keeps a field the patch omits, so a fraction-only push has to null
+    // the location out: left in place, an older CFI would outrank the fraction
+    // beside it the next time a reader resumes.
     expect(buildAbsEbookProgressPatch({ fraction: 0.5 })).toEqual({
+      ebookLocation: null,
       ebookProgress: 0.5,
       progress: 0.5,
     });
