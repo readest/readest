@@ -54,6 +54,7 @@ fn main() {
             "open_web_browser",
             "fetch_web_browser_resource",
             "set_web_browser_status",
+            "extract_web_browser_archive",
             "spawn_fresh_browser",
             "verify_update_signature",
             "install_nightly_update",

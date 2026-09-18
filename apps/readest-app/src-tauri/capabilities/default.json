@@ -240,6 +240,7 @@
     "allow-open-web-browser",
     "allow-fetch-web-browser-resource",
     "allow-set-web-browser-status",
+    "allow-extract-web-browser-archive",
     "allow-spawn-fresh-browser",
     "allow-verify-update-signature",
     "allow-install-nightly-update",

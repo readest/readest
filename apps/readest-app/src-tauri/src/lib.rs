@@ -506,6 +506,7 @@ pub fn run() {
             web_browser::open_web_browser,
             browser_fetch::fetch_web_browser_resource,
             web_browser::set_web_browser_status,
+            web_browser::extract_web_browser_archive,
             localsend::commands::localsend_start,
             localsend::commands::localsend_stop,
             localsend::commands::localsend_get_status,
