@@ -53,6 +53,7 @@ fn main() {
             "clip_url",
             "open_web_browser",
             "fetch_web_browser_resource",
+            "get_media_proxy_base",
             "set_web_browser_status",
             "extract_web_browser_archive",
             "spawn_fresh_browser",

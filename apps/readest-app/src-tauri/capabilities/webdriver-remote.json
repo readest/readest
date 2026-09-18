@@ -33,6 +33,7 @@
     "allow-update-book-presence",
     "allow-clear-book-presence",
     "allow-clip-url",
+    "allow-get-media-proxy-base",
     "allow-spawn-fresh-browser",
     "allow-verify-update-signature",
     "allow-install-nightly-update",
