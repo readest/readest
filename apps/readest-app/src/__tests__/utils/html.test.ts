@@ -142,6 +142,33 @@ describe('makeHtmlBook', () => {
     expect(doc.body.textContent).toContain('Click me');
   });
 
+  it('keeps a right-to-left document right-to-left', async () => {
+    const rtl = `<!DOCTYPE html><html lang="ar" dir="RTL"><head><title>عنوان</title></head><body>${ARTICLE}</body></html>`;
+    const book = await make(rtl);
+    expect(book.dir).toBe('rtl');
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.documentElement.getAttribute('dir')).toBe('rtl');
+    const ltr = await make(page(ARTICLE));
+    expect(ltr.dir).toBe('ltr');
+  });
+
+  it('renames repeated ids so every TOC entry keeps its own anchor', async () => {
+    const body = `<main>${prose()}<h2 id="notes">Notes A</h2>${prose()}<h2 id="notes">Notes B</h2>${prose()}<p id="notes-1">reserved</p>${prose()}</main>`;
+    const book = await make(page(body));
+    const hrefs = flattenToc(book.toc).map((i) => i.href);
+    expect(hrefs.length).toBe(2);
+    expect(new Set(hrefs).size).toBe(2);
+    const doc = await book.sections[0]!.createDocument();
+    for (const item of flattenToc(book.toc)) {
+      const anchor = book
+        .resolveHref(item.href.split('#')[1] ? '#' + item.href.split('#')[1] : item.href)
+        ?.anchor(doc);
+      expect(anchor?.textContent).toBe(item.label);
+    }
+    // The generated name must not collide with an id the document already had.
+    expect(doc.getElementById('notes-1')?.textContent).toBe('reserved');
+  });
+
   it('gives each section a CFI base and a blob URL, and revokes it on destroy', async () => {
     const created: string[] = [];
     const revoked: string[] = [];

@@ -38,6 +38,10 @@ export async function makeHtmlBook(file: File): Promise<BookDoc> {
   const doc = new DOMParser().parseFromString(sanitizeForParsing(await file.text()), 'text/html');
   const documentTitle = doc.title.trim();
   const language = doc.documentElement.lang.trim() || 'en';
+  const dirAttr = (doc.documentElement.getAttribute('dir') || doc.body.getAttribute('dir') || '')
+    .trim()
+    .toLowerCase();
+  const dir = dirAttr === 'rtl' ? 'rtl' : 'ltr';
   for (const el of Array.from(doc.getElementsByClassName(SINGLEFILE_HIDDEN_CLASS))) el.remove();
   liftWrappedHeadings(doc);
 
@@ -65,5 +69,6 @@ export async function makeHtmlBook(file: File): Promise<BookDoc> {
       identifier: file.name,
     },
     null,
+    dir,
   );
 }

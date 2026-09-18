@@ -28,9 +28,9 @@ sup a, .footnote-backref { text-decoration: none; }
 .footnote-backref { margin-inline-start: 0.4em; }
 `;
 
-const wrapXhtml = (inner: string): string =>
+const wrapXhtml = (inner: string, dir: 'ltr' | 'rtl'): string =>
   '<?xml version="1.0" encoding="utf-8"?>\n' +
-  `<html xmlns="${XHTML_NS}"><head><meta charset="utf-8"/>` +
+  `<html xmlns="${XHTML_NS}"${dir === 'rtl' ? ' dir="rtl"' : ''}><head><meta charset="utf-8"/>` +
   `<style>${SECTION_STYLE}</style></head><body>${inner}</body></html>`;
 
 const slugify = (text: string): string =>
@@ -60,11 +60,14 @@ type HtmlSection = SectionItem & {
  * @param metadata the book's metadata as the caller resolved it (title,
  *   identifier and defaults included)
  * @param coverBlob an explicit cover, or null for the generated one
+ * @param dir the document's reading direction; drives page progression and
+ *   is stamped on every section so the text lays out that way too
  */
 export function buildHtmlBook(
   safeHtml: string,
   metadata: BookMetadata,
   coverBlob: Blob | null,
+  dir: 'ltr' | 'rtl' = 'ltr',
 ): BookDoc {
   const docBody = new DOMParser().parseFromString(safeHtml, 'text/html').body;
 
@@ -75,18 +78,21 @@ export function buildHtmlBook(
 
   // Ensure every id is unique (including author-provided ids on raw HTML /
   // footnotes), then give each heading a stable slug id for TOC anchors and
-  // internal-link resolution.
+  // internal-link resolution. A repeated author id is renamed on its later
+  // occurrences: `idMap` and getElementById both resolve an id once, so two
+  // headings sharing one would collapse onto the first. Every original id is
+  // reserved up front so a generated name never lands on a later one.
+  const idEls = Array.from(docBody.querySelectorAll('[id]')).filter((el) => el.id);
+  const originalIds = new Set(idEls.map((el) => el.id));
   const usedIds = new Set<string>();
-  for (const el of Array.from(docBody.querySelectorAll('[id]'))) {
-    if (el.id) usedIds.add(el.id);
-  }
   const uniqueId = (base: string): string => {
     let id = base;
     let n = 1;
-    while (usedIds.has(id)) id = `${base}-${n++}`;
+    while (usedIds.has(id) || (id !== base && originalIds.has(id))) id = `${base}-${n++}`;
     usedIds.add(id);
     return id;
   };
+  for (const el of idEls) el.id = uniqueId(el.id);
   // All six heading levels, so the TOC mirrors the document outline in full
   // and deep headings stay linkable by anchor (issue #5357).
   const headingEls = Array.from(docBody.querySelectorAll('h1, h2, h3, h4, h5, h6'));
@@ -138,7 +144,7 @@ export function buildHtmlBook(
         if (child.id) idMap.set(child.id, index);
       }
     }
-    return wrapXhtml(nodes.map((n) => serializer.serializeToString(n)).join(''));
+    return wrapXhtml(nodes.map((n) => serializer.serializeToString(n)).join(''), dir);
   });
 
   // Build a nested heading outline as the TOC, each entry linking to its
@@ -227,7 +233,7 @@ export function buildHtmlBook(
   const book = {
     metadata,
     rendition: { layout: 'reflowable' as const },
-    dir: 'ltr',
+    dir,
     toc,
     sections,
     transformTarget,
