@@ -34,8 +34,9 @@ AudiobookController then toasts + fires `onPause` -> that is the mysterious
 - Why not a custom URI scheme: Android WebView re-applies `Range` offsets to
   intercepted bodies (range_file.rs header) and scheme responses are buffered whole.
 - Deps: `hyper {http1,server}`, `hyper-util {tokio}`, `http-body-util` (all already in
-  the tree via reqwest; root Cargo.lock gains 3 lines under Readest -> nix cargoHash
-  bump needed from the PR check's `got:` line); tokio features + net/sync/time.
+  the tree via reqwest; root Cargo.lock gains 3 lines under Readest; the fod-hashes
+  PR check PASSED with the old cargoHash - direct deps on already-vendored
+  crates leave the vendored sources unchanged, so NO hash bump); tokio features + net/sync/time.
 - Command = 3 files (lib.rs generate_handler, build.rs AppManifest, capabilities
   default.json + webdriver-remote.json `allow-get-media-proxy-base`); the ACL guard
   test catches omissions.
