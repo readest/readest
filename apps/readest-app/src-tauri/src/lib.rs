@@ -26,6 +26,7 @@ use tauri::{Listener, Url};
 mod browser_cookies_macos;
 mod browser_fetch;
 mod clip_url;
+mod comic_parser;
 mod cover_thumbnail;
 mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
@@ -484,6 +485,7 @@ pub fn run() {
             epub_parser::parse_epub_metadata,
             epub_parser::extract_epub_cover_full,
             epub_parser::parse_epub_full,
+            comic_parser::get_comic_page_sizes,
             mobi_parser::parse_mobi_metadata,
             mobi_parser::extract_mobi_cover_full,
             pdf_parser::parse_pdf_metadata,

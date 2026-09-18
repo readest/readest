@@ -227,6 +227,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           }
           const doc = await new DocumentLoader(file, {
             nativeFilePath: nativeFilePath ?? undefined,
+            detectWidePages: true,
           }).open();
           bookDoc = doc.book;
         }

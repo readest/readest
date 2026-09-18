@@ -225,6 +225,7 @@
     "allow-parse-epub-metadata",
     "allow-extract-epub-cover-full",
     "allow-parse-epub-full",
+    "allow-get-comic-page-sizes",
     "allow-parse-mobi-metadata",
     "allow-extract-mobi-cover-full",
     "allow-parse-pdf-metadata",

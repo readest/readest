@@ -182,6 +182,12 @@ export interface DocumentLoaderOptions {
    * EPUB when the prefetch cache is hit.
    */
   nativeFilePath?: string;
+  /**
+   * Measure a comic's pages so each wide one (a double-page spread stored as
+   * one image) gets a spread of its own. It reads every page's header, so
+   * only the reader asks for it.
+   */
+  detectWidePages?: boolean;
 }
 
 type PDFJSGlobal = {
@@ -227,10 +233,12 @@ export { WorkerMessageHandler };`,
 export class DocumentLoader {
   private file: File;
   private nativeFilePath?: string;
+  private detectWidePages: boolean;
 
   constructor(file: File, options: DocumentLoaderOptions = {}) {
     this.file = file;
     this.nativeFilePath = options.nativeFilePath;
+    this.detectWidePages = options.detectWidePages ?? false;
   }
 
   private async isZip(): Promise<boolean> {
@@ -497,6 +505,10 @@ export class DocumentLoader {
           const { makeComicBook } = await import('foliate-js/comic-book.js');
           book = await makeComicBook(loader, this.file);
           format = 'CBZ';
+          if (this.detectWidePages) {
+            const { markWidePages } = await import('@/utils/spread');
+            await markWidePages(book.sections, this.file, entries, this.nativeFilePath);
+          }
         } else if (this.isFBZ()) {
           const entry = entries.find((entry) => entry.filename.endsWith(`.${EXTS.FB2}`));
           const blob = await loader.loadBlob((entry ?? entries[0]!).filename);
