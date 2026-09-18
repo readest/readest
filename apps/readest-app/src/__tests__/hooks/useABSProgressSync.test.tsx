@@ -6,7 +6,14 @@ import type { Book, BookConfig, BookProgress } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
 
 const appService = {} as AppService;
-const envConfig = { getAppService: async () => appService } as EnvConfigType;
+// Held open by the test that turns a page while getTarget() is still awaiting.
+let appServiceGate: Promise<unknown> | null = null;
+const envConfig = {
+  getAppService: async () => {
+    if (appServiceGate) await appServiceGate;
+    return appService;
+  },
+} as EnvConfigType;
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService, envConfig }),
@@ -90,6 +97,7 @@ let restoreReaderStore: Partial<ReturnType<typeof useReaderStore.getState>>;
 beforeEach(() => {
   vi.useFakeTimers();
   localStorage.clear();
+  appServiceGate = null;
   client.getMe.mockResolvedValue({ mediaProgress: [] });
   client.patchProgress.mockResolvedValue(undefined);
   useABSServerStore.setState({ servers: [server] });
@@ -270,6 +278,40 @@ describe('useABSProgressSync', () => {
 
     expect(view.goTo).not.toHaveBeenCalled();
     expect(view.goToFraction).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(10000);
+    });
+    await settle();
+
+    expect(client.patchProgress).toHaveBeenCalledWith('item1', {
+      ebookLocation: 'epubcfi(/6/8!/4/2/6/1:0)',
+      ebookProgress: 0.33,
+      progress: 0.33,
+    });
+  });
+
+  it('keeps a page turned while the pull is still resolving its server', async () => {
+    // The pull snapshots the local position to tell later whether the reader
+    // moved under it. Resolving the app service is itself awaited, so the
+    // snapshot has to be taken before that, or a page turned in the meantime
+    // reads back as "nothing moved" and the server position overwrites it.
+    let releaseAppService: () => void = () => {};
+    appServiceGate = new Promise<void>((resolve) => {
+      releaseAppService = resolve;
+    });
+    client.getMe.mockResolvedValue({ mediaProgress: [remoteRow()] });
+
+    renderHook(() => useABSProgressSync(BOOK_KEY));
+    await settle();
+    seedProgress({ location: 'epubcfi(/6/8!/4/2/6/1:0)', fraction: 0.33 });
+    await settle();
+    await act(async () => {
+      releaseAppService();
+    });
+    await settle();
+
+    expect(view.goTo).not.toHaveBeenCalled();
 
     await act(async () => {
       vi.advanceTimersByTime(10000);

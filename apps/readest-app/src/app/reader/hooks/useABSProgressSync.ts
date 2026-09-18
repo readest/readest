@@ -95,14 +95,16 @@ export const useABSProgressSync = (bookKey: string) => {
   );
 
   const pullProgress = useCallback(async () => {
+    // Where the reader sat when the pull began, so the steps below can tell
+    // whether the user read on while it was in flight. Taken before the first
+    // await: resolving the server is one too, and a page turned during it must
+    // not read back as "nothing moved".
+    const locationAtPullStart = getBookProgress(bookKey)?.location;
     const target = await getTarget();
     if (!target) {
       pullSettled.current = true;
       return;
     }
-    // Where the reader sat when the pull began, so the release below can tell
-    // whether the user read on while it was in flight.
-    const locationAtPullStart = getBookProgress(bookKey)?.location;
     try {
       const me = await target.client.getMe();
       const remote = findAbsEbookProgress(me?.mediaProgress, target.itemId);
