@@ -139,6 +139,8 @@ pub fn unique_path(dir: &Path, name: &str) -> PathBuf {
 }
 
 const MAX_ARCHIVE_EXPANSION: u64 = 20;
+// An item download holds a book or two; thousands of tiny ones only exhaust inodes.
+const MAX_ARCHIVE_BOOKS: usize = 100;
 
 /// Servers such as Audiobookshelf hand out a multi-file item as a plain zip
 /// (`Title.zip` holding `Title.epub`, the cover, audio tracks...). Extract
@@ -178,6 +180,9 @@ pub fn extract_archive_books(archive: &Path, exts: &[String]) -> Result<Vec<Path
                     .is_some_and(|(_, ext)| exts.iter().any(|e| e.eq_ignore_ascii_case(ext)));
             if !is_book {
                 continue;
+            }
+            if books.len() == MAX_ARCHIVE_BOOKS {
+                return Err("Archive holds too many books".into());
             }
             let path = unique_path(dir, &name);
             books.push(path.clone());
@@ -716,6 +721,22 @@ mod tests {
             .map(|e| e.unwrap().path())
             .collect();
         assert_eq!(left, vec![archive.clone()]);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn extract_archive_books_refuses_an_archive_of_countless_books() {
+        let dir = std::env::temp_dir().join(format!("readest-wb-zip4-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let archive = dir.join("many.zip");
+        let names: Vec<String> = (0..=MAX_ARCHIVE_BOOKS)
+            .map(|i| format!("{i}.epub"))
+            .collect();
+        let entries: Vec<(&str, &[u8])> = names.iter().map(|n| (n.as_str(), &b"x"[..])).collect();
+        write_zip(&archive, &entries);
+
+        assert!(extract_archive_books(&archive, &book_exts()).is_err());
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
