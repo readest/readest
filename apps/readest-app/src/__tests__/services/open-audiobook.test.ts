@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   getOSPlatform: vi.fn((): OsPlatform => 'macos'),
   isTauriAppPlatform: vi.fn(() => false),
   loadAbsOfflineManifest: vi.fn(async () => null as unknown),
+  getMediaProxyBase: vi.fn(async (): Promise<string | null> => null),
 }));
 
 vi.mock('@/services/audiobookshelf/offline', () => ({
@@ -82,6 +83,11 @@ vi.mock('@/services/environment', async (importOriginal) => {
   return { ...actual, isTauriAppPlatform: mocks.isTauriAppPlatform };
 });
 
+vi.mock('@/services/audiobook/mediaProxy', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/audiobook/mediaProxy')>();
+  return { ...actual, getMediaProxyBase: mocks.getMediaProxyBase };
+});
+
 import { loadAbsEpisodes, openAudiobookSession } from '@/services/audiobook/openAudiobook';
 import { AudiobookController } from '@/services/audiobook/AudiobookController';
 import { BlobAudioClock, HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
@@ -140,6 +146,7 @@ describe('openAudiobookSession', () => {
     mocks.syncerBegin.mockResolvedValue(42);
     mocks.getOSPlatform.mockReturnValue('macos');
     mocks.isTauriAppPlatform.mockReturnValue(false);
+    mocks.getMediaProxyBase.mockResolvedValue(null);
     useABSServerStore.setState({ servers: [server] });
     useSettingsStore.setState({ settings: { absServers: [] } as unknown as SystemSettings });
   });
@@ -286,6 +293,59 @@ describe('openAudiobookSession', () => {
     useABSServerStore.getState().updateServer('srv1', { accessToken: 'token-rotated' });
     expect(resolveUrl('/api/items/item1/file/1')).toContain('token=token-rotated');
   });
+
+  // #6216: the API client accepts a self-signed server certificate, but the
+  // WebView <audio> element enforces normal TLS trust and aborted the track
+  // request before a byte was sent. On native the track streams through the
+  // loopback media proxy, which fetches with the same lenient TLS policy.
+  describe('loopback media proxy (#6216)', () => {
+    const proxyBase = 'http://127.0.0.1:41234/s3cret';
+    const directUrl = 'http://abs.local:13378/api/items/item1/file/1?token=token-1';
+
+    it('routes the WebView clock through the proxy on native, with the current token inside', async () => {
+      mocks.getOSPlatform.mockReturnValue('android');
+      mocks.isTauriAppPlatform.mockReturnValue(true);
+      mocks.getMediaProxyBase.mockResolvedValue(proxyBase);
+
+      const result = await openAudiobookSession({ appService, book });
+      expect(result).not.toBeNull();
+
+      const [source] = mocks.controllerCtor.mock.calls[0]!;
+      const resolveUrl = (source as AudiobookSource).resolveUrl;
+      expect(resolveUrl('/api/items/item1/file/1')).toBe(
+        `${proxyBase}/media?u=${encodeURIComponent(directUrl)}`,
+      );
+
+      useABSServerStore.getState().updateServer('srv1', { accessToken: 'token-rotated' });
+      expect(resolveUrl('/api/items/item1/file/1')).toBe(
+        `${proxyBase}/media?u=${encodeURIComponent(directUrl.replace('token-1', 'token-rotated'))}`,
+      );
+    });
+
+    // getMediaProxyBase itself answers null on iOS (media-proxy.test.ts), so
+    // the native AVPlayer clock keeps direct URLs.
+    it('leaves the clock on direct URLs when the proxy declines the platform', async () => {
+      mocks.getOSPlatform.mockReturnValue('ios');
+      mocks.isTauriAppPlatform.mockReturnValue(true);
+      mocks.getMediaProxyBase.mockResolvedValue(null);
+
+      await openAudiobookSession({ appService, book });
+
+      const [source] = mocks.controllerCtor.mock.calls[0]!;
+      expect((source as AudiobookSource).resolveUrl('/api/items/item1/file/1')).toBe(directUrl);
+    });
+
+    it('falls back to direct URLs when the proxy is unavailable', async () => {
+      mocks.getOSPlatform.mockReturnValue('windows');
+      mocks.isTauriAppPlatform.mockReturnValue(true);
+      mocks.getMediaProxyBase.mockResolvedValue(null);
+
+      await openAudiobookSession({ appService, book });
+
+      const [source] = mocks.controllerCtor.mock.calls[0]!;
+      expect((source as AudiobookSource).resolveUrl('/api/items/item1/file/1')).toBe(directUrl);
+    });
+  });
 });
 
 const podcastItem: ABSLibraryItem = {
@@ -351,6 +411,7 @@ describe('openAudiobookSession - podcast episodes', () => {
     mocks.readLocalLastPlayedAt.mockReturnValue(0);
     mocks.getOSPlatform.mockReturnValue('macos');
     mocks.isTauriAppPlatform.mockReturnValue(false);
+    mocks.getMediaProxyBase.mockResolvedValue(null);
     useABSServerStore.setState({ servers: [server] });
     useSettingsStore.setState({ settings: { absServers: [] } as unknown as SystemSettings });
   });

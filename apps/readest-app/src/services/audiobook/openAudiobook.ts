@@ -15,6 +15,7 @@ import { NativeAudiobookClock } from './NativeAudiobookClock';
 import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import { AbsProgressSyncer, readLocalLastPlayedAt } from '@/services/audiobookshelf/progressSync';
 import { loadAbsOfflineManifest } from '@/services/audiobookshelf/offline';
+import { getMediaProxyBase, proxiedMediaUrl } from './mediaProxy';
 import { findABSServerById, useABSServerStore } from '@/store/absServerStore';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import type { TTSMediaBridgeMeta } from '@/services/tts/ttsMediaBridge';
@@ -204,6 +205,13 @@ export const openAudiobookSession = async (input: {
     const nativeClock = isIOSTauri() || (!!offline && isAndroidTauri());
     const blobClock = !!offline && !nativeClock && isLinuxTauri();
 
+    // The WebView <audio> element applies the platform's TLS trust, unlike
+    // the API client above, so a streamed track goes through the loopback
+    // media proxy (see mediaProxy.ts, #6216); null on the web and on iOS,
+    // whose native clock takes the direct URL. A downloaded book plays from
+    // local files, never the proxy.
+    const proxyBase = offline ? null : await getMediaProxyBase();
+
     const sourceObj: AudiobookSource = {
       itemId,
       episodeId,
@@ -218,14 +226,17 @@ export const openAudiobookSession = async (input: {
       // never a captured copy - so a track load issued after a 401-triggered
       // token refresh (by this client or another, e.g. the periodic library
       // sync) carries the rotated token instead of the one this session
-      // started with.
+      // started with; on native they go through the loopback media proxy so a
+      // self-signed server the API client accepted also plays (#6216).
       resolveUrl: offline
         ? (path: string) => (nativeClock || blobClock ? path : convertFileSrc(path))
-        : (contentPath: string) =>
-            buildAbsMediaUrl(
+        : (contentPath: string) => {
+            const upstream = buildAbsMediaUrl(
               useABSServerStore.getState().getServer(server.id) ?? server,
               contentPath,
-            ),
+            );
+            return proxyBase ? proxiedMediaUrl(proxyBase, upstream) : upstream;
+          },
       startAt,
     };
 

@@ -23,6 +23,7 @@ import {
   loadAbsPairingSource,
   type AbsPairingSource,
 } from '@/services/audiobook/absPairing';
+import { getMediaProxyBase } from '@/services/audiobook/mediaProxy';
 import {
   buildSequentialAudiobookMappings,
   collectAudiobookTextChapters,
@@ -342,7 +343,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
       let clip: Omit<AudiobookPreviewClip, 'id'>;
       if (previewAbsSource) {
         // Chapter times are global; the preview plays the file holding the start.
-        const remote = absPreviewClip(previewAbsSource, chapter.start);
+        const remote = absPreviewClip(previewAbsSource, chapter.start, await getMediaProxyBase());
         if (!remote) throw new Error(_('Audiobookshelf server not found'));
         // A chapter can continue into the next track; keep the preview within
         // the file it starts in so it does not run off the end of the clip.

@@ -50,7 +50,10 @@ export interface AudiobookSource {
   author: string;
   tracks: ABSTrack[];
   chapters: ABSChapter[];
-  /** Resolve a track contentUrl to a playable absolute URL (adds ?token=). */
+  /**
+   * Resolve a track contentUrl to a playable absolute URL (adds ?token=;
+   * routed through the loopback media proxy on native, see mediaProxy.ts).
+   */
   resolveUrl: (contentPath: string) => string;
   /** Global seconds to resume from. */
   startAt: number;
