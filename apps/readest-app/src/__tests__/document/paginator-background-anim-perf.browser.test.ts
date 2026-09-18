@@ -111,6 +111,55 @@ describe('Paginator animated background repaint (browser)', () => {
     }
   });
 
+  it.each([
+    false,
+    true,
+  ])('only defers off-screen preloads during a held swipe (needed: %s)', async (needed) => {
+    const idx = book.sections!.findIndex((s) => s.linear !== 'no' && s.size > 4000);
+    paginator = createPaginator();
+    paginator.style.width = '400px';
+    paginator.setAttribute('no-preload', '');
+    paginator.open(book);
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: idx });
+    await stabilized;
+    expect(paginator.pages).toBeGreaterThan(3);
+    await paginator.goTo({ index: idx, anchor: needed ? 1 : 1 - 3 / paginator.pages });
+
+    const loaded: number[] = [];
+    paginator.addEventListener('load', ((event: CustomEvent<{ index: number }>) => {
+      loaded.push(event.detail.index);
+    }) as EventListener);
+    const touch = new Touch({ identifier: 1, target: paginator, clientX: 400, clientY: 100 });
+    paginator.dispatchEvent(
+      new TouchEvent('touchstart', { touches: [touch], changedTouches: [touch] }),
+    );
+    paginator.removeAttribute('no-preload');
+    paginator.shadowRoot!.querySelector('[part="container"]')!.dispatchEvent(new Event('scroll'));
+    // The asynchronous iframe can finish loading after the finger goes down.
+    // Its layout and host load handlers must wait even though fetch has finished.
+    await expect
+      .poll(() =>
+        paginator
+          .getContents()
+          .some(
+            (c) =>
+              c.index != null &&
+              c.index > idx &&
+              c.doc.readyState === 'complete' &&
+              c.doc.body?.textContent?.trim(),
+          ),
+      )
+      .toBe(true);
+    try {
+      if (needed) await expect.poll(() => loaded.length).toBeGreaterThan(0);
+      else expect(loaded).toEqual([]);
+    } finally {
+      paginator.dispatchEvent(new TouchEvent('touchcancel', { changedTouches: [touch] }));
+    }
+    await expect.poll(() => loaded.length).toBeGreaterThan(0);
+  });
+
   it('snapshots the paint context once per animated turn instead of every frame', async () => {
     // A multi-page section so next() animates a page turn that stays within the
     // section (the within-section snap/smooth path runs the per-frame loop).
