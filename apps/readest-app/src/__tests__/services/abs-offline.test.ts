@@ -178,6 +178,23 @@ describe('downloadAbsForOffline — audiobook', () => {
     expect(downloadFileMock).toHaveBeenCalledTimes(3);
   });
 
+  it('names files by their position, not the server-supplied index', async () => {
+    const { service } = makeAppService();
+    getItemExpandedMock.mockResolvedValue({
+      ...audiobookItem,
+      media: {
+        ...audiobookItem.media,
+        tracks: [{ ...audiobookItem.media.tracks![0]!, index: '../../escape' as never }],
+      },
+    });
+
+    await downloadAbsForOffline(service, makeBook());
+
+    expect(downloadFileMock.mock.calls[0]![0].dst).toBe(
+      `/books/${getAbsOfflineDir('bookhash')}/1-01 Down the Rabbit-Hole.mp3.part`,
+    );
+  });
+
   it('stops between files once cancelled, without a manifest', async () => {
     const { service, files } = makeAppService();
     const controller = new AbortController();
@@ -218,6 +235,23 @@ describe('downloadAbsForOffline — ebook-only item', () => {
     });
     expect(renameMock).toHaveBeenCalledWith(`/books/${managed}.part`, `/books/${managed}`);
     expect(files.size).toBe(0);
+  });
+});
+
+describe('downloadAbsForOffline — media type from the book row', () => {
+  // A metadata edit rewrites `metadata` wholesale, dropping the ABS mirror
+  // until the next library sync; the top-level field still says ebook.
+  it('treats an ebook as an ebook even without its metadata mirror', async () => {
+    const { service } = makeAppService();
+    getItemExpandedMock.mockResolvedValue({
+      id: 'item1',
+      mediaType: 'book',
+      media: { metadata: { title: 'Alice' }, ebookFile: { ino: '9', ebookFormat: 'epub' } },
+    });
+
+    await downloadAbsForOffline(service, makeBook({ absMediaType: 'ebook' }));
+
+    expect(downloadFileMock.mock.calls[0]![0].url).toBe('http://abs.local/api/items/item1/ebook');
   });
 });
 

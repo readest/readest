@@ -65,7 +65,8 @@ export const downloadAbsForOffline = async (
   const client = createAbsClient(appService, server);
   const item = await client.getItemExpanded(parsed.itemId);
 
-  const ebook = isAbsEbook(book);
+  // A metadata edit drops the ABS mirror until the next library sync.
+  const ebook = isAbsEbook(book) || book.absMediaType === 'ebook';
   const tracks = ebook ? [] : (item.media.tracks ?? []);
   const files: OfflineFile[] = ebook
     ? [
@@ -75,9 +76,10 @@ export const downloadAbsForOffline = async (
           size: item.media.ebookFile?.metadata?.size ?? 0,
         },
       ]
-    : tracks.map((track) => ({
+    : tracks.map((track, i) => ({
         contentPath: track.contentUrl,
-        path: `${getAbsOfflineDir(book.hash)}/${track.index}-${makeSafeFilename(
+        // Position, not the server's `index`: nothing from the server shapes a path.
+        path: `${getAbsOfflineDir(book.hash)}/${i + 1}-${makeSafeFilename(
           track.metadata?.filename ?? track.title ?? 'track',
         )}`,
         size: track.metadata?.size ?? 0,

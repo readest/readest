@@ -108,6 +108,8 @@ export class BlobAudioClock extends HtmlAudioClock {
   }
 
   override destroy(): void {
+    // A load still reading its blob must not resurrect the clock.
+    this.#loadSeq++;
     super.destroy();
     this.#release();
   }

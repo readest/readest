@@ -138,6 +138,8 @@ pub fn unique_path(dir: &Path, name: &str) -> PathBuf {
         .expect("unbounded counter")
 }
 
+const MAX_ARCHIVE_EXPANSION: u64 = 20;
+
 /// Servers such as Audiobookshelf hand out a multi-file item as a plain zip
 /// (`Title.zip` holding `Title.epub`, the cover, audio tracks...). Extract
 /// the entries whose extension is in `exts` next to the archive, then drop
@@ -146,33 +148,54 @@ pub fn unique_path(dir: &Path, name: &str) -> PathBuf {
 /// streamed to disk, so a large audiobook archive is never held in memory.
 pub fn extract_archive_books(archive: &Path, exts: &[String]) -> Result<Vec<PathBuf>, String> {
     let file = std::fs::File::open(archive).map_err(|e| e.to_string())?;
+    // Books are stored or already compressed, so a real book archive barely
+    // expands; past this ratio it is a zip bomb that would fill the disk.
+    let mut budget = file
+        .metadata()
+        .map_err(|e| e.to_string())?
+        .len()
+        .saturating_mul(MAX_ARCHIVE_EXPANSION);
     let mut zip = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
     if zip.index_for_name("META-INF/container.xml").is_some() {
         return Ok(Vec::new());
     }
     let dir = archive.parent().ok_or("Invalid path")?;
     let mut books = Vec::new();
-    for i in 0..zip.len() {
-        let mut entry = zip.by_index(i).map_err(|e| e.to_string())?;
-        let Some(name) = entry
-            .enclosed_name()
-            .and_then(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_string))
-        else {
-            continue;
-        };
-        // Skip `__MACOSX/._Title.epub` resource forks and other dotfiles.
-        let is_book = entry.is_file()
-            && !name.starts_with('.')
-            && name
-                .rsplit_once('.')
-                .is_some_and(|(_, ext)| exts.iter().any(|e| e.eq_ignore_ascii_case(ext)));
-        if !is_book {
-            continue;
+    let mut extract = || -> Result<(), String> {
+        for i in 0..zip.len() {
+            let entry = zip.by_index(i).map_err(|e| e.to_string())?;
+            let Some(name) = entry
+                .enclosed_name()
+                .and_then(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_string))
+            else {
+                continue;
+            };
+            // Skip `__MACOSX/._Title.epub` resource forks and other dotfiles.
+            let is_book = entry.is_file()
+                && !name.starts_with('.')
+                && name
+                    .rsplit_once('.')
+                    .is_some_and(|(_, ext)| exts.iter().any(|e| e.eq_ignore_ascii_case(ext)));
+            if !is_book {
+                continue;
+            }
+            let path = unique_path(dir, &name);
+            books.push(path.clone());
+            let mut out = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+            let written = std::io::copy(&mut std::io::Read::take(entry, budget + 1), &mut out)
+                .map_err(|e| e.to_string())?;
+            if written > budget {
+                return Err("Archive expands too much to hold books".into());
+            }
+            budget -= written;
         }
-        let path = unique_path(dir, &name);
-        let mut out = std::fs::File::create(&path).map_err(|e| e.to_string())?;
-        std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
-        books.push(path);
+        Ok(())
+    };
+    if let Err(error) = extract() {
+        for path in &books {
+            let _ = std::fs::remove_file(path);
+        }
+        return Err(error);
     }
     if !books.is_empty() {
         let _ = std::fs::remove_file(archive);
@@ -668,6 +691,31 @@ mod tests {
             .is_empty());
         assert!(epub.exists() && audio.exists());
         assert!(extract_archive_books(&dir.join("missing.zip"), &book_exts()).is_err());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn extract_archive_books_refuses_a_zip_bomb_and_cleans_up() {
+        use std::io::Write;
+        let dir = std::env::temp_dir().join(format!("readest-wb-zip3-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let archive = dir.join("bomb.zip");
+        let mut w = zip::ZipWriter::new(std::fs::File::create(&archive).unwrap());
+        let deflated = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+        w.start_file("a.epub", deflated).unwrap();
+        w.write_all(b"small book").unwrap();
+        w.start_file("b.epub", deflated).unwrap();
+        w.write_all(&vec![0u8; 8 * 1024 * 1024]).unwrap();
+        w.finish().unwrap();
+
+        assert!(extract_archive_books(&archive, &book_exts()).is_err());
+        // Nothing half-extracted is left behind, and the archive is kept.
+        let left: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        assert_eq!(left, vec![archive.clone()]);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

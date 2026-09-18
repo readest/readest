@@ -55,8 +55,13 @@ describe('getBookContextMenuItemIds', () => {
       filePath: 'abs://srv/item',
       metadata: { absMediaType: 'podcast' } as never,
     });
+    const podcastWithoutMirror = createBook({
+      format: 'ABS',
+      filePath: 'abs://srv/item',
+      absMediaType: 'podcast',
+    });
     const offlineIds = ['offlineDownload', 'offlineRemove'];
-    for (const book of [podcast, createBook({ downloadedAt: 1 })]) {
+    for (const book of [podcast, podcastWithoutMirror, createBook({ downloadedAt: 1 })]) {
       const ids = getBookContextMenuItemIds(book, { absOffline: true });
       expect(ids.filter((id) => offlineIds.includes(id))).toEqual([]);
     }

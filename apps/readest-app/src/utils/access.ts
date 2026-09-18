@@ -100,14 +100,12 @@ export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased: boolea
   !TTS_CACHE_REQUIRES_PREMIUM || isTTSCacheInPlan(plan, customizationPurchased);
 
 /**
- * Plans that include offline Audiobookshelf downloads — storing an ABS
- * audiobook's tracks or an ebook-only item's file on the device so it plays
- * and reads without a network: any paid plan (Plus, Pro, and Lifetime
- * `purchase`). Free users see the action with a Premium badge and an upgrade
- * route; streaming stays free. Client-side gate, like the TTS cache.
+ * Offline Audiobookshelf downloads — storing an ABS audiobook's tracks or an
+ * ebook-only item's file on the device so it plays and reads without a
+ * network — are a premium feature ({@link isCustomizationAllowed}). Free users
+ * see the action with a Premium badge and an upgrade route; streaming stays
+ * free. Client-side gate, like the TTS cache.
  */
-export const ABS_OFFLINE_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
-
 export const isAbsOfflineInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isCustomizationAllowed(plan, customizationPurchased);
 

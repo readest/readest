@@ -63,4 +63,16 @@ describe('BlobAudioClock', () => {
     clock.destroy();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:track-1');
   });
+
+  it('never creates a URL for a load still pending when the clock is destroyed', async () => {
+    let finish: (b: Blob) => void = () => {};
+    const clock = new BlobAudioClock(() => new Promise<Blob>((resolve) => (finish = resolve)));
+
+    const pending = clock.load('/books/h/1.mp3', 0);
+    clock.destroy();
+    finish(blob());
+    await pending;
+
+    expect(createObjectURL).not.toHaveBeenCalled();
+  });
 });

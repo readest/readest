@@ -17,11 +17,19 @@ export const isAbsEbook = (book: {
   metadata?: Book['metadata'];
 }): boolean => book.format === 'ABS' && book.metadata?.absMediaType === 'ebook';
 
-/** True when an ABS book's media can be downloaded for offline use: audiobooks and ebooks, not podcast shows. */
+/**
+ * True when an ABS book's media can be downloaded for offline use: audiobooks
+ * and ebooks, not podcast shows. Reads both copies of the media type: a
+ * metadata edit drops the mirror until the next library sync.
+ */
 export const isAbsOfflineCapable = (book: {
   format: Book['format'];
+  absMediaType?: Book['absMediaType'];
   metadata?: Book['metadata'];
-}): boolean => book.format === 'ABS' && book.metadata?.absMediaType !== 'podcast';
+}): boolean =>
+  book.format === 'ABS' &&
+  book.absMediaType !== 'podcast' &&
+  book.metadata?.absMediaType !== 'podcast';
 
 /** Books-relative folder holding an ABS audiobook downloaded for offline use. */
 export const getAbsOfflineDir = (bookHash: string): string => `${bookHash}/abs-offline`;
