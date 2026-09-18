@@ -1378,6 +1378,27 @@ describe('paragraph mode selection (#6200)', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('lets Shift+Arrow start a keyboard selection from a caret in the clone', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const { clone, dialog } = await renderOverlayWithSource();
+    // A click in the text leaves a collapsed caret, not a selection.
+    const caret = document.createRange();
+    caret.setStart(clone.querySelector('em')!.firstChild!, 2);
+    caret.collapse(true);
+    document.getSelection()!.removeAllRanges();
+    document.getSelection()!.addRange(caret);
+    dispatchSpy.mockClear();
+
+    const shifted = fireEvent.keyDown(dialog, { key: 'ArrowRight', shiftKey: true });
+
+    // Left to the browser: not prevented, and no paragraph turned.
+    expect(shifted).toBe(true);
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
+
+    fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+    expect(dispatchSpy).toHaveBeenCalledWith('paragraph-next', { bookKey: overlayBookKey });
+  });
+
   it('clears the reported selection when the paragraph changes', async () => {
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
     const { clone, doc } = await renderOverlayWithSource();
@@ -1449,19 +1470,23 @@ describe('paragraph mode resume (#6200)', () => {
   });
 
   // Enter paragraph mode on a page whose live location is its first paragraph,
-  // move two paragraphs on, and exit.
+  // move two paragraphs on, and exit. Live CFIs resolve to a paragraph each.
   const exitFromThirdParagraph = async () => {
     const doc = createDoc('<p>Block zero</p><p>Block one</p><p>Block two</p>');
     const { view } = createMockView([doc], 0);
-    const pageStart = doc.querySelectorAll('p')[0]!;
+    const blocks = doc.querySelectorAll('p');
+    const pages: Record<string, Element> = {
+      'cfi-page-start': blocks[0]!,
+      'cfi-page-2': blocks[1]!,
+    };
     (view as unknown as { lastLocation: { cfi: string } }).lastLocation = { cfi: 'cfi-page-start' };
     (view.resolveCFI as ReturnType<typeof vi.fn>).mockImplementation((cfi: string) =>
-      cfi === 'cfi-page-start'
+      pages[cfi]
         ? {
             index: 0,
             anchor: () => {
               const r = doc.createRange();
-              r.selectNodeContents(pageStart);
+              r.selectNodeContents(pages[cfi]!);
               return r;
             },
           }
@@ -1486,6 +1511,7 @@ describe('paragraph mode resume (#6200)', () => {
       await hookApi!.toggleParagraphMode();
     });
     currentViewSettings.paragraphMode = { enabled: false };
+    return view;
   };
 
   it('re-enters at the paragraph it was exited from, not the first paragraph of the page', async () => {
@@ -1500,16 +1526,19 @@ describe('paragraph mode resume (#6200)', () => {
     });
   });
 
-  it('re-enters at the page start once the reading position has moved on', async () => {
-    await exitFromThirdParagraph();
-    mockGetProgress.mockReturnValue({ location: 'loc-page-2' });
+  it('re-enters at the live location once the view has moved, even while the store progress is stale', async () => {
+    const view = await exitFromThirdParagraph();
+    // The view relocated within the same document (set synchronously by
+    // foliate); the rAF-debounced store still reports the old page.
+    (view as unknown as { lastLocation: { cfi: string } }).lastLocation = { cfi: 'cfi-page-2' };
+    expect(mockGetProgress()?.location).toBe('loc-page-1');
 
     await act(async () => {
       await hookApi!.toggleParagraphMode();
     });
 
     await waitFor(() => {
-      expect(hookApi?.paragraphState.currentRange?.toString()).toBe('Block zero');
+      expect(hookApi?.paragraphState.currentRange?.toString()).toBe('Block one');
     });
   });
 });

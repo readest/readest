@@ -64,11 +64,14 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
   const toggleInFlightRef = useRef(false);
   // The paragraph focused when paragraph mode was last exited, so re-entering
   // on the same page resumes there rather than at the page's first paragraph
-  // (#6200). Remembered by its position in the iterator plus its text as a
-  // check — both stable for the same document, unlike the CFI of a block
-  // range, which could come out malformed and resolve to an empty range (#4717).
+  // (#6200). Keyed on the view's live location CFI (set synchronously on every
+  // relocate, so a move in between is never missed — the store's progress is
+  // rAF-debounced and can lag). The paragraph itself is remembered by its
+  // position in the iterator plus its text as a check — both stable for the
+  // same document, unlike the CFI of a block range, which could come out
+  // malformed and resolve to an empty range (#4717).
   const lastParagraphRef = useRef<{
-    progressLocation: string;
+    locationCfi: string;
     docIndex: number;
     index: number;
     text: string;
@@ -233,16 +236,15 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
           return null;
         };
 
-        // Re-entering on the page paragraph mode was left from resumes at the
-        // paragraph that was focused then (#6200); a page turn in between
-        // changes the progress location and falls through to the page itself.
+        // Re-entering at the location paragraph mode was left from resumes at
+        // the paragraph that was focused then (#6200); any move in between
+        // changes the live location and falls through to the page itself.
         const resumeLastParagraph = (): boolean => {
           const last = lastParagraphRef.current;
           const iterator = iteratorRef.current;
-          if (!last || !iterator || !progressLocation) return false;
-          if (last.progressLocation !== progressLocation || last.docIndex !== docIndex) {
-            return false;
-          }
+          const locationCfi = view.lastLocation?.cfi;
+          if (!last || !iterator || !locationCfi) return false;
+          if (last.locationCfi !== locationCfi || last.docIndex !== docIndex) return false;
           const range = iterator.goTo(last.index);
           return !!range && range.toString() === last.text;
         };
@@ -672,11 +674,11 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
         const iterator = iteratorRef.current;
         const range = iterator?.current();
         if (iterator && range) {
-          const progressLocation = getProgress(bookKeyRef.current)?.location;
+          const locationCfi = viewRef.current?.lastLocation?.cfi;
           const docIndex = currentDocIndexRef.current;
-          if (progressLocation && docIndex !== undefined) {
+          if (locationCfi && docIndex !== undefined) {
             lastParagraphRef.current = {
-              progressLocation,
+              locationCfi,
               docIndex,
               index: iterator.currentIndex,
               text: range.toString(),
@@ -700,6 +702,7 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
     envConfig,
     initIterator,
     focusCurrentParagraph,
+    viewRef,
     updateStateFromIterator,
   ]);
 

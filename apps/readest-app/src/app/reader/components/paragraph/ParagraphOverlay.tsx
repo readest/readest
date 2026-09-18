@@ -316,6 +316,12 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     () => getSelectionRangeWithin(getCloneRoot()),
     [getCloneRoot],
   );
+  // Whether the document selection sits in the clone at all — a caret left by
+  // a click counts, so a keyboard selection can be started from it.
+  const isSelectionAnchoredInClone = useCallback(() => {
+    const anchor = document.getSelection()?.anchorNode;
+    return !!anchor && !!getCloneRoot()?.contains(anchor);
+  }, [getCloneRoot]);
 
   // Android floats its own menu over a selection; the book page keeps it off
   // while its text is selected (useTextSelector), and so does the clone.
@@ -493,8 +499,9 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         return;
       }
 
-      // Shift+arrow extends a keyboard selection; leave it to the browser.
-      if (e.shiftKey && getCloneSelection()) return;
+      // Shift+arrow starts or extends a keyboard selection from a caret or a
+      // selection in the clone; leave it to the browser.
+      if (e.shiftKey && isSelectionAnchoredInClone()) return;
 
       const action = getParagraphActionForKey(e.key, activePresentation ?? viewSettings);
       if (action === 'next') {
@@ -505,7 +512,14 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         eventDispatcher.dispatch('paragraph-prev', { bookKey });
       }
     },
-    [activePresentation, bookKey, viewSettings, getCloneSelection, clearReportedSelection],
+    [
+      activePresentation,
+      bookKey,
+      viewSettings,
+      getCloneSelection,
+      isSelectionAnchoredInClone,
+      clearReportedSelection,
+    ],
   );
 
   useEffect(() => {
