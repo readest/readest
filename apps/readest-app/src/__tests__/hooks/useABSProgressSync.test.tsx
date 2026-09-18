@@ -248,6 +248,41 @@ describe('useABSProgressSync', () => {
     });
   });
 
+  it('keeps a page turned during the pull instead of resuming the server position', async () => {
+    // The push that would stamp this device as the newest writer is still
+    // gated while the pull is open, so the remote row can look fresher than a
+    // page the reader just turned to. Reading here has to win anyway.
+    let releaseGetMe: (value: { mediaProgress: unknown[] }) => void = () => {};
+    client.getMe.mockReturnValue(
+      new Promise((resolve) => {
+        releaseGetMe = resolve as typeof releaseGetMe;
+      }),
+    );
+
+    renderHook(() => useABSProgressSync(BOOK_KEY));
+    await settle();
+    seedProgress({ location: 'epubcfi(/6/8!/4/2/6/1:0)', fraction: 0.33 });
+    await settle();
+    await act(async () => {
+      releaseGetMe({ mediaProgress: [remoteRow()] });
+    });
+    await settle();
+
+    expect(view.goTo).not.toHaveBeenCalled();
+    expect(view.goToFraction).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(10000);
+    });
+    await settle();
+
+    expect(client.patchProgress).toHaveBeenCalledWith('item1', {
+      ebookLocation: 'epubcfi(/6/8!/4/2/6/1:0)',
+      ebookProgress: 0.33,
+      progress: 0.33,
+    });
+  });
+
   it('flushes the pending push when the book is closed', async () => {
     renderHook(() => useABSProgressSync(BOOK_KEY));
     await settle();

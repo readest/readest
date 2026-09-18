@@ -108,6 +108,12 @@ export const useABSProgressSync = (bookKey: string) => {
       const remote = findAbsEbookProgress(me?.mediaProgress, target.itemId);
       const config = getConfig(bookKey);
       const position = getBookProgress(bookKey);
+      // Reading that happened while the pull was open outranks whatever the
+      // server says, even when the server row looks newer: the push that would
+      // have stamped this device is still gated behind this very pull. Bail
+      // out and let the release below schedule that position instead of
+      // yanking the reader off the page they just turned to.
+      if (position?.location !== locationAtPullStart) return;
       const resume = resolveAbsEbookResume({
         remote,
         localLocation: position?.location ?? config?.location,
