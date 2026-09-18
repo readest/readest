@@ -2328,5 +2328,9 @@
   "Download for Offline": "නොබැඳි භාවිතය සඳහා බාගන්න",
   "Remove Offline Download": "නොබැඳි බාගැනීම ඉවත් කරන්න",
   "Transfer Sound": "හුවමාරු හඬ",
-  "Play a sound when a transfer finishes": "හුවමාරුව අවසන් වන විට හඬක් වාදනය කරන්න"
+  "Play a sound when a transfer finishes": "හුවමාරුව අවසන් වන විට හඬක් වාදනය කරන්න",
+  "Pull-Down to Bookmark": "පොත් සලකුණක් සඳහා පහළට අදින්න",
+  "Pronunciation": "උච්චාරණය",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "ශබ්දකෝෂය ප්‍රවේශය සමඟ සපයන පටිගත කිරීමක් ඇත්නම් එය වාදනය කරයි.",
+  "Auto-play Pronunciation": "උච්චාරණය ස්වයංක්‍රීයව වාදනය කරන්න"
 }

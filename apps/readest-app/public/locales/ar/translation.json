@@ -2568,5 +2568,9 @@
   "Download for Offline": "التنزيل للاستخدام دون اتصال",
   "Remove Offline Download": "إزالة التنزيل دون اتصال",
   "Transfer Sound": "صوت النقل",
-  "Play a sound when a transfer finishes": "تشغيل صوت عند اكتمال النقل"
+  "Play a sound when a transfer finishes": "تشغيل صوت عند اكتمال النقل",
+  "Pull-Down to Bookmark": "اسحب للأسفل لإضافة إشارة مرجعية",
+  "Pronunciation": "النطق",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "يشغّل التسجيل الذي يرفقه القاموس مع المدخل، إن وُجد.",
+  "Auto-play Pronunciation": "تشغيل النطق تلقائيًا"
 }

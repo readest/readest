@@ -103,6 +103,9 @@ export function useDictionaryResults({
   const { dictionaries, settings } = useCustomDictionaryStore();
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
   const themeCode = useThemeStore((s) => s.themeCode);
+  // Speak the entry as soon as it renders, for dictionaries that carry their
+  // own recordings (#6265). Providers without bundled audio ignore it.
+  const autoPlayPronunciation = settings.autoPlayPronunciation ?? false;
 
   const computedProviders = getEnabledProviders({
     settings,
@@ -327,6 +330,7 @@ export function useDictionaryResults({
                 isDarkMode,
                 bg: themeCode.bg,
                 fg: themeCode.fg,
+                autoPlayPronunciation,
               });
               if (controller.signal.aborted) return;
               if (outcome.ok || outcome.reason !== 'empty') break;
@@ -365,6 +369,7 @@ export function useDictionaryResults({
     isDarkMode,
     themeCode.bg,
     themeCode.fg,
+    autoPlayPronunciation,
   ]);
 
   // Visible cards = providers that are still loading or finished with a

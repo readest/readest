@@ -2268,5 +2268,9 @@
   "Download for Offline": "下载以供离线使用",
   "Remove Offline Download": "移除离线下载",
   "Transfer Sound": "传输提示音",
-  "Play a sound when a transfer finishes": "在传输完成时播放提示音"
+  "Play a sound when a transfer finishes": "在传输完成时播放提示音",
+  "Pull-Down to Bookmark": "下拉添加书签",
+  "Pronunciation": "发音",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "播放词典随词条附带的发音录音（如果有）。",
+  "Auto-play Pronunciation": "自动播放发音"
 }

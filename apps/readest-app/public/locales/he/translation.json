@@ -2388,5 +2388,9 @@
   "Download for Offline": "הורדה לשימוש לא מקוון",
   "Remove Offline Download": "הסרת ההורדה לשימוש לא מקוון",
   "Transfer Sound": "צליל העברה",
-  "Play a sound when a transfer finishes": "השמע צליל בסיום העברה"
+  "Play a sound when a transfer finishes": "השמע צליל בסיום העברה",
+  "Pull-Down to Bookmark": "משיכה למטה לסימנייה",
+  "Pronunciation": "הגייה",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "מנגן את ההקלטה שהמילון מצרף לערך, כאשר היא קיימת.",
+  "Auto-play Pronunciation": "נגן הגייה אוטומטית"
 }

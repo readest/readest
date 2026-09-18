@@ -296,10 +296,22 @@ const playDictAudio = (audio: HTMLAudioElement, url: string, label: string): voi
   });
 };
 
+/**
+ * A pronunciation the rendered entry can play, in document order. The click
+ * handlers call these; with "auto-play pronunciation" on (#6265) the first one
+ * is also fired as soon as the entry finishes rendering.
+ *
+ * Each trigger primes the shared element synchronously before its first
+ * `await`, so calling it straight out of a click handler keeps the WebKit
+ * user-gesture unlock (#6018) intact.
+ */
+type AudioTrigger = () => Promise<void>;
+
 async function wireMdictAudioOnclick(
   container: HTMLElement,
   mdds: MDDInstance[],
   trackedUrls: string[],
+  audioTriggers: AudioTrigger[],
 ): Promise<void> {
   // Note: we deliberately leave `<script>` tags and other inline `onclick`
   // attributes in place. innerHTML parsing does NOT execute scripts, and
@@ -324,9 +336,7 @@ async function wireMdictAudioOnclick(
     el.removeAttribute('onclick');
 
     el.style.cursor ||= 'pointer';
-    el.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    const play: AudioTrigger = async () => {
       const audio = primeDictAudio();
 
       let url = resolvedAudioUrls.get(el);
@@ -374,7 +384,13 @@ async function wireMdictAudioOnclick(
       }
       if (!url) return;
       playDictAudio(audio, url, key);
+    };
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      void play();
     });
+    audioTriggers.push(play);
   }
 }
 
@@ -412,6 +428,7 @@ function wireMdxAnchors(
   mdds: MDDInstance[],
   trackedUrls: string[],
   onNavigate: ((word: string) => void) | undefined,
+  audioTriggers: AudioTrigger[],
 ): void {
   const anchors = Array.from(container.querySelectorAll<HTMLAnchorElement>('a[href]'));
   for (const anchor of anchors) {
@@ -421,26 +438,11 @@ function wireMdxAnchors(
       if (!mdds.length) continue;
       const path = raw.replace(SOUND_HREF_RX, '').trim();
       if (!path) continue;
-      anchor.addEventListener('click', async (e) => {
-        e.preventDefault();
-        // Stop bubbling so the parent card's tap-to-expand handler doesn't fire.
-        e.stopPropagation();
-
-        // Speex (`.spx`) was deprecated by Xiph in 2012 in favor of Opus and
-        // is no longer decoded by any major browser. Skip the lookup + play
-        // attempt entirely and surface a toast so users with MW-style
-        // dictionaries understand why nothing audible happens.
-        if (/\.spx$/i.test(path)) {
-          eventDispatcher.dispatch('toast', {
-            type: 'warning',
-            timeout: 4000,
-            message: _(
-              "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.",
-            ),
-          });
-          return;
-        }
-
+      // Speex (`.spx`) was deprecated by Xiph in 2012 in favor of Opus and is
+      // no longer decoded by any major browser. A click says so with a toast;
+      // auto-play stays silent rather than nagging on every lookup.
+      const isSpeex = /\.spx$/i.test(path);
+      const play: AudioTrigger = async () => {
         const audio = primeDictAudio();
         let url = resolvedAudioUrls.get(anchor);
         if (!url) {
@@ -460,7 +462,24 @@ function wireMdxAnchors(
         }
         if (!url) return;
         playDictAudio(audio, url, path);
+      };
+      anchor.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Stop bubbling so the parent card's tap-to-expand handler doesn't fire.
+        e.stopPropagation();
+        if (isSpeex) {
+          eventDispatcher.dispatch('toast', {
+            type: 'warning',
+            timeout: 4000,
+            message: _(
+              "This audio can't play here — the dictionary uses an outdated format. Try one with Opus, MP3, or WAV audio.",
+            ),
+          });
+          return;
+        }
+        void play();
       });
+      if (!isSpeex) audioTriggers.push(play);
       continue;
     }
 
@@ -694,13 +713,17 @@ export const createMdictProvider = ({
           rawMddStylesheets.map((css) => resolveCssUrls(css, mdds, ctx.signal, trackedUrls)),
         );
         if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
-        wireMdxAnchors(body, mdds, trackedUrls, ctx.onNavigate);
+        // Pronunciations this entry can play, in the order the two wiring
+        // passes find them. Anchors run first, so a dictionary that ships
+        // both styles auto-plays its `sound://` link (#6265).
+        const audioTriggers: AudioTrigger[] = [];
+        wireMdxAnchors(body, mdds, trackedUrls, ctx.onNavigate, audioTriggers);
         // Some MDicts (notably Vocabulary.com-derived ones) wire audio
         // playback through inline `onclick="v0r.v(this,'KEY')"` handlers
         // that depend on the dict's own `j.js` script. We never run
         // MDX-supplied JS inside the shadow root (XSS surface), so parse
         // the audio key ourselves and bind a CSP-safe replacement.
-        await wireMdictAudioOnclick(body, mdds, trackedUrls);
+        await wireMdictAudioOnclick(body, mdds, trackedUrls, audioTriggers);
 
         // Attach a shadow root to a dedicated host so the dict's CSS (loose
         // .css files imported alongside + `<link>` references resolved from
@@ -744,6 +767,15 @@ export const createMdictProvider = ({
             (!!firstChild && matchesText(firstChild)) ||
             Array.from(shadow.querySelectorAll('h1')).some(matchesText);
           if (dup) headword.remove();
+        }
+
+        // Speak the entry without waiting for a tap on the speaker (#6265).
+        // Not awaited: the card should paint while the audio is read out of
+        // the MDD. On WebKit this only makes a sound once the shared element
+        // has been unlocked by a real tap (the autoplay policy rejects it
+        // otherwise, which `playDictAudio` logs and swallows).
+        if (ctx.autoPlayPronunciation && audioTriggers.length) {
+          void audioTriggers[0]!();
         }
 
         return { ok: true, headword: result.keyText, sourceLabel: dict.name };

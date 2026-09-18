@@ -2328,5 +2328,9 @@
   "Download for Offline": "ஆஃப்லைன் பயன்பாட்டிற்குப் பதிவிறக்கு",
   "Remove Offline Download": "ஆஃப்லைன் பதிவிறக்கத்தை அகற்று",
   "Transfer Sound": "பரிமாற்ற ஒலி",
-  "Play a sound when a transfer finishes": "பரிமாற்றம் முடியும் போது ஒலியை இயக்கவும்"
+  "Play a sound when a transfer finishes": "பரிமாற்றம் முடியும் போது ஒலியை இயக்கவும்",
+  "Pull-Down to Bookmark": "புத்தகக்குறியிட கீழே இழுக்கவும்",
+  "Pronunciation": "உச்சரிப்பு",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "அகராதி பதிவுடன் வழங்கும் ஒலிப்பதிவு இருந்தால் அதை இயக்கும்.",
+  "Auto-play Pronunciation": "உச்சரிப்பைத் தானாக இயக்கு"
 }

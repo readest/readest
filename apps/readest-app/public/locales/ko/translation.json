@@ -2268,5 +2268,9 @@
   "Download for Offline": "오프라인용으로 다운로드",
   "Remove Offline Download": "오프라인 다운로드 삭제",
   "Transfer Sound": "전송 소리",
-  "Play a sound when a transfer finishes": "전송이 완료될 때 소리 재생"
+  "Play a sound when a transfer finishes": "전송이 완료될 때 소리 재생",
+  "Pull-Down to Bookmark": "아래로 당겨 북마크",
+  "Pronunciation": "발음",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "사전이 표제어에 함께 담은 녹음이 있으면 재생합니다.",
+  "Auto-play Pronunciation": "발음 자동 재생"
 }

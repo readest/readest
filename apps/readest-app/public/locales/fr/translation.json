@@ -2388,5 +2388,9 @@
   "Download for Offline": "Télécharger pour une utilisation hors ligne",
   "Remove Offline Download": "Supprimer le téléchargement hors ligne",
   "Transfer Sound": "Son de transfert",
-  "Play a sound when a transfer finishes": "Jouer un son à la fin d’un transfert"
+  "Play a sound when a transfer finishes": "Jouer un son à la fin d’un transfert",
+  "Pull-Down to Bookmark": "Tirer vers le bas pour ajouter un signet",
+  "Pronunciation": "Prononciation",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "Lit l'enregistrement fourni avec l'entrée par le dictionnaire, lorsqu'il y en a un.",
+  "Auto-play Pronunciation": "Lire automatiquement la prononciation"
 }

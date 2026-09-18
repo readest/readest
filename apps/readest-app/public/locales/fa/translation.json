@@ -2328,5 +2328,9 @@
   "Download for Offline": "دانلود برای استفادهٔ آفلاین",
   "Remove Offline Download": "حذف دانلود آفلاین",
   "Transfer Sound": "صدای انتقال",
-  "Play a sound when a transfer finishes": "پخش صدا هنگام پایان یک انتقال"
+  "Play a sound when a transfer finishes": "پخش صدا هنگام پایان یک انتقال",
+  "Pull-Down to Bookmark": "برای نشانک‌گذاری به پایین بکشید",
+  "Pronunciation": "تلفظ",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "ضبطی را که واژه‌نامه همراه مدخل ارائه می‌کند، در صورت وجود پخش می‌کند.",
+  "Auto-play Pronunciation": "پخش خودکار تلفظ"
 }

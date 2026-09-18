@@ -2328,5 +2328,9 @@
   "Download for Offline": "ऑफ़लाइन उपयोग के लिए डाउनलोड करें",
   "Remove Offline Download": "ऑफ़लाइन डाउनलोड हटाएँ",
   "Transfer Sound": "स्थानांतरण ध्वनि",
-  "Play a sound when a transfer finishes": "स्थानांतरण पूर्ण होने पर ध्वनि चलाएँ"
+  "Play a sound when a transfer finishes": "स्थानांतरण पूर्ण होने पर ध्वनि चलाएँ",
+  "Pull-Down to Bookmark": "बुकमार्क के लिए नीचे खींचें",
+  "Pronunciation": "उच्चारण",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "शब्दकोश प्रविष्टि के साथ जो रिकॉर्डिंग देता है, उपलब्ध होने पर उसे चलाता है।",
+  "Auto-play Pronunciation": "उच्चारण अपने आप चलाएँ"
 }

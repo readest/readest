@@ -2328,5 +2328,9 @@
   "Download for Offline": "Downloaden voor offline gebruik",
   "Remove Offline Download": "Offline download verwijderen",
   "Transfer Sound": "Overdrachtsgeluid",
-  "Play a sound when a transfer finishes": "Geluid afspelen wanneer een overdracht is voltooid"
+  "Play a sound when a transfer finishes": "Geluid afspelen wanneer een overdracht is voltooid",
+  "Pull-Down to Bookmark": "Omlaag trekken voor bladwijzer",
+  "Pronunciation": "Uitspraak",
+  "Plays the recording a dictionary bundles with the entry, when it has one.": "Speelt de opname af die een woordenboek bij het lemma levert, als die er is.",
+  "Auto-play Pronunciation": "Uitspraak automatisch afspelen"
 }
