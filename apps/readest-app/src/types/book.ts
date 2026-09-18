@@ -248,6 +248,7 @@ export interface BookLayout {
   noContinuousScroll: boolean;
   disableClick: boolean;
   disableSwipe: boolean;
+  disablePullDownToBookmark: boolean;
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
