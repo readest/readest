@@ -17,6 +17,7 @@ export type BookFormat =
   | 'FBZ'
   | 'TXT'
   | 'MD'
+  | 'HTML'
   // Streaming audiobook from an Audiobookshelf server; filePath is abs://<serverId>/<itemId>
   | 'ABS';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt' | 'notebook';
