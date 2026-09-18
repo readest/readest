@@ -35,8 +35,17 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import app.tauri.plugin.JSObject
+import org.json.JSONArray
 import java.io.File
 import java.io.FileOutputStream
+
+internal data class AndroidAutoBook(
+    val hash: String,
+    val title: String,
+    val author: String,
+    val coverHash: String?,
+    val artworkReady: Boolean,
+)
 
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var mediaSession: MediaSessionCompat? = null
@@ -158,6 +167,8 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         private const val CHANNEL_ID = "media2_playback_channel"
         private const val NOTIFICATION_ID = 1002
         private const val MEDIA_ROOT_ID = "media_root_id"
+        private const val LIBRARY_ROOT_ID = "readest_library"
+        private const val BOOK_MEDIA_ID_PREFIX = "readest_book:"
         private const val CURRENT_READING_MEDIA_ID = "readest_current_reading"
         private const val RESUME_MEDIA_ID = "readest_resume_last_book"
         const val ACTION_ACTIVATE_SESSION = "ACTIVATE_SESSION"
@@ -166,6 +177,10 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         private const val KEY_HASH = "hash"
         private const val KEY_TITLE = "title"
         private const val KEY_AUTHOR = "author"
+        private const val PREFS_MEDIA_LIBRARY = "media_library"
+        private const val KEY_LIBRARY_JSON = "books_json"
+        private const val COVER_THUMBNAIL_CACHE_DIR = "cover-thumbnails/v1"
+        private val MD5_PATTERN = Regex("^[0-9a-fA-F]{32}$")
 
         var pluginEventTrigger: ((String, JSObject) -> Unit)? = null
 
@@ -224,6 +239,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         @Volatile
         var lastBookAuthor: String? = null
 
+        @Volatile
+        private var libraryBooks: List<AndroidAutoBook> = emptyList()
+
         fun saveLastBook(context: Context, hash: String, title: String?, author: String?) {
             lastBookHash = hash
             lastBookTitle = title
@@ -240,6 +258,53 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             lastBookHash = prefs.getString(KEY_HASH, null)
             lastBookTitle = prefs.getString(KEY_TITLE, null)
             lastBookAuthor = prefs.getString(KEY_AUTHOR, null)
+        }
+
+        internal fun parseLibrary(booksJson: String): List<AndroidAutoBook> {
+            val array = JSONArray(booksJson)
+            return buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    val hash = item.optString("hash").trim()
+                    val title = item.optString("title").trim()
+                    if (hash.isEmpty() || title.isEmpty()) continue
+                    add(
+                        AndroidAutoBook(
+                            hash = hash,
+                            title = title,
+                            author = item.optString("author").trim(),
+                            coverHash = item.optString("coverHash")
+                                .trim()
+                                .takeIf { MD5_PATTERN.matches(it) },
+                            artworkReady = item.optBoolean("artworkReady", false),
+                        )
+                    )
+                }
+            }
+        }
+
+        fun saveLibrary(context: Context, booksJson: String) {
+            val parsed = parseLibrary(booksJson)
+            context.getSharedPreferences(PREFS_MEDIA_LIBRARY, Context.MODE_PRIVATE).edit()
+                .putString(KEY_LIBRARY_JSON, booksJson)
+                .apply()
+            libraryBooks = parsed
+            val service = instance ?: return
+            Handler(Looper.getMainLooper()).post {
+                service.notifyChildrenChanged(MEDIA_ROOT_ID)
+                service.notifyChildrenChanged(LIBRARY_ROOT_ID)
+            }
+        }
+
+        private fun loadLibrary(context: Context) {
+            val json = context.getSharedPreferences(PREFS_MEDIA_LIBRARY, Context.MODE_PRIVATE)
+                .getString(KEY_LIBRARY_JSON, "[]") ?: "[]"
+            libraryBooks = try {
+                parseLibrary(json)
+            } catch (e: Exception) {
+                Log.w("MediaPlaybackService", "Ignoring invalid Android Auto library", e)
+                emptyList()
+            }
         }
 
         @Volatile
@@ -286,9 +351,10 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        // Android Auto binds this service cold (no session); restore the last
-        // book so the browse tree can offer a "Resume last book" entry.
+        // Android Auto binds this service cold (no session); restore the
+        // persisted library and last-book fallback before it requests a root.
         loadLastBook(this)
+        loadLibrary(this)
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         player = ExoPlayer.Builder(this).build()
@@ -305,8 +371,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
                 PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
             )
-            setPlaybackState(stateBuilder.build())
+            setPlaybackState(
+                stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED, 0L, 1f).build()
+            )
             setCallback(SessionCallback())
+            // A browser client can select a book while no TTS session is
+            // already playing. Keep the media session command-ready for the
+            // lifetime of the bound service; sessionActive separately gates
+            // audio focus, foreground state, and the silent route keeper.
+            isActive = true
             setSessionToken(sessionToken)
         }
 
@@ -366,7 +439,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             unregisterReceiver(becomingNoisyReceiver)
         }
 
-        mediaSession?.isActive = false
         mediaSession?.setPlaybackState(
             stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED, 0L, 1f).build()
         )
@@ -418,16 +490,43 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         }
 
         override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
-            if (sessionActive) {
+            if (sessionActive && mediaId == CURRENT_READING_MEDIA_ID) {
                 onPlay()
                 return
             }
-            // Cold start from the car: launch the reader on the last book with
-            // an autoplay flag so it starts TTS once loaded; playback then flows
-            // back through this media session. The mediaId carries the hash;
-            // fall back to the persisted one.
-            val hash = mediaId?.substringAfter("$RESUME_MEDIA_ID:", "")?.takeIf { it.isNotEmpty() }
-                ?: lastBookHash ?: return
+            val hash = when {
+                mediaId?.startsWith(BOOK_MEDIA_ID_PREFIX) == true ->
+                    mediaId.removePrefix(BOOK_MEDIA_ID_PREFIX).takeIf { it.isNotEmpty() }
+                mediaId?.startsWith("$RESUME_MEDIA_ID:") == true ->
+                    mediaId.removePrefix("$RESUME_MEDIA_ID:").takeIf { it.isNotEmpty() }
+                else -> lastBookHash
+            } ?: return
+
+            val selectedBook = libraryBooks.firstOrNull { it.hash == hash }
+            if (selectedBook != null) {
+                currentTitle = selectedBook.title
+                currentArtist = selectedBook.author
+                currentPositionMs = 0L
+                mediaSession?.setMetadata(buildLibraryBookMetadata(selectedBook))
+            }
+            // A playable-item request is asynchronous: the WebView still has
+            // to open the book and initialize its saved reader/player state.
+            // Report that work immediately so Android Auto keeps the selection
+            // alive instead of timing out with "Could not load your selection."
+            mediaSession?.setPlaybackState(
+                stateBuilder.setState(PlaybackStateCompat.STATE_BUFFERING, 0L, 1f).build()
+            )
+
+            // Normal case: the app process is alive in the background. Let the
+            // global bridge select the book and start the existing ebook TTS or
+            // audiobook player without trying to display phone UI in the car.
+            pluginEventTrigger?.let { trigger ->
+                trigger("media-session-play-book", JSObject().apply { put("bookHash", hash) })
+                return
+            }
+
+            // Cold process fallback: open the existing deep link. The reader
+            // consumes autoplay=tts after its library has hydrated.
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("readest://book/$hash?autoplay=tts"))
                 .setPackage(packageName)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -474,8 +573,8 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     private val browserClients =
         java.util.Collections.synchronizedSet(mutableSetOf<String>())
 
-    private fun grantArtworkTo(pkg: String) {
-        val uri = currentArtworkUri ?: return
+    private fun grantArtworkTo(pkg: String, artworkUri: Uri? = currentArtworkUri) {
+        val uri = artworkUri ?: return
         try {
             grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         } catch (e: Exception) {
@@ -506,6 +605,33 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         // is set, and the grant is cheap + idempotent.
         for (pkg in ARTWORK_URI_CLIENTS) grantArtworkTo(pkg)
         for (pkg in browserClients.toList()) grantArtworkTo(pkg)
+    }
+
+    private fun libraryArtworkUri(book: AndroidAutoBook): Uri? {
+        if (!book.artworkReady || !MD5_PATTERN.matches(book.hash)) return null
+        val cacheKey = book.coverHash ?: "legacy"
+        val file = File(cacheDir, "$COVER_THUMBNAIL_CACHE_DIR/${book.hash}-$cacheKey.jpg")
+        if (!file.isFile) return null
+        return try {
+            FileProvider.getUriForFile(this, "$packageName.fileprovider", file).also { uri ->
+                for (pkg in ARTWORK_URI_CLIENTS) grantArtworkTo(pkg, uri)
+                for (pkg in browserClients.toList()) grantArtworkTo(pkg, uri)
+            }
+        } catch (e: Exception) {
+            Log.w("MediaPlaybackService", "Failed to publish library artwork for ${book.hash}", e)
+            null
+        }
+    }
+
+    private fun buildLibraryBookMetadata(book: AndroidAutoBook): MediaMetadataCompat {
+        val builder = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, book.title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, book.author)
+        libraryArtworkUri(book)?.let { uri ->
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, uri.toString())
+            builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, uri.toString())
+        }
+        return builder.build()
     }
 
     private fun buildMediaMetadata(): MediaMetadataCompat {
@@ -651,36 +777,44 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaBrowserCompat.MediaItem>>) {
         val items = mutableListOf<MediaBrowserCompat.MediaItem>()
         if (parentId == MEDIA_ROOT_ID && sessionActive) {
-            // Downscale the cover for the browse item: MediaItems are parceled
-            // across binder to the car client, which caps transactions at ~1MB.
-            val icon = currentArtwork?.let { art ->
-                val maxSide = maxOf(art.width, art.height)
-                if (maxSide > 512) {
-                    val scale = 512f / maxSide
-                    Bitmap.createScaledBitmap(
-                        art,
-                        (art.width * scale).toInt().coerceAtLeast(1),
-                        (art.height * scale).toInt().coerceAtLeast(1),
-                        true
-                    )
-                } else {
-                    art
-                }
-            }
+            refreshArtworkUri()
             val description = MediaDescriptionCompat.Builder()
                 .setMediaId(CURRENT_READING_MEDIA_ID)
                 .setTitle(currentTitle)
                 .setSubtitle(currentArtist)
-                .setIconBitmap(icon)
+                .setIconUri(currentArtworkUri)
                 .build()
             items.add(MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_PLAYABLE))
         }
-        // Idle (no active session): show nothing rather than a "Resume last
-        // book" entry. Android Auto blocks launching Readest's WebView activity
-        // while projecting, so cold play-from-media-id hangs on "Getting your
-        // selection"; only expose the current book while it is actually playing.
-        // (The persisted last-book fields + onPlayFromMediaId cold-launch stay
-        // dormant for a future cold-start solution.)
+        if (parentId == MEDIA_ROOT_ID && libraryBooks.isNotEmpty()) {
+            val description = MediaDescriptionCompat.Builder()
+                .setMediaId(LIBRARY_ROOT_ID)
+                .setTitle("Library")
+                .setSubtitle("${libraryBooks.size} books")
+                .build()
+            items.add(
+                MediaBrowserCompat.MediaItem(
+                    description,
+                    MediaBrowserCompat.MediaItem.FLAG_BROWSABLE,
+                )
+            )
+        }
+        if (parentId == LIBRARY_ROOT_ID) {
+            for (book in libraryBooks) {
+                val description = MediaDescriptionCompat.Builder()
+                    .setMediaId("$BOOK_MEDIA_ID_PREFIX${book.hash}")
+                    .setTitle(book.title)
+                    .setSubtitle(book.author)
+                    .setIconUri(libraryArtworkUri(book))
+                    .build()
+                items.add(
+                    MediaBrowserCompat.MediaItem(
+                        description,
+                        MediaBrowserCompat.MediaItem.FLAG_PLAYABLE,
+                    )
+                )
+            }
+        }
         result.sendResult(items)
     }
 

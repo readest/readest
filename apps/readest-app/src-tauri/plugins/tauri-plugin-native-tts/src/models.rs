@@ -101,6 +101,12 @@ pub struct UpdateMediaSessionMetadataRequest {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct UpdateMediaLibraryRequest {
+    pub books_json: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateCarPlayStateRequest {
     pub active: bool,
     pub title: Option<String>,

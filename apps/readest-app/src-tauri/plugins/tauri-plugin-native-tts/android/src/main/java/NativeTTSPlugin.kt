@@ -99,6 +99,11 @@ class UpdateMediaSessionStateArgs {
 }
 
 @InvokeArg
+class UpdateMediaLibraryArgs {
+  var booksJson: String? = null
+}
+
+@InvokeArg
 class SetMediaSessionActiveArgs {
   var active: Boolean? = null
   var ownsAudioFocus: Boolean? = null
@@ -575,6 +580,20 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     @Command
+    fun update_media_library(invoke: Invoke) {
+        val args = invoke.parseArgs(UpdateMediaLibraryArgs::class.java)
+        try {
+            MediaPlaybackService.saveLibrary(activity, args.booksJson ?: "[]")
+            // Keep a process-local route from Android Auto selections back to
+            // the WebView even while no TTS session is active.
+            MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
+            invoke.resolve()
+        } catch (e: Exception) {
+            invoke.reject("Failed to update Android Auto library: ${e.message}")
+        }
+    }
+
+    @Command
     fun set_media_session_active(invoke: Invoke) {
         var args = invoke.parseArgs(SetMediaSessionActiveArgs::class.java)
         val active = args.active ?: true
@@ -608,7 +627,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 // browsing, in which case stopService would leave the foreground
                 // notification and the keep-alive player running.
                 MediaPlaybackService.requestDeactivation()
-                MediaPlaybackService.pluginEventTrigger = null
             }
             invoke.resolve()
         } catch (e: Exception) {
@@ -748,7 +766,6 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         try {
             abortPlayout()
             MediaPlaybackService.requestDeactivation()
-            MediaPlaybackService.pluginEventTrigger = null
 
             textToSpeech?.shutdown()
             textToSpeech = null
