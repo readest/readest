@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as sounds from '@/services/localsend/sounds';
 import {
   isLocalSendSoundsEnabled,
-  playTransferDoneCue,
   setLocalSendSoundsEnabled,
   shouldPlayTransferCue,
 } from '@/services/localsend/sounds';
@@ -47,8 +46,11 @@ describe('shouldPlayTransferCue', () => {
 describe('playTransferDoneCue', () => {
   const play = vi.fn(() => Promise.resolve());
   const created: string[] = [];
+  // The cue element is a module-level singleton, so a test that asserts on the
+  // construction would otherwise pass only while it is the first one to play.
+  let playTransferDoneCue: typeof sounds.playTransferDoneCue;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     created.length = 0;
     play.mockClear();
@@ -63,6 +65,8 @@ describe('playTransferDoneCue', () => {
         }
       },
     );
+    vi.resetModules();
+    ({ playTransferDoneCue } = await import('@/services/localsend/sounds'));
   });
 
   afterEach(() => {
