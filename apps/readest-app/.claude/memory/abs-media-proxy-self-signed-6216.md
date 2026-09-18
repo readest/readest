@@ -67,3 +67,21 @@ both `Body` and `Stream`, so `.boxed()` is ambiguous - use `BoxBody::new`. The
 reporter's Windows "cert installed but still fails" detail is unexplained (SAN?); the
 proxy sidesteps it. Repro script + CDP driver: scratchpad `proxy/proxy.mjs`, `cdp.mjs`.
 Left on the Xiaomi: the `https://127.0.0.1:8443` server row + its synced books.
+
+
+**Hardening added after CodeRabbit + CodeQL review (PR #6268, 2026-09-18):** the
+proxy now takes a per-session ORIGIN ALLOWLIST - `get_media_proxy_base(origins:
+Vec<String>)` - and refuses (403) any `u=` target whose `scheme://host:port` is
+not one of the configured ABS servers, closing the open-relay SSRF (CWE-918) a
+leaked secret would otherwise allow. Plus `redirect(Policy::none())` and a 10s
+`connect_timeout` on the reqwest client. **Gotcha that cost a device round-trip:**
+the JS `absServerOrigins()` FIRST read only `useABSServerStore.getState().servers`,
+which the player route opens BEFORE it is hydrated from settings, so the allowlist
+was empty and the proxy 403'd the just-opened track (logcat `refused an
+off-allowlist origin: https://127.0.0.1:8443`). Fix = mirror `findABSServerById`:
+union the store AND `useSettingsStore.getState().settings.absServers`. Re-sent on
+every `getMediaProxyBase()` call (no JS memo) so a server added mid-session
+registers. Xiaomi RE-VERIFIED: 206 file GETs across chapters, no interrupted toast,
+no off-allowlist refusals. CSP note: a page `fetch()` to the loopback proxy is
+blocked by connect-src; only the `<audio>` element reaches it (media-src `http://*`)
+- so the proxy can't be probed from a devtools `fetch`, only through playback.

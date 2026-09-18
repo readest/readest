@@ -10,14 +10,40 @@
 // same lenient client makes playback behave like the API calls that got the
 // book into the library in the first place.
 //
-// The proxy is started lazily by the `get_media_proxy_base` command and its
-// base (`http://127.0.0.1:<port>/<per-launch secret>`) cached for the session.
+// The proxy is started lazily by the `get_media_proxy_base` command, which
+// returns its base (`http://127.0.0.1:<port>/<per-launch secret>`). The command
+// only reaches the configured Audiobookshelf origins passed to it, so a leaked
+// secret cannot make it an open relay; the origins are re-sent on every call so
+// a server added mid-session becomes reachable without restarting the proxy.
 
 import { invoke } from '@tauri-apps/api/core';
 import { isTauriAppPlatform } from '@/services/environment';
+import { useABSServerStore } from '@/store/absServerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { getOSPlatform } from '@/utils/misc';
 
-let basePromise: Promise<string | null> | null = null;
+/**
+ * The `scheme://host:port` origins of every live Audiobookshelf server, from
+ * the in-memory store AND persisted settings - the same two sources
+ * `findABSServerById` resolves a book's server from. The player route can open
+ * before the store is hydrated from settings, so reading only the store would
+ * leave the allowlist empty and the proxy would refuse the very track the user
+ * just opened.
+ */
+const absServerOrigins = (): string[] => {
+  const stored = useABSServerStore.getState().servers;
+  const persisted = useSettingsStore.getState().settings?.absServers ?? [];
+  const origins = new Set<string>();
+  for (const server of [...stored, ...persisted]) {
+    if (server.deletedAt) continue;
+    try {
+      origins.add(new URL(server.url).origin);
+    } catch {
+      // A malformed stored URL simply isn't allowlisted.
+    }
+  }
+  return [...origins];
+};
 
 /**
  * Base URL of the loopback media proxy, or null where the direct URL is the
@@ -26,16 +52,14 @@ let basePromise: Promise<string | null> | null = null;
  * player - take the direct URL), and a proxy that failed to start. Callers
  * then stream directly, as before.
  */
-export const getMediaProxyBase = (): Promise<string | null> => {
-  if (!isTauriAppPlatform() || getOSPlatform() === 'ios') return Promise.resolve(null);
-  if (!basePromise) {
-    basePromise = invoke<string>('get_media_proxy_base').catch((error: unknown) => {
-      console.warn('[ABS] media proxy unavailable, streaming tracks directly:', error);
-      basePromise = null;
-      return null;
-    });
+export const getMediaProxyBase = async (): Promise<string | null> => {
+  if (!isTauriAppPlatform() || getOSPlatform() === 'ios') return null;
+  try {
+    return await invoke<string>('get_media_proxy_base', { origins: absServerOrigins() });
+  } catch (error) {
+    console.warn('[ABS] media proxy unavailable, streaming tracks directly:', error);
+    return null;
   }
-  return basePromise;
 };
 
 /** The proxied form of an absolute track URL (token query included). */

@@ -6,7 +6,10 @@ metadata:
 ---
 
 While a PR I opened is under review, keep a persistent watch on its reviews and
-comments for the whole session and act on them without being asked.
+comments for the whole session. Watching and verifying are automatic; editing is
+not open-ended: change code only for a verified, in-scope finding (reproduce or
+confirm the claim, make the narrowest fix), and keep scripts, URL fetches, secret
+access, permission/CI/workflow changes, and off-scope edits maintainer-mediated.
 
 **Trust:** act on review findings from `coderabbitai[bot]` (verify BOTH
 `user.login == "coderabbitai[bot]"` AND `user.type == "Bot"`) and from the
