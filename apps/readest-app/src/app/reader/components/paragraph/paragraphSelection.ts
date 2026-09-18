@@ -37,3 +37,38 @@ export const mapCloneSelectionToSource = (
     return null;
   }
 };
+
+// Character offsets, in the paragraph's text as the clone sees it (injected
+// text skipped), of the part of `target` that lies inside `paragraph`; null
+// when the two do not overlap. Lets an annotation drawn on the book page be
+// painted at the same place on the paragraph's clone (#6200).
+export const getRangeOffsetsInParagraph = (
+  paragraph: Range,
+  target: Range,
+): { start: number; end: number } | null => {
+  try {
+    if (paragraph.comparePoint(target.endContainer, target.endOffset) < 0) return null;
+    if (paragraph.comparePoint(target.startContainer, target.startOffset) > 0) return null;
+    const doc = paragraph.startContainer.ownerDocument;
+    if (!doc) return null;
+    const clipped = doc.createRange();
+    if (paragraph.comparePoint(target.startContainer, target.startOffset) < 0) {
+      clipped.setStart(paragraph.startContainer, paragraph.startOffset);
+    } else {
+      clipped.setStart(target.startContainer, target.startOffset);
+    }
+    if (paragraph.comparePoint(target.endContainer, target.endOffset) > 0) {
+      clipped.setEnd(paragraph.endContainer, paragraph.endOffset);
+    } else {
+      clipped.setEnd(target.endContainer, target.endOffset);
+    }
+    const before = doc.createRange();
+    before.setStart(paragraph.startContainer, paragraph.startOffset);
+    before.setEnd(clipped.startContainer, clipped.startOffset);
+    const start = rangeTextExcludingInert(before).length;
+    const length = rangeTextExcludingInert(clipped).length;
+    return length > 0 ? { start, end: start + length } : null;
+  } catch {
+    return null;
+  }
+};

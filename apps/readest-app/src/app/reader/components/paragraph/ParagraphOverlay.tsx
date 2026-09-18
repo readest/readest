@@ -6,6 +6,8 @@ import { ViewSettings } from '@/types/book';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS } from '@/services/constants';
 import { setSelectionSuppressed } from '@/utils/bridge';
 import { eventDispatcher } from '@/utils/event';
@@ -15,17 +17,27 @@ import {
   getParagraphLayoutContext,
   ParagraphPresentation,
 } from '@/utils/paragraphPresentation';
-import { getTextSubRange } from '@/services/tts/wordHighlight';
+import { getTextSubRange, rangeTextExcludingInert } from '@/services/tts/wordHighlight';
+import { getIndexFromCfi } from '@/utils/cfi';
+import { isRangeLike } from '@/utils/range';
+import { getHighlightColorHex } from '../../utils/annotatorUtil';
 import { getBaseFontFamily } from '@/utils/style';
 import { loadShortcuts } from '@/helpers/shortcuts';
 import { matchesShortcut } from '@/utils/shortcutKeys';
 import TTSFollowIndicator, { TtsSyncStatus } from '../tts/TTSFollowIndicator';
 import { buildTtsHighlightCssText } from './paragraphTts';
-import { getSelectionRangeWithin, mapCloneSelectionToSource } from './paragraphSelection';
+import {
+  getRangeOffsetsInParagraph,
+  getSelectionRangeWithin,
+  mapCloneSelectionToSource,
+} from './paragraphSelection';
 
 // CSS Custom Highlight registry name for the in-paragraph TTS word/sentence
 // highlight (#3235). Unique per app so it never collides with other highlights.
 const TTS_HIGHLIGHT_NAME = 'readest-tts-paragraph';
+// Prefix of the CSS Custom Highlight names the book's own highlights are painted
+// under on the clone, one per style and colour (#6200).
+const ANNOTATION_HIGHLIGHT_PREFIX = 'readest-annotation-';
 
 const isSameRange = (a: Range, b: Range) => {
   try {
@@ -163,6 +175,10 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
 }) => {
   const { appService } = useEnv();
   const { getView, getProgress } = useReaderStore();
+  const booknotes = useBookDataStore(
+    (state) => state.booksData[bookKey.split('-')[0]!]?.config?.booknotes,
+  );
+  const { settings } = useSettingsStore();
   const [paragraphs, setParagraphs] = useState<ParagraphContent[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const [isOverlayMounted, setIsOverlayMounted] = useState(false);
@@ -171,6 +187,8 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   // Index of the currently focused paragraph, used to gate the TTS word/sentence
   // highlight so a stale highlight never lands on the wrong paragraph (#3235).
   const [focusIndex, setFocusIndex] = useState(-1);
+  // `::highlight()` rules for the book highlights painted on the clone.
+  const [annotationCss, setAnnotationCss] = useState('');
   const [ttsHighlight, setTtsHighlight] = useState<{
     index: number;
     start: number;
@@ -591,6 +609,83 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
     return clear;
   }, [ttsHighlight, focusIndex, paragraphs]);
 
+  // Paint the book's highlights that fall in the focused paragraph onto the
+  // clone (#6200). The overlay hides the page, so a highlight made here — or
+  // one already there — gave no feedback at all. Each is resolved from its CFI
+  // in the book document, clipped to the paragraph, mapped by text offset onto
+  // the clone and drawn with the CSS Custom Highlight API like the TTS
+  // highlight: no DOM mutation, so a selection in the clone survives. Keyed on
+  // the book's notes, a highlight shows the moment it is made.
+  useEffect(() => {
+    const registry = typeof CSS !== 'undefined' ? CSS.highlights : undefined;
+    if (!registry || typeof Highlight === 'undefined') return undefined;
+    const clear = () => {
+      for (const name of [...registry.keys()]) {
+        if (name.startsWith(ANNOTATION_HIGHLIGHT_PREFIX)) registry.delete(name);
+      }
+      setAnnotationCss('');
+    };
+    clear();
+    const cloneRoot = getCloneRoot();
+    const source = sourceRangeRef.current;
+    const view = getView(bookKey);
+    const doc = source?.startContainer.ownerDocument;
+    if (!cloneRoot || !source || !view || !doc || !booknotes?.length) return clear;
+    const index = view.renderer.getContents().find((content) => content.doc === doc)?.index;
+    if (index === undefined) return clear;
+
+    const base = document.createRange();
+    base.selectNodeContents(cloneRoot);
+    const cloneText = rangeTextExcludingInert(base);
+    const groups = new Map<string, { css: string; ranges: Range[] }>();
+    for (const note of booknotes) {
+      if (note.type !== 'annotation' || note.deletedAt || !note.style || !note.color) continue;
+      if (getIndexFromCfi(note.cfi) !== index) continue;
+      const offsets: { start: number; end: number }[] = [];
+      try {
+        const anchor = view.resolveCFI(note.cfi)?.anchor(doc);
+        let range: Range | null = null;
+        if (isRangeLike(anchor)) {
+          range = anchor;
+        } else if (anchor) {
+          range = doc.createRange();
+          range.selectNodeContents(anchor);
+        }
+        const clipped = range && getRangeOffsetsInParagraph(source, range);
+        if (clipped) offsets.push(clipped);
+      } catch {
+        // An unresolvable CFI has nothing to paint.
+      }
+      // A global highlight marks every occurrence of its text on the page.
+      if (note.global && note.text) {
+        for (
+          let at = cloneText.indexOf(note.text);
+          at >= 0;
+          at = cloneText.indexOf(note.text, at + note.text.length)
+        ) {
+          offsets.push({ start: at, end: at + note.text.length });
+        }
+      }
+      const ranges = offsets
+        .map(({ start, end }) => getTextSubRange(base, start, end))
+        .filter((range): range is Range => !!range);
+      const color = getHighlightColorHex(settings, note.color);
+      if (ranges.length === 0 || !color) continue;
+      const name = `${ANNOTATION_HIGHLIGHT_PREFIX}${note.style}-${color.replace('#', '')}`;
+      const group = groups.get(name) ?? {
+        css: buildTtsHighlightCssText({ style: note.style, color }),
+        ranges: [],
+      };
+      group.ranges.push(...ranges);
+      groups.set(name, group);
+    }
+    for (const [name, group] of groups) registry.set(name, new Highlight(...group.ranges));
+    setAnnotationCss(
+      [...groups].map(([name, group]) => `::highlight(${name}) { ${group.css} }`).join('\n'),
+    );
+    return clear;
+  }, [paragraphs, booknotes, bookKey, getCloneRoot, getView, settings]);
+
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       // A finger on a selected paragraph is dragging the selection, not swiping.
@@ -843,6 +938,8 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
           ::highlight(${TTS_HIGHLIGHT_NAME}) {
             ${ttsHighlightCss}
           }
+
+          ${annotationCss}
         `}</style>
         {activeParagraph ? (
           <div

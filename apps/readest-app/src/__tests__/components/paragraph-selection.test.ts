@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getRangeOffsetsInParagraph,
   getSelectionRangeWithin,
   mapCloneSelectionToSource,
 } from '@/app/reader/components/paragraph/paragraphSelection';
@@ -17,9 +18,9 @@ const cloneParagraph = (source: Range): HTMLDivElement => {
   return clone;
 };
 
-const createSource = (body: string) => {
+const createSource = (body: string, paragraphIndex = 0) => {
   const doc = new DOMParser().parseFromString(`<html><body>${body}</body></html>`, 'text/html');
-  const paragraph = doc.querySelector('p')!;
+  const paragraph = doc.querySelectorAll('p')[paragraphIndex]!;
   // A paragraph-mode range starts inside the block and ends before the next
   // one, exactly as ParagraphIterator builds them.
   const range = doc.createRange();
@@ -129,5 +130,55 @@ describe('getSelectionRangeWithin (#6200)', () => {
     sel.removeAllRanges();
     container.remove();
     outside.remove();
+  });
+});
+
+describe('getRangeOffsetsInParagraph (#6200)', () => {
+  const setup = (body: string, paragraphIndex = 0) => {
+    const { doc, range } = createSource(body, paragraphIndex);
+    const rangeOver = (text: string) => selectText(doc.body, text);
+    return { doc, paragraph: range, rangeOver };
+  };
+
+  it('returns the offsets of an annotation inside the paragraph', () => {
+    const { paragraph, rangeOver } = setup('<p>Hello <em>brave</em> new world</p><h2>Next</h2>');
+    expect(getRangeOffsetsInParagraph(paragraph, rangeOver('brave new'))).toEqual({
+      start: 6,
+      end: 15,
+    });
+  });
+
+  it('clips an annotation that starts before or ends after the paragraph', () => {
+    const { doc, paragraph, rangeOver } = setup(
+      '<p class="intro">Intro text</p><p>Hello brave new world</p><h2>Next</h2>',
+      1,
+    );
+    const intro = doc.querySelector('.intro')!;
+    const spill = doc.createRange();
+    spill.setStart(intro.firstChild!, 6);
+    spill.setEnd(rangeOver('brave').endContainer, rangeOver('brave').endOffset);
+    expect(getRangeOffsetsInParagraph(paragraph, spill)).toEqual({ start: 0, end: 11 });
+
+    const tail = doc.createRange();
+    tail.setStart(rangeOver('new').startContainer, rangeOver('new').startOffset);
+    tail.setEndAfter(doc.querySelector('h2')!);
+    expect(getRangeOffsetsInParagraph(paragraph, tail)).toEqual({ start: 12, end: 21 });
+  });
+
+  it('returns null for an annotation elsewhere in the section', () => {
+    const { doc, paragraph } = setup('<p>Hello world</p><h2>Next</h2><p>After</p>');
+    const after = doc.createRange();
+    after.selectNodeContents(doc.querySelectorAll('p')[1]!);
+    expect(getRangeOffsetsInParagraph(paragraph, after)).toBeNull();
+  });
+
+  it('skips injected inert text when counting offsets', () => {
+    const { paragraph, rangeOver } = setup(
+      '<p>Hello <span cfi-inert="true">[gloss]</span>brave new world</p><h2>Next</h2>',
+    );
+    expect(getRangeOffsetsInParagraph(paragraph, rangeOver('new world'))).toEqual({
+      start: 12,
+      end: 21,
+    });
   });
 });

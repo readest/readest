@@ -45,15 +45,26 @@ afterEach(() => {
 });
 
 let mockIsFixedLayout = false;
+const mockBooksData: Record<string, { config?: { booknotes?: unknown[] } }> = {};
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
-    getBookData: () => ({ isFixedLayout: mockIsFixedLayout }),
-  }),
+  useBookDataStore: (selector?: (state: unknown) => unknown) => {
+    const state = {
+      getBookData: () => ({ isFixedLayout: mockIsFixedLayout }),
+      booksData: mockBooksData,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: { hasSafeAreaInset: false } }),
+}));
+
+// Highlight colours resolve through the read settings (custom colours first);
+// the reader never mounts before they are loaded.
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: () => ({ settings: { globalReadSettings: {} } }),
 }));
 
 vi.mock('@/helpers/settings', () => ({
@@ -1500,5 +1511,158 @@ describe('paragraph mode resume (#6200)', () => {
     await waitFor(() => {
       expect(hookApi?.paragraphState.currentRange?.toString()).toBe('Block zero');
     });
+  });
+});
+
+describe('paragraph mode highlights (#6200)', () => {
+  const overlayBookKey = 'overlay-book';
+  const presentation = { dir: 'ltr', writingMode: 'horizontal-tb', vertical: false, rtl: false };
+  type HighlightEntry = { ranges: Range[] };
+  let highlights: Map<string, HighlightEntry>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    highlights = new Map();
+    // jsdom has no CSS Custom Highlight API; the overlay paints through it.
+    (globalThis as unknown as { CSS: unknown }).CSS = { highlights };
+    (globalThis as unknown as { Highlight: unknown }).Highlight = class {
+      ranges: Range[];
+      constructor(...ranges: Range[]) {
+        this.ranges = ranges;
+      }
+    };
+    delete mockBooksData['overlay'];
+  });
+
+  afterEach(() => {
+    cleanup();
+    delete (globalThis as unknown as { CSS?: unknown }).CSS;
+    delete (globalThis as unknown as { Highlight?: unknown }).Highlight;
+    delete mockBooksData['overlay'];
+  });
+
+  const painted = () =>
+    [...highlights.entries()].map(([name, entry]) => ({
+      name,
+      texts: entry.ranges.map((range) => range.toString()),
+      inClone: entry.ranges.every((range) => range.startContainer.ownerDocument === document),
+    }));
+
+  const renderWithNotes = async (booknotes: object[]) => {
+    const doc = createDoc(
+      '<p class="intro">Intro text</p><p>Hello <em>brave</em> new world</p><h2>Next</h2>',
+    );
+    const paragraph = doc.querySelectorAll('p')[1]!;
+    const range = doc.createRange();
+    range.setStart(paragraph, 0);
+    range.setEndBefore(doc.querySelector('h2')!);
+    const rangeOver = (text: string) => {
+      const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const at = (node as Text).data.indexOf(text);
+        if (at < 0) continue;
+        const r = doc.createRange();
+        r.setStart(node, at);
+        r.setEnd(node, at + text.length);
+        return r;
+      }
+      throw new Error(`"${text}" not in source`);
+    };
+    const anchors: Record<string, () => Range> = {
+      'epubcfi(/6/8!/4/4/2,/1:0,/1:5)': () => rangeOver('brave'),
+      'epubcfi(/6/8!/4/4,/3:5,/3:10)': () => rangeOver('world'),
+      'epubcfi(/6/8!/4/2,/1:0,/1:5)': () => rangeOver('Intro'),
+    };
+    mockGetView.mockReturnValue({
+      renderer: { getContents: () => [{ doc, index: 3 }] },
+      getCFI: vi.fn(),
+      resolveCFI: (cfi: string) => (anchors[cfi] ? { index: 3, anchor: anchors[cfi] } : null),
+    });
+    mockBooksData['overlay'] = { config: { booknotes } };
+
+    const utils = render(
+      <ParagraphOverlay
+        bookKey={overlayBookKey}
+        viewSettings={{ writingMode: 'horizontal-tb', vertical: false, rtl: false } as never}
+      />,
+    );
+    await act(async () => {
+      await eventDispatcher.dispatch('paragraph-focus', {
+        bookKey: overlayBookKey,
+        range,
+        presentation,
+      });
+    });
+    await waitFor(() => {
+      expect(utils.container.querySelector('.paragraph-content')).not.toBeNull();
+    });
+    return utils;
+  };
+
+  const note = (id: string, cfi: string, extra: object = {}) => ({
+    id,
+    type: 'annotation',
+    cfi,
+    style: 'highlight',
+    color: 'yellow',
+    text: '',
+    note: '',
+    createdAt: 1,
+    updatedAt: 1,
+    ...extra,
+  });
+
+  it('paints the highlights that fall in the focused paragraph onto the clone', async () => {
+    const { container } = await renderWithNotes([
+      note('a', 'epubcfi(/6/8!/4/4/2,/1:0,/1:5)'),
+      note('b', 'epubcfi(/6/8!/4/4,/3:5,/3:10)', { style: 'underline', color: 'red' }),
+      // Another paragraph of the same section: not this clone's.
+      note('c', 'epubcfi(/6/8!/4/2,/1:0,/1:5)'),
+      // Deleted: gone from the page, so gone from the clone.
+      note('d', 'epubcfi(/6/8!/4/4/2,/1:0,/1:5)', { color: 'blue', deletedAt: 2 }),
+    ]);
+
+    await waitFor(() => expect(painted()).toHaveLength(2));
+    expect(painted()).toEqual([
+      { name: 'readest-annotation-highlight-facc15', texts: ['brave'], inClone: true },
+      { name: 'readest-annotation-underline-f87171', texts: ['world'], inClone: true },
+    ]);
+    // Each painted style/colour gets its own ::highlight() rule.
+    const css = container.querySelector('style')!.textContent!;
+    expect(css).toContain('::highlight(readest-annotation-highlight-facc15)');
+    expect(css).toContain('#facc15');
+    expect(css).toContain('::highlight(readest-annotation-underline-f87171)');
+    expect(css).toContain('text-decoration: underline');
+  });
+
+  it('shows a highlight made in paragraph mode as soon as the book notes change', async () => {
+    const { rerender } = await renderWithNotes([]);
+    await act(async () => {});
+    expect(painted()).toHaveLength(0);
+
+    mockBooksData['overlay'] = {
+      config: { booknotes: [note('a', 'epubcfi(/6/8!/4/4/2,/1:0,/1:5)')] },
+    };
+    rerender(
+      <ParagraphOverlay
+        bookKey={overlayBookKey}
+        viewSettings={{ writingMode: 'horizontal-tb', vertical: false, rtl: false } as never}
+      />,
+    );
+
+    await waitFor(() => expect(painted()).toHaveLength(1));
+    expect(painted()[0]!.texts).toEqual(['brave']);
+  });
+
+  it('paints every occurrence of a global highlight in the paragraph', async () => {
+    await renderWithNotes([
+      note('g', 'epubcfi(/6/8!/4/4/2,/1:0,/1:5)', { text: 'e', global: true }),
+    ]);
+
+    await waitFor(() => expect(painted()).toHaveLength(1));
+    // The anchored range plus every "e" in "Hello brave new world".
+    const texts = painted()[0]!.texts;
+    expect(texts).toContain('brave');
+    expect(texts.filter((t) => t === 'e')).toHaveLength(3);
   });
 });
