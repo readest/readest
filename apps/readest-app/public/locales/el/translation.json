@@ -2278,8 +2278,6 @@
   "Unlocked": "Ξεκλειδώθηκε",
   "Receiving from paired device {{alias}}": "Λήψη από τη συζευγμένη συσκευή {{alias}}",
   "Always accept from {{alias}}": "Να γίνεται πάντα αποδοχή από {{alias}}",
-  "Transfer Sounds": "Ήχοι μεταφοράς",
-  "Play a sound when transfers start, finish, or fail": "Αναπαραγωγή ήχου όταν οι μεταφορές ξεκινούν, ολοκληρώνονται ή αποτυγχάνουν",
   "Paired Devices": "Συζευγμένες συσκευές",
   "Paired {{date}}": "Συζεύχθηκε στις {{date}}",
   "Unpair": "Κατάργηση σύζευξης",
@@ -2328,5 +2326,7 @@
   "Open External Link": "Άνοιγμα εξωτερικού συνδέσμου",
   "Available Offline": "Διαθέσιμο εκτός σύνδεσης",
   "Download for Offline": "Λήψη για χρήση εκτός σύνδεσης",
-  "Remove Offline Download": "Κατάργηση λήψης εκτός σύνδεσης"
+  "Remove Offline Download": "Κατάργηση λήψης εκτός σύνδεσης",
+  "Transfer Sound": "Ήχος μεταφοράς",
+  "Play a sound when a transfer finishes": "Αναπαραγωγή ήχου όταν ολοκληρώνεται μια μεταφορά"
 }

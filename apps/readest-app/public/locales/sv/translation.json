@@ -2278,8 +2278,6 @@
   "Unlocked": "Upplåst",
   "Receiving from paired device {{alias}}": "Tar emot från parkopplad enhet {{alias}}",
   "Always accept from {{alias}}": "Acceptera alltid från {{alias}}",
-  "Transfer Sounds": "Överföringsljud",
-  "Play a sound when transfers start, finish, or fail": "Spela upp ett ljud när överföringar startar, slutförs eller misslyckas",
   "Paired Devices": "Parkopplade enheter",
   "Paired {{date}}": "Parkopplad {{date}}",
   "Unpair": "Ta bort parkoppling",
@@ -2328,5 +2326,7 @@
   "Open External Link": "Öppna extern länk",
   "Available Offline": "Tillgänglig offline",
   "Download for Offline": "Ladda ned för offlineanvändning",
-  "Remove Offline Download": "Ta bort offlinenedladdning"
+  "Remove Offline Download": "Ta bort offlinenedladdning",
+  "Transfer Sound": "Överföringsljud",
+  "Play a sound when a transfer finishes": "Spela upp ett ljud när en överföring slutförs"
 }

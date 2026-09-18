@@ -2278,8 +2278,6 @@
   "Unlocked": "باز شد",
   "Receiving from paired device {{alias}}": "در حال دریافت از دستگاه جفت‌شده {{alias}}",
   "Always accept from {{alias}}": "همیشه از {{alias}} پذیرفته شود",
-  "Transfer Sounds": "صداهای انتقال",
-  "Play a sound when transfers start, finish, or fail": "پخش صدا هنگام شروع، پایان یا شکست انتقال‌ها",
   "Paired Devices": "دستگاه‌های جفت‌شده",
   "Paired {{date}}": "جفت‌شده در {{date}}",
   "Unpair": "لغو جفت‌شدن",
@@ -2328,5 +2326,7 @@
   "Open External Link": "باز کردن پیوند خارجی",
   "Available Offline": "در دسترس به‌صورت آفلاین",
   "Download for Offline": "دانلود برای استفادهٔ آفلاین",
-  "Remove Offline Download": "حذف دانلود آفلاین"
+  "Remove Offline Download": "حذف دانلود آفلاین",
+  "Transfer Sound": "صدای انتقال",
+  "Play a sound when a transfer finishes": "پخش صدا هنگام پایان یک انتقال"
 }

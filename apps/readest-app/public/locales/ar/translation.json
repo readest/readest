@@ -2514,8 +2514,6 @@
   "Unlocked": "تم إلغاء القفل",
   "Receiving from paired device {{alias}}": "جارٍ الاستلام من الجهاز المقترن {{alias}}",
   "Always accept from {{alias}}": "القبول دائمًا من {{alias}}",
-  "Transfer Sounds": "أصوات النقل",
-  "Play a sound when transfers start, finish, or fail": "تشغيل صوت عند بدء عمليات النقل أو اكتمالها أو فشلها",
   "Paired Devices": "الأجهزة المقترنة",
   "Paired {{date}}": "تم الاقتران في {{date}}",
   "Unpair": "إلغاء الاقتران",
@@ -2568,5 +2566,7 @@
   "Open External Link": "فتح رابط خارجي",
   "Available Offline": "متاح دون اتصال",
   "Download for Offline": "التنزيل للاستخدام دون اتصال",
-  "Remove Offline Download": "إزالة التنزيل دون اتصال"
+  "Remove Offline Download": "إزالة التنزيل دون اتصال",
+  "Transfer Sound": "صوت النقل",
+  "Play a sound when a transfer finishes": "تشغيل صوت عند اكتمال النقل"
 }

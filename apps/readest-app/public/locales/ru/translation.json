@@ -2396,8 +2396,6 @@
   "Unlocked": "Разблокировано",
   "Receiving from paired device {{alias}}": "Приём с сопряжённого устройства {{alias}}",
   "Always accept from {{alias}}": "Всегда принимать от {{alias}}",
-  "Transfer Sounds": "Звуки передачи",
-  "Play a sound when transfers start, finish, or fail": "Воспроизводить звук при начале, завершении или сбое передачи",
   "Paired Devices": "Сопряжённые устройства",
   "Paired {{date}}": "Сопряжено {{date}}",
   "Unpair": "Разорвать сопряжение",
@@ -2448,5 +2446,7 @@
   "Open External Link": "Открыть внешнюю ссылку",
   "Available Offline": "Доступно офлайн",
   "Download for Offline": "Скачать для офлайн-доступа",
-  "Remove Offline Download": "Удалить офлайн-загрузку"
+  "Remove Offline Download": "Удалить офлайн-загрузку",
+  "Transfer Sound": "Звук передачи",
+  "Play a sound when a transfer finishes": "Воспроизводить звук при завершении передачи"
 }

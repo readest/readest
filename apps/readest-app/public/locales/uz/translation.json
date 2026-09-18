@@ -2278,8 +2278,6 @@
   "Unlocked": "Ochilgan",
   "Receiving from paired device {{alias}}": "{{alias}} juftlangan qurilmasidan qabul qilinmoqda",
   "Always accept from {{alias}}": "{{alias}} qurilmasidan doim qabul qilinsin",
-  "Transfer Sounds": "Uzatish tovushlari",
-  "Play a sound when transfers start, finish, or fail": "Uzatish boshlanganda, tugaganda yoki muvaffaqiyatsiz boʻlganda tovush chalinsin",
   "Paired Devices": "Juftlangan qurilmalar",
   "Paired {{date}}": "{{date}} da juftlangan",
   "Unpair": "Juftlikni bekor qilish",
@@ -2328,5 +2326,7 @@
   "Open External Link": "Tashqi havolani ochish",
   "Available Offline": "Oflayn mavjud",
   "Download for Offline": "Oflayn foydalanish uchun yuklab olish",
-  "Remove Offline Download": "Oflayn yuklamani oʻchirish"
+  "Remove Offline Download": "Oflayn yuklamani oʻchirish",
+  "Transfer Sound": "Uzatish tovushi",
+  "Play a sound when a transfer finishes": "Uzatish tugaganda tovush chalinsin"
 }

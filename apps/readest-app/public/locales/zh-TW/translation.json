@@ -2219,8 +2219,6 @@
   "Unlocked": "已解鎖",
   "Receiving from paired device {{alias}}": "正在接收來自已配對裝置 {{alias}} 的傳輸",
   "Always accept from {{alias}}": "一律接受來自 {{alias}} 的傳輸",
-  "Transfer Sounds": "傳輸提示音",
-  "Play a sound when transfers start, finish, or fail": "在傳輸開始、完成或失敗時播放提示音",
   "Paired Devices": "已配對裝置",
   "Paired {{date}}": "配對於 {{date}}",
   "Unpair": "取消配對",
@@ -2268,5 +2266,7 @@
   "Open External Link": "開啟外部連結",
   "Available Offline": "可離線使用",
   "Download for Offline": "下載以供離線使用",
-  "Remove Offline Download": "移除離線下載"
+  "Remove Offline Download": "移除離線下載",
+  "Transfer Sound": "傳輸提示音",
+  "Play a sound when a transfer finishes": "在傳輸完成時播放提示音"
 }

@@ -2278,8 +2278,6 @@
   "Unlocked": "திறக்கப்பட்டது",
   "Receiving from paired device {{alias}}": "இணைக்கப்பட்ட சாதனம் {{alias}} இலிருந்து பெறப்படுகிறது",
   "Always accept from {{alias}}": "{{alias}} இடமிருந்து எப்போதும் ஏற்கவும்",
-  "Transfer Sounds": "பரிமாற்ற ஒலிகள்",
-  "Play a sound when transfers start, finish, or fail": "பரிமாற்றங்கள் தொடங்கும், முடியும் அல்லது தோல்வியடையும் போது ஒலியை இயக்கவும்",
   "Paired Devices": "இணைக்கப்பட்ட சாதனங்கள்",
   "Paired {{date}}": "{{date}} அன்று இணைக்கப்பட்டது",
   "Unpair": "இணைப்பு நீக்கு",
@@ -2328,5 +2326,7 @@
   "Open External Link": "வெளிப்புற இணைப்பைத் திற",
   "Available Offline": "ஆஃப்லைனில் கிடைக்கும்",
   "Download for Offline": "ஆஃப்லைன் பயன்பாட்டிற்குப் பதிவிறக்கு",
-  "Remove Offline Download": "ஆஃப்லைன் பதிவிறக்கத்தை அகற்று"
+  "Remove Offline Download": "ஆஃப்லைன் பதிவிறக்கத்தை அகற்று",
+  "Transfer Sound": "பரிமாற்ற ஒலி",
+  "Play a sound when a transfer finishes": "பரிமாற்றம் முடியும் போது ஒலியை இயக்கவும்"
 }

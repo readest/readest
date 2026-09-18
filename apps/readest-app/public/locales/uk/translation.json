@@ -2396,8 +2396,6 @@
   "Unlocked": "Відкрито",
   "Receiving from paired device {{alias}}": "Отримання зі спареного пристрою {{alias}}",
   "Always accept from {{alias}}": "Завжди приймати від {{alias}}",
-  "Transfer Sounds": "Звуки передавання",
-  "Play a sound when transfers start, finish, or fail": "Відтворювати звук на початку, після завершення або в разі помилки передавання",
   "Paired Devices": "Спарені пристрої",
   "Paired {{date}}": "Спарено {{date}}",
   "Unpair": "Розірвати пару",
@@ -2448,5 +2446,7 @@
   "Open External Link": "Відкрити зовнішнє посилання",
   "Available Offline": "Доступно офлайн",
   "Download for Offline": "Завантажити для офлайн-доступу",
-  "Remove Offline Download": "Видалити офлайн-завантаження"
+  "Remove Offline Download": "Видалити офлайн-завантаження",
+  "Transfer Sound": "Звук передавання",
+  "Play a sound when a transfer finishes": "Відтворювати звук після завершення передавання"
 }

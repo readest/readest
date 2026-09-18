@@ -2278,8 +2278,6 @@
   "Unlocked": "විවෘත කර ඇත",
   "Receiving from paired device {{alias}}": "යුගල කළ උපාංගය {{alias}} වෙතින් ලැබෙමින් පවතී",
   "Always accept from {{alias}}": "{{alias}} වෙතින් සැමවිටම පිළිගන්න",
-  "Transfer Sounds": "හුවමාරු හඬ",
-  "Play a sound when transfers start, finish, or fail": "හුවමාරු ආරම්භ වන, අවසන් වන හෝ අසාර්ථක වන විට හඬක් වාදනය කරන්න",
   "Paired Devices": "යුගල කළ උපාංග",
   "Paired {{date}}": "{{date}} දින යුගල කරන ලදී",
   "Unpair": "යුගලය ඉවත් කරන්න",
@@ -2328,5 +2326,7 @@
   "Open External Link": "බාහිර සබැඳිය විවෘත කරන්න",
   "Available Offline": "නොබැඳිව ලබා ගත හැක",
   "Download for Offline": "නොබැඳි භාවිතය සඳහා බාගන්න",
-  "Remove Offline Download": "නොබැඳි බාගැනීම ඉවත් කරන්න"
+  "Remove Offline Download": "නොබැඳි බාගැනීම ඉවත් කරන්න",
+  "Transfer Sound": "හුවමාරු හඬ",
+  "Play a sound when a transfer finishes": "හුවමාරුව අවසන් වන විට හඬක් වාදනය කරන්න"
 }

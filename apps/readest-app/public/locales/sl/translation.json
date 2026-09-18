@@ -2396,8 +2396,6 @@
   "Unlocked": "Odklenjeno",
   "Receiving from paired device {{alias}}": "Prejemanje iz seznanjene naprave {{alias}}",
   "Always accept from {{alias}}": "Vedno sprejmi od {{alias}}",
-  "Transfer Sounds": "Zvoki prenosa",
-  "Play a sound when transfers start, finish, or fail": "Predvajaj zvok ob začetku, koncu ali neuspehu prenosa",
   "Paired Devices": "Seznanjene naprave",
   "Paired {{date}}": "Seznanjeno {{date}}",
   "Unpair": "Prekini seznanitev",
@@ -2448,5 +2446,7 @@
   "Open External Link": "Odpri zunanjo povezavo",
   "Available Offline": "Na voljo brez povezave",
   "Download for Offline": "Prenesi za uporabo brez povezave",
-  "Remove Offline Download": "Odstrani prenos za uporabo brez povezave"
+  "Remove Offline Download": "Odstrani prenos za uporabo brez povezave",
+  "Transfer Sound": "Zvok prenosa",
+  "Play a sound when a transfer finishes": "Predvajaj zvok ob koncu prenosa"
 }

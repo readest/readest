@@ -2219,8 +2219,6 @@
   "Unlocked": "ཁ་ཕྱེ་ཟིན།",
   "Receiving from paired device {{alias}}": "ཟུང་སྦྲེལ་བྱས་པའི་སྒྲིག་ཆས་ {{alias}} ནས་ལེན་བཞིན་པ།",
   "Always accept from {{alias}}": "{{alias}} ནས་རྟག་ཏུ་དང་ལེན་བྱེད།",
-  "Transfer Sounds": "སྐྱེལ་འདྲེན་སྒྲ།",
-  "Play a sound when transfers start, finish, or fail": "སྐྱེལ་འདྲེན་འགོ་ཚུགས་པ་དང་། ལེགས་གྲུབ། ཡང་ན་ཕམ་སྐབས་སྒྲ་གཏོང་།",
   "Paired Devices": "ཟུང་སྦྲེལ་སྒྲིག་ཆས།",
   "Paired {{date}}": "{{date}} ལ་ཟུང་སྦྲེལ་བྱས།",
   "Unpair": "ཟུང་སྦྲེལ་འདོར་བ།",
@@ -2268,5 +2266,7 @@
   "Open External Link": "ཕྱི་ཕྱོགས་ཀྱི་སྦྲེལ་ཐག་ཁ་ཕྱེ།",
   "Available Offline": "དྲ་མེད་ཐོག་སྤྱོད་ཆོག",
   "Download for Offline": "དྲ་མེད་སྤྱོད་པར་ཕབ་ལེན།",
-  "Remove Offline Download": "དྲ་མེད་ཕབ་ལེན་སུབ་པ།"
+  "Remove Offline Download": "དྲ་མེད་ཕབ་ལེན་སུབ་པ།",
+  "Transfer Sound": "སྐྱེལ་འདྲེན་སྒྲ།",
+  "Play a sound when a transfer finishes": "སྐྱེལ་འདྲེན་ལེགས་གྲུབ་སྐབས་སྒྲ་གཏོང་།"
 }

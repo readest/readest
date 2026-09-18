@@ -2278,8 +2278,6 @@
   "Unlocked": "আনলক করা হয়েছে",
   "Receiving from paired device {{alias}}": "পেয়ার করা ডিভাইস {{alias}} থেকে গ্রহণ করা হচ্ছে",
   "Always accept from {{alias}}": "{{alias}} থেকে সর্বদা গ্রহণ করুন",
-  "Transfer Sounds": "স্থানান্তরের শব্দ",
-  "Play a sound when transfers start, finish, or fail": "স্থানান্তর শুরু, সম্পন্ন বা ব্যর্থ হলে শব্দ বাজান",
   "Paired Devices": "পেয়ার করা ডিভাইস",
   "Paired {{date}}": "{{date}} তারিখে পেয়ার করা হয়েছে",
   "Unpair": "আনপেয়ার করুন",
@@ -2328,5 +2326,7 @@
   "Open External Link": "বাহ্যিক লিঙ্ক খুলুন",
   "Available Offline": "অফলাইনে উপলব্ধ",
   "Download for Offline": "অফলাইনে ব্যবহারের জন্য ডাউনলোড করুন",
-  "Remove Offline Download": "অফলাইন ডাউনলোড সরান"
+  "Remove Offline Download": "অফলাইন ডাউনলোড সরান",
+  "Transfer Sound": "স্থানান্তরের শব্দ",
+  "Play a sound when a transfer finishes": "স্থানান্তর সম্পন্ন হলে শব্দ বাজান"
 }

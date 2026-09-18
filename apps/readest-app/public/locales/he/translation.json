@@ -2337,8 +2337,6 @@
   "Unlocked": "נפתח",
   "Receiving from paired device {{alias}}": "מקבל ממכשיר מצומד {{alias}}",
   "Always accept from {{alias}}": "תמיד לקבל מ-{{alias}}",
-  "Transfer Sounds": "צלילי העברה",
-  "Play a sound when transfers start, finish, or fail": "השמע צליל כאשר העברות מתחילות, מסתיימות או נכשלות",
   "Paired Devices": "מכשירים מצומדים",
   "Paired {{date}}": "צומד בתאריך {{date}}",
   "Unpair": "ביטול צימוד",
@@ -2388,5 +2386,7 @@
   "Open External Link": "פתיחת קישור חיצוני",
   "Available Offline": "זמין במצב לא מקוון",
   "Download for Offline": "הורדה לשימוש לא מקוון",
-  "Remove Offline Download": "הסרת ההורדה לשימוש לא מקוון"
+  "Remove Offline Download": "הסרת ההורדה לשימוש לא מקוון",
+  "Transfer Sound": "צליל העברה",
+  "Play a sound when a transfer finishes": "השמע צליל בסיום העברה"
 }

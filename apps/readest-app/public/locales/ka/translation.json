@@ -2278,8 +2278,6 @@
   "Unlocked": "გახსნილია",
   "Receiving from paired device {{alias}}": "მიმდინარეობს მიღება დაწყვილებული მოწყობილობიდან {{alias}}",
   "Always accept from {{alias}}": "ყოველთვის მიიღე {{alias}}-სგან",
-  "Transfer Sounds": "გადაცემის ხმები",
-  "Play a sound when transfers start, finish, or fail": "ხმის დაკვრა გადაცემის დაწყებისას, დასრულებისას ან წარუმატებლობისას",
   "Paired Devices": "დაწყვილებული მოწყობილობები",
   "Paired {{date}}": "დაწყვილდა {{date}}",
   "Unpair": "დაწყვილების გაუქმება",
@@ -2328,5 +2326,7 @@
   "Open External Link": "გარე ბმულის გახსნა",
   "Available Offline": "ხელმისაწვდომია ოფლაინ",
   "Download for Offline": "ჩამოტვირთვა ოფლაინ გამოსაყენებლად",
-  "Remove Offline Download": "ოფლაინ ჩამოტვირთვის წაშლა"
+  "Remove Offline Download": "ოფლაინ ჩამოტვირთვის წაშლა",
+  "Transfer Sound": "გადაცემის ხმა",
+  "Play a sound when a transfer finishes": "ხმის დაკვრა გადაცემის დასრულებისას"
 }

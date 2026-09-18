@@ -2278,8 +2278,6 @@
   "Unlocked": "Ontgrendeld",
   "Receiving from paired device {{alias}}": "Ontvangen van gekoppeld apparaat {{alias}}",
   "Always accept from {{alias}}": "Altijd accepteren van {{alias}}",
-  "Transfer Sounds": "Overdrachtsgeluiden",
-  "Play a sound when transfers start, finish, or fail": "Geluid afspelen wanneer overdrachten starten, worden voltooid of mislukken",
   "Paired Devices": "Gekoppelde apparaten",
   "Paired {{date}}": "Gekoppeld op {{date}}",
   "Unpair": "Ontkoppelen",
@@ -2328,5 +2326,7 @@
   "Open External Link": "Externe link openen",
   "Available Offline": "Offline beschikbaar",
   "Download for Offline": "Downloaden voor offline gebruik",
-  "Remove Offline Download": "Offline download verwijderen"
+  "Remove Offline Download": "Offline download verwijderen",
+  "Transfer Sound": "Overdrachtsgeluid",
+  "Play a sound when a transfer finishes": "Geluid afspelen wanneer een overdracht is voltooid"
 }

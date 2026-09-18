@@ -2219,8 +2219,6 @@
   "Unlocked": "Đã mở khóa",
   "Receiving from paired device {{alias}}": "Đang nhận từ thiết bị đã ghép nối {{alias}}",
   "Always accept from {{alias}}": "Luôn chấp nhận từ {{alias}}",
-  "Transfer Sounds": "Âm thanh truyền tệp",
-  "Play a sound when transfers start, finish, or fail": "Phát âm thanh khi quá trình truyền bắt đầu, hoàn tất hoặc thất bại",
   "Paired Devices": "Thiết bị đã ghép nối",
   "Paired {{date}}": "Đã ghép nối {{date}}",
   "Unpair": "Hủy ghép nối",
@@ -2268,5 +2266,7 @@
   "Open External Link": "Mở liên kết bên ngoài",
   "Available Offline": "Có sẵn ngoại tuyến",
   "Download for Offline": "Tải xuống để dùng ngoại tuyến",
-  "Remove Offline Download": "Xóa bản tải xuống ngoại tuyến"
+  "Remove Offline Download": "Xóa bản tải xuống ngoại tuyến",
+  "Transfer Sound": "Âm thanh truyền tệp",
+  "Play a sound when a transfer finishes": "Phát âm thanh khi quá trình truyền hoàn tất"
 }

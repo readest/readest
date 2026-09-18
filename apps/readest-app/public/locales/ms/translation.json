@@ -2219,8 +2219,6 @@
   "Unlocked": "Dibuka Kunci",
   "Receiving from paired device {{alias}}": "Menerima daripada peranti berpasangan {{alias}}",
   "Always accept from {{alias}}": "Sentiasa terima daripada {{alias}}",
-  "Transfer Sounds": "Bunyi Pemindahan",
-  "Play a sound when transfers start, finish, or fail": "Mainkan bunyi apabila pemindahan bermula, selesai atau gagal",
   "Paired Devices": "Peranti Berpasangan",
   "Paired {{date}}": "Dipasangkan {{date}}",
   "Unpair": "Nyahpasangan",
@@ -2268,5 +2266,7 @@
   "Open External Link": "Buka pautan luaran",
   "Available Offline": "Tersedia di luar talian",
   "Download for Offline": "Muat turun untuk kegunaan luar talian",
-  "Remove Offline Download": "Alih keluar muat turun luar talian"
+  "Remove Offline Download": "Alih keluar muat turun luar talian",
+  "Transfer Sound": "Bunyi Pemindahan",
+  "Play a sound when a transfer finishes": "Mainkan bunyi apabila pemindahan selesai"
 }

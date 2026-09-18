@@ -2278,8 +2278,6 @@
   "Unlocked": "अनलॉक किया गया",
   "Receiving from paired device {{alias}}": "युग्मित डिवाइस {{alias}} से प्राप्त हो रहा है",
   "Always accept from {{alias}}": "{{alias}} से हमेशा स्वीकार करें",
-  "Transfer Sounds": "स्थानांतरण ध्वनियाँ",
-  "Play a sound when transfers start, finish, or fail": "स्थानांतरण शुरू होने, पूर्ण होने या विफल होने पर ध्वनि चलाएँ",
   "Paired Devices": "युग्मित डिवाइस",
   "Paired {{date}}": "{{date}} को युग्मित",
   "Unpair": "युग्मन हटाएँ",
@@ -2328,5 +2326,7 @@
   "Open External Link": "बाहरी लिंक खोलें",
   "Available Offline": "ऑफ़लाइन उपलब्ध",
   "Download for Offline": "ऑफ़लाइन उपयोग के लिए डाउनलोड करें",
-  "Remove Offline Download": "ऑफ़लाइन डाउनलोड हटाएँ"
+  "Remove Offline Download": "ऑफ़लाइन डाउनलोड हटाएँ",
+  "Transfer Sound": "स्थानांतरण ध्वनि",
+  "Play a sound when a transfer finishes": "स्थानांतरण पूर्ण होने पर ध्वनि चलाएँ"
 }

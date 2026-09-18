@@ -2337,8 +2337,6 @@
   "Unlocked": "Deblocat",
   "Receiving from paired device {{alias}}": "Se primește de la dispozitivul asociat {{alias}}",
   "Always accept from {{alias}}": "Acceptă întotdeauna de la {{alias}}",
-  "Transfer Sounds": "Sunete de transfer",
-  "Play a sound when transfers start, finish, or fail": "Redă un sunet când transferurile încep, se termină sau eșuează",
   "Paired Devices": "Dispozitive asociate",
   "Paired {{date}}": "Asociat la {{date}}",
   "Unpair": "Anulează asocierea",
@@ -2388,5 +2386,7 @@
   "Open External Link": "Deschide linkul extern",
   "Available Offline": "Disponibil offline",
   "Download for Offline": "Descarcă pentru utilizare offline",
-  "Remove Offline Download": "Elimină descărcarea offline"
+  "Remove Offline Download": "Elimină descărcarea offline",
+  "Transfer Sound": "Sunet de transfer",
+  "Play a sound when a transfer finishes": "Redă un sunet când un transfer se încheie"
 }

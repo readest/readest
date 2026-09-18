@@ -2219,8 +2219,6 @@
   "Unlocked": "잠금 해제됨",
   "Receiving from paired device {{alias}}": "페어링된 기기 {{alias}}에서 수신 중",
   "Always accept from {{alias}}": "{{alias}}의 전송 항상 수락",
-  "Transfer Sounds": "전송 소리",
-  "Play a sound when transfers start, finish, or fail": "전송이 시작, 완료 또는 실패할 때 소리 재생",
   "Paired Devices": "페어링된 기기",
   "Paired {{date}}": "{{date}}에 페어링됨",
   "Unpair": "페어링 해제",
@@ -2268,5 +2266,7 @@
   "Open External Link": "외부 링크 열기",
   "Available Offline": "오프라인 사용 가능",
   "Download for Offline": "오프라인용으로 다운로드",
-  "Remove Offline Download": "오프라인 다운로드 삭제"
+  "Remove Offline Download": "오프라인 다운로드 삭제",
+  "Transfer Sound": "전송 소리",
+  "Play a sound when a transfer finishes": "전송이 완료될 때 소리 재생"
 }

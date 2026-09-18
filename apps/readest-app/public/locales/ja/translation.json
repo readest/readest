@@ -2219,8 +2219,6 @@
   "Unlocked": "解除済み",
   "Receiving from paired device {{alias}}": "ペアリング済みデバイス {{alias}} から受信中",
   "Always accept from {{alias}}": "{{alias}} から常に受け入れる",
-  "Transfer Sounds": "転送音",
-  "Play a sound when transfers start, finish, or fail": "転送の開始・完了・失敗時に音を鳴らす",
   "Paired Devices": "ペアリング済みデバイス",
   "Paired {{date}}": "{{date}} にペアリング",
   "Unpair": "ペアリング解除",
@@ -2268,5 +2266,7 @@
   "Open External Link": "外部リンクを開く",
   "Available Offline": "オフラインで利用可能",
   "Download for Offline": "オフライン用にダウンロード",
-  "Remove Offline Download": "オフラインダウンロードを削除"
+  "Remove Offline Download": "オフラインダウンロードを削除",
+  "Transfer Sound": "転送音",
+  "Play a sound when a transfer finishes": "転送の完了時に音を鳴らす"
 }

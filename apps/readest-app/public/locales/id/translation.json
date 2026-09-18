@@ -2219,8 +2219,6 @@
   "Unlocked": "Terbuka",
   "Receiving from paired device {{alias}}": "Menerima dari perangkat yang dipasangkan {{alias}}",
   "Always accept from {{alias}}": "Selalu terima dari {{alias}}",
-  "Transfer Sounds": "Suara Transfer",
-  "Play a sound when transfers start, finish, or fail": "Putar suara saat transfer dimulai, selesai, atau gagal",
   "Paired Devices": "Perangkat yang Dipasangkan",
   "Paired {{date}}": "Dipasangkan {{date}}",
   "Unpair": "Batalkan Pemasangan",
@@ -2268,5 +2266,7 @@
   "Open External Link": "Buka tautan eksternal",
   "Available Offline": "Tersedia offline",
   "Download for Offline": "Unduh untuk penggunaan offline",
-  "Remove Offline Download": "Hapus unduhan offline"
+  "Remove Offline Download": "Hapus unduhan offline",
+  "Transfer Sound": "Suara Transfer",
+  "Play a sound when a transfer finishes": "Putar suara saat transfer selesai"
 }

@@ -2337,8 +2337,6 @@
   "Unlocked": "Desbloqueado",
   "Receiving from paired device {{alias}}": "A receber do dispositivo emparelhado {{alias}}",
   "Always accept from {{alias}}": "Aceitar sempre de {{alias}}",
-  "Transfer Sounds": "Sons de transferência",
-  "Play a sound when transfers start, finish, or fail": "Reproduzir um som quando as transferências começam, terminam ou falham",
   "Paired Devices": "Dispositivos emparelhados",
   "Paired {{date}}": "Emparelhado em {{date}}",
   "Unpair": "Desemparelhar",
@@ -2388,5 +2386,7 @@
   "Open External Link": "Abrir ligação externa",
   "Available Offline": "Disponível offline",
   "Download for Offline": "Transferir para utilização offline",
-  "Remove Offline Download": "Remover transferência offline"
+  "Remove Offline Download": "Remover transferência offline",
+  "Transfer Sound": "Som de transferência",
+  "Play a sound when a transfer finishes": "Reproduzir um som quando uma transferência termina"
 }

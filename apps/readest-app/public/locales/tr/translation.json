@@ -2278,8 +2278,6 @@
   "Unlocked": "Kilidi açıldı",
   "Receiving from paired device {{alias}}": "Eşleştirilmiş cihazdan alınıyor: {{alias}}",
   "Always accept from {{alias}}": "{{alias}} cihazından her zaman kabul et",
-  "Transfer Sounds": "Aktarım Sesleri",
-  "Play a sound when transfers start, finish, or fail": "Aktarımlar başladığında, bittiğinde veya başarısız olduğunda ses çal",
   "Paired Devices": "Eşleştirilmiş Cihazlar",
   "Paired {{date}}": "{{date}} tarihinde eşleştirildi",
   "Unpair": "Eşleştirmeyi Kaldır",
@@ -2328,5 +2326,7 @@
   "Open External Link": "Harici bağlantıyı aç",
   "Available Offline": "Çevrimdışı kullanılabilir",
   "Download for Offline": "Çevrimdışı kullanım için indir",
-  "Remove Offline Download": "Çevrimdışı indirmeyi kaldır"
+  "Remove Offline Download": "Çevrimdışı indirmeyi kaldır",
+  "Transfer Sound": "Aktarım Sesi",
+  "Play a sound when a transfer finishes": "Bir aktarım tamamlandığında ses çal"
 }

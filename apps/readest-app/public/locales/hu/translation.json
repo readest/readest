@@ -2278,8 +2278,6 @@
   "Unlocked": "Feloldva",
   "Receiving from paired device {{alias}}": "Fogadás a párosított eszközről: {{alias}}",
   "Always accept from {{alias}}": "Mindig fogadd el tőle: {{alias}}",
-  "Transfer Sounds": "Átviteli hangok",
-  "Play a sound when transfers start, finish, or fail": "Hang lejátszása az átvitel indulásakor, befejeződésekor vagy hibájakor",
   "Paired Devices": "Párosított eszközök",
   "Paired {{date}}": "Párosítva: {{date}}",
   "Unpair": "Párosítás törlése",
@@ -2328,5 +2326,7 @@
   "Open External Link": "Külső hivatkozás megnyitása",
   "Available Offline": "Offline elérhető",
   "Download for Offline": "Letöltés offline használatra",
-  "Remove Offline Download": "Offline letöltés eltávolítása"
+  "Remove Offline Download": "Offline letöltés eltávolítása",
+  "Transfer Sound": "Átviteli hang",
+  "Play a sound when a transfer finishes": "Hang lejátszása az átvitel befejeződésekor"
 }
