@@ -2172,7 +2172,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const handleConfirmExport = async (
     content: string,
     format: NoteExportFormat,
-    sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' },
+    {
+      share,
+      sharePosition,
+    }: {
+      share: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ) => {
     const { book } = bookData;
     if (!book) return;
@@ -2193,11 +2199,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const filename = format === 'json' ? `${safeTitle}-annotations.json` : `${safeTitle}.${ext}`;
     const saved = await appService?.saveFile(filename, content, {
       mimeType,
-      share: true,
+      share,
       sharePosition,
     });
 
-    if (appService?.isMacOSApp) return;
+    // The macOS share sheet gives its own feedback; the Save panel does not.
+    if (share && appService?.isMacOSApp) return;
     // Without the clipboard fallback there is nothing to fall back to, so a
     // failed JSON save has to be reported as a failure.
     const failedJson = format === 'json' && !saved;
