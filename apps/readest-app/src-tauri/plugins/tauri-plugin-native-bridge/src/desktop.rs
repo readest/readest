@@ -169,6 +169,10 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn set_screen_wake_lock(&self, _payload: SetScreenWakeLockRequest) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn get_screen_brightness(&self) -> crate::Result<GetScreenBrightnessResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }

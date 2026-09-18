@@ -73,7 +73,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
     appThemeColor: 'base-100',
     themeScope: 'reader',
   });
-  useScreenWakeLock(settings.screenWakeLock, appService?.hasWindow);
+  useScreenWakeLock(settings.screenWakeLock, appService?.hasWindow, appService?.isIOSApp);
   useScreenBrightness();
   useTransferQueue(libraryLoaded, 5000);
   // Reader needs dictionaries for word-lookup, fonts for rendering, and

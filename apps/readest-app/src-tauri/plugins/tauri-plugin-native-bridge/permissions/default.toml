@@ -22,6 +22,7 @@ permissions = [
   "allow-get-safe-area-insets",
   "allow-get-screen-brightness",
   "allow-set-screen-brightness",
+  "allow-set-screen-wake-lock",
   "allow-has-ambient-light-sensor",
   "allow-start-ambient-light-updates",
   "allow-stop-ambient-light-updates",

@@ -20,6 +20,7 @@ const COMMANDS: &[&str] = &[
     "get_safe_area_insets",
     "get_screen_brightness",
     "set_screen_brightness",
+    "set_screen_wake_lock",
     "has_ambient_light_sensor",
     "start_ambient_light_updates",
     "stop_ambient_light_updates",

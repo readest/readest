@@ -62,6 +62,10 @@ class LockScreenOrientationRequestArgs: Decodable {
   let orientation: String?
 }
 
+class SetScreenWakeLockRequestArgs: Decodable {
+  let enabled: Bool
+}
+
 class SetScreenBrightnessRequestArgs: Decodable {
   let brightness: Float?
 }
@@ -1293,6 +1297,16 @@ class NativeBridgePlugin: Plugin {
   @objc public func get_system_color_scheme(_ invoke: Invoke) {
     DispatchQueue.main.async { [weak self] in
       invoke.resolve(["colorScheme": self?.systemColorScheme() ?? "light"])
+    }
+  }
+
+  @objc public func set_screen_wake_lock(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(SetScreenWakeLockRequestArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async {
+      UIApplication.shared.isIdleTimerDisabled = args.enabled
+      invoke.resolve()
     }
   }
 
