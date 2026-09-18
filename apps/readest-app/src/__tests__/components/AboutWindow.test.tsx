@@ -36,6 +36,10 @@ vi.mock('@/utils/ua', () => ({
   parseWebViewInfo: () => 'Chrome 148',
 }));
 
+vi.mock('@/services/environment', () => ({
+  isTauriAppPlatform: () => false,
+}));
+
 vi.mock('@/utils/version', () => ({
   getAppVersion: () => '0.11.20',
 }));
@@ -90,7 +94,7 @@ describe('AboutWindow version label', () => {
     fireEvent.click(label);
 
     await waitFor(() => expect(mockWriteTextToClipboard).toHaveBeenCalledTimes(1));
-    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Version 0.11.20 (Chrome 148)');
+    expect(mockWriteTextToClipboard).toHaveBeenCalledWith('Readest 0.11.20 (Chrome 148)');
   });
 
   it('shows a toast confirming the copy', async () => {

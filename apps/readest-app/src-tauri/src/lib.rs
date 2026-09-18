@@ -331,14 +331,45 @@ fn is_updater_disabled() -> bool {
     updater_disabled()
 }
 
-// Record the WebView engine/version (parsed from the app's User-Agent) so Sentry
-// events can be correlated with WebView version. Called once from
-// `NativeAppService.init()`; no-op when Sentry is disabled.
+// Record the WebView engine/version so Sentry events can be correlated with
+// the WebView build. Chromium's UA-Reduction freezes the User-Agent to a stub
+// on Windows WebView2 (e.g. "152.0.0.0"), so prefer the version reported by
+// the runtime itself and keep the engine from the User-Agent parse; the CEF
+// runtime has no version query, so everything falls back to the User-Agent
+// there. Called once from `NativeAppService.init()`; no-op when Sentry is
+// disabled.
 #[tauri::command]
 fn set_webview_info(user_agent: String) {
-    if let Some((engine, version)) = sentry_config::parse_webview_info(&user_agent) {
-        sentry_config::set_webview_info(engine, version);
+    let parsed = sentry_config::parse_webview_info(&user_agent);
+    let version = tauri::webview_version()
+        .ok()
+        .map(|version| version.trim().to_string())
+        .filter(|version| !version.is_empty())
+        .or_else(|| parsed.as_ref().map(|(_, version)| version.clone()));
+    if let (Some((engine, _)), Some(version)) = (&parsed, version) {
+        sentry_config::set_webview_info(engine.clone(), version);
     }
+}
+
+#[derive(serde::Serialize)]
+struct WebViewInfo {
+    engine: String,
+    version: String,
+}
+
+// The WebView engine/version for the About window's display. The runtime
+// query is only needed on Windows, where the User-Agent is reduced to a
+// stub; the other platforms keep their User-Agent-derived labels.
+#[tauri::command]
+fn get_webview_version() -> Option<WebViewInfo> {
+    if std::env::consts::OS != "windows" {
+        return None;
+    }
+    let version = tauri::webview_version().ok()?;
+    Some(WebViewInfo {
+        engine: "WebView2".to_string(),
+        version: version.trim().to_string(),
+    })
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -476,6 +507,7 @@ pub fn run() {
             get_environment_variable,
             get_executable_dir,
             set_webview_info,
+            get_webview_version,
             #[cfg(desktop)]
             is_updater_disabled,
             allow_paths_in_scopes,
