@@ -7,6 +7,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 import { isTauriAppPlatform } from '@/services/environment';
+import { getImageSize } from '@/utils/image';
 import { setCoverSpread } from '@/utils/spread';
 
 vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
@@ -14,6 +15,10 @@ vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
   invoke: vi.fn(),
 }));
 vi.mock('@/services/environment', () => ({ isTauriAppPlatform: vi.fn(() => false) }));
+vi.mock('@/utils/image', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/image')>();
+  return { ...actual, getImageSize: vi.fn(actual.getImageSize) };
+});
 
 const u16be = (n: number) => [n >> 8, n & 0xff];
 const u32be = (n: number) => [n >>> 24, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
@@ -93,6 +98,21 @@ describe('CBZ double-page spreads (#6210)', () => {
       '03.png': undefined,
       '04.png': 'center',
     });
+  });
+
+  it('stops inflating a page at the header limit', async () => {
+    // 8 MB of zeros deflates to a few kilobytes: a small read that expands
+    // a thousandfold must not be kept whole.
+    const bomb = new Uint8Array(8 * 1024 * 1024);
+    bomb.set([0xff, 0xd8]);
+    const file = await makeCbz([
+      ['01.jpg', bomb],
+      ['02.png', png(2400, 1800)],
+    ]);
+    const { book } = await new DocumentLoader(file, { detectWidePages: true }).open();
+    expect(pageSpreads(book)).toEqual({ '01.jpg': undefined, '02.png': 'center' });
+    const longest = Math.max(...vi.mocked(getImageSize).mock.calls.map(([data]) => data.length));
+    expect(longest).toBeLessThanOrEqual(64 * 1024);
   });
 
   it('leaves the pages unmeasured unless asked', async () => {

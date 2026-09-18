@@ -23,21 +23,26 @@ const readPageSize = async (file: File, entry: Entry): Promise<[number, number] 
   const header = new DataView(await file.slice(offset, offset + 30).arrayBuffer());
   const start = offset + 30 + header.getUint16(26, true) + header.getUint16(28, true);
   const end = start + Math.min(compressedSize, HEAD_LIMIT);
-  let head = new Uint8Array();
+  // The limit holds for the inflated bytes too: output past it is dropped.
+  const head = new Uint8Array(HEAD_LIMIT);
+  let length = 0;
   const append = (chunk: Uint8Array) => {
-    const joined = new Uint8Array(head.length + chunk.length);
-    joined.set(head);
-    joined.set(chunk, head.length);
-    head = joined;
+    const kept = chunk.subarray(0, HEAD_LIMIT - length);
+    head.set(kept, length);
+    length += kept.length;
   };
   const inflate = compressionMethod === 8 ? new Inflate(append) : null;
-  for (let pos = start; pos < end; pos += HEAD_STEP) {
+  for (let pos = start; pos < end && length < HEAD_LIMIT; pos += HEAD_STEP) {
     const chunk = new Uint8Array(
       await file.slice(pos, Math.min(pos + HEAD_STEP, end)).arrayBuffer(),
     );
-    if (inflate) inflate.push(chunk);
-    else append(chunk);
-    const size = getImageSize(head);
+    if (!inflate) append(chunk);
+    // A push inflates all it is given, and deflate can expand a thousandfold,
+    // so feed it a kilobyte at a time.
+    for (let i = 0; inflate && i < chunk.length && length < HEAD_LIMIT; i += 1024) {
+      inflate.push(chunk.subarray(i, i + 1024));
+    }
+    const size = getImageSize(head.subarray(0, length));
     if (size) return [size.width, size.height];
   }
   return null;
