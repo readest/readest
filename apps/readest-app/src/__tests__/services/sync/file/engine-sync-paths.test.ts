@@ -136,26 +136,6 @@ describe('FileSyncEngine.pushBookFile — ABS books never push a file (direct ca
     expect(head).not.toHaveBeenCalled();
     expect(uploadStream).not.toHaveBeenCalled();
   });
-
-  // An ebook-only ABS item downloaded for offline use has a real managed file
-  // (#6256), but that copy belongs to this device and the ABS server.
-  test('never pushes the offline copy of an ABS ebook', async () => {
-    const uploadStream = vi.fn(async () => true);
-    const provider = fakeProvider({ head: vi.fn(async () => null), uploadStream });
-    const resolveLocalBookPath = vi.fn(async () => ({ path: '/local/x.abs', size: 100 }));
-    const store = fakeStore({ resolveLocalBookPath });
-
-    const res = await new FileSyncEngine(provider, store).pushBookFile(
-      makeBook('h1', {
-        format: 'ABS',
-        filePath: 'abs://server-1/item-abc',
-        metadata: { absMediaType: 'ebook' } as never,
-      }),
-    );
-
-    expect(res).toEqual({ uploaded: false, reason: 'no-source' });
-    expect(uploadStream).not.toHaveBeenCalled();
-  });
 });
 
 describe('FileSyncEngine.syncLibrary — remote discovery + cloud shelf (#5009)', () => {

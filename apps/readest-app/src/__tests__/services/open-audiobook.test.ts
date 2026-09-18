@@ -84,7 +84,7 @@ vi.mock('@/services/environment', async (importOriginal) => {
 
 import { loadAbsEpisodes, openAudiobookSession } from '@/services/audiobook/openAudiobook';
 import { AudiobookController } from '@/services/audiobook/AudiobookController';
-import { HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
+import { BlobAudioClock, HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
 import { NativeAudiobookClock } from '@/services/audiobook/NativeAudiobookClock';
 import { AbsProgressSyncer } from '@/services/audiobookshelf/progressSync';
 import { useABSServerStore } from '@/store/absServerStore';
@@ -653,6 +653,18 @@ describe('openAudiobookSession — offline download (#6256)', () => {
     );
     const [, , meta] = mocks.claim.mock.calls[0]!;
     expect(meta.ownsAudioFocus).toBe(true);
+  });
+
+  it('plays from memory on Linux, whose CEF runtime cannot seek asset:// media', async () => {
+    mocks.getOSPlatform.mockReturnValue('linux');
+
+    await openAudiobookSession({ appService: localAppService, book: offlineBook });
+
+    const source = openedSource();
+    expect(mocks.controllerCtor.mock.calls[0]![1]).toBeInstanceOf(BlobAudioClock);
+    expect(source.resolveUrl(source.tracks[0]!.contentUrl)).toBe(
+      '/data/Books/h1/abs-offline/1-01.mp3',
+    );
   });
 
   it('resumes from the local position when the server is unreachable', async () => {

@@ -10,7 +10,7 @@
 
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { AudiobookController, type AudiobookSource } from './AudiobookController';
-import { HtmlAudioClock } from './AudiobookClock';
+import { BlobAudioClock, HtmlAudioClock } from './AudiobookClock';
 import { NativeAudiobookClock } from './NativeAudiobookClock';
 import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import { AbsProgressSyncer, readLocalLastPlayedAt } from '@/services/audiobookshelf/progressSync';
@@ -41,6 +41,10 @@ const isIOSTauri = (): boolean => isTauriAppPlatform() && getOSPlatform() === 'i
 // 40739128), so a downloaded track plays through the same native ExoPlayer
 // that EPUB narration uses, straight from its file path.
 const isAndroidTauri = (): boolean => isTauriAppPlatform() && getOSPlatform() === 'android';
+
+// The Linux runtime (CEF) has the same custom-scheme range bug and no native
+// player, so a downloaded track plays from memory there (BlobAudioClock).
+const isLinuxTauri = (): boolean => isTauriAppPlatform() && getOSPlatform() === 'linux';
 
 // A downloaded book opens even when the server is down: past this, playback
 // resumes from the local position instead of waiting on the listening session.
@@ -198,6 +202,7 @@ export const openAudiobookSession = async (input: {
       ? await withTimeout(begin, OFFLINE_SESSION_TIMEOUT_MS).catch(() => localPosition)
       : await begin;
     const nativeClock = isIOSTauri() || (!!offline && isAndroidTauri());
+    const blobClock = !!offline && !nativeClock && isLinuxTauri();
 
     const sourceObj: AudiobookSource = {
       itemId,
@@ -206,15 +211,16 @@ export const openAudiobookSession = async (input: {
       author,
       tracks,
       chapters,
-      // Downloaded tracks already carry absolute file paths: the native
-      // players take them as they are, the WebView element needs an asset URL.
+      // Downloaded tracks already carry absolute file paths: the native and
+      // blob clocks take them as they are, the WebView element needs an asset
+      // URL.
       // Streamed ones read the server's CURRENT accessToken on every call -
       // never a captured copy - so a track load issued after a 401-triggered
       // token refresh (by this client or another, e.g. the periodic library
       // sync) carries the rotated token instead of the one this session
       // started with.
       resolveUrl: offline
-        ? (path: string) => (nativeClock ? path : convertFileSrc(path))
+        ? (path: string) => (nativeClock || blobClock ? path : convertFileSrc(path))
         : (contentPath: string) =>
             buildAbsMediaUrl(
               useABSServerStore.getState().getServer(server.id) ?? server,
@@ -223,7 +229,15 @@ export const openAudiobookSession = async (input: {
       startAt,
     };
 
-    const clock = nativeClock ? new NativeAudiobookClock() : new HtmlAudioClock();
+    const clock = nativeClock
+      ? new NativeAudiobookClock()
+      : blobClock
+        ? new BlobAudioClock(async (path) => {
+            const bytes = await appService.readFile(path, 'None', 'binary');
+            const mimeType = tracks.find((track) => track.contentUrl === path)?.mimeType;
+            return new Blob([bytes], { type: mimeType });
+          })
+        : new HtmlAudioClock();
     const controller = new AudiobookController(sourceObj, clock, syncer.hooks());
 
     const bookKey = `${book.hash}-${uniqueId()}`;
