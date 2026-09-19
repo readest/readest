@@ -101,10 +101,17 @@ export const buildBookOrbitPairing = (
     duration,
   };
 
-  const audioChapters: AudiobookChapter[] = chapters.map((chapter, index) => ({
+  // Keyed by sequence, not by position: `manifestChapters` sorts its output but
+  // `manifest.chapters` keeps the server's order, so indexing into the raw
+  // array pairs a title and timing with another chapter's id whenever the
+  // server answers out of order.
+  const idBySequence = new Map(manifest.chapters.map((chapter) => [chapter.sequence, chapter.id]));
+
+  const audioChapters: AudiobookChapter[] = chapters.map((chapter) => ({
     // The manifest's own chapter id, so a re-pair against the same book keeps
-    // existing mappings pointing at the same audio.
-    id: manifest.chapters[index]?.id ?? String(chapter.id),
+    // existing mappings pointing at the same audio. `ABSChapter.id` carries the
+    // sequence (see manifestChapters).
+    id: idBySequence.get(chapter.id) ?? String(chapter.id),
     fileId: BOOKORBIT_PAIRED_FILE_ID,
     label: chapter.title,
     start: chapter.start,

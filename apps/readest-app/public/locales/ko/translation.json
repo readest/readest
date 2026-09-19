@@ -2273,5 +2273,6 @@
   "Playing this catalog requires the desktop or mobile app": "이 카탈로그를 재생하려면 데스크톱 또는 모바일 앱이 필요합니다",
   "{{hours}}h {{minutes}}m": "{{hours}}시간 {{minutes}}분",
   "{{minutes}}m": "{{minutes}}분",
-  "{{seconds}}s": "{{seconds}}초"
+  "{{seconds}}s": "{{seconds}}초",
+  "Could not read the length of every track in this audiobook": "이 오디오북의 모든 트랙 길이를 읽지 못했습니다"
 }

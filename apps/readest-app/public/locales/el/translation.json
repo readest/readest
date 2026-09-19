@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "Η αναπαραγωγή αυτού του καταλόγου απαιτεί την εφαρμογή για υπολογιστή ή κινητό",
   "{{hours}}h {{minutes}}m": "{{hours}}ώ {{minutes}}λ",
   "{{minutes}}m": "{{minutes}}λ",
-  "{{seconds}}s": "{{seconds}}δ"
+  "{{seconds}}s": "{{seconds}}δ",
+  "Could not read the length of every track in this audiobook": "Δεν ήταν δυνατή η ανάγνωση της διάρκειας κάθε κομματιού αυτού του ηχητικού βιβλίου"
 }

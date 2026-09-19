@@ -2453,5 +2453,6 @@
   "Playing this catalog requires the desktop or mobile app": "Для відтворення цього каталогу потрібен застосунок для комп’ютера або телефона",
   "{{hours}}h {{minutes}}m": "{{hours}} год {{minutes}} хв",
   "{{minutes}}m": "{{minutes}} хв",
-  "{{seconds}}s": "{{seconds}} с"
+  "{{seconds}}s": "{{seconds}} с",
+  "Could not read the length of every track in this audiobook": "Не вдалося визначити тривалість кожної доріжки цієї аудіокниги"
 }

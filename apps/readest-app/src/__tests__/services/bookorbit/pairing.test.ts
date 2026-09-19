@@ -116,3 +116,23 @@ describe('buildBookOrbitPairing', () => {
     expect(buildBookOrbitPairing(manifest, []).mappings).toEqual([]);
   });
 });
+
+// `manifestChapters` sorts by sequence while `manifest.chapters` keeps the
+// server's order, so indexing into the raw array paired a chapter's title and
+// timing with a different chapter's id whenever the server answered unsorted.
+describe('buildBookOrbitPairing chapter identity', () => {
+  it('keeps each chapter id with its own sequence when the server is unsorted', () => {
+    const unsorted: BookOrbitManifest = {
+      ...manifest,
+      chapters: [...manifest.chapters].reverse(),
+    };
+
+    const paired = buildBookOrbitPairing(unsorted, ['c1', 'c2']);
+
+    expect(paired.chapters.map((chapter) => chapter.id)).toEqual(
+      manifest.chapters.map((chapter) => chapter.id),
+    );
+    expect(paired.chapters[0]!.label).toBe(manifest.chapters[0]!.title);
+    expect(paired.chapters[0]!.start).toBe(manifest.chapters[0]!.startMs / 1000);
+  });
+});

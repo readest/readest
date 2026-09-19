@@ -135,8 +135,16 @@ export const openBookOrbitAudiobookSession = async (input: {
   // concurrency check: it rejects a write based on a position someone else has
   // already superseded, and we re-read rather than clobbering theirs.
   let pushInFlight = false;
+  // The position that arrived while a write was in flight. Dropping it is fine
+  // for a tick (another follows a second later) but not for the pause or end
+  // that stops playback: nothing comes after it, so the server would keep a
+  // position from seconds earlier.
+  let queuedPosition: number | null = null;
   const pushPosition = async (positionSec: number): Promise<void> => {
-    if (pushInFlight) return;
+    if (pushInFlight) {
+      queuedPosition = positionSec;
+      return;
+    }
     const at = assetPositionFromGlobal(tracks, assetIds, positionSec);
     if (!at) return;
     pushInFlight = true;
@@ -158,6 +166,11 @@ export const openBookOrbitAudiobookSession = async (input: {
       }
     } finally {
       pushInFlight = false;
+    }
+    if (queuedPosition !== null) {
+      const next = queuedPosition;
+      queuedPosition = null;
+      await pushPosition(next);
     }
   };
 

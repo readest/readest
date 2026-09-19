@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "Het afspelen van deze catalogus vereist de desktop- of mobiele app",
   "{{hours}}h {{minutes}}m": "{{hours}} u {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
-  "{{seconds}}s": "{{seconds}} s"
+  "{{seconds}}s": "{{seconds}} s",
+  "Could not read the length of every track in this audiobook": "Kan de lengte van elk fragment van dit luisterboek niet lezen"
 }

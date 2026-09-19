@@ -27,12 +27,19 @@ const { buildOpdsAudioUrl, canStreamOpdsAudio, needsAudioAuth, opdsAudioBlocker 
 );
 
 const CATALOG = 'https://books.example.com/opds/7/download?fileId=8';
-const open = { authHeader: null, customHeaders: {}, hasCredentials: false };
-const authed = { authHeader: 'Basic abc', customHeaders: {}, hasCredentials: true };
+const ORIGIN = 'https://books.example.com';
+const open = { authHeader: null, customHeaders: {}, hasCredentials: false, origin: ORIGIN };
+const authed = {
+  authHeader: 'Basic abc',
+  customHeaders: {},
+  hasCredentials: true,
+  origin: ORIGIN,
+};
 const headered = {
   authHeader: null,
   customHeaders: { 'CF-Access-Client-Id': 'x' },
   hasCredentials: false,
+  origin: ORIGIN,
 };
 
 describe('buildOpdsAudioUrl', () => {
@@ -88,7 +95,7 @@ describe('resolveOpdsAudioAuth credential handling', () => {
     h.catalog = catalog;
     return (await import('@/services/opds/audioStream')).resolveOpdsAudioAuth(
       'cat-1',
-      'http://x/y',
+      'https://books.example.com/opds/7/download',
     );
   };
 
@@ -96,7 +103,7 @@ describe('resolveOpdsAudioAuth credential handling', () => {
     h.probeImpl = () => {
       throw new Error('network down');
     };
-    const auth = await load({ id: 'cat-1', username: 'u', password: 'p' });
+    const auth = await load({ id: 'cat-1', url: CATALOG, username: 'u', password: 'p' });
 
     expect(auth.authHeader).toBe('Basic ' + btoa('u:p'));
     expect(needsAudioAuth(auth)).toBe(true);
@@ -104,7 +111,7 @@ describe('resolveOpdsAudioAuth credential handling', () => {
 
   it('still authenticates when only a username is stored', async () => {
     h.probeImpl = () => null;
-    const auth = await load({ id: 'cat-1', username: 'u', password: '' });
+    const auth = await load({ id: 'cat-1', url: CATALOG, username: 'u', password: '' });
 
     expect(auth.authHeader).toBeTruthy();
     expect(needsAudioAuth(auth)).toBe(true);
@@ -112,7 +119,7 @@ describe('resolveOpdsAudioAuth credential handling', () => {
 
   it('leaves a genuinely open catalog unauthenticated', async () => {
     h.probeImpl = () => null;
-    const auth = await load({ id: 'cat-1' });
+    const auth = await load({ id: 'cat-1', url: CATALOG });
 
     expect(auth.authHeader).toBeNull();
     expect(needsAudioAuth(auth)).toBe(false);
@@ -180,6 +187,144 @@ describe('probeAudioDurationFromHead', () => {
 
     // No stream to stop and no range honoured: give up rather than pull 30 MB.
     expect(Number.isNaN(await probeAudioDurationFromHead('http://host/a.mp3', open))).toBe(true);
+    vi.unstubAllGlobals();
+  });
+});
+
+// A feed is remote data: an entry can point its acquisition link at any host,
+// and the catalog's password or Cloudflare Access headers must not follow it
+// there.
+describe('credential scoping', () => {
+  const capture = () => {
+    const calls: { url: string; headers: Record<string, string> }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: { headers: Record<string, string> }) => {
+        calls.push({ url, headers: init.headers });
+        return {
+          ok: true,
+          status: 206,
+          headers: { get: () => null },
+          body: null,
+          arrayBuffer: async () => new Uint8Array(0).buffer,
+        } as unknown as Response;
+      }),
+    );
+    return calls;
+  };
+
+  it('sends the catalog credentials to the catalog itself', async () => {
+    const calls = capture();
+    const { fetchOpdsAudioBlob } = await import('@/services/opds/audioStream');
+
+    await fetchOpdsAudioBlob(CATALOG, authed, 'audio/mpeg');
+
+    expect(calls[0]!.headers['Authorization']).toBe('Basic abc');
+    vi.unstubAllGlobals();
+  });
+
+  it('withholds them from a track hosted somewhere else', async () => {
+    const calls = capture();
+    const { fetchOpdsAudioBlob } = await import('@/services/opds/audioStream');
+
+    await fetchOpdsAudioBlob('https://evil.example.net/track.mp3', authed, 'audio/mpeg');
+
+    expect(calls[0]!.headers['Authorization']).toBeUndefined();
+    vi.unstubAllGlobals();
+  });
+
+  it('withholds custom headers from a foreign origin too', async () => {
+    const calls = capture();
+    const { probeAudioDurationFromHead } = await import('@/services/opds/audioStream');
+
+    await probeAudioDurationFromHead('https://evil.example.net/track.mp3', headered);
+
+    expect(calls[0]!.headers['CF-Access-Client-Id']).toBeUndefined();
+    vi.unstubAllGlobals();
+  });
+
+  // The auth probe is itself a credentialed request against a feed-chosen URL.
+  it('does not probe auth against a foreign origin', async () => {
+    vi.resetModules();
+    h.catalog = { id: 'cat-1', url: CATALOG, username: 'u', password: 'p' };
+    let probed = false;
+    h.probeImpl = () => {
+      probed = true;
+      return 'Digest xyz';
+    };
+    const { resolveOpdsAudioAuth } = await import('@/services/opds/audioStream');
+
+    const auth = await resolveOpdsAudioAuth('cat-1', 'https://evil.example.net/track.mp3');
+
+    expect(probed).toBe(false);
+    expect(auth.authHeader).toBe('Basic ' + btoa('u:p'));
+  });
+});
+
+// The media element cannot send credentials, so falling back to it on an
+// authenticated catalog means a 401 and the WebView's own Basic-auth dialog.
+describe('probeAudioDurations fallback', () => {
+  it('reports an unknown duration rather than media-probing an authed track', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 500 }) as unknown as Response),
+    );
+    const audioCtor = vi.fn();
+    vi.stubGlobal('Audio', audioCtor);
+    const { probeAudioDurations } = await import('@/services/opds/audioStream');
+
+    const durations = await probeAudioDurations([CATALOG], [{ href: CATALOG, auth: authed }]);
+
+    expect(Number.isNaN(durations[0]!)).toBe(true);
+    expect(audioCtor).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
+
+// Embedded cover art routinely pushes an ID3v2 tag past the probe window, so
+// the first read holds no frame header at all. Falling through to the media
+// element there is what downloads the whole track.
+describe('probeAudioDurationFromHead with an oversized ID3 tag', () => {
+  const frame = [0xff, 0xfb, 0x50, 0xc0];
+
+  // A 40 KB tag: "ID3", version, flags, then a synchsafe size of 40950.
+  const tagHeader = [0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x02, 0x7f, 0x76];
+  const TAG_TOTAL = 10 + ((0x02 << 14) | (0x7f << 7) | 0x76);
+
+  it('re-reads at the first audio byte instead of giving up', async () => {
+    const ranges: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: { headers: Record<string, string> }) => {
+        ranges.push(init.headers['Range']!);
+        const first = ranges.length === 1;
+        const bytes = new Uint8Array(
+          first
+            ? [...tagHeader, ...new Array(2048).fill(0)]
+            : [...frame, ...new Array(2048).fill(0)],
+        );
+        return {
+          ok: true,
+          status: 206,
+          headers: {
+            get: (k: string) =>
+              k.toLowerCase() === 'content-range' ? `bytes 0-16383/${TAG_TOTAL + 31255480}` : null,
+          },
+          body: null,
+          arrayBuffer: async () => bytes.buffer,
+        } as unknown as Response;
+      }),
+    );
+    const { probeAudioDurationFromHead } = await import('@/services/opds/audioStream');
+
+    const seconds = await probeAudioDurationFromHead('http://host/a.mp3', open);
+
+    expect(ranges).toHaveLength(2);
+    expect(ranges[1]).toBe(`bytes=${TAG_TOTAL}-${TAG_TOTAL + 16383}`);
+    // The audio is everything after the tag, so the duration matches the
+    // untagged file: ~3907s of 64 kbps mono.
+    expect(seconds).toBeGreaterThan(3890);
+    expect(seconds).toBeLessThan(3920);
     vi.unstubAllGlobals();
   });
 });

@@ -2273,5 +2273,6 @@
   "Playing this catalog requires the desktop or mobile app": "Phát danh mục này cần ứng dụng máy tính hoặc di động",
   "{{hours}}h {{minutes}}m": "{{hours}} giờ {{minutes}} phút",
   "{{minutes}}m": "{{minutes}} phút",
-  "{{seconds}}s": "{{seconds}} giây"
+  "{{seconds}}s": "{{seconds}} giây",
+  "Could not read the length of every track in this audiobook": "Không thể đọc độ dài của mọi bản nhạc trong sách nói này"
 }

@@ -2273,5 +2273,6 @@
   "Playing this catalog requires the desktop or mobile app": "このカタログの再生にはデスクトップまたはモバイルアプリが必要です",
   "{{hours}}h {{minutes}}m": "{{hours}}時間{{minutes}}分",
   "{{minutes}}m": "{{minutes}}分",
-  "{{seconds}}s": "{{seconds}}秒"
+  "{{seconds}}s": "{{seconds}}秒",
+  "Could not read the length of every track in this audiobook": "このオーディオブックの全トラックの長さを取得できませんでした"
 }

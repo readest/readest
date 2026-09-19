@@ -2393,5 +2393,6 @@
   "Playing this catalog requires the desktop or mobile app": "Reproducir este catálogo requiere la aplicación de escritorio o móvil",
   "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
-  "{{seconds}}s": "{{seconds}} s"
+  "{{seconds}}s": "{{seconds}} s",
+  "Could not read the length of every track in this audiobook": "No se pudo leer la duración de todas las pistas de este audiolibro"
 }

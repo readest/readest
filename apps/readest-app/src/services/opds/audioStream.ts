@@ -33,7 +33,7 @@ import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
-import { parseMp3Duration } from '@/utils/mp3Duration';
+import { id3TagSize, parseMp3Duration } from '@/utils/mp3Duration';
 import type { CustomHeaders } from '@/utils/customHeaders';
 
 export interface OpdsAudioAuth {
@@ -41,7 +41,47 @@ export interface OpdsAudioAuth {
   customHeaders: CustomHeaders;
   /** The catalog was saved with credentials, whatever the probe made of them. */
   hasCredentials: boolean;
+  /**
+   * Origin of the catalog the credentials belong to. Track hrefs come out of
+   * the feed, so a catalog can name any host it likes; credentials go only to
+   * this one.
+   */
+  origin: string;
 }
+
+const originOf = (url: string): string => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Headers for one track request.
+ *
+ * The catalog's credentials are attached only when the track lives on the
+ * catalog's own origin. A feed is remote data: nothing stops an entry pointing
+ * its acquisition link at another host, and forwarding the user's catalog
+ * password or Cloudflare Access headers there would hand them to whoever
+ * controls it. A foreign host that legitimately serves the media (a CDN)
+ * authenticates by signed URL, not by these headers, so dropping them costs
+ * nothing.
+ */
+const trackHeaders = (href: string, auth: OpdsAudioAuth): Record<string, string> => {
+  const base = { 'User-Agent': READEST_OPDS_USER_AGENT };
+  if (auth.origin && originOf(href) !== auth.origin) {
+    if (needsAudioAuth(auth)) {
+      console.warn('[OPDS] not sending catalog credentials to', originOf(href));
+    }
+    return base;
+  }
+  return {
+    ...base,
+    ...auth.customHeaders,
+    ...(auth.authHeader ? { Authorization: auth.authHeader } : {}),
+  };
+};
 
 /** Resolve the catalog's credentials once, for every track in a session. */
 export const resolveOpdsAudioAuth = async (
@@ -60,13 +100,17 @@ export const resolveOpdsAudioAuth = async (
   // HEAD fails. Letting either downgrade us to an unauthenticated request is
   // what made the server answer 401 and the WebView pop its own Basic-auth
   // dialog, asking for the credentials the user already gave us (#6224).
+  const origin = originOf(catalog?.url ?? '');
   const hasCredentials = !!(username || password);
   if (!hasCredentials) {
-    return { authHeader: null, customHeaders, hasCredentials: false };
+    return { authHeader: null, customHeaders, hasCredentials: false, origin };
   }
 
   let authHeader: string | null = null;
   try {
+    // The probe is itself a credentialed request, against a URL the feed chose,
+    // so it gets the same origin check as the track requests below.
+    if (origin && originOf(probeUrl) !== origin) throw new Error('foreign track origin');
     authHeader = await probeAuth(probeUrl, username, password, needsProxy(probeUrl), customHeaders);
   } catch {
     // The probe is an optimisation for servers that want Digest; Basic is the
@@ -77,6 +121,7 @@ export const resolveOpdsAudioAuth = async (
     authHeader: authHeader ?? createBasicAuth(username, password),
     customHeaders,
     hasCredentials: true,
+    origin,
   };
 };
 
@@ -106,11 +151,7 @@ export const fetchOpdsAudioBlob = async (
   auth: OpdsAudioAuth,
   mimeType: string,
 ): Promise<Blob> => {
-  const headers = withOriginSuppressed({
-    'User-Agent': READEST_OPDS_USER_AGENT,
-    ...auth.customHeaders,
-    ...(auth.authHeader ? { Authorization: auth.authHeader } : {}),
-  });
+  const headers = withOriginSuppressed(trackHeaders(href, auth));
   const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
   const res = await doFetch(href, {
     headers,
@@ -125,6 +166,79 @@ const PROBE_TIMEOUT_MS = 20000;
 
 /** Enough of an MP3 to carry the ID3 tag, first frame header and Xing tag. */
 const HEAD_PROBE_BYTES = 16384;
+
+/**
+ * `length` bytes from `start`, or null when the server will not bound what it
+ * sends. Bails rather than buffering whenever it cannot: a server that ignores
+ * our Range and hands back a whole 30 MB track is exactly the case this exists
+ * to avoid.
+ */
+const readRange = async (
+  url: string,
+  auth: OpdsAudioAuth,
+  start: number,
+  length: number,
+): Promise<{ bytes: Uint8Array; total: number } | null> => {
+  const controller = new AbortController();
+  // The abort below only fires once bytes arrive. A server that accepts the
+  // request and then stalls would otherwise hold the whole session open, since
+  // tracks are probed one after another.
+  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+  try {
+    const headers = withOriginSuppressed({
+      ...trackHeaders(url, auth),
+      Range: `bytes=${start}-${start + length - 1}`,
+    });
+    const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
+    const res = await doFetch(url, {
+      headers,
+      signal: controller.signal,
+      danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
+    });
+    if (!res.ok) return null;
+
+    // `Content-Range: bytes 0-16383/31255480` carries the real total; a server
+    // that ignored the range reports it in Content-Length instead.
+    const contentRange = res.headers.get('Content-Range');
+    const total = contentRange
+      ? Number(contentRange.split('/')[1])
+      : Number(res.headers.get('Content-Length'));
+
+    const body = res.body as ReadableStream<Uint8Array> | null;
+    if (body?.getReader) {
+      const reader = body.getReader();
+      const chunks: Uint8Array[] = [];
+      let read = 0;
+      while (read < length) {
+        const { done, value } = await reader.read();
+        if (done || !value) break;
+        chunks.push(value);
+        read += value.length;
+      }
+      // Stop the transfer: without this a 200 response keeps streaming the
+      // whole file even though we have what we need.
+      controller.abort();
+      const bytes = new Uint8Array(read);
+      let at = 0;
+      for (const c of chunks) {
+        bytes.set(c, at);
+        at += c.length;
+      }
+      return { bytes, total };
+    }
+    if (res.status === 206) {
+      return { bytes: new Uint8Array(await res.arrayBuffer()), total };
+    }
+    // No stream to stop and no range honoured: reading the body here would
+    // pull the entire track, which is the cost we are avoiding.
+    controller.abort();
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 /**
  * Duration read from the file's own header, or NaN when that isn't possible.
@@ -142,63 +256,24 @@ export const probeAudioDurationFromHead = async (
   url: string,
   auth: OpdsAudioAuth,
 ): Promise<number> => {
-  const controller = new AbortController();
-  try {
-    const headers = withOriginSuppressed({
-      'User-Agent': READEST_OPDS_USER_AGENT,
-      ...auth.customHeaders,
-      ...(auth.authHeader ? { Authorization: auth.authHeader } : {}),
-      Range: `bytes=0-${HEAD_PROBE_BYTES - 1}`,
-    });
-    const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await doFetch(url, {
-      headers,
-      signal: controller.signal,
-      danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-    });
-    if (!res.ok) return NaN;
+  const first = await readRange(url, auth, 0, HEAD_PROBE_BYTES);
+  if (!first) return NaN;
 
-    // `Content-Range: bytes 0-16383/31255480` carries the real total; a server
-    // that ignored the range reports it in Content-Length instead.
-    const contentRange = res.headers.get('Content-Range');
-    const total = contentRange
-      ? Number(contentRange.split('/')[1])
-      : Number(res.headers.get('Content-Length'));
+  const direct = parseMp3Duration(first.bytes, first.total);
+  if (Number.isFinite(direct) && direct > 0) return direct;
 
-    const body = res.body as ReadableStream<Uint8Array> | null;
-    let head: Uint8Array;
-    if (body?.getReader) {
-      const reader = body.getReader();
-      const chunks: Uint8Array[] = [];
-      let read = 0;
-      while (read < HEAD_PROBE_BYTES) {
-        const { done, value } = await reader.read();
-        if (done || !value) break;
-        chunks.push(value);
-        read += value.length;
-      }
-      // Stop the transfer: without this a 200 response keeps streaming the
-      // whole file even though we have what we need.
-      controller.abort();
-      head = new Uint8Array(read);
-      let at = 0;
-      for (const c of chunks) {
-        head.set(c, at);
-        at += c.length;
-      }
-    } else if (res.status === 206) {
-      head = new Uint8Array(await res.arrayBuffer());
-    } else {
-      // No stream to stop and no range honoured: reading the body here would
-      // pull the entire track, which is the cost we are avoiding.
-      controller.abort();
-      return NaN;
-    }
-
-    return parseMp3Duration(head, total);
-  } catch {
-    return NaN;
-  }
+  // An ID3v2 tag bigger than the window -- embedded cover art routinely is --
+  // leaves no frame header in what we read. The tag declares its own length in
+  // its first 10 bytes, so a second bounded read lands on the audio itself
+  // rather than falling through to the media element, which would fetch the
+  // whole track.
+  const tagSize = id3TagSize(first.bytes);
+  if (tagSize <= first.bytes.length) return NaN;
+  const second = await readRange(url, auth, tagSize, HEAD_PROBE_BYTES);
+  if (!second) return NaN;
+  // The byte total is the file's, so the frame scan must be told where in the
+  // file this buffer starts; audio bytes are everything after the tag.
+  return parseMp3Duration(second.bytes, second.total - tagSize);
 };
 
 /**
@@ -243,8 +318,16 @@ export const probeAudioDurations = async (
     // Cheap path first: a few KB off the catalog rather than the whole track.
     const source = sources?.[i];
     const fromHead = source ? await probeAudioDurationFromHead(source.href, source.auth) : NaN;
+    if (Number.isFinite(fromHead) && fromHead > 0) {
+      durations.push(fromHead);
+      continue;
+    }
+    // The media element cannot send credentials, so on an authenticated
+    // catalog this fallback is not a fallback: the server answers 401 and the
+    // WebView pops its own Basic-auth dialog, asking for what the user already
+    // gave us (#6224). Report the duration as unknown instead.
     durations.push(
-      Number.isFinite(fromHead) && fromHead > 0 ? fromHead : await probeAudioDuration(urls[i]!),
+      source && needsAudioAuth(source.auth) ? NaN : await probeAudioDuration(urls[i]!),
     );
   }
   return durations;

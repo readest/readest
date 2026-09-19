@@ -2573,5 +2573,6 @@
   "Playing this catalog requires the desktop or mobile app": "يتطلب تشغيل هذا الفهرس تطبيق سطح المكتب أو الهاتف",
   "{{hours}}h {{minutes}}m": "{{hours}} س {{minutes}} د",
   "{{minutes}}m": "{{minutes}} د",
-  "{{seconds}}s": "{{seconds}} ث"
+  "{{seconds}}s": "{{seconds}} ث",
+  "Could not read the length of every track in this audiobook": "تعذّرت قراءة مدة كل مقطع في هذا الكتاب الصوتي"
 }

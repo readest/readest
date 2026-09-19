@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "इस कैटलॉग को चलाने के लिए डेस्कटॉप या मोबाइल ऐप आवश्यक है",
   "{{hours}}h {{minutes}}m": "{{hours}}घं {{minutes}}मि",
   "{{minutes}}m": "{{minutes}}मि",
-  "{{seconds}}s": "{{seconds}}से"
+  "{{seconds}}s": "{{seconds}}से",
+  "Could not read the length of every track in this audiobook": "इस ऑडियोबुक के हर ट्रैक की अवधि नहीं पढ़ी जा सकी"
 }

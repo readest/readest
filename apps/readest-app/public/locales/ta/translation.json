@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "இந்த பட்டியலை இயக்க டெஸ்க்டாப் அல்லது மொபைல் செயலி தேவை",
   "{{hours}}h {{minutes}}m": "{{hours}}ம {{minutes}}நி",
   "{{minutes}}m": "{{minutes}}நி",
-  "{{seconds}}s": "{{seconds}}வி"
+  "{{seconds}}s": "{{seconds}}வி",
+  "Could not read the length of every track in this audiobook": "இந்த ஒலிப்புத்தகத்தின் ஒவ்வொரு தடத்தின் நீளத்தையும் படிக்க முடியவில்லை"
 }

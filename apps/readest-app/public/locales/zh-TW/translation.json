@@ -2273,5 +2273,6 @@
   "Playing this catalog requires the desktop or mobile app": "播放此目錄需要使用桌面或行動應用程式",
   "{{hours}}h {{minutes}}m": "{{hours}} 小時 {{minutes}} 分",
   "{{minutes}}m": "{{minutes}} 分鐘",
-  "{{seconds}}s": "{{seconds}} 秒"
+  "{{seconds}}s": "{{seconds}} 秒",
+  "Could not read the length of every track in this audiobook": "無法讀取這本有聲書中每個音軌的長度"
 }

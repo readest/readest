@@ -2393,5 +2393,6 @@
   "Playing this catalog requires the desktop or mobile app": "השמעת קטלוג זה מחייבת את אפליקציית שולחן העבודה או הנייד",
   "{{hours}}h {{minutes}}m": "{{hours}} ש׳ {{minutes}} ד׳",
   "{{minutes}}m": "{{minutes}} ד׳",
-  "{{seconds}}s": "{{seconds}} שנ׳"
+  "{{seconds}}s": "{{seconds}} שנ׳",
+  "Could not read the length of every track in this audiobook": "לא ניתן היה לקרוא את אורך כל הרצועות בספר השמע הזה"
 }

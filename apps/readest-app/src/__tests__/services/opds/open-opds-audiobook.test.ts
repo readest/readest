@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
   session: null as { bookKey: string; controller: { kind: string; terminated: boolean } } | null,
   claimed: [] as string[],
   startAt: -1,
+  durations: null as number[] | null,
   library: [] as Array<Record<string, unknown>>,
 }));
 
@@ -28,7 +29,8 @@ vi.mock('@/services/opds/audioStream', () => ({
   buildOpdsAudioUrl: (href: string) => href,
   fetchOpdsAudioBlob: async () => new Blob(),
   opdsAudioBlocker: () => null,
-  probeAudioDurations: async (urls: string[]) => urls.map(() => 20),
+  needsAudioAuth: () => false,
+  probeAudioDurations: async (urls: string[]) => urls.map((_, i) => h.durations?.[i] ?? 20),
 }));
 
 vi.mock('@/services/audiobook/AudiobookClock', () => ({ HtmlAudioClock: class {} }));
@@ -81,6 +83,7 @@ const appService = { saveLibraryBooks: vi.fn() } as never;
 beforeEach(() => {
   h.session = null;
   h.claimed = [];
+  h.durations = null;
 });
 
 describe('openOpdsAudiobookSession session reuse', () => {
@@ -138,5 +141,33 @@ describe('library duration', () => {
     await openOpdsAudiobookSession({ appService, book });
 
     expect(h.library[0]!['duration']).toBe(20);
+  });
+});
+
+// Dropping an unprobeable track closes the gap and shifts every later track
+// earlier, so the book would play a chapter short with every seek and saved
+// position landing in the wrong place. Refuse rather than do that quietly.
+describe('incomplete timeline', () => {
+  const twoTrackBook = {
+    ...(book as unknown as Record<string, unknown>),
+    filePath: makeOpdsAudioFilePath({
+      catalogId: 'c',
+      title: 'T',
+      author: 'A',
+      tracks: [
+        { href: 'http://x/1.mp3', mimeType: 'audio/mpeg' },
+        { href: 'http://x/2.mp3', mimeType: 'audio/mpeg' },
+      ],
+    }),
+  } as never;
+
+  it('refuses to open when a track duration could not be read', async () => {
+    // The first track probes, the second does not: exactly the case that used
+    // to produce a silently shortened book.
+    h.durations = [20, NaN];
+
+    await expect(openOpdsAudiobookSession({ appService, book: twoTrackBook })).rejects.toThrow(
+      /incomplete/,
+    );
   });
 });

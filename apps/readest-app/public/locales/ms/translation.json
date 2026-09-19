@@ -2273,5 +2273,6 @@
   "Playing this catalog requires the desktop or mobile app": "Memainkan katalog ini memerlukan aplikasi desktop atau mudah alih",
   "{{hours}}h {{minutes}}m": "{{hours}} j {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
-  "{{seconds}}s": "{{seconds}} saat"
+  "{{seconds}}s": "{{seconds}} saat",
+  "Could not read the length of every track in this audiobook": "Tidak dapat membaca tempoh setiap trek dalam buku audio ini"
 }

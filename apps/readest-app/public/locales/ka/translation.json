@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "ამ კატალოგის დასაკრავად საჭიროა დესკტოპის ან მობილურის აპი",
   "{{hours}}h {{minutes}}m": "{{hours}}სთ {{minutes}}წთ",
   "{{minutes}}m": "{{minutes}}წთ",
-  "{{seconds}}s": "{{seconds}}წმ"
+  "{{seconds}}s": "{{seconds}}წმ",
+  "Could not read the length of every track in this audiobook": "ამ აუდიოწიგნის ყველა ტრეკის ხანგრძლივობის წაკითხვა ვერ მოხერხდა"
 }

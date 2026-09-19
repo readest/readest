@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "پخش این فهرست به برنامه دسکتاپ یا موبایل نیاز دارد",
   "{{hours}}h {{minutes}}m": "{{hours}} س {{minutes}} د",
   "{{minutes}}m": "{{minutes}} د",
-  "{{seconds}}s": "{{seconds}} ث"
+  "{{seconds}}s": "{{seconds}} ث",
+  "Could not read the length of every track in this audiobook": "طول همهٔ قطعه‌های این کتاب صوتی خوانده نشد"
 }

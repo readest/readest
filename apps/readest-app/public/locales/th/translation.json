@@ -2273,5 +2273,6 @@
   "Playing this catalog requires the desktop or mobile app": "การเล่นแค็ตตาล็อกนี้ต้องใช้แอปเดสก์ท็อปหรือมือถือ",
   "{{hours}}h {{minutes}}m": "{{hours}} ชม. {{minutes}} นาที",
   "{{minutes}}m": "{{minutes}} นาที",
-  "{{seconds}}s": "{{seconds}} วิ"
+  "{{seconds}}s": "{{seconds}} วิ",
+  "Could not read the length of every track in this audiobook": "ไม่สามารถอ่านความยาวของทุกแทร็กในหนังสือเสียงนี้ได้"
 }

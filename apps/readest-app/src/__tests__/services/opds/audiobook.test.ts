@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  OPDS_AUDIO_SCHEME,
   buildOpdsAudioTracks,
   isOpdsAudioFilePath,
   makeOpdsAudioFilePath,
+  opdsAudioIdentity,
   parseOpdsAudioFilePath,
   pickAudioLinks,
 } from '@/services/opds/audiobook';
@@ -111,5 +113,48 @@ describe('opdsaudio filePath', () => {
     expect(isOpdsAudioFilePath('abs://server/item')).toBe(false);
     expect(parseOpdsAudioFilePath('abs://server/item')).toBeNull();
     expect(parseOpdsAudioFilePath(undefined)).toBeNull();
+  });
+});
+
+// The filePath survives in the library across releases and can be hand-edited,
+// so a payload that is not a playable audiobook has to fail here rather than as
+// a property access deep inside the session opener.
+describe('parseOpdsAudioFilePath validation', () => {
+  const pack = (value: unknown) => OPDS_AUDIO_SCHEME + encodeURIComponent(JSON.stringify(value));
+
+  it('rejects a payload missing the fields playback needs', () => {
+    expect(parseOpdsAudioFilePath(pack({}))).toBeNull();
+    expect(parseOpdsAudioFilePath(pack({ catalogId: 'c', title: 'T', author: 'A' }))).toBeNull();
+    expect(
+      parseOpdsAudioFilePath(pack({ catalogId: 'c', title: 'T', author: 'A', tracks: [{}] })),
+    ).toBeNull();
+  });
+
+  it('accepts a well-formed one', () => {
+    const data = {
+      catalogId: 'c',
+      title: 'T',
+      author: 'A',
+      tracks: [{ href: 'http://x/1.mp3', mimeType: 'audio/mpeg' }],
+    };
+
+    expect(parseOpdsAudioFilePath(pack(data))).toEqual(data);
+  });
+});
+
+// A catalog correcting a typo in the title must not turn the book into a second
+// library row with its own listening progress.
+describe('opdsAudioIdentity', () => {
+  const tracks = [
+    { href: 'http://x/1.mp3', mimeType: 'audio/mpeg' },
+    { href: 'http://x/2.mp3', mimeType: 'audio/mpeg' },
+  ];
+
+  it('ignores metadata and depends only on the catalog and track order', () => {
+    expect(opdsAudioIdentity('c', tracks)).toBe(opdsAudioIdentity('c', [...tracks]));
+    expect(opdsAudioIdentity('c', tracks)).not.toBe(opdsAudioIdentity('other', tracks));
+    expect(opdsAudioIdentity('c', tracks)).not.toBe(
+      opdsAudioIdentity('c', [tracks[1]!, tracks[0]!]),
+    );
   });
 });

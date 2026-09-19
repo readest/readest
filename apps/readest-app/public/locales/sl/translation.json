@@ -2453,5 +2453,6 @@
   "Playing this catalog requires the desktop or mobile app": "Predvajanje tega kataloga zahteva namizno ali mobilno aplikacijo",
   "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
-  "{{seconds}}s": "{{seconds}} s"
+  "{{seconds}}s": "{{seconds}} s",
+  "Could not read the length of every track in this audiobook": "Dolžine vseh posnetkov te zvočne knjige ni bilo mogoče prebrati"
 }

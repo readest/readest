@@ -51,7 +51,7 @@ import { applyOPDSCover, getOPDSCoverHref, getOPDSImageCacheFilename } from '@/s
 import { applyOPDSMetadata, getOPDSBookMetadata } from '@/services/opds/metadata';
 import { buildPseStreamFileName } from '@/services/opds/pseStream';
 import { md5 } from '@/utils/md5';
-import { makeOpdsAudioFilePath } from '@/services/opds/audiobook';
+import { makeOpdsAudioFilePath, opdsAudioIdentity } from '@/services/opds/audiobook';
 import {
   makeBookOrbitAudioFilePath,
   matchBookOrbitAudiobook,
@@ -768,7 +768,11 @@ export default function BrowserPage() {
           ? makeBookOrbitAudioFilePath(native.bookId)
           : makeOpdsAudioFilePath({ catalogId, title, author, tracks: resolved });
         const { library, setLibrary } = useLibraryStore.getState();
-        const hash = md5(filePath);
+        // Hashed over the book's identity, not the whole filePath: that string
+        // also carries the title and author, so a catalog correcting either one
+        // would hash to a new row and strand the listening progress on the old
+        // one. The BookOrbit path is already just `bookorbit://<id>`.
+        const hash = md5(native ? filePath : opdsAudioIdentity(catalogId, resolved));
         const now = Date.now();
         const existing = library.find((b) => b.hash === hash);
         if (!existing) {

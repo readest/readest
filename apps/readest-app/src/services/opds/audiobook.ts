@@ -92,6 +92,14 @@ export const buildOpdsAudioTracks = (
   return tracks;
 };
 
+/**
+ * What makes two plays the same audiobook: the catalog it came from and its
+ * ordered track URLs. Deliberately excludes title and author, which the
+ * catalog can correct without the book becoming a different one.
+ */
+export const opdsAudioIdentity = (catalogId: string, tracks: OpdsAudioTrackLink[]): string =>
+  JSON.stringify({ catalogId, tracks: tracks.map((track) => track.href) });
+
 export const isOpdsAudioFilePath = (filePath: string | undefined): boolean =>
   !!filePath && filePath.startsWith(OPDS_AUDIO_SCHEME);
 
@@ -104,12 +112,31 @@ export const isOpdsAudioFilePath = (filePath: string | undefined): boolean =>
 export const makeOpdsAudioFilePath = (data: OpdsAudiobookData): string =>
   OPDS_AUDIO_SCHEME + encodeURIComponent(JSON.stringify(data));
 
+const isAudiobookData = (value: unknown): value is OpdsAudiobookData => {
+  const data = value as OpdsAudiobookData | null;
+  return (
+    !!data &&
+    typeof data.catalogId === 'string' &&
+    typeof data.title === 'string' &&
+    typeof data.author === 'string' &&
+    Array.isArray(data.tracks) &&
+    data.tracks.every(
+      (track) => !!track && typeof track.href === 'string' && typeof track.mimeType === 'string',
+    )
+  );
+};
+
+/**
+ * The entry packed into a synthetic filePath, or null when it is not one we can
+ * play. Validated rather than cast: the string survives in the library across
+ * releases, so a row written by an older build (or edited by hand) must fail
+ * here rather than as a property access deep inside the session opener.
+ */
 export const parseOpdsAudioFilePath = (filePath: string | undefined): OpdsAudiobookData | null => {
   if (!isOpdsAudioFilePath(filePath)) return null;
   try {
-    return JSON.parse(
-      decodeURIComponent(filePath!.slice(OPDS_AUDIO_SCHEME.length)),
-    ) as OpdsAudiobookData;
+    const data: unknown = JSON.parse(decodeURIComponent(filePath!.slice(OPDS_AUDIO_SCHEME.length)));
+    return isAudiobookData(data) ? data : null;
   } catch {
     return null;
   }

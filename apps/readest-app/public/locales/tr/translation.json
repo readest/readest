@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "Bu kataloğu oynatmak masaüstü veya mobil uygulamayı gerektirir",
   "{{hours}}h {{minutes}}m": "{{hours}} sa {{minutes}} dk",
   "{{minutes}}m": "{{minutes}} dk",
-  "{{seconds}}s": "{{seconds}} sn"
+  "{{seconds}}s": "{{seconds}} sn",
+  "Could not read the length of every track in this audiobook": "Bu sesli kitaptaki her parçanın uzunluğu okunamadı"
 }

@@ -2333,5 +2333,6 @@
   "Playing this catalog requires the desktop or mobile app": "මෙම නාමාවලිය වාදනය කිරීමට ඩෙස්ක්ටොප් හෝ ජංගම යෙදුම අවශ්‍යයි",
   "{{hours}}h {{minutes}}m": "{{hours}}පැ {{minutes}}මි",
   "{{minutes}}m": "{{minutes}}මි",
-  "{{seconds}}s": "{{seconds}}තත්"
+  "{{seconds}}s": "{{seconds}}තත්",
+  "Could not read the length of every track in this audiobook": "මෙම ශ්‍රව්‍ය පොතේ සෑම ඛණ්ඩයකම දිග කියවිය නොහැකි විය"
 }

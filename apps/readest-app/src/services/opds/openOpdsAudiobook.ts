@@ -38,6 +38,14 @@ export class OpdsAudioWebAuthError extends Error {
   }
 }
 
+/** At least one track's duration could not be read, so the timeline is wrong. */
+export class OpdsAudioIncompleteError extends Error {
+  constructor() {
+    super('opds-audio-incomplete');
+    this.name = 'OpdsAudioIncompleteError';
+  }
+}
+
 /** Matches the ABS syncer: keep the row live in the store, write to disk rarely. */
 const PERSIST_THROTTLE_MS = 15000;
 
@@ -142,6 +150,11 @@ export const openOpdsAudiobookSession = async (input: {
   );
   const tracks = buildOpdsAudioTracks(data.tracks, durations);
   if (tracks.length === 0) return null;
+  // A track whose duration could not be read is dropped by the layout above,
+  // which closes the gap and shifts every later track earlier. Playing that
+  // silently would lose a chapter and put every seek and saved position in the
+  // wrong place, so an incomplete timeline is refused instead.
+  if (tracks.length !== data.tracks.length) throw new OpdsAudioIncompleteError();
 
   const mimeByHref = new Map(data.tracks.map((track) => [track.href, track.mimeType]));
 

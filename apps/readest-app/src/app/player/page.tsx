@@ -9,7 +9,11 @@ import type { Book } from '@/types/book';
 import type { AudiobookController } from '@/services/audiobook/AudiobookController';
 import type { ABSEpisode } from '@/types/audiobookshelf';
 import { loadAbsEpisodes, openAudiobookSession } from '@/services/audiobook/openAudiobook';
-import { OpdsAudioWebAuthError, openOpdsAudiobookSession } from '@/services/opds/openOpdsAudiobook';
+import {
+  OpdsAudioIncompleteError,
+  OpdsAudioWebAuthError,
+  openOpdsAudiobookSession,
+} from '@/services/opds/openOpdsAudiobook';
 import { openBookOrbitAudiobookSession } from '@/services/bookorbit/openBookOrbitAudiobook';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { useEnv } from '@/context/EnvContext';
@@ -181,6 +185,16 @@ const PlayerRoute = () => {
                 eventDispatcher.dispatch('toast', {
                   type: 'error',
                   message: _('Playing this catalog requires the desktop or mobile app'),
+                  timeout: 5000,
+                });
+                return { result: null };
+              }
+              // Some track's length could not be read, so the timeline would be
+              // short by a chapter and every position in it wrong.
+              if (error instanceof OpdsAudioIncompleteError) {
+                eventDispatcher.dispatch('toast', {
+                  type: 'error',
+                  message: _('Could not read the length of every track in this audiobook'),
                   timeout: 5000,
                 });
                 return { result: null };

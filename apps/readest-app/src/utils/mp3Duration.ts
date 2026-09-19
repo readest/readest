@@ -25,7 +25,7 @@ const SAMPLE_RATES: Record<number, readonly number[]> = {
 const samplesPerFrame = (version: number): number => (version === MPEG1 ? 1152 : 576);
 
 /** Total size of an ID3v2 tag at the start of the buffer, 0 when there is none. */
-const id3TagSize = (buf: Uint8Array): number => {
+export const id3TagSize = (buf: Uint8Array): number => {
   if (buf.length < 10 || buf[0] !== 0x49 || buf[1] !== 0x44 || buf[2] !== 0x33) return 0;
   // Synchsafe integer: 7 significant bits per byte.
   const size =
