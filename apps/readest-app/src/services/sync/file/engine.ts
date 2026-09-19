@@ -554,6 +554,7 @@ export class FileSyncEngine {
     // overlap (a Full-Sync re-check both reconciles and re-pushes the same
     // book, and one book can push a config + cover + file).
     const syncedHashes = new Set<string>();
+    const failedConfigHashes = new Set<string>();
 
     const strategy = options.strategy || 'silent';
     const canPull = strategy !== 'send';
@@ -1221,6 +1222,7 @@ export class FileSyncEngine {
             }
           } catch (e) {
             noteAbort(e);
+            if (phase === 'upload-config') failedConfigHashes.add(book.hash);
             result.failures += 1;
             result.failedBooks.push({
               hash: book.hash,
@@ -1247,6 +1249,7 @@ export class FileSyncEngine {
     // never had, silently reviving it for every other device (#4860).
     if (canPush) {
       const indexByHash = new Map(allBooksMap);
+      const remoteAllByHash = new Map((remoteIndex?.books ?? []).map((b) => [b.hash, b] as const));
       if (remoteIndex?.books) {
         for (const rb of remoteIndex.books) {
           const local = indexByHash.get(rb.hash);
@@ -1291,6 +1294,18 @@ export class FileSyncEngine {
         }
       }
 
+      // A library row is also the config-upload cursor. Publishing the local
+      // timestamp after a failed config PUT/MKCOL would suppress every later
+      // incremental retry (#6184). Keep the last confirmed row, or omit a new
+      // book until its config has actually reached the server. Do this after
+      // GC so restoring an old tombstone cannot authorize deletion of a book
+      // whose newer local row kept it alive during reconciliation.
+      for (const hash of failedConfigHashes) {
+        const remote = remoteAllByHash.get(hash);
+        if (remote) indexByHash.set(hash, remote);
+        else indexByHash.delete(hash);
+      }
+
       // Carry the uploaded-file record forward so the next incremental sync
       // stays O(changed). Keep only hashes that still map to a live indexed
       // book so the set can't grow unbounded with tombstoned / evicted books.
@@ -1308,7 +1323,6 @@ export class FileSyncEngine {
       // invalidates every other device's etag-based change detection. The
       // check is deliberately conservative — any per-book activity, failure,
       // record change, or local row the remote lacks (or trails) pushes.
-      const remoteAllByHash = new Map((remoteIndex?.books ?? []).map((b) => [b.hash, b] as const));
       const indexDirty =
         remoteIndex === null ||
         syncedHashes.size > 0 ||
