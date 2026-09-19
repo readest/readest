@@ -225,32 +225,6 @@ does not start XWayland; use the value provided by your session.
 `--ozone-platform=wayland` cannot enable native Wayland support in this runtime,
 and WebKitGTK environment variables do not affect CEF.
 
-### AppImage EGL Error (Older WebKitGTK Builds)
-
-On some Arch Linux systems—especially those using Wayland—older WebKitGTK-based Readest AppImages may briefly show an icon in the taskbar and then exit without opening a window.
-
-You might see logs such as:
-
-```
-Could not create default EGL display: EGL_BAD_PARAMETER. Aborting...
-```
-
-This behavior is usually caused by compatibility issues between the bundled AppImage libraries and the system’s EGL / Wayland environment.
-
-**Workaround 1: Launch with LD_PRELOAD (recommended)**
-
-You can preload the system Wayland client library before launching the AppImage:
-
-```
-LD_PRELOAD=/usr/lib/libwayland-client.so /path/to/Readest.AppImage
-```
-
-This workaround has been confirmed to resolve the issue on affected systems.
-
-**Workaround 2: Use the Flatpak Version**
-
-If you prefer a more reliable out-of-the-box experience on Arch Linux, consider using the [Flatpak build on Flathub][link-flathub] instead. The Flatpak runtime helps avoid system library mismatches and tends to behave more consistently across different Wayland and X11 setups.
-
 ## Contributors
 
 Readest is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
