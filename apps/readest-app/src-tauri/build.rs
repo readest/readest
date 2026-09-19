@@ -37,6 +37,8 @@ fn main() {
             "allow_paths_in_scopes",
             "optimize_cover_thumbnails",
             "read_dir",
+            "write_backup_zip",
+            "extract_backup_zip",
             "parse_epub_metadata",
             "extract_epub_cover_full",
             "parse_epub_full",

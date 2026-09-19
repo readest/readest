@@ -223,6 +223,8 @@
     "allow-allow-paths-in-scopes",
     "allow-optimize-cover-thumbnails",
     "allow-read-dir",
+    "allow-write-backup-zip",
+    "allow-extract-backup-zip",
     "allow-parse-epub-metadata",
     "allow-extract-epub-cover-full",
     "allow-parse-epub-full",

@@ -22,6 +22,7 @@ use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+mod backup_zip;
 #[cfg(target_os = "macos")]
 mod browser_cookies_macos;
 mod browser_fetch;
@@ -524,6 +525,8 @@ pub fn run() {
             allow_paths_in_scopes,
             cover_thumbnail::optimize_cover_thumbnails,
             dir_scanner::read_dir,
+            backup_zip::write_backup_zip,
+            backup_zip::extract_backup_zip,
             epub_parser::parse_epub_metadata,
             epub_parser::extract_epub_cover_full,
             epub_parser::parse_epub_full,
