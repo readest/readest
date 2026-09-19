@@ -53,6 +53,7 @@ internal object MediaBrowserCallerValidator {
         "com.google.android.carassistant", // Auto's assistant
         "com.google.android.googlequicksearchbox", // Google Assistant
         "com.google.android.wearable.app", // Wear OS
+        "com.android.car.media", // Android Automotive's media app (observed)
         "com.android.systemui",
         "com.android.bluetooth",
     )
@@ -76,6 +77,14 @@ internal object MediaBrowserCallerValidator {
      * [BrowseAccess.MEDIA_CONTENT_CONTROL], which cover the system media stack
      * on every device we have seen — but NOT necessarily gearhead, which is
      * exactly what step 2 is for.
+     *
+     * Observed so far (Android Automotive emulator, android-34-ext9 arm64):
+     *   com.android.car.media -> PLATFORM_SIGNED
+     * so AAOS is already admitted with no pins at all. The gearhead verdict on
+     * phone projection is still unmeasured: the Desktop Head Unit links over
+     * ADB but never took video focus on the API 35 emulator, so its browse
+     * request never reached us. Read it off a real head unit, or a phone that
+     * completes projection, before step 4.
      */
     val TRUSTED_CERTIFICATES: Map<String, Set<String>> = emptyMap()
 
