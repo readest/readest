@@ -2279,6 +2279,6 @@
   "{{seconds}}s": "{{seconds}} dtk",
   "Could not read the length of every track in this audiobook": "Tidak dapat membaca durasi setiap trek dalam buku audio ini",
   "Manage the streamed audiobook paired with this ebook.": "Kelola buku audio streaming yang dipasangkan dengan ebook ini.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "Tutup",
+  "Failed to upload the library index. Please sync again.": "Gagal mengunggah indeks perpustakaan. Silakan sinkronkan kembali."
 }

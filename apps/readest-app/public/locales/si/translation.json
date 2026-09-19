@@ -2339,6 +2339,6 @@
   "{{seconds}}s": "{{seconds}}තත්",
   "Could not read the length of every track in this audiobook": "මෙම ශ්‍රව්‍ය පොතේ සෑම ඛණ්ඩයකම දිග කියවිය නොහැකි විය",
   "Manage the streamed audiobook paired with this ebook.": "මෙම ඊ-පොත හා යුගල කළ ප්‍රවාහ ශ්‍රව්‍ය පොත කළමනාකරණය කරන්න.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "වසන්න",
+  "Failed to upload the library index. Please sync again.": "පුස්තකාල දර්ශකය උඩුගත කිරීමට නොහැකි විය. කරුණාකර නැවත සමමුහුර්ත කරන්න."
 }

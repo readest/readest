@@ -2279,6 +2279,6 @@
   "{{seconds}}s": "{{seconds}} 秒",
   "Could not read the length of every track in this audiobook": "無法讀取這本有聲書中每個音軌的長度",
   "Manage the streamed audiobook paired with this ebook.": "管理與此電子書配對的串流有聲書。",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "關閉",
+  "Failed to upload the library index. Please sync again.": "書庫索引上傳失敗。請重新同步。"
 }

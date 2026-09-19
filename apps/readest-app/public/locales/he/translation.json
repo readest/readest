@@ -2399,6 +2399,6 @@
   "{{seconds}}s": "{{seconds}} שנ׳",
   "Could not read the length of every track in this audiobook": "לא ניתן היה לקרוא את אורך כל הרצועות בספר השמע הזה",
   "Manage the streamed audiobook paired with this ebook.": "ניהול ספר השמע המוזרם המשויך לספר האלקטרוני הזה.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "סגור",
+  "Failed to upload the library index. Please sync again.": "העלאת אינדקס הספרייה נכשלה. יש לסנכרן שוב."
 }

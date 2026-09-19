@@ -2459,6 +2459,6 @@
   "{{seconds}}s": "{{seconds}} с",
   "Could not read the length of every track in this audiobook": "Не вдалося визначити тривалість кожної доріжки цієї аудіокниги",
   "Manage the streamed audiobook paired with this ebook.": "Керування потоковою аудіокнигою, пов’язаною з цією електронною книгою.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "Закрити",
+  "Failed to upload the library index. Please sync again.": "Не вдалося завантажити індекс бібліотеки. Повторіть синхронізацію."
 }

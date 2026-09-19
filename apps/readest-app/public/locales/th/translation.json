@@ -2279,6 +2279,6 @@
   "{{seconds}}s": "{{seconds}} วิ",
   "Could not read the length of every track in this audiobook": "ไม่สามารถอ่านความยาวของทุกแทร็กในหนังสือเสียงนี้ได้",
   "Manage the streamed audiobook paired with this ebook.": "จัดการหนังสือเสียงแบบสตรีมที่จับคู่กับอีบุ๊กนี้",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "ปิด",
+  "Failed to upload the library index. Please sync again.": "อัปโหลดดัชนีห้องสมุดไม่สำเร็จ โปรดซิงค์อีกครั้ง"
 }

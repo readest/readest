@@ -2279,6 +2279,6 @@
   "{{seconds}}s": "{{seconds}}초",
   "Could not read the length of every track in this audiobook": "이 오디오북의 모든 트랙 길이를 읽지 못했습니다",
   "Manage the streamed audiobook paired with this ebook.": "이 전자책과 연결된 스트리밍 오디오북을 관리합니다.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "닫기",
+  "Failed to upload the library index. Please sync again.": "라이브러리 색인을 업로드하지 못했습니다. 다시 동기화해 주세요."
 }

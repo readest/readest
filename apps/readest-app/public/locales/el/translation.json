@@ -2339,6 +2339,6 @@
   "{{seconds}}s": "{{seconds}}δ",
   "Could not read the length of every track in this audiobook": "Δεν ήταν δυνατή η ανάγνωση της διάρκειας κάθε κομματιού αυτού του ηχητικού βιβλίου",
   "Manage the streamed audiobook paired with this ebook.": "Διαχειριστείτε το ηχητικό βιβλίο που μεταδίδεται μέσω ροής και είναι συνδεδεμένο με αυτό το e-book.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "Κλείσιμο",
+  "Failed to upload the library index. Please sync again.": "Απέτυχε η μεταφόρτωση του ευρετηρίου της βιβλιοθήκης. Συγχρονίστε ξανά."
 }

@@ -2339,6 +2339,6 @@
   "{{seconds}}s": "{{seconds}} Sek.",
   "Could not read the length of every track in this audiobook": "Die Länge konnte nicht für jeden Titel dieses Hörbuchs ermittelt werden",
   "Manage the streamed audiobook paired with this ebook.": "Verwalten Sie das gestreamte Hörbuch, das mit diesem E-Book verknüpft ist.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "Schließen",
+  "Failed to upload the library index. Please sync again.": "Der Bibliotheksindex konnte nicht hochgeladen werden. Bitte erneut synchronisieren."
 }

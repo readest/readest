@@ -2339,6 +2339,6 @@
   "{{seconds}}s": "{{seconds}} ث",
   "Could not read the length of every track in this audiobook": "طول همهٔ قطعه‌های این کتاب صوتی خوانده نشد",
   "Manage the streamed audiobook paired with this ebook.": "مدیریت کتاب صوتی پخش‌شده جفت‌شده با این کتاب الکترونیکی.",
-  "Dismiss": "__STRING_NOT_TRANSLATED__",
-  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
+  "Dismiss": "بستن",
+  "Failed to upload the library index. Please sync again.": "بارگذاری فهرست کتابخانه ناموفق بود. لطفاً دوباره همگام‌سازی کنید."
 }
