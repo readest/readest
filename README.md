@@ -203,9 +203,31 @@ To build Readest from the latest commit, see [Getting Started](./CONTRIBUTING.md
 
 - See Issue [readest/readest#358](https://github.com/readest/readest/issues/358) for further details, or head over to our [Discord][link-discord] server and open a support discussion with detailed logs of your environment and the steps you’ve taken.
 
-### 2. AppImage Launches but Only Shows a Taskbar Icon
+### Linux Fails to Launch on Wayland / Niri
 
-On some Arch Linux systems—especially those using Wayland—the Readest AppImage may briefly show an icon in the taskbar and then exit without opening a window.
+Current Linux builds, including Flatpak, use CEF with an X11 window backend.
+Wayland sessions therefore need XWayland. Without a `DISPLAY`, older builds exit
+with `Runtime(CreateWindow)` before opening a window.
+
+On Niri, install `xwayland-satellite` 0.7 or later using your distribution's package manager
+and restart your Niri session. Niri 25.08 and later can start it on demand and
+set `DISPLAY` for applications. See [Niri's XWayland setup instructions](https://niri-wm.github.io/niri/Xwayland.html).
+
+From a terminal in that session, check `printenv DISPLAY`, then launch Readest:
+
+```sh
+flatpak run com.bilingify.readest
+```
+
+The Flatpak already requests the X11 socket. If you have customized its sandbox
+permissions, allow that socket as well. Setting `DISPLAY` to an arbitrary value
+does not start XWayland; use the value provided by your session.
+`--ozone-platform=wayland` cannot enable native Wayland support in this runtime,
+and WebKitGTK environment variables do not affect CEF.
+
+### AppImage EGL Error (Older WebKitGTK Builds)
+
+On some Arch Linux systems—especially those using Wayland—older WebKitGTK-based Readest AppImages may briefly show an icon in the taskbar and then exit without opening a window.
 
 You might see logs such as:
 

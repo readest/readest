@@ -33,6 +33,8 @@ mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
 mod epub_parser;
+#[cfg(all(target_os = "linux", any(feature = "cef", test)))]
+mod linux_display;
 mod localsend;
 #[cfg(target_os = "macos")]
 mod macos;
@@ -407,6 +409,15 @@ type AppRuntime = tauri::Wry;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[cfg_attr(all(feature = "cef", target_os = "linux"), tauri::cef_entry_point)]
 pub fn run() {
+    // The CEF runtime forces X11, even on Wayland. Check before initializing
+    // Tauri, which otherwise hides the missing display behind CreateWindow.
+    // cef_entry_point routes helper processes away before reaching this code.
+    #[cfg(all(feature = "cef", target_os = "linux"))]
+    if let Err(message) = linux_display::check_display(std::env::var_os("DISPLAY").as_deref()) {
+        eprintln!("{message}");
+        std::process::exit(1);
+    }
+
     // Initialize Sentry as early as possible so panics during startup are
     // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
     // builds don't report. This client covers Rust panics and the events the
