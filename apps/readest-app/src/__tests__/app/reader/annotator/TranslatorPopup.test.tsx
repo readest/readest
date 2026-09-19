@@ -129,6 +129,25 @@ describe('TranslatorPopup error reporting', () => {
   });
 });
 
+describe('TranslatorPopup translated text', () => {
+  it.each([
+    ['It&#39;ll be alright', "It'll be alright"],
+    ['It&#x27;ll be alright', "It'll be alright"],
+    ['It&apos;ll be &quot;alright&quot; &amp; fine', 'It\'ll be "alright" & fine'],
+    ["It'll be alright", "It'll be alright"],
+    ['Literal &amp;#39;', 'Literal &#39;'],
+    ['&lt;b&gt;alright&lt;/b&gt;', '<b>alright</b>'],
+    ['</textarea><img src=x onerror=alert(1)>', '</textarea><img src=x onerror=alert(1)>'],
+  ])('displays %s as plain text', async (response, expected) => {
+    mockTranslate.mockResolvedValue([response]);
+    await renderPopup();
+
+    const translated = await screen.findByText(expected);
+    expect(translated.textContent).toBe(expected);
+    expect(translated.childElementCount).toBe(0);
+  });
+});
+
 describe('TranslatorPopup source language', () => {
   beforeEach(() => {
     mockViewSettings = {};

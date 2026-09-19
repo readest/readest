@@ -128,7 +128,10 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           throw new Error('No translation found');
         }
 
-        setTranslation(translatedText);
+        // Decode provider entities once while keeping any markup literal.
+        const decoder = document.createElement('textarea');
+        decoder.innerHTML = translatedText.replaceAll('<', '&lt;');
+        setTranslation(decoder.value);
         if (sourceLang === 'AUTO' && detectedSource) {
           setDetectedSourceLang(detectedSource);
         }
