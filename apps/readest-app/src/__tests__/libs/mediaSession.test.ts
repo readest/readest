@@ -159,6 +159,38 @@ describe('TauriMediaSession.setActive', () => {
     expect(addPluginListener).toHaveBeenCalled();
   });
 
+  test('unregisters the partial set when listener registration fails midway', async () => {
+    // Listeners are only published to `eventListeners` once the whole sequence
+    // succeeds, so the ones registered before a failure were unreachable and
+    // leaked, and `eventListenerInited` stayed true, blocking any retry.
+    const unregister = vi.fn();
+    let registrations = 0;
+    vi.mocked(addPluginListener).mockImplementation(async () => {
+      registrations += 1;
+      if (registrations === 3) throw new Error('plugin channel closed');
+      return { unregister } as unknown as PluginListener;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true, sessionId: 'book-1' });
+
+    // The two that did register are cleaned up rather than orphaned.
+    expect(unregister).toHaveBeenCalledTimes(2);
+
+    // ...and the session is still retryable: a later activation registers again
+    // instead of short-circuiting on a stale "already initialized" flag.
+    vi.mocked(addPluginListener).mockResolvedValue({ unregister } as unknown as PluginListener);
+    const before = vi.mocked(addPluginListener).mock.calls.length;
+    await session.setActive({ active: true, sessionId: 'book-2' });
+    expect(vi.mocked(addPluginListener).mock.calls.length).toBeGreaterThan(before);
+  });
+
   test('still activates the native session when the permission request throws', async () => {
     // A thrown/hung permission request must never abort the foreground-service
     // start, or the service never becomes foreground and the OS reclaims it on

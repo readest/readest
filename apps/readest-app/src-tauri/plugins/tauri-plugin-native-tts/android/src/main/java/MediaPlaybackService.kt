@@ -219,13 +219,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         private const val CHANNEL_ID = "media2_playback_channel"
         private const val NOTIFICATION_ID = 1002
         private const val MEDIA_ROOT_ID = "media_root_id"
-        // Served to a caller that fails browse validation: it connects, and
-        // sees nothing. onLoadChildren returns an empty list for any parent id
-        // it does not recognise, so this needs no branch of its own.
-        private const val EMPTY_ROOT_ID = "readest_empty_root"
         // Shadow mode. False = every caller is still served the real tree and
-        // the verdict is only logged; true = unvalidated callers get
-        // EMPTY_ROOT_ID. Flip this only after the certificates in
+        // the verdict is only logged; true = unvalidated callers are refused
+        // outright. Flip this only after the certificates in
         // MediaBrowserCallerValidator.TRUSTED_CERTIFICATES have been filled in
         // from what real head units actually present (see that file).
         private const val ENFORCE_BROWSE_VALIDATION = false
@@ -707,7 +703,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var pendingSelection: String? = null
     private val selectionTimeout = Runnable {
         pendingSelection = null
-        if (sessionActive) return@Runnable
+        // A successful handoff cancels this watchdog in activateSession(), so
+        // reaching here always means the selection failed. sessionActive can
+        // still be true when a DIFFERENT book was already playing: returning
+        // early then left that live session stuck in STATE_BUFFERING, so
+        // republish its real state instead of reporting an error over it.
+        if (sessionActive) {
+            updatePlaybackState()
+            return@Runnable
+        }
         mediaSession?.setPlaybackState(
             stateBuilder
                 .setState(PlaybackStateCompat.STATE_ERROR, 0L, 1f)
@@ -1000,28 +1004,39 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         )
     }
 
-    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
-        val verdict = callerVerdicts.getOrPut("$clientUid:$clientPackageName") {
-            val identity = readCallerIdentity(clientPackageName, clientUid)
-            val decision =
-                MediaBrowserCallerValidator.evaluate(identity, Process.myUid())
+    // Verdict for whoever is driving the in-flight browse callback. Resolved
+    // from the same cache onGetRoot fills, so it costs nothing on the hot path.
+    private fun isCurrentBrowserAllowed(): Boolean {
+        val browser = currentBrowserInfo ?: return false
+        return resolveCallerVerdict(browser.packageName, browser.uid).allowed
+    }
+
+    private fun resolveCallerVerdict(pkg: String, uid: Int): BrowseAccess =
+        callerVerdicts.getOrPut("$uid:$pkg") {
+            val identity = readCallerIdentity(pkg, uid)
+            val decision = MediaBrowserCallerValidator.evaluate(identity, Process.myUid())
             // Shadow-mode record. This is the only way to learn which packages
             // and certificates real head units present before the allowlist is
             // enforced; grep logcat for "browse caller".
             Log.i(
                 "MediaPlaybackService",
-                "browse caller pkg=$clientPackageName uid=$clientUid verdict=$decision " +
-                    "expected=${clientPackageName in MediaBrowserCallerValidator.EXPECTED_MEDIA_CLIENTS} " +
+                "browse caller pkg=$pkg uid=$uid verdict=$decision " +
+                    "expected=${pkg in MediaBrowserCallerValidator.EXPECTED_MEDIA_CLIENTS} " +
                     "certs=${identity.signatureSha256.joinToString(",")}",
             )
             decision
         }
 
+    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
+        val verdict = resolveCallerVerdict(clientPackageName, clientUid)
+
         if (ENFORCE_BROWSE_VALIDATION && !verdict.allowed) {
-            // Connect but serve nothing. Returning null refuses the connection
-            // outright, which some clients handle badly; an unknown root falls
-            // through onLoadChildren to an empty list.
-            return BrowserRoot(EMPTY_ROOT_ID, null)
+            // Refuse the connection outright. An empty root still completes it,
+            // and a completed connection hands the caller the media-session
+            // token — from which it can drive onPlay/onPlayFromMediaId, since
+            // the session callbacks authorize nothing. Google's Android for
+            // Cars guidance is explicit: return null for an untrusted package.
+            return null
         }
 
         // Grant the cover URI to the connecting browser client (Android Auto,
@@ -1033,6 +1048,13 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaBrowserCompat.MediaItem>>) {
         val items = mutableListOf<MediaBrowserCompat.MediaItem>()
+        // A browser client picks the parentId it subscribes to, so it can ask
+        // for LIBRARY_ROOT_ID directly no matter which root onGetRoot handed
+        // back. Authorize here too, or the root check is only advisory.
+        if (ENFORCE_BROWSE_VALIDATION && !isCurrentBrowserAllowed()) {
+            result.sendResult(items)
+            return
+        }
         if (parentId == MEDIA_ROOT_ID && sessionActive) {
             refreshArtworkUri()
             val description = MediaDescriptionCompat.Builder()

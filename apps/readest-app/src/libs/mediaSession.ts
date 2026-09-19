@@ -71,83 +71,97 @@ export class TauriMediaSession {
     this.listenerSessionId = sessionId;
     const generation = ++this.listenerGeneration;
     const listeners: PluginListener[] = [];
-
-    const playListener = await addPluginListener('native-tts', 'media-session-play', () => {
-      if (this.handlers['play']) {
-        (this.handlers['play'] as () => void)();
-      }
-    });
-    listeners.push(playListener);
-
-    const pauseListener = await addPluginListener('native-tts', 'media-session-pause', () => {
-      if (this.handlers['pause']) {
-        (this.handlers['pause'] as () => void)();
-      }
-    });
-    listeners.push(pauseListener);
-
-    // iOS single-button toggle (lock-screen center button, headset click).
-    // Distinct from 'play'/'pause', which are directional so that audio-focus
-    // events (interruptions, route loss) can reuse them safely.
-    const toggleListener = await addPluginListener('native-tts', 'media-session-toggle', () => {
-      if (this.handlers['toggle']) {
-        (this.handlers['toggle'] as () => void)();
-      }
-    });
-    listeners.push(toggleListener);
-
-    const nextListener = await addPluginListener('native-tts', 'media-session-next', () => {
-      if (this.handlers['nexttrack']) {
-        (this.handlers['nexttrack'] as () => void)();
-      }
-    });
-    listeners.push(nextListener);
-
-    const previousListener = await addPluginListener('native-tts', 'media-session-previous', () => {
-      if (this.handlers['previoustrack']) {
-        (this.handlers['previoustrack'] as () => void)();
-      }
-    });
-    listeners.push(previousListener);
-
-    // iOS skip-interval commands (the icons the lock-screen card renders);
-    // routed to the sentence-level seek handlers.
-    const seekForwardListener = await addPluginListener(
-      'native-tts',
-      'media-session-seek-forward',
-      () => {
-        if (this.handlers['seekforward']) {
-          (this.handlers['seekforward'] as () => void)();
+    try {
+      const playListener = await addPluginListener('native-tts', 'media-session-play', () => {
+        if (this.handlers['play']) {
+          (this.handlers['play'] as () => void)();
         }
-      },
-    );
-    listeners.push(seekForwardListener);
+      });
+      listeners.push(playListener);
 
-    const seekBackwardListener = await addPluginListener(
-      'native-tts',
-      'media-session-seek-backward',
-      () => {
-        if (this.handlers['seekbackward']) {
-          (this.handlers['seekbackward'] as () => void)();
+      const pauseListener = await addPluginListener('native-tts', 'media-session-pause', () => {
+        if (this.handlers['pause']) {
+          (this.handlers['pause'] as () => void)();
         }
-      },
-    );
-    listeners.push(seekBackwardListener);
+      });
+      listeners.push(pauseListener);
 
-    const seekListener = await addPluginListener(
-      'native-tts',
-      'media-session-seek',
-      // addPluginListener delivers the payload directly (as the other native-tts
-      // and native-bridge listeners consume it) — reading `.payload.position`
-      // threw, so lock-screen / Android Auto seeks never reached seekToTime.
-      (payload: { position: number }) => {
-        const position = payload.position;
-        if (this.handlers['seekto']) {
-          (this.handlers['seekto'] as (position: number) => void)(position);
+      // iOS single-button toggle (lock-screen center button, headset click).
+      // Distinct from 'play'/'pause', which are directional so that audio-focus
+      // events (interruptions, route loss) can reuse them safely.
+      const toggleListener = await addPluginListener('native-tts', 'media-session-toggle', () => {
+        if (this.handlers['toggle']) {
+          (this.handlers['toggle'] as () => void)();
         }
-      },
-    );
-    listeners.push(seekListener);
+      });
+      listeners.push(toggleListener);
+
+      const nextListener = await addPluginListener('native-tts', 'media-session-next', () => {
+        if (this.handlers['nexttrack']) {
+          (this.handlers['nexttrack'] as () => void)();
+        }
+      });
+      listeners.push(nextListener);
+
+      const previousListener = await addPluginListener(
+        'native-tts',
+        'media-session-previous',
+        () => {
+          if (this.handlers['previoustrack']) {
+            (this.handlers['previoustrack'] as () => void)();
+          }
+        },
+      );
+      listeners.push(previousListener);
+
+      // iOS skip-interval commands (the icons the lock-screen card renders);
+      // routed to the sentence-level seek handlers.
+      const seekForwardListener = await addPluginListener(
+        'native-tts',
+        'media-session-seek-forward',
+        () => {
+          if (this.handlers['seekforward']) {
+            (this.handlers['seekforward'] as () => void)();
+          }
+        },
+      );
+      listeners.push(seekForwardListener);
+
+      const seekBackwardListener = await addPluginListener(
+        'native-tts',
+        'media-session-seek-backward',
+        () => {
+          if (this.handlers['seekbackward']) {
+            (this.handlers['seekbackward'] as () => void)();
+          }
+        },
+      );
+      listeners.push(seekBackwardListener);
+
+      const seekListener = await addPluginListener(
+        'native-tts',
+        'media-session-seek',
+        // addPluginListener delivers the payload directly (as the other native-tts
+        // and native-bridge listeners consume it) — reading `.payload.position`
+        // threw, so lock-screen / Android Auto seeks never reached seekToTime.
+        (payload: { position: number }) => {
+          const position = payload.position;
+          if (this.handlers['seekto']) {
+            (this.handlers['seekto'] as (position: number) => void)(position);
+          }
+        },
+      );
+      listeners.push(seekListener);
+    } catch (error) {
+      // Registration failed partway. The listeners already registered are
+      // unreachable from here on (eventListeners is only assigned on success),
+      // so unregister them explicitly, and clear the init flag or the guard at
+      // the top of this method would block every retry for the session.
+      this.eventListenerInited = false;
+      this.listenerSessionId = undefined;
+      await this.cleanupListeners(listeners);
+      throw error;
+    }
 
     if (generation !== this.listenerGeneration || this.sessionId !== sessionId) {
       await this.cleanupListeners(listeners);

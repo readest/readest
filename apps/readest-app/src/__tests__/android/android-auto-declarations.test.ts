@@ -213,18 +213,55 @@ describe('Android Auto declarations (#3919)', () => {
    * suite (MediaBrowserCallerValidatorTest); this only guards the wiring.
    */
   it('evaluates and logs every browse caller before serving the tree', () => {
+    expect(mediaPlaybackService).toContain('MediaBrowserCallerValidator.evaluate');
+    expect(mediaPlaybackService).toContain('browse caller');
     const getRoot = mediaPlaybackService.slice(
       mediaPlaybackService.indexOf('override fun onGetRoot'),
       mediaPlaybackService.indexOf('override fun onLoadChildren'),
     );
-    expect(getRoot).toContain('MediaBrowserCallerValidator.evaluate');
-    expect(getRoot).toContain('browse caller');
     // The artwork grant and the client registry must sit behind the verdict,
     // not in front of it.
-    expect(getRoot.indexOf('MediaBrowserCallerValidator.evaluate')).toBeLessThan(
+    expect(getRoot.indexOf('resolveCallerVerdict')).toBeLessThan(
       getRoot.indexOf('grantArtworkTo(clientPackageName)'),
     );
-    expect(getRoot).toContain('BrowserRoot(EMPTY_ROOT_ID, null)');
+  });
+
+  /**
+   * An empty root still completes the connection, and a completed connection
+   * hands the caller the media-session token, which drives onPlay /
+   * onPlayFromMediaId — the session callbacks authorize nothing. Google's
+   * Android for Cars guidance is to return null for an untrusted package.
+   */
+  it('refuses the connection outright for a denied caller', () => {
+    const getRoot = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('override fun onGetRoot'),
+      mediaPlaybackService.indexOf('override fun onLoadChildren'),
+    );
+    expect(getRoot).toMatch(
+      /ENFORCE_BROWSE_VALIDATION && !verdict\.allowed\)\s*\{[^}]*return null/,
+    );
+    expect(mediaPlaybackService).not.toContain('EMPTY_ROOT_ID');
+  });
+
+  /**
+   * A browser client chooses the parentId it subscribes to, so it can request
+   * LIBRARY_ROOT_ID directly regardless of which root onGetRoot returned.
+   * Without a check here the root decision is only advisory.
+   */
+  it('authorizes the caller again before serving any browse children', () => {
+    const loadChildren = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('override fun onLoadChildren'),
+      mediaPlaybackService.indexOf('override fun onStartCommand'),
+    );
+    expect(loadChildren).toContain('isCurrentBrowserAllowed()');
+    // The guard must precede any item construction, library or now-playing.
+    expect(loadChildren.indexOf('isCurrentBrowserAllowed()')).toBeLessThan(
+      loadChildren.indexOf('MediaDescriptionCompat.Builder()'),
+    );
+    expect(loadChildren.indexOf('isCurrentBrowserAllowed()')).toBeLessThan(
+      loadChildren.indexOf('.setMediaId(LIBRARY_ROOT_ID)'),
+    );
+    expect(mediaPlaybackService).toContain('currentBrowserInfo');
   });
 
   it('ships browse validation in shadow mode until the pins are collected', () => {

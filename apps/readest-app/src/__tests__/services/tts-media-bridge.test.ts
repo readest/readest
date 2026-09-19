@@ -502,6 +502,49 @@ describe('TTSMediaBridge bind teardown race (READEST-1A)', () => {
     }
   });
 
+  test('a stale artwork push does not consume the new binding cover slot', async () => {
+    // The artwork updateMetadata() for book A can still be in flight when
+    // unbind() + a new bind for book B reset #pushArtwork to true. Clearing the
+    // flag when the stale call finally resolves would eat B's one-shot cover
+    // push and leave B without artwork.
+    let releaseFirstMetadata!: () => void;
+    const tauriSession = new TauriMediaSession();
+    tauriSession.setActive = vi.fn().mockResolvedValue(undefined);
+    tauriSession.setActionHandler = vi.fn();
+    tauriSession.updateMetadata = vi
+      .fn()
+      .mockImplementation(async (payload: { artwork?: string }) => {
+        if (payload.artwork === 'data:image/png;base64,first') {
+          await new Promise<void>((resolve) => {
+            releaseFirstMetadata = resolve;
+          });
+        }
+      });
+    const bridge = new TTSMediaBridge(() => tauriSession);
+
+    vi.mocked(fetchImageAsBase64).mockResolvedValueOnce('data:image/png;base64,first');
+    await bridge.bind(new FakeController() as unknown as TTSController, meta());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Book B takes over while A's artwork push is still pending.
+    bridge.unbind();
+    vi.mocked(fetchImageAsBase64).mockResolvedValueOnce('data:image/png;base64,second');
+    const controllerB = new FakeController();
+    await bridge.bind(controllerB as unknown as TTSController, meta({ bookKey: 'hash-def' }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // A's push now completes, too late.
+    releaseFirstMetadata();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    vi.mocked(tauriSession.updateMetadata).mockClear();
+    controllerB.emitMark('x', 'mark-1');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const pushed = vi.mocked(tauriSession.updateMetadata).mock.calls.map((c) => c[0]?.artwork);
+    expect(pushed).not.toContain('data:image/png;base64,first');
+  });
+
   test('stop during native activation finishes inactive', async () => {
     let releaseActivation!: () => void;
     const states: MediaSessionState[] = [];
