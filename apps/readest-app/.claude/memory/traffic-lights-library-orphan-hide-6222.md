@@ -34,7 +34,7 @@ metadata:
    re-assert after `setTitle` resolved was NOT enough — it lands one IPC
    round-trip later, after AppKit has painted a frame at the default, and
    chrox still saw the flick. Any correction that crosses the IPC boundary
-   will flicker; it has to be same-pass. Verified by chrox on device.
+   will flicker; it has to be same-pass. Verified by chrox on device. MERGED #6253 (030f9c025), unreleased.
 
 **Native geometry (measured, macOS 26):** rendered offset below the window top
 is exactly `(header_h - btn_h) / 2`. Close button is `(10, 6, 14x16)`, and a

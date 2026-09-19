@@ -1,6 +1,6 @@
 ---
 name: abs-media-proxy-self-signed-6216
-description: "#6216 ABS playback 'Playback interrupted' on self-signed HTTPS: API client accepts invalid certs (tauri-plugin-http danger:), the WebView <audio> does not; fix = Rust loopback media proxy (hyper) on 127.0.0.1 with per-launch secret; Xiaomi-VERIFIED; PR #6268 OPEN (branch fix/abs-media-proxy-6216)"
+description: "#6216 ABS playback 'Playback interrupted' on self-signed HTTPS: API client accepts invalid certs (tauri-plugin-http danger:), the WebView <audio> does not; fix = Rust loopback media proxy (hyper) on 127.0.0.1 with per-launch secret; Xiaomi-VERIFIED; MERGED #6268 (730f68a6c, 2026-09-18)"
 metadata:
   type: project
 ---
@@ -21,7 +21,7 @@ OpenSSL "alert certificate unknown (46)" from the client). `#onError` in
 AudiobookController then toasts + fires `onPause` -> that is the mysterious
 `/session/<id>/sync` right after `/play`. Access logs never log a failed handshake.
 
-**Fix in PR #6268** (commits 724afc2c3 + 3011fe2b9 on `fix/abs-media-proxy-6216`, worktree
+**Fix MERGED #6268 (squash 730f68a6c)** (commits 724afc2c3 + 3011fe2b9 on `fix/abs-media-proxy-6216`, worktree
 `/Users/chrox/dev/readest-fix-abs-media-proxy-6216`, from origin/main 030f9c025):
 - `src-tauri/src/media_proxy.rs`: hyper http1 server bound to `127.0.0.1:0`, started
   lazily by command `get_media_proxy_base` (tokio OnceCell), base =
@@ -85,3 +85,5 @@ registers. Xiaomi RE-VERIFIED: 206 file GETs across chapters, no interrupted toa
 no off-allowlist refusals. CSP note: a page `fetch()` to the loopback proxy is
 blocked by connect-src; only the `<audio>` element reaches it (media-src `http://*`)
 - so the proxy can't be probed from a devtools `fetch`, only through playback.
+
+**Rebased onto main after #6267 (ABS offline download) 2026-09-18:** semantic conflict in openAudiobook.ts - #6267 added an offline branch (BlobAudioClock/native ExoPlayer, local file paths). Resolution: the proxy wraps ONLY the online streaming resolveUrl branch; `proxyBase = offline ? null : await getMediaProxyBase()` so a downloaded book never touches it. lib.rs/build.rs/capabilities auto-merged (both add a command line). Also added a 10s response-HEADER timeout (`send_with_timeout` -> 504) per a second CodeRabbit Major: connect_timeout bounds only the handshake, a server that stalls after it would park send(); body stream stays unbounded. Force-pushed 3915407e3.
