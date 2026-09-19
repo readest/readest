@@ -2268,5 +2268,10 @@
   "Open External Link": "Mở liên kết bên ngoài",
   "Available Offline": "Có sẵn ngoại tuyến",
   "Download for Offline": "Tải xuống để dùng ngoại tuyến",
-  "Remove Offline Download": "Xóa bản tải xuống ngoại tuyến"
+  "Remove Offline Download": "Xóa bản tải xuống ngoại tuyến",
+  "Failed to start playback": "Không thể bắt đầu phát",
+  "Playing this catalog requires the desktop or mobile app": "Phát danh mục này cần ứng dụng máy tính hoặc di động",
+  "{{hours}}h {{minutes}}m": "{{hours}} giờ {{minutes}} phút",
+  "{{minutes}}m": "{{minutes}} phút",
+  "{{seconds}}s": "{{seconds}} giây"
 }

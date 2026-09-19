@@ -2328,5 +2328,10 @@
   "Open External Link": "გარე ბმულის გახსნა",
   "Available Offline": "ხელმისაწვდომია ოფლაინ",
   "Download for Offline": "ჩამოტვირთვა ოფლაინ გამოსაყენებლად",
-  "Remove Offline Download": "ოფლაინ ჩამოტვირთვის წაშლა"
+  "Remove Offline Download": "ოფლაინ ჩამოტვირთვის წაშლა",
+  "Failed to start playback": "დაკვრის დაწყება ვერ მოხერხდა",
+  "Playing this catalog requires the desktop or mobile app": "ამ კატალოგის დასაკრავად საჭიროა დესკტოპის ან მობილურის აპი",
+  "{{hours}}h {{minutes}}m": "{{hours}}სთ {{minutes}}წთ",
+  "{{minutes}}m": "{{minutes}}წთ",
+  "{{seconds}}s": "{{seconds}}წმ"
 }

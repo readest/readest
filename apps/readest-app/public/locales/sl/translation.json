@@ -2448,5 +2448,10 @@
   "Open External Link": "Odpri zunanjo povezavo",
   "Available Offline": "Na voljo brez povezave",
   "Download for Offline": "Prenesi za uporabo brez povezave",
-  "Remove Offline Download": "Odstrani prenos za uporabo brez povezave"
+  "Remove Offline Download": "Odstrani prenos za uporabo brez povezave",
+  "Failed to start playback": "Predvajanja ni bilo mogoče začeti",
+  "Playing this catalog requires the desktop or mobile app": "Predvajanje tega kataloga zahteva namizno ali mobilno aplikacijo",
+  "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
+  "{{minutes}}m": "{{minutes}} min",
+  "{{seconds}}s": "{{seconds}} s"
 }

@@ -2328,5 +2328,10 @@
   "Open External Link": "बाहरी लिंक खोलें",
   "Available Offline": "ऑफ़लाइन उपलब्ध",
   "Download for Offline": "ऑफ़लाइन उपयोग के लिए डाउनलोड करें",
-  "Remove Offline Download": "ऑफ़लाइन डाउनलोड हटाएँ"
+  "Remove Offline Download": "ऑफ़लाइन डाउनलोड हटाएँ",
+  "Failed to start playback": "प्लेबैक शुरू नहीं हो सका",
+  "Playing this catalog requires the desktop or mobile app": "इस कैटलॉग को चलाने के लिए डेस्कटॉप या मोबाइल ऐप आवश्यक है",
+  "{{hours}}h {{minutes}}m": "{{hours}}घं {{minutes}}मि",
+  "{{minutes}}m": "{{minutes}}मि",
+  "{{seconds}}s": "{{seconds}}से"
 }

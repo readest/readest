@@ -2328,5 +2328,10 @@
   "Open External Link": "باز کردن پیوند خارجی",
   "Available Offline": "در دسترس به‌صورت آفلاین",
   "Download for Offline": "دانلود برای استفادهٔ آفلاین",
-  "Remove Offline Download": "حذف دانلود آفلاین"
+  "Remove Offline Download": "حذف دانلود آفلاین",
+  "Failed to start playback": "شروع پخش ناموفق بود",
+  "Playing this catalog requires the desktop or mobile app": "پخش این فهرست به برنامه دسکتاپ یا موبایل نیاز دارد",
+  "{{hours}}h {{minutes}}m": "{{hours}} س {{minutes}} د",
+  "{{minutes}}m": "{{minutes}} د",
+  "{{seconds}}s": "{{seconds}} ث"
 }

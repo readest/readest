@@ -2388,5 +2388,10 @@
   "Open External Link": "Abrir enlace externo",
   "Available Offline": "Disponible sin conexión",
   "Download for Offline": "Descargar para usar sin conexión",
-  "Remove Offline Download": "Eliminar descarga sin conexión"
+  "Remove Offline Download": "Eliminar descarga sin conexión",
+  "Failed to start playback": "No se pudo iniciar la reproducción",
+  "Playing this catalog requires the desktop or mobile app": "Reproducir este catálogo requiere la aplicación de escritorio o móvil",
+  "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
+  "{{minutes}}m": "{{minutes}} min",
+  "{{seconds}}s": "{{seconds}} s"
 }

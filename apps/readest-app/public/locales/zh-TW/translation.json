@@ -2268,5 +2268,10 @@
   "Open External Link": "開啟外部連結",
   "Available Offline": "可離線使用",
   "Download for Offline": "下載以供離線使用",
-  "Remove Offline Download": "移除離線下載"
+  "Remove Offline Download": "移除離線下載",
+  "Failed to start playback": "啟動播放失敗",
+  "Playing this catalog requires the desktop or mobile app": "播放此目錄需要使用桌面或行動應用程式",
+  "{{hours}}h {{minutes}}m": "{{hours}} 小時 {{minutes}} 分",
+  "{{minutes}}m": "{{minutes}} 分鐘",
+  "{{seconds}}s": "{{seconds}} 秒"
 }

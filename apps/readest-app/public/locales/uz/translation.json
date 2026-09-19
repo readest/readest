@@ -2328,5 +2328,10 @@
   "Open External Link": "Tashqi havolani ochish",
   "Available Offline": "Oflayn mavjud",
   "Download for Offline": "Oflayn foydalanish uchun yuklab olish",
-  "Remove Offline Download": "Oflayn yuklamani oʻchirish"
+  "Remove Offline Download": "Oflayn yuklamani oʻchirish",
+  "Failed to start playback": "Ijro etishni boshlab boʻlmadi",
+  "Playing this catalog requires the desktop or mobile app": "Bu katalogni ijro etish uchun desktop yoki mobil ilova kerak",
+  "{{hours}}h {{minutes}}m": "{{hours}} soat {{minutes}} daq",
+  "{{minutes}}m": "{{minutes}} daq",
+  "{{seconds}}s": "{{seconds}} s"
 }

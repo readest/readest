@@ -2388,5 +2388,10 @@
   "Open External Link": "Ouvrir le lien externe",
   "Available Offline": "Disponible hors ligne",
   "Download for Offline": "Télécharger pour une utilisation hors ligne",
-  "Remove Offline Download": "Supprimer le téléchargement hors ligne"
+  "Remove Offline Download": "Supprimer le téléchargement hors ligne",
+  "Failed to start playback": "Échec du démarrage de la lecture",
+  "Playing this catalog requires the desktop or mobile app": "La lecture de ce catalogue nécessite l’application de bureau ou mobile",
+  "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
+  "{{minutes}}m": "{{minutes}} min",
+  "{{seconds}}s": "{{seconds}} s"
 }

@@ -2328,5 +2328,10 @@
   "Open External Link": "வெளிப்புற இணைப்பைத் திற",
   "Available Offline": "ஆஃப்லைனில் கிடைக்கும்",
   "Download for Offline": "ஆஃப்லைன் பயன்பாட்டிற்குப் பதிவிறக்கு",
-  "Remove Offline Download": "ஆஃப்லைன் பதிவிறக்கத்தை அகற்று"
+  "Remove Offline Download": "ஆஃப்லைன் பதிவிறக்கத்தை அகற்று",
+  "Failed to start playback": "இயக்கத்தைத் தொடங்க முடியவில்லை",
+  "Playing this catalog requires the desktop or mobile app": "இந்த பட்டியலை இயக்க டெஸ்க்டாப் அல்லது மொபைல் செயலி தேவை",
+  "{{hours}}h {{minutes}}m": "{{hours}}ம {{minutes}}நி",
+  "{{minutes}}m": "{{minutes}}நி",
+  "{{seconds}}s": "{{seconds}}வி"
 }

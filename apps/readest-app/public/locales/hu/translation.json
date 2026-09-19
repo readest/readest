@@ -2328,5 +2328,10 @@
   "Open External Link": "Külső hivatkozás megnyitása",
   "Available Offline": "Offline elérhető",
   "Download for Offline": "Letöltés offline használatra",
-  "Remove Offline Download": "Offline letöltés eltávolítása"
+  "Remove Offline Download": "Offline letöltés eltávolítása",
+  "Failed to start playback": "A lejátszás indítása sikertelen",
+  "Playing this catalog requires the desktop or mobile app": "A katalógus lejátszásához az asztali vagy mobilalkalmazás szükséges",
+  "{{hours}}h {{minutes}}m": "{{hours}} ó {{minutes}} p",
+  "{{minutes}}m": "{{minutes}} p",
+  "{{seconds}}s": "{{seconds}} mp"
 }

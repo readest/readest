@@ -2328,5 +2328,10 @@
   "Open External Link": "Externe link openen",
   "Available Offline": "Offline beschikbaar",
   "Download for Offline": "Downloaden voor offline gebruik",
-  "Remove Offline Download": "Offline download verwijderen"
+  "Remove Offline Download": "Offline download verwijderen",
+  "Failed to start playback": "Afspelen kon niet worden gestart",
+  "Playing this catalog requires the desktop or mobile app": "Het afspelen van deze catalogus vereist de desktop- of mobiele app",
+  "{{hours}}h {{minutes}}m": "{{hours}} u {{minutes}} min",
+  "{{minutes}}m": "{{minutes}} min",
+  "{{seconds}}s": "{{seconds}} s"
 }

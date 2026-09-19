@@ -2268,5 +2268,10 @@
   "Open External Link": "外部リンクを開く",
   "Available Offline": "オフラインで利用可能",
   "Download for Offline": "オフライン用にダウンロード",
-  "Remove Offline Download": "オフラインダウンロードを削除"
+  "Remove Offline Download": "オフラインダウンロードを削除",
+  "Failed to start playback": "再生の開始に失敗しました",
+  "Playing this catalog requires the desktop or mobile app": "このカタログの再生にはデスクトップまたはモバイルアプリが必要です",
+  "{{hours}}h {{minutes}}m": "{{hours}}時間{{minutes}}分",
+  "{{minutes}}m": "{{minutes}}分",
+  "{{seconds}}s": "{{seconds}}秒"
 }

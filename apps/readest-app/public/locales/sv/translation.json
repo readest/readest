@@ -2328,5 +2328,10 @@
   "Open External Link": "Öppna extern länk",
   "Available Offline": "Tillgänglig offline",
   "Download for Offline": "Ladda ned för offlineanvändning",
-  "Remove Offline Download": "Ta bort offlinenedladdning"
+  "Remove Offline Download": "Ta bort offlinenedladdning",
+  "Failed to start playback": "Det gick inte att starta uppspelningen",
+  "Playing this catalog requires the desktop or mobile app": "Uppspelning av den här katalogen kräver skrivbords- eller mobilappen",
+  "{{hours}}h {{minutes}}m": "{{hours}} tim {{minutes}} min",
+  "{{minutes}}m": "{{minutes}} min",
+  "{{seconds}}s": "{{seconds}} s"
 }

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   MdAlarm,
   MdCheck,
@@ -24,6 +24,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { eventDispatcher } from '@/utils/event';
 import { formatPlaybackTime } from '@/utils/time';
 import TTSScrubber from '@/app/reader/components/tts/TTSScrubber';
@@ -31,6 +32,7 @@ import SpeedRuler, { formatRate } from '@/app/reader/components/tts/SpeedRuler';
 import { getTTSTimeoutOptions } from '@/app/reader/components/tts/TTSPlayerSheet';
 import { useCountdownLabel } from '@/app/reader/components/tts/useCountdownLabel';
 import Dialog from '@/components/Dialog';
+import WindowButtons from '@/components/WindowButtons';
 import Spinner from '@/components/Spinner';
 import EpisodesView from './EpisodesView';
 
@@ -64,6 +66,8 @@ const PlayerView = ({
 }: PlayerViewProps) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const { isTrafficLightVisible } = useTrafficLightStore();
+  const headerRef = useRef<HTMLDivElement>(null);
   const { settings } = useSettingsStore();
   const isEink = settings.globalViewSettings?.isEink ?? false;
   const iconSize18 = useResponsiveSize(18);
@@ -255,7 +259,10 @@ const PlayerView = ({
           : _('Set Timeout');
 
   const header = (
-    <div className='relative flex h-12 w-full items-center px-2'>
+    // WindowButtons binds the window-drag listeners to this element, which is
+    // why the ref is here: without it a desktop build has no OS title bar on
+    // this route and the window cannot be moved from the player at all.
+    <div ref={headerRef} className='relative flex h-12 w-full items-center px-2'>
       <button
         type='button'
         aria-label={_('Go Back')}
@@ -268,6 +275,16 @@ const PlayerView = ({
         <span className='line-clamp-1 text-sm font-semibold'>{headingTitle}</span>
         <span className='text-base-content/70 line-clamp-1 text-xs'>{headingSubtitle}</span>
       </div>
+      {appService?.hasWindowBar && (
+        <WindowButtons
+          className='z-10 ms-auto'
+          headerRef={headerRef}
+          showMinimize={!isTrafficLightVisible}
+          showMaximize={!isTrafficLightVisible}
+          showClose={!isTrafficLightVisible}
+          onClose={onGoBack}
+        />
+      )}
     </div>
   );
 

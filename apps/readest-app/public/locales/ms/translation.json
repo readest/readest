@@ -2268,5 +2268,10 @@
   "Open External Link": "Buka pautan luaran",
   "Available Offline": "Tersedia di luar talian",
   "Download for Offline": "Muat turun untuk kegunaan luar talian",
-  "Remove Offline Download": "Alih keluar muat turun luar talian"
+  "Remove Offline Download": "Alih keluar muat turun luar talian",
+  "Failed to start playback": "Gagal memulakan main balik",
+  "Playing this catalog requires the desktop or mobile app": "Memainkan katalog ini memerlukan aplikasi desktop atau mudah alih",
+  "{{hours}}h {{minutes}}m": "{{hours}} j {{minutes}} min",
+  "{{minutes}}m": "{{minutes}} min",
+  "{{seconds}}s": "{{seconds}} saat"
 }

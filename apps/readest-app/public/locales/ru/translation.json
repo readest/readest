@@ -2448,5 +2448,10 @@
   "Open External Link": "Открыть внешнюю ссылку",
   "Available Offline": "Доступно офлайн",
   "Download for Offline": "Скачать для офлайн-доступа",
-  "Remove Offline Download": "Удалить офлайн-загрузку"
+  "Remove Offline Download": "Удалить офлайн-загрузку",
+  "Failed to start playback": "Не удалось начать воспроизведение",
+  "Playing this catalog requires the desktop or mobile app": "Для воспроизведения этого каталога нужно приложение для компьютера или телефона",
+  "{{hours}}h {{minutes}}m": "{{hours}} ч {{minutes}} мин",
+  "{{minutes}}m": "{{minutes}} мин",
+  "{{seconds}}s": "{{seconds}} с"
 }

@@ -21,7 +21,7 @@ import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { isAudiobook } from '@/utils/audiobook';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
-import { formatCompactTime } from '@/utils/time';
+import { splitDuration } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
@@ -89,10 +89,20 @@ const BookItem: React.FC<BookItemProps> = ({
   const isPodcastShow = book.absMediaType === 'podcast';
   const absDuration = book.duration ?? 0;
   const absCurrentTime = book.progress?.[0] ?? 0;
+  // Units rather than a bare clock: `formatCompactTime` renders 7h55m and
+  // 7m55s both as "7:55", which reads fine as a live countdown in the mini
+  // player but not on a shelf where a 10-hour book sits beside a 35-second
+  // one. Here there is room to say which is which.
+  const formatLength = (seconds: number): string => {
+    const { hours, minutes, seconds: secs } = splitDuration(seconds);
+    if (hours > 0) return _('{{hours}}h {{minutes}}m', { hours, minutes });
+    if (minutes > 0) return _('{{minutes}}m', { minutes });
+    return _('{{seconds}}s', { seconds: secs });
+  };
   const absTimeLabel =
     absCurrentTime > 0
-      ? `-${formatCompactTime(Math.max(absDuration - absCurrentTime, 0))}`
-      : formatCompactTime(absDuration);
+      ? `-${formatLength(Math.max(absDuration - absCurrentTime, 0))}`
+      : formatLength(absDuration);
   // A podcast show has no total duration or resume position of its own (those
   // live per-episode, a later task), so the row badges its episode count
   // instead of the duration/remaining-time label audiobooks get.

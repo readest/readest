@@ -2388,5 +2388,10 @@
   "Open External Link": "פתיחת קישור חיצוני",
   "Available Offline": "זמין במצב לא מקוון",
   "Download for Offline": "הורדה לשימוש לא מקוון",
-  "Remove Offline Download": "הסרת ההורדה לשימוש לא מקוון"
+  "Remove Offline Download": "הסרת ההורדה לשימוש לא מקוון",
+  "Failed to start playback": "ההפעלה נכשלה",
+  "Playing this catalog requires the desktop or mobile app": "השמעת קטלוג זה מחייבת את אפליקציית שולחן העבודה או הנייד",
+  "{{hours}}h {{minutes}}m": "{{hours}} ש׳ {{minutes}} ד׳",
+  "{{minutes}}m": "{{minutes}} ד׳",
+  "{{seconds}}s": "{{seconds}} שנ׳"
 }

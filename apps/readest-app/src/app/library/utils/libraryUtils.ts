@@ -14,7 +14,7 @@ import { md5Fingerprint } from '@/utils/md5';
 import { stubTranslation as _ } from '@/utils/misc';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
-import { isAbsOfflineCapable } from '@/utils/audiobook';
+import { isAbsOfflineCapable, isAudiobook } from '@/utils/audiobook';
 
 /** Valid sort types for the library */
 const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
@@ -265,6 +265,16 @@ export const getTimeRemainingMinutes = (
   book: Book,
   medianPageDurationSecs?: number,
 ): number | undefined => {
+  // An audiobook already knows how long it is: `progress` is [seconds,
+  // seconds] against `duration`, with no pages and no reading pace involved.
+  // Running it through the page estimate turned 7h of listening into 446h and
+  // floated every audiobook to the top of a time-remaining sort (#6224).
+  if (isAudiobook(book)) {
+    const total = book.duration ?? 0;
+    const secondsLeft = total - (book.progress?.[0] ?? 0);
+    if (!(secondsLeft > 0)) return undefined;
+    return Math.max(1, Math.round(secondsLeft / 60));
+  }
   const pagesLeft = book.progress ? book.progress[1] - book.progress[0] : undefined;
   if (!pagesLeft) return undefined;
   return convertPagesToTimeRemainingMinutes(pagesLeft, medianPageDurationSecs);

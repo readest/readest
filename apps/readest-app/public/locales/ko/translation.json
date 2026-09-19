@@ -2268,5 +2268,10 @@
   "Open External Link": "외부 링크 열기",
   "Available Offline": "오프라인 사용 가능",
   "Download for Offline": "오프라인용으로 다운로드",
-  "Remove Offline Download": "오프라인 다운로드 삭제"
+  "Remove Offline Download": "오프라인 다운로드 삭제",
+  "Failed to start playback": "재생을 시작할 수 없습니다",
+  "Playing this catalog requires the desktop or mobile app": "이 카탈로그를 재생하려면 데스크톱 또는 모바일 앱이 필요합니다",
+  "{{hours}}h {{minutes}}m": "{{hours}}시간 {{minutes}}분",
+  "{{minutes}}m": "{{minutes}}분",
+  "{{seconds}}s": "{{seconds}}초"
 }

@@ -2328,5 +2328,10 @@
   "Open External Link": "Harici bağlantıyı aç",
   "Available Offline": "Çevrimdışı kullanılabilir",
   "Download for Offline": "Çevrimdışı kullanım için indir",
-  "Remove Offline Download": "Çevrimdışı indirmeyi kaldır"
+  "Remove Offline Download": "Çevrimdışı indirmeyi kaldır",
+  "Failed to start playback": "Oynatma başlatılamadı",
+  "Playing this catalog requires the desktop or mobile app": "Bu kataloğu oynatmak masaüstü veya mobil uygulamayı gerektirir",
+  "{{hours}}h {{minutes}}m": "{{hours}} sa {{minutes}} dk",
+  "{{minutes}}m": "{{minutes}} dk",
+  "{{seconds}}s": "{{seconds}} sn"
 }

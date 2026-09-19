@@ -495,6 +495,24 @@ export class TTSController extends EventTarget {
         });
         return;
       }
+      if (source?.kind === 'bookorbit') {
+        // Streamed like the above, but the tracks cannot be handed to a media
+        // element as URLs at all: BookOrbit marks its audio
+        // `Cross-Origin-Resource-Policy: same-origin`, so `loadTrack` fetches
+        // each one natively and the composite plays it from a blob.
+        this.ttsMediaOverlayClient.attachSource({
+          ...(narrator ? { narrator } : {}),
+          textHighlight: false,
+          resolveTracks: async () =>
+            (await import('@/services/bookorbit/narration')).bookOrbitNarrationTracks(source),
+          loadTrack: async (path) =>
+            (await import('@/services/bookorbit/narration')).loadBookOrbitTrack(path),
+          loadBlob: async () => {
+            throw new Error('BookOrbit server not found');
+          },
+        });
+        return;
+      }
       this.ttsMediaOverlayClient.attachSource({
         ...(narrator ? { narrator } : {}),
         textHighlight: false,

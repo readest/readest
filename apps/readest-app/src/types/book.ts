@@ -18,7 +18,11 @@ export type BookFormat =
   | 'TXT'
   | 'MD'
   // Streaming audiobook from an Audiobookshelf server; filePath is abs://<serverId>/<itemId>
-  | 'ABS';
+  | 'ABS'
+  // Streaming audiobook from an OPDS catalog; filePath is opdsaudio://<encoded entry> (#6224)
+  | 'OPDSAUDIO'
+  // Streaming audiobook from BookOrbit's audiobook API; filePath is bookorbit://<bookId> (#6224)
+  | 'BOOKORBIT';
 export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt' | 'notebook';
 export type ReadingStatus = 'unread' | 'reading' | 'finished' | 'abandoned';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
@@ -682,6 +686,23 @@ export interface PairedAudiobookAbsSource {
   }[];
 }
 
+/**
+ * An audiobook streamed from a BookOrbit server. One BookOrbit book owns both
+ * the ebook and the audio, so the pairing needs only that book's id; the
+ * virtual file is `bookorbit://<bookId>` and the tracks map its global
+ * timeline onto the server's assets, exactly as the ABS variant does.
+ */
+export interface PairedAudiobookBookOrbitSource {
+  kind: 'bookorbit';
+  bookId: number;
+  tracks: {
+    index: number;
+    startOffset: number; // global seconds
+    duration: number; // seconds
+    contentUrl: string; // server-relative
+  }[];
+}
+
 export interface PairedAudiobook {
   version: 1;
   title?: string;
@@ -690,7 +711,7 @@ export interface PairedAudiobook {
   chapters: AudiobookChapter[];
   mappings: AudiobookChapterMapping[];
   createdAt: number;
-  source?: PairedAudiobookAbsSource;
+  source?: PairedAudiobookAbsSource | PairedAudiobookBookOrbitSource;
 }
 
 export interface BookDataRecord {

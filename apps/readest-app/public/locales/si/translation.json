@@ -2328,5 +2328,10 @@
   "Open External Link": "බාහිර සබැඳිය විවෘත කරන්න",
   "Available Offline": "නොබැඳිව ලබා ගත හැක",
   "Download for Offline": "නොබැඳි භාවිතය සඳහා බාගන්න",
-  "Remove Offline Download": "නොබැඳි බාගැනීම ඉවත් කරන්න"
+  "Remove Offline Download": "නොබැඳි බාගැනීම ඉවත් කරන්න",
+  "Failed to start playback": "ධාවනය ආරම්භ කිරීම අසාර්ථක විය",
+  "Playing this catalog requires the desktop or mobile app": "මෙම නාමාවලිය වාදනය කිරීමට ඩෙස්ක්ටොප් හෝ ජංගම යෙදුම අවශ්‍යයි",
+  "{{hours}}h {{minutes}}m": "{{hours}}පැ {{minutes}}මි",
+  "{{minutes}}m": "{{minutes}}මි",
+  "{{seconds}}s": "{{seconds}}තත්"
 }

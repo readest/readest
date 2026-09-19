@@ -2328,5 +2328,10 @@
   "Open External Link": "Externen Link öffnen",
   "Available Offline": "Offline verfügbar",
   "Download for Offline": "Offline verfügbar machen",
-  "Remove Offline Download": "Offline-Download entfernen"
+  "Remove Offline Download": "Offline-Download entfernen",
+  "Failed to start playback": "Wiedergabe konnte nicht gestartet werden",
+  "Playing this catalog requires the desktop or mobile app": "Zum Abspielen dieses Katalogs wird die Desktop- oder Mobil-App benötigt",
+  "{{hours}}h {{minutes}}m": "{{hours}} Std. {{minutes}} Min.",
+  "{{minutes}}m": "{{minutes}} Min.",
+  "{{seconds}}s": "{{seconds}} Sek."
 }

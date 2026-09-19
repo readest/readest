@@ -2268,5 +2268,10 @@
   "Open External Link": "Buka tautan eksternal",
   "Available Offline": "Tersedia offline",
   "Download for Offline": "Unduh untuk penggunaan offline",
-  "Remove Offline Download": "Hapus unduhan offline"
+  "Remove Offline Download": "Hapus unduhan offline",
+  "Failed to start playback": "Gagal memulai pemutaran",
+  "Playing this catalog requires the desktop or mobile app": "Memutar katalog ini memerlukan aplikasi desktop atau seluler",
+  "{{hours}}h {{minutes}}m": "{{hours}} j {{minutes}} mnt",
+  "{{minutes}}m": "{{minutes}} mnt",
+  "{{seconds}}s": "{{seconds}} dtk"
 }

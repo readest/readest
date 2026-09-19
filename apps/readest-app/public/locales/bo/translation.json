@@ -2268,5 +2268,10 @@
   "Open External Link": "ཕྱི་ཕྱོགས་ཀྱི་སྦྲེལ་ཐག་ཁ་ཕྱེ།",
   "Available Offline": "དྲ་མེད་ཐོག་སྤྱོད་ཆོག",
   "Download for Offline": "དྲ་མེད་སྤྱོད་པར་ཕབ་ལེན།",
-  "Remove Offline Download": "དྲ་མེད་ཕབ་ལེན་སུབ་པ།"
+  "Remove Offline Download": "དྲ་མེད་ཕབ་ལེན་སུབ་པ།",
+  "Failed to start playback": "གསར་སྒྲོག་འགོ་འཛུགས་མ་ཐུབ།",
+  "Playing this catalog requires the desktop or mobile app": "དཀར་ཆག་འདི་གཏོང་བར་ཌེསིཀ་ཏོབ་བམ་ལག་ཐོགས་མཉེན་ཆས་དགོས།",
+  "{{hours}}h {{minutes}}m": "{{hours}}ཆུ {{minutes}}སྐར",
+  "{{minutes}}m": "{{minutes}}སྐར",
+  "{{seconds}}s": "{{seconds}}སྐར་ཆ"
 }

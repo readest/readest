@@ -2388,5 +2388,10 @@
   "Open External Link": "Deschide linkul extern",
   "Available Offline": "Disponibil offline",
   "Download for Offline": "Descarcă pentru utilizare offline",
-  "Remove Offline Download": "Elimină descărcarea offline"
+  "Remove Offline Download": "Elimină descărcarea offline",
+  "Failed to start playback": "Nu s-a putut porni redarea",
+  "Playing this catalog requires the desktop or mobile app": "Redarea acestui catalog necesită aplicația desktop sau mobilă",
+  "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
+  "{{minutes}}m": "{{minutes}} min",
+  "{{seconds}}s": "{{seconds}} s"
 }
