@@ -356,6 +356,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       bgClassName={bookKey ? 'sm:bg-black/20!' : 'sm:bg-black/50!'}
       boxClassName={clsx(
         'sm:min-w-[520px] overflow-hidden not-eink:bg-base-200',
+        // Overscroll is not inherited; include the OverlayScrollbars viewport
+        // and nested scrollers so iOS bounce cannot compete with dismissal.
+        'overscroll-none [&_*]:overscroll-none',
         appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4',
       )}
       snapHeight={appService?.isMobile ? 0.7 : undefined}
