@@ -956,13 +956,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     val info =
                         packageManager.getPackageInfo(pkg, PackageManager.GET_SIGNING_CERTIFICATES)
-                    info.signingInfo?.let { signing ->
-                        if (signing.hasMultipleSigners()) {
-                            signing.apkContentsSigners
-                        } else {
-                            signing.signingCertificateHistory
-                        }
-                    }
+                    // Always the CURRENT signer(s). signingCertificateHistory is
+                    // the rotation lineage, not the present identity: reading it
+                    // reported two certificates for Android Auto (a rotated key
+                    // plus today's), and since a caller must match every
+                    // certificate it presents, pinning would then have had to
+                    // include a retired key and would break on the next
+                    // rotation. apkContentsSigners matches what apksigner
+                    // reports for the installed APK.
+                    info.signingInfo?.apkContentsSigners
                 } else {
                     @Suppress("DEPRECATION")
                     packageManager.getPackageInfo(pkg, PackageManager.GET_SIGNATURES).signatures
