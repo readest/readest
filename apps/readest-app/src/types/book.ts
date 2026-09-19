@@ -407,6 +407,7 @@ export interface TTSConfig {
 }
 
 export interface TranslatorConfig {
+  translateSourceLang?: string;
   translationEnabled: boolean;
   translationProvider: string;
   translateTargetLang: string;
