@@ -468,6 +468,40 @@ describe('TTSMediaBridge bind teardown race (READEST-1A)', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
 
+  test('a new book never inherits the previous book cover', async () => {
+    // Artwork loads asynchronously after bind(), so the first metadata push of
+    // the next book used to carry the previous book's cover — and consumed the
+    // one-shot #pushArtwork flag, so the correction never landed.
+    const tauriSession = new TauriMediaSession();
+    tauriSession.setActive = vi.fn().mockResolvedValue(undefined);
+    tauriSession.updateMetadata = vi.fn().mockResolvedValue(undefined);
+    tauriSession.setActionHandler = vi.fn();
+    const bridge = new TTSMediaBridge(() => tauriSession);
+
+    vi.mocked(fetchImageAsBase64).mockResolvedValueOnce('data:image/png;base64,first');
+    await bridge.bind(new FakeController() as unknown as TTSController, meta());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(tauriSession.updateMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ artwork: 'data:image/png;base64,first' }),
+    );
+
+    bridge.unbind();
+    vi.mocked(tauriSession.updateMetadata).mockClear();
+
+    // Second book: both the cover and the bundled fallback fail to load.
+    vi.mocked(fetchImageAsBase64).mockRejectedValueOnce(new Error('no cover'));
+    vi.mocked(fetchImageAsBase64).mockRejectedValueOnce(new Error('no fallback'));
+    await bridge.bind(
+      new FakeController() as unknown as TTSController,
+      meta({ bookKey: 'hash-def', title: 'Second', coverImageUrl: 'missing.png' }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    for (const call of vi.mocked(tauriSession.updateMetadata).mock.calls) {
+      expect(call[0]?.artwork).not.toBe('data:image/png;base64,first');
+    }
+  });
+
   test('stop during native activation finishes inactive', async () => {
     let releaseActivation!: () => void;
     const states: MediaSessionState[] = [];

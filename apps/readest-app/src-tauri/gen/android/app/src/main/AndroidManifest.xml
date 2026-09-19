@@ -27,8 +27,17 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
 
+        <!-- Android Auto opt-in. Play's Auto review rejected version code
+             11020 ("Audio inconsistently plays on the Android Auto
+             environment"), which blocked the whole release; it was withdrawn
+             in #5038, restored in #5066, and withdrawn again in #5235. It now
+             ships to the FOSS/GitHub builds only: build.gradle.kts resolves
+             `carAppMetaName` to an inert name for storeFlavor=googleplay, so
+             the Play build advertises no car application and skips Auto
+             review. Flip that mapping once the car audio path is validated
+             on real hardware. -->
         <meta-data
-            android:name="com.google.android.gms.car.application"
+            android:name="${carAppMetaName}"
             android:resource="@xml/automotive_app_desc" />
 
         <!-- Sentry auto-init (ContentProvider). Empty DSN => disabled. Release

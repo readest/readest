@@ -24,4 +24,31 @@ class MediaSessionActivationStateTest {
         assertTrue(MediaSessionActivationState.requestDeactivation("new-session"))
         assertFalse(MediaSessionActivationState.isActivationDesired())
     }
+
+    /**
+     * The 30-minute idle-shutdown timer and destroy() deactivate with no
+     * session id. That must not disown the session still on screen: gating
+     * acceptsUpdate() on the active flag meant a book paused past the idle
+     * timeout had every later position/metadata write dropped, freezing the
+     * lock-screen and car scrubber for good.
+     */
+    @Test
+    fun idleDeactivationStillAcceptsUpdatesFromTheLiveSession() {
+        MediaSessionActivationState.requestActivation("live-session")
+
+        assertTrue(MediaSessionActivationState.requestDeactivation())
+        assertFalse(MediaSessionActivationState.isActivationDesired())
+        assertTrue(MediaSessionActivationState.acceptsUpdate("live-session"))
+        assertTrue(MediaSessionActivationState.acceptsUpdate(null))
+    }
+
+    @Test
+    fun replacedSessionStaysRejectedAfterDeactivation() {
+        MediaSessionActivationState.requestActivation("old-session")
+        MediaSessionActivationState.requestActivation("new-session")
+        MediaSessionActivationState.requestDeactivation()
+
+        assertFalse(MediaSessionActivationState.acceptsUpdate("old-session"))
+        assertTrue(MediaSessionActivationState.acceptsUpdate("new-session"))
+    }
 }

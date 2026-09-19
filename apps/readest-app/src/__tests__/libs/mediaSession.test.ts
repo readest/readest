@@ -134,6 +134,31 @@ describe('TauriMediaSession.setActive', () => {
     });
   });
 
+  test('resolves and keeps wiring listeners when the native activation fails', async () => {
+    // TTSMediaBridge calls this as `void bind(...)`, so a rejection here is an
+    // unhandled rejection AND skips action-handler registration, leaving the
+    // session with no transport controls at all. Starting the foreground
+    // service can legitimately fail (ForegroundServiceStartNotAllowedException
+    // while backgrounded); degrade rather than throw.
+    const unregister = vi.fn();
+    vi.mocked(addPluginListener).mockResolvedValue({
+      unregister,
+    } as unknown as PluginListener);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|set_media_session_active') {
+        throw new Error('ForegroundServiceStartNotAllowedException');
+      }
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await expect(session.setActive({ active: true, sessionId: 'book-1' })).resolves.toBeUndefined();
+    expect(addPluginListener).toHaveBeenCalled();
+  });
+
   test('still activates the native session when the permission request throws', async () => {
     // A thrown/hung permission request must never abort the foreground-service
     // start, or the service never becomes foreground and the OS reclaims it on

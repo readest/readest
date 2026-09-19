@@ -1,19 +1,21 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
 import type { Book } from '@/types/book';
-import { useAppRouter } from '@/hooks/useAppRouter';
+import { useAppLockStore } from '@/store/appLockStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { getOSPlatform } from '@/utils/misc';
 import { isAudiobook } from '@/utils/audiobook';
-import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
-import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isMainAppWindow } from '@/utils/window';
 
-const MAX_ANDROID_AUTO_BOOKS = 100;
+// The browse tree is served by an exported MediaBrowserService, which any
+// installed app is allowed to bind. Keep the published slice deliberately
+// small — the most recently updated books, not the whole shelf — so a media
+// client that connects only ever sees what the car actually needs.
+export const MAX_ANDROID_AUTO_BOOKS = 10;
 
 export interface AndroidAutoBook {
   hash: string;
@@ -34,7 +36,11 @@ export const getAndroidAutoLibraryBooks = (
     .filter(
       (book) =>
         !book.deletedAt &&
-        (book.downloadedAt !== null || !!book.filePath || !!book.url || book.format === 'ABS'),
+        // `downloadedAt` never syncs (types/book.ts), so a row that arrived
+        // from the cloud carries `undefined`, not `null`. Testing `!== null`
+        // admits every one of them and the car offers books with no bytes on
+        // this device; match the truthiness test used everywhere else.
+        (!!book.downloadedAt || !!book.filePath || !!book.url || book.format === 'ABS'),
     )
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, MAX_ANDROID_AUTO_BOOKS)
@@ -53,31 +59,51 @@ export const getAndroidAutoLibraryBooks = (
     });
 
 const AndroidAutoLibraryBridge = () => {
-  const router = useAppRouter();
   const library = useLibraryStore((state) => state.library);
   const libraryLoaded = useLibraryStore((state) => state.libraryLoaded);
   const coverThumbnails = useLibraryStore((state) => state.coverThumbnails);
+  const isLockInitialized = useAppLockStore((state) => state.isInitialized);
+  const isUnlocked = useAppLockStore((state) => state.isUnlocked);
+
+  // App Lock exists to keep the shelf away from whoever is holding the phone.
+  // The car browse tree has to disappear with it — and because the native side
+  // persists the last published list, locking has to publish an empty one
+  // rather than simply stop publishing.
+  const locked = !isLockInitialized || !isUnlocked;
+  const lockedRef = useRef(locked);
+  lockedRef.current = locked;
+
   const androidAutoBooks = useMemo(
-    () => getAndroidAutoLibraryBooks(library, coverThumbnails),
-    [coverThumbnails, library],
+    () => (locked ? [] : getAndroidAutoLibraryBooks(library, coverThumbnails)),
+    [coverThumbnails, library, locked],
   );
   const booksJson = useMemo(() => JSON.stringify(androidAutoBooks), [androidAutoBooks]);
+  const publishedBooksRef = useRef(androidAutoBooks);
+  publishedBooksRef.current = androidAutoBooks;
+
+  // `library` gets a fresh array reference on every progress save — that is
+  // every page turn and every TTS paragraph advance — and `coverThumbnails`
+  // gets a fresh Map for each thumbnail that lands. Key the artwork effect on
+  // the identity of the published set so neither storm re-requests thumbnails.
+  const artworkKey = useMemo(
+    () => androidAutoBooks.map((book) => `${book.hash}:${book.coverHash ?? ''}`).join(','),
+    [androidAutoBooks],
+  );
 
   useEffect(() => {
-    if (!libraryLoaded || !isTauriAppPlatform() || getOSPlatform() !== 'android') return;
+    if (locked || !libraryLoaded || !isTauriAppPlatform() || getOSPlatform() !== 'android') return;
 
     // Android Auto artwork must be exposed as a local content:// URI. Reuse
     // Readest's bounded JPEG thumbnail cache rather than parceling full cover
     // bitmaps through the media browser. Thumbnail-ready events update the
     // store above, which republishes the library and refreshes the car UI.
-    const selectedHashes = new Set(getAndroidAutoLibraryBooks(library).map((book) => book.hash));
     const appService = getInitializedAppService();
-    if (appService?.supportsCoverThumbnailOptimization) {
-      for (const book of library) {
-        if (selectedHashes.has(book.hash)) appService.requestCoverThumbnail(book);
-      }
+    if (!appService?.supportsCoverThumbnailOptimization) return;
+    const selectedHashes = new Set(publishedBooksRef.current.map((book) => book.hash));
+    for (const book of useLibraryStore.getState().library) {
+      if (selectedHashes.has(book.hash)) appService.requestCoverThumbnail(book);
     }
-  }, [library, libraryLoaded]);
+  }, [artworkKey, libraryLoaded, locked]);
 
   useEffect(() => {
     if (!libraryLoaded || !isTauriAppPlatform() || getOSPlatform() !== 'android') return;
@@ -95,21 +121,17 @@ const AndroidAutoLibraryBridge = () => {
       'native-tts',
       'media-session-play-book',
       ({ bookHash }: { bookHash?: string }) => {
-        if (!bookHash) return;
+        if (!bookHash || lockedRef.current) return;
+        // Hand the selection to the shared deep-link path (useOpenBookLink):
+        // it defers until the library has hydrated, downloads a cloud-only
+        // book before opening it, routes an audiobook to the player, and
+        // switches an already-mounted reader in place. Re-implementing any of
+        // that here would be a second, untested copy of it.
         const book = useLibraryStore.getState().getBookByHash(bookHash);
-        if (!book || book.deletedAt) return;
-
-        if (isAudiobook(book)) {
-          router.push(`/player?id=${encodeURIComponent(bookHash)}`);
-          return;
-        }
-
-        setPendingTTSAutoplay(bookHash);
-        if (window.location.pathname.startsWith('/reader')) {
-          eventDispatcher.dispatch('open-book-in-reader', { bookHash });
-        } else {
-          navigateToReader(router, [bookHash]);
-        }
+        const autoplay = !book || !isAudiobook(book);
+        const query = autoplay ? '?autoplay=tts' : '';
+        const url = `readest://book/${encodeURIComponent(bookHash)}${query}`;
+        eventDispatcher.dispatch('app-incoming-url', { urls: [url] });
       },
     )
       .then((registered) => {
@@ -125,7 +147,7 @@ const AndroidAutoLibraryBridge = () => {
       cancelled = true;
       void listener?.unregister();
     };
-  }, [router]);
+  }, []);
 
   return null;
 };

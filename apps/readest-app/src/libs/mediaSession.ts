@@ -202,8 +202,13 @@ export class TauriMediaSession {
           payload,
         });
       } catch (error) {
+        // Never rethrow: the caller (TTSMediaBridge.bind) is invoked as
+        // `void bind(...)`, so a rejection here becomes an unhandled rejection
+        // AND skips action-handler registration — leaving the session with no
+        // transport controls at all. Starting the service can legitimately
+        // fail (ForegroundServiceStartNotAllowedException while backgrounded);
+        // degrade to a session without native controls instead.
         console.error('Failed to set media session active state:', error);
-        throw error;
       }
       if (this.sessionId !== sessionId) return;
       // The foreground-service media notification IS the lock-screen control;

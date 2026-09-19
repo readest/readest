@@ -14,6 +14,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibrary } from '@/hooks/useLibrary';
+import { useOpenBookLink } from '@/hooks/useOpenBookLink';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -36,6 +37,10 @@ const PlayerRoute = () => {
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
   const { libraryLoaded } = useLibrary();
+  // Picking another book from the Android Auto browse tree (or a widget tap)
+  // while the player is open arrives as a readest://book deep link. Without
+  // this the selection lands on a route with nobody listening for it.
+  useOpenBookLink();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const _ = useTranslation();
   const iconSize24 = useResponsiveSize(24);

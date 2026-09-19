@@ -33,11 +33,43 @@ const nativeTTSPlugin = readFileSync(
   ),
   'utf-8',
 );
+const appGradle = readFileSync(
+  resolve(process.cwd(), 'src-tauri/gen/android/app/build.gradle.kts'),
+  'utf-8',
+);
 
 describe('Android Auto declarations (#3919)', () => {
-  it('opts in to Android Auto media projection', () => {
-    expect(manifest).toContain('com.google.android.gms.car.application');
+  it('opts in to Android Auto media projection through a build-resolved name', () => {
+    expect(manifest).toMatch(/android:name="\$\{carAppMetaName\}"/);
     expect(manifest).toContain('android:resource="@xml/automotive_app_desc"');
+    // The literal name must not be hardcoded, or the Play build would ship the
+    // car opt-in regardless of the flavor.
+    expect(manifest).not.toContain('android:name="com.google.android.gms.car.application"');
+  });
+
+  /**
+   * Play's Auto review rejected version code 11020 ("Audio inconsistently
+   * plays on the Android Auto environment") and blocked the whole release
+   * (#5038, #5235). Android Auto ships to the FOSS/GitHub builds while the Play
+   * build withholds the declaration, so a Play submission is never routed
+   * through Auto review until the car audio path is validated on hardware.
+   */
+  it('withholds the car declaration from the Google Play flavor only', () => {
+    const placeholder = appGradle.slice(
+      appGradle.indexOf('manifestPlaceholders["carAppMetaName"]'),
+      appGradle.indexOf('signingConfigs'),
+    );
+    expect(placeholder).toContain('storeFlavor == "googleplay"');
+    expect(placeholder).toContain('com.google.android.gms.car.application');
+    // The googleplay branch must resolve to something Android never reads.
+    const googlePlayBranch = placeholder.slice(0, placeholder.indexOf('} else {'));
+    expect(googlePlayBranch).not.toContain('com.google.android.gms.car.application');
+
+    const releaseScript = readFileSync(
+      resolve(process.cwd(), 'scripts/release-google-play.sh'),
+      'utf-8',
+    );
+    expect(releaseScript).toContain('storeFlavor=googleplay');
   });
 
   it('keeps the automotive descriptor with the media capability for re-enabling', () => {
@@ -100,5 +132,111 @@ describe('Android Auto declarations (#3919)', () => {
       nativeTTSPlugin.indexOf('fun destroy()'),
     );
     expect(idleShutdownBlock).not.toContain('pluginEventTrigger = null');
+  });
+
+  // The session is command-ready for the life of the bound service, so a
+  // hardware/Bluetooth play button can reach it with nothing playing. It must
+  // not start the silent keep-alive player and hold the media button away from
+  // whatever the user meant to resume.
+  it('ignores transport commands that arrive with no active session', () => {
+    const callbackBlock = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('private inner class SessionCallback'),
+      mediaPlaybackService.indexOf('override fun onSkipToNext()'),
+    );
+    const playBlock = callbackBlock.slice(
+      callbackBlock.indexOf('override fun onPlay()'),
+      callbackBlock.indexOf('override fun onPause()'),
+    );
+    const pauseBlock = callbackBlock.slice(callbackBlock.indexOf('override fun onPause()'));
+    expect(playBlock).toContain('if (!sessionActive)');
+    expect(playBlock.indexOf('if (!sessionActive)')).toBeLessThan(
+      playBlock.indexOf('player.play()'),
+    );
+    expect(pauseBlock).toContain('if (!sessionActive) return');
+  });
+
+  // A selection that never lands (row deleted since the browse tree was
+  // cached, no listener on the current route) previously left Android Auto
+  // pinned on STATE_BUFFERING until it timed out with the exact error this
+  // feature exists to remove.
+  it('fails a stuck browse selection instead of buffering forever', () => {
+    expect(mediaPlaybackService).toContain('armSelectionWatchdog(hash)');
+    expect(mediaPlaybackService).toContain('PlaybackStateCompat.STATE_ERROR');
+    expect(mediaPlaybackService).toContain('R.string.readest_auto_selection_failed');
+    const activateBlock = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('private fun activateSession()'),
+      mediaPlaybackService.indexOf('private fun deactivateSession()'),
+    );
+    expect(activateBlock).toContain('cancelSelectionWatchdog()');
+  });
+
+  // Any bound client can call playFromMediaId. Writing the shared statics
+  // there let it retitle and zero the scrubber of audio that is still playing.
+  it('does not overwrite the live session while a selection is pending', () => {
+    const playFromMediaId = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('override fun onPlayFromMediaId'),
+      mediaPlaybackService.indexOf('armSelectionWatchdog(hash)'),
+    );
+    expect(playFromMediaId).toContain('mediaSession?.setMetadata(buildLibraryBookMetadata');
+    expect(playFromMediaId).not.toContain('currentTitle =');
+    expect(playFromMediaId).not.toContain('currentPositionMs = 0L');
+  });
+
+  // The browse tree is readable by any app that binds the exported service, so
+  // the native side enforces its own ceiling on the published slice.
+  it('caps the natively persisted browse tree', () => {
+    expect(mediaPlaybackService).toContain('private const val MAX_LIBRARY_BOOKS = 10');
+    expect(mediaPlaybackService).toContain('if (size >= MAX_LIBRARY_BOOKS) break');
+  });
+
+  it('localizes the browse-tree labels instead of hardcoding English', () => {
+    expect(mediaPlaybackService).toContain('R.string.readest_auto_library_root');
+    expect(mediaPlaybackService).toContain('R.plurals.readest_auto_library_count');
+    expect(mediaPlaybackService).not.toContain('.setTitle("Library")');
+    const strings = readFileSync(
+      resolve(
+        process.cwd(),
+        'src-tauri/plugins/tauri-plugin-native-tts/android/src/main/res/values/strings.xml',
+      ),
+      'utf-8',
+    );
+    expect(strings).toContain('readest_auto_library_root');
+    expect(strings).toContain('readest_auto_library_count');
+    expect(strings).toContain('readest_auto_selection_failed');
+  });
+
+  /**
+   * The service is exported so Android Auto can bind it, which means any
+   * installed app can call onGetRoot. Caller validation runs in shadow mode:
+   * the verdict is logged but not enforced until the certificate pins have been
+   * collected from real head units. The Kotlin decision logic has its own JUnit
+   * suite (MediaBrowserCallerValidatorTest); this only guards the wiring.
+   */
+  it('evaluates and logs every browse caller before serving the tree', () => {
+    const getRoot = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('override fun onGetRoot'),
+      mediaPlaybackService.indexOf('override fun onLoadChildren'),
+    );
+    expect(getRoot).toContain('MediaBrowserCallerValidator.evaluate');
+    expect(getRoot).toContain('browse caller');
+    // The artwork grant and the client registry must sit behind the verdict,
+    // not in front of it.
+    expect(getRoot.indexOf('MediaBrowserCallerValidator.evaluate')).toBeLessThan(
+      getRoot.indexOf('grantArtworkTo(clientPackageName)'),
+    );
+    expect(getRoot).toContain('BrowserRoot(EMPTY_ROOT_ID, null)');
+  });
+
+  it('ships browse validation in shadow mode until the pins are collected', () => {
+    expect(mediaPlaybackService).toContain('private const val ENFORCE_BROWSE_VALIDATION = false');
+    const validator = readFileSync(
+      resolve(
+        process.cwd(),
+        'src-tauri/plugins/tauri-plugin-native-tts/android/src/main/java/MediaBrowserCallerValidator.kt',
+      ),
+      'utf-8',
+    );
+    expect(validator).toContain('val TRUSTED_CERTIFICATES: Map<String, Set<String>> = emptyMap()');
+    expect(validator).toContain('com.google.android.projection.gearhead');
   });
 });
