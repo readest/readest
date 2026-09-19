@@ -585,6 +585,196 @@ describe('mdictProvider', () => {
     }
   });
 
+  describe('autoPlayPronunciation (#6265)', () => {
+    const withFakeMdict = async (
+      definition: string,
+      run: (
+        locateMock: ReturnType<typeof vi.fn>,
+        playSpy: ReturnType<typeof vi.spyOn>,
+      ) => Promise<void>,
+    ) => {
+      const jsmdict = await import('js-mdict');
+      const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+      const origMDDCreate = jsmdict.MDD.create.bind(jsmdict.MDD);
+      const locateMock = vi.fn(async (key: string) => ({
+        keyText: key,
+        data: new Uint8Array([0xff, 0xfb, 0x90, 0x00]),
+      }));
+      const playSpy = vi
+        .spyOn(window.HTMLMediaElement.prototype, 'play')
+        .mockResolvedValue(undefined);
+      type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+      type FakeMDD = ReturnType<typeof origMDDCreate> extends Promise<infer T> ? T : never;
+      jsmdict.MDX.create = async () =>
+        ({
+          meta: { encrypt: 0 },
+          header: {},
+          lookup: async (word: string) => ({ keyText: word, definition }),
+        }) as unknown as FakeMDX;
+      jsmdict.MDD.create = async () => ({ locateBytes: locateMock }) as unknown as FakeMDD;
+      try {
+        await run(locateMock, playSpy);
+      } finally {
+        jsmdict.MDX.create = origMDXCreate;
+        jsmdict.MDD.create = origMDDCreate;
+        playSpy.mockRestore();
+      }
+    };
+
+    it('plays the first sound:// pronunciation without a click when enabled', async () => {
+      await withFakeMdict(
+        `<a href="sound://uk/hello.mp3">uk</a> <a href="sound://us/hello.mp3">us</a>`,
+        async (locateMock, playSpy) => {
+          const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+          const container = document.createElement('div');
+          await provider.lookup('hello', {
+            signal: new AbortController().signal,
+            container,
+            autoPlayPronunciation: true,
+          });
+          await new Promise((resolve) => setTimeout(resolve, 0));
+
+          // Document order decides: the first pronunciation on the entry wins.
+          expect(locateMock).toHaveBeenCalledWith('uk/hello.mp3');
+          expect(locateMock).not.toHaveBeenCalledWith('us/hello.mp3');
+          const played = playSpy.mock.instances.at(-1) as HTMLMediaElement;
+          expect(played.src).toMatch(/^blob:/);
+        },
+      );
+    });
+
+    it('stays silent when the setting is off', async () => {
+      await withFakeMdict(`<a href="sound://uk/hello.mp3">uk</a>`, async (locateMock, playSpy) => {
+        const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+        const container = document.createElement('div');
+        await provider.lookup('hello', {
+          signal: new AbortController().signal,
+          container,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(locateMock).not.toHaveBeenCalled();
+        expect(playSpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('plays the v0r.v onclick pronunciation when there is no sound:// anchor', async () => {
+      await withFakeMdict(
+        `<img src="x.png" onclick="v0r.v(this,'E/BDAWTHU6YF46')" class="m">`,
+        async (locateMock, playSpy) => {
+          const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+          const container = document.createElement('div');
+          await provider.lookup('hello', {
+            signal: new AbortController().signal,
+            container,
+            autoPlayPronunciation: true,
+          });
+          await new Promise((resolve) => setTimeout(resolve, 0));
+
+          expect(locateMock).toHaveBeenCalledWith('E/BDAWTHU6YF46.mp3');
+          expect(playSpy).toHaveBeenCalled();
+        },
+      );
+    });
+
+    it('picks the earliest pronunciation in the document, across both audio mechanisms', async () => {
+      // The two wiring passes run one after the other (anchors, then the
+      // `v0r.v` rewrite), so array order alone would always pick the anchor.
+      // Document order has to decide instead.
+      await withFakeMdict(
+        `<img onclick="v0r.v(this,'E/FIRST')" class="m"> <a href="sound://later/hello.mp3">us</a>`,
+        async (locateMock, playSpy) => {
+          const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+          const container = document.createElement('div');
+          await provider.lookup('hello', {
+            signal: new AbortController().signal,
+            container,
+            autoPlayPronunciation: true,
+          });
+          await new Promise((resolve) => setTimeout(resolve, 0));
+
+          expect(locateMock).toHaveBeenCalledWith('E/FIRST.mp3');
+          expect(locateMock).not.toHaveBeenCalledWith('later/hello.mp3');
+          expect(playSpy).toHaveBeenCalled();
+        },
+      );
+    });
+
+    it('falls through to the next pronunciation when the first has no recording', async () => {
+      const jsmdict = await import('js-mdict');
+      const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+      const origMDDCreate = jsmdict.MDD.create.bind(jsmdict.MDD);
+      // Only the second anchor's resource exists in the MDD.
+      const locateMock = vi.fn(async (key: string) => ({
+        keyText: key,
+        data: key === 'us/hello.mp3' ? new Uint8Array([0xff, 0xfb, 0x90, 0x00]) : null,
+      }));
+      const playSpy = vi
+        .spyOn(window.HTMLMediaElement.prototype, 'play')
+        .mockResolvedValue(undefined);
+      type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+      type FakeMDD = ReturnType<typeof origMDDCreate> extends Promise<infer T> ? T : never;
+      jsmdict.MDX.create = async () =>
+        ({
+          meta: { encrypt: 0 },
+          header: {},
+          lookup: async (word: string) => ({
+            keyText: word,
+            definition: `<a href="sound://missing/hello.mp3">uk</a> <a href="sound://us/hello.mp3">us</a>`,
+          }),
+        }) as unknown as FakeMDX;
+      jsmdict.MDD.create = async () => ({ locateBytes: locateMock }) as unknown as FakeMDD;
+
+      try {
+        const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+        const container = document.createElement('div');
+        await provider.lookup('hello', {
+          signal: new AbortController().signal,
+          container,
+          autoPlayPronunciation: true,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(locateMock).toHaveBeenCalledWith('missing/hello.mp3');
+        expect(locateMock).toHaveBeenCalledWith('us/hello.mp3');
+        const played = playSpy.mock.instances.at(-1) as HTMLMediaElement;
+        expect(played.src).toMatch(/^blob:/);
+      } finally {
+        jsmdict.MDX.create = origMDXCreate;
+        jsmdict.MDD.create = origMDDCreate;
+        playSpy.mockRestore();
+      }
+    });
+
+    it('never auto-plays a deprecated .spx pronunciation', async () => {
+      await withFakeMdict(
+        `<a href="sound://door0001.spx">play</a>`,
+        async (locateMock, playSpy) => {
+          const eventModule = await import('@/utils/event');
+          const dispatchSpy = vi.spyOn(eventModule.eventDispatcher, 'dispatch');
+          try {
+            const provider = createMdictProvider({ dict: buildDict(true), fs: makeFs() });
+            const container = document.createElement('div');
+            await provider.lookup('hello', {
+              signal: new AbortController().signal,
+              container,
+              autoPlayPronunciation: true,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            // Speex can't decode anywhere; auto-play must not fire the
+            // click path's deprecation toast on every single lookup.
+            expect(locateMock).not.toHaveBeenCalled();
+            expect(playSpy).not.toHaveBeenCalled();
+            expect(dispatchSpy.mock.calls.filter(([event]) => event === 'toast')).toHaveLength(0);
+          } finally {
+            dispatchSpy.mockRestore();
+          }
+        },
+      );
+    });
+  });
+
   it('types sound:// audio blobs and starts the element inside the click gesture', async () => {
     const jsmdict = await import('js-mdict');
     const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);

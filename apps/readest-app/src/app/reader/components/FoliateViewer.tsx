@@ -94,6 +94,7 @@ import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { observeDynamicResources } from '@/utils/dynamicResources';
+import { setCoverSpread } from '@/utils/spread';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
@@ -530,7 +531,7 @@ const FoliateViewer: React.FC<{
     return {
       appService: appService!,
       bookLang,
-      appLang: getLocale().split('-')[0] || 'en',
+      appLang: getLocale(),
       allowDownload,
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
@@ -727,8 +728,7 @@ const FoliateViewer: React.FC<{
 
       if (bookDoc.rendition?.layout === 'pre-paginated' && bookDoc.sections) {
         bookDoc.rendition.spread = viewSettings.spreadMode;
-        const coverSide = bookDoc.dir === 'rtl' ? 'right' : 'left';
-        bookDoc.sections[0]!.pageSpread = viewSettings.keepCoverSpread ? '' : coverSide;
+        setCoverSpread(bookDoc, viewSettings.keepCoverSpread);
       }
 
       await view.open(bookDoc);

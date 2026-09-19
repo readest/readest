@@ -78,8 +78,11 @@ const enabledSystemSettings: DictionarySettings = {
   webSearches: [],
 };
 
+// Provider rows use the compact `toggle-sm`; the panel's own preference
+// switches (SettingsSwitchRow) use the default size, so this stays scoped to
+// the sortable provider list as more switches are added below it.
 const getToggles = (container: HTMLElement) =>
-  Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+  Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"].toggle-sm'));
 
 beforeEach(() => {
   platform.supported = false;
@@ -192,5 +195,30 @@ describe('CustomDictionaries — import progress', () => {
         }),
       ),
     );
+  });
+});
+
+describe('CustomDictionaries — auto-play pronunciation (#6265)', () => {
+  const baseSettings: DictionarySettings = {
+    providerOrder: [BUILTIN_PROVIDER_IDS.wiktionary],
+    providerEnabled: { [BUILTIN_PROVIDER_IDS.wiktionary]: true },
+    webSearches: [],
+  };
+
+  it('reflects the stored setting and persists a toggle', async () => {
+    const saveCustomDictionaries = vi.fn().mockResolvedValue(undefined);
+    seedSettings({ ...baseSettings, autoPlayPronunciation: false });
+    useCustomDictionaryStore.setState({ saveCustomDictionaries });
+
+    render(<CustomDictionaries onBack={() => {}} />);
+    const toggle = screen.getByRole('checkbox', { name: 'Auto-play Pronunciation' });
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+
+    expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+    expect(saveCustomDictionaries).toHaveBeenCalled();
   });
 });

@@ -1,5 +1,5 @@
-import type { Configuration, ZipWriter } from '@zip.js/zip.js';
-import { AppService } from '@/types/system';
+import type { Configuration, FileEntry, ZipWriter } from '@zip.js/zip.js';
+import { AppService, FileItem } from '@/types/system';
 import { EXTS } from '@/libs/document';
 import { isTauriAppPlatform } from '@/services/environment';
 import { Book, BookConfig, BookNote } from '@/types/book';
@@ -282,31 +282,33 @@ export function reviveRestoredBooks(revived: RevivedBook[], now: number = Date.n
 
 type ProgressCallback = (current: number, total: number, filename: string) => void;
 
+interface BackupPlan {
+  /** Small JSON entries: the canonical library.json and sanitized settings.json. */
+  texts: { name: string; content: string }[];
+  /** Book files, `file.path` relative to the Books dir, `entryName` with forward slashes. */
+  files: { file: FileItem; entryName: string }[];
+}
+
 /**
- * Shared logic: add all library entries to a ZipWriter.
+ * Plan the archive: which entries a backup holds and what they are named.
+ * Shared by the in-memory zip.js writer (web) and the native writer (Tauri).
  */
-export async function addBackupEntriesToZip(
-  writer: ZipWriter<unknown>,
+async function collectBackupEntries(
   appService: AppService,
   options: BackupOptions,
-  onProgress?: ProgressCallback,
-): Promise<void> {
-  const { Uint8ArrayReader } = await import('@zip.js/zip.js');
-
+): Promise<BackupPlan> {
   // Generate canonical library.json from the current storage backend
   const books = await appService.loadLibraryBooks();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
-  const libraryJson = new TextEncoder().encode(JSON.stringify(libraryBooks, null, 2));
-  await writer.add(getLibraryFilename(), new Uint8ArrayReader(libraryJson));
+  const texts = [{ name: getLibraryFilename(), content: JSON.stringify(libraryBooks, null, 2) }];
 
   // Add the global settings snapshot, sanitized of device-specific and
   // (unless opted in) credential fields.
   try {
     const settings = await appService.loadSettings();
     const sanitized = sanitizeSettingsForBackup(settings, options);
-    const settingsJson = new TextEncoder().encode(JSON.stringify(sanitized, null, 2));
-    await writer.add(SETTINGS_BACKUP_FILENAME, new Uint8ArrayReader(settingsJson));
+    texts.push({ name: SETTINGS_BACKUP_FILENAME, content: JSON.stringify(sanitized, null, 2) });
   } catch (error) {
     console.warn('Skipping settings backup:', error);
   }
@@ -335,11 +337,31 @@ export async function addBackupEntriesToZip(
     .map((file) => ({ file, entryName: file.path.replace(/\\/g, '/') }))
     // Offline Audiobookshelf audio (#6256) is re-downloadable and can run to
     // gigabytes, each file read into memory here.
-    .filter(({ entryName }) => !isAbsOfflineEntry(entryName));
-  const total = bookFiles.length;
+    .filter(({ entryName }) => !isAbsOfflineEntry(entryName))
+    // A restore killed mid-file leaves its `.part` temp file behind.
+    .filter(({ entryName }) => !entryName.endsWith('.part'));
+  return { texts, files: bookFiles };
+}
 
-  for (let i = 0; i < bookFiles.length; i++) {
-    const { file, entryName } = bookFiles[i]!;
+/**
+ * Shared logic: add all library entries to a ZipWriter.
+ */
+export async function addBackupEntriesToZip(
+  writer: ZipWriter<unknown>,
+  appService: AppService,
+  options: BackupOptions,
+  onProgress?: ProgressCallback,
+): Promise<void> {
+  const { Uint8ArrayReader } = await import('@zip.js/zip.js');
+  const { texts, files } = await collectBackupEntries(appService, options);
+
+  for (const { name, content } of texts) {
+    await writer.add(name, new Uint8ArrayReader(new TextEncoder().encode(content)));
+  }
+
+  const total = files.length;
+  for (let i = 0; i < files.length; i++) {
+    const { file, entryName } = files[i]!;
     onProgress?.(i + 1, total, file.path);
     try {
       const content = await appService.readFile(file.path, 'Books', 'binary');
@@ -349,6 +371,25 @@ export async function addBackupEntriesToZip(
       console.warn(`Skipping file ${file.path}:`, error);
     }
   }
+}
+
+type ZipProgress = { current: number; total: number; name: string };
+
+/**
+ * Run one of the Rust zip commands, forwarding its progress channel.
+ * The bulk bytes never cross the IPC bridge: on Android a request body is
+ * serialized as a JSON number array, 3.9 MB/s measured on a Xiaomi 13, which
+ * made a 687 MB library take three minutes to back up (#6291).
+ */
+async function invokeZipCommand(
+  cmd: 'write_backup_zip' | 'extract_backup_zip',
+  args: Record<string, unknown>,
+  onProgress?: ProgressCallback,
+): Promise<void> {
+  const { Channel, invoke } = await import('@tauri-apps/api/core');
+  const channel = new Channel<ZipProgress>();
+  channel.onmessage = ({ current, total, name }) => onProgress?.(current, total, name);
+  await invoke(cmd, { ...args, onProgress: channel });
 }
 
 const ZIP_WRITE_CONFIG: Partial<Configuration> = {
@@ -388,10 +429,32 @@ export async function createBackupZipToFile(
   options: BackupOptions = {},
   onProgress?: ProgressCallback,
 ): Promise<void> {
+  const { texts, files } = await collectBackupEntries(appService, options);
+  const srcDir = await appService.resolveFilePath('', 'Books');
+  // A file entry's name is also its path under srcDir (forward slashes; the
+  // writer joins them, so host separators never reach it).
+  const entries = [...texts, ...files.map(({ entryName }) => ({ name: entryName }))];
+  try {
+    // The writer reports every entry; the dialog's contract counts book files
+    // only and echoes their on-disk path (same as the zip.js writer below).
+    await invokeZipCommand('write_backup_zip', { dest: filePath, srcDir, entries }, (current) => {
+      const index = current - texts.length - 1;
+      const file = files[index];
+      if (file) onProgress?.(index + 1, files.length, file.file.path);
+    });
+    return;
+  } catch (error) {
+    // A non-seekable Android document provider fails on the first seek; a
+    // mid-run I/O error leaves a partial archive. Either way stream it the
+    // old way, after truncating whatever the native writer left behind.
+    console.error('Native backup writer failed, streaming through the IPC bridge instead:', error);
+  }
+
   await configureZip(ZIP_WRITE_CONFIG);
   const { ZipWriter } = await import('@zip.js/zip.js');
   const { writeFile } = await import('@tauri-apps/plugin-fs');
 
+  await writeFile(filePath, new Uint8Array());
   const { readable, writable } = new TransformStream<Uint8Array>();
 
   // Start streaming readable side to the file (runs concurrently)
@@ -422,7 +485,9 @@ export function validateBackupStructure(entryNames: string[]): boolean {
 export async function restoreFromBackupZip(
   appService: AppService,
   zipBlob: Blob,
-  onProgress?: (current: number, total: number, filename: string) => void,
+  onProgress?: ProgressCallback,
+  /** Where the zip lives (path or picker URI); lets Tauri extract it natively. */
+  source?: string,
 ): Promise<{ booksAdded: number; booksUpdated: number; settingsRestored: boolean }> {
   await configureZip();
   const { BlobReader, ZipReader, Uint8ArrayWriter } = await import('@zip.js/zip.js');
@@ -472,12 +537,14 @@ export async function restoreFromBackupZip(
   let booksAdded = 0;
   let booksUpdated = 0;
   const revivedBooks: RevivedBook[] = [];
-  const total = backupBooks.length + orphanHashes.size;
+  // Plan first so progress can count the whole job: the config.json of a
+  // book already in the library is merged in JS, every other entry is
+  // extracted in one pass, then orphan books are imported from disk.
+  const configMerges: FileEntry[] = [];
+  const bulkEntries: FileEntry[] = [];
+  const orphanImports: FileEntry[] = [];
 
-  for (let i = 0; i < backupBooks.length; i++) {
-    const backupBook = backupBooks[i]!;
-    onProgress?.(i + 1, total, backupBook.title);
-
+  for (const backupBook of backupBooks) {
     const existingBook = currentBooksMap.get(backupBook.hash);
     const bookDir = backupBook.hash;
 
@@ -487,25 +554,7 @@ export async function restoreFromBackupZip(
     if (existingBook) {
       // Update: override book file and cover, merge config
       for (const entry of bookFileEntries) {
-        const data = await entry.getData!(new Uint8ArrayWriter());
-
-        if (entry.filename.endsWith('/config.json')) {
-          // Merge config
-          let currentConfig: Partial<BookConfig> = {};
-          try {
-            const str = (await appService.readFile(entry.filename, 'Books', 'text')) as string;
-            currentConfig = JSON.parse(str);
-          } catch {
-            /* use empty config if current doesn't exist */
-          }
-
-          const backupConfig: Partial<BookConfig> = JSON.parse(new TextDecoder().decode(data));
-          const mergedConfig = mergeBookConfigs(currentConfig, backupConfig);
-          await appService.writeFile(entry.filename, 'Books', JSON.stringify(mergedConfig));
-        } else {
-          // Override book file and cover image
-          await appService.writeFile(entry.filename, 'Books', data.buffer as ArrayBuffer);
-        }
+        (entry.filename.endsWith('/config.json') ? configMerges : bulkEntries).push(entry);
       }
 
       // Merge book metadata (timestamps, deletedAt reconciliation). A book
@@ -520,22 +569,16 @@ export async function restoreFromBackupZip(
       if (!(await appService.exists(bookDir, 'Books'))) {
         await appService.createDir(bookDir, 'Books');
       }
-      for (const entry of bookFileEntries) {
-        const data = await entry.getData!(new Uint8ArrayWriter());
-        await appService.writeFile(entry.filename, 'Books', data.buffer as ArrayBuffer);
-      }
+      bulkEntries.push(...bookFileEntries);
       currentBooks.push(backupBook);
       currentBooksMap.set(backupBook.hash, backupBook);
       booksAdded++;
     }
   }
 
-  // Import orphan directories: hash dirs in zip not listed in library.json
-  let orphanIdx = 0;
+  // Orphan directories: hash dirs in zip not listed in library.json.
   for (const hash of orphanHashes) {
-    orphanIdx++;
     if (currentBooksMap.has(hash)) continue;
-    onProgress?.(backupBooks.length + orphanIdx, total, hash);
     const orphanEntries = fileEntries.filter((e) => e.filename.startsWith(`${hash}/`));
     // Find the book file by extension
     const bookEntry = orphanEntries.find((e) => {
@@ -543,17 +586,45 @@ export async function restoreFromBackupZip(
       return BOOK_EXTS.has(ext);
     });
     if (!bookEntry) continue;
-
-    // Extract all files to the Books directory
     if (!(await appService.exists(hash, 'Books'))) {
       await appService.createDir(hash, 'Books');
     }
-    for (const entry of orphanEntries) {
-      const data = await entry.getData!(new Uint8ArrayWriter());
-      await appService.writeFile(entry.filename, 'Books', data.buffer as ArrayBuffer);
-    }
+    bulkEntries.push(...orphanEntries);
+    orphanImports.push(bookEntry);
+  }
 
-    // Import the book file from the extracted location
+  const total = configMerges.length + bulkEntries.length + orphanImports.length;
+  let done = 0;
+  const tick = (name: string) => onProgress?.(++done, total, name);
+
+  // Merged configs are written only once the book files they describe are
+  // on disk, so a failed extraction leaves the current configs untouched.
+  const mergedConfigs: { filename: string; json: string }[] = [];
+  for (const entry of configMerges) {
+    tick(entry.filename);
+    const data = await entry.getData!(new Uint8ArrayWriter());
+    let currentConfig: Partial<BookConfig> = {};
+    try {
+      const str = (await appService.readFile(entry.filename, 'Books', 'text')) as string;
+      currentConfig = JSON.parse(str);
+    } catch {
+      /* use empty config if current doesn't exist */
+    }
+    const backupConfig: Partial<BookConfig> = JSON.parse(new TextDecoder().decode(data));
+    const mergedConfig = mergeBookConfigs(currentConfig, backupConfig);
+    mergedConfigs.push({ filename: entry.filename, json: JSON.stringify(mergedConfig) });
+  }
+
+  await extractEntries(appService, bulkEntries, source, (current, _bulkTotal, name) => {
+    onProgress?.(configMerges.length + current, total, name);
+  });
+  done = configMerges.length + bulkEntries.length;
+  for (const { filename, json } of mergedConfigs) {
+    await appService.writeFile(filename, 'Books', json);
+  }
+
+  for (const bookEntry of orphanImports) {
+    tick(bookEntry.filename);
     try {
       const filePath = await appService.resolveFilePath(bookEntry.filename, 'Books');
       const imported = await appService.importBook(filePath, currentBooks, { overwrite: true });
@@ -562,7 +633,7 @@ export async function restoreFromBackupZip(
         booksAdded++;
       }
     } catch (error) {
-      console.warn(`Failed to import orphan book from ${hash}:`, error);
+      console.warn(`Failed to import orphan book from ${bookEntry.filename}:`, error);
     }
   }
 
@@ -593,6 +664,43 @@ export async function restoreFromBackupZip(
   await reader.close();
 
   return { booksAdded, booksUpdated, settingsRestored };
+}
+
+/**
+ * Write zip entries into the Books dir: natively on Tauri when the zip's
+ * location is known, otherwise (web, or a native failure) one file at a time
+ * through the IPC bridge.
+ */
+async function extractEntries(
+  appService: AppService,
+  entries: FileEntry[],
+  source: string | undefined,
+  onProgress?: ProgressCallback,
+): Promise<void> {
+  if (isTauriAppPlatform() && source) {
+    try {
+      const destDir = await appService.resolveFilePath('', 'Books');
+      const names = entries.map((e) => e.filename);
+      await invokeZipCommand(
+        'extract_backup_zip',
+        { src: source, destDir, entries: names },
+        onProgress,
+      );
+      return;
+    } catch (error) {
+      console.warn(
+        'Native backup extractor failed, writing through the IPC bridge instead:',
+        error,
+      );
+    }
+  }
+  const { Uint8ArrayWriter } = await import('@zip.js/zip.js');
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!;
+    onProgress?.(i + 1, entries.length, entry.filename);
+    const data = await entry.getData!(new Uint8ArrayWriter());
+    await appService.writeFile(entry.filename, 'Books', data.buffer as ArrayBuffer);
+  }
 }
 
 /**

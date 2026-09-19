@@ -46,7 +46,7 @@ minisign-verify = "0.2"
 log = "0.4"
 thiserror = "2"
 walkdir = "2"
-tokio = { version = "1", features = ["fs"] }
+tokio = { version = "1", features = ["fs", "net", "sync", "time"] }
 tokio-util = { version = "0.7", features = ["codec", "rt"] }
 futures-util = "0.3"
 futures = "0.3.31"
@@ -112,6 +112,11 @@ uuid = { version = "1", features = ["v4"] }
 pem = "4"
 anyhow = "1"
 bytes = "1"
+# Loopback media proxy (media_proxy.rs). All three already ship inside reqwest;
+# `server` just turns on hyper's serving half.
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
 tokio-stream = "0.1"
 if-addrs = "0.15"
 
@@ -137,6 +142,9 @@ percent-encoding = "2"
 # are disabled to keep the binary lean — we only need decoders for the
 # formats EPUBs actually use (jpeg/png/gif) plus the JPEG encoder.
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
+# Image sizes from header bytes alone, so comic pages are measured without
+# decoding them (comic_parser.rs).
+imagesize = { version = "0.14", default-features = false, features = ["jpeg", "png", "gif", "webp", "bmp", "jxl", "heif"] }
 
 # Native MOBI/AZW/AZW3 import path. Mirrors the EPUB fast-path: parse
 # PalmDB + MobiHeader + EXTH in Rust to extract title/author/publisher/

@@ -17,6 +17,7 @@ export type BookFormat =
   | 'FBZ'
   | 'TXT'
   | 'MD'
+  | 'HTML'
   // Streaming audiobook from an Audiobookshelf server; filePath is abs://<serverId>/<itemId>
   | 'ABS'
   // Streaming audiobook from an OPDS catalog; filePath is opdsaudio://<encoded entry> (#6224)
@@ -252,6 +253,7 @@ export interface BookLayout {
   noContinuousScroll: boolean;
   disableClick: boolean;
   disableSwipe: boolean;
+  disablePullDownToBookmark: boolean;
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
@@ -409,6 +411,7 @@ export interface TTSConfig {
 }
 
 export interface TranslatorConfig {
+  translateSourceLang?: string;
   translationEnabled: boolean;
   translationProvider: string;
   translateTargetLang: string;
@@ -637,6 +640,13 @@ export interface BookConfig {
    */
   audiobook?: PairedAudiobook;
   hardcover?: HardcoverBookLink;
+  /**
+   * The pages of a comic laid out as spreads of their own (wide images), by
+   * page path: a device-local cache of measuring them, so a later open skips
+   * it and a streamed comic keeps what earlier reading found. Neither sync
+   * carries it; both copy an explicit list of fields.
+   */
+  widePages?: string[];
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
