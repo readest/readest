@@ -49,6 +49,8 @@ export class TauriMediaSession {
   private handlers: { [key: string]: (() => void) | ((position: number) => void) } = {};
   private eventListenerInited: boolean = false;
   private eventListeners: PluginListener[] = [];
+  private listenerGeneration = 0;
+  private listenerSessionId: string | undefined;
   private sessionId: string | undefined;
 
   private async requestPostNotificationPermission() {
@@ -60,23 +62,29 @@ export class TauriMediaSession {
     }
   }
 
-  private async initializeListeners() {
-    if (this.eventListenerInited) return;
+  private async initializeListeners(sessionId: string | undefined) {
+    if (this.eventListenerInited && this.listenerSessionId === sessionId) return;
+    if (this.eventListenerInited) {
+      await this.cleanupListeners(this.detachListeners());
+    }
     this.eventListenerInited = true;
+    this.listenerSessionId = sessionId;
+    const generation = ++this.listenerGeneration;
+    const listeners: PluginListener[] = [];
 
     const playListener = await addPluginListener('native-tts', 'media-session-play', () => {
       if (this.handlers['play']) {
         (this.handlers['play'] as () => void)();
       }
     });
-    this.eventListeners.push(playListener);
+    listeners.push(playListener);
 
     const pauseListener = await addPluginListener('native-tts', 'media-session-pause', () => {
       if (this.handlers['pause']) {
         (this.handlers['pause'] as () => void)();
       }
     });
-    this.eventListeners.push(pauseListener);
+    listeners.push(pauseListener);
 
     // iOS single-button toggle (lock-screen center button, headset click).
     // Distinct from 'play'/'pause', which are directional so that audio-focus
@@ -86,21 +94,21 @@ export class TauriMediaSession {
         (this.handlers['toggle'] as () => void)();
       }
     });
-    this.eventListeners.push(toggleListener);
+    listeners.push(toggleListener);
 
     const nextListener = await addPluginListener('native-tts', 'media-session-next', () => {
       if (this.handlers['nexttrack']) {
         (this.handlers['nexttrack'] as () => void)();
       }
     });
-    this.eventListeners.push(nextListener);
+    listeners.push(nextListener);
 
     const previousListener = await addPluginListener('native-tts', 'media-session-previous', () => {
       if (this.handlers['previoustrack']) {
         (this.handlers['previoustrack'] as () => void)();
       }
     });
-    this.eventListeners.push(previousListener);
+    listeners.push(previousListener);
 
     // iOS skip-interval commands (the icons the lock-screen card renders);
     // routed to the sentence-level seek handlers.
@@ -113,7 +121,7 @@ export class TauriMediaSession {
         }
       },
     );
-    this.eventListeners.push(seekForwardListener);
+    listeners.push(seekForwardListener);
 
     const seekBackwardListener = await addPluginListener(
       'native-tts',
@@ -124,7 +132,7 @@ export class TauriMediaSession {
         }
       },
     );
-    this.eventListeners.push(seekBackwardListener);
+    listeners.push(seekBackwardListener);
 
     const seekListener = await addPluginListener(
       'native-tts',
@@ -139,15 +147,28 @@ export class TauriMediaSession {
         }
       },
     );
-    this.eventListeners.push(seekListener);
+    listeners.push(seekListener);
+
+    if (generation !== this.listenerGeneration || this.sessionId !== sessionId) {
+      await this.cleanupListeners(listeners);
+      return;
+    }
+    this.eventListeners = listeners;
   }
 
-  private async cleanupListeners() {
-    for (const listener of this.eventListeners) {
-      await listener.unregister();
-    }
+  private detachListeners(): PluginListener[] {
+    ++this.listenerGeneration;
+    const listeners = this.eventListeners;
     this.eventListeners = [];
     this.eventListenerInited = false;
+    this.listenerSessionId = undefined;
+    return listeners;
+  }
+
+  private async cleanupListeners(listeners: PluginListener[]) {
+    for (const listener of listeners) {
+      await listener.unregister();
+    }
   }
 
   async updateMetadata(metadata: MediaMetadata) {
@@ -184,6 +205,7 @@ export class TauriMediaSession {
         console.error('Failed to set media session active state:', error);
         throw error;
       }
+      if (this.sessionId !== sessionId) return;
       // The foreground-service media notification IS the lock-screen control;
       // on Android 13+ it is silently suppressed unless POST_NOTIFICATIONS is
       // granted. Request it on every activation (no-op once decided).
@@ -194,15 +216,20 @@ export class TauriMediaSession {
       } catch (error) {
         console.warn('POST_NOTIFICATIONS request failed:', error);
       }
+      if (this.sessionId !== sessionId) return;
       // Listener registration is optional and may stall or fail independently.
       try {
-        await this.initializeListeners();
+        await this.initializeListeners(sessionId);
       } catch (error) {
         console.warn('Media session listener init failed:', error);
       }
       return;
     }
 
+    // Detach this owner's listeners before the native await. A replacement
+    // activation can then install a new listener set that this stale teardown
+    // cannot unregister when it resumes.
+    const listeners = this.sessionId === sessionId ? this.detachListeners() : [];
     try {
       await invoke('plugin:native-tts|set_media_session_active', {
         payload,
@@ -211,7 +238,7 @@ export class TauriMediaSession {
       console.error('Failed to set media session active state:', error);
     }
     try {
-      await this.cleanupListeners();
+      await this.cleanupListeners(listeners);
     } catch (error) {
       console.warn('Media session listener cleanup failed:', error);
     }

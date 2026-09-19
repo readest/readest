@@ -168,6 +168,7 @@ export class TTSMediaBridge {
         bookTitle: meta.title,
         bookAuthor: meta.author,
       });
+      if (this.#bindingId !== bindingId || this.#mediaSession !== mediaSession) return;
       await mediaSession.updateMetadata({
         title: meta.title,
         artist: meta.author,
@@ -175,7 +176,7 @@ export class TTSMediaBridge {
       });
     }
 
-    if (this.#mediaSession !== mediaSession) return;
+    if (this.#bindingId !== bindingId || this.#mediaSession !== mediaSession) return;
 
     this.#registerActionHandlers();
 

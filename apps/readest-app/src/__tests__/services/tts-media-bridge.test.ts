@@ -527,6 +527,12 @@ describe('TTSMediaBridge bind teardown race (READEST-1A)', () => {
     expect(states.map((state) => state.active)).toEqual([true, false, true]);
     expect(states[1]).toEqual(expect.objectContaining({ sessionId: 'hash-abc' }));
     expect(states.at(-1)).toEqual(expect.objectContaining({ active: true, bookTitle: 'New book' }));
+    expect(tauriSession.updateMetadata).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Old book' }),
+    );
+    expect(tauriSession.updateMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'New book' }),
+    );
     expect(bridge.isBound).toBe(true);
   });
 

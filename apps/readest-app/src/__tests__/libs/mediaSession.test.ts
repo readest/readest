@@ -17,7 +17,12 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 import { invoke, addPluginListener, type PluginListener } from '@tauri-apps/api/core';
-import { getMediaSession, IOSCompositeMediaSession, TauriMediaSession } from '@/libs/mediaSession';
+import {
+  getMediaSession,
+  IOSCompositeMediaSession,
+  TauriMediaSession,
+  type MediaSessionState,
+} from '@/libs/mediaSession';
 import { getOSPlatform } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
 
@@ -190,6 +195,53 @@ describe('TauriMediaSession.setActive', () => {
     });
     expect(invoke).toHaveBeenCalledWith('plugin:native-tts|set_media_session_active', {
       payload: { active: false, sessionId: 'book-session' },
+    });
+  });
+
+  test('a stale teardown cannot unregister replacement session listeners', async () => {
+    const oldUnregisters: ReturnType<typeof vi.fn>[] = [];
+    const newUnregisters: ReturnType<typeof vi.fn>[] = [];
+    let listenerCount = 0;
+    vi.mocked(addPluginListener).mockImplementation(async () => {
+      const unregister = vi.fn().mockResolvedValue(undefined);
+      (listenerCount++ < 8 ? oldUnregisters : newUnregisters).push(unregister);
+      return { unregister } as unknown as PluginListener;
+    });
+
+    let releaseOldTeardown!: () => void;
+    let reportOldTeardown!: () => void;
+    const oldTeardownStarted = new Promise<void>((resolve) => {
+      reportOldTeardown = resolve;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      const payload = (args as { payload?: MediaSessionState } | undefined)?.payload;
+      if (cmd === 'plugin:native-tts|set_media_session_active' && payload?.active === false) {
+        reportOldTeardown();
+        await new Promise<void>((resolve) => {
+          releaseOldTeardown = resolve;
+        });
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true, sessionId: 'old-session' });
+    const staleTeardown = session.setActive({ active: false, sessionId: 'old-session' });
+    await oldTeardownStarted;
+    await session.setActive({ active: true, sessionId: 'new-session' });
+    releaseOldTeardown();
+    await staleTeardown;
+    await session.updateMetadata({ title: 'Replacement' });
+
+    expect(oldUnregisters).toHaveLength(8);
+    expect(oldUnregisters.every((unregister) => unregister.mock.calls.length === 1)).toBe(true);
+    expect(newUnregisters).toHaveLength(8);
+    expect(newUnregisters.every((unregister) => unregister.mock.calls.length === 0)).toBe(true);
+    expect(invoke).toHaveBeenLastCalledWith('plugin:native-tts|update_media_session_metadata', {
+      payload: { title: 'Replacement', sessionId: 'new-session' },
     });
   });
 });
