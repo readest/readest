@@ -1,7 +1,8 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
+  isMobile: false,
   resize: null as null | ((width: string) => void),
   settings: {
     globalReadSettings: {
@@ -53,7 +54,7 @@ vi.mock('@/store/themeStore', () => ({
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: {} }),
+  useEnv: () => ({ envConfig: {}, appService: { isMobile: h.isMobile } }),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -86,19 +87,21 @@ vi.mock('@/app/reader/hooks/useNotebookDocumentCoordinator', () => ({
   useNotebookDocumentCoordinator: vi.fn(),
 }));
 vi.mock('@/components/Overlay', () => ({ Overlay: () => null }));
-vi.mock('@/app/reader/components/notebook/Header', () => ({ default: () => null }));
+vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (size: number) => size }));
 vi.mock('@/app/reader/components/notebook/NotebookEditor', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/notebook/NotebookTabNavigation', () => ({
   default: () => null,
 }));
 vi.mock('@/app/reader/components/notebook/AIAssistant', () => ({ default: () => null }));
 
+import { flushNotebookDocument } from '@/app/reader/hooks/useNotebookDocumentCoordinator';
 import Notebook from '@/app/reader/components/notebook/Notebook';
 import { useNotebookStore } from '@/store/notebookStore';
 
 describe('Notebook resizing', () => {
   beforeEach(() => {
     h.resize = null;
+    h.isMobile = false;
     h.settings.globalReadSettings.notebookWidth = '30%';
     useNotebookStore.setState({
       notebookWidth: '',
@@ -111,6 +114,18 @@ describe('Notebook resizing', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  test('saves and dismisses the mobile notebook when Close is pressed', () => {
+    h.isMobile = true;
+    render(<Notebook />);
+    act(() => useNotebookStore.getState().setNotebookVisible(true));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(flushNotebookDocument).toHaveBeenCalledWith('book-1');
+    expect(useNotebookStore.getState().isNotebookVisible).toBe(false);
+    expect(screen.queryByRole('group', { name: 'Notebook' })).toBeNull();
   });
 
   test('keeps an unpinned Notebook open while its width changes', () => {
