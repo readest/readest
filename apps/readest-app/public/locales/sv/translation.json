@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "Synlig som {{name}}",
   "Local Network": "Lokalt nätverk",
   "Italic Text": "Kursiv text",
-  "Mark italic text like dialogue": "Markera kursiv text som dialog"
+  "Mark italic text like dialogue": "Markera kursiv text som dialog",
+  "Column Gap (px)": "Kolumnavstånd (px)"
 }

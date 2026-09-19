@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "Ορατό ως {{name}}",
   "Local Network": "Τοπικό δίκτυο",
   "Italic Text": "Πλάγιο κείμενο",
-  "Mark italic text like dialogue": "Επισήμανση πλάγιου κειμένου όπως ο διάλογος"
+  "Mark italic text like dialogue": "Επισήμανση πλάγιου κειμένου όπως ο διάλογος",
+  "Column Gap (px)": "Απόσταση στηλών (px)"
 }

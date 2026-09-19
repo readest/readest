@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "{{name}}(으)로 표시됨",
   "Local Network": "로컬 네트워크",
   "Italic Text": "기울임꼴 텍스트",
-  "Mark italic text like dialogue": "기울임꼴 텍스트를 대화처럼 하이라이트"
+  "Mark italic text like dialogue": "기울임꼴 텍스트를 대화처럼 하이라이트",
+  "Column Gap (px)": "열 간격 (px)"
 }

@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "Zichtbaar als {{name}}",
   "Local Network": "Lokaal netwerk",
   "Italic Text": "Cursieve tekst",
-  "Mark italic text like dialogue": "Cursieve tekst markeren zoals dialoog"
+  "Mark italic text like dialogue": "Cursieve tekst markeren zoals dialoog",
+  "Column Gap (px)": "Kolomafstand (px)"
 }

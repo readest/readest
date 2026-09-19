@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "{{name}} nomi bilan koʻrinadi",
   "Local Network": "Mahalliy tarmoq",
   "Italic Text": "Kursiv matn",
-  "Mark italic text like dialogue": "Kursiv matnni dialog kabi belgilash"
+  "Mark italic text like dialogue": "Kursiv matnni dialog kabi belgilash",
+  "Column Gap (px)": "Ustunlar oraligʻi (px)"
 }

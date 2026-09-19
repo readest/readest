@@ -2533,5 +2533,6 @@
   "Visible as {{name}}": "Vizibil ca {{name}}",
   "Local Network": "Rețea locală",
   "Italic Text": "Text cursiv",
-  "Mark italic text like dialogue": "Evidențiază textul cursiv ca dialogurile"
+  "Mark italic text like dialogue": "Evidențiază textul cursiv ca dialogurile",
+  "Column Gap (px)": "Spațiu între coloane (px)"
 }

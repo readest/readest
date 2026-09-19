@@ -2533,5 +2533,6 @@
   "Visible as {{name}}": "גלוי בשם {{name}}",
   "Local Network": "רשת מקומית",
   "Italic Text": "טקסט נטוי",
-  "Mark italic text like dialogue": "הדגשת טקסט נטוי כמו דיאלוג"
+  "Mark italic text like dialogue": "הדגשת טקסט נטוי כמו דיאלוג",
+  "Column Gap (px)": "רווח בין עמודות (פיקסלים)"
 }

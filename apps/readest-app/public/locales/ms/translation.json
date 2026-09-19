@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "Kelihatan sebagai {{name}}",
   "Local Network": "Rangkaian Setempat",
   "Italic Text": "Teks Condong",
-  "Mark italic text like dialogue": "Tonjolkan teks condong seperti dialog"
+  "Mark italic text like dialogue": "Tonjolkan teks condong seperti dialog",
+  "Column Gap (px)": "Jarak Lajur (px)"
 }

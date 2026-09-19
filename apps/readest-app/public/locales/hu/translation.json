@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "Látható ezen a néven: {{name}}",
   "Local Network": "Helyi hálózat",
   "Italic Text": "Dőlt szöveg",
-  "Mark italic text like dialogue": "A dőlt szöveg kiemelése a párbeszédhez hasonlóan"
+  "Mark italic text like dialogue": "A dőlt szöveg kiemelése a párbeszédhez hasonlóan",
+  "Column Gap (px)": "Oszlopköz (px)"
 }
