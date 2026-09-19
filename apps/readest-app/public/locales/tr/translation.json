@@ -2338,5 +2338,5 @@
   "{{minutes}}m": "{{minutes}} dk",
   "{{seconds}}s": "{{seconds}} sn",
   "Could not read the length of every track in this audiobook": "Bu sesli kitaptaki her parçanın uzunluğu okunamadı",
-  "Manage the streamed audiobook paired with this ebook.": "Bu e-kitapla eşleştirilmiş akış sesli kitabını yönetin."
+  "Manage the streamed audiobook paired with this ebook.": "Bu e-kitapla eşleştirilmiş, akış üzerinden sunulan sesli kitabı yönetin."
 }

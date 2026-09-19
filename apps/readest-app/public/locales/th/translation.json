@@ -2278,5 +2278,5 @@
   "{{minutes}}m": "{{minutes}} นาที",
   "{{seconds}}s": "{{seconds}} วิ",
   "Could not read the length of every track in this audiobook": "ไม่สามารถอ่านความยาวของทุกแทร็กในหนังสือเสียงนี้ได้",
-  "Manage the streamed audiobook paired with this ebook.": "จัดการหนังสือเสียงแบบสตรีมที่จับคู่กับ ebook นี้"
+  "Manage the streamed audiobook paired with this ebook.": "จัดการหนังสือเสียงแบบสตรีมที่จับคู่กับอีบุ๊กนี้"
 }

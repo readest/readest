@@ -2338,5 +2338,5 @@
   "{{minutes}}m": "{{minutes}} Min.",
   "{{seconds}}s": "{{seconds}} Sek.",
   "Could not read the length of every track in this audiobook": "Die Länge konnte nicht für jeden Titel dieses Hörbuchs ermittelt werden",
-  "Manage the streamed audiobook paired with this ebook.": "Das gestreamte Hörbuch verwalten, das mit diesem E-Book verknüpft ist."
+  "Manage the streamed audiobook paired with this ebook.": "Verwalten Sie das gestreamte Hörbuch, das mit diesem E-Book verknüpft ist."
 }
