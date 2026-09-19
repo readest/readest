@@ -218,13 +218,30 @@ fn extract_entries<R: Read + Seek>(
         });
         let mut file = archive.by_name(name).map_err(|e| format!("{name}: {e}"))?;
         let dest = dest_dir.join(name);
-        if let Some(parent) = dest.parent() {
-            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        let parent = dest
+            .parent()
+            .ok_or_else(|| format!("{name}: no parent dir"))?;
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        // A symlink already under the destination must not lead the write
+        // out of it: resolve the parent and require it to stay inside.
+        let canonical_dir = dest_dir.canonicalize().map_err(|e| e.to_string())?;
+        let canonical_parent = parent.canonicalize().map_err(|e| e.to_string())?;
+        if !canonical_parent.starts_with(&canonical_dir) {
+            return Err(format!(
+                "{name}: destination escapes {}",
+                dest_dir.display()
+            ));
         }
         // Land the bytes next to the target and rename on success, so a
         // corrupt entry cannot truncate the book the user already has.
+        // `create_new` refuses to follow a symlink left in the temp's place.
         let tmp = PathBuf::from(format!("{}.part", dest.display()));
-        let mut out = File::create(&tmp).map_err(|e| format!("{}: {e}", tmp.display()))?;
+        let _ = std::fs::remove_file(&tmp);
+        let mut out = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&tmp)
+            .map_err(|e| format!("{}: {e}", tmp.display()))?;
         let copied = io::copy(&mut file, &mut out).map_err(|e| format!("{name}: {e}"));
         drop(out);
         if let Err(err) = copied {
@@ -384,5 +401,32 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.contains("invalid zip entry name"), "{err}");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn extract_refuses_a_symlinked_directory_inside_the_destination() {
+        let outside = temp_dir("outside");
+        let dest = temp_dir("dest-symlink");
+        std::os::unix::fs::symlink(&outside, dest.join("h")).unwrap();
+        let src = temp_dir("src-symlink");
+        std::fs::create_dir_all(src.join("h")).unwrap();
+        std::fs::write(src.join("h/book.epub"), b"book").unwrap();
+        let mut cursor = Cursor::new(Vec::new());
+        write_entries(&mut cursor, &src, &[file_entry("h/book.epub")], |_| {}).unwrap();
+
+        let err = extract_entries(
+            Cursor::new(cursor.into_inner()),
+            &dest,
+            &["h/book.epub".to_string()],
+            |_| {},
+        )
+        .unwrap_err();
+        assert!(err.contains("escapes"), "{err}");
+        assert!(!outside.join("book.epub").exists());
+        assert!(!outside.join("book.epub.part").exists());
+        let _ = std::fs::remove_dir_all(outside);
+        let _ = std::fs::remove_dir_all(dest);
+        let _ = std::fs::remove_dir_all(src);
     }
 }

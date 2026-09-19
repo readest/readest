@@ -220,10 +220,11 @@ describe('restoreFromBackupZip on Tauri', () => {
       'Books',
       expect.stringContaining('"progress":[5,10]'),
     );
-    // The orphan import needs its files on disk first.
+    // Merged configs land only after the books they describe are on disk,
+    // and the orphan import needs its files on disk first.
     expect(calls).toEqual([
-      `write:${LIVE_HASH}/config.json`,
       'extract',
+      `write:${LIVE_HASH}/config.json`,
       `import:/data/Books/${ORPHAN_HASH}/book.pdf`,
     ]);
     expect(result).toMatchObject({ booksAdded: 2, booksUpdated: 1 });
@@ -246,11 +247,11 @@ describe('restoreFromBackupZip on Tauri', () => {
 
     const written = writeFile.mock.calls.map(([path]) => path);
     expect(written).toEqual([
-      `${LIVE_HASH}/config.json`,
       `${LIVE_HASH}/book.epub`,
       `${NEW_HASH}/book.epub`,
       `${NEW_HASH}/config.json`,
       `${ORPHAN_HASH}/book.pdf`,
+      `${LIVE_HASH}/config.json`,
     ]);
     expect(importBook).toHaveBeenCalledWith(
       `/data/Books/${ORPHAN_HASH}/book.pdf`,

@@ -597,6 +597,9 @@ export async function restoreFromBackupZip(
   let done = 0;
   const tick = (name: string) => onProgress?.(++done, total, name);
 
+  // Merged configs are written only once the book files they describe are
+  // on disk, so a failed extraction leaves the current configs untouched.
+  const mergedConfigs: { filename: string; json: string }[] = [];
   for (const entry of configMerges) {
     tick(entry.filename);
     const data = await entry.getData!(new Uint8ArrayWriter());
@@ -609,13 +612,16 @@ export async function restoreFromBackupZip(
     }
     const backupConfig: Partial<BookConfig> = JSON.parse(new TextDecoder().decode(data));
     const mergedConfig = mergeBookConfigs(currentConfig, backupConfig);
-    await appService.writeFile(entry.filename, 'Books', JSON.stringify(mergedConfig));
+    mergedConfigs.push({ filename: entry.filename, json: JSON.stringify(mergedConfig) });
   }
 
   await extractEntries(appService, bulkEntries, source, (current, _bulkTotal, name) => {
     onProgress?.(configMerges.length + current, total, name);
   });
   done = configMerges.length + bulkEntries.length;
+  for (const { filename, json } of mergedConfigs) {
+    await appService.writeFile(filename, 'Books', json);
+  }
 
   for (const bookEntry of orphanImports) {
     tick(bookEntry.filename);
