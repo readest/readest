@@ -531,7 +531,7 @@ const FoliateViewer: React.FC<{
     return {
       appService: appService!,
       bookLang,
-      appLang: getLocale().split('-')[0] || 'en',
+      appLang: getLocale(),
       allowDownload,
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
