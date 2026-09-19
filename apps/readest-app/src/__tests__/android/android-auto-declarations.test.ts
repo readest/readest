@@ -66,6 +66,23 @@ describe('Android Auto declarations (#3919)', () => {
     expect(nativeTTSPlugin).toContain('fun update_media_library');
   });
 
+  it('keeps audiobook identity for cold-start player routing', () => {
+    expect(mediaPlaybackService).toContain('isAudiobook = item.optBoolean("isAudiobook", false)');
+    expect(mediaPlaybackService).toContain('selectedBook?.isAudiobook == true');
+    expect(mediaPlaybackService).toContain('"readest://book/$hash?autoplay=tts"');
+  });
+
+  it('keeps book switches from accepting stale playback or artwork updates', () => {
+    expect(nativeTTSPlugin).toContain(
+      'MediaPlaybackService.requestActivation(args.sessionId, args.bookHash)',
+    );
+    expect(nativeTTSPlugin).toContain(
+      'MediaPlaybackService.pushMetadata(args.sessionId, title, artist, artworkBitmap)',
+    );
+    expect(mediaPlaybackService).toContain('MediaSessionActivationState.acceptsUpdate(sessionId)');
+    expect(mediaPlaybackService).toContain('service.resetArtworkForBook(bookHash)');
+  });
+
   it('keeps the browsing media session active while playback is stopped', () => {
     const createBlock = mediaPlaybackService.slice(
       mediaPlaybackService.indexOf('override fun onCreate()'),

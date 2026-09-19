@@ -18,6 +18,10 @@ export interface PlaybackState {
 
 export interface MediaSessionState {
   active: boolean;
+  // Unique playback-session identity. Android uses it to ignore a late
+  // deactivate, metadata decode, or state write from the book that was just
+  // replaced.
+  sessionId?: string;
   // Android: whether the media service should hold the app's audio focus for
   // this session. True for audio the app renders itself (TTS engines,
   // WebAudio, the native narration player). FALSE when the audio plays through
@@ -45,6 +49,7 @@ export class TauriMediaSession {
   private handlers: { [key: string]: (() => void) | ((position: number) => void) } = {};
   private eventListenerInited: boolean = false;
   private eventListeners: PluginListener[] = [];
+  private sessionId: string | undefined;
 
   private async requestPostNotificationPermission() {
     const permission = await invoke<Permissions>('plugin:native-tts|checkPermissions');
@@ -147,7 +152,8 @@ export class TauriMediaSession {
 
   async updateMetadata(metadata: MediaMetadata) {
     try {
-      await invoke('plugin:native-tts|update_media_session_metadata', { payload: metadata });
+      const payload = this.sessionId ? { ...metadata, sessionId: this.sessionId } : metadata;
+      await invoke('plugin:native-tts|update_media_session_metadata', { payload });
     } catch (error) {
       console.error('Failed to update media metadata:', error);
     }
@@ -155,14 +161,29 @@ export class TauriMediaSession {
 
   async updatePlaybackState(state: PlaybackState) {
     try {
-      await invoke('plugin:native-tts|update_media_session_state', { payload: state });
+      const payload = this.sessionId ? { ...state, sessionId: this.sessionId } : state;
+      await invoke('plugin:native-tts|update_media_session_state', { payload });
     } catch (error) {
       console.error('Failed to update playback state:', error);
     }
   }
 
   async setActive(sessionState: MediaSessionState) {
+    const sessionId = sessionState.sessionId ?? this.sessionId;
+    const payload = sessionId ? { ...sessionState, sessionId } : sessionState;
     if (sessionState.active) {
+      this.sessionId = sessionId;
+      // Starting the native foreground service is the required operation and
+      // must precede every optional setup step, including a permission prompt
+      // that may wait for user interaction.
+      try {
+        await invoke('plugin:native-tts|set_media_session_active', {
+          payload,
+        });
+      } catch (error) {
+        console.error('Failed to set media session active state:', error);
+        throw error;
+      }
       // The foreground-service media notification IS the lock-screen control;
       // on Android 13+ it is silently suppressed unless POST_NOTIFICATIONS is
       // granted. Request it on every activation (no-op once decided).
@@ -173,25 +194,28 @@ export class TauriMediaSession {
       } catch (error) {
         console.warn('POST_NOTIFICATIONS request failed:', error);
       }
+      // Listener registration is optional and may stall or fail independently.
       try {
         await this.initializeListeners();
       } catch (error) {
         console.warn('Media session listener init failed:', error);
       }
-    } else {
-      try {
-        await this.cleanupListeners();
-      } catch (error) {
-        console.warn('Media session listener cleanup failed:', error);
-      }
+      return;
     }
+
     try {
       await invoke('plugin:native-tts|set_media_session_active', {
-        payload: sessionState,
+        payload,
       });
     } catch (error) {
       console.error('Failed to set media session active state:', error);
     }
+    try {
+      await this.cleanupListeners();
+    } catch (error) {
+      console.warn('Media session listener cleanup failed:', error);
+    }
+    if (this.sessionId === sessionId) this.sessionId = undefined;
   }
 
   setActionHandler(action: string, handler: (() => void) | ((position: number) => void) | null) {

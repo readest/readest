@@ -19,6 +19,7 @@ export interface AndroidAutoBook {
   hash: string;
   title: string;
   author: string;
+  isAudiobook: boolean;
   coverHash: string | null;
   artworkReady: boolean;
 }
@@ -37,13 +38,15 @@ export const getAndroidAutoLibraryBooks = (
     )
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, MAX_ANDROID_AUTO_BOOKS)
-    .map(({ hash, title, author, coverHash }) => {
+    .map((book) => {
+      const { hash, title, author, coverHash } = book;
       const normalizedCoverHash = coverHash ?? null;
       const thumbnail = coverThumbnails.get(hash);
       return {
         hash,
         title,
         author,
+        isAudiobook: isAudiobook(book),
         coverHash: normalizedCoverHash,
         artworkReady: !!thumbnail && thumbnail.coverHash === normalizedCoverHash,
       };

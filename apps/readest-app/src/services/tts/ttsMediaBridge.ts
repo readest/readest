@@ -111,6 +111,7 @@ export class TTSMediaBridge {
   // not. Sending artwork: '' instead is what used to wipe the cover — empty
   // string is truthy for the WebKit mirror and non-nil for Swift's optional.
   #pushArtwork = true;
+  #bindingId = 0;
   #lastSectionLabel: string | undefined;
   #previousSectionLabel: string | undefined;
   #onSpeakMark: ((e: Event) => void) | null = null;
@@ -141,6 +142,7 @@ export class TTSMediaBridge {
       return;
     }
     this.unbind();
+    const bindingId = ++this.#bindingId;
     this.#controller = controller;
     this.#meta = meta;
     this.#mediaSession = this.#resolveMediaSession();
@@ -151,23 +153,15 @@ export class TTSMediaBridge {
     // bail before wiring handlers onto a torn-down session (READEST-1A).
     const mediaSession = this.#mediaSession;
 
-    // Fetch the cover once as a data URL, reused by the native session and by
-    // every navigator.mediaSession metadata refresh (see #coverArtwork).
-    try {
-      this.#coverArtwork = await fetchImageAsBase64(meta.coverImageUrl || '/icon.png');
-    } catch {
-      try {
-        this.#coverArtwork = await fetchImageAsBase64('/icon.png');
-      } catch {
-        this.#coverArtwork = '';
-      }
-    }
-    this.#pushArtwork = true;
-
     if (mediaSession instanceof TauriMediaSession) {
+      // Foreground ownership is the startup-critical path. Artwork conversion
+      // can be slow and must never delay Android's active media service.
       await mediaSession.setActive({
         active: true,
+        sessionId: meta.bookKey,
         ownsAudioFocus: meta.ownsAudioFocus ?? true,
+        foregroundServiceTitle: meta.title,
+        foregroundServiceText: meta.author,
         // bookKey is `${hash}-${uniqueId()}`; the hash alone addresses the book
         // for a readest://book/{hash} resume deep link from the car.
         bookHash: meta.bookKey.split('-')[0],
@@ -178,9 +172,7 @@ export class TTSMediaBridge {
         title: meta.title,
         artist: meta.author,
         album: meta.title,
-        artwork: this.#coverArtwork,
       });
-      this.#pushArtwork = false;
     }
 
     if (this.#mediaSession !== mediaSession) return;
@@ -218,9 +210,20 @@ export class TTSMediaBridge {
     };
     controller.addEventListener('tts-speak-mark', this.#onSpeakMark);
     controller.addEventListener('tts-state-change', this.#onStateChange);
+
+    void this.#loadArtwork(mediaSession, meta, bindingId);
+    // Activation and listener registration both await native work. An
+    // audiobook can begin playing during that window, before either event
+    // listener exists. Reconcile the live controller once so Android Auto is
+    // never left stopped over audio that is already playing.
+    if (mediaSession instanceof TauriMediaSession) {
+      void this.#updatePlaybackState();
+      void this.#updatePositionState();
+    }
   }
 
   unbind(): void {
+    ++this.#bindingId;
     if (this.#controller) {
       if (this.#onSpeakMark) {
         this.#controller.removeEventListener('tts-speak-mark', this.#onSpeakMark);
@@ -250,7 +253,7 @@ export class TTSMediaBridge {
         }
       }
       if (mediaSession instanceof TauriMediaSession) {
-        void mediaSession.setActive({ active: false });
+        void mediaSession.setActive({ active: false, sessionId: this.#meta?.bookKey });
       }
     }
     this.#endSkip();
@@ -262,6 +265,34 @@ export class TTSMediaBridge {
     this.#lastSectionLabel = undefined;
     this.#previousSectionLabel = undefined;
     this.#pushArtwork = true;
+  }
+
+  async #loadArtwork(
+    mediaSession: BridgeMediaSession,
+    meta: TTSMediaBridgeMeta,
+    bindingId: number,
+  ): Promise<void> {
+    let artwork: string;
+    try {
+      artwork = await fetchImageAsBase64(meta.coverImageUrl || '/icon.png');
+    } catch {
+      try {
+        artwork = await fetchImageAsBase64('/icon.png');
+      } catch {
+        artwork = '';
+      }
+    }
+    if (this.#bindingId !== bindingId || this.#mediaSession !== mediaSession) return;
+    this.#coverArtwork = artwork;
+    if (mediaSession instanceof TauriMediaSession && artwork) {
+      await mediaSession.updateMetadata({
+        title: meta.title,
+        artist: meta.author,
+        album: meta.title,
+        artwork,
+      });
+      this.#pushArtwork = false;
+    }
   }
 
   #registerActionHandlers(): void {

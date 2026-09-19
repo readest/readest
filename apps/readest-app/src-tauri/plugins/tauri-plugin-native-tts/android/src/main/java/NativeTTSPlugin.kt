@@ -85,6 +85,7 @@ class SetVoiceArgs(
 
 @InvokeArg
 class UpdateMediaSessionMetadataArgs {
+  var sessionId: String? = null
   var title: String? = null
   var artist: String? = null
   var album: String? = null
@@ -93,6 +94,7 @@ class UpdateMediaSessionMetadataArgs {
 
 @InvokeArg
 class UpdateMediaSessionStateArgs {
+  var sessionId: String? = null
   var playing: Boolean? = null
   var position: Int? = null // in milliseconds
   var duration: Int? = null // in milliseconds
@@ -106,6 +108,7 @@ class UpdateMediaLibraryArgs {
 @InvokeArg
 class SetMediaSessionActiveArgs {
   var active: Boolean? = null
+  var sessionId: String? = null
   var ownsAudioFocus: Boolean? = null
   var notificationTitle: String? = null
   var notificationText: String? = null
@@ -550,7 +553,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 val artworkBitmap = args.artwork?.let { loadArtworkFromUrl(it) }
                 // In-process update on the running service; never startService()
                 // — that throws "app is in background" once backgrounded.
-                MediaPlaybackService.pushMetadata(title, artist, artworkBitmap)
+                MediaPlaybackService.pushMetadata(args.sessionId, title, artist, artworkBitmap)
                 invoke.resolve()
             } catch (e: Exception) {
                 invoke.reject("Failed to update metadata: ${e.message}")
@@ -569,6 +572,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
             // and duration are null on a bare play/pause flip; the service
             // keeps the last known values so the scrubber does not reset.
             MediaPlaybackService.pushPlaybackState(
+                args.sessionId,
                 isPlaying,
                 args.position?.toLong(),
                 args.duration?.toLong(),
@@ -606,12 +610,15 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         try {
             if (active) {
                 cancelIdleTimer()
-                MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
                 MediaPlaybackService.currentTitle = FOREGROUND_SERVICE_TITLE
                 MediaPlaybackService.currentArtist = FOREGROUND_SERVICE_TEXT
                 // Set before the service starts: activateSession reads it to
                 // decide whether to take audio focus for this session.
                 MediaPlaybackService.ownsAudioFocus = args.ownsAudioFocus ?: true
+                // Record ownership before service creation. A late teardown
+                // from the prior book must not deactivate this replacement.
+                MediaPlaybackService.requestActivation(args.sessionId, args.bookHash)
+                MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
                 // Persist the book so the Android Auto browse tree can offer a
                 // "Resume last book" entry after the process is cold.
                 args.bookHash?.let {
@@ -626,10 +633,13 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 // Not stopService: Android Auto may keep the service bound for
                 // browsing, in which case stopService would leave the foreground
                 // notification and the keep-alive player running.
-                MediaPlaybackService.requestDeactivation()
+                MediaPlaybackService.requestDeactivation(args.sessionId)
             }
             invoke.resolve()
         } catch (e: Exception) {
+            if (active) {
+                MediaPlaybackService.requestDeactivation(args.sessionId)
+            }
             invoke.reject("Failed to set media session active state: ${e.message}")
         }
     }

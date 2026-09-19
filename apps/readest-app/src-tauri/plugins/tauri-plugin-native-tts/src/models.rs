@@ -66,6 +66,7 @@ pub struct GetVoicesResponse {
 #[serde(rename_all = "camelCase")]
 pub struct SetMediaSessionActiveRequest {
     pub active: bool,
+    pub session_id: Option<String>,
     // Android: whether the media service should hold the app's audio focus for
     // this session. False when the session's audio plays through a WebView
     // media element, which Chromium already requests focus for (see
@@ -86,6 +87,7 @@ pub struct SetMediaSessionActiveRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateMediaSessionStateRequest {
     pub playing: bool,
+    pub session_id: Option<String>,
     pub position: Option<f64>,
     pub duration: Option<f64>,
 }
@@ -93,6 +95,7 @@ pub struct UpdateMediaSessionStateRequest {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateMediaSessionMetadataRequest {
+    pub session_id: Option<String>,
     pub title: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,

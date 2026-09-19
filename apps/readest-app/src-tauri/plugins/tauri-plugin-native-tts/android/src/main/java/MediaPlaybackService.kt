@@ -43,9 +43,49 @@ internal data class AndroidAutoBook(
     val hash: String,
     val title: String,
     val author: String,
+    val isAudiobook: Boolean,
     val coverHash: String?,
     val artworkReady: Boolean,
 )
+
+internal object MediaSessionActivationState {
+    @Volatile
+    private var desiredActive = false
+    @Volatile
+    private var desiredSessionId: String? = null
+
+    @Synchronized
+    fun requestActivation(sessionId: String? = null): Boolean {
+        val changed = !desiredActive || desiredSessionId != sessionId
+        desiredActive = true
+        desiredSessionId = sessionId
+        return changed
+    }
+
+    @Synchronized
+    fun requestDeactivation(sessionId: String? = null): Boolean {
+        // A replaced controller can finish its asynchronous teardown after the
+        // new book has activated. Never let that stale stop win.
+        if (sessionId != null && desiredSessionId != null && sessionId != desiredSessionId) {
+            return false
+        }
+        desiredActive = false
+        desiredSessionId = null
+        return true
+    }
+
+    fun isActivationDesired(): Boolean = desiredActive
+
+    @Synchronized
+    fun acceptsUpdate(sessionId: String?): Boolean =
+        sessionId == null || (desiredActive && sessionId == desiredSessionId)
+
+    @Synchronized
+    fun resetForTest() {
+        desiredActive = false
+        desiredSessionId = null
+    }
+}
 
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var mediaSession: MediaSessionCompat? = null
@@ -241,6 +281,8 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
         @Volatile
         private var libraryBooks: List<AndroidAutoBook> = emptyList()
+        @Volatile
+        private var currentBookHash: String? = null
 
         fun saveLastBook(context: Context, hash: String, title: String?, author: String?) {
             lastBookHash = hash
@@ -273,6 +315,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                             hash = hash,
                             title = title,
                             author = item.optString("author").trim(),
+                            isAudiobook = item.optBoolean("isAudiobook", false),
                             coverHash = item.optString("coverHash")
                                 .trim()
                                 .takeIf { MD5_PATTERN.matches(it) },
@@ -315,9 +358,32 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         // stopService neither runs onDestroy nor clears the foreground
         // notification, so playback teardown has to happen on the live
         // instance.
-        fun requestDeactivation() {
+        fun requestActivation(sessionId: String?, bookHash: String?) {
+            val changed = MediaSessionActivationState.requestActivation(sessionId)
+            if (bookHash != null) currentBookHash = bookHash
+            if (!changed) return
+
+            // Never carry the previous book's decoded bitmap into the new
+            // session. Seed the matching cached library thumbnail immediately;
+            // the full artwork can replace it later.
+            currentArtwork = null
+            currentArtworkUri = null
+            currentPositionMs = 0L
+            currentDurationMs = 0L
             val service = instance ?: return
-            Handler(Looper.getMainLooper()).post { service.deactivateSession() }
+            Handler(Looper.getMainLooper()).post {
+                service.resetArtworkForBook(bookHash)
+            }
+        }
+
+        fun requestDeactivation(sessionId: String? = null) {
+            if (!MediaSessionActivationState.requestDeactivation(sessionId)) return
+            val service = instance ?: return
+            Handler(Looper.getMainLooper()).post {
+                if (!MediaSessionActivationState.isActivationDesired()) {
+                    service.deactivateSession()
+                }
+            }
         }
 
         // Deliver metadata/state updates to the live service in-process rather
@@ -329,7 +395,8 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         // instance is not a service *start*, so it is exempt. The statics are
         // refreshed regardless so a not-yet-created service picks them up when
         // it activates.
-        fun pushMetadata(title: String, artist: String, artwork: Bitmap?) {
+        fun pushMetadata(sessionId: String?, title: String, artist: String, artwork: Bitmap?) {
+            if (!MediaSessionActivationState.acceptsUpdate(sessionId)) return
             currentTitle = title
             currentArtist = artist
             if (artwork != null) currentArtwork = artwork
@@ -340,7 +407,13 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         // position/duration are null when the update only reports a play/pause
         // flip (that payload omits them); keep the last known values so the
         // scrubber does not snap back to 0 on pause.
-        fun pushPlaybackState(playing: Boolean, position: Long?, duration: Long?) {
+        fun pushPlaybackState(
+            sessionId: String?,
+            playing: Boolean,
+            position: Long?,
+            duration: Long?,
+        ) {
+            if (!MediaSessionActivationState.acceptsUpdate(sessionId)) return
             if (position != null) currentPositionMs = position
             if (duration != null) currentDurationMs = duration
             val service = instance ?: return
@@ -382,6 +455,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             isActive = true
             setSessionToken(sessionToken)
         }
+        currentBookHash?.let { resetArtworkForBook(it) }
 
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -525,9 +599,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 return
             }
 
-            // Cold process fallback: open the existing deep link. The reader
-            // consumes autoplay=tts after its library has hydrated.
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("readest://book/$hash?autoplay=tts"))
+            // Cold process fallback: the generic book deep link routes an
+            // audiobook to the player after library hydration. Only ebooks
+            // carry the autoplay flag consumed by the reader's TTS bridge.
+            val deepLink = if (selectedBook?.isAudiobook == true) {
+                "readest://book/$hash"
+            } else {
+                "readest://book/$hash?autoplay=tts"
+            }
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
                 .setPackage(packageName)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             try {
@@ -565,6 +645,18 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var artworkUriSource: Bitmap? = null
     private var artworkUriVersion = 0
     private var artworkUriFile: File? = null
+
+    private fun resetArtworkForBook(bookHash: String?) {
+        artworkUriSource = null
+        artworkUriFile?.delete()
+        artworkUriFile = null
+        currentArtwork = null
+        currentArtworkUri = bookHash
+            ?.let { hash -> libraryBooks.firstOrNull { it.hash == hash } }
+            ?.let(::libraryArtworkUri)
+        appliedDurationMs = -1L
+        applyMetadata()
+    }
 
     // Packages that have opened the browse tree (Android Auto's projection, the
     // media system components). The cover URI is cross-UID, so each must be
@@ -821,7 +913,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_ACTIVATE_SESSION -> {
-                activateSession()
+                if (MediaSessionActivationState.isActivationDesired()) {
+                    activateSession()
+                } else {
+                    // A stop can overtake the asynchronous service start.
+                    // Satisfy the foreground contract without reviving it.
+                    showNotification(PlaybackStateCompat.STATE_PAUSED)
+                    ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                    stopSelf(startId)
+                }
             }
             Intent.ACTION_MEDIA_BUTTON -> {
                 if (sessionActive) {

@@ -165,6 +165,33 @@ describe('TauriMediaSession.setActive', () => {
       expect.anything(),
     );
   });
+
+  test('tags native updates and teardown with the active playback session', async () => {
+    const unregister = vi.fn();
+    vi.mocked(addPluginListener).mockResolvedValue({ unregister } as unknown as PluginListener);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true, sessionId: 'book-session' });
+    await session.updateMetadata({ title: 'New book' });
+    await session.updatePlaybackState({ playing: true });
+    await session.setActive({ active: false });
+
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|update_media_session_metadata', {
+      payload: { title: 'New book', sessionId: 'book-session' },
+    });
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|update_media_session_state', {
+      payload: { playing: true, sessionId: 'book-session' },
+    });
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|set_media_session_active', {
+      payload: { active: false, sessionId: 'book-session' },
+    });
+  });
 });
 
 describe('TauriMediaSession media-session-seek', () => {
