@@ -11,6 +11,15 @@
       "entries": 13806
     },
     {
+      "pair": "en-ar",
+      "source": "en",
+      "target": "ar",
+      "file": "en-ar.json",
+      "bytes": 993268,
+      "sha256": "ddb4bd8de97c3bb874a35ef7c239dc61efb799e0c34695ca4ef7f068cc4de435",
+      "entries": 12870
+    },
+    {
       "pair": "en-de",
       "source": "en",
       "target": "de",
