@@ -145,6 +145,7 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
         (current, total, currentFile) => {
           setProgress({ current, total, currentFile });
         },
+        result.files[0]?.path,
       );
 
       const newLibrary = await appService.loadLibraryBooks();
