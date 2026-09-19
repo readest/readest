@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "Trek omlaag om bladwijzer toe te voegen",
   "Pronunciation": "Uitspraak",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Speelt de opname af die een woordenboek bij het lemma levert, als die er is.",
-  "Auto-play Pronunciation": "Uitspraak automatisch afspelen"
+  "Auto-play Pronunciation": "Uitspraak automatisch afspelen",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

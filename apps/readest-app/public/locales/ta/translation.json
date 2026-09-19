@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "புக்மார்க் சேர்க்க கீழே இழுக்கவும்",
   "Pronunciation": "உச்சரிப்பு",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "அகராதி பதிவுடன் வழங்கும் ஒலிப்பதிவு இருந்தால் அதை இயக்கும்.",
-  "Auto-play Pronunciation": "உச்சரிப்பைத் தானாக இயக்கு"
+  "Auto-play Pronunciation": "உச்சரிப்பைத் தானாக இயக்கு",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

@@ -2452,5 +2452,6 @@
   "Pull-Down to Bookmark": "Pociągnij w dół, aby dodać zakładkę",
   "Pronunciation": "Wymowa",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Odtwarza nagranie dołączone przez słownik do hasła, jeśli takie istnieje.",
-  "Auto-play Pronunciation": "Automatycznie odtwarzaj wymowę"
+  "Auto-play Pronunciation": "Automatycznie odtwarzaj wymowę",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

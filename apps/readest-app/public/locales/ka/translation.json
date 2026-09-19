@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "ჩამოწიეთ სანიშნის დასამატებლად",
   "Pronunciation": "გამოთქმა",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "უკრავს ჩანაწერს, რომელსაც ლექსიკონი სტატიას ურთავს, თუ ასეთი არსებობს.",
-  "Auto-play Pronunciation": "გამოთქმის ავტომატური დაკვრა"
+  "Auto-play Pronunciation": "გამოთქმის ავტომატური დაკვრა",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

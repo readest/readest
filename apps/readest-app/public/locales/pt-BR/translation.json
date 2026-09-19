@@ -2392,5 +2392,6 @@
   "Pull-Down to Bookmark": "Puxe para baixo para adicionar marcador",
   "Pronunciation": "Pronúncia",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Reproduz a gravação que o dicionário inclui no verbete, quando existe.",
-  "Auto-play Pronunciation": "Reproduzir a pronúncia automaticamente"
+  "Auto-play Pronunciation": "Reproduzir a pronúncia automaticamente",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

@@ -2272,5 +2272,6 @@
   "Pull-Down to Bookmark": "下に引いてブックマークを追加",
   "Pronunciation": "発音",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "辞書が項目に収録している音声があれば再生します。",
-  "Auto-play Pronunciation": "発音を自動再生"
+  "Auto-play Pronunciation": "発音を自動再生",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

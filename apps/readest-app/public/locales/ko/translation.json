@@ -2272,5 +2272,6 @@
   "Pull-Down to Bookmark": "아래로 당겨 북마크 추가",
   "Pronunciation": "발음",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "사전이 표제어에 함께 담은 녹음이 있으면 재생합니다.",
-  "Auto-play Pronunciation": "발음 자동 재생"
+  "Auto-play Pronunciation": "발음 자동 재생",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

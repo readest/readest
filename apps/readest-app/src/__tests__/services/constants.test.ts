@@ -445,6 +445,10 @@ describe('services/constants', () => {
       expect(DEFAULT_BOOK_LAYOUT.gapPercent).toBeLessThanOrEqual(100);
     });
 
+    it('derives the column gap from the margins by default', () => {
+      expect(DEFAULT_BOOK_LAYOUT.columnGapPx).toBe(0);
+    });
+
     it('has boolean layout flags', () => {
       expect(typeof DEFAULT_BOOK_LAYOUT.scrolled).toBe('boolean');
       expect(typeof DEFAULT_BOOK_LAYOUT.noContinuousScroll).toBe('boolean');

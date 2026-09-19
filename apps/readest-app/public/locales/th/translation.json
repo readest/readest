@@ -2272,5 +2272,6 @@
   "Pull-Down to Bookmark": "ดึงลงเพื่อเพิ่มบุ๊กมาร์ก",
   "Pronunciation": "การออกเสียง",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "เล่นไฟล์เสียงที่พจนานุกรมแนบมากับรายการคำ หากมี",
-  "Auto-play Pronunciation": "เล่นเสียงอ่านอัตโนมัติ"
+  "Auto-play Pronunciation": "เล่นเสียงอ่านอัตโนมัติ",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

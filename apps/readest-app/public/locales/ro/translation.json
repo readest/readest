@@ -2392,5 +2392,6 @@
   "Pull-Down to Bookmark": "Trageți în jos pentru a adăuga marcajul",
   "Pronunciation": "Pronunție",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Redă înregistrarea pe care dicționarul o include în intrare, atunci când există.",
-  "Auto-play Pronunciation": "Redă automat pronunția"
+  "Auto-play Pronunciation": "Redă automat pronunția",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

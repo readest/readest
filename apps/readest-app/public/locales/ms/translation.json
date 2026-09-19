@@ -2272,5 +2272,6 @@
   "Pull-Down to Bookmark": "Tarik ke bawah untuk menambah tandabuku",
   "Pronunciation": "Sebutan",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Memainkan rakaman yang disertakan kamus pada entri, jika ada.",
-  "Auto-play Pronunciation": "Mainkan sebutan secara automatik"
+  "Auto-play Pronunciation": "Mainkan sebutan secara automatik",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

@@ -2272,5 +2272,6 @@
   "Pull-Down to Bookmark": "Kéo xuống để thêm đánh dấu",
   "Pronunciation": "Phát âm",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Phát bản ghi âm mà từ điển kèm theo mục từ, nếu có.",
-  "Auto-play Pronunciation": "Tự động phát âm"
+  "Auto-play Pronunciation": "Tự động phát âm",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

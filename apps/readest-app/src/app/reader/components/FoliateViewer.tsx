@@ -923,6 +923,11 @@ const FoliateViewer: React.FC<{
       setScrollMargins({ top: 0, bottom: 0 });
     }
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
+    if (viewSettings.columnGapPx > 0) {
+      viewRef.current?.renderer.setAttribute('column-gap', `${viewSettings.columnGapPx}px`);
+    } else {
+      viewRef.current?.renderer.removeAttribute('column-gap');
+    }
     viewRef.current?.renderer.setAttribute(
       'scroll-direction',
       viewSettings.scrolledDirection === 'horizontal' ? 'horizontal' : 'vertical',

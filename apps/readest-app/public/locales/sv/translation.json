@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "Dra nedåt för att lägga till bokmärke",
   "Pronunciation": "Uttal",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Spelar upp inspelningen som ordboken levererar med uppslagsordet, när den finns.",
-  "Auto-play Pronunciation": "Spela upp uttal automatiskt"
+  "Auto-play Pronunciation": "Spela upp uttal automatiskt",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

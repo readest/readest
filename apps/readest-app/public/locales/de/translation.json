@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "Herunterziehen, um Lesezeichen hinzuzufügen",
   "Pronunciation": "Aussprache",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Spielt die Aufnahme ab, die ein Wörterbuch dem Eintrag beilegt, sofern vorhanden.",
-  "Auto-play Pronunciation": "Aussprache automatisch abspielen"
+  "Auto-play Pronunciation": "Aussprache automatisch abspielen",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

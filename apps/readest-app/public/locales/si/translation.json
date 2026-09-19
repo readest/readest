@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "සටහන් එකතු කිරීමට පහළට අදින්න",
   "Pronunciation": "උච්චාරණය",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "ශබ්දකෝෂය ප්‍රවේශය සමඟ සපයන පටිගත කිරීමක් ඇත්නම් එය වාදනය කරයි.",
-  "Auto-play Pronunciation": "උච්චාරණය ස්වයංක්‍රීයව වාදනය කරන්න"
+  "Auto-play Pronunciation": "උච්චාරණය ස්වයංක්‍රීයව වාදනය කරන්න",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

@@ -2272,5 +2272,6 @@
   "Pull-Down to Bookmark": "下拉添加書籤",
   "Pronunciation": "發音",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "播放字典隨詞條附帶的發音錄音（若有）。",
-  "Auto-play Pronunciation": "自動播放發音"
+  "Auto-play Pronunciation": "自動播放發音",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

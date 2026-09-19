@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "Xatchoʻp qoʻshish uchun pastga torting",
   "Pronunciation": "Talaffuz",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Lug'at maqolaga ilova qilgan yozuvni, agar mavjud bo'lsa, ijro etadi.",
-  "Auto-play Pronunciation": "Talaffuzni avtomatik ijro etish"
+  "Auto-play Pronunciation": "Talaffuzni avtomatik ijro etish",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

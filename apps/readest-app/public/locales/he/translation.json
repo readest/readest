@@ -2392,5 +2392,6 @@
   "Pull-Down to Bookmark": "משוך למטה להוספת סימנייה",
   "Pronunciation": "הגייה",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "מנגן את ההקלטה שהמילון מצרף לערך, כאשר היא קיימת.",
-  "Auto-play Pronunciation": "נגן הגייה אוטומטית"
+  "Auto-play Pronunciation": "נגן הגייה אוטומטית",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

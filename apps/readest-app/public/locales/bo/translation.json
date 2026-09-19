@@ -2272,5 +2272,6 @@
   "Pull-Down to Bookmark": "དེབ་གྲངས་སྣོན་པར་མར་འཐེན།",
   "Pronunciation": "སྒྲ་གདངས།",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "ཚིག་མཛོད་ཀྱིས་ཚིག་ཐོ་དང་མཉམ་དུ་བཞག་པའི་སྒྲ་ཕབ་ཡོད་ན་དེ་གཏོང་བ།",
-  "Auto-play Pronunciation": "སྒྲ་གདངས་རང་འགུལ་གྱིས་གཏོང་བ།"
+  "Auto-play Pronunciation": "སྒྲ་གདངས་རང་འགུལ་གྱིས་གཏོང་བ།",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

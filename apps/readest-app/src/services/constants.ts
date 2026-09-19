@@ -343,6 +343,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   compactMarginLeftPx: 16,
   compactMarginRightPx: 16,
   gapPercent: 5,
+  columnGapPx: 0,
   scrolled: false,
   scrolledDirection: 'vertical',
   webtoonMode: false,

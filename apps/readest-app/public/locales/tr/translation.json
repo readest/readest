@@ -2332,5 +2332,6 @@
   "Pull-Down to Bookmark": "Yer işareti eklemek için aşağı çekin",
   "Pronunciation": "Telaffuz",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Sözlüğün maddeyle birlikte sunduğu kaydı, varsa çalar.",
-  "Auto-play Pronunciation": "Telaffuzu otomatik çal"
+  "Auto-play Pronunciation": "Telaffuzu otomatik çal",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

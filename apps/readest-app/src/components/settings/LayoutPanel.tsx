@@ -61,6 +61,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     viewSettings.compactMarginBottomPx,
   );
   const [gapPercent, setGapPercent] = useState(viewSettings.gapPercent);
+  const [columnGapPx, setColumnGapPx] = useState(viewSettings.columnGapPx);
   const [compactMarginLeftPx, setCompactMarginLeftPx] = useState(viewSettings.compactMarginLeftPx);
   const [compactMarginRightPx, setCompactMarginRightPx] = useState(
     viewSettings.compactMarginRightPx,
@@ -295,6 +296,17 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gapPercent]);
+
+  useEffect(() => {
+    if (columnGapPx === viewSettings.columnGapPx) return;
+    saveViewSettings(envConfig, bookKey, 'columnGapPx', columnGapPx, false, false);
+    if (columnGapPx > 0) {
+      view?.renderer.setAttribute('column-gap', `${columnGapPx}px`);
+    } else {
+      view?.renderer.removeAttribute('column-gap');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnGapPx]);
 
   useEffect(() => {
     if (maxColumnCount === viewSettings.maxColumnCount) return;
@@ -722,6 +734,16 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           min={0}
           max={30}
           data-setting-id='settings.layout.pageGap'
+        />
+        <NumberInput
+          label={_('Column Gap (px)')}
+          value={columnGapPx}
+          onChange={setColumnGapPx}
+          min={0}
+          max={200}
+          step={4}
+          disabled={isVertical}
+          data-setting-id='settings.layout.columnGap'
         />
         <NumberInput
           label={_('Maximum Number of Columns')}

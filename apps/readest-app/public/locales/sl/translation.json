@@ -2452,5 +2452,6 @@
   "Pull-Down to Bookmark": "Povlecite navzdol za dodajanje zaznamka",
   "Pronunciation": "Izgovorjava",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Predvaja posnetek, ki ga slovar priloži geslu, če ta obstaja.",
-  "Auto-play Pronunciation": "Samodejno predvajaj izgovorjavo"
+  "Auto-play Pronunciation": "Samodejno predvajaj izgovorjavo",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

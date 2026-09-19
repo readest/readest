@@ -2392,5 +2392,6 @@
   "Pull-Down to Bookmark": "Desliza hacia abajo para agregar marcador",
   "Pronunciation": "Pronunciación",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "Reproduce la grabación que el diccionario incluye con la entrada, cuando la tiene.",
-  "Auto-play Pronunciation": "Reproducir la pronunciación automáticamente"
+  "Auto-play Pronunciation": "Reproducir la pronunciación automáticamente",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }

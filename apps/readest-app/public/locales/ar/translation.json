@@ -2572,5 +2572,6 @@
   "Pull-Down to Bookmark": "اسحب لأسفل لإضافة علامة",
   "Pronunciation": "النطق",
   "Plays the recording a dictionary bundles with the entry, when it has one.": "يشغّل التسجيل الذي يرفقه القاموس مع المدخل، إن وُجد.",
-  "Auto-play Pronunciation": "تشغيل النطق تلقائيًا"
+  "Auto-play Pronunciation": "تشغيل النطق تلقائيًا",
+  "Column Gap (px)": "__STRING_NOT_TRANSLATED__"
 }
