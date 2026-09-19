@@ -2338,5 +2338,7 @@
   "{{minutes}}m": "{{minutes}}நி",
   "{{seconds}}s": "{{seconds}}வி",
   "Could not read the length of every track in this audiobook": "இந்த ஒலிப்புத்தகத்தின் ஒவ்வொரு தடத்தின் நீளத்தையும் படிக்க முடியவில்லை",
-  "Manage the streamed audiobook paired with this ebook.": "இந்த மின்னூலுடன் இணைக்கப்பட்ட ஸ்ட்ரீமிங் ஒலிப்புத்தகத்தை நிர்வகிக்கவும்."
+  "Manage the streamed audiobook paired with this ebook.": "இந்த மின்னூலுடன் இணைக்கப்பட்ட ஸ்ட்ரீமிங் ஒலிப்புத்தகத்தை நிர்வகிக்கவும்.",
+  "Dismiss": "__STRING_NOT_TRANSLATED__",
+  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
 }

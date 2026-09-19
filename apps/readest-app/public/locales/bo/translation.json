@@ -2278,5 +2278,7 @@
   "{{minutes}}m": "{{minutes}}སྐར",
   "{{seconds}}s": "{{seconds}}སྐར་ཆ",
   "Could not read the length of every track in this audiobook": "སྒྲ་དེབ་འདིའི་གླུ་གྲངས་རེ་རེའི་རིང་ཚད་ཀློག་མ་ཐུབ།",
-  "Manage the streamed audiobook paired with this ebook.": "དཔེ་དེབ་འདི་དང་མཉམ་སྦྲེལ་བྱས་པའི་རྒྱུན་སྐྱེལ་སྒྲ་དེབ་དོ་དམ་བྱེད།"
+  "Manage the streamed audiobook paired with this ebook.": "དཔེ་དེབ་འདི་དང་མཉམ་སྦྲེལ་བྱས་པའི་རྒྱུན་སྐྱེལ་སྒྲ་དེབ་དོ་དམ་བྱེད།",
+  "Dismiss": "__STRING_NOT_TRANSLATED__",
+  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
 }

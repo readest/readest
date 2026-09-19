@@ -378,7 +378,13 @@ export class FileSyncEngine {
           return { uploaded: false, reason: 'remote-matches' };
         }
         await this.ensureDirs(dirs);
-        let ok = await this.provider.uploadStream(path, src.path);
+        let ok = false;
+        try {
+          ok = await this.provider.uploadStream(path, src.path);
+        } catch (e) {
+          // Authentication will not heal by retrying the same credentials.
+          if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') throw e;
+        }
         if (!ok) {
           // Mirror the buffered path's one-shot retry: a parent may have been
           // recreated mid-PUT (409). Re-ensure directories and try once more.

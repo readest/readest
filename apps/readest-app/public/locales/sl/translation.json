@@ -2458,5 +2458,7 @@
   "{{minutes}}m": "{{minutes}} min",
   "{{seconds}}s": "{{seconds}} s",
   "Could not read the length of every track in this audiobook": "Dolžine vseh posnetkov te zvočne knjige ni bilo mogoče prebrati",
-  "Manage the streamed audiobook paired with this ebook.": "Upravljanje pretočne zvočne knjige, povezane s to e-knjigo."
+  "Manage the streamed audiobook paired with this ebook.": "Upravljanje pretočne zvočne knjige, povezane s to e-knjigo.",
+  "Dismiss": "__STRING_NOT_TRANSLATED__",
+  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
 }

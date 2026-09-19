@@ -2338,5 +2338,7 @@
   "{{minutes}}m": "{{minutes}} p",
   "{{seconds}}s": "{{seconds}} mp",
   "Could not read the length of every track in this audiobook": "Nem sikerült beolvasni a hangoskönyv minden sávjának hosszát",
-  "Manage the streamed audiobook paired with this ebook.": "Az e-könyvhöz párosított, streamelt hangoskönyv kezelése."
+  "Manage the streamed audiobook paired with this ebook.": "Az e-könyvhöz párosított, streamelt hangoskönyv kezelése.",
+  "Dismiss": "__STRING_NOT_TRANSLATED__",
+  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
 }

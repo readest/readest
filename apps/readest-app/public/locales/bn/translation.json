@@ -2338,5 +2338,7 @@
   "{{minutes}}m": "{{minutes}}মি",
   "{{seconds}}s": "{{seconds}}সে",
   "Could not read the length of every track in this audiobook": "এই অডিওবইয়ের প্রতিটি ট্র্যাকের দৈর্ঘ্য পড়া যায়নি",
-  "Manage the streamed audiobook paired with this ebook.": "এই ই-বইয়ের সঙ্গে যুক্ত স্ট্রিম করা অডিওবই পরিচালনা করুন।"
+  "Manage the streamed audiobook paired with this ebook.": "এই ই-বইয়ের সঙ্গে যুক্ত স্ট্রিম করা অডিওবই পরিচালনা করুন।",
+  "Dismiss": "__STRING_NOT_TRANSLATED__",
+  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
 }

@@ -2338,5 +2338,7 @@
   "{{minutes}}m": "{{minutes}}წთ",
   "{{seconds}}s": "{{seconds}}წმ",
   "Could not read the length of every track in this audiobook": "ამ აუდიოწიგნის ყველა ტრეკის ხანგრძლივობის წაკითხვა ვერ მოხერხდა",
-  "Manage the streamed audiobook paired with this ebook.": "მართეთ ამ ელწიგნთან დაწყვილებული ნაკადური აუდიოწიგნი."
+  "Manage the streamed audiobook paired with this ebook.": "მართეთ ამ ელწიგნთან დაწყვილებული ნაკადური აუდიოწიგნი.",
+  "Dismiss": "__STRING_NOT_TRANSLATED__",
+  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
 }

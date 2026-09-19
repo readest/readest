@@ -2398,5 +2398,7 @@
   "{{minutes}}m": "{{minutes}} min",
   "{{seconds}}s": "{{seconds}} s",
   "Could not read the length of every track in this audiobook": "No se pudo leer la duración de todas las pistas de este audiolibro",
-  "Manage the streamed audiobook paired with this ebook.": "Gestiona el audiolibro en streaming emparejado con este libro electrónico."
+  "Manage the streamed audiobook paired with this ebook.": "Gestiona el audiolibro en streaming emparejado con este libro electrónico.",
+  "Dismiss": "__STRING_NOT_TRANSLATED__",
+  "Failed to upload the library index. Please sync again.": "__STRING_NOT_TRANSLATED__"
 }
