@@ -462,8 +462,10 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         <SurfaceHeader
           title={_('Paired Audiobook')}
           description={
+            // Source-neutral: this dialog now covers BookOrbit pairings too,
+            // and the server's own name is shown in the row below either way.
             streamedFrom
-              ? _('Manage the Audiobookshelf audiobook paired with this ebook.')
+              ? _('Manage the streamed audiobook paired with this ebook.')
               : _('Manage the local recording paired with this ebook.')
           }
         />

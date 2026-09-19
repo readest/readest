@@ -2216,7 +2216,6 @@
   "Loading audiobook chapters": "აუდიოწიგნის თავები იტვირთება",
   "Failed to load the audiobook.": "აუდიოწიგნის ჩატვირთვა ვერ მოხერხდა.",
   "Audiobook unpaired.": "აუდიოწიგნის კავშირი გაწყდა.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "მართეთ ამ ელწიგნთან დაკავშირებული Audiobookshelf-ის აუდიოწიგნი.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} აუდიო თავი · {{duration}} · სტრიმინგი {{server}}-იდან",
   "Unpair this audiobook?": "გაწყდეს ამ აუდიოწიგნის კავშირი?",
   "Choose from Audiobookshelf": "არჩევა Audiobookshelf-იდან",
@@ -2338,5 +2337,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}}სთ {{minutes}}წთ",
   "{{minutes}}m": "{{minutes}}წთ",
   "{{seconds}}s": "{{seconds}}წმ",
-  "Could not read the length of every track in this audiobook": "ამ აუდიოწიგნის ყველა ტრეკის ხანგრძლივობის წაკითხვა ვერ მოხერხდა"
+  "Could not read the length of every track in this audiobook": "ამ აუდიოწიგნის ყველა ტრეკის ხანგრძლივობის წაკითხვა ვერ მოხერხდა",
+  "Manage the streamed audiobook paired with this ebook.": "მართეთ ამ ელწიგნთან დაწყვილებული ნაკადური აუდიოწიგნი."
 }

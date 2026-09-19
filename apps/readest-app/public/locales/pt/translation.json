@@ -2273,7 +2273,6 @@
   "Loading audiobook chapters": "A carregar os capítulos do audiolivro",
   "Failed to load the audiobook.": "Não foi possível carregar o audiolivro.",
   "Audiobook unpaired.": "Audiolivro desassociado.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "Faça a gestão do audiolivro do Audiobookshelf associado a este e-book.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} capítulos de áudio · {{duration}} · Transmitido de {{server}}",
   "Unpair this audiobook?": "Desassociar este audiolivro?",
   "Choose from Audiobookshelf": "Escolher do Audiobookshelf",
@@ -2398,5 +2397,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
   "{{seconds}}s": "{{seconds}} s",
-  "Could not read the length of every track in this audiobook": "Não foi possível ler a duração de todas as faixas deste audiolivro"
+  "Could not read the length of every track in this audiobook": "Não foi possível ler a duração de todas as faixas deste audiolivro",
+  "Manage the streamed audiobook paired with this ebook.": "Gerir o audiolivro transmitido associado a este ebook."
 }

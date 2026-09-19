@@ -2330,7 +2330,6 @@
   "Loading audiobook chapters": "Wczytywanie rozdziałów audiobooka",
   "Failed to load the audiobook.": "Nie udało się wczytać audiobooka.",
   "Audiobook unpaired.": "Audiobook został odparowany.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "Zarządzaj audiobookiem Audiobookshelf sparowanym z tym e-bookiem.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} rozdziałów audio · {{duration}} · Strumieniowanie z {{server}}",
   "Unpair this audiobook?": "Odparować ten audiobook?",
   "Choose from Audiobookshelf": "Wybierz z Audiobookshelf",
@@ -2458,5 +2457,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} godz. {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
   "{{seconds}}s": "{{seconds}} s",
-  "Could not read the length of every track in this audiobook": "Nie udało się odczytać długości każdej ścieżki tego audiobooka"
+  "Could not read the length of every track in this audiobook": "Nie udało się odczytać długości każdej ścieżki tego audiobooka",
+  "Manage the streamed audiobook paired with this ebook.": "Zarządzaj strumieniowanym audiobookiem powiązanym z tym e-bookiem."
 }

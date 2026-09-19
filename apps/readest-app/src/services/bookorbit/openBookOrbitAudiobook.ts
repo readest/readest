@@ -5,14 +5,13 @@
 // downloaded to build the timeline, and only the track being played is
 // fetched.
 //
-// The bytes come through the client's native fetch rather than a media
-// element: BookOrbit serves audio with `Cross-Origin-Resource-Policy:
-// same-origin` and no CORS headers, so a webview refuses to load it
-// cross-origin whatever credentials are attached. BlobAudioClock loads one
-// track at a time and releases the previous, which keeps that bounded -- and a
-// blob is also the only source a Chromium webview can seek within on the Linux
-// runtime (see BlobAudioClock), which resuming mid-track needs.
-import { BlobAudioClock } from '@/services/audiobook/AudiobookClock';
+// Where the loopback media proxy is available the tracks stream through it:
+// it is a real origin, so `Range` works and only the part being listened to is
+// fetched. BookOrbit's own URL cannot be given to a media element at all
+// (`Cross-Origin-Resource-Policy: same-origin`), so elsewhere -- the web build,
+// iOS -- BlobAudioClock fetches one whole track at a time through the client
+// and releases the previous one. See ./mediaProxy.
+import { BlobAudioClock, HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
 import { AudiobookController } from '@/services/audiobook/AudiobookController';
 import type { AudiobookSource } from '@/services/audiobook/AudiobookController';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
@@ -23,6 +22,7 @@ import type { AppService } from '@/types/system';
 import { uniqueId } from '@/utils/misc';
 import { parseBookOrbitAudioFilePath } from './audiobookId';
 import { createBookOrbitClient } from './createClient';
+import { openBookOrbitMediaProxy } from './mediaProxy';
 import {
   assetPositionFromGlobal,
   globalFromAssetPosition,
@@ -175,6 +175,7 @@ export const openBookOrbitAudiobookSession = async (input: {
   };
 
   const mimeByUrl = new Map(tracks.map((track) => [track.contentUrl, track.mimeType]));
+  const streamUrl = await openBookOrbitMediaProxy(client);
   recordDuration(appService, book.hash, totalDuration);
   const saveProgress = makeProgressSaver(appService, book.hash, totalDuration);
 
@@ -184,18 +185,21 @@ export const openBookOrbitAudiobookSession = async (input: {
     author: manifest.book.authors.join(' & ') || book.author,
     tracks,
     chapters,
-    // The clock hands this straight back to the loader below.
-    resolveUrl: (contentPath: string) => contentPath,
+    // A streamable loopback URL where the proxy is available; otherwise the
+    // content path, which the blob loader below fetches.
+    resolveUrl: (contentPath: string) => streamUrl?.(contentPath) ?? contentPath,
     startAt: resolveStartAt(serverPositionSec, book, totalDuration),
   };
 
-  const clock = new BlobAudioClock(async (contentPath) => {
-    const res = await client.fetchAsset(contentPath);
-    if (!res.ok) throw new Error(`BookOrbit asset fetch failed: ${res.status}`);
-    return new Blob([await res.arrayBuffer()], {
-      type: mimeByUrl.get(contentPath) ?? 'audio/mpeg',
-    });
-  });
+  const clock = streamUrl
+    ? new HtmlAudioClock()
+    : new BlobAudioClock(async (contentPath) => {
+        const res = await client.fetchAsset(contentPath);
+        if (!res.ok) throw new Error(`BookOrbit asset fetch failed: ${res.status}`);
+        return new Blob([await res.arrayBuffer()], {
+          type: mimeByUrl.get(contentPath) ?? 'audio/mpeg',
+        });
+      });
 
   const controller = new AudiobookController(source, clock, {
     onTick: (position) => {

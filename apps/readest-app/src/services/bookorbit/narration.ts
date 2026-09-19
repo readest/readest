@@ -1,27 +1,32 @@
 // The BookOrbit half of read-along narration.
 //
 // A paired BookOrbit book has no local audio file to open: its tracks live on
-// the server, and a media element cannot load them from their URLs at all --
-// BookOrbit sends `Cross-Origin-Resource-Policy: same-origin`, which a webview
-// refuses cross-origin whatever credentials are attached. So the bytes come
-// through the client's native fetch and play from a blob, one track at a time,
-// exactly as downloaded audiobooks do (see BlobAudioClock).
+// the server, and BookOrbit's own URL cannot be given to a media element at all
+// (`Cross-Origin-Resource-Policy: same-origin`). Where the loopback media proxy
+// is available the tracks stream through it and seek normally, which starting a
+// chapter part-way into a track needs; elsewhere the bytes come through the
+// client's native fetch and play from a blob, one track at a time.
 import type { NarrationTrack } from '@/services/tts/mediaOverlay/MultiTrackNarrationClock';
 import type { PairedAudiobookBookOrbitSource } from '@/types/book';
 import { createBookOrbitClient } from './createClient';
+import { openBookOrbitMediaProxy } from './mediaProxy';
 
 /**
- * The pairing's tracks on the narration timeline. Each `url` is the asset's
- * server-relative path, which is what {@link loadBookOrbitTrack} is handed back.
+ * The pairing's tracks on the narration timeline. Each `url` is a streamable
+ * loopback URL where the proxy is available, and otherwise the asset's
+ * server-relative path, which {@link loadBookOrbitTrack} is handed back.
  */
-export const bookOrbitNarrationTracks = (
+export const bookOrbitNarrationTracks = async (
   source: PairedAudiobookBookOrbitSource,
-): NarrationTrack[] =>
-  source.tracks.map((track) => ({
-    url: track.contentUrl,
+): Promise<NarrationTrack[]> => {
+  const client = createBookOrbitClient();
+  const streamUrl = client ? await openBookOrbitMediaProxy(client) : null;
+  return source.tracks.map((track) => ({
+    url: streamUrl?.(track.contentUrl) ?? track.contentUrl,
     startOffset: track.startOffset,
     duration: track.duration,
   }));
+};
 
 export const loadBookOrbitTrack = async (contentPath: string): Promise<Blob> => {
   // Built per track rather than cached: a track lasts tens of minutes, far

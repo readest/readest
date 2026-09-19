@@ -2216,7 +2216,6 @@
   "Loading audiobook chapters": "ऑडियोबुक के अध्याय लोड हो रहे हैं",
   "Failed to load the audiobook.": "ऑडियोबुक लोड नहीं हो सकी।",
   "Audiobook unpaired.": "ऑडियोबुक का युग्मन हटा दिया गया।",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "इस ई-पुस्तक के साथ युग्मित Audiobookshelf ऑडियोबुक प्रबंधित करें।",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ऑडियो अध्याय · {{duration}} · {{server}} से स्ट्रीम",
   "Unpair this audiobook?": "क्या इस ऑडियोबुक का युग्मन हटाएँ?",
   "Choose from Audiobookshelf": "Audiobookshelf से चुनें",
@@ -2338,5 +2337,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}}घं {{minutes}}मि",
   "{{minutes}}m": "{{minutes}}मि",
   "{{seconds}}s": "{{seconds}}से",
-  "Could not read the length of every track in this audiobook": "इस ऑडियोबुक के हर ट्रैक की अवधि नहीं पढ़ी जा सकी"
+  "Could not read the length of every track in this audiobook": "इस ऑडियोबुक के हर ट्रैक की अवधि नहीं पढ़ी जा सकी",
+  "Manage the streamed audiobook paired with this ebook.": "इस ईबुक के साथ जोड़ी गई स्ट्रीम की जाने वाली ऑडियोबुक प्रबंधित करें।"
 }

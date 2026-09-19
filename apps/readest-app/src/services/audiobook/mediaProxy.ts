@@ -45,17 +45,36 @@ const absServerOrigins = (): string[] => {
   return [...origins];
 };
 
+/** A server the proxy may reach that is not an Audiobookshelf instance. */
+export interface MediaProxyGrant {
+  /** `scheme://host:port` of the upstream server. */
+  origin: string;
+  /**
+   * `Authorization` header to send there, for a server that authenticates by
+   * header rather than by a token in the URL. Held proxy-side, so it never
+   * reaches the DOM and a refreshed token leaves the track URL untouched.
+   */
+  authorization?: string;
+}
+
 /**
  * Base URL of the loopback media proxy, or null where the direct URL is the
  * right one: the web (fetch and media share one TLS policy, nothing to
  * bridge), iOS (its AVPlayer clocks - NativeAudiobookClock and the narration
  * player - take the direct URL), and a proxy that failed to start. Callers
  * then stream directly, as before.
+ *
+ * `grant` adds one more origin for this call, for a source that is not
+ * Audiobookshelf. The allowlist is merged on every call, so granting again
+ * with a fresh credential replaces the one it supersedes.
  */
-export const getMediaProxyBase = async (): Promise<string | null> => {
+export const getMediaProxyBase = async (grant?: MediaProxyGrant): Promise<string | null> => {
   if (!isTauriAppPlatform() || getOSPlatform() === 'ios') return null;
   try {
-    return await invoke<string>('get_media_proxy_base', { origins: absServerOrigins() });
+    const origins = absServerOrigins();
+    if (grant) origins.push(grant.origin);
+    const auth = grant?.authorization ? { [grant.origin]: grant.authorization } : undefined;
+    return await invoke<string>('get_media_proxy_base', { origins, auth });
   } catch (error) {
     console.warn('[ABS] media proxy unavailable, streaming tracks directly:', error);
     return null;

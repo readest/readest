@@ -2174,7 +2174,6 @@
   "Loading audiobook chapters": "正在載入有聲書章節",
   "Failed to load the audiobook.": "無法載入有聲書。",
   "Audiobook unpaired.": "已取消有聲書配對。",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "管理與此電子書配對的 Audiobookshelf 有聲書。",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} 個音訊章節 · {{duration}} · 來自 {{server}} 的串流",
   "Unpair this audiobook?": "要取消此有聲書的配對嗎？",
   "Choose from Audiobookshelf": "從 Audiobookshelf 選擇",
@@ -2278,5 +2277,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} 小時 {{minutes}} 分",
   "{{minutes}}m": "{{minutes}} 分鐘",
   "{{seconds}}s": "{{seconds}} 秒",
-  "Could not read the length of every track in this audiobook": "無法讀取這本有聲書中每個音軌的長度"
+  "Could not read the length of every track in this audiobook": "無法讀取這本有聲書中每個音軌的長度",
+  "Manage the streamed audiobook paired with this ebook.": "管理與此電子書配對的串流有聲書。"
 }

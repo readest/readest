@@ -2216,7 +2216,6 @@
   "Loading audiobook chapters": "Audiokitob boblari yuklanmoqda",
   "Failed to load the audiobook.": "Audiokitobni yuklab boʻlmadi.",
   "Audiobook unpaired.": "Audiokitob bogʻlanishi uzildi.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "Ushbu e-kitob bilan bogʻlangan Audiobookshelf audiokitobini boshqaring.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ta audio bob · {{duration}} · {{server}} dan translyatsiya",
   "Unpair this audiobook?": "Ushbu audiokitob bogʻlanishi uzilsinmi?",
   "Choose from Audiobookshelf": "Audiobookshelf dan tanlash",
@@ -2338,5 +2337,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} soat {{minutes}} daq",
   "{{minutes}}m": "{{minutes}} daq",
   "{{seconds}}s": "{{seconds}} s",
-  "Could not read the length of every track in this audiobook": "Bu audiokitobdagi har bir trek uzunligini o‘qib bo‘lmadi"
+  "Could not read the length of every track in this audiobook": "Bu audiokitobdagi har bir trek uzunligini o‘qib bo‘lmadi",
+  "Manage the streamed audiobook paired with this ebook.": "Ushbu elektron kitobga bog‘langan oqim audiokitobini boshqaring."
 }

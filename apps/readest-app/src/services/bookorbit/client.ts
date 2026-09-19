@@ -102,6 +102,27 @@ export class BookOrbitClient {
     return this.#server;
   }
 
+  /** Origin the assets live on, for the media proxy's allowlist. */
+  get serverUrl(): string {
+    return this.#base;
+  }
+
+  /** The cached bearer, empty until the first login. */
+  get accessToken(): string {
+    return this.#server.accessToken ?? '';
+  }
+
+  /**
+   * Mint a fresh access token.
+   *
+   * Asset bytes are fetched by the media proxy, not by this client, so a token
+   * expiring mid-track produces no 401 here to trigger the usual re-login: the
+   * caller has to ask.
+   */
+  refreshAccessToken(): Promise<void> {
+    return this.#login();
+  }
+
   #fetch(path: string, init: RequestOptions = {}): Promise<Response> {
     return boFetch(`${this.#base}${path}`, {
       ...init,

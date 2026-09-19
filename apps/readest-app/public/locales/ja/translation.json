@@ -2159,7 +2159,6 @@
   "Loading audiobook chapters": "オーディオブックの章を読み込み中",
   "Failed to load the audiobook.": "オーディオブックを読み込めませんでした。",
   "Audiobook unpaired.": "オーディオブックのペアリングを解除しました。",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "この電子書籍とペアリングされたAudiobookshelfのオーディオブックを管理します。",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}}音声章 · {{duration}} · {{server}} からストリーミング",
   "Unpair this audiobook?": "このオーディオブックのペアリングを解除しますか？",
   "Choose from Audiobookshelf": "Audiobookshelf から選択",
@@ -2278,5 +2277,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}}時間{{minutes}}分",
   "{{minutes}}m": "{{minutes}}分",
   "{{seconds}}s": "{{seconds}}秒",
-  "Could not read the length of every track in this audiobook": "このオーディオブックの全トラックの長さを取得できませんでした"
+  "Could not read the length of every track in this audiobook": "このオーディオブックの全トラックの長さを取得できませんでした",
+  "Manage the streamed audiobook paired with this ebook.": "この電子書籍とペアリングされたストリーミング再生のオーディオブックを管理します。"
 }

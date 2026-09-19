@@ -2159,7 +2159,6 @@
   "Loading audiobook chapters": "오디오북 챕터를 불러오는 중",
   "Failed to load the audiobook.": "오디오북을 불러오지 못했습니다.",
   "Audiobook unpaired.": "오디오북 페어링을 해제했습니다.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "이 전자책과 페어링된 Audiobookshelf 오디오북을 관리합니다.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "오디오 챕터 {{chapters}}개 · {{duration}} · {{server}}에서 스트리밍",
   "Unpair this audiobook?": "이 오디오북의 페어링을 해제할까요?",
   "Choose from Audiobookshelf": "Audiobookshelf에서 선택",
@@ -2278,5 +2277,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}}시간 {{minutes}}분",
   "{{minutes}}m": "{{minutes}}분",
   "{{seconds}}s": "{{seconds}}초",
-  "Could not read the length of every track in this audiobook": "이 오디오북의 모든 트랙 길이를 읽지 못했습니다"
+  "Could not read the length of every track in this audiobook": "이 오디오북의 모든 트랙 길이를 읽지 못했습니다",
+  "Manage the streamed audiobook paired with this ebook.": "이 전자책과 연결된 스트리밍 오디오북을 관리합니다."
 }

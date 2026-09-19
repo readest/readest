@@ -2330,7 +2330,6 @@
   "Loading audiobook chapters": "Nalaganje poglavij zvočne knjige",
   "Failed to load the audiobook.": "Zvočne knjige ni bilo mogoče naložiti.",
   "Audiobook unpaired.": "Povezava z zvočno knjigo je odstranjena.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "Upravljajte zvočno knjigo Audiobookshelf, povezano s to e-knjigo.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} zvočnih poglavij · {{duration}} · Pretakanje s strežnika {{server}}",
   "Unpair this audiobook?": "Ali želite odstraniti povezavo s to zvočno knjigo?",
   "Choose from Audiobookshelf": "Izberite iz Audiobookshelfa",
@@ -2458,5 +2457,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
   "{{seconds}}s": "{{seconds}} s",
-  "Could not read the length of every track in this audiobook": "Dolžine vseh posnetkov te zvočne knjige ni bilo mogoče prebrati"
+  "Could not read the length of every track in this audiobook": "Dolžine vseh posnetkov te zvočne knjige ni bilo mogoče prebrati",
+  "Manage the streamed audiobook paired with this ebook.": "Upravljanje pretočne zvočne knjige, povezane s to e-knjigo."
 }

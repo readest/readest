@@ -262,8 +262,12 @@ export class MediaOverlayClient implements TTSClient {
         player = nativeTrackPlayer(this.#player, href);
       } else {
         this.#releaseAudio();
+        // A source with a blob loader may still resolve real URLs (BookOrbit
+        // does when the media proxy is up), and those stream and seek, so the
+        // blob clock is only for the tracks that are not URLs.
         const loadTrack = this.#source.loadTrack;
-        player = loadTrack ? new BlobAudioClock(loadTrack) : new HtmlAudioClock();
+        const streamable = tracks.every((track) => /^https?:\/\//.test(track.url));
+        player = loadTrack && !streamable ? new BlobAudioClock(loadTrack) : new HtmlAudioClock();
       }
       const clock = new MultiTrackNarrationClock(tracks, player);
       await clock.setRate(this.#rate);

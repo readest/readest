@@ -27,13 +27,14 @@ use http_body_util::combinators::BoxBody;
 use http_body_util::{BodyExt, Empty, StreamBody};
 use hyper::body::{Frame, Incoming};
 use hyper::header::{
-    ACCEPT_RANGES, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, ETAG, LAST_MODIFIED, RANGE,
+    ACCEPT_RANGES, AUTHORIZATION, CONTENT_LENGTH, CONTENT_RANGE, CONTENT_TYPE, ETAG, LAST_MODIFIED,
+    RANGE,
 };
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::convert::Infallible;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
@@ -50,11 +51,19 @@ type ProxyBody = BoxBody<Bytes, std::io::Error>;
 // is expected.
 const HEADER_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// The set of upstream origins (`scheme://host:port`) the proxy is allowed to
-/// reach, shared between the command (which extends it) and every connection
-/// (which reads it). Grows as servers are added mid-session; never shrinks,
-/// which is harmless - a removed server's token stops working anyway.
-type Origins = Arc<RwLock<HashSet<String>>>;
+/// The upstream origins (`scheme://host:port`) the proxy is allowed to reach,
+/// each mapped to the `Authorization` header to send there (None for a server
+/// that authenticates another way). Shared between the command (which extends
+/// it) and every connection (which reads it). Grows as servers are added
+/// mid-session; never shrinks, which is harmless - a removed server's token
+/// stops working anyway.
+///
+/// Holding the credential here rather than in the loopback URL is deliberate:
+/// Audiobookshelf carries its token in the upstream URL's own query, but
+/// BookOrbit's asset route is bearer-only, and a URL handed to a media element
+/// ends up in the DOM. Re-registering with a refreshed token also leaves the
+/// URL untouched, so a token expiring mid-track does not interrupt playback.
+type Origins = Arc<RwLock<HashMap<String, Option<String>>>>;
 
 struct Proxy {
     base: String,
@@ -65,20 +74,30 @@ static PROXY: OnceCell<Proxy> = OnceCell::const_new();
 
 /// Base URL (`http://127.0.0.1:<port>/<secret>`) of the media proxy, started
 /// on first use and kept for the life of the process. `origins` are the
-/// configured Audiobookshelf server origins the caller may stream from; they
-/// are merged into the allowlist on every call so a server added mid-session
-/// is reachable without restarting the proxy.
+/// configured server origins the caller may stream from, and `auth` the
+/// `Authorization` header to send to any of them that needs one. Both are
+/// merged into the allowlist on every call, so a server added mid-session is
+/// reachable without restarting the proxy and a refreshed token replaces the
+/// one it supersedes.
 #[tauri::command]
-pub async fn get_media_proxy_base(origins: Vec<String>) -> Result<String, String> {
+pub async fn get_media_proxy_base(
+    origins: Vec<String>,
+    auth: Option<HashMap<String, String>>,
+) -> Result<String, String> {
     let proxy = PROXY
         .get_or_try_init(|| async {
-            let origins: Origins = Arc::new(RwLock::new(HashSet::new()));
+            let origins: Origins = Arc::new(RwLock::new(HashMap::new()));
             let base = start(build_client()?, origins.clone()).await?;
             Ok::<_, String>(Proxy { base, origins })
         })
         .await?;
     if let Ok(mut allow) = proxy.origins.write() {
-        allow.extend(origins);
+        for origin in origins {
+            allow.entry(origin).or_insert(None);
+        }
+        for (origin, header) in auth.unwrap_or_default() {
+            allow.insert(origin, Some(header));
+        }
     }
     Ok(proxy.base.clone())
 }
@@ -184,12 +203,16 @@ fn target_url(query: Option<&str>) -> Option<Url> {
     ok.then_some(url)
 }
 
-/// Whether `url`'s origin (`scheme://host:port`) is one the proxy may reach.
-/// The UUID secret authenticates the caller; this authorizes the destination.
-fn origin_allowed(url: &Url, origins: &RwLock<HashSet<String>>) -> bool {
+/// The credential to use for `url`, or None when its origin is not one the
+/// proxy may reach. The UUID secret authenticates the caller; this authorizes
+/// the destination. `Some(None)` is an allowed origin that needs no header.
+fn origin_credential(
+    url: &Url,
+    origins: &RwLock<HashMap<String, Option<String>>>,
+) -> Option<Option<String>> {
     match origins.read() {
-        Ok(allow) => allow.contains(&url.origin().ascii_serialization()),
-        Err(_) => false,
+        Ok(allow) => allow.get(&url.origin().ascii_serialization()).cloned(),
+        Err(_) => None,
     }
 }
 
@@ -227,16 +250,19 @@ async fn forward(
         return Err(StatusCode::NOT_FOUND);
     }
     let target = target_url(req.uri().query()).ok_or(StatusCode::BAD_REQUEST)?;
-    if !origin_allowed(&target, origins) {
+    let Some(credential) = origin_credential(&target, origins) else {
         log::warn!(
             "media proxy: refused an off-allowlist origin: {}",
             target.origin().ascii_serialization()
         );
         return Err(StatusCode::FORBIDDEN);
-    }
+    };
     let host = target.host_str().unwrap_or_default().to_owned();
 
     let mut upstream = client.get(target.clone());
+    if let Some(value) = credential {
+        upstream = upstream.header(AUTHORIZATION, value);
+    }
     if let Some(range) = req.headers().get(RANGE) {
         upstream = upstream.header(RANGE, range.clone());
     }
@@ -249,7 +275,13 @@ async fn forward(
             target.path()
         );
     }
-    let mut builder = Response::builder().status(status);
+    // The app's page is cross-origin isolated (COEP), which defaults every
+    // cross-origin subresource to same-origin and would otherwise block the
+    // element with ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSame\
+    // OriginByCoep. This proxy exists to serve that page, so it opts in.
+    let mut builder = Response::builder()
+        .status(status)
+        .header("Cross-Origin-Resource-Policy", "cross-origin");
     for name in [
         CONTENT_TYPE,
         CONTENT_LENGTH,
@@ -374,7 +406,9 @@ mod tests {
     /// test's runtime), allowing exactly the given origins, with a client that
     /// ignores the shell's proxy env.
     async fn spawn_proxy(allow: &[String]) -> String {
-        let origins: Origins = Arc::new(RwLock::new(allow.iter().cloned().collect()));
+        let origins: Origins = Arc::new(RwLock::new(
+            allow.iter().map(|o| (o.clone(), None)).collect(),
+        ));
         start(test_client(), origins).await.unwrap()
     }
 
@@ -406,6 +440,11 @@ mod tests {
 
         assert_eq!(res.status(), 206);
         assert_eq!(res.headers()[CONTENT_RANGE], "bytes 100-199/1000");
+        // Without this the COEP-isolated page refuses the response outright.
+        assert_eq!(
+            res.headers()["cross-origin-resource-policy"],
+            "cross-origin"
+        );
         assert_eq!(res.headers()[CONTENT_TYPE], "audio/mpeg");
         assert_eq!(res.headers()[ACCEPT_RANGES], "bytes");
         assert_eq!(res.bytes().await.unwrap().as_ref(), &track()[100..200]);
@@ -560,16 +599,39 @@ mod tests {
 
     #[test]
     fn origin_allowed_matches_scheme_host_and_port() {
-        let allow: RwLock<HashSet<String>> =
-            RwLock::new(HashSet::from(["https://abs.example".to_string()]));
+        let allow: RwLock<HashMap<String, Option<String>>> =
+            RwLock::new(HashMap::from([("https://abs.example".to_string(), None)]));
         let allowed = Url::parse("https://abs.example/api/items/i1/file/2?token=t").unwrap();
         let other_port = Url::parse("https://abs.example:8443/api/items/i1/file/2").unwrap();
         let other_host = Url::parse("https://evil.example/api/items/i1/file/2").unwrap();
         let other_scheme = Url::parse("http://abs.example/api/items/i1/file/2").unwrap();
 
-        assert!(origin_allowed(&allowed, &allow));
-        assert!(!origin_allowed(&other_port, &allow));
-        assert!(!origin_allowed(&other_host, &allow));
-        assert!(!origin_allowed(&other_scheme, &allow));
+        assert!(origin_credential(&allowed, &allow).is_some());
+        assert!(origin_credential(&other_port, &allow).is_none());
+        assert!(origin_credential(&other_host, &allow).is_none());
+        assert!(origin_credential(&other_scheme, &allow).is_none());
+    }
+
+    /// BookOrbit's asset route is bearer-only, so the credential travels with
+    /// the origin rather than in the loopback URL a media element is given.
+    #[test]
+    fn a_registered_origin_carries_its_authorization() {
+        let allow: RwLock<HashMap<String, Option<String>>> = RwLock::new(HashMap::from([
+            ("https://abs.example".to_string(), None),
+            (
+                "http://books.example:13380".to_string(),
+                Some("Bearer jwt".to_string()),
+            ),
+        ]));
+        let bookorbit =
+            Url::parse("http://books.example:13380/api/v1/audiobooks/8/assets/a/content").unwrap();
+        let abs = Url::parse("https://abs.example/api/items/i1/file/2?token=t").unwrap();
+
+        assert_eq!(
+            origin_credential(&bookorbit, &allow),
+            Some(Some("Bearer jwt".to_string()))
+        );
+        // An allowed origin that authenticates another way sends no header.
+        assert_eq!(origin_credential(&abs, &allow), Some(None));
     }
 }

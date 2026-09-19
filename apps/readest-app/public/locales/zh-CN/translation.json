@@ -2174,7 +2174,6 @@
   "Loading audiobook chapters": "正在加载有声书章节",
   "Failed to load the audiobook.": "无法加载有声书。",
   "Audiobook unpaired.": "已取消有声书配对。",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "管理与此电子书配对的 Audiobookshelf 有声书。",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} 个音频章节 · {{duration}} · 来自 {{server}} 的流式播放",
   "Unpair this audiobook?": "要取消此有声书的配对吗？",
   "Choose from Audiobookshelf": "从 Audiobookshelf 选择",
@@ -2278,5 +2277,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} 小时 {{minutes}} 分",
   "{{minutes}}m": "{{minutes}} 分钟",
   "{{seconds}}s": "{{seconds}} 秒",
-  "Could not read the length of every track in this audiobook": "无法读取这本有声书中每个音轨的时长"
+  "Could not read the length of every track in this audiobook": "无法读取这本有声书中每个音轨的时长",
+  "Manage the streamed audiobook paired with this ebook.": "管理与此电子书配对的流式有声书。"
 }

@@ -2330,7 +2330,6 @@
   "Loading audiobook chapters": "Завантаження розділів аудіокниги",
   "Failed to load the audiobook.": "Не вдалося завантажити аудіокнигу.",
   "Audiobook unpaired.": "Аудіокнигу від'єднано.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "Керуйте аудіокнигою Audiobookshelf, зіставленою з цією електронною книгою.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} аудіорозділів · {{duration}} · Трансляція з {{server}}",
   "Unpair this audiobook?": "Від'єднати цю аудіокнигу?",
   "Choose from Audiobookshelf": "Вибрати з Audiobookshelf",
@@ -2458,5 +2457,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} год {{minutes}} хв",
   "{{minutes}}m": "{{minutes}} хв",
   "{{seconds}}s": "{{seconds}} с",
-  "Could not read the length of every track in this audiobook": "Не вдалося визначити тривалість кожної доріжки цієї аудіокниги"
+  "Could not read the length of every track in this audiobook": "Не вдалося визначити тривалість кожної доріжки цієї аудіокниги",
+  "Manage the streamed audiobook paired with this ebook.": "Керування потоковою аудіокнигою, пов’язаною з цією електронною книгою."
 }

@@ -2216,7 +2216,6 @@
   "Loading audiobook chapters": "Hangoskönyv-fejezetek betöltése",
   "Failed to load the audiobook.": "Nem sikerült betölteni a hangoskönyvet.",
   "Audiobook unpaired.": "A hangoskönyv párosítása megszüntetve.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "Kezelje az ehhez az e-könyvhöz párosított Audiobookshelf-hangoskönyvet.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} hangfejezet · {{duration}} · Streamelve innen: {{server}}",
   "Unpair this audiobook?": "Megszünteti a hangoskönyv párosítását?",
   "Choose from Audiobookshelf": "Választás az Audiobookshelfről",
@@ -2338,5 +2337,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} ó {{minutes}} p",
   "{{minutes}}m": "{{minutes}} p",
   "{{seconds}}s": "{{seconds}} mp",
-  "Could not read the length of every track in this audiobook": "Nem sikerült beolvasni a hangoskönyv minden sávjának hosszát"
+  "Could not read the length of every track in this audiobook": "Nem sikerült beolvasni a hangoskönyv minden sávjának hosszát",
+  "Manage the streamed audiobook paired with this ebook.": "Az e-könyvhöz párosított, streamelt hangoskönyv kezelése."
 }

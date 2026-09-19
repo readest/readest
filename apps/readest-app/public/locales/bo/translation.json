@@ -2159,7 +2159,6 @@
   "Loading audiobook chapters": "སྒྲ་དེབ་ཀྱི་ལེའུ་ལེན་བཞིན་པ།",
   "Failed to load the audiobook.": "སྒྲ་དེབ་ལེན་མ་ཐུབ།",
   "Audiobook unpaired.": "སྒྲ་དེབ་ཀྱི་སྦྲེལ་མཐུད་བཤིག་ཟིན།",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "ཨི་དེབ་འདི་དང་སྦྲེལ་མཐུད་ཡོད་པའི་ Audiobookshelf སྒྲ་དེབ་དོ་དམ་བྱོས།",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "སྒྲ་ལེའུ་ {{chapters}} · {{duration}} · {{server}} ནས་རྒྱུན་སྐྱེལ།",
   "Unpair this audiobook?": "སྒྲ་དེབ་འདིའི་སྦྲེལ་མཐུད་བཤིག་དགོས་སམ།",
   "Choose from Audiobookshelf": "Audiobookshelf ནས་འདེམས།",
@@ -2278,5 +2277,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}}ཆུ {{minutes}}སྐར",
   "{{minutes}}m": "{{minutes}}སྐར",
   "{{seconds}}s": "{{seconds}}སྐར་ཆ",
-  "Could not read the length of every track in this audiobook": "སྒྲ་དེབ་འདིའི་གླུ་གྲངས་རེ་རེའི་རིང་ཚད་ཀློག་མ་ཐུབ།"
+  "Could not read the length of every track in this audiobook": "སྒྲ་དེབ་འདིའི་གླུ་གྲངས་རེ་རེའི་རིང་ཚད་ཀློག་མ་ཐུབ།",
+  "Manage the streamed audiobook paired with this ebook.": "དཔེ་དེབ་འདི་དང་མཉམ་སྦྲེལ་བྱས་པའི་རྒྱུན་སྐྱེལ་སྒྲ་དེབ་དོ་དམ་བྱེད།"
 }

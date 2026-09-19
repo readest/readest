@@ -2273,7 +2273,6 @@
   "Loading audiobook chapters": "Se încarcă capitolele cărții audio",
   "Failed to load the audiobook.": "Cartea audio nu a putut fi încărcată.",
   "Audiobook unpaired.": "Cartea audio a fost dezasociată.",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "Gestionează cartea audio Audiobookshelf asociată cu această carte electronică.",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} capitole audio · {{duration}} · Transmis de la {{server}}",
   "Unpair this audiobook?": "Dezasociezi această carte audio?",
   "Choose from Audiobookshelf": "Alege din Audiobookshelf",
@@ -2398,5 +2397,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}} h {{minutes}} min",
   "{{minutes}}m": "{{minutes}} min",
   "{{seconds}}s": "{{seconds}} s",
-  "Could not read the length of every track in this audiobook": "Nu s-a putut citi durata fiecărei piese din această carte audio"
+  "Could not read the length of every track in this audiobook": "Nu s-a putut citi durata fiecărei piese din această carte audio",
+  "Manage the streamed audiobook paired with this ebook.": "Gestionează cartea audio transmisă în flux asociată cu acest ebook."
 }

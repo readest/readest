@@ -2216,7 +2216,6 @@
   "Loading audiobook chapters": "অডিওবুকের অধ্যায় লোড হচ্ছে",
   "Failed to load the audiobook.": "অডিওবুক লোড করা যায়নি।",
   "Audiobook unpaired.": "অডিওবুকের পেয়ারিং সরানো হয়েছে।",
-  "Manage the Audiobookshelf audiobook paired with this ebook.": "এই ই-বুকের সাথে পেয়ার করা Audiobookshelf অডিওবুক পরিচালনা করুন।",
   "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}}টি অডিও অধ্যায় · {{duration}} · {{server}} থেকে স্ট্রিম করা হচ্ছে",
   "Unpair this audiobook?": "এই অডিওবুকের পেয়ারিং সরাবেন?",
   "Choose from Audiobookshelf": "Audiobookshelf থেকে বেছে নিন",
@@ -2338,5 +2337,6 @@
   "{{hours}}h {{minutes}}m": "{{hours}}ঘ {{minutes}}মি",
   "{{minutes}}m": "{{minutes}}মি",
   "{{seconds}}s": "{{seconds}}সে",
-  "Could not read the length of every track in this audiobook": "এই অডিওবইয়ের প্রতিটি ট্র্যাকের দৈর্ঘ্য পড়া যায়নি"
+  "Could not read the length of every track in this audiobook": "এই অডিওবইয়ের প্রতিটি ট্র্যাকের দৈর্ঘ্য পড়া যায়নি",
+  "Manage the streamed audiobook paired with this ebook.": "এই ই-বইয়ের সঙ্গে যুক্ত স্ট্রিম করা অডিওবই পরিচালনা করুন।"
 }

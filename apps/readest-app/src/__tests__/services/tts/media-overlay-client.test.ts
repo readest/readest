@@ -274,6 +274,32 @@ describe('MediaOverlayClient capabilities', () => {
     expect(audio().src).toBe('blob:audio');
     expect(audio().seeks).toEqual([1]);
   });
+
+  // The same source resolves real URLs once the loopback media proxy is up.
+  // Those stream and seek, so they must go to the element directly rather than
+  // being downloaded whole through the blob loader.
+  test('plays a blob-capable source from URLs when it resolves them', async () => {
+    [section] = await makeSection(WORD_SMIL);
+    const loadTrack = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+    await client.init();
+    client.attachSource({
+      loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+      loadTrack,
+      resolveTracks: vi.fn(async () => [
+        { url: 'http://127.0.0.1:9/s/media?u=a1', startOffset: 0, duration: 2 },
+        { url: 'http://127.0.0.1:9/s/media?u=a2', startOffset: 2, duration: 10 },
+      ]),
+    });
+    client.setSection(section);
+
+    const iter = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
+
+    expect(loadTrack).not.toHaveBeenCalled();
+    expect(audio().src).toBe('http://127.0.0.1:9/s/media?u=a2');
+    expect(audio().seeks).toEqual([1]);
+  });
 });
 
 describe('MediaOverlayClient playback', () => {
