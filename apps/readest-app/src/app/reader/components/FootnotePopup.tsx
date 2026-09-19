@@ -14,7 +14,8 @@ import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
-import { getPopupPosition, getPosition, Position } from '@/utils/sel';
+import { getPopupPosition, getPosition, insetRect, Position, Rect } from '@/utils/sel';
+import { Insets } from '@/types/misc';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
@@ -35,7 +36,10 @@ import Popup from '@/components/Popup';
 interface FootnotePopupProps {
   bookKey: string;
   bookDoc: BookDoc;
+  gridInsets?: Insets;
 }
+
+const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 const popupWidth = 360;
 const popupHeight = 88;
@@ -57,7 +61,11 @@ const chromeButtonClassName = clsx(
   'h-8 min-h-8 w-8 p-0 shadow-xs',
 );
 
-const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
+const FootnotePopup: React.FC<FootnotePopupProps> = ({
+  bookKey,
+  bookDoc,
+  gridInsets = ZERO_INSETS,
+}) => {
   const footnoteRef = useRef<HTMLDivElement>(null);
   const footnoteViewRef = useRef<FoliateView | null>(null);
   const trianglePositionRef = useRef<Position | null>(null);
@@ -128,7 +136,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     flashTimerRef.current = await showTransientHighlight(view, href);
   };
 
-  const [gridRect, setGridRect] = useState<DOMRect | null>(null);
+  const [gridRect, setGridRect] = useState<Rect | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
   const sizeAdjustCountRef = useRef(0);
@@ -461,7 +469,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     // console.log('doc link click', detail);
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    const rect = gridFrame.getBoundingClientRect();
+    // Clamp to the safe region, not the physical cell: iPhone Duo's
+    // status-bar strip can otherwise sit under a popup (#6307).
+    const rect = insetRect(gridFrame.getBoundingClientRect(), gridInsets);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = getPosition(detail.a, rect, popupPadding, viewSettings.vertical);
     stopTrackingPopupContentSize();
@@ -554,7 +564,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setSourceHref(null);
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
-    const rect = gridFrame.getBoundingClientRect();
+    // Clamp to the safe region, not the physical cell: iPhone Duo's
+    // status-bar strip can otherwise sit under a popup (#6307).
+    const rect = insetRect(gridFrame.getBoundingClientRect(), gridInsets);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = getPosition(element, rect, popupPadding, viewSettings.vertical);
     const seed = seedPopupSize(viewSettings.vertical);

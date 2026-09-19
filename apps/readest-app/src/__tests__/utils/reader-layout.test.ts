@@ -35,4 +35,28 @@ describe('isForcedMobileLayout', () => {
     setViewport(639, 1000);
     expect(isForcedMobileLayout(true)).toBe(false);
   });
+
+  // iPhone Duo's inner display is landscape-only (951x669) but phone-class on
+  // its short side, so without a pose exception it got the desktop
+  // hover-reveal chrome while every other pose on the same book got the
+  // mobile bars (#6307).
+  it('is true on the Duo inner display in landscape (951x669), a phone-class short side', () => {
+    setViewport(951, 669);
+    expect(isForcedMobileLayout(true)).toBe(true);
+  });
+
+  it('is false on an iPad landscape (1180x820), a tablet-class short side', () => {
+    setViewport(1180, 820);
+    expect(isForcedMobileLayout(true)).toBe(false);
+  });
+
+  it('is false on a phone (393x852), below the sm breakpoint', () => {
+    setViewport(393, 852);
+    expect(isForcedMobileLayout(true)).toBe(false);
+  });
+
+  it('is true on tablet portrait (820x1180), already covered by the width<=height case', () => {
+    setViewport(820, 1180);
+    expect(isForcedMobileLayout(true)).toBe(true);
+  });
 });

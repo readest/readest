@@ -16,12 +16,19 @@ export const TURN_GESTURE_LEFT_INSET_ATTRIBUTE = 'turn-gesture-left-inset';
 
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 
-/** True when `clientX` falls within the left edge strip of the view. */
+/**
+ * True when `clientX` falls within the left edge strip of the view.
+ *
+ * `edgeInset` shifts the zone's start past a vertical system strip — iPhone
+ * Duo reports its status-bar strip as a large left/right safe-area inset
+ * (#6307) — so the gesture doesn't arm underneath it.
+ */
 export const isInLeftEdge = (
   clientX: number,
   viewWidth: number,
   edgeRatio = BRIGHTNESS_GESTURE_EDGE_RATIO,
-): boolean => viewWidth > 0 && clientX <= viewWidth * edgeRatio;
+  edgeInset = 0,
+): boolean => viewWidth > 0 && clientX <= edgeInset + viewWidth * edgeRatio;
 
 /** True when movement is vertical-dominant and past the activation threshold. */
 export const shouldActivate = (

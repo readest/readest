@@ -21,6 +21,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { handleAuthCallback, parseOAuthCallbackUrl } from '@/helpers/auth';
 import { getUserProfilePlan } from '@/utils/access';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
@@ -318,6 +319,7 @@ export default function AuthPage() {
         className={clsx('flex h-full w-full flex-col items-center overflow-y-auto')}
         style={{
           paddingTop: `${safeAreaInsets?.top || 0}px`,
+          ...getHorizontalInsetStyle(safeAreaInsets),
         }}
       >
         <div
@@ -326,7 +328,17 @@ export default function AuthPage() {
             'fixed z-10 flex w-full items-center justify-between py-2 pe-6 ps-4',
             appService?.hasTrafficLight && 'pt-11',
           )}
-          style={{ top: `${safeAreaInsets?.top || 0}px` }}
+          style={{
+            top: `${safeAreaInsets?.top || 0}px`,
+            // Fixed, so it does not inherit the wrapper's inset; keep the
+            // Back button clear of a side status strip (iPhone Duo, #6307).
+            ...(appService?.hasSafeAreaInset
+              ? {
+                  paddingLeft: `${(safeAreaInsets?.left || 0) + 16}px`,
+                  paddingRight: `${(safeAreaInsets?.right || 0) + 24}px`,
+                }
+              : {}),
+          }}
         >
           <button
             aria-label={_('Go Back')}

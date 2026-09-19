@@ -19,7 +19,7 @@ import { getHighlightColorHex } from '../utils/annotatorUtil';
 import { annotationToolQuickActions } from './annotator/AnnotationTools';
 import { AnnotationToolType } from '@/types/annotator';
 import { saveViewSettings } from '@/helpers/settings';
-import { getHeaderTriggerHeight } from '@/utils/insets';
+import { getHeaderTriggerHeight, getHorizontalInsetStyle } from '@/utils/insets';
 import { getBookDataAttributes } from '@/utils/book';
 import { isForcedMobileLayout } from '../utils/mobileLayout';
 import { HighlighterIcon } from '@/components/HighlighterIcon';
@@ -235,6 +235,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           marginTop: systemUIVisible
             ? `${Math.max(insets.top, statusBarHeight)}px`
             : `${insets.top}px`,
+          // iPhone Duo's status-bar strip reports as a large left/right inset
+          // (#6307); clear it without losing the header's own ps-4/pr-4 padding.
+          ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(insets, 16) : {}),
         }}
         onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onMouseLeave={(e) => {

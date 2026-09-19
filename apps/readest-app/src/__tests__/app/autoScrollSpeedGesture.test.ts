@@ -27,6 +27,21 @@ describe('autoScrollSpeedGesture pure helpers', () => {
       expect(isInRightEdge(0, 0)).toBe(false);
       expect(isInRightEdge(5, -10)).toBe(false);
     });
+
+    it('extends the zone boundary by an edge inset, mirroring the left edge (#6307)', () => {
+      const w = 1000;
+      // The strip covers [810, 1000] and is never touchable, so the reachable
+      // part of the zone is [710, 810] — the same 100px width as the uninset
+      // case, just before the strip.
+      expect(isInRightEdge(710, w, AUTO_SCROLL_GESTURE_EDGE_RATIO, 190)).toBe(true);
+      expect(isInRightEdge(709, w, AUTO_SCROLL_GESTURE_EDGE_RATIO, 190)).toBe(false);
+    });
+
+    it('defaults edgeInset to 0, matching the pre-#6307 behavior', () => {
+      const w = 1000;
+      expect(isInRightEdge(900, w, AUTO_SCROLL_GESTURE_EDGE_RATIO)).toBe(true);
+      expect(isInRightEdge(899, w, AUTO_SCROLL_GESTURE_EDGE_RATIO)).toBe(false);
+    });
   });
 
   describe('shouldActivate', () => {

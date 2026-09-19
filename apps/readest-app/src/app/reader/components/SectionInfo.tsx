@@ -141,7 +141,11 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
               }
             : {
                 top: `${band.top}px`,
-                paddingInline: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
+                // Per side: a Duo status strip widens only one inset (#6307).
+                // Half the page margin past the safe-area inset, matching the
+                // paginator's gutter (#6307).
+                paddingLeft: `calc(${horizontalGap / 2}% + ${(contentInsets.left + gridInsets.left) / 2}px)`,
+                paddingRight: `calc(${horizontalGap / 2}% + ${(contentInsets.right + gridInsets.right) / 2}px)`,
                 width: '100%',
                 height: `${band.height}px`,
               }),

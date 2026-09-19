@@ -40,6 +40,8 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
         marginTop: systemUIVisible
           ? `${Math.max(gridInsets.top, statusBarHeight)}px`
           : `${gridInsets.top}px`,
+        // Clears the Duo status-bar strip / camera cutout (right inset, #6307).
+        right: `${gridInsets.right + 16}px`,
       }}
     >
       <button

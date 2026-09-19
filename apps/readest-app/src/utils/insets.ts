@@ -72,6 +72,35 @@ export const getHeaderTriggerHeight = (topInset: number, viewSettings: ViewSetti
  * tablet/desktop panel anchored to the top) clears the safe-area inset, growing
  * to the status bar height when the system UI is visible.
  */
+/**
+ * Physical horizontal padding that keeps an edge-to-edge bar, sheet or panel
+ * clear of a vertical system strip. iPhone Duo puts the status bar (and the
+ * cover display's camera) in a strip along one long edge and reports it as a
+ * large left or right safe-area inset, which can flip with rotation or Split
+ * View; landscape notches report the same shape. Safe-area insets are
+ * physical, so this is `paddingLeft`/`paddingRight`, never start/end.
+ */
+export const getHorizontalInsetStyle = (
+  insets: Insets | null | undefined,
+  basePx = 0,
+): { paddingLeft: string; paddingRight: string } => ({
+  paddingLeft: `${(insets?.left ?? 0) + basePx}px`,
+  paddingRight: `${(insets?.right ?? 0) + basePx}px`,
+});
+
+/**
+ * Insets for a book cell's page area. A two-column spread is inset by the
+ * larger horizontal inset on both sides so it stays centred on the display:
+ * on iPhone Duo's inner display that puts the spine on the fold (Apple: match
+ * the symmetry of the inner display, #6307). A single column keeps the
+ * asymmetric inset and the width it frees.
+ */
+export const getPageAreaInsets = (insets: Insets, isSpread: boolean): Insets => {
+  if (!isSpread || insets.left === insets.right) return insets;
+  const side = Math.max(insets.left, insets.right);
+  return { ...insets, left: side, right: side };
+};
+
 export const getPanelTopInset = ({
   isMobile,
   isFullHeightInMobile,

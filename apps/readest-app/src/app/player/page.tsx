@@ -20,6 +20,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useThemeStore } from '@/store/themeStore';
 import { isAudiobook } from '@/utils/audiobook';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
@@ -328,6 +329,8 @@ const PlayerRoute = () => {
       style={{
         paddingTop: `${safeAreaInsets?.top || 0}px`,
         paddingBottom: `${safeAreaInsets?.bottom || 0}px`,
+        // Clear a side status strip (iPhone Duo, #6307).
+        ...getHorizontalInsetStyle(safeAreaInsets),
       }}
     >
       {libraryLoaded && book && isAudiobook(book) && session ? (

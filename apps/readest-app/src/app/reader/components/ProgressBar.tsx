@@ -229,8 +229,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
             }
           : {
-              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
-              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right / 2}px)`,
+              // Half the page margin past the safe-area inset, matching the
+              // paginator's gutter (#6307). Physical sides: the insets are.
+              paddingLeft: `calc(${horizontalGap / 2}% + ${(contentInsets.left + gridInsets.left) / 2}px)`,
+              paddingRight: `calc(${horizontalGap / 2}% + ${(contentInsets.right + gridInsets.right) / 2}px)`,
               paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
             }),
       }}

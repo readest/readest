@@ -12,6 +12,8 @@ import { saveSysSettings } from '@/helpers/settings';
 import { themes } from '@/styles/themes';
 import { debounce } from '@/utils/debounce';
 import { nextThemeMode } from '@/utils/ambientLight';
+import { getHorizontalInsetStyle } from '@/utils/insets';
+import { Insets } from '@/types/misc';
 import Slider from '@/components/Slider';
 
 const SCREEN_BRIGHTNESS_LIMITS = {
@@ -24,12 +26,14 @@ interface ColorPanelProps {
   actionTab: string;
   bottomOffset: string;
   forceMobileLayout: boolean;
+  gridInsets: Insets;
 }
 
 export const ColorPanel: React.FC<ColorPanelProps> = ({
   actionTab,
   bottomOffset,
   forceMobileLayout,
+  gridInsets,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -98,6 +102,9 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
         bottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 64px)`
           : bottomOffset,
+        // Keep the panel clear of a side status strip (iPhone Duo, #6307);
+        // base matches px-4.
+        ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(gridInsets, 16) : {}),
       }}
     >
       {appService?.hasScreenBrightness && (

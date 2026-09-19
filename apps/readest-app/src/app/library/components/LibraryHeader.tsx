@@ -101,6 +101,11 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         marginTop: appService?.hasSafeAreaInset
           ? `max(${insets.top}px, ${systemUIVisible ? statusBarHeight : 0}px)`
           : '0px',
+        // Keep the trailing buttons clear of a side status strip / camera
+        // cutout (iPhone Duo, #6307); bases match pl-0 / pr-4.
+        ...(appService?.hasSafeAreaInset
+          ? { paddingLeft: `${insets.left}px`, paddingRight: `${insets.right + 16}px` }
+          : {}),
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>

@@ -94,6 +94,10 @@ export const useSafeAreaInsets = () => {
     };
     window.addEventListener('focus', handleFocus);
 
+    // Listen for resizes: folding or unfolding iPhone Duo and entering Split
+    // View move the status strip to another edge without an orientation event.
+    window.addEventListener('resize', onUpdateInsets);
+
     return () => {
       if (window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', onUpdateInsets);
@@ -102,6 +106,7 @@ export const useSafeAreaInsets = () => {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('resize', onUpdateInsets);
     };
   }, [onUpdateInsets]);
 

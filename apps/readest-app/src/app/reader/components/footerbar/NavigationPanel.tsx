@@ -8,6 +8,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { NavigationHandlers } from './types';
 import { getNavigationIcon } from './utils';
+import { getHorizontalInsetStyle } from '@/utils/insets';
+import { Insets } from '@/types/misc';
 import Button from '@/components/Button';
 import Slider from '@/components/Slider';
 import PageJumpInput from './PageJumpInput';
@@ -21,6 +23,7 @@ interface NavigationPanelProps {
   bottomOffset: string;
   sliderHeight: number;
   forceMobileLayout: boolean;
+  gridInsets: Insets;
 }
 
 export const NavigationPanel: React.FC<NavigationPanelProps> = ({
@@ -32,6 +35,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   bottomOffset,
   sliderHeight,
   forceMobileLayout,
+  gridInsets,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -78,6 +82,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
         bottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 64px)`
           : bottomOffset,
+        ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(gridInsets, 16) : {}),
       }}
     >
       <div className='flex w-full flex-col items-center gap-y-4'>

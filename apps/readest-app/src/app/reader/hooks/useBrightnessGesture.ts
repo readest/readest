@@ -3,6 +3,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import type { Renderer } from '@/types/view';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { saveSysSettings } from '@/helpers/settings';
 import { setLayeredTurnTouchClaimed } from '@/app/reader/utils/iframeEventHandlers';
@@ -23,6 +24,9 @@ interface LatestState {
   scrolled: boolean;
   autoBrightness: boolean;
   renderer: Renderer | undefined;
+  // Left safe-area inset (px): iPhone Duo reports its status-bar strip as a
+  // large left/right inset (#6307), so the gesture zone must start past it.
+  edgeInset: number;
 }
 
 /**
@@ -41,6 +45,7 @@ export const useBrightnessGesture = (bookKey: string) => {
   const { settings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
   const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
+  const { safeAreaInsets } = useThemeStore();
 
   const hasScreenBrightness = !!appService?.hasScreenBrightness;
   const viewSettings = getViewSettings(bookKey);
@@ -56,12 +61,14 @@ export const useBrightnessGesture = (bookKey: string) => {
     scrolled: false,
     autoBrightness: false,
     renderer: undefined,
+    edgeInset: 0,
   });
   latestRef.current = {
     enabled: brightnessGestureEnabled,
     scrolled: !!viewSettings?.scrolled,
     autoBrightness: settings.autoScreenBrightness,
     renderer,
+    edgeInset: safeAreaInsets?.left || 0,
   };
 
   useEffect(() => {
@@ -182,7 +189,12 @@ export const useBrightnessGesture = (bookKey: string) => {
         viewHeightRef.current = window.innerHeight;
         startXRef.current = t.screenX;
         startYRef.current = t.screenY;
-        armedRef.current = isInLeftEdge(t.screenX, viewWidth);
+        armedRef.current = isInLeftEdge(
+          t.screenX,
+          viewWidth,
+          BRIGHTNESS_GESTURE_EDGE_RATIO,
+          latestRef.current.edgeInset,
+        );
         const applied = useDeviceControlStore.getState().lastScreenBrightness;
         startValueRef.current = applied ?? seedRef.current;
       };

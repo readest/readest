@@ -361,6 +361,9 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
           <div
             ref={ribbonBoxRef}
             className='bookmark-pull-ribbon absolute right-0 top-0 flex w-8 justify-center sm:w-6'
+            // Mirrors the resting Ribbon: keep clear of the Duo cover
+            // display's top-trailing camera cutout (#6307).
+            style={{ right: `${safeAreaInsets?.right || 0}px` }}
           >
             <svg
               ref={svgRef}

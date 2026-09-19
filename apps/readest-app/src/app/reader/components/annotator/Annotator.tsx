@@ -42,6 +42,7 @@ import {
   getRangeRectInWebview,
   getRangeTextStyleInWebview,
   getTextFromRange,
+  insetRect,
 } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/services/nav';
@@ -119,9 +120,12 @@ import {
 } from '@/utils/readera';
 import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
 
-const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
+const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?: Insets }> = ({
   bookKey,
   contentInsets,
+  gridInsets = ZERO_INSETS,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -267,7 +271,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!selection || !selection.text) return;
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    const rect = gridFrame.getBoundingClientRect();
+    // Clamp to the safe region, not the physical cell: iPhone Duo's
+    // status-bar strip can otherwise sit under a popup (#6307).
+    const rect = insetRect(gridFrame.getBoundingClientRect(), gridInsets);
     const triangPos = getPosition(selection, rect, trianglePadding, viewSettings.vertical);
     const annotPopupPos = getPopupPosition(
       triangPos,
@@ -1088,7 +1094,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       pendingWordLensDictRef.current = false;
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
-      const rect = gridFrame.getBoundingClientRect();
+      // Clamp to the safe region, not the physical cell: iPhone Duo's
+      // status-bar strip can otherwise sit under a popup (#6307).
+      const rect = insetRect(gridFrame.getBoundingClientRect(), gridInsets);
       const triangPos = getPosition(selection, rect, trianglePadding, viewSettings.vertical);
       const annotPopupPos = getPopupPosition(
         triangPos,

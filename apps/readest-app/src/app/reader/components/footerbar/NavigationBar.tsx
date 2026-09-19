@@ -12,6 +12,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Button from '@/components/Button';
 import { Insets } from '@/types/misc';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 
 interface NavigationBarProps {
   bookKey: string;
@@ -50,6 +51,9 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
         paddingBottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 16px)`
           : navPadding,
+        // iPhone Duo's status-bar strip reports as a large left/right inset
+        // (#6307); clear it without losing the row's own px-8 padding.
+        ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(gridInsets, 32) : {}),
       }}
     >
       {isSideBarVisible && isSideBarPinned ? null : (

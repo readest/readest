@@ -614,6 +614,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           className='eink-bordered absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white transition-all duration-300 hover:bg-black/70'
           aria-label={_('Previous Image')}
           title={_('Previous Image')}
+          // Clears the Duo status-bar strip, reported as a left inset (#6307).
+          style={{ left: `${gridInsets.left + 16}px` }}
         >
           <IoChevronBack className='h-8 w-8' />
         </button>
@@ -628,6 +630,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           className='eink-bordered absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white transition-all duration-300 hover:bg-black/70'
           aria-label={_('Next Image')}
           title={_('Next Image')}
+          // Clears the Duo status-bar strip, reported as a right inset (#6307).
+          style={{ right: `${gridInsets.right + 16}px` }}
         >
           <IoChevronForward className='h-8 w-8' />
         </button>

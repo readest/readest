@@ -1,4 +1,5 @@
 import { getPdfTextFromRange, getPdfTextLayer } from '@/utils/pdfText';
+import { Insets } from '@/types/misc';
 
 export interface Frame {
   top: number;
@@ -99,6 +100,24 @@ const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => 
   return {
     x: Math.max(padding, Math.min(point.x, rect.right - rect.left - padding)),
     y: Math.max(padding, Math.min(point.y, rect.bottom - rect.top - padding)),
+  };
+};
+
+/**
+ * Shrink a rect by physical insets, clamping so it never inverts. Used to
+ * clamp popup positioning (`getPosition`/`getPopupPosition`) to a grid cell's
+ * safe region instead of its physical bounds — iPhone Duo's vertical
+ * status-bar strip (and cover-display camera cutout) reports as a large
+ * left/right inset that would otherwise sit under a popup (#6307).
+ */
+export const insetRect = (rect: Rect, insets: Insets): Rect => {
+  const left = rect.left + insets.left;
+  const top = rect.top + insets.top;
+  return {
+    left,
+    top,
+    right: Math.max(left, rect.right - insets.right),
+    bottom: Math.max(top, rect.bottom - insets.bottom),
   };
 };
 

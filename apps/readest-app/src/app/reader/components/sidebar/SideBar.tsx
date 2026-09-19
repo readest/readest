@@ -8,7 +8,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
-import { getPanelTopInset } from '@/utils/insets';
+import { getHorizontalInsetStyle, getPanelTopInset } from '@/utils/insets';
 import { useEnv } from '@/context/EnvContext';
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
 import { usePanelResize } from '@/hooks/usePanelResize';
@@ -207,6 +207,9 @@ const SideBar = ({}) => {
             statusBarHeight,
             safeAreaInsets,
           })}px`,
+          // iPhone Duo's status-bar strip reports as a large left/right inset
+          // (#6307); a no-op on the edge the strip isn't on.
+          ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(safeAreaInsets) : {}),
         }}
       >
         <style jsx>{`

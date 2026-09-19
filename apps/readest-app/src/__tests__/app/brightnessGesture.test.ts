@@ -22,6 +22,21 @@ describe('brightnessGesture pure helpers', () => {
       expect(isInLeftEdge(0, 0)).toBe(false);
       expect(isInLeftEdge(5, -10)).toBe(false);
     });
+
+    it('extends the zone boundary by an edge inset (#6307)', () => {
+      const w = 1000;
+      // The strip covers [0, 190] and is never touchable, so the reachable
+      // part of the zone is [190, 290] — the same 100px width as the
+      // uninset case, just past the strip.
+      expect(isInLeftEdge(290, w, BRIGHTNESS_GESTURE_EDGE_RATIO, 190)).toBe(true);
+      expect(isInLeftEdge(291, w, BRIGHTNESS_GESTURE_EDGE_RATIO, 190)).toBe(false);
+    });
+
+    it('defaults edgeInset to 0, matching the pre-#6307 behavior', () => {
+      const w = 1000;
+      expect(isInLeftEdge(100, w, BRIGHTNESS_GESTURE_EDGE_RATIO)).toBe(true);
+      expect(isInLeftEdge(101, w, BRIGHTNESS_GESTURE_EDGE_RATIO)).toBe(false);
+    });
   });
 
   describe('shouldActivate', () => {

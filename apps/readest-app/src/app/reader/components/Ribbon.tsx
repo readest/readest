@@ -13,6 +13,9 @@ const Ribbon: React.FC = () => {
         'ribbon pointer-events-none absolute right-0 top-0 z-20 flex w-8 justify-center sm:w-6',
       )}
       style={{
+        // Keep clear of the Duo cover display's camera cutout, reported as a
+        // right inset (#6307).
+        right: `${safeAreaInsets?.right || 0}px`,
         height: `${(safeAreaInsets?.top || 0) + 44}px`,
       }}
     >

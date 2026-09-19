@@ -12,6 +12,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { eventDispatcher } from '@/utils/event';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 import { Overlay } from './Overlay';
 
 const VELOCITY_THRESHOLD = 0.5;
@@ -328,6 +329,11 @@ const Dialog: React.FC<DialogProps> = ({
             appService?.hasSafeAreaInset && isFullHeightInMobile
               ? `${Math.max(safeAreaInsets?.top || 0, systemUIVisible ? statusBarHeight : 0)}px`
               : '0px',
+          // The mobile sheet is edge to edge; pad (not margin) it clear of a
+          // side status strip / camera cutout (iPhone Duo, #6307).
+          ...(appService?.hasSafeAreaInset && isMobile
+            ? getHorizontalInsetStyle(safeAreaInsets)
+            : {}),
           ...(isMobile
             ? snapHeight
               ? { height: `${snapHeight * 100}%`, top: 'auto', bottom: 0 }

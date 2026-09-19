@@ -893,9 +893,14 @@ const FoliateViewer: React.FC<{
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
     const topMargin = (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
-    const rightMargin = insets.right + moreRightInset;
+    // Horizontal safe-area insets are applied to the viewer container itself
+    // (see the render below), not folded into these margins: the paginator
+    // treats a horizontal margin as a gutter and puts only half of it (a
+    // quarter in two-column mode) on the outer edge, which left text under a
+    // side status strip on iPhone Duo (#6307).
+    const rightMargin = viewInsets.right + moreRightInset;
     const bottomMargin = (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset;
-    const leftMargin = insets.left + moreLeftInset;
+    const leftMargin = viewInsets.left + moreLeftInset;
     viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
@@ -1153,6 +1158,9 @@ const FoliateViewer: React.FC<{
         style={{
           paddingTop: scrollMargins.top,
           paddingBottom: scrollMargins.bottom,
+          // Keep the whole page area inside the horizontal safe area (#6307).
+          left: `${gridInsets.left}px`,
+          width: `calc(100% - ${gridInsets.left + gridInsets.right}px)`,
         }}
         {...mouseHandlers}
         {...touchHandlers}

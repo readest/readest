@@ -8,6 +8,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
+import { getHorizontalInsetStyle } from '@/utils/insets';
+import { Insets } from '@/types/misc';
 import Slider from '@/components/Slider';
 
 const FONT_SIZE_LIMITS = {
@@ -35,6 +37,7 @@ interface FontLayoutPanelProps {
   bottomOffset: string;
   marginIconSize: number;
   forceMobileLayout: boolean;
+  gridInsets: Insets;
 }
 
 export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
@@ -43,6 +46,7 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   bottomOffset,
   marginIconSize,
   forceMobileLayout,
+  gridInsets,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -128,6 +132,7 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
         bottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 64px)`
           : bottomOffset,
+        ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(gridInsets, 16) : {}),
       }}
     >
       <Slider

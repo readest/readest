@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useThemeStore } from '@/store/themeStore';
 import {
+  AUTO_SCROLL_GESTURE_EDGE_RATIO,
   computeSpeed,
   isInRightEdge,
   shouldActivate,
@@ -23,10 +25,16 @@ const OVERLAY_HIDE_DELAY_MS = 600;
  */
 export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
   const [overlayVisible, setOverlayVisible] = useState(false);
+  const { safeAreaInsets } = useThemeStore();
 
   // The once-attached listener reads the latest session state and setter here.
   const latestRef = useRef(autoScroll);
   latestRef.current = autoScroll;
+
+  // Right safe-area inset (px): iPhone Duo reports its status-bar strip as a
+  // large left/right inset (#6307), so the gesture zone must end before it.
+  const edgeInsetRef = useRef(0);
+  edgeInsetRef.current = safeAreaInsets?.right || 0;
 
   // Per-gesture state.
   const armedRef = useRef(false);
@@ -61,7 +69,12 @@ export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
         viewHeightRef.current = window.innerHeight;
         startXRef.current = t.screenX;
         startYRef.current = t.screenY;
-        armedRef.current = isInRightEdge(t.screenX, viewWidth);
+        armedRef.current = isInRightEdge(
+          t.screenX,
+          viewWidth,
+          AUTO_SCROLL_GESTURE_EDGE_RATIO,
+          edgeInsetRef.current,
+        );
         startSpeedRef.current = latestRef.current.speed;
       };
 

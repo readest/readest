@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
@@ -10,6 +11,11 @@ export type ToastType = 'info' | 'success' | 'warning' | 'error';
 // `top` below overrides, so the toast carries the gap itself.
 const TOP_BAR_HEIGHT = 44;
 const TOAST_GAP = 16;
+// daisyUI's `.toast-end` gap (`inset-inline-end: 1rem`), which the inline
+// `right` below re-applies on top of the safe-area inset.
+const TOAST_EDGE_GAP = 16;
+// `sm:toast-end` is only active from Tailwind's `sm` breakpoint.
+const TOAST_SM_BREAKPOINT = 640;
 
 export const Toast = () => {
   const { safeAreaInsets } = useThemeStore();
@@ -135,6 +141,14 @@ export const Toast = () => {
           top: toastClassMap[toastType].includes('toast-top')
             ? `${(safeAreaInsets?.top || 0) + TOP_BAR_HEIGHT + TOAST_GAP}px`
             : undefined,
+          // Keep a trailing toast clear of a right-side status strip (iPhone
+          // Duo, #6307). Below `sm` the toast is centered, so leave `right`
+          // unset there or it fights `toast-center`.
+          right:
+            toastClassMap[toastType].includes('toast-end') &&
+            window.innerWidth >= TOAST_SM_BREAKPOINT
+              ? getHorizontalInsetStyle(safeAreaInsets, TOAST_EDGE_GAP).paddingRight
+              : undefined,
         }}
       >
         <div

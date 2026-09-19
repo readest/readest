@@ -15,7 +15,7 @@ import { usePanelResize } from '@/hooks/usePanelResize';
 import { eventDispatcher } from '@/utils/event';
 import { BookNote } from '@/types/book';
 import { getBookDirFromLanguage } from '@/utils/book';
-import { getPanelTopInset } from '@/utils/insets';
+import { getHorizontalInsetStyle, getPanelTopInset } from '@/utils/insets';
 import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -210,6 +210,9 @@ const Notebook: React.FC = () => {
             statusBarHeight,
             safeAreaInsets,
           })}px`,
+          // iPhone Duo's status-bar strip reports as a large left/right inset
+          // (#6307); a no-op on the edge the strip isn't on.
+          ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(safeAreaInsets) : {}),
         }}
       >
         <style jsx>{`

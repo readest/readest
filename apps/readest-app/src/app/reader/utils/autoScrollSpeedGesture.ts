@@ -24,12 +24,20 @@ const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 const clampSpeed = (speed: number): number =>
   Math.max(MIN_AUTO_SCROLL_SPEED, Math.min(MAX_AUTO_SCROLL_SPEED, speed));
 
-/** True when `clientX` falls within the right edge strip of the view. */
+/**
+ * True when `clientX` falls within the right edge strip of the view.
+ *
+ * `edgeInset` pulls the zone's start in from the physical edge, past a
+ * vertical system strip — iPhone Duo reports its status-bar strip as a large
+ * left/right safe-area inset (#6307) — so the gesture doesn't arm underneath
+ * it.
+ */
 export const isInRightEdge = (
   clientX: number,
   viewWidth: number,
   edgeRatio = AUTO_SCROLL_GESTURE_EDGE_RATIO,
-): boolean => viewWidth > 0 && clientX >= viewWidth * (1 - edgeRatio);
+  edgeInset = 0,
+): boolean => viewWidth > 0 && clientX >= viewWidth * (1 - edgeRatio) - edgeInset;
 
 /** True when movement is vertical-dominant and past the activation threshold. */
 export const shouldActivate = (

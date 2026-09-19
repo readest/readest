@@ -60,6 +60,7 @@ import { closeOPDSBrowser, stashOPDSReturnTarget } from './utils/opdsClose';
 import { findExistingBookForPublication } from './utils/findExistingBook';
 import Dialog from '@/components/Dialog';
 import { uniqueId } from '@/utils/misc';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -1005,6 +1006,8 @@ export default function BrowserPage() {
         className='relative top-0 z-40 w-full'
         style={{
           paddingTop: `${safeAreaInsets?.top || 0}px`,
+          // Clear a side status strip (iPhone Duo, #6307).
+          ...getHorizontalInsetStyle(safeAreaInsets),
         }}
       >
         <Navigation

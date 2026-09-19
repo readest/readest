@@ -43,6 +43,32 @@ style={{
 }}
 ```
 
+### Horizontal Inset Rules
+
+Safe-area insets are physical: `left`/`right`, never start/end. They are normally 0 on a
+phone held portrait, but a landscape notch reports one, and iPhone Duo reports a large one
+on the cover display and on the inner display in landscape, where the system moves the
+status bar into a vertical strip along one edge (with the cover display's camera in the
+same corner). That edge can flip with rotation or Split View, so read both values every
+time (#6307).
+
+For a full-width bar, sheet or panel, pad it by the insets with
+`getHorizontalInsetStyle()` from `src/utils/insets.ts`, passing the element's existing
+horizontal padding as `basePx` — an inline `paddingLeft`/`paddingRight` replaces the
+Tailwind class on that element — and gate it on mobile so desktop layouts keep their
+state-dependent padding:
+
+```tsx
+style={{
+  ...(appService?.hasSafeAreaInset ? getHorizontalInsetStyle(insets, 16) : {}),
+}}
+```
+
+For an element anchored to one edge (a corner ribbon, a floating button column, a popup
+clamp), offset that edge by the matching inset instead of padding: `right: ${insets.right + 16}px`.
+Popups positioned inside a grid cell should clamp to the cell rect shrunk by the cell's
+`gridInsets` (`insetRect()` in `src/utils/sel.ts`).
+
 ### Passing `gridInsets`
 
 When creating overlay components (image viewers, table viewers, zoom controls, etc.), always pass `gridInsets` as a prop so they can position their controls correctly:

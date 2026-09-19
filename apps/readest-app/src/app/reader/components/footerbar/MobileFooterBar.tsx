@@ -27,6 +27,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
         actionTab={actionTab}
         bottomOffset={bottomOffset}
         forceMobileLayout={forceMobileLayout}
+        gridInsets={gridInsets}
       />
       <NavigationPanel
         bookKey={bookKey}
@@ -37,6 +38,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
         bottomOffset={bottomOffset}
         sliderHeight={sliderHeight}
         forceMobileLayout={forceMobileLayout}
+        gridInsets={gridInsets}
       />
       <FontLayoutPanel
         bookKey={bookKey}
@@ -44,6 +46,7 @@ const MobileFooterBar: React.FC<FooterBarChildProps> = ({
         bottomOffset={bottomOffset}
         marginIconSize={marginIconSize}
         forceMobileLayout={forceMobileLayout}
+        gridInsets={gridInsets}
       />
       <NavigationBar
         bookKey={bookKey}

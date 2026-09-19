@@ -220,6 +220,11 @@ const TTSMiniPlayer = ({
       style={{
         bottom: `${bottomOffset}px`,
         marginBottom: `${safeAreaMargin}px`,
+        // iPhone Duo's status-bar strip reports as a large left/right inset
+        // (#6307); clear it without losing the card's inset-x-4 margin.
+        ...(appService?.hasSafeAreaInset
+          ? { left: `${16 + gridInsets.left}px`, right: `${16 + gridInsets.right}px` }
+          : {}),
       }}
       onMouseEnter={() => !appService?.isMobile && setHoveredBookKey('')}
       onTouchStart={() => !appService?.isMobile && setHoveredBookKey('')}

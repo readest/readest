@@ -47,6 +47,7 @@ describe('FontLayoutPanel More Settings', () => {
         bottomOffset='64px'
         marginIconSize={20}
         forceMobileLayout={false}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
       />,
     );
 

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ViewSettings } from '@/types/book';
-import { getHeaderBandGeometry, getHeaderTriggerHeight, getPanelTopInset } from '@/utils/insets';
+import {
+  getHeaderBandGeometry,
+  getHeaderTriggerHeight,
+  getHorizontalInsetStyle,
+  getPageAreaInsets,
+  getPanelTopInset,
+} from '@/utils/insets';
 
 const insets = (top: number) => ({ top, right: 0, bottom: 0, left: 0 });
 
@@ -172,5 +178,50 @@ describe('getPanelTopInset', () => {
         safeAreaInsets: null,
       }),
     ).toBe(0);
+  });
+});
+
+describe('getHorizontalInsetStyle (#6307)', () => {
+  it('treats missing insets as zero', () => {
+    expect(getHorizontalInsetStyle(null)).toEqual({ paddingLeft: '0px', paddingRight: '0px' });
+    expect(getHorizontalInsetStyle(undefined)).toEqual({ paddingLeft: '0px', paddingRight: '0px' });
+  });
+
+  it('adds the base padding to each side independently', () => {
+    // iPhone Duo cover-display strip + camera cutout: right-only inset.
+    expect(getHorizontalInsetStyle({ top: 0, right: 76, bottom: 0, left: 0 }, 16)).toEqual({
+      paddingLeft: '16px',
+      paddingRight: '92px',
+    });
+  });
+
+  it('applies a left-only inset without adding padding on the right', () => {
+    expect(getHorizontalInsetStyle({ top: 0, right: 0, bottom: 0, left: 44 })).toEqual({
+      paddingLeft: '44px',
+      paddingRight: '0px',
+    });
+  });
+});
+
+describe('getPageAreaInsets (#6307)', () => {
+  const duoInner = { top: 0, right: 84, bottom: 34, left: 0 };
+
+  it('keeps a single column asymmetric so it can use the freed width', () => {
+    expect(getPageAreaInsets(duoInner, false)).toBe(duoInner);
+  });
+
+  it('centres a spread by insetting both sides by the larger inset', () => {
+    expect(getPageAreaInsets(duoInner, true)).toEqual({ top: 0, right: 84, bottom: 34, left: 84 });
+    expect(getPageAreaInsets({ ...duoInner, right: 0, left: 84 }, true)).toEqual({
+      top: 0,
+      right: 84,
+      bottom: 34,
+      left: 84,
+    });
+  });
+
+  it('returns the same object when already symmetric', () => {
+    const even = { top: 59, right: 0, bottom: 34, left: 0 };
+    expect(getPageAreaInsets(even, true)).toBe(even);
   });
 });

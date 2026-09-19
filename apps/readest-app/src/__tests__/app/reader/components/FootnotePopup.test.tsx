@@ -95,10 +95,14 @@ vi.mock('@/styles/fonts', () => ({
   mountCustomFont: vi.fn(),
 }));
 
-vi.mock('@/utils/sel', () => ({
-  getPosition: () => ({ point: { x: 10, y: 10 }, dir: 'down' }),
-  getPopupPosition: () => ({ point: { x: 10, y: 10 }, dir: 'down' }),
-}));
+vi.mock('@/utils/sel', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/sel')>();
+  return {
+    ...actual,
+    getPosition: () => ({ point: { x: 10, y: 10 }, dir: 'down' }),
+    getPopupPosition: () => ({ point: { x: 10, y: 10 }, dir: 'down' }),
+  };
+});
 
 vi.mock('@/app/reader/utils/transientHighlight', () => ({
   showTransientHighlight: hoisted.showTransientHighlight,
