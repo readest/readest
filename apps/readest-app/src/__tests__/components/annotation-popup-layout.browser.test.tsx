@@ -302,3 +302,56 @@ describe('AnnotationPopup anchoring', () => {
     expect(hit?.dataset['testid']).toBe('handle');
   });
 });
+
+// A full-page selection clamps the toolbar to the cell edge. Its floating
+// style/color strip must flip inward rather than disappear outside the cell.
+describe('AnnotationPopup full-page selection (#6162)', () => {
+  it.each([
+    'up',
+    'down',
+    'left',
+    'right',
+  ] as const)('keeps the %s style/color strip inside the book cell and clickable', async (dir) => {
+    const vertical = dir === 'left' || dir === 'right';
+    const onHighlight = vi.fn();
+    const point = {
+      x: dir === 'right' ? 356 : 10,
+      y: dir === 'down' ? 446 : 10,
+    };
+    const { container } = render(
+      <div
+        data-eink='true'
+        style={{ position: 'fixed', left: 40, top: 20, width: 410, height: 500 }}
+      >
+        <AnnotationPopup
+          bookKey='test'
+          dir='ltr'
+          isVertical={vertical}
+          buttons={toolButtons}
+          notes={[]}
+          position={{ dir, point }}
+          trianglePosition={{ dir, point: { x: point.x, y: point.y + 20 } }}
+          highlightOptionsVisible
+          selectedStyle='highlight'
+          selectedColor='yellow'
+          popupWidth={POPUP_W}
+          popupHeight={POPUP_H}
+          onHighlight={onHighlight}
+          onDismiss={vi.fn()}
+        />
+      </div>,
+    );
+    const cell = container.firstElementChild as HTMLElement;
+    const options = container.querySelector<HTMLElement>('.highlight-options')!;
+    await vi.waitFor(() => {
+      const bounds = cell.getBoundingClientRect();
+      const rect = options.getBoundingClientRect();
+      expect(rect.top).toBeGreaterThanOrEqual(bounds.top);
+      expect(rect.bottom).toBeLessThanOrEqual(bounds.bottom);
+      expect(rect.left).toBeGreaterThanOrEqual(bounds.left);
+      expect(rect.right).toBeLessThanOrEqual(bounds.right);
+    });
+    await page.elementLocator(options.querySelector('button')!).click();
+    await vi.waitFor(() => expect(onHighlight).toHaveBeenCalledWith(true));
+  });
+});
