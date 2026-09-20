@@ -13,7 +13,7 @@
  * surface on the frame it opened.
  */
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import type { TextSelection } from '@/utils/sel';
@@ -35,6 +35,7 @@ const h = vi.hoisted(() => ({
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(),
   deselect: vi.fn(),
+  getContents: vi.fn((): { doc: Document }[] => []),
   restoreSelectionRange: vi.fn(() => true),
   isTextSelected: { current: true },
   // Swapped per test: the fixed-layout branch of `onLoad` used to wire PDF-only
@@ -111,7 +112,15 @@ vi.mock('@/store/bookDataStore', () => {
 
 vi.mock('@/store/readerStore', () => {
   const state = {
-    getView: () => ({ deselect: h.deselect, getCFI: () => 'epubcfi(/6/2!/4/2)' }),
+    getView: () => ({
+      deselect: h.deselect,
+      getCFI: () => 'epubcfi(/6/2!/4/2)',
+      renderer: {
+        getContents: h.getContents,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+    }),
     getViewsById: () => [],
     getViewSettings: () => h.viewSettings,
   };
@@ -299,6 +308,7 @@ beforeEach(() => {
   h.viewSettings.enableAnnotationQuickActions = false;
   h.viewSettings.annotationQuickAction = '';
   h.restoreSelectionRange.mockReturnValue(true);
+  h.getContents.mockReturnValue([]);
   h.updateBooknotes.mockImplementation(() => h.config);
   vi.clearAllMocks();
 });
@@ -347,6 +357,55 @@ test('dismisses OCR selection from the reader margin, but keeps popup interactio
   expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   expect(turnPage).not.toHaveBeenCalled();
   margin.removeEventListener('click', turnPage);
+});
+
+test('deselects OCR from either page image without dismissing a text drag', async () => {
+  const frames = [document.createElement('iframe'), document.createElement('iframe')];
+  document.body.append(...frames);
+  const docs = frames.map((frame) => frame.contentDocument!);
+  h.getContents.mockReturnValue(docs.map((doc) => ({ doc })));
+  h.deselect.mockImplementation(() => {
+    for (const doc of docs) doc.getSelection()?.removeAllRanges();
+  });
+  const turnPage = vi.fn();
+  for (const doc of docs) {
+    doc.body.innerHTML = '<img><div data-readest-ocr-layer><span>日本語</span></div>';
+    doc.body.addEventListener('click', turnPage);
+  }
+  const text = docs[0]!.querySelector('span')!;
+  const range = docs[0]!.createRange();
+  range.selectNodeContents(text);
+  const { unmount } = render(
+    <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+  );
+  try {
+    for (const doc of docs) {
+      await selectText(true);
+      docs[0]!.getSelection()!.addRange(range);
+      h.deselect.mockClear();
+      const image = doc.querySelector('img')!;
+      fireEvent.pointerDown(text);
+      fireEvent.click(image);
+      expect(h.deselect).not.toHaveBeenCalled();
+      expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+
+      turnPage.mockClear();
+      fireEvent.pointerDown(image);
+      fireEvent.click(image);
+      expect(h.deselect).toHaveBeenCalledOnce();
+      expect(docs[0]!.getSelection()!.isCollapsed).toBe(true);
+      await waitFor(() => expect(screen.queryByTestId('annotation-toolbar')).toBeNull());
+      expect(turnPage).not.toHaveBeenCalled();
+    }
+    unmount();
+    h.deselect.mockClear();
+    fireEvent.click(docs[0]!.querySelector('img')!);
+    expect(h.deselect).not.toHaveBeenCalled();
+  } finally {
+    unmount();
+    for (const frame of frames) frame.remove();
+    h.deselect.mockReset();
+  }
 });
 
 /**

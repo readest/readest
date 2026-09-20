@@ -43,6 +43,7 @@ import {
   getRangeRectInWebview,
   getRangeTextStyleInWebview,
   getTextFromRange,
+  isOcrNode,
   isOcrRange,
 } from '@/utils/sel';
 import { eventDispatcher } from '@/utils/event';
@@ -416,16 +417,33 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   useEffect(() => {
     if (!selectionIsOcr) return;
-    // Reader margins live outside the page iframe and its selection listeners.
+    const docs = [document, ...(view?.renderer?.getContents() ?? []).map(({ doc }) => doc)];
+    let startedInOcr = false;
+    const handlePointerDown = (event: PointerEvent) => {
+      startedInOcr = isOcrNode(event.target as Node);
+    };
     const handleOutsideClick = (event: MouseEvent) => {
-      if (containerRef.current?.contains(event.target as Node)) return;
+      const draggedFromOcr = startedInOcr;
+      startedInOcr = false;
+      const target = event.target as Node;
+      if (draggedFromOcr || isOcrNode(target) || containerRef.current?.contains(target)) return;
+      event.preventDefault();
       event.stopPropagation();
+      isTextSelected.current = false;
       handleDismissPopup();
       view?.deselect();
-      isTextSelected.current = false;
     };
-    document.addEventListener('click', handleOutsideClick, true);
-    return () => document.removeEventListener('click', handleOutsideClick, true);
+    // Page images live in iframes; their clicks never reach the reader margins.
+    for (const doc of docs) {
+      doc.addEventListener('pointerdown', handlePointerDown, true);
+      doc.addEventListener('click', handleOutsideClick, true);
+    }
+    return () => {
+      for (const doc of docs) {
+        doc.removeEventListener('pointerdown', handlePointerDown, true);
+        doc.removeEventListener('click', handleOutsideClick, true);
+      }
+    };
   }, [selectionIsOcr, handleDismissPopup, view, isTextSelected]);
 
   // Whether the currently shown selection came from the footnote popup, for
