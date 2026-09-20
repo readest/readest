@@ -266,6 +266,7 @@ describe("readest_syncannotations", function()
             assert.are.equal("/a/1", deleted[1].xpointer0)
             assert.are.equal("/a/2", deleted[1].xpointer1)
             assert.is_truthy(deleted[1].deletedAt)
+            assert.are.equal(deleted[1].deletedAt, deleted[1].updatedAt)
         end)
 
         it("derives the id for a native highlight (no stored id) from positions", function()
@@ -341,7 +342,7 @@ describe("readest_syncannotations", function()
                 readest_sync = {
                     meta_hash_v1 = "meta-1",
                     deleted_notes = {
-                        { id = "gone1", type = "annotation", xpointer0 = "/b/1", deletedAt = 111 },
+                        { id = "gone1", type = "annotation", xpointer0 = "/b/1", updatedAt = 50, deletedAt = 111 },
                     },
                 },
             })
@@ -358,6 +359,9 @@ describe("readest_syncannotations", function()
             assert.are.equal(1, #captured.notes)
             assert.are.equal("gone1", captured.notes[1].id)
             assert.are.equal(111, captured.notes[1].deletedAt)
+            -- Upgrade queued tombstones from older plugin versions too: an
+            -- unchanged remote copy must not beat the deletion's old timestamp.
+            assert.are.equal(111, captured.notes[1].updatedAt)
             assert.are.equal("book-hash-1", captured.notes[1].bookHash)
             assert.are.equal("meta-1", captured.notes[1].metaHash)
             assert.is_nil(doc_settings:readSetting("readest_sync").deleted_notes)

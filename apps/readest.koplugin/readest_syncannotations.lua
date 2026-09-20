@@ -226,6 +226,7 @@ function SyncAnnotations:recordDeletion(doc_settings, item)
     local note = self:buildNoteDescriptor(item, book_hash, doc_readest_sync.meta_hash_v1)
     if not note then return end
     note.deletedAt = os.time() * 1000
+    note.updatedAt = note.deletedAt
 
     local deleted = doc_readest_sync.deleted_notes or {}
     for _, t in ipairs(deleted) do
@@ -258,6 +259,9 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
     for _, t in ipairs(deleted_notes) do
         t.bookHash = book_hash
         t.metaHash = meta_hash
+        -- Older queued tombstones retain the highlight's creation/edit time.
+        -- Advance it to the deletion so a stale live copy cannot win on push.
+        t.updatedAt = math.max(t.updatedAt or 0, t.deletedAt)
         annotations[#annotations + 1] = t
         sent_deletions[t.id] = t.deletedAt
     end
