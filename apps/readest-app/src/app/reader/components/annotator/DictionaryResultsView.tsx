@@ -320,13 +320,8 @@ export function useDictionaryResults({
           if (!container) {
             outcome = { ok: false, reason: 'error', message: 'no container' };
           } else {
-            // Try normalized query variants (trimmed, case-folded) then
-            // language-aware lemma candidates in priority order, keeping the
-            // first hit. Case-sensitive formats (mdict) otherwise miss
-            // `Hello` / `world ` style selections whose headword is stored
-            // lowercased, and dictionaries that store only base headwords
-            // (e.g. Oxford Dictionary of English) miss inflected selections
-            // like `ran` / `mice` / `analyses`.
+            // Try case/Unicode variants, lemmas, then accent-folded
+            // fallbacks across providers, keeping the first hit.
             outcome = { ok: false, reason: 'empty' };
             for (const candidate of buildLookupCandidates(currentWord, langCode)) {
               container.replaceChildren();

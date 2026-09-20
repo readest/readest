@@ -428,6 +428,27 @@ describe('DictionarySheet — concurrent lookup', () => {
 });
 
 describe('DictionarySheet — query normalization', () => {
+  it.each([
+    ['Café', 'cafe'],
+    ['rūpa', 'rupa'],
+    ['niño', 'nino'],
+    ['café', 'cafe\u0301'],
+    ['cafe\u0301', 'café'],
+  ])('resolves %s against the stored headword %s', async (word, headword) => {
+    providersForNextRender.push(buildExactProvider(headword));
+    renderSheet({ word });
+    await waitFor(() => screen.getByText(`def for ${headword}`));
+  });
+
+  it('keeps an accented exact match ahead of folding', async () => {
+    const exact = buildExactProvider('café');
+    const spy = vi.spyOn(exact, 'lookup');
+    providersForNextRender.push(exact);
+    renderSheet({ word: 'café' });
+    await waitFor(() => screen.getByText('Exact Match'));
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   it('resolves a lowercase-stored entry from a capitalized selection', async () => {
     const exact = buildExactProvider('hello');
     const spy = vi.spyOn(exact, 'lookup');
