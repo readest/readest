@@ -153,7 +153,7 @@ export class StatisticsDb {
       `SELECT duration
          FROM page_stat_data
          WHERE id_book = ?
-         ORDER BY start_time DESC
+         ORDER BY start_time DESC, page DESC
          LIMIT 50`,
       [idBook],
     );
@@ -171,7 +171,7 @@ export class StatisticsDb {
     const rows = await this.db.select<{ md5: string; duration: number }>(
       `SELECT md5, duration FROM (
          SELECT b.md5, p.duration,
-           ROW_NUMBER() OVER (PARTITION BY p.id_book ORDER BY p.start_time DESC) AS recency
+           ROW_NUMBER() OVER (PARTITION BY p.id_book ORDER BY p.start_time DESC, p.page DESC) AS recency
          FROM page_stat_data p JOIN book b ON b.id = p.id_book
        ) WHERE recency <= 50 ORDER BY md5, duration`,
     );
