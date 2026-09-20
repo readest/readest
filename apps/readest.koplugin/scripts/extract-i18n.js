@@ -78,6 +78,7 @@ const LANG_META = {
   },
   hu: { label: 'Hungarian', plural: 'nplurals=2; plural=(n != 1);' },
   uz: { label: 'Uzbek', plural: 'nplurals=2; plural=(n != 1);' },
+  ka: { label: 'Georgian', plural: 'nplurals=2; plural=(n != 1);' },
 };
 
 // ---------------------------------------------------------------------------

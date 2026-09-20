@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Mantém seus dispositivos KOReader e Readest sincronizados."
 
+msgid "Downloading %1 of %2…"
+msgstr "Baixando %1 de %2…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB baixados"
+
+msgid "No downloads in progress."
+msgstr "Nenhum download em andamento."
+
+msgid "Run in background"
+msgstr "Executar em segundo plano"
+
+msgid "Cancel download"
+msgstr "Cancelar download"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Download cancelado. %1 de %2 baixados."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 de %2 baixados (%3 ignorados)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 de %2 baixados."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Configure primeiro a pasta inicial no Gerenciador de Arquivos para ativar os downloads."
+
+msgid "No books to download."
+msgstr "Nenhum livro para baixar."
+
 msgid "Library view"
 msgstr "Visualização da biblioteca"
 
@@ -68,8 +98,14 @@ msgstr "Crescente"
 msgid "Actions"
 msgstr "Ações"
 
+msgid "Sync now"
+msgstr "Sincronizar agora"
+
 msgid "Download all books"
 msgstr "Baixar todos os livros"
+
+msgid "Download progress"
+msgstr "Progresso do download"
 
 msgid "Rescan library"
 msgstr "Reescanear biblioteca"
@@ -104,6 +140,12 @@ msgstr "Buscar na biblioteca"
 msgid "Search title or author"
 msgstr "Buscar título ou autor"
 
+msgid "Books synced"
+msgstr "Livros sincronizados"
+
+msgid "Books sync failed"
+msgstr "Falha na sincronização de livros"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Plugin Cover Browser necessário para renderização completa da biblioteca. Voltando à lista simples."
 
@@ -116,18 +158,6 @@ msgstr "Baixar este livro do Readest?"
 msgid "Download"
 msgstr "Baixar"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Configure primeiro a pasta inicial no Gerenciador de Arquivos para ativar os downloads."
-
-msgid "Downloading…"
-msgstr "Baixando…"
-
-msgid "Cloud copy unavailable."
-msgstr "Cópia na nuvem indisponível."
-
-msgid "Download failed."
-msgstr "Falha no download."
-
 msgid "No cover available on Readest."
 msgstr "Nenhuma capa disponível no Readest."
 
@@ -137,20 +167,8 @@ msgstr "Falha ao baixar a capa."
 msgid "Could not delete the file."
 msgstr "Não foi possível excluir o arquivo."
 
-msgid "No books to download."
-msgstr "Nenhum livro para baixar."
-
-msgid "Downloading %1 of %2…"
-msgstr "Baixando %1 de %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Download cancelado. %1 de %2 baixados."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%1 de %2 baixados (%3 ignorados)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%1 de %2 baixados."
+msgid "Download group"
+msgstr "Baixar grupo"
 
 msgid "Removing from cloud…"
 msgstr "Removendo da nuvem…"
@@ -287,23 +305,14 @@ msgstr "Enviar estatísticas agora"
 msgid "Pull stats now"
 msgstr "Obter estatísticas agora"
 
-msgid "Push books now"
-msgstr "Enviar livros agora"
-
-msgid "Pull books now"
-msgstr "Obter livros agora"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Receber via Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Enviar o livro atual para o Readest"
-
 msgid "Push reading progress now"
 msgstr "Enviar progresso de leitura agora"
 
 msgid "Pull reading progress now"
 msgstr "Obter progresso de leitura agora"
+
+msgid "Upload current book to Readest"
+msgstr "Enviar o livro atual para o Readest"
 
 msgid "Push annotations now"
 msgstr "Enviar anotações agora"
@@ -316,6 +325,9 @@ msgstr "Sincronizar todas as anotações por completo"
 
 msgid "Sync info"
 msgstr "Informações de sincronização"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Receber via Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Verificar atualização (v%1)"
@@ -349,12 +361,6 @@ msgstr "Informações de sincronização"
 
 msgid "Library not initialized"
 msgstr "Biblioteca não inicializada"
-
-msgid "Books synced"
-msgstr "Livros sincronizados"
-
-msgid "Books sync failed"
-msgstr "Falha na sincronização de livros"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Primeiro defina uma pasta de downloads do Readest ou uma pasta inicial do KOReader."

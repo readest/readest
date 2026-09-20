@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Vaše naprave KOReader in Readest ostajajo sinhronizirane."
 
+msgid "Downloading %1 of %2…"
+msgstr "Prenašanje %1 od %2…"
+
+msgid "%1 MB downloaded"
+msgstr "Preneseno %1 MB"
+
+msgid "No downloads in progress."
+msgstr "Trenutno ni prenosov."
+
+msgid "Run in background"
+msgstr "Izvajaj v ozadju"
+
+msgid "Cancel download"
+msgstr "Prekliči prenos"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Prenos preklican. Prenesenih %1 od %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Prenesenih %1 od %2 (preskočenih %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Prenesenih %1 od %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Najprej v upravitelju datotek nastavite domačo mapo, da omogočite prenose."
+
+msgid "No books to download."
+msgstr "Ni knjig za prenos."
+
 msgid "Library view"
 msgstr "Pogled knjižnice"
 
@@ -68,8 +98,14 @@ msgstr "Naraščajoče"
 msgid "Actions"
 msgstr "Dejanja"
 
+msgid "Sync now"
+msgstr "Sinhroniziraj zdaj"
+
 msgid "Download all books"
 msgstr "Prenesi vse knjige"
+
+msgid "Download progress"
+msgstr "Napredek prenosa"
 
 msgid "Rescan library"
 msgstr "Znova preglej knjižnico"
@@ -104,6 +140,12 @@ msgstr "Iskanje po knjižnici"
 msgid "Search title or author"
 msgstr "Iskanje naslova ali avtorja"
 
+msgid "Books synced"
+msgstr "Knjige sinhronizirane"
+
+msgid "Books sync failed"
+msgstr "Sinhronizacija knjig ni uspela"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Vtičnik Cover Browser je potreben za polno upodabljanje knjižnice. Vrnitev na navaden seznam."
 
@@ -116,18 +158,6 @@ msgstr "Prenesi to knjigo iz Readest?"
 msgid "Download"
 msgstr "Prenesi"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Najprej v upravitelju datotek nastavite domačo mapo, da omogočite prenose."
-
-msgid "Downloading…"
-msgstr "Prenašanje…"
-
-msgid "Cloud copy unavailable."
-msgstr "Kopija v oblaku ni na voljo."
-
-msgid "Download failed."
-msgstr "Prenos ni uspel."
-
 msgid "No cover available on Readest."
 msgstr "Naslovnica ni na voljo v Readest."
 
@@ -137,20 +167,8 @@ msgstr "Prenos naslovnice ni uspel."
 msgid "Could not delete the file."
 msgstr "Datoteke ni bilo mogoče izbrisati."
 
-msgid "No books to download."
-msgstr "Ni knjig za prenos."
-
-msgid "Downloading %1 of %2…"
-msgstr "Prenašanje %1 od %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Prenos preklican. Prenesenih %1 od %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Prenesenih %1 od %2 (preskočenih %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Prenesenih %1 od %2."
+msgid "Download group"
+msgstr "Prenesi skupino"
 
 msgid "Removing from cloud…"
 msgstr "Odstranjevanje iz oblaka…"
@@ -287,23 +305,14 @@ msgstr "Pošlji statistiko zdaj"
 msgid "Pull stats now"
 msgstr "Pridobi statistiko zdaj"
 
-msgid "Push books now"
-msgstr "Pošlji knjige zdaj"
-
-msgid "Pull books now"
-msgstr "Pridobi knjige zdaj"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Prejmi prek Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Naloži trenutno knjigo v Readest"
-
 msgid "Push reading progress now"
 msgstr "Pošlji napredek branja zdaj"
 
 msgid "Pull reading progress now"
 msgstr "Pridobi napredek branja zdaj"
+
+msgid "Upload current book to Readest"
+msgstr "Naloži trenutno knjigo v Readest"
 
 msgid "Push annotations now"
 msgstr "Pošlji opombe zdaj"
@@ -316,6 +325,9 @@ msgstr "Polna sinhronizacija vseh opomb"
 
 msgid "Sync info"
 msgstr "Podatki o sinhronizaciji"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Prejmi prek Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Preveri posodobitve (v%1)"
@@ -349,12 +361,6 @@ msgstr "Podatki o sinhronizaciji"
 
 msgid "Library not initialized"
 msgstr "Knjižnica ni inicializirana"
-
-msgid "Books synced"
-msgstr "Knjige sinhronizirane"
-
-msgid "Books sync failed"
-msgstr "Sinhronizacija knjig ni uspela"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Najprej nastavite mapo za prenose Readest ali domačo mapo KOReader."

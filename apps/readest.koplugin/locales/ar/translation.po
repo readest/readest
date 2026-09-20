@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "يحافظ على مزامنة أجهزة KOReader و Readest الخاصة بك."
 
+msgid "Downloading %1 of %2…"
+msgstr "جارٍ تنزيل %1 من %2…"
+
+msgid "%1 MB downloaded"
+msgstr "تم تنزيل %1 ميغابايت"
+
+msgid "No downloads in progress."
+msgstr "لا توجد تنزيلات قيد التنفيذ."
+
+msgid "Run in background"
+msgstr "التشغيل في الخلفية"
+
+msgid "Cancel download"
+msgstr "إلغاء التنزيل"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "أُلغي التنزيل. تم تنزيل %1 من %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "تم تنزيل %1 من %2 (تم تخطّي %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "تم تنزيل %1 من %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "حدد المجلد الرئيسي في مدير الملفات أولاً لتفعيل التنزيلات."
+
+msgid "No books to download."
+msgstr "لا توجد كتب للتنزيل."
+
 msgid "Library view"
 msgstr "عرض المكتبة"
 
@@ -68,8 +98,14 @@ msgstr "تصاعدي"
 msgid "Actions"
 msgstr "إجراءات"
 
+msgid "Sync now"
+msgstr "المزامنة الآن"
+
 msgid "Download all books"
 msgstr "تنزيل كل الكتب"
+
+msgid "Download progress"
+msgstr "تقدم التنزيل"
 
 msgid "Rescan library"
 msgstr "إعادة فحص المكتبة"
@@ -104,6 +140,12 @@ msgstr "البحث في المكتبة"
 msgid "Search title or author"
 msgstr "البحث بالعنوان أو المؤلف"
 
+msgid "Books synced"
+msgstr "تمت مزامنة الكتب"
+
+msgid "Books sync failed"
+msgstr "فشلت مزامنة الكتب"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "يتطلب عرض المكتبة الكامل إضافة Cover Browser. سيتم استخدام قائمة عادية."
 
@@ -116,18 +158,6 @@ msgstr "تنزيل هذا الكتاب من Readest؟"
 msgid "Download"
 msgstr "تنزيل"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "حدد المجلد الرئيسي في مدير الملفات أولاً لتفعيل التنزيلات."
-
-msgid "Downloading…"
-msgstr "جارٍ التنزيل…"
-
-msgid "Cloud copy unavailable."
-msgstr "نسخة السحابة غير متاحة."
-
-msgid "Download failed."
-msgstr "فشل التنزيل."
-
 msgid "No cover available on Readest."
 msgstr "لا يوجد غلاف متوفر على Readest."
 
@@ -137,20 +167,8 @@ msgstr "فشل تنزيل الغلاف."
 msgid "Could not delete the file."
 msgstr "تعذّر حذف الملف."
 
-msgid "No books to download."
-msgstr "لا توجد كتب للتنزيل."
-
-msgid "Downloading %1 of %2…"
-msgstr "جارٍ تنزيل %1 من %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "أُلغي التنزيل. تم تنزيل %1 من %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "تم تنزيل %1 من %2 (تم تخطّي %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "تم تنزيل %1 من %2."
+msgid "Download group"
+msgstr "تنزيل المجموعة"
 
 msgid "Removing from cloud…"
 msgstr "جارٍ الإزالة من السحابة…"
@@ -287,23 +305,14 @@ msgstr "إرسال الإحصائيات الآن"
 msgid "Pull stats now"
 msgstr "جلب الإحصائيات الآن"
 
-msgid "Push books now"
-msgstr "إرسال الكتب الآن"
-
-msgid "Pull books now"
-msgstr "جلب الكتب الآن"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "استقبال عبر Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "رفع الكتاب الحالي إلى Readest"
-
 msgid "Push reading progress now"
 msgstr "إرسال تقدم القراءة الآن"
 
 msgid "Pull reading progress now"
 msgstr "جلب تقدم القراءة الآن"
+
+msgid "Upload current book to Readest"
+msgstr "رفع الكتاب الحالي إلى Readest"
 
 msgid "Push annotations now"
 msgstr "إرسال الملاحظات الآن"
@@ -316,6 +325,9 @@ msgstr "مزامنة كاملة لجميع الملاحظات"
 
 msgid "Sync info"
 msgstr "معلومات المزامنة"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "استقبال عبر Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "التحقق من التحديث (v%1)"
@@ -349,12 +361,6 @@ msgstr "معلومات المزامنة"
 
 msgid "Library not initialized"
 msgstr "المكتبة غير مهيّأة"
-
-msgid "Books synced"
-msgstr "تمت مزامنة الكتب"
-
-msgid "Books sync failed"
-msgstr "فشلت مزامنة الكتب"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "عيّن أولاً مجلد تنزيل لـ Readest أو مجلد KOReader الرئيسي."

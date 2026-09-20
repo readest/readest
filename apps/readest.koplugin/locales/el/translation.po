@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Διατηρεί τις συσκευές KOReader και Readest συγχρονισμένες."
 
+msgid "Downloading %1 of %2…"
+msgstr "Γίνεται λήψη %1 από %2…"
+
+msgid "%1 MB downloaded"
+msgstr "Έγινε λήψη %1 MB"
+
+msgid "No downloads in progress."
+msgstr "Δεν υπάρχουν λήψεις σε εξέλιξη."
+
+msgid "Run in background"
+msgstr "Εκτέλεση στο παρασκήνιο"
+
+msgid "Cancel download"
+msgstr "Ακύρωση λήψης"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Η λήψη ακυρώθηκε. Έγινε λήψη %1 από %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Έγινε λήψη %1 από %2 (παραλείφθηκαν %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Έγινε λήψη %1 από %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Πρώτα ορίστε τον αρχικό φάκελο στη διαχείριση αρχείων για να ενεργοποιήσετε τις λήψεις."
+
+msgid "No books to download."
+msgstr "Δεν υπάρχουν βιβλία για λήψη."
+
 msgid "Library view"
 msgstr "Προβολή βιβλιοθήκης"
 
@@ -68,8 +98,14 @@ msgstr "Αύξουσα"
 msgid "Actions"
 msgstr "Ενέργειες"
 
+msgid "Sync now"
+msgstr "Συγχρονισμός τώρα"
+
 msgid "Download all books"
 msgstr "Λήψη όλων των βιβλίων"
+
+msgid "Download progress"
+msgstr "Πρόοδος λήψης"
 
 msgid "Rescan library"
 msgstr "Επανασάρωση βιβλιοθήκης"
@@ -104,6 +140,12 @@ msgstr "Αναζήτηση στη βιβλιοθήκη"
 msgid "Search title or author"
 msgstr "Αναζήτηση τίτλου ή συγγραφέα"
 
+msgid "Books synced"
+msgstr "Τα βιβλία συγχρονίστηκαν"
+
+msgid "Books sync failed"
+msgstr "Αποτυχία συγχρονισμού βιβλίων"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Το πρόσθετο Cover Browser απαιτείται για πλήρη απόδοση βιβλιοθήκης. Επιστροφή σε απλή λίστα."
 
@@ -116,18 +158,6 @@ msgstr "Λήψη αυτού του βιβλίου από το Readest;"
 msgid "Download"
 msgstr "Λήψη"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Πρώτα ορίστε τον αρχικό φάκελο στη διαχείριση αρχείων για να ενεργοποιήσετε τις λήψεις."
-
-msgid "Downloading…"
-msgstr "Γίνεται λήψη…"
-
-msgid "Cloud copy unavailable."
-msgstr "Το αντίγραφο στο cloud δεν είναι διαθέσιμο."
-
-msgid "Download failed."
-msgstr "Η λήψη απέτυχε."
-
 msgid "No cover available on Readest."
 msgstr "Δεν υπάρχει εξώφυλλο διαθέσιμο στο Readest."
 
@@ -137,20 +167,8 @@ msgstr "Αποτυχία λήψης εξωφύλλου."
 msgid "Could not delete the file."
 msgstr "Δεν ήταν δυνατή η διαγραφή του αρχείου."
 
-msgid "No books to download."
-msgstr "Δεν υπάρχουν βιβλία για λήψη."
-
-msgid "Downloading %1 of %2…"
-msgstr "Γίνεται λήψη %1 από %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Η λήψη ακυρώθηκε. Έγινε λήψη %1 από %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Έγινε λήψη %1 από %2 (παραλείφθηκαν %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Έγινε λήψη %1 από %2."
+msgid "Download group"
+msgstr "Λήψη ομάδας"
 
 msgid "Removing from cloud…"
 msgstr "Αφαίρεση από το cloud…"
@@ -287,23 +305,14 @@ msgstr "Αποστολή στατιστικών τώρα"
 msgid "Pull stats now"
 msgstr "Λήψη στατιστικών τώρα"
 
-msgid "Push books now"
-msgstr "Αποστολή βιβλίων τώρα"
-
-msgid "Pull books now"
-msgstr "Λήψη βιβλίων τώρα"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Λήψη μέσω Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Μεταφόρτωση τρέχοντος βιβλίου στο Readest"
-
 msgid "Push reading progress now"
 msgstr "Αποστολή προόδου ανάγνωσης τώρα"
 
 msgid "Pull reading progress now"
 msgstr "Λήψη προόδου ανάγνωσης τώρα"
+
+msgid "Upload current book to Readest"
+msgstr "Μεταφόρτωση τρέχοντος βιβλίου στο Readest"
 
 msgid "Push annotations now"
 msgstr "Αποστολή σχολίων τώρα"
@@ -316,6 +325,9 @@ msgstr "Πλήρης συγχρονισμός όλων των σχολίων"
 
 msgid "Sync info"
 msgstr "Πληροφορίες συγχρονισμού"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Λήψη μέσω Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Έλεγχος για ενημέρωση (v%1)"
@@ -349,12 +361,6 @@ msgstr "Πληροφορίες συγχρονισμού"
 
 msgid "Library not initialized"
 msgstr "Η βιβλιοθήκη δεν αρχικοποιήθηκε"
-
-msgid "Books synced"
-msgstr "Τα βιβλία συγχρονίστηκαν"
-
-msgid "Books sync failed"
-msgstr "Αποτυχία συγχρονισμού βιβλίων"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Ορίστε πρώτα έναν φάκελο λήψεων Readest ή έναν αρχικό φάκελο KOReader."

@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader ve Readest cihazlarınızı senkronize tutar."
 
+msgid "Downloading %1 of %2…"
+msgstr "%2 kitaptan %1. indiriliyor…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB indirildi"
+
+msgid "No downloads in progress."
+msgstr "Devam eden indirme yok."
+
+msgid "Run in background"
+msgstr "Arka planda çalıştır"
+
+msgid "Cancel download"
+msgstr "İndirmeyi iptal et"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "İndirme iptal edildi. %2 kitaptan %1 tanesi indirildi."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 kitaptan %1 tanesi indirildi (%3 tanesi atlandı)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 kitaptan %1 tanesi indirildi."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "İndirmeleri etkinleştirmek için önce Dosya Yöneticisi'nde Ana klasörü ayarlayın."
+
+msgid "No books to download."
+msgstr "İndirilecek kitap yok."
+
 msgid "Library view"
 msgstr "Kütüphane görünümü"
 
@@ -68,8 +98,14 @@ msgstr "Artan"
 msgid "Actions"
 msgstr "İşlemler"
 
+msgid "Sync now"
+msgstr "Şimdi eşitle"
+
 msgid "Download all books"
 msgstr "Tüm kitapları indir"
+
+msgid "Download progress"
+msgstr "İndirme ilerlemesi"
 
 msgid "Rescan library"
 msgstr "Kütüphaneyi yeniden tara"
@@ -104,6 +140,12 @@ msgstr "Kütüphanede ara"
 msgid "Search title or author"
 msgstr "Başlık veya yazar ara"
 
+msgid "Books synced"
+msgstr "Kitaplar senkronize edildi"
+
+msgid "Books sync failed"
+msgstr "Kitap senkronizasyonu başarısız"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Tam kütüphane görünümü için Cover Browser eklentisi gerekli. Düz listeye geri dönülüyor."
 
@@ -116,18 +158,6 @@ msgstr "Bu kitabı Readest'ten indirelim mi?"
 msgid "Download"
 msgstr "İndir"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "İndirmeleri etkinleştirmek için önce Dosya Yöneticisi'nde Ana klasörü ayarlayın."
-
-msgid "Downloading…"
-msgstr "İndiriliyor…"
-
-msgid "Cloud copy unavailable."
-msgstr "Bulut kopyası kullanılamıyor."
-
-msgid "Download failed."
-msgstr "İndirme başarısız."
-
 msgid "No cover available on Readest."
 msgstr "Readest'te kapak bulunamadı."
 
@@ -137,20 +167,8 @@ msgstr "Kapak indirilemedi."
 msgid "Could not delete the file."
 msgstr "Dosya silinemedi."
 
-msgid "No books to download."
-msgstr "İndirilecek kitap yok."
-
-msgid "Downloading %1 of %2…"
-msgstr "%2 kitaptan %1. indiriliyor…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "İndirme iptal edildi. %2 kitaptan %1 tanesi indirildi."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 kitaptan %1 tanesi indirildi (%3 tanesi atlandı)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 kitaptan %1 tanesi indirildi."
+msgid "Download group"
+msgstr "Grubu indir"
 
 msgid "Removing from cloud…"
 msgstr "Buluttan kaldırılıyor…"
@@ -287,23 +305,14 @@ msgstr "İstatistikleri şimdi gönder"
 msgid "Pull stats now"
 msgstr "İstatistikleri şimdi al"
 
-msgid "Push books now"
-msgstr "Kitapları şimdi gönder"
-
-msgid "Pull books now"
-msgstr "Kitapları şimdi al"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop ile al"
-
-msgid "Upload current book to Readest"
-msgstr "Geçerli kitabı Readest'e yükle"
-
 msgid "Push reading progress now"
 msgstr "Okuma ilerlemesini şimdi gönder"
 
 msgid "Pull reading progress now"
 msgstr "Okuma ilerlemesini şimdi al"
+
+msgid "Upload current book to Readest"
+msgstr "Geçerli kitabı Readest'e yükle"
 
 msgid "Push annotations now"
 msgstr "Açıklamaları şimdi gönder"
@@ -316,6 +325,9 @@ msgstr "Tüm açıklamaları tam senkronize et"
 
 msgid "Sync info"
 msgstr "Senkronizasyon bilgisi"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop ile al"
 
 msgid "Check for update (v%1)"
 msgstr "Güncelleme kontrol et (v%1)"
@@ -349,12 +361,6 @@ msgstr "Senkronizasyon bilgisi"
 
 msgid "Library not initialized"
 msgstr "Kütüphane başlatılmadı"
-
-msgid "Books synced"
-msgstr "Kitaplar senkronize edildi"
-
-msgid "Books sync failed"
-msgstr "Kitap senkronizasyonu başarısız"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Önce bir Readest indirme klasörü veya bir KOReader ana klasörü ayarlayın."
