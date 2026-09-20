@@ -128,6 +128,7 @@ describe('reader relocation progress', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     readerState.viewStates = {};
+    view.renderer.getContents.mockReturnValue([{ doc: document, index: 0 }]);
     vi.useFakeTimers();
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
   });
