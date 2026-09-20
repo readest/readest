@@ -83,7 +83,10 @@ const wholePageResult = {
 };
 
 describe('Tesseract manga OCR', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   it('keeps Japanese OCR isolated from the English model', () => {
     expect(getTesseractLanguages(undefined, { mangaFallback: true })).toEqual(['jpn', 'jpn_vert']);
@@ -293,6 +296,42 @@ describe('Tesseract manga OCR', () => {
 
     expect(crops).toHaveLength(2);
     expect(crops.every((crop) => crop.width === 80 && crop.height < 1_000)).toBe(true);
+  });
+
+  it('keeps unsplit vertical crops upright without allocating rotated copies', () => {
+    const contexts = installCanvas();
+    const source = document.createElement('canvas');
+    const image = { width: 64, height: 256, data: new Uint8ClampedArray(64 * 256 * 4) };
+    for (let i = 0; i < image.data.length; i++) image.data[i] = i % 251;
+    const uprightLine = {
+      ...line,
+      polygon: [
+        { x: 0, y: 0 },
+        { x: 63, y: 0 },
+        { x: 63, y: 252 },
+        { x: 0, y: 252 },
+      ],
+    };
+    const allocations = vi.fn();
+    vi.stubGlobal(
+      'Uint8ClampedArray',
+      new Proxy(Uint8ClampedArray, {
+        construct(target, args) {
+          allocations();
+          return Reflect.construct(target, args);
+        },
+      }),
+    );
+
+    const crops = makeMangaTextLineCrops(source, image, uprightLine, { keepVertical: true });
+
+    expect(crops).toHaveLength(1);
+    expect([crops[0]!.width, crops[0]!.height]).toEqual([80, 272]);
+    const context = contexts.mock.results[0]!.value as { putImageData: ReturnType<typeof vi.fn> };
+    const pixels = context.putImageData.mock.calls[0]![0].data as Uint8ClampedArray;
+    expect(Array.from(pixels.slice(0, 8))).toEqual(Array.from(image.data.slice(0, 8)));
+    expect(Array.from(pixels.slice(-4))).toEqual(Array.from(image.data.slice(64764, 64768)));
+    expect(allocations).toHaveBeenCalledTimes(2);
   });
 
   it('falls back to whole-page Tesseract for the rest of the session after detector failure', async () => {

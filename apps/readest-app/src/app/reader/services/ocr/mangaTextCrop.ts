@@ -287,6 +287,10 @@ export const makeMangaTextLineCrops = (
     dimensions.height,
   );
   if (!warped) return [];
+  if (vertical && options.keepVertical && warped.height <= warped.width * MAXIMUM_VERTICAL_RATIO) {
+    const canvas = makeCanvas(source, warped, options.border ?? BORDER);
+    return canvas ? [canvas] : [];
+  }
   const normalized = vertical ? rotateCounterClockwise(warped) : warped;
   const maximumRatio = vertical ? MAXIMUM_VERTICAL_RATIO : MAXIMUM_HORIZONTAL_RATIO;
   const needsSplit = normalized.width > normalized.height * maximumRatio;
