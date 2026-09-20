@@ -48,6 +48,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
   const [isDisableSwipe, setIsDisableSwipe] = useState(viewSettings.disableSwipe);
+  const [disablePullDownToBookmark, setDisablePullDownToBookmark] = useState(
+    viewSettings.disablePullDownToBookmark ?? false,
+  );
   const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
@@ -102,6 +105,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       showPaginationButtons: setShowPaginationButtons,
       disableClick: setIsDisableClick,
       disableSwipe: setIsDisableSwipe,
+      disablePullDownToBookmark: setDisablePullDownToBookmark,
       swapClickArea: setSwapClickArea,
       animated: setAnimated,
       isEink: setIsEink,
@@ -202,6 +206,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableSwipe]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'disablePullDownToBookmark',
+      disablePullDownToBookmark,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disablePullDownToBookmark]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableDoubleClick', isDisableDoubleClick, false, false);
@@ -458,6 +474,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         title={_('Annotation Tools')}
         data-setting-id='settings.control.enableQuickActions'
       >
+        <SettingsSwitchRow
+          label={_('Pull-Down to Bookmark')}
+          checked={!disablePullDownToBookmark}
+          onChange={() => setDisablePullDownToBookmark(!disablePullDownToBookmark)}
+          data-setting-id='settings.control.disablePullDownToBookmark'
+        />
         <SettingsSwitchRow
           label={_('Enable Quick Actions')}
           checked={enableAnnotationQuickActions}

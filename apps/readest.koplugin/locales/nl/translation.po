@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Houdt je KOReader- en Readest-apparaten gesynchroniseerd."
 
+msgid "Downloading %1 of %2…"
+msgstr "%1 van %2 wordt gedownload…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB gedownload"
+
+msgid "No downloads in progress."
+msgstr "Geen actieve downloads."
+
+msgid "Run in background"
+msgstr "Op de achtergrond uitvoeren"
+
+msgid "Cancel download"
+msgstr "Download annuleren"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Download geannuleerd. %1 van %2 gedownload."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 van %2 gedownload (%3 overgeslagen)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 van %2 gedownload."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Stel eerst de Home-map in de bestandsbeheerder in om downloads in te schakelen."
+
+msgid "No books to download."
+msgstr "Geen boeken om te downloaden."
+
 msgid "Library view"
 msgstr "Bibliotheekweergave"
 
@@ -68,8 +98,14 @@ msgstr "Oplopend"
 msgid "Actions"
 msgstr "Acties"
 
+msgid "Sync now"
+msgstr "Nu synchroniseren"
+
 msgid "Download all books"
 msgstr "Alle boeken downloaden"
+
+msgid "Download progress"
+msgstr "Downloadvoortgang"
 
 msgid "Rescan library"
 msgstr "Bibliotheek opnieuw scannen"
@@ -104,6 +140,12 @@ msgstr "Doorzoek bibliotheek"
 msgid "Search title or author"
 msgstr "Zoek op titel of auteur"
 
+msgid "Books synced"
+msgstr "Boeken gesynchroniseerd"
+
+msgid "Books sync failed"
+msgstr "Synchronisatie van boeken mislukt"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Cover Browser-plug-in vereist voor volledige bibliotheekweergave. Terug naar gewone lijst."
 
@@ -116,18 +158,6 @@ msgstr "Dit boek van Readest downloaden?"
 msgid "Download"
 msgstr "Downloaden"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Stel eerst de Home-map in de bestandsbeheerder in om downloads in te schakelen."
-
-msgid "Downloading…"
-msgstr "Bezig met downloaden …"
-
-msgid "Cloud copy unavailable."
-msgstr "Cloud-kopie niet beschikbaar."
-
-msgid "Download failed."
-msgstr "Downloaden mislukt."
-
 msgid "No cover available on Readest."
 msgstr "Geen omslag beschikbaar op Readest."
 
@@ -137,20 +167,8 @@ msgstr "Omslag downloaden mislukt."
 msgid "Could not delete the file."
 msgstr "Kon het bestand niet verwijderen."
 
-msgid "No books to download."
-msgstr "Geen boeken om te downloaden."
-
-msgid "Downloading %1 of %2…"
-msgstr "%1 van %2 wordt gedownload…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Download geannuleerd. %1 van %2 gedownload."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%1 van %2 gedownload (%3 overgeslagen)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%1 van %2 gedownload."
+msgid "Download group"
+msgstr "Groep downloaden"
 
 msgid "Removing from cloud…"
 msgstr "Verwijderen uit cloud …"
@@ -287,23 +305,14 @@ msgstr "Statistieken nu pushen"
 msgid "Pull stats now"
 msgstr "Statistieken nu pullen"
 
-msgid "Push books now"
-msgstr "Boeken nu pushen"
-
-msgid "Pull books now"
-msgstr "Boeken nu pullen"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Ontvangen via Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Huidig boek uploaden naar Readest"
-
 msgid "Push reading progress now"
 msgstr "Leesvoortgang nu verzenden"
 
 msgid "Pull reading progress now"
 msgstr "Leesvoortgang nu ophalen"
+
+msgid "Upload current book to Readest"
+msgstr "Huidig boek uploaden naar Readest"
 
 msgid "Push annotations now"
 msgstr "Aantekeningen nu verzenden"
@@ -316,6 +325,9 @@ msgstr "Alle aantekeningen volledig synchroniseren"
 
 msgid "Sync info"
 msgstr "Synchronisatie-info"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Ontvangen via Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Controleer op update (v%1)"
@@ -349,12 +361,6 @@ msgstr "Synchronisatie-info"
 
 msgid "Library not initialized"
 msgstr "Bibliotheek niet geïnitialiseerd"
-
-msgid "Books synced"
-msgstr "Boeken gesynchroniseerd"
-
-msgid "Books sync failed"
-msgstr "Synchronisatie van boeken mislukt"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Stel eerst een Readest-downloadmap of een KOReader-startmap in."

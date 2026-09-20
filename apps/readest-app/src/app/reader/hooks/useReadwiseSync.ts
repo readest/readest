@@ -60,7 +60,7 @@ export const useReadwiseSync = (bookKey: string) => {
     [bookKey, getBookData, getConfig, updateLastSyncedAt, appService],
   );
 
-  // Manual "Push All": sends every annotation/excerpt regardless of sync timestamp
+  // Manual "Push All": sends every annotation/excerpt/bookmark regardless of sync timestamp
   const pushAllHighlights = useCallback(async () => {
     const { settings } = useSettingsStore.getState();
     if (!settings.readwise?.enabled || !settings.readwise?.accessToken) return;

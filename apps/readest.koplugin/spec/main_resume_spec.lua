@@ -30,7 +30,7 @@ describe("ReadestSync:onResume", function()
         -- Delayed, not immediate: Wi-Fi is still coming back up right after wake.
         assert.is_true(UIManagerStub._scheduled[1].delay > 0)
 
-        UIManagerStub._scheduled[1].fn()
+        UIManagerStub:drain()
         assert.are.equal(3, #plugin.pull_calls)
         local pulled = {}
         for _, call in ipairs(plugin.pull_calls) do
@@ -68,8 +68,7 @@ describe("ReadestSync:onResume", function()
         assert.are.equal(1, #UIManagerStub._scheduled)
 
         -- Simulate the pending task firing.
-        local task = table.remove(UIManagerStub._scheduled, 1)
-        task.fn()
+        UIManagerStub:drain()
 
         -- Still inside the debounce window: no new pull.
         plugin:onResume()

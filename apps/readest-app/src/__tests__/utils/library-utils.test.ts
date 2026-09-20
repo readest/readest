@@ -1826,3 +1826,47 @@ describe('withTimeRemainingLast', () => {
     expect(sorter(finished, reading)).toBe(-1);
   });
 });
+
+describe('time remaining uses each book’s measured pace (#6318)', () => {
+  const slow = createMockBook({ hash: 'slow', title: 'Same', progress: [10, 20] });
+  const fast = createMockBook({ hash: 'fast', title: 'Same', progress: [10, 30] });
+  const paces = { slow: 120, fast: 15 };
+
+  it.each([true, false])('matches the displayed minutes, ascending=%s', (ascending) => {
+    const sorter = createBookSorter(
+      LibrarySortByType.TimeRemaining,
+      'en',
+      'none',
+      ascending,
+      true,
+      paces,
+    );
+    expect([slow, fast].sort(sorter).map((b) => b.hash)).toEqual(
+      ascending ? ['fast', 'slow'] : ['slow', 'fast'],
+    );
+  });
+
+  it('uses measured pace for secondary and within-group sorting too', () => {
+    expect(
+      createBookSorter(
+        LibrarySortByType.Title,
+        'en',
+        LibrarySortByType.TimeRemaining,
+        true,
+        true,
+        paces,
+      )(slow, fast),
+    ).toBeGreaterThan(0);
+    expect(
+      createWithinGroupSorter(
+        LibraryGroupByType.Author,
+        LibrarySortByType.Title,
+        'en',
+        true,
+        LibrarySortByType.TimeRemaining,
+        true,
+        paces,
+      )(slow, fast),
+    ).toBeGreaterThan(0);
+  });
+});

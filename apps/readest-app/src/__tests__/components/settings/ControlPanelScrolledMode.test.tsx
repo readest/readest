@@ -88,6 +88,7 @@ vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({
 }));
 
 import ControlPanel from '@/components/settings/ControlPanel';
+import { saveViewSettings } from '@/helpers/settings';
 
 const scrolledModeSwitch = () =>
   screen.getByText('Scrolled Mode').closest('label')?.querySelector('input') ??
@@ -100,6 +101,30 @@ afterEach(() => {
 });
 
 describe('Settings > Behavior > Scroll', () => {
+  it('saves the pull-down bookmark preference when toggled', () => {
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    const toggle = screen.getByRole('checkbox', { name: 'Pull-Down to Bookmark' });
+    expect((toggle as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(toggle);
+    expect(saveViewSettings).toHaveBeenCalledWith(
+      {},
+      'test',
+      'disablePullDownToBookmark',
+      true,
+      false,
+      false,
+    );
+    fireEvent.click(toggle);
+    expect(saveViewSettings).toHaveBeenLastCalledWith(
+      {},
+      'test',
+      'disablePullDownToBookmark',
+      false,
+      false,
+      false,
+    );
+  });
+
   it('offers Scrolled Mode for a fixed-layout book (PDF / CBZ)', () => {
     currentIsFixedLayout = true;
     render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);

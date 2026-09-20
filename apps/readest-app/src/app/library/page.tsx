@@ -54,6 +54,7 @@ import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useLibraryFileSync } from './hooks/useLibraryFileSync';
 import { useBookTransferActions } from './hooks/useBookTransferActions';
+import { useAbsOfflineDownload } from './hooks/useAbsOfflineDownload';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
@@ -1237,6 +1238,33 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
   };
 
+  // Audiobookshelf offline downloads (#6256): the shelf's context menu asks
+  // through events so the handlers need not be threaded through every shelf.
+  // Removing the copy is "Remove from Device Only".
+  const { handleBookOfflineDownload, offlinePremiumLabel } = useAbsOfflineDownload();
+  const offlineHandlersRef = useRef({
+    download: handleBookOfflineDownload,
+    remove: handleBookDelete('local'),
+  });
+  offlineHandlersRef.current = {
+    download: handleBookOfflineDownload,
+    remove: handleBookDelete('local'),
+  };
+  useEffect(() => {
+    const onDownload = (event: CustomEvent) => {
+      offlineHandlersRef.current.download(event.detail.book);
+    };
+    const onRemove = async (event: CustomEvent) => {
+      await offlineHandlersRef.current.remove(event.detail.book);
+    };
+    eventDispatcher.on('abs-offline-download', onDownload);
+    eventDispatcher.on('abs-offline-remove', onRemove);
+    return () => {
+      eventDispatcher.off('abs-offline-download', onDownload);
+      eventDispatcher.off('abs-offline-remove', onRemove);
+    };
+  }, []);
+
   const handleUpdateMetadata = async (book: Book, metadata: BookMetadata, tags: string[]) => {
     // Build a NEW book object instead of mutating `book` in place. <BookCover>
     // is memoized and compares fields off the book, so mutating the existing
@@ -2111,6 +2139,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookPurge={handleBookDelete('purge')}
           handleBookMetadataUpdate={handleUpdateMetadata}
+          handleBookOfflineDownload={isTauriAppPlatform() ? handleBookOfflineDownload : undefined}
+          offlinePremiumLabel={offlinePremiumLabel}
           onMetadataValueClick={handleMetadataValueClick}
         />
       )}

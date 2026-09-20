@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Giữ các thiết bị KOReader và Readest của bạn đồng bộ."
 
+msgid "Downloading %1 of %2…"
+msgstr "Đang tải xuống %1 trên %2…"
+
+msgid "%1 MB downloaded"
+msgstr "Đã tải xuống %1 MB"
+
+msgid "No downloads in progress."
+msgstr "Không có lượt tải xuống nào đang diễn ra."
+
+msgid "Run in background"
+msgstr "Chạy trong nền"
+
+msgid "Cancel download"
+msgstr "Hủy tải xuống"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Đã hủy tải xuống. Đã tải %1 trên %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Đã tải %1 trên %2 (bỏ qua %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Đã tải %1 trên %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Đặt thư mục Home trong Trình quản lý tệp trước để bật tải xuống."
+
+msgid "No books to download."
+msgstr "Không có sách nào để tải xuống."
+
 msgid "Library view"
 msgstr "Xem thư viện"
 
@@ -68,8 +98,14 @@ msgstr "Tăng dần"
 msgid "Actions"
 msgstr "Tác vụ"
 
+msgid "Sync now"
+msgstr "Đồng bộ ngay"
+
 msgid "Download all books"
 msgstr "Tải xuống tất cả sách"
+
+msgid "Download progress"
+msgstr "Tiến trình tải xuống"
 
 msgid "Rescan library"
 msgstr "Quét lại thư viện"
@@ -104,6 +140,12 @@ msgstr "Tìm trong thư viện"
 msgid "Search title or author"
 msgstr "Tìm theo tiêu đề hoặc tác giả"
 
+msgid "Books synced"
+msgstr "Đã đồng bộ sách"
+
+msgid "Books sync failed"
+msgstr "Đồng bộ sách thất bại"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Cần plugin Cover Browser để hiển thị thư viện đầy đủ. Quay về danh sách đơn giản."
 
@@ -116,18 +158,6 @@ msgstr "Tải sách này từ Readest?"
 msgid "Download"
 msgstr "Tải xuống"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Đặt thư mục Home trong Trình quản lý tệp trước để bật tải xuống."
-
-msgid "Downloading…"
-msgstr "Đang tải xuống…"
-
-msgid "Cloud copy unavailable."
-msgstr "Bản sao trên đám mây không khả dụng."
-
-msgid "Download failed."
-msgstr "Tải xuống thất bại."
-
 msgid "No cover available on Readest."
 msgstr "Không có bìa trên Readest."
 
@@ -137,20 +167,8 @@ msgstr "Tải bìa thất bại."
 msgid "Could not delete the file."
 msgstr "Không thể xóa tệp."
 
-msgid "No books to download."
-msgstr "Không có sách nào để tải xuống."
-
-msgid "Downloading %1 of %2…"
-msgstr "Đang tải xuống %1 trên %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Đã hủy tải xuống. Đã tải %1 trên %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Đã tải %1 trên %2 (bỏ qua %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Đã tải %1 trên %2."
+msgid "Download group"
+msgstr "Tải xuống nhóm"
 
 msgid "Removing from cloud…"
 msgstr "Đang xóa khỏi đám mây…"
@@ -287,23 +305,14 @@ msgstr "Gửi thống kê ngay"
 msgid "Pull stats now"
 msgstr "Lấy thống kê ngay"
 
-msgid "Push books now"
-msgstr "Gửi sách ngay"
-
-msgid "Pull books now"
-msgstr "Lấy sách ngay"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nhận qua Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Tải sách hiện tại lên Readest"
-
 msgid "Push reading progress now"
 msgstr "Đẩy tiến trình đọc ngay"
 
 msgid "Pull reading progress now"
 msgstr "Lấy tiến trình đọc ngay"
+
+msgid "Upload current book to Readest"
+msgstr "Tải sách hiện tại lên Readest"
 
 msgid "Push annotations now"
 msgstr "Đẩy ghi chú ngay"
@@ -316,6 +325,9 @@ msgstr "Đồng bộ đầy đủ tất cả ghi chú"
 
 msgid "Sync info"
 msgstr "Thông tin đồng bộ"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nhận qua Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Kiểm tra cập nhật (v%1)"
@@ -349,12 +361,6 @@ msgstr "Thông tin đồng bộ"
 
 msgid "Library not initialized"
 msgstr "Thư viện chưa được khởi tạo"
-
-msgid "Books synced"
-msgstr "Đã đồng bộ sách"
-
-msgid "Books sync failed"
-msgstr "Đồng bộ sách thất bại"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Trước tiên hãy đặt thư mục tải xuống của Readest hoặc thư mục chính của KOReader."

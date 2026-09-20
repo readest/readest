@@ -9,6 +9,7 @@ import {
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFileSelector } from '@/hooks/useFileSelector';
+import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { restoreFromBackupZip, saveBackupFile } from '@/services/backupService';
 import { useLibraryStore } from '@/store/libraryStore';
 import Dialog from '@/components/Dialog';
@@ -53,6 +54,11 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
   const [errorMessage, setErrorMessage] = useState('');
   const [result, setResult] = useState<BackupResult | null>(null);
   const [includeCredentials, setIncludeCredentials] = useState(false);
+
+  const isProcessing = status === 'backing-up' || status === 'restoring';
+  // Keep the screen on while a backup or restore runs, otherwise Android
+  // suspends the app with it and the job stalls (#6291).
+  useScreenWakeLock(isProcessing, appService?.hasWindow, appService?.isIOSApp);
 
   const resetState = () => {
     setStatus('idle');
@@ -139,6 +145,7 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
         (current, total, currentFile) => {
           setProgress({ current, total, currentFile });
         },
+        result.files[0]?.path,
       );
 
       const newLibrary = await appService.loadLibraryBooks();
@@ -169,8 +176,6 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
 
   const progressPercentage =
     progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
-
-  const isProcessing = status === 'backing-up' || status === 'restoring';
 
   return (
     <Dialog

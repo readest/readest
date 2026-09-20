@@ -245,6 +245,61 @@ describe('MediaOverlayClient capabilities', () => {
     audio().advanceTo(4);
     expect((await pending).value).toMatchObject({ code: 'end' });
   });
+
+  // BookOrbit's audio cannot be given to a media element as a URL at all
+  // (`Cross-Origin-Resource-Policy: same-origin`), so its track list carries
+  // server paths and the bytes arrive as blobs -- only the track being played,
+  // and seekable, which resuming inside a chapter needs.
+  test('plays a multi-track source whose tracks load as blobs', async () => {
+    [section] = await makeSection(WORD_SMIL);
+    const loadTrack = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+    await client.init();
+    client.attachSource({
+      loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+      loadTrack,
+      resolveTracks: vi.fn(async () => [
+        { url: '/api/v1/audiobooks/8/assets/a1/content', startOffset: 0, duration: 2 },
+        { url: '/api/v1/audiobooks/8/assets/a2/content', startOffset: 2, duration: 10 },
+      ]),
+    });
+    client.setSection(section);
+
+    const iter = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
+
+    // Only the track holding the clip is fetched, and the element plays the
+    // blob rather than the path.
+    expect(loadTrack).toHaveBeenCalledExactlyOnceWith('/api/v1/audiobooks/8/assets/a2/content');
+    expect(audio().src).toBe('blob:audio');
+    expect(audio().seeks).toEqual([1]);
+  });
+
+  // The same source resolves real URLs once the loopback media proxy is up.
+  // Those stream and seek, so they must go to the element directly rather than
+  // being downloaded whole through the blob loader.
+  test('plays a blob-capable source from URLs when it resolves them', async () => {
+    [section] = await makeSection(WORD_SMIL);
+    const loadTrack = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+    await client.init();
+    client.attachSource({
+      loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+      loadTrack,
+      resolveTracks: vi.fn(async () => [
+        { url: 'http://127.0.0.1:9/s/media?u=a1', startOffset: 0, duration: 2 },
+        { url: 'http://127.0.0.1:9/s/media?u=a2', startOffset: 2, duration: 10 },
+      ]),
+    });
+    client.setSection(section);
+
+    const iter = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    expect((await iter.next()).value).toMatchObject({ code: 'boundary' });
+
+    expect(loadTrack).not.toHaveBeenCalled();
+    expect(audio().src).toBe('http://127.0.0.1:9/s/media?u=a2');
+    expect(audio().seeks).toEqual([1]);
+  });
 });
 
 describe('MediaOverlayClient playback', () => {

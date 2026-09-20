@@ -203,31 +203,27 @@ To build Readest from the latest commit, see [Getting Started](./CONTRIBUTING.md
 
 - See Issue [readest/readest#358](https://github.com/readest/readest/issues/358) for further details, or head over to our [Discord][link-discord] server and open a support discussion with detailed logs of your environment and the steps you’ve taken.
 
-### 2. AppImage Launches but Only Shows a Taskbar Icon
+### Linux Fails to Launch on Wayland / Niri
 
-On some Arch Linux systems—especially those using Wayland—the Readest AppImage may briefly show an icon in the taskbar and then exit without opening a window.
+Current Linux builds, including Flatpak, use CEF with an X11 window backend.
+Wayland sessions therefore need XWayland. Without a `DISPLAY`, older builds exit
+with `Runtime(CreateWindow)` before opening a window.
 
-You might see logs such as:
+On Niri, install `xwayland-satellite` 0.7 or later using your distribution's package manager
+and restart your Niri session. Niri 25.08 and later can start it on demand and
+set `DISPLAY` for applications. See [Niri's XWayland setup instructions](https://niri-wm.github.io/niri/Xwayland.html).
 
-```
-Could not create default EGL display: EGL_BAD_PARAMETER. Aborting...
-```
+From a terminal in that session, check `printenv DISPLAY`, then launch Readest:
 
-This behavior is usually caused by compatibility issues between the bundled AppImage libraries and the system’s EGL / Wayland environment.
-
-**Workaround 1: Launch with LD_PRELOAD (recommended)**
-
-You can preload the system Wayland client library before launching the AppImage:
-
-```
-LD_PRELOAD=/usr/lib/libwayland-client.so /path/to/Readest.AppImage
+```sh
+flatpak run com.bilingify.readest
 ```
 
-This workaround has been confirmed to resolve the issue on affected systems.
-
-**Workaround 2: Use the Flatpak Version**
-
-If you prefer a more reliable out-of-the-box experience on Arch Linux, consider using the [Flatpak build on Flathub][link-flathub] instead. The Flatpak runtime helps avoid system library mismatches and tends to behave more consistently across different Wayland and X11 setups.
+The Flatpak already requests the X11 socket. If you have customized its sandbox
+permissions, allow that socket as well. Setting `DISPLAY` to an arbitrary value
+does not start XWayland; use the value provided by your session.
+`--ozone-platform=wayland` cannot enable native Wayland support in this runtime,
+and WebKitGTK environment variables do not affect CEF.
 
 ## Contributors
 

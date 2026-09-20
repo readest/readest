@@ -428,6 +428,27 @@ describe('DictionarySheet — concurrent lookup', () => {
 });
 
 describe('DictionarySheet — query normalization', () => {
+  it.each([
+    ['Café', 'cafe'],
+    ['rūpa', 'rupa'],
+    ['niño', 'nino'],
+    ['café', 'cafe\u0301'],
+    ['cafe\u0301', 'café'],
+  ])('resolves %s against the stored headword %s', async (word, headword) => {
+    providersForNextRender.push(buildExactProvider(headword));
+    renderSheet({ word });
+    await waitFor(() => screen.getByText(`def for ${headword}`));
+  });
+
+  it('keeps an accented exact match ahead of folding', async () => {
+    const exact = buildExactProvider('café');
+    const spy = vi.spyOn(exact, 'lookup');
+    providersForNextRender.push(exact);
+    renderSheet({ word: 'café' });
+    await waitFor(() => screen.getByText('Exact Match'));
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   it('resolves a lowercase-stored entry from a capitalized selection', async () => {
     const exact = buildExactProvider('hello');
     const spy = vi.spyOn(exact, 'lookup');
@@ -733,5 +754,64 @@ describe('DictionarySheet - image zoom', () => {
 
     const viewer = await waitFor(() => screen.getByTestId('dict-image-viewer'));
     expect(viewer.getAttribute('data-src')).toBe('data:image/png;base64,blob:test/pic-fullsize');
+  });
+});
+
+describe('DictionarySheet — auto-play pronunciation fan-out (#6265)', () => {
+  const buildRecordingProvider = (
+    id: string,
+    seen: { id: string; autoPlay: boolean | undefined }[],
+  ): DictionaryProvider => ({
+    id,
+    kind: 'mdict',
+    label: id,
+    async lookup(word, ctx): Promise<DictionaryLookupOutcome> {
+      seen.push({ id, autoPlay: ctx.autoPlayPronunciation });
+      ctx.container.textContent = `${id}:${word}`;
+      return { ok: true, headword: word };
+    },
+  });
+
+  it('arms auto-play on the first MDict provider only, so concurrent lookups cannot interrupt each other', async () => {
+    const seen: { id: string; autoPlay: boolean | undefined }[] = [];
+    useCustomDictionaryStore.setState({
+      dictionaries: [],
+      settings: {
+        providerOrder: ['mdict:first', 'mdict:second'],
+        providerEnabled: { 'mdict:first': true, 'mdict:second': true },
+        webSearches: [],
+        autoPlayPronunciation: true,
+      },
+    });
+    providersForNextRender.push(
+      buildRecordingProvider('mdict:first', seen),
+      buildRecordingProvider('mdict:second', seen),
+    );
+
+    renderSheet({ word: 'hello' });
+    await waitFor(() => expect(seen).toHaveLength(2));
+
+    // They share one module-scoped <audio>, so arming both lets whichever
+    // resolves its bytes last cut off the other.
+    expect(seen.find((s) => s.id === 'mdict:first')?.autoPlay).toBe(true);
+    expect(seen.find((s) => s.id === 'mdict:second')?.autoPlay).toBe(false);
+  });
+
+  it('arms nothing while the setting is off', async () => {
+    const seen: { id: string; autoPlay: boolean | undefined }[] = [];
+    useCustomDictionaryStore.setState({
+      dictionaries: [],
+      settings: {
+        providerOrder: ['mdict:first'],
+        providerEnabled: { 'mdict:first': true },
+        webSearches: [],
+      },
+    });
+    providersForNextRender.push(buildRecordingProvider('mdict:first', seen));
+
+    renderSheet({ word: 'hello' });
+    await waitFor(() => expect(seen).toHaveLength(1));
+
+    expect(seen[0]!.autoPlay).toBe(false);
   });
 });

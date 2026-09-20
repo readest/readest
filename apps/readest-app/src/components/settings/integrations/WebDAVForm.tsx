@@ -32,7 +32,7 @@ const formatConnectError = (_: TranslationFunc, result: WebDAVConnectResult): st
       return _('Unexpected server response (status {{status}})', { status: result.status ?? 0 });
     case 'NETWORK':
     default:
-      return _('Network error');
+      return result.message ? `${_('Network error')}: ${result.message}` : _('Network error');
   }
 };
 

@@ -213,3 +213,46 @@ describe('StatisticsDb.open', () => {
     await stats.close();
   });
 });
+
+describe('library reading paces', () => {
+  it('uses the same deterministic sample when timestamps tie across the latest 50 events', async () => {
+    const stats = StatisticsDb.from(await freshStatsDb());
+    const id = await stats.upsertBook({ bookMd5: 'tied', title: 'Tied', authors: '' });
+    for (let page = 0; page < 60; page++) {
+      await stats.insertPageEvent(id, {
+        page,
+        startTime: 1000,
+        duration: page + 10,
+        totalPages: 100,
+      });
+    }
+
+    // Break timestamp ties by descending page: pages 10–59 have median duration 44.5.
+    expect.soft(await stats.getMedianPageDurationSecs(id)).toBe(44.5);
+    expect.soft((await stats.getMedianPageDurationsSecs())['tied']).toBe(44.5);
+  });
+
+  it('loads the same recent median per book as individual labels, including the data threshold', async () => {
+    const stats = StatisticsDb.from(await freshStatsDb());
+    const ids: Record<string, number> = {};
+    for (const [hash, count] of [
+      ['slow', 60],
+      ['fast', 6],
+      ['new', 4],
+    ] as const) {
+      const id = await stats.upsertBook({ bookMd5: hash, title: hash, authors: '' });
+      ids[hash] = id;
+      for (let i = 0; i < count; i++)
+        await stats.insertPageEvent(id, {
+          page: i,
+          startTime: 1000 + i,
+          duration: i + 10,
+          totalPages: 100,
+        });
+    }
+    const paces = await stats.getMedianPageDurationsSecs();
+    for (const [hash, id] of Object.entries(ids))
+      expect(paces[hash] ?? null).toBe(await stats.getMedianPageDurationSecs(id));
+    expect(paces['slow']).toBe(44.5);
+  });
+});

@@ -75,3 +75,48 @@ export class HtmlAudioClock implements AudiobookClock {
     this.#audio.load();
   }
 }
+
+/**
+ * Plays downloaded tracks (#6256) from blob URLs, taking file paths in load().
+ * Chromium under CEF (the Linux runtime) fails every non-zero `Range` read of
+ * a custom-scheme URL (Chromium 40739128), so an asset:// track cannot seek
+ * there; a blob URL can. The current track's blob is reused for seeks within
+ * it and released when the track changes or the clock is destroyed.
+ */
+export class BlobAudioClock extends HtmlAudioClock {
+  #loadBlob: (path: string) => Promise<Blob>;
+  #path: string | null = null;
+  #url: string | null = null;
+  #loadSeq = 0;
+
+  constructor(loadBlob: (path: string) => Promise<Blob>) {
+    super();
+    this.#loadBlob = loadBlob;
+  }
+
+  override async load(path: string, startAt: number): Promise<void> {
+    const seq = ++this.#loadSeq;
+    if (path !== this.#path || !this.#url) {
+      const blob = await this.#loadBlob(path);
+      // A newer load (a quick skip) already took over.
+      if (seq !== this.#loadSeq) return;
+      this.#release();
+      this.#path = path;
+      this.#url = URL.createObjectURL(blob);
+    }
+    await super.load(this.#url, startAt);
+  }
+
+  override destroy(): void {
+    // A load still reading its blob must not resurrect the clock.
+    this.#loadSeq++;
+    super.destroy();
+    this.#release();
+  }
+
+  #release(): void {
+    if (this.#url) URL.revokeObjectURL(this.#url);
+    this.#path = null;
+    this.#url = null;
+  }
+}

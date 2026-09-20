@@ -216,7 +216,7 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
         if (selection && !selection.isCollapsed) return; // don't hijack selection
         const store = useReaderStore.getState();
         const viewSettings = store.getViewSettings(bookKey);
-        if (!viewSettings) return;
+        if (!viewSettings || viewSettings.disablePullDownToBookmark) return;
         if (
           !canPullBookmark({
             scrolled: !!viewSettings.scrolled,

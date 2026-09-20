@@ -169,3 +169,16 @@ describe("SyncConfig:getMetaHash", function()
         assert.are.equal(sha2.md5("Dune||"), SyncConfig:getMetaHash(ui, store))
     end)
 end)
+
+describe("SyncConfig delayed responses", function()
+    it("ignores a reading-position response after closing the document", function()
+        local ui = fakeUI()
+        ui.document = {}
+        local response
+        local client = {pullChanges = function(_, _, cb) response = cb end}
+        SyncConfig:pull(ui, {}, client, "book", "meta", false)
+        ui.document = nil
+        response(true, {configs = {}})
+        assert.is_nil(ui._values.readest_sync)
+    end)
+end)

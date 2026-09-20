@@ -26,6 +26,39 @@ const readCapabilityPermissions = (file: string): string[] => {
   );
 };
 
+// Every command in lib.rs's generate_handler! list. `#[cfg(...)]` attribute
+// lines are skipped; the entries themselves are `module::path::command,`.
+const registeredCommands = Array.from(
+  (rustCommandRegistry.match(/generate_handler!\[(?<body>[\s\S]*?)\]\)/)?.groups?.['body'] ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#[') && !line.startsWith('//'))
+    .map((line) => line.replace(/,$/, ''))
+    .map((entry) => entry.split('::').at(-1)),
+).filter((command): command is string => command !== undefined);
+
+// A command registered in Rust but missing from the manifest or the default
+// capability is rejected at runtime with "not allowed. Command not found"
+// (#6253's set_window_title shipped that way).
+describe('every registered app command is declared and granted', () => {
+  it('finds the registered commands', () => {
+    expect(registeredCommands.length).toBeGreaterThan(20);
+  });
+
+  it('declares each command in the Tauri app manifest', () => {
+    const missing = registeredCommands.filter((command) => !manifestCommands.includes(command));
+    expect(missing).toEqual([]);
+  });
+
+  it('grants each command to local app windows', () => {
+    const granted = readCapabilityPermissions('default.json');
+    const missing = registeredCommands.filter(
+      (command) => !granted.includes(`allow-${command.replaceAll('_', '-')}`),
+    );
+    expect(missing).toEqual([]);
+  });
+});
+
 describe('cover thumbnail app-command ACL (#5632)', () => {
   it('declares the command in the Tauri app manifest', () => {
     expect(manifestCommands).toContain(COMMAND);

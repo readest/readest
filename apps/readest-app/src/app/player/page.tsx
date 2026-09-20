@@ -9,14 +9,22 @@ import type { Book } from '@/types/book';
 import type { AudiobookController } from '@/services/audiobook/AudiobookController';
 import type { ABSEpisode } from '@/types/audiobookshelf';
 import { loadAbsEpisodes, openAudiobookSession } from '@/services/audiobook/openAudiobook';
+import {
+  OpdsAudioIncompleteError,
+  OpdsAudioWebAuthError,
+  openOpdsAudiobookSession,
+} from '@/services/opds/openOpdsAudiobook';
+import { openBookOrbitAudiobookSession } from '@/services/bookorbit/openBookOrbitAudiobook';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { useEnv } from '@/context/EnvContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibrary } from '@/hooks/useLibrary';
+import { useOpenBookLink } from '@/hooks/useOpenBookLink';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useThemeStore } from '@/store/themeStore';
 import { isAudiobook } from '@/utils/audiobook';
@@ -36,6 +44,10 @@ const PlayerRoute = () => {
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
   const { libraryLoaded } = useLibrary();
+  // Picking another book from the Android Auto browse tree (or a widget tap)
+  // while the player is open arrives as a readest://book deep link. Without
+  // this the selection lands on a route with nobody listening for it.
+  useOpenBookLink();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const _ = useTranslation();
   const iconSize24 = useResponsiveSize(24);
@@ -151,6 +163,50 @@ const PlayerRoute = () => {
         hash: resolvedBook.hash,
         promise: (async (): Promise<OpenResult> => {
           const activeAppService = appService ?? (await envConfig.getAppService());
+          // An OPDS audiobook has no ABS server behind it; its tracks come
+          // straight from the catalog's acquisition links (#6224).
+          // BookOrbit's own audiobook API carries chapters, byte ranges and a
+          // shared listening position; OPDS can express none of that (#6224).
+          if (resolvedBook.format === 'BOOKORBIT') {
+            return {
+              result: await openBookOrbitAudiobookSession({
+                appService: activeAppService,
+                book: resolvedBook,
+              }),
+            };
+          }
+          if (resolvedBook.format === 'OPDSAUDIO') {
+            try {
+              return {
+                result: await openOpdsAudiobookSession({
+                  appService: activeAppService,
+                  book: resolvedBook,
+                }),
+              };
+            } catch (error) {
+              // A password-protected catalog has no playable route on the web
+              // build; say so instead of bouncing silently to the library.
+              if (error instanceof OpdsAudioWebAuthError) {
+                eventDispatcher.dispatch('toast', {
+                  type: 'error',
+                  message: _('Playing this catalog requires the desktop or mobile app'),
+                  timeout: 5000,
+                });
+                return { result: null };
+              }
+              // Some track's length could not be read, so the timeline would be
+              // short by a chapter and every position in it wrong.
+              if (error instanceof OpdsAudioIncompleteError) {
+                eventDispatcher.dispatch('toast', {
+                  type: 'error',
+                  message: _('Could not read the length of every track in this audiobook'),
+                  timeout: 5000,
+                });
+                return { result: null };
+              }
+              throw error;
+            }
+          }
           const result = await openAudiobookSession({
             appService: activeAppService,
             book: resolvedBook,

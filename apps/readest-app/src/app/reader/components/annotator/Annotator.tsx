@@ -225,6 +225,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // long-press hold before the instant quick action fires, so a tap-to-deselect
   // can't re-open the dictionary off a racy lingering selectionchange (iOS).
   const pointerDownTimeRef = useRef(0);
+  // Set while an instant-quick-action dictionary lookup is up, because that
+  // path consumes the selection as it opens (see handleQuickAction). Dismissing
+  // the lookup hands the selection back (#6213).
+  const instantLookupDeselectedRef = useRef(false);
   // Set when a Word Lens gloss tap synthesizes a selection so the
   // selection-change effect opens the dictionary popup instead of the
   // annotation toolbar. Cleared as soon as it's consumed.
@@ -349,6 +353,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleDismissPopup = useCallback(
     throttle(() => {
+      instantLookupDeselectedRef.current = false;
       setSelection(null);
       setShowAnnotPopup(false);
       setShowAnnotationNotes(false);
@@ -369,6 +374,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    handleTouchCancel,
     handleMouseDown,
     handlePointerDown,
     handlePointerMove,
@@ -382,6 +388,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleContextmenu,
     dragSelectionTo,
     suppressNativeSelectionHandles,
+    restoreSelectionRange,
     noteAutoTurnPoint,
     cancelAutoTurn,
     onAutoTurn,
@@ -428,11 +435,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     selectionIsPopupRef.current = !!selection?.popup;
   }, [selection]);
 
-  // Selections made inside the footnote popup window (FootnotePopup) arrive
-  // via this event: the popup renders its own foliate view (or a host-document
-  // element for data-attribute footnotes), so the per-section listeners
-  // attached in onLoad below never see them. A detail without a range means
-  // the popup selection was cleared or the popup closed.
+  // Selections made outside the book's section documents arrive via this
+  // event: the footnote popup renders its own foliate view (or a host-document
+  // element for data-attribute footnotes), and paragraph mode renders a clone
+  // of the focused paragraph in the host document (ParagraphOverlay, #6200), so
+  // the per-section listeners attached in onLoad below never see them. A
+  // detail without a range means the selection was cleared or the surface
+  // closed.
   const footnoteSelectionEpochRef = useRef(0);
   useEffect(() => {
     const onFootnoteSelection = async (event: CustomEvent) => {
@@ -549,6 +558,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // Bound to the section so a selectionchange deferred during the drag can
     // be processed (and the popup shown once) when the gesture ends.
     detail.doc?.addEventListener('touchend', handleTouchEnd.bind(null, doc, index));
+    if (!appService?.isIOSApp && !appService?.isAndroidApp) {
+      detail.doc?.addEventListener('touchcancel', handleTouchCancel);
+    }
     // Re-arm the instant quick action at the start of each gesture. Android does
     // this via the native-touch touchstart above; iOS/desktop have no such path,
     // and a single iOS long-press emits multiple selectionchange events for the
@@ -724,8 +736,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     onRelocate,
   });
 
-  // Android native-touch handler (the per-gesture engagement signal bridged from
-  // MainActivity.kt). Registered once per view by useRendererInputListeners; it
+  // Mobile native-touch handler (Android MainActivity / iOS touch observer).
+  // Registered once per view by useRendererInputListeners; it
   // resolves the CURRENT primary section's doc/index at fire time rather than
   // capturing them at load time, because foliate also fires `load` for preloaded
   // neighbour sections, whose doc/index would be off-screen.
@@ -734,6 +746,21 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const content = contents.find((c) => c.index === view?.renderer?.primaryIndex) ?? contents[0];
     const doc = content?.doc;
     const index = content?.index;
+    // Release/cancel must clear a pending dwell even if a page turn unloaded
+    // the section the gesture began in.
+    if (ev.type === 'touchcancel') {
+      handleTouchCancel();
+      return;
+    }
+    if (appService?.isIOSApp) {
+      if (ev.type === 'touchstart') handleTouchStart();
+      else if (ev.type === 'touchmove' && doc) {
+        // Native events also cover popup controls: hide only for a drag
+        // that has actually changed the book selection.
+        if (handleNativeTouchMove(ev.x, ev.y, doc)) setShowAnnotPopup(false);
+      } else if (ev.type === 'touchend') handleTouchEnd(doc, index);
+      return;
+    }
     if (!doc || index === undefined) return;
     if (ev.type === 'touchstart') {
       androidTouchEndRef.current = false;
@@ -749,13 +776,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
-  // Register the renderer `scroll` listener and (on Android) the `native-touch`
+  // Register the renderer `scroll` listener and mobile `native-touch`
   // bridge once per view, with cleanup — see the hook for why attaching these in
   // onLoad leaked listeners and degraded paragraph mode over a long session.
   useRendererInputListeners(view, {
     onRendererScroll: handleScroll,
     onNativeTouch: handleNativeTouch,
-    enableNativeTouch: !!appService?.isAndroidApp,
+    enableNativeTouch: !!(appService?.isAndroidApp || appService?.isIOSApp),
     listenToNativeTouchEvents,
   });
 
@@ -1040,14 +1067,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           // toolbar so highlighting and copying stay reachable (#5213).
           if (selection && isSingleLookupTerm(selection.text)) {
             handleDictionary();
-            // The instant lookup consumes the gesture: the word was tapped to be
-            // looked up, not selected. Drop the selection so iOS's native
-            // handles and blue highlight — painted above web content — don't sit
-            // on top of the popup, and so dismissing it has no live selection to
-            // return a toolbar to (#5585, the other side of #5213's boundary).
+            // Drop the selection for as long as the lookup is up, so iOS's
+            // native handles and blue highlight — painted above web content —
+            // don't sit on top of the popup (#5585). It is handed back on
+            // dismiss (#6213): keeping it dropped for good left no way to
+            // highlight or copy the word, because re-selecting it with a quick
+            // action armed only opens the dictionary again.
             // Clear the flag before deselecting: the selectionchange this fires
             // would otherwise dismiss the popup we just opened.
             isTextSelected.current = false;
+            instantLookupDeselectedRef.current = true;
             view?.deselect();
           } else {
             handleShowAnnotPopup();
@@ -1148,7 +1177,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         // dictionary settings (system dictionary vs the in-app popup) — same
         // as the selection-toolbar and instant-quick-action dictionary paths.
         handleDictionary();
-      } else if (enableAnnotationQuickActions && annotationQuickAction && isTextSelected.current) {
+      } else if (
+        enableAnnotationQuickActions &&
+        annotationQuickAction &&
+        isTextSelected.current &&
+        !selection.quickActionHandled
+      ) {
         handleQuickAction();
       } else {
         handleShowAnnotPopup();
@@ -2206,7 +2240,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const handleConfirmExport = async (
     content: string,
     format: NoteExportFormat,
-    sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' },
+    {
+      share,
+      sharePosition,
+    }: {
+      share: boolean;
+      sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' };
+    },
   ) => {
     const { book } = bookData;
     if (!book) return;
@@ -2227,11 +2267,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const filename = format === 'json' ? `${safeTitle}-annotations.json` : `${safeTitle}.${ext}`;
     const saved = await appService?.saveFile(filename, content, {
       mimeType,
-      share: true,
+      share,
       sharePosition,
     });
 
-    if (appService?.isMacOSApp) return;
+    // The macOS share sheet gives its own feedback; the Save panel does not.
+    if (share && appService?.isMacOSApp) return;
     // Without the clipboard fallback there is nothing to fall back to, so a
     // failed JSON save has to be reported as a failure.
     const failedJson = format === 'json' && !saved;
@@ -2384,13 +2425,27 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // The lookup popups never deselect (handleDictionary / handleTranslation /
   // handleProofread only flip popup flags), so a genuine selection is still
   // live when one closes — return to its toolbar instead of discarding it
-  // (#5213). Word Lens gloss taps and taps on an existing highlight
+  // (#5213). The instant dictionary is the one exception, and the block below
+  // puts its selection back so it lands on the same footing. Word Lens gloss taps and taps on an existing highlight
   // synthesize their selection with isTextSelected left false, and an empty
   // toolbar has nothing to return to: those keep the full dismiss. The
   // consuming actions are a different class by design — copy, share, search,
   // and TTS spend the selection (TTS deselects deliberately), and highlight /
   // annotate replace it with the created annotation — so they are not here.
   const handleDismissPopupShowToolbar = () => {
+    // The instant dictionary is the one lookup that deselects as it opens, so
+    // its dismiss has to put the range back before the check below — otherwise
+    // the word it just defined can never be highlighted or copied (#6213).
+    if (instantLookupDeselectedRef.current) {
+      instantLookupDeselectedRef.current = false;
+      if (selection && restoreSelectionRange(selection.range)) {
+        isTextSelected.current = true;
+        // `quickActionHandled` rides along with the selection from here on, so a
+        // later republish of it (handleHighlight stamps `annotated`) can't be
+        // read as a fresh selection and re-open the lookup we just closed.
+        setSelection({ ...selection, quickActionHandled: true });
+      }
+    }
     if (isTextSelected.current && toolButtons.length > 0) {
       handleShowAnnotPopup();
     } else {
@@ -2464,6 +2519,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         })()}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
         <TranslatorPopup
+          bookKey={bookKey}
           text={selection?.text as string}
           position={translatorPopupPosition}
           trianglePosition={trianglePosition}

@@ -11,6 +11,7 @@ const COMMANDS: &[&str] = &[
     "set_media_session_active",
     "update_media_session_state",
     "update_media_session_metadata",
+    "update_media_library",
     "update_carplay_state",
     "playout_enqueue",
     "playout_control",

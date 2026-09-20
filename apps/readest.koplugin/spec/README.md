@@ -1,6 +1,7 @@
 # readest.koplugin tests
 
-Unit tests for `apps/readest.koplugin/library/` modules. Runs under **LuaJIT
+Unit tests for the library, sync client, reader lifecycle, and plugin menus in
+`apps/readest.koplugin/`. Runs under **LuaJIT
 2.1** (the runtime KOReader uses) via [busted](https://lunarmodules.github.io/busted/).
 
 ## Toolchain
@@ -41,6 +42,7 @@ busted --lua=$(which luajit)
 ```
 spec/
 ├── spec_helper.lua      # KOReader stubs + lua-ljsqlite3 shim (loaded once)
+├── *_spec.lua           # Sync transport, reader lifecycle, and menu behavior
 ├── library/
 │   ├── smoke_spec.lua   # Sanity check that the harness boots
 │   └── *_spec.lua       # One per module under library/
@@ -56,6 +58,13 @@ spec/
 - **`G_reader_settings`** (global) → in-memory `readSetting`/`saveSetting`/`flush`.
 
 Each spec calls `require("spec_helper").reset()` in `before_each` to wipe state.
+
+The download specs simulate worker completion and cancellation, verify
+partial-file cleanup, and exercise the shared queue while its dialog is
+hidden. `syncclient_spec.lua` verifies transport retries, errors, and
+background RPC responses larger than a pipe buffer. These use mocked process
+and UI APIs; actual TLS, fork behavior, page-turn responsiveness, and rendering
+still require a KOReader emulator or device check.
 
 ## Adding a new module
 

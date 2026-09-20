@@ -153,7 +153,7 @@ export class StatisticsDb {
       `SELECT duration
          FROM page_stat_data
          WHERE id_book = ?
-         ORDER BY start_time DESC
+         ORDER BY start_time DESC, page DESC
          LIMIT 50`,
       [idBook],
     );
@@ -164,6 +164,31 @@ export class StatisticsDb {
     return pageDurations.length % 2 !== 0
       ? (pageDurations[mid] ?? 0)
       : ((pageDurations[mid - 1] ?? 0) + (pageDurations[mid] ?? 0)) / 2;
+  }
+
+  /** Load shelf paces in one query, using the same last-50 sample as book labels. */
+  async getMedianPageDurationsSecs(): Promise<Record<string, number>> {
+    const rows = await this.db.select<{ md5: string; duration: number }>(
+      `SELECT md5, duration FROM (
+         SELECT b.md5, p.duration,
+           ROW_NUMBER() OVER (PARTITION BY p.id_book ORDER BY p.start_time DESC, p.page DESC) AS recency
+         FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       ) WHERE recency <= 50 ORDER BY md5, duration`,
+    );
+    const samples = new Map<string, number[]>();
+    for (const { md5, duration } of rows) {
+      const durations = samples.get(md5) ?? [];
+      durations.push(duration);
+      samples.set(md5, durations);
+    }
+    const medians: Record<string, number> = {};
+    for (const [md5, durations] of samples) {
+      if (durations.length < 5) continue;
+      const mid = Math.floor(durations.length / 2);
+      medians[md5] =
+        durations.length % 2 ? durations[mid]! : (durations[mid - 1]! + durations[mid]!) / 2;
+    }
+    return medians;
   }
 
   async getBookByMd5(md5: string): Promise<BookRow | null> {

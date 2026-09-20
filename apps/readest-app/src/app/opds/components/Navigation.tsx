@@ -114,7 +114,12 @@ export function Navigation({
         appService?.isMobile ? '' : 'bg-base-100',
       )}
     >
-      <div className={clsx('justify-start gap-1 sm:gap-3', isTrafficLightVisible && 'pl-16!')}>
+      <div
+        className={clsx(
+          'flex items-center justify-start gap-1 sm:gap-3',
+          isTrafficLightVisible && 'pl-16!',
+        )}
+      >
         <div className='flex gap-1'>
           {onBack && (
             <button

@@ -1,7 +1,9 @@
 import { getAllWindows, getCurrentWindow } from '@tauri-apps/api/window';
+import { invoke } from '@tauri-apps/api/core';
 import { emitTo, TauriEvent } from '@tauri-apps/api/event';
 import { exit } from '@tauri-apps/plugin-process';
 import { type as osType } from '@tauri-apps/plugin-os';
+import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { eventDispatcher } from './event';
 
 const APP_NAME = 'Readest';
@@ -40,7 +42,21 @@ export const isMainAppWindow = () => {
 };
 
 export const tauriSetWindowTitle = async (bookTitle?: string) => {
-  await getCurrentWindow().setTitle(formatAppWindowTitle(bookTitle));
+  const title = formatAppWindowTitle(bookTitle);
+  // On macOS a new title makes AppKit re-lay out the title bar and restore
+  // its standard 28pt container, dropping the traffic lights to their
+  // default spot — 8pt above where our header centers them — or bringing
+  // them back on screen where the reader had hidden them. Every page sets
+  // the title on mount, and a correction sent from here lands an IPC
+  // round-trip later, after that default has already been painted, so the
+  // buttons flicked between the two positions on each navigation (#6222).
+  // The native command sets the title and re-applies our layout in one
+  // main-thread pass, so the default is never drawn.
+  if (useTrafficLightStore.getState().appService?.hasTrafficLight) {
+    await invoke('set_window_title', { title });
+    return;
+  }
+  await getCurrentWindow().setTitle(title);
 };
 
 export const tauriGetWindowLogicalPosition = async () => {

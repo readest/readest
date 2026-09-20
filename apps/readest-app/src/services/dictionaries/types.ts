@@ -40,6 +40,12 @@ export interface DictionaryLookupContext {
   bg?: string;
   /** Theme foreground color (e.g. `#1a1a1a`). Forwarded into shadow-scoped CSS. */
   fg?: string;
+  /**
+   * Play the entry's own pronunciation audio as soon as it renders, instead of
+   * waiting for a tap on the speaker (#6265). Only providers that ship audio
+   * inside the bundle (MDict + its companion `.mdd`) act on this.
+   */
+  autoPlayPronunciation?: boolean;
 }
 
 export type DictionaryLookupOutcome =
@@ -204,6 +210,13 @@ export interface DictionarySettings {
    * `font-size` rules and the MDict shadow `::part(dict-content)` rule alike.
    */
   fontScale?: number;
+  /**
+   * Play a looked-up word's pronunciation automatically instead of waiting for
+   * a tap on the speaker icon (#6265). Off by default. Only dictionaries that
+   * carry their own audio (MDict bundles with a companion `.mdd`) can honour
+   * it; nothing is spoken when the entry has no recording.
+   */
+  autoPlayPronunciation?: boolean;
 }
 
 /** Stable ids for the built-in providers. */

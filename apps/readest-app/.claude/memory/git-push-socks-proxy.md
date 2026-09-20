@@ -35,6 +35,16 @@ GIT_SSH_COMMAND="ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=8" \
   git push --no-verify -u origin <branch>
 ```
 
+**`pnpm worktree:new` dies on the submodule step** (seen 2026-09-11): `.gitmodules`
+pins every submodule to an `https://github.com/...` URL, and https to github.com
+fails on this machine (`LibreSSL SSL_ERROR_SYSCALL`, or a bogus
+`remote error: upload-pack: not our ref <sha>` that looks like main pins a dead
+commit — it does NOT, the same sha fetches fine over ssh). The worktree and branch
+ARE created; the script aborts before `pnpm install`. Unblock with
+`git -C packages/<sub> fetch git@github.com:readest/<sub>.git <pinned-sha>` first,
+or just commit/push from the half-built worktree and run the gates in the main
+tree.
+
 Keep `origin = git@github.com:readest/readest.git` (goes through the working
 proxy). Push in the background ([[feedback_dont_push_every_change]]). ls-remote and
 `gh` API calls (small) work fine through the proxy without special handling.

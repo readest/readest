@@ -34,14 +34,29 @@ import {
 let captureBroken = false;
 
 /**
+ * A fixed-layout view whose page does not fit the cell pans instead of
+ * turning: a horizontal drag moves the page, which is why `usePagination`'s
+ * swipe-flip refuses to flip there. The same predicate keeps the captured
+ * pipeline off those views (readest#6239).
+ */
+const isPanningFixedLayout = (viewSettings: ViewSettings) =>
+  viewSettings.zoomLevel > 100 || viewSettings.zoomMode !== 'fit-page';
+
+/**
  * The turn style the captured-page pipeline should drive for this view, or
- * null when the paginator's own turns apply. The pipeline needs a native
- * webview snapshot (Tauri only) and only makes sense for animated,
- * paginated, reflowable books. The curl always turns from a capture (a
- * flat snapshot cannot mesh-bend). Mobile Tauri also keeps slide on this path
- * so a renderer-ready surface can be prepared while the page is idle. Desktop
- * and web builds retain the browser View Transition implementation when it is
- * available.
+ * null when the renderer's own turns apply. The pipeline needs a native
+ * webview snapshot (Tauri only) and only makes sense for animated, paginated
+ * books. The curl always turns from a capture (a flat snapshot cannot
+ * mesh-bend). Mobile Tauri also keeps slide on this path so a renderer-ready
+ * surface can be prepared while the page is idle. Desktop and web builds
+ * retain the browser View Transition implementation when it is available.
+ *
+ * Fixed-layout books (PDF, CBZ/CBR, fixed-layout EPUB/MOBI) ride the same
+ * pipeline for every style, push included: `fixed-layout.js` animates nothing
+ * itself, and its next()/prev() are already the instant jump the overlay
+ * hides. They only drop out while the view is panning — the web/desktop View
+ * Transition turns live in `paginator.js` alone, so off Tauri they stay on an
+ * instant push.
  */
 export const getCapturedTurnStyle = (
   viewSettings: ViewSettings,
@@ -49,10 +64,13 @@ export const getCapturedTurnStyle = (
   prepareNativeSlide = getInitializedAppService()?.isMobileApp === true,
 ): CapturedTurnStyle | null => {
   if (!isTauriAppPlatform() || captureBroken) return null;
-  if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink || isFixedLayout) {
-    return null;
-  }
+  if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink) return null;
+  if (isFixedLayout && isPanningFixedLayout(viewSettings)) return null;
   if (viewSettings.pageTurnStyle === 'curl') return 'curl';
+  // `fixed-layout.js` has no strip to scroll, so its push is an instant swap;
+  // the captured pipeline pushes the live view in beside the outgoing
+  // capture instead. Reflowable books keep the paginator's native push.
+  if (viewSettings.pageTurnStyle === 'push') return isFixedLayout ? 'push' : null;
   if (
     viewSettings.pageTurnStyle === 'slide' &&
     (prepareNativeSlide || !detectViewTransitionGroup())
@@ -360,6 +378,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // text content box.
       getContentRect: () =>
         document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect() ?? null,
+      // A push translates the live reader view in beside the outgoing capture.
+      // The cell clips it, and the header/footer stay put like the paginator's
+      // native push, which scrolls only the page strip.
+      getPushTarget: () =>
+        document
+          .getElementById(`gridcell-${bookKey}`)
+          ?.querySelector<HTMLElement>('foliate-view') ?? null,
       onBeforeCapture: () => {
         restoreToolbarOnCancelRef.current = useReaderStore.getState().hoveredBookKey === bookKey;
       },
@@ -855,7 +880,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             releaseSamples: [{ distance: 0, time: 0 }],
             lastMovementTime: 0,
           };
-          if (style === 'slide') {
+          if (style !== 'curl') {
             startedState.visualOriginDistance = Math.max(
               0,
               dragDistance(startedState, detail.deltaX, viewSettings.rtl),
@@ -907,15 +932,15 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       const signed = dragDistance(state, detail.deltaX, viewSettings?.rtl ?? false);
       const fullGestureVelocity = signed / (detail.deltaT || 1);
       const releaseVelocity = getReleaseVelocity(state);
-      // Slide projects the release velocity forward over a short horizon:
-      // distance and speed contribute continuously instead of crossing two
-      // independent hard thresholds. Curl preserves the existing whole-
-      // gesture 0.3px/ms-or-halfway rule.
+      // Slide and push project the release velocity forward over a short
+      // horizon: distance and speed contribute continuously instead of
+      // crossing two independent hard thresholds. Curl preserves the existing
+      // whole-gesture 0.3px/ms-or-halfway rule.
       const releaseProgress = Math.max(0, Math.min(1, signed / state.width));
       const projectedProgress =
         releaseProgress + (releaseVelocity * SLIDE_RELEASE_PROJECTION_MS) / state.width;
       const commit =
-        state.style === 'slide'
+        state.style !== 'curl'
           ? projectedProgress > 0.5
           : fullGestureVelocity > 0.3
             ? true
@@ -936,10 +961,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
 
 const dragProgress = (state: DragState, deltaX: number, rtl: boolean) => {
   const signed = dragDistance(state, deltaX, rtl);
-  // Slide starts visually flat at the claim point, avoiding a first-frame
-  // jump by the distance consumed during gesture recognition. Release intent
-  // is calculated separately from the full touchstart-relative distance.
-  const visualDistance = state.style === 'slide' ? signed - state.visualOriginDistance : signed;
+  // Slide and push start visually flat at the claim point, avoiding a
+  // first-frame jump by the distance consumed during gesture recognition.
+  // Release intent is calculated separately from the full touchstart-relative
+  // distance.
+  const visualDistance = state.style !== 'curl' ? signed - state.visualOriginDistance : signed;
   return Math.max(0, Math.min(1, visualDistance / state.width));
 };
 

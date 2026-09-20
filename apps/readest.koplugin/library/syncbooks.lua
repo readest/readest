@@ -5,11 +5,9 @@
 --
 -- The pure helpers (build_file_key, build_cover_key, build_local_filename,
 -- resolve_collision) are exported and unit-tested in
--- spec/library/syncbooks_spec.lua. The network-touching methods (pullBooks,
--- downloadBook, downloadCover) require live KOReader services (Spore,
--- httpclient, NetworkMgr, UIManager.looper) and are exercised via the manual
--- test matrix in docs/library-design.md, not unit tests — stubbing that
--- surface would balloon test setup with little additional confidence.
+-- spec/library/syncbooks_spec.lua. Background book transfer lifecycle is
+-- covered by spec/library/download_spec.lua, with live network behavior
+-- verified in KOReader.
 
 local M = {}
 
@@ -262,6 +260,12 @@ end
 -- updated_at | deleted_at of the rows we sent (so the next sync's
 -- getChangedBooks query doesn't re-include them).
 -- ---------------------------------------------------------------------------
+local function syncContextValid(opts, user_id)
+    return opts.store and opts.store.db and opts.store.user_id == user_id
+        and opts.settings.user_id == user_id
+        and opts.settings.access_token ~= nil
+end
+
 function M.pushChangedBooks(opts, cb)
     local logger = require("logger")
     local SyncAuth = opts.sync_auth
@@ -271,6 +275,11 @@ function M.pushChangedBooks(opts, cb)
         return
     end
 
+    local user_id = opts.settings.user_id
+    if not syncContextValid(opts, user_id) then
+        if cb then cb(false, "sync cancelled") end
+        return
+    end
     local since = store:getLastPushedAt() or 0
     local changed = store:getChangedBooks(since)
     if #changed == 0 then
@@ -280,6 +289,10 @@ function M.pushChangedBooks(opts, cb)
     end
 
     SyncAuth:withFreshToken(opts.settings, opts.sync_path, function(ok)
+        if not syncContextValid(opts, user_id) then
+            if cb then cb(false, "sync cancelled") end
+            return
+        end
         if not ok then
             if cb then cb(false, "auth refresh failed") end
             return
@@ -303,6 +316,10 @@ function M.pushChangedBooks(opts, cb)
             .. " new_watermark=" .. tostring(max_ts) .. ")")
         client:pushChanges({ books = books_wire, notes = {}, configs = {} },
             function(success, body, status)
+                if not syncContextValid(opts, user_id) then
+                    if cb then cb(false, "sync cancelled") end
+                    return
+                end
                 logger.info("ReadestLibrary pushChangedBooks done: success=" .. tostring(success)
                     .. " status=" .. tostring(status))
                 if not success then
@@ -344,6 +361,10 @@ function M.syncBooks(opts, mode, cb, before_push)
         M.pullBooks(opts, cb)
     else  -- "both"
         M.pullBooks(opts, function(pull_ok, pull_msg, pull_status)
+            if pull_msg == "sync cancelled" then
+                if cb then cb(false, pull_msg, pull_status) end
+                return
+            end
             if before_push then before_push() end
             M.pushChangedBooks(opts, function(push_ok, push_msg)
                 if cb then
@@ -377,6 +398,11 @@ function M.pullBooks(opts, cb)
     local logger = require("logger")
     local SyncAuth = opts.sync_auth
     local LibraryStore = require("library.librarystore")
+    local user_id = opts.settings.user_id
+    if not syncContextValid(opts, user_id) then
+        if cb then cb(false, "sync cancelled") end
+        return
+    end
 
     logger.info("ReadestLibrary syncbooks.pullBooks: starting")
 
@@ -384,6 +410,10 @@ function M.pullBooks(opts, cb)
     -- ensureClient() refreshes async-and-races; the new wrapper blocks until
     -- the refresh completes, so the request never fires with a stale token).
     SyncAuth:withFreshToken(opts.settings, opts.sync_path, function(ok, err)
+        if not syncContextValid(opts, user_id) then
+            if cb then cb(false, "sync cancelled") end
+            return
+        end
         logger.info("ReadestLibrary withFreshToken result: ok=" .. tostring(ok) .. " err=" .. tostring(err))
         if not ok then
             if cb then cb(false, err or "auth refresh failed") end
@@ -403,6 +433,10 @@ function M.pullBooks(opts, cb)
         local since = opts.store:getLastPulledAt() or 0
         logger.info("ReadestLibrary client:pullBooks dispatching with since=" .. tostring(since))
         client:pullBooks({ since = since }, function(success, body, status)
+            if not syncContextValid(opts, user_id) then
+                if cb then cb(false, "sync cancelled") end
+                return
+            end
             logger.info("ReadestLibrary client:pullBooks responded: success=" .. tostring(success)
                 .. " status=" .. tostring(status)
                 .. " body_type=" .. type(body)
@@ -457,13 +491,29 @@ end
 -- opts: {
 --   sync_auth, sync_path, settings,
 --   download_dir   = absolute path; created if missing,
+--   on_progress    = optional callback(bytes_received),
 -- }
 -- book: a row from LibraryStore (must include hash, format, title/source_title)
 -- cb: function(success, abs_path_or_err, status)
+-- Returns a cancellation function; completion runs once after the child is reaped.
 function M.downloadBook(book, opts, cb)
     local logger = require("logger")
     local lfs = require("libs/libkoreader-lfs")
     local SyncAuth = opts.sync_auth
+
+    local FFIUtil = require("ffi/util")
+    local UIManager = require("ui/uimanager")
+    local pid, cancelled, finished
+    local function finish(success, path_or_err, status)
+        if finished then return end
+        finished = true
+        if cb then cb(success, path_or_err, status) end
+    end
+    local function cancel()
+        if finished or cancelled then return end
+        cancelled = true
+        if pid then FFIUtil.terminateSubProcess(pid) end
+    end
 
     logger.info("ReadestLibrary downloadBook: hash=" .. tostring(book.hash)
         .. " format=" .. tostring(book.format)
@@ -479,7 +529,7 @@ function M.downloadBook(book, opts, cb)
             .. " (user_id_set=" .. tostring(opts.settings.user_id ~= nil)
             .. " hash_set=" .. tostring(book.hash ~= nil and book.hash ~= "")
             .. " format=" .. tostring(book.format) .. ")")
-        if cb then cb(false, "could not build cloud fileKey for book") end
+        finish(false, "could not build cloud fileKey for book")
         return
     end
     logger.info("ReadestLibrary downloadBook: file_key=" .. file_key)
@@ -487,7 +537,7 @@ function M.downloadBook(book, opts, cb)
     local local_name = M.build_local_filename(book)
     if not local_name then
         logger.warn("ReadestLibrary downloadBook: build_local_filename returned nil")
-        if cb then cb(false, "unknown book format") end
+        finish(false, "unknown book format")
         return
     end
 
@@ -497,6 +547,7 @@ function M.downloadBook(book, opts, cb)
     end
     local exists = function(name)
         return lfs.attributes(opts.download_dir .. "/" .. name, "mode") ~= nil
+            or lfs.attributes(opts.download_dir .. "/" .. name .. ".part", "mode") ~= nil
     end
     local final_name = M.resolve_collision(local_name, exists)
     local dst = opts.download_dir .. "/" .. final_name
@@ -505,14 +556,15 @@ function M.downloadBook(book, opts, cb)
     logger.info("ReadestLibrary downloadBook: requesting fresh token…")
     SyncAuth:withFreshToken(opts.settings, opts.sync_path, function(ok)
         logger.info("ReadestLibrary downloadBook: withFreshToken returned ok=" .. tostring(ok))
+        if cancelled then finish(false, "cancelled"); return end
         if not ok then
-            if cb then cb(false, "auth refresh failed") end
+            finish(false, "auth refresh failed")
             return
         end
         local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
         if not client then
             logger.warn("ReadestLibrary downloadBook: getReadestSyncClient returned nil")
-            if cb then cb(false, "no sync client") end
+            finish(false, "no sync client")
             return
         end
         logger.info("ReadestLibrary downloadBook: dispatching getDownloadUrl…")
@@ -522,61 +574,76 @@ function M.downloadBook(book, opts, cb)
                 .. " status=" .. tostring(status)
                 .. " body_type=" .. type(body)
                 .. " has_url=" .. tostring(body and body.downloadUrl ~= nil))
+            if cancelled then finish(false, "cancelled"); return end
             if not success or not body or not body.downloadUrl then
                 local err = (status == 404) and "cloud-not-found"
                     or (body and body.error)
                     or "url-fetch-failed"
-                if cb then cb(false, err, status) end
+                finish(false, err, status)
                 return
             end
             local url = body.downloadUrl
             logger.info("ReadestLibrary downloadBook: streaming GET " .. url:sub(1, 80) .. "…")
 
-            -- Use socket.http synchronously with ltn12 file sink — same
-            -- pattern as KOReader's OPDS downloader (opdsbrowser.lua:1036)
-            -- and dropboxapi (dropboxapi.lua:39). The async httpclient
-            -- path we used before only fires its callback inside an
-            -- active Spore coroutine; calling it from a getDownloadUrl
-            -- callback doesn't satisfy that, so the response was never
-            -- delivered and the "Downloading…" dialog hung forever.
-            -- Synchronous blocks the UI for the duration of the
-            -- download, which matches OPDS UX (progress dialog stays
-            -- visible; users expect the brief freeze).
-            local socket     = require("socket")
-            local http       = require("socket.http")
-            local socketutil = require("socketutil")
-            local ltn12      = require("ltn12")
+            -- Keep blocking network I/O in a child, as cover downloads do.
+            -- Only publish a complete file; the parent polls its temporary
+            -- size for progress without filling a pipe with per-chunk events.
+            local partial = dst .. ".part"
+            local parent_read_fd
+            pid, parent_read_fd = FFIUtil.runInSubProcess(function(_, child_write_fd)
+                local result
+                local ok, err = pcall(function()
+                    local socket = require("socket")
+                    local http = require("socket.http")
+                    local socketutil = require("socketutil")
+                    local ltn12 = require("ltn12")
+                    local f, ferr = io.open(partial, "wb")
+                    if not f then result = "error:" .. tostring(ferr); return end
+                    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+                    local code = socket.skip(1, http.request{
+                        url = url,
+                        headers = { ["Accept-Encoding"] = "identity" },
+                        sink = ltn12.sink.file(f),
+                    })
+                    socketutil:reset_timeout()
+                    result = tostring(code)
+                end)
+                if not ok then result = "error:" .. tostring(err) end
+                -- Keep the result smaller than a pipe buffer; the parent reads
+                -- only after exit. _exit avoids inherited driver destructors.
+                pcall(FFIUtil.writeToFD, child_write_fd, (result or "error"):sub(1, 512), true)
+                local ffi = require("ffi")
+                pcall(ffi.cdef, "void _exit(int status);")
+                ffi.C._exit(0)
+            end, true)
+            if not pid then finish(false, "fork failed"); return end
 
-            local f, ferr = io.open(dst, "wb")
-            if not f then
-                logger.warn("ReadestLibrary downloadBook: io.open failed " .. tostring(ferr))
-                if cb then cb(false, "open dst failed: " .. tostring(ferr)) end
-                return
+            local poll
+            poll = function()
+                if FFIUtil.isSubProcessDone(pid) then
+                    local result = FFIUtil.readAllFromFD(parent_read_fd) or ""
+                    if cancelled then
+                        os.remove(partial)
+                        finish(false, "cancelled")
+                    elseif tonumber(result) == 200 then
+                        local renamed, err = os.rename(partial, dst)
+                        if not renamed then os.remove(partial) end
+                        finish(renamed == true, renamed and dst or err)
+                    else
+                        os.remove(partial)
+                        finish(false, "download failed", tonumber(result))
+                    end
+                else
+                    if opts.on_progress and not cancelled then
+                        opts.on_progress(lfs.attributes(partial, "size") or 0)
+                    end
+                    UIManager:scheduleIn(1, poll)
+                end
             end
-
-            socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-            local code, headers, http_status = socket.skip(1, http.request{
-                url     = url,
-                headers = { ["Accept-Encoding"] = "identity" },
-                sink    = ltn12.sink.file(f),
-            })
-            socketutil:reset_timeout()
-
-            logger.info("ReadestLibrary downloadBook: socket.http response"
-                .. " code=" .. tostring(code) .. " status=" .. tostring(http_status))
-
-            if code ~= 200 then
-                -- sink already closed by ltn12 on error; remove the
-                -- partial file so a retry doesn't trip the
-                -- collision-resolution suffix.
-                os.remove(dst)
-                if cb then cb(false, "download failed", code) end
-                return
-            end
-            logger.info("ReadestLibrary downloadBook: wrote " .. dst)
-            if cb then cb(true, dst) end
+            UIManager:scheduleIn(0.1, poll)
         end)
     end)
+    return cancel
 end
 
 -- downloadCover(book, opts, cb)

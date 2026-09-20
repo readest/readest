@@ -477,6 +477,12 @@ const controlPanelItems = [
     section: 'Pagination',
   },
   {
+    id: 'settings.control.disablePullDownToBookmark',
+    labelKey: _('Pull-Down to Bookmark'),
+    keywords: ['pull', 'down', 'bookmark', 'gesture'],
+    section: 'Annotation Tools',
+  },
+  {
     id: 'settings.control.enableQuickActions',
     labelKey: _('Enable Quick Actions'),
     keywords: ['quick', 'actions', 'annotation', 'enable'],

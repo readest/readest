@@ -379,6 +379,8 @@ const getColorStyles = (
   return colorStyles;
 };
 
+export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
+
 const getPageLayoutStyles = (
   marginTop: number,
   marginRight: number,
@@ -412,6 +414,11 @@ const getPageLayoutStyles = (
   img {
     -webkit-touch-callout: none;
     -webkit-user-drag: none;
+  }
+  /* Chromium snaps a long press onto any link in reach of the finger, and a
+     link long press starts no selection (#6242); set while a touch is held */
+  html.${LINK_TOUCH_HOLD_CLASS} a[href] {
+    pointer-events: none !important;
   }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
@@ -647,7 +654,12 @@ const getParagraphLayoutStyles = (
   dd.aligned-justify, div.aligned-justify {
     ${!justify && overrideLayout ? 'text-align: initial !important;' : ''};
   }
+  /* An image that is the paragraph's whole content must not take the indent:
+     sized to the column, it would overhang by the indent and paint a strip on
+     the next page (#6198). Linked images (<a><img>, <span><a><img>) included. */
   p:has(> img:only-child), p:has(> span:only-child > img:only-child),
+  p:has(> a:only-child > img:only-child),
+  p:has(> span:only-child > a:only-child > img:only-child),
   p:has(> img:not(.has-text-siblings)),
   p:has(> a:first-child + img:last-child) {
     text-indent: initial !important;
