@@ -1,3 +1,4 @@
+import { bookshelfReplicaSchema, bookshelfFieldsSchema } from '@/services/bookshelves/replica';
 import { z } from 'zod';
 import type { ReplicaRow } from '@/types/replica';
 import type { SyncErrorCode } from '@/libs/errors';
@@ -106,6 +107,13 @@ interface KindSpec {
 }
 
 export const KIND_ALLOWLIST: Record<string, KindSpec> = {
+  bookshelf: {
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 200,
+    binary: false,
+    fields: bookshelfFieldsSchema,
+  },
   dictionary: {
     minSchemaVersion: 1,
     maxSchemaVersion: 1,
@@ -253,6 +261,9 @@ export const validateRow = (row: ReplicaRow): ValidationResult => {
     };
   }
 
+  if (row.kind === 'bookshelf' && !bookshelfReplicaSchema.safeParse(row).success) {
+    return { ok: false, code: 'VALIDATION', message: 'Invalid bookshelf replica' };
+  }
   if (row.manifest_jsonb !== null) {
     const manifestParse = manifestSchema.safeParse(row.manifest_jsonb);
     if (!manifestParse.success) {

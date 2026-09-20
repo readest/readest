@@ -44,14 +44,15 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
       {/* No `appearance-none!` here: daisyUI's `.select` already hides the
           native arrow and, where supported, opts into `appearance: base-select`
           so the option popup is painted by the page in the app theme instead
-          of by the OS (#5587). */}
+          of by the OS (#5587). Size to the selected text so the shadow-root
+          value sits against the trailing chevron, including short labels. */}
       <select
         value={value}
         onChange={onChange}
         onKeyDown={(e) => e.stopPropagation()}
         disabled={disabled}
         aria-label={ariaLabel}
-        className='select settings-content h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'
+        className='select settings-content h-9 w-auto min-w-0 [field-sizing:content] cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'
         style={{
           textAlignLast: 'end',
         }}

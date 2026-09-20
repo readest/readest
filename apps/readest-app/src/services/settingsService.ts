@@ -1,3 +1,5 @@
+import { mergeBookshelfStates, migrateBookshelfSettings } from '@/services/bookshelves/state';
+import { readPendingBookshelves } from '@/services/bookshelves/journal';
 import { FileSystem } from '@/types/system';
 import { LibrarySecondarySortByType, ReadSettings, SystemSettings } from '@/types/settings';
 import { DEFAULT_HIGHLIGHT_COLORS, UserHighlightColor, ViewSettings } from '@/types/book';
@@ -173,6 +175,12 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
   }
 
   migrateLibraryThenSort(settings);
+  // Recover durable edits even when this device starts offline.
+  for (const row of readPendingBookshelves()) {
+    settings.bookshelves = mergeBookshelfStates(settings.bookshelves, {
+      rows: { [row.replica_id]: row },
+    });
+  }
 
   if (!settings.kosync.deviceId) {
     settings.kosync.deviceId = uuidv4();
@@ -189,9 +197,23 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     await saveSettings(ctx.fs, settings);
   }
 
+  if (migrateBookshelfSettings(settings)) {
+    await saveSettings(ctx.fs, settings);
+  }
+
   return settings;
 }
 
+let settingsWrites: Promise<void> = Promise.resolve();
 export async function saveSettings(fs: FileSystem, settings: SystemSettings): Promise<void> {
-  await safeSaveJSON(fs, SETTINGS_FILENAME, 'Settings', settings);
+  const write = async () => {
+    const disk = await safeLoadJSON<Partial<SystemSettings>>(fs, SETTINGS_FILENAME, 'Settings', {});
+    const merged =
+      settings.bookshelves || disk.bookshelves
+        ? { ...settings, bookshelves: mergeBookshelfStates(disk.bookshelves, settings.bookshelves) }
+        : settings;
+    await safeSaveJSON(fs, SETTINGS_FILENAME, 'Settings', merged);
+  };
+  settingsWrites = settingsWrites.catch(() => {}).then(write);
+  await settingsWrites;
 }

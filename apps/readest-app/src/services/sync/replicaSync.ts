@@ -1,3 +1,4 @@
+import { acknowledgeBookshelfOperation } from '@/services/bookshelves/journal';
 import { HlcGenerator } from '@/libs/crdt';
 import { LocalStorageHlcStore, type HlcSnapshotStore } from '@/libs/hlcStore';
 import { ReplicaSyncClient } from '@/libs/replicaSyncClient';
@@ -71,6 +72,15 @@ export const initReplicaSync = (opts: ReplicaSyncInitOpts): ReplicaSyncContext =
     hlc,
     client,
     cursorStore: opts.cursorStore,
+    canPushRow: async (row) => {
+      if (row.kind !== 'bookshelf') return true;
+      const { getUserID } = await import('@/utils/access');
+      const { isSyncCategoryEnabled } = await import('./syncCategories');
+      return isSyncCategoryEnabled('bookshelf') && row.user_id === (await getUserID());
+    },
+    onAcknowledged: (row) => {
+      if (row.kind === 'bookshelf') acknowledgeBookshelfOperation(row);
+    },
   });
 
   instance = { manager, hlc, deviceId: opts.deviceId };

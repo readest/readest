@@ -17,6 +17,8 @@ export interface ReplicaSyncManagerOpts {
   client: Pick<ReplicaSyncClient, 'push' | 'pull' | 'pullBatch'>;
   cursorStore: CursorStore;
   debounceMs?: number;
+  canPushRow?: (row: ReplicaRow) => Promise<boolean>;
+  onAcknowledged?: (row: ReplicaRow) => void;
 }
 
 interface DirtyKey {
@@ -24,11 +26,11 @@ interface DirtyKey {
   replicaId: string;
 }
 
-const dirtyKeyOf = (row: ReplicaRow): string => `${row.kind}::${row.replica_id}`;
-const splitKey = (k: string): DirtyKey => {
-  const idx = k.indexOf('::');
-  return { kind: k.slice(0, idx), replicaId: k.slice(idx + 2) };
-};
+// Durable bookshelf edits retain their account across sign-out/sign-in.
+const dirtyKeyOf = (row: ReplicaRow): string =>
+  row.kind === 'bookshelf'
+    ? JSON.stringify([row.user_id, row.kind, row.replica_id])
+    : `${row.kind}::${row.replica_id}`;
 
 const mergeDirtyRows = (a: ReplicaRow, b: ReplicaRow): ReplicaRow => {
   if (a.user_id !== b.user_id || a.kind !== b.kind || a.replica_id !== b.replica_id) {
@@ -126,6 +128,12 @@ export class ReplicaSyncManager {
       ([, row]) => !this.unsupportedKinds.has(row.kind),
     );
     if (entries.length === 0) return;
+    if (this.opts.canPushRow) {
+      for (let i = entries.length - 1; i >= 0; i--) {
+        if (!(await this.opts.canPushRow(entries[i]![1]))) entries.splice(i, 1);
+      }
+    }
+    if (!entries.length) return;
     const snapshot = entries.map(([, row]) => row);
     const snapshotKeys = entries.map(([key]) => key);
 
@@ -159,6 +167,7 @@ export class ReplicaSyncManager {
       }
     }
     for (const key of pushedKeys) {
+      this.opts.onAcknowledged?.(snapshot[snapshotKeys.indexOf(key)]!);
       const stillSame = this.dirty.get(key);
       if (stillSame === snapshot[snapshotKeys.indexOf(key)]) {
         this.dirty.delete(key);
@@ -279,6 +288,9 @@ export class ReplicaSyncManager {
   }
 
   pendingKeys(): DirtyKey[] {
-    return Array.from(this.dirty.keys()).map(splitKey);
+    return Array.from(this.dirty.values(), (row) => ({
+      kind: row.kind,
+      replicaId: row.replica_id,
+    }));
   }
 }

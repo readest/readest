@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as sortable from '@dnd-kit/sortable';
 
 import CustomDictionaries from '@/components/settings/CustomDictionaries';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
@@ -93,6 +94,20 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+});
+
+it('preserves dictionary row dimensions when dragging over a differently sized row', () => {
+  seedSettings(enabledSystemSettings);
+  const useSortable = sortable.useSortable;
+  vi.spyOn(sortable, 'useSortable').mockImplementation((options) => ({
+    ...useSortable(options),
+    transform: { x: 12, y: 24, scaleX: 0.5, scaleY: 1.5 },
+  }));
+  render(<CustomDictionaries onBack={() => {}} />);
+  const row = screen.getAllByRole('button', { name: 'Drag to reorder' })[0]!.parentElement!;
+  expect(row.style.transform).toContain('translate3d(12px, 24px, 0)');
+  expect(row.style.transform).not.toContain('scale');
 });
 
 describe('CustomDictionaries — system-dictionary lock', () => {

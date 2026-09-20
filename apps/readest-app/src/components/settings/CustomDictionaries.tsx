@@ -146,7 +146,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
   });
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
     // Keep the row visible while dragging; use a slight opacity dip so the
     // user can tell it's the moving one.

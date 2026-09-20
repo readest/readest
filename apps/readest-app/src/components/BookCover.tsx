@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import Image from 'next/image';
-import { memo, useEffect, useRef, useState } from 'react';
+import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
 import { Book } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
@@ -8,6 +8,8 @@ import { getInitializedAppService } from '@/services/environment';
 import { observeCoverForThumbnail } from '@/services/coverThumbnailService';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+
+export const HideBookCoversContext = createContext<boolean | undefined>(undefined);
 
 interface BookCoverProps {
   book: Book;
@@ -45,7 +47,9 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     const usableThumbnail = matchingThumbnail === failedThumbnailUrl ? null : matchingThumbnail;
     const metadataCoverImageUrl = book.metadata?.coverImageUrl || null;
     const coverImageUrl = metadataCoverImageUrl || usableThumbnail || book.coverImageUrl || null;
-    const hideCovers = useSettingsStore((state) => state.settings.libraryHideCovers);
+    const shelfHideCovers = useContext(HideBookCoversContext);
+    const legacyHideCovers = useSettingsStore((state) => state.settings.libraryHideCovers);
+    const hideCovers = shelfHideCovers ?? legacyHideCovers;
     const displayCoverUrl = hideCovers ? null : coverImageUrl;
 
     const shouldShowSpine = showSpine && !hideCovers && imageLoaded && !imageError;

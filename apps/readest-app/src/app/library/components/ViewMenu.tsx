@@ -1,10 +1,12 @@
+import { eventDispatcher } from '@/utils/event';
+import { BOOKSHELF_GROUP_LABELS } from '@/services/bookshelves/definitions';
+import { getGlobalBookshelfSort } from '@/services/bookshelves/sorting';
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
-  LibraryCoverFitType,
   LibraryViewModeType,
   LibraryGroupByType,
   LibrarySecondarySortByType,
@@ -28,50 +30,35 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
 
-  const viewMode = settings.libraryViewMode;
-  const coverFit = settings.libraryCoverFit;
+  const viewMode = searchParams?.get('view') || settings.libraryViewMode;
   const autoColumns = settings.libraryAutoColumns;
   const columns = settings.libraryColumns;
   const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
-  const sortBy = settings.librarySortBy;
-  const isAscending = settings.librarySortAscending;
-  const sortByAuto = settings.librarySortByAuto ?? true;
-  // Primary smart default: when auto is on, grouping by Series implies Series as
-  // the primary sort. The stored value is left alone — that way turning auto off
-  // later restores the user's previous explicit pick.
-  const primaryEffective: LibrarySortByType =
-    sortByAuto && groupBy === LibraryGroupByType.Series ? LibrarySortByType.Series : sortBy;
-  const primaryIsImplicit = sortByAuto && primaryEffective !== sortBy;
-  const thenSortBy: LibrarySecondarySortByType = settings.libraryThenSortBy ?? 'none';
-  // Smart default: when grouping by Author and the user hasn't picked an explicit
-  // secondary, Series is implied. Surface this in the menu so the highlighted row
-  // matches the actual sort behavior.
-  const secondaryEffective: LibrarySecondarySortByType =
-    thenSortBy === 'none' && groupBy === LibraryGroupByType.Author
-      ? LibrarySortByType.Series
-      : thenSortBy;
-  const secondaryIsImplicit = thenSortBy === 'none' && secondaryEffective !== 'none';
-  const isThenAscending = settings.libraryThenSortAscending ?? true;
+  const globalSort = getGlobalBookshelfSort(settings, searchParams);
+  const sortBy = globalSort.by;
+  const isAscending = globalSort.ascending;
+  const primaryEffective = globalSort.by;
+  const primaryIsImplicit =
+    !searchParams?.get('sort') &&
+    (settings.librarySortByAuto ?? true) &&
+    globalSort.by !== settings.librarySortBy;
+  const thenSortBy = globalSort.thenBy;
+  const secondaryEffective = globalSort.thenBy;
+  const secondaryIsImplicit =
+    !searchParams?.get('thenSort') &&
+    (!settings.libraryThenSortBy || settings.libraryThenSortBy === 'none') &&
+    globalSort.thenBy !== 'none';
+  const isThenAscending = globalSort.thenAscending;
 
   const viewOptions = [
     { label: _('List'), value: 'list' },
     { label: _('Grid'), value: 'grid' },
   ];
 
-  const coverFitOptions = [
-    { label: _('Crop'), value: 'crop' },
-    { label: _('Fit'), value: 'fit' },
-  ];
-
-  const groupByOptions = [
-    { label: _('Authors'), value: LibraryGroupByType.Author },
-    { label: _('Books'), value: LibraryGroupByType.None },
-    { label: _('Groups'), value: LibraryGroupByType.Group },
-    { label: _('Series'), value: LibraryGroupByType.Series },
-    { label: _('Tags'), value: LibraryGroupByType.Tag },
-    { label: _('Subjects'), value: LibraryGroupByType.Subject },
-    { label: _('Status'), value: LibraryGroupByType.Status },
-  ];
+  const groupByOptions = Object.entries(BOOKSHELF_GROUP_LABELS).map(([value, label]) => ({
+    value,
+    label: _(label),
+  }));
 
   const sortByOptions = [
     { label: _('Title'), value: LibrarySortByType.Title },
@@ -103,29 +90,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleToggleCropCovers = async (value: LibraryCoverFitType) => {
-    await saveSysSettings(envConfig, 'libraryCoverFit', value);
-
-    const params = new URLSearchParams(window.location.search);
-    params.set('cover', value);
-    navigateToLibrary(router, `${params.toString()}`);
-  };
-
   const handleToggleAutoColumns = async () => {
     const newValue = !settings.libraryAutoColumns;
     await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
-  };
-
-  const handleToggleRecentShelf = async () => {
-    await saveSysSettings(
-      envConfig,
-      'libraryRecentShelfEnabled',
-      !settings.libraryRecentShelfEnabled,
-    );
-  };
-
-  const handleToggleHideCovers = async () => {
-    await saveSysSettings(envConfig, 'libraryHideCovers', !settings.libraryHideCovers);
   };
 
   const handleSetColumns = async (value: number) => {
@@ -144,6 +111,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     }
     // Clear group navigation when changing groupBy mode
     params.delete('group');
+    params.delete('shelf');
     navigateToLibrary(router, `${params.toString()}`);
   };
 
@@ -191,6 +159,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
       className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'
       onCancel={() => setIsDropdownOpen?.(false)}
     >
+      <MenuItem
+        label={_('Bookshelves')}
+        buttonClass='min-h-11'
+        onClick={() => {
+          eventDispatcher.dispatch('show-bookshelves');
+          setIsDropdownOpen?.(false);
+        }}
+        transient
+      />
+      <hr aria-hidden='true' className='border-base-200 my-1' />
       {/* View Mode */}
       {viewOptions.map((option) => (
         <MenuItem
@@ -229,45 +207,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           />
         }
         onClick={() => handleToggleAutoColumns()}
-      />
-
-      {/* Book Covers */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Book Covers')}
-        buttonClass='min-h-8 py-1!'
-        labelClass='text-sm sm:text-xs'
-        disabled
-      />
-      {coverFitOptions.map((option) => (
-        <MenuItem
-          key={option.value}
-          label={option.label}
-          buttonClass='min-h-8 py-1!'
-          toggled={coverFit === option.value}
-          onClick={() => handleToggleCropCovers(option.value as LibraryCoverFitType)}
-          transient
-        />
-      ))}
-
-      {/* Hide covers */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Hide covers')}
-        buttonClass='min-h-8 py-1!'
-        toggled={settings.libraryHideCovers}
-        onClick={handleToggleHideCovers}
-        transient
-      />
-
-      {/* Recently read shelf */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Show recently read')}
-        buttonClass='min-h-8 py-1!'
-        toggled={settings.libraryRecentShelfEnabled}
-        onClick={handleToggleRecentShelf}
-        transient
       />
 
       {/* Group By - Collapsible */}
