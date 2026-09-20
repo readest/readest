@@ -290,6 +290,29 @@ fn default_window_size(work_area: Option<(f64, f64)>) -> (f64, f64) {
     )
 }
 
+/// Windows 10 renders the native shadow of an undecorated window as a 1px
+/// border on the left, right and bottom edges but not the top, which reads
+/// as a broken frame (tauri-apps/tauri#13134). Windows 11 (build >= 22000)
+/// draws a uniform border, so only there is the shadow worth keeping.
+#[cfg(all(desktop, target_os = "windows"))]
+fn undecorated_shadow_is_symmetric() -> bool {
+    use winreg::enums::HKEY_LOCAL_MACHINE;
+    use winreg::RegKey;
+
+    RegKey::predef(HKEY_LOCAL_MACHINE)
+        .open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")
+        .and_then(|key| key.get_value::<String, _>("CurrentBuild"))
+        // Unknown version: keep the current (shadowed) behavior.
+        .map_or(true, |build| {
+            build.parse::<u32>().map_or(true, |b| b >= 22000)
+        })
+}
+
+#[cfg(all(desktop, not(target_os = "windows"), not(target_os = "macos")))]
+fn undecorated_shadow_is_symmetric() -> bool {
+    true
+}
+
 // Pure decision for whether the in-app updater should be hidden. Kept
 // dependency-free so it can be unit tested for every platform combination.
 //
@@ -854,7 +877,7 @@ pub fn run() {
                 let mut builder = win_builder
                     .decorations(false)
                     .visible(false)
-                    .shadow(true)
+                    .shadow(undecorated_shadow_is_symmetric())
                     .title("Readest");
 
                 #[cfg(target_os = "windows")]

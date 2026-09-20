@@ -216,8 +216,9 @@ tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
 
 [target.'cfg(windows)'.dependencies]
-# Resolve the user's default browser from the registry for the cold-browser
-# OAuth-redirect fallback (see src/spawn_fresh_browser.rs).
+# Registry reads for the default-browser lookup in the cold-browser
+# OAuth-redirect fallback (see src/spawn_fresh_browser.rs) and the OS build
+# check behind the Windows 10 shadow workaround (see src/lib.rs).
 winreg = "0.52"
 
 [target.'cfg(target_os = "android")'.dependencies]
