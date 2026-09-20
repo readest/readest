@@ -29,6 +29,7 @@ import {
 } from '../../utils/annotatorUtil';
 import AnnotationsToolbar from './AnnotationsToolbar';
 import BooknoteItem from './BooknoteItem';
+import { BooknoteTimeProvider } from './BooknoteTime';
 import EmptyState from '../EmptyState';
 
 type FlatBooknoteRow =
@@ -433,21 +434,23 @@ const BooknoteView: React.FC<{
             data-overlayscrollbars-initialize=''
             style={{ height: containerHeight }}
           >
-            <Virtuoso
-              ref={virtuosoRef}
-              scrollerRef={handleScrollerRef}
-              initialTopMostItemIndex={
-                initialTopIndex > 0 ? { index: initialTopIndex, align: 'center' } : 0
-              }
-              rangeChanged={({ startIndex, endIndex }) => {
-                visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
-              }}
-              style={{ height: containerHeight }}
-              totalCount={flatItems.length}
-              computeItemKey={(index) => flatItems[index]?.key ?? index}
-              itemContent={renderItem}
-              overscan={500}
-            />
+            <BooknoteTimeProvider>
+              <Virtuoso
+                ref={virtuosoRef}
+                scrollerRef={handleScrollerRef}
+                initialTopMostItemIndex={
+                  initialTopIndex > 0 ? { index: initialTopIndex, align: 'center' } : 0
+                }
+                rangeChanged={({ startIndex, endIndex }) => {
+                  visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
+                }}
+                style={{ height: containerHeight }}
+                totalCount={flatItems.length}
+                computeItemKey={(index) => flatItems[index]?.key ?? index}
+                itemContent={renderItem}
+                overscan={500}
+              />
+            </BooknoteTimeProvider>
           </div>
         )}
       </div>
