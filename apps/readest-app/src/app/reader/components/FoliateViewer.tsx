@@ -143,6 +143,8 @@ const FoliateViewer: React.FC<{
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
   const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
+  const ocrEnabledRef = useRef(ocrEnabled);
+  ocrEnabledRef.current = ocrEnabled;
   const ocrLanguage = useReaderStore((s) => s.viewStates[bookKey]?.ocrLanguage ?? '');
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
@@ -275,7 +277,7 @@ const FoliateViewer: React.FC<{
     pendingRelocateRef.current = null;
     if (!event) return;
     const detail = event.detail;
-    if (ocrEnabled) {
+    if (ocrEnabledRef.current) {
       const current = getOnDeviceTextDocuments()[0];
       if (current?.doc && typeof current.index === 'number') {
         void processOcrDocument(current.doc, current.index);
@@ -296,7 +298,7 @@ const FoliateViewer: React.FC<{
       detail.range,
       detail.fraction,
     );
-  }, [bookKey, getOnDeviceTextDocuments, ocrEnabled, processOcrDocument, setProgress]);
+  }, [bookKey, getOnDeviceTextDocuments, processOcrDocument, setProgress]);
 
   const progressRelocateHandler = (event: Event) => {
     // Foliate can emit a late relocation after close() clears its progress
