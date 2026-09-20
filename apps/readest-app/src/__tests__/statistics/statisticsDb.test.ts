@@ -213,3 +213,29 @@ describe('StatisticsDb.open', () => {
     await stats.close();
   });
 });
+
+describe('library reading paces', () => {
+  it('loads the same recent median per book as individual labels, including the data threshold', async () => {
+    const stats = StatisticsDb.from(await freshStatsDb());
+    const ids: Record<string, number> = {};
+    for (const [hash, count] of [
+      ['slow', 60],
+      ['fast', 6],
+      ['new', 4],
+    ] as const) {
+      const id = await stats.upsertBook({ bookMd5: hash, title: hash, authors: '' });
+      ids[hash] = id;
+      for (let i = 0; i < count; i++)
+        await stats.insertPageEvent(id, {
+          page: i,
+          startTime: 1000 + i,
+          duration: i + 10,
+          totalPages: 100,
+        });
+    }
+    const paces = await stats.getMedianPageDurationsSecs();
+    for (const [hash, id] of Object.entries(ids))
+      expect(paces[hash] ?? null).toBe(await stats.getMedianPageDurationSecs(id));
+    expect(paces['slow']).toBe(44.5);
+  });
+});

@@ -29,6 +29,7 @@ import { isAbsBookOrphaned, useABSServerStore } from '@/store/absServerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { selectActiveBookDownloadProgress, useTransferStore } from '@/store/transferStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useMedianPageDurationsSecs } from '@/hooks/useMedianPageDurationSecs';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import {
@@ -337,6 +338,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
   }, [searchParams, groupId, currentShelfBooks.length, updateUrlParams]);
 
+  const pageDurations = useMedianPageDurationsSecs(
+    libraryBooks,
+    sortBy === LibrarySortByType.TimeRemaining || thenSortBy === LibrarySortByType.TimeRemaining,
+  );
   const sortedBookshelfItems = useMemo(() => {
     const sortOrderMultiplier = sortOrder === 'asc' ? 1 : -1;
 
@@ -357,6 +362,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         sortAscending,
         thenSortBy,
         thenSortAscending,
+        pageDurations,
       ),
     );
     groups.forEach((group) => {
@@ -373,6 +379,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       thenSortBy,
       sortAscending,
       thenSortAscending,
+      pageDurations,
     );
     if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
       ungroupedBooks.sort(withinGroupSorter);
@@ -426,6 +433,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     groupId,
     uiLanguage,
     currentBookshelfItems,
+    pageDurations,
   ]);
 
   useEffect(() => {

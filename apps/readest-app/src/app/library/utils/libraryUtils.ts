@@ -333,7 +333,13 @@ export const withTimeRemainingLast =
     return compare(a, b);
   };
 
-const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string): number => {
+const compareBookByKey = (
+  a: Book,
+  b: Book,
+  sortBy: string,
+  uiLanguage: string,
+  pageDurations?: Readonly<Record<string, number>>,
+): number => {
   switch (sortBy) {
     case LibrarySortByType.Title: {
       const aTitle = formatTitle(a.title);
@@ -386,8 +392,8 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
       return aDate - bDate;
     }
     case LibrarySortByType.TimeRemaining: {
-      const aTime = getDisplayedTimeRemaining(a);
-      const bTime = getDisplayedTimeRemaining(b);
+      const aTime = getDisplayedTimeRemaining(a, pageDurations?.[a.hash]);
+      const bTime = getDisplayedTimeRemaining(b, pageDurations?.[b.hash]);
       // Never subtract two Infinities here: NaN makes the comparator inconsistent
       // and Array.sort then scatters the no-time books through the shelf.
       if (aTime === undefined && bTime === undefined) return 0;
@@ -416,12 +422,16 @@ export const createBookSorter =
     secondarySortBy: LibrarySecondarySortByType = 'none',
     sortAscending: boolean = true,
     secondaryAscending: boolean = true,
+    pageDurations?: Readonly<Record<string, number>>,
   ) =>
   (a: Book, b: Book): number => {
-    const primary = compareBookByKey(a, b, sortBy, uiLanguage);
+    const primary = compareBookByKey(a, b, sortBy, uiLanguage, pageDurations);
     if (primary !== 0) return primary * (sortAscending ? 1 : -1);
     if (secondarySortBy === 'none') return 0;
-    return compareBookByKey(a, b, secondarySortBy, uiLanguage) * (secondaryAscending ? 1 : -1);
+    return (
+      compareBookByKey(a, b, secondarySortBy, uiLanguage, pageDurations) *
+      (secondaryAscending ? 1 : -1)
+    );
   };
 
 /**
@@ -708,6 +718,7 @@ export const createWithinGroupSorter =
     sortAscending: boolean = true,
     secondarySortBy: LibrarySecondarySortByType = 'none',
     secondaryAscending: boolean = true,
+    pageDurations?: Readonly<Record<string, number>>,
   ) =>
   (a: Book, b: Book): number => {
     const sortDirection = sortAscending ? 1 : -1;
@@ -726,18 +737,26 @@ export const createWithinGroupSorter =
       if (bIndex != null) return 1;
 
       // Neither has series index - fall back to global sort with direction
-      return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
+      return (
+        createBookSorter(sortBy, uiLanguage, 'none', true, true, pageDurations)(a, b) *
+        sortDirection
+      );
     }
 
     // For author and other non-series groupings: when a secondary key is provided,
     // use it as the within-group primary order with the global key as tiebreaker.
     if (secondarySortBy !== 'none') {
-      const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage);
+      const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage, pageDurations);
       if (bySecondary !== 0) return bySecondary * (secondaryAscending ? 1 : -1);
-      return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
+      return (
+        createBookSorter(sortBy, uiLanguage, 'none', true, true, pageDurations)(a, b) *
+        sortDirection
+      );
     }
 
-    return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
+    return (
+      createBookSorter(sortBy, uiLanguage, 'none', true, true, pageDurations)(a, b) * sortDirection
+    );
   };
 
 /**
