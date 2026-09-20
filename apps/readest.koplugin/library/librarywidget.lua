@@ -475,12 +475,12 @@ end
 --
 -- Sync direction depends on settings.auto_sync (mirrors the auto-sync
 -- toggle the user controls from the Readest plugin menu):
---   on  → "both" (push local changes first, then pull remote changes)
+--   on  → "both" (pull remote changes first, then push local changes)
 --   off → "pull" only (still surface cloud-side updates so the Library
 --         view stays meaningful, but never silently push local state).
 -- ---------------------------------------------------------------------------
-local function runCloudSync(opts, store)
-    local mode = opts.settings.auto_sync and "both" or "pull"
+local function runCloudSync(opts, store, interactive)
+    local mode = (interactive or opts.settings.auto_sync) and "both" or "pull"
     local DocSettings = require("docsettings")
     local BookList = require("ui/widget/booklist")
     local statussync = require("library.statussync")
@@ -507,14 +507,19 @@ local function runCloudSync(opts, store)
     logger.info("ReadestLibrary runCloudSync: mode=" .. mode
         .. " auto_sync=" .. tostring(opts.settings.auto_sync))
 
-    -- Deferred (post-paint) but still on the UI loop, so a slow network sync
-    -- can freeze the Library after it appears — time it so the reporter's log
-    -- distinguishes this from the synchronous open-path cost (issue #4954).
+    -- HTTP runs asynchronously; time the complete sync for diagnostics.
     local t_sync = time.now()
     local function done(success, msg, status)
+        if msg == "sync cancelled" then return end
         logger.info("ReadestLibrary runCloudSync[" .. mode .. "] done: success="
             .. tostring(success) .. " msg=" .. tostring(msg) .. " status=" .. tostring(status)
             .. " elapsed=" .. elapsed_ms(t_sync) .. "ms")
+        if interactive then
+            UIManager:show(InfoMessage:new{
+                text = success and _("Books synced") or _("Books sync failed"),
+                timeout = 2,
+            })
+        end
         M.refresh()
     end
 
@@ -530,22 +535,14 @@ local function runCloudSync(opts, store)
             sync_auth = opts.sync_auth, sync_path = opts.sync_path,
             settings = opts.settings, store = store,
         }, "pull", function(success, msg, status)
+            if msg == "sync cancelled" then return end
             reconcile()  -- apply cloud statuses to sidecars even when auto_sync is off
             done(success, msg, status)
         end)
     end
 end
 
--- Cloud sync HTTP is synchronous on platforms without the Turbo looper
--- (macOS desktop, most KOReader builds with the lightweight networking
--- layer). Calling it inline from M.open blocks the UI loop, so
--- UIManager:show(menu) doesn't actually repaint until the sync returns
--- — visible to the user as a frozen Library on open. Pushing it through
--- UIManager:scheduleIn yields back to the event loop first, lets the
--- menu paint with the pre-sync local snapshot, and only then issues the
--- HTTP. The user still sees a brief blocking window when the request
--- fires, but at least content is on screen instead of a black hole.
--- Plan B (true non-blocking via runInSubProcess) is a bigger refactor.
+-- Let the library paint its cached contents before starting background sync.
 local SYNC_DEFER_SECONDS = 0.05
 
 local function runOpenSync(opts, store, menu)
@@ -652,6 +649,11 @@ function M.open(opts, internal)
         local prev_group_by = active_group_by(opts.settings)
         LibraryViewMenu.show({
             settings         = opts.settings,
+            on_sync          = function()
+                local function sync() runCloudSync(opts, store, true) end
+                if NetworkMgr:willRerunWhenOnline(sync) then return end
+                sync()
+            end,
             on_change        = function()
                 if active_group_by(opts.settings) ~= prev_group_by then
                     M._group_path = nil
@@ -791,6 +793,13 @@ end
 -- handleTap(item, opts) — tap dispatch. Local books open immediately;
 -- cloud-only books prompt for download.
 -- ---------------------------------------------------------------------------
+local function queueDownloads(books, opts, on_open)
+    require("library.downloadqueue").start(books, {
+        settings = opts.settings, sync_auth = opts.sync_auth, sync_path = opts.sync_path,
+        store = M._store, on_book = M.refresh, on_open = on_open,
+    })
+end
+
 function M.handleTap(item, opts)
     if not item then return end
 
@@ -845,43 +854,10 @@ function M.handleTap(item, opts)
             text = _("Download this book from Readest?") .. "\n\n" .. (row.title or ""),
             ok_text = _("Download"),
             ok_callback = function()
-                local download_dir = opts.settings.library_download_dir
-                    or G_reader_settings:readSetting("home_dir")
-                if not download_dir or download_dir == "" then
-                    UIManager:show(InfoMessage:new{
-                        text = _("Set Home folder in File Manager first to enable downloads."),
-                        timeout = 3,
-                    })
-                    return
-                end
-                local progress = InfoMessage:new{
-                    text = _("Downloading…") .. " " .. (row.title or ""),
-                }
-                UIManager:show(progress)
-                syncbooks.downloadBook(row, {
-                    sync_auth     = opts.sync_auth,
-                    sync_path     = opts.sync_path,
-                    settings      = opts.settings,
-                    download_dir  = download_dir,
-                }, function(success, dst_or_err, status)
-                    UIManager:close(progress)
-                    if not success then
-                        local msg = (status == 404)
-                            and _("Cloud copy unavailable.")
-                            or _("Download failed.")
-                        UIManager:show(InfoMessage:new{ text = msg, timeout = 3 })
-                        return
-                    end
-                    -- Update store: row now has a local file
-                    M._store:upsertBook({
-                        hash = row.hash, title = row.title,
-                        local_present = 1, file_path = dst_or_err,
-                    })
-                    -- Hand off to the reader and close the Library — no
-                    -- M.refresh() needed since the Menu is going away.
+                queueDownloads({ row }, opts, function(path)
                     local ReaderUI = require("apps/reader/readerui")
                     M.close()
-                    ReaderUI:showReader(dst_or_err)
+                    ReaderUI:showReader(path)
                 end)
             end,
         })
@@ -896,43 +872,8 @@ end
 -- Run a book download without auto-opening the reader on success. Used by
 -- both "Download Book" and "Download All" from the long-press action
 -- sheet — there the user wants the file on device, not to start reading.
-local function downloadBookOnly(row, opts, after_cb)
-    local download_dir = opts.settings.library_download_dir
-        or G_reader_settings:readSetting("home_dir")
-    if not download_dir or download_dir == "" then
-        UIManager:show(InfoMessage:new{
-            text = _("Set Home folder in File Manager first to enable downloads."),
-            timeout = 3,
-        })
-        if after_cb then after_cb(false) end
-        return
-    end
-    local progress = InfoMessage:new{
-        text = _("Downloading…") .. " " .. (row.title or ""),
-    }
-    UIManager:show(progress)
-    syncbooks.downloadBook(row, {
-        sync_auth    = opts.sync_auth,
-        sync_path    = opts.sync_path,
-        settings     = opts.settings,
-        download_dir = download_dir,
-    }, function(success, dst_or_err, status)
-        UIManager:close(progress)
-        if not success then
-            local msg = (status == 404)
-                and _("Cloud copy unavailable.")
-                or _("Download failed.")
-            UIManager:show(InfoMessage:new{ text = msg, timeout = 3 })
-            if after_cb then after_cb(false) end
-            return
-        end
-        M._store:upsertBook({
-            hash = row.hash, title = row.title,
-            local_present = 1, file_path = dst_or_err,
-        })
-        M.refresh()
-        if after_cb then after_cb(true) end
-    end)
+local function downloadBookOnly(row, opts)
+    queueDownloads({ row }, opts)
 end
 
 local function downloadCoverOnly(row, opts, after_cb)
@@ -982,106 +923,12 @@ local function removeLocalFile(row)
     return true
 end
 
--- ---------------------------------------------------------------------------
--- downloadAll() — bulk-download every cloud-only book to this device (#4751).
--- ---------------------------------------------------------------------------
--- The KOReader counterpart to "download all" on Readest web/desktop: gather
--- every book that's in the cloud with an uploaded file but not yet on this
--- device (LibraryStore:listCloudOnlyBooks) and stream them one at a time,
--- reusing the proven syncbooks.downloadBook path. Driven from the view-menu
--- Actions section; uses M._opts/M._store like M.refresh() so the caller
--- needs no arguments.
---
--- Progress + cancel: a Trapper:info message shows "Downloading X of N"; the
--- batch yields to the event loop between books, so tapping the message
--- raises Trapper's Abort/Continue confirm. Aborting finishes the in-flight
--- book and then halts. Per-book failures (404, network, unknown format) are
--- counted and skipped, never fatal, and a summary is shown at the end.
-function M.downloadAll()
+-- Download all eligible books, or one group (including nested subgroups).
+function M.downloadAll(group)
     local opts = M._opts
     if not opts or not M._store then return end
-
-    -- Same download-dir resolution + guard as the single-book tap path.
-    local download_dir = opts.settings.library_download_dir
-        or G_reader_settings:readSetting("home_dir")
-    if not download_dir or download_dir == "" then
-        UIManager:show(InfoMessage:new{
-            text = _("Set Home folder in File Manager first to enable downloads."),
-            timeout = 3,
-        })
-        return
-    end
-
-    local books = M._store:listCloudOnlyBooks()
-    local total = #books
-    if total == 0 then
-        UIManager:show(InfoMessage:new{
-            text = _("No books to download."), timeout = 3,
-        })
-        return
-    end
-
-    Trapper:wrap(function()
-        local co = coroutine.running()
-        local done, failed, cancelled = 0, 0, false
-
-        for i, book in ipairs(books) do
-            -- Trapper:info returns false when the user taps the message and
-            -- confirms Abort. It also yields to UIManager, which is what
-            -- lets a tap queued during the previous (blocking) download get
-            -- processed here, at the book boundary.
-            local go_on = Trapper:info(
-                T(_("Downloading %1 of %2…"), i, total) .. "\n" .. (book.title or ""))
-            if not go_on then
-                cancelled = true
-                break
-            end
-
-            -- Await the download. downloadBook fires its callback exactly
-            -- once, either synchronously (token already fresh) or after an
-            -- async token refresh. Only resume when the coroutine actually
-            -- suspended; if the callback already ran inline, skip the yield.
-            local finished, result = false, nil
-            syncbooks.downloadBook(book, {
-                sync_auth    = opts.sync_auth,
-                sync_path    = opts.sync_path,
-                settings     = opts.settings,
-                download_dir = download_dir,
-            }, function(success, dst_or_err, status)
-                result = { success = success, dst = dst_or_err, status = status }
-                finished = true
-                if coroutine.status(co) == "suspended" then
-                    coroutine.resume(co)
-                end
-            end)
-            if not finished then coroutine.yield() end
-
-            if result and result.success then
-                M._store:upsertBook({
-                    hash = book.hash, title = book.title,
-                    local_present = 1, file_path = result.dst,
-                })
-                done = done + 1
-            else
-                failed = failed + 1
-            end
-        end
-
-        -- On the cancel path Trapper:info already closed its widget when it
-        -- returned false; only the run-to-completion path leaves one showing.
-        if not cancelled then Trapper:clear() end
-        M.refresh()
-
-        local summary
-        if cancelled then
-            summary = T(_("Download cancelled. %1 of %2 downloaded."), done, total)
-        elseif failed > 0 then
-            summary = T(_("Downloaded %1 of %2 (skipped %3)."), done, total, failed)
-        else
-            summary = T(_("Downloaded %1 of %2."), done, total)
-        end
-        UIManager:show(InfoMessage:new{ text = summary, timeout = 3 })
-    end)
+    local group_by = group and (group._group_by or active_group_by(opts.settings))
+    queueDownloads(M._store:listCloudOnlyBooks(group_by, group and group.name), opts)
 end
 
 -- ---------------------------------------------------------------------------
@@ -1096,6 +943,23 @@ end
 -- so they're labeled but stubbed; local-side actions (Remove from
 -- Device, Download Book/Cover/All) work today.
 function M.handleHold(item, opts)
+    if item and item._readest_group then
+        local group = item._readest_group
+        local ButtonDialog = require("ui/widget/buttondialog")
+        local dialog
+        dialog = ButtonDialog:new{
+            title = group.display_name or group.name,
+            title_align = "center",
+            buttons = {{
+                { text = _("Download group"), callback = function()
+                    UIManager:close(dialog)
+                    M.downloadAll(group)
+                end },
+            }},
+        }
+        UIManager:show(dialog)
+        return
+    end
     if not item or not item._readest_row then return end
     local row = item._readest_row
     local ButtonDialog = require("ui/widget/buttondialog")

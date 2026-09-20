@@ -55,6 +55,17 @@ describe("readest_syncannotations", function()
         SyncAnnotations = require("readest_syncannotations")
     end)
 
+    it("ignores annotation responses after the document closes", function()
+        local ui = { document = { info = { has_pages = false } },
+            annotation = { annotations = {{id = "keep"}} } }
+        local response
+        local client = {pullChanges = function(_, _, cb) response = cb end}
+        SyncAnnotations:pull(ui, {}, client, "book", "meta", nil, false)
+        ui.document = nil
+        response(true, {notes = {{id = "keep", deleted_at = "2026-09-20"}}})
+        assert.are.equal(1, #ui.annotation.annotations)
+    end)
+
     describe("removeDeletedAnnotations", function()
         local BOOK_HASH = "book-hash-1"
 
@@ -261,6 +272,11 @@ describe("readest_syncannotations", function()
     end)
 
     describe("push folds tombstones", function()
+        local real_time = os.time
+        after_each(function()
+            os.time = real_time
+        end)
+
         local function makeUi(doc_settings, annotations)
             return {
                 doc_settings = doc_settings,
@@ -294,6 +310,50 @@ describe("readest_syncannotations", function()
             assert.are.equal("book-hash-1", captured.notes[1].bookHash)
             assert.are.equal("meta-1", captured.notes[1].metaHash)
             assert.is_nil(doc_settings:readSetting("readest_sync").deleted_notes)
+        end)
+
+        it("keeps deletions recorded while the request is pending", function()
+            local doc_settings = makeDocSettings({
+                partial_md5_checksum = "book-hash-1",
+                readest_sync = { meta_hash_v1 = "meta-1" },
+            })
+            SyncAnnotations:recordDeletion(doc_settings, { id = "gone1", page = "/one" })
+            local callback
+            SyncAnnotations:push(makeUi(doc_settings), {}, {
+                pushChanges = function(_, _, cb) callback = cb end,
+            }, false, false)
+            SyncAnnotations:recordDeletion(doc_settings, { id = "gone2", page = "/two" })
+            callback(true, {})
+
+            local deleted = doc_settings:readSetting("readest_sync").deleted_notes
+            assert.are.equal(1, #deleted)
+            assert.are.equal("gone2", deleted[1].id)
+        end)
+
+        it("keeps edits made in the request's starting second eligible for the next push", function()
+            local started = real_time({ year = 2026, month = 9, day = 20, hour = 10, min = 0, sec = 0 })
+            local now = started
+            os.time = function(date) return date and real_time(date) or now end
+            local doc_settings = makeDocSettings({
+                partial_md5_checksum = "book-hash-1",
+                readest_sync = { meta_hash_v1 = "meta-1" },
+            })
+            local item = { id = "note1", page = "/one", note = "before", datetime = "2026-09-20 09:59:00" }
+            local ui = makeUi(doc_settings, { item })
+            local settings = {}
+            local callback
+            SyncAnnotations:push(ui, settings, {
+                pushChanges = function(_, _, cb) callback = cb end,
+            }, false, false)
+            item.note = "edited while pending"
+            item.datetime_updated = "2026-09-20 10:00:00"
+            now = started + 10
+            callback(true, {})
+
+            local notes = SyncAnnotations:getAnnotations(ui, settings, "book-hash-1", "meta-1", false)
+            assert.are.equal(1, #notes)
+            assert.are.equal("edited while pending", notes[1].note)
+            assert.is_true(settings.last_notes_sync_at < started * 1000)
         end)
 
         it("keeps tombstones when the push fails so a later push retries", function()
