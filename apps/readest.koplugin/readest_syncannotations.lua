@@ -262,6 +262,15 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
         sent_deletions[t.id] = t.deletedAt
     end
 
+    -- A stale pull may have restored a locally deleted note. Never send both
+    -- versions: duplicate upsert keys reject the entire batch on the server.
+    for i = #annotations, 1, -1 do
+        local note = annotations[i]
+        if sent_deletions[note.id] and not note.deletedAt then
+            table.remove(annotations, i)
+        end
+    end
+
     if #annotations == 0 then
         if interactive then
             UIManager:show(InfoMessage:new{
@@ -341,6 +350,18 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
         })
     end
 
+    -- Keep the starting snapshot even if a concurrent push acknowledges it
+    -- before this pull returns with an older, live copy of the note.
+    local doc_settings = ui.doc_settings
+    local pending_deletions = {}
+    local function collectPendingDeletions()
+        local sync = doc_settings and doc_settings:readSetting("readest_sync") or {}
+        for _, note in ipairs(sync.deleted_notes or {}) do
+            pending_deletions[note.id] = true
+        end
+    end
+    collectPendingDeletions()
+
     client:pullChanges(
         {
             since = full_sync and 0 or (settings.last_notes_sync_at or 0),
@@ -417,9 +438,11 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 end
             end
 
+            -- Also include deletions made while the request was running.
+            collectPendingDeletions()
             local added = 0
             for _, note in ipairs(data) do
-                if note.deleted_at then
+                if note.deleted_at or pending_deletions[note.id] then
                     goto continue
                 end
 
