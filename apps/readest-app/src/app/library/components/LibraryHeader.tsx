@@ -253,10 +253,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
             <Dropdown
               label={_('View Menu')}
-              containerClassName={clsx(
-                isMobile &&
-                  '[&>div.relative]:static [&_details.dropdown]:static [&_.view-menu]:start-auto! [&_.view-menu]:end-4!',
-              )}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
               buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
               toggleButton={<PiDotsThreeCircle role='none' size={iconSize18} />}
@@ -265,10 +261,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             </Dropdown>
             <Dropdown
               label={_('Settings Menu')}
-              containerClassName={clsx(
-                isMobile &&
-                  '[&>div.relative]:static [&_details.dropdown]:static [&_.settings-menu]:start-auto! [&_.settings-menu]:end-4!',
-              )}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
               buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
               toggleButton={<MdOutlineMenu role='none' size={iconSize18} />}
