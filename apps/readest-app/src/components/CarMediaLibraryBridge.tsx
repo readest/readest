@@ -15,9 +15,9 @@ import { isMainAppWindow } from '@/utils/window';
 // installed app is allowed to bind. Keep the published slice deliberately
 // small — the most recently updated books, not the whole shelf — so a media
 // client that connects only ever sees what the car actually needs.
-export const MAX_ANDROID_AUTO_BOOKS = 10;
+export const MAX_CAR_MEDIA_BOOKS = 10;
 
-export interface AndroidAutoBook {
+export interface CarMediaBook {
   hash: string;
   title: string;
   author: string;
@@ -28,10 +28,10 @@ export interface AndroidAutoBook {
 
 type CoverThumbnail = { coverHash: string | null; url: string };
 
-export const getAndroidAutoLibraryBooks = (
+export const getCarMediaLibraryBooks = (
   library: Book[],
   coverThumbnails: Map<string, CoverThumbnail> = new Map(),
-): AndroidAutoBook[] =>
+): CarMediaBook[] =>
   library
     .filter(
       (book) =>
@@ -43,7 +43,7 @@ export const getAndroidAutoLibraryBooks = (
         (!!book.downloadedAt || !!book.filePath || !!book.url || book.format === 'ABS'),
     )
     .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, MAX_ANDROID_AUTO_BOOKS)
+    .slice(0, MAX_CAR_MEDIA_BOOKS)
     .map((book) => {
       const { hash, title, author, coverHash } = book;
       const normalizedCoverHash = coverHash ?? null;
@@ -58,7 +58,7 @@ export const getAndroidAutoLibraryBooks = (
       };
     });
 
-const AndroidAutoLibraryBridge = () => {
+const CarMediaLibraryBridge = () => {
   const library = useLibraryStore((state) => state.library);
   const libraryLoaded = useLibraryStore((state) => state.libraryLoaded);
   const coverThumbnails = useLibraryStore((state) => state.coverThumbnails);
@@ -73,21 +73,21 @@ const AndroidAutoLibraryBridge = () => {
   const lockedRef = useRef(locked);
   lockedRef.current = locked;
 
-  const androidAutoBooks = useMemo(
-    () => (locked ? [] : getAndroidAutoLibraryBooks(library, coverThumbnails)),
+  const carMediaBooks = useMemo(
+    () => (locked ? [] : getCarMediaLibraryBooks(library, coverThumbnails)),
     [coverThumbnails, library, locked],
   );
-  const booksJson = useMemo(() => JSON.stringify(androidAutoBooks), [androidAutoBooks]);
-  const publishedBooksRef = useRef(androidAutoBooks);
-  publishedBooksRef.current = androidAutoBooks;
+  const booksJson = useMemo(() => JSON.stringify(carMediaBooks), [carMediaBooks]);
+  const publishedBooksRef = useRef(carMediaBooks);
+  publishedBooksRef.current = carMediaBooks;
 
   // `library` gets a fresh array reference on every progress save — that is
   // every page turn and every TTS paragraph advance — and `coverThumbnails`
   // gets a fresh Map for each thumbnail that lands. Key the artwork effect on
   // the identity of the published set so neither storm re-requests thumbnails.
   const artworkKey = useMemo(
-    () => androidAutoBooks.map((book) => `${book.hash}:${book.coverHash ?? ''}`).join(','),
-    [androidAutoBooks],
+    () => carMediaBooks.map((book) => `${book.hash}:${book.coverHash ?? ''}`).join(','),
+    [carMediaBooks],
   );
 
   useEffect(() => {
@@ -106,10 +106,11 @@ const AndroidAutoLibraryBridge = () => {
   }, [artworkKey, libraryLoaded, locked]);
 
   useEffect(() => {
-    if (!libraryLoaded || !isTauriAppPlatform() || getOSPlatform() !== 'android') return;
+    if (!libraryLoaded || !isTauriAppPlatform() || !['android', 'ios'].includes(getOSPlatform()))
+      return;
     void invoke('plugin:native-tts|update_media_library', {
       payload: { booksJson },
-    }).catch((error) => console.warn('Failed to update Android Auto library:', error));
+    }).catch((error) => console.warn('Failed to update car media library:', error));
   }, [booksJson, libraryLoaded]);
 
   useEffect(() => {
@@ -152,4 +153,4 @@ const AndroidAutoLibraryBridge = () => {
   return null;
 };
 
-export default AndroidAutoLibraryBridge;
+export default CarMediaLibraryBridge;

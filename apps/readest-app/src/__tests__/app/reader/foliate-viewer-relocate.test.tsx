@@ -124,6 +124,18 @@ describe('reader relocation progress', () => {
     act(() => vi.advanceTimersByTime(20));
     expect(setProgress).toHaveBeenCalledOnce();
     expect(setProgress.mock.lastCall?.[5]).toEqual({ current: 4, next: 5, total: 10 });
+    act(() => vi.advanceTimersByTime(1000));
+    expect(setProgress).toHaveBeenCalledOnce();
+  });
+
+  it('commits car-only progress even when a visible WebView suspends animation frames', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+    render(<FoliateViewer {...props} />);
+    relocate({ location: { current: 3, next: 4, total: 10 } });
+    relocate({ location: { current: 4, next: 5, total: 10 } });
+    act(() => vi.advanceTimersByTime(1000));
+    expect(setProgress).toHaveBeenCalledOnce();
+    expect(setProgress.mock.lastCall?.[5]).toEqual({ current: 4, next: 5, total: 10 });
   });
 
   it('flushes the last valid position on unmount after a late incomplete relocation', () => {

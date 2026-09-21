@@ -217,14 +217,19 @@ const FoliateViewer: React.FC<{
   // the page is busy — which is the behaviour we want here.
   const pendingRelocateRef = useRef<CustomEvent | null>(null);
   const relocateRafRef = useRef<number | null>(null);
+  const relocateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelRelocateScheduled = useCallback(() => {
+    if (relocateTimeoutRef.current != null) {
+      clearTimeout(relocateTimeoutRef.current);
+      relocateTimeoutRef.current = null;
+    }
     const id = relocateRafRef.current;
     if (id == null) return;
     relocateRafRef.current = null;
     cancelAnimationFrame(id);
   }, []);
   const commitRelocate = useCallback(() => {
-    relocateRafRef.current = null;
+    cancelRelocateScheduled();
     const event = pendingRelocateRef.current;
     pendingRelocateRef.current = null;
     if (!event) return;
@@ -244,7 +249,7 @@ const FoliateViewer: React.FC<{
       detail.range,
       detail.fraction,
     );
-  }, [bookKey, setProgress]);
+  }, [bookKey, setProgress, cancelRelocateScheduled]);
 
   const progressRelocateHandler = (event: Event) => {
     // Foliate can emit a late relocation after close() clears its progress
@@ -261,15 +266,14 @@ const FoliateViewer: React.FC<{
     // stays current. The page-follow relocate still fires; only the commit was
     // being deferred.
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-      if (relocateRafRef.current != null) {
-        cancelAnimationFrame(relocateRafRef.current);
-        relocateRafRef.current = null;
-      }
       commitRelocate();
       return;
     }
     if (relocateRafRef.current != null) return;
     relocateRafRef.current = requestAnimationFrame(commitRelocate);
+    // A CarPlay-only WebView can report "visible" without a phone scene
+    // driving animation frames. TTS still needs its reading position.
+    relocateTimeoutRef.current = setTimeout(commitRelocate, 100);
   };
 
   useEffect(() => {
