@@ -77,6 +77,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
+import { sanitizeSvg } from '@/services/transformers/sanitizer';
 import { lockScreenOrientation, setSelectionSuppressed } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
@@ -305,6 +306,9 @@ const FoliateViewer: React.FC<{
               viewSettings.vertical,
               bookData?.isFixedLayout,
             );
+          if (detail.type === 'image/svg+xml' && !viewSettings?.allowScript) {
+            return sanitizeSvg(data);
+          }
           const isHtml = detail.type === 'application/xhtml+xml' || detail.type === 'text/html';
           if (viewSettings && bookData && isHtml) {
             const ctx: TransformContext = {
