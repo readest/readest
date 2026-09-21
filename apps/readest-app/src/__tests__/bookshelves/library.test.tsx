@@ -16,6 +16,8 @@ import {
   defaultBookshelves,
 } from '@/services/bookshelves/definitions';
 import { applyBookshelfDraft } from '@/services/bookshelves/state';
+import { createBookGroups } from '@/app/library/utils/libraryUtils';
+import { LibraryGroupByType } from '@/types/settings';
 import Bookshelf from '@/app/library/components/Bookshelf';
 const mocks = vi.hoisted(() => ({
   params: new URLSearchParams(),
@@ -24,11 +26,12 @@ const mocks = vi.hoisted(() => ({
   servers: [],
   translate: (s: string) => s,
   open: vi.fn(),
+  router: { push: vi.fn(), replace: vi.fn() },
   initialize: () => {},
   instance: () => undefined,
 }));
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => mocks.router,
   useSearchParams: () => mocks.params,
 }));
 vi.mock('@/context/EnvContext', () => ({
@@ -69,20 +72,29 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     skeuomorphicCovers: boolean;
     isSelectMode: boolean;
     handleLibraryNavigation: (group: string) => void;
-  }) => (
-    <button
-      data-cover-fit={coverFit}
-      data-skeuomorphic-covers={skeuomorphicCovers}
-      aria-pressed={itemSelected}
-      onClick={() =>
+  }) => {
+    // Keep the mode-entry callback here to verify selection reads the live
+    // store even when a child retains an older callback. The real card also
+    // refreshes its handler when group membership or callbacks change.
+    const onClick = React.useCallback(
+      () =>
         isSelectMode
           ? toggleSelection('hash' in item ? item.hash : item.id)
-          : 'books' in item && handleLibraryNavigation(item.id)
-      }
-    >
-      {'hash' in item ? item.title : item.name}
-    </button>
-  ),
+          : 'books' in item && handleLibraryNavigation(item.id),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [isSelectMode],
+    );
+    return (
+      <button
+        data-cover-fit={coverFit}
+        data-skeuomorphic-covers={skeuomorphicCovers}
+        aria-pressed={itemSelected}
+        onClick={onClick}
+      >
+        {'hash' in item ? item.title : item.name}
+      </button>
+    );
+  },
 }));
 vi.mock('@/app/library/components/SelectModeActions', () => ({ default: () => null }));
 vi.mock('@/app/library/components/BookshelfStream', () => ({
@@ -165,6 +177,8 @@ const configure = (draft: BookshelfDefinition[]) => {
 };
 beforeEach(() => {
   mocks.params = new URLSearchParams();
+  mocks.router.replace.mockClear();
+  window.history.replaceState(null, '', '/library');
   useSettingsStore.setState({
     settings: {
       ...DEFAULT_SYSTEM_SETTINGS,
@@ -473,6 +487,85 @@ describe('library bookshelf integration', () => {
         .getAllByRole('button', { name: 'Fiction' })
         .every((group) => group.getAttribute('aria-pressed') === 'true'),
     ).toBe(true);
+  });
+  it('adds each tapped group to the selection and removes only its books on a second tap', async () => {
+    const grouped = books.map((book, index) => ({
+      ...book,
+      groupName: index < 5 ? 'A' : index < 10 ? 'B' : undefined,
+    }));
+    configure(
+      defaultBookshelves(DEFAULT_SYSTEM_SETTINGS).map((s) => ({
+        ...s,
+        enabled: s.id === 'default',
+      })),
+    );
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, libraryGroupBy: 'group' },
+    });
+    useLibraryStore.setState({ library: grouped, selectedBooks: new Set() });
+    render(<Bookshelf {...props} libraryBooks={grouped} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Book 10' }));
+    fireEvent.click(screen.getByRole('button', { name: 'A' }));
+    fireEvent.click(screen.getByRole('button', { name: 'B' }));
+    await waitFor(() =>
+      expect(useLibraryStore.getState().selectedBooks).toEqual(
+        new Set(['10', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'B' }));
+    await waitFor(() =>
+      expect(useLibraryStore.getState().selectedBooks).toEqual(
+        new Set(['10', '0', '1', '2', '3', '4']),
+      ),
+    );
+  });
+  it('keeps books unticked after Select all while the shelves recompute', async () => {
+    const { rerender } = render(<Bookshelf {...props} isSelectAll />);
+    await waitFor(() => expect(useLibraryStore.getState().selectedBooks.size).toBe(20));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Book 19' })[0]!);
+    expect(useLibraryStore.getState().selectedBooks.size).toBe(19);
+    rerender(<Bookshelf {...props} isSelectAll libraryBooks={[...books]} />);
+    expect(useLibraryStore.getState().selectedBooks.size).toBe(19);
+    rerender(<Bookshelf {...props} isSelectAll={false} isSelectNone />);
+    rerender(<Bookshelf {...props} isSelectAll />);
+    await waitFor(() => expect(useLibraryStore.getState().selectedBooks.size).toBe(20));
+  });
+  it('keeps an opened group while a search matches nothing', () => {
+    window.history.replaceState(null, '', '/library?q=nope&group=g&shelf=default');
+    mocks.params = new URLSearchParams('q=nope&group=g&shelf=default');
+    render(<Bookshelf {...props} isSelectMode={false} />);
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
+  it('spans the whole library for a group opened without a shelf', () => {
+    const audio = bookshelfSchema.parse({
+      ...createBookshelf('Audiobooks'),
+      exclusive: true,
+      filters: {
+        type: 'group',
+        match: 'all',
+        children: [
+          { type: 'rule', field: 'audio', kind: 'boolean', operator: 'equals', value: true },
+        ],
+      },
+    });
+    configure([audio, ...defaultBookshelves(DEFAULT_SYSTEM_SETTINGS)]);
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, libraryGroupBy: 'author' },
+    });
+    const mixed: Book[] = [
+      ...books,
+      { ...books[0]!, hash: 'abs', title: 'Audio book', format: 'ABS' },
+    ];
+    useLibraryStore.setState({ library: mixed });
+    const group = createBookGroups(mixed, LibraryGroupByType.Author).find(
+      (item): item is BooksGroup => 'books' in item,
+    )!;
+    mocks.params = new URLSearchParams({ groupBy: 'author', group: group.id });
+    const { rerender } = render(<Bookshelf {...props} isSelectMode={false} libraryBooks={mixed} />);
+    expect(screen.getByRole('button', { name: 'Audio book' })).toBeTruthy();
+    mocks.params = new URLSearchParams({ groupBy: 'author', group: group.id, shelf: 'default' });
+    rerender(<Bookshelf {...props} isSelectMode={false} libraryBooks={mixed} />);
+    expect(screen.queryByRole('button', { name: 'Audio book' })).toBeNull();
   });
   it('keeps global search complete when Default is disabled and an exclusive carousel has a legacy limit', () => {
     const base = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS);

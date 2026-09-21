@@ -41,6 +41,7 @@ vi.mock('@tauri-apps/plugin-haptics', () => ({ impactFeedback: vi.fn() }));
 const { default: BookshelvesDialog } = await import('@/app/library/components/BookshelvesDialog');
 await import('@/styles/globals.css');
 beforeEach(() => {
+  localStorage.removeItem('lastBookshelfTab');
   saveDraft.mockReset().mockResolvedValue(undefined);
   useSettingsStore.setState({
     settings: {
@@ -64,11 +65,47 @@ beforeEach(() => {
 });
 afterEach(async () => {
   cleanup();
+  localStorage.removeItem('lastBookshelfTab');
   document.documentElement.removeAttribute('data-eink');
   document.documentElement.dir = 'ltr';
   await page.viewport(1280, 900);
 });
 describe('bookshelf editor responsive layout', () => {
+  for (const width of [320, 437]) {
+    for (const dir of ['ltr', 'rtl']) {
+      it(`centers every wrapped shelf row at ${width}px in ${dir}`, async () => {
+        await page.viewport(width, 900);
+        document.documentElement.dir = dir;
+        const { getByRole, getByLabelText } = render(<BookshelvesDialog />);
+        await act(async () => {
+          await eventDispatcher.dispatch('show-bookshelves');
+        });
+        fireEvent.click(getByRole('button', { name: 'Add bookshelf' }));
+        fireEvent.click(getByRole('button', { name: 'Add bookshelf' }));
+        const tabs = getByRole('group', { name: 'Bookshelves' });
+        const expectCenteredRows = () => {
+          const rows = new Map<number, DOMRect[]>();
+          for (const control of tabs.querySelectorAll('[data-bookshelf-control]')) {
+            const bounds = control.getBoundingClientRect();
+            const top = Math.round(bounds.top);
+            rows.set(top, [...(rows.get(top) || []), bounds]);
+          }
+          expect(rows.size).toBeGreaterThan(1);
+          const bounds = tabs.getBoundingClientRect();
+          for (const row of rows.values()) {
+            const start = Math.min(...row.map((control) => control.left));
+            const end = Math.max(...row.map((control) => control.right));
+            expect((start + end) / 2).toBeCloseTo((bounds.left + bounds.right) / 2, 0);
+          }
+        };
+        await waitFor(expectCenteredRows);
+        await waitFor(() => expect(getByLabelText('Bookshelf status').textContent).toBe('Saved'));
+        expectCenteredRows();
+        fireEvent.click(getByRole('button', { name: 'Default' }));
+        await waitFor(expectCenteredRows);
+      });
+    }
+  }
   it('previews skeuomorphic covers for books and groups using the shelf setting', async () => {
     await page.viewport(1440, 900);
     useLibraryStore.setState({
@@ -121,7 +158,7 @@ describe('bookshelf editor responsive layout', () => {
         });
         const info = getByRole('button', { name: 'Filter help' });
         await userEvent.click(info);
-        const tooltip = getByRole('tooltip');
+        const tooltip = await waitFor(() => getByRole('tooltip'));
         expect(tooltip.textContent).toContain('Add condition');
         expect(tooltip.textContent).toContain('Add filter group');
         expect(tooltip.textContent).toContain('AND');
@@ -140,7 +177,7 @@ describe('bookshelf editor responsive layout', () => {
         await waitFor(() => expect(queryByRole('tooltip')).toBeNull());
         expect(container.querySelector('dialog')?.open).toBe(true);
         await userEvent.click(info);
-        expect(getByRole('tooltip')).toBeTruthy();
+        await waitFor(() => expect(getByRole('tooltip')).toBeTruthy());
         await userEvent.click(getByRole('button', { name: 'Add condition' }));
         await waitFor(() => expect(queryByRole('tooltip')).toBeNull());
       });
@@ -518,6 +555,8 @@ describe('bookshelf editor responsive layout', () => {
       ),
     );
     expect(container.querySelector('dialog')?.open).toBe(true);
+    // Both close-time saving and the queued autosave must fail before Retry is enabled.
+    await waitFor(() => expect(saveDraft).toHaveBeenCalledTimes(2));
     saveDraft.mockResolvedValue(undefined);
     await userEvent.click(getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(getByLabelText('Bookshelf status').textContent).toBe('Saved'));
@@ -641,7 +680,8 @@ describe('bookshelf editor responsive layout', () => {
             2;
           expect(controlsCenter).toBeCloseTo((tabsBounds.left + tabsBounds.right) / 2, 0);
         }
-        if (width < 600) expect(tabsBounds.height).toBeLessThanOrEqual(112);
+        // Two tab rows and a separate, stable-height status row on small screens.
+        if (width < 600) expect(tabsBounds.height).toBeLessThanOrEqual(140);
         const settingsPane = getByRole('region', { name: 'Bookshelf settings' });
         const settingsBox = settingsPane.querySelector<HTMLElement>('.card')!;
         await waitFor(() => {
@@ -699,13 +739,23 @@ describe('bookshelf editor responsive layout', () => {
           const row = preview.querySelector<HTMLElement>('[data-shelf-layout="grid"]')!;
           expect(row).toBeTruthy();
           expect(row.clientWidth / row.getBoundingClientRect().width).toBeCloseTo(2, 1);
-          expect(row.children.length).toBe(width < 600 ? 4 : width < 1280 ? 6 : 8);
+          expect(row.children.length).toBe(3);
           const scroller = preview.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
           expect(scroller.scrollWidth).toBeLessThanOrEqual(scroller.clientWidth);
           expect(row.getBoundingClientRect().width).toBeLessThanOrEqual(
             preview.getBoundingClientRect().width,
           );
         });
+        act(() =>
+          useSettingsStore.setState({
+            settings: { ...useSettingsStore.getState().settings, libraryAutoColumns: true },
+          }),
+        );
+        await waitFor(() =>
+          expect(
+            preview.querySelector<HTMLElement>('[data-shelf-layout="grid"]')!.children.length,
+          ).toBe(width < 600 ? 4 : width < 1280 ? 6 : 8),
+        );
         act(() =>
           useSettingsStore.setState({
             settings: { ...useSettingsStore.getState().settings, libraryViewMode: 'list' },

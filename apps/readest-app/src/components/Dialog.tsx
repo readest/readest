@@ -155,7 +155,11 @@ const Dialog: React.FC<DialogProps> = ({
     }
 
     const timer = setTimeout(() => {
-      if (dialogRef.current && !dialogRef.current.querySelector('dialog[open]')) {
+      if (
+        dialogRef.current &&
+        !dialogRef.current.querySelector('dialog[open]') &&
+        !dialogRef.current.contains(document.activeElement)
+      ) {
         dialogRef.current.focus();
       }
     }, 100);

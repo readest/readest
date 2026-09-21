@@ -1,5 +1,5 @@
 import { eventDispatcher } from '@/utils/event';
-import { BOOKSHELF_GROUP_LABELS } from '@/services/bookshelves/definitions';
+import { BOOKSHELF_GROUP_LABELS, BOOKSHELF_SORT_LABELS } from '@/services/bookshelves/definitions';
 import { getGlobalBookshelfSort } from '@/services/bookshelves/sorting';
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,6 +22,18 @@ import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 interface ViewMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
+
+const SORT_BY_ORDER: LibrarySortByType[] = [
+  LibrarySortByType.Title,
+  LibrarySortByType.Author,
+  LibrarySortByType.Format,
+  LibrarySortByType.Series,
+  LibrarySortByType.Updated,
+  LibrarySortByType.Created,
+  LibrarySortByType.Published,
+  LibrarySortByType.Progress,
+  LibrarySortByType.TimeRemaining,
+];
 
 const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
@@ -60,17 +72,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     label: _(label),
   }));
 
-  const sortByOptions = [
-    { label: _('Title'), value: LibrarySortByType.Title },
-    { label: _('Author'), value: LibrarySortByType.Author },
-    { label: _('Format'), value: LibrarySortByType.Format },
-    { label: _('Series'), value: LibrarySortByType.Series },
-    { label: _('Date Read'), value: LibrarySortByType.Updated },
-    { label: _('Date Added'), value: LibrarySortByType.Created },
-    { label: _('Date Published'), value: LibrarySortByType.Published },
-    { label: _('Progress Read'), value: LibrarySortByType.Progress },
-    { label: _('Time Remaining'), value: LibrarySortByType.TimeRemaining },
-  ];
+  // Menu order, deliberately excluding Size: the library has never offered it.
+  const sortByOptions = SORT_BY_ORDER.map((value) => ({
+    value,
+    label: _(BOOKSHELF_SORT_LABELS[value]),
+  }));
 
   const thenSortByOptions: { label: string; value: LibrarySecondarySortByType }[] = [
     { label: _('None'), value: 'none' },

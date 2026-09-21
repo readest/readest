@@ -26,8 +26,6 @@ import GroupItem from './GroupItem';
 import BookContextMenuPopup, { type BookContextMenuItem } from './BookContextMenuPopup';
 import { useOpenBook } from '../hooks/useOpenBook';
 
-export { generateBookshelfItems } from '@/services/bookshelves/presentation';
-
 // A native popup blocks Tauri's main thread until the menu is dismissed and
 // holds the webview's resources table lock for that whole time, while
 // menu.close() destroys the resource through a *synchronous* command, which
@@ -356,7 +354,6 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     };
   }, [item, itemSelected, isSelectMode, settings.localBooksDir, _]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSelectItem = useCallback(
     throttle(() => {
       if (!isSelectMode) {
@@ -368,7 +365,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         toggleSelection((item as BooksGroup).id);
       }
     }, 100),
-    [isSelectMode],
+    [isSelectMode, item, handleSetSelectMode, toggleSelection],
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

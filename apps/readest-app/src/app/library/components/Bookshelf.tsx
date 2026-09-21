@@ -122,8 +122,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { safeAreaInsets } = useThemeStore();
 
   const groupId = searchParams?.get('group') || '';
-  const activeShelfId = searchParams?.get('shelf') || 'default';
+  const shelfId = searchParams?.get('shelf') || '';
+  const activeShelfId = shelfId || 'default';
   const queryTerm = searchParams?.get('q')?.trim() || null;
+  // Tag/subject links and legacy `?group=` deep links carry no shelf, so the
+  // group spans the whole library instead of Default's filters and exclusions
+  // (which own every audiobook and podcast).
+  const unscopedGroup = !!groupId && !shelfId;
   const storedDefinitions = useMemo(
     () => readBookshelves(settings),
     [
@@ -143,7 +148,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   );
   const globalSort = useMemo(
     () => getGlobalBookshelfSort(settings, searchParams),
-    [settings, searchParams],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      settings.libraryGroupBy,
+      settings.librarySortBy,
+      settings.librarySortByAuto,
+      settings.librarySortAscending,
+      settings.libraryThenSortBy,
+      settings.libraryThenSortAscending,
+      searchParams,
+    ],
   );
   const definitions = useMemo(
     () =>
@@ -177,6 +191,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
   const abortDeletionRef = useRef(false);
+  const selectAllAppliedRef = useRef(false);
   const isImportingBook = useRef(false);
   const iconSize15 = useResponsiveSize(15);
   const autofocusRef = useAutoFocus<HTMLDivElement>();
@@ -225,14 +240,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // can't stream, have no cover source, and can't be opened — hide them from
   // every shelf derivation (grid, groups, recent shelf, search). They stay in
   // the store and keep syncing; they reappear the moment the server row
-  // lands. `absServers` and `settings` are deps because the orphan check
-  // reads the server store with a settings fallback, both of which hydrate
-  // asynchronously after the cached library first renders.
+  // lands. `absServers` and `settings.absServers` are deps because the orphan
+  // check reads the server store with a settings fallback, both of which
+  // hydrate asynchronously after the cached library first renders. Keying on
+  // the one settings field it reads keeps unrelated settings writes from
+  // re-filtering and re-sorting every shelf.
   const absServers = useABSServerStore((state) => state.servers);
   const visibleBooks = useMemo(
     () => libraryBooks.filter((book) => !book.deletedAt && !isAbsBookOrphaned(book)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [libraryBooks, absServers, settings],
+    [libraryBooks, absServers, settings.absServers],
   );
 
   const filteredBooks = useMemo(() => {
@@ -286,8 +303,18 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           ),
         },
       ];
-    return results
-      .filter((r) => !groupId || r.definition.id === activeShelfId)
+    return (
+      unscopedGroup
+        ? [
+            {
+              definition: defaultShelf,
+              books: visibleBooks,
+              matching: visibleBooks.length,
+              excluded: 0,
+            },
+          ]
+        : results.filter((r) => !groupId || r.definition.id === activeShelfId)
+    )
       .map((result) => {
         const definition: BookshelfDefinition = {
           ...result.definition,
@@ -303,7 +330,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           hideHeading: definition.id === 'default',
           items: presentBookshelf(
             { ...result, definition },
-            { ...settings, libraryGroupBy: globalGroupBy },
+            { libraryGroupBy: globalGroupBy },
             uiLanguage,
             pageDurations,
             groupId,
@@ -320,10 +347,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     viewMode,
     groupId,
     activeShelfId,
+    unscopedGroup,
+    visibleBooks,
     groupBy,
     globalGroupBy,
     globalSort,
-    settings,
     uiLanguage,
     pageDurations,
     manualGroupName,
@@ -344,9 +372,19 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     [sortedBookshelfItems],
   );
   useEffect(() => {
-    if (groupId && (!activeShelf?.enabled || currentShelfBooks.length === 0))
+    // A search with no hits filters the group down to nothing; that must not
+    // throw the user back to the library root.
+    if (!groupId || queryTerm) return;
+    if ((!unscopedGroup && !activeShelf?.enabled) || currentShelfBooks.length === 0)
       updateUrlParams({ group: null, shelf: null });
-  }, [groupId, activeShelf?.enabled, currentShelfBooks.length, updateUrlParams]);
+  }, [
+    groupId,
+    queryTerm,
+    unscopedGroup,
+    activeShelf?.enabled,
+    currentShelfBooks.length,
+    updateUrlParams,
+  ]);
 
   useEffect(() => {
     if (isImportingBook.current) return;
@@ -374,8 +412,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const toggleSelection = useCallback(
     (id: string, group?: BooksGroup) => {
       if (group) {
-        const allSelected = group.books.every((book) => selectedBookSet.has(book.hash));
-        const next = new Set(selectedBookSet);
+        // Read the live selection: memoized cards keep the `toggleSelection`
+        // closure from when select mode was entered, so a captured
+        // `selectedBookSet` would replace the selection with a stale snapshot.
+        const selected = useLibraryStore.getState().selectedBooks;
+        const allSelected = group.books.every((book) => selected.has(book.hash));
+        const next = new Set(selected);
         for (const book of group.books) {
           if (allSelected) next.delete(book.hash);
           else next.add(book.hash);
@@ -383,7 +425,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         setSelectedBooks([...next]);
       } else toggleSelectedBook(id);
     },
-    [toggleSelectedBook, selectedBookSet, setSelectedBooks],
+    [toggleSelectedBook, setSelectedBooks],
   );
 
   const openSelectedBooks = () => {
@@ -632,11 +674,21 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     if (isSelectMode) {
       setShowSelectModeActions(true);
       if (isSelectAll) {
-        setSelectedBooks(currentShelfBooks.map((book) => book.hash));
-      } else if (isSelectNone) {
+        // `isSelectAll` stays latched until select mode or navigation clears
+        // it, so applying it again whenever the shelves recompute would undo
+        // the user's manual unticks. Honour each request once.
+        if (!selectAllAppliedRef.current) {
+          selectAllAppliedRef.current = true;
+          setSelectedBooks(currentShelfBooks.map((book) => book.hash));
+        }
+        return;
+      }
+      selectAllAppliedRef.current = false;
+      if (isSelectNone) {
         setSelectedBooks([]);
       }
     } else {
+      selectAllAppliedRef.current = false;
       setSelectedBooks([]);
       setShowSelectModeActions(false);
     }

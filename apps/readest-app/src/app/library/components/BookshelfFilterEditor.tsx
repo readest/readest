@@ -25,6 +25,7 @@ export default function BookshelfFilterEditor({
   const _ = useTranslation();
   const [showHelp, setShowHelp] = useState(false);
   const helpButtonRef = useRef<HTMLButtonElement>(null);
+  const addRuleRef = useRef<HTMLButtonElement>(null);
   const changeChild = (index: number, node: BookshelfRule | BookshelfFilterGroup) =>
     onChange({
       ...group,
@@ -46,7 +47,7 @@ export default function BookshelfFilterEditor({
           {_('Match')}
           <select
             aria-label={_('Match conditions')}
-            className='select select-sm eink-bordered border-base-200 min-w-0'
+            className='select eink-bordered border-base-200 min-w-0'
             value={group.match}
             onChange={(e) => onChange({ ...group, match: e.target.value as 'all' | 'any' })}
           >
@@ -249,9 +250,11 @@ export default function BookshelfFilterEditor({
               aria-label={child.type === 'group' ? _('Remove filter group') : _('Remove condition')}
               title={child.type === 'group' ? _('Remove filter group') : _('Remove condition')}
               className='btn btn-ghost btn-circle eink-bordered h-11 min-h-11 w-11 shrink-0'
-              onClick={() =>
-                onChange({ ...group, children: group.children.filter((_child, i) => i !== index) })
-              }
+              onClick={() => {
+                onChange({ ...group, children: group.children.filter((_child, i) => i !== index) });
+                // Children are keyed by index, so this button now belongs to the next condition.
+                addRuleRef.current?.focus();
+              }}
             >
               <IoMdCloseCircleOutline aria-hidden className='text-base-content/75 h-5 w-5' />
             </button>
@@ -265,6 +268,7 @@ export default function BookshelfFilterEditor({
       )}
       <div className='mt-2 flex flex-wrap gap-x-6'>
         <button
+          ref={addRuleRef}
           type='button'
           className='min-h-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2'
           onClick={addRule}

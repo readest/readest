@@ -3,6 +3,7 @@ import { page, userEvent } from 'vitest/browser';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Book } from '@/types/book';
 import BookCover from '@/components/BookCover';
+import BookshelfItem from '@/app/library/components/BookshelfItem';
 import { createBookshelf } from '@/services/bookshelves/definitions';
 import BookshelfStream, {
   BookshelfCarousel,
@@ -10,14 +11,20 @@ import BookshelfStream, {
 } from '@/app/library/components/BookshelfStream';
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
+vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@/app/library/hooks/useOpenBook', () => ({
+  useOpenBook: () => ({ openBook: vi.fn() }),
+}));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string, values?: Record<string, unknown>) =>
     s.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(values?.[key] ?? '')),
 }));
 await import('@/styles/globals.css');
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   document.documentElement.removeAttribute('data-eink');
+  await page.viewport(1280, 900);
 });
 const books = (count: number): Book[] =>
   Array.from({ length: count }, (_, index) => ({
@@ -49,6 +56,71 @@ const renderItem: React.ComponentProps<typeof BookshelfStream>['renderItem'] = (
   </button>
 );
 describe('mixed bookshelf stream in Chromium', () => {
+  for (const width of [375, 900]) {
+    for (const layout of ['carousel', 'grid'] as const) {
+      it(`matches divider gaps to the heading-to-cover gap for ${layout} shelves at ${width}px`, async () => {
+        await page.viewport(width, 900);
+        const noop = () => {};
+        const transfer = async () => true;
+        const { container, getByRole } = render(
+          <div style={{ width, height: 900 }}>
+            <BookshelfStream
+              sections={[
+                section('First', layout, 3),
+                section('Audiobooks', layout, 3),
+                { ...section('Default', layout, 3), hideHeading: true },
+              ]}
+              autoColumns={false}
+              fixedColumns={3}
+              renderItem={(item, mode) => (
+                <BookshelfItem
+                  item={item}
+                  mode={mode}
+                  coverFit='crop'
+                  isSelectMode={false}
+                  itemSelected={false}
+                  transferProgress={null}
+                  setLoading={noop}
+                  toggleSelection={noop}
+                  handleGroupBooks={noop}
+                  handleBookDownload={transfer}
+                  handleBookUpload={transfer}
+                  handleBookDelete={transfer}
+                  handleSetSelectMode={noop}
+                  handleShowDetailsBook={noop}
+                  handleLibraryNavigation={noop}
+                  handleUpdateReadingStatus={noop}
+                  showTimeRemaining={false}
+                />
+              )}
+            />
+          </div>,
+        );
+        await waitFor(() => {
+          const cards = container.querySelectorAll('.book-item');
+          expect(cards).toHaveLength(9);
+          const previousBottom = cards[0]!.getBoundingClientRect().bottom;
+          const coverTop = cards[3]!.querySelector('.bookitem-main')!.getBoundingClientRect().top;
+          const heading = getByRole('heading', { name: 'Audiobooks' });
+          const headingBounds = heading.getBoundingClientRect();
+          const style = getComputedStyle(heading);
+          const titleTop = headingBounds.top + parseFloat(style.paddingTop);
+          const titleBottom = headingBounds.bottom - parseFloat(style.paddingBottom);
+          const divider = container.querySelector('hr')!.getBoundingClientRect();
+          const gap = coverTop - titleBottom;
+          expect(gap).toBeGreaterThan(0);
+          expect(divider.top - previousBottom).toBeCloseTo(gap, 1);
+          expect(titleTop - divider.bottom).toBeCloseTo(gap, 1);
+          const defaultCoverTop = cards[6]!
+            .querySelector('.bookitem-main')!
+            .getBoundingClientRect().top;
+          const defaultDivider = container.querySelectorAll('hr')[1]!.getBoundingClientRect();
+          // Untitled shelves also need the visual breathing room below the title's text.
+          expect(defaultCoverTop - defaultDivider.bottom).toBeCloseTo(width < 640 ? 16 : 24, 1);
+        });
+      });
+    }
+  }
   it('keeps virtual row measurements correct while scrolling a scaled preview', async () => {
     const { container } = render(
       <div style={{ width: 900, height: 600 }}>
@@ -152,7 +224,7 @@ describe('mixed bookshelf stream in Chromium', () => {
         ).toBeGreaterThan(0),
       );
       if (!eink) {
-        const previous = getByRole('button', { name: 'Scroll left' });
+        const previous = await waitFor(() => getByRole('button', { name: 'Scroll left' }));
         const outside = getByRole('button', { name: 'Outside carousel' });
         await userEvent.hover(outside);
         await waitFor(() => expect(getComputedStyle(previous).opacity).toBe('0'));

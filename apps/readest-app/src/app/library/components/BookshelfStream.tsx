@@ -100,7 +100,17 @@ export const BookshelfCarousel = ({
   const compact = typeof window !== 'undefined' && window.innerWidth < 640;
   const gap = compact ? 16 : 0;
   const itemWidth = Math.max(40, (width - (compact ? 32 : 16) + gap) / columns);
-  const start = Math.max(0, Math.floor(offset / itemWidth) - columns);
+  // Clamped to the list: a shelf that shrinks while scrolled to the end would
+  // otherwise leave `start` past `end` and render no cards.
+  const windowStart = (value: number) =>
+    Math.min(
+      Math.max(0, Math.floor(value / itemWidth) - columns),
+      Math.max(0, section.items.length - columns * 3),
+    );
+  const showPrevious = (value: number) => value > 1;
+  const showNext = (value: number) =>
+    viewportWidth > 0 && value + viewportWidth < itemWidth * section.items.length - 1;
+  const start = windowStart(offset);
   const end = Math.min(section.items.length, start + columns * 3);
   useEffect(() => {
     const element = scroller.current;
@@ -134,7 +144,18 @@ export const BookshelfCarousel = ({
       <div className='group/carousel relative px-4 sm:px-2' data-shelf-layout='carousel'>
         <div
           ref={scroller}
-          onScroll={(e) => setOffset(Math.abs(e.currentTarget.scrollLeft))}
+          onScroll={(e) => {
+            const next = Math.abs(e.currentTarget.scrollLeft);
+            // Every raw scroll event would otherwise re-render the whole
+            // window; only a changed window or edge arrow is visible.
+            setOffset((current) =>
+              windowStart(next) === windowStart(current) &&
+              showPrevious(next) === showPrevious(current) &&
+              showNext(next) === showNext(current)
+                ? current
+                : next,
+            );
+          }}
           className='no-scrollbar overflow-x-auto overflow-y-hidden overscroll-x-contain'
           tabIndex={0}
           aria-label={_('Scroll books')}
@@ -157,11 +178,7 @@ export const BookshelfCarousel = ({
           </div>
         </div>
         {[-1, 1].map((direction) => {
-          const visible =
-            direction < 0
-              ? offset > 1
-              : viewportWidth > 0 && offset + viewportWidth < itemWidth * section.items.length - 1;
-          if (!visible) return null;
+          if (!(direction < 0 ? showPrevious(offset) : showNext(offset))) return null;
           const Icon = direction < 0 ? MdChevronLeft : MdChevronRight;
           return (
             <button
@@ -275,7 +292,10 @@ export default function BookshelfStream({
             const name = definition.name || _(bookshelfName(definition));
             if (row.type === 'divider')
               return (
-                <div aria-hidden='true' className='transform-wrapper px-4 pb-3 pt-4 sm:px-6'>
+                <div
+                  aria-hidden='true'
+                  className={`transform-wrapper px-4 pt-1 sm:px-6 ${row.section.hideHeading ? 'pb-2' : 'pb-1'}`}
+                >
                   <hr className='border-base-content/10 eink:border-base-content border-t' />
                 </div>
               );
@@ -283,7 +303,7 @@ export default function BookshelfStream({
               return (
                 <h2
                   data-shelf-id={definition.id}
-                  className='transform-wrapper px-4 pb-1 pt-5 text-sm font-semibold sm:px-6'
+                  className='transform-wrapper px-4 pb-1 pt-2 text-sm font-semibold sm:px-6 sm:pt-4'
                 >
                   {name}
                 </h2>

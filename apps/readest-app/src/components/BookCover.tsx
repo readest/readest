@@ -6,8 +6,8 @@ import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { getInitializedAppService } from '@/services/environment';
 import { observeCoverForThumbnail } from '@/services/coverThumbnailService';
+import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useSettingsStore } from '@/store/settingsStore';
 
 export const HideBookCoversContext = createContext<boolean | undefined>(undefined);
 
@@ -48,8 +48,8 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     const metadataCoverImageUrl = book.metadata?.coverImageUrl || null;
     const coverImageUrl = metadataCoverImageUrl || usableThumbnail || book.coverImageUrl || null;
     const shelfHideCovers = useContext(HideBookCoversContext);
-    const legacyHideCovers = useSettingsStore((state) => state.settings.libraryHideCovers);
-    const hideCovers = shelfHideCovers ?? legacyHideCovers;
+    const defaultShelfCovers = useDefaultBookshelfCovers();
+    const hideCovers = shelfHideCovers ?? defaultShelfCovers.hideCovers;
     const displayCoverUrl = hideCovers ? null : coverImageUrl;
 
     const shouldShowSpine = showSpine && !hideCovers && imageLoaded && !imageError;

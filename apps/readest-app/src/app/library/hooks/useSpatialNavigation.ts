@@ -52,6 +52,10 @@ export function useSpatialNavigation(containerRef: React.RefObject<HTMLElement |
       const active = document.activeElement as HTMLElement;
       if (!container.contains(active) && e.key !== 'ArrowDown') return;
       const current = items.indexOf(active);
+      // Focus resting on a non-navigable control inside the shelf (a carousel
+      // scroller, its arrows) belongs to that control: arrow keys must keep
+      // scrolling it natively.
+      if (current < 0 && active !== container && container.contains(active)) return;
       const next =
         current < 0
           ? 0

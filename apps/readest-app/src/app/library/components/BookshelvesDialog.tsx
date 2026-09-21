@@ -159,7 +159,12 @@ function BookshelfTab({
             {...listeners}
             aria-pressed={selected}
             aria-keyshortcuts='F2 Alt+ArrowLeft Alt+ArrowRight'
-            title={`${name}${shelf.enabled ? '' : ` (${_('Disabled')})`} · ${_('Drag to reorder')}`}
+            data-bookshelf-tab={shelf.id}
+            title={
+              shelf.enabled
+                ? _('{{name}} · Drag to reorder', { name })
+                : _('{{name}} (disabled) · Drag to reorder', { name })
+            }
             className={`btn btn-ghost h-11 min-h-11 min-w-0 cursor-grab touch-pan-x select-none focus-visible:ring-2 focus-visible:ring-base-content/15 active:cursor-grabbing flex-1 px-3 ${selected ? 'eink:underline eink:underline-offset-4' : 'group-data-[collapsed=true]/bookshelf-tabs:w-11 group-data-[collapsed=true]/bookshelf-tabs:flex-none group-data-[collapsed=true]/bookshelf-tabs:px-0'}`}
             onClick={onSelect}
             onDoubleClick={rename}
@@ -197,7 +202,7 @@ function BookshelfTab({
               type='button'
               aria-label={_('Rename bookshelf')}
               title={_('Rename bookshelf')}
-              className='btn btn-ghost h-11 min-h-11 w-9 shrink-0 px-0 focus-visible:ring-2 focus-visible:ring-base-content/15'
+              className='btn btn-ghost h-11 min-h-11 w-11 shrink-0 px-0 focus-visible:ring-2 focus-visible:ring-base-content/15'
               onClick={rename}
             >
               <MdEdit aria-hidden className='h-4 w-4' />
@@ -231,7 +236,13 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   const servers = useABSServerStore((s) => s.servers);
   const [base] = useState(() => readBookshelves(settings));
   const [draft, setDraft] = useState(base);
-  const [selectedId, setSelectedId] = useState(base[0]!.id);
+  const [selectedId, setSelectedId] = useState(() => {
+    const lastTab = localStorage.getItem('lastBookshelfTab');
+    return base.find((shelf) => shelf.id === lastTab)?.id ?? base[0]!.id;
+  });
+  useEffect(() => {
+    localStorage.setItem('lastBookshelfTab', selectedId);
+  }, [selectedId]);
   const tabsRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const tabLabels = draft.map((s) => s.name || _(bookshelfName(s))).join('\0');
@@ -265,6 +276,8 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   const [savedNotice, setSavedNotice] = useState(false);
   const saved = useRef(base);
   const latestValid = useRef(base);
+  const lastValidShelf = useRef(new Map(base.map((s) => [s.id, s])));
+  const includeBeforeExclusive = useRef(new Map<string, boolean>());
   const saveQueue = useRef(Promise.resolve(true));
   const mounted = useRef(true);
   const saveContext = useRef({ envConfig, _ });
@@ -301,9 +314,11 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   }, []);
   const resetButtonRef = useRef<HTMLButtonElement>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
-  const cancelConfirmation = () => {
+  const cancelConfirmation = (focus?: HTMLElement | null) => {
     setConfirmation(null);
-    (confirmation?.action === 'reset' ? resetButtonRef : deleteButtonRef).current?.focus();
+    (
+      focus ?? (confirmation?.action === 'reset' ? resetButtonRef : deleteButtonRef).current
+    )?.focus();
   };
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -374,9 +389,8 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
         : [],
     [preview, settings, globalGroupBy, viewMode, uiLanguage, pageDurations],
   );
-  const invalid = draft
-    .map((s) => ({ shelf: s, result: bookshelfSchema.safeParse(s) }))
-    .find((s) => !s.result.success);
+  const results = draft.map((s) => ({ shelf: s, result: bookshelfSchema.safeParse(s) }));
+  const invalid = results.find((s) => !s.result.success);
   const enabledCount = draft.filter((s) => s.enabled).length;
   const priorityShelf = draft.find(
     (s) => s.id === FINISHED_BOOKSHELF_ID && s.enabled && s.exclusive,
@@ -399,7 +413,13 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
     setDraft(next);
     setDebounced(next);
   };
-  if (!validation) latestValid.current = draft;
+  // One incomplete shelf must not freeze the others: each shelf falls back to its own last valid
+  // version, and a shelf that was never valid is left out of the snapshot.
+  results.forEach(({ shelf, result }) => {
+    if (result.success) lastValidShelf.current.set(shelf.id, shelf);
+  });
+  const validDraft = draft.flatMap((s) => lastValidShelf.current.get(s.id) ?? []);
+  if (enabledCount && validDraft.some((s) => s.enabled)) latestValid.current = validDraft;
   const flush = useCallback(() => {
     const snapshot = latestValid.current;
     const persist = async () => {
@@ -556,7 +576,7 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
         </button>
         <div
           ref={statusRef}
-          className='flex min-h-5 min-w-16 flex-1 items-center justify-end gap-2 text-end text-sm'
+          className='flex min-h-5 min-w-16 flex-1 basis-full items-center justify-end gap-2 text-end text-sm sm:basis-0'
         >
           <p
             role={error || validation ? 'alert' : 'status'}
@@ -724,9 +744,21 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
                     includeExclusiveBooks: false,
                   }).success
                 }
-                onChange={() =>
-                  update({ exclusive: !selected.exclusive, includeExclusiveBooks: false })
-                }
+                onChange={() => {
+                  // Exclusive shelves cannot include other exclusive shelves, so remember the
+                  // choice while it is forced off and restore it when Exclusive goes off again.
+                  if (selected.exclusive)
+                    update({
+                      exclusive: false,
+                      includeExclusiveBooks:
+                        includeBeforeExclusive.current.get(selected.id) ??
+                        selected.includeExclusiveBooks,
+                    });
+                  else {
+                    includeBeforeExclusive.current.set(selected.id, selected.includeExclusiveBooks);
+                    update({ exclusive: true, includeExclusiveBooks: false });
+                  }
+                }}
               />
               <SettingsSwitchRow
                 label={_('Include books from exclusive shelves')}
@@ -779,7 +811,7 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
               onScrollerRef={handlePreviewScrollerRef}
               pageDurations={pageDurations}
               sections={previewSections}
-              autoColumns
+              autoColumns={settings.libraryAutoColumns}
               fixedColumns={settings.libraryColumns || 3}
               renderItem={renderPreview}
             />
@@ -793,7 +825,7 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
           title={confirmation.action === 'reset' ? _('Reset bookshelf?') : _('Delete bookshelf?')}
           className='z-[60]'
           boxClassName='h-auto! max-h-[80vh]! sm:max-w-md'
-          onClose={cancelConfirmation}
+          onClose={() => cancelConfirmation()}
         >
           <p className='text-sm'>
             {confirmation.action === 'reset'
@@ -812,7 +844,7 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
               type='button'
               className='btn btn-ghost eink-bordered min-h-11'
               autoFocus
-              onClick={cancelConfirmation}
+              onClick={() => cancelConfirmation()}
             >
               {_('Cancel')}
             </button>
@@ -821,29 +853,39 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
               className={`btn min-h-11 ${confirmation.action === 'reset' ? 'btn-contrast' : 'btn-error eink-contrast'}`}
               onClick={() => {
                 const { shelf, action } = confirmation;
+                let nextFocus: HTMLElement | null = null;
                 if (action === 'delete') {
                   setDraft((shelves) => shelves.filter((s) => s.id !== shelf.id));
                   setSelectedId(DEFAULT_BOOKSHELF_ID);
+                  // The Delete button goes away with the shelf, so hand focus to the new selection.
+                  nextFocus =
+                    tabsRef.current?.querySelector<HTMLElement>(
+                      `[data-bookshelf-tab='${DEFAULT_BOOKSHELF_ID}']`,
+                    ) ?? null;
                 } else {
-                  const defaults =
-                    defaultBookshelves({}).find((s) => s.id === shelf.id) ||
-                    createBookshelf(shelf.name, shelf.id);
+                  const builtin = defaultBookshelves({}).find((s) => s.id === shelf.id);
                   setDraft((shelves) =>
-                    shelves.map((s) =>
-                      s.id === shelf.id
-                        ? {
-                            ...defaults,
-                            name: s.name,
-                            enabled:
-                              defaults.enabled ||
-                              !shelves.some((other) => other.id !== s.id && other.enabled),
-                          }
-                        : s,
-                    ),
+                    shelves.map((s) => {
+                      if (s.id !== shelf.id) return s;
+                      // A custom shelf is defined by its filters; only its display settings reset.
+                      const defaults = builtin || {
+                        ...createBookshelf(s.name, s.id),
+                        filters: s.filters,
+                        exclusive: s.exclusive,
+                        includeExclusiveBooks: s.includeExclusiveBooks,
+                      };
+                      return {
+                        ...defaults,
+                        name: s.name,
+                        enabled:
+                          defaults.enabled ||
+                          !shelves.some((other) => other.id !== s.id && other.enabled),
+                      };
+                    }),
                   );
                 }
                 setError('');
-                cancelConfirmation();
+                cancelConfirmation(nextFocus);
               }}
             >
               {confirmation.action === 'reset' ? _('Reset') : _('Delete')}
@@ -859,7 +901,9 @@ export default function BookshelvesDialog() {
   const [open, setOpen] = useState(false);
   const editor = useRef<BookshelvesEditorHandle>(null);
   const close = async () => {
-    if (await editor.current?.flush()) setOpen(false);
+    // The controls stay live while the first save runs, so flush again for anything edited
+    // meanwhile; the second flush is a no-op when nothing changed.
+    if ((await editor.current?.flush()) && (await editor.current?.flush())) setOpen(false);
   };
   useEffect(() => {
     const show = () => setOpen(true);

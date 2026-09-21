@@ -1,10 +1,11 @@
 import { createRef } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
+import BookshelvesDialog, {
   BookshelvesEditor,
   type BookshelvesEditorHandle,
 } from '@/app/library/components/BookshelvesDialog';
+import { eventDispatcher } from '@/utils/event';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { DEFAULT_SYSTEM_SETTINGS as partialSettings } from '@/services/constants';
@@ -50,13 +51,18 @@ vi.mock('@/components/Dialog', () => ({
     isOpen,
     title,
     children,
+    onClose,
   }: {
     isOpen: boolean;
     title: string;
     children: React.ReactNode;
+    onClose: () => void;
   }) =>
     isOpen ? (
       <div role='dialog' aria-label={title}>
+        <button type='button' aria-label={`Close ${title}`} onClick={onClose}>
+          Close
+        </button>
         {children}
       </div>
     ) : null,
@@ -67,6 +73,7 @@ vi.mock('@/store/absServerStore', () => ({
 }));
 
 beforeEach(() => {
+  localStorage.removeItem('lastBookshelfTab');
   vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -92,9 +99,37 @@ afterEach(async () => {
   cleanup();
   await act(async () => {});
   localStorage.removeItem('i18nextLng');
+  localStorage.removeItem('lastBookshelfTab');
   vi.unstubAllGlobals();
 });
 describe('bookshelf editor', () => {
+  it('remembers the selected shelf when the dialog is reopened after a remount', async () => {
+    const { unmount } = render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Close Manage Bookshelves'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    unmount();
+
+    render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+    expect(screen.getByRole('button', { name: 'Default' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(save).not.toHaveBeenCalled();
+  });
+  it('falls back to the first shelf when the remembered shelf no longer exists', () => {
+    localStorage.setItem('lastBookshelfTab', 'deleted-shelf');
+    render(<BookshelvesEditor />);
+    expect(
+      screen.getByRole('button', { name: /^Recently read/ }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(localStorage.getItem('lastBookshelfTab')).toBe('recent');
+  });
   it('previews Finished books ahead of an earlier exclusive shelf', () => {
     const base = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS);
     const clock = new HlcGenerator('test');
@@ -413,9 +448,106 @@ describe('bookshelf editor', () => {
     );
     await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
     const reset = save.mock.calls.at(-1)![2] as BookshelfDefinition[];
-    expect(reset[1]).toEqual(createBookshelf(edited[1]!.name, edited[1]!.id));
+    expect(reset[1]).toEqual({
+      ...createBookshelf(edited[1]!.name, edited[1]!.id),
+      filters: edited[1]!.filters,
+      exclusive: true,
+      includeExclusiveBooks: false,
+    });
     expect(reset.filter((s) => s.id !== edited[1]!.id)).toEqual(
       edited.filter((s) => s.id !== edited[1]!.id),
+    );
+  });
+  it('keeps autosaving other shelves while one shelf has an incomplete condition', async () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookshelf' }));
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    const added = (save.mock.calls.at(-1)![2] as BookshelfDefinition[])[1]!;
+    fireEvent.click(screen.getByRole('button', { name: 'Add filter group' }));
+    expect(screen.getByRole('alert').textContent).toContain('Complete every filter condition.');
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Hide covers'));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+    const draft = save.mock.calls.at(-1)![2] as BookshelfDefinition[];
+    expect(draft.find((s) => s.id === 'default')?.hideCovers).toBe(true);
+    expect(draft.find((s) => s.id === added.id)).toEqual(added);
+    expect(screen.getByRole('alert').textContent).toContain('Complete every filter condition.');
+  });
+  it('restores the previous include setting when Exclusive is turned back off', async () => {
+    render(<BookshelvesEditor />);
+    const include = screen.getByLabelText(
+      'Include books from exclusive shelves',
+    ) as HTMLInputElement;
+    expect(include.checked).toBe(true);
+    fireEvent.click(screen.getByLabelText(/^Exclusive/));
+    expect(include.checked).toBe(false);
+    expect(include.disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText(/^Exclusive/));
+    expect(include.checked).toBe(true);
+    expect(include.disabled).toBe(false);
+    fireEvent.click(screen.getByLabelText('Hide covers'));
+    await waitFor(() =>
+      expect(save.mock.calls.at(-1)?.[2][0]).toMatchObject({
+        exclusive: false,
+        includeExclusiveBooks: true,
+      }),
+    );
+  });
+  it('moves focus to Add condition after removing a condition', () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookshelf' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add condition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add condition' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove condition' })[0]!);
+    expect(screen.getAllByRole('button', { name: 'Remove condition' })).toHaveLength(1);
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Add condition' }));
+  });
+  it('describes each shelf tab as a whole sentence', () => {
+    render(<BookshelvesEditor />);
+    expect(screen.getByRole('button', { name: 'Default' }).title).toBe('Default · Drag to reorder');
+    expect(screen.getByRole('button', { name: /^Finished books/ }).title).toBe(
+      'Finished books (disabled) · Drag to reorder',
+    );
+  });
+  it('focuses the newly selected tab after a confirmed deletion', async () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookshelf' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Delete bookshelf?' })).getByRole('button', {
+        name: 'Delete',
+      }),
+    );
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Default' })),
+    );
+    expect(localStorage.getItem('lastBookshelfTab')).toBe('default');
+  });
+  it('stays open until an edit made while closing has been saved', async () => {
+    let finishFirst!: () => void;
+    let finishSecond!: () => void;
+    save
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (finishFirst = resolve)))
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (finishSecond = resolve)));
+    render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+    fireEvent.click(screen.getByLabelText('Hide covers'));
+    fireEvent.click(screen.getByLabelText('Close Manage Bookshelves'));
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByLabelText('Carousel layout'));
+    await act(async () => {
+      finishFirst();
+    });
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+    expect(save.mock.calls[1]![2][0]).toMatchObject({ hideCovers: true, layout: 'grid' });
+    expect(screen.getByRole('dialog', { name: 'Manage Bookshelves' })).toBeTruthy();
+    await act(async () => {
+      finishSecond();
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Manage Bookshelves' })).toBeNull(),
     );
   });
   it('restores builtin filters without disabling the last enabled shelf', async () => {

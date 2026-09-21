@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import type { SystemSettings } from '@/types/settings';
 import type { EnvConfigType } from '@/services/environment';
-import { createBookshelf } from '@/services/bookshelves/definitions';
+import { BOOKSHELF_SORT_LABELS, createBookshelf } from '@/services/bookshelves/definitions';
 import { readBookshelves } from '@/services/bookshelves/state';
 import { saveBookshelfDraft } from '@/services/bookshelves/persistence';
 import { readPendingBookshelves } from '@/services/bookshelves/journal';
@@ -50,6 +50,14 @@ describe('bookshelf layouts from the View menu', () => {
     await waitFor(() => expect(useSettingsStore.getState().settings.librarySortBy).toBe('title'));
     expect(readBookshelves(useSettingsStore.getState().settings)).toEqual(before);
     expect(readPendingBookshelves()).toEqual(pending);
+  });
+  it('offers the same sort labels as the bookshelf editor, except Size', () => {
+    render(<ViewMenu />);
+    for (const [value, label] of Object.entries(BOOKSHELF_SORT_LABELS))
+      if (value === 'size') expect(screen.queryByText(label)).toBeNull();
+      else expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Date Published').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Progress Read').length).toBeGreaterThan(0);
   });
   it('keeps shelf visibility and cover visibility in Bookshelves settings', () => {
     render(<ViewMenu />);

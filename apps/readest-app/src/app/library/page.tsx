@@ -1321,9 +1321,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleMetadataValueClick = (type: 'tag' | 'subject', value: string) => {
     const groupBy = type === 'tag' ? LibraryGroupByType.Tag : LibraryGroupByType.Subject;
-    const targetGroup = createBookGroups(libraryBooks, groupBy).find(
-      (item): item is BooksGroup => 'books' in item && item.name === value,
-    );
+    const targetGroup = createBookGroups(
+      libraryBooks.filter((book) => !book.deletedAt),
+      groupBy,
+    ).find((item): item is BooksGroup => 'books' in item && item.name === value);
     if (!targetGroup) return;
     const params = new URLSearchParams(window.location.search);
     params.set('groupBy', groupBy);
