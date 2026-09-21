@@ -90,7 +90,7 @@ export const Toast = () => {
 
   useEffect(() => {
     if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
-    if (toastMessage) {
+    if (toastMessage && toastTimeout !== 0) {
       const timeout = setTimeout(() => {
         setIsVisible(false);
         toastClearTimeout.current = setTimeout(() => setToastMessage(''), 300);
@@ -142,6 +142,14 @@ export const Toast = () => {
       toastIdRef.current = undefined;
     }, 300);
     if (toastDismissTimeout.current) clearTimeout(toastDismissTimeout.current);
+  };
+
+  const handleUserDismiss = () => {
+    const id = toastIdRef.current;
+    handleDismiss();
+    if (toastTimeout === 0 && id) {
+      void eventDispatcher.dispatch('toast-dismissed', { id });
+    }
   };
 
   const handleDismissOwnedToast = (event: CustomEvent) => {
@@ -224,11 +232,13 @@ export const Toast = () => {
 
           {/* Close button */}
           <button
-            onClick={handleDismiss}
+            onClick={handleUserDismiss}
             className={clsx(
               'shrink-0 rounded-lg p-1 transition-colors',
               toastType === 'info'
-                ? 'hover:bg-base-300 hidden'
+                ? toastTimeout === 0
+                  ? 'hover:bg-base-300'
+                  : 'hover:bg-base-300 hidden'
                 : 'hover:bg-white/20 active:bg-white/30',
             )}
             aria-label='Dismiss'

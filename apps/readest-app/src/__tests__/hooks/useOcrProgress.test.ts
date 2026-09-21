@@ -25,9 +25,11 @@ it('shows preparation once, monotonic page progress, then keeps background pages
   expect(dispatch.mock.calls[0]?.[1]).toMatchObject({
     message: 'Preparing text recognition...',
     placement: 'top',
+    timeout: 0,
   });
   expect(dispatch.mock.calls[0]?.[1]).not.toHaveProperty('progress');
   progress('recognizing text', 0.6);
+  expect(dispatch.mock.calls[1]?.[1]).toMatchObject({ timeout: 0 });
   progress('loading model', 0);
   progress('recognizing text', 0.2);
   progress('recognizing text', 1);
@@ -49,7 +51,7 @@ it('shows preparation once, monotonic page progress, then keeps background pages
   expect(dispatch.mock.calls.filter(([event]) => event === 'toast')).toHaveLength(5);
 });
 
-it('dismisses only its owned toast when disabled or unmounted', () => {
+it('dismisses only its owned toast when disabled or unmounted', async () => {
   const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
   const { result, rerender, unmount } = renderHook(({ enabled }) => useOcrProgress(enabled, 'ja'), {
     initialProps: { enabled: true },
@@ -58,6 +60,11 @@ it('dismisses only its owned toast when disabled or unmounted', () => {
   result.current.onProgress({ status: 'loading model', progress: 1 });
   const ocrToastId = (dispatch.mock.calls[0]?.[1] as { id?: string }).id;
   expect(ocrToastId).toEqual(expect.any(String));
+
+  await eventDispatcher.dispatch('toast-dismissed', { id: ocrToastId });
+  result.current.onProgress({ status: 'recognizing text', progress: 0.6 });
+  result.current.onPageRecognized();
+  expect(dispatch.mock.calls.filter(([event]) => event === 'toast')).toHaveLength(1);
 
   rerender({ enabled: false });
   expect(dispatch).toHaveBeenCalledWith('toast-dismiss', { id: ocrToastId });

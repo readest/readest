@@ -147,6 +147,29 @@ describe('Toast layout', () => {
     expect(screen.getByText('Copied to clipboard')).toBeTruthy();
   });
 
+  it('keeps a zero-timeout toast visible until it is dismissed', async () => {
+    vi.useFakeTimers();
+    render(<Toast />);
+    await act(async () => {
+      await eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: 'Preparing text recognition...',
+        placement: 'top',
+        id: 'ocr-toast',
+        timeout: 0,
+      });
+    });
+
+    await act(async () => vi.advanceTimersByTimeAsync(60_001));
+    expect(screen.getByText('Preparing text recognition...')).toBeTruthy();
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Dismiss' }).click();
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(screen.queryByText('Preparing text recognition...')).toBeNull();
+  });
+
   it('centers the info toast on the viewport', async () => {
     const toast = await showToast({ type: 'info', message: 'Copied to clipboard' });
     const box = toast.getBoundingClientRect();

@@ -13,7 +13,12 @@ export const useOcrProgress = (enabled: boolean, language: string) => {
   useEffect(() => {
     progressRef.current = -1;
     doneRef.current = false;
+    const handleToastDismissed = (event: CustomEvent) => {
+      if (event.detail?.id === toastId) doneRef.current = true;
+    };
+    eventDispatcher.on('toast-dismissed', handleToastDismissed);
     return () => {
+      eventDispatcher.off('toast-dismissed', handleToastDismissed);
       void eventDispatcher.dispatch('toast-dismiss', { id: toastId });
     };
   }, [enabled, language, toastId]);
@@ -37,7 +42,7 @@ export const useOcrProgress = (enabled: boolean, language: string) => {
         message: recognizing
           ? _('Recognizing text: {{progress}}%', { progress: percentage })
           : _('Preparing text recognition...'),
-        timeout: 60_000,
+        timeout: 0,
       });
     },
     onPageRecognized: () => {
