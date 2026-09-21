@@ -112,6 +112,42 @@ describe('OcrSession', () => {
     expect(engine.terminate).toHaveBeenCalledOnce();
   });
 
+  it('retains the 32 most recently used results after their documents unload', async () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const doc = frame.contentDocument!;
+    const image = doc.createElement('img');
+    Object.defineProperties(image, {
+      naturalWidth: { value: 1200 },
+      naturalHeight: { value: 1800 },
+    });
+    doc.body.append(image);
+    const engine: OcrEngine = {
+      recognize: vi.fn(async (_source, page) => ({ ...page, blocks: [] })),
+      terminate: vi.fn(async () => undefined),
+    };
+    const session = new OcrSession({ createEngine: () => engine });
+    const visit = async (index: number) => {
+      image.src = `blob:page-${index}`;
+      await session.processDocument(doc, index, { priority: true });
+      frame.contentWindow!.dispatchEvent(new Event('pagehide'));
+    };
+    try {
+      await session.setEnabled(true);
+      for (let index = 0; index < 33; index++) await visit(index);
+      await visit(1);
+      expect(engine.recognize).toHaveBeenCalledTimes(33);
+      await visit(33);
+      await visit(1);
+      expect(engine.recognize).toHaveBeenCalledTimes(34);
+      await visit(2);
+      expect(engine.recognize).toHaveBeenCalledTimes(35);
+    } finally {
+      await session.terminate();
+      frame.remove();
+    }
+  });
+
   it('reuses cached pages without remounting and releases hidden documents', async () => {
     const pages = [0, 1].map(() => {
       const iframe = document.createElement('iframe');

@@ -5,6 +5,8 @@ import {
   removeOcrTextLayer,
 } from '@/app/reader/utils/ocrTextLayer';
 
+const MAX_CACHED_PAGES = 32;
+
 interface OcrImagePage {
   pageIndex: number;
   width: number;
@@ -180,13 +182,14 @@ export class OcrSession {
     if (cachedPage) {
       if (isSamePageImage(cachedPage, doc, image)) {
         cachedPage.document = doc;
+        this.#cachePage(pageIndex, cachedPage);
         if (!hasOcrTextLayer(doc, pageIndex)) mountOcrTextLayer(doc, cachedPage.page);
         if (priority) this.#onPageRecognized?.(cachedPage.page);
         return cachedPage.page;
       }
       if (isSamePdfPage(cachedPage, doc, image)) {
         const resizedPage = resizeOcrPage(cachedPage.page, image);
-        this.#pages.set(pageIndex, { document: doc, image, page: resizedPage });
+        this.#cachePage(pageIndex, { document: doc, image, page: resizedPage });
         mountOcrTextLayer(doc, resizedPage);
         if (priority) this.#onPageRecognized?.(resizedPage);
         return resizedPage;
@@ -340,7 +343,7 @@ export class OcrSession {
         ) {
           return page;
         }
-        this.#pages.set(pageIndex, { document: currentDocument, image: currentImage, page });
+        this.#cachePage(pageIndex, { document: currentDocument, image: currentImage, page });
         this.#onPageRecognized?.(page);
         return page;
       },
@@ -363,6 +366,14 @@ export class OcrSession {
       },
     );
     return recognition;
+  }
+
+  #cachePage(pageIndex: number, page: CachedOcrPage): void {
+    this.#pages.delete(pageIndex);
+    this.#pages.set(pageIndex, page);
+    if (this.#pages.size > MAX_CACHED_PAGES) {
+      this.#pages.delete(this.#pages.keys().next().value!);
+    }
   }
 
   #promoteTask(task: OcrQueueTask): void {
