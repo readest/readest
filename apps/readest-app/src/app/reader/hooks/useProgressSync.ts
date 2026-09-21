@@ -17,6 +17,7 @@ import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 import { isMalformedLocationCfi } from '@/utils/cfi';
+import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 // Backoff schedule for the first-pull retry on book open. After these
 // attempts the gate releases unconditionally so the user's progress can
@@ -191,6 +192,21 @@ export const useProgressSync = (bookKey: string) => {
       await pullWithRetry();
     }
   };
+
+  useWindowActiveChanged((isActive) => {
+    if (!user || !progress) return;
+    if (!isActive) {
+      handleAutoSync.flush();
+      return;
+    }
+    // The book stays mounted while Android is backgrounded. Pull again on
+    // resume before a suspended auto-push can send the old local position.
+    handleAutoSync.cancel();
+    configPulled.current = false;
+    pullAttempt.current = 0;
+    clearPendingPullRetry();
+    void pullWithRetry();
+  });
 
   // Push: flush the pending push + pull when the book is closed or the user
   // taps the manual Sync button.

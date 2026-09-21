@@ -360,6 +360,64 @@ describe('useProgressSync', () => {
     expect(pullCallCount()).toBe(callsBeforeRefresh + 2);
   });
 
+  test('resuming an open book pulls and applies progress read on another device', async () => {
+    const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+    const initialPulls = pullCallCount();
+
+    const visibility = vi.spyOn(document, 'visibilityState', 'get');
+    try {
+      visibility.mockReturnValue('hidden');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await flushMicrotasks();
+      });
+      expect(pullCallCount()).toBe(initialPulls);
+      // Save a pending local turn before Android can suspend its timer.
+      expect(pushCallCount()).toBe(1);
+
+      h.syncConfigsMock.mockClear();
+      visibility.mockReturnValue('visible');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await flushMicrotasks();
+      });
+      expect(pullCallCount()).toBe(1);
+      expect(pushCallCount()).toBe(0);
+
+      // A new response must be applied even though the book's initial pull
+      // already succeeded before the app went into the background.
+      h.cfiCompareMock.mockReturnValue(-1);
+      h.state.syncedConfigs = [{ bookHash: 'h1', location: 'remote-ahead' }];
+      rerender();
+      await advance(0);
+      expect(h.view.goTo).toHaveBeenCalledWith('remote-ahead');
+      await advance(20_000);
+      expect(pullCallCount()).toBe(1);
+    } finally {
+      visibility.mockRestore();
+    }
+  });
+
+  test('foreground pull retries after a failed request and cleans up on unmount', async () => {
+    const { unmount } = renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+    const initialPulls = pullCallCount();
+
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await flushMicrotasks();
+    });
+    expect(pullCallCount()).toBe(initialPulls + 1);
+    await advance(1500);
+    expect(pullCallCount()).toBe(initialPulls + 2);
+
+    unmount();
+    document.dispatchEvent(new Event('visibilitychange'));
+    await advance(20_000);
+    expect(pullCallCount()).toBe(initialPulls + 2);
+  });
+
   test('merges synced book-scope proofread rules into local config by id', async () => {
     // Local has a book rule; the remote config carries a different book rule
     // plus a library-scope rule (which must be ignored — it syncs separately
