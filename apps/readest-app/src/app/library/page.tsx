@@ -1,5 +1,7 @@
 'use client';
 
+import BookshelvesDialog from './components/BookshelvesDialog';
+
 import clsx from 'clsx';
 import * as React from 'react';
 import { MdChevronRight, MdClose } from 'react-icons/md';
@@ -85,6 +87,7 @@ import {
   tauriSetWindowTitle,
 } from '@/utils/window';
 
+import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
@@ -104,16 +107,10 @@ import { useDragDropImport } from './hooks/useDragDropImport';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { Toast } from '@/components/Toast';
-import {
-  createBookGroups,
-  ensureLibraryGroupByType,
-  findGroupById,
-  getBreadcrumbs,
-} from './utils/libraryUtils';
+import { createBookGroups, findGroupById, getBreadcrumbs } from './utils/libraryUtils';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
-import LibraryEmptyState from './components/LibraryEmptyState';
 import ImportMenuPopup from './components/ImportMenuPopup';
 import GroupHeader from './components/GroupHeader';
 import FailedImportsDialog, { FailedImport } from './components/FailedImportsDialog';
@@ -245,7 +242,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // settings). Deferred 10s; module-scoped dedup means a later navigation
   // to the reader won't re-pull the same kind.
   useReplicaPull({
-    kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'abs_server', 'settings'],
+    kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'abs_server', 'settings', 'bookshelf'],
   });
   // Hydrate the custom-font store from persisted settings so the Font
   // panel sees imported fonts even when opened straight from the
@@ -468,7 +465,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // cleanup effect below (purely cosmetic URL rewrite). See
   // https://github.com/readest/readest/issues/3782.
   const handleLibraryNavigation = useCallback(
-    (targetGroup: string) => {
+    (targetGroup: string, shelfId?: string) => {
       const params = new URLSearchParams(window.location.search);
       const currentGroup = params.get('group') || '';
 
@@ -482,6 +479,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       // Build query params — always `set` so the search string is non-empty
       // even when targetGroup is '' (the Next.js 16.2 workaround).
       params.set('group', targetGroup);
+      if (!targetGroup) params.delete('shelf');
+      else if (shelfId) params.set('shelf', shelfId);
 
       navigateToLibrary(router, `${params.toString()}`);
     },
@@ -868,8 +867,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // Track the current virtual group for the navigation header.
   useEffect(() => {
     const groupId = searchParams?.get('group') || '';
-    const groupByParam = searchParams?.get('groupBy');
-    const groupBy = ensureLibraryGroupByType(groupByParam, settings.libraryGroupBy);
+    const groupBy = getActiveBookshelfGroupBy(settings, searchParams);
 
     if (
       groupId &&
@@ -898,7 +896,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     } else {
       setCurrentVirtualGroup(null);
     }
-  }, [libraryBooks, searchParams, settings.libraryGroupBy]);
+  }, [libraryBooks, searchParams, settings.libraryGroupBy, settings.bookshelves]);
 
   useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {
@@ -1323,20 +1321,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleMetadataValueClick = (type: 'tag' | 'subject', value: string) => {
     const groupBy = type === 'tag' ? LibraryGroupByType.Tag : LibraryGroupByType.Subject;
-    const targetGroup = createBookGroups(libraryBooks, groupBy).find(
-      (item): item is BooksGroup => 'books' in item && item.name === value,
-    );
+    const targetGroup = createBookGroups(
+      libraryBooks.filter((book) => !book.deletedAt),
+      groupBy,
+    ).find((item): item is BooksGroup => 'books' in item && item.name === value);
     if (!targetGroup) return;
     const params = new URLSearchParams(window.location.search);
     params.set('groupBy', groupBy);
     params.set('group', targetGroup.id);
+    params.delete('shelf');
     params.delete('q');
     setShowDetailsBook(null);
     navigateToLibrary(router, params.toString());
   };
 
   const getImportTargetGroupId = () => {
-    const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
+    const groupBy = getActiveBookshelfGroupBy(settings, searchParams);
     return groupBy === LibraryGroupByType.Group ? searchParams?.get('group') || '' : '';
   };
 
@@ -2058,53 +2058,48 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           localized={currentVirtualGroup.localized}
         />
       )}
-      {showBookshelf &&
-        (libraryBooks.some((book) => !book.deletedAt) ? (
-          <div aria-label={_('Your Bookshelf')} className='flex min-h-0 grow flex-col'>
-            <div
-              ref={containerRef}
-              className={clsx(
-                'scroll-container drop-zone flex min-h-0 grow flex-col',
-                isDragging && 'drag-over',
-              )}
-              style={{
-                paddingRight: `${insets.right}px`,
-                paddingLeft: `${insets.left}px`,
-              }}
-            >
-              <DropIndicator />
-              <Bookshelf
-                libraryBooks={libraryBooks}
-                isSelectMode={isSelectMode}
-                isSelectAll={isSelectAll}
-                isSelectNone={isSelectNone}
-                onScrollerRef={handleScrollerRef}
-                handleImportBooks={setImportMenuAnchor}
-                handleBookUpload={handleBookUpload}
-                handleBookDownload={handleBookDownload}
-                handleBookDelete={handleBookDelete('both')}
-                handleBookPurge={handleBookDelete('purge')}
-                handleSetSelectMode={handleSetSelectMode}
-                handleShowDetailsBook={handleShowDetailsBook}
-                handleLibraryNavigation={handleLibraryNavigation}
-                booksTransferProgress={booksTransferProgress}
-                handlePushLibrary={pushLibrary}
-                onSearchContents={() => handleSearchTargetChange('text')}
-                onSearchProgress={setLibrarySearchProgress}
-                contentSearch={
-                  librarySearchTarget === 'text'
-                    ? { query: searchParams?.get('q') ?? '', config: librarySearchConfig }
-                    : null
-                }
-              />
-            </div>
-          </div>
-        ) : (
-          <div className='hero drop-zone h-screen items-center justify-center'>
+      <BookshelvesDialog />
+      {showBookshelf && (
+        <div aria-label={_('Your Bookshelf')} className='flex min-h-0 grow flex-col'>
+          <div
+            ref={containerRef}
+            className={clsx(
+              'scroll-container drop-zone flex min-h-0 grow flex-col',
+              isDragging && 'drag-over',
+            )}
+            style={{
+              paddingRight: `${insets.right}px`,
+              paddingLeft: `${insets.left}px`,
+            }}
+          >
             <DropIndicator />
-            <LibraryEmptyState onImport={setImportMenuAnchor} />
+            <Bookshelf
+              libraryBooks={libraryBooks}
+              isSelectMode={isSelectMode}
+              isSelectAll={isSelectAll}
+              isSelectNone={isSelectNone}
+              onScrollerRef={handleScrollerRef}
+              handleImportBooks={setImportMenuAnchor}
+              handleBookUpload={handleBookUpload}
+              handleBookDownload={handleBookDownload}
+              handleBookDelete={handleBookDelete('both')}
+              handleBookPurge={handleBookDelete('purge')}
+              handleSetSelectMode={handleSetSelectMode}
+              handleShowDetailsBook={handleShowDetailsBook}
+              handleLibraryNavigation={handleLibraryNavigation}
+              booksTransferProgress={booksTransferProgress}
+              handlePushLibrary={pushLibrary}
+              onSearchContents={() => handleSearchTargetChange('text')}
+              onSearchProgress={setLibrarySearchProgress}
+              contentSearch={
+                librarySearchTarget === 'text'
+                  ? { query: searchParams?.get('q') ?? '', config: librarySearchConfig }
+                  : null
+              }
+            />
           </div>
-        ))}
+        </div>
+      )}
       {importMenuAnchor && (
         <ImportMenuPopup
           anchor={importMenuAnchor}

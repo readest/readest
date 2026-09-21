@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (value: string) => value,
@@ -41,9 +41,34 @@ const Harness = ({ isOpen }: { isOpen: boolean }) => (
 );
 
 beforeEach(() => vi.useFakeTimers());
-afterEach(() => vi.useRealTimers());
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('Dialog close', () => {
+  it('keeps focus on a control used before the opening focus timer runs', () => {
+    render(
+      <Dialog isOpen title='Manage Bookshelves' onClose={vi.fn()}>
+        <button type='button'>Filter help</button>
+      </Dialog>,
+    );
+    const help = screen.getByRole('button', { name: 'Filter help' });
+    help.focus();
+
+    act(() => vi.advanceTimersByTime(100));
+
+    expect(document.activeElement).toBe(help);
+  });
+
+  it('moves focus into the dialog when none of its controls has focus', () => {
+    const { container } = render(<Harness isOpen />);
+
+    act(() => vi.advanceTimersByTime(100));
+
+    expect(document.activeElement).toBe(container.querySelector('dialog'));
+  });
+
   it('keeps the body while the dialog fades out', () => {
     const { rerender } = render(<Harness isOpen />);
     expect(screen.getByText('Version 0.12.1')).toBeTruthy();

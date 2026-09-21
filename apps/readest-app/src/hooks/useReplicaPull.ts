@@ -1,3 +1,7 @@
+import {
+  applyRemoteBookshelfRows,
+  replayBookshelfOperations,
+} from '@/services/bookshelves/persistence';
 import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -56,7 +60,8 @@ export type ReplicaKind =
   | 'texture'
   | 'opds_catalog'
   | 'abs_server'
-  | 'settings';
+  | 'settings'
+  | 'bookshelf';
 
 export interface UseReplicaPullOpts {
   /** Replica kinds this page wants pulled. */
@@ -332,6 +337,16 @@ const runPullForKind = async (
   const ctx = getReplicaSync();
   if (!ctx) return;
   switch (kind) {
+    case 'bookshelf': {
+      await replayBookshelfOperations(envConfig);
+      // Batched rows already passed the category/auth gates and advanced the
+      // cursor, so apply them even if those gates change after the fetch.
+      if (!pullOverride && (!isSyncCategoryEnabled('bookshelf') || !(await getAccessToken())))
+        return;
+      const rows = await (pullOverride ? pullOverride() : ctx.manager.pull('bookshelf', pullOpts));
+      await applyRemoteBookshelfRows(envConfig, rows);
+      return;
+    }
     case 'dictionary':
       await replicaPullAndApply(
         buildReplicaPullDeps(

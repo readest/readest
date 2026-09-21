@@ -1,26 +1,14 @@
+import LibraryEmptyState from './LibraryEmptyState';
+import LibraryImportButton from './LibraryImportButton';
 import clsx from 'clsx';
 import { MdManageSearch } from 'react-icons/md';
-import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PiPlus } from 'react-icons/pi';
 import { useOverlayScrollbars } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
-import {
-  Virtuoso,
-  VirtuosoGrid,
-  type Components,
-  type GridComponents,
-  type GridListProps,
-  type ListProps,
-} from 'react-virtuoso';
 import { Book, BooksGroup, type LibrarySearchConfig, ReadingStatus } from '@/types/book';
-import {
-  LibraryCoverFitType,
-  LibraryGroupByType,
-  LibrarySortByType,
-  LibraryViewModeType,
-} from '@/types/settings';
+import { LibraryGroupByType, LibrarySortByType, LibraryViewModeType } from '@/types/settings';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
@@ -30,29 +18,29 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { selectActiveBookDownloadProgress, useTransferStore } from '@/store/transferStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMedianPageDurationsSecs } from '@/hooks/useMedianPageDurationSecs';
+import { useBookshelfDate } from '@/hooks/useBookshelfDate';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
 import {
   createBookFilter,
-  createBookGroups,
   createBookSorter,
-  createGroupSorter,
-  createWithinGroupSorter,
   ensureLibraryGroupByType,
-  ensureLibrarySortByType,
-  ensureLibrarySecondarySortByType,
   expandBookshelfSelection,
-  getBookSortValue,
-  getGroupSortValue,
-  compareSortValues,
-  resolveEffectivePrimarySort,
-  resolveEffectiveSecondarySort,
-  resolveCurrentShelfBooks,
   selectDownloadableBooks,
-  selectRecentShelfBooks,
   withReadingStatus,
-  withTimeRemainingLast,
 } from '../utils/libraryUtils';
+import { readBookshelves } from '@/services/bookshelves/state';
+import {
+  assignBookshelfOwnership,
+  evaluateBookshelves,
+  matchBookshelves,
+} from '@/services/bookshelves/evaluate';
+import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
+import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
+import { presentBookshelf } from '@/services/bookshelves/presentation';
+import type { BookshelfDefinition } from '@/types/bookshelf';
+import { resolveBookshelfLayout } from '@/services/bookshelves/definitions';
+import BookshelfStream, { type ShelfSection } from './BookshelfStream';
 import { eventDispatcher } from '@/utils/event';
 import { getLocalBookFilename } from '@/utils/book';
 import { MIMETYPES, EXTS } from '@/libs/document';
@@ -65,13 +53,12 @@ import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
 import DeleteConfirmAlert from '@/components/DeleteConfirmAlert';
 import Spinner from '@/components/Spinner';
 import ModalPortal from '@/components/ModalPortal';
-import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
+import BookshelfItem from './BookshelfItem';
 import SelectModeActions from './SelectModeActions';
 import ShareBookDialog from './ShareBookDialog';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
 import SetStatusAlert from './SetStatusAlert';
-import RecentShelf, { RECENT_SHELF_BOOK_COUNT } from './RecentShelf';
 import { useOpenBook } from '../hooks/useOpenBook';
 import LibrarySearchResults from './LibrarySearchResults';
 
@@ -96,7 +83,7 @@ interface BookshelfProps {
   handleBookPurge: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
-  handleLibraryNavigation: (targetGroup: string) => void;
+  handleLibraryNavigation: (targetGroup: string, shelfId?: string) => void;
   handlePushLibrary: () => Promise<void>;
   /** Direct (non-queued) downloads only; queue transfers are read from the store. */
   booksTransferProgress: { [key: string]: number };
@@ -105,86 +92,7 @@ interface BookshelfProps {
   onSearchProgress?: (value: number | null) => void;
 }
 
-/**
- * Context passed to the custom Virtuoso `List` components so they can render
- * grid styles that depend on runtime settings without being re-created on
- * every Bookshelf render (which would break Virtuoso's component identity).
- */
-type BookshelfListContext = {
-  autoColumns: boolean;
-  fixedColumns: number;
-  /**
-   * The recently-read shelf, rendered in the Virtuoso header so it scrolls with
-   * the shelf content (not sticky). `null` when hidden. Passed through context
-   * (rather than recreating the Header component) so Virtuoso keeps the Header
-   * identity stable and does not reset its scroller on every Bookshelf render.
-   */
-  recentShelfHeader: React.ReactNode;
-  /**
-   * Height (px) of the trailing Footer spacer. Defaults to the baseline
-   * breathing room, but grows to clear the fixed select-mode action bar so the
-   * last book can scroll above it instead of hiding behind it (#5175).
-   */
-  footerHeight: number;
-};
-
 const DEFAULT_FOOTER_HEIGHT = 34;
-
-const BookshelfFooter = ({ context }: { context?: BookshelfListContext }) => (
-  <div style={{ height: context?.footerHeight ?? DEFAULT_FOOTER_HEIGHT }} />
-);
-
-const BOOKSHELF_GRID_CLASSES =
-  'bookshelf-items transform-wrapper grid gap-x-4 px-4 sm:gap-x-0 sm:px-2 ' +
-  'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-12';
-
-const BOOKSHELF_LIST_CLASSES = 'bookshelf-items transform-wrapper flex flex-col';
-
-const BookshelfGridList: GridComponents<BookshelfListContext>['List'] = React.forwardRef<
-  HTMLDivElement,
-  GridListProps & { context?: BookshelfListContext }
->(({ children, className, style, context, 'data-testid': testId }, ref) => (
-  <div
-    ref={ref}
-    data-testid={testId}
-    className={clsx(BOOKSHELF_GRID_CLASSES, className)}
-    style={{
-      ...style,
-      gridTemplateColumns:
-        context && !context.autoColumns
-          ? `repeat(${context.fixedColumns}, minmax(0, 1fr))`
-          : undefined,
-    }}
-  >
-    {children}
-  </div>
-));
-BookshelfGridList.displayName = 'BookshelfGridList';
-
-const BookshelfLinearList: Components<unknown, BookshelfListContext>['List'] = React.forwardRef<
-  HTMLDivElement,
-  ListProps
->(({ children, style, 'data-testid': testId }, ref) => (
-  <div ref={ref} data-testid={testId} className={BOOKSHELF_LIST_CLASSES} style={style}>
-    {children}
-  </div>
-));
-BookshelfLinearList.displayName = 'BookshelfLinearList';
-
-const BookshelfHeader = ({ context }: { context?: BookshelfListContext }) => (
-  <>{context?.recentShelfHeader ?? null}</>
-);
-
-const GRID_VIRTUOSO_COMPONENTS: GridComponents<BookshelfListContext> = {
-  List: BookshelfGridList,
-  Header: BookshelfHeader,
-  Footer: BookshelfFooter,
-};
-const LIST_VIRTUOSO_COMPONENTS: Components<unknown, BookshelfListContext> = {
-  List: BookshelfLinearList,
-  Header: BookshelfHeader,
-  Footer: BookshelfFooter,
-};
 
 const Bookshelf: React.FC<BookshelfProps> = ({
   libraryBooks,
@@ -214,24 +122,64 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { safeAreaInsets } = useThemeStore();
 
   const groupId = searchParams?.get('group') || '';
+  const shelfId = searchParams?.get('shelf') || '';
+  const activeShelfId = shelfId || 'default';
   const queryTerm = searchParams?.get('q')?.trim() || null;
-  const viewMode = searchParams?.get('view') || settings.libraryViewMode;
-  const storedSortBy = ensureLibrarySortByType(searchParams?.get('sort'), settings.librarySortBy);
-  const sortOrder = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
-  const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
-  const sortByAuto = settings.librarySortByAuto ?? true;
-  const sortBy = resolveEffectivePrimarySort(storedSortBy, groupBy, sortByAuto);
-  const thenSortByRaw = ensureLibrarySecondarySortByType(
-    searchParams?.get('thenSort'),
-    settings.libraryThenSortBy ?? 'none',
+  // Tag/subject links and legacy `?group=` deep links carry no shelf, so the
+  // group spans the whole library instead of Default's filters and exclusions
+  // (which own every audiobook and podcast).
+  const unscopedGroup = !!groupId && !shelfId;
+  const storedDefinitions = useMemo(
+    () => readBookshelves(settings),
+    [
+      settings.bookshelves,
+      settings.libraryViewMode,
+      settings.libraryHideCovers,
+      settings.libraryCoverFit,
+      settings.librarySkeuomorphicCovers,
+      settings.librarySortBy,
+      settings.librarySortAscending,
+      settings.libraryThenSortBy,
+      settings.libraryThenSortAscending,
+      settings.libraryRecentShelfEnabled,
+      settings.libraryGroupBy,
+      settings.librarySortByAuto,
+    ],
   );
-  const thenSortBy = resolveEffectiveSecondarySort(thenSortByRaw, groupBy);
-  const thenSortOrder =
-    searchParams?.get('thenOrder') ||
-    ((settings.libraryThenSortAscending ?? true) ? 'asc' : 'desc');
-  const showTimeRemaining =
-    sortBy === LibrarySortByType.TimeRemaining || thenSortBy === LibrarySortByType.TimeRemaining;
-  const coverFit = searchParams?.get('cover') || settings.libraryCoverFit;
+  const globalSort = useMemo(
+    () => getGlobalBookshelfSort(settings, searchParams),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      settings.libraryGroupBy,
+      settings.librarySortBy,
+      settings.librarySortByAuto,
+      settings.librarySortAscending,
+      settings.libraryThenSortBy,
+      settings.libraryThenSortAscending,
+      searchParams,
+    ],
+  );
+  const definitions = useMemo(
+    () =>
+      storedDefinitions.map((s) => ({
+        ...s,
+        sort: resolveBookshelfSort(s, globalSort),
+      })),
+    [storedDefinitions, globalSort],
+  );
+  const defaultShelf = definitions.find((s) => s.id === 'default')!;
+  const viewMode = searchParams?.get('view') || settings.libraryViewMode;
+  const globalGroupBy = ensureLibraryGroupByType(
+    searchParams?.get('groupBy'),
+    settings.libraryGroupBy,
+  );
+  const groupBy = getActiveBookshelfGroupBy(settings, searchParams);
+  const activeShelf = definitions.find((s) => s.id === activeShelfId);
+  const showTimeRemaining = queryTerm
+    ? globalSort.by === 'timeRemaining' || globalSort.thenBy === 'timeRemaining'
+    : definitions.some(
+        (s) => s.enabled && (s.sort.by === 'timeRemaining' || s.sort.thenBy === 'timeRemaining'),
+      );
 
   const [loading, setLoading] = useState(false);
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
@@ -243,6 +191,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
   const abortDeletionRef = useRef(false);
+  const selectAllAppliedRef = useRef(false);
   const isImportingBook = useRef(false);
   const iconSize15 = useResponsiveSize(15);
   const autofocusRef = useAutoFocus<HTMLDivElement>();
@@ -291,14 +240,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // can't stream, have no cover source, and can't be opened — hide them from
   // every shelf derivation (grid, groups, recent shelf, search). They stay in
   // the store and keep syncing; they reappear the moment the server row
-  // lands. `absServers` and `settings` are deps because the orphan check
-  // reads the server store with a settings fallback, both of which hydrate
-  // asynchronously after the cached library first renders.
+  // lands. `absServers` and `settings.absServers` are deps because the orphan
+  // check reads the server store with a settings fallback, both of which
+  // hydrate asynchronously after the cached library first renders. Keying on
+  // the one settings field it reads keeps unrelated settings writes from
+  // re-filtering and re-sorting every shelf.
   const absServers = useABSServerStore((state) => state.servers);
   const visibleBooks = useMemo(
-    () => libraryBooks.filter((book) => !isAbsBookOrphaned(book)),
+    () => libraryBooks.filter((book) => !book.deletedAt && !isAbsBookOrphaned(book)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [libraryBooks, absServers, settings],
+    [libraryBooks, absServers, settings.absServers],
   );
 
   const filteredBooks = useMemo(() => {
@@ -307,133 +258,132 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   }, [visibleBooks, queryTerm]);
 
   const manualGroupName = groupBy === LibraryGroupByType.Group ? getGroupName(groupId) : undefined;
-  const currentShelfBooks = useMemo(
-    () => resolveCurrentShelfBooks(visibleBooks, groupBy, groupId, manualGroupName),
-    [visibleBooks, groupBy, groupId, manualGroupName],
+  const pageDurations = useMedianPageDurationsSecs(libraryBooks, showTimeRemaining);
+  const today = useBookshelfDate(definitions);
+  const rawMatches = useMemo(
+    () => matchBookshelves(visibleBooks, definitions, today),
+    [visibleBooks, definitions, today],
   );
-  const filteredShelfBooks = useMemo(() => {
-    const bookFilter = createBookFilter(queryTerm);
-    return queryTerm ? currentShelfBooks.filter(bookFilter) : currentShelfBooks;
-  }, [currentShelfBooks, queryTerm]);
-
-  const currentBookshelfItems = useMemo(() => {
-    if (groupBy === LibraryGroupByType.Group) {
-      // Use existing generateBookshelfItems for group mode
-      const groupName = manualGroupName || '';
-      if (groupId && !manualGroupName) {
-        return [];
-      }
-      return generateBookshelfItems(filteredShelfBooks, groupName);
-    } else {
-      if (groupId) return filteredShelfBooks;
-      return createBookGroups(filteredShelfBooks, groupBy);
-    }
-  }, [filteredShelfBooks, groupBy, groupId, manualGroupName]);
-
-  useEffect(() => {
-    if (groupId && currentShelfBooks.length === 0) {
-      updateUrlParams({ group: null });
-    } else {
-      updateUrlParams({});
-    }
-  }, [searchParams, groupId, currentShelfBooks.length, updateUrlParams]);
-
-  const pageDurations = useMedianPageDurationsSecs(
-    libraryBooks,
-    sortBy === LibrarySortByType.TimeRemaining || thenSortBy === LibrarySortByType.TimeRemaining,
+  const ownership = useMemo(
+    () => assignBookshelfOwnership(definitions, rawMatches),
+    [definitions, rawMatches],
   );
-  const sortedBookshelfItems = useMemo(() => {
-    const sortOrderMultiplier = sortOrder === 'asc' ? 1 : -1;
-
-    // Separate into ungrouped books and groups
-    const ungroupedBooks = currentBookshelfItems.filter((item): item is Book => 'format' in item);
-    const groups = currentBookshelfItems.filter((item): item is BooksGroup => 'books' in item);
-
-    // Sort books within each group
-    // For series groups, series index is always ascending; sort direction applies to fallback only
-    const sortAscending = sortOrder === 'asc';
-    const thenSortAscending = thenSortOrder === 'asc';
-    const withinGroupSorter = withTimeRemainingLast<Book>(
-      sortBy,
-      createWithinGroupSorter(
-        groupBy,
-        sortBy,
+  const results = useMemo(
+    () =>
+      evaluateBookshelves(
+        visibleBooks,
+        definitions,
         uiLanguage,
-        sortAscending,
-        thenSortBy,
-        thenSortAscending,
         pageDurations,
+        rawMatches,
+        ownership,
       ),
-    );
-    groups.forEach((group) => {
-      group.books.sort(withinGroupSorter);
-    });
-
-    // Sort ungrouped books - use within-group sorter if we're inside a group
-    // (for series, this ensures books are sorted by series index)
-    // `bookSorter` already carries both sort directions, so it is never multiplied
-    // by `sortOrderMultiplier` — that would flip the secondary key too (#5119).
-    const bookSorter = createBookSorter(
-      sortBy,
-      uiLanguage,
-      thenSortBy,
-      sortAscending,
-      thenSortAscending,
-      pageDurations,
-    );
-    if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
-      ungroupedBooks.sort(withinGroupSorter);
-      // When inside a group, books are already sorted correctly — return directly
-      // to avoid the merge sort below overriding the within-group sort order
-      return ungroupedBooks;
-    } else {
-      ungroupedBooks.sort(withTimeRemainingLast<Book>(sortBy, bookSorter));
-    }
-
-    // Merge groups and ungrouped books, then sort them together
-    const allItems: (Book | BooksGroup)[] = [...groups, ...ungroupedBooks];
-    const groupSorter = createGroupSorter(sortBy, uiLanguage, groupBy);
-
-    allItems.sort(
-      withTimeRemainingLast<Book | BooksGroup>(sortBy, (a, b) => {
-        const isAGroup = 'books' in a;
-        const isBGroup = 'books' in b;
-
-        // If both are groups, use group sorter
-        if (isAGroup && isBGroup) {
-          return groupSorter(a, b) * sortOrderMultiplier;
+    [visibleBooks, definitions, uiLanguage, pageDurations, rawMatches, ownership],
+  );
+  const sections = useMemo<ShelfSection[]>(() => {
+    // Search is a flat view of every eligible library book, independent of all shelves.
+    if (queryTerm)
+      return [
+        {
+          definition: {
+            ...defaultShelf,
+            name: _('Search results'),
+            sort: globalSort,
+            layout: viewMode === 'list' ? 'list' : 'grid',
+          },
+          items: [...filteredBooks].sort(
+            createBookSorter(
+              globalSort.by,
+              uiLanguage,
+              globalSort.thenBy,
+              globalSort.ascending,
+              globalSort.thenAscending,
+              pageDurations,
+            ),
+          ),
+        },
+      ];
+    return (
+      unscopedGroup
+        ? [
+            {
+              definition: defaultShelf,
+              books: visibleBooks,
+              matching: visibleBooks.length,
+              excluded: 0,
+            },
+          ]
+        : results.filter((r) => !groupId || r.definition.id === activeShelfId)
+    )
+      .map((result) => {
+        const definition: BookshelfDefinition = {
+          ...result.definition,
+          layout: resolveBookshelfLayout(result.definition, viewMode),
+        };
+        // Legacy group links have no shelf and use their URL/global grouping.
+        if (groupId) {
+          definition.useGlobalGrouping = false;
+          definition.groupBy = groupBy;
         }
-
-        // If both are books, use book sorter
-        if (!isAGroup && !isBGroup) {
-          return bookSorter(a, b);
-        }
-
-        // For series/author groups: compare sort values to interleave properly
-        if (isAGroup && !isBGroup) {
-          const groupValue = getGroupSortValue(a, sortBy, groupBy);
-          const bookValue = getBookSortValue(b, sortBy);
-          return compareSortValues(groupValue, bookValue, uiLanguage) * sortOrderMultiplier;
-        } else if (!isAGroup && isBGroup) {
-          const bookValue = getBookSortValue(a, sortBy);
-          const groupValue = getGroupSortValue(b, sortBy, groupBy);
-          return compareSortValues(bookValue, groupValue, uiLanguage) * sortOrderMultiplier;
-        }
-        return 0;
-      }),
-    );
-
-    return allItems;
+        return {
+          definition,
+          hideHeading: definition.id === 'default',
+          items: presentBookshelf(
+            { ...result, definition },
+            { libraryGroupBy: globalGroupBy },
+            uiLanguage,
+            pageDurations,
+            groupId,
+            manualGroupName,
+          ),
+        };
+      })
+      .filter((section) => section.items.length > 0);
   }, [
-    sortOrder,
-    thenSortOrder,
-    sortBy,
-    thenSortBy,
-    groupBy,
+    results,
+    queryTerm,
+    filteredBooks,
+    defaultShelf,
+    viewMode,
     groupId,
+    activeShelfId,
+    unscopedGroup,
+    visibleBooks,
+    groupBy,
+    globalGroupBy,
+    globalSort,
     uiLanguage,
-    currentBookshelfItems,
     pageDurations,
+    manualGroupName,
+    _,
+  ]);
+  const sortedBookshelfItems = useMemo(
+    () => sections.flatMap((section) => section.items),
+    [sections],
+  );
+  const currentShelfBooks = useMemo(
+    () => [
+      ...new Map(
+        sortedBookshelfItems
+          .flatMap((item) => ('books' in item ? item.books : [item]))
+          .map((book) => [book.hash, book]),
+      ).values(),
+    ],
+    [sortedBookshelfItems],
+  );
+  useEffect(() => {
+    // A search with no hits filters the group down to nothing; that must not
+    // throw the user back to the library root.
+    if (!groupId || queryTerm) return;
+    if ((!unscopedGroup && !activeShelf?.enabled) || currentShelfBooks.length === 0)
+      updateUrlParams({ group: null, shelf: null });
+  }, [
+    groupId,
+    queryTerm,
+    unscopedGroup,
+    activeShelf?.enabled,
+    currentShelfBooks.length,
+    updateUrlParams,
   ]);
 
   useEffect(() => {
@@ -460,10 +410,22 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   }, [currentShelfBooks, setCurrentBookshelf]);
 
   const toggleSelection = useCallback(
-    (id: string) => {
-      toggleSelectedBook(id);
+    (id: string, group?: BooksGroup) => {
+      if (group) {
+        // Read the live selection: memoized cards keep the `toggleSelection`
+        // closure from when select mode was entered, so a captured
+        // `selectedBookSet` would replace the selection with a stale snapshot.
+        const selected = useLibraryStore.getState().selectedBooks;
+        const allSelected = group.books.every((book) => selected.has(book.hash));
+        const next = new Set(selected);
+        for (const book of group.books) {
+          if (allSelected) next.delete(book.hash);
+          else next.add(book.hash);
+        }
+        setSelectedBooks([...next]);
+      } else toggleSelectedBook(id);
     },
-    [toggleSelectedBook],
+    [toggleSelectedBook, setSelectedBooks],
   );
 
   const openSelectedBooks = () => {
@@ -712,18 +674,26 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     if (isSelectMode) {
       setShowSelectModeActions(true);
       if (isSelectAll) {
-        setSelectedBooks(
-          currentBookshelfItems.map((item) => ('hash' in item ? item.hash : item.id)),
-        );
-      } else if (isSelectNone) {
+        // `isSelectAll` stays latched until select mode or navigation clears
+        // it, so applying it again whenever the shelves recompute would undo
+        // the user's manual unticks. Honour each request once.
+        if (!selectAllAppliedRef.current) {
+          selectAllAppliedRef.current = true;
+          setSelectedBooks(currentShelfBooks.map((book) => book.hash));
+        }
+        return;
+      }
+      selectAllAppliedRef.current = false;
+      if (isSelectNone) {
         setSelectedBooks([]);
       }
     } else {
+      selectAllAppliedRef.current = false;
       setSelectedBooks([]);
       setShowSelectModeActions(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelectMode, isSelectAll, isSelectNone, currentBookshelfItems]);
+  }, [isSelectMode, isSelectAll, isSelectNone, currentShelfBooks]);
 
   useEffect(() => {
     eventDispatcher.on('delete-books', handleDeleteBooksIntent);
@@ -759,7 +729,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   // OverlayScrollbars + Virtuoso integration: Virtuoso manages its own
   // scroller; OverlayScrollbars wraps it for overlay scrollbar rendering.
-  const osRootRef = useRef<HTMLDivElement>(null);
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
   const [initialize, osInstance] = useOverlayScrollbars({
     defer: true,
@@ -774,7 +743,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   });
 
   useEffect(() => {
-    const root = osRootRef.current;
+    // Use the stream's immediate wrapper so OS keeps the viewport inside the
+    // measured container instead of moving it beside an empty full-width div.
+    const root = scroller?.parentElement;
     if (scroller && root) {
       initialize({ target: root, elements: { viewport: scroller } });
     }
@@ -832,29 +803,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
   };
 
-  const isGridMode = viewMode === 'grid';
-  const hasItems = sortedBookshelfItems.length > 0;
-  // In grid mode the Import-Books "+" tile is rendered as an extra grid cell
-  // after all books. We represent it to Virtuoso as an extra index past the
-  // last book; list mode doesn't have an import tile.
-  const gridTotalCount = hasItems ? sortedBookshelfItems.length + 1 : 0;
-
-  // Recently-read shelf: shares the availability-aware open path with per-item
-  // taps so cloud-only synced books download before opening. `openBook` is
-  // memoized inside the hook, keeping `openRecentBook` -> `recentShelfHeader`
-  // -> `listContext` identities stable (no full-grid re-render churn).
   const { openBook } = useOpenBook({ setLoading, handleBookDownload });
-  const openRecentBook = useCallback((book: Book) => openBook(book), [openBook]);
   const openSearchResult = useCallback(
     (book: Book, cfi: string) => openBook(book, cfi, { highlightSearchResult: true }),
     [openBook],
-  );
-
-  // Flat recency slice of the whole library, independent of the main shelf's
-  // sort/grouping. Built from `visibleBooks` (not the sorted/filtered items).
-  const recentBooks = useMemo(
-    () => selectRecentShelfBooks(visibleBooks, RECENT_SHELF_BOOK_COUNT),
-    [visibleBooks],
   );
 
   // Cover transfer overlay progress for every book on screen, from both
@@ -869,51 +821,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     [transfers, booksTransferProgress],
   );
 
-  // A top-level quick-resume strip: hidden while searching, inside a group, or
-  // when nothing has been read yet. It stays up in select mode so shelf books
-  // can be selected in place, just like the grid.
-  const showRecentShelf =
-    settings.libraryRecentShelfEnabled && !queryTerm && !groupId && recentBooks.length > 0;
-
-  const recentShelfHeader = useMemo(
-    () =>
-      showRecentShelf ? (
-        <RecentShelf
-          books={recentBooks}
-          coverFit={coverFit as LibraryCoverFitType}
-          autoColumns={settings.libraryAutoColumns}
-          fixedColumns={settings.libraryColumns}
-          isSelectMode={isSelectMode}
-          selectedBooks={selectedBookSet}
-          onOpenBook={openRecentBook}
-          toggleSelection={toggleSelection}
-          handleSetSelectMode={handleSetSelectMode}
-          handleBookUpload={handleBookUpload}
-          handleBookDownload={handleBookDownload}
-          showBookDetailsModal={handleShowDetailsBook}
-          showTimeRemaining={showTimeRemaining}
-          transferProgress={transferProgress}
-        />
-      ) : null,
-    [
-      showRecentShelf,
-      recentBooks,
-      transferProgress,
-      coverFit,
-      settings.libraryAutoColumns,
-      settings.libraryColumns,
-      isSelectMode,
-      selectedBookSet,
-      openRecentBook,
-      toggleSelection,
-      handleSetSelectMode,
-      handleBookUpload,
-      handleBookDownload,
-      handleShowDetailsBook,
-      showTimeRemaining,
-    ],
-  );
-
   // Reserve enough trailing space for the fixed select-mode action bar so the
   // last book scrolls clear of it (#5175). `selectModeActionsHeight` already
   // includes the bar's safe-area padding and is 0 whenever the bar is hidden,
@@ -923,90 +830,41 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       ? selectModeActionsHeight + DEFAULT_FOOTER_HEIGHT
       : DEFAULT_FOOTER_HEIGHT;
 
-  const listContext = useMemo<BookshelfListContext>(
-    () => ({
-      autoColumns: settings.libraryAutoColumns,
-      fixedColumns: settings.libraryColumns,
-      recentShelfHeader,
-      showTimeRemaining,
-      footerHeight,
-    }),
-    [
-      settings.libraryAutoColumns,
-      settings.libraryColumns,
-      recentShelfHeader,
-      showTimeRemaining,
-      footerHeight,
-    ],
-  );
-
   const renderBookshelfItem = useCallback(
-    (index: number) => {
-      if (isGridMode && index === sortedBookshelfItems.length) {
-        return (
-          <div
-            className={clsx('bookshelf-import-item mx-0 my-2 sm:mx-4 sm:my-4')}
-            style={
-              coverFit === 'fit'
-                ? { display: 'flex', paddingBottom: `${iconSize15 + 24}px` }
-                : undefined
-            }
-          >
-            <button
-              aria-label={_('Import Books')}
-              aria-haspopup='menu'
-              className={clsx(
-                'bookitem-main bg-base-100/50 hover:bg-base-300/50',
-                'flex items-center justify-center',
-                'aspect-28/41 w-full',
-              )}
-              onClick={(event) => handleImportBooks(event.currentTarget)}
-            >
-              <div className='flex items-center justify-center'>
-                <PiPlus className='size-10' color='gray' />
-              </div>
-            </button>
-          </div>
-        );
-      }
-      const item = sortedBookshelfItems[index];
-      if (!item) return null;
-      const itemSelected =
-        'hash' in item ? selectedBooks.includes(item.hash) : selectedBooks.includes(item.id);
-      return (
-        <BookshelfItem
-          item={item}
-          mode={viewMode as LibraryViewModeType}
-          coverFit={coverFit as LibraryCoverFitType}
-          isSelectMode={isSelectMode}
-          itemSelected={itemSelected}
-          setLoading={setLoading}
-          toggleSelection={toggleSelection}
-          handleGroupBooks={groupSelectedBooks}
-          handleBookUpload={handleBookUpload}
-          handleBookDownload={handleBookDownload}
-          handleBookDelete={handleBookDelete}
-          handleSetSelectMode={handleSetSelectMode}
-          handleShowDetailsBook={handleShowDetailsBook}
-          handleLibraryNavigation={handleLibraryNavigation}
-          handleUpdateReadingStatus={handleUpdateReadingStatus}
-          transferProgress={'hash' in item ? (transferProgress[(item as Book).hash] ?? null) : null}
-          showTimeRemaining={showTimeRemaining}
-        />
-      );
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (item: Book | BooksGroup, mode: LibraryViewModeType, shelf: BookshelfDefinition) => (
+      <BookshelfItem
+        item={item}
+        mode={mode}
+        coverFit={shelf.coverFit || 'crop'}
+        skeuomorphicCovers={shelf.skeuomorphicCovers}
+        isSelectMode={isSelectMode}
+        itemSelected={
+          'hash' in item
+            ? selectedBookSet.has(item.hash)
+            : item.books.every((book) => selectedBookSet.has(book.hash)) ||
+              selectedBookSet.has(item.id)
+        }
+        setLoading={setLoading}
+        toggleSelection={(id) => toggleSelection(id, 'books' in item ? item : undefined)}
+        handleGroupBooks={groupSelectedBooks}
+        handleBookUpload={handleBookUpload}
+        handleBookDownload={handleBookDownload}
+        handleBookDelete={handleBookDelete}
+        handleSetSelectMode={handleSetSelectMode}
+        handleShowDetailsBook={handleShowDetailsBook}
+        handleLibraryNavigation={(group) => handleLibraryNavigation(group, shelf.id)}
+        handleUpdateReadingStatus={handleUpdateReadingStatus}
+        transferProgress={'hash' in item ? (transferProgress[item.hash] ?? null) : null}
+        showTimeRemaining={
+          shelf.sort.by === 'timeRemaining' || shelf.sort.thenBy === 'timeRemaining'
+        }
+      />
+    ),
     [
-      sortedBookshelfItems,
-      selectedBooks,
-      isGridMode,
-      viewMode,
-      coverFit,
       isSelectMode,
-      transferProgress,
-      iconSize15,
-      handleImportBooks,
+      selectedBookSet,
       toggleSelection,
+      groupSelectedBooks,
       handleBookUpload,
       handleBookDownload,
       handleBookDelete,
@@ -1014,21 +872,45 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       handleShowDetailsBook,
       handleLibraryNavigation,
       handleUpdateReadingStatus,
-      showTimeRemaining,
+      transferProgress,
     ],
   );
-
-  const computeItemKey = useCallback(
-    (index: number) => {
-      if (isGridMode && index === sortedBookshelfItems.length) {
-        return 'library-import-tile';
-      }
-      const item = sortedBookshelfItems[index];
-      if (!item) return `library-item-${index}`;
-      return `library-item-${'hash' in item ? item.hash : item.id}`;
-    },
-    [sortedBookshelfItems, isGridMode],
-  );
+  const lastShelf = sections.at(-1)?.definition;
+  const importTile =
+    visibleBooks.length > 0 && lastShelf && lastShelf.layout !== 'carousel' ? (
+      <div
+        className='bookshelf-import-item mx-0 my-2 sm:mx-4 sm:my-4'
+        style={
+          lastShelf.layout === 'grid' && lastShelf.coverFit === 'fit'
+            ? { display: 'flex', paddingBottom: `${iconSize15 + 24}px` }
+            : undefined
+        }
+      >
+        <button
+          type='button'
+          aria-label={_('Import Books')}
+          aria-haspopup='menu'
+          className={clsx(
+            'bookitem-main eink-bordered bg-base-100/50 hover:bg-base-300/50 flex w-full items-center justify-center gap-2 rounded-sm',
+            'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
+            lastShelf.layout === 'grid' ? 'aspect-28/41' : 'min-h-28',
+          )}
+          onClick={(event) => handleImportBooks(event.currentTarget)}
+        >
+          <PiPlus aria-hidden className='text-base-content/60 size-10' />
+          {lastShelf.layout === 'list' && _('Import Books')}
+        </button>
+      </div>
+    ) : undefined;
+  const importAction = !visibleBooks.length ? (
+    <div className='flex justify-center p-6'>
+      <LibraryEmptyState onImport={handleImportBooks} />
+    </div>
+  ) : !lastShelf || lastShelf.layout === 'carousel' ? (
+    <div className='flex justify-center px-4 py-4'>
+      <LibraryImportButton onImport={handleImportBooks} />
+    </div>
+  ) : undefined;
 
   return (
     <div
@@ -1058,7 +940,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       {contentSearch?.query.trim() && appService ? (
         <LibrarySearchResults
           appService={appService}
-          books={currentShelfBooks}
+          books={visibleBooks}
           query={contentSearch.query.trim()}
           config={contentSearch.config}
           onSelectResult={openSearchResult}
@@ -1069,29 +951,18 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         // purpose: OS decorates this subtree with its own DOM, and letting
         // React swap children inside it caused NotFoundError crashes on
         // WebKit when a search was cleared.
-        <div ref={osRootRef} data-overlayscrollbars-initialize='' className='min-h-0 flex-1'>
-          {!contentSearch?.query.trim() && hasItems && isGridMode && (
-            <VirtuosoGrid<unknown, BookshelfListContext>
-              overscan={200}
-              totalCount={gridTotalCount}
-              components={GRID_VIRTUOSO_COMPONENTS}
-              context={listContext}
-              computeItemKey={computeItemKey}
-              itemContent={renderBookshelfItem}
-              scrollerRef={handleScrollerRef}
-            />
-          )}
-          {!contentSearch?.query.trim() && hasItems && !isGridMode && (
-            <Virtuoso<unknown, BookshelfListContext>
-              overscan={200}
-              totalCount={sortedBookshelfItems.length}
-              components={LIST_VIRTUOSO_COMPONENTS}
-              context={listContext}
-              computeItemKey={computeItemKey}
-              itemContent={renderBookshelfItem}
-              scrollerRef={handleScrollerRef}
-            />
-          )}
+        <div className='min-h-0 flex-1'>
+          <BookshelfStream
+            pageDurations={pageDurations}
+            sections={sections}
+            autoColumns={settings.libraryAutoColumns}
+            fixedColumns={settings.libraryColumns}
+            footerHeight={footerHeight}
+            importAction={importAction}
+            importTile={importTile}
+            renderItem={renderBookshelfItem}
+            onScrollerRef={handleScrollerRef}
+          />
         </div>
       )}
       {loading && (

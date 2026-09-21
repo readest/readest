@@ -98,6 +98,7 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - Resolved/stable → [Platform Compat](platform-compat-fixes.md)
 
 ## Reader Features & UI
+- [Bookshelves feature review 2026-09-21](bookshelves-review-2026-09-21.md) 0a73fb651; fixes on branch fix/bookshelves-review-followups; preserve field stamps and restamp row ts for sync; local saves use cached identity without token refresh
 - [#6286 Word Lens Arabic + Traditional Chinese](wordlens-en-ar-zh-hant-6286.md) MERGED #6303 (bd15c03ba), CDN sync DONE, not device-verified; missing language = missing pack; zh-TW/HK/Hant = render-time OpenCC (s2twp/s2hk/s2t) over Simplified en-zh; kaikki build drops roman + dialect-tagged + mixed-script artifacts
 - [#6198 HTML import + table-fit font race](html-import-6198.md) MERGED #6281; Readability drops Wikipedia heading wrappers (lifted); author EMPTY by design; `decideTableFit` measured in the fallback font -> FIT wrapper spilled tables/images into the next column, re-measure on fonts.status + img load; SingleFile `--sf-img-N` images LOST
 - [#6271 BookDrop rang on reader open](bookdrop-cue-priming-rang-on-reader-open-6271.md) MERGED #6277 (8681c925f), test follow-up #6279; cause = cue PRIMING on first pointerdown, and priming is pointless (wry autoplay=true); start/fail cues deleted; BookDrop now default ON; prove silence via .wav requests in the next dev log

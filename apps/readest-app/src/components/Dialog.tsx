@@ -28,6 +28,7 @@ interface DialogProps {
   isOpen: boolean;
   children: ReactNode;
   snapHeight?: number;
+  fullScreen?: boolean;
   dismissible?: boolean;
   header?: ReactNode;
   title?: string;
@@ -66,6 +67,7 @@ const Dialog: React.FC<DialogProps> = ({
   isOpen,
   children,
   snapHeight,
+  fullScreen = false,
   dismissible = true,
   header,
   title,
@@ -115,6 +117,8 @@ const Dialog: React.FC<DialogProps> = ({
   }, [isOpen]);
 
   const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
+    // A nested confirmation owns dismissal until it closes.
+    if (dialogRef.current?.querySelector('dialog[open]')) return false;
     if (event instanceof CustomEvent) {
       if (event.detail.keyName === 'Back') {
         onClose();
@@ -151,7 +155,11 @@ const Dialog: React.FC<DialogProps> = ({
     }
 
     const timer = setTimeout(() => {
-      if (dialogRef.current) {
+      if (
+        dialogRef.current &&
+        !dialogRef.current.querySelector('dialog[open]') &&
+        !dialogRef.current.contains(document.activeElement)
+      ) {
         dialogRef.current.focus();
       }
     }, 100);
@@ -318,16 +326,22 @@ const Dialog: React.FC<DialogProps> = ({
         className={clsx(
           'modal-box settings-content absolute z-20 flex flex-col rounded-none rounded-tl-2xl rounded-tr-2xl p-0 sm:rounded-2xl',
           'h-full max-h-full w-full max-w-full',
-          window.innerWidth < window.innerHeight
-            ? 'sm:h-[50%] sm:w-3/4'
-            : 'sm:h-[65%] sm:w-1/2 sm:max-w-[600px]',
+          fullScreen
+            ? 'rounded-none!'
+            : window.innerWidth < window.innerHeight
+              ? 'sm:h-[50%] sm:w-3/4'
+              : 'sm:h-[65%] sm:w-1/2 sm:max-w-[600px]',
           boxClassName,
         )}
         style={{
           paddingTop:
-            appService?.hasSafeAreaInset && isFullHeightInMobile
+            appService?.hasSafeAreaInset && (fullScreen || isFullHeightInMobile)
               ? `${Math.max(safeAreaInsets?.top || 0, systemUIVisible ? statusBarHeight : 0)}px`
               : '0px',
+          paddingBottom:
+            appService?.hasSafeAreaInset && fullScreen
+              ? `${(safeAreaInsets?.bottom || 0) * 0.33}px`
+              : undefined,
           ...(isMobile
             ? snapHeight
               ? { height: `${snapHeight * 100}%`, top: 'auto', bottom: 0 }

@@ -226,6 +226,7 @@ function SyncAnnotations:recordDeletion(doc_settings, item)
     local note = self:buildNoteDescriptor(item, book_hash, doc_readest_sync.meta_hash_v1)
     if not note then return end
     note.deletedAt = os.time() * 1000
+    note.updatedAt = note.deletedAt
 
     local deleted = doc_readest_sync.deleted_notes or {}
     for _, t in ipairs(deleted) do
@@ -258,8 +259,20 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
     for _, t in ipairs(deleted_notes) do
         t.bookHash = book_hash
         t.metaHash = meta_hash
+        -- Older queued tombstones retain the highlight's creation/edit time.
+        -- Advance it to the deletion so a stale live copy cannot win on push.
+        t.updatedAt = math.max(t.updatedAt or 0, t.deletedAt)
         annotations[#annotations + 1] = t
         sent_deletions[t.id] = t.deletedAt
+    end
+
+    -- A stale pull may have restored a locally deleted note. Never send both
+    -- versions: duplicate upsert keys reject the entire batch on the server.
+    for i = #annotations, 1, -1 do
+        local note = annotations[i]
+        if sent_deletions[note.id] and not note.deletedAt then
+            table.remove(annotations, i)
+        end
     end
 
     if #annotations == 0 then
@@ -341,6 +354,18 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
         })
     end
 
+    -- Keep the starting snapshot even if a concurrent push acknowledges it
+    -- before this pull returns with an older, live copy of the note.
+    local doc_settings = ui.doc_settings
+    local pending_deletions = {}
+    local function collectPendingDeletions()
+        local sync = doc_settings and doc_settings:readSetting("readest_sync") or {}
+        for _, note in ipairs(sync.deleted_notes or {}) do
+            pending_deletions[note.id] = true
+        end
+    end
+    collectPendingDeletions()
+
     client:pullChanges(
         {
             since = full_sync and 0 or (settings.last_notes_sync_at or 0),
@@ -417,9 +442,11 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 end
             end
 
+            -- Also include deletions made while the request was running.
+            collectPendingDeletions()
             local added = 0
             for _, note in ipairs(data) do
-                if note.deleted_at then
+                if note.deleted_at or pending_deletions[note.id] then
                     goto continue
                 end
 

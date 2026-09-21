@@ -30,6 +30,7 @@ interface BookItemProps {
   book: Book;
   mode: LibraryViewModeType;
   coverFit: LibraryCoverFitType;
+  skeuomorphicCovers?: boolean;
   isSelectMode: boolean;
   bookSelected: boolean;
   transferProgress: number | null;
@@ -43,6 +44,7 @@ const BookItem: React.FC<BookItemProps> = ({
   book,
   mode,
   coverFit,
+  skeuomorphicCovers,
   isSelectMode,
   bookSelected,
   transferProgress,
@@ -56,6 +58,7 @@ const BookItem: React.FC<BookItemProps> = ({
   const { user } = useAuth();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
+  const showSpine = skeuomorphicCovers ?? settings.librarySkeuomorphicCovers;
   const iconSize15 = useResponsiveSize(15);
 
   const [coverAspect, setCoverAspect] = useState<number | null>(null);
@@ -134,11 +137,8 @@ const BookItem: React.FC<BookItemProps> = ({
           mode={mode}
           book={book}
           coverFit={coverFit}
-          showSpine={settings.librarySkeuomorphicCovers}
-          imageClassName={clsx(
-            'shadow-md',
-            settings.librarySkeuomorphicCovers ? 'rounded-none' : 'rounded-sm',
-          )}
+          showSpine={showSpine}
+          imageClassName={clsx('shadow-md', showSpine ? 'rounded-none' : 'rounded-sm')}
           onAspectRatioChange={setCoverAspect}
         />
         {isTransferring && (
@@ -216,7 +216,7 @@ const BookItem: React.FC<BookItemProps> = ({
             minHeight: `${iconSize15}px`,
           }}
         >
-          {isAbsBook ? (
+          {isAbsBook && book.readingStatus !== 'finished' ? (
             <div
               className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
               role='status'

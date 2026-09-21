@@ -5,6 +5,9 @@ import {
   sanitizeSettingsForBackup,
   mergeRestoredSettings,
 } from '@/services/backupService';
+import { createBookshelf } from '@/services/bookshelves/definitions';
+import { readBookshelves } from '@/services/bookshelves/state';
+import { hlcPack } from '@/libs/crdt';
 import { SystemSettings } from '@/types/settings';
 
 /**
@@ -313,5 +316,78 @@ describe('mergeRestoredSettings', () => {
     mergeRestoredSettings(current, backup);
     expect(JSON.stringify(current)).toBe(currentSnapshot);
     expect(JSON.stringify(backup)).toBe(backupSnapshot);
+  });
+
+  // Bookshelves are LWW rows, not a scalar blob: a restore merges them by stamp
+  // and never rolls back a newer local shelf edit.
+  describe('bookshelf rows', () => {
+    const shelfState = (
+      id: string,
+      definition: unknown,
+      at: number,
+    ): SystemSettings['bookshelves'] => {
+      const stamp = hlcPack(at, 0, 'dev-a');
+      return {
+        rows: {
+          [id]: {
+            user_id: '',
+            kind: 'bookshelf',
+            replica_id: id,
+            fields_jsonb: { definition: { v: definition, t: stamp, s: 'dev-a' } },
+            deleted_at_ts: null,
+            updated_at_ts: stamp,
+            reincarnation: null,
+            manifest_jsonb: null,
+            schema_version: 1,
+          },
+        },
+      };
+    };
+    const named = (id: string, name: string, at: number) =>
+      shelfState(id, createBookshelf(name, id), at);
+    const shelfNames = (settings: SystemSettings) =>
+      readBookshelves(settings).map((shelf) => shelf.name);
+    const CUSTOM_ID = '00000000-0000-4000-8000-000000000001';
+
+    it('does not roll back a newer local shelf definition', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 2000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({ bookshelves: named('default', 'Older backup', 1000) }),
+      );
+      expect(shelfNames(mergeRestoredSettings(current, backup))).not.toContain('Older backup');
+      expect(shelfNames(mergeRestoredSettings(current, backup))).toContain('Local edit');
+    });
+
+    it('adopts a newer backup shelf definition', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 1000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({ bookshelves: named('default', 'Newer backup', 2000) }),
+      );
+      expect(shelfNames(mergeRestoredSettings(current, backup))).not.toContain('Local edit');
+      expect(shelfNames(mergeRestoredSettings(current, backup))).toContain('Newer backup');
+    });
+
+    it('adds a shelf that is absent locally', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 1000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({ bookshelves: named(CUSTOM_ID, 'Restored shelf', 1000) }),
+      );
+      const merged = mergeRestoredSettings(current, backup);
+      expect(Object.keys(merged.bookshelves!.rows).sort()).toEqual([CUSTOM_ID, 'default']);
+      expect(shelfNames(merged)).toContain('Restored shelf');
+      expect(shelfNames(merged)).toContain('Local edit');
+    });
+
+    it('drops an invalid backup row without throwing', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 1000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({
+          bookshelves: shelfState(CUSTOM_ID, { id: CUSTOM_ID, name: 'Broken' }, 2000),
+        }),
+      );
+      const merged = mergeRestoredSettings(current, backup);
+      expect(Object.keys(merged.bookshelves!.rows)).toEqual(['default']);
+      expect(shelfNames(merged)).toContain('Local edit');
+    });
   });
 });

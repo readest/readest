@@ -258,6 +258,130 @@ describe('ReplicaSyncManager.markDirty + flush', () => {
     expect(client.push).toHaveBeenCalledOnce();
     expect(client.push.mock.calls[0]![0]!.map((r) => r.kind)).toEqual(['dictionary']);
   });
+
+  // A row the server refuses on its own merits (CLOCK_SKEW / VALIDATION) used
+  // to fail the whole batch on every retry, so one stale journaled shelf edit
+  // wedged every kind's writes for the rest of the session.
+  test('a rejected row lands the other kinds and is skipped until re-marked', async () => {
+    const bad = { ...makeRow('bad'), kind: 'bookshelf' };
+    const good = makeRow('good');
+    const client = {
+      ...makeFakeClient(),
+      push: vi.fn(async (rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+        if (rows.some((r) => r.replica_id === 'bad')) {
+          throw new SyncError('CLOCK_SKEW', 'row timestamp too far from server time', {
+            status: 409,
+          });
+        }
+        return rows;
+      }),
+    };
+    const { manager } = makeManager(client);
+    manager.markDirty(bad);
+    manager.markDirty(good);
+
+    await manager.flush();
+
+    expect(client.push.mock.calls.map((c) => c[0]!.map((r) => r.replica_id))).toContainEqual([
+      'good',
+    ]);
+    expect(manager.pendingKeys()).toEqual([{ kind: 'bookshelf', replicaId: 'bad' }]);
+
+    // No request storm: the rejected row stays out of later flushes…
+    client.push.mockClear();
+    await manager.flush();
+    expect(client.push).not.toHaveBeenCalled();
+
+    // …until a new edit replaces it.
+    manager.markDirty({ ...bad });
+    await manager.flush();
+    expect(client.push.mock.calls[0]![0]!.map((r) => r.replica_id)).toEqual(['bad']);
+  });
+
+  test('VALIDATION on a multi-row kind retries row by row so the good rows land', async () => {
+    const client = {
+      ...makeFakeClient(),
+      push: vi.fn(async (rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+        if (rows.some((r) => r.replica_id === 'bad')) {
+          throw new SyncError('VALIDATION', 'rows[0] is invalid', { status: 400 });
+        }
+        return rows;
+      }),
+    };
+    const { manager } = makeManager(client);
+    manager.markDirty(makeRow('bad'));
+    manager.markDirty(makeRow('good'));
+
+    await manager.flush();
+
+    expect(client.push.mock.calls.map((c) => c[0]!.map((r) => r.replica_id))).toEqual([
+      ['bad', 'good'],
+      ['bad', 'good'],
+      ['bad'],
+      ['good'],
+    ]);
+    expect(manager.pendingKeys()).toEqual([{ kind: 'dictionary', replicaId: 'bad' }]);
+  });
+
+  test('a 5xx on one kind still lands the other kinds, then rethrows', async () => {
+    const client = {
+      ...makeFakeClient(),
+      push: vi.fn(async (rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+        if (rows.some((r) => r.kind === 'font')) {
+          throw new SyncError('SERVER', 'Push failed with status 503', { status: 503 });
+        }
+        return rows;
+      }),
+    };
+    const { manager } = makeManager(client);
+    manager.markDirty({ ...makeRow('f1'), kind: 'font' });
+    manager.markDirty(makeRow('d1'));
+
+    await expect(manager.flush()).rejects.toThrow(/status 503/);
+
+    expect(manager.pendingKeys()).toEqual([{ kind: 'font', replicaId: 'f1' }]);
+  });
+
+  test('a row-specific 5xx does not block healthy rows of the same kind and remains retryable', async () => {
+    const push = vi.fn(async (rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+      if (rows.some((row) => row.replica_id === 'bad')) {
+        throw new SyncError('SERVER', 'Row failed with status 500', { status: 500 });
+      }
+      return rows;
+    });
+    const { manager } = makeManager({ push });
+    manager.markDirty(makeRow('bad'));
+    manager.markDirty(makeRow('good'));
+
+    await expect(manager.flush()).rejects.toThrow(/status 500/);
+
+    expect(manager.pendingKeys()).toEqual([{ kind: 'dictionary', replicaId: 'bad' }]);
+    expect(push.mock.calls.map(([rows]) => rows.map((row) => row.replica_id))).toContainEqual([
+      'good',
+    ]);
+    push.mockImplementation(async (rows) => rows);
+    await manager.flush();
+    expect(manager.pendingCount()).toBe(0);
+  });
+
+  test('a network failure keeps every row queued for retry', async () => {
+    const client = {
+      ...makeFakeClient(),
+      push: vi.fn(async (_rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+        throw new SyncError('SERVER', 'Network failure during push', {
+          cause: new Error('offline'),
+        });
+      }),
+    };
+    const { manager } = makeManager(client);
+    manager.markDirty({ ...makeRow('f1'), kind: 'font' });
+    manager.markDirty(makeRow('d1'));
+
+    await expect(manager.flush()).rejects.toThrow(/Network failure during push/);
+
+    expect(client.push).toHaveBeenCalledOnce();
+    expect(manager.pendingCount()).toBe(2);
+  });
 });
 
 describe('ReplicaSyncManager.pull', () => {

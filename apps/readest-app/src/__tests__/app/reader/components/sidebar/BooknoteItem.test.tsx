@@ -1,7 +1,10 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BooknoteItem from '@/app/reader/components/sidebar/BooknoteItem';
+import { BooknoteTimeProvider } from '@/app/reader/components/sidebar/BooknoteTime';
 import { BookNote } from '@/types/book';
 import { NOTE_PREFIX } from '@/types/view';
 
@@ -71,7 +74,7 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
   useResponsiveSize: (size: number) => size,
 }));
 
-vi.mock('dayjs', () => ({ default: () => ({ fromNow: () => 'now' }) }));
+dayjs.extend(relativeTime);
 
 const makeItem = (overrides: Partial<BookNote> = {}): BookNote => ({
   id: 'note-1',
@@ -88,9 +91,11 @@ const makeItem = (overrides: Partial<BookNote> = {}): BookNote => ({
 
 const renderItem = (item: BookNote, inlineNoteEditing?: boolean) =>
   render(
-    <ul>
-      <BooknoteItem bookKey='hash1-primary' item={item} inlineNoteEditing={inlineNoteEditing} />
-    </ul>,
+    <BooknoteTimeProvider>
+      <ul>
+        <BooknoteItem bookKey='hash1-primary' item={item} inlineNoteEditing={inlineNoteEditing} />
+      </ul>
+    </BooknoteTimeProvider>,
   );
 
 beforeEach(() => {
@@ -100,9 +105,50 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 describe('BooknoteItem', () => {
+  it('refreshes the relative time every minute without remounting the item', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-20T10:00:00Z'));
+    renderItem(makeItem({ type: 'bookmark', createdAt: Date.now() }));
+
+    expect(screen.getByText('a few seconds ago')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(59_999));
+    expect(screen.getByText('a few seconds ago')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByText('a minute ago')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getByText('2 minutes ago')).toBeTruthy();
+  });
+
+  it('shares one timer across items, cleans it up, and recalculates on reopening', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-20T10:00:00Z'));
+    const item = makeItem({ type: 'bookmark', createdAt: Date.now() });
+    const secondItem = makeItem({ id: 'note-2', createdAt: Date.now() });
+    const { unmount } = render(
+      <BooknoteTimeProvider>
+        <ul>
+          <BooknoteItem bookKey='hash1-primary' item={item} />
+          <BooknoteItem bookKey='hash1-primary' item={secondItem} />
+        </ul>
+      </BooknoteTimeProvider>,
+    );
+
+    expect(vi.getTimerCount()).toBe(1);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getAllByText('a minute ago')).toHaveLength(2);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+
+    act(() => vi.advanceTimersByTime(4 * 60_000));
+    renderItem(item);
+    expect(screen.getByText('5 minutes ago')).toBeTruthy();
+    expect(vi.getTimerCount()).toBe(1);
+  });
+
   it('never opens the notebook when a noted item is clicked', () => {
     renderItem(makeItem({ note: 'my note' }));
     fireEvent.click(screen.getByText('highlighted words'));

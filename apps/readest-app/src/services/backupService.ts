@@ -1,3 +1,4 @@
+import { mergeBookshelfStates } from '@/services/bookshelves/state';
 import type { Configuration, FileEntry, ZipWriter } from '@zip.js/zip.js';
 import { AppService, FileItem } from '@/types/system';
 import { EXTS } from '@/libs/document';
@@ -191,10 +192,13 @@ export function mergeRestoredSettings(
   current: SystemSettings,
   backup: Partial<SystemSettings>,
 ): SystemSettings {
-  return deepMerge(
+  const merged = deepMerge(
     current as unknown as Record<string, unknown>,
     backup as unknown as Record<string, unknown>,
   ) as unknown as SystemSettings;
+  if (current.bookshelves || backup.bookshelves)
+    merged.bookshelves = mergeBookshelfStates(current.bookshelves, backup.bookshelves);
+  return merged;
 }
 
 /**

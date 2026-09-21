@@ -104,7 +104,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
-        <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
+        <div className='exclude-title-bar-mousedown relative flex w-full items-center ps-4'>
           <div className='relative flex h-9 w-full items-center sm:h-7'>
             {/* The icon doubles as the mode indicator and toggle: magnifier
                 for book search, full-text glyph for content search. */}
@@ -180,8 +180,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           </div>
           <div
             className={clsx(
-              'text-base-content/50 absolute flex items-center space-x-2 sm:space-x-4',
-              searchTarget === 'text' ? 'end-14' : 'right-4',
+              'text-base-content/50 absolute flex items-center gap-1',
+              searchTarget === 'text' ? 'end-14' : 'end-4',
             )}
           >
             {searchQuery && (
