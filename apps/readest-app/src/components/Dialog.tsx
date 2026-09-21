@@ -48,11 +48,17 @@ interface DialogProps {
   onClose: () => void;
 }
 
-// A swipe that starts on a scroller which is not at its top belongs to that
-// scroller: the user is scrolling back up, not dismissing the sheet.
-const hasScrolledAncestor = (target: HTMLElement, root: HTMLElement) => {
+// Scrollable content owns the whole gesture, including at its edges where
+// native overscroll should remain available.
+const hasScrollableAncestor = (target: HTMLElement, root: HTMLElement) => {
   for (let el: HTMLElement | null = target; el && el !== root; el = el.parentElement) {
-    if (el.scrollTop > 0) return true;
+    const style = getComputedStyle(el);
+    if (
+      (el.scrollHeight > el.clientHeight && /auto|scroll/.test(style.overflowY)) ||
+      (el.scrollWidth > el.clientWidth && /auto|scroll/.test(style.overflowX))
+    ) {
+      return true;
+    }
   }
   return false;
 };
@@ -218,6 +224,9 @@ const Dialog: React.FC<DialogProps> = ({
       overlay.style.transition = `opacity ${transitionDuration}s ease-out`;
       overlay.style.opacity = '0';
       onClose();
+      if (appService?.hasHaptics) {
+        impactFeedback('light');
+      }
       setTimeout(() => {
         modal.style.transform = 'translateY(0%)';
       }, 300);
@@ -226,13 +235,26 @@ const Dialog: React.FC<DialogProps> = ({
       (data.canceled ||
         (top > window.innerHeight * snapUpper && top < window.innerHeight * snapLower))
     ) {
-      // dialog is snapped
-      overlay.style.transition = `opacity 0.3s ease-out`;
-      overlay.style.opacity = `${1 - snapHeight}`;
+      // Preserve the visible top while restoring the snapped height. Keeping
+      // the drag's percentage transform during that resize would jump the sheet
+      // down before the return animation even starts.
+      const currentTop = modal.getBoundingClientRect().top;
+      modal.style.transition = 'none';
       modal.style.height = `${snapHeight * 100}%`;
       modal.style.bottom = '0';
-      modal.style.transition = `transform 0.3s ease-out`;
       modal.style.transform = '';
+      const restingTop = modal.getBoundingClientRect().top;
+      modal.style.transform = `translateY(${currentTop - restingTop}px)`;
+      // Commit the equivalent position before animating back to rest.
+      modal.getBoundingClientRect();
+      const reduceMotion =
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        document.documentElement.dataset['eink'] === 'true';
+      const easing = '0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+      modal.style.transition = reduceMotion ? 'none' : `transform ${easing}`;
+      modal.style.transform = '';
+      overlay.style.transition = reduceMotion ? 'none' : `opacity ${easing}`;
+      overlay.style.opacity = `${1 - snapHeight}`;
     } else {
       // dialog is opened without snap
       setIsFullHeightInMobile(true);
@@ -240,9 +262,6 @@ const Dialog: React.FC<DialogProps> = ({
       modal.style.transition = `transform 0.3s ease-out`;
       modal.style.transform = `translateY(0%)`;
       overlay.style.opacity = '0';
-    }
-    if (appService?.hasHaptics && !data.canceled) {
-      impactFeedback('medium');
     }
   };
 
@@ -260,15 +279,15 @@ const Dialog: React.FC<DialogProps> = ({
   // The drag handle is a 24px strip at the top of the sheet, out of reach of the
   // thumb that just finished reading (#6089), so a downward swipe anywhere on the
   // sheet dismisses it too. It only takes over once the finger has clearly gone
-  // down rather than sideways, and only when the content under it has nothing
-  // left to scroll — so the sheet never steals a tap, a scroll or a page swipe.
+  // down rather than sideways, and only outside scrollable content — so the
+  // sheet never steals a tap, a scroll or a page swipe.
   const handleSheetTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     pendingSwipeRef.current = null;
     if (!dismissible || !isMobile || e.touches.length !== 1) return;
     const target = e.target as HTMLElement;
     // The handle starts its own drag on touchstart; don't arm a second one.
     if (target.closest('.drag-handle')) return;
-    if (isEditable(target) || hasScrolledAncestor(target, e.currentTarget)) return;
+    if (isEditable(target) || hasScrollableAncestor(target, e.currentTarget)) return;
     const touch = e.touches[0]!;
     pendingSwipeRef.current = { x: touch.clientX, y: touch.clientY };
   };
