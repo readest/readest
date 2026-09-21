@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { OverlayScrollbars } from 'overlayscrollbars';
+import 'overlayscrollbars/overlayscrollbars.css';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Book } from '@/types/book';
 import BookCover from '@/components/BookCover';
@@ -56,6 +58,45 @@ const renderItem: React.ComponentProps<typeof BookshelfStream>['renderItem'] = (
   </button>
 );
 describe('mixed bookshelf stream in Chromium', () => {
+  it('hides native scrollbars and keeps shelf width stable through overlay initialization', async () => {
+    const { container } = render(
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          sections={[section('books', 'grid', 120)]}
+          autoColumns={false}
+          fixedColumns={3}
+          renderItem={renderItem}
+        />
+      </div>,
+    );
+    const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+    await waitFor(() => expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight));
+    // Check before the deferred initializer runs, even on platforms where
+    // native scrollbars overlay content and consume no width.
+    expect(getComputedStyle(scroller).scrollbarWidth).toBe('none');
+    const width = scroller.clientWidth;
+    const rowWidth = container.querySelector('.bookshelf-items')!.getBoundingClientRect().width;
+    const instance = OverlayScrollbars(
+      {
+        target: scroller.parentElement!,
+        elements: { viewport: scroller },
+      },
+      {},
+    );
+    try {
+      expect(scroller.clientWidth).toBe(width);
+      expect(container.querySelector('.bookshelf-items')!.getBoundingClientRect().width).toBe(
+        rowWidth,
+      );
+      expect(getComputedStyle(scroller).scrollbarWidth).toBe('none');
+      scroller.scrollTop = 300;
+      fireEvent.scroll(scroller);
+      await waitFor(() => expect(scroller.scrollTop).toBe(300));
+    } finally {
+      instance.destroy();
+    }
+  });
+
   it('shows the library page controls only in e-ink mode', () => {
     const { queryByRole } = render(
       <div style={{ width: 900, height: 600 }}>

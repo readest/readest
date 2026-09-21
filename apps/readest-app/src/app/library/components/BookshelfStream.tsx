@@ -303,7 +303,8 @@ export default function BookshelfStream({
         className='flex h-full min-h-0 w-full flex-col'
         data-testid='bookshelf-stream'
       >
-        <div className='min-h-0 flex-1'>
+        {/* Hide native scrollbars before the deferred overlay initializes. */}
+        <div className='min-h-0 flex-1' data-overlayscrollbars-initialize=''>
           <Virtuoso
             style={scale !== 1 ? { overflowX: 'hidden' } : undefined}
             data={rows}
