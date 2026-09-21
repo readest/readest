@@ -13,7 +13,7 @@
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { useEffect, useState } from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { page } from 'vitest/browser';
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -159,5 +159,42 @@ describe('Dialog close frames', () => {
     expect(onScreen.filter((frame) => frame.height !== openHeight)).toEqual([]);
     // The hold is bounded: the body goes once the dialog is off screen.
     expect(frames[frames.length - 1]?.body).toBe(false);
+  });
+});
+
+describe('Dialog snap return frames', () => {
+  it('follows a short drag and returns without jumping farther down on release', async () => {
+    await page.viewport(390, 844);
+    const onClose = vi.fn();
+    render(
+      <Dialog isOpen snapHeight={0.7} onClose={onClose}>
+        Sheet content
+      </Dialog>,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const box = document.querySelector('.modal-box') as HTMLElement;
+    const handle = document.querySelector('.drag-handle') as HTMLElement;
+    const restingTop = box.getBoundingClientRect().top;
+    const startY = restingTop + 12;
+
+    fireEvent.mouseDown(handle, { clientX: 100, clientY: startY });
+    fireEvent.mouseMove(window, { clientX: 100, clientY: startY + 24 });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const releasedTop = box.getBoundingClientRect().top;
+    expect(releasedTop - restingTop).toBeCloseTo(24, 0);
+
+    fireEvent.mouseUp(window, { clientX: 100, clientY: startY + 24 });
+    const positions = [box.getBoundingClientRect().top];
+    const started = performance.now();
+    while (performance.now() - started < 400) {
+      await nextFrame();
+      positions.push(box.getBoundingClientRect().top);
+    }
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(Math.max(...positions)).toBeLessThanOrEqual(releasedTop + 1);
+    expect(Math.min(...positions)).toBeGreaterThanOrEqual(restingTop - 1);
+    expect(positions.some((top) => top > restingTop + 2 && top < releasedTop - 2)).toBe(true);
+    expect(positions.at(-1)).toBeCloseTo(restingTop, 0);
   });
 });

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { OverlayScrollbars } from 'overlayscrollbars';
+import 'overlayscrollbars/overlayscrollbars.css';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Book } from '@/types/book';
 import BookCover from '@/components/BookCover';
@@ -56,6 +58,45 @@ const renderItem: React.ComponentProps<typeof BookshelfStream>['renderItem'] = (
   </button>
 );
 describe('mixed bookshelf stream in Chromium', () => {
+  it('hides native scrollbars and keeps shelf width stable through overlay initialization', async () => {
+    const { container } = render(
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          sections={[section('books', 'grid', 120)]}
+          autoColumns={false}
+          fixedColumns={3}
+          renderItem={renderItem}
+        />
+      </div>,
+    );
+    const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+    await waitFor(() => expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight));
+    // Check before the deferred initializer runs, even on platforms where
+    // native scrollbars overlay content and consume no width.
+    expect(getComputedStyle(scroller).scrollbarWidth).toBe('none');
+    const width = scroller.clientWidth;
+    const rowWidth = container.querySelector('.bookshelf-items')!.getBoundingClientRect().width;
+    const instance = OverlayScrollbars(
+      {
+        target: scroller.parentElement!,
+        elements: { viewport: scroller },
+      },
+      {},
+    );
+    try {
+      expect(scroller.clientWidth).toBe(width);
+      expect(container.querySelector('.bookshelf-items')!.getBoundingClientRect().width).toBe(
+        rowWidth,
+      );
+      expect(getComputedStyle(scroller).scrollbarWidth).toBe('none');
+      scroller.scrollTop = 300;
+      fireEvent.scroll(scroller);
+      await waitFor(() => expect(scroller.scrollTop).toBe(300));
+    } finally {
+      instance.destroy();
+    }
+  });
+
   it('shows the library page controls only in e-ink mode', () => {
     const { queryByRole } = render(
       <div style={{ width: 900, height: 600 }}>
@@ -101,14 +142,28 @@ describe('mixed bookshelf stream in Chromium', () => {
       const first = container.querySelector('[data-section="Grid"]')!.getBoundingClientRect();
       expect(first.bottom).toBeLessThanOrEqual(viewport.bottom);
     });
+    // Virtuoso reports atBottom (which drives `disabled`) after the scroll lands,
+    // so wait for the button to agree with the scroll position before deciding
+    // whether to click again; otherwise the last click targets a button that is
+    // about to disable and Playwright times out waiting for it to be enabled.
+    const settled = () =>
+      waitFor(
+        () =>
+          expect(next.hasAttribute('disabled')).toBe(
+            scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1,
+          ),
+        { timeout: 5000 },
+      );
     container.firstElementChild!.setAttribute('style', 'width: 700px; height: 450px');
     await waitFor(() => expect(scroller.clientHeight).toBeLessThan(450));
+    await settled();
     for (let i = 0; i < 10 && !next.hasAttribute('disabled'); i++) {
       const before = scroller.scrollTop;
       await userEvent.click(next);
       await waitFor(() =>
         expect(scroller.scrollTop > before || next.hasAttribute('disabled')).toBe(true),
       );
+      await settled();
     }
     await waitFor(() => expect(next.hasAttribute('disabled')).toBe(true));
     const last = container.querySelector('[data-section="Grid"][data-book="17"]')!;
@@ -247,6 +302,52 @@ describe('mixed bookshelf stream in Chromium', () => {
         });
       });
     }
+  }
+  for (const width of [375, 900]) {
+    it(`insets list rows by the row's own responsive padding only at ${width}px`, async () => {
+      await page.viewport(width, 900);
+      const noop = () => {};
+      const transfer = async () => true;
+      const { container } = render(
+        <div style={{ width, height: 900 }}>
+          <BookshelfStream
+            sections={[section('List', 'list', 2)]}
+            autoColumns={false}
+            fixedColumns={3}
+            renderItem={(item, mode) => (
+              <BookshelfItem
+                item={item}
+                mode={mode}
+                coverFit='crop'
+                isSelectMode={false}
+                itemSelected={false}
+                transferProgress={null}
+                setLoading={noop}
+                toggleSelection={noop}
+                handleGroupBooks={noop}
+                handleBookDownload={transfer}
+                handleBookUpload={transfer}
+                handleBookDelete={transfer}
+                handleSetSelectMode={noop}
+                handleShowDetailsBook={noop}
+                handleLibraryNavigation={noop}
+                handleUpdateReadingStatus={noop}
+                showTimeRemaining={false}
+              />
+            )}
+          />
+        </div>,
+      );
+      await waitFor(() => {
+        const row = container.querySelector('.book-item')!.getBoundingClientRect();
+        const shelf = container
+          .querySelector('[data-shelf-layout="list"]')!
+          .getBoundingClientRect();
+        const inset = width < 640 ? 16 : 24;
+        expect(row.left - shelf.left).toBeCloseTo(inset, 1);
+        expect(shelf.right - row.right).toBeCloseTo(inset, 1);
+      });
+    });
   }
   it('keeps virtual row measurements correct while scrolling a scaled preview', async () => {
     const { container } = render(
