@@ -42,12 +42,18 @@ it('keeps the notification pending when an old page finishes after navigation', 
     await vi.waitFor(() => expect(finish).toHaveLength(2));
     expect(onPageRecognized).not.toHaveBeenCalled();
     current = 0;
-    await result.current(docs[0]!.doc, 0);
+    const reversed = result.current(docs[0]!.doc, 0);
+    finish[1]!();
+    await vi.waitFor(() => expect(finish).toHaveLength(3));
+    expect(onPageRecognized).not.toHaveBeenCalled();
+    finish[2]!();
+    await reversed;
     expect(onPageRecognized).toHaveBeenCalledWith(expect.objectContaining({ pageIndex: 0 }));
     onPageRecognized.mockClear();
     current = 1;
     const resumed = result.current(docs[1]!.doc, 1);
-    finish[1]!();
+    await vi.waitFor(() => expect(finish).toHaveLength(4));
+    finish[3]!();
     await Promise.all([next, resumed]);
     expect(onPageRecognized).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ pageIndex: 1 }),
