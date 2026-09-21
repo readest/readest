@@ -91,7 +91,8 @@ describe('mixed bookshelf stream in Chromium', () => {
     const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
     const next = getByRole('button', { name: 'Next page' });
     await waitFor(() => expect(next.hasAttribute('disabled')).toBe(false));
-    fireEvent.click(next);
+    // Use browser input so clicks do not outrun Virtuoso's layout/scroll updates.
+    await userEvent.click(next);
     await waitFor(() => {
       const heading = getByRole('heading', { name: 'Grid' }).getBoundingClientRect();
       const viewport = scroller.getBoundingClientRect();
@@ -104,7 +105,7 @@ describe('mixed bookshelf stream in Chromium', () => {
     await waitFor(() => expect(scroller.clientHeight).toBeLessThan(450));
     for (let i = 0; i < 10 && !next.hasAttribute('disabled'); i++) {
       const before = scroller.scrollTop;
-      fireEvent.click(next);
+      await userEvent.click(next);
       await waitFor(() =>
         expect(scroller.scrollTop > before || next.hasAttribute('disabled')).toBe(true),
       );
@@ -135,7 +136,7 @@ describe('mixed bookshelf stream in Chromium', () => {
       const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
       await waitFor(() => expect(next.hasAttribute('disabled')).toBe(false));
       expect(previous.hasAttribute('disabled')).toBe(true);
-      fireEvent.click(next);
+      await userEvent.click(next);
       await waitFor(() => {
         expect(scroller.scrollTop).toBeGreaterThan(0);
         expect(previous.hasAttribute('disabled')).toBe(false);
@@ -148,7 +149,7 @@ describe('mixed bookshelf stream in Chromium', () => {
           scroller.getBoundingClientRect().bottom,
         );
       });
-      fireEvent.click(previous);
+      await userEvent.click(previous);
       await waitFor(() => expect(scroller.scrollTop).toBe(0));
       fireEvent.keyDown(window, { key: 'PageDown', code: 'PageDown' });
       await waitFor(() => expect(scroller.scrollTop).toBeGreaterThan(0));
