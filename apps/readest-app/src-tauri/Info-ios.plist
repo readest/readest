@@ -89,8 +89,11 @@
     </array>
     <key>UIApplicationSceneManifest</key>
     <dict>
+      <!-- Readest creates one main window. Extra scenes requested by Files on
+           iPad have no WebView and appear black. Keep document handoffs in
+           the existing scene; retain the separate CarPlay role below. -->
       <key>UIApplicationSupportsMultipleScenes</key>
-      <true/>
+      <false/>
       <key>UISceneConfigurations</key>
       <dict>
         <key>CPTemplateApplicationSceneSessionRoleApplication</key>
