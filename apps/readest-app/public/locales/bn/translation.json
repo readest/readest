@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "বিল্ট-ইন বইয়ের তাক মোছা যায় না।",
   "{{name}} · Drag to reorder": "{{name}} · পুনঃক্রম করতে টানুন",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (নিষ্ক্রিয়) · পুনঃক্রম করতে টানুন",
-  "This bookshelf has too many or too long filter conditions.": "এই বইয়ের তাকে খুব বেশি বা খুব দীর্ঘ ফিল্টার শর্ত রয়েছে।"
+  "This bookshelf has too many or too long filter conditions.": "এই বইয়ের তাকে খুব বেশি বা খুব দীর্ঘ ফিল্টার শর্ত রয়েছে।",
+  "Previous page": "পূর্ববর্তী পৃষ্ঠা",
+  "Next page": "পরবর্তী পৃষ্ঠা",
+  "Tag Books": "বই ট্যাগ করুন",
+  "Remove All Tags": "সব ট্যাগ সরান",
+  "Create New Tag": "নতুন ট্যাগ তৈরি করুন",
+  "Tag name": "ট্যাগের নাম",
+  "No tags yet": "এখনও কোনো ট্যাগ নেই",
+  "Failed to save note. Please try again.": "নোট সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।"
 }

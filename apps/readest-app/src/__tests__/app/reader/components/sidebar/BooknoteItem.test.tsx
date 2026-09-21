@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BooknoteItem from '@/app/reader/components/sidebar/BooknoteItem';
 import { BooknoteTimeProvider } from '@/app/reader/components/sidebar/BooknoteTime';
 import { BookNote } from '@/types/book';
+import { eventDispatcher } from '@/utils/event';
 import { NOTE_PREFIX } from '@/types/view';
 
 // vi.mock factories are hoisted above const initializers, so shared spies MUST
@@ -155,7 +156,7 @@ describe('BooknoteItem', () => {
     expect(mocks.setNotebookVisible).not.toHaveBeenCalled();
   });
 
-  it('shows Add Note on a bare highlight and saves a new note inline', () => {
+  it('shows Add Note on a bare highlight and saves a new note inline', async () => {
     const item = makeItem();
     mocks.state.booknotes = [item];
     renderItem(item, true);
@@ -163,7 +164,9 @@ describe('BooknoteItem', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
     const editor = screen.getByRole('textbox');
     fireEvent.change(editor, { target: { value: 'fresh thought' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
     expect(mocks.updateBooknotes).toHaveBeenCalledTimes(1);
     const saved = mocks.state.booknotes[0] as BookNote;
@@ -176,7 +179,7 @@ describe('BooknoteItem', () => {
     );
   });
 
-  it('whitespace-only draft saves an empty note', () => {
+  it('whitespace-only draft saves an empty note', async () => {
     const item = makeItem();
     mocks.state.booknotes = [item];
     renderItem(item, true);
@@ -184,7 +187,9 @@ describe('BooknoteItem', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
     const editor = screen.getByRole('textbox');
     fireEvent.change(editor, { target: { value: '   ' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
     expect(mocks.updateBooknotes).toHaveBeenCalledTimes(1);
     const saved = mocks.state.booknotes[0] as BookNote;
@@ -192,14 +197,16 @@ describe('BooknoteItem', () => {
     expect(mocks.addAnnotation).not.toHaveBeenCalled();
   });
 
-  it('clearing a note inline keeps the highlight and removes the bubble', () => {
+  it('clearing a note inline keeps the highlight and removes the bubble', async () => {
     const item = makeItem({ note: 'old note' });
     mocks.state.booknotes = [item];
     renderItem(item, true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
     const saved = mocks.state.booknotes[0] as BookNote;
     expect(saved.note).toBe('');
@@ -210,15 +217,18 @@ describe('BooknoteItem', () => {
     );
   });
 
-  it('aborts the inline save when the record is gone (deleted by sync)', () => {
+  it('aborts the inline save when the record is gone (deleted by sync)', async () => {
     const item = makeItem({ note: 'old note' });
     mocks.state.booknotes = [];
     renderItem(item, true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'update' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('update');
     expect(mocks.updateBooknotes).not.toHaveBeenCalled();
     expect(mocks.saveConfig).not.toHaveBeenCalled();
   });
@@ -237,4 +247,35 @@ describe('BooknoteItem', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add Note' })).toBeNull();
   });
+});
+
+it('keeps the inline draft through a failed save and closes only after retry succeeds (#6123)', async () => {
+  const item = makeItem({ note: 'old note' });
+  mocks.state.booknotes = [item];
+  renderItem(item, true);
+  fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'draft to keep' } });
+  let rejectSave!: (error: Error) => void;
+  mocks.saveConfig.mockReturnValueOnce(
+    new Promise<void>((_resolve, reject) => {
+      rejectSave = reject;
+    }),
+  );
+  const toast = vi.spyOn(eventDispatcher, 'dispatch');
+  fireEvent.click(screen.getByText('Save'));
+  expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('draft to keep');
+  fireEvent.click(screen.getByText('Save'));
+  expect(mocks.saveConfig).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    rejectSave(new Error('disk full'));
+  });
+  expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('draft to keep');
+  expect(toast).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'error' }));
+  expect(mocks.state.booknotes[0]?.note).toBe('old note');
+  expect(mocks.addAnnotation).not.toHaveBeenCalled();
+  await act(async () => {
+    fireEvent.click(screen.getByText('Save'));
+  });
+  expect(screen.queryByRole('textbox')).toBeNull();
+  toast.mockRestore();
 });

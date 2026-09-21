@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "Integrierte Bücherregale können nicht gelöscht werden.",
   "{{name}} · Drag to reorder": "{{name}} · Zum Neuanordnen ziehen",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (deaktiviert) · Zum Neuanordnen ziehen",
-  "This bookshelf has too many or too long filter conditions.": "Dieses Bücherregal hat zu viele oder zu lange Filterbedingungen."
+  "This bookshelf has too many or too long filter conditions.": "Dieses Bücherregal hat zu viele oder zu lange Filterbedingungen.",
+  "Previous page": "Vorherige Seite",
+  "Next page": "Nächste Seite",
+  "Tag Books": "Bücher taggen",
+  "Remove All Tags": "Alle Tags entfernen",
+  "Create New Tag": "Neuen Tag erstellen",
+  "Tag name": "Tag-Name",
+  "No tags yet": "Noch keine Tags",
+  "Failed to save note. Please try again.": "Notiz konnte nicht gespeichert werden. Bitte versuche es erneut."
 }

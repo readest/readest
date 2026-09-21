@@ -2508,5 +2508,13 @@
   "Built-in bookshelves cannot be deleted.": "Rafturile predefinite nu pot fi șterse.",
   "{{name}} · Drag to reorder": "{{name}} · Trage pentru a reordona",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (dezactivat) · Trage pentru a reordona",
-  "This bookshelf has too many or too long filter conditions.": "Acest raft are prea multe condiții de filtrare sau condiții prea lungi."
+  "This bookshelf has too many or too long filter conditions.": "Acest raft are prea multe condiții de filtrare sau condiții prea lungi.",
+  "Previous page": "Pagina anterioară",
+  "Next page": "Pagina următoare",
+  "Tag Books": "Etichetați cărțile",
+  "Remove All Tags": "Eliminați toate etichetele",
+  "Create New Tag": "Creați o etichetă nouă",
+  "Tag name": "Numele etichetei",
+  "No tags yet": "Încă nu există etichete",
+  "Failed to save note. Please try again.": "Nota nu a putut fi salvată. Încercați din nou."
 }

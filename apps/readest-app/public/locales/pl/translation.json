@@ -2568,5 +2568,13 @@
   "Built-in bookshelves cannot be deleted.": "Wbudowanych półek nie można usunąć.",
   "{{name}} · Drag to reorder": "{{name}} · Przeciągnij, aby zmienić kolejność",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (wyłączona) · Przeciągnij, aby zmienić kolejność",
-  "This bookshelf has too many or too long filter conditions.": "Ta półka ma zbyt wiele warunków filtra lub są one zbyt długie."
+  "This bookshelf has too many or too long filter conditions.": "Ta półka ma zbyt wiele warunków filtra lub są one zbyt długie.",
+  "Previous page": "Poprzednia strona",
+  "Next page": "Następna strona",
+  "Tag Books": "Taguj książki",
+  "Remove All Tags": "Usuń wszystkie tagi",
+  "Create New Tag": "Utwórz nowy tag",
+  "Tag name": "Nazwa tagu",
+  "No tags yet": "Brak tagów",
+  "Failed to save note. Please try again.": "Nie udało się zapisać notatki. Spróbuj ponownie."
 }

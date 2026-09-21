@@ -5,8 +5,7 @@
  * annotationToolButtons, DEFAULT_HIGHLIGHT_COLORS, and optional user
  * colors.  Tailwind CSS is loaded so the screenshot matches the live app.
  *
- * Guards against the layout regression from PR #3741 (missing
- * `justify-between`, unwanted `flex-1` on the color strip).
+ * Guards edge alignment, compact spacing, and action-dependent minimum color visibility.
  */
 
 import React from 'react';
@@ -139,23 +138,32 @@ const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
-const renderPopup = (userColors: UserHighlightColor[] = []) => {
+const renderPopup = (
+  userColors: UserHighlightColor[] = [],
+  compact = false,
+  isVertical = false,
+  globalToggleAvailable = false,
+  actionCount = compact ? 4 : toolButtons.length,
+) => {
   mockUserColors = userColors;
   return render(
     <Wrapper>
       <AnnotationPopup
         bookKey='test'
         dir='ltr'
-        isVertical={false}
-        buttons={toolButtons}
+        isVertical={isVertical}
+        buttons={toolButtons.slice(0, actionCount)}
         notes={[]}
         position={{ dir: 'up', point: { x: POPUP_X, y: POPUP_Y } }}
         trianglePosition={{ dir: 'up', point: { x: POPUP_X + POPUP_W / 2, y: POPUP_Y + POPUP_H } }}
         highlightOptionsVisible
         selectedStyle='highlight'
         selectedColor='yellow'
-        popupWidth={POPUP_W}
+        popupWidth={
+          compact ? (globalToggleAvailable ? 236 : 202) : actionCount === 5 ? 236 : POPUP_W
+        }
         popupHeight={POPUP_H}
+        globalToggleAvailable={globalToggleAvailable}
         onHighlight={vi.fn()}
         onDismiss={vi.fn()}
       />
@@ -180,7 +188,7 @@ afterEach(() => {
 // ── Tests ───────────────────────────────────────────────────────────────
 
 describe('AnnotationPopup layout screenshot', () => {
-  it('default 5 colors — compact color strip, large gap', async () => {
+  it('default 5 colors — controls align with toolbar edges', async () => {
     const { container } = renderPopup();
     const wrapper = container.firstElementChild as HTMLElement;
     await expectElement(page.elementLocator(wrapper)).toMatchScreenshot(
@@ -202,7 +210,7 @@ describe('AnnotationPopup layout screenshot', () => {
     );
   });
 
-  it('5+10 user colors — color strip at max, overflow scrolls', async () => {
+  it('5+10 user colors — extra colors scroll', async () => {
     const { container } = renderPopup([
       { hex: '#f97316' },
       { hex: '#06b6d4' },
@@ -353,5 +361,101 @@ describe('AnnotationPopup full-page selection (#6162)', () => {
     });
     await page.elementLocator(options.querySelector('button')!).click();
     await vi.waitFor(() => expect(onHighlight).toHaveBeenCalledWith(true));
+  });
+});
+
+describe('compact four-action toolbar', () => {
+  it.each([
+    false,
+    true,
+  ])('keeps four colors visible and scrolls extras (vertical=%s)', async (vertical) => {
+    const { container } = renderPopup([{ hex: '#f97316' }, { hex: '#06b6d4' }], true, vertical);
+    const options = container.querySelector<HTMLElement>('.highlight-options')!;
+    const strip = options.lastElementChild as HTMLElement;
+    const styles = options.firstElementChild as HTMLElement;
+    const colors = [...strip.querySelectorAll('button')];
+    const start = vertical ? 'top' : 'left';
+    const end = vertical ? 'bottom' : 'right';
+    const length = vertical ? 'height' : 'width';
+    expect(container.querySelectorAll('.selection-buttons button')).toHaveLength(4);
+    const styleButtons = [...styles.querySelectorAll('button')];
+    expect(
+      styleButtons[1]!.getBoundingClientRect()[start] -
+        styleButtons[0]!.getBoundingClientRect()[end],
+    ).toBe(4);
+    expect(
+      strip.getBoundingClientRect()[start] - styles.getBoundingClientRect()[end],
+    ).toBeLessThanOrEqual(4);
+    expect(strip.getBoundingClientRect()[length]).toBeLessThanOrEqual(101);
+    expect(colors[3]!.getBoundingClientRect()[end]).toBeLessThanOrEqual(
+      strip.getBoundingClientRect()[end] - 1,
+    );
+    expect(colors[4]!.getBoundingClientRect()[end]).toBeGreaterThan(
+      strip.getBoundingClientRect()[end],
+    );
+    if (vertical) strip.scrollTop = strip.scrollHeight;
+    else strip.scrollLeft = strip.scrollWidth;
+    await vi.waitFor(() => {
+      expect(colors.at(-1)!.getBoundingClientRect()[end]).toBeLessThanOrEqual(
+        strip.getBoundingClientRect()[end],
+      );
+    });
+  });
+
+  it('fits four colors alongside the global-highlight toggle', () => {
+    const { container } = renderPopup([], true, false, true);
+    const options = container.querySelector<HTMLElement>('.highlight-options')!;
+    const strip = options.lastElementChild as HTMLElement;
+    const last = strip.querySelectorAll('button')[3]!;
+    expect(last.getBoundingClientRect().right).toBeLessThanOrEqual(
+      strip.getBoundingClientRect().right - 1,
+    );
+    expect(strip.getBoundingClientRect().right).toBeLessThanOrEqual(
+      options.getBoundingClientRect().right,
+    );
+  });
+});
+
+describe('highlight controls align with the toolbar edges', () => {
+  it.each([false, true])('anchors both ends for compact=%s', (compact) => {
+    const { container } = renderPopup([], compact);
+    const toolbar = container.querySelector<HTMLElement>('.selection-popup')!;
+    const options = container.querySelector<HTMLElement>('.highlight-options')!;
+    const styles = options.firstElementChild as HTMLElement;
+    const strip = options.lastElementChild as HTMLElement;
+    expect(
+      Math.abs(styles.getBoundingClientRect().left - toolbar.getBoundingClientRect().left),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(strip.getBoundingClientRect().right - toolbar.getBoundingClientRect().right),
+    ).toBeLessThanOrEqual(1);
+  });
+
+  it('gives extra colors the available width on a larger toolbar', () => {
+    const { container } = renderPopup([{ hex: '#f97316' }, { hex: '#06b6d4' }]);
+    const strip = container.querySelector<HTMLElement>('.highlight-options')!
+      .lastElementChild as HTMLElement;
+    expect(strip.getBoundingClientRect().width).toBeGreaterThan(100);
+    const colors = strip.querySelectorAll('button');
+    expect(colors[4]!.getBoundingClientRect().right).toBeLessThanOrEqual(
+      strip.getBoundingClientRect().right,
+    );
+  });
+});
+
+describe('five-action toolbar', () => {
+  it.each([false, true])('keeps five colors visible (vertical=%s)', (vertical) => {
+    const { container } = renderPopup([{ hex: '#f97316' }], false, vertical, false, 5);
+    const options = container.querySelector<HTMLElement>('.highlight-options')!;
+    const strip = options.lastElementChild as HTMLElement;
+    const colors = strip.querySelectorAll('button');
+    const end = vertical ? 'bottom' : 'right';
+    expect(container.querySelectorAll('.selection-buttons button')).toHaveLength(5);
+    expect(colors[4]!.getBoundingClientRect()[end]).toBeLessThanOrEqual(
+      strip.getBoundingClientRect()[end] - 1,
+    );
+    expect(strip.getBoundingClientRect()[end]).toBeLessThanOrEqual(
+      options.getBoundingClientRect()[end],
+    );
   });
 });

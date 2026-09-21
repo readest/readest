@@ -2568,5 +2568,13 @@
   "Built-in bookshelves cannot be deleted.": "Вбудовані полиці не можна видалити.",
   "{{name}} · Drag to reorder": "{{name}} · Перетягніть, щоб змінити порядок",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (вимкнена) · Перетягніть, щоб змінити порядок",
-  "This bookshelf has too many or too long filter conditions.": "Ця полиця має занадто багато умов фільтра або вони занадто довгі."
+  "This bookshelf has too many or too long filter conditions.": "Ця полиця має занадто багато умов фільтра або вони занадто довгі.",
+  "Previous page": "Попередня сторінка",
+  "Next page": "Наступна сторінка",
+  "Tag Books": "Додати теґи до книг",
+  "Remove All Tags": "Видалити всі теґи",
+  "Create New Tag": "Створити новий теґ",
+  "Tag name": "Назва теґу",
+  "No tags yet": "Теґів поки немає",
+  "Failed to save note. Please try again.": "Не вдалося зберегти нотатку. Спробуйте ще раз."
 }

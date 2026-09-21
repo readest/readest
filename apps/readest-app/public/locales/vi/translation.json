@@ -2388,5 +2388,13 @@
   "Built-in bookshelves cannot be deleted.": "Không thể xóa các kệ sách có sẵn.",
   "{{name}} · Drag to reorder": "{{name}} · Kéo để sắp xếp lại",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (đã tắt) · Kéo để sắp xếp lại",
-  "This bookshelf has too many or too long filter conditions.": "Kệ sách này có quá nhiều điều kiện bộ lọc hoặc điều kiện quá dài."
+  "This bookshelf has too many or too long filter conditions.": "Kệ sách này có quá nhiều điều kiện bộ lọc hoặc điều kiện quá dài.",
+  "Previous page": "Trang trước",
+  "Next page": "Trang tiếp theo",
+  "Tag Books": "Gắn thẻ sách",
+  "Remove All Tags": "Xóa tất cả thẻ",
+  "Create New Tag": "Tạo thẻ mới",
+  "Tag name": "Tên thẻ",
+  "No tags yet": "Chưa có thẻ nào",
+  "Failed to save note. Please try again.": "Không thể lưu ghi chú. Vui lòng thử lại."
 }

@@ -1,3 +1,4 @@
+import { isBuiltinBookshelf } from './definitions';
 import type { BookshelfDefinition, BookshelfState } from '@/types/bookshelf';
 import type { ReplicaRow } from '@/types/replica';
 import type { EnvConfigType } from '@/services/environment';
@@ -12,6 +13,7 @@ import {
   journalBookshelfOperation,
   readPendingBookshelves,
   bindBookshelfOperation,
+  resolveLocalBookshelf,
 } from './journal';
 import { bookshelfReplicaSchema } from './replica';
 
@@ -29,13 +31,21 @@ const persistState = (env: EnvConfigType, state: BookshelfState): Promise<void> 
   writes = writes.catch(() => {}).then(save);
   return writes;
 };
-const publishPendingBookshelves = (userId: string | null) => {
+const publishPendingBookshelves = async (env: EnvConfigType, userId: string | null) => {
   const ctx = getReplicaSync();
   if (!ctx || !userId || !isSyncCategoryEnabled('bookshelf')) return;
+  const rows: ReplicaRow[] = [];
+  const bound: BookshelfState = { rows: {} };
   for (const original of readPendingBookshelves()) {
     const row = bindBookshelfOperation(original, userId);
-    if (row.user_id === userId) ctx.manager.markDirty(row);
+    if (row.user_id !== userId) continue;
+    if (original.localOnly) bound.rows[row.replica_id] = row;
+    rows.push(row);
   }
+  // Persist the canonical rows before queuing them. Their journals are already
+  // durable, so a crash during the handoff is recovered on the next load.
+  if (Object.keys(bound.rows).length) await persistState(env, bound);
+  for (const row of rows) ctx.manager.markDirty(row);
 };
 export const replayBookshelfOperations = async (env: EnvConfigType) => {
   const userId = await getUserID();
@@ -49,7 +59,7 @@ export const replayBookshelfOperations = async (env: EnvConfigType) => {
         state = mergeBookshelfStates(state, { rows: { [row.replica_id]: row } });
     await persistState(env, state);
   }
-  publishPendingBookshelves(userId);
+  await publishPendingBookshelves(env, userId);
 };
 export const saveBookshelfDraft = async (
   env: EnvConfigType,
@@ -78,12 +88,35 @@ export const saveBookshelfDraft = async (
   );
   if (!operations.length) return;
   hlcStore.save(hlc.serialize());
-  for (const row of operations) journalBookshelfOperation(row);
+  for (const row of operations) {
+    const previous = settings.bookshelves?.rows[row.replica_id];
+    // A stale editor must not recreate a local shelf discarded in another window.
+    if (
+      (previous?.localOnly && !resolveLocalBookshelf(previous)) ||
+      (!previous &&
+        !isBuiltinBookshelf(row.replica_id) &&
+        base.some((s) => s.id === row.replica_id))
+    ) {
+      delete state.rows[row.replica_id];
+      continue;
+    }
+    const localOnly =
+      !userId &&
+      !previous &&
+      !isBuiltinBookshelf(row.replica_id) &&
+      !base.some((shelf) => shelf.id === row.replica_id);
+    const journaled = journalBookshelfOperation({
+      ...row,
+      ...(localOnly ? { localOnly: true as const } : {}),
+    });
+    if (journaled) state.rows[row.replica_id] = journaled;
+    else delete state.rows[row.replica_id];
+  }
   // The draft state already carries the journaled rows, so publish without
   // replaying — a replay would persist the very same state a second time, and
   // the editor autosaves on every keystroke.
   await persistState(env, state);
-  publishPendingBookshelves(userId);
+  await publishPendingBookshelves(env, userId);
 };
 export const updateBookshelf = async (
   env: EnvConfigType,

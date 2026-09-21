@@ -218,6 +218,16 @@ describe('bookshelf evaluation', () => {
     expect(
       evaluateBookshelves(books, [{ ...finished, enabled: true }])[0]!.books.map((b) => b.hash),
     ).toEqual(['newer', 'older']);
+    const enabledResults = evaluateBookshelves(
+      books,
+      defaults.map((s) => (s.id === 'finished' ? { ...s, enabled: true } : s)),
+    );
+    expect(
+      enabledResults.find((s) => s.definition.id === 'default')!.books.map((b) => b.hash),
+    ).toEqual(['on-hold', 'reading', 'unread']);
+    expect(
+      enabledResults.find((s) => s.definition.id === 'finished')!.books.map((b) => b.hash),
+    ).toEqual(['newer', 'older']);
   });
   it('classifies an ABS podcast known only from its metadata mirror as a podcast', () => {
     const podcast: Book = {

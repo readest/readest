@@ -10,7 +10,7 @@ Predefined shelves start in this order: Recently read, Audiobooks, Podcasts, Def
 They can be renamed, reordered or disabled, but cannot be deleted. Audiobooks and Podcasts start
 enabled with Carousel on, Crop covers, global grouping/sorting and Exclusive on. Audiobooks
 matches Audiobook Is Yes; Podcasts matches Media type Is Podcast. Finished books starts after
-Default, disabled with Carousel on, and filters for finished reading status.
+Default, disabled with Carousel and Exclusive on, and filters for finished reading status.
 Predefined positions are stable: new presets use gaps in `BUILTIN_BOOKSHELF_POSITIONS` without
 renumbering existing entries. This preserves manual ordering and saved custom shelf positions.
 Default has no heading on the library page; its name remains visible in the editor and preview.
@@ -113,6 +113,10 @@ carousels maintain bounded horizontal windows. Selection is shared by book hash,
 expands groups and deduplicates the books represented by the displayed sections.
 Carousels use smooth scrolling on normal screens. Edge arrows appear when hovering over that
 carousel or focusing an arrow with the keyboard. Previous/Next page buttons appear only in e-ink mode.
+In e-ink mode, the library also has fixed Previous/Next controls for its vertical stream, including
+grid and list shelves. These move instantly by visible rows, keeping a shelf heading with its first
+row and repeating partly visible rows on the next page. Page Up/Down and configured hardware
+page-turn buttons work here too; editing fields and open dialogs or menus keep their own input.
 
 ## Persistence and rollout
 
@@ -131,9 +135,13 @@ locally without publishing a repair.
 
 Converged rows live in `SystemSettings.bookshelves`, included in backups and merged across desktop
 windows. The per-device localStorage journal retains original operation timestamps and account
-identity until the exact field versions are acknowledged. Anonymous edits bind to the first
-account that syncs them; edits belonging to another account are never published under the current
-account. Reading settings recovers anonymous edits and the cached account's interrupted journal
+identity until the exact field versions are acknowledged. It merges repeated edits into one pending
+record per shelf. A custom shelf created anonymously and deleted before publication is removed
+from both the journal and local state when its local creation history proves it was never published.
+Published shelves and older records without that proof retain deletion markers to prevent stale
+devices from restoring them. Backups omit device-local creation markers.
+Anonymous edits bind to the first account that syncs them; edits belonging to another account are
+never published under the current account. Reading settings recovers anonymous edits and the cached account's interrupted journal
 writes without refreshing an expired token; other accounts' pending edits remain in the journal.
 Remote application merges with newer local rows. Migration defaults are saved locally with baseline
 timestamps, so synced user edits take precedence. The completion marker is saved with the config and retained by merges;
@@ -141,7 +149,9 @@ untouched migrated defaults are not queued as user edits.
 The journal keeps each field's original stamp, so last-writer-wins follows edit time. The row-level
 `updated_at_ts`, and a tombstone's `deleted_at_ts`, is restamped when the row is actually pushed:
 the server rejects row stamps more than 60 seconds from its clock, and pull cursors key on that
-stamp. A row the server permanently rejects is isolated so it cannot block other rows or kinds.
+stamp. Uploads use batches of at most 100 records; successful batches are acknowledged while failed
+records and newer edits remain pending. A row the server permanently rejects is isolated so it
+cannot block other rows or kinds.
 Restoring a backup merges shelf rows by their stamps: it adds shelves missing locally and never
 rolls back newer local shelf edits.
 The wire schemas are strict. A row written by a newer client, with an unknown field or an unknown

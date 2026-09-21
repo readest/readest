@@ -141,8 +141,8 @@ describe('updateUserStorage — grandfathered storage buyers', () => {
 // premium feature set. It drives a WRITE rather than a derivation, so that
 // flipping it off cannot revoke anyone who bought while it was on.
 describe('storage grace grant', () => {
-  it('is on today, so the grace period is live', () => {
-    expect(STORAGE_GRANTS_CUSTOMIZATION).toBe(true);
+  it('is off, so the grace period has ended', () => {
+    expect(STORAGE_GRANTS_CUSTOMIZATION).toBe(false);
   });
 
   it('grants while the flag is on and the buyer has storage', () => {
@@ -161,22 +161,15 @@ describe('storage grace grant', () => {
     expect(shouldGrantGraceCustomization(0, false, true)).toBe(false);
   });
 
-  it('writes a durable payment row for a storage buyer during the grace period', async () => {
+  it('gives a storage buyer space and nothing else now the grace period is over', async () => {
     paymentsRows.current = [
       { storage_gb: 5, product_id: 'com.bilingify.readest.storage.5gb.purchase', metadata: null },
     ];
 
     await updateUserStorage('user-1');
 
-    expect(insertMock).toHaveBeenCalledTimes(1);
-    expect(insertMock.mock.calls[0]![0]).toMatchObject({
-      user_id: 'user-1',
-      provider: 'readest',
-      storage_gb: 0,
-      status: 'completed',
-      metadata: expect.objectContaining({ feature: 'customization', grandfathered: true }),
-    });
-    expect(lastUpdate().customization_purchased).toBe(true);
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(lastUpdate().customization_purchased).toBe(false);
     expect(lastUpdate().storage_purchased_bytes).toBe(5 * 1024 * 1024 * 1024);
   });
 

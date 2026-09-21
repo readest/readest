@@ -57,6 +57,30 @@ afterEach(() => {
 });
 
 describe('ReplicaSyncManager.markDirty + flush', () => {
+  test('uploads large queues in batches of at most 100', async () => {
+    const { manager, client } = makeManager();
+    for (let i = 0; i < 250; i++) manager.markDirty(makeRow(`r${i}`));
+    await manager.flush();
+    expect(client.push.mock.calls.map(([rows]) => rows.length)).toEqual([100, 100, 50]);
+    expect(manager.pendingCount()).toBe(0);
+  });
+
+  test('acknowledges completed batches while retaining failed batches and concurrent edits', async () => {
+    const { manager, client } = makeManager();
+    for (let i = 0; i < 250; i++) manager.markDirty(makeRow(`r${i}`));
+    client.push.mockImplementationOnce(async (rows) => {
+      manager.markDirty(makeRow('r0', hlcPack(NOW, 1, DEV)));
+      return rows;
+    });
+    client.push.mockRejectedValueOnce(new Error('offline'));
+    await expect(manager.flush()).rejects.toThrow('offline');
+    expect(manager.pendingCount()).toBe(151);
+    client.push.mockClear();
+    await manager.flush();
+    expect(client.push.mock.calls.map(([rows]) => rows.length)).toEqual([100, 51]);
+    expect(manager.pendingCount()).toBe(0);
+  });
+
   test('markDirty alone does not push', async () => {
     const { manager, client } = makeManager();
     manager.markDirty(makeRow('r1'));

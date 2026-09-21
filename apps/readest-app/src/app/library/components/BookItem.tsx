@@ -23,6 +23,7 @@ import { isAudiobook } from '@/utils/audiobook';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import { splitDuration } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
+import { getBookTags } from '../utils/libraryUtils';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -77,6 +78,8 @@ const BookItem: React.FC<BookItemProps> = ({
     : undefined;
 
   const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
+  // Synced rows may carry untrimmed or duplicate tags; show each tag once.
+  const tags = getBookTags(book);
 
   // One condition drives both the cover overlay and the hiding of the row's
   // transfer buttons, so the cover can never end up showing neither. The
@@ -229,6 +232,32 @@ const BookItem: React.FC<BookItemProps> = ({
             (book.progress || book.readingStatus) && (
               <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
             )
+          )}
+          {mode === 'list' && tags.length > 0 && (
+            // The tags only take the space left between the progress and the
+            // icons, and clip (fading out) when it runs out. `w-0` zeroes their
+            // min-content contribution, else a long tag list widens the whole
+            // text column and pushes the icons out of the row.
+            <div
+              aria-label={_('Tags')}
+              className={clsx(
+                'me-2 flex w-0 min-w-0 flex-1 items-center gap-1.5 overflow-hidden',
+                // Space from the progress only when it shows something.
+                '[:not(:empty)+&]:ms-1.5',
+                '[mask-image:linear-gradient(to_right,black_calc(100%-12px),transparent)]',
+                'rtl:[mask-image:linear-gradient(to_left,black_calc(100%-12px),transparent)]',
+                'eink:[mask-image:none]',
+              )}
+            >
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className='eink-bordered text-neutral-content/70 border-base-content/15 inline-flex h-3.5 shrink-0 items-center whitespace-nowrap rounded-sm border px-1 text-[10px] leading-none'
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           )}
           <div className='flex shrink-0 items-center justify-center gap-x-2'>
             {!appService?.isMobile && (

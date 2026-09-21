@@ -1,4 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -7,48 +9,69 @@ import { updateBooknoteNoteText } from '@/utils/updateBooknoteNoteText';
 import { applyNoteBubbleTransition, decideNoteBubbleTransition } from '../utils/annotatorUtil';
 
 /**
- * Persists an inline edit to a booknote's `note` text. Writes the updated
- * booknotes to the store first; only once that write succeeds does it
- * redraw the note-bubble overlay on every rendered view and save the config
- * to disk/cloud, so a failed store update never leaves a stale bubble on
- * screen or persists a config the store itself rejected.
- *
- * Shared by every inline note editor (`BooknoteItem`, and later
- * `AnnotationNotes`) so this persistence/view-update wiring lives in one place.
+ * Confirms persistence before closing the editor or updating note bubbles.
+ * Failed saves restore the previous stored note and keep the draft for retry.
  */
 export function useSaveBooknoteNoteText(bookKey: string) {
+  const _ = useTranslation();
+  const savingRef = useRef(false);
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getViewsById } = useReaderStore();
 
   return useCallback(
-    (booknoteId: string, noteText: string) => {
-      const config = getConfig(bookKey);
-      if (!config) return;
+    async (booknoteId: string, noteText: string): Promise<boolean> => {
+      if (savingRef.current) return false;
+      savingRef.current = true;
+      try {
+        const config = getConfig(bookKey);
+        if (!config) throw new Error('Book config unavailable');
 
-      const result = updateBooknoteNoteText(
-        config.booknotes ?? [],
-        booknoteId,
-        noteText,
-        Date.now(),
-      );
-      if (!result) return;
+        const previousBooknotes = config.booknotes ?? [];
+        const result = updateBooknoteNoteText(previousBooknotes, booknoteId, noteText, Date.now());
+        if (!result) throw new Error('Booknote unavailable');
 
-      const updatedConfig = updateBooknotes(bookKey, result.booknotes);
-      if (!updatedConfig) return;
+        const updatedConfig = updateBooknotes(bookKey, result.booknotes);
+        if (!updatedConfig) throw new Error('Booknote update failed');
 
-      const transition = decideNoteBubbleTransition(
-        result.previousNoteText,
-        result.updatedBooknote.note,
-      );
-      applyNoteBubbleTransition(
-        getViewsById(bookKey.split('-')[0]!),
-        result.updatedBooknote,
-        transition,
-      );
-      saveConfig(envConfig, bookKey, updatedConfig, settings);
+        try {
+          await saveConfig(envConfig, bookKey, updatedConfig, settings);
+        } catch (error) {
+          const latest = getConfig(bookKey)?.booknotes;
+          // Restore only our optimistic edit, preserving concurrent sync/edit changes.
+          if (latest?.includes(result.updatedBooknote)) {
+            const previous = previousBooknotes.find(
+              (note) => note.id === booknoteId && !note.deletedAt,
+            )!;
+            updateBooknotes(
+              bookKey,
+              latest.map((note) => (note === result.updatedBooknote ? previous : note)),
+            );
+          }
+          throw error;
+        }
+
+        const transition = decideNoteBubbleTransition(
+          result.previousNoteText,
+          result.updatedBooknote.note,
+        );
+        applyNoteBubbleTransition(
+          getViewsById(bookKey.split('-')[0]!),
+          result.updatedBooknote,
+          transition,
+        );
+        return true;
+      } catch {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to save note. Please try again.'),
+        });
+        return false;
+      } finally {
+        savingRef.current = false;
+      }
     },
-    [bookKey, envConfig, settings, getConfig, saveConfig, updateBooknotes, getViewsById],
+    [bookKey, envConfig, settings, getConfig, saveConfig, updateBooknotes, getViewsById, _],
   );
 }

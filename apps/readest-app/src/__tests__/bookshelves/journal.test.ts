@@ -6,6 +6,7 @@ import {
   journalBookshelfOperation,
   readPendingBookshelves,
   bindBookshelfOperation,
+  resolveLocalBookshelf,
 } from '@/services/bookshelves/journal';
 import type { ReplicaRow } from '@/types/replica';
 const clock = new HlcGenerator('device');
@@ -31,6 +32,15 @@ const row = (userId = 'account'): ReplicaRow => {
 };
 beforeEach(() => localStorage.clear());
 describe('durable bookshelf operations', () => {
+  it('keeps cached local data when its journal is unreadable rather than known absent', () => {
+    const cached = { ...row(''), localOnly: true as const };
+    const key = `readest.bookshelf.pending.v1::${cached.replica_id}`;
+    localStorage.setItem(key, '{');
+    expect(resolveLocalBookshelf(cached)).toEqual(cached);
+    localStorage.removeItem(key);
+    expect(resolveLocalBookshelf(cached)).toBeNull();
+  });
+
   it('replays exact timestamps after restart and separates accounts', () => {
     const first = row();
     const other = row('other');

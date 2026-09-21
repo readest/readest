@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "Τα ενσωματωμένα ράφια δεν μπορούν να διαγραφούν.",
   "{{name}} · Drag to reorder": "{{name}} · Σύρετε για επαναταξινόμηση",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (απενεργοποιημένο) · Σύρετε για επαναταξινόμηση",
-  "This bookshelf has too many or too long filter conditions.": "Αυτό το ράφι βιβλίων έχει πάρα πολλές ή πολύ μεγάλες συνθήκες φίλτρου."
+  "This bookshelf has too many or too long filter conditions.": "Αυτό το ράφι βιβλίων έχει πάρα πολλές ή πολύ μεγάλες συνθήκες φίλτρου.",
+  "Previous page": "Προηγούμενη σελίδα",
+  "Next page": "Επόμενη σελίδα",
+  "Tag Books": "Προσθήκη ετικετών σε βιβλία",
+  "Remove All Tags": "Αφαίρεση όλων των ετικετών",
+  "Create New Tag": "Δημιουργία νέας ετικέτας",
+  "Tag name": "Όνομα ετικέτας",
+  "No tags yet": "Δεν υπάρχουν ακόμη ετικέτες",
+  "Failed to save note. Please try again.": "Αποτυχία αποθήκευσης σημείωσης. Δοκιμάστε ξανά."
 }

@@ -261,6 +261,7 @@ export const defaultBookshelves = (settings: Partial<SystemSettings>): Bookshelf
   },
   {
     ...createBookshelf('', FINISHED_BOOKSHELF_ID),
+    exclusive: true,
     skeuomorphicCovers: settings.librarySkeuomorphicCovers ?? false,
     coverFit: settings.libraryCoverFit || 'crop',
     enabled: false,

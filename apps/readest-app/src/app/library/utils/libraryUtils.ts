@@ -210,7 +210,43 @@ export const getBookSubjects = (book: Book): string[] => {
   return getContributorNames(book.metadata?.subject);
 };
 
-const getBookTags = (book: Book): string[] => normalizeValues(book.tags ?? []);
+export const getBookTags = (book: Book): string[] => normalizeValues(book.tags ?? []);
+
+export const getLibraryTags = (books: Book[]): string[] =>
+  normalizeValues(books.filter((book) => !book.deletedAt).flatMap(getBookTags)).sort((a, b) =>
+    a.localeCompare(b),
+  );
+
+export type TagSelectionState = 'all' | 'some' | 'none';
+
+export const getTagSelectionState = (books: Book[], tag: string): TagSelectionState => {
+  const count = books.filter((book) => getBookTags(book).includes(tag)).length;
+  return count === 0 ? 'none' : count === books.length ? 'all' : 'some';
+};
+
+// Applied to the selected books only, never to the rest of the library.
+export interface BookTagEdits {
+  add: string[];
+  remove: string[];
+}
+
+// Returns a new array where only the books whose tags actually change are new
+// objects. Tags merge with the metadata group on its own clock, so a changed
+// book stamps metadataUpdatedAt like a metadata edit does.
+export const applyBookTagEdits = (
+  books: Book[],
+  selectedHashes: string[],
+  edits: BookTagEdits,
+  now = Date.now(),
+): Book[] =>
+  books.map((book) => {
+    if (book.deletedAt || !selectedHashes.includes(book.hash)) return book;
+    const current = book.tags ?? [];
+    const kept = current.filter((tag) => !edits.remove.includes(tag.trim()));
+    const added = edits.add.filter((tag) => !kept.some((k) => k.trim() === tag));
+    if (kept.length === current.length && added.length === 0) return book;
+    return { ...book, tags: [...kept, ...added], updatedAt: now, metadataUpdatedAt: now };
+  });
 
 const getBookValuesText = (book: Book): string =>
   [...getBookTags(book), ...getBookSubjects(book)].join(' ');

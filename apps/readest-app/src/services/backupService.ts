@@ -134,6 +134,11 @@ export function sanitizeSettingsForBackup(
   options: BackupOptions = {},
 ): SystemSettings {
   const clone = structuredClone(settings) as SystemSettings & Record<string, unknown>;
+  if (clone.bookshelves) {
+    clone.bookshelves = structuredClone(mergeBookshelfStates(clone.bookshelves));
+    // A portable snapshot must not depend on this device's anonymous journal.
+    for (const row of Object.values(clone.bookshelves.rows)) delete row.localOnly;
+  }
   for (const path of BACKUP_SETTINGS_BLACKLIST) {
     deletePath(clone, path);
   }

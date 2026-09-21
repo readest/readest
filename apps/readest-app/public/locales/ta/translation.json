@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "உள்ளமைந்த புத்தக அலமாரிகளை நீக்க முடியாது.",
   "{{name}} · Drag to reorder": "{{name}} · மறு வரிசைப்படுத்த இழுக்கவும்",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (முடக்கப்பட்டது) · மறு வரிசைப்படுத்த இழுக்கவும்",
-  "This bookshelf has too many or too long filter conditions.": "இந்தப் புத்தக அலமாரியில் வடிகட்டி நிபந்தனைகள் மிக அதிகமாக அல்லது மிக நீளமாக உள்ளன."
+  "This bookshelf has too many or too long filter conditions.": "இந்தப் புத்தக அலமாரியில் வடிகட்டி நிபந்தனைகள் மிக அதிகமாக அல்லது மிக நீளமாக உள்ளன.",
+  "Previous page": "முந்தைய பக்கம்",
+  "Next page": "அடுத்த பக்கம்",
+  "Tag Books": "புத்தகங்களுக்குக் குறிச்சொல் இடவும்",
+  "Remove All Tags": "அனைத்து குறிச்சொற்களையும் நீக்கவும்",
+  "Create New Tag": "புதிய குறிச்சொல் உருவாக்கவும்",
+  "Tag name": "குறிச்சொல் பெயர்",
+  "No tags yet": "இன்னும் குறிச்சொற்கள் இல்லை",
+  "Failed to save note. Please try again.": "குறிப்பைச் சேமிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்."
 }

@@ -67,8 +67,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   };
   const { editorRef, draftText, setDraftText, inlineEditMode, startEdit, cancelEdit, save } =
     useInlineTextEditor((draftText) => {
-      if (isBookmark) saveBookmarkText(draftText);
-      else saveBooknoteNoteText(item.id, draftText);
+      if (isBookmark) return saveBookmarkText(draftText);
+      else return saveBooknoteNoteText(item.id, draftText);
     });
   const separatorWidth = useResponsiveSize(3);
   const size18 = useResponsiveSize(18);

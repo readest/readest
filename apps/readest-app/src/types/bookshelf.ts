@@ -67,8 +67,12 @@ export interface BookshelfDefinition {
   exclusive: boolean;
   includeExclusiveBooks: boolean;
 }
+export interface BookshelfReplicaRow extends ReplicaRow {
+  /** Cache of a new anonymous shelf whose journal is authoritative until publication. */
+  localOnly?: true;
+}
 export interface BookshelfState {
-  rows: Record<string, ReplicaRow>;
+  rows: Record<string, BookshelfReplicaRow>;
   /** The previous library preferences have been copied into saved shelves. */
   legacySettingsMigrated?: boolean;
 }

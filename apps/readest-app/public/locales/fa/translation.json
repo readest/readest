@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "قفسه‌های کتاب داخلی را نمی‌توان حذف کرد.",
   "{{name}} · Drag to reorder": "{{name}} · برای تغییر ترتیب بکشید",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (غیرفعال) · برای تغییر ترتیب بکشید",
-  "This bookshelf has too many or too long filter conditions.": "این قفسه‌ی کتاب شرط‌های فیلتر بیش از حد زیاد یا بیش از حد طولانی دارد."
+  "This bookshelf has too many or too long filter conditions.": "این قفسه‌ی کتاب شرط‌های فیلتر بیش از حد زیاد یا بیش از حد طولانی دارد.",
+  "Previous page": "صفحهٔ قبل",
+  "Next page": "صفحهٔ بعد",
+  "Tag Books": "برچسب‌گذاری کتاب‌ها",
+  "Remove All Tags": "حذف همهٔ برچسب‌ها",
+  "Create New Tag": "ایجاد برچسب جدید",
+  "Tag name": "نام برچسب",
+  "No tags yet": "هنوز برچسبی وجود ندارد",
+  "Failed to save note. Please try again.": "ذخیرهٔ یادداشت ناموفق بود. لطفاً دوباره تلاش کنید."
 }

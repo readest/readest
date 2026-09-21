@@ -1,3 +1,4 @@
+import { MAX_PUSH_BATCH } from '@/types/replica';
 import { HlcGenerator, hlcCompare, hlcMax, mergeFields } from '@/libs/crdt';
 import { isSyncError } from '@/libs/errors';
 import type { Hlc, ReplicaRow } from '@/types/replica';
@@ -150,10 +151,17 @@ export class ReplicaSyncManager {
       ([, row]) => !this.unsupportedKinds.has(row.kind) && !this.rejectedRows.has(row),
     );
     if (entries.length === 0) return;
+    for (let offset = 0; offset < entries.length; offset += MAX_PUSH_BATCH) {
+      await this.flushBatch(entries.slice(offset, offset + MAX_PUSH_BATCH));
+    }
+  }
+
+  private async flushBatch(entries: [string, ReplicaRow][]): Promise<void> {
     const queued: ReplicaRow[] = [];
     const snapshot: ReplicaRow[] = [];
     const snapshotKeys: string[] = [];
     for (const [key, row] of entries) {
+      if (this.unsupportedKinds.has(row.kind) || this.rejectedRows.has(row)) continue;
       const prepared = this.opts.prepareRow ? await this.opts.prepareRow(row) : row;
       if (!prepared) continue;
       queued.push(row);

@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "अंतर्निहित पुस्तक शेल्फ हटाई नहीं जा सकतीं।",
   "{{name}} · Drag to reorder": "{{name}} · पुनः क्रमित करने के लिए खींचें",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (अक्षम) · पुनः क्रमित करने के लिए खींचें",
-  "This bookshelf has too many or too long filter conditions.": "इस पुस्तक शेल्फ में बहुत अधिक या बहुत लंबी फ़िल्टर शर्तें हैं।"
+  "This bookshelf has too many or too long filter conditions.": "इस पुस्तक शेल्फ में बहुत अधिक या बहुत लंबी फ़िल्टर शर्तें हैं।",
+  "Previous page": "पिछला पृष्ठ",
+  "Next page": "अगला पृष्ठ",
+  "Tag Books": "पुस्तकों को टैग करें",
+  "Remove All Tags": "सभी टैग हटाएं",
+  "Create New Tag": "नया टैग बनाएं",
+  "Tag name": "टैग का नाम",
+  "No tags yet": "अभी तक कोई टैग नहीं",
+  "Failed to save note. Please try again.": "नोट सहेजा नहीं जा सका। कृपया पुनः प्रयास करें।"
 }

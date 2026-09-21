@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
+import { OverlayScrollbars } from 'overlayscrollbars';
+import 'overlayscrollbars/overlayscrollbars.css';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Book } from '@/types/book';
 import BookCover from '@/components/BookCover';
@@ -56,10 +58,177 @@ const renderItem: React.ComponentProps<typeof BookshelfStream>['renderItem'] = (
   </button>
 );
 describe('mixed bookshelf stream in Chromium', () => {
+  it('hides native scrollbars and keeps shelf width stable through overlay initialization', async () => {
+    const { container } = render(
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          sections={[section('books', 'grid', 120)]}
+          autoColumns={false}
+          fixedColumns={3}
+          renderItem={renderItem}
+        />
+      </div>,
+    );
+    const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+    await waitFor(() => expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight));
+    // Check before the deferred initializer runs, even on platforms where
+    // native scrollbars overlay content and consume no width.
+    expect(getComputedStyle(scroller).scrollbarWidth).toBe('none');
+    const width = scroller.clientWidth;
+    const rowWidth = container.querySelector('.bookshelf-items')!.getBoundingClientRect().width;
+    const instance = OverlayScrollbars(
+      {
+        target: scroller.parentElement!,
+        elements: { viewport: scroller },
+      },
+      {},
+    );
+    try {
+      expect(scroller.clientWidth).toBe(width);
+      expect(container.querySelector('.bookshelf-items')!.getBoundingClientRect().width).toBe(
+        rowWidth,
+      );
+      expect(getComputedStyle(scroller).scrollbarWidth).toBe('none');
+      scroller.scrollTop = 300;
+      fireEvent.scroll(scroller);
+      await waitFor(() => expect(scroller.scrollTop).toBe(300));
+    } finally {
+      instance.destroy();
+    }
+  });
+
+  it('shows the library page controls only in e-ink mode', () => {
+    const { queryByRole } = render(
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          pageNavigation
+          sections={[section('books', 'grid', 30)]}
+          autoColumns={false}
+          fixedColumns={3}
+          renderItem={renderItem}
+        />
+      </div>,
+    );
+    expect(queryByRole('button', { name: 'Next page' })).toBeNull();
+    document.documentElement.setAttribute('data-eink', 'true');
+    expect(queryByRole('button', { name: 'Next page' })).not.toBeNull();
+    document.documentElement.setAttribute('data-eink', 'false');
+    expect(queryByRole('button', { name: 'Next page' })).toBeNull();
+    expect(queryByRole('button', { name: 'Previous page' })).toBeNull();
+  });
+  it('keeps a heading with its first grid row across mixed shelves and reaches the last page', async () => {
+    document.documentElement.setAttribute('data-eink', 'true');
+    const { container, getByRole } = render(
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          pageNavigation
+          sections={[section('List', 'list', 5), section('Grid', 'grid', 18)]}
+          autoColumns={false}
+          fixedColumns={3}
+          renderItem={renderItem}
+        />
+      </div>,
+    );
+    const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+    const next = getByRole('button', { name: 'Next page' });
+    await waitFor(() => expect(next.hasAttribute('disabled')).toBe(false));
+    // Use browser input so clicks do not outrun Virtuoso's layout/scroll updates.
+    await userEvent.click(next);
+    await waitFor(() => {
+      const heading = getByRole('heading', { name: 'Grid' }).getBoundingClientRect();
+      const viewport = scroller.getBoundingClientRect();
+      expect(heading.top).toBeGreaterThanOrEqual(viewport.top);
+      expect(heading.top - viewport.top).toBeLessThan(20);
+      const first = container.querySelector('[data-section="Grid"]')!.getBoundingClientRect();
+      expect(first.bottom).toBeLessThanOrEqual(viewport.bottom);
+    });
+    // Virtuoso reports atBottom (which drives `disabled`) after the scroll lands,
+    // so wait for the button to agree with the scroll position before deciding
+    // whether to click again; otherwise the last click targets a button that is
+    // about to disable and Playwright times out waiting for it to be enabled.
+    const settled = () =>
+      waitFor(
+        () =>
+          expect(next.hasAttribute('disabled')).toBe(
+            scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1,
+          ),
+        { timeout: 5000 },
+      );
+    container.firstElementChild!.setAttribute('style', 'width: 700px; height: 450px');
+    await waitFor(() => expect(scroller.clientHeight).toBeLessThan(450));
+    await settled();
+    for (let i = 0; i < 10 && !next.hasAttribute('disabled'); i++) {
+      const before = scroller.scrollTop;
+      await userEvent.click(next);
+      await waitFor(() =>
+        expect(scroller.scrollTop > before || next.hasAttribute('disabled')).toBe(true),
+      );
+      await settled();
+    }
+    await waitFor(() => expect(next.hasAttribute('disabled')).toBe(true));
+    const last = container.querySelector('[data-section="Grid"][data-book="17"]')!;
+    expect(last.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      scroller.getBoundingClientRect().bottom,
+    );
+  });
+  for (const layout of ['grid', 'list'] as const) {
+    it(`pages ${layout} by complete rows and ignores keys in inputs and dialogs`, async () => {
+      document.documentElement.setAttribute('data-eink', 'true');
+      const { container, getByRole } = render(
+        <div style={{ width: 900, height: 600 }}>
+          <input aria-label='Search library' />
+          <BookshelfStream
+            pageNavigation
+            sections={[section('books', layout, 120)]}
+            autoColumns={false}
+            fixedColumns={3}
+            renderItem={renderItem}
+          />
+        </div>,
+      );
+      const next = getByRole('button', { name: 'Next page' });
+      const previous = getByRole('button', { name: 'Previous page' });
+      const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+      await waitFor(() => expect(next.hasAttribute('disabled')).toBe(false));
+      expect(previous.hasAttribute('disabled')).toBe(true);
+      await userEvent.click(next);
+      await waitFor(() => {
+        expect(scroller.scrollTop).toBeGreaterThan(0);
+        expect(previous.hasAttribute('disabled')).toBe(false);
+        const top = scroller.getBoundingClientRect().top;
+        const row = Array.from(container.querySelectorAll('.bookshelf-items')).find(
+          (el) => Math.abs(el.getBoundingClientRect().top - top) < 1,
+        );
+        expect(row).toBeTruthy();
+        expect(next.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+          scroller.getBoundingClientRect().bottom,
+        );
+      });
+      await userEvent.click(previous);
+      await waitFor(() => expect(scroller.scrollTop).toBe(0));
+      fireEvent.keyDown(window, { key: 'PageDown', code: 'PageDown' });
+      await waitFor(() => expect(scroller.scrollTop).toBeGreaterThan(0));
+      const offset = scroller.scrollTop;
+      fireEvent.keyDown(getByRole('textbox'), { key: 'PageDown', code: 'PageDown' });
+      expect(scroller.scrollTop).toBe(offset);
+      const dialog = document.createElement('dialog');
+      document.body.append(dialog);
+      dialog.showModal();
+      try {
+        fireEvent.keyDown(window, { key: 'PageDown', code: 'PageDown' });
+        expect(scroller.scrollTop).toBe(offset);
+      } finally {
+        dialog.remove();
+      }
+    });
+  }
   for (const width of [375, 900]) {
-    for (const layout of ['carousel', 'grid'] as const) {
-      it(`matches divider gaps to the heading-to-cover gap for ${layout} shelves at ${width}px`, async () => {
+    for (const scenario of ['carousel', 'grid', 'eink-carousel'] as const) {
+      const eink = scenario === 'eink-carousel';
+      const layout = scenario === 'grid' ? 'grid' : 'carousel';
+      it(`matches divider gaps for ${scenario} shelves at ${width}px`, async () => {
         await page.viewport(width, 900);
+        document.documentElement.setAttribute('data-eink', String(eink));
         const noop = () => {};
         const transfer = async () => true;
         const { container, getByRole } = render(
@@ -71,7 +240,7 @@ describe('mixed bookshelf stream in Chromium', () => {
                 { ...section('Default', layout, 3), hideHeading: true },
               ]}
               autoColumns={false}
-              fixedColumns={3}
+              fixedColumns={eink ? 2 : 3}
               renderItem={(item, mode) => (
                 <BookshelfItem
                   item={item}
@@ -98,8 +267,21 @@ describe('mixed bookshelf stream in Chromium', () => {
         );
         await waitFor(() => {
           const cards = container.querySelectorAll('.book-item');
-          expect(cards).toHaveLength(9);
+          expect(cards.length).toBeGreaterThan(0);
           const previousBottom = cards[0]!.getBoundingClientRect().bottom;
+          if (eink) {
+            const carousel = container.querySelector('[data-shelf-layout="carousel"]')!;
+            const buttons = carousel.querySelectorAll('button');
+            const previous = buttons[buttons.length - 2]!.getBoundingClientRect();
+            const next = buttons[buttons.length - 1]!.getBoundingClientRect();
+            const divider = container.querySelector('hr')!.getBoundingClientRect();
+            expect(next.right).toBeCloseTo(divider.right, 1);
+            expect(previous.top).toBe(next.top);
+            expect(next.top - previousBottom).toBeGreaterThan(0);
+            expect(divider.top - next.bottom).toBeCloseTo(next.top - previousBottom, 1);
+            return;
+          }
+          expect(cards).toHaveLength(9);
           const coverTop = cards[3]!.querySelector('.bookitem-main')!.getBoundingClientRect().top;
           const heading = getByRole('heading', { name: 'Audiobooks' });
           const headingBounds = heading.getBoundingClientRect();
@@ -120,6 +302,52 @@ describe('mixed bookshelf stream in Chromium', () => {
         });
       });
     }
+  }
+  for (const width of [375, 900]) {
+    it(`insets list rows by the row's own responsive padding only at ${width}px`, async () => {
+      await page.viewport(width, 900);
+      const noop = () => {};
+      const transfer = async () => true;
+      const { container } = render(
+        <div style={{ width, height: 900 }}>
+          <BookshelfStream
+            sections={[section('List', 'list', 2)]}
+            autoColumns={false}
+            fixedColumns={3}
+            renderItem={(item, mode) => (
+              <BookshelfItem
+                item={item}
+                mode={mode}
+                coverFit='crop'
+                isSelectMode={false}
+                itemSelected={false}
+                transferProgress={null}
+                setLoading={noop}
+                toggleSelection={noop}
+                handleGroupBooks={noop}
+                handleBookDownload={transfer}
+                handleBookUpload={transfer}
+                handleBookDelete={transfer}
+                handleSetSelectMode={noop}
+                handleShowDetailsBook={noop}
+                handleLibraryNavigation={noop}
+                handleUpdateReadingStatus={noop}
+                showTimeRemaining={false}
+              />
+            )}
+          />
+        </div>,
+      );
+      await waitFor(() => {
+        const row = container.querySelector('.book-item')!.getBoundingClientRect();
+        const shelf = container
+          .querySelector('[data-shelf-layout="list"]')!
+          .getBoundingClientRect();
+        const inset = width < 640 ? 16 : 24;
+        expect(row.left - shelf.left).toBeCloseTo(inset, 1);
+        expect(shelf.right - row.right).toBeCloseTo(inset, 1);
+      });
+    });
   }
   it('keeps virtual row measurements correct while scrolling a scaled preview', async () => {
     const { container } = render(
