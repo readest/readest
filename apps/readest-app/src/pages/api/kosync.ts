@@ -32,22 +32,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Invalid endpoint' });
   }
 
+  let baseUrl: URL;
   try {
-    const parsed = new URL(serverUrl);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    baseUrl = new URL(serverUrl);
+    if (baseUrl.protocol !== 'http:' && baseUrl.protocol !== 'https:') {
       return res.status(400).json({ error: 'Only http and https URLs are allowed' });
+    }
+    if (
+      baseUrl.username ||
+      baseUrl.password ||
+      baseUrl.search ||
+      baseUrl.hash ||
+      baseUrl.pathname !== '/'
+    ) {
+      return res.status(400).json({ error: 'Invalid serverUrl' });
     }
   } catch {
     return res.status(400).json({ error: 'Invalid serverUrl' });
   }
 
-  if (isLanAddress(serverUrl)) {
+  let targetUrl = new URL(endpoint, baseUrl.origin).href;
+  if (isLanAddress(targetUrl)) {
     return res
       .status(400)
       .json({ error: 'Requests to private/internal addresses are not allowed' });
   }
-
-  let targetUrl = `${serverUrl.replace(/\/$/, '')}${endpoint}`;
 
   try {
     let requestMethod = method;
