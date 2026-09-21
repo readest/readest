@@ -482,6 +482,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             currentDurationMs = 0L
             val service = instance ?: return
             Handler(Looper.getMainLooper()).post {
+                // Explicit WebView playback takes ownership even if Pause
+                // canceled the pending automatic book-selection handoff.
+                service.clearColdTtsPlayback()
                 service.resetArtworkForBook(bookHash)
             }
         }

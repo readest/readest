@@ -126,6 +126,17 @@ describe('Android Auto declarations (#3919)', () => {
     expect(mediaPlaybackService).toContain('isCurrentColdUtterance(utteranceId) && !coldTtsPaused');
   });
 
+  it('releases cold playback on explicit WebView activation even after pause canceled autoplay', () => {
+    const activation = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('fun requestActivation(sessionId: String?, bookHash: String?)'),
+      mediaPlaybackService.lastIndexOf('fun requestDeactivation(sessionId:'),
+    );
+    // Pause can empty pendingBookHash. Explicit activation must release the
+    // native owner independently of setPluginEventTrigger draining that queue.
+    expect(activation).toContain('service.clearColdTtsPlayback()');
+    expect(activation).not.toContain('pendingBookHash');
+  });
+
   it('keeps book switches from accepting stale playback or artwork updates', () => {
     expect(nativeTTSPlugin).toContain(
       'MediaPlaybackService.requestActivation(args.sessionId, args.bookHash)',
