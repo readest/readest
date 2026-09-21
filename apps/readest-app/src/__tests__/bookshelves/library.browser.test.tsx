@@ -185,16 +185,15 @@ describe('library scrollbar integration in Chromium', () => {
         await waitFor(() => {
           const button = getByRole('button', { name: 'Import Books' });
           const row = button.closest('[data-shelf-layout]');
-          if (layout === 'carousel') {
+          if (layout === 'grid') {
+            expect(row?.getAttribute('data-shelf-layout')).toBe('grid');
+            expect(row?.contains(getByRole('button', { name: 'Book 1' }))).toBe(true);
+            expect(button.getBoundingClientRect().width).toBeLessThan(width / 2);
+          } else {
+            // List and carousel shelves share the standalone Import Books button.
             expect(row).toBeNull();
             expect(button.getBoundingClientRect().width).toBeLessThanOrEqual(320);
             expect(button.getBoundingClientRect().height).toBe(48);
-          } else {
-            expect(row?.getAttribute('data-shelf-layout')).toBe(layout);
-            if (layout === 'grid') {
-              expect(row?.contains(getByRole('button', { name: 'Book 1' }))).toBe(true);
-              expect(button.getBoundingClientRect().width).toBeLessThan(width / 2);
-            }
           }
           expect(container.querySelectorAll('[aria-label="Import Books"]')).toHaveLength(1);
         });
