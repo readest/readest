@@ -14,6 +14,7 @@ import {
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
 import { openExternalUrl } from '@/utils/open';
+import { sanitizeHtml } from '@/utils/sanitize';
 import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -472,7 +473,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               <p
                 className='text-neutral-content prose prose-sm max-w-full whitespace-pre-line text-sm'
                 dangerouslySetInnerHTML={{
-                  __html: metadata?.description || _('No description available'),
+                  __html: sanitizeHtml(metadata?.description || _('No description available')),
                 }}
               ></p>
             </div>
