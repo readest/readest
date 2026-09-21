@@ -1602,9 +1602,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteEditorTarget]);
 
-  const handleSaveNote = (note: string) => {
+  const handleSaveNote = async (note: string) => {
     if (!noteEditorTarget) return;
-    saveBooknoteNoteText(noteEditorTarget.annotationId, note);
+    if (!(await saveBooknoteNoteText(noteEditorTarget.annotationId, note))) return;
     // The placeholder carries a note now — a real annotation, not a leftover.
     pendingNotePlaceholdersRef.current = [];
     setNoteEditorTarget(null);

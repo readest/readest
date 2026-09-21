@@ -1,4 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -7,48 +9,57 @@ import { updateBooknoteNoteText } from '@/utils/updateBooknoteNoteText';
 import { applyNoteBubbleTransition, decideNoteBubbleTransition } from '../utils/annotatorUtil';
 
 /**
- * Persists an inline edit to a booknote's `note` text. Writes the updated
- * booknotes to the store first; only once that write succeeds does it
- * redraw the note-bubble overlay on every rendered view and save the config
- * to disk/cloud, so a failed store update never leaves a stale bubble on
- * screen or persists a config the store itself rejected.
- *
- * Shared by every inline note editor (`BooknoteItem`, and later
- * `AnnotationNotes`) so this persistence/view-update wiring lives in one place.
+ * Updates the store and note bubbles, then confirms persistence before the
+ * editor can close. Failed saves leave the draft available for retry.
  */
 export function useSaveBooknoteNoteText(bookKey: string) {
+  const _ = useTranslation();
+  const savingRef = useRef(false);
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getViewsById } = useReaderStore();
 
   return useCallback(
-    (booknoteId: string, noteText: string) => {
-      const config = getConfig(bookKey);
-      if (!config) return;
+    async (booknoteId: string, noteText: string): Promise<boolean> => {
+      if (savingRef.current) return false;
+      savingRef.current = true;
+      try {
+        const config = getConfig(bookKey);
+        if (!config) throw new Error('Book config unavailable');
 
-      const result = updateBooknoteNoteText(
-        config.booknotes ?? [],
-        booknoteId,
-        noteText,
-        Date.now(),
-      );
-      if (!result) return;
+        const result = updateBooknoteNoteText(
+          config.booknotes ?? [],
+          booknoteId,
+          noteText,
+          Date.now(),
+        );
+        if (!result) throw new Error('Booknote unavailable');
 
-      const updatedConfig = updateBooknotes(bookKey, result.booknotes);
-      if (!updatedConfig) return;
+        const updatedConfig = updateBooknotes(bookKey, result.booknotes);
+        if (!updatedConfig) throw new Error('Booknote update failed');
 
-      const transition = decideNoteBubbleTransition(
-        result.previousNoteText,
-        result.updatedBooknote.note,
-      );
-      applyNoteBubbleTransition(
-        getViewsById(bookKey.split('-')[0]!),
-        result.updatedBooknote,
-        transition,
-      );
-      saveConfig(envConfig, bookKey, updatedConfig, settings);
+        const transition = decideNoteBubbleTransition(
+          result.previousNoteText,
+          result.updatedBooknote.note,
+        );
+        applyNoteBubbleTransition(
+          getViewsById(bookKey.split('-')[0]!),
+          result.updatedBooknote,
+          transition,
+        );
+        await saveConfig(envConfig, bookKey, updatedConfig, settings);
+        return true;
+      } catch {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to save note. Please try again.'),
+        });
+        return false;
+      } finally {
+        savingRef.current = false;
+      }
     },
-    [bookKey, envConfig, settings, getConfig, saveConfig, updateBooknotes, getViewsById],
+    [bookKey, envConfig, settings, getConfig, saveConfig, updateBooknotes, getViewsById, _],
   );
 }
