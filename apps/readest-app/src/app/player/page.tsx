@@ -3,7 +3,6 @@
 import clsx from 'clsx';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { IoArrowBack } from 'react-icons/io5';
 
 import type { Book } from '@/types/book';
 import type { AudiobookController } from '@/services/audiobook/AudiobookController';
@@ -21,7 +20,6 @@ import { useAppRouter } from '@/hooks/useAppRouter';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useOpenBookLink } from '@/hooks/useOpenBookLink';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
@@ -32,6 +30,7 @@ import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import PlayerView from './components/PlayerView';
+import PlayerHeader from './components/PlayerHeader';
 import EpisodesView from './components/EpisodesView';
 
 type AudiobookSession = { bookKey: string; controller: AudiobookController };
@@ -50,7 +49,6 @@ const PlayerRoute = () => {
   useOpenBookLink();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const _ = useTranslation();
-  const iconSize24 = useResponsiveSize(24);
   useTheme({ systemUIVisible: false });
 
   const id = searchParams?.get('id') ?? '';
@@ -397,20 +395,7 @@ const PlayerRoute = () => {
         />
       ) : libraryLoaded && book && isAudiobook(book) && !session && episodes ? (
         <div className='bg-base-100 flex h-full w-full flex-col overflow-hidden'>
-          <div className='relative flex h-12 w-full items-center px-2'>
-            <button
-              type='button'
-              aria-label={_('Go Back')}
-              onClick={handleGoBack}
-              className='btn btn-ghost btn-circle z-10 flex h-9 min-h-9 w-9'
-            >
-              <IoArrowBack size={iconSize24 * 0.85} className='rtl:rotate-180' />
-            </button>
-            <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-16 text-center'>
-              <span className='line-clamp-1 text-sm font-semibold'>{book.title}</span>
-              <span className='text-base-content/70 line-clamp-1 text-xs'>{_('Episodes')}</span>
-            </div>
-          </div>
+          <PlayerHeader title={book.title} subtitle={_('Episodes')} onGoBack={handleGoBack} />
           <div className='flex w-full flex-1 flex-col items-center gap-4 overflow-y-auto px-4 pb-6 pt-2'>
             <EpisodesView
               episodes={episodes.episodes}
