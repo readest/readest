@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { MAX_CHAPTERS, readMp4Chapters } from '@/services/audiobook/mp4Chapters';
 
@@ -270,6 +270,95 @@ describe('readMp4Chapters', () => {
       { title: 'Opening Credits', start: 0, timeScale: 1_000 },
       { title: '', start: 5_000, timeScale: 1_000 },
     ]);
+  });
+
+  it.each<{ name: string; runs: [number, number][] }>([
+    {
+      name: 'zero samples per chunk',
+      runs: [
+        [1, 0],
+        [2, 3],
+      ],
+    },
+    {
+      name: 'zero first chunk',
+      runs: [
+        [0, 1],
+        [1, 3],
+      ],
+    },
+    {
+      name: 'duplicate first chunks',
+      runs: [
+        [1, 1],
+        [1, 2],
+      ],
+    },
+    {
+      name: 'descending first chunks',
+      runs: [
+        [2, 1],
+        [1, 2],
+      ],
+    },
+    {
+      name: 'first chunk beyond the chunk table',
+      runs: [
+        [1, 1],
+        [0xffffffff, 1],
+      ],
+    },
+  ])('falls back to Nero chapters for $name', async ({ runs }) => {
+    const file = buildFile((offsets) =>
+      box(
+        'moov',
+        audioTrak(),
+        textTrak([
+          stts([[3, 5_000]]),
+          stsz(samples.map((sample) => sample.length)),
+          stsc(runs),
+          stco(offsets),
+        ]),
+        box('udta', neroChpl([[0, 'Prelude']])),
+      ),
+    );
+
+    await expect(readMp4Chapters(file)).resolves.toEqual([
+      { title: 'Prelude', start: 0, timeScale: 10_000_000 },
+    ]);
+  });
+
+  it('stops inspecting chunk runs once all declared samples have offsets', async () => {
+    const runs: [number, number][] = Array.from({ length: 100 }, (_, i) => [i + 1, 1]);
+    const table = stsc(runs);
+    const file = buildFile((offsets) =>
+      box(
+        'moov',
+        audioTrak(),
+        textTrak([
+          stts([[1, 5_000]]),
+          stsz([samples[0]!.length]),
+          table,
+          stco(Array.from({ length: runs.length }, () => offsets[0]!)),
+        ]),
+      ),
+    );
+    let tableReads = 0;
+    const getUint32 = DataView.prototype.getUint32;
+    const spy = vi.spyOn(DataView.prototype, 'getUint32').mockImplementation(function (
+      this: DataView,
+      offset: number,
+      littleEndian?: boolean,
+    ) {
+      if (this.byteLength === table.length - 8) tableReads++;
+      return getUint32.call(this, offset, littleEndian);
+    });
+    try {
+      await expect(readMp4Chapters(file)).resolves.toEqual([expectedTrackChapters[0]]);
+      expect(tableReads).toBeLessThan(10);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('caps a runaway chapter count', async () => {

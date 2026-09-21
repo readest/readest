@@ -206,11 +206,20 @@ const readChapterTrack = async (file: Blob, trak: Box): Promise<Mp4Chapter[]> =>
   // Expand the sample-to-chunk runs into a file offset per sample.
   const offsets: number[] = [];
   const chunkRuns = Math.min(stscView.getUint32(4), tableCapacity(stscView, 8, 12));
-  for (let run = 0; run < chunkRuns; run++) {
+  for (let run = 0; run < chunkRuns && offsets.length < sampleCount; run++) {
     const at = 8 + run * 12;
+    const firstChunk = stscView.getUint32(at);
     const samplesPerChunk = stscView.getUint32(at + 4);
     const nextFirstChunk = run + 1 < chunkRuns ? stscView.getUint32(at + 12) : chunkCount + 1;
-    for (let chunk = stscView.getUint32(at); chunk < nextFirstChunk; chunk++) {
+    if (
+      samplesPerChunk === 0 ||
+      firstChunk < 1 ||
+      nextFirstChunk <= firstChunk ||
+      nextFirstChunk > chunkCount + 1
+    ) {
+      return [];
+    }
+    for (let chunk = firstChunk; chunk < nextFirstChunk && offsets.length < sampleCount; chunk++) {
       let offset = chunkOffsets[chunk - 1];
       if (offset === undefined) break;
       for (let i = 0; i < samplesPerChunk && offsets.length < sampleCount; i++) {
