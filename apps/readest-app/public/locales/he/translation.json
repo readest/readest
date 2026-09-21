@@ -2508,5 +2508,13 @@
   "Built-in bookshelves cannot be deleted.": "לא ניתן למחוק מדפי ספרים מובנים.",
   "{{name}} · Drag to reorder": "{{name}} · גררו כדי לסדר מחדש",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (מושבת) · גררו כדי לסדר מחדש",
-  "This bookshelf has too many or too long filter conditions.": "למדף הספרים הזה יש יותר מדי תנאי סינון או תנאים ארוכים מדי."
+  "This bookshelf has too many or too long filter conditions.": "למדף הספרים הזה יש יותר מדי תנאי סינון או תנאים ארוכים מדי.",
+  "Previous page": "העמוד הקודם",
+  "Next page": "העמוד הבא",
+  "Tag Books": "תייג ספרים",
+  "Remove All Tags": "הסר את כל התגיות",
+  "Create New Tag": "צור תגית חדשה",
+  "Tag name": "שם התגית",
+  "No tags yet": "אין תגיות עדיין",
+  "Failed to save note. Please try again.": "שמירת ההערה נכשלה. נסה שוב."
 }

@@ -39,6 +39,7 @@ const baseProps = {
   safeAreaBottom: 24,
   onOpen: noop,
   onGroup: noop,
+  onTag: noop,
   onDetails: noop,
   onStatus: noop,
   onDownload: noop,
@@ -98,6 +99,25 @@ describe('SelectModeActions height reporting', () => {
 
 // Bulk download (#5244): selecting a group is the only practical way to pull a
 // few hundred books onto a new device.
+describe('SelectModeActions tag', () => {
+  it('opens tagging when the tag action is tapped', () => {
+    const onTag = vi.fn();
+    render(<SelectModeActions {...baseProps} onTag={onTag} />);
+
+    fireEvent.click(getAction('Tag'));
+
+    expect(onTag).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the tag action without a selection', () => {
+    render(<SelectModeActions {...baseProps} selectedBooks={[]} />);
+
+    expect(getAction('Tag').className).toContain('btn-disabled');
+    // Natively disabled too, so keyboard activation cannot open it.
+    expect(getAction('Tag').disabled).toBe(true);
+  });
+});
+
 describe('SelectModeActions download', () => {
   it('queues the selection when the download action is tapped', () => {
     const onDownload = vi.fn();
@@ -114,7 +134,7 @@ describe('SelectModeActions download', () => {
     expect(getAction('Download').className).toContain('btn-disabled');
   });
 
-  it('places download right after details so it heads the wrapped row', () => {
+  it('places tag right after group and download right after details', () => {
     render(<SelectModeActions {...baseProps} canDownload />);
 
     const labels = Array.from(document.querySelectorAll('button')).map((button) =>
@@ -123,6 +143,7 @@ describe('SelectModeActions download', () => {
     expect(labels).toEqual([
       'Open',
       'Group',
+      'Tag',
       'Status',
       'Details',
       'Download',
@@ -130,6 +151,5 @@ describe('SelectModeActions download', () => {
       'Delete',
       'Cancel',
     ]);
-    expect(getAction('Download').className).toContain('max-[500px]:col-start-1');
   });
 });

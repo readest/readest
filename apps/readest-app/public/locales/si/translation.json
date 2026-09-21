@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "ගොඩනැගූ පොත් රාක්ක මැකිය නොහැක.",
   "{{name}} · Drag to reorder": "{{name}} · නැවත සකස් කිරීමට අදින්න",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (අබල කර ඇත) · නැවත සකස් කිරීමට අදින්න",
-  "This bookshelf has too many or too long filter conditions.": "මෙම පොත් රාක්කයට ඉතා වැඩි හෝ ඉතා දිගු පෙරහන් කොන්දේසි ඇත."
+  "This bookshelf has too many or too long filter conditions.": "මෙම පොත් රාක්කයට ඉතා වැඩි හෝ ඉතා දිගු පෙරහන් කොන්දේසි ඇත.",
+  "Previous page": "පෙර පිටුව",
+  "Next page": "ඊළඟ පිටුව",
+  "Tag Books": "පොත් ටැග් කරන්න",
+  "Remove All Tags": "සියලු ටැග් ඉවත් කරන්න",
+  "Create New Tag": "නව ටැගයක් සාදන්න",
+  "Tag name": "ටැගයේ නම",
+  "No tags yet": "තවම ටැග් නැත",
+  "Failed to save note. Please try again.": "සටහන සුරැකීමට නොහැකි විය. නැවත උත්සාහ කරන්න."
 }

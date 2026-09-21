@@ -2568,5 +2568,13 @@
   "Built-in bookshelves cannot be deleted.": "Vgrajenih knjižnih polic ni mogoče izbrisati.",
   "{{name}} · Drag to reorder": "{{name}} · Povleci za prerazporeditev",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (onemogočena) · Povleci za prerazporeditev",
-  "This bookshelf has too many or too long filter conditions.": "Ta knjižna polica ima preveč ali predolge pogoje filtra."
+  "This bookshelf has too many or too long filter conditions.": "Ta knjižna polica ima preveč ali predolge pogoje filtra.",
+  "Previous page": "Prejšnja stran",
+  "Next page": "Naslednja stran",
+  "Tag Books": "Označi knjige",
+  "Remove All Tags": "Odstrani vse oznake",
+  "Create New Tag": "Ustvari novo oznako",
+  "Tag name": "Ime oznake",
+  "No tags yet": "Še ni oznak",
+  "Failed to save note. Please try again.": "Zapiska ni bilo mogoče shraniti. Poskusite znova."
 }

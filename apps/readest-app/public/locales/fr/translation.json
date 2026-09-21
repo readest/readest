@@ -2508,5 +2508,13 @@
   "Built-in bookshelves cannot be deleted.": "Les étagères intégrées ne peuvent pas être supprimées.",
   "{{name}} · Drag to reorder": "{{name}} · Glisser pour réorganiser",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (désactivée) · Glisser pour réorganiser",
-  "This bookshelf has too many or too long filter conditions.": "Cette étagère comporte trop de conditions de filtre, ou des conditions trop longues."
+  "This bookshelf has too many or too long filter conditions.": "Cette étagère comporte trop de conditions de filtre, ou des conditions trop longues.",
+  "Previous page": "Page précédente",
+  "Next page": "Page suivante",
+  "Tag Books": "Taguer les livres",
+  "Remove All Tags": "Retirer tous les tags",
+  "Create New Tag": "Créer un nouveau tag",
+  "Tag name": "Nom du tag",
+  "No tags yet": "Aucun tag pour le moment",
+  "Failed to save note. Please try again.": "Impossible d'enregistrer la note. Veuillez réessayer."
 }

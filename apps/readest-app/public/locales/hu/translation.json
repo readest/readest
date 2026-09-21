@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "A beépített könyvespolcok nem törölhetők.",
   "{{name}} · Drag to reorder": "{{name}} · Húzd az átrendezéshez",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (letiltva) · Húzd az átrendezéshez",
-  "This bookshelf has too many or too long filter conditions.": "Ennek a könyvespolcnak túl sok vagy túl hosszú szűrési feltétele van."
+  "This bookshelf has too many or too long filter conditions.": "Ennek a könyvespolcnak túl sok vagy túl hosszú szűrési feltétele van.",
+  "Previous page": "Előző oldal",
+  "Next page": "Következő oldal",
+  "Tag Books": "Könyvek címkézése",
+  "Remove All Tags": "Összes címke eltávolítása",
+  "Create New Tag": "Új címke létrehozása",
+  "Tag name": "Címke neve",
+  "No tags yet": "Még nincsenek címkék",
+  "Failed to save note. Please try again.": "A jegyzet mentése sikertelen. Kérjük, próbáld újra."
 }

@@ -58,6 +58,7 @@ import SelectModeActions from './SelectModeActions';
 import ShareBookDialog from './ShareBookDialog';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
+import TaggingModal from './TaggingModal';
 import SetStatusAlert from './SetStatusAlert';
 import { useOpenBook } from '../hooks/useOpenBook';
 import LibrarySearchResults from './LibrarySearchResults';
@@ -188,6 +189,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showStatusAlert, setShowStatusAlert] = useState(false);
   const [showGroupingModal, setShowGroupingModal] = useState(false);
+  const [tagBookHashes, setTagBookHashes] = useState<string[] | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
   const abortDeletionRef = useRef(false);
@@ -508,6 +510,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const groupSelectedBooks = () => {
     setShowSelectModeActions(false);
     setShowGroupingModal(true);
+  };
+
+  const tagSelectedBooks = () => {
+    setTagBookHashes(expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems));
+    setShowSelectModeActions(false);
   };
 
   const showStatusSelection = () => {
@@ -877,11 +884,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   );
   const lastShelf = sections.at(-1)?.definition;
   const importTile =
-    visibleBooks.length > 0 && lastShelf && lastShelf.layout !== 'carousel' ? (
+    visibleBooks.length > 0 && lastShelf?.layout === 'grid' ? (
       <div
         className='bookshelf-import-item mx-0 my-2 sm:mx-4 sm:my-4'
         style={
-          lastShelf.layout === 'grid' && lastShelf.coverFit === 'fit'
+          lastShelf.coverFit === 'fit'
             ? { display: 'flex', paddingBottom: `${iconSize15 + 24}px` }
             : undefined
         }
@@ -891,14 +898,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           aria-label={_('Import Books')}
           aria-haspopup='menu'
           className={clsx(
-            'bookitem-main eink-bordered bg-base-100/50 hover:bg-base-300/50 flex w-full items-center justify-center gap-2 rounded-sm',
+            'bookitem-main eink-bordered bg-base-100/50 hover:bg-base-300/50 flex aspect-28/41 w-full items-center justify-center rounded-sm',
             'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
-            lastShelf.layout === 'grid' ? 'aspect-28/41' : 'min-h-28',
           )}
           onClick={(event) => handleImportBooks(event.currentTarget)}
         >
           <PiPlus aria-hidden className='text-base-content/60 size-10' />
-          {lastShelf.layout === 'list' && _('Import Books')}
         </button>
       </div>
     ) : undefined;
@@ -906,7 +911,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     <div className='flex justify-center p-6'>
       <LibraryEmptyState onImport={handleImportBooks} />
     </div>
-  ) : !lastShelf || lastShelf.layout === 'carousel' ? (
+  ) : !importTile ? (
     <div className='flex justify-center px-4 py-4'>
       <LibraryImportButton onImport={handleImportBooks} />
     </div>
@@ -975,7 +980,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Spinner loading />
         </div>
       )}
-      {!showGroupingModal && isSelectMode && showSelectModeActions && (
+      {!showGroupingModal && !tagBookHashes && isSelectMode && showSelectModeActions && (
         <SelectModeActions
           selectedBooks={selectedBooks}
           safeAreaBottom={safeAreaInsets?.bottom || 0}
@@ -996,6 +1001,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           canDownload={downloadableBooks.length > 0}
           onOpen={openSelectedBooks}
           onGroup={groupSelectedBooks}
+          onTag={tagSelectedBooks}
           onDetails={openBookDetails}
           onStatus={showStatusSelection}
           onDownload={downloadSelectedBooks}
@@ -1016,6 +1022,22 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             }}
             onConfirm={() => {
               setShowGroupingModal(false);
+              handleSetSelectMode(false);
+            }}
+          />
+        </ModalPortal>
+      )}
+      {tagBookHashes && (
+        <ModalPortal>
+          <TaggingModal
+            libraryBooks={libraryBooks}
+            bookHashes={tagBookHashes}
+            onCancel={() => {
+              setTagBookHashes(null);
+              setShowSelectModeActions(true);
+            }}
+            onConfirm={() => {
+              setTagBookHashes(null);
               handleSetSelectMode(false);
             }}
           />

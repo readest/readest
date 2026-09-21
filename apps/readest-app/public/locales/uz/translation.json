@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "Oʻrnatilgan javonlarni oʻchirib boʻlmaydi.",
   "{{name}} · Drag to reorder": "{{name}} · Tartibni oʻzgartirish uchun torting",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (oʻchirilgan) · Tartibni oʻzgartirish uchun torting",
-  "This bookshelf has too many or too long filter conditions.": "Bu kitob javonida filtr shartlari juda koʻp yoki juda uzun."
+  "This bookshelf has too many or too long filter conditions.": "Bu kitob javonida filtr shartlari juda koʻp yoki juda uzun.",
+  "Previous page": "Oldingi sahifa",
+  "Next page": "Keyingi sahifa",
+  "Tag Books": "Kitoblarga teg qoʻyish",
+  "Remove All Tags": "Barcha teglarni olib tashlash",
+  "Create New Tag": "Yangi teg yaratish",
+  "Tag name": "Teg nomi",
+  "No tags yet": "Hali teglar yoʻq",
+  "Failed to save note. Please try again.": "Eslatmani saqlab boʻlmadi. Qaytadan urinib koʻring."
 }
