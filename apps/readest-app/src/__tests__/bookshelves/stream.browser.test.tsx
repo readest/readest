@@ -248,6 +248,52 @@ describe('mixed bookshelf stream in Chromium', () => {
       });
     }
   }
+  for (const width of [375, 900]) {
+    it(`insets list rows by the row's own responsive padding only at ${width}px`, async () => {
+      await page.viewport(width, 900);
+      const noop = () => {};
+      const transfer = async () => true;
+      const { container } = render(
+        <div style={{ width, height: 900 }}>
+          <BookshelfStream
+            sections={[section('List', 'list', 2)]}
+            autoColumns={false}
+            fixedColumns={3}
+            renderItem={(item, mode) => (
+              <BookshelfItem
+                item={item}
+                mode={mode}
+                coverFit='crop'
+                isSelectMode={false}
+                itemSelected={false}
+                transferProgress={null}
+                setLoading={noop}
+                toggleSelection={noop}
+                handleGroupBooks={noop}
+                handleBookDownload={transfer}
+                handleBookUpload={transfer}
+                handleBookDelete={transfer}
+                handleSetSelectMode={noop}
+                handleShowDetailsBook={noop}
+                handleLibraryNavigation={noop}
+                handleUpdateReadingStatus={noop}
+                showTimeRemaining={false}
+              />
+            )}
+          />
+        </div>,
+      );
+      await waitFor(() => {
+        const row = container.querySelector('.book-item')!.getBoundingClientRect();
+        const shelf = container
+          .querySelector('[data-shelf-layout="list"]')!
+          .getBoundingClientRect();
+        const inset = width < 640 ? 16 : 24;
+        expect(row.left - shelf.left).toBeCloseTo(inset, 1);
+        expect(shelf.right - row.right).toBeCloseTo(inset, 1);
+      });
+    });
+  }
   it('keeps virtual row measurements correct while scrolling a scaled preview', async () => {
     const { container } = render(
       <div style={{ width: 900, height: 600 }}>

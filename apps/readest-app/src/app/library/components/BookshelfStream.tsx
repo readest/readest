@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { LibraryPageDurationsContext } from '@/hooks/useMedianPageDurationSecs';
 import { HideBookCoversContext } from '@/components/BookCover';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -359,7 +360,11 @@ export default function BookshelfStream({
                 <HideBookCoversContext.Provider value={definition.hideCovers}>
                   <div
                     data-shelf-layout={definition.layout}
-                    className='bookshelf-items transform-wrapper grid gap-x-4 px-4 sm:gap-x-0 sm:px-2'
+                    className={clsx(
+                      'bookshelf-items transform-wrapper grid',
+                      // List rows carry their own responsive side padding.
+                      definition.layout === 'grid' && 'gap-x-4 px-4 sm:gap-x-0 sm:px-2',
+                    )}
                     style={{
                       gridTemplateColumns: `repeat(${definition.layout === 'grid' ? columns : 1}, minmax(0, 1fr))`,
                     }}
