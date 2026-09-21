@@ -119,6 +119,10 @@ Every new UI widget must look right under `[data-eink='true']`. E-ink screens ha
 
 When in doubt, toggle E-ink in Settings → Misc and check. The rules in `globals.css` cover most cases automatically, but composite components (custom buttons, layered cards) often need `eink-bordered` on the right element to stay legible.
 
+### No internal data in public text
+
+Commits, PR titles and descriptions, issues, and review replies are public. Never include user counts, payment or subscription data (buyer numbers, revenue, audit results from production queries), or any user identifiers such as user ids, emails, or payment/session ids. Describe the mechanism, not the numbers behind it.
+
 ### PR review workflow
 
 While a PR you opened is under review, keep a persistent watch on its reviews and comments for the whole session and act on them without being asked.
