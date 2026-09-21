@@ -32,9 +32,10 @@ Rename a shelf directly in its tab using the pencil button, a double click, or F
 clicking outside accepts the name; Escape cancels the rename. **+ Add** inserts a shelf
 immediately after Recently read, named New bookshelf 1, New bookshelf 2, and so on, avoiding names
 already in use. The red **Delete** action at the bottom right of the settings pane asks
-for confirmation. Confirmed deletion is saved automatically; books remain in the library. **Reset** restores the
-selected shelf’s default settings after confirmation, keeping its name and position. It keeps the
-last enabled shelf enabled.
+for confirmation. Confirmed deletion is saved automatically; books remain in the library. **Reset**
+asks for confirmation, then keeps the shelf's name and position. For a custom shelf it keeps the
+filters and the Exclusive / Include options and resets layout, covers, grouping and sorting; a
+predefined shelf is restored to its built-in definition. It keeps the last enabled shelf enabled.
 Use each shelf's **Enabled** and **Hide covers** switches to control its visibility and cover
 art. **Book covers**, below Hide covers, chooses Crop or Fit independently for each shelf and its
 preview, including grouped covers. On upgrade, a one-time migration saves the old Recently read
@@ -43,6 +44,8 @@ shelves. It preserves existing shelf definitions and order. Later changes to the
 do not reset migrated shelves; new custom shelves start with visible covers and Crop.
 **Skeuomorphic covers**, below Book covers, adds a spine effect independently for each shelf and
 its preview. Existing shelves retain the previous Theme setting; new shelves start with it off.
+Covers outside any shelf (book details, the full-screen cover viewer, the reader sidebar) follow the
+Default shelf's Hide covers and Skeuomorphic covers, which Manage Bookshelves can still change.
 View-menu Grid/List changes every non-carousel shelf without changing shelf definitions. Carousel
 shelves keep their layout. Search always uses the chosen Grid/List mode.
 
@@ -50,7 +53,9 @@ The **Grouping** box above Sorting starts with **Use global grouping**, enabled 
 Its disabled **Group by** selector shows the View menu’s choice. Turn off the switch to choose
 Authors, Books, Groups, Series, Tags, Subjects or Status for this shelf. Switching inheritance
 back on retains that individual choice. Preview and library share the same grouping, including
-carousels. Opening a group retains the originating shelf’s filters and exclusions.
+carousels. Opening a group from a shelf retains that shelf’s filters and exclusions. A group opened
+without a shelf, from a tag or subject in book details or from an older link, shows every library
+book in that group.
 
 The **Sorting** box starts with **Use global sorting**, enabled by default for every shelf,
 including older saved definitions. These shelves follow the View menu’s primary and secondary
@@ -63,7 +68,9 @@ New shelves and Reset use Date Read descending, no secondary sort, and secondary
 enabled as their individual sorting defaults.
 
 Filters use nested All (AND) and Any (OR) groups. An empty root matches all books. Incomplete
-conditions and empty nested groups cannot be saved. The field registry in
+conditions and empty nested groups cannot be saved. A shelf definition is limited to 60,000 bytes
+serialized; a larger one fails validation in the editor. **Is not** and **Does not contain** also
+match books that lack the field; every other comparison does not match a missing value. The field registry in
 `src/services/bookshelves/fields.ts` is shared by the editor, validator and evaluator. Calibre
 column rules keep their column label and type even when that column is absent on a device.
 Date Read retains the previous library meaning (`updatedAt`, including metadata/status edits).
@@ -93,9 +100,11 @@ narrow screens keep the preview below the controls. Both panes scroll independen
 tabs stationary. Valid changes save automatically after a short pause, applying only edited
 definitions, deletions and moves to the latest configuration. The header briefly shows Saving…
 and Saved; incomplete inputs show a validation hint and keep the last valid configuration saved.
+Valid shelves keep autosaving while another shelf has an incomplete condition.
 Closing the window finishes pending valid changes. Failed saves offer Retry and keep the window
-open. Tabs stay centered on wider screens and wrap as needed, with status information at the end
-of the last line. The Info button beside Match explains conditions, AND/OR matching and nested
+open. Tabs stay centered on every line as they wrap, with status information on its own line on
+mobile and beside the tabs on wider screens. Reopening Manage Bookshelves selects the last used
+shelf, falling back to the first shelf if it was deleted. The Info button beside Match explains conditions, AND/OR matching and nested
 filter groups. Global search ignores shelf filters and ownership.
 
 The library has one vertical Virtuoso stream. Grid rows use the responsive/fixed column settings;
@@ -106,14 +115,16 @@ carousel or focusing an arrow with the keyboard. Previous/Next page buttons appe
 
 ## Persistence and rollout
 
-Deploy `docker/volumes/db/migrations/023_replica_bookshelf.sql` and the server validator **before
-releasing clients**. The migration expands the database allowlist without changing existing
+Apply `docker/volumes/db/migrations/023_replica_bookshelf.sql` **before deploying the web/API**, and
+deploy both **before releasing clients**. The API allowlist ships with the app, so a client can push
+this kind as soon as the API accepts it: without the migration the insert fails the database CHECK
+and the push returns 500. The migration expands the database allowlist without changing existing
 replicas. Older servers reject this kind with `UNKNOWN_KIND`; the existing sync manager isolates
 that kind so unrelated sync continues. Pending bookshelf operations remain durable for retry.
 
 Each shelf is one metadata-only `bookshelf` replica. Its `definition` is one atomic LWW field;
-`position` is stamped separately. Built-ins use `default` / `recent` / `finished`, custom shelves use UUIDs,
-and position ties resolve by stable ID. Custom deletion is remove-wins and cannot be reversed
+`position` is stamped separately. Built-ins use `recent` / `audiobooks` / `podcasts` / `default` /
+`finished`, custom shelves use UUIDs, and position ties resolve by stable ID. Custom deletion is remove-wins and cannot be reversed
 by a stale editor. If concurrent disables leave no enabled shelf, Default is effectively enabled
 locally without publishing a repair.
 
@@ -125,6 +136,16 @@ account. Reading settings recovers interrupted journal writes, and remote applic
 newer local rows. Migration defaults are saved locally with baseline timestamps, so synced user
 edits take precedence. The completion marker is saved with the config and retained by merges;
 untouched migrated defaults are not queued as user edits.
+The journal keeps each field's original stamp, so last-writer-wins follows edit time. The row-level
+`updated_at_ts`, and a tombstone's `deleted_at_ts`, is restamped when the row is actually pushed:
+the server rejects row stamps more than 60 seconds from its clock, and pull cursors key on that
+stamp. A row the server permanently rejects is isolated so it cannot block other rows or kinds.
+Restoring a backup merges shelf rows by their stamps: it adds shelves missing locally and never
+rolls back newer local shelf edits.
+The wire schemas are strict. A row written by a newer client, with an unknown field or an unknown
+property inside the definition, is dropped whole by older clients, and that shelf falls back to its
+previous or default definition; the full pull at the next app start after upgrading fetches it
+again. Adding a field therefore needs the server validator deployed first.
 Bookshelf replicas follow **App settings** account sync and have no file-provider representation.
 
 ## Verification
