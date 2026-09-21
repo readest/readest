@@ -58,8 +58,8 @@ export const BOOKSHELF_SORT_LABELS: Record<LibrarySortByType, string> = {
   series: _('Series'),
   size: _('Size'),
   format: _('Format'),
-  published: _('Publication date'),
-  progress: _('Reading Progress'),
+  published: _('Date Published'),
+  progress: _('Progress Read'),
   timeRemaining: _('Time Remaining'),
 };
 export const BOOKSHELF_GROUP_LABELS: Record<LibraryGroupByType, string> = {
@@ -170,6 +170,11 @@ export const bookshelfSchema: z.ZodType<BookshelfDefinition> = z
     message: _(
       'Exclusive shelves need a complete filter and cannot include other exclusive shelves.',
     ),
+  })
+  // Stay under the replica row's 64 KiB `fields_jsonb` cap with room for the
+  // position field and envelope stamps, or the server rejects the row forever.
+  .refine((s) => new TextEncoder().encode(JSON.stringify(s)).length <= 60000, {
+    message: _('This bookshelf has too many or too long filter conditions.'),
   });
 export const createBookshelf = (name: string, id = crypto.randomUUID()): BookshelfDefinition => ({
   id,

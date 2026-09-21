@@ -59,6 +59,40 @@ describe('durable bookshelf operations', () => {
     acknowledgeBookshelfOperation(first);
     expect(readPendingBookshelves()).toEqual([deletion]);
   });
+  it('clears a tombstone acknowledged with a fresh push stamp', () => {
+    const first = row();
+    const t = clock.next();
+    const deletion = { ...first, fields_jsonb: {}, deleted_at_ts: t, updated_at_ts: t };
+    journalBookshelfOperation(first);
+    journalBookshelfOperation(deletion);
+    // The manager restamps the row envelope at push time, so the acknowledged
+    // tombstone no longer carries the journaled timestamp.
+    const pushed = clock.next();
+    acknowledgeBookshelfOperation({
+      ...deletion,
+      fields_jsonb: first.fields_jsonb,
+      deleted_at_ts: pushed,
+      updated_at_ts: pushed,
+    });
+    expect(readPendingBookshelves()).toEqual([]);
+  });
+  it('treats a corrupt entry as absent when journaling and acknowledging', () => {
+    const first = row();
+    const key = `readest.bookshelf.pending.v1:account:${first.replica_id}`;
+    localStorage.setItem(key, '{');
+    journalBookshelfOperation(first);
+    expect(readPendingBookshelves()).toEqual([first]);
+    localStorage.setItem(key, '{');
+    acknowledgeBookshelfOperation(first);
+    expect(localStorage.getItem(key)).toBe(null);
+  });
+  it('never merges a schema-invalid entry into a new operation', () => {
+    const first = row();
+    const key = `readest.bookshelf.pending.v1:account:${first.replica_id}`;
+    localStorage.setItem(key, JSON.stringify({ ...first, fields_jsonb: { bogus: 1 } }));
+    journalBookshelfOperation(first);
+    expect(readPendingBookshelves()).toEqual([first]);
+  });
   it('binds anonymous edits once without restamping', () => {
     const first = row('');
     journalBookshelfOperation(first);

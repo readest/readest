@@ -188,6 +188,25 @@ describe('bookshelf validation boundaries', () => {
     for (const limit of [0, -1, 1.5, Infinity])
       expect(bookshelfSchema.safeParse({ ...createBookshelf('Shelf'), limit }).success).toBe(false);
   });
+  it('rejects definitions too large for a synced row before the editor reports success', () => {
+    const definition = createBookshelf('Huge');
+    const condition = {
+      type: 'rule' as const,
+      field: 'title',
+      kind: 'text' as const,
+      operator: 'contains' as const,
+      value: 'x'.repeat(4000),
+    };
+    definition.filters.children = Array.from({ length: 20 }, () => ({ ...condition }));
+    expect(bookshelfSchema.safeParse(definition).success).toBe(false);
+    const row = makeRow();
+    row.replica_id = definition.id;
+    row.fields_jsonb['definition']!.v = definition;
+    expect(validateRow(row).ok).toBe(false);
+    definition.filters.children = [{ ...condition }, { ...condition }];
+    expect(bookshelfSchema.safeParse(definition).success).toBe(true);
+    expect(validateRow(row).ok).toBe(true);
+  });
   it('does not interpret malformed incoming exclusive definitions as unfiltered shelves', () => {
     const row = makeRow();
     row.fields_jsonb['definition']!.v = {

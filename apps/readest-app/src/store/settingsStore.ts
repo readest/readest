@@ -50,12 +50,16 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   requestedSubPage: null,
   setSettings: (settings) =>
     set((state) => ({
-      settings: state.settings.bookshelves
-        ? {
-            ...settings,
-            bookshelves: mergeBookshelfStates(state.settings.bookshelves, settings.bookshelves),
-          }
-        : settings,
+      // An unrelated `{ ...settings, someField }` write carries the very state
+      // already stored, so skip the merge and keep the reference stable — the
+      // library memoizes whole-shelf derivations on it.
+      settings:
+        state.settings.bookshelves && state.settings.bookshelves !== settings.bookshelves
+          ? {
+              ...settings,
+              bookshelves: mergeBookshelfStates(state.settings.bookshelves, settings.bookshelves),
+            }
+          : settings,
     })),
   saveSettings: async (envConfig: EnvConfigType, settings: SystemSettings) => {
     const appService = await envConfig.getAppService();

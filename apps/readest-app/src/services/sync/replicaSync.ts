@@ -72,11 +72,21 @@ export const initReplicaSync = (opts: ReplicaSyncInitOpts): ReplicaSyncContext =
     hlc,
     client,
     cursorStore: opts.cursorStore,
-    canPushRow: async (row) => {
-      if (row.kind !== 'bookshelf') return true;
+    prepareRow: async (row) => {
+      if (row.kind !== 'bookshelf') return row;
       const { getUserID } = await import('@/utils/access');
       const { isSyncCategoryEnabled } = await import('./syncCategories');
-      return isSyncCategoryEnabled('bookshelf') && row.user_id === (await getUserID());
+      if (!isSyncCategoryEnabled('bookshelf') || row.user_id !== (await getUserID())) return null;
+      // The journal keeps the original stamps so LWW still orders by edit time,
+      // but the server rejects a whole batch whose row-level stamp is more than
+      // a minute off its clock — which would wedge every push after an offline
+      // edit. Restamp the row envelope only; the fields keep their own `t`.
+      const updated_at_ts = hlc.next();
+      return {
+        ...row,
+        updated_at_ts,
+        ...(row.deleted_at_ts ? { deleted_at_ts: updated_at_ts } : {}),
+      };
     },
     onAcknowledged: (row) => {
       if (row.kind === 'bookshelf') acknowledgeBookshelfOperation(row);

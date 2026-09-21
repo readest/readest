@@ -205,14 +205,28 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
 }
 
 let settingsWrites: Promise<void> = Promise.resolve();
+/**
+ * The newest queued settings, or null once it is safely on disk. Saves run on
+ * hot paths (every view-setting slider step) and each one reads settings.json
+ * back to merge `bookshelves`, so a burst would otherwise do one read+write per
+ * step. Only the newest object needs writing; the earlier callers still await a
+ * link that resolves after a write carrying their data or newer, and reject with
+ * it when it fails — the stamp is only dropped once the write succeeds, so the
+ * next link retries instead of reporting a silent success.
+ */
+let pendingSettings: SystemSettings | null = null;
 export async function saveSettings(fs: FileSystem, settings: SystemSettings): Promise<void> {
+  pendingSettings = settings;
   const write = async () => {
+    const next = pendingSettings;
+    if (!next) return;
     const disk = await safeLoadJSON<Partial<SystemSettings>>(fs, SETTINGS_FILENAME, 'Settings', {});
     const merged =
-      settings.bookshelves || disk.bookshelves
-        ? { ...settings, bookshelves: mergeBookshelfStates(disk.bookshelves, settings.bookshelves) }
-        : settings;
+      next.bookshelves || disk.bookshelves
+        ? { ...next, bookshelves: mergeBookshelfStates(disk.bookshelves, next.bookshelves) }
+        : next;
     await safeSaveJSON(fs, SETTINGS_FILENAME, 'Settings', merged);
+    if (pendingSettings === next) pendingSettings = null;
   };
   settingsWrites = settingsWrites.catch(() => {}).then(write);
   await settingsWrites;

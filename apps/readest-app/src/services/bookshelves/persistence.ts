@@ -29,8 +29,15 @@ const persistState = (env: EnvConfigType, state: BookshelfState): Promise<void> 
   writes = writes.catch(() => {}).then(save);
   return writes;
 };
-export const replayBookshelfOperations = async (env: EnvConfigType) => {
+const publishPendingBookshelves = (userId: string | null) => {
   const ctx = getReplicaSync();
+  if (!ctx || !userId || !isSyncCategoryEnabled('bookshelf')) return;
+  for (const original of readPendingBookshelves()) {
+    const row = bindBookshelfOperation(original, userId);
+    if (row.user_id === userId) ctx.manager.markDirty(row);
+  }
+};
+export const replayBookshelfOperations = async (env: EnvConfigType) => {
   const userId = await getUserID();
   const pending = readPendingBookshelves();
   // Reapply the journal first: a crash between journaling and saving settings
@@ -42,18 +49,19 @@ export const replayBookshelfOperations = async (env: EnvConfigType) => {
         state = mergeBookshelfStates(state, { rows: { [row.replica_id]: row } });
     await persistState(env, state);
   }
-  if (!ctx || !userId || !isSyncCategoryEnabled('bookshelf')) return;
-  for (const original of pending) {
-    const row = bindBookshelfOperation(original, userId);
-    if (row.user_id === userId) ctx.manager.markDirty(row);
-  }
+  publishPendingBookshelves(userId);
 };
 export const saveBookshelfDraft = async (
   env: EnvConfigType,
   base: BookshelfDefinition[],
   draft: BookshelfDefinition[],
 ) => {
-  const userId = (await getUserID()) || '';
+  // AuthContext persists this identity on every platform. A native getUserID()
+  // may refresh an expired token, so awaiting it would block durable local saves
+  // offline and mistake a failed refresh for an anonymous edit. The sync manager
+  // still checks the authenticated account before publishing any queued row.
+  const user = JSON.parse(localStorage.getItem('user') || '{}') as { id?: string };
+  const userId = user.id || '';
   const { settings } = useSettingsStore.getState();
   const deviceId = settings.replicaDeviceId || 'local';
   const hlcStore = new LocalStorageHlcStore();
@@ -71,8 +79,11 @@ export const saveBookshelfDraft = async (
   if (!operations.length) return;
   hlcStore.save(hlc.serialize());
   for (const row of operations) journalBookshelfOperation(row);
+  // The draft state already carries the journaled rows, so publish without
+  // replaying — a replay would persist the very same state a second time, and
+  // the editor autosaves on every keystroke.
   await persistState(env, state);
-  await replayBookshelfOperations(env);
+  publishPendingBookshelves(userId);
 };
 export const updateBookshelf = async (
   env: EnvConfigType,

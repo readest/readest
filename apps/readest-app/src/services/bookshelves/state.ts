@@ -1,6 +1,6 @@
 import { bookshelfReplicaSchema } from './replica';
 import type { BookshelfDefinition, BookshelfState } from '@/types/bookshelf';
-import type { SystemSettings } from '@/types/settings';
+import type { LibraryCoverFitType, SystemSettings } from '@/types/settings';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import { hlcMax, hlcPack, mergeFields } from '@/libs/crdt';
 import {
@@ -9,6 +9,7 @@ import {
   isBuiltinBookshelf,
   BUILTIN_BOOKSHELF_IDS,
   BUILTIN_BOOKSHELF_POSITIONS,
+  DEFAULT_BOOKSHELF_ID,
   RECENT_BOOKSHELF_ID,
 } from './definitions';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -40,6 +41,14 @@ const positionOf = (state: BookshelfState | undefined, id: string) => {
     ? value
     : (BUILTIN_BOOKSHELF_POSITIONS[id] ?? 1024);
 };
+/**
+ * No position fits between these two: they tie after concurrent insertions, or
+ * repeated moves into one gap have used up every representable midpoint.
+ */
+const crowded = (lo: number, position: number) => {
+  const mid = (lo + position) / 2;
+  return mid === lo || mid === position;
+};
 export const readBookshelves = (settings: Partial<SystemSettings>): BookshelfDefinition[] => {
   const definitions = new Map(defaultBookshelves(settings).map((s) => [s.id, s]));
   for (const [id, row] of Object.entries(settings.bookshelves?.rows || {})) {
@@ -64,6 +73,42 @@ export const readBookshelves = (settings: Partial<SystemSettings>): BookshelfDef
       a.id.localeCompare(b.id)
     );
   });
+};
+
+export interface BookshelfCoverSettings {
+  hideCovers: boolean;
+  coverFit: LibraryCoverFitType;
+  skeuomorphicCovers: boolean;
+}
+let coverCache: { inputs: unknown[]; covers: BookshelfCoverSettings } | null = null;
+/**
+ * Cover appearance for surfaces outside any shelf (book details, the cover
+ * viewer, the reader sidebar): the Default shelf owns it, since the legacy
+ * library preferences no longer have any UI. Parses that one row only and
+ * memoizes on it, because a card renders this once per visible cover.
+ */
+export const readDefaultBookshelfCovers = (
+  settings: Partial<SystemSettings>,
+): BookshelfCoverSettings => {
+  const row = settings.bookshelves?.rows[DEFAULT_BOOKSHELF_ID];
+  const inputs = [
+    row,
+    settings.libraryHideCovers,
+    settings.libraryCoverFit,
+    settings.librarySkeuomorphicCovers,
+  ];
+  if (coverCache && inputs.every((value, index) => value === coverCache!.inputs[index]))
+    return coverCache.covers;
+  const parsed = row && bookshelfReplicaSchema.safeParse(row).success ? row : undefined;
+  const definition = bookshelfSchema.safeParse(parsed?.fields_jsonb['definition']?.v);
+  const shelf = definition.success ? definition.data : undefined;
+  const covers: BookshelfCoverSettings = {
+    hideCovers: shelf?.hideCovers ?? settings.libraryHideCovers ?? false,
+    coverFit: shelf?.coverFit ?? settings.libraryCoverFit ?? 'crop',
+    skeuomorphicCovers: shelf?.skeuomorphicCovers ?? settings.librarySkeuomorphicCovers ?? false,
+  };
+  coverCache = { inputs, covers };
+  return covers;
 };
 
 /** Freeze legacy library preferences once without replacing existing shelf edits. */
@@ -164,11 +209,12 @@ export const applyBookshelfDraft = (
     const following = ordered[previousIndex + 1];
     const lo = previous ? positionOf(next, previous.id) : undefined;
     const hi = following ? positionOf(next, following.id) : undefined;
-    // Concurrent insertions can share a numeric position. Make a gap after
-    // the chosen predecessor without changing the surrounding order.
-    if (lo !== undefined && hi !== undefined && lo === hi) {
-      const tied = ordered.slice(previousIndex + 1).filter((s) => positionOf(next, s.id) === lo);
-      const upper = ordered.slice(previousIndex + 1).find((s) => positionOf(next, s.id) > lo);
+    // Nothing fits after the predecessor. Make a gap there without changing
+    // the surrounding order.
+    if (lo !== undefined && hi !== undefined && crowded(lo, hi)) {
+      const rest = ordered.slice(previousIndex + 1);
+      const tied = rest.filter((s) => crowded(lo, positionOf(next, s.id)));
+      const upper = rest.find((s) => !crowded(lo, positionOf(next, s.id)));
       const step = ((upper ? positionOf(next, upper.id) : lo + 1024) - lo) / (tied.length + 2);
       tied.forEach((s, index) => write(s.id, { position: lo + step * (index + 2) }));
       write(id, { position: lo + step });

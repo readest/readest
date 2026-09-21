@@ -219,6 +219,18 @@ describe('bookshelf evaluation', () => {
       evaluateBookshelves(books, [{ ...finished, enabled: true }])[0]!.books.map((b) => b.hash),
     ).toEqual(['newer', 'older']);
   });
+  it('classifies an ABS podcast known only from its metadata mirror as a podcast', () => {
+    const podcast: Book = {
+      ...book('show'),
+      format: 'ABS',
+      metadata: { title: 'Show', author: 'Host', language: 'en', absMediaType: 'podcast' },
+    };
+    const results = evaluateBookshelves([podcast], defaultBookshelves({}));
+    expect(results.find((s) => s.definition.id === 'podcasts')!.books.map((b) => b.hash)).toEqual([
+      'show',
+    ]);
+    expect(results.find((s) => s.definition.id === 'audiobooks')!.books).toEqual([]);
+  });
   it('uses the moved Default bookshelf position for exclusive ownership', () => {
     const main = {
       ...defaultBookshelves({}).find((s) => s.id === 'default')!,
@@ -392,6 +404,31 @@ describe('field operators', () => {
   ] as const)('%s %s %s %s', (field, kind, operator, value, expected) => {
     expect(
       matchBookshelfFilter(sample, {
+        type: 'group',
+        match: 'all',
+        children: [{ type: 'rule', field, kind, operator, value }],
+      }),
+    ).toBe(expected);
+  });
+  // A book without the field satisfies a negated condition: "Tags does not
+  // contain kids" must keep untagged books rather than hide them.
+  const missing = book('Missing');
+  it.each([
+    ['publisher', 'text', 'notEquals', 'Penguin', true],
+    ['publisher', 'text', 'notContains', 'Penguin', true],
+    ['publisher', 'text', 'equals', 'Penguin', false],
+    ['publisher', 'text', 'contains', 'Penguin', false],
+    ['publisher', 'text', 'startsWith', 'Pen', false],
+    ['series', 'text', 'notEquals', 'Dune', true],
+    ['tags', 'collection', 'notContains', 'kids', true],
+    ['tags', 'collection', 'contains', 'kids', false],
+    ['publisher', 'text', 'set', undefined, false],
+    ['publisher', 'text', 'unset', undefined, true],
+    ['tags', 'collection', 'unset', undefined, true],
+  ] as const)('unset %s %s %s %s', (field, kind, operator, value, expected) => {
+    expect(missing.tags).toEqual([]);
+    expect(
+      matchBookshelfFilter(missing, {
         type: 'group',
         match: 'all',
         children: [{ type: 'rule', field, kind, operator, value }],

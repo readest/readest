@@ -185,6 +185,57 @@ describe('bookshelf draft operations', () => {
       false,
     );
   });
+  // The wire schemas are strict, so a row written by a newer client is dropped
+  // whole rather than partially applied; a full pull refetches it after upgrade.
+  it('drops rows from a newer client and falls back to the built-in definition', () => {
+    const base = defaults();
+    const renamed = () =>
+      save(
+        empty(),
+        base,
+        base.map((s) => (s.id === 'default' ? { ...s, name: 'Main' } : s)),
+      ).state;
+    expect(readBookshelves({ bookshelves: renamed() }).find((s) => s.id === 'default')?.name).toBe(
+      'Main',
+    );
+    const unknownField = renamed();
+    unknownField.rows['default']!.fields_jsonb['color'] = {
+      v: 'red',
+      t: clock.next(),
+      s: 'newer',
+    };
+    const unknownProperty = renamed();
+    (unknownProperty.rows['default']!.fields_jsonb['definition']!.v as Record<string, unknown>)[
+      'color'
+    ] = 'red';
+    const newerSchema = renamed();
+    newerSchema.rows['default']!.schema_version = 2;
+    for (const state of [unknownField, unknownProperty, newerSchema]) {
+      expect(mergeBookshelfStates(state).rows['default']).toBeUndefined();
+      const shelves = readBookshelves({ bookshelves: state });
+      expect(shelves.map((s) => s.id)).toEqual([
+        'recent',
+        'audiobooks',
+        'podcasts',
+        'default',
+        'finished',
+      ]);
+      expect(shelves.find((s) => s.id === 'default')?.name).toBe('');
+    }
+  });
+  it('keeps the saved order once repeated moves exhaust the numeric gap', () => {
+    const a = createBookshelf('A', '00000000-0000-4000-8000-00000000000a');
+    const b = createBookshelf('B', '00000000-0000-4000-8000-00000000000b');
+    const added = [...defaults().slice(0, 2), a, b, ...defaults().slice(2)];
+    let state = save(empty(), defaults(), added).state;
+    let base = readBookshelves({ bookshelves: state });
+    for (let i = 0; i < 60; i++) {
+      const draft = [...base.slice(0, 2), base[3]!, base[2]!, ...base.slice(4)];
+      state = save(state, base, draft).state;
+      base = readBookshelves({ bookshelves: state });
+      expect(base.map((s) => s.id)).toEqual(draft.map((s) => s.id));
+    }
+  });
   it('protects built-ins and the last enabled shelf', () => {
     expect(() => save(empty(), defaults(), defaults().slice(1))).toThrow();
     expect(() =>

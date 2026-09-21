@@ -5,80 +5,124 @@ import { bookshelfSchema, effectiveBookshelves, FINISHED_BOOKSHELF_ID } from './
 import { getBookshelfField } from './fields';
 
 const normalized = (value: unknown) => String(value).normalize('NFKC').toLocaleLowerCase();
-const matchesRule = (book: Book, rule: BookshelfRule, now: number): boolean => {
-  const actual = getBookshelfField(rule.field, rule.kind)?.read(book);
-  const isSet =
-    actual !== undefined && actual !== '' && (!Array.isArray(actual) || actual.length > 0);
-  if (rule.operator === 'set') return isSet;
-  if (rule.operator === 'unset') return !isSet;
-  if (!isSet) return false;
+const isSet = (value: unknown) =>
+  value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0);
+/** Matches one book against a filter node already resolved and normalized. */
+type CompiledMatcher = (book: Book, now: number) => boolean;
+/**
+ * Resolve the field and normalize the rule's constant value once, then return a
+ * matcher that computes only what its operator needs. Filters run once per book
+ * per shelf, so nothing constant per rule may be repeated per book.
+ */
+const compileRule = (rule: BookshelfRule): CompiledMatcher => {
+  const read = getBookshelfField(rule.field, rule.kind)?.read;
   const expected = rule.kind === 'date' ? Date.parse(String(rule.value)) : rule.value;
+  const expectedText = normalized(expected);
   // Date comparisons use whole UTC calendar days, matching date-only editor inputs.
-  const left =
-    rule.kind === 'date' && typeof actual === 'number'
+  const value = (book: Book) => {
+    const actual = read?.(book);
+    return rule.kind === 'date' && typeof actual === 'number'
       ? Math.floor(actual / 86400000) * 86400000
       : actual;
-  if (rule.operator === 'withinLast') {
-    if (
-      rule.kind !== 'date' ||
-      typeof left !== 'number' ||
-      typeof rule.value !== 'number' ||
-      !rule.unit ||
-      !Number.isSafeInteger(rule.value) ||
-      rule.value <= 0
-    )
-      return false;
-    const today = Math.floor(now / 86400000) * 86400000;
-    const start = new Date(today);
-    if (rule.unit === 'days') start.setUTCDate(start.getUTCDate() - rule.value);
-    else {
-      const day = start.getUTCDate();
-      start.setUTCDate(1);
-      start.setUTCMonth(start.getUTCMonth() - rule.value * (rule.unit === 'years' ? 12 : 1));
-      const monthEnd = new Date(start);
-      monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1, 0);
-      start.setUTCDate(Math.min(day, monthEnd.getUTCDate()));
-    }
-    // Intervals beyond JavaScript's date range cover every past date.
-    const lower = Number.isFinite(start.getTime()) ? start.getTime() : -Infinity;
-    return left >= lower && left <= today;
-  }
-  const equal =
-    typeof left === 'string' ? normalized(left) === normalized(expected) : left === expected;
-  const contains = Array.isArray(left)
-    ? left.some((v) => normalized(v) === normalized(expected))
-    : normalized(left).includes(normalized(expected));
+  };
   switch (rule.operator) {
+    case 'set':
+      return (book) => isSet(value(book));
+    case 'unset':
+      return (book) => !isSet(value(book));
+    case 'withinLast': {
+      if (
+        rule.kind !== 'date' ||
+        typeof rule.value !== 'number' ||
+        !rule.unit ||
+        !Number.isSafeInteger(rule.value) ||
+        rule.value <= 0
+      )
+        return () => false;
+      const { unit, value: amount } = rule;
+      return (book, now) => {
+        const left = value(book);
+        if (typeof left !== 'number') return false;
+        const today = Math.floor(now / 86400000) * 86400000;
+        const start = new Date(today);
+        if (unit === 'days') start.setUTCDate(start.getUTCDate() - amount);
+        else {
+          const day = start.getUTCDate();
+          start.setUTCDate(1);
+          start.setUTCMonth(start.getUTCMonth() - amount * (unit === 'years' ? 12 : 1));
+          const monthEnd = new Date(start);
+          monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1, 0);
+          start.setUTCDate(Math.min(day, monthEnd.getUTCDate()));
+        }
+        // Intervals beyond JavaScript's date range cover every past date.
+        const lower = Number.isFinite(start.getTime()) ? start.getTime() : -Infinity;
+        return left >= lower && left <= today;
+      };
+    }
+    // A book that lacks the field satisfies the negated operators: "Tags does
+    // not contain kids" keeps untagged books instead of hiding them.
     case 'equals':
-      return equal;
-    case 'notEquals':
-      return !equal;
+    case 'notEquals': {
+      const want = rule.operator === 'equals';
+      return (book) => {
+        const left = value(book);
+        if (!isSet(left)) return !want;
+        const equal =
+          typeof left === 'string' ? normalized(left) === expectedText : left === expected;
+        return equal === want;
+      };
+    }
     case 'contains':
-      return contains;
-    case 'notContains':
-      return !contains;
+    case 'notContains': {
+      const want = rule.operator === 'contains';
+      return (book) => {
+        const left = value(book);
+        if (!isSet(left)) return !want;
+        const contains = Array.isArray(left)
+          ? left.some((v) => normalized(v) === expectedText)
+          : normalized(left).includes(expectedText);
+        return contains === want;
+      };
+    }
     case 'startsWith':
-      return normalized(left).startsWith(normalized(expected));
+      return (book) => {
+        const left = value(book);
+        return isSet(left) && normalized(left).startsWith(expectedText);
+      };
     case 'gt':
-      return typeof left === 'number' && typeof expected === 'number' && left > expected;
     case 'gte':
-      return typeof left === 'number' && typeof expected === 'number' && left >= expected;
     case 'lt':
-      return typeof left === 'number' && typeof expected === 'number' && left < expected;
-    case 'lte':
-      return typeof left === 'number' && typeof expected === 'number' && left <= expected;
+    case 'lte': {
+      if (typeof expected !== 'number') return () => false;
+      const operator = rule.operator;
+      return (book) => {
+        const left = value(book);
+        if (typeof left !== 'number') return false;
+        return operator === 'gt'
+          ? left > expected
+          : operator === 'gte'
+            ? left >= expected
+            : operator === 'lt'
+              ? left < expected
+              : left <= expected;
+      };
+    }
   }
+};
+const compileFilter = (group: BookshelfFilterGroup): CompiledMatcher => {
+  if (!group.children.length) return () => true;
+  const children = group.children.map((node) =>
+    node.type === 'group' ? compileFilter(node) : compileRule(node),
+  );
+  return group.match === 'all'
+    ? (book, now) => children.every((match) => match(book, now))
+    : (book, now) => children.some((match) => match(book, now));
 };
 export const matchBookshelfFilter = (
   book: Book,
   group: BookshelfFilterGroup,
   now = Date.now(),
-): boolean => {
-  if (!group.children.length) return true;
-  const match = (node: BookshelfFilterGroup | BookshelfRule) =>
-    node.type === 'group' ? matchBookshelfFilter(book, node, now) : matchesRule(book, node, now);
-  return group.match === 'all' ? group.children.every(match) : group.children.some(match);
-};
+): boolean => compileFilter(group)(book, now);
 export interface BookshelfResult {
   definition: BookshelfDefinition;
   books: Book[];
@@ -90,22 +134,22 @@ export const matchBookshelves = (
   books: Book[],
   definitions: BookshelfDefinition[],
   now = Date.now(),
-) =>
+): Map<string, Book[]> =>
   new Map(
-    definitions.map((definition) => [
-      definition.id,
-      bookshelfSchema.safeParse(definition).success
-        ? books.filter((b) => !b.deletedAt && matchBookshelfFilter(b, definition.filters, now))
-        : [],
-    ]),
+    definitions.map((definition): [string, Book[]] => {
+      if (!bookshelfSchema.safeParse(definition).success) return [definition.id, []];
+      const match = compileFilter(definition.filters);
+      return [definition.id, books.filter((b) => !b.deletedAt && match(b, now))];
+    }),
   );
+/** Invalid shelves own nothing: `matchBookshelves` already gave them no matches. */
 export const assignBookshelfOwnership = (
   definitions: BookshelfDefinition[],
   matches: Map<string, Book[]>,
 ) => {
   const owners = new Map<string, string>();
   for (const shelf of effectiveBookshelves(definitions)) {
-    if (!shelf.enabled || !shelf.exclusive || !bookshelfSchema.safeParse(shelf).success) continue;
+    if (!shelf.enabled || !shelf.exclusive) continue;
     for (const book of matches.get(shelf.id) || [])
       if (shelf.id === FINISHED_BOOKSHELF_ID || !owners.has(book.hash))
         owners.set(book.hash, shelf.id);

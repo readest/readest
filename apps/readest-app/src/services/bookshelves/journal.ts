@@ -4,40 +4,47 @@ import { mergeBookshelfRows } from './state';
 
 const PREFIX = 'readest.bookshelf.pending.v1:';
 const keyOf = (row: ReplicaRow) => `${PREFIX}${row.user_id}:${row.replica_id}`;
+/** A corrupt or schema-invalid entry is indistinguishable from no entry. */
+const readEntry = (key: string): ReplicaRow | null => {
+  try {
+    const row = JSON.parse(localStorage.getItem(key) || 'null') as ReplicaRow | null;
+    return row && bookshelfReplicaSchema.safeParse(row).success ? row : null;
+  } catch {
+    return null;
+  }
+};
 export const readPendingBookshelves = (): ReplicaRow[] => {
   if (typeof localStorage === 'undefined') return [];
   const rows: ReplicaRow[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key?.startsWith(PREFIX)) continue;
-    try {
-      const row = JSON.parse(localStorage.getItem(key) || 'null') as ReplicaRow | null;
-      if (row && bookshelfReplicaSchema.safeParse(row).success) rows.push(row);
-    } catch {
-      /* Ignore corrupt entries; never turn them into definitions. */
-    }
+    const row = readEntry(key);
+    if (row) rows.push(row);
   }
   return rows;
 };
 export const journalBookshelfOperation = (row: ReplicaRow) => {
   const key = keyOf(row);
-  const previous = localStorage.getItem(key);
-  localStorage.setItem(
-    key,
-    JSON.stringify(previous ? mergeBookshelfRows(JSON.parse(previous) as ReplicaRow, row) : row),
-  );
+  const previous = readEntry(key);
+  localStorage.setItem(key, JSON.stringify(previous ? mergeBookshelfRows(previous, row) : row));
 };
 /** An acknowledgment may only clear the exact field versions it sent. */
 export const acknowledgeBookshelfOperation = (ack: ReplicaRow) => {
   const key = keyOf(ack);
-  const raw = localStorage.getItem(key);
-  if (!raw) return;
-  const current = JSON.parse(raw) as ReplicaRow;
+  if (!localStorage.getItem(key)) return;
+  const current = readEntry(key);
+  if (!current) {
+    localStorage.removeItem(key);
+    return;
+  }
   const fields = { ...current.fields_jsonb };
   for (const [name, field] of Object.entries(ack.fields_jsonb)) {
     if (fields[name]?.t === field.t && fields[name]?.s === field.s) delete fields[name];
   }
-  const deleted = current.deleted_at_ts === ack.deleted_at_ts ? null : current.deleted_at_ts;
+  // Deletion is remove-wins, and the row envelope is restamped at push time, so
+  // any acknowledged tombstone settles the journaled one whatever its stamp.
+  const deleted = ack.deleted_at_ts ? null : current.deleted_at_ts;
   if (!Object.keys(fields).length && !deleted) localStorage.removeItem(key);
   else
     localStorage.setItem(

@@ -13,6 +13,7 @@ import {
   saveBookshelfDraft,
 } from '@/services/bookshelves/persistence';
 import { readPendingBookshelves } from '@/services/bookshelves/journal';
+import { getUserID } from '@/utils/access';
 
 const mocks = vi.hoisted(() => ({
   userId: 'account',
@@ -20,7 +21,7 @@ const mocks = vi.hoisted(() => ({
   markDirty: vi.fn(),
   saveSettings: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/utils/access', () => ({ getUserID: async () => mocks.userId }));
+vi.mock('@/utils/access', () => ({ getUserID: vi.fn(async () => mocks.userId) }));
 const hlc = new HlcGenerator('device');
 vi.mock('@/services/sync/replicaSync', () => ({
   getReplicaSync: () => (mocks.connected ? { hlc, manager: { markDirty: mocks.markDirty } } : null),
@@ -29,6 +30,10 @@ const env = {} as EnvConfigType;
 beforeEach(() => {
   localStorage.clear();
   mocks.userId = 'account';
+  localStorage.setItem('user', JSON.stringify({ id: mocks.userId }));
+  vi.mocked(getUserID)
+    .mockReset()
+    .mockImplementation(async () => mocks.userId);
   mocks.connected = false;
   mocks.markDirty.mockClear();
   mocks.saveSettings.mockClear();
@@ -38,6 +43,31 @@ beforeEach(() => {
   });
 });
 describe('bookshelf persistence and sync integration', () => {
+  it('saves offline edits under the cached account without waiting for token refresh', async () => {
+    let finishRefresh: (() => void) | undefined;
+    vi.mocked(getUserID).mockImplementationOnce(
+      () => new Promise((resolve) => (finishRefresh = () => resolve(null))),
+    );
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const custom = createBookshelf('Offline with expired token');
+    const saving = saveBookshelfDraft(env, base, [custom, ...base]);
+    try {
+      expect(readPendingBookshelves()).toContainEqual(
+        expect.objectContaining({ user_id: 'account', replica_id: custom.id }),
+      );
+      await saving;
+      expect(mocks.saveSettings).toHaveBeenCalledOnce();
+      expect(getUserID).not.toHaveBeenCalled();
+      mocks.userId = 'other-account';
+      vi.mocked(getUserID).mockReset().mockResolvedValue(mocks.userId);
+      mocks.connected = true;
+      await replayBookshelfOperations(env);
+      expect(mocks.markDirty).not.toHaveBeenCalled();
+    } finally {
+      finishRefresh?.();
+      await saving;
+    }
+  });
   it('recovers offline edits after restart with original timestamps', async () => {
     const base = readBookshelves(useSettingsStore.getState().settings);
     const custom = createBookshelf('Offline');
@@ -52,6 +82,13 @@ describe('bookshelf persistence and sync integration', () => {
     ).toBe('Offline');
     expect(mocks.markDirty).toHaveBeenCalledWith(original);
     expect(readPendingBookshelves()[0]!.updated_at_ts).toBe(original.updated_at_ts);
+  });
+  it('persists a draft once per autosave', async () => {
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    mocks.connected = true;
+    await saveBookshelfDraft(env, base, [createBookshelf('Once'), ...base]);
+    expect(mocks.saveSettings).toHaveBeenCalledOnce();
+    expect(mocks.markDirty).toHaveBeenCalledOnce();
   });
   it('merges remote definitions without publishing them or losing a newer pending edit', async () => {
     const base = readBookshelves(useSettingsStore.getState().settings);

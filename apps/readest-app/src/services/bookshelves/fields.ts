@@ -18,6 +18,11 @@ const textList = (value: unknown): string[] => {
 };
 const date = (value: string | undefined) =>
   value && Number.isFinite(Date.parse(value)) ? Date.parse(value) : undefined;
+/** Formats whose books play through the audiobook player rather than the reader. */
+const AUDIO_FORMATS = ['ABS', 'OPDSAUDIO', 'BOOKORBIT'];
+// Both copies matter: a metadata edit or a synced row can leave only one of them
+// (see src/utils/audiobook.ts), and reading just one misfiles podcasts as audiobooks.
+const absMediaType = (b: Book) => b.absMediaType ?? b.metadata?.absMediaType;
 export const BOOKSHELF_FIELDS: BookshelfField[] = [
   { id: 'title', label: _('Title'), kind: 'text', read: (b) => b.title },
   { id: 'author', label: _('Author'), kind: 'text', read: (b) => b.author },
@@ -104,7 +109,7 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     id: 'audio',
     label: _('Audiobook'),
     kind: 'boolean',
-    read: (b) => ['ABS', 'OPDSAUDIO', 'BOOKORBIT'].includes(b.format) && !b.absMediaType,
+    read: (b) => AUDIO_FORMATS.includes(b.format) && !absMediaType(b),
   },
   {
     id: 'mediaType',
@@ -115,9 +120,7 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     ],
     label: _('Media type'),
     kind: 'text',
-    read: (b) =>
-      b.absMediaType ||
-      (['ABS', 'OPDSAUDIO', 'BOOKORBIT'].includes(b.format) ? 'audiobook' : 'ebook'),
+    read: (b) => absMediaType(b) || (AUDIO_FORMATS.includes(b.format) ? 'audiobook' : 'ebook'),
   },
   {
     id: 'availability',
@@ -132,7 +135,7 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     read: (b) =>
       b.downloadedAt || b.absDownloadedAt
         ? 'local'
-        : ['ABS', 'OPDSAUDIO', 'BOOKORBIT'].includes(b.format)
+        : AUDIO_FORMATS.includes(b.format)
           ? 'streaming'
           : b.uploadedAt
             ? 'cloud'
