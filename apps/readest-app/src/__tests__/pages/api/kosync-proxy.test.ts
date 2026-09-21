@@ -22,6 +22,31 @@ const call = async (
 };
 
 describe('KOSync proxy boundaries', () => {
+  it('allows fetching progress for a document hash', async () => {
+    const endpoint = '/syncs/progress/0123456789abcdef0123456789abcdef';
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{"percentage":0.5}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call(endpoint);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://sync.example.com${endpoint}`,
+      expect.objectContaining({ method: 'GET' }),
+    );
+    expect(res.json).toHaveBeenCalledWith({ percentage: 0.5 });
+  });
+
+  it.each([
+    '../users/auth',
+    '%2e%2e',
+    'abc/extra',
+    'abc?admin=true',
+  ])('rejects malformed progress suffix %s', async (suffix) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call(`/syncs/progress/${suffix}`);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('rejects paths merely containing an allowed endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response('{}'));
     vi.stubGlobal('fetch', fetchMock);

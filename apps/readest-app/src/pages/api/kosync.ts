@@ -3,7 +3,11 @@ import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { isLanAddress } from '@/utils/network';
 import { KoSyncProxyPayload } from '@/types/kosync';
 
-const validEndpoints = [/^\/users\/create$/, /^\/users\/auth$/, /^\/syncs\/progress$/];
+const validEndpoints = [
+  /^\/users\/create$/,
+  /^\/users\/auth$/,
+  /^\/syncs\/progress(?:\/[a-fA-F0-9]{32})?$/,
+];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
