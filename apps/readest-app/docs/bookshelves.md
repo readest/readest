@@ -133,9 +133,10 @@ Converged rows live in `SystemSettings.bookshelves`, included in backups and mer
 windows. The per-device localStorage journal retains original operation timestamps and account
 identity until the exact field versions are acknowledged. Anonymous edits bind to the first
 account that syncs them; edits belonging to another account are never published under the current
-account. Reading settings recovers interrupted journal writes, and remote application merges with
-newer local rows. Migration defaults are saved locally with baseline timestamps, so synced user
-edits take precedence. The completion marker is saved with the config and retained by merges;
+account. Reading settings recovers anonymous edits and the cached account's interrupted journal
+writes without refreshing an expired token; other accounts' pending edits remain in the journal.
+Remote application merges with newer local rows. Migration defaults are saved locally with baseline
+timestamps, so synced user edits take precedence. The completion marker is saved with the config and retained by merges;
 untouched migrated defaults are not queued as user edits.
 The journal keeps each field's original stamp, so last-writer-wins follows edit time. The row-level
 `updated_at_ts`, and a tombstone's `deleted_at_ts`, is restamped when the row is actually pushed:

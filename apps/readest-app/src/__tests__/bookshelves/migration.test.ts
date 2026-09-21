@@ -7,7 +7,7 @@ import {
   mergeBookshelfStates,
   readBookshelves,
 } from '@/services/bookshelves/state';
-import { journalBookshelfOperation } from '@/services/bookshelves/journal';
+import { journalBookshelfOperation, readPendingBookshelves } from '@/services/bookshelves/journal';
 import { bookshelfReplicaSchema } from '@/services/bookshelves/replica';
 import { HlcGenerator } from '@/libs/crdt';
 import type { SystemSettings } from '@/types/settings';
@@ -116,6 +116,7 @@ describe('one-time bookshelf settings migration', () => {
   });
 
   it('preserves existing shelf definitions, order, and pending edits', async () => {
+    localStorage.setItem('user', JSON.stringify({ id: 'account' }));
     const base = defaultBookshelves(disk.settings!);
     const custom = createBookshelf('My shelf');
     const recent = {
@@ -184,6 +185,33 @@ describe('one-time bookshelf settings migration', () => {
       hideCovers: true,
     });
     expect(disk.save).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'account-b',
+    null,
+  ])('recovers only anonymous and current-account edits for %s', async (userId) => {
+    if (userId) localStorage.setItem('user', JSON.stringify({ id: userId }));
+    const base = defaultBookshelves(disk.settings!);
+    const clock = new HlcGenerator('device');
+    const shelves = ['account-a', 'account-b', ''].map((owner) => {
+      const shelf = createBookshelf(owner || 'Anonymous');
+      const { operations } = applyBookshelfDraft({ rows: {} }, base, [...base, shelf], {
+        userId: owner,
+        deviceId: 'device',
+        next: () => clock.next(),
+      });
+      for (const row of operations) journalBookshelfOperation(row);
+      return { owner, shelf };
+    });
+    const pending = readPendingBookshelves();
+
+    const loaded = readBookshelves(await loadSettings(ctx));
+
+    for (const { owner, shelf } of shelves) {
+      expect(loaded.some((entry) => entry.id === shelf.id)).toBe(!owner || owner === userId);
+    }
+    expect(readPendingBookshelves()).toEqual(pending);
   });
 
   it('retries migration if saving the config fails', async () => {

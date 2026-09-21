@@ -339,7 +339,10 @@ const runPullForKind = async (
   switch (kind) {
     case 'bookshelf': {
       await replayBookshelfOperations(envConfig);
-      if (!isSyncCategoryEnabled('bookshelf') || !(await getAccessToken())) return;
+      // Batched rows already passed the category/auth gates and advanced the
+      // cursor, so apply them even if those gates change after the fetch.
+      if (!pullOverride && (!isSyncCategoryEnabled('bookshelf') || !(await getAccessToken())))
+        return;
       const rows = await (pullOverride ? pullOverride() : ctx.manager.pull('bookshelf', pullOpts));
       await applyRemoteBookshelfRows(envConfig, rows);
       return;

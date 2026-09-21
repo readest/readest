@@ -192,12 +192,13 @@ export class ReplicaSyncManager {
             this.unsupportedKinds.add(kind);
             continue;
           }
-          if (!isRowRejection(kindErr)) {
+          if (!isIsolatableError(kindErr)) {
             deferred ??= kindErr;
             continue;
           }
           if (indexes.length === 1) {
-            this.rejectedRows.add(queued[indexes[0]!]!);
+            if (isRowRejection(kindErr)) this.rejectedRows.add(queued[indexes[0]!]!);
+            else deferred ??= kindErr;
             continue;
           }
         }

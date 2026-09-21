@@ -342,6 +342,28 @@ describe('ReplicaSyncManager.markDirty + flush', () => {
     expect(manager.pendingKeys()).toEqual([{ kind: 'font', replicaId: 'f1' }]);
   });
 
+  test('a row-specific 5xx does not block healthy rows of the same kind and remains retryable', async () => {
+    const push = vi.fn(async (rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+      if (rows.some((row) => row.replica_id === 'bad')) {
+        throw new SyncError('SERVER', 'Row failed with status 500', { status: 500 });
+      }
+      return rows;
+    });
+    const { manager } = makeManager({ push });
+    manager.markDirty(makeRow('bad'));
+    manager.markDirty(makeRow('good'));
+
+    await expect(manager.flush()).rejects.toThrow(/status 500/);
+
+    expect(manager.pendingKeys()).toEqual([{ kind: 'dictionary', replicaId: 'bad' }]);
+    expect(push.mock.calls.map(([rows]) => rows.map((row) => row.replica_id))).toContainEqual([
+      'good',
+    ]);
+    push.mockImplementation(async (rows) => rows);
+    await manager.flush();
+    expect(manager.pendingCount()).toBe(0);
+  });
+
   test('a network failure keeps every row queued for retry', async () => {
     const client = {
       ...makeFakeClient(),
