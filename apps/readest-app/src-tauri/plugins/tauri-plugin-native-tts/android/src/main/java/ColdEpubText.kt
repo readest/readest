@@ -74,7 +74,9 @@ internal object ColdEpubText {
                 val sectionResumeCfi = resumeCfi.takeIf { sectionIndex == startSection }
                 addAll(
                     extractSegments(zip.getInputStream(entry).readBytes(), sectionResumeCfi).map {
-                        ColdEpubSegment(it, sectionIndex, sectionResumeCfi ?: sectionCfi)
+                        val cfi = it.localCfi?.let { local -> "${sectionCfi.dropLast(1)}!$local)" }
+                            ?: sectionResumeCfi ?: sectionCfi
+                        ColdEpubSegment(it.text, sectionIndex, cfi)
                     }
                 )
             }
@@ -91,17 +93,25 @@ internal object ColdEpubText {
         return (packageStep / 2 - 1).coerceAtLeast(0)
     }
 
-    private fun extractSegments(bytes: ByteArray, resumeCfi: String?): List<String> {
+    private data class TextRun(val node: Node, val start: Int, val end: Int)
+    private data class TextSegment(val text: String, val localCfi: String?)
+
+    private fun extractSegments(bytes: ByteArray, resumeCfi: String?): List<TextSegment> {
+        val runs = mutableListOf<TextRun>()
+        var resumeOffset: Int
         val text = try {
             val document = parseXml(bytes)
             val body = document.getElementsByTagNameNS("*", "body").item(0) ?: document.documentElement
             val anchor = resumeCfi?.let { resolveLocalCfi(document.documentElement, it) }
             val output = StringBuilder()
             val anchorOffset = intArrayOf(-1)
-            appendNodeText(body, output, anchor, anchorOffset)
-            output.substring(anchorOffset[0].takeIf { it >= 0 } ?: 0)
+            appendNodeText(body, output, anchor, anchorOffset, runs)
+            resumeOffset = anchorOffset[0].coerceAtLeast(0)
+            output.toString()
         } catch (_: Exception) {
             // EPUB requires XHTML, but tolerate old books with HTML-ish markup.
+            runs.clear()
+            resumeOffset = 0
             bytes.toString(Charsets.UTF_8)
                 .replace(Regex("(?is)<(script|style|svg|math)[^>]*>.*?</\\1>"), " ")
                 .replace(Regex("(?i)<br\\s*/?>|</?(p|div|li|h[1-6]|section|article|tr)[^>]*>"), "\n")
@@ -112,11 +122,66 @@ internal object ColdEpubText {
                 .replace("&gt;", ">")
                 .replace("&quot;", "\"")
         }
-        return text.lineSequence()
-            .map { it.replace(Regex("\\s+"), " ").trim() }
-            .filter { it.isNotEmpty() }
-            .flatMap(::splitLongSegment)
-            .toList()
+        return buildList {
+            var lineOffset = resumeOffset
+            for (line in text.substring(resumeOffset).split('\n')) {
+                val normalized = StringBuilder()
+                val offsets = IntArray(line.length)
+                for (word in Regex("\\S+").findAll(line)) {
+                    if (normalized.isNotEmpty()) {
+                        offsets[normalized.length] = lineOffset + word.range.first - 1
+                        normalized.append(' ')
+                    }
+                    for (index in word.range) {
+                        offsets[normalized.length] = lineOffset + index
+                        normalized.append(line[index])
+                    }
+                }
+                var chunkOffset = 0
+                if (normalized.isNotEmpty()) {
+                    val normalizedText = normalized.toString()
+                    for (chunk in splitLongSegment(normalizedText)) {
+                        val start = normalizedText.indexOf(chunk, chunkOffset)
+                        val sourceOffset = offsets[start]
+                        val runIndex = runs.binarySearch {
+                            when {
+                                sourceOffset < it.start -> 1
+                                sourceOffset >= it.end -> -1
+                                else -> 0
+                            }
+                        }
+                        val run = runs.getOrNull(runIndex)
+                        val cfi = run?.let { localCfi(it.node, sourceOffset - it.start) }
+                        add(TextSegment(chunk, cfi))
+                        chunkOffset = start + chunk.length
+                    }
+                }
+                lineOffset += line.length + 1
+            }
+        }
+    }
+
+    // Use the same odd text slots as the resolver, including adjacent text /
+    // CDATA nodes. Offsets refer to the original DOM, before speech whitespace
+    // normalization or long-chunk splitting.
+    private fun localCfi(textNode: Node, textOffset: Int): String {
+        var node = textNode
+        var offset = textOffset
+        val steps = mutableListOf<Int>()
+        while (node.parentNode?.nodeType == Node.ELEMENT_NODE) {
+            val parent = node.parentNode
+            val children = indexCfiChildren(parent)
+            val index = children.indexOfFirst {
+                it === node || (it is List<*> && it.any { child -> child === node })
+            }
+            val slot = children[index]
+            if (slot is List<*>) {
+                offset += slot.takeWhile { it !== node }.sumOf { (it as Node).nodeValue?.length ?: 0 }
+            }
+            steps.add(index)
+            node = parent
+        }
+        return steps.asReversed().joinToString("", postfix = ":$offset") { "/$it" }
     }
 
     private fun splitLongSegment(text: String): Sequence<String> = sequence {
@@ -151,6 +216,7 @@ internal object ColdEpubText {
         output: StringBuilder,
         anchor: TextAnchor?,
         anchorOffset: IntArray,
+        runs: MutableList<TextRun>,
     ) {
         if (anchorOffset[0] < 0 && node === anchor?.node) {
             anchorOffset[0] = output.length + if (
@@ -162,14 +228,18 @@ internal object ColdEpubText {
             }
         }
         when (node.nodeType) {
-            Node.TEXT_NODE, Node.CDATA_SECTION_NODE -> output.append(node.nodeValue)
+            Node.TEXT_NODE, Node.CDATA_SECTION_NODE -> {
+                val start = output.length
+                output.append(node.nodeValue)
+                runs.add(TextRun(node, start, output.length))
+            }
             Node.ELEMENT_NODE -> {
                 val name = (node.localName ?: node.nodeName).lowercase()
                 if (name in setOf("script", "style", "svg", "math")) return
                 if (name in blockElements) output.append('\n')
                 val children = node.childNodes
                 for (index in 0 until children.length) {
-                    appendNodeText(children.item(index), output, anchor, anchorOffset)
+                    appendNodeText(children.item(index), output, anchor, anchorOffset, runs)
                 }
                 if (name in blockElements) output.append('\n')
             }
