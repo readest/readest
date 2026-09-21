@@ -1,6 +1,6 @@
+use crate::transfer_file::ensure_path_allowed;
 use std::path::Path;
 use tauri::AppHandle;
-use tauri_plugin_fs::FsExt;
 use walkdir::WalkDir;
 
 #[derive(serde::Serialize)]
@@ -16,12 +16,8 @@ pub async fn read_dir<R: tauri::Runtime>(
     recursive: bool,
     extensions: Vec<String>,
 ) -> Result<Vec<ScannedFile>, String> {
-    let scope = app.fs_scope();
-    let path_buf = std::path::PathBuf::from(&path);
-
-    if !scope.is_allowed(&path_buf) && !path_buf.to_string_lossy().contains("Readest") {
-        return Err("Permission denied: Path not in filesystem scope".to_string());
-    }
+    let path = ensure_path_allowed(&app, &path).map_err(|e| e.to_string())?;
+    let path = path.to_string_lossy().into_owned();
 
     // The walk stats every matching file; on a large watched folder that is
     // thousands of syscalls. A sync command would run them inline on the IPC

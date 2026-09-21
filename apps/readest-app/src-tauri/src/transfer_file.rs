@@ -8,7 +8,7 @@
 
 use futures_util::TryStreamExt;
 use serde::{ser::Serializer, Serialize};
-use tauri::{command, ipc::Channel, AppHandle};
+use tauri::{command, ipc::Channel, AppHandle, Manager};
 use tauri_plugin_fs::FsExt;
 use tokio::{
     fs::File,
@@ -18,6 +18,7 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 
 use read_progress_stream::ReadProgressStream;
 
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 use std::{collections::HashMap, sync::Arc};
 
@@ -98,35 +99,64 @@ fn has_disallowed_components(file_path: &str) -> bool {
             .any(|c| matches!(c, std::path::Component::ParentDir))
 }
 
-/// The app's own storage always carries either the `Readest` data folder or the
-/// app's bundle identifier in its path — the Android sandbox
-/// (`/data/user/0/<identifier>/…`, including the cache dir) and the desktop
-/// identifier dirs (`…/<identifier>/…`). Those paths aren't in the global
-/// `fs_scope()` (their capability patterns are command-scoped), so `is_allowed`
-/// returns false for the app's own files. Accept these segments as a fallback,
-/// the way `dir_scanner::read_dir` does. `..` is already rejected, so foreign
-/// targets (e.g. `~/.ssh/id_rsa`) stay blocked.
-fn is_within_app_storage(file_path: &str, app_identifier: &str) -> bool {
-    file_path.contains("Readest") || file_path.contains(app_identifier)
+/// Resolve existing ancestors too, so a new download beneath a symlink is
+/// checked against the directory where it will actually be written.
+fn resolve_path(path: &Path) -> std::io::Result<PathBuf> {
+    let mut ancestor = path;
+    let mut missing = Vec::new();
+    loop {
+        match std::fs::symlink_metadata(ancestor) {
+            Ok(_) => {
+                let mut resolved = std::fs::canonicalize(ancestor)?;
+                for name in missing.iter().rev() {
+                    resolved.push(name);
+                }
+                return Ok(resolved);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                let Some(name) = ancestor.file_name() else {
+                    return Err(error);
+                };
+                missing.push(name.to_os_string());
+                let Some(parent) = ancestor.parent() else {
+                    return Err(error);
+                };
+                ancestor = parent;
+            }
+            Err(error) => return Err(error),
+        }
+    }
 }
 
-/// Validate a webview-supplied `file_path` before any `File::create`/`File::open`.
-/// Without this, `download_file`/`upload_file` would write/read arbitrary local
-/// paths (e.g. `~/.ssh/id_rsa`, autostart entries) from any JS running in the
-/// privileged Tauri origin — see GHSA-55vr-pvq5-6fmg. We require an absolute,
-/// traversal-free path that is either granted by the fs scope (persisted dialog
-/// grants for custom/external roots) or lives inside the app's own storage.
+fn is_within_app_storage(file_path: &Path, roots: &[PathBuf]) -> bool {
+    roots.iter().any(|root| file_path.starts_with(root))
+}
+
+/// Authorize the resolved path against user grants or real application roots.
+/// Callers use the returned path for I/O, never the untrusted spelling.
 pub(crate) fn ensure_path_allowed<R: tauri::Runtime>(
     app: &AppHandle<R>,
     file_path: &str,
-) -> std::result::Result<(), Error> {
+) -> std::result::Result<PathBuf, Error> {
     if has_disallowed_components(file_path) {
         return Err(Error::Forbidden(file_path.to_string()));
     }
-    if app.fs_scope().is_allowed(std::path::Path::new(file_path))
-        || is_within_app_storage(file_path, &app.config().identifier)
-    {
-        return Ok(());
+    let resolved = resolve_path(Path::new(file_path))?;
+    let scope = app.fs_scope();
+    if scope.is_forbidden(&resolved) {
+        return Err(Error::Forbidden(file_path.to_string()));
+    }
+    let roots: Vec<PathBuf> = [
+        app.path().app_data_dir(),
+        app.path().app_local_data_dir(),
+        app.path().app_config_dir(),
+        app.path().app_cache_dir(),
+    ]
+    .into_iter()
+    .filter_map(|root| root.ok().and_then(|root| resolve_path(&root).ok()))
+    .collect();
+    if scope.is_allowed(&resolved) || is_within_app_storage(&resolved, &roots) {
+        return Ok(resolved);
     }
     Err(Error::Forbidden(file_path.to_string()))
 }
@@ -164,7 +194,8 @@ pub async fn download_file<R: tauri::Runtime>(
     use std::cmp::min;
     use tokio::io::AsyncSeekExt;
 
-    ensure_path_allowed(&app, file_path)?;
+    let allowed_path = ensure_path_allowed(&app, file_path)?;
+    let file_path = allowed_path.as_path();
 
     const PART_SIZE: u64 = 1024 * 1024;
 
@@ -177,7 +208,7 @@ pub async fn download_file<R: tauri::Runtime>(
     async fn single_threaded_download(
         client: &reqwest::Client,
         url: &str,
-        file_path: &str,
+        file_path: &Path,
         headers: &HashMap<String, String>,
         body: &Option<String>,
         on_progress: Channel<ProgressPayload>,
@@ -337,7 +368,8 @@ pub async fn upload_file<R: tauri::Runtime>(
     headers: HashMap<String, String>,
     on_progress: Channel<ProgressPayload>,
 ) -> Result<String> {
-    ensure_path_allowed(&app, file_path)?;
+    let allowed_path = ensure_path_allowed(&app, file_path)?;
+    let file_path = allowed_path.as_path();
 
     let file = File::open(file_path).await?;
     let file_len = file.metadata().await.unwrap().len();
@@ -387,29 +419,46 @@ fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) ->
 
 #[cfg(test)]
 mod tests {
-    use super::{has_disallowed_components, is_within_app_storage};
+    use super::{has_disallowed_components, is_within_app_storage, resolve_path};
+    use std::path::{Path, PathBuf};
 
     #[test]
-    fn app_storage_fallback_accepts_app_paths() {
-        let id = "com.bilingify.readest";
-        // Covers, dictionaries, books, gloss packs — under the `Readest` data dir.
+    fn app_storage_does_not_authorize_brand_names_in_foreign_paths() {
+        let roots = [PathBuf::from(
+            "/Users/victim/Library/Application Support/com.bilingify.readest",
+        )];
+        for path in [
+            "/Users/victim/Library/LaunchAgents/Readest-agent.plist",
+            "/Users/victim/Documents/com.bilingify.readest-secrets.txt",
+            "/Users/victim/Library/Application Support/com.bilingify.readest-other/file",
+        ] {
+            assert!(!is_within_app_storage(Path::new(path), &roots));
+        }
         assert!(is_within_app_storage(
-            "/data/user/0/com.bilingify.readest/Readest/Books/abc/cover.png",
-            id
+            Path::new("/Users/victim/Library/Application Support/com.bilingify.readest/Readest/Books/book.epub"),
+            &roots,
         ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn resolves_symlinks_before_authorizing_new_downloads() {
+        let temp = std::env::temp_dir().join(format!("readest-path-scope-{}", std::process::id()));
+        let app = temp.join("app");
+        let outside = temp.join("outside");
+        std::fs::create_dir_all(&app).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        std::os::unix::fs::symlink(&outside, app.join("escape")).unwrap();
+        let roots = [std::fs::canonicalize(&app).unwrap()];
+        let target = resolve_path(&app.join("escape/new/file.epub")).unwrap();
+        assert!(!is_within_app_storage(&target, &roots));
         assert!(is_within_app_storage(
-            "/data/user/0/com.bilingify.readest/Readest/Dictionaries/x/d.mdx",
-            id
+            &resolve_path(&app.join("Books/new.epub")).unwrap(),
+            &roots
         ));
-        // Cache-dir downloads (e.g. OPDS) carry no `Readest` segment but are still
-        // inside the app sandbox, matched via the bundle identifier.
-        assert!(is_within_app_storage(
-            "/data/user/0/com.bilingify.readest/cache/opds-book.epub",
-            id
-        ));
-        // Foreign targets carry neither segment and stay blocked.
-        assert!(!is_within_app_storage("/home/user/.ssh/id_rsa", id));
-        assert!(!is_within_app_storage("/etc/passwd", id));
+        std::os::unix::fs::symlink(temp.join("missing"), app.join("dangling")).unwrap();
+        assert!(resolve_path(&app.join("dangling/file.epub")).is_err());
+        std::fs::remove_dir_all(temp).unwrap();
     }
 
     #[test]
