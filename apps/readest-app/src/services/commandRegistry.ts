@@ -186,33 +186,33 @@ const fontPanelItems = [
   },
   {
     id: 'settings.font.defaultFont',
-    labelKey: _('Default Font'),
+    labelKey: _('Font Category'),
     keywords: ['font', 'family', 'serif', 'sans', 'default'],
-    section: 'Font Family',
+    section: 'Preferred Font',
   },
   {
     id: 'settings.font.cjkFont',
     labelKey: _('CJK Font'),
     keywords: ['font', 'cjk', 'chinese', 'japanese', 'korean', 'asian'],
-    section: 'Font Family',
+    section: 'CJK Font',
   },
   {
     id: 'settings.font.serifFont',
     labelKey: _('Serif Font'),
     keywords: ['font', 'serif', 'family', 'typeface'],
-    section: 'Font Face',
+    section: 'Preferred Font',
   },
   {
     id: 'settings.font.sansSerifFont',
     labelKey: _('Sans-Serif Font'),
     keywords: ['font', 'sans', 'serif', 'family', 'typeface'],
-    section: 'Font Face',
+    section: 'Preferred Font',
   },
   {
     id: 'settings.font.monospaceFont',
     labelKey: _('Monospace Font'),
     keywords: ['font', 'monospace', 'mono', 'code', 'fixed', 'width'],
-    section: 'Font Face',
+    section: 'Preferred Coding Font',
   },
 ];
 

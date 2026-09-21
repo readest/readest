@@ -48,6 +48,13 @@ interface FontFaceProps {
   className?: string;
   family: string;
   label: string;
+  /**
+   * Optional secondary line under the label stating what the setting affects.
+   * Wraps to two lines instead of the single-line clamp `SettingsRow` uses:
+   * the monospace scope is a whole phrase, and ellipsizing it on a phone
+   * ("…code, kbd an…") drops the one thing the line exists to say.
+   */
+  description?: string;
   options: string[];
   moreOptions?: string[];
   selected: string;
@@ -67,6 +74,7 @@ const FontFace = ({
   className,
   family,
   label,
+  description,
   options,
   moreOptions,
   selected,
@@ -76,18 +84,32 @@ const FontFace = ({
   const _ = useTranslation();
   return (
     <div
-      className={clsx('flex h-14 items-center justify-between pe-4', className)}
+      className={clsx('flex min-h-14 items-center justify-between gap-3 pe-4', className)}
       data-setting-id={settingId}
     >
-      <SettingLabel className='min-w-10'>{label}</SettingLabel>
-      <FontDropdown
-        family={family}
-        options={options.map((option) => ({ option, label: _(option) }))}
-        moreOptions={moreOptions?.map((option) => ({ option, label: option })) ?? []}
-        selected={selected}
-        onSelect={onSelect}
-        onGetFontFamily={handleFontFaceFont}
-      />
+      {/* flex-1 (not just min-w-0) so this column — and only this column — yields
+          width, and the description wraps inside it. The dropdown needs shrink-0
+          on top of that: its button cannot shrink (daisyUI `.btn` is
+          flex-shrink: 0), but the wrapper around it can, and a squeezed wrapper
+          ellipsizes the selected font name ("Conso…"). */}
+      <div className='flex min-w-0 flex-1 flex-col'>
+        <SettingLabel className='min-w-10'>{label}</SettingLabel>
+        {description && (
+          <span className='text-base-content/65 line-clamp-2 text-[0.8em] leading-snug'>
+            {description}
+          </span>
+        )}
+      </div>
+      <div className='shrink-0'>
+        <FontDropdown
+          family={family}
+          options={options.map((option) => ({ option, label: _(option) }))}
+          moreOptions={moreOptions?.map((option) => ({ option, label: option })) ?? []}
+          selected={selected}
+          onSelect={onSelect}
+          onGetFontFamily={handleFontFaceFont}
+        />
+      </div>
     </div>
   );
 };
@@ -340,8 +362,8 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         />
       </BoxedList>
 
-      <BoxedList title={_('Font Family')}>
-        <SettingsRow label={_('Default Font')} data-setting-id='settings.font.defaultFont'>
+      <BoxedList title={_('Preferred Font')}>
+        <SettingsRow label={_('Font Category')} data-setting-id='settings.font.defaultFont'>
           <FontDropdown
             options={fontFamilyOptions}
             selected={defaultFont}
@@ -349,7 +371,54 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onGetFontFamily={handleFontFamilyFont}
           />
         </SettingsRow>
-        {(isCJKEnv() || view?.language.isCJK) && (
+        {/* The two faces the category selects between live in one child, so the
+            card's divider only separates them from the category above; a book
+            asking for a generic family can still reach the other one. */}
+        <div>
+          <FontFace
+            family='serif'
+            label={_('Serif Font')}
+            options={[
+              ...customFonts,
+              ...SERIF_FONTS.filter(filterNonFreeFonts),
+              ...CJK_SERIF_FONTS,
+            ]}
+            moreOptions={sysFonts}
+            selected={serifFont}
+            onSelect={setSerifFont}
+            data-setting-id='settings.font.serifFont'
+          />
+          <FontFace
+            family='sans-serif'
+            label={_('Sans-Serif Font')}
+            options={[
+              ...customFonts,
+              ...SANS_SERIF_FONTS.filter(filterNonFreeFonts),
+              ...CJK_SANS_SERIF_FONTS,
+            ]}
+            moreOptions={sysFonts}
+            selected={sansSerifFont}
+            onSelect={setSansSerifFont}
+            data-setting-id='settings.font.sansSerifFont'
+          />
+        </div>
+      </BoxedList>
+
+      <BoxedList title={_('Preferred Coding Font')}>
+        <FontFace
+          family='monospace'
+          label={_('Monospace Font')}
+          description={_('Only applies to pre, code, kbd and .code')}
+          options={[...customFonts, ...MONOSPACE_FONTS]}
+          moreOptions={sysFonts}
+          selected={monospaceFont}
+          onSelect={setMonospaceFont}
+          data-setting-id='settings.font.monospaceFont'
+        />
+      </BoxedList>
+
+      {(isCJKEnv() || view?.language.isCJK) && (
+        <BoxedList title={_('CJK Font')}>
           <FontFace
             family='serif'
             label={_('CJK Font')}
@@ -358,42 +427,8 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onSelect={setDefaultCJKFont}
             data-setting-id='settings.font.cjkFont'
           />
-        )}
-      </BoxedList>
-
-      <BoxedList title={_('Font Face')}>
-        <FontFace
-          family='serif'
-          label={_('Serif Font')}
-          options={[...customFonts, ...SERIF_FONTS.filter(filterNonFreeFonts), ...CJK_SERIF_FONTS]}
-          moreOptions={sysFonts}
-          selected={serifFont}
-          onSelect={setSerifFont}
-          data-setting-id='settings.font.serifFont'
-        />
-        <FontFace
-          family='sans-serif'
-          label={_('Sans-Serif Font')}
-          options={[
-            ...customFonts,
-            ...SANS_SERIF_FONTS.filter(filterNonFreeFonts),
-            ...CJK_SANS_SERIF_FONTS,
-          ]}
-          moreOptions={sysFonts}
-          selected={sansSerifFont}
-          onSelect={setSansSerifFont}
-          data-setting-id='settings.font.sansSerifFont'
-        />
-        <FontFace
-          family='monospace'
-          label={_('Monospace Font')}
-          options={[...customFonts, ...MONOSPACE_FONTS]}
-          moreOptions={sysFonts}
-          selected={monospaceFont}
-          onSelect={setMonospaceFont}
-          data-setting-id='settings.font.monospaceFont'
-        />
-      </BoxedList>
+        </BoxedList>
+      )}
 
       <BoxedList title={_('Custom Fonts')} data-setting-id='settings.font.fonts'>
         <NavigationRow title={_('Manage Fonts')} onClick={handleManageCustomFonts} />
