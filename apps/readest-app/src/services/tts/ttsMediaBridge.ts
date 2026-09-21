@@ -152,6 +152,11 @@ export class TTSMediaBridge {
     // captured session for the awaited calls so they can't deref null, then
     // bail before wiring handlers onto a torn-down session (READEST-1A).
     const mediaSession = this.#mediaSession;
+    // Install directional handlers before any native activation await. Cold
+    // Android Auto speech may already be audible while the WebView takes over;
+    // without handlers in this window the first Pause updates the car icon but
+    // leaves the controller speaking.
+    this.#registerActionHandlers();
 
     if (mediaSession instanceof TauriMediaSession) {
       // Foreground ownership is the startup-critical path. Artwork conversion
@@ -177,8 +182,6 @@ export class TTSMediaBridge {
     }
 
     if (this.#bindingId !== bindingId || this.#mediaSession !== mediaSession) return;
-
-    this.#registerActionHandlers();
 
     // Mirror the session onto CarPlay (iOS only; no-op elsewhere).
     void notifyCarPlayState({ active: true, title: meta.title, author: meta.author });
