@@ -2388,5 +2388,13 @@
   "Built-in bookshelves cannot be deleted.": "内蔵の本棚は削除できません。",
   "{{name}} · Drag to reorder": "{{name}} · ドラッグで並べ替え",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (無効) · ドラッグで並べ替え",
-  "This bookshelf has too many or too long filter conditions.": "この本棚のフィルター条件が多すぎる、または長すぎます。"
+  "This bookshelf has too many or too long filter conditions.": "この本棚のフィルター条件が多すぎる、または長すぎます。",
+  "Previous page": "前のページ",
+  "Next page": "次のページ",
+  "Tag Books": "書籍にタグを付ける",
+  "Remove All Tags": "すべてのタグを削除",
+  "Create New Tag": "新しいタグを作成",
+  "Tag name": "タグ名",
+  "No tags yet": "タグはまだありません",
+  "Failed to save note. Please try again.": "メモを保存できませんでした。もう一度お試しください。"
 }

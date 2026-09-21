@@ -2508,5 +2508,13 @@
   "Built-in bookshelves cannot be deleted.": "As estantes predefinidas não podem ser eliminadas.",
   "{{name}} · Drag to reorder": "{{name}} · Arraste para reordenar",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (desativada) · Arraste para reordenar",
-  "This bookshelf has too many or too long filter conditions.": "Esta estante tem demasiadas condições de filtro ou condições demasiado longas."
+  "This bookshelf has too many or too long filter conditions.": "Esta estante tem demasiadas condições de filtro ou condições demasiado longas.",
+  "Previous page": "Página anterior",
+  "Next page": "Página seguinte",
+  "Tag Books": "Etiquetar Livros",
+  "Remove All Tags": "Remover Todas as Etiquetas",
+  "Create New Tag": "Criar Nova Etiqueta",
+  "Tag name": "Nome da etiqueta",
+  "No tags yet": "Ainda sem etiquetas",
+  "Failed to save note. Please try again.": "Não foi possível guardar a nota. Tente novamente."
 }

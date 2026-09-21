@@ -2388,5 +2388,13 @@
   "Built-in bookshelves cannot be deleted.": "기본 책장은 삭제할 수 없습니다.",
   "{{name}} · Drag to reorder": "{{name}} · 드래그하여 순서 변경",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (비활성화됨) · 드래그하여 순서 변경",
-  "This bookshelf has too many or too long filter conditions.": "이 책장의 필터 조건이 너무 많거나 너무 깁니다."
+  "This bookshelf has too many or too long filter conditions.": "이 책장의 필터 조건이 너무 많거나 너무 깁니다.",
+  "Previous page": "이전 페이지",
+  "Next page": "다음 페이지",
+  "Tag Books": "책에 태그 지정",
+  "Remove All Tags": "모든 태그 제거",
+  "Create New Tag": "새 태그 만들기",
+  "Tag name": "태그 이름",
+  "No tags yet": "아직 태그가 없습니다",
+  "Failed to save note. Please try again.": "노트를 저장하지 못했습니다. 다시 시도해 주세요."
 }

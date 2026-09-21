@@ -2388,5 +2388,13 @@
   "Built-in bookshelves cannot be deleted.": "內建書架無法刪除。",
   "{{name}} · Drag to reorder": "{{name}} · 拖曳以重新排序",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (已停用) · 拖曳以重新排序",
-  "This bookshelf has too many or too long filter conditions.": "此書架的篩選條件過多或過長。"
+  "This bookshelf has too many or too long filter conditions.": "此書架的篩選條件過多或過長。",
+  "Previous page": "上一頁",
+  "Next page": "下一頁",
+  "Tag Books": "為書籍加上標籤",
+  "Remove All Tags": "移除所有標籤",
+  "Create New Tag": "建立新標籤",
+  "Tag name": "標籤名稱",
+  "No tags yet": "尚無標籤",
+  "Failed to save note. Please try again.": "筆記儲存失敗，請重試。"
 }

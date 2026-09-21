@@ -2388,5 +2388,13 @@
   "Built-in bookshelves cannot be deleted.": "ไม่สามารถลบชั้นวางหนังสือในตัวได้",
   "{{name}} · Drag to reorder": "{{name}} · ลากเพื่อจัดลำดับใหม่",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (ปิดอยู่) · ลากเพื่อจัดลำดับใหม่",
-  "This bookshelf has too many or too long filter conditions.": "ชั้นวางหนังสือนี้มีเงื่อนไขตัวกรองมากเกินไปหรือยาวเกินไป"
+  "This bookshelf has too many or too long filter conditions.": "ชั้นวางหนังสือนี้มีเงื่อนไขตัวกรองมากเกินไปหรือยาวเกินไป",
+  "Previous page": "หน้าก่อนหน้า",
+  "Next page": "หน้าถัดไป",
+  "Tag Books": "ติดแท็กหนังสือ",
+  "Remove All Tags": "ลบแท็กทั้งหมด",
+  "Create New Tag": "สร้างแท็กใหม่",
+  "Tag name": "ชื่อแท็ก",
+  "No tags yet": "ยังไม่มีแท็ก",
+  "Failed to save note. Please try again.": "บันทึกโน้ตไม่สำเร็จ โปรดลองอีกครั้ง"
 }

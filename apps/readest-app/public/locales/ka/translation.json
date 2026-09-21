@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "ჩაშენებული თაროების წაშლა შეუძლებელია.",
   "{{name}} · Drag to reorder": "{{name}} · გადაათრიეთ თანმიმდევრობის შესაცვლელად",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (გამორთული) · გადაათრიეთ თანმიმდევრობის შესაცვლელად",
-  "This bookshelf has too many or too long filter conditions.": "ამ თაროს აქვს ძალიან ბევრი ან ძალიან გრძელი ფილტრის პირობა."
+  "This bookshelf has too many or too long filter conditions.": "ამ თაროს აქვს ძალიან ბევრი ან ძალიან გრძელი ფილტრის პირობა.",
+  "Previous page": "წინა გვერდი",
+  "Next page": "შემდეგი გვერდი",
+  "Tag Books": "წიგნების მონიშვნა ტეგებით",
+  "Remove All Tags": "ყველა ტეგის ამოღება",
+  "Create New Tag": "ახალი ტეგის შექმნა",
+  "Tag name": "ტეგის სახელი",
+  "No tags yet": "ტეგები ჯერ არ არის",
+  "Failed to save note. Please try again.": "ჩანაწერის შენახვა ვერ მოხერხდა. სცადეთ ხელახლა."
 }

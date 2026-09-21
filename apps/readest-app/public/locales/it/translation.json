@@ -2508,5 +2508,13 @@
   "Built-in bookshelves cannot be deleted.": "Gli scaffali predefiniti non possono essere eliminati.",
   "{{name}} · Drag to reorder": "{{name}} · Trascina per riordinare",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (disattivato) · Trascina per riordinare",
-  "This bookshelf has too many or too long filter conditions.": "Questo scaffale ha troppe condizioni di filtro o condizioni troppo lunghe."
+  "This bookshelf has too many or too long filter conditions.": "Questo scaffale ha troppe condizioni di filtro o condizioni troppo lunghe.",
+  "Previous page": "Pagina precedente",
+  "Next page": "Pagina successiva",
+  "Tag Books": "Assegna tag ai libri",
+  "Remove All Tags": "Rimuovi tutti i tag",
+  "Create New Tag": "Crea nuovo tag",
+  "Tag name": "Nome del tag",
+  "No tags yet": "Nessun tag",
+  "Failed to save note. Please try again.": "Impossibile salvare la nota. Riprova."
 }

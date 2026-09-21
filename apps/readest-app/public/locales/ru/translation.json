@@ -2568,5 +2568,13 @@
   "Built-in bookshelves cannot be deleted.": "Встроенные полки нельзя удалить.",
   "{{name}} · Drag to reorder": "{{name}} · Перетащите для изменения порядка",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (отключена) · Перетащите для изменения порядка",
-  "This bookshelf has too many or too long filter conditions.": "У этой полки слишком много условий фильтра или они слишком длинные."
+  "This bookshelf has too many or too long filter conditions.": "У этой полки слишком много условий фильтра или они слишком длинные.",
+  "Previous page": "Предыдущая страница",
+  "Next page": "Следующая страница",
+  "Tag Books": "Добавить теги к книгам",
+  "Remove All Tags": "Удалить все теги",
+  "Create New Tag": "Создать новый тег",
+  "Tag name": "Название тега",
+  "No tags yet": "Тегов пока нет",
+  "Failed to save note. Please try again.": "Не удалось сохранить заметку. Попробуйте ещё раз."
 }

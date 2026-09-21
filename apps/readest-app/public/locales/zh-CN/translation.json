@@ -2388,5 +2388,13 @@
   "Built-in bookshelves cannot be deleted.": "内置书架无法删除。",
   "{{name}} · Drag to reorder": "{{name}} · 拖动以重新排序",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (已停用) · 拖动以重新排序",
-  "This bookshelf has too many or too long filter conditions.": "此书架的筛选条件过多或过长。"
+  "This bookshelf has too many or too long filter conditions.": "此书架的筛选条件过多或过长。",
+  "Previous page": "上一页",
+  "Next page": "下一页",
+  "Tag Books": "为书籍添加标签",
+  "Remove All Tags": "移除所有标签",
+  "Create New Tag": "创建新标签",
+  "Tag name": "标签名称",
+  "No tags yet": "暂无标签",
+  "Failed to save note. Please try again.": "笔记保存失败，请重试。"
 }

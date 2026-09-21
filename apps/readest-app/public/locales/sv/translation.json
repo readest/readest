@@ -2448,5 +2448,13 @@
   "Built-in bookshelves cannot be deleted.": "Inbyggda bokhyllor kan inte tas bort.",
   "{{name}} · Drag to reorder": "{{name}} · Dra för att ändra ordning",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (inaktiverad) · Dra för att ändra ordning",
-  "This bookshelf has too many or too long filter conditions.": "Den här bokhyllan har för många eller för långa filtervillkor."
+  "This bookshelf has too many or too long filter conditions.": "Den här bokhyllan har för många eller för långa filtervillkor.",
+  "Previous page": "Föregående sida",
+  "Next page": "Nästa sida",
+  "Tag Books": "Tagga böcker",
+  "Remove All Tags": "Ta bort alla taggar",
+  "Create New Tag": "Skapa ny tagg",
+  "Tag name": "Taggnamn",
+  "No tags yet": "Inga taggar ännu",
+  "Failed to save note. Please try again.": "Det gick inte att spara anteckningen. Försök igen."
 }

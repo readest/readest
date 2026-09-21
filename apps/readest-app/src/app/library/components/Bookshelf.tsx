@@ -58,6 +58,7 @@ import SelectModeActions from './SelectModeActions';
 import ShareBookDialog from './ShareBookDialog';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
+import TaggingModal from './TaggingModal';
 import SetStatusAlert from './SetStatusAlert';
 import { useOpenBook } from '../hooks/useOpenBook';
 import LibrarySearchResults from './LibrarySearchResults';
@@ -188,6 +189,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showStatusAlert, setShowStatusAlert] = useState(false);
   const [showGroupingModal, setShowGroupingModal] = useState(false);
+  const [tagBookHashes, setTagBookHashes] = useState<string[] | null>(null);
   const [importBookUrl] = useState(searchParams?.get('url') || '');
 
   const abortDeletionRef = useRef(false);
@@ -508,6 +510,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const groupSelectedBooks = () => {
     setShowSelectModeActions(false);
     setShowGroupingModal(true);
+  };
+
+  const tagSelectedBooks = () => {
+    setTagBookHashes(expandBookshelfSelection(getSelectedBooks(), sortedBookshelfItems));
+    setShowSelectModeActions(false);
   };
 
   const showStatusSelection = () => {
@@ -975,7 +982,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           <Spinner loading />
         </div>
       )}
-      {!showGroupingModal && isSelectMode && showSelectModeActions && (
+      {!showGroupingModal && !tagBookHashes && isSelectMode && showSelectModeActions && (
         <SelectModeActions
           selectedBooks={selectedBooks}
           safeAreaBottom={safeAreaInsets?.bottom || 0}
@@ -996,6 +1003,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           canDownload={downloadableBooks.length > 0}
           onOpen={openSelectedBooks}
           onGroup={groupSelectedBooks}
+          onTag={tagSelectedBooks}
           onDetails={openBookDetails}
           onStatus={showStatusSelection}
           onDownload={downloadSelectedBooks}
@@ -1016,6 +1024,22 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             }}
             onConfirm={() => {
               setShowGroupingModal(false);
+              handleSetSelectMode(false);
+            }}
+          />
+        </ModalPortal>
+      )}
+      {tagBookHashes && (
+        <ModalPortal>
+          <TaggingModal
+            libraryBooks={libraryBooks}
+            bookHashes={tagBookHashes}
+            onCancel={() => {
+              setTagBookHashes(null);
+              setShowSelectModeActions(true);
+            }}
+            onConfirm={() => {
+              setTagBookHashes(null);
               handleSetSelectMode(false);
             }}
           />

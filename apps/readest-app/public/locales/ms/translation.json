@@ -2388,5 +2388,13 @@
   "Built-in bookshelves cannot be deleted.": "Rak buku terbina dalam tidak boleh dipadam.",
   "{{name}} · Drag to reorder": "{{name}} · Seret untuk susun semula",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (dilumpuhkan) · Seret untuk susun semula",
-  "This bookshelf has too many or too long filter conditions.": "Rak buku ini mempunyai syarat penapis yang terlalu banyak atau terlalu panjang."
+  "This bookshelf has too many or too long filter conditions.": "Rak buku ini mempunyai syarat penapis yang terlalu banyak atau terlalu panjang.",
+  "Previous page": "Halaman sebelumnya",
+  "Next page": "Halaman seterusnya",
+  "Tag Books": "Tag Buku",
+  "Remove All Tags": "Alih Keluar Semua Tag",
+  "Create New Tag": "Cipta Tag Baharu",
+  "Tag name": "Nama tag",
+  "No tags yet": "Belum ada tag",
+  "Failed to save note. Please try again.": "Gagal menyimpan nota. Sila cuba lagi."
 }

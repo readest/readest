@@ -2688,5 +2688,13 @@
   "Built-in bookshelves cannot be deleted.": "لا يمكن حذف رفوف الكتب المدمجة.",
   "{{name}} · Drag to reorder": "{{name}} · اسحب لإعادة الترتيب",
   "{{name}} (disabled) · Drag to reorder": "{{name}} (معطّل) · اسحب لإعادة الترتيب",
-  "This bookshelf has too many or too long filter conditions.": "يحتوي رف الكتب هذا على شروط تصفية كثيرة جدًا أو طويلة جدًا."
+  "This bookshelf has too many or too long filter conditions.": "يحتوي رف الكتب هذا على شروط تصفية كثيرة جدًا أو طويلة جدًا.",
+  "Previous page": "الصفحة السابقة",
+  "Next page": "الصفحة التالية",
+  "Tag Books": "وضع علامات على الكتب",
+  "Remove All Tags": "إزالة جميع العلامات",
+  "Create New Tag": "إنشاء علامة جديدة",
+  "Tag name": "اسم العلامة",
+  "No tags yet": "لا توجد علامات بعد",
+  "Failed to save note. Please try again.": "تعذّر حفظ الملاحظة. يرجى المحاولة مرة أخرى."
 }
