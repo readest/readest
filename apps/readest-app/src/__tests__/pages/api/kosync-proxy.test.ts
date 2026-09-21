@@ -5,12 +5,16 @@ import handler from '@/pages/api/kosync';
 vi.mock('@/utils/cors', () => ({ corsAllMethods: {}, runMiddleware: vi.fn() }));
 afterEach(() => vi.unstubAllGlobals());
 
-const call = async (endpoint = '/users/auth', serverUrl = 'https://sync.example.com') => {
+const call = async (
+  endpoint = '/users/auth',
+  serverUrl = 'https://sync.example.com',
+  options: { method?: 'GET' | 'POST' | 'PUT'; body?: unknown } = {},
+) => {
   const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn() };
   await handler(
     {
       method: 'POST',
-      body: { serverUrl, endpoint, method: 'GET' },
+      body: { serverUrl, endpoint, method: 'GET', ...options },
     } as NextApiRequest,
     res as unknown as NextApiResponse,
   );
@@ -94,5 +98,28 @@ describe('KOSync proxy boundaries', () => {
       expect.objectContaining({ redirect: 'manual' }),
     );
     expect(res.json).toHaveBeenCalledWith({ ok: true });
+  });
+  it.each([
+    301, 302, 303, 307, 308,
+  ])('uses fetch-compatible POST semantics for %s', async (status) => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { status, headers: { location: '/users/create/' } }),
+      )
+      .mockResolvedValueOnce(new Response('{"ok":true}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const body = { username: 'test-reader' };
+    await call('/users/create', 'https://sync.example.com', { method: 'POST', body });
+    const preservesBody = status === 307 || status === 308;
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://sync.example.com/users/create/',
+      expect.objectContaining({
+        method: preservesBody ? 'POST' : 'GET',
+        body: preservesBody ? JSON.stringify(body) : null,
+        redirect: 'manual',
+      }),
+    );
   });
 });

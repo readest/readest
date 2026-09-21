@@ -215,4 +215,15 @@ describe('OPDS proxy response isolation', () => {
     expect(res.headers.get('Service-Worker-Allowed')).toBeNull();
     expect(res.headers.get('Content-Security-Policy')).toContain('sandbox');
   });
+  it.each([
+    ['', 'public, max-age=300'],
+    ['&auth=Basic%20test', 'no-store'],
+    [`&headers=${encodeURIComponent(JSON.stringify({ 'X-Api-Key': 'test' }))}`, 'no-store'],
+  ])('sets the cache policy for request credentials (%s)', async (suffix, expected) => {
+    fetchSpy.mockResolvedValueOnce(
+      new Response('<feed/>', { headers: { 'Content-Type': 'application/atom+xml' } }),
+    );
+    const res = await GET(new NextRequest(proxyReq('https://feeds.example.com/feed').url + suffix));
+    expect(res.headers.get('Cache-Control')).toBe(expected);
+  });
 });
