@@ -164,6 +164,7 @@ describe('Tesseract manga OCR', () => {
       name: 'AbortError',
     });
     expect(recognizer.recognize).toHaveBeenCalledTimes(3);
+    expect(recognizer.recognize.mock.calls[2]?.[2]).toBe(cancellation.signal);
     recognizer.recognize.mockResolvedValue({ text: '再開', confidence: 91 });
     expect((await engine.recognize(source, page)).blocks[0]?.text).toBe('再開再開');
     expect(recognizer.terminate).not.toHaveBeenCalled();

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   terminate: vi.fn(),
   load: vi.fn(),
   release: vi.fn(),
+  onDecoderRun: vi.fn(),
 }));
 vi.mock('@/app/reader/services/ocr/paddleJapaneseRecognizer', () => ({
   PaddleJapaneseRecognizer: class {
@@ -32,6 +33,7 @@ vi.mock('onnxruntime-web/wasm', () => {
         run: async (feeds: Record<string, Tensor>) => {
           if (feeds['pixel_values'])
             return { last_hidden_state: new Tensor('float32', new Float32Array(1), [1, 1, 1]) };
+          mocks.onDecoderRun();
           const [count, length] = feeds['input_ids']!.dims as [number, number];
           const data = new Float32Array(count * length * 6144).fill(-100);
           for (let i = 0; i < count; i++)
@@ -61,6 +63,17 @@ it('loads refinement only for weak text, reuses models, and releases them on can
     expect(mocks.load).not.toHaveBeenCalled();
     mocks.fast.mockResolvedValue({ text: '犬', confidence: 60 });
     expect(await recognizer.recognize(source, crop)).toMatchObject({ text: '猫' });
+    expect(await recognizer.recognize(source, crop)).toMatchObject({ text: '猫' });
+    expect(mocks.load).toHaveBeenCalledTimes(3);
+    const cancellation = new AbortController();
+    mocks.onDecoderRun.mockClear();
+    mocks.onDecoderRun.mockImplementationOnce(() => cancellation.abort());
+    await expect(recognizer.recognize(source, crop, cancellation.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    expect(mocks.onDecoderRun).toHaveBeenCalledOnce();
+    expect(mocks.release).not.toHaveBeenCalled();
+    mocks.onDecoderRun.mockReset();
     expect(await recognizer.recognize(source, crop)).toMatchObject({ text: '猫' });
     expect(mocks.load).toHaveBeenCalledTimes(3);
     await recognizer.terminate();

@@ -63,9 +63,11 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   async recognize(
     source: HTMLCanvasElement,
     getMangaCrop: () => HTMLCanvasElement,
+    signal?: AbortSignal,
   ): Promise<JapaneseMangaRecognition | null> {
     this.#abort.signal.throwIfAborted();
-    const run = this.#recognize(source, getMangaCrop);
+    signal?.throwIfAborted();
+    const run = this.#recognize(source, getMangaCrop, signal);
     this.#active.add(run);
     try {
       return await run;
@@ -86,27 +88,34 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   async #recognize(
     source: HTMLCanvasElement,
     getMangaCrop: () => HTMLCanvasElement,
+    signal?: AbortSignal,
   ): Promise<JapaneseMangaRecognition | null> {
     const fast = await this.#fast.recognize(source);
     this.#abort.signal.throwIfAborted();
+    signal?.throwIfAborted();
     // ponytail: confidence routing can miss confident errors. Our sample favoured
     // Paddle narration; revisit this threshold with broader labelled samples.
     if (this.#mangaUnavailable || (fast && fast.confidence >= 80)) return fast;
     try {
-      const refined = await this.#recognizeManga(getMangaCrop());
+      const refined = await this.#recognizeManga(getMangaCrop(), signal);
       return refined && refined.confidence >= 80 ? refined : fast;
     } catch (error) {
       this.#abort.signal.throwIfAborted();
+      signal?.throwIfAborted();
       this.#mangaUnavailable = true;
       console.warn('MangaOCR refinement unavailable; keeping the fast OCR result', error);
       return fast;
     }
   }
 
-  async #recognizeManga(source: HTMLCanvasElement): Promise<JapaneseMangaRecognition | null> {
+  async #recognizeManga(
+    source: HTMLCanvasElement,
+    signal?: AbortSignal,
+  ): Promise<JapaneseMangaRecognition | null> {
     const { runtime, encoder, decoder, vocabulary } = await this.#getModel();
-    const signal = this.#abort.signal;
-    signal.throwIfAborted();
+    const terminationSignal = this.#abort.signal;
+    terminationSignal.throwIfAborted();
+    signal?.throwIfAborted();
     // MangaOCR reads upright grayscale crops, resized to 224x224 and normalized
     // to [-1, 1]. The caller preserves vertical writing and omits OCR padding.
     const canvas = source.ownerDocument.createElement('canvas');
@@ -132,6 +141,7 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
       }
       const features = hidden.data;
       const result = await decodeMangaText(async (sequences) => {
+        signal?.throwIfAborted();
         const count = sequences.length;
         const length = sequences[0]!.length;
         const ids = new BigInt64Array(count * length);
@@ -154,6 +164,7 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
             imageFeatures.dispose();
           });
         try {
+          signal?.throwIfAborted();
           const logits = outputs['logits']?.data;
           if (!(logits instanceof Float32Array) || logits.length !== count * length * 6144) {
             throw new Error('MangaOCR returned invalid decoder output');
@@ -169,7 +180,8 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
         } finally {
           for (const tensor of Object.values(outputs)) tensor.dispose();
         }
-      }, signal);
+      }, terminationSignal);
+      signal?.throwIfAborted();
       const text = result.tokens
         .filter((id) => id > 4)
         .map((id) => vocabulary[id])
