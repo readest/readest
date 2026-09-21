@@ -6,13 +6,16 @@ import type { SystemSettings } from '@/types/settings';
 import type { ReplicaRow } from '@/types/replica';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import { createBookshelf } from '@/services/bookshelves/definitions';
-import { readBookshelves } from '@/services/bookshelves/state';
+import { mergeBookshelfStates, readBookshelves } from '@/services/bookshelves/state';
 import {
   applyRemoteBookshelfRows,
   replayBookshelfOperations,
   saveBookshelfDraft,
 } from '@/services/bookshelves/persistence';
-import { readPendingBookshelves } from '@/services/bookshelves/journal';
+import {
+  acknowledgeBookshelfOperation,
+  readPendingBookshelves,
+} from '@/services/bookshelves/journal';
 import { getUserID } from '@/utils/access';
 
 const mocks = vi.hoisted(() => ({
@@ -43,6 +46,133 @@ beforeEach(() => {
   });
 });
 describe('bookshelf persistence and sync integration', () => {
+  it.each([
+    false,
+    true,
+  ])('preserves stale-window edits after anonymous publication (acknowledged: %s)', async (acknowledged) => {
+    localStorage.removeItem('user');
+    mocks.userId = '';
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const custom = createBookshelf('Created in another window');
+    await saveBookshelfDraft(env, base, [...base, custom]);
+    const staleSettings = useSettingsStore.getState().settings;
+    expect(staleSettings.bookshelves?.rows[custom.id]?.localOnly).toBe(true);
+
+    mocks.userId = 'account';
+    localStorage.setItem('user', JSON.stringify({ id: mocks.userId }));
+    mocks.connected = true;
+    await replayBookshelfOperations(env);
+    const published = mocks.markDirty.mock.calls[0]![0] as ReplicaRow;
+    const persistedSettings = useSettingsStore.getState().settings;
+    expect(persistedSettings.bookshelves?.rows[custom.id]?.user_id).toBe('account');
+    expect(persistedSettings.bookshelves?.rows[custom.id]?.localOnly).toBeUndefined();
+    if (acknowledged) acknowledgeBookshelfOperation(published);
+
+    // The other window has not received the settings broadcast yet.
+    useSettingsStore.setState({ settings: staleSettings });
+    await saveBookshelfDraft(
+      env,
+      [...base, custom],
+      [...base, { ...custom, name: 'Edited after publication' }],
+    );
+    const pending = readPendingBookshelves().find((row) => row.replica_id === custom.id);
+    expect(pending?.fields_jsonb['definition']?.v).toMatchObject({
+      name: 'Edited after publication',
+    });
+    expect(
+      readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === custom.id)?.name,
+    ).toBe('Edited after publication');
+  });
+
+  it('discards anonymous shelves created and deleted locally, including stale cached state', async () => {
+    localStorage.removeItem('user');
+    mocks.userId = '';
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const custom = createBookshelf('Never published');
+    await saveBookshelfDraft(env, base, [...base, custom]);
+    const cached = useSettingsStore.getState().settings.bookshelves;
+    await saveBookshelfDraft(env, [...base, custom], base);
+    expect(readPendingBookshelves()).toEqual([]);
+    expect(useSettingsStore.getState().settings.bookshelves?.rows[custom.id]).toBeUndefined();
+    expect(mergeBookshelfStates(cached).rows[custom.id]).toBeUndefined();
+    expect(readBookshelves({ bookshelves: cached }).some((s) => s.id === custom.id)).toBe(false);
+    mocks.userId = 'account';
+    mocks.connected = true;
+    await replayBookshelfOperations(env);
+    expect(mocks.markDirty).not.toHaveBeenCalled();
+  });
+
+  it('does not resurrect a discarded shelf from a stale editor', async () => {
+    localStorage.removeItem('user');
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const custom = createBookshelf('Discarded');
+    await saveBookshelfDraft(env, base, [...base, custom]);
+    await saveBookshelfDraft(env, [...base, custom], base);
+    await saveBookshelfDraft(env, [...base, custom], [...base, { ...custom, name: 'Stale edit' }]);
+    expect(readPendingBookshelves()).toEqual([]);
+    expect(useSettingsStore.getState().settings.bookshelves?.rows[custom.id]).toBeUndefined();
+  });
+
+  it('keeps thousands of anonymous create/delete cycles bounded', async () => {
+    localStorage.removeItem('user');
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    for (let i = 0; i < 1000; i++) {
+      const custom = createBookshelf(`Temporary ${i}`);
+      await saveBookshelfDraft(env, base, [...base, custom]);
+      await saveBookshelfDraft(env, [...base, custom], base);
+    }
+    expect(readPendingBookshelves()).toEqual([]);
+    expect(Object.keys(useSettingsStore.getState().settings.bookshelves?.rows || {})).toEqual([]);
+    expect(localStorage.length).toBe(1); // Only the logical clock remains.
+  });
+
+  it('keeps legacy anonymous deletions when creation provenance is unknown', async () => {
+    localStorage.removeItem('user');
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const custom = createBookshelf('Legacy');
+    const t = hlc.next();
+    await applyRemoteBookshelfRows(env, [
+      {
+        user_id: '',
+        kind: 'bookshelf',
+        replica_id: custom.id,
+        fields_jsonb: { definition: { v: custom, t, s: 'device' } },
+        updated_at_ts: t,
+        deleted_at_ts: null,
+        manifest_jsonb: null,
+        reincarnation: null,
+        schema_version: 1,
+      },
+    ]);
+    await saveBookshelfDraft(env, [...base, custom], base);
+    expect(readPendingBookshelves()[0]?.deleted_at_ts).toBeTruthy();
+  });
+
+  it('retains deletions once an anonymous shelf has been handed to sync', async () => {
+    localStorage.removeItem('user');
+    mocks.userId = '';
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    const custom = createBookshelf('Published');
+    await saveBookshelfDraft(env, base, [...base, custom]);
+    mocks.userId = 'account';
+    localStorage.setItem('user', JSON.stringify({ id: mocks.userId }));
+    mocks.connected = true;
+    await replayBookshelfOperations(env);
+    expect(mocks.markDirty).toHaveBeenCalled();
+    const published = mocks.markDirty.mock.calls[0]![0];
+    expect(published).not.toHaveProperty('localOnly');
+    expect(
+      readBookshelves(useSettingsStore.getState().settings).some((s) => s.id === custom.id),
+    ).toBe(true);
+    await saveBookshelfDraft(env, [...base, custom], base);
+    expect(
+      readPendingBookshelves().find((r) => r.replica_id === custom.id)?.deleted_at_ts,
+    ).toBeTruthy();
+    expect(
+      useSettingsStore.getState().settings.bookshelves?.rows[custom.id]?.deleted_at_ts,
+    ).toBeTruthy();
+  });
+
   it('saves offline edits under the cached account without waiting for token refresh', async () => {
     let finishRefresh: (() => void) | undefined;
     vi.mocked(getUserID).mockImplementationOnce(

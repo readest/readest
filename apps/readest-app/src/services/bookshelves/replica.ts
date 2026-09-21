@@ -1,3 +1,5 @@
+import { hlcMax, mergeFields } from '@/libs/crdt';
+import type { BookshelfReplicaRow } from '@/types/bookshelf';
 import { z } from 'zod';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import { bookshelfIdSchema, bookshelfSchema, isBuiltinBookshelf } from './definitions';
@@ -29,3 +31,23 @@ export const bookshelfReplicaSchema: z.ZodType<ReplicaRow> = z
   .refine(
     (row) => !row.fields_jsonb.definition || row.fields_jsonb.definition.v.id === row.replica_id,
   );
+
+export const mergeBookshelfRows = (
+  a: BookshelfReplicaRow,
+  b: BookshelfReplicaRow,
+): BookshelfReplicaRow => {
+  const { localOnly: _localOnly, ...row } = b;
+  return {
+    ...row,
+    fields_jsonb: mergeFields(a.fields_jsonb, b.fields_jsonb),
+    deleted_at_ts: isBuiltinBookshelf(a.replica_id)
+      ? null
+      : hlcMax(a.deleted_at_ts, b.deleted_at_ts),
+    updated_at_ts: hlcMax(a.updated_at_ts, b.updated_at_ts)!,
+    reincarnation: null,
+    manifest_jsonb: null,
+    ...(!a.user_id && !b.user_id && (a.localOnly || b.localOnly)
+      ? { localOnly: true as const }
+      : {}),
+  };
+};

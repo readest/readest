@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadSettings, type Context } from '@/services/settingsService';
+import { loadSettings, saveSettings, type Context } from '@/services/settingsService';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import { defaultBookshelves, createBookshelf } from '@/services/bookshelves/definitions';
 import {
@@ -44,6 +44,31 @@ beforeEach(() => {
 afterEach(() => localStorage.clear());
 
 describe('one-time bookshelf settings migration', () => {
+  it('does not restore discarded local shelves from disk or stale settings writes', async () => {
+    const settings = await loadSettings(ctx);
+    const base = readBookshelves(settings);
+    const custom = createBookshelf('Discarded before sync');
+    const clock = new HlcGenerator('device');
+    const { state } = applyBookshelfDraft(settings.bookshelves!, base, [...base, custom], {
+      userId: '',
+      deviceId: 'device',
+      next: () => clock.next(),
+    });
+    const row = { ...state.rows[custom.id]!, localOnly: true as const };
+    journalBookshelfOperation(row);
+    const cached = {
+      ...settings,
+      bookshelves: { ...state, rows: { ...state.rows, [custom.id]: row } },
+    };
+    await saveSettings(ctx.fs, cached);
+    const t = clock.next();
+    journalBookshelfOperation({ ...row, fields_jsonb: {}, deleted_at_ts: t, updated_at_ts: t });
+    const reloaded = await loadSettings(ctx);
+    expect(reloaded.bookshelves?.rows[custom.id]).toBeUndefined();
+    await saveSettings(ctx.fs, cached);
+    expect(disk.settings?.bookshelves?.rows[custom.id]).toBeUndefined();
+  });
+
   for (const recent of [false, true]) {
     for (const hide of [false, true]) {
       for (const fit of ['crop', 'fit'] as const) {

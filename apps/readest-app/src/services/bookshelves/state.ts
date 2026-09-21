@@ -1,8 +1,9 @@
-import { bookshelfReplicaSchema } from './replica';
-import type { BookshelfDefinition, BookshelfState } from '@/types/bookshelf';
+import { resolveLocalBookshelf } from './journal';
+import { bookshelfReplicaSchema, mergeBookshelfRows } from './replica';
+import type { BookshelfDefinition, BookshelfState, BookshelfReplicaRow } from '@/types/bookshelf';
 import type { LibraryCoverFitType, SystemSettings } from '@/types/settings';
 import type { Hlc, ReplicaRow } from '@/types/replica';
-import { hlcMax, hlcPack, mergeFields } from '@/libs/crdt';
+import { hlcPack } from '@/libs/crdt';
 import {
   bookshelfSchema,
   defaultBookshelves,
@@ -14,17 +15,12 @@ import {
 } from './definitions';
 import { stubTranslation as _ } from '@/utils/misc';
 
-export const mergeBookshelfRows = (a: ReplicaRow, b: ReplicaRow): ReplicaRow => ({
-  ...b,
-  fields_jsonb: mergeFields(a.fields_jsonb, b.fields_jsonb),
-  deleted_at_ts: isBuiltinBookshelf(a.replica_id) ? null : hlcMax(a.deleted_at_ts, b.deleted_at_ts),
-  updated_at_ts: hlcMax(a.updated_at_ts, b.updated_at_ts)!,
-  reincarnation: null,
-  manifest_jsonb: null,
-});
+export { mergeBookshelfRows } from './replica';
 export const mergeBookshelfStates = (a?: BookshelfState, b?: BookshelfState): BookshelfState => {
-  const rows: Record<string, ReplicaRow> = {};
-  for (const [id, row] of [...Object.entries(a?.rows || {}), ...Object.entries(b?.rows || {})]) {
+  const rows: Record<string, BookshelfReplicaRow> = {};
+  for (const [id, cached] of [...Object.entries(a?.rows || {}), ...Object.entries(b?.rows || {})]) {
+    const row = resolveLocalBookshelf(cached);
+    if (!row) continue;
     if (!bookshelfReplicaSchema.safeParse(row).success || row.replica_id !== id) continue;
     rows[id] = Object.hasOwn(rows, id) ? mergeBookshelfRows(rows[id]!, row) : row;
   }
@@ -51,7 +47,9 @@ const crowded = (lo: number, position: number) => {
 };
 export const readBookshelves = (settings: Partial<SystemSettings>): BookshelfDefinition[] => {
   const definitions = new Map(defaultBookshelves(settings).map((s) => [s.id, s]));
-  for (const [id, row] of Object.entries(settings.bookshelves?.rows || {})) {
+  for (const [id, cached] of Object.entries(settings.bookshelves?.rows || {})) {
+    const row = resolveLocalBookshelf(cached);
+    if (!row) continue;
     if (!bookshelfReplicaSchema.safeParse(row).success || row.replica_id !== id) continue;
     if (row.deleted_at_ts && !isBuiltinBookshelf(id)) {
       definitions.delete(id);

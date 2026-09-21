@@ -185,6 +185,8 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     });
   }
 
+  if (settings.bookshelves) settings.bookshelves = mergeBookshelfStates(settings.bookshelves);
+
   if (!settings.kosync.deviceId) {
     settings.kosync.deviceId = uuidv4();
     await saveSettings(ctx.fs, settings);

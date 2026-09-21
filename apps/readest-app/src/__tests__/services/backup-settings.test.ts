@@ -1,3 +1,4 @@
+import { journalBookshelfOperation } from '@/services/bookshelves/journal';
 import { describe, it, expect } from 'vitest';
 import {
   BACKUP_SETTINGS_BLACKLIST,
@@ -106,6 +107,29 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
     ...overrides,
   } as unknown as SystemSettings;
 }
+
+it('exports local shelves independently of the originating device journal', () => {
+  const shelf = createBookshelf('Anonymous backup');
+  const t = hlcPack(100, 0, 'device');
+  const row = {
+    user_id: '',
+    kind: 'bookshelf',
+    replica_id: shelf.id,
+    fields_jsonb: { definition: { v: shelf, t, s: 'device' } },
+    updated_at_ts: t,
+    deleted_at_ts: null,
+    manifest_jsonb: null,
+    reincarnation: null,
+    schema_version: 1,
+    localOnly: true as const,
+  };
+  journalBookshelfOperation(row);
+  const settings = makeSettings({ bookshelves: { rows: { [shelf.id]: row } } });
+  const backup = sanitizeSettingsForBackup(settings);
+  localStorage.clear();
+  expect(readBookshelves(backup).some((s) => s.id === shelf.id)).toBe(true);
+  expect(settings.bookshelves?.rows[shelf.id]?.localOnly).toBe(true);
+});
 
 describe('sanitizeSettingsForBackup - blacklist', () => {
   it('strips device-specific filesystem paths', () => {
