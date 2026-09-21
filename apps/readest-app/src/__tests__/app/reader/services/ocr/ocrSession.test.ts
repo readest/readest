@@ -4,7 +4,7 @@ import { OcrSession, type OcrEngine } from '@/app/reader/services/ocr/ocrSession
 import { OCR_TEXT_LAYER_SELECTOR } from '@/app/reader/utils/ocrTextLayer';
 
 describe('OcrSession', () => {
-  it('bounds background work and reprioritizes a rapid page reversal without duplicate inference', async () => {
+  it('interrupts stale work and reprioritizes a rapid page reversal without concurrent inference', async () => {
     const docs = Array.from({ length: 10 }, (_, index) => {
       const doc = document.implementation.createHTMLDocument();
       const image = doc.createElement('img');
@@ -21,26 +21,52 @@ describe('OcrSession', () => {
       finish = resolve;
     });
     const engine: OcrEngine = {
-      recognize: vi.fn(async (_source, page) => {
+      recognize: vi.fn(async (_source, page, signal?: AbortSignal) => {
         if (page.pageIndex === 4) await running;
+        signal?.throwIfAborted();
         return { ...page, blocks: [] };
       }),
       terminate: vi.fn(async () => undefined),
     };
-    const session = new OcrSession({ createEngine: () => engine });
+    const onError = vi.fn();
+    const session = new OcrSession({ createEngine: () => engine, onError });
     try {
       await session.setEnabled(true);
       const first = session.processDocument(docs[4]!, 4, { priority: true });
       await vi.waitFor(() => expect(engine.recognize).toHaveBeenCalledOnce());
       const queued = docs.map((doc, index) => session.processDocument(doc, index));
+      const next = session.processDocument(docs[5]!, 5, { priority: true });
+      expect(vi.mocked(engine.recognize).mock.calls[0]?.[2]?.aborted).toBe(true);
       const jump = session.processDocument(docs[9]!, 9, { priority: true });
       const reverse = session.processDocument(docs[3]!, 3, { priority: true });
       const nearby = docs.map((doc, index) => session.processDocument(doc, index));
       finish();
-      await Promise.all([first, jump, reverse, ...queued, ...nearby]);
+      await Promise.all([first, next, jump, reverse, ...queued, ...nearby]);
       expect(vi.mocked(engine.recognize).mock.calls.map(([, page]) => page.pageIndex)).toEqual([
-        4, 3, 2, 5, 1,
+        4, 3, 4, 2, 5, 1,
       ]);
+
+      let resume!: () => void;
+      const paused = new Promise<void>((resolve) => {
+        resume = resolve;
+      });
+      vi.mocked(engine.recognize).mockImplementationOnce(async (_source, page, signal) => {
+        await paused;
+        signal?.throwIfAborted();
+        return { ...page, blocks: [] };
+      });
+      const neighbour = session.processDocument(docs[7]!, 7, { priority: true });
+      await vi.waitFor(() => expect(engine.recognize).toHaveBeenCalledTimes(7));
+      const current = session.processDocument(docs[8]!, 8, { priority: true });
+      resume();
+      await Promise.all([neighbour, current]);
+      expect(
+        vi
+          .mocked(engine.recognize)
+          .mock.calls.slice(-3)
+          .map(([, page]) => page.pageIndex),
+      ).toEqual([7, 8, 7]);
+      expect(onError).not.toHaveBeenCalled();
     } finally {
       finish();
       await session.terminate();

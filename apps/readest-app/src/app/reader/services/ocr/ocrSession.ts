@@ -14,7 +14,7 @@ interface OcrImagePage {
 export type OcrImageSource = string | HTMLCanvasElement;
 
 export interface OcrEngine {
-  recognize: (source: OcrImageSource, page: OcrImagePage) => Promise<OcrPage>;
+  recognize: (source: OcrImageSource, page: OcrImagePage, signal?: AbortSignal) => Promise<OcrPage>;
   terminate: () => Promise<void>;
 }
 
@@ -50,6 +50,7 @@ interface PendingOcrPage extends PageImageIdentity {
 
 interface OcrQueueTask {
   pageIndex: number;
+  controller: AbortController;
   run: () => Promise<OcrPage | null>;
   resolve: (page: OcrPage | null) => void;
   reject: (error: unknown) => void;
@@ -158,7 +159,7 @@ export class OcrSession {
     if (priority) {
       this.#currentPageIndex = pageIndex;
       for (const [index, pending] of this.#pending) {
-        if (Math.abs(index - pageIndex) <= 2 || pending.task === this.#runningTask) continue;
+        if (Math.abs(index - pageIndex) <= 2) continue;
         this.#pending.delete(index);
         this.#cancelQueuedTask(pending.task);
       }
@@ -317,16 +318,18 @@ export class OcrSession {
     });
     const task: OcrQueueTask = {
       pageIndex,
+      controller: new AbortController(),
       run: async () => {
         if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
         await this.#engineTermination;
         if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
         if (this.#pending.get(pageIndex)?.task !== task) return null;
-        const page = await this.#getEngine().recognize(image.source, {
-          pageIndex,
-          width: image.width,
-          height: image.height,
-        });
+        const page = await this.#getEngine().recognize(
+          image.source,
+          { pageIndex, width: image.width, height: image.height },
+          task.controller.signal,
+        );
+        task.controller.signal.throwIfAborted();
         if (this.#terminated || !this.#enabled || generation !== this.#generation) return null;
         const currentDocument = this.#documents.get(pageIndex);
         const currentImage = currentDocument && getPageImage(currentDocument);
@@ -349,6 +352,7 @@ export class OcrSession {
     if (priority) this.#queue.unshift(task);
     else this.#queue.push(task);
     this.#sortQueue();
+    if (priority) this.#promoteTask(task);
     void this.#drainQueue();
     void recognition.then(
       () => {
@@ -363,6 +367,7 @@ export class OcrSession {
 
   #promoteTask(task: OcrQueueTask): void {
     if (this.#runningTask === task) return;
+    this.#runningTask?.controller.abort();
     const index = this.#queue.indexOf(task);
     if (index <= 0) return;
     this.#queue.splice(index, 1);
@@ -380,7 +385,10 @@ export class OcrSession {
   }
 
   #cancelQueuedTask(task: OcrQueueTask): void {
-    if (this.#runningTask === task) return;
+    if (this.#runningTask === task) {
+      task.controller.abort();
+      return;
+    }
     const index = this.#queue.indexOf(task);
     if (index < 0) return;
     this.#queue.splice(index, 1);
@@ -397,7 +405,13 @@ export class OcrSession {
         try {
           task.resolve(await task.run());
         } catch (error) {
-          task.reject(error);
+          if (!task.controller.signal.aborted) task.reject(error);
+          else if (this.#pending.get(task.pageIndex)?.task === task) {
+            // Resume nearby work after the current page, keeping the loaded models.
+            task.controller = new AbortController();
+            this.#queue.push(task);
+            this.#sortQueue();
+          } else task.resolve(null);
         } finally {
           this.#runningTask = null;
         }

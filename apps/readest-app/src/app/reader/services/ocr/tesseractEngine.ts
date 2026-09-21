@@ -295,9 +295,11 @@ export class TesseractOcrEngine {
     this.#loadLanguageAsset = languageAssetLoader;
   }
 
-  async recognize(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
-    if (this.#mangaMode) return this.#recognizeManga(image, page);
+  async recognize(image: ImageLike, page: OcrImagePage, signal?: AbortSignal): Promise<OcrPage> {
+    signal?.throwIfAborted();
+    if (this.#mangaMode) return this.#recognizeManga(image, page, signal);
     const worker = await this.#getWorker();
+    signal?.throwIfAborted();
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     const prepared = prepareImage(image, page);
     const { data } = await this.#runWorkerOperation(worker, () =>
@@ -330,8 +332,13 @@ export class TesseractOcrEngine {
     await Promise.all([detector?.terminate(), japaneseRecognizer?.terminate(), workerTermination]);
   }
 
-  async #recognizeManga(image: ImageLike, page: OcrImagePage): Promise<OcrPage> {
+  async #recognizeManga(
+    image: ImageLike,
+    page: OcrImagePage,
+    signal?: AbortSignal,
+  ): Promise<OcrPage> {
     const prepared = await prepareMangaImage(image, page, this.#loadMangaImage);
+    signal?.throwIfAborted();
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     if (this.#mangaDetectorUnavailable) return this.#recognizeWholePage(prepared);
     this.#onProgress?.({ status: 'detecting manga text', progress: 0 });
@@ -342,6 +349,7 @@ export class TesseractOcrEngine {
         height: prepared.page.height,
       });
     } catch (error) {
+      signal?.throwIfAborted();
       if (this.#terminated || this.#abortController.signal.aborted) {
         throw new Error('OCR engine has been terminated');
       }
@@ -352,6 +360,7 @@ export class TesseractOcrEngine {
       console.warn('Manga text detector unavailable; using whole-page Tesseract', error);
       return this.#recognizeWholePage(prepared);
     }
+    signal?.throwIfAborted();
     this.#onProgress?.({ status: 'detecting manga text', progress: 1 });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     const totalLines = detection.blocks.reduce((total, block) => total + block.lines.length, 0);
@@ -365,6 +374,7 @@ export class TesseractOcrEngine {
       const confidences: number[] = [];
       const fontSize = getMokuroFontSize(detectedBlock);
       for (const line of detectedBlock.lines) {
+        signal?.throwIfAborted();
         if (this.#terminated) throw new Error('OCR engine has been terminated');
         const useJapaneseRecognizer = isJapaneseLanguage(this.#textLanguage);
         const crops = makeMangaTextLineCrops(prepared.image, imageData, line, {
@@ -411,6 +421,7 @@ export class TesseractOcrEngine {
               useJapaneseRecognizer,
               () => getMangaCrop(cropIndex),
             );
+            signal?.throwIfAborted();
             if (!result) {
               recognizedChunks.length = 0;
               break;

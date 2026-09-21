@@ -154,6 +154,21 @@ describe('Tesseract manga OCR', () => {
         },
       ],
     });
+
+    const cancellation = new AbortController();
+    recognizer.recognize.mockImplementationOnce(async () => {
+      cancellation.abort();
+      return { text: '一行目', confidence: 91 };
+    });
+    await expect(engine.recognize(source, page, cancellation.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    expect(recognizer.recognize).toHaveBeenCalledTimes(3);
+    recognizer.recognize.mockResolvedValue({ text: '再開', confidence: 91 });
+    expect((await engine.recognize(source, page)).blocks[0]?.text).toBe('再開再開');
+    expect(recognizer.terminate).not.toHaveBeenCalled();
+    expect(createWorker).not.toHaveBeenCalled();
+    await engine.terminate();
   });
 
   it('uses vertical Tesseract crops when Japanese recognition is unavailable', async () => {
