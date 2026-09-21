@@ -70,7 +70,8 @@ enabled as their individual sorting defaults.
 Filters use nested All (AND) and Any (OR) groups. An empty root matches all books. Incomplete
 conditions and empty nested groups cannot be saved. A shelf definition is limited to 60,000 bytes
 serialized; a larger one fails validation in the editor. **Is not** and **Does not contain** also
-match books that lack the field; every other comparison does not match a missing value. The field registry in
+match books that lack the field. **Is not set** matches missing values; other comparisons require a
+value. The field registry in
 `src/services/bookshelves/fields.ts` is shared by the editor, validator and evaluator. Calibre
 column rules keep their column label and type even when that column is absent on a device.
 Date Read retains the previous library meaning (`updatedAt`, including metadata/status edits).
