@@ -1,12 +1,13 @@
 import { LibraryPageDurationsContext } from '@/hooks/useMedianPageDurationSecs';
 import { HideBookCoversContext } from '@/components/BookCover';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Virtuoso, type Components, type ItemProps } from 'react-virtuoso';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import type { Book, BooksGroup } from '@/types/book';
 import type { BookshelfDefinition } from '@/types/bookshelf';
 import { bookshelfName } from '@/services/bookshelves/definitions';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useLibraryPagination } from '../hooks/useLibraryPagination';
 
 export interface ShelfSection {
   definition: BookshelfDefinition;
@@ -28,6 +29,8 @@ interface StreamProps {
   onScrollerRef?: (element: HTMLElement | Window | null) => void;
   importAction?: ReactNode;
   importTile?: ReactNode;
+  pageNavigation?: boolean;
+  navigationBottomInset?: number;
 }
 type StreamRow = {
   key: string;
@@ -197,7 +200,7 @@ export const BookshelfCarousel = ({
           );
         })}
         {section.items.length > columns && (
-          <div className='not-eink:hidden flex justify-end gap-2 pb-1'>
+          <div className='not-eink:hidden flex justify-end gap-2 pb-1 sm:px-4 sm:pb-3'>
             {[-1, 1].map((direction) => (
               <button
                 key={direction}
@@ -223,10 +226,10 @@ interface StreamContext {
 const StreamItem = ({
   children,
   context,
-  item: _item,
+  item,
   ...props
 }: ItemProps<StreamRow> & { context?: StreamContext }) => (
-  <div {...props}>
+  <div {...props} data-page-row={item.type}>
     {context && context.scale !== 1 ? (
       // Scale row content only: Virtuoso's viewport and spacers stay in screen pixels.
       <div style={{ zoom: context.scale }}>{children}</div>
@@ -253,16 +256,34 @@ export default function BookshelfStream({
   importTile,
   pageDurations,
   scale = 1,
+  pageNavigation = false,
+  navigationBottomInset = 0,
 }: StreamProps) {
   const _ = useTranslation();
   const root = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
+  const [scroller, setScroller] = useState<HTMLElement | null>(null);
+  const handleScrollerRef = useCallback(
+    (element: HTMLElement | Window | null) => {
+      setScroller(element instanceof HTMLElement ? element : null);
+      onScrollerRef?.(element);
+    },
+    [onScrollerRef],
+  );
+  const [start, setStart] = useState(true);
+  const [end, setEnd] = useState(true);
+  const turnPage = useLibraryPagination(scroller, pageNavigation);
   useEffect(() => {
     const element = root.current;
     if (!element) return;
-    const observer = new ResizeObserver(() => setWidth(element.clientWidth));
+    const measure = () => {
+      setWidth(element.clientWidth);
+      setHeight(element.clientHeight);
+    };
+    const observer = new ResizeObserver(measure);
     observer.observe(element);
-    setWidth(element.clientWidth);
+    measure();
     return () => observer.disconnect();
   }, []);
   const columns = bookshelfColumns(width / scale, autoColumns, fixedColumns);
@@ -277,74 +298,116 @@ export default function BookshelfStream({
   );
   return (
     <LibraryPageDurationsContext.Provider value={pageDurations || {}}>
-      <div ref={root} className='h-full min-h-0 w-full' data-testid='bookshelf-stream'>
-        <Virtuoso
-          style={scale !== 1 ? { overflowX: 'hidden' } : undefined}
-          data={rows}
-          overscan={400}
-          defaultItemHeight={200}
-          context={context}
-          components={COMPONENTS}
-          scrollerRef={onScrollerRef}
-          computeItemKey={(_, row) => row.key}
-          itemContent={(_index, row) => {
-            const { definition } = row.section;
-            const name = definition.name || _(bookshelfName(definition));
-            if (row.type === 'divider')
+      <div
+        ref={root}
+        className='flex h-full min-h-0 w-full flex-col'
+        data-testid='bookshelf-stream'
+      >
+        <div className='min-h-0 flex-1'>
+          <Virtuoso
+            style={scale !== 1 ? { overflowX: 'hidden' } : undefined}
+            data={rows}
+            overscan={pageNavigation ? Math.max(400, height) : 400}
+            defaultItemHeight={200}
+            context={context}
+            components={COMPONENTS}
+            scrollerRef={handleScrollerRef}
+            atTopStateChange={setStart}
+            atBottomStateChange={setEnd}
+            atTopThreshold={1}
+            atBottomThreshold={1}
+            computeItemKey={(_, row) => row.key}
+            itemContent={(_index, row) => {
+              const { definition } = row.section;
+              const name = definition.name || _(bookshelfName(definition));
+              if (row.type === 'divider')
+                return (
+                  <div
+                    aria-hidden='true'
+                    className={`transform-wrapper px-4 pt-1 sm:px-6 ${row.section.hideHeading ? 'pb-2' : 'pb-1'}`}
+                  >
+                    <hr className='border-base-content/10 eink:border-base-content border-t' />
+                  </div>
+                );
+              if (row.type === 'heading')
+                return (
+                  <h2
+                    data-shelf-id={definition.id}
+                    className='transform-wrapper px-4 pb-1 pt-2 text-sm font-semibold sm:px-6 sm:pt-4'
+                  >
+                    {name}
+                  </h2>
+                );
+              if (row.type === 'empty')
+                return (
+                  <p className='text-base-content/60 transform-wrapper px-4 py-8 text-sm sm:px-6'>
+                    {row.section.hideHeading ? _('No books') : _('No books in {{name}}', { name })}
+                  </p>
+                );
+              if (row.type === 'carousel')
+                return (
+                  <div className='transform-wrapper'>
+                    <BookshelfCarousel
+                      section={row.section}
+                      columns={columns}
+                      width={width / scale}
+                      renderItem={renderItem}
+                    />
+                  </div>
+                );
               return (
-                <div
-                  aria-hidden='true'
-                  className={`transform-wrapper px-4 pt-1 sm:px-6 ${row.section.hideHeading ? 'pb-2' : 'pb-1'}`}
-                >
-                  <hr className='border-base-content/10 eink:border-base-content border-t' />
-                </div>
+                <HideBookCoversContext.Provider value={definition.hideCovers}>
+                  <div
+                    data-shelf-layout={definition.layout}
+                    className='bookshelf-items transform-wrapper grid gap-x-4 px-4 sm:gap-x-0 sm:px-2'
+                    style={{
+                      gridTemplateColumns: `repeat(${definition.layout === 'grid' ? columns : 1}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {row.items!.map((item) => (
+                      <div key={`${definition.id}:${itemKey(item)}`} className='min-w-0'>
+                        {renderItem(
+                          item,
+                          definition.layout === 'list' ? 'list' : 'grid',
+                          definition,
+                        )}
+                      </div>
+                    ))}
+                    {row.hasImport && <div className='min-w-0'>{importTile}</div>}
+                  </div>
+                </HideBookCoversContext.Provider>
               );
-            if (row.type === 'heading')
-              return (
-                <h2
-                  data-shelf-id={definition.id}
-                  className='transform-wrapper px-4 pb-1 pt-2 text-sm font-semibold sm:px-6 sm:pt-4'
-                >
-                  {name}
-                </h2>
-              );
-            if (row.type === 'empty')
-              return (
-                <p className='text-base-content/60 transform-wrapper px-4 py-8 text-sm sm:px-6'>
-                  {row.section.hideHeading ? _('No books') : _('No books in {{name}}', { name })}
-                </p>
-              );
-            if (row.type === 'carousel')
-              return (
-                <div className='transform-wrapper'>
-                  <BookshelfCarousel
-                    section={row.section}
-                    columns={columns}
-                    width={width / scale}
-                    renderItem={renderItem}
-                  />
-                </div>
-              );
-            return (
-              <HideBookCoversContext.Provider value={definition.hideCovers}>
-                <div
-                  data-shelf-layout={definition.layout}
-                  className='bookshelf-items transform-wrapper grid gap-x-4 px-4 sm:gap-x-0 sm:px-2'
-                  style={{
-                    gridTemplateColumns: `repeat(${definition.layout === 'grid' ? columns : 1}, minmax(0, 1fr))`,
-                  }}
-                >
-                  {row.items!.map((item) => (
-                    <div key={`${definition.id}:${itemKey(item)}`} className='min-w-0'>
-                      {renderItem(item, definition.layout === 'list' ? 'list' : 'grid', definition)}
-                    </div>
-                  ))}
-                  {row.hasImport && <div className='min-w-0'>{importTile}</div>}
-                </div>
-              </HideBookCoversContext.Provider>
-            );
-          }}
-        />
+            }}
+          />
+        </div>
+        {pageNavigation && (
+          <nav
+            aria-label={_('Pagination')}
+            className='not-eink:hidden bg-base-100 border-base-content shrink-0 border-t px-4 sm:px-6'
+            style={{ paddingBottom: navigationBottomInset }}
+          >
+            <div className='flex justify-end gap-2 py-2'>
+              <button
+                type='button'
+                className='btn btn-ghost eink-bordered min-h-11'
+                aria-label={_('Previous page')}
+                disabled={start}
+                onClick={() => turnPage(-1)}
+              >
+                {_('Previous')}
+              </button>
+              <button
+                type='button'
+                className='btn btn-ghost eink-bordered min-h-11'
+                aria-label={_('Next page')}
+                disabled={end}
+                onClick={() => turnPage(1)}
+              >
+                {_('Next')}
+              </button>
+            </div>
+          </nav>
+        )}
       </div>
     </LibraryPageDurationsContext.Provider>
   );

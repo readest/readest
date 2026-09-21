@@ -953,6 +953,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         // WebKit when a search was cleared.
         <div className='min-h-0 flex-1'>
           <BookshelfStream
+            pageNavigation={!!settings.globalViewSettings?.isEink}
+            navigationBottomInset={
+              selectModeActionsHeight ||
+              (appService?.hasSafeAreaInset ? (safeAreaInsets?.bottom || 0) * 0.33 : 0)
+            }
             pageDurations={pageDurations}
             sections={sections}
             autoColumns={settings.libraryAutoColumns}
