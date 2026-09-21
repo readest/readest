@@ -9,8 +9,8 @@ import { updateBooknoteNoteText } from '@/utils/updateBooknoteNoteText';
 import { applyNoteBubbleTransition, decideNoteBubbleTransition } from '../utils/annotatorUtil';
 
 /**
- * Updates the store and note bubbles, then confirms persistence before the
- * editor can close. Failed saves leave the draft available for retry.
+ * Confirms persistence before closing the editor or updating note bubbles.
+ * Failed saves restore the previous stored note and keep the draft for retry.
  */
 export function useSaveBooknoteNoteText(bookKey: string) {
   const _ = useTranslation();
@@ -28,16 +28,29 @@ export function useSaveBooknoteNoteText(bookKey: string) {
         const config = getConfig(bookKey);
         if (!config) throw new Error('Book config unavailable');
 
-        const result = updateBooknoteNoteText(
-          config.booknotes ?? [],
-          booknoteId,
-          noteText,
-          Date.now(),
-        );
+        const previousBooknotes = config.booknotes ?? [];
+        const result = updateBooknoteNoteText(previousBooknotes, booknoteId, noteText, Date.now());
         if (!result) throw new Error('Booknote unavailable');
 
         const updatedConfig = updateBooknotes(bookKey, result.booknotes);
         if (!updatedConfig) throw new Error('Booknote update failed');
+
+        try {
+          await saveConfig(envConfig, bookKey, updatedConfig, settings);
+        } catch (error) {
+          const latest = getConfig(bookKey)?.booknotes;
+          // Restore only our optimistic edit, preserving concurrent sync/edit changes.
+          if (latest?.includes(result.updatedBooknote)) {
+            const previous = previousBooknotes.find(
+              (note) => note.id === booknoteId && !note.deletedAt,
+            )!;
+            updateBooknotes(
+              bookKey,
+              latest.map((note) => (note === result.updatedBooknote ? previous : note)),
+            );
+          }
+          throw error;
+        }
 
         const transition = decideNoteBubbleTransition(
           result.previousNoteText,
@@ -48,7 +61,6 @@ export function useSaveBooknoteNoteText(bookKey: string) {
           result.updatedBooknote,
           transition,
         );
-        await saveConfig(envConfig, bookKey, updatedConfig, settings);
         return true;
       } catch {
         eventDispatcher.dispatch('toast', {

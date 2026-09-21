@@ -122,3 +122,48 @@ describe('note save confirmation (#6123)', () => {
     expect(h.toast).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'error' }));
   });
 });
+
+it('rolls back only the failed note and preserves concurrent note changes', async () => {
+  const original = makeBooknote();
+  const other = makeBooknote({ id: 'other', note: 'before' });
+  h.booknotes = [original, other];
+  h.updateBooknotes.mockImplementation((_key: string, booknotes: BookNote[]) => {
+    h.booknotes = booknotes;
+    return { booknotes };
+  });
+  let rejectSave!: (error: Error) => void;
+  h.saveConfig.mockReturnValue(
+    new Promise<void>((_resolve, reject) => {
+      rejectSave = reject;
+    }),
+  );
+  const { result } = renderHook(() => useSaveBooknoteNoteText('book-1'));
+  const save = result.current('note-1', 'failed draft');
+  h.booknotes = h.booknotes.map((note) =>
+    note.id === 'other' ? { ...note, note: 'concurrent edit' } : note,
+  );
+  rejectSave(new Error('disk full'));
+  expect(await save).toBe(false);
+  expect(h.booknotes).toEqual([original, { ...other, note: 'concurrent edit' }]);
+  expect(h.view.addAnnotation).not.toHaveBeenCalled();
+});
+
+it('does not roll back a newer edit to the same note after persistence fails', async () => {
+  h.updateBooknotes.mockImplementation((_key: string, booknotes: BookNote[]) => {
+    h.booknotes = booknotes;
+    return { booknotes };
+  });
+  let rejectSave!: (error: Error) => void;
+  h.saveConfig.mockReturnValue(
+    new Promise<void>((_resolve, reject) => {
+      rejectSave = reject;
+    }),
+  );
+  const { result } = renderHook(() => useSaveBooknoteNoteText('book-1'));
+  const save = result.current('note-1', 'failed draft');
+  const newer = { ...h.booknotes[0]!, note: 'newer synced note', updatedAt: Date.now() + 1 };
+  h.booknotes = [newer];
+  rejectSave(new Error('disk full'));
+  expect(await save).toBe(false);
+  expect(h.booknotes).toEqual([newer]);
+});

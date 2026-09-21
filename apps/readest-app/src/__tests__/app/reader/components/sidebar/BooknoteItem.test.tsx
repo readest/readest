@@ -271,6 +271,8 @@ it('keeps the inline draft through a failed save and closes only after retry suc
   });
   expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('draft to keep');
   expect(toast).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'error' }));
+  expect(mocks.state.booknotes[0]?.note).toBe('old note');
+  expect(mocks.addAnnotation).not.toHaveBeenCalled();
   await act(async () => {
     fireEvent.click(screen.getByText('Save'));
   });
