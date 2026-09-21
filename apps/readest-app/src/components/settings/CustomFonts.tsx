@@ -286,7 +286,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
 
       <Tips className='mt-6'>
         <li>{_('Supported font formats: .ttf, .otf, .woff, .woff2')}</li>
-        <li>{_('Custom fonts can be selected from the Font Face menu')}</li>
+        <li>{_('Custom fonts can be selected from the font lists in the Font panel')}</li>
       </Tips>
     </div>
   );
