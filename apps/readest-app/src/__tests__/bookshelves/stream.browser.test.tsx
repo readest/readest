@@ -101,14 +101,28 @@ describe('mixed bookshelf stream in Chromium', () => {
       const first = container.querySelector('[data-section="Grid"]')!.getBoundingClientRect();
       expect(first.bottom).toBeLessThanOrEqual(viewport.bottom);
     });
+    // Virtuoso reports atBottom (which drives `disabled`) after the scroll lands,
+    // so wait for the button to agree with the scroll position before deciding
+    // whether to click again; otherwise the last click targets a button that is
+    // about to disable and Playwright times out waiting for it to be enabled.
+    const settled = () =>
+      waitFor(
+        () =>
+          expect(next.hasAttribute('disabled')).toBe(
+            scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1,
+          ),
+        { timeout: 5000 },
+      );
     container.firstElementChild!.setAttribute('style', 'width: 700px; height: 450px');
     await waitFor(() => expect(scroller.clientHeight).toBeLessThan(450));
+    await settled();
     for (let i = 0; i < 10 && !next.hasAttribute('disabled'); i++) {
       const before = scroller.scrollTop;
       await userEvent.click(next);
       await waitFor(() =>
         expect(scroller.scrollTop > before || next.hasAttribute('disabled')).toBe(true),
       );
+      await settled();
     }
     await waitFor(() => expect(next.hasAttribute('disabled')).toBe(true));
     const last = container.querySelector('[data-section="Grid"][data-book="17"]')!;
