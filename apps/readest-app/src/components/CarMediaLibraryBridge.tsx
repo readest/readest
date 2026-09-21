@@ -33,6 +33,11 @@ interface AndroidAutoPlaybackSource {
   configPath: string | null;
 }
 
+interface AndroidAutoPlaybackSourceState {
+  key: string | null;
+  sources: Map<string, AndroidAutoPlaybackSource>;
+}
+
 type CoverThumbnail = { coverHash: string | null; url: string };
 
 export const getCarMediaLibraryBooks = (
@@ -66,6 +71,25 @@ export const getCarMediaLibraryBooks = (
       };
     });
 
+export const getCarMediaPlaybackSourceKey = (
+  library: Book[],
+  publishedBooks: CarMediaBook[],
+): string => {
+  const booksByHash = new Map(library.map((book) => [book.hash, book]));
+  const sourceKeys = publishedBooks.map(({ hash, format }) => {
+    const book = booksByHash.get(hash);
+    return [
+      hash,
+      format,
+      book?.filePath ?? null,
+      book?.url ?? null,
+      book?.downloadedAt ?? null,
+    ] as const;
+  });
+  sourceKeys.sort(([leftHash], [rightHash]) => leftHash.localeCompare(rightHash));
+  return JSON.stringify(sourceKeys);
+};
+
 const CarMediaLibraryBridge = () => {
   const library = useLibraryStore((state) => state.library);
   const libraryLoaded = useLibraryStore((state) => state.libraryLoaded);
@@ -73,9 +97,10 @@ const CarMediaLibraryBridge = () => {
   const isLockInitialized = useAppLockStore((state) => state.isInitialized);
   const isUnlocked = useAppLockStore((state) => state.isUnlocked);
   const [selectionListenerReady, setSelectionListenerReady] = useState(false);
-  const [playbackSources, setPlaybackSources] = useState<Map<string, AndroidAutoPlaybackSource>>(
-    new Map(),
-  );
+  const [playbackSourceState, setPlaybackSourceState] = useState<AndroidAutoPlaybackSourceState>({
+    key: null,
+    sources: new Map(),
+  });
 
   // App Lock exists to keep the shelf away from whoever is holding the phone.
   // The car browse tree has to disappear with it — and because the native side
@@ -93,10 +118,10 @@ const CarMediaLibraryBridge = () => {
     () =>
       baseCarMediaBooks.map((book) => ({
         ...book,
-        sourcePath: playbackSources.get(book.hash)?.sourcePath ?? null,
-        configPath: playbackSources.get(book.hash)?.configPath ?? null,
+        sourcePath: playbackSourceState.sources.get(book.hash)?.sourcePath ?? null,
+        configPath: playbackSourceState.sources.get(book.hash)?.configPath ?? null,
       })),
-    [baseCarMediaBooks, playbackSources],
+    [baseCarMediaBooks, playbackSourceState.sources],
   );
   const booksJson = useMemo(() => JSON.stringify(carMediaBooks), [carMediaBooks]);
   const publishedBooksRef = useRef(carMediaBooks);
@@ -109,6 +134,10 @@ const CarMediaLibraryBridge = () => {
   const artworkKey = useMemo(
     () => carMediaBooks.map((book) => `${book.hash}:${book.coverHash ?? ''}`).join(','),
     [carMediaBooks],
+  );
+  const playbackSourceKey = useMemo(
+    () => getCarMediaPlaybackSourceKey(library, baseCarMediaBooks),
+    [baseCarMediaBooks, library],
   );
 
   useEffect(() => {
@@ -132,34 +161,53 @@ const CarMediaLibraryBridge = () => {
     if (!appService) return;
 
     let cancelled = false;
+    const currentLibrary = useLibraryStore.getState().library;
     void Promise.all(
-      baseCarMediaBooks.map(async ({ hash }) => {
-        const book = library.find((candidate) => candidate.hash === hash);
+      publishedBooksRef.current.map(async ({ hash }) => {
+        const book = currentLibrary.find((candidate) => candidate.hash === hash);
         if (!book) return [hash, { sourcePath: null, configPath: null }] as const;
         const [sourcePath, configPath] = await Promise.all([
-          appService.resolveNativeBookFilePath(book),
+          appService.resolveNativeBookFilePath(book).catch((error) => {
+            console.warn(`Failed to resolve Android Auto source for ${hash}:`, error);
+            return null;
+          }),
           appService.resolveFilePath(getConfigFilename(book), 'Books').catch(() => null),
         ]);
         return [hash, { sourcePath, configPath }] as const;
       }),
-    ).then((entries) => {
-      if (!cancelled) setPlaybackSources(new Map(entries));
-    });
+    )
+      .then((entries) => {
+        if (!cancelled) {
+          setPlaybackSourceState({ key: playbackSourceKey, sources: new Map(entries) });
+        }
+      })
+      .catch((error) => console.warn('Failed to resolve Android Auto book paths:', error));
 
     return () => {
       cancelled = true;
     };
-  }, [baseCarMediaBooks, library, libraryLoaded, locked]);
+  }, [libraryLoaded, locked, playbackSourceKey]);
 
   useEffect(() => {
     if (!libraryLoaded || !isTauriAppPlatform()) return;
     const platform = getOSPlatform();
-    if (!['android', 'ios'].includes(platform) || (platform === 'android' && !selectionListenerReady))
+    if (!['android', 'ios'].includes(platform)) return;
+    if (
+      platform === 'android' &&
+      (!selectionListenerReady || (!locked && playbackSourceState.key !== playbackSourceKey))
+    )
       return;
     void invoke('plugin:native-tts|update_media_library', {
       payload: { booksJson },
     }).catch((error) => console.warn('Failed to update car media library:', error));
-  }, [booksJson, libraryLoaded, selectionListenerReady]);
+  }, [
+    booksJson,
+    libraryLoaded,
+    locked,
+    playbackSourceKey,
+    playbackSourceState.key,
+    selectionListenerReady,
+  ]);
 
   useEffect(() => {
     if (!isMainAppWindow() || !isTauriAppPlatform() || getOSPlatform() !== 'android') return;

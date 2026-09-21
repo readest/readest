@@ -33,8 +33,8 @@ const nativeTTSPlugin = readFileSync(
   ),
   'utf-8',
 );
-const androidAutoBridge = readFileSync(
-  resolve(process.cwd(), 'src/components/AndroidAutoLibraryBridge.tsx'),
+const carMediaBridge = readFileSync(
+  resolve(process.cwd(), 'src/components/CarMediaLibraryBridge.tsx'),
   'utf-8',
 );
 const appGradle = readFileSync(
@@ -119,9 +119,11 @@ describe('Android Auto declarations (#3919)', () => {
     expect(mediaPlaybackService).toContain(
       'MediaButtonReceiver.handleIntent(mediaSession, intent)',
     );
-    expect(androidAutoBridge).toContain('selectionListenerReady');
-    expect(androidAutoBridge).toContain('resolveNativeBookFilePath(book)');
-    expect(androidAutoBridge).toContain('getConfigFilename(book)');
+    expect(carMediaBridge).toContain('selectionListenerReady');
+    expect(carMediaBridge).toContain('playbackSourceState.key !== playbackSourceKey');
+    expect(carMediaBridge).toContain('resolveNativeBookFilePath(book)');
+    expect(carMediaBridge).toContain('getConfigFilename(book)');
+    expect(mediaPlaybackService).toContain('isCurrentColdUtterance(utteranceId) && !coldTtsPaused');
   });
 
   it('keeps book switches from accepting stale playback or artwork updates', () => {

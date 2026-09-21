@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   platform: 'ios',
   invoke: vi.fn().mockResolvedValue(undefined),
   listen: vi.fn().mockResolvedValue({ unregister: vi.fn() }),
+  resolveNativeBookFilePath: vi.fn().mockResolvedValue('/books/book.epub'),
+  resolveFilePath: vi.fn().mockResolvedValue('/books/book.json'),
 }));
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: mocks.invoke,
@@ -15,7 +17,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
-  getInitializedAppService: () => null,
+  getInitializedAppService: () => ({
+    supportsCoverThumbnailOptimization: false,
+    resolveNativeBookFilePath: mocks.resolveNativeBookFilePath,
+    resolveFilePath: mocks.resolveFilePath,
+  }),
 }));
 vi.mock('@/utils/misc', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/misc')>()),

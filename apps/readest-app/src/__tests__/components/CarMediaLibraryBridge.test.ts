@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Book } from '@/types/book';
-import { MAX_CAR_MEDIA_BOOKS, getCarMediaLibraryBooks } from '@/components/CarMediaLibraryBridge';
+import {
+  MAX_CAR_MEDIA_BOOKS,
+  getCarMediaLibraryBooks,
+  getCarMediaPlaybackSourceKey,
+} from '@/components/CarMediaLibraryBridge';
 
 const book = (overrides: Partial<Book>): Book => ({
   hash: 'hash',
@@ -103,5 +107,29 @@ describe('CarMediaLibraryBridge', () => {
     expect(MAX_CAR_MEDIA_BOOKS).toBe(10);
     expect(books).toHaveLength(MAX_CAR_MEDIA_BOOKS);
     expect(books[0]!.hash).toBe(`book-${library.length - 1}`);
+  });
+
+  it('keeps the playback-source key stable across progress-only reorderings', () => {
+    const firstLibrary = [
+      book({ hash: 'one', updatedAt: 20, downloadedAt: 10 }),
+      book({ hash: 'two', updatedAt: 10, filePath: '/books/two.epub' }),
+    ];
+    const reorderedLibrary = [
+      { ...firstLibrary[0]!, updatedAt: 20 },
+      { ...firstLibrary[1]!, updatedAt: 30 },
+    ];
+
+    expect(getCarMediaPlaybackSourceKey(firstLibrary, getCarMediaLibraryBooks(firstLibrary))).toBe(
+      getCarMediaPlaybackSourceKey(reorderedLibrary, getCarMediaLibraryBooks(reorderedLibrary)),
+    );
+  });
+
+  it('changes the playback-source key when a source input changes', () => {
+    const firstLibrary = [book({ hash: 'one', filePath: '/books/one.epub' })];
+    const movedLibrary = [{ ...firstLibrary[0]!, filePath: '/moved/one.epub' }];
+
+    expect(
+      getCarMediaPlaybackSourceKey(firstLibrary, getCarMediaLibraryBooks(firstLibrary)),
+    ).not.toBe(getCarMediaPlaybackSourceKey(movedLibrary, getCarMediaLibraryBooks(movedLibrary)));
   });
 });

@@ -792,7 +792,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                     @Deprecated("Deprecated in Android")
                     override fun onError(utteranceId: String?) {
                         mainHandler.post {
-                            if (isCurrentColdUtterance(utteranceId)) {
+                            if (isCurrentColdUtterance(utteranceId) && !coldTtsPaused) {
                                 publishColdTtsError("Android text-to-speech stopped unexpectedly")
                             }
                         }
