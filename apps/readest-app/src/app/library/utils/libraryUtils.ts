@@ -210,7 +210,7 @@ export const getBookSubjects = (book: Book): string[] => {
   return getContributorNames(book.metadata?.subject);
 };
 
-const getBookTags = (book: Book): string[] => normalizeValues(book.tags ?? []);
+export const getBookTags = (book: Book): string[] => normalizeValues(book.tags ?? []);
 
 export const getLibraryTags = (books: Book[]): string[] =>
   normalizeValues(books.filter((book) => !book.deletedAt).flatMap(getBookTags)).sort((a, b) =>

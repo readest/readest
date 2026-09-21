@@ -113,6 +113,8 @@ describe('SelectModeActions tag', () => {
     render(<SelectModeActions {...baseProps} selectedBooks={[]} />);
 
     expect(getAction('Tag').className).toContain('btn-disabled');
+    // Natively disabled too, so keyboard activation cannot open it.
+    expect(getAction('Tag').disabled).toBe(true);
   });
 });
 

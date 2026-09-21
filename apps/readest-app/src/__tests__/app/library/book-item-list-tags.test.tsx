@@ -49,6 +49,18 @@ describe('book tags in the library list view', () => {
     expect(screen.queryByLabelText('Tags')).toBeNull();
   });
 
+  it('shows each tag once, trimmed, skipping blanks', () => {
+    render(
+      <BookItem
+        {...props}
+        book={{ ...book, tags: [' Fiction ', 'Fiction', '', 'Sci-Fi'] }}
+        mode='list'
+      />,
+    );
+    const chips = Array.from(screen.getByLabelText('Tags').children).map((el) => el.textContent);
+    expect(chips).toEqual(['Fiction', 'Sci-Fi']);
+  });
+
   it('renders nothing for a book without tags', () => {
     render(<BookItem {...props} book={{ ...book, tags: [] }} mode='list' />);
     expect(screen.queryByLabelText('Tags')).toBeNull();

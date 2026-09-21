@@ -135,6 +135,7 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
         </button>
         <button
           onClick={onTag}
+          disabled={!hasSelection}
           className={clsx(
             'flex flex-col items-center justify-center gap-1',
             !hasSelection && 'btn-disabled opacity-50',

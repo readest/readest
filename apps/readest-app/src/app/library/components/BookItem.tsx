@@ -23,6 +23,7 @@ import { isAudiobook } from '@/utils/audiobook';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import { splitDuration } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
+import { getBookTags } from '../utils/libraryUtils';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -77,6 +78,8 @@ const BookItem: React.FC<BookItemProps> = ({
     : undefined;
 
   const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
+  // Synced rows may carry untrimmed or duplicate tags; show each tag once.
+  const tags = getBookTags(book);
 
   // One condition drives both the cover overlay and the hiding of the row's
   // transfer buttons, so the cover can never end up showing neither. The
@@ -230,7 +233,7 @@ const BookItem: React.FC<BookItemProps> = ({
               <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
             )
           )}
-          {mode === 'list' && !!book.tags?.length && (
+          {mode === 'list' && tags.length > 0 && (
             // The tags only take the space left between the progress and the
             // icons, and clip (fading out) when it runs out. `w-0` zeroes their
             // min-content contribution, else a long tag list widens the whole
@@ -246,7 +249,7 @@ const BookItem: React.FC<BookItemProps> = ({
                 'eink:[mask-image:none]',
               )}
             >
-              {book.tags.map((tag) => (
+              {tags.map((tag) => (
                 <span
                   key={tag}
                   className='eink-bordered text-neutral-content/70 border-base-content/15 inline-flex h-3.5 shrink-0 items-center whitespace-nowrap rounded-sm border px-1 text-[10px] leading-none'
