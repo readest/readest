@@ -418,6 +418,55 @@ describe('useProgressSync', () => {
     expect(pullCallCount()).toBe(initialPulls + 2);
   });
 
+  for (const responseBeforeCompletion of [true, false]) {
+    test(`queues a resume pull across an in-flight request (response first: ${responseBeforeCompletion})`, async () => {
+      let finishPull!: () => void;
+      h.state.syncedConfigs = null;
+      h.syncConfigsMock.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            finishPull = resolve;
+          }),
+      );
+      const { rerender } = renderHook(() => useProgressSync('h1-view1'));
+      await advance(0);
+      const visibility = vi.spyOn(document, 'visibilityState', 'get');
+      visibility.mockReturnValueOnce('hidden').mockReturnValue('visible');
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        document.dispatchEvent(new Event('visibilitychange'));
+        await flushMicrotasks();
+      });
+      visibility.mockRestore();
+      expect(pullCallCount()).toBe(1);
+
+      if (!responseBeforeCompletion) {
+        await act(async () => {
+          finishPull();
+          await flushMicrotasks();
+        });
+      }
+      h.state.syncedConfigs = [];
+      rerender();
+      if (responseBeforeCompletion) {
+        await act(async () => {
+          finishPull();
+          await flushMicrotasks();
+        });
+      }
+      await advance(0);
+      expect(pullCallCount()).toBe(2);
+
+      h.cfiCompareMock.mockReturnValue(-1);
+      h.state.syncedConfigs = [{ bookHash: 'h1', location: 'remote-after-resume' }];
+      rerender();
+      await advance(0);
+      expect(h.view.goTo).toHaveBeenCalledWith('remote-after-resume');
+      await advance(20_000);
+      expect(pullCallCount()).toBe(2);
+    });
+  }
+
   test('merges synced book-scope proofread rules into local config by id', async () => {
     // Local has a book rule; the remote config carries a different book rule
     // plus a library-scope rule (which must be ignored — it syncs separately

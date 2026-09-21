@@ -67,6 +67,7 @@ export const useProgressSync = (bookKey: string) => {
   const hasPulledConfigOnce = useRef(false);
   const pullAttempt = useRef(0);
   const pullInFlight = useRef(false);
+  const pendingResumePull = useRef(false);
   const pullRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearPendingPullRetry = () => {
@@ -103,6 +104,16 @@ export const useProgressSync = (bookKey: string) => {
     await syncConfigs([], bookHash, metaHash, 'pull');
   };
 
+  const runPendingResumePull = () => {
+    // Wait for both the request and its React-delivered result so the old
+    // response cannot close the new pull's gate.
+    if (!pendingResumePull.current || pullInFlight.current || !configPulled.current) return false;
+    configPulled.current = false;
+    clearPendingPullRetry();
+    void pullWithRetry();
+    return true;
+  };
+
   // Drives the pull on book open. A successful pull is signalled by the
   // [syncedConfigs] effect below flipping `configPulled.current` to true and
   // clearing the retry state — so this function just kicks off the next
@@ -114,12 +125,14 @@ export const useProgressSync = (bookKey: string) => {
     if (configPulled.current) return;
     if (pullInFlight.current) return;
     if (pullRetryTimer.current !== null) return;
+    pendingResumePull.current = false;
     pullInFlight.current = true;
     try {
       await pullConfig(bookKey);
     } finally {
       pullInFlight.current = false;
     }
+    if (runPendingResumePull()) return;
     if (configPulled.current) return;
     if (pullAttempt.current >= PULL_RETRY_DELAYS_MS.length) {
       // Best-effort release. The server-side last-writer-wins compare still
@@ -202,6 +215,7 @@ export const useProgressSync = (bookKey: string) => {
     // The book stays mounted while Android is backgrounded. Pull again on
     // resume before a suspended auto-push can send the old local position.
     handleAutoSync.cancel();
+    pendingResumePull.current = pullInFlight.current;
     configPulled.current = false;
     pullAttempt.current = 0;
     clearPendingPullRetry();
@@ -236,7 +250,10 @@ export const useProgressSync = (bookKey: string) => {
   // Clean up any pending retry timer on unmount so it doesn't fire after the
   // reader has been torn down.
   useEffect(() => {
-    return () => clearPendingPullRetry();
+    return () => {
+      pendingResumePull.current = false;
+      clearPendingPullRetry();
+    };
   }, []);
 
   const applyRemoteProgress = async (syncedConfigs: BookConfig[]) => {
@@ -427,6 +444,7 @@ export const useProgressSync = (bookKey: string) => {
       applyRemoteProgress(syncedConfigs).catch((error) => {
         console.error('Failed to apply remote progress', error);
       });
+      runPendingResumePull();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedConfigs]);
