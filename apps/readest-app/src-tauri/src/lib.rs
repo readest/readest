@@ -794,7 +794,11 @@ pub fn run() {
             );
 
             let app_handle = app.handle().clone();
-            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+            let window_url = match std::env::var("READEST_FOUNDATION_SPIKE") {
+                Ok(value) if value == "1" => WebviewUrl::App("foundation-spike".into()),
+                _ => WebviewUrl::default(),
+            };
+            let win_builder = WebviewWindowBuilder::new(app, "main", window_url)
                 .background_throttling(BackgroundThrottlingPolicy::Disabled)
                 .background_color(if is_eink {
                     tauri::window::Color(255, 255, 255, 255)
