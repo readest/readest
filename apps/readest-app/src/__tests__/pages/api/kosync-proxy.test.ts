@@ -1,0 +1,98 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import handler from '@/pages/api/kosync';
+
+vi.mock('@/utils/cors', () => ({ corsAllMethods: {}, runMiddleware: vi.fn() }));
+afterEach(() => vi.unstubAllGlobals());
+
+const call = async (endpoint = '/users/auth', serverUrl = 'https://sync.example.com') => {
+  const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn() };
+  await handler(
+    {
+      method: 'POST',
+      body: { serverUrl, endpoint, method: 'GET' },
+    } as NextApiRequest,
+    res as unknown as NextApiResponse,
+  );
+  return res;
+};
+
+describe('KOSync proxy boundaries', () => {
+  it('rejects paths merely containing an allowed endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call('/unrelated/users/auth/extra');
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not follow a redirect to an internal service', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+      if (init.redirect !== 'manual') return new Response('internal secret');
+      return new Response(null, { status: 307, headers: { location: 'http://127.0.0.1/admin' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call();
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).not.toHaveBeenCalledWith('internal secret');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves compatible same-origin redirects', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { status: 307, headers: { location: '/users/auth/' } }),
+      )
+      .mockResolvedValueOnce(new Response('{"ok":true}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(res.json).toHaveBeenCalledWith({ ok: true });
+  });
+  it('rejects a cross-origin public redirect instead of forwarding credentials', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: { location: 'https://other.example/users/auth' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call();
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops redirect loops', async () => {
+    const fetchMock = vi.fn().mockImplementation(
+      async () =>
+        new Response(null, {
+          status: 307,
+          headers: { location: '/users/auth' },
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call();
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+  it('allows same-host HTTP to HTTPS upgrades', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 301,
+          headers: { location: 'https://sync.example.com/users/auth' },
+        }),
+      )
+      .mockResolvedValueOnce(new Response('{"ok":true}'));
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await call('/users/auth', 'http://sync.example.com');
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://sync.example.com/users/auth',
+      expect.objectContaining({ redirect: 'manual' }),
+    );
+    expect(res.json).toHaveBeenCalledWith({ ok: true });
+  });
+});
