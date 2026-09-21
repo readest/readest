@@ -433,6 +433,7 @@ export class OcrSession {
   }
 
   #cancelQueuedTasks(): void {
+    this.#runningTask?.controller.abort();
     const queuedTasks = this.#queue;
     this.#queue = [];
     for (const task of queuedTasks) task.resolve(null);
@@ -451,7 +452,7 @@ export class OcrSession {
       try {
         await engine.terminate();
       } catch (error) {
-        this.#onError?.(error, -1);
+        console.warn('Failed to release OCR engine', error);
       }
     });
     this.#engineTermination = termination;

@@ -99,7 +99,8 @@ describe('OcrSession', () => {
       })),
       terminate: vi.fn(async () => undefined),
     };
-    const session = new OcrSession({ createEngine: () => engine });
+    const onError = vi.fn();
+    const session = new OcrSession({ createEngine: () => engine, onError });
 
     await session.processDocument(doc, 3);
     expect(engine.recognize).not.toHaveBeenCalled();
@@ -110,6 +111,32 @@ describe('OcrSession', () => {
     await session.setEnabled(false);
     expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)).toBeNull();
     expect(engine.terminate).toHaveBeenCalledOnce();
+
+    image.src = 'blob:another-page';
+    vi.mocked(engine.recognize).mockImplementationOnce(
+      (_source, _page, signal) =>
+        new Promise((_resolve, reject) => {
+          signal!.addEventListener('abort', () => reject(signal!.reason), { once: true });
+        }),
+    );
+    let rejectTermination!: (error: Error) => void;
+    vi.mocked(engine.terminate).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectTermination = reject;
+        }),
+    );
+    const active = session.setEnabled(true);
+    await vi.waitFor(() => expect(engine.recognize).toHaveBeenCalledTimes(2));
+    const disabled = session.setEnabled(false);
+    expect(vi.mocked(engine.recognize).mock.calls[1]?.[2]?.aborted).toBe(true);
+    await vi.waitFor(() => expect(rejectTermination).toBeDefined());
+    const resumed = session.setEnabled(true);
+    rejectTermination(new Error('Old engine cleanup failed'));
+    await Promise.all([active, disabled, resumed]);
+    expect(onError).not.toHaveBeenCalled();
+    expect(doc.querySelector(OCR_TEXT_LAYER_SELECTOR)?.textContent).toBe('日本語');
+    await session.terminate();
   });
 
   it('retains the 32 most recently used results after their documents unload', async () => {
