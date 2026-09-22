@@ -60,8 +60,16 @@ jobs:
           $newProcess = Start-Process $newInstaller.FullName -ArgumentList "/S" -Wait -PassThru
           if ($newProcess.ExitCode -ne 0) { throw "0.12.12 silent upgrade failed: $($newProcess.ExitCode)" }
           if ((Get-Content $sentinel) -ne "preserve-me") { throw "App data was not preserved" }
-          $entries = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" |
-            Get-ItemProperty | Where-Object { $_.DisplayName -eq "Readest NL-270" }
+          $uninstallRoots = @(
+            "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+          )
+          $entries = foreach ($root in $uninstallRoots) {
+            if (Test-Path $root) {
+              Get-ChildItem $root | Get-ItemProperty | Where-Object { $_.DisplayName -eq "Readest NL-270" }
+            }
+          }
           if (@($entries).Count -ne 1) { throw "Expected one Readest NL-270 uninstall entry, got $(@($entries).Count)" }
           if ($entries.DisplayVersion -ne "0.12.12") { throw "Installed version is $($entries.DisplayVersion)" }
           $signature = Get-AuthenticodeSignature $newInstaller.FullName
@@ -72,6 +80,7 @@ jobs:
           Write-Host "Authenticode: $($signature.Status)"
           Write-Host "Upgrade: v3 -> 0.12.12, data preserved, one uninstall entry"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
         with:
           name: Readest-NL-270-Windows-x64-v4
           path: target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
