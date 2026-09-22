@@ -30,6 +30,7 @@
 		D4A0A4E1CB92879877D7319E /* ReadestWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60661C103F0FF9B56906D570 /* ReadestWidgetBundle.swift */; };
 		D59272888A2BFE858490838D /* ReadingWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CB7597C040DC2E2BBAAD58 /* ReadingWidgetViews.swift */; };
 		D608DE39BD2F9FA892508F37 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B62E5ED5797D06981F30B6F /* UIKit.framework */; };
+		D8686630072A4D6D59502DF8 /* CarPlayBootstrap.m in Sources */ = {isa = PBXBuildFile; fileRef = A6F7D4232EC1A743CA6CB256 /* CarPlayBootstrap.m */; };
 		E6D9510F89AD18B18D0FCBC9 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E5F4A6E57CB4895FFFBC2DE8 /* ShareExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		E853ADD6F720091D24E184FD /* AppGroupBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EACF94D1026C7A51CD0A63 /* AppGroupBridge.swift */; };
 		EF4B1B9640A3E70CE3F329E9 /* ReadingWidgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4CB13FE16F5D99107B056A7 /* ReadingWidgetProvider.swift */; };
@@ -111,6 +112,7 @@
 		9CE7112678AB90D73F62180F /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		A02C074BB1C537B8020DB593 /* system_dictionary.rs */ = {isa = PBXFileReference; path = system_dictionary.rs; sourceTree = "<group>"; };
 		A37E99A73D229E08C8B46AEB /* epub_parser.rs */ = {isa = PBXFileReference; path = epub_parser.rs; sourceTree = "<group>"; };
+		A6F7D4232EC1A743CA6CB256 /* CarPlayBootstrap.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CarPlayBootstrap.m; sourceTree = "<group>"; };
 		A7318D4877A991A1DAB79861 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
 		A77628B94260724841CB0C1F /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		AA9882F143239C0055D58746 /* spawn_fresh_browser.rs */ = {isa = PBXFileReference; path = spawn_fresh_browser.rs; sourceTree = "<group>"; };
@@ -309,6 +311,7 @@
 		ADF310BD2F14DA462EF79E53 /* Readest_iOS */ = {
 			isa = PBXGroup;
 			children = (
+				A6F7D4232EC1A743CA6CB256 /* CarPlayBootstrap.m */,
 				9CE7112678AB90D73F62180F /* CarPlaySceneDelegate.swift */,
 				7DADD61846736B0E638BF012 /* Readest_iOS.entitlements */,
 			);
@@ -530,6 +533,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D8686630072A4D6D59502DF8 /* CarPlayBootstrap.m in Sources */,
 				18653C7427FA61B643FB5927 /* CarPlaySceneDelegate.swift in Sources */,
 				9E79568218100A2569F00CEA /* SentryBootstrap.m in Sources */,
 				A3B9B497F2EC434EEEBA2235 /* main.mm in Sources */,

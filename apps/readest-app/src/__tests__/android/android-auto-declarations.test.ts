@@ -33,6 +33,10 @@ const nativeTTSPlugin = readFileSync(
   ),
   'utf-8',
 );
+const carMediaBridge = readFileSync(
+  resolve(process.cwd(), 'src/components/CarMediaLibraryBridge.tsx'),
+  'utf-8',
+);
 const appGradle = readFileSync(
   resolve(process.cwd(), 'src-tauri/gen/android/app/build.gradle.kts'),
   'utf-8',
@@ -102,6 +106,35 @@ describe('Android Auto declarations (#3919)', () => {
     expect(mediaPlaybackService).toContain('isAudiobook = item.optBoolean("isAudiobook", false)');
     expect(mediaPlaybackService).toContain('selectedBook?.isAudiobook == true');
     expect(mediaPlaybackService).toContain('"readest://book/$hash?autoplay=tts"');
+  });
+
+  it('starts cold EPUB speech inside the media service without requiring the phone activity', () => {
+    expect(mediaPlaybackService).toContain('ACTION_START_COLD_EPUB');
+    expect(mediaPlaybackService).toContain('activateColdEpubPlayback(hash)');
+    expect(mediaPlaybackService).toContain('ColdEpubText.read(source, config.cfi)');
+    expect(mediaPlaybackService).toContain('TextToSpeech(applicationContext)');
+    expect(mediaPlaybackService).toContain('handoffColdTtsToWebView(pending)');
+    expect(mediaPlaybackService).toContain('File(applicationInfo.dataDir, "Readest/Books/');
+    expect(mediaPlaybackService).toContain('persistColdTtsLocation(segment.cfi)');
+    expect(mediaPlaybackService).toContain(
+      'MediaButtonReceiver.handleIntent(mediaSession, intent)',
+    );
+    expect(carMediaBridge).toContain('selectionListenerReady');
+    expect(carMediaBridge).toContain('playbackSourceState.key !== playbackSourceKey');
+    expect(carMediaBridge).toContain('resolveNativeBookFilePath(book)');
+    expect(carMediaBridge).toContain('getConfigFilename(book)');
+    expect(mediaPlaybackService).toContain('isCurrentColdUtterance(utteranceId) && !coldTtsPaused');
+  });
+
+  it('releases cold playback on explicit WebView activation even after pause canceled autoplay', () => {
+    const activation = mediaPlaybackService.slice(
+      mediaPlaybackService.indexOf('fun requestActivation(sessionId: String?, bookHash: String?)'),
+      mediaPlaybackService.lastIndexOf('fun requestDeactivation(sessionId:'),
+    );
+    // Pause can empty pendingBookHash. Explicit activation must release the
+    // native owner independently of setPluginEventTrigger draining that queue.
+    expect(activation).toContain('service.clearColdTtsPlayback()');
+    expect(activation).not.toContain('pendingBookHash');
   });
 
   it('keeps book switches from accepting stale playback or artwork updates', () => {

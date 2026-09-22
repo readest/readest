@@ -334,13 +334,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <NotebookToggler bookKey={bookKey} />
           <Dropdown
             label={_('View Options')}
-            // On mobile, anchor to the header rather than the toggle, which
-            // sits inward from the edge to leave room for the close button.
-            containerClassName={clsx(
-              'h-8',
-              isMobile &&
-                '[&>div]:static [&_details.dropdown]:static [&_.view-menu]:left-auto! [&_.view-menu]:right-4!',
-            )}
+            containerClassName='h-8'
             className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'
             buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0 mt-0'
             toggleButton={<MdOutlineMenu />}

@@ -113,6 +113,30 @@ describe('TauriMediaSession.setActive', () => {
     vi.clearAllMocks();
   });
 
+  test('registers transport listeners before notification permission settles', async () => {
+    let releasePermission!: () => void;
+    vi.mocked(addPluginListener).mockResolvedValue({
+      unregister: vi.fn(),
+    } as unknown as PluginListener);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        await new Promise<void>((resolve) => {
+          releasePermission = resolve;
+        });
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    const activation = session.setActive({ active: true, sessionId: 'book-1' });
+
+    await vi.waitFor(() => expect(releasePermission).toBeTypeOf('function'));
+    expect(addPluginListener).toHaveBeenCalled();
+    releasePermission();
+    await activation;
+  });
+
   test('requests POST_NOTIFICATIONS whenever the session activates', async () => {
     // The foreground-service media notification IS the lock-screen control; on
     // Android 13+ it is silently suppressed unless POST_NOTIFICATIONS is

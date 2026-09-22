@@ -77,7 +77,14 @@ vi.mock('@/app/reader/components/NotebookToggler', () => ({ default: () => null 
 vi.mock('@/app/reader/components/TranslationToggler', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/ViewMenu', () => ({
   default: () => (
-    <Menu className='view-menu dropdown-content dropdown-right no-triangle mt-1.5'>Settings</Menu>
+    <Menu
+      className='view-menu dropdown-content dropdown-right no-triangle mt-1.5'
+      style={{
+        marginRight: useEnvMock().appService?.isMobile || window.innerWidth < 640 ? '-36px' : 0,
+      }}
+    >
+      Settings
+    </Menu>
   ),
 }));
 vi.mock('@/app/reader/components/SyncInfoDialog', () => ({ default: () => null }));
@@ -166,7 +173,12 @@ it.each([
   { width: 807, mobile: true, rtl: false, eink: false },
   { width: 390, mobile: true, rtl: true, eink: false },
   { width: 390, mobile: true, rtl: false, eink: true },
-])('aligns the mobile reader menu with 16px padding: %o', async ({ width, mobile, rtl, eink }) => {
+])('keeps the mobile reader menu near the screen edge and dismissible: %o', async ({
+  width,
+  mobile,
+  rtl,
+  eink,
+}) => {
   useEnvMock.mockReturnValue({ envConfig: {}, appService: { isMobile: mobile } });
   document.documentElement.classList.toggle('ui-rtl', rtl);
   document.documentElement.setAttribute('data-eink', String(eink));
@@ -174,9 +186,19 @@ it.each([
   const { container } = renderHeader();
   fireEvent.click(screen.getByRole('button', { name: 'View Options' }));
   const menu = container.querySelector('.view-menu') as HTMLElement;
-  const header = container.querySelector('.header-bar') as HTMLElement;
-  expect(menu.getBoundingClientRect().right).toBe(width - 16);
-  expect(menu.getBoundingClientRect().top).toBeCloseTo(header.getBoundingClientRect().bottom + 6);
+  const toggle = screen.getByRole('button', { name: 'View Options' });
+  const endGap = width - menu.getBoundingClientRect().right;
+  expect(endGap).toBeGreaterThanOrEqual(16);
+  expect(endGap).toBeLessThanOrEqual(20);
+  expect(menu.getBoundingClientRect().top).toBeCloseTo(toggle.getBoundingClientRect().bottom + 6);
+  const overlay = container.querySelector('.overlay') as HTMLElement;
+  expect(getComputedStyle(overlay).position).toBe('fixed');
+  const outside = document.elementFromPoint(16, 880) as HTMLElement;
+  expect(outside).toBe(overlay);
+  fireEvent.click(outside);
+  expect(screen.getByRole('button', { name: 'View Options' }).getAttribute('aria-expanded')).toBe(
+    'false',
+  );
 });
 
 it('keeps the desktop menu aligned with its toggle', async () => {
