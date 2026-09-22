@@ -6,6 +6,7 @@ local socketutil = require("socketutil")
 local SYNC_TIMEOUTS = { 5, 10 }
 local RETRY_TIMEOUTS = { 10, 20 }
 local READ_METHODS = { pullChanges = true, pullBooks = true, getDownloadUrl = true, listFiles = true }
+local response_seq = 0
 
 -- LuaSec reports TLS handshake timeouts as "wantread"/"wantwrite";
 -- Spore wraps these strings with a source location. Only retry transport
@@ -96,11 +97,17 @@ end
 function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive)
     local FFIUtil = require("ffi/util")
     local json = require("json")
-    -- os.tmpname uses mkstemp on KOReader's POSIX platforms (mode 0600).
-    -- Stats/notes responses can exceed a pipe buffer; a private temporary
-    -- file avoids deadlocking a child while the parent waits for its exit.
-    local temp_ok, result_path = pcall(os.tmpname)
-    if not temp_ok then receive(false, "cannot create sync response file"); return end
+    -- Stats/notes responses can exceed a pipe buffer; a response file
+    -- avoids deadlocking a child while the parent waits for its exit.
+    -- Not os.tmpname: /tmp is unwritable for the app on Android and a
+    -- small, often full tmpfs on Kindle. The settings dir already holds
+    -- the access token, so the response is no less private there.
+    response_seq = response_seq + 1
+    local result_path = string.format("%s/readest_sync_%d_%d.json",
+        require("datastorage"):getSettingsDir(), os.time(), response_seq)
+    local created = io.open(result_path, "wb")
+    if not created then receive(false, "cannot create sync response file"); return end
+    created:close()
     local pid = FFIUtil.runInSubProcess(function()
         -- No exceptions may escape, and _exit avoids inherited graphics
         -- driver destructors on Android (same rule as background covers).

@@ -461,22 +461,30 @@ function M.pullBooks(opts, cb)
             local pull_ts = opts.store:getLastPulledAt() or 0
             local push_ts = opts.store:getLastPushedAt() or 0
             local upserted = 0
-            for _, raw in ipairs(rows) do
-                local parsed = LibraryStore.parseSyncRow(raw)
-                if parsed then
-                    parsed.user_id = opts.settings.user_id
-                    opts.store:upsertBook(parsed)
-                    upserted = upserted + 1
-                    local rc = row_pull_cursor(parsed)
-                    if rc > pull_ts then pull_ts = rc end
-                    if parsed.updated_at and parsed.updated_at > push_ts then
-                        push_ts = parsed.updated_at
-                    end
-                    if parsed.deleted_at and parsed.deleted_at > push_ts then
-                        push_ts = parsed.deleted_at
+            -- One transaction for the whole page: a first pull is the full
+            -- library, and a commit per row on Android's /sdcard stalls the
+            -- UI thread past the ANR watchdog.
+            opts.store.db:exec("BEGIN;")
+            local ok, err = pcall(function()
+                for _, raw in ipairs(rows) do
+                    local parsed = LibraryStore.parseSyncRow(raw)
+                    if parsed then
+                        parsed.user_id = opts.settings.user_id
+                        opts.store:upsertBook(parsed)
+                        upserted = upserted + 1
+                        local rc = row_pull_cursor(parsed)
+                        if rc > pull_ts then pull_ts = rc end
+                        if parsed.updated_at and parsed.updated_at > push_ts then
+                            push_ts = parsed.updated_at
+                        end
+                        if parsed.deleted_at and parsed.deleted_at > push_ts then
+                            push_ts = parsed.deleted_at
+                        end
                     end
                 end
-            end
+            end)
+            opts.store.db:exec(ok and "COMMIT;" or "ROLLBACK;")
+            if not ok then error(err) end
             opts.store:setLastPulledAt(pull_ts)
             opts.store:setLastPushedAt(push_ts)
             logger.info("ReadestLibrary pullBooks complete: rows=" .. #rows
