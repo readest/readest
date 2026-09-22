@@ -201,9 +201,9 @@ describe('SOURCE_DOC foundation spike', () => {
 
     expect(imported.blocks).toHaveLength(2);
     expect(store.getThread(thread.id)).toBeNull();
-    expect(store.loadSchema().messages.find((message) => message.threadId === thread.id)?.content).toBe(
-      '保留我',
-    );
+    expect(
+      store.loadSchema().messages.find((message) => message.threadId === thread.id)?.content,
+    ).toBe('保留我');
     expect(new SourceDocSpikeStore(localStorage).loadCurrentDocument().title).toBe('新书');
   });
 
