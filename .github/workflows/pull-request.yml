@@ -454,3 +454,55 @@ jobs:
         if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app
         run: xvfb-run pnpm test:pr:tauri
+
+  nl_270_windows_x64:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: 'true'
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @readest/readest-app setup-vendors
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
+        with:
+          key: nl-270-windows-x64-cargo
+      - name: create Tauri environment
+        shell: bash
+        run: |
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > .env.local
+          cp .env.local apps/readest-app/.env.local
+      - name: build Windows x64 test installer
+        shell: bash
+        timeout-minutes: 45
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+          READEST_FOUNDATION_SPIKE: '1'
+        run: |
+          cd apps/readest-app
+          pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis --config '{"productName":"Readest NL-270","identifier":"com.readest.nl270","bundle":{"createUpdaterArtifacts":false}}'
+      - name: verify installer
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          if (-not $installer) { throw "Windows installer was not generated" }
+          $signature = Get-AuthenticodeSignature $installer.FullName
+          $hash = Get-FileHash $installer.FullName -Algorithm SHA256
+          Write-Host "Installer: $($installer.Name)"
+          Write-Host "Size: $($installer.Length) bytes"
+          Write-Host "SHA256: $($hash.Hash)"
+          Write-Host "Authenticode: $($signature.Status)"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Readest-NL-270-Windows-x64
+          path: target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
+          compression-level: 0
