@@ -283,7 +283,7 @@ describe('Tesseract manga OCR', () => {
   });
 
   it('splits long vertical text before recognition', () => {
-    installCanvas();
+    const contexts = installCanvas();
     const source = document.createElement('canvas');
     source.width = 64;
     source.height = 1280;
@@ -299,19 +299,29 @@ describe('Tesseract manga OCR', () => {
       vertical: true,
     };
 
-    const crops = makeMangaTextLineCrops(
-      source,
-      {
-        data: new Uint8ClampedArray(source.width * source.height * 4).fill(255),
-        width: source.width,
-        height: source.height,
-      },
-      longLine,
-      { keepVertical: true, vertical: true },
-    );
+    const data = new Uint8ClampedArray(source.width * source.height * 4);
+    for (let i = 0; i < data.length; i++) data[i] = i % 251;
+    const image = { data, width: source.width, height: source.height };
+    const crops = makeMangaTextLineCrops(source, image, longLine, {
+      keepVertical: true,
+      vertical: true,
+    });
 
     expect(crops).toHaveLength(2);
     expect(crops.every((crop) => crop.width === 80 && crop.height < 1_000)).toBe(true);
+    makeMangaTextLineCrops(source, image, longLine, { vertical: true });
+    const pixels = contexts.mock.results.map(({ value }) => value.putImageData.mock.calls[0][0]);
+    for (let chunk = 0; chunk < crops.length; chunk++) {
+      const upright = pixels[chunk];
+      const rotated = pixels[chunk + crops.length];
+      for (const y of [0, Math.floor(upright.height / 2), upright.height - 1]) {
+        for (const x of [0, upright.width - 1]) {
+          const from = (y * upright.width + x) * 4;
+          const to = ((rotated.height - 1 - x) * rotated.width + y) * 4;
+          expect(upright.data.subarray(from, from + 4)).toEqual(rotated.data.subarray(to, to + 4));
+        }
+      }
+    }
   });
 
   it('keeps unsplit vertical crops upright without allocating rotated copies', () => {

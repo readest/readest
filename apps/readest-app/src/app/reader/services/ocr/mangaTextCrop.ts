@@ -12,10 +12,10 @@ interface RgbaImage {
 }
 
 interface RasterImage {
-  data: ArrayLike<number>;
+  data: Uint8Array | Uint8ClampedArray;
   width: number;
   height: number;
-  channels: number;
+  channels: 1 | 4;
 }
 
 interface MangaTextCropOptions {
@@ -119,35 +119,22 @@ const perspectiveWarp = (
   return { data, width, height, channels: image.channels };
 };
 
-const rotateCounterClockwise = (image: RasterImage): RasterImage => {
+const rotateRaster = (image: RasterImage, clockwise = false): RasterImage => {
   const width = image.height;
   const height = image.width;
   const data = new Uint8ClampedArray(width * height * image.channels);
+  const pixels =
+    image.channels === 4
+      ? new Uint32Array(image.data.buffer, image.data.byteOffset, image.data.length / 4)
+      : image.data;
+  const rotated = image.channels === 4 ? new Uint32Array(data.buffer) : data;
+  const start = clockwise ? (image.height - 1) * image.width : image.width - 1;
+  const rowStep = clockwise ? 1 : -1;
+  const columnStep = clockwise ? -image.width : image.width;
   for (let y = 0; y < height; y += 1) {
+    const row = start + y * rowStep;
     for (let x = 0; x < width; x += 1) {
-      const sourceX = image.width - 1 - y;
-      const sourceY = x;
-      const source = (sourceY * image.width + sourceX) * image.channels;
-      for (let channel = 0; channel < image.channels; channel += 1) {
-        data[(y * width + x) * image.channels + channel] = Number(image.data[source + channel]);
-      }
-    }
-  }
-  return { data, width, height, channels: image.channels };
-};
-
-const rotateClockwise = (image: RasterImage): RasterImage => {
-  const width = image.height;
-  const height = image.width;
-  const data = new Uint8ClampedArray(width * height * image.channels);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const sourceX = y;
-      const sourceY = image.height - 1 - x;
-      const source = (sourceY * image.width + sourceX) * image.channels;
-      for (let channel = 0; channel < image.channels; channel += 1) {
-        data[(y * width + x) * image.channels + channel] = Number(image.data[source + channel]);
-      }
+      rotated[y * width + x] = pixels[row + x * columnStep]!;
     }
   }
   return { data, width, height, channels: image.channels };
@@ -204,9 +191,7 @@ const sliceRaster = (image: RasterImage, left: number, right: number): RasterIma
   for (let y = 0; y < image.height; y += 1) {
     const source = (y * image.width + left) * image.channels;
     const target = y * width * image.channels;
-    for (let index = 0; index < width * image.channels; index += 1) {
-      data[target + index] = Number(image.data[source + index]);
-    }
+    data.set(image.data.subarray(source, source + width * image.channels), target);
   }
   return { data, width, height: image.height, channels: image.channels };
 };
@@ -291,7 +276,7 @@ export const makeMangaTextLineCrops = (
     const canvas = makeCanvas(source, warped, options.border ?? BORDER);
     return canvas ? [canvas] : [];
   }
-  const normalized = vertical ? rotateCounterClockwise(warped) : warped;
+  const normalized = vertical ? rotateRaster(warped) : warped;
   const maximumRatio = vertical ? MAXIMUM_VERTICAL_RATIO : MAXIMUM_HORIZONTAL_RATIO;
   const needsSplit = normalized.width > normalized.height * maximumRatio;
   const maskPolygon =
@@ -310,10 +295,10 @@ export const makeMangaTextLineCrops = (
           dimensions.height,
         ) ?? undefined)
       : undefined;
-  const normalizedMask = vertical && warpedMask ? rotateCounterClockwise(warpedMask) : warpedMask;
+  const normalizedMask = vertical && warpedMask ? rotateRaster(warpedMask) : warpedMask;
   const chunks = splitRaster(normalized, normalizedMask, maximumRatio);
   return chunks.flatMap((chunk) => {
-    const oriented = vertical && options.keepVertical ? rotateClockwise(chunk) : chunk;
+    const oriented = vertical && options.keepVertical ? rotateRaster(chunk, true) : chunk;
     const canvas = makeCanvas(source, oriented, options.border ?? BORDER);
     return canvas ? [canvas] : [];
   });
