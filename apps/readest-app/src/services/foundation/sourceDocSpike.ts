@@ -23,6 +23,8 @@ export interface SourceDocFixture {
 
 export interface SourceDocAnchor {
   blockId: string;
+  endBlockId: string;
+  selectedBlockIds: string[];
   sectionId: string;
   exactQuote: string;
   prefix: string;
@@ -166,6 +168,8 @@ export function createSelectionAnchor(
 
   return {
     blockId: selectedBlock.id,
+    endBlockId: selectedBlock.id,
+    selectedBlockIds: [selectedBlock.id],
     sectionId: selectedBlock.sectionId,
     exactQuote: selectedBlock.semanticText.slice(startOffset, endOffset),
     prefix: selectedBlock.semanticText.slice(
@@ -173,6 +177,51 @@ export function createSelectionAnchor(
       startOffset,
     ),
     suffix: selectedBlock.semanticText.slice(endOffset, endOffset + CONTEXT_LENGTH),
+    startOffset,
+    endOffset,
+  };
+}
+
+export function createRangeAnchor(
+  document: SourceDocFixture,
+  startBlockId: string,
+  startOffset: number,
+  endBlockId: string,
+  endOffset: number,
+): SourceDocAnchor {
+  const startIndex = document.blocks.findIndex((item) => item.id === startBlockId);
+  const endIndex = document.blocks.findIndex((item) => item.id === endBlockId);
+  if (startIndex < 0 || endIndex < startIndex) throw new Error('Selection block range is invalid');
+
+  const selectedBlocks = document.blocks.slice(startIndex, endIndex + 1);
+  const firstBlock = selectedBlocks[0]!;
+  const lastBlock = selectedBlocks.at(-1)!;
+  if (
+    startOffset < 0 ||
+    startOffset >= firstBlock.semanticText.length ||
+    endOffset <= 0 ||
+    endOffset > lastBlock.semanticText.length ||
+    (firstBlock.id === lastBlock.id && endOffset <= startOffset)
+  ) {
+    throw new Error('Selection offsets are outside the source block range');
+  }
+
+  const exactQuote = selectedBlocks
+    .map((item, index) => {
+      const from = index === 0 ? startOffset : 0;
+      const to = index === selectedBlocks.length - 1 ? endOffset : item.semanticText.length;
+      return item.semanticText.slice(from, to);
+    })
+    .join('\n');
+
+  return {
+    blockId: firstBlock.id,
+    endBlockId: lastBlock.id,
+    selectedBlockIds: selectedBlocks.map((item) => item.id),
+    sectionId: firstBlock.sectionId,
+    exactQuote,
+    prefix: firstBlock.semanticText.slice(Math.max(0, startOffset - CONTEXT_LENGTH), startOffset),
+    suffix: lastBlock.semanticText.slice(endOffset, endOffset + CONTEXT_LENGTH),
     startOffset,
     endOffset,
   };
@@ -198,7 +247,13 @@ export function generateStubAnswer(
   return {
     content: `这是确定性底座回答。问题“${question}”已绑定到所选原文，并通过另一章节的证明步骤补充依据。`,
     citations: [
-      { blockId: selected.id, exactQuote: anchor.exactQuote },
+      {
+        blockId: selected.id,
+        exactQuote: selected.semanticText.slice(
+          anchor.startOffset,
+          anchor.blockId === anchor.endBlockId ? anchor.endOffset : selected.semanticText.length,
+        ),
+      },
       { blockId: supporting.id, exactQuote: supporting.semanticText },
     ],
   };
@@ -210,7 +265,15 @@ export class SourceDocSpikeStore {
   load(): SourceDocThread | null {
     const serialized = this.storage.getItem(STORAGE_KEY);
     if (!serialized) return null;
-    return JSON.parse(serialized) as SourceDocThread;
+    const thread = JSON.parse(serialized) as SourceDocThread;
+    return {
+      ...thread,
+      anchor: {
+        ...thread.anchor,
+        endBlockId: thread.anchor.endBlockId ?? thread.anchor.blockId,
+        selectedBlockIds: thread.anchor.selectedBlockIds ?? [thread.anchor.blockId],
+      },
+    };
   }
 
   ask(document: SourceDocFixture, anchor: SourceDocAnchor, question: string): SourceDocThread {

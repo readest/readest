@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   SOURCE_DOC_FIXTURE,
   SourceDocSpikeStore,
+  createRangeAnchor,
   createSelectionAnchor,
   generateStubAnswer,
   validateCitation,
@@ -39,6 +40,20 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(anchor.suffix.length).toBeGreaterThan(0);
   });
 
+  it('captures a continuous selection across source blocks', () => {
+    const first = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const last = SOURCE_DOC_FIXTURE.blocks[2]!;
+    const startOffset = first.semanticText.indexOf('紧致性');
+    const endOffset = last.semanticText.indexOf('因此') + '因此'.length;
+    const anchor = createRangeAnchor(SOURCE_DOC_FIXTURE, first.id, startOffset, last.id, endOffset);
+
+    expect(anchor.selectedBlockIds).toEqual([first.id, last.id]);
+    expect(anchor.endBlockId).toBe(last.id);
+    expect(anchor.exactQuote).toContain('\n');
+    expect(anchor.exactQuote).toContain('紧致性把局部信息提升为全局控制');
+    expect(anchor.exactQuote).toContain('因此');
+  });
+
   it('returns two valid citations from different blocks', () => {
     const block = SOURCE_DOC_FIXTURE.blocks[1]!;
     const startOffset = block.semanticText.indexOf('紧致性');
@@ -65,6 +80,25 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(restored?.messages.map((message) => message.role)).toEqual(['user', 'assistant']);
     expect(restored?.messages[1]?.citations).toHaveLength(2);
     expect(restored?.anchor).toEqual(anchor);
+  });
+
+  it('upgrades anchors saved by the first spike build', () => {
+    const block = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const anchor = createSelectionAnchor(block, 0, 3);
+    const {
+      endBlockId: _endBlockId,
+      selectedBlockIds: _selectedBlockIds,
+      ...legacyAnchor
+    } = anchor;
+    localStorage.setItem(
+      'readest:foundation-spike:v1',
+      JSON.stringify({ id: 'legacy', anchor: legacyAnchor, messages: [] }),
+    );
+
+    expect(new SourceDocSpikeStore(localStorage).load()?.anchor).toMatchObject({
+      endBlockId: block.id,
+      selectedBlockIds: [block.id],
+    });
   });
 
   it('keeps consecutive questions in the same annotation thread', () => {
