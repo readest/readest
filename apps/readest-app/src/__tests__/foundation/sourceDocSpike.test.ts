@@ -6,6 +6,7 @@ import {
   createRangeAnchor,
   createSelectionAnchor,
   generateStubAnswer,
+  parseMarkdownDocument,
   validateCitation,
 } from '@/services/foundation/sourceDocSpike';
 
@@ -107,9 +108,110 @@ describe('SOURCE_DOC foundation spike', () => {
     const startOffset = block.semanticText.indexOf('紧致性');
     const anchor = createSelectionAnchor(block, startOffset, startOffset + '紧致性'.length);
     const first = store.ask(SOURCE_DOC_FIXTURE, anchor, '为什么需要紧致性？');
-    const second = store.ask(SOURCE_DOC_FIXTURE, anchor, '这个结论如何用于证明？');
+    const second = store.ask(SOURCE_DOC_FIXTURE, anchor, '这个结论如何用于证明？', first.id);
 
     expect(second.id).toBe(first.id);
     expect(second.messages).toHaveLength(4);
+  });
+
+  it('imports real Markdown into stable sections and blocks', () => {
+    const markdown = `# 第一章\n\n第一段有 **重点**。\n\n## 子节\n\n- 条目一\n- 条目二\n\n\`\`\`ts\nconst answer = 42;\n\`\`\``;
+    const first = parseMarkdownDocument('测试书.md', markdown);
+    const second = parseMarkdownDocument('测试书.md', markdown);
+
+    expect(first.title).toBe('第一章');
+    expect(first.sections.map((section) => section.title)).toEqual(['第一章', '子节']);
+    expect(first.blocks.map((block) => block.type)).toEqual([
+      'heading',
+      'paragraph',
+      'heading',
+      'list',
+      'code',
+    ]);
+    expect(first.blocks[1]?.semanticText).toBe('第一段有 重点。');
+    expect(first.blocks.map((block) => block.id)).toEqual(second.blocks.map((block) => block.id));
+  });
+
+  it('persists schema v1 and migrates the legacy spike thread', () => {
+    const block = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const anchor = createSelectionAnchor(block, 0, 3);
+    localStorage.setItem(
+      'readest:foundation-spike:v1',
+      JSON.stringify({
+        id: 'legacy-thread',
+        anchor,
+        messages: [{ id: 'legacy-message', role: 'user', content: '旧问题', citations: [] }],
+      }),
+    );
+
+    const store = new SourceDocSpikeStore(localStorage);
+    const schema = store.loadSchema();
+
+    expect(schema.schemaVersion).toBe(1);
+    expect(schema.documents).toHaveLength(1);
+    expect(schema.documentVersions).toHaveLength(1);
+    expect(schema.sections).toHaveLength(2);
+    expect(schema.blocks).toHaveLength(12);
+    expect(schema.anchors).toHaveLength(1);
+    expect(schema.threads[0]?.id).toBe('legacy-thread');
+    expect(schema.messages[0]?.content).toBe('旧问题');
+    expect(localStorage.getItem('readest:annotation-schema:v1')).not.toBeNull();
+  });
+
+  it('uses one authoritative store for multiple threads on the same anchor', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const block = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const anchor = createSelectionAnchor(block, 0, 3);
+    const first = store.ask(SOURCE_DOC_FIXTURE, anchor, '问题一');
+    const second = store.ask(SOURCE_DOC_FIXTURE, anchor, '问题二');
+
+    expect(second.id).not.toBe(first.id);
+    expect(store.listThreads()).toHaveLength(2);
+    expect(store.listThreadGroups()[0]).toMatchObject({ blockId: block.id, count: 2 });
+  });
+
+  it('supports title, message, archive, and delete management', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const block = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const anchor = createSelectionAnchor(block, 0, 3);
+    const thread = store.ask(SOURCE_DOC_FIXTURE, anchor, '原问题');
+    const userMessage = thread.messages[0]!;
+
+    store.renameThread(thread.id, '新的标题');
+    store.editMessage(userMessage.id, '修改后的问题');
+    store.setThreadArchived(thread.id, true);
+    expect(store.getThread(thread.id)).toMatchObject({
+      title: '新的标题',
+      status: 'archived',
+    });
+    expect(store.getThread(thread.id)?.messages[0]?.content).toBe('修改后的问题');
+
+    store.deleteThread(thread.id);
+    expect(store.getThread(thread.id)).toBeNull();
+    expect(store.loadSchema().messages).toHaveLength(0);
+    expect(store.loadSchema().citations).toHaveLength(0);
+  });
+
+  it('imports Markdown without discarding existing annotation data', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const block = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const thread = store.ask(SOURCE_DOC_FIXTURE, createSelectionAnchor(block, 0, 3), '保留我');
+
+    const imported = store.importMarkdown('新书.md', '# 新书\n\n真实正文。');
+
+    expect(imported.blocks).toHaveLength(2);
+    expect(store.getThread(thread.id)?.messages[0]?.content).toBe('保留我');
+    expect(new SourceDocSpikeStore(localStorage).loadCurrentDocument().title).toBe('新书');
+  });
+
+  it('selects replies only from the fixed local candidate set', () => {
+    const block = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const anchor = createSelectionAnchor(block, 0, 3);
+    const first = generateStubAnswer(SOURCE_DOC_FIXTURE, anchor, '问题', () => 0);
+    const last = generateStubAnswer(SOURCE_DOC_FIXTURE, anchor, '问题', () => 0.9999);
+
+    expect(first.content).not.toBe(last.content);
+    expect(first.citations).toHaveLength(2);
+    expect(last.citations).toHaveLength(2);
   });
 });
