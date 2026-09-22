@@ -46,6 +46,7 @@ export interface SectionItem {
   fragments?: Array<SectionFragment>;
 
   loadText?: () => Promise<string | null>;
+  resolveHref?: (href: string) => string;
   // Resolve a reference a script introduces after load (see observeDynamicResources).
   loadHref?: (href: string) => Promise<string>;
   createDocument: () => Promise<Document>;
@@ -123,6 +124,7 @@ export interface BookDoc {
   sections: Array<SectionItem>;
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
+  isExternal?(href: string): boolean;
   getCover(): Promise<Blob | null>;
   // Present on formats that carry a real spine (EPUB); absent for the ones
   // foliate-js gives synthetic per-index CFIs. Mirrors `view.resolveCFI`.

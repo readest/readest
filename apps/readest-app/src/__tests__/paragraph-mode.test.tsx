@@ -1168,13 +1168,34 @@ describe('paragraph mode selection (#6200)', () => {
     return range;
   };
 
-  const renderOverlayWithSource = async (onClose = vi.fn()) => {
-    const doc = createDoc('<p>Hello <em>brave</em> new world</p><h2>Next</h2>');
+  const renderOverlayWithSource = async (
+    onClose = vi.fn(),
+    html = '<p>Hello <em>brave</em> new world</p><h2>Next</h2>',
+  ) => {
+    const doc = createDoc(html);
     const range = createSourceRange(doc);
-    mockGetView.mockReturnValue({
+    const view = Object.assign(new EventTarget(), {
       renderer: { getContents: () => [{ doc, index: 3 }] },
       getCFI: mockGetCFI,
+      book: {
+        sections: [
+          {},
+          {},
+          {},
+          {
+            resolveHref: (href: string) => {
+              if (/^https?:/.test(href)) return href;
+              const url = new URL(href, 'https://book/OEBPS/Text/ch1.xhtml');
+              return url.pathname.slice(1) + url.hash;
+            },
+          },
+        ],
+        isExternal: (href: string) => /^https?:/.test(href),
+      },
+      resolveNavigation: vi.fn<() => { index: number } | undefined>(() => ({ index: 4 })),
+      goTo: vi.fn(),
     });
+    mockGetView.mockReturnValue(view);
     mockGetProgress.mockReturnValue({ sectionHref: 'ch1.xhtml' });
 
     const { container, rerender } = render(
@@ -1199,7 +1220,7 @@ describe('paragraph mode selection (#6200)', () => {
     const dialog = container.querySelector('[role="dialog"]') as HTMLDivElement;
     const contentArea = container.querySelector('.relative.flex') as HTMLDivElement;
     vi.spyOn(contentArea, 'getBoundingClientRect').mockReturnValue(contentRect);
-    return { container, rerender, dialog, contentArea, clone, doc, range, onClose };
+    return { container, rerender, dialog, contentArea, clone, doc, range, onClose, view };
   };
 
   // Select `text` (within one text node) in the clone, as the user would.
@@ -1224,6 +1245,102 @@ describe('paragraph mode selection (#6200)', () => {
 
   const selectionReports = (spy: { mock: { calls: unknown[][] } }) =>
     spy.mock.calls.filter(([name]) => name === 'footnote-selection');
+
+  it.each([
+    ['../Notes/notes.xhtml#note1', 'OEBPS/Notes/notes.xhtml#note1'],
+    ['#note1', 'OEBPS/Text/ch1.xhtml#note1'],
+  ])('routes a cloned footnote %s through the reader without navigating the app (#6359)', async (href, resolved) => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    const { clone, view, onClose } = await renderOverlayWithSource(
+      vi.fn(),
+      '<p>Text <a epub:type="noteref" href="' + href + '"><sup>1</sup></a></p><h2>Next</h2>',
+    );
+    const onLink = vi.fn((event: Event) => event.preventDefault());
+    view.addEventListener('link', onLink);
+    dispatchSpy.mockClear();
+
+    expect(fireEvent.click(clone.querySelector('sup')!)).toBe(false);
+
+    expect(onLink).toHaveBeenCalledTimes(1);
+    const event = onLink.mock.calls[0]![0] as CustomEvent;
+    expect(event.detail).toEqual({ a: clone.querySelector('a'), href: resolved });
+    expect(event.cancelable).toBe(true);
+    expect(view.goTo).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-prev', expect.anything());
+    expect(dispatchSpy).not.toHaveBeenCalledWith('paragraph-next', expect.anything());
+  });
+
+  it('leaves paragraph mode for an ordinary in-book link the popup does not consume', async () => {
+    const { clone, view, onClose } = await renderOverlayWithSource(
+      vi.fn(),
+      '<p><a href="../Text/ch2.xhtml">Next chapter</a></p><h2>Next</h2>',
+    );
+
+    expect(fireEvent.click(clone.querySelector('a')!)).toBe(false);
+
+    expect(view.goTo).toHaveBeenCalledWith('OEBPS/Text/ch2.xhtml');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves a fragment against the source section when its filename is outdated', async () => {
+    const { clone, view } = await renderOverlayWithSource(
+      vi.fn(),
+      '<p><a href="old.xhtml#note1">Note</a></p><h2>Next</h2>',
+    );
+    view.resolveNavigation.mockReturnValue(undefined);
+    const onLink = vi.fn((event: Event) => event.preventDefault());
+    view.addEventListener('link', onLink);
+
+    expect(fireEvent.click(clone.querySelector('a')!)).toBe(false);
+
+    expect((onLink.mock.calls[0]![0] as CustomEvent).detail.href).toBe(
+      'OEBPS/Text/ch1.xhtml#note1',
+    );
+    expect(view.goTo).not.toHaveBeenCalled();
+  });
+
+  it('hands external paragraph links to the existing confirmation', async () => {
+    const { clone, view, onClose } = await renderOverlayWithSource(
+      vi.fn(),
+      '<p><a href="https://example.com/">Website</a></p><h2>Next</h2>',
+    );
+    const onExternalLink = vi.fn((event: Event) => event.preventDefault());
+    view.addEventListener('external-link', onExternalLink);
+
+    expect(fireEvent.click(clone.querySelector('a')!)).toBe(false);
+
+    expect(onExternalLink).toHaveBeenCalledTimes(1);
+    expect((onExternalLink.mock.calls[0]![0] as CustomEvent).detail.href).toBe(
+      'https://example.com/',
+    );
+    expect(view.goTo).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('prevents native link navigation when a selection gesture or popup consumes the click', async () => {
+    const { clone, view } = await renderOverlayWithSource(
+      vi.fn(),
+      '<p><a href="#note1">Select this text</a></p><h2>Next</h2>',
+    );
+    const onLink = vi.fn();
+    view.addEventListener('link', onLink);
+    selectInClone(clone, 'Select');
+
+    expect(fireEvent.click(clone.querySelector('a')!)).toBe(false);
+    expect(onLink).not.toHaveBeenCalled();
+
+    document.getSelection()!.removeAllRanges();
+    const consume = () => true;
+    eventDispatcher.onSync('iframe-single-click', consume);
+    try {
+      expect(fireEvent.click(clone.querySelector('a')!)).toBe(false);
+      expect(onLink).not.toHaveBeenCalled();
+      expect(view.goTo).not.toHaveBeenCalled();
+    } finally {
+      eventDispatcher.offSync('iframe-single-click', consume);
+    }
+  });
 
   it('reports a settled selection in the clone with the CFI of that text in the book', async () => {
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
