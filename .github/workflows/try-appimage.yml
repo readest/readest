@@ -162,4 +162,3 @@ jobs:
           name: Readest-AppImage-${{ matrix.config.arch }}
           path: target/release/bundle/appimage/*.AppImage
           if-no-files-found: error
-

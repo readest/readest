@@ -454,4 +454,3 @@ jobs:
         if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app
         run: xvfb-run pnpm test:pr:tauri
-
