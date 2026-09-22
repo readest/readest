@@ -565,32 +565,40 @@ export class SourceDocSpikeStore {
   constructor(private readonly storage: Storage) {}
 
   private saveSchema(schema: AnnotationSchemaV1): void {
-    this.storage.setItem(SCHEMA_STORAGE_KEY, JSON.stringify(schema));
+    try {
+      this.storage.setItem(SCHEMA_STORAGE_KEY, JSON.stringify(schema));
+    } catch (error) {
+      console.warn('Unable to persist annotation schema', error);
+    }
   }
 
   loadSchema(): AnnotationSchemaV1 {
-    const serialized = this.storage.getItem(SCHEMA_STORAGE_KEY);
-    if (serialized) return JSON.parse(serialized) as AnnotationSchemaV1;
     const schema = emptySchema(SOURCE_DOC_FIXTURE);
-    const legacy = this.storage.getItem(LEGACY_STORAGE_KEY);
-    if (legacy) {
-      const parsed = JSON.parse(legacy) as Partial<SourceDocThread> & {
-        anchor: SourceDocAnchor;
-        messages: SourceDocMessage[];
-      };
-      const anchor = {
-        ...parsed.anchor,
-        endBlockId: parsed.anchor.endBlockId ?? parsed.anchor.blockId,
-        selectedBlockIds: parsed.anchor.selectedBlockIds ?? [parsed.anchor.blockId],
-      };
-      this.insertThread(
-        schema,
-        SOURCE_DOC_FIXTURE,
-        anchor,
-        parsed.messages,
-        parsed.id ?? createId('thread'),
-        parsed.title,
-      );
+    try {
+      const serialized = this.storage.getItem(SCHEMA_STORAGE_KEY);
+      if (serialized) return JSON.parse(serialized) as AnnotationSchemaV1;
+      const legacy = this.storage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy) {
+        const parsed = JSON.parse(legacy) as Partial<SourceDocThread> & {
+          anchor: SourceDocAnchor;
+          messages: SourceDocMessage[];
+        };
+        const anchor = {
+          ...parsed.anchor,
+          endBlockId: parsed.anchor.endBlockId ?? parsed.anchor.blockId,
+          selectedBlockIds: parsed.anchor.selectedBlockIds ?? [parsed.anchor.blockId],
+        };
+        this.insertThread(
+          schema,
+          SOURCE_DOC_FIXTURE,
+          anchor,
+          parsed.messages,
+          parsed.id ?? createId('thread'),
+          parsed.title,
+        );
+      }
+    } catch (error) {
+      console.warn('Unable to load annotation schema', error);
     }
     this.saveSchema(schema);
     return schema;
@@ -762,6 +770,10 @@ export class SourceDocSpikeStore {
   listThreads(): SourceDocThread[] {
     const schema = this.loadSchema();
     return schema.threads
+      .filter((record) => {
+        const anchor = schema.anchors.find((item) => item.id === record.anchorId);
+        return anchor?.documentVersionId === schema.currentDocumentVersionId;
+      })
       .map((record) => this.hydrateThread(schema, record))
       .filter((thread): thread is SourceDocThread => thread !== null)
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
@@ -879,7 +891,11 @@ export class SourceDocSpikeStore {
   }
 
   clear(): void {
-    this.storage.removeItem(SCHEMA_STORAGE_KEY);
-    this.storage.removeItem(LEGACY_STORAGE_KEY);
+    try {
+      this.storage.removeItem(SCHEMA_STORAGE_KEY);
+      this.storage.removeItem(LEGACY_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Unable to clear annotation schema', error);
+    }
   }
 }

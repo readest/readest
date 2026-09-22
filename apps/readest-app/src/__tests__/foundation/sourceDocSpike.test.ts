@@ -192,7 +192,7 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(store.loadSchema().citations).toHaveLength(0);
   });
 
-  it('imports Markdown without discarding existing annotation data', () => {
+  it('retains other-document annotations without listing them in the current document', () => {
     const store = new SourceDocSpikeStore(localStorage);
     const block = SOURCE_DOC_FIXTURE.blocks[1]!;
     const thread = store.ask(SOURCE_DOC_FIXTURE, createSelectionAnchor(block, 0, 3), '保留我');
@@ -200,8 +200,38 @@ describe('SOURCE_DOC foundation spike', () => {
     const imported = store.importMarkdown('新书.md', '# 新书\n\n真实正文。');
 
     expect(imported.blocks).toHaveLength(2);
-    expect(store.getThread(thread.id)?.messages[0]?.content).toBe('保留我');
+    expect(store.getThread(thread.id)).toBeNull();
+    expect(store.loadSchema().messages.find((message) => message.threadId === thread.id)?.content).toBe(
+      '保留我',
+    );
     expect(new SourceDocSpikeStore(localStorage).loadCurrentDocument().title).toBe('新书');
+  });
+
+  it('recovers from corrupt or unavailable storage', () => {
+    localStorage.setItem('readest:annotation-schema:v1', '{not-json');
+    expect(new SourceDocSpikeStore(localStorage).loadCurrentDocument().title).toBe(
+      SOURCE_DOC_FIXTURE.title,
+    );
+
+    const unavailableStorage: Storage = {
+      length: 0,
+      clear: () => {
+        throw new Error('blocked');
+      },
+      getItem: () => {
+        throw new Error('blocked');
+      },
+      key: () => null,
+      removeItem: () => {
+        throw new Error('blocked');
+      },
+      setItem: () => {
+        throw new Error('blocked');
+      },
+    };
+    const unavailableStore = new SourceDocSpikeStore(unavailableStorage);
+    expect(unavailableStore.loadCurrentDocument().title).toBe(SOURCE_DOC_FIXTURE.title);
+    expect(() => unavailableStore.clear()).not.toThrow();
   });
 
   it('selects replies only from the fixed local candidate set', () => {
