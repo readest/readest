@@ -509,8 +509,15 @@ jobs:
           $newProcess = Start-Process $newInstaller.FullName -ArgumentList "/S" -Wait -PassThru
           if ($newProcess.ExitCode -ne 0) { throw "0.12.11 silent upgrade failed: $($newProcess.ExitCode)" }
           if ((Get-Content $sentinel) -ne "preserve-me") { throw "App data was not preserved" }
-          $entries = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" |
-            Get-ItemProperty | Where-Object { $_.DisplayName -eq "Readest NL-270" }
+          $uninstallRoots = @(
+            "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKCU:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+            "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+          )
+          $entries = $uninstallRoots | Where-Object { Test-Path $_ } |
+            ForEach-Object { Get-ChildItem $_ | Get-ItemProperty } |
+            Where-Object { $_.DisplayName -eq "Readest NL-270" }
           if (@($entries).Count -ne 1) { throw "Expected one Readest NL-270 uninstall entry, got $(@($entries).Count)" }
           if ($entries.DisplayVersion -ne "0.12.11") { throw "Installed version is $($entries.DisplayVersion)" }
           $signature = Get-AuthenticodeSignature $newInstaller.FullName
