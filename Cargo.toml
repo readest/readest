@@ -54,3 +54,11 @@ tauri = { path = "packages/tauri/crates/tauri" }
 # without that cargo cannot unify swift-rs and silently drops the tauri patch
 # above in favour of crates.io tauri. See packages/swift-rs.
 swift-rs = { path = "packages/swift-rs" }
+
+[profile.release]
+# The Android library is 95% of the APK, and cross-crate inlining plus a single
+# codegen unit is the one knob that shrinks the code itself: on aarch64 it cuts
+# .text by 5.2MB and the unwind/exception tables by another 2.1MB, at the cost
+# of a longer final link.
+lto = "fat"
+codegen-units = 1

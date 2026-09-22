@@ -175,9 +175,15 @@ flate2 = "1"
 # never re-exec itself so it aborted in dyld (#5053), and its crash-handler
 # `pthread_create` interposer panics on 32-bit ARM, aborting every armeabi-v7a
 # device (#5070). See `minidump_feature_is_enabled_on_no_target`.
+#
+# `debug-images` attaches the loaded libraries and their build ids to each
+# event. The Android library ships stripped, so its frames carry addresses
+# only, and this is what lets Sentry resolve them against the debug files CI
+# uploads.
 sentry = { version = "0.42", default-features = false, features = [
   "backtrace",
   "contexts",
+  "debug-images",
   "panic",
   "reqwest",
   "rustls",

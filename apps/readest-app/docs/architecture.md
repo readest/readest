@@ -243,7 +243,7 @@ support, classic mode overlays, etc.).
 PDF rendering goes through `pdfjs-dist`, which is copied into
 `public/vendor/pdfjs` at build time (`pnpm setup-pdfjs`). Chinese conversion
 uses `simplecc-wasm` (`public/vendor/simplecc`), and Chinese segmentation uses
-`jieba-wasm` (`public/vendor/jieba`).
+`jieba-wasm` (loaded from the file the bundler emits).
 
 ### 3.4 Service worker and offline
 
