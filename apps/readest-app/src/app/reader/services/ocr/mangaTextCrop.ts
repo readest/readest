@@ -1,9 +1,9 @@
 import type {
-  MokuroMask,
-  MokuroPageSize,
-  MokuroPoint,
-  MokuroTextLine,
-} from '@/app/reader/services/manga/mokuroTextDetector';
+  ComicMask,
+  ComicPageSize,
+  ComicPoint,
+  ComicTextLine,
+} from '@/app/reader/services/manga/comicTextDetector';
 
 interface RgbaImage {
   data: Uint8ClampedArray;
@@ -21,8 +21,8 @@ interface RasterImage {
 interface MangaTextCropOptions {
   border?: number;
   keepVertical?: boolean;
-  mask?: MokuroMask;
-  page?: MokuroPageSize;
+  mask?: ComicMask;
+  page?: ComicPageSize;
   vertical?: boolean;
 }
 
@@ -34,11 +34,11 @@ const ANCHOR_WINDOW = TEXT_THICKNESS * 2;
 const GAUSSIAN_LENGTH = TEXT_THICKNESS * 2;
 const GAUSSIAN_SIGMA = TEXT_THICKNESS / 8;
 
-const pointDistance = (left: MokuroPoint, right: MokuroPoint): number =>
+const pointDistance = (left: ComicPoint, right: ComicPoint): number =>
   Math.hypot(right.x - left.x, right.y - left.y);
 
 const getWarpDimensions = (
-  polygon: readonly MokuroPoint[],
+  polygon: readonly ComicPoint[],
   vertical: boolean,
 ): { width: number; height: number } | null => {
   if (polygon.length !== 4) return null;
@@ -62,7 +62,7 @@ const getWarpDimensions = (
 
 const perspectiveWarp = (
   image: RasterImage,
-  polygon: readonly MokuroPoint[],
+  polygon: readonly ComicPoint[],
   width: number,
   height: number,
 ): RasterImage | null => {
@@ -226,10 +226,10 @@ const splitRaster = (
 };
 
 const scalePolygon = (
-  polygon: readonly MokuroPoint[],
-  from: MokuroPageSize,
-  to: MokuroPageSize,
-): MokuroPoint[] =>
+  polygon: readonly ComicPoint[],
+  from: ComicPageSize,
+  to: ComicPageSize,
+): ComicPoint[] =>
   polygon.map(({ x, y }) => ({
     x: (x * to.width) / from.width,
     y: (y * to.height) / from.height,
@@ -265,7 +265,7 @@ export const readCanvasRgba = (canvas: HTMLCanvasElement): RgbaImage => {
 export const makeMangaTextLineCrops = (
   source: HTMLCanvasElement,
   image: RgbaImage,
-  line: MokuroTextLine,
+  line: ComicTextLine,
   options: MangaTextCropOptions = {},
 ): HTMLCanvasElement[] => {
   const vertical = options.vertical ?? line.vertical;

@@ -93,7 +93,7 @@ describe('Tesseract manga OCR', () => {
     expect(getTesseractLanguages('ja')).toEqual(['jpn', 'jpn_vert']);
   });
 
-  it('recognizes Japanese Mokuro blocks without loading Tesseract', async () => {
+  it('recognizes Japanese text blocks without loading Tesseract', async () => {
     installCanvas();
     const source = document.createElement('canvas');
     source.width = page.width;
@@ -144,7 +144,7 @@ describe('Tesseract manga OCR', () => {
       language: 'ja',
       blocks: [
         {
-          id: 'mokuro-block-0',
+          id: 'manga-block-0',
           text: '一行目二行目',
           lines: ['一行目', '二行目'],
           confidence: 90,

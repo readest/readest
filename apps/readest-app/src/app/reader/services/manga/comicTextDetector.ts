@@ -5,79 +5,79 @@ import {
   type VerifiedModelAsset,
 } from '@/app/reader/services/manga/modelAssets';
 
-export const MOKURO_TEXT_DETECTOR_INPUT_SIZE = 1024;
-export const MOKURO_TEXT_DETECTOR_MODEL_BYTES = 94_669_756;
-export const MOKURO_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES = 95_000_000;
-export const MOKURO_TEXT_DETECTOR_MODEL_URL =
+export const COMIC_TEXT_DETECTOR_INPUT_SIZE = 1024;
+export const COMIC_TEXT_DETECTOR_MODEL_BYTES = 94_669_756;
+export const COMIC_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES = 95_000_000;
+export const COMIC_TEXT_DETECTOR_MODEL_URL =
   'https://huggingface.co/mayocream/koharu/resolve/15439cba09df388c51de6e47c6020bc31edab41f/comictextdetector.onnx';
-export const MOKURO_TEXT_DETECTOR_MODEL_SHA256 =
+export const COMIC_TEXT_DETECTOR_MODEL_SHA256 =
   '1a86ace74961413cbd650002e7bb4dcec4980ffa21b2f19b86933372071d718f';
 
 type StaticModelAsset = Omit<VerifiedModelAsset, 'onProgress' | 'signal'>;
 
-export const MOKURO_TEXT_DETECTOR_MODEL_ASSET: Readonly<StaticModelAsset> = {
-  url: MOKURO_TEXT_DETECTOR_MODEL_URL,
-  sha256: MOKURO_TEXT_DETECTOR_MODEL_SHA256,
-  maximumDownloadBytes: MOKURO_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES,
-  maximumResultBytes: MOKURO_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES,
+export const COMIC_TEXT_DETECTOR_MODEL_ASSET: Readonly<StaticModelAsset> = {
+  url: COMIC_TEXT_DETECTOR_MODEL_URL,
+  sha256: COMIC_TEXT_DETECTOR_MODEL_SHA256,
+  maximumDownloadBytes: COMIC_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES,
+  maximumResultBytes: COMIC_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES,
 };
 
-export const MOKURO_TEXT_DETECTOR_OUTPUT_SHAPES = {
+export const COMIC_TEXT_DETECTOR_OUTPUT_SHAPES = {
   blk: [1, 64_512, 7],
-  seg: [1, 1, MOKURO_TEXT_DETECTOR_INPUT_SIZE, MOKURO_TEXT_DETECTOR_INPUT_SIZE],
-  det: [1, 2, MOKURO_TEXT_DETECTOR_INPUT_SIZE, MOKURO_TEXT_DETECTOR_INPUT_SIZE],
+  seg: [1, 1, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
+  det: [1, 2, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
 } as const;
 
-export type MokuroTextLanguage = 'eng' | 'ja' | 'unknown';
+export type ComicTextLanguage = 'eng' | 'ja' | 'unknown';
 
-export interface MokuroPageSize {
+export interface ComicPageSize {
   width: number;
   height: number;
 }
 
-export interface MokuroPoint {
+export interface ComicPoint {
   x: number;
   y: number;
 }
 
 /** A detector-resolution grayscale page mask. Values are 0..255. */
-export interface MokuroMask extends MokuroPageSize {
+export interface ComicMask extends ComicPageSize {
   data: Uint8Array;
 }
 
-export interface MokuroTextLine {
-  polygon: readonly MokuroPoint[];
+export interface ComicTextLine {
+  polygon: readonly ComicPoint[];
   box: OcrBoundingBox;
   score: number;
   vertical: boolean;
 }
 
-export interface MokuroTextBlock {
+export interface ComicTextBlock {
   box: OcrBoundingBox;
   score: number;
-  language: MokuroTextLanguage;
+  language: ComicTextLanguage;
   vertical: boolean;
-  lines: readonly MokuroTextLine[];
+  lines: readonly ComicTextLine[];
 }
 
-export interface MokuroTextDetectionResult {
-  page: MokuroPageSize;
-  mask?: MokuroMask;
-  blocks: readonly MokuroTextBlock[];
+export interface ComicTextDetectionResult {
+  page: ComicPageSize;
+  mask?: ComicMask;
+  blocks: readonly ComicTextBlock[];
 }
 
-export interface MokuroDetectorTensor {
+export interface ComicDetectorTensor {
   data: ArrayLike<number>;
   dims: readonly number[];
 }
 
-export interface MokuroDetectorOutputs {
-  blk: MokuroDetectorTensor;
-  seg: MokuroDetectorTensor;
-  det: MokuroDetectorTensor;
+export interface ComicDetectorOutputs {
+  blk: ComicDetectorTensor;
+  seg: ComicDetectorTensor;
+  det: ComicDetectorTensor;
 }
 
-export interface MokuroTextDetectorRuntime {
+export interface ComicTextDetectorRuntime {
   env: {
     wasm: {
       numThreads?: number;
@@ -94,16 +94,16 @@ export interface MokuroTextDetectorRuntime {
         executionMode: 'sequential';
         graphOptimizationLevel: 'all';
       },
-    ) => Promise<MokuroDetectorSession>;
+    ) => Promise<ComicDetectorSession>;
   };
 }
 
-export interface MokuroDetectorSession {
-  run: (feeds: Record<string, unknown>) => Promise<Record<string, MokuroDetectorTensor>>;
+export interface ComicDetectorSession {
+  run: (feeds: Record<string, unknown>) => Promise<Record<string, ComicDetectorTensor>>;
   release: () => Promise<void>;
 }
 
-export interface MokuroDetectorCanvasContext {
+export interface ComicDetectorCanvasContext {
   drawImage: (
     source: CanvasImageSource,
     x: number,
@@ -119,16 +119,16 @@ export interface MokuroDetectorCanvasContext {
   ) => { data: Uint8ClampedArray };
 }
 
-export interface MokuroDetectorCanvas {
+export interface ComicDetectorCanvas {
   width: number;
   height: number;
   getContext: (
     type: '2d',
     options?: { willReadFrequently?: boolean },
-  ) => MokuroDetectorCanvasContext | null;
+  ) => ComicDetectorCanvasContext | null;
 }
 
-export interface MokuroTextDetectorOptions {
+export interface ComicTextDetectorOptions {
   blockConfidence?: number;
   blockIouThreshold?: number;
   lineConfidence?: number;
@@ -138,9 +138,9 @@ export interface MokuroTextDetectorOptions {
   onDownloadProgress?: (progress: ModelDownloadProgress) => void;
 }
 
-export interface MokuroTextDetectorDependencies {
-  createCanvas: () => MokuroDetectorCanvas;
-  loadRuntime: () => Promise<MokuroTextDetectorRuntime>;
+export interface ComicTextDetectorDependencies {
+  createCanvas: () => ComicDetectorCanvas;
+  loadRuntime: () => Promise<ComicTextDetectorRuntime>;
   loadModel: (
     signal?: AbortSignal,
     onProgress?: (progress: ModelDownloadProgress) => void,
@@ -152,8 +152,8 @@ interface LetterboxTransform {
   height: number;
 }
 
-interface BlockCandidate extends MokuroTextBlock {
-  lines: MokuroTextLine[];
+interface BlockCandidate extends ComicTextBlock {
+  lines: ComicTextLine[];
 }
 
 interface LineComponent {
@@ -171,41 +171,41 @@ const DEFAULT_LINE_CONFIDENCE = 0.5;
 const DEFAULT_LINE_THRESHOLD = 0.3;
 const DEFAULT_MAXIMUM_BLOCKS = 300;
 const DEFAULT_MAXIMUM_LINES = 1_000;
-const MASK_CHANNEL_SIZE = MOKURO_TEXT_DETECTOR_INPUT_SIZE * MOKURO_TEXT_DETECTOR_INPUT_SIZE;
+const MASK_CHANNEL_SIZE = COMIC_TEXT_DETECTOR_INPUT_SIZE * COMIC_TEXT_DETECTOR_INPUT_SIZE;
 
-const defaultCreateCanvas = (): MokuroDetectorCanvas => document.createElement('canvas');
+const defaultCreateCanvas = (): ComicDetectorCanvas => document.createElement('canvas');
 
-const defaultLoadRuntime = async (): Promise<MokuroTextDetectorRuntime> =>
-  (await import('onnxruntime-web/wasm')) as unknown as MokuroTextDetectorRuntime;
+const defaultLoadRuntime = async (): Promise<ComicTextDetectorRuntime> =>
+  (await import('onnxruntime-web/wasm')) as unknown as ComicTextDetectorRuntime;
 
-const defaultLoadModel: MokuroTextDetectorDependencies['loadModel'] = (signal, onProgress) =>
+const defaultLoadModel: ComicTextDetectorDependencies['loadModel'] = (signal, onProgress) =>
   fetchVerifiedModelAsset({
-    ...MOKURO_TEXT_DETECTOR_MODEL_ASSET,
+    ...COMIC_TEXT_DETECTOR_MODEL_ASSET,
     signal,
     onProgress,
   });
 
 const validatePositiveInteger = (name: string, value: number): void => {
   if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error(`Mokuro text detector requires a positive integer ${name}`);
+    throw new Error(`Comic text detector requires a positive integer ${name}`);
   }
 };
 
-const validatePage = (page: MokuroPageSize): void => {
+const validatePage = (page: ComicPageSize): void => {
   validatePositiveInteger('page width', page.width);
   validatePositiveInteger('page height', page.height);
   if (!Number.isSafeInteger(page.width * page.height)) {
-    throw new Error('Mokuro text detector page is too large');
+    throw new Error('Comic text detector page is too large');
   }
 };
 
 const validateOption = (name: string, value: number, minimum: number, maximum: number): void => {
   if (!Number.isFinite(value) || value < minimum || value > maximum) {
-    throw new Error(`Mokuro text detector ${name} is outside its supported range`);
+    throw new Error(`Comic text detector ${name} is outside its supported range`);
   }
 };
 
-const resolveOptions = (options: MokuroTextDetectorOptions = {}) => {
+const resolveOptions = (options: ComicTextDetectorOptions = {}) => {
   const resolved = {
     blockConfidence: options.blockConfidence ?? DEFAULT_BLOCK_CONFIDENCE,
     blockIouThreshold: options.blockIouThreshold ?? DEFAULT_BLOCK_IOU_THRESHOLD,
@@ -224,39 +224,39 @@ const resolveOptions = (options: MokuroTextDetectorOptions = {}) => {
 };
 
 const assertTensorShape = (
-  name: keyof typeof MOKURO_TEXT_DETECTOR_OUTPUT_SHAPES,
-  tensor: MokuroDetectorTensor,
+  name: keyof typeof COMIC_TEXT_DETECTOR_OUTPUT_SHAPES,
+  tensor: ComicDetectorTensor,
 ): void => {
-  const expected = MOKURO_TEXT_DETECTOR_OUTPUT_SHAPES[name];
+  const expected = COMIC_TEXT_DETECTOR_OUTPUT_SHAPES[name];
   if (
     tensor.dims.length !== expected.length ||
     expected.some((dimension, index) => tensor.dims[index] !== dimension)
   ) {
     throw new Error(
-      `Mokuro text detector output ${name} has invalid dimensions; expected [${expected.join(', ')}]`,
+      `Comic text detector output ${name} has invalid dimensions; expected [${expected.join(', ')}]`,
     );
   }
   let expectedLength = 1;
   for (const dimension of expected) expectedLength *= dimension;
   if (tensor.data.length !== expectedLength) {
-    throw new Error(`Mokuro text detector output ${name} has incomplete data`);
+    throw new Error(`Comic text detector output ${name} has incomplete data`);
   }
 };
 
-const assertOutputs = (outputs: MokuroDetectorOutputs): void => {
+const assertOutputs = (outputs: ComicDetectorOutputs): void => {
   assertTensorShape('blk', outputs.blk);
   assertTensorShape('seg', outputs.seg);
   assertTensorShape('det', outputs.det);
 };
 
-const getLetterboxTransform = (page: MokuroPageSize): LetterboxTransform => {
+const getLetterboxTransform = (page: ComicPageSize): LetterboxTransform => {
   const scale = Math.min(
-    MOKURO_TEXT_DETECTOR_INPUT_SIZE / page.width,
-    MOKURO_TEXT_DETECTOR_INPUT_SIZE / page.height,
+    COMIC_TEXT_DETECTOR_INPUT_SIZE / page.width,
+    COMIC_TEXT_DETECTOR_INPUT_SIZE / page.height,
   );
   return {
-    width: Math.max(1, Math.min(MOKURO_TEXT_DETECTOR_INPUT_SIZE, Math.round(page.width * scale))),
-    height: Math.max(1, Math.min(MOKURO_TEXT_DETECTOR_INPUT_SIZE, Math.round(page.height * scale))),
+    width: Math.max(1, Math.min(COMIC_TEXT_DETECTOR_INPUT_SIZE, Math.round(page.width * scale))),
+    height: Math.max(1, Math.min(COMIC_TEXT_DETECTOR_INPUT_SIZE, Math.round(page.height * scale))),
   };
 };
 
@@ -266,9 +266,9 @@ const clamp = (value: number, minimum: number, maximum: number): number =>
 const mapInputPoint = (
   x: number,
   y: number,
-  page: MokuroPageSize,
+  page: ComicPageSize,
   transform: LetterboxTransform,
-): MokuroPoint => ({
+): ComicPoint => ({
   x: clamp((x * page.width) / transform.width, 0, page.width),
   y: clamp((y * page.height) / transform.height, 0, page.height),
 });
@@ -278,7 +278,7 @@ const mapInputBox = (
   yMin: number,
   xMax: number,
   yMax: number,
-  page: MokuroPageSize,
+  page: ComicPageSize,
   transform: LetterboxTransform,
 ): OcrBoundingBox | null => {
   const left = clamp(xMin, 0, transform.width);
@@ -314,22 +314,22 @@ const unionBoxes = (boxes: readonly OcrBoundingBox[]): OcrBoundingBox => ({
   yMax: Math.max(...boxes.map((box) => box.yMax)),
 });
 
-const blockLanguage = (classIndex: number): MokuroTextLanguage => {
+const blockLanguage = (classIndex: number): ComicTextLanguage => {
   if (classIndex === 0) return 'eng';
   if (classIndex === 1) return 'ja';
   return 'unknown';
 };
 
 /** Decode the YOLOv5 block tensor into page-coordinate text block candidates. */
-export const decodeMokuroBlockPredictions = (
+export const decodeComicBlockPredictions = (
   data: ArrayLike<number>,
-  page: MokuroPageSize,
+  page: ComicPageSize,
   transform = getLetterboxTransform(page),
   options: Pick<
-    MokuroTextDetectorOptions,
+    ComicTextDetectorOptions,
     'blockConfidence' | 'blockIouThreshold' | 'maximumBlocks'
   > = {},
-): MokuroTextBlock[] => {
+): ComicTextBlock[] => {
   validatePage(page);
   const blockConfidence = options.blockConfidence ?? DEFAULT_BLOCK_CONFIDENCE;
   const blockIouThreshold = options.blockIouThreshold ?? DEFAULT_BLOCK_IOU_THRESHOLD;
@@ -338,8 +338,8 @@ export const decodeMokuroBlockPredictions = (
   validateOption('block IoU threshold', blockIouThreshold, 0, 1);
   validatePositiveInteger('maximum blocks', maximumBlocks);
 
-  const rowCount = Math.min(Math.floor(data.length / 7), MOKURO_TEXT_DETECTOR_OUTPUT_SHAPES.blk[1]);
-  const candidates: Array<MokuroTextBlock & { classIndex: number; index: number }> = [];
+  const rowCount = Math.min(Math.floor(data.length / 7), COMIC_TEXT_DETECTOR_OUTPUT_SHAPES.blk[1]);
+  const candidates: Array<ComicTextBlock & { classIndex: number; index: number }> = [];
   for (let index = 0; index < rowCount; index += 1) {
     const offset = index * 7;
     const centerX = Number(data[offset]);
@@ -381,7 +381,7 @@ export const decodeMokuroBlockPredictions = (
   }
 
   candidates.sort((left, right) => right.score - left.score || left.index - right.index);
-  const accepted: Array<MokuroTextBlock & { classIndex: number; index: number }> = [];
+  const accepted: Array<ComicTextBlock & { classIndex: number; index: number }> = [];
   for (const candidate of candidates) {
     if (
       accepted.some(
@@ -400,22 +400,22 @@ export const decodeMokuroBlockPredictions = (
 
 const componentPolygon = (
   component: LineComponent,
-  page: MokuroPageSize,
+  page: ComicPageSize,
   transform: LetterboxTransform,
   pixels: ArrayLike<number>,
-): { polygon: MokuroPoint[]; vertical: boolean } => {
+): { polygon: ComicPoint[]; vertical: boolean } => {
   // Row endpoints preserve the pixel hull without sorting every foreground pixel.
   const rowCount = component.maxY - component.minY + 1;
-  const leftEdges = new Int32Array(rowCount).fill(MOKURO_TEXT_DETECTOR_INPUT_SIZE);
+  const leftEdges = new Int32Array(rowCount).fill(COMIC_TEXT_DETECTOR_INPUT_SIZE);
   const rightEdges = new Int32Array(rowCount).fill(-1);
   for (let index = 0; index < component.count; index += 1) {
     const pixel = Number(pixels[index]);
-    const x = pixel % MOKURO_TEXT_DETECTOR_INPUT_SIZE;
-    const row = Math.floor(pixel / MOKURO_TEXT_DETECTOR_INPUT_SIZE) - component.minY;
+    const x = pixel % COMIC_TEXT_DETECTOR_INPUT_SIZE;
+    const row = Math.floor(pixel / COMIC_TEXT_DETECTOR_INPUT_SIZE) - component.minY;
     leftEdges[row] = Math.min(leftEdges[row]!, x);
     rightEdges[row] = Math.max(rightEdges[row]!, x);
   }
-  const endpoints: MokuroPoint[] = [];
+  const endpoints: ComicPoint[] = [];
   for (let row = 0; row < rowCount; row += 1) {
     if (rightEdges[row]! < 0) continue;
     endpoints.push({ x: leftEdges[row]!, y: row + component.minY });
@@ -424,7 +424,7 @@ const componentPolygon = (
     }
   }
   endpoints.sort((a, b) => a.x - b.x || a.y - b.y);
-  const hull: MokuroPoint[] = [];
+  const hull: ComicPoint[] = [];
   for (const chain of [endpoints, [...endpoints].reverse()]) {
     const start = hull.length;
     for (const point of chain) {
@@ -505,7 +505,7 @@ const componentPolygon = (
   return { polygon, vertical };
 };
 
-const getLineBox = (polygon: readonly MokuroPoint[]): OcrBoundingBox => ({
+const getLineBox = (polygon: readonly ComicPoint[]): OcrBoundingBox => ({
   xMin: Math.min(...polygon.map((point) => point.x)),
   yMin: Math.min(...polygon.map((point) => point.y)),
   xMax: Math.max(...polygon.map((point) => point.x)),
@@ -525,14 +525,14 @@ const collectLineComponent = (
   visited[seed] = 1;
   let count = 0;
   let score = 0;
-  let minX = MOKURO_TEXT_DETECTOR_INPUT_SIZE;
-  let minY = MOKURO_TEXT_DETECTOR_INPUT_SIZE;
+  let minX = COMIC_TEXT_DETECTOR_INPUT_SIZE;
+  let minY = COMIC_TEXT_DETECTOR_INPUT_SIZE;
   let maxX = 0;
   let maxY = 0;
   while (head < tail) {
     const pixel = queue[head++]!;
-    const x = pixel % MOKURO_TEXT_DETECTOR_INPUT_SIZE;
-    const y = Math.floor(pixel / MOKURO_TEXT_DETECTOR_INPUT_SIZE);
+    const x = pixel % COMIC_TEXT_DETECTOR_INPUT_SIZE;
+    const y = Math.floor(pixel / COMIC_TEXT_DETECTOR_INPUT_SIZE);
     const value = Number(map[pixel]);
     count += 1;
     score += Number.isFinite(value) ? value : threshold;
@@ -547,13 +547,13 @@ const collectLineComponent = (
         const nextY = y + dy;
         if (
           nextX < 0 ||
-          nextX >= MOKURO_TEXT_DETECTOR_INPUT_SIZE ||
+          nextX >= COMIC_TEXT_DETECTOR_INPUT_SIZE ||
           nextY < 0 ||
-          nextY >= MOKURO_TEXT_DETECTOR_INPUT_SIZE
+          nextY >= COMIC_TEXT_DETECTOR_INPUT_SIZE
         ) {
           continue;
         }
-        const next = nextY * MOKURO_TEXT_DETECTOR_INPUT_SIZE + nextX;
+        const next = nextY * COMIC_TEXT_DETECTOR_INPUT_SIZE + nextX;
         if (!visited[next] && Number(map[next]) > threshold) {
           visited[next] = 1;
           queue[tail++] = next;
@@ -572,15 +572,12 @@ const collectLineComponent = (
 };
 
 /** Extract oriented DB text-line polygons from the first `det` channel. */
-export const extractMokuroLinePolygons = (
+export const extractComicLinePolygons = (
   data: ArrayLike<number>,
-  page: MokuroPageSize,
+  page: ComicPageSize,
   transform = getLetterboxTransform(page),
-  options: Pick<
-    MokuroTextDetectorOptions,
-    'lineConfidence' | 'lineThreshold' | 'maximumLines'
-  > = {},
-): MokuroTextLine[] => {
+  options: Pick<ComicTextDetectorOptions, 'lineConfidence' | 'lineThreshold' | 'maximumLines'> = {},
+): ComicTextLine[] => {
   validatePage(page);
   const lineConfidence = options.lineConfidence ?? DEFAULT_LINE_CONFIDENCE;
   const lineThreshold = options.lineThreshold ?? DEFAULT_LINE_THRESHOLD;
@@ -589,12 +586,12 @@ export const extractMokuroLinePolygons = (
   validateOption('line threshold', lineThreshold, 0, 1);
   validatePositiveInteger('maximum lines', maximumLines);
   if (data.length < MASK_CHANNEL_SIZE) {
-    throw new Error('Mokuro text detector line output has incomplete data');
+    throw new Error('Comic text detector line output has incomplete data');
   }
 
   const visited = new Uint8Array(MASK_CHANNEL_SIZE);
   const queue = new Int32Array(MASK_CHANNEL_SIZE);
-  const lines: MokuroTextLine[] = [];
+  const lines: ComicTextLine[] = [];
   for (let pixel = 0; pixel < MASK_CHANNEL_SIZE; pixel += 1) {
     if (visited[pixel] || Number(data[pixel]) <= lineThreshold) continue;
     const component = collectLineComponent(pixel, data, visited, queue, lineThreshold);
@@ -613,11 +610,7 @@ export const extractMokuroLinePolygons = (
     .slice(0, maximumLines);
 };
 
-const sampleMaskCoverage = (
-  mask: MokuroMask,
-  box: OcrBoundingBox,
-  page: MokuroPageSize,
-): number => {
+const sampleMaskCoverage = (mask: ComicMask, box: OcrBoundingBox, page: ComicPageSize): number => {
   const xMin = clamp(Math.floor((box.xMin * mask.width) / page.width), 0, mask.width - 1);
   const yMin = clamp(Math.floor((box.yMin * mask.height) / page.height), 0, mask.height - 1);
   const xMax = clamp(Math.ceil((box.xMax * mask.width) / page.width), xMin + 1, mask.width);
@@ -633,10 +626,10 @@ const sampleMaskCoverage = (
   return count > 0 ? sum / count / 255 : 0;
 };
 
-const readInputMask = (data: ArrayLike<number>, transform: LetterboxTransform): MokuroMask => {
+const readInputMask = (data: ArrayLike<number>, transform: LetterboxTransform): ComicMask => {
   const result = new Uint8Array(transform.width * transform.height);
   for (let y = 0; y < transform.height; y += 1) {
-    const sourceOffset = y * MOKURO_TEXT_DETECTOR_INPUT_SIZE;
+    const sourceOffset = y * COMIC_TEXT_DETECTOR_INPUT_SIZE;
     const targetOffset = y * transform.width;
     for (let x = 0; x < transform.width; x += 1) {
       result[targetOffset + x] = Math.round(clamp(Number(data[sourceOffset + x]), 0, 1) * 255);
@@ -645,7 +638,7 @@ const readInputMask = (data: ArrayLike<number>, transform: LetterboxTransform): 
   return { width: transform.width, height: transform.height, data: result };
 };
 
-const sortLines = (lines: readonly MokuroTextLine[], vertical: boolean): MokuroTextLine[] =>
+const sortLines = (lines: readonly ComicTextLine[], vertical: boolean): ComicTextLine[] =>
   [...lines].sort((left, right) =>
     vertical
       ? right.box.xMin - left.box.xMin || left.box.yMin - right.box.yMin
@@ -661,7 +654,7 @@ const getBlockVertical = (block: BlockCandidate): boolean => {
   return verticalCount > block.lines.length * 0.66;
 };
 
-const sortBlocks = (blocks: readonly BlockCandidate[], page: MokuroPageSize): BlockCandidate[] => {
+const sortBlocks = (blocks: readonly BlockCandidate[], page: ComicPageSize): BlockCandidate[] => {
   const japaneseCount = blocks.filter((block) => block.language === 'ja').length;
   const flipLeftRight = japaneseCount > blocks.length / 2;
   const originalWidth = page.width;
@@ -689,7 +682,7 @@ const sortBlocks = (blocks: readonly BlockCandidate[], page: MokuroPageSize): Bl
     .map(({ block }) => block);
 };
 
-const rectangleLine = (box: OcrBoundingBox, score: number): MokuroTextLine => ({
+const rectangleLine = (box: OcrBoundingBox, score: number): ComicTextLine => ({
   polygon: [
     { x: box.xMin, y: box.yMin },
     { x: box.xMax, y: box.yMin },
@@ -702,12 +695,12 @@ const rectangleLine = (box: OcrBoundingBox, score: number): MokuroTextLine => ({
 });
 
 /** Associate DB lines with blocks and apply Mokuro's Japanese reading order. */
-export const groupMokuroText = (
-  blocks: readonly MokuroTextBlock[],
-  lines: readonly MokuroTextLine[],
-  rawMask: MokuroMask,
-  page: MokuroPageSize,
-): MokuroTextBlock[] => {
+export const groupComicText = (
+  blocks: readonly ComicTextBlock[],
+  lines: readonly ComicTextLine[],
+  rawMask: ComicMask,
+  page: ComicPageSize,
+): ComicTextBlock[] => {
   const grouped: BlockCandidate[] = blocks.map((block) => ({ ...block, lines: [] }));
   for (const line of lines) {
     const lineArea = boxArea(line.box);
@@ -756,19 +749,19 @@ export const groupMokuroText = (
   }));
 };
 
-export const postprocessMokuroDetectorOutputs = (
-  outputs: MokuroDetectorOutputs,
-  page: MokuroPageSize,
-  options: MokuroTextDetectorOptions = {},
-): MokuroTextDetectionResult => {
+export const postprocessComicDetectorOutputs = (
+  outputs: ComicDetectorOutputs,
+  page: ComicPageSize,
+  options: ComicTextDetectorOptions = {},
+): ComicTextDetectionResult => {
   validatePage(page);
   assertOutputs(outputs);
   const resolved = resolveOptions(options);
   const transform = getLetterboxTransform(page);
   const rawMask = readInputMask(outputs.seg.data, transform);
-  const blocks = decodeMokuroBlockPredictions(outputs.blk.data, page, transform, resolved);
-  const lines = extractMokuroLinePolygons(outputs.det.data, page, transform, resolved);
-  const grouped = groupMokuroText(blocks, lines, rawMask, page);
+  const blocks = decodeComicBlockPredictions(outputs.blk.data, page, transform, resolved);
+  const lines = extractComicLinePolygons(outputs.det.data, page, transform, resolved);
+  const grouped = groupComicText(blocks, lines, rawMask, page);
   return {
     page: { ...page },
     mask: rawMask,
@@ -782,7 +775,7 @@ const makeImageTensor = (
   height: number,
 ): Float32Array => {
   if (pixels.length !== width * height * 4) {
-    throw new Error('Mokuro text detector received incomplete image pixels');
+    throw new Error('Comic text detector received incomplete image pixels');
   }
   const pixelCount = width * height;
   const values = new Float32Array(pixelCount * 3);
@@ -796,29 +789,29 @@ const makeImageTensor = (
 };
 
 const getOutput = (
-  outputs: Record<string, MokuroDetectorTensor>,
-  name: keyof MokuroDetectorOutputs,
-): MokuroDetectorTensor => {
+  outputs: Record<string, ComicDetectorTensor>,
+  name: keyof ComicDetectorOutputs,
+): ComicDetectorTensor => {
   const output = outputs[name];
-  if (!output) throw new Error(`Mokuro text detector returned no ${name} output`);
+  if (!output) throw new Error(`Comic text detector returned no ${name} output`);
   return output;
 };
 
-export class MokuroTextDetector {
-  readonly #options: MokuroTextDetectorOptions;
+export class ComicTextDetector {
+  readonly #options: ComicTextDetectorOptions;
   readonly #onDownloadProgress?: (progress: ModelDownloadProgress) => void;
-  readonly #createCanvas: () => MokuroDetectorCanvas;
-  readonly #loadRuntime: () => Promise<MokuroTextDetectorRuntime>;
-  readonly #loadModel: MokuroTextDetectorDependencies['loadModel'];
+  readonly #createCanvas: () => ComicDetectorCanvas;
+  readonly #loadRuntime: () => Promise<ComicTextDetectorRuntime>;
+  readonly #loadModel: ComicTextDetectorDependencies['loadModel'];
   readonly #abortController = new AbortController();
-  readonly #activeRuns = new Set<Promise<Record<string, MokuroDetectorTensor>>>();
-  #runtimePromise: Promise<MokuroTextDetectorRuntime> | null = null;
-  #sessionPromise: Promise<MokuroDetectorSession> | null = null;
+  readonly #activeRuns = new Set<Promise<Record<string, ComicDetectorTensor>>>();
+  #runtimePromise: Promise<ComicTextDetectorRuntime> | null = null;
+  #sessionPromise: Promise<ComicDetectorSession> | null = null;
   #terminated = false;
 
   constructor(
-    options: MokuroTextDetectorOptions = {},
-    dependencies: Partial<MokuroTextDetectorDependencies> = {},
+    options: ComicTextDetectorOptions = {},
+    dependencies: Partial<ComicTextDetectorDependencies> = {},
   ) {
     this.#options = { ...options };
     this.#onDownloadProgress = options.onDownloadProgress;
@@ -827,37 +820,34 @@ export class MokuroTextDetector {
     this.#loadModel = dependencies.loadModel ?? defaultLoadModel;
   }
 
-  async detect(
-    source: CanvasImageSource,
-    page: MokuroPageSize,
-  ): Promise<MokuroTextDetectionResult> {
+  async detect(source: CanvasImageSource, page: ComicPageSize): Promise<ComicTextDetectionResult> {
     validatePage(page);
-    if (this.#terminated) throw new Error('Mokuro text detector has been terminated');
+    if (this.#terminated) throw new Error('Comic text detector has been terminated');
     const transform = getLetterboxTransform(page);
     const canvas = this.#createCanvas();
-    canvas.width = MOKURO_TEXT_DETECTOR_INPUT_SIZE;
-    canvas.height = MOKURO_TEXT_DETECTOR_INPUT_SIZE;
+    canvas.width = COMIC_TEXT_DETECTOR_INPUT_SIZE;
+    canvas.height = COMIC_TEXT_DETECTOR_INPUT_SIZE;
     const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (!context) throw new Error('Mokuro text detector could not create a canvas context');
+    if (!context) throw new Error('Comic text detector could not create a canvas context');
     context.drawImage(source, 0, 0, transform.width, transform.height);
     const pixels = context.getImageData(
       0,
       0,
-      MOKURO_TEXT_DETECTOR_INPUT_SIZE,
-      MOKURO_TEXT_DETECTOR_INPUT_SIZE,
+      COMIC_TEXT_DETECTOR_INPUT_SIZE,
+      COMIC_TEXT_DETECTOR_INPUT_SIZE,
     ).data;
     const runtime = await this.#getRuntime();
     const session = await this.#getSession(runtime);
-    if (this.#terminated) throw new Error('Mokuro text detector has been terminated');
+    if (this.#terminated) throw new Error('Comic text detector has been terminated');
     const run = session.run({
       images: new runtime.Tensor(
         'float32',
-        makeImageTensor(pixels, MOKURO_TEXT_DETECTOR_INPUT_SIZE, MOKURO_TEXT_DETECTOR_INPUT_SIZE),
-        [1, 3, MOKURO_TEXT_DETECTOR_INPUT_SIZE, MOKURO_TEXT_DETECTOR_INPUT_SIZE],
+        makeImageTensor(pixels, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE),
+        [1, 3, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
       ),
     });
     this.#activeRuns.add(run);
-    let rawOutputs: Record<string, MokuroDetectorTensor>;
+    let rawOutputs: Record<string, ComicDetectorTensor>;
     try {
       rawOutputs = await run;
     } catch (error) {
@@ -866,13 +856,13 @@ export class MokuroTextDetector {
     } finally {
       this.#activeRuns.delete(run);
     }
-    if (this.#terminated) throw new Error('Mokuro text detector has been terminated');
+    if (this.#terminated) throw new Error('Comic text detector has been terminated');
     const outputs = {
       blk: getOutput(rawOutputs, 'blk'),
       seg: getOutput(rawOutputs, 'seg'),
       det: getOutput(rawOutputs, 'det'),
     };
-    return postprocessMokuroDetectorOutputs(outputs, page, this.#options);
+    return postprocessComicDetectorOutputs(outputs, page, this.#options);
   }
 
   async terminate(): Promise<void> {
@@ -891,7 +881,7 @@ export class MokuroTextDetector {
     }
   }
 
-  #getRuntime(): Promise<MokuroTextDetectorRuntime> {
+  #getRuntime(): Promise<ComicTextDetectorRuntime> {
     if (this.#runtimePromise) return this.#runtimePromise;
     const runtimePromise = this.#loadRuntime();
     this.#runtimePromise = runtimePromise;
@@ -901,9 +891,9 @@ export class MokuroTextDetector {
     return runtimePromise;
   }
 
-  #getSession(runtime: MokuroTextDetectorRuntime): Promise<MokuroDetectorSession> {
+  #getSession(runtime: ComicTextDetectorRuntime): Promise<ComicDetectorSession> {
     if (this.#terminated)
-      return Promise.reject(new Error('Mokuro text detector has been terminated'));
+      return Promise.reject(new Error('Comic text detector has been terminated'));
     if (this.#sessionPromise) return this.#sessionPromise;
     runtime.env.wasm.proxy = true;
     runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
@@ -918,7 +908,7 @@ export class MokuroTextDetector {
       });
       if (this.#terminated) {
         await session.release();
-        throw new Error('Mokuro text detector has been terminated');
+        throw new Error('Comic text detector has been terminated');
       }
       return session;
     });
@@ -929,10 +919,10 @@ export class MokuroTextDetector {
     return sessionPromise;
   }
 
-  async #discardSession(session: MokuroDetectorSession): Promise<void> {
+  async #discardSession(session: ComicDetectorSession): Promise<void> {
     const sessionPromise = this.#sessionPromise;
     if (!sessionPromise) return;
-    let activeSession: MokuroDetectorSession;
+    let activeSession: ComicDetectorSession;
     try {
       activeSession = await sessionPromise;
     } catch {

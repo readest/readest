@@ -9,9 +9,9 @@ import type {
 } from 'tesseract.js';
 
 import {
-  MokuroTextDetector,
-  type MokuroTextDetectionResult,
-} from '@/app/reader/services/manga/mokuroTextDetector';
+  ComicTextDetector,
+  type ComicTextDetectionResult,
+} from '@/app/reader/services/manga/comicTextDetector';
 import {
   fetchVerifiedModelAsset,
   type VerifiedModelAsset,
@@ -84,7 +84,7 @@ export interface MangaTextDetector {
   detect: (
     source: CanvasImageSource,
     page: Pick<OcrImagePage, 'width' | 'height'>,
-  ) => Promise<MokuroTextDetectionResult>;
+  ) => Promise<ComicTextDetectionResult>;
   terminate: () => Promise<void>;
 }
 
@@ -130,8 +130,8 @@ interface MangaLineProgress {
   total: number;
 }
 
-const getMokuroFontSize = (
-  block: MokuroTextDetectionResult['blocks'][number],
+const getMangaFontSize = (
+  block: ComicTextDetectionResult['blocks'][number],
 ): number | undefined => {
   let vectorX = 0;
   let vectorY = 0;
@@ -158,7 +158,7 @@ const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
 const loadLocalLanguageAsset: TesseractLanguageAssetLoader = fetchVerifiedModelAsset;
 
 const createMangaDetector: MangaTextDetectorFactory = (onDownloadProgress) =>
-  new MokuroTextDetector({ onDownloadProgress });
+  new ComicTextDetector({ onDownloadProgress });
 
 const createJapaneseMangaRecognizer: JapaneseMangaRecognizerFactory = (onDownloadProgress) =>
   new MangaOcrRecognizer({ onDownloadProgress });
@@ -342,7 +342,7 @@ export class TesseractOcrEngine {
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     if (this.#mangaDetectorUnavailable) return this.#recognizeWholePage(prepared, signal);
     this.#onProgress?.({ status: 'detecting manga text', progress: 0 });
-    let detection: MokuroTextDetectionResult;
+    let detection: ComicTextDetectionResult;
     try {
       detection = await this.#getMangaDetector().detect(prepared.image, {
         width: prepared.page.width,
@@ -372,7 +372,7 @@ export class TesseractOcrEngine {
     for (const [blockIndex, detectedBlock] of detection.blocks.entries()) {
       const textLines: string[] = [];
       const confidences: number[] = [];
-      const fontSize = getMokuroFontSize(detectedBlock);
+      const fontSize = getMangaFontSize(detectedBlock);
       for (const line of detectedBlock.lines) {
         signal?.throwIfAborted();
         if (this.#terminated) throw new Error('OCR engine has been terminated');
@@ -442,7 +442,7 @@ export class TesseractOcrEngine {
       }
       if (!textLines.length) continue;
       blocks.push({
-        id: `mokuro-block-${blockIndex}`,
+        id: `manga-block-${blockIndex}`,
         text: textLines.join(''),
         lines: textLines,
         ...(fontSize === undefined ? {} : { fontSize }),
