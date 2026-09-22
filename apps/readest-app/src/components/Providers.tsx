@@ -35,7 +35,7 @@ import { DropdownProvider } from '@/context/DropdownContext';
 import { CommandPaletteProvider, CommandPalette } from '@/components/command-palette';
 import AtmosphereOverlay from '@/components/AtmosphereOverlay';
 import AppLockScreen from '@/components/AppLockScreen';
-import AndroidAutoLibraryBridge from '@/components/AndroidAutoLibraryBridge';
+import CarMediaLibraryBridge from '@/components/CarMediaLibraryBridge';
 import FileSyncReport from '@/components/FileSyncReport';
 import AppLockDialog from '@/components/settings/AppLockDialog';
 import PassphrasePrompt from '@/components/PassphrasePrompt';
@@ -232,7 +232,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <CSPostHogProvider>
-      <AndroidAutoLibraryBridge />
+      <CarMediaLibraryBridge />
       <AuthProvider>
         <IconContext.Provider value={{ size: `${iconSize}px` }}>
           <SyncProvider>

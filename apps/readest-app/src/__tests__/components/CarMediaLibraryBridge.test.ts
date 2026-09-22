@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Book } from '@/types/book';
 import {
-  MAX_ANDROID_AUTO_BOOKS,
-  getAndroidAutoLibraryBooks,
-} from '@/components/AndroidAutoLibraryBridge';
+  MAX_CAR_MEDIA_BOOKS,
+  getCarMediaLibraryBooks,
+  getCarMediaPlaybackSourceKey,
+} from '@/components/CarMediaLibraryBridge';
 
 const book = (overrides: Partial<Book>): Book => ({
   hash: 'hash',
@@ -15,9 +16,9 @@ const book = (overrides: Partial<Book>): Book => ({
   ...overrides,
 });
 
-describe('AndroidAutoLibraryBridge', () => {
+describe('CarMediaLibraryBridge', () => {
   it('publishes recent playable books and excludes deleted or cloud-only rows', () => {
-    const books = getAndroidAutoLibraryBooks(
+    const books = getCarMediaLibraryBooks(
       [
         book({ hash: 'older', title: 'Older', updatedAt: 10, downloadedAt: 10 }),
         book({
@@ -43,6 +44,7 @@ describe('AndroidAutoLibraryBridge', () => {
         title: 'Audiobook',
         author: 'Author',
         isAudiobook: true,
+        format: 'ABS',
         coverHash: null,
         artworkReady: false,
       },
@@ -51,6 +53,7 @@ describe('AndroidAutoLibraryBridge', () => {
         title: 'Newer',
         author: 'Author',
         isAudiobook: false,
+        format: 'EPUB',
         coverHash: 'cover-v2',
         artworkReady: true,
       },
@@ -59,6 +62,7 @@ describe('AndroidAutoLibraryBridge', () => {
         title: 'Older',
         author: 'Author',
         isAudiobook: false,
+        format: 'EPUB',
         coverHash: null,
         artworkReady: false,
       },
@@ -69,7 +73,7 @@ describe('AndroidAutoLibraryBridge', () => {
   // the cloud carries `undefined`, not `null`. A `!== null` test lets every one
   // of them through and the car offers books with no bytes on this device.
   it('excludes a synced row whose downloadedAt is undefined', () => {
-    const books = getAndroidAutoLibraryBooks([
+    const books = getCarMediaLibraryBooks([
       book({ hash: 'synced', title: 'Synced', updatedAt: 10, downloadedAt: undefined }),
     ]);
 
@@ -77,7 +81,7 @@ describe('AndroidAutoLibraryBridge', () => {
   });
 
   it('keeps rows that are playable without a local download', () => {
-    const books = getAndroidAutoLibraryBooks([
+    const books = getCarMediaLibraryBooks([
       book({ hash: 'filepath', title: 'On disk', updatedAt: 30, filePath: '/books/a.epub' }),
       book({ hash: 'url', title: 'Streamed', updatedAt: 20, url: 'https://example.com/a.epub' }),
       book({ hash: 'abs', title: 'Audiobookshelf', format: 'ABS', updatedAt: 10 }),
@@ -89,7 +93,7 @@ describe('AndroidAutoLibraryBridge', () => {
   // The browse tree is readable by any client that binds the exported
   // MediaBrowserService, so the published slice stays deliberately small.
   it('caps the published slice at the ten most recently updated books', () => {
-    const library = Array.from({ length: MAX_ANDROID_AUTO_BOOKS + 5 }, (_, index) =>
+    const library = Array.from({ length: MAX_CAR_MEDIA_BOOKS + 5 }, (_, index) =>
       book({
         hash: `book-${index}`,
         title: `Book ${index}`,
@@ -98,10 +102,34 @@ describe('AndroidAutoLibraryBridge', () => {
       }),
     );
 
-    const books = getAndroidAutoLibraryBooks(library);
+    const books = getCarMediaLibraryBooks(library);
 
-    expect(MAX_ANDROID_AUTO_BOOKS).toBe(10);
-    expect(books).toHaveLength(MAX_ANDROID_AUTO_BOOKS);
+    expect(MAX_CAR_MEDIA_BOOKS).toBe(10);
+    expect(books).toHaveLength(MAX_CAR_MEDIA_BOOKS);
     expect(books[0]!.hash).toBe(`book-${library.length - 1}`);
+  });
+
+  it('keeps the playback-source key stable across progress-only reorderings', () => {
+    const firstLibrary = [
+      book({ hash: 'one', updatedAt: 20, downloadedAt: 10 }),
+      book({ hash: 'two', updatedAt: 10, filePath: '/books/two.epub' }),
+    ];
+    const reorderedLibrary = [
+      { ...firstLibrary[0]!, updatedAt: 20 },
+      { ...firstLibrary[1]!, updatedAt: 30 },
+    ];
+
+    expect(getCarMediaPlaybackSourceKey(firstLibrary, getCarMediaLibraryBooks(firstLibrary))).toBe(
+      getCarMediaPlaybackSourceKey(reorderedLibrary, getCarMediaLibraryBooks(reorderedLibrary)),
+    );
+  });
+
+  it('changes the playback-source key when a source input changes', () => {
+    const firstLibrary = [book({ hash: 'one', filePath: '/books/one.epub' })];
+    const movedLibrary = [{ ...firstLibrary[0]!, filePath: '/moved/one.epub' }];
+
+    expect(
+      getCarMediaPlaybackSourceKey(firstLibrary, getCarMediaLibraryBooks(firstLibrary)),
+    ).not.toBe(getCarMediaPlaybackSourceKey(movedLibrary, getCarMediaLibraryBooks(movedLibrary)));
   });
 });

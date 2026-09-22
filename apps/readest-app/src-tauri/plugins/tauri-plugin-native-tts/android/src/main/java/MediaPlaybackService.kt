@@ -21,6 +21,8 @@ import android.util.Log
 import android.graphics.Bitmap
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -40,14 +42,19 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import app.tauri.plugin.JSObject
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.Executors
 
 internal data class AndroidAutoBook(
     val hash: String,
     val title: String,
     val author: String,
     val isAudiobook: Boolean,
+    val format: String,
+    val sourcePath: String?,
+    val configPath: String?,
     val coverHash: String?,
     val artworkReady: Boolean,
 )
@@ -104,6 +111,18 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     private lateinit var player: ExoPlayer
     private lateinit var stateBuilder: PlaybackStateCompat.Builder
     private lateinit var audioManager: AudioManager
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val coldTextExecutor = Executors.newSingleThreadExecutor()
+    private var coldTts: TextToSpeech? = null
+    private var coldTtsReady = false
+    private var coldTtsActive = false
+    private var coldTtsPaused = false
+    private var coldTtsGeneration = 0
+    private var coldTtsIndex = 0
+    private var coldTtsSegments: List<ColdEpubSegment> = emptyList()
+    private var coldTtsBookHash: String? = null
+    private var coldTtsConfigPath: String? = null
+    private var coldTtsSavedCfi: String? = null
 
     // True only between session activation (TTS playback started) and
     // deactivation. Android Auto can bind this service at any time to browse,
@@ -128,9 +147,13 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             AudioManager.AUDIOFOCUS_GAIN -> {
                 if (resumeOnFocusGain) {
                     resumeOnFocusGain = false
-                    player.play()
-                    pluginEventTrigger?.invoke("media-session-play", JSObject())
-                    updatePlaybackState()
+                    if (coldTtsActive) {
+                        resumeColdTts()
+                    } else {
+                        player.play()
+                        pluginEventTrigger?.invoke("media-session-play", JSObject())
+                        updatePlaybackState()
+                    }
                 }
             }
             // Spoken audio pauses for transient loss instead of ducking or
@@ -140,7 +163,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 resumeOnFocusGain = player.isPlaying
-                if (player.isPlaying) {
+                if (coldTtsActive) {
+                    pauseColdTts()
+                } else if (player.isPlaying) {
                     player.pause()
                     pluginEventTrigger?.invoke("media-session-pause", JSObject())
                     updatePlaybackState()
@@ -150,7 +175,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             // paused; the system never sends a GAIN after this.
             AudioManager.AUDIOFOCUS_LOSS -> {
                 resumeOnFocusGain = false
-                if (player.isPlaying) {
+                if (coldTtsActive) {
+                    pauseColdTts()
+                } else if (player.isPlaying) {
                     player.pause()
                     pluginEventTrigger?.invoke("media-session-pause", JSObject())
                     updatePlaybackState()
@@ -166,7 +193,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != AudioManager.ACTION_AUDIO_BECOMING_NOISY) return
             resumeOnFocusGain = false
-            if (player.isPlaying) {
+            if (coldTtsActive) {
+                pauseColdTts()
+            } else if (player.isPlaying) {
                 player.pause()
                 pluginEventTrigger?.invoke("media-session-pause", JSObject())
                 updatePlaybackState()
@@ -182,12 +211,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     private fun requestFocus() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build()
-                )
+                .setAudioAttributes(SPOKEN_MEDIA_ATTRIBUTES)
                 .setWillPauseWhenDucked(true)
                 .setOnAudioFocusChangeListener(afChangeListener)
                 .build()
@@ -216,6 +240,11 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     }
 
     companion object {
+        private val SPOKEN_MEDIA_ATTRIBUTES: AudioAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
+
         private const val CHANNEL_ID = "media2_playback_channel"
         private const val NOTIFICATION_ID = 1002
         private const val MEDIA_ROOT_ID = "media_root_id"
@@ -230,6 +259,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         private const val CURRENT_READING_MEDIA_ID = "readest_current_reading"
         private const val RESUME_MEDIA_ID = "readest_resume_last_book"
         const val ACTION_ACTIVATE_SESSION = "ACTIVATE_SESSION"
+        private const val ACTION_START_COLD_EPUB = "START_COLD_EPUB"
+        private const val EXTRA_BOOK_HASH = "book_hash"
+        private const val COLD_TTS_INIT_TIMEOUT_MS = 8_000L
 
         private const val PREFS_LAST_BOOK = "media_last_book"
         private const val KEY_HASH = "hash"
@@ -249,7 +281,50 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         private const val MAX_LIBRARY_BOOKS = 10
         private val MD5_PATTERN = Regex("^[0-9a-fA-F]{32}$")
 
-        var pluginEventTrigger: ((String, JSObject) -> Unit)? = null
+        @Volatile
+        private var pluginEventTrigger: ((String, JSObject) -> Unit)? = null
+        @Volatile
+        private var pendingBookHash: String? = null
+
+        fun setPluginEventTrigger(trigger: ((String, JSObject) -> Unit)?) {
+            val pending = synchronized(this) {
+                pluginEventTrigger = trigger
+                if (trigger == null) {
+                    null
+                } else {
+                    pendingBookHash.also { pendingBookHash = null }
+                }
+            }
+            if (pending != null && trigger != null) {
+                val service = instance
+                val deliver = {
+                    trigger("media-session-play-book", JSObject().apply { put("bookHash", pending) })
+                }
+                if (service == null) {
+                    deliver()
+                } else {
+                    Handler(Looper.getMainLooper()).post {
+                        service.handoffColdTtsToWebView(pending)
+                        deliver()
+                    }
+                }
+            }
+        }
+
+        private fun dispatchOrQueueBookPlayback(hash: String): Boolean {
+            val trigger = synchronized(this) {
+                pendingBookHash = hash
+                pluginEventTrigger?.also { pendingBookHash = null }
+            }
+            trigger?.invoke("media-session-play-book", JSObject().apply { put("bookHash", hash) })
+            return trigger != null
+        }
+
+        private fun cancelPendingBookPlayback(): Boolean = synchronized(this) {
+            val hadPendingSelection = pendingBookHash != null
+            pendingBookHash = null
+            hadPendingSelection
+        }
 
         // Whether this service should hold the app's audio focus for the
         // current session. True for audio the app renders itself (the
@@ -344,6 +419,13 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                             title = title,
                             author = item.optString("author").trim(),
                             isAudiobook = item.optBoolean("isAudiobook", false),
+                            format = item.optString("format").trim().uppercase(),
+                            sourcePath = item.optString("sourcePath")
+                                .trim()
+                                .takeIf { it.isNotEmpty() && it != "null" },
+                            configPath = item.optString("configPath")
+                                .trim()
+                                .takeIf { it.isNotEmpty() && it != "null" },
                             coverHash = item.optString("coverHash")
                                 .trim()
                                 .takeIf { MD5_PATTERN.matches(it) },
@@ -400,6 +482,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             currentDurationMs = 0L
             val service = instance ?: return
             Handler(Looper.getMainLooper()).post {
+                // Explicit WebView playback takes ownership even if Pause
+                // canceled the pending automatic book-selection handoff.
+                service.clearColdTtsPlayback()
                 service.resetArtworkForBook(bookHash)
             }
         }
@@ -533,6 +618,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     private fun deactivateSession() {
         if (!sessionActive) return
+        clearColdTtsPlayback()
         sessionActive = false
 
         player.playWhenReady = false
@@ -553,6 +639,295 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         stopSelf()
     }
 
+    private data class ColdTtsConfig(val cfi: String?, val rate: Float)
+    private data class ColdEpubPaths(val sourcePath: String, val configPath: String?)
+
+    private fun requestColdEpubPlayback(book: AndroidAutoBook) {
+        val intent = Intent(this, MediaPlaybackService::class.java).apply {
+            action = ACTION_START_COLD_EPUB
+            putExtra(EXTRA_BOOK_HASH, book.hash)
+        }
+        ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun activateColdEpubPlayback(hash: String) {
+        val book = libraryBooks.firstOrNull { it.hash == hash }
+        val paths = book?.let(::resolveColdEpubPaths)
+        if (book == null || paths == null) {
+            publishColdTtsError("This book is not available for cold Read Aloud")
+            return
+        }
+
+        clearColdTtsPlayback()
+        coldTtsGeneration += 1
+        val generation = coldTtsGeneration
+        coldTtsActive = true
+        coldTtsPaused = false
+        coldTtsIndex = 0
+        coldTtsSegments = emptyList()
+        coldTtsBookHash = hash
+        coldTtsConfigPath = paths.configPath
+        coldTtsSavedCfi = null
+
+        currentBookHash = hash
+        currentTitle = book.title
+        currentArtist = book.author
+        ownsAudioFocus = true
+        MediaSessionActivationState.requestActivation("android-auto-cold:$hash")
+        activateSession()
+        mediaSession?.setPlaybackState(
+            stateBuilder.setState(PlaybackStateCompat.STATE_BUFFERING, 0L, 1f).build()
+        )
+        showNotification(PlaybackStateCompat.STATE_BUFFERING)
+
+        initializeColdTts(generation)
+        coldTextExecutor.execute {
+            var temporaryFile: File? = null
+            try {
+                val materialized = materializeColdBook(paths.sourcePath)
+                val source = materialized.file
+                if (materialized.temporary) temporaryFile = source
+                val config = readColdTtsConfig(paths.configPath)
+                val speech = ColdEpubText.read(source, config.cfi)
+                mainHandler.post {
+                    if (!coldTtsActive || generation != coldTtsGeneration) return@post
+                    coldTts?.setSpeechRate(config.rate)
+                    coldTtsSegments = speech.segments
+                    if (coldTtsSegments.isEmpty()) {
+                        publishColdTtsError("No readable text was found in this book")
+                    } else {
+                        maybeSpeakColdTts()
+                    }
+                }
+            } catch (error: Exception) {
+                Log.e("MediaPlaybackService", "Cold EPUB preparation failed for $hash", error)
+                mainHandler.post {
+                    if (generation == coldTtsGeneration) {
+                        publishColdTtsError("Read Aloud could not open this book")
+                    }
+                }
+            } finally {
+                temporaryFile?.delete()
+            }
+        }
+    }
+
+    private fun resolveColdEpubPaths(book: AndroidAutoBook): ColdEpubPaths? {
+        if (book.format == "EPUB" && !book.sourcePath.isNullOrBlank()) {
+            return ColdEpubPaths(book.sourcePath, book.configPath)
+        }
+
+        // Libraries saved by versions before 0.12.23 do not contain native
+        // source/config paths. Managed books live under Tauri's Android
+        // AppData root, so upgrade in place without requiring the phone app to
+        // be opened once merely to republish library metadata.
+        if (!MD5_PATTERN.matches(book.hash)) return null
+        val bookDir = File(applicationInfo.dataDir, "Readest/Books/${book.hash}")
+        val source = bookDir.listFiles()?.firstOrNull {
+            it.isFile && it.extension.equals("epub", ignoreCase = true)
+        } ?: return null
+        return ColdEpubPaths(source.absolutePath, File(bookDir, "config.json").absolutePath)
+    }
+
+    private data class ColdBookFile(val file: File, val temporary: Boolean)
+
+    private fun materializeColdBook(sourcePath: String): ColdBookFile {
+        val uri = Uri.parse(sourcePath)
+        if (uri.scheme != "content") return ColdBookFile(File(sourcePath), false)
+        val output = File.createTempFile("android_auto_book_", ".epub", cacheDir)
+        contentResolver.openInputStream(uri).use { input ->
+            requireNotNull(input) { "Unable to open $sourcePath" }
+            output.outputStream().use(input::copyTo)
+        }
+        return ColdBookFile(output, true)
+    }
+
+    private fun readColdTtsConfig(configPath: String?): ColdTtsConfig {
+        if (configPath.isNullOrBlank()) return ColdTtsConfig(null, 1f)
+        return try {
+            val json = JSONObject(File(configPath).readText())
+            val viewSettings = json.optJSONObject("viewSettings")
+            val cfi = viewSettings?.optString("ttsLocation")
+                ?.takeIf { it.isNotBlank() }
+                ?: json.optString("location").takeIf { it.isNotBlank() }
+            val rate = viewSettings?.optDouble("ttsRate", 1.0)?.toFloat() ?: 1f
+            ColdTtsConfig(cfi, rate.coerceIn(0.25f, 4f))
+        } catch (_: Exception) {
+            ColdTtsConfig(null, 1f)
+        }
+    }
+
+    private fun initializeColdTts(generation: Int) {
+        lateinit var engine: TextToSpeech
+        engine = TextToSpeech(applicationContext) { status ->
+            mainHandler.post {
+                if (!coldTtsActive || generation != coldTtsGeneration) {
+                    engine.shutdown()
+                    return@post
+                }
+                if (status != TextToSpeech.SUCCESS) {
+                    publishColdTtsError("Android text-to-speech could not start")
+                    return@post
+                }
+                engine.setAudioAttributes(SPOKEN_MEDIA_ATTRIBUTES)
+                engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) = Unit
+
+                    override fun onDone(utteranceId: String?) {
+                        mainHandler.post done@{
+                            if (!isCurrentColdUtterance(utteranceId) || coldTtsPaused) return@done
+                            coldTtsIndex += 1
+                            if (coldTtsIndex >= coldTtsSegments.size) {
+                                mediaSession?.setPlaybackState(
+                                    stateBuilder.setState(
+                                        PlaybackStateCompat.STATE_STOPPED,
+                                        0L,
+                                        1f,
+                                    ).build()
+                                )
+                                deactivateSession()
+                            } else {
+                                speakCurrentColdTtsSegment()
+                            }
+                        }
+                    }
+
+                    @Deprecated("Deprecated in Android")
+                    override fun onError(utteranceId: String?) {
+                        mainHandler.post {
+                            if (isCurrentColdUtterance(utteranceId) && !coldTtsPaused) {
+                                publishColdTtsError("Android text-to-speech stopped unexpectedly")
+                            }
+                        }
+                    }
+
+                    override fun onError(utteranceId: String?, errorCode: Int) = onError(utteranceId)
+                })
+                coldTts = engine
+                coldTtsReady = true
+                maybeSpeakColdTts()
+            }
+        }
+        coldTts = engine
+        mainHandler.postDelayed({
+            if (coldTtsActive && generation == coldTtsGeneration && !coldTtsReady) {
+                publishColdTtsError("Android text-to-speech took too long to start")
+            }
+        }, COLD_TTS_INIT_TIMEOUT_MS)
+    }
+
+    private fun maybeSpeakColdTts() {
+        if (!coldTtsActive || coldTtsPaused || !coldTtsReady || coldTtsSegments.isEmpty()) return
+        speakCurrentColdTtsSegment()
+    }
+
+    private fun speakCurrentColdTtsSegment() {
+        val engine = coldTts ?: return
+        val segment = coldTtsSegments.getOrNull(coldTtsIndex) ?: return
+        persistColdTtsLocation(segment.cfi)
+        if (ownsAudioFocus) requestFocus()
+        player.play()
+        mediaSession?.setPlaybackState(
+            stateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, 0L, 1f).build()
+        )
+        showNotification(PlaybackStateCompat.STATE_PLAYING)
+        val result = engine.speak(
+            segment.text,
+            TextToSpeech.QUEUE_FLUSH,
+            null,
+            "$coldTtsGeneration:$coldTtsIndex",
+        )
+        if (result == TextToSpeech.ERROR) publishColdTtsError("Android text-to-speech rejected the text")
+    }
+
+    private fun isCurrentColdUtterance(utteranceId: String?): Boolean =
+        utteranceId == "$coldTtsGeneration:$coldTtsIndex" && coldTtsActive
+
+    private fun persistColdTtsLocation(cfi: String) {
+        if (cfi == coldTtsSavedCfi) return
+        coldTtsSavedCfi = cfi
+        val path = coldTtsConfigPath ?: return
+        try {
+            val file = File(path)
+            if (!file.isFile) return
+            val json = JSONObject(file.readText())
+            val viewSettings = json.optJSONObject("viewSettings") ?: JSONObject().also {
+                json.put("viewSettings", it)
+            }
+            viewSettings.put("ttsLocation", cfi)
+            file.writeText(json.toString())
+        } catch (error: Exception) {
+            Log.w("MediaPlaybackService", "Cold EPUB location persistence failed", error)
+        }
+    }
+
+    private fun pauseColdTts() {
+        if (!coldTtsActive) return
+        coldTtsPaused = true
+        coldTts?.stop()
+        player.pause()
+        mediaSession?.setPlaybackState(
+            stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0L, 1f).build()
+        )
+        showNotification(PlaybackStateCompat.STATE_PAUSED)
+    }
+
+    private fun resumeColdTts() {
+        if (!coldTtsActive) return
+        coldTtsPaused = false
+        maybeSpeakColdTts()
+    }
+
+    private fun skipColdTts(delta: Int) {
+        if (!coldTtsActive || coldTtsSegments.isEmpty()) return
+        coldTts?.stop()
+        coldTtsIndex = (coldTtsIndex + delta).coerceIn(0, coldTtsSegments.lastIndex)
+        coldTtsPaused = false
+        speakCurrentColdTtsSegment()
+    }
+
+    private fun publishColdTtsError(message: String) {
+        Log.e("MediaPlaybackService", message)
+        coldTtsActive = false
+        coldTtsPaused = false
+        coldTtsReady = false
+        coldTts?.stop()
+        coldTts?.shutdown()
+        coldTts = null
+        player.pause()
+        mediaSession?.setPlaybackState(
+            stateBuilder.setErrorMessage(message)
+                .setState(PlaybackStateCompat.STATE_ERROR, 0L, 1f)
+                .build()
+        )
+        showNotification(PlaybackStateCompat.STATE_ERROR)
+    }
+
+    private fun clearColdTtsPlayback() {
+        coldTtsGeneration += 1
+        coldTtsActive = false
+        coldTtsPaused = false
+        coldTtsReady = false
+        coldTtsIndex = 0
+        coldTtsSegments = emptyList()
+        coldTtsBookHash = null
+        coldTtsConfigPath = null
+        coldTtsSavedCfi = null
+        coldTts?.stop()
+        coldTts?.shutdown()
+        coldTts = null
+    }
+
+    private fun handoffColdTtsToWebView(hash: String) {
+        if (coldTtsBookHash != hash) return
+        clearColdTtsPlayback()
+        player.pause()
+        mediaSession?.setPlaybackState(
+            stateBuilder.setState(PlaybackStateCompat.STATE_BUFFERING, 0L, 1f).build()
+        )
+        showNotification(PlaybackStateCompat.STATE_BUFFERING)
+    }
+
     private inner class SessionCallback : MediaSessionCompat.Callback() {
         override fun onPlay() {
             // The session stays command-ready for the whole life of the bound
@@ -562,6 +937,14 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             // Starting the silent keep-alive player then would hold the media
             // button away from whatever the user actually meant to resume, so
             // treat it as a request to resume the last book instead.
+            coldTtsBookHash?.let {
+                if (coldTtsActive) resumeColdTts() else activateColdEpubPlayback(it)
+                return
+            }
+            if (coldTtsActive) {
+                resumeColdTts()
+                return
+            }
             if (!sessionActive) {
                 onPlayFromMediaId(lastBookHash?.let { "$BOOK_MEDIA_ID_PREFIX$it" }, null)
                 return
@@ -576,6 +959,19 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             // An explicit user pause must stick: cancel any pending
             // resume-after-interruption.
             resumeOnFocusGain = false
+            if (coldTtsBookHash != null) {
+                cancelPendingBookPlayback()
+                if (coldTtsActive) {
+                    pauseColdTts()
+                } else {
+                    player.pause()
+                    mediaSession?.setPlaybackState(
+                        stateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, 0L, 1f).build()
+                    )
+                    showNotification(PlaybackStateCompat.STATE_PAUSED)
+                }
+                return
+            }
             player.pause()
             pluginEventTrigger?.invoke("media-session-pause", JSObject())
             updatePlaybackState()
@@ -587,10 +983,18 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         // muddied the transition, so the JS side (ttsMediaBridge) holds an
         // optimistic playing state until the skipped-to segment speaks.
         override fun onSkipToNext() {
+            if (coldTtsActive) {
+                skipColdTts(1)
+                return
+            }
             pluginEventTrigger?.invoke("media-session-next", JSObject())
         }
 
         override fun onSkipToPrevious() {
+            if (coldTtsActive) {
+                skipColdTts(-1)
+                return
+            }
             pluginEventTrigger?.invoke("media-session-previous", JSObject())
         }
 
@@ -627,6 +1031,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             val selectedBook = libraryBooks.firstOrNull { it.hash == hash }
             if (selectedBook != null) {
                 mediaSession?.setMetadata(buildLibraryBookMetadata(selectedBook))
+                saveLastBook(this@MediaPlaybackService, hash, selectedBook.title, selectedBook.author)
             }
             // A playable-item request is asynchronous: the WebView still has
             // to open the book and initialize its saved reader/player state.
@@ -640,8 +1045,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             // Normal case: the app process is alive in the background. Let the
             // global bridge select the book and start the existing ebook TTS or
             // audiobook player without trying to display phone UI in the car.
-            pluginEventTrigger?.let { trigger ->
-                trigger("media-session-play-book", JSObject().apply { put("bookHash", hash) })
+            if (dispatchOrQueueBookPlayback(hash)) return
+
+            // A cold Android Auto selection cannot wake Readest's Activity:
+            // background services do not receive background-activity-launch
+            // privileges merely by sending their own PendingIntent. EPUB Read
+            // Aloud therefore starts inside this media service, as Android's
+            // car playback contract requires.
+            if (selectedBook != null && resolveColdEpubPaths(selectedBook) != null) {
+                requestColdEpubPlayback(selectedBook)
                 return
             }
 
@@ -1105,6 +1517,16 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
+            ACTION_START_COLD_EPUB -> {
+                val hash = intent.getStringExtra(EXTRA_BOOK_HASH)
+                if (hash != null) {
+                    activateColdEpubPlayback(hash)
+                } else {
+                    showNotification(PlaybackStateCompat.STATE_ERROR)
+                    ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                    stopSelf(startId)
+                }
+            }
             ACTION_ACTIVATE_SESSION -> {
                 if (MediaSessionActivationState.isActivationDesired()) {
                     activateSession()
@@ -1117,16 +1539,29 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 }
             }
             Intent.ACTION_MEDIA_BUTTON -> {
-                if (sessionActive) {
-                    MediaButtonReceiver.handleIntent(mediaSession, intent)
-                } else {
-                    // MediaButtonReceiver cold-starts this service with
-                    // startForegroundService; honor the foreground contract,
-                    // then back out — there is no TTS session to control.
+                if (!sessionActive) {
+                    // MediaButtonReceiver cold-starts this service specifically
+                    // so the last media session can process Play and resume
+                    // without an Activity. Satisfy the foreground contract
+                    // before dispatching; onPlay() will select the persisted
+                    // last book and start service-owned EPUB speech.
                     showNotification(PlaybackStateCompat.STATE_PAUSED)
-                    ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                    stopSelf(startId)
                 }
+                MediaButtonReceiver.handleIntent(mediaSession, intent)
+                mainHandler.postDelayed({
+                    // Pause/stop delivered to a cold session has no playback
+                    // work to keep alive. A Play command will synchronously
+                    // enqueue ACTION_START_COLD_EPUB (or wake the Activity),
+                    // so give that command time to activate before cleaning
+                    // up the receiver-started foreground service.
+                    if (!sessionActive && !coldTtsActive) {
+                        ServiceCompat.stopForeground(
+                            this,
+                            ServiceCompat.STOP_FOREGROUND_REMOVE,
+                        )
+                        stopSelfResult(startId)
+                    }
+                }, 1_000L)
             }
         }
 
@@ -1135,8 +1570,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     override fun onDestroy() {
         instance = null
-        super.onDestroy()
         cancelSelectionWatchdog()
+        clearColdTtsPlayback()
+        coldTextExecutor.shutdownNow()
         if (noisyReceiverRegistered) {
             noisyReceiverRegistered = false
             unregisterReceiver(becomingNoisyReceiver)
@@ -1144,5 +1580,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         abandonFocus()
         player.release()
         mediaSession?.release()
+        super.onDestroy()
     }
 }

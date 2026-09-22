@@ -64,13 +64,13 @@ fn open_location<R: Runtime>(
     let file_path = FilePath::from_str(location).map_err(|e| e.to_string())?;
     match &file_path {
         FilePath::Path(path) => {
-            ensure_path_allowed(app, &path.to_string_lossy()).map_err(|e| e.to_string())?
+            ensure_path_allowed(app, &path.to_string_lossy()).map_err(|e| e.to_string())?;
         }
         FilePath::Url(url) if url.scheme() == "file" => {
             let path = url
                 .to_file_path()
                 .map_err(|_| format!("invalid file URL: {location}"))?;
-            ensure_path_allowed(app, &path.to_string_lossy()).map_err(|e| e.to_string())?
+            ensure_path_allowed(app, &path.to_string_lossy()).map_err(|e| e.to_string())?;
         }
         FilePath::Url(url) if url.scheme() == "content" => {}
         FilePath::Url(url) => return Err(format!("unsupported location scheme: {}", url.scheme())),

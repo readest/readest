@@ -441,6 +441,33 @@ describe('TTSMediaBridge', () => {
 });
 
 describe('TTSMediaBridge bind teardown race (READEST-1A)', () => {
+  test('first pause works while native activation is still pending', async () => {
+    let releaseActivation!: () => void;
+    const actions = new Map<string, (() => void) | ((position: number) => void)>();
+    const tauriSession = new TauriMediaSession();
+    tauriSession.setActive = vi.fn(async () => {
+      await new Promise<void>((resolve) => {
+        releaseActivation = resolve;
+      });
+    });
+    tauriSession.updateMetadata = vi.fn().mockResolvedValue(undefined);
+    tauriSession.updatePlaybackState = vi.fn().mockResolvedValue(undefined);
+    tauriSession.setActionHandler = vi.fn((action, handler) => {
+      if (handler) actions.set(action, handler);
+      else actions.delete(action);
+    });
+    const controller = new FakeController();
+    const bridge = new TTSMediaBridge(() => tauriSession);
+
+    const binding = bridge.bind(controller as unknown as TTSController, meta());
+    await Promise.resolve();
+    (actions.get('pause') as () => void)();
+
+    expect(controller.pause).toHaveBeenCalledOnce();
+    releaseActivation();
+    await binding;
+  });
+
   test('activates the foreground session before a deferred cover fetch resolves', async () => {
     let resolveCover!: (value: string) => void;
     vi.mocked(fetchImageAsBase64).mockReturnValueOnce(

@@ -26,17 +26,28 @@ export class EdgeSpeechProvider implements SpeechProvider {
   // protocol to probe with.
   async init(protocol: EDGE_TTS_PROTOCOL = 'wss'): Promise<boolean> {
     this.#tts = new EdgeSpeechTTS(protocol);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
-      await this.#tts.create({
-        lang: 'en',
-        text: 'test',
-        voice: 'en-US-AriaNeural',
-        rate: 1.0,
-        pitch: 1.0,
-      });
-      return true;
+      // Initialization gates every engine and the player controls. In
+      // particular, a native WebSocket can hang before its audio timer starts.
+      return await Promise.race([
+        this.#tts
+          .create({
+            lang: 'en',
+            text: 'test',
+            voice: 'en-US-AriaNeural',
+            rate: 1.0,
+            pitch: 1.0,
+          })
+          .then(() => true),
+        new Promise<false>((resolve) => {
+          timeout = setTimeout(() => resolve(false), 5000);
+        }),
+      ]);
     } catch {
       return false;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 

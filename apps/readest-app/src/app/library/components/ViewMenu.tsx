@@ -39,7 +39,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
 
   const viewMode = searchParams?.get('view') || settings.libraryViewMode;
@@ -163,6 +163,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   return (
     <Menu
       className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'
+      style={{ marginRight: appService?.isMobile || window.innerWidth < 640 ? '-40px' : 0 }}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
       <MenuItem
