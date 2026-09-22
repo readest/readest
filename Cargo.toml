@@ -56,9 +56,11 @@ tauri = { path = "packages/tauri/crates/tauri" }
 swift-rs = { path = "packages/swift-rs" }
 
 [profile.release]
-# The Android library is 95% of the APK, and cross-crate inlining plus a single
-# codegen unit is the one knob that shrinks the code itself: on aarch64 it cuts
-# .text by 5.2MB and the unwind/exception tables by another 2.1MB, at the cost
-# of a longer final link.
-lto = "fat"
+# The Android library is 95% of the APK, and one codegen unit is the one knob
+# that shrinks the code itself: on aarch64 it cuts .text 29.7MB -> 24.4MB and
+# the unwind/exception tables 6.2MB -> 4.1MB. It costs ~1.5min on a clean
+# build and ~0.5GB of peak memory (measured aarch64-linux-android, M-series).
+#
+# LTO is deliberately NOT enabled: fat, thin and off all produce the same
+# .text once codegen-units is 1, so it would buy nothing but link time.
 codegen-units = 1
