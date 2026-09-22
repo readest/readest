@@ -27,12 +27,14 @@ test.describe('NL-270 foundation spike', () => {
     await expect(page.getByTestId('active-quote')).toContainText('因此');
     await page.getByRole('textbox', { name: '问题' }).fill('为什么需要紧致性？');
     await page.getByRole('button', { name: '提问' }).click();
-    await expect(page.getByRole('button', { name: /打开源块 02 的批注/ })).toContainText(
-      '为什么需要紧致性？',
+    await expect(page.getByRole('button', { name: /打开源块 02 的批注/ })).toHaveAttribute(
+      'title',
+      /为什么需要紧致性/,
     );
     await expect(page.getByRole('button', { name: /引用/ })).toHaveCount(2);
 
-    await page.getByRole('button', { name: '切换字号' }).click();
+    await page.getByRole('slider', { name: '正文字号' }).fill('21');
+    await page.getByRole('slider', { name: '正文行距' }).fill('1.9');
     await page.getByRole('button', { name: '切换主题' }).click();
     await page.getByRole('button', { name: /引用 1/ }).click();
     await expect(sourceBlock).toHaveAttribute('data-highlighted', 'true');
@@ -61,7 +63,7 @@ test.describe('NL-270 foundation spike', () => {
     );
   });
 
-  test('imports Markdown and opens an inline thread without page navigation', async ({ page }) => {
+  test('imports Markdown and opens a margin thread in the sidebar', async ({ page }) => {
     await page.goto('/foundation-spike');
     await page.getByLabel('导入 Markdown').setInputFiles({
       name: 'human-acceptance.md',
@@ -84,9 +86,41 @@ test.describe('NL-270 foundation spike', () => {
     });
     await page.getByRole('textbox', { name: '问题' }).fill('这段在说什么？');
     await page.getByRole('button', { name: '提问' }).click();
+    await page.getByRole('button', { name: '收起批注栏' }).click();
     await page.getByRole('button', { name: /打开源块 02 的批注/ }).click();
-    await expect(page.getByRole('dialog', { name: '完整批注对话' })).toBeVisible();
+    await expect(page.getByLabel('对话批注')).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByRole('button', { name: '收起批注栏' }).click();
+    await page.getByRole('button', { name: /打开批注：第一段真实内容/ }).click();
+    await expect(page.getByLabel('对话批注')).toBeVisible();
     await expect(page).toHaveURL(/\/foundation-spike$/);
-    await page.getByRole('button', { name: '关闭完整对话' }).click();
+  });
+
+  test('uses an overlay sidebar in a narrow reading window', async ({ page }) => {
+    await page.setViewportSize({ width: 520, height: 800 });
+    await page.goto('/foundation-spike');
+
+    const sourceBlock = page.getByTestId('source-block-block-02');
+    await sourceBlock.evaluate((element) => {
+      const textNode = element.querySelector('[data-source-text]')!.firstChild!;
+      const start = textNode.textContent!.indexOf('紧致性');
+      const range = document.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, start + '紧致性'.length);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    });
+    await page.getByRole('textbox', { name: '问题' }).fill('窄屏批注');
+    await page.getByRole('button', { name: '提问' }).click();
+
+    const sidebar = page.getByLabel('对话批注');
+    await expect(sidebar).toHaveCSS('position', 'fixed');
+    await page.getByRole('button', { name: '关闭批注栏' }).click();
+    await expect(sidebar).toHaveCount(0);
+    await page.getByRole('button', { name: '打开批注：紧致性' }).click();
+    await expect(page.getByLabel('对话批注')).toBeVisible();
+    await expect(page.getByText('窄屏批注', { exact: true }).first()).toBeVisible();
   });
 });

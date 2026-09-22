@@ -86,10 +86,21 @@ describe('foundation spike page', () => {
     const exactQuote = '局部信息';
     selectText('block-02', exactQuote);
 
-    fireEvent.click(screen.getByRole('button', { name: '切换字号' }));
+    fireEvent.change(screen.getByRole('slider', { name: '正文字号' }), {
+      target: { value: '22' },
+    });
+    fireEvent.change(screen.getByRole('slider', { name: '正文行距' }), {
+      target: { value: '2' },
+    });
     fireEvent.click(screen.getByRole('button', { name: '切换主题' }));
 
     expect(screen.getByTestId('active-quote').textContent).toBe(exactQuote);
+    expect(screen.getByLabelText('SOURCE_DOC 阅读区').getAttribute('style')).toContain(
+      'font-size: 22px',
+    );
+    expect(screen.getByLabelText('SOURCE_DOC 阅读区').getAttribute('style')).toContain(
+      'line-height: 2',
+    );
     expect(document.querySelector('main')?.getAttribute('style')).toContain(
       'background-color: rgb(17, 24, 39)',
     );
@@ -107,22 +118,32 @@ describe('foundation spike page', () => {
     expect(screen.getByTestId('active-quote').textContent).toContain('因此');
   });
 
-  it('shows an inline preview and opens the full thread without leaving the reader', () => {
+  it('opens a thread from the annotation rail and the underlined source text', () => {
     render(<FoundationSpike />);
     selectText('block-02', '紧致性');
     fireEvent.change(screen.getByLabelText('问题'), { target: { value: '为什么？' } });
     fireEvent.click(screen.getByRole('button', { name: '提问' }));
 
-    const preview = screen.getByRole('button', { name: /打开源块 02 的批注/ });
-    expect(preview.textContent).toContain('为什么？');
-    fireEvent.click(preview);
-    expect(screen.getByRole('dialog', { name: '完整批注对话' })).not.toBeNull();
+    const railMarker = screen.getByRole('button', { name: /打开源块 02 的批注/ });
+    const annotatedText = screen.getByRole('button', { name: '打开批注：紧致性' });
+    expect(screen.getByTestId('source-block-block-02').className).not.toContain('border');
+    expect(annotatedText.className).toContain('decoration-1');
+    expect(annotatedText.className).toContain('decoration-blue-500/45');
+    expect(screen.queryByRole('dialog', { name: '完整批注对话' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '收起批注栏' }));
+    expect(screen.queryByLabelText('对话批注')).toBeNull();
+
+    fireEvent.click(railMarker);
+    expect(screen.getByLabelText('对话批注')).not.toBeNull();
     expect(screen.getAllByText('为什么？').length).toBeGreaterThan(0);
-    expect(window.location.pathname).toBe('/');
-    fireEvent.click(screen.getByRole('button', { name: '关闭完整对话' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '收起批注栏' }));
+    fireEvent.click(annotatedText);
+    expect(screen.getByLabelText('对话批注')).not.toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('keeps sidebar and inline preview synchronized after editing and archiving', () => {
+  it('keeps sidebar and margin marker synchronized after editing and archiving', () => {
     render(<FoundationSpike />);
     selectText('block-02', '紧致性');
     fireEvent.change(screen.getByLabelText('问题'), { target: { value: '旧标题问题' } });
@@ -131,7 +152,7 @@ describe('foundation spike page', () => {
     fireEvent.click(screen.getByRole('button', { name: '重命名批注' }));
     fireEvent.change(screen.getByLabelText('批注标题'), { target: { value: '新批注标题' } });
     fireEvent.click(screen.getByRole('button', { name: '保存标题' }));
-    expect(screen.getAllByText('新批注标题').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('新批注标题').length).toBeGreaterThanOrEqual(1);
 
     fireEvent.click(screen.getByRole('button', { name: '编辑消息：旧标题问题' }));
     fireEvent.change(screen.getByLabelText('消息内容'), { target: { value: '修改后的问题' } });
@@ -142,6 +163,29 @@ describe('foundation spike page', () => {
     expect(screen.getByText('已归档')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '显示已归档' }));
     expect(screen.getByRole('button', { name: /打开源块 02 的批注/ })).not.toBeNull();
+  });
+
+  it('adjusts and persists reading and sidebar widths', () => {
+    const first = render(<FoundationSpike />);
+    fireEvent.change(screen.getByRole('slider', { name: '正文宽度' }), {
+      target: { value: '760' },
+    });
+    fireEvent.change(screen.getByRole('slider', { name: '批注栏宽度' }), {
+      target: { value: '480' },
+    });
+    expect(screen.getByLabelText('SOURCE_DOC 阅读区').getAttribute('style')).toContain(
+      'width: 760px',
+    );
+    expect(screen.getByLabelText('对话批注').getAttribute('style')).toContain('width: 480px');
+    first.unmount();
+
+    render(<FoundationSpike />);
+    expect((screen.getByRole('slider', { name: '正文宽度' }) as HTMLInputElement).value).toBe(
+      '760',
+    );
+    expect((screen.getByRole('slider', { name: '批注栏宽度' }) as HTMLInputElement).value).toBe(
+      '480',
+    );
   });
 
   it('imports a Markdown file through the reader toolbar', async () => {
