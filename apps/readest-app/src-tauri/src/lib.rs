@@ -794,9 +794,12 @@ pub fn run() {
             );
 
             let app_handle = app.handle().clone();
-            let window_url = match std::env::var("READEST_FOUNDATION_SPIKE") {
-                Ok(value) if value == "1" => WebviewUrl::App("foundation-spike".into()),
-                _ => WebviewUrl::default(),
+            let foundation_spike_enabled = option_env!("READEST_FOUNDATION_SPIKE") == Some("1")
+                || matches!(std::env::var("READEST_FOUNDATION_SPIKE"), Ok(value) if value == "1");
+            let window_url = if foundation_spike_enabled {
+                WebviewUrl::App("foundation-spike".into())
+            } else {
+                WebviewUrl::default()
             };
             let win_builder = WebviewWindowBuilder::new(app, "main", window_url)
                 .background_throttling(BackgroundThrottlingPolicy::Disabled)
