@@ -8,6 +8,7 @@ import { IconContext } from 'react-icons';
 import { AuthProvider } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import WindowResizeHandles from '@/components/WindowResizeHandles';
+import WindowOutline from '@/components/WindowOutline';
 import { CSPostHogProvider } from '@/context/PHContext';
 import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
@@ -248,6 +249,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <PassphrasePrompt />
                   {!appShellHidden && <FileSyncReport />}
                   <WindowResizeHandles />
+                  <WindowOutline />
                 </div>
                 <AppLockDialog />
                 <TelemetryConsentDialog

@@ -397,6 +397,24 @@
     pointer-events: none;
   }
 
+  /* Frame for Windows 10, where the OS draws no symmetric edge around an
+     undecorated window. Square rather than rounded, because Windows 10 keeps
+     windows square-cornered too. */
+  .window-outline {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 99;
+    border: 1px solid var(--color-base-300);
+    pointer-events: none;
+  }
+
+  [data-eink='true'] .window-outline {
+    border-color: var(--color-base-content);
+  }
+
   /* daisyUI 5 fades and scales every dropdown open, <details> ones included,
      which daisyUI 4 left static. Keep them static: the Dropdown clamps the open
      menu into the viewport from its measured box, and a menu mid-scale measures
