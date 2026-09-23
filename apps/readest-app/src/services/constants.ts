@@ -389,6 +389,11 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   highlightOpacity: 0.4,
   codeHighlighting: false,
   codeLanguage: 'auto-detect',
+  dialogueHighlight: false,
+  dialogueHighlightCustomColor: false,
+  dialogueHighlightColor: HIGHLIGHT_COLOR_HEX['yellow'] ?? '#facc15',
+  dialogueHighlightCustomTextColor: false,
+  dialogueHighlightTextColor: '',
   userStylesheet: '',
   userUIStylesheet: '',
 

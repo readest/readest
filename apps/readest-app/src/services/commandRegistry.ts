@@ -424,6 +424,12 @@ const colorPanelItems = [
     keywords: ['code', 'highlighting', 'syntax', 'programming'],
     section: 'Code',
   },
+  {
+    id: 'settings.color.dialogueHighlight',
+    labelKey: _('Dialogue Highlighting'),
+    keywords: ['dialogue', 'dialog', 'speech', 'quote', 'highlight', 'theme'],
+    section: 'Theme',
+  },
 ];
 
 // control panel items

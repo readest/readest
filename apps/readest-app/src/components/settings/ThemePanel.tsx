@@ -26,6 +26,7 @@ import {
 } from '@/helpers/settings';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
+import { manageDialogueHighlight } from '@/utils/dialogueHighlight';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
@@ -40,6 +41,7 @@ import ThemeColorSelector from './theme/ThemeColorSelector';
 import BackgroundTextureSelector from './theme/BackgroundTextureSelector';
 import HighlightColorsEditor from './theme/HighlightColorsEditor';
 import CodeHighlightingSettings from './theme/CodeHighlightingSettings';
+import DialogueHighlightSettings from './theme/DialogueHighlightSettings';
 import ReadingRulerSettings from './theme/ReadingRulerSettings';
 import { Toggle } from '../primitives/toggle';
 
@@ -96,6 +98,19 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [overrideColor, setOverrideColor] = useState(viewSettings.overrideColor);
   const [codeHighlighting, setcodeHighlighting] = useState(viewSettings.codeHighlighting);
   const [codeLanguage, setCodeLanguage] = useState(viewSettings.codeLanguage);
+  const [dialogueHighlight, setDialogueHighlight] = useState(viewSettings.dialogueHighlight);
+  const [dialogueHighlightCustomColor, setDialogueHighlightCustomColor] = useState(
+    viewSettings.dialogueHighlightCustomColor,
+  );
+  const [dialogueHighlightColor, setDialogueHighlightColor] = useState(
+    viewSettings.dialogueHighlightColor,
+  );
+  const [dialogueHighlightTextColor, setDialogueHighlightTextColor] = useState(
+    viewSettings.dialogueHighlightTextColor,
+  );
+  const [dialogueHighlightCustomTextColor, setDialogueHighlightCustomTextColor] = useState(
+    viewSettings.dialogueHighlightCustomTextColor,
+  );
   const [selectedTextureId, setSelectedTextureId] = useState(currentTextureId);
   const [backgroundOpacity, setBackgroundOpacity] = useState(currentBackgroundOpacity);
   const [backgroundSize, setBackgroundSize] = useState(currentBackgroundSize);
@@ -135,6 +150,11 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       highlightOpacity: setHighlightOpacity,
       codeHighlighting: setcodeHighlighting,
       codeLanguage: setCodeLanguage,
+      dialogueHighlight: setDialogueHighlight,
+      dialogueHighlightCustomColor: setDialogueHighlightCustomColor,
+      dialogueHighlightColor: setDialogueHighlightColor,
+      dialogueHighlightCustomTextColor: setDialogueHighlightCustomTextColor,
+      dialogueHighlightTextColor: setDialogueHighlightTextColor,
       readingRulerEnabled: setReadingRulerEnabled,
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
@@ -216,6 +236,67 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     docs.forEach(({ doc }) => manageSyntaxHighlighting(doc, viewSettings));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeHighlighting, codeLanguage]);
+
+  useEffect(() => {
+    if (dialogueHighlight === viewSettings.dialogueHighlight) return;
+    saveViewSettings(envConfig, bookKey, 'dialogueHighlight', dialogueHighlight);
+    const view = getView(bookKey);
+    if (!view) return;
+    const docs = view.renderer.getContents();
+    docs.forEach(({ doc }) => manageDialogueHighlight(doc, viewSettings));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialogueHighlight]);
+
+  useEffect(() => {
+    let update = false;
+    if (dialogueHighlightCustomColor !== viewSettings.dialogueHighlightCustomColor) {
+      saveViewSettings(
+        envConfig,
+        bookKey,
+        'dialogueHighlightCustomColor',
+        dialogueHighlightCustomColor,
+      );
+      update = true;
+    }
+    if (dialogueHighlightColor !== viewSettings.dialogueHighlightColor) {
+      saveViewSettings(envConfig, bookKey, 'dialogueHighlightColor', dialogueHighlightColor);
+      update = true;
+    }
+    if (viewSettings.dialogueHighlightCustomTextColor !== dialogueHighlightCustomTextColor) {
+      saveViewSettings(
+        envConfig,
+        bookKey,
+        'dialogueHighlightCustomTextColor',
+        dialogueHighlightCustomTextColor,
+      );
+      update = true;
+    }
+    if (viewSettings.dialogueHighlightTextColor !== dialogueHighlightTextColor) {
+      saveViewSettings(
+        envConfig,
+        bookKey,
+        'dialogueHighlightTextColor',
+        dialogueHighlightTextColor,
+      );
+      update = true;
+    }
+    if (!update) return;
+    // Recoloring is pure CSS (getStyles reads these fields), so the saved
+    // viewSettings refresh via saveViewSettings -> setStyles is enough when
+    // the background is on and spans are guaranteed present. With the
+    // background off, spans may not exist yet (text-only mode just turned
+    // on), so re-wrap to give the new CSS something to paint.
+    if (!dialogueHighlight) {
+      const docs = getView(bookKey)?.renderer.getContents() ?? [];
+      docs.forEach(({ doc }) => manageDialogueHighlight(doc, viewSettings));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    dialogueHighlightCustomColor,
+    dialogueHighlightColor,
+    dialogueHighlightCustomTextColor,
+    dialogueHighlightTextColor,
+  ]);
 
   useEffect(() => {
     if (selectedTextureId === currentTextureId) return;
@@ -495,6 +576,20 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onToggle={setcodeHighlighting}
             onLanguageChange={setCodeLanguage}
             data-setting-id='settings.color.codeHighlighting'
+          />
+
+          <DialogueHighlightSettings
+            dialogueHighlight={dialogueHighlight}
+            customBackground={dialogueHighlightCustomColor}
+            backgroundColor={dialogueHighlightColor}
+            customTextColor={dialogueHighlightCustomTextColor}
+            textColor={dialogueHighlightTextColor}
+            onToggle={setDialogueHighlight}
+            onCustomBackgroundToggle={setDialogueHighlightCustomColor}
+            onBackgroundColorChange={setDialogueHighlightColor}
+            onCustomTextColorToggle={setDialogueHighlightCustomTextColor}
+            onTextColorChange={setDialogueHighlightTextColor}
+            data-setting-id='settings.color.dialogueHighlight'
           />
         </>
       )}
