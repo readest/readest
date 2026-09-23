@@ -11,6 +11,8 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+import { isTauriAppPlatform } from '@/services/environment';
+
 import {
   SOURCE_DOC_FIXTURE,
   SourceDocSpikeStore,
@@ -103,6 +105,8 @@ export default function FoundationSpike() {
   const [readingProgress, setReadingProgress] = useState(0);
   const sidebarDrag = useRef<{ startX: number; startWidth: number } | null>(null);
   const sourcePointerStart = useRef<{ x: number; y: number } | null>(null);
+  const normalWindowSize = useRef<{ width: number; height: number } | null>(null);
+  const toolbarExpanded = readingSettings.toolbarPinned || toolbarHovered;
   const store = useMemo(
     () => (typeof window === 'undefined' ? null : new SourceDocSpikeStore(window.localStorage)),
     [],
@@ -336,6 +340,20 @@ export default function FoundationSpike() {
     window.scrollTo({ top: (scrollable * value) / 100, behavior: 'smooth' });
   };
 
+  const startWindowDragging = async (event: ReactMouseEvent<HTMLElement>) => {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('button, input, label, select, a')) return;
+    try {
+      if (isTauriAppPlatform()) {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        await getCurrentWindow().startDragging();
+      }
+    } catch {
+      // Window dragging is only available in the desktop shell.
+    }
+  };
+
   const minimizeWindow = async () => {
     try {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
@@ -347,15 +365,36 @@ export default function FoundationSpike() {
 
   const toggleFullscreen = async () => {
     try {
+      if (isTauriAppPlatform()) {
+        const { getCurrentWindow, LogicalSize } = await import('@tauri-apps/api/window');
+        const currentWindow = getCurrentWindow();
+        if (await currentWindow.isFullscreen()) {
+          await currentWindow.setFullscreen(false);
+          await currentWindow.unmaximize();
+          const size = normalWindowSize.current ?? { width: 1280, height: 820 };
+          await currentWindow.setSize(new LogicalSize(size.width, size.height));
+          await currentWindow.center();
+        } else {
+          const maximized = await currentWindow.isMaximized();
+          if (maximized) {
+            normalWindowSize.current = null;
+            await currentWindow.unmaximize();
+          } else {
+            const factor = await currentWindow.scaleFactor();
+            const currentSize = await currentWindow.innerSize();
+            normalWindowSize.current = {
+              width: Math.round(currentSize.width / factor),
+              height: Math.round(currentSize.height / factor),
+            };
+          }
+          await currentWindow.setFullscreen(true);
+        }
+        return;
+      }
       if (document.fullscreenElement) await document.exitFullscreen();
       else await document.documentElement.requestFullscreen();
     } catch {
-      try {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        await getCurrentWindow().setFullscreen(!(await getCurrentWindow().isFullscreen()));
-      } catch {
-        // Fullscreen is optional in restricted webviews.
-      }
+      // Fullscreen is optional in restricted webviews.
     }
   };
 
@@ -618,20 +657,34 @@ export default function FoundationSpike() {
         }
       `}</style>
       <div
-        className='sticky top-0 z-50 -mx-4 mb-4 border-b px-4 pb-2 pt-1 backdrop-blur'
+        className='sticky top-0 z-50 -mx-4 mb-4 overflow-hidden border-b px-4 pb-1 pt-1 backdrop-blur'
         style={{ backgroundColor: `${surface}ee` }}
         onMouseEnter={() => setToolbarHovered(true)}
         onMouseLeave={() => setToolbarHovered(false)}
       >
-        <div className='mx-auto flex max-w-[96rem] items-center justify-between gap-3'>
-          <div>
-            <p className='text-sm font-semibold text-blue-600'>NL-270 · Markdown 对话批注 Alpha</p>
-            <div className='text-2xl font-bold'>{documentModel.title}</div>
-            <p className='mt-1 text-sm' style={{ color: muted }}>
-              {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
-              {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
-            </p>
-          </div>
+        <div
+          className='mx-auto flex min-h-7 max-w-[96rem] items-center justify-between gap-3'
+          data-tauri-drag-region
+          onMouseDown={(event) => void startWindowDragging(event)}
+        >
+          {toolbarExpanded ? (
+            <div>
+              <p className='text-sm font-semibold text-blue-600'>
+                NL-270 · Markdown 对话批注 Alpha
+              </p>
+              <div className='text-2xl font-bold'>{documentModel.title}</div>
+              <p className='mt-1 text-sm' style={{ color: muted }}>
+                {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
+                {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
+              </p>
+            </div>
+          ) : (
+            <div className='h-5 flex-1' aria-label='窗口拖动区域' />
+          )}
+          <span className='sr-only'>
+            {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
+            {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
+          </span>
           <div className='flex items-center gap-1'>
             <button
               className='btn btn-ghost btn-sm'
@@ -657,18 +710,12 @@ export default function FoundationSpike() {
           </div>
         </div>
         <div
-          className={`mx-auto max-w-[96rem] overflow-hidden transition-[max-height,opacity,margin] duration-200 ${readingSettings.toolbarPinned || toolbarHovered ? 'mt-2 max-h-40 opacity-100' : 'max-h-7 opacity-80'}`}
+          className={`mx-auto max-w-[96rem] overflow-hidden transition-[max-height,opacity,margin] duration-200 ${toolbarExpanded ? 'mt-2 max-h-64 opacity-100' : 'pointer-events-none max-h-0 opacity-0'}`}
           aria-label='阅读工具栏'
         >
-          {readingSettings.toolbarPinned || toolbarHovered ? (
-            <div className='mb-1 text-xs' style={{ color: muted }}>
-              阅读工具栏
-            </div>
-          ) : (
-            <div className='text-center text-xs' style={{ color: muted }}>
-              移入此处展开工具栏
-            </div>
-          )}
+          <div className='mb-1 text-xs' style={{ color: muted }}>
+            阅读工具栏
+          </div>
           <div className='flex flex-wrap gap-2'>
             <label className='btn btn-primary btn-sm cursor-pointer'>
               导入 Markdown
@@ -685,13 +732,6 @@ export default function FoundationSpike() {
             </a>
             <button className='btn btn-sm' onClick={() => setDark((value) => !value)}>
               切换主题
-            </button>
-            <button
-              className='btn btn-sm'
-              aria-label={sidebarOpen ? '收起批注栏' : '展开批注栏'}
-              onClick={() => setSidebarOpen((value) => !value)}
-            >
-              {sidebarOpen ? '收起批注栏' : '展开批注栏'}
             </button>
             <button
               className='btn btn-sm'
@@ -714,24 +754,90 @@ export default function FoundationSpike() {
               />
               常驻工具栏
             </label>
+            <button
+              className='btn btn-sm'
+              aria-label={settingsOpen ? '收起阅读显示设置' : '展开阅读显示设置'}
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen((value) => !value)}
+            >
+              显示设置 {settingsOpen ? '▲' : '▼'}
+            </button>
           </div>
+          {settingsOpen ? (
+            <div className='mt-2 grid gap-x-6 gap-y-2 border-t pt-3 sm:grid-cols-3'>
+              {(
+                [
+                  ['contentWidth', '正文宽度', 520, 1000, 20, `${readingSettings.contentWidth} px`],
+                  ['fontSize', '正文字号', 14, 28, 1, `${readingSettings.fontSize} px`],
+                  [
+                    'lineHeight',
+                    '正文行距',
+                    1.35,
+                    2.4,
+                    0.05,
+                    readingSettings.lineHeight.toFixed(2),
+                  ],
+                ] as const
+              ).map(([key, label, minimum, maximum, step, display]) => (
+                <label key={key} className='flex min-w-0 items-center gap-3 text-sm'>
+                  <span className='w-20 shrink-0 font-medium'>{label}</span>
+                  <input
+                    aria-label={label}
+                    className='range range-xs min-w-0 flex-1'
+                    type='range'
+                    min={minimum}
+                    max={maximum}
+                    step={step}
+                    value={readingSettings[key]}
+                    onChange={(event) => updateReadingSetting(key, Number(event.target.value))}
+                  />
+                  <span className='w-14 shrink-0 text-right text-xs' style={{ color: muted }}>
+                    {display}
+                  </span>
+                </label>
+              ))}
+              <label className='flex min-w-0 items-center gap-3 text-sm'>
+                <span className='w-20 shrink-0 font-medium'>批注显示</span>
+                <select
+                  aria-label='批注显示模式'
+                  className='select select-sm select-bordered min-w-0 flex-1'
+                  value={readingSettings.annotationDisplay}
+                  onChange={(event) => {
+                    const value = event.target.value as ReadingSettings['annotationDisplay'];
+                    setReadingSettings((current) => {
+                      const nextSettings = { ...current, annotationDisplay: value };
+                      window.localStorage.setItem(
+                        READING_SETTINGS_KEY,
+                        JSON.stringify(nextSettings),
+                      );
+                      return nextSettings;
+                    });
+                  }}
+                >
+                  <option value='underline'>仅下划线</option>
+                  <option value='card'>仅小卡片</option>
+                  <option value='both'>下划线 + 小卡片</option>
+                </select>
+              </label>
+            </div>
+          ) : null}
+          <label
+            className='mx-auto mt-2 flex max-w-[96rem] items-center gap-2 border-t pt-2 text-xs'
+            aria-label='阅读进度'
+          >
+            <span className='w-12 shrink-0'>进度</span>
+            <input
+              className='range range-xs flex-1'
+              type='range'
+              min='0'
+              max='100'
+              step='1'
+              value={readingProgress}
+              onChange={(event) => jumpToProgress(Number(event.target.value))}
+            />
+            <span className='w-10 text-right'>{Math.round(readingProgress)}%</span>
+          </label>
         </div>
-        <label
-          className='mx-auto mt-2 flex max-w-[96rem] items-center gap-2 text-xs'
-          aria-label='阅读进度'
-        >
-          <span className='w-12 shrink-0'>进度</span>
-          <input
-            className='range range-xs flex-1'
-            type='range'
-            min='0'
-            max='100'
-            step='1'
-            value={readingProgress}
-            onChange={(event) => jumpToProgress(Number(event.target.value))}
-          />
-          <span className='w-10 text-right'>{Math.round(readingProgress)}%</span>
-        </label>
       </div>
       {importStatus ? (
         <p
@@ -741,71 +847,6 @@ export default function FoundationSpike() {
           {importStatus}
         </p>
       ) : null}
-
-      <section
-        aria-label='阅读显示设置'
-        className='eink-bordered mx-auto mb-4 max-w-[96rem] rounded-xl px-4 py-2 shadow-sm'
-        style={{ backgroundColor: panel }}
-      >
-        <button
-          type='button'
-          className='flex w-full items-center justify-between py-1 text-sm font-semibold'
-          aria-label={settingsOpen ? '收起阅读显示设置' : '展开阅读显示设置'}
-          aria-expanded={settingsOpen}
-          onClick={() => setSettingsOpen((value) => !value)}
-        >
-          <span>阅读显示设置</span>
-          <span aria-hidden='true'>{settingsOpen ? '收起 ▲' : '展开 ▼'}</span>
-        </button>
-        {settingsOpen ? (
-          <div className='mt-2 grid gap-x-6 gap-y-2 border-t pt-3 sm:grid-cols-3'>
-            {(
-              [
-                ['contentWidth', '正文宽度', 520, 1000, 20, `${readingSettings.contentWidth} px`],
-                ['fontSize', '正文字号', 14, 28, 1, `${readingSettings.fontSize} px`],
-                ['lineHeight', '正文行距', 1.35, 2.4, 0.05, readingSettings.lineHeight.toFixed(2)],
-              ] as const
-            ).map(([key, label, minimum, maximum, step, display]) => (
-              <label key={key} className='flex min-w-0 items-center gap-3 text-sm'>
-                <span className='w-20 shrink-0 font-medium'>{label}</span>
-                <input
-                  aria-label={label}
-                  className='range range-xs min-w-0 flex-1'
-                  type='range'
-                  min={minimum}
-                  max={maximum}
-                  step={step}
-                  value={readingSettings[key]}
-                  onChange={(event) => updateReadingSetting(key, Number(event.target.value))}
-                />
-                <span className='w-14 shrink-0 text-right text-xs' style={{ color: muted }}>
-                  {display}
-                </span>
-              </label>
-            ))}
-            <label className='flex min-w-0 items-center gap-3 text-sm'>
-              <span className='w-20 shrink-0 font-medium'>批注显示</span>
-              <select
-                aria-label='批注显示模式'
-                className='select select-sm select-bordered min-w-0 flex-1'
-                value={readingSettings.annotationDisplay}
-                onChange={(event) => {
-                  const value = event.target.value as ReadingSettings['annotationDisplay'];
-                  setReadingSettings((current) => {
-                    const nextSettings = { ...current, annotationDisplay: value };
-                    window.localStorage.setItem(READING_SETTINGS_KEY, JSON.stringify(nextSettings));
-                    return nextSettings;
-                  });
-                }}
-              >
-                <option value='underline'>仅下划线</option>
-                <option value='card'>仅小卡片</option>
-                <option value='both'>下划线 + 小卡片</option>
-              </select>
-            </label>
-          </div>
-        ) : null}
-      </section>
 
       <div className='mx-auto flex max-w-[96rem] flex-col items-stretch justify-center gap-4 lg:flex-row lg:items-start'>
         <article
@@ -875,7 +916,7 @@ export default function FoundationSpike() {
               aria-valuemin={SIDEBAR_MIN_WIDTH}
               aria-valuemax={SIDEBAR_MAX_WIDTH}
               aria-valuenow={readingSettings.sidebarWidth}
-              className='sticky top-4 hidden h-[calc(100vh-2rem)] w-2 shrink-0 cursor-col-resize touch-none rounded-full bg-transparent hover:bg-blue-500/20 lg:block'
+              className='relative sticky top-4 hidden h-[calc(100vh-2rem)] w-2 shrink-0 cursor-col-resize touch-none rounded-full bg-transparent hover:bg-blue-500/20 lg:block'
               onPointerDown={(event) => {
                 sidebarDrag.current = {
                   startX: event.clientX,
@@ -899,7 +940,18 @@ export default function FoundationSpike() {
                 );
               }}
               tabIndex={0}
-            />
+            >
+              <button
+                type='button'
+                className='btn btn-circle btn-sm absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border border-blue-300 bg-base-100 shadow-md'
+                aria-label='收起批注栏'
+                title='收起批注栏'
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={() => setSidebarOpen(false)}
+              >
+                ‹
+              </button>
+            </div>
             <aside
               className='eink-bordered z-40 max-h-[calc(100vh-1.5rem)] w-full max-w-full shrink-0 overflow-y-auto rounded-xl p-4 shadow-xl lg:sticky lg:top-4 lg:z-auto lg:max-h-[calc(100vh-2rem)] lg:w-auto lg:max-w-[50vw] lg:shadow-sm'
               style={{
