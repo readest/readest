@@ -251,7 +251,7 @@ export const SOURCE_DOC_FIXTURE: SourceDocFixture = {
 const LEGACY_STORAGE_KEY = 'readest:foundation-spike:v1';
 const SCHEMA_STORAGE_KEY = 'readest:annotation-schema:v1';
 const CONTEXT_LENGTH = 16;
-const PARSER_VERSION = 'markdown-alpha-1';
+const PARSER_VERSION = 'markdown-alpha-2';
 const FIXED_REPLIES = [
   '从所选原文看，这个问题的关键是把局部条件和最终结论连接起来；另一处原文给出了补充步骤。',
   '可以先按定义理解所选句子，再对照另一章节的论证。当前回答来自本地固定候选，不代表模型判断。',
@@ -274,15 +274,92 @@ function createId(prefix: string): string {
     : `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function markdownToSemanticText(source: string): string {
-  return source
+function markdownToSemanticText(source: string, type?: SourceDocBlock['type']): string {
+  const plain = source
+    .replace(/^```[^\n]*\n?/gm, '')
+    .replace(/^```$/gm, '')
     .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s?/gm, '')
     .replace(/^[-*+]\s+/gm, '')
     .replace(/^\d+\.\s+/gm, '')
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/[*_~`]/g, '')
+    .replace(/\n{2,}/g, '\n')
     .trim();
+  if (type === 'table') {
+    return plain
+      .split('\n')
+      .filter((line) => !/^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line))
+      .flatMap((line) => line.replace(/^\s*\||\|\s*$/g, '').split(/\s*\|\s*/))
+      .map((cell) => cell.trim())
+      .join('');
+  }
+  return type === 'list' ? plain.replace(/\n/g, '') : plain;
+}
+
+function mapRemovedCharactersOffset(previous: string, next: string, offset: number): number {
+  let previousOffset = 0;
+  let nextOffset = 0;
+  while (previousOffset < offset && nextOffset < next.length) {
+    if (previous[previousOffset] === next[nextOffset]) nextOffset += 1;
+    previousOffset += 1;
+  }
+  return nextOffset;
+}
+
+function migrateMarkdownSemantics(schema: AnnotationSchemaV1): boolean {
+  let migrated = false;
+  for (const version of schema.documentVersions) {
+    const document = schema.documents.find((item) => item.id === version.documentId);
+    if (document?.sourceFormat !== 'markdown' || version.parserVersion === PARSER_VERSION) continue;
+    const oldTextByBlock = new Map<string, string>();
+    for (const block of schema.blocks.filter((item) => item.documentVersionId === version.id)) {
+      oldTextByBlock.set(block.id, block.semanticText);
+      block.semanticText = markdownToSemanticText(block.sourceText, block.type);
+    }
+    for (const anchor of schema.anchors.filter((item) => item.documentVersionId === version.id)) {
+      const firstBlock = schema.blocks.find((item) => item.id === anchor.blockId);
+      const lastBlock = schema.blocks.find((item) => item.id === anchor.endBlockId);
+      const oldFirstText = oldTextByBlock.get(anchor.blockId);
+      const oldLastText = oldTextByBlock.get(anchor.endBlockId);
+      if (!firstBlock || !lastBlock || oldFirstText === undefined || oldLastText === undefined)
+        continue;
+      anchor.startOffset = mapRemovedCharactersOffset(
+        oldFirstText,
+        firstBlock.semanticText,
+        anchor.startOffset,
+      );
+      anchor.endOffset = mapRemovedCharactersOffset(
+        oldLastText,
+        lastBlock.semanticText,
+        anchor.endOffset,
+      );
+      anchor.exactQuote = anchor.selectedBlockIds
+        .flatMap((blockId, index) => {
+          const block = schema.blocks.find((item) => item.id === blockId);
+          if (!block) return [];
+          return block.semanticText.slice(
+            index === 0 ? anchor.startOffset : 0,
+            index === anchor.selectedBlockIds.length - 1
+              ? anchor.endOffset
+              : block.semanticText.length,
+          );
+        })
+        .join('\n');
+      anchor.prefix = firstBlock.semanticText.slice(
+        Math.max(0, anchor.startOffset - CONTEXT_LENGTH),
+        anchor.startOffset,
+      );
+      anchor.suffix = lastBlock.semanticText.slice(
+        anchor.endOffset,
+        anchor.endOffset + CONTEXT_LENGTH,
+      );
+    }
+    version.parserVersion = PARSER_VERSION;
+    migrated = true;
+  }
+  return migrated;
 }
 
 export function parseMarkdownDocument(sourceName: string, markdown: string): SourceDocFixture {
@@ -379,7 +456,7 @@ export function parseMarkdownDocument(sourceName: string, markdown: string): Sou
             .replace(/^```[^\n]*\n?/, '')
             .replace(/```$/, '')
             .trim()
-        : markdownToSemanticText(sourceText);
+        : markdownToSemanticText(sourceText, type);
     const ordinal = blocks.length;
     const id = `${versionId}-block-${ordinal}-${stableHash(sourceText)}`;
     blocks.push({
@@ -576,7 +653,11 @@ export class SourceDocSpikeStore {
     const schema = emptySchema(SOURCE_DOC_FIXTURE);
     try {
       const serialized = this.storage.getItem(SCHEMA_STORAGE_KEY);
-      if (serialized) return JSON.parse(serialized) as AnnotationSchemaV1;
+      if (serialized) {
+        const parsed = JSON.parse(serialized) as AnnotationSchemaV1;
+        if (migrateMarkdownSemantics(parsed)) this.saveSchema(parsed);
+        return parsed;
+      }
       const legacy = this.storage.getItem(LEGACY_STORAGE_KEY);
       if (legacy) {
         const parsed = JSON.parse(legacy) as Partial<SourceDocThread> & {

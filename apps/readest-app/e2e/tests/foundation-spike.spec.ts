@@ -9,8 +9,10 @@ test.describe('NL-270 foundation spike', () => {
     const nextBlock = page.getByTestId('source-block-block-03');
     await sourceBlock.evaluate((element) => {
       const startText = '紧致性把局部信息提升为全局控制';
-      const startNode = element.querySelector('[data-source-text]')!.firstChild!;
-      const endNode = document.querySelector('[data-source-text="block-03"]')!.firstChild!;
+      const startNode = element.querySelector('[data-source-text]')!.querySelector('p')!
+        .firstChild!;
+      const endNode = document.querySelector('[data-source-text="block-03"]')!.querySelector('p')!
+        .firstChild!;
       const startOffset = startNode.textContent!.indexOf(startText);
       const endText = '因此';
       const range = document.createRange();
@@ -33,14 +35,13 @@ test.describe('NL-270 foundation spike', () => {
     );
     await expect(page.getByRole('button', { name: /引用/ })).toHaveCount(2);
 
+    await page.getByRole('button', { name: '展开阅读显示设置' }).click();
     await page.getByRole('slider', { name: '正文字号' }).fill('21');
     await page.getByRole('slider', { name: '正文行距' }).fill('1.9');
     await page.getByRole('button', { name: '切换主题' }).click();
     await page.getByRole('button', { name: /引用 1/ }).click();
     await expect(sourceBlock).toHaveAttribute('data-highlighted', 'true');
-    await expect(page.getByTestId('citation-highlight')).toContainText(
-      '紧致性把局部信息提升为全局控制',
-    );
+    expect(await page.evaluate(() => CSS.highlights.has('foundation-citation'))).toBe(true);
     await expect(page.getByRole('status')).toHaveText('已定位到源块 02');
 
     await page.reload();
@@ -75,7 +76,7 @@ test.describe('NL-270 foundation spike', () => {
 
     const firstParagraph = page.getByTestId(/^source-block-/).nth(1);
     await firstParagraph.evaluate((element) => {
-      const textNode = element.querySelector('[data-source-text]')!.firstChild!;
+      const textNode = element.querySelector('[data-source-text]')!.querySelector('p')!.firstChild!;
       const range = document.createRange();
       range.setStart(textNode, 0);
       range.setEnd(textNode, textNode.textContent!.length);
@@ -91,7 +92,7 @@ test.describe('NL-270 foundation spike', () => {
     await expect(page.getByLabel('对话批注')).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.getByRole('button', { name: '收起批注栏' }).click();
-    await page.getByRole('button', { name: /打开批注：第一段真实内容/ }).click();
+    await firstParagraph.getByText('第一段真实内容。').click({ position: { x: 8, y: 8 } });
     await expect(page.getByLabel('对话批注')).toBeVisible();
     await expect(page).toHaveURL(/\/foundation-spike$/);
   });
@@ -102,7 +103,7 @@ test.describe('NL-270 foundation spike', () => {
 
     const sourceBlock = page.getByTestId('source-block-block-02');
     await sourceBlock.evaluate((element) => {
-      const textNode = element.querySelector('[data-source-text]')!.firstChild!;
+      const textNode = element.querySelector('[data-source-text]')!.querySelector('p')!.firstChild!;
       const start = textNode.textContent!.indexOf('紧致性');
       const range = document.createRange();
       range.setStart(textNode, start);
@@ -119,8 +120,72 @@ test.describe('NL-270 foundation spike', () => {
     await expect(sidebar).toHaveCSS('position', 'fixed');
     await page.getByRole('button', { name: '关闭批注栏' }).click();
     await expect(sidebar).toHaveCount(0);
-    await page.getByRole('button', { name: '打开批注：紧致性' }).click();
+    const annotationPoint = await sourceBlock.evaluate((element) => {
+      const textNode = element.querySelector('[data-source-text]')!.querySelector('p')!.firstChild!;
+      const start = textNode.textContent!.indexOf('紧致性');
+      const range = document.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, start + '紧致性'.length);
+      const bounds = range.getBoundingClientRect();
+      return { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
+    });
+    await page.mouse.click(annotationPoint.x, annotationPoint.y);
     await expect(page.getByLabel('对话批注')).toBeVisible();
     await expect(page.getByText('窄屏批注', { exact: true }).first()).toBeVisible();
+  });
+
+  test('keeps rendered Markdown intact and resizes the desktop sidebar by its divider', async ({
+    page,
+  }) => {
+    await page.goto('/foundation-spike');
+    await page.getByLabel('导入 Markdown').setInputFiles({
+      name: 'formatted.md',
+      mimeType: 'text/markdown',
+      buffer: Buffer.from(
+        '# 格式验收\n\n正文包含 **粗体**、*斜体* 和 [链接](https://example.com)。\n\n> 引用内容\n\n- 条目一\n- 条目二\n\n| 列一 | 列二 |\n| --- | --- |\n| A | B |\n\n```ts\nconst answer = 42;\n```',
+      ),
+    });
+
+    await expect(page.getByRole('heading', { name: '格式验收', level: 1 })).toBeVisible();
+    await expect(page.getByText('粗体')).toHaveJSProperty('tagName', 'STRONG');
+    await expect(page.getByText('斜体')).toHaveJSProperty('tagName', 'EM');
+    await expect(page.getByRole('table')).toBeVisible();
+    await expect(page.getByText('引用内容').locator('..')).toHaveJSProperty(
+      'tagName',
+      'BLOCKQUOTE',
+    );
+
+    const paragraph = page.getByText(/正文包含/).locator('..');
+    const htmlBefore = await paragraph.evaluate((element) => element.innerHTML);
+    await paragraph.evaluate((element) => {
+      const strongText = element.querySelector('strong')!.firstChild!;
+      const range = document.createRange();
+      range.selectNodeContents(strongText);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    });
+    await page.getByRole('textbox', { name: '问题' }).fill('解释粗体');
+    await page.getByRole('button', { name: '提问' }).click();
+    expect(await paragraph.evaluate((element) => element.innerHTML)).toBe(htmlBefore);
+    expect(await page.evaluate(() => CSS.highlights.has('foundation-annotations'))).toBe(true);
+
+    await expect(page.getByRole('slider', { name: '正文宽度' })).toHaveCount(0);
+    await page.getByRole('button', { name: '展开阅读显示设置' }).click();
+    await expect(page.getByRole('slider', { name: '正文宽度' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: '批注栏宽度' })).toHaveCount(0);
+
+    const sidebar = page.getByLabel('对话批注');
+    const divider = page.getByRole('separator', { name: '调整批注栏宽度' });
+    const widthBefore = (await sidebar.boundingBox())!.width;
+    const dividerBox = await divider.boundingBox();
+    if (!dividerBox) throw new Error('Sidebar divider is not visible');
+    await page.mouse.move(dividerBox.x + dividerBox.width / 2, dividerBox.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(dividerBox.x - 80, dividerBox.y + 20);
+    await page.mouse.up();
+    const widthAfter = (await sidebar.boundingBox())!.width;
+    expect(widthAfter).toBeGreaterThanOrEqual(widthBefore + 75);
   });
 });

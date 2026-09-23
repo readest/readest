@@ -23,11 +23,20 @@ describe('foundation spike page', () => {
     const endElement = screen
       .getByTestId(`source-block-${endBlockId}`)
       .querySelector('[data-source-text]')!;
-    const startNode = startElement.firstChild!;
-    const endNode = endElement.firstChild!;
+    const findText = (element: Element, value: string) => {
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const offset = node.textContent?.indexOf(value) ?? -1;
+        if (offset >= 0) return { node, offset };
+      }
+      throw new Error(`Text not found: ${value}`);
+    };
+    const start = findText(startElement, startText);
+    const end = findText(endElement, endText);
     const range = document.createRange();
-    range.setStart(startNode, startNode.textContent!.indexOf(startText));
-    range.setEnd(endNode, endNode.textContent!.indexOf(endText) + endText.length);
+    range.setStart(start.node, start.offset);
+    range.setEnd(end.node, end.offset + endText.length);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
     fireEvent.mouseUp(startElement.closest('article')!);
@@ -51,7 +60,7 @@ describe('foundation spike page', () => {
     expect(citations).toHaveLength(2);
     fireEvent.click(citations[0]!);
     expect(block.getAttribute('data-highlighted')).toBe('true');
-    expect(screen.getByTestId('citation-highlight').textContent).toBe(exactQuote);
+    expect(block.getAttribute('style')).toContain('color: rgb(17, 24, 39)');
     expect(screen.getByRole('status').textContent).toContain('已定位到源块 02');
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({
       behavior: 'smooth',
@@ -86,6 +95,7 @@ describe('foundation spike page', () => {
     const exactQuote = '局部信息';
     selectText('block-02', exactQuote);
 
+    fireEvent.click(screen.getByRole('button', { name: '展开阅读显示设置' }));
     fireEvent.change(screen.getByRole('slider', { name: '正文字号' }), {
       target: { value: '22' },
     });
@@ -125,10 +135,10 @@ describe('foundation spike page', () => {
     fireEvent.click(screen.getByRole('button', { name: '提问' }));
 
     const railMarker = screen.getByRole('button', { name: /打开源块 02 的批注/ });
-    const annotatedText = screen.getByRole('button', { name: '打开批注：紧致性' });
+    const annotatedText = screen.getByTestId('source-block-block-02').querySelector('p')!;
     expect(screen.getByTestId('source-block-block-02').className).not.toContain('border');
-    expect(annotatedText.className).toContain('decoration-1');
-    expect(annotatedText.className).toContain('decoration-blue-500/45');
+    expect(annotatedText.textContent).toContain('紧致性');
+    expect(annotatedText.querySelector('button')).toBeNull();
     expect(screen.queryByRole('dialog', { name: '完整批注对话' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '收起批注栏' }));
     expect(screen.queryByLabelText('对话批注')).toBeNull();
@@ -138,7 +148,8 @@ describe('foundation spike page', () => {
     expect(screen.getAllByText('为什么？').length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: '收起批注栏' }));
-    fireEvent.click(annotatedText);
+    window.getSelection()?.removeAllRanges();
+    fireEvent.click(screen.getByTestId('source-block-block-02').querySelector('p')!);
     expect(screen.getByLabelText('对话批注')).not.toBeNull();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -165,27 +176,86 @@ describe('foundation spike page', () => {
     expect(screen.getByRole('button', { name: /打开源块 02 的批注/ })).not.toBeNull();
   });
 
-  it('adjusts and persists reading and sidebar widths', () => {
+  it('collapses display settings and resizes the sidebar from its divider', () => {
     const first = render(<FoundationSpike />);
+    expect(screen.queryByRole('slider', { name: '正文宽度' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '展开阅读显示设置' }));
     fireEvent.change(screen.getByRole('slider', { name: '正文宽度' }), {
       target: { value: '760' },
-    });
-    fireEvent.change(screen.getByRole('slider', { name: '批注栏宽度' }), {
-      target: { value: '480' },
     });
     expect(screen.getByLabelText('SOURCE_DOC 阅读区').getAttribute('style')).toContain(
       'width: 760px',
     );
+    expect(screen.queryByRole('slider', { name: '批注栏宽度' })).toBeNull();
+    const divider = screen.getByRole('separator', { name: '调整批注栏宽度' });
+    fireEvent.pointerDown(divider, { clientX: 900, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 820, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
     expect(screen.getByLabelText('对话批注').getAttribute('style')).toContain('width: 480px');
+    fireEvent.keyDown(divider, { key: 'ArrowLeft' });
+    expect(screen.getByLabelText('对话批注').getAttribute('style')).toContain('width: 490px');
+    fireEvent.pointerDown(divider, { clientX: 900, pointerId: 2 });
+    fireEvent.pointerMove(window, { clientX: 0, pointerId: 2 });
+    fireEvent.pointerUp(window, { pointerId: 2 });
+    expect(screen.getByLabelText('对话批注').getAttribute('style')).toContain('width: 560px');
     first.unmount();
 
     render(<FoundationSpike />);
+    fireEvent.click(screen.getByRole('button', { name: '展开阅读显示设置' }));
     expect((screen.getByRole('slider', { name: '正文宽度' }) as HTMLInputElement).value).toBe(
       '760',
     );
-    expect((screen.getByRole('slider', { name: '批注栏宽度' }) as HTMLInputElement).value).toBe(
-      '480',
+    expect(screen.getByLabelText('对话批注').getAttribute('style')).toContain('width: 560px');
+  });
+
+  it('renders Markdown semantics without changing them after annotation', async () => {
+    render(<FoundationSpike />);
+    const input = screen.getByLabelText('导入 Markdown');
+    const markdown = [
+      '# 格式验收',
+      '',
+      '正文包含 **粗体**、*斜体* 和 [链接](https://example.com)。',
+      '',
+      '> 引用内容',
+      '',
+      '- 条目一',
+      '- 条目二',
+      '',
+      '| 列一 | 列二 |',
+      '| --- | --- |',
+      '| A | B |',
+      '',
+      '```ts',
+      'const answer = 42;',
+      '```',
+    ].join('\n');
+    fireEvent.change(input, {
+      target: { files: [new File([markdown], '格式验收.md', { type: 'text/markdown' })] },
+    });
+
+    const bold = await screen.findByText('粗体');
+    expect(bold.tagName).toBe('STRONG');
+    expect(screen.getByText('斜体').tagName).toBe('EM');
+    expect(screen.getByRole('link', { name: '链接' }).getAttribute('href')).toBe(
+      'https://example.com',
     );
+    expect(screen.getByText('引用内容').closest('blockquote')).not.toBeNull();
+    expect(screen.getByText('条目一').closest('li')).not.toBeNull();
+    expect(screen.getByRole('table')).not.toBeNull();
+    expect(screen.getByText('const answer = 42;').closest('code')).not.toBeNull();
+
+    const paragraphBlock = bold.closest('[data-testid^="source-block-"]') as HTMLElement;
+    const sourceText = paragraphBlock.querySelector('[data-source-text]')!;
+    const textBefore = sourceText.textContent;
+    const htmlBefore = sourceText.innerHTML;
+    selectText(paragraphBlock.dataset['testid']!.replace('source-block-', ''), '粗体');
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '解释粗体' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+
+    expect(sourceText.textContent).toBe(textBefore);
+    expect(sourceText.innerHTML).toBe(htmlBefore);
+    expect(sourceText.querySelector('strong')?.textContent).toBe('粗体');
+    expect(sourceText.querySelector('button')).toBeNull();
   });
 
   it('imports a Markdown file through the reader toolbar', async () => {

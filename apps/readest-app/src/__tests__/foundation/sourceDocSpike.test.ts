@@ -129,7 +129,55 @@ describe('SOURCE_DOC foundation spike', () => {
       'code',
     ]);
     expect(first.blocks[1]?.semanticText).toBe('第一段有 重点。');
+    expect(first.blocks[3]?.semanticText).toBe('条目一条目二');
     expect(first.blocks.map((block) => block.id)).toEqual(second.blocks.map((block) => block.id));
+  });
+
+  it('keeps Markdown table anchor text aligned with its rendered cell order', () => {
+    const document = parseMarkdownDocument(
+      '表格.md',
+      '# 表格\n\n| 条件 | 作用 |\n| --- | --- |\n| 紧致性 | 保证收敛子列 |',
+    );
+    const table = document.blocks.find((block) => block.type === 'table')!;
+
+    expect(table.semanticText).toBe('条件作用紧致性保证收敛子列');
+    const start = table.semanticText.indexOf('紧致性');
+    expect(createSelectionAnchor(table, start, start + 3).exactQuote).toBe('紧致性');
+  });
+
+  it('migrates v4 Markdown offsets without losing existing annotations', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const imported = store.importMarkdown(
+      '旧表格.md',
+      '# 表格\n\n| 条件 | 作用 |\n| --- | --- |\n| 紧致性 | 保证收敛子列 |',
+    );
+    const table = imported.blocks.find((block) => block.type === 'table')!;
+    const oldSemanticText = '条件 | 作用\n--- | ---\n紧致性 | 保证收敛子列';
+    const oldTable = { ...table, semanticText: oldSemanticText };
+    const oldStart = oldSemanticText.indexOf('紧致性');
+    store.ask(
+      {
+        ...imported,
+        blocks: imported.blocks.map((block) => (block.id === table.id ? oldTable : block)),
+      },
+      createSelectionAnchor(oldTable, oldStart, oldStart + 3),
+      '旧批注',
+    );
+    const oldSchema = store.loadSchema();
+    oldSchema.documentVersions.find((version) => version.id === imported.versionId)!.parserVersion =
+      'markdown-alpha-1';
+    oldSchema.blocks.find((block) => block.id === table.id)!.semanticText = oldSemanticText;
+    localStorage.setItem('readest:annotation-schema:v1', JSON.stringify(oldSchema));
+
+    const migratedStore = new SourceDocSpikeStore(localStorage);
+    const migratedTable = migratedStore
+      .loadCurrentDocument()
+      .blocks.find((block) => block.id === table.id)!;
+    const migratedThread = migratedStore.load()!;
+
+    expect(migratedTable.semanticText).toBe('条件作用紧致性保证收敛子列');
+    expect(migratedThread.anchor.exactQuote).toBe('紧致性');
+    expect(migratedThread.anchor.startOffset).toBe(migratedTable.semanticText.indexOf('紧致性'));
   });
 
   it('persists schema v1 and migrates the legacy spike thread', () => {
