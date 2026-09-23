@@ -10,7 +10,7 @@ export default defineConfig({
       // The @pdfjs alias from tsconfig only resolves within the app's own
       // source files.  foliate-js/pdf.js lives outside that scope, so Vite
       // needs an explicit alias to find the vendored pdfjs build.
-      '@pdfjs': path.resolve(__dirname, 'public/vendor/pdfjs'),
+      '@pdfjs': path.resolve(__dirname, 'vendor/pdfjs'),
       // `js-mdict` is consumed via tsconfig paths from `packages/js-mdict/src/`.
       // Its sources `import 'fflate'` directly — without an alias, vite's
       // import-analysis walks up from the redirected file location and fails

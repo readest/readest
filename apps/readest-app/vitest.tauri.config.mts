@@ -14,7 +14,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@pdfjs': path.resolve(__dirname, 'public/vendor/pdfjs'),
+      '@pdfjs': path.resolve(__dirname, 'vendor/pdfjs'),
     },
     conditions: ['development'],
   },

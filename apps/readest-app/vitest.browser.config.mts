@@ -24,7 +24,7 @@ export default defineConfig({
       // The @pdfjs alias from tsconfig only resolves within the app's own
       // source files.  foliate-js/pdf.js lives outside that scope, so Vite
       // needs an explicit alias to find the vendored pdfjs build.
-      '@pdfjs': resolve(import.meta.dirname, 'public/vendor/pdfjs'),
+      '@pdfjs': resolve(import.meta.dirname, 'vendor/pdfjs'),
     },
   },
   optimizeDeps: {

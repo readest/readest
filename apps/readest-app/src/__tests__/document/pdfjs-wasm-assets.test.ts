@@ -58,8 +58,12 @@ describe('pdfjs vendor wasm assets', () => {
 
   it('copies every wasm decoder the bundled pdf.js references', () => {
     // Files the worker/main bundle are copied from (source of truth for CI).
-    const jsGlob = sourceGlobOf(pkg.scripts['copy-pdfjs-js']!);
-    const { dir: jsDir, files: jsFiles } = resolveCpxGlob(jsGlob);
+    // The worker is fetched by URL so it lives in `public/vendor/pdfjs`, while
+    // the library is imported through the @pdfjs alias and so lives outside
+    // `public/` — scan both, either can carry the wasm references.
+    const jsSources = (['copy-pdfjs-worker', 'copy-pdfjs-lib'] as const).map((script) =>
+      resolveCpxGlob(sourceGlobOf(pkg.scripts[script]!)),
+    );
 
     // The wasm modules available in pdfjs-dist and what the copy script ships.
     const wasmGlob = sourceGlobOf(pkg.scripts['copy-pdfjs-wasm']!);
@@ -70,12 +74,14 @@ describe('pdfjs vendor wasm assets', () => {
     // Scan the bundled JS for `*.wasm` references, keeping only ones that map to
     // a real file (drops minified false positives like `e.wasm`/`t.wasm`).
     const referenced = new Set<string>();
-    for (const file of jsFiles) {
-      const full = resolve(jsDir, file);
-      if (!existsSync(full)) continue;
-      const text = readFileSync(full, 'utf8');
-      for (const m of text.matchAll(/[A-Za-z0-9_-]+\.wasm/g)) {
-        if (availableWasm.has(m[0])) referenced.add(m[0]);
+    for (const { dir: jsDir, files: jsFiles } of jsSources) {
+      for (const file of jsFiles) {
+        const full = resolve(jsDir, file);
+        if (!existsSync(full)) continue;
+        const text = readFileSync(full, 'utf8');
+        for (const m of text.matchAll(/[A-Za-z0-9_-]+\.wasm/g)) {
+          if (availableWasm.has(m[0])) referenced.add(m[0]);
+        }
       }
     }
 
