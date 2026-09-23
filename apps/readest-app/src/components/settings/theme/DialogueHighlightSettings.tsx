@@ -114,7 +114,13 @@ const DialogueHighlightSettings: React.FC<DialogueHighlightSettingsProps> = ({
           </span>
           <Toggle
             checked={customTextColor}
-            onChange={() => onCustomTextColorToggle(!customTextColor)}
+            aria-label={_('Text Color')}
+            onChange={() => {
+              // Seed the picker's displayed fallback so enabling the switch
+              // visibly does something instead of staying on inherited text.
+              if (!customTextColor && !textColor) onTextColorChange('#808080');
+              onCustomTextColorToggle(!customTextColor);
+            }}
           />
         </div>
       </SettingsRow>

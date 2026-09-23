@@ -202,6 +202,22 @@ describe('manageDialogueHighlight', () => {
     expect(doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`).length).toBe(3);
   });
 
+  it('wraps German low-high quotes', () => {
+    const doc = makeDoc(`<p>Er sagte „guten Morgen“ und ging.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`);
+    expect(spans.length).toBe(1);
+    expect(spans[0]?.textContent).toBe('„guten Morgen“');
+  });
+
+  it('marks spans CFI-transparent', () => {
+    const doc = makeDoc(`<p>他说：“你好。”</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`);
+    expect(spans.length).toBe(1);
+    expect(spans[0]?.getAttribute('cfi-skip')).toBe('');
+  });
+
   it('wraps sections when only the text switch is on', () => {
     const doc = makeDoc(`<p>他说：“你好。”</p>`);
     manageDialogueHighlight(
@@ -291,6 +307,19 @@ describe('manageDialogueHighlight', () => {
     const blocks = doc.querySelectorAll(`.${DIALOGUE_BLOCK_CLASS}`);
     expect(blocks.length).toBe(2);
     expect(doc.querySelector('blockquote')?.classList.contains(DIALOGUE_BLOCK_CLASS)).toBe(false);
+  });
+
+  it('clearDialogueHighlight preserves nested ruby markup', () => {
+    const doc = makeDoc(`<p>他说：“<ruby>加粗<rt>jia cu</rt></ruby>台词。”</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    // Gloss text (<rt>) is skipped by the scan, so the ruby stays intact.
+    expect(doc.querySelector('p ruby rt')?.textContent).toBe('jia cu');
+    expect(doc.querySelector('p ruby rt .readest-dialogue')).toBeNull();
+    clearDialogueHighlight(doc);
+    expect(doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`).length).toBe(0);
+    // The ruby element survives instead of being flattened into plain text.
+    expect(doc.querySelector('p ruby rt')?.textContent).toBe('jia cu');
+    expect(doc.querySelector('p')?.textContent).toBe('他说：“加粗jia cu台词。”');
   });
 
   it('clearDialogueHighlight restores blocks', () => {

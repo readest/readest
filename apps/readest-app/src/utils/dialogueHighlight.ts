@@ -23,7 +23,7 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 // otherwise tint everything up to the next quote, while CJK books never use
 // " for inches.
 const DIALOGUE_PATTERN =
-  /“[^“”]{1,500}?[”"]|"[^"\n]{1,500}?"|«[^«»]{1,500}?[»]|「[^「」]{1,500}?[」]|『[^『』]{1,500}?[』]|‘[^‘’]{1,300}?[’]/g;
+  /“[^“”]{1,500}?[”"]|„[^„“]{1,500}?[“"]|"[^"\n]{1,500}?"|«[^«»]{1,500}?[»]|「[^「」]{1,500}?[」]|『[^『』]{1,500}?[』]|‘[^‘’]{1,300}?[’]/g;
 
 // Paragraph-leading dashes marking dialogue lines (French/Russian/CJK style).
 const DIALOGUE_DASH_RE = /^[—–―－-][\s\u3000]/;
@@ -90,6 +90,9 @@ const wrapSlice = (doc: Document, node: Text, start: number, end: number): void 
   const target = start > 0 ? node.splitText(start) : node;
   const span = doc.createElement('span');
   span.className = DIALOGUE_SPAN_CLASS;
+  // CFI-transparent like the translation/ruby wrappers: the span contributes
+  // no CFI step, so saved locations resolve identically with or without marks.
+  span.setAttribute('cfi-skip', '');
   target.parentNode?.replaceChild(span, target);
   span.appendChild(target);
 };
@@ -134,7 +137,12 @@ const markDashBlocks = (doc: Document): void => {
 /** Remove all dialogue marks without touching anything else. */
 export const clearDialogueHighlight = (doc: Document): void => {
   doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`).forEach((el) => {
-    el.replaceWith(doc.createTextNode(el.textContent ?? ''));
+    // Move children out in order instead of flattening to text: a span may
+    // wrap Word Lens ruby or other inline markup that must survive.
+    const parent = el.parentNode;
+    if (!parent) return;
+    while (el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
   });
   doc.querySelectorAll(`.${DIALOGUE_BLOCK_CLASS}`).forEach((el) => {
     el.classList.remove(DIALOGUE_BLOCK_CLASS);

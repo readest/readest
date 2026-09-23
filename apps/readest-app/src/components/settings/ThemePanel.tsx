@@ -237,17 +237,35 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeHighlighting, codeLanguage]);
 
+  // Re-wrap dialogue marks in every view affected by the save: global
+  // settings fan out to all open books via saveViewSettings, and the library
+  // dialog carries an empty bookKey, so refreshing only the current view
+  // would leave stale or missing spans elsewhere. Each view keeps its own
+  // (possibly per-book) settings, hence the per-key lookup.
+  const refreshDialogueMarks = () => {
+    const { bookKeys, getView, getViewSettings } = useReaderStore.getState();
+    const isGlobal = getViewSettings(bookKey)?.isGlobal ?? true;
+    const keys = isGlobal ? bookKeys : bookKey ? [bookKey] : [];
+    keys.forEach((key) => {
+      const vs = getViewSettings(key);
+      if (!vs) return;
+      getView(key)
+        ?.renderer.getContents()
+        .forEach(({ doc }) => manageDialogueHighlight(doc, vs));
+    });
+  };
+
   useEffect(() => {
     if (dialogueHighlight === viewSettings.dialogueHighlight) return;
     saveViewSettings(envConfig, bookKey, 'dialogueHighlight', dialogueHighlight);
-    const view = getView(bookKey);
-    if (!view) return;
-    const docs = view.renderer.getContents();
-    docs.forEach(({ doc }) => manageDialogueHighlight(doc, viewSettings));
+    refreshDialogueMarks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialogueHighlight]);
 
   useEffect(() => {
+    // Capture before the saves below mutate viewSettings in place.
+    const customTextColorChanged =
+      dialogueHighlightCustomTextColor !== viewSettings.dialogueHighlightCustomTextColor;
     let update = false;
     if (dialogueHighlightCustomColor !== viewSettings.dialogueHighlightCustomColor) {
       saveViewSettings(
@@ -285,10 +303,10 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // viewSettings refresh via saveViewSettings -> setStyles is enough when
     // the background is on and spans are guaranteed present. With the
     // background off, spans may not exist yet (text-only mode just turned
-    // on), so re-wrap to give the new CSS something to paint.
-    if (!dialogueHighlight) {
-      const docs = getView(bookKey)?.renderer.getContents() ?? [];
-      docs.forEach(({ doc }) => manageDialogueHighlight(doc, viewSettings));
+    // on), so re-wrap — but only on that toggle transition, not on every
+    // color-picker tick, since each run clears and rewrites every document.
+    if (!dialogueHighlight && customTextColorChanged) {
+      refreshDialogueMarks();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
