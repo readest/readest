@@ -40,7 +40,10 @@ describe('Docker build stage vendor assets', () => {
     const roots = new Set(
       [...pkg.scripts['prepare-vendor']!.matchAll(/\.\/(\S+)/g)].map((m) =>
         // keep the first two segments: public/vendor/pdfjs -> public/vendor
-        m[1]!.split('/').slice(0, m[1]!.startsWith('public/') ? 2 : 1).join('/'),
+        m[1]!
+          .split('/')
+          .slice(0, m[1]!.startsWith('public/') ? 2 : 1)
+          .join('/'),
       ),
     );
     expect(roots.size).toBeGreaterThan(1);
