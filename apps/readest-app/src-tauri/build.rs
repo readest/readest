@@ -10,6 +10,13 @@ fn main() {
     if target_os == "windows" {
         build_windows_thumbnail();
     }
+    if target_os == "android" {
+        // The APK ships the library stripped (see gen/android/app/build.gradle.kts),
+        // so Sentry symbolicates Rust panics from the debug files CI uploads. It
+        // matches them to the crashing library by build id, and the NDK linker
+        // emits none by default.
+        println!("cargo:rustc-link-arg=-Wl,--build-id=sha1");
+    }
 
     propagate_sentry_dsn();
     propagate_app_version();

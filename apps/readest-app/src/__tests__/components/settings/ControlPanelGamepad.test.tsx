@@ -72,7 +72,10 @@ vi.mock('@/components/settings/PageTurnerSettings', () => ({
 }));
 
 vi.mock('@/utils/style', () => ({ getStyles: () => '' }));
-vi.mock('@/utils/config', () => ({ getMaxInlineSize: () => 720 }));
+vi.mock('@/utils/config', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/config')>()),
+  getMaxInlineSize: () => 720,
+}));
 vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({
   applyPageTurnAttributes: vi.fn(),
 }));
