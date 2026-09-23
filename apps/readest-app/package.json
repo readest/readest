@@ -66,7 +66,7 @@
     "setup-simplecc": "pnpm prepare-public-vendor && pnpm copy-simplecc",
     "setup-jieba": "pnpm prepare-public-vendor && pnpm copy-jieba",
     "setup-vendors": "pnpm setup-pdfjs && pnpm setup-simplecc && pnpm setup-jieba",
-    "build-win-x64": "dotenv -e .env.tauri.local -- tauri build --target i686-pc-windows-msvc --bundles nsis",
+    "build-win-x64": "dotenv -e .env.tauri.local -- tauri build --target x86_64-pc-windows-msvc --bundles nsis",
     "build-win-arm64": "dotenv -e .env.tauri.local -- tauri build --target aarch64-pc-windows-msvc --bundles nsis",
     "build-linux-x64": "dotenv -e .env.tauri.local -- pnpm tauri build --bundles appimage",
     "build-macos-universial": "dotenv -e .env.tauri.local -e .env.apple-nonstore.local -- tauri build -t universal-apple-darwin --bundles dmg --config src-tauri/tauri.macos-nonestore.conf.json",
