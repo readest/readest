@@ -1,15 +1,30 @@
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-// The wasm-bindgen glue defaults to `new URL('jieba_rs_wasm_bg.wasm', import.meta.url)`,
-// which the bundler always emits into `_next/static/media`. Passing any other
-// path ships the WASM a second time (Tauri embeds every file in `out/`).
+// Both wasm-bindgen glues default to `new URL('<name>_bg.wasm', import.meta.url)`,
+// which the bundler always emits and Tauri embeds. Passing a `/vendor/...` URL
+// instead needs a published copy: it either ships the WASM twice (#6368) or,
+// once the published copy is gone, 404s at runtime.
 const jiebaInit = vi.fn();
+const simpleccInit = vi.fn();
 vi.mock('jieba-wasm', () => ({ default: jiebaInit, cut: vi.fn() }));
+vi.mock('@simplecc/simplecc_wasm', () => ({ default: simpleccInit, simplecc: vi.fn() }));
 
-describe('jieba WASM init', () => {
-  test('uses the bundler-emitted file', async () => {
+describe('WASM init uses the bundler-emitted file', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    jiebaInit.mockReset();
+    simpleccInit.mockReset();
+  });
+
+  test('jieba', async () => {
     const { initJieba } = await import('@/utils/jieba');
     await initJieba();
     expect(jiebaInit).toHaveBeenCalledWith();
+  });
+
+  test('simplecc', async () => {
+    const { initSimpleCC } = await import('@/utils/simplecc');
+    await initSimpleCC();
+    expect(simpleccInit).toHaveBeenCalledWith();
   });
 });
