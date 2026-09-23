@@ -28,6 +28,8 @@ interface ReadingSettings {
   sidebarWidth: number;
   fontSize: number;
   lineHeight: number;
+  annotationDisplay: 'underline' | 'card' | 'both';
+  toolbarPinned: boolean;
 }
 
 const DEFAULT_READING_SETTINGS: ReadingSettings = {
@@ -35,6 +37,8 @@ const DEFAULT_READING_SETTINGS: ReadingSettings = {
   sidebarWidth: 400,
   fontSize: 18,
   lineHeight: 1.75,
+  annotationDisplay: 'both',
+  toolbarPinned: false,
 };
 
 const SIDEBAR_MIN_WIDTH = 320;
@@ -95,6 +99,8 @@ export default function FoundationSpike() {
   const [readingSettings, setReadingSettings] = useState(DEFAULT_READING_SETTINGS);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const [toolbarHovered, setToolbarHovered] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
   const sidebarDrag = useRef<{ startX: number; startWidth: number } | null>(null);
   const sourcePointerStart = useRef<{ x: number; y: number } | null>(null);
   const store = useMemo(
@@ -127,6 +133,22 @@ export default function FoundationSpike() {
       window.localStorage.removeItem(READING_SETTINGS_KEY);
     }
   }, [store]);
+
+  useEffect(() => {
+    const updateProgress = () => {
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      setReadingProgress(
+        scrollable > 0 ? Math.min(100, Math.max(0, (window.scrollY / scrollable) * 100)) : 0,
+      );
+    };
+    updateProgress();
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress);
+    return () => {
+      window.removeEventListener('scroll', updateProgress);
+      window.removeEventListener('resize', updateProgress);
+    };
+  }, [documentModel, readingSettings, sidebarOpen]);
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -300,6 +322,52 @@ export default function FoundationSpike() {
     });
   };
 
+  const updateToolbarPinned = (pinned: boolean) => {
+    setReadingSettings((current) => {
+      const nextSettings = { ...current, toolbarPinned: pinned };
+      window.localStorage.setItem(READING_SETTINGS_KEY, JSON.stringify(nextSettings));
+      return nextSettings;
+    });
+  };
+
+  const jumpToProgress = (value: number) => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    setReadingProgress(value);
+    window.scrollTo({ top: (scrollable * value) / 100, behavior: 'smooth' });
+  };
+
+  const minimizeWindow = async () => {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      await getCurrentWindow().minimize();
+    } catch {
+      // Window controls are only available in the desktop shell.
+    }
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        await getCurrentWindow().setFullscreen(!(await getCurrentWindow().isFullscreen()));
+      } catch {
+        // Fullscreen is optional in restricted webviews.
+      }
+    }
+  };
+
+  const closeWindow = async () => {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      await getCurrentWindow().close();
+    } catch {
+      window.close();
+    }
+  };
+
   const blockLabel = (blockId: string) => {
     const index = documentModel.blocks.findIndex((item) => item.id === blockId);
     return `源块 ${String(index + 1).padStart(2, '0')}`;
@@ -315,6 +383,7 @@ export default function FoundationSpike() {
     if (!css.highlights || !HighlightClass) return;
     const annotationRanges: Range[] = [];
     for (const thread of threads) {
+      if (readingSettings.annotationDisplay === 'card') continue;
       for (const blockId of thread.anchor.selectedBlockIds) {
         const element = globalThis.document.querySelector<HTMLElement>(
           `[data-source-text="${blockId}"]`,
@@ -348,7 +417,7 @@ export default function FoundationSpike() {
       css.highlights?.delete(ANNOTATION_HIGHLIGHT);
       css.highlights?.delete(CITATION_HIGHLIGHT);
     };
-  }, [documentModel, highlightedCitation, threads]);
+  }, [documentModel, highlightedCitation, readingSettings.annotationDisplay, threads]);
 
   const openThreadAtPointer = (
     event: ReactMouseEvent<HTMLElement>,
@@ -548,53 +617,122 @@ export default function FoundationSpike() {
           color: #111827;
         }
       `}</style>
-      <header className='mx-auto mb-4 flex max-w-[96rem] flex-wrap items-center justify-between gap-3'>
-        <div>
-          <p className='text-sm font-semibold text-blue-600'>NL-270 · Markdown 对话批注 Alpha</p>
-          <div className='text-2xl font-bold'>{documentModel.title}</div>
-          <p className='mt-1 text-sm' style={{ color: muted }}>
-            {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
-            {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
-          </p>
+      <div
+        className='sticky top-0 z-50 -mx-4 mb-4 border-b px-4 pb-2 pt-1 backdrop-blur'
+        style={{ backgroundColor: `${surface}ee` }}
+        onMouseEnter={() => setToolbarHovered(true)}
+        onMouseLeave={() => setToolbarHovered(false)}
+      >
+        <div className='mx-auto flex max-w-[96rem] items-center justify-between gap-3'>
+          <div>
+            <p className='text-sm font-semibold text-blue-600'>NL-270 · Markdown 对话批注 Alpha</p>
+            <div className='text-2xl font-bold'>{documentModel.title}</div>
+            <p className='mt-1 text-sm' style={{ color: muted }}>
+              {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
+              {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
+            </p>
+          </div>
+          <div className='flex items-center gap-1'>
+            <button
+              className='btn btn-ghost btn-sm'
+              aria-label='最小化窗口'
+              onClick={() => void minimizeWindow()}
+            >
+              −
+            </button>
+            <button
+              className='btn btn-ghost btn-sm'
+              aria-label='全屏或取消全屏'
+              onClick={() => void toggleFullscreen()}
+            >
+              □
+            </button>
+            <button
+              className='btn btn-ghost btn-sm text-red-600'
+              aria-label='关闭窗口'
+              onClick={() => void closeWindow()}
+            >
+              ×
+            </button>
+          </div>
         </div>
-        <div className='flex flex-wrap gap-2'>
-          <label className='btn btn-primary btn-sm cursor-pointer'>
-            导入 Markdown
-            <input
-              aria-label='导入 Markdown'
-              className='hidden'
-              type='file'
-              accept='.md,.markdown,text/markdown,text/plain'
-              onChange={(event) => void importMarkdown(event.target.files?.[0])}
-            />
-          </label>
-          <a className='btn btn-sm' href='/'>
-            打开原版书库
-          </a>
-          <button className='btn btn-sm' onClick={() => setDark((value) => !value)}>
-            切换主题
-          </button>
-          <button
-            className='btn btn-sm'
-            aria-label={sidebarOpen ? '收起批注栏' : '展开批注栏'}
-            onClick={() => setSidebarOpen((value) => !value)}
-          >
-            {sidebarOpen ? '收起批注栏' : '展开批注栏'}
-          </button>
-          <button
-            className='btn btn-sm'
-            onClick={() => {
-              store?.clear();
-              setDocumentModel(SOURCE_DOC_FIXTURE);
-              setAnchor(null);
-              setThreads([]);
-              setActiveThreadId(null);
-            }}
-          >
-            清空测试数据
-          </button>
+        <div
+          className={`mx-auto max-w-[96rem] overflow-hidden transition-[max-height,opacity,margin] duration-200 ${readingSettings.toolbarPinned || toolbarHovered ? 'mt-2 max-h-40 opacity-100' : 'max-h-7 opacity-80'}`}
+          aria-label='阅读工具栏'
+        >
+          {readingSettings.toolbarPinned || toolbarHovered ? (
+            <div className='mb-1 text-xs' style={{ color: muted }}>
+              阅读工具栏
+            </div>
+          ) : (
+            <div className='text-center text-xs' style={{ color: muted }}>
+              移入此处展开工具栏
+            </div>
+          )}
+          <div className='flex flex-wrap gap-2'>
+            <label className='btn btn-primary btn-sm cursor-pointer'>
+              导入 Markdown
+              <input
+                aria-label='导入 Markdown'
+                className='hidden'
+                type='file'
+                accept='.md,.markdown,text/markdown,text/plain'
+                onChange={(event) => void importMarkdown(event.target.files?.[0])}
+              />
+            </label>
+            <a className='btn btn-sm' href='/'>
+              打开原版书库
+            </a>
+            <button className='btn btn-sm' onClick={() => setDark((value) => !value)}>
+              切换主题
+            </button>
+            <button
+              className='btn btn-sm'
+              aria-label={sidebarOpen ? '收起批注栏' : '展开批注栏'}
+              onClick={() => setSidebarOpen((value) => !value)}
+            >
+              {sidebarOpen ? '收起批注栏' : '展开批注栏'}
+            </button>
+            <button
+              className='btn btn-sm'
+              onClick={() => {
+                store?.clear();
+                setDocumentModel(SOURCE_DOC_FIXTURE);
+                setAnchor(null);
+                setThreads([]);
+                setActiveThreadId(null);
+              }}
+            >
+              清空测试数据
+            </button>
+            <label className='flex items-center gap-2 px-2 text-sm'>
+              <input
+                type='checkbox'
+                className='toggle toggle-sm'
+                checked={readingSettings.toolbarPinned}
+                onChange={(event) => updateToolbarPinned(event.target.checked)}
+              />
+              常驻工具栏
+            </label>
+          </div>
         </div>
-      </header>
+        <label
+          className='mx-auto mt-2 flex max-w-[96rem] items-center gap-2 text-xs'
+          aria-label='阅读进度'
+        >
+          <span className='w-12 shrink-0'>进度</span>
+          <input
+            className='range range-xs flex-1'
+            type='range'
+            min='0'
+            max='100'
+            step='1'
+            value={readingProgress}
+            onChange={(event) => jumpToProgress(Number(event.target.value))}
+          />
+          <span className='w-10 text-right'>{Math.round(readingProgress)}%</span>
+        </label>
+      </div>
       {importStatus ? (
         <p
           role='status'
@@ -645,13 +783,33 @@ export default function FoundationSpike() {
                 </span>
               </label>
             ))}
+            <label className='flex min-w-0 items-center gap-3 text-sm'>
+              <span className='w-20 shrink-0 font-medium'>批注显示</span>
+              <select
+                aria-label='批注显示模式'
+                className='select select-sm select-bordered min-w-0 flex-1'
+                value={readingSettings.annotationDisplay}
+                onChange={(event) => {
+                  const value = event.target.value as ReadingSettings['annotationDisplay'];
+                  setReadingSettings((current) => {
+                    const nextSettings = { ...current, annotationDisplay: value };
+                    window.localStorage.setItem(READING_SETTINGS_KEY, JSON.stringify(nextSettings));
+                    return nextSettings;
+                  });
+                }}
+              >
+                <option value='underline'>仅下划线</option>
+                <option value='card'>仅小卡片</option>
+                <option value='both'>下划线 + 小卡片</option>
+              </select>
+            </label>
           </div>
         ) : null}
       </section>
 
-      <div className='mx-auto flex max-w-[96rem] items-start justify-center gap-4'>
+      <div className='mx-auto flex max-w-[96rem] flex-col items-stretch justify-center gap-4 lg:flex-row lg:items-start'>
         <article
-          className='min-w-0 rounded-xl px-5 py-8 shadow-sm sm:px-10'
+          className='min-w-0 w-full rounded-xl px-5 py-8 shadow-sm sm:px-10 lg:flex-1'
           style={{
             backgroundColor: panel,
             color: foreground,
@@ -677,7 +835,7 @@ export default function FoundationSpike() {
                 className={`relative scroll-m-24 pl-1 ${item.type === 'heading' ? 'mb-5 mt-9 first:mt-0' : 'mb-[1em]'}`}
                 style={{ color: highlighted ? '#111827' : foreground }}
               >
-                {previewThread ? (
+                {previewThread && readingSettings.annotationDisplay !== 'underline' ? (
                   <button
                     className='eink-bordered absolute right-full top-[0.15em] mr-3 flex h-7 min-w-7 items-center justify-center rounded-full border border-blue-500/40 bg-blue-50 px-1.5 text-xs font-bold text-blue-700 shadow-sm hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-500'
                     aria-label={`打开${blockLabel(item.id)} 的批注，共 ${blockThreads.length} 条`}
@@ -743,11 +901,12 @@ export default function FoundationSpike() {
               tabIndex={0}
             />
             <aside
-              className='eink-bordered fixed inset-y-3 right-3 z-40 max-h-[calc(100vh-1.5rem)] max-w-[calc(100vw-1.5rem)] shrink-0 overflow-y-auto rounded-xl p-4 shadow-xl lg:sticky lg:top-4 lg:z-auto lg:max-h-[calc(100vh-2rem)] lg:shadow-sm'
+              className='eink-bordered z-40 max-h-[calc(100vh-1.5rem)] w-full max-w-full shrink-0 overflow-y-auto rounded-xl p-4 shadow-xl lg:sticky lg:top-4 lg:z-auto lg:max-h-[calc(100vh-2rem)] lg:w-auto lg:max-w-[50vw] lg:shadow-sm'
               style={{
                 backgroundColor: panel,
                 color: foreground,
                 width: readingSettings.sidebarWidth,
+                maxWidth: '100%',
               }}
               aria-label='对话批注'
             >
