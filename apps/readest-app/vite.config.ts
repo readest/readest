@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [vinext()],
   resolve: {
     alias: {
-      '@pdfjs': path.resolve('vendor/pdfjs'),
-      '@simplecc': path.resolve('vendor/simplecc'),
+      '@pdfjs': path.resolve('../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build'),
+      '@simplecc': path.resolve('../../packages/simplecc-wasm/dist/web'),
     },
   },
   build: {

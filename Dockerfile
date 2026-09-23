@@ -42,11 +42,6 @@ ARG NEXT_PUBLIC_TRANSLATION_FIXED_QUOTA
 COPY --from=dependencies /app/node_modules /app/node_modules
 COPY --from=dependencies /app/apps/readest-app/node_modules /app/apps/readest-app/node_modules
 COPY --from=dependencies /app/apps/readest-app/public/vendor /app/apps/readest-app/public/vendor
-# The pdf.js and simplecc modules the bundler imports through the @pdfjs /
-# @simplecc aliases. Built by `setup-vendors` in the dependencies stage and
-# kept out of the build context by .dockerignore, so `build-web` cannot
-# resolve those aliases without this.
-COPY --from=dependencies /app/apps/readest-app/vendor /app/apps/readest-app/vendor
 COPY --from=dependencies /app/packages/foliate-js/node_modules /app/packages/foliate-js/node_modules
 COPY . .
 WORKDIR /app/apps/readest-app

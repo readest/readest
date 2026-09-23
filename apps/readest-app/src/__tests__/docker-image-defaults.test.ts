@@ -30,10 +30,9 @@ describe('Docker build stage vendor assets', () => {
   /**
    * `setup-vendors` runs in the `dependencies` stage, and `.dockerignore`
    * keeps its output out of the build context, so every directory it creates
-   * needs an explicit `COPY --from=dependencies`. `vendor/` (the pdf.js and
-   * simplecc modules the bundler imports through the @pdfjs / @simplecc
-   * aliases) was missed when it was split out of `public/vendor`, and
-   * `pnpm build-web` failed with "Can't resolve '@pdfjs/pdf.min.mjs'" (#6368).
+   * needs an explicit `COPY --from=dependencies`. A vendor directory added
+   * without one makes `pnpm build-web` fail inside the image — as it did for
+   * a short-lived second vendor dir after #6368.
    */
   test('copies every vendor root that setup-vendors creates', () => {
     // `prepare-vendor` is the source of truth: "mkdirp ./public/vendor/pdfjs ./vendor/..."
@@ -46,7 +45,7 @@ describe('Docker build stage vendor assets', () => {
           .join('/'),
       ),
     );
-    expect(roots.size).toBeGreaterThan(1);
+    expect(roots.size).toBeGreaterThanOrEqual(1);
 
     for (const root of roots) {
       expect(dockerfile).toContain(

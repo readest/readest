@@ -23,10 +23,23 @@ describe('vendored build-time modules live outside public/', () => {
     expect(inPublic).toEqual([]);
   });
 
-  test('pdf.js and simplecc are vendored for the bundler, not published', () => {
-    expect(existsSync(path.join(appDir, 'vendor/pdfjs/pdf.min.mjs'))).toBe(true);
+  test('the bundler imports resolve from packages/, with nothing copied', () => {
+    // No second vendor directory: the aliases point at the real sources, the
+    // way `jieba-wasm` is imported straight from node_modules.
+    expect(existsSync(path.join(appDir, 'vendor'))).toBe(false);
+    expect(
+      existsSync(
+        path.join(
+          appDir,
+          '../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build/pdf.min.mjs',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      existsSync(path.join(appDir, '../../packages/simplecc-wasm/dist/web/simplecc_wasm.js')),
+    ).toBe(true);
+    // ...and neither is published, so neither ships twice.
     expect(existsSync(path.join(appDir, 'public/vendor/pdfjs/pdf.min.mjs'))).toBe(false);
-    expect(existsSync(path.join(appDir, 'vendor/simplecc/simplecc_wasm_bg.wasm'))).toBe(true);
     expect(existsSync(path.join(appDir, 'public/vendor/simplecc'))).toBe(false);
   });
 

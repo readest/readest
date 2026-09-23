@@ -14,7 +14,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@pdfjs': path.resolve(__dirname, 'vendor/pdfjs'),
+      '@pdfjs': path.resolve(__dirname, '../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build'),
     },
     conditions: ['development'],
   },

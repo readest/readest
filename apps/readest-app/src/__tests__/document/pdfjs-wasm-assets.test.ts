@@ -57,13 +57,16 @@ describe('pdfjs vendor wasm assets', () => {
   };
 
   it('copies every wasm decoder the bundled pdf.js references', () => {
-    // Files the worker/main bundle are copied from (source of truth for CI).
-    // The worker is fetched by URL so it lives in `public/vendor/pdfjs`, while
-    // the library is imported through the @pdfjs alias and so lives outside
-    // `public/` — scan both, either can carry the wasm references.
-    const jsSources = (['copy-pdfjs-worker', 'copy-pdfjs-lib'] as const).map((script) =>
-      resolveCpxGlob(sourceGlobOf(pkg.scripts[script]!)),
-    );
+    // Scan both halves of pdf.js: the worker, copied into `public/vendor/pdfjs`
+    // because it is fetched by URL, and the library, which the bundler imports
+    // through the @pdfjs alias straight out of pdfjs-dist (never copied).
+    const jsSources = [
+      resolveCpxGlob(sourceGlobOf(pkg.scripts['copy-pdfjs-worker']!)),
+      {
+        dir: resolve(appRoot, '../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build'),
+        files: new Set(['pdf.min.mjs']),
+      },
+    ];
 
     // The wasm modules available in pdfjs-dist and what the copy script ships.
     const wasmGlob = sourceGlobOf(pkg.scripts['copy-pdfjs-wasm']!);
