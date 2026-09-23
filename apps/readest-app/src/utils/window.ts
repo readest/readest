@@ -2,7 +2,8 @@ import { getAllWindows, getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import { emitTo, TauriEvent } from '@tauri-apps/api/event';
 import { exit } from '@tauri-apps/plugin-process';
-import { type as osType } from '@tauri-apps/plugin-os';
+import { type as osType, version as osVersion } from '@tauri-apps/plugin-os';
+import { AppService } from '@/types/system';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { eventDispatcher } from './event';
 
@@ -40,6 +41,28 @@ export const isMainAppWindow = () => {
     return true;
   }
 };
+
+// Windows 10 renders the native shadow of an undecorated window as a 1px
+// border on the left, right and bottom edges but not the top, which reads as
+// a broken frame (tauri-apps/tauri#13134). Windows 11 draws a uniform border,
+// so only there is the shadow worth keeping. Keep in sync with
+// `undecorated_shadow_is_symmetric` in src-tauri/src/lib.rs.
+const WINDOWS_11_BUILD = 22000;
+
+const undecoratedShadowIsSymmetric = (appService: AppService) => {
+  if (!appService.isWindowsApp) return true;
+  const build = parseInt(osVersion().split('.')[2] ?? '', 10);
+  return Number.isNaN(build) ? true : build >= WINDOWS_11_BUILD;
+};
+
+/**
+ * Whether the window's own frame fails to give it a visible edge, so the
+ * client area has to draw one. On Windows 10 the native shadow is off (see
+ * above) and the OS draws nothing else, leaving the window floating without a
+ * border against a light desktop.
+ */
+export const windowNeedsClientOutline = (appService: AppService) =>
+  appService.isWindowsApp && !undecoratedShadowIsSymmetric(appService);
 
 export const tauriSetWindowTitle = async (bookTitle?: string) => {
   const title = formatAppWindowTitle(bookTitle);
