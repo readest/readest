@@ -2396,5 +2396,9 @@
   "Create New Tag": "Tạo thẻ mới",
   "Tag name": "Tên thẻ",
   "No tags yet": "Chưa có thẻ nào",
-  "Failed to save note. Please try again.": "Không thể lưu ghi chú. Vui lòng thử lại."
+  "Failed to save note. Please try again.": "Không thể lưu ghi chú. Vui lòng thử lại.",
+  "Dialogue Highlighting": "Đánh dấu hội thoại",
+  "Background": "Nền",
+  "Follows the theme color": "Theo màu chủ đề",
+  "Background Style": "Kiểu nền"
 }

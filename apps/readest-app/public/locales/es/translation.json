@@ -2516,5 +2516,9 @@
   "Create New Tag": "Crear nueva etiqueta",
   "Tag name": "Nombre de la etiqueta",
   "No tags yet": "Aún no hay etiquetas",
-  "Failed to save note. Please try again.": "No se pudo guardar la nota. Inténtalo de nuevo."
+  "Failed to save note. Please try again.": "No se pudo guardar la nota. Inténtalo de nuevo.",
+  "Dialogue Highlighting": "Resaltado de diálogos",
+  "Background": "Fondo",
+  "Follows the theme color": "Sigue el color del tema",
+  "Background Style": "Estilo de fondo"
 }

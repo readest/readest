@@ -2456,5 +2456,9 @@
   "Create New Tag": "Δημιουργία νέας ετικέτας",
   "Tag name": "Όνομα ετικέτας",
   "No tags yet": "Δεν υπάρχουν ακόμη ετικέτες",
-  "Failed to save note. Please try again.": "Αποτυχία αποθήκευσης σημείωσης. Δοκιμάστε ξανά."
+  "Failed to save note. Please try again.": "Αποτυχία αποθήκευσης σημείωσης. Δοκιμάστε ξανά.",
+  "Dialogue Highlighting": "Επισήμανση διαλόγου",
+  "Background": "Φόντο",
+  "Follows the theme color": "Ακολουθεί το χρώμα του θέματος",
+  "Background Style": "Στυλ φόντου"
 }

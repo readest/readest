@@ -2456,5 +2456,9 @@
   "Create New Tag": "ایجاد برچسب جدید",
   "Tag name": "نام برچسب",
   "No tags yet": "هنوز برچسبی وجود ندارد",
-  "Failed to save note. Please try again.": "ذخیرهٔ یادداشت ناموفق بود. لطفاً دوباره تلاش کنید."
+  "Failed to save note. Please try again.": "ذخیرهٔ یادداشت ناموفق بود. لطفاً دوباره تلاش کنید.",
+  "Dialogue Highlighting": "هایلایت دیالوگ",
+  "Background": "پس‌زمینه",
+  "Follows the theme color": "از رنگ تم پیروی می‌کند",
+  "Background Style": "سبک پس‌زمینه"
 }

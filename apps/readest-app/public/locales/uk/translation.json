@@ -2576,5 +2576,9 @@
   "Create New Tag": "Створити новий теґ",
   "Tag name": "Назва теґу",
   "No tags yet": "Теґів поки немає",
-  "Failed to save note. Please try again.": "Не вдалося зберегти нотатку. Спробуйте ще раз."
+  "Failed to save note. Please try again.": "Не вдалося зберегти нотатку. Спробуйте ще раз.",
+  "Dialogue Highlighting": "Підсвічування діалогів",
+  "Background": "Фон",
+  "Follows the theme color": "Використовує колір теми",
+  "Background Style": "Стиль фону"
 }

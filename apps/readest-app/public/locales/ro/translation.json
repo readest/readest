@@ -2516,5 +2516,9 @@
   "Create New Tag": "Creați o etichetă nouă",
   "Tag name": "Numele etichetei",
   "No tags yet": "Încă nu există etichete",
-  "Failed to save note. Please try again.": "Nota nu a putut fi salvată. Încercați din nou."
+  "Failed to save note. Please try again.": "Nota nu a putut fi salvată. Încercați din nou.",
+  "Dialogue Highlighting": "Evidențierea dialogurilor",
+  "Background": "Fundal",
+  "Follows the theme color": "Urmează culoarea temei",
+  "Background Style": "Stil fundal"
 }

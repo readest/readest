@@ -2456,5 +2456,9 @@
   "Create New Tag": "Yeni Etiket Oluştur",
   "Tag name": "Etiket adı",
   "No tags yet": "Henüz etiket yok",
-  "Failed to save note. Please try again.": "Not kaydedilemedi. Lütfen tekrar deneyin."
+  "Failed to save note. Please try again.": "Not kaydedilemedi. Lütfen tekrar deneyin.",
+  "Dialogue Highlighting": "Diyalog Vurgulama",
+  "Background": "Arka Plan",
+  "Follows the theme color": "Tema rengini kullanır",
+  "Background Style": "Arka Plan Stili"
 }

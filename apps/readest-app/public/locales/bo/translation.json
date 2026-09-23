@@ -2396,5 +2396,9 @@
   "Create New Tag": "མཚོན་འགྲེལ་གསར་པ་བཟོ་བ།",
   "Tag name": "མཚོན་འགྲེལ་གྱི་མིང་།",
   "No tags yet": "ད་དུང་མཚོན་འགྲེལ་མེད།",
-  "Failed to save note. Please try again.": "མཆན་ཉར་ཚགས་བྱེད་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།"
+  "Failed to save note. Please try again.": "མཆན་ཉར་ཚགས་བྱེད་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
+  "Dialogue Highlighting": "གཏམ་གླེང་གསལ་བཀྲོལ།",
+  "Background": "གནས་སྟངས།",
+  "Follows the theme color": "བརྗོད་བྱའི་ཚོན་མདོག་ལ་རྗེས་སུ་འབྲང་།",
+  "Background Style": "གནས་སྟངས་ཀྱི་རྣམ་པ།"
 }

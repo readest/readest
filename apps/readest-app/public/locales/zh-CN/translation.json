@@ -2396,5 +2396,9 @@
   "Create New Tag": "创建新标签",
   "Tag name": "标签名称",
   "No tags yet": "暂无标签",
-  "Failed to save note. Please try again.": "笔记保存失败，请重试。"
+  "Failed to save note. Please try again.": "笔记保存失败，请重试。",
+  "Dialogue Highlighting": "对话高亮",
+  "Background": "背景",
+  "Follows the theme color": "跟随主题颜色",
+  "Background Style": "背景样式"
 }

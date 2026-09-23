@@ -2396,5 +2396,9 @@
   "Create New Tag": "Buat Tag Baru",
   "Tag name": "Nama tag",
   "No tags yet": "Belum ada tag",
-  "Failed to save note. Please try again.": "Gagal menyimpan catatan. Silakan coba lagi."
+  "Failed to save note. Please try again.": "Gagal menyimpan catatan. Silakan coba lagi.",
+  "Dialogue Highlighting": "Penyorotan Dialog",
+  "Background": "Latar Belakang",
+  "Follows the theme color": "Mengikuti warna tema",
+  "Background Style": "Gaya Latar Belakang"
 }

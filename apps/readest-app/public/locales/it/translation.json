@@ -2516,5 +2516,9 @@
   "Create New Tag": "Crea nuovo tag",
   "Tag name": "Nome del tag",
   "No tags yet": "Nessun tag",
-  "Failed to save note. Please try again.": "Impossibile salvare la nota. Riprova."
+  "Failed to save note. Please try again.": "Impossibile salvare la nota. Riprova.",
+  "Dialogue Highlighting": "Evidenziazione dialoghi",
+  "Background": "Sfondo",
+  "Follows the theme color": "Segue il colore del tema",
+  "Background Style": "Stile sfondo"
 }

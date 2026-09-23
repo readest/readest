@@ -2456,5 +2456,9 @@
   "Create New Tag": "Yangi teg yaratish",
   "Tag name": "Teg nomi",
   "No tags yet": "Hali teglar yoʻq",
-  "Failed to save note. Please try again.": "Eslatmani saqlab boʻlmadi. Qaytadan urinib koʻring."
+  "Failed to save note. Please try again.": "Eslatmani saqlab boʻlmadi. Qaytadan urinib koʻring.",
+  "Dialogue Highlighting": "Dialogni belgilash",
+  "Background": "Fon",
+  "Follows the theme color": "Mavzu rangidan foydalanadi",
+  "Background Style": "Fon uslubi"
 }

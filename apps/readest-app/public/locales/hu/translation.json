@@ -2456,5 +2456,9 @@
   "Create New Tag": "Új címke létrehozása",
   "Tag name": "Címke neve",
   "No tags yet": "Még nincsenek címkék",
-  "Failed to save note. Please try again.": "A jegyzet mentése sikertelen. Kérjük, próbáld újra."
+  "Failed to save note. Please try again.": "A jegyzet mentése sikertelen. Kérjük, próbáld újra.",
+  "Dialogue Highlighting": "Párbeszédkiemelés",
+  "Background": "Háttér",
+  "Follows the theme color": "Követi a téma színét",
+  "Background Style": "Háttérstílus"
 }

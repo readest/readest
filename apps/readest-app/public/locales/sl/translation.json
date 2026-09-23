@@ -2576,5 +2576,9 @@
   "Create New Tag": "Ustvari novo oznako",
   "Tag name": "Ime oznake",
   "No tags yet": "Še ni oznak",
-  "Failed to save note. Please try again.": "Zapiska ni bilo mogoče shraniti. Poskusite znova."
+  "Failed to save note. Please try again.": "Zapiska ni bilo mogoče shraniti. Poskusite znova.",
+  "Dialogue Highlighting": "Označevanje dialogov",
+  "Background": "Ozadje",
+  "Follows the theme color": "Sledi barvi teme",
+  "Background Style": "Slog ozadja"
 }

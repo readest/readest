@@ -2456,5 +2456,9 @@
   "Create New Tag": "नया टैग बनाएं",
   "Tag name": "टैग का नाम",
   "No tags yet": "अभी तक कोई टैग नहीं",
-  "Failed to save note. Please try again.": "नोट सहेजा नहीं जा सका। कृपया पुनः प्रयास करें।"
+  "Failed to save note. Please try again.": "नोट सहेजा नहीं जा सका। कृपया पुनः प्रयास करें।",
+  "Dialogue Highlighting": "संवाद हाइलाइटिंग",
+  "Background": "पृष्ठभूमि",
+  "Follows the theme color": "थीम रंग का अनुसरण करता है",
+  "Background Style": "पृष्ठभूमि शैली"
 }

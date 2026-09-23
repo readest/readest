@@ -2396,5 +2396,9 @@
   "Create New Tag": "建立新標籤",
   "Tag name": "標籤名稱",
   "No tags yet": "尚無標籤",
-  "Failed to save note. Please try again.": "筆記儲存失敗，請重試。"
+  "Failed to save note. Please try again.": "筆記儲存失敗，請重試。",
+  "Dialogue Highlighting": "對話高亮",
+  "Background": "背景",
+  "Follows the theme color": "跟隨主題顏色",
+  "Background Style": "背景樣式"
 }

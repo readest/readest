@@ -2396,5 +2396,9 @@
   "Create New Tag": "สร้างแท็กใหม่",
   "Tag name": "ชื่อแท็ก",
   "No tags yet": "ยังไม่มีแท็ก",
-  "Failed to save note. Please try again.": "บันทึกโน้ตไม่สำเร็จ โปรดลองอีกครั้ง"
+  "Failed to save note. Please try again.": "บันทึกโน้ตไม่สำเร็จ โปรดลองอีกครั้ง",
+  "Dialogue Highlighting": "ไฮไลต์บทสนทนา",
+  "Background": "พื้นหลัง",
+  "Follows the theme color": "ตามสีธีม",
+  "Background Style": "รูปแบบพื้นหลัง"
 }

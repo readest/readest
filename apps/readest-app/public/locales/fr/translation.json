@@ -2516,5 +2516,9 @@
   "Create New Tag": "Créer un nouveau tag",
   "Tag name": "Nom du tag",
   "No tags yet": "Aucun tag pour le moment",
-  "Failed to save note. Please try again.": "Impossible d'enregistrer la note. Veuillez réessayer."
+  "Failed to save note. Please try again.": "Impossible d'enregistrer la note. Veuillez réessayer.",
+  "Dialogue Highlighting": "Surlignage des dialogues",
+  "Background": "Fond",
+  "Follows the theme color": "Suit la couleur du thème",
+  "Background Style": "Style de fond"
 }

@@ -2576,5 +2576,9 @@
   "Create New Tag": "Utwórz nowy tag",
   "Tag name": "Nazwa tagu",
   "No tags yet": "Brak tagów",
-  "Failed to save note. Please try again.": "Nie udało się zapisać notatki. Spróbuj ponownie."
+  "Failed to save note. Please try again.": "Nie udało się zapisać notatki. Spróbuj ponownie.",
+  "Dialogue Highlighting": "Podświetlanie dialogów",
+  "Background": "Tło",
+  "Follows the theme color": "Używa koloru motywu",
+  "Background Style": "Styl tła"
 }

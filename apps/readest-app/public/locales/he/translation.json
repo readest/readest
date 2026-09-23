@@ -2516,5 +2516,9 @@
   "Create New Tag": "צור תגית חדשה",
   "Tag name": "שם התגית",
   "No tags yet": "אין תגיות עדיין",
-  "Failed to save note. Please try again.": "שמירת ההערה נכשלה. נסה שוב."
+  "Failed to save note. Please try again.": "שמירת ההערה נכשלה. נסה שוב.",
+  "Dialogue Highlighting": "הדגשת דיאלוג",
+  "Background": "רקע",
+  "Follows the theme color": "עוקב אחר צבע ערכת הנושא",
+  "Background Style": "סגנון רקע"
 }

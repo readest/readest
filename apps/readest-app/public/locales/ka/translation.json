@@ -2456,5 +2456,9 @@
   "Create New Tag": "ახალი ტეგის შექმნა",
   "Tag name": "ტეგის სახელი",
   "No tags yet": "ტეგები ჯერ არ არის",
-  "Failed to save note. Please try again.": "ჩანაწერის შენახვა ვერ მოხერხდა. სცადეთ ხელახლა."
+  "Failed to save note. Please try again.": "ჩანაწერის შენახვა ვერ მოხერხდა. სცადეთ ხელახლა.",
+  "Dialogue Highlighting": "დიალოგის მარკირება",
+  "Background": "ფონი",
+  "Follows the theme color": "მიჰყვება თემის ფერს",
+  "Background Style": "ფონის სტილი"
 }

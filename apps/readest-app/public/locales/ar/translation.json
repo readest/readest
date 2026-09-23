@@ -2696,5 +2696,9 @@
   "Create New Tag": "إنشاء علامة جديدة",
   "Tag name": "اسم العلامة",
   "No tags yet": "لا توجد علامات بعد",
-  "Failed to save note. Please try again.": "تعذّر حفظ الملاحظة. يرجى المحاولة مرة أخرى."
+  "Failed to save note. Please try again.": "تعذّر حفظ الملاحظة. يرجى المحاولة مرة أخرى.",
+  "Dialogue Highlighting": "تمييز الحوار",
+  "Background": "الخلفية",
+  "Follows the theme color": "يتبع لون السمة",
+  "Background Style": "نمط الخلفية"
 }

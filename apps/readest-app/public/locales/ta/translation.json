@@ -2456,5 +2456,9 @@
   "Create New Tag": "புதிய குறிச்சொல் உருவாக்கவும்",
   "Tag name": "குறிச்சொல் பெயர்",
   "No tags yet": "இன்னும் குறிச்சொற்கள் இல்லை",
-  "Failed to save note. Please try again.": "குறிப்பைச் சேமிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்."
+  "Failed to save note. Please try again.": "குறிப்பைச் சேமிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  "Dialogue Highlighting": "உரையாடல் முத்திரை",
+  "Background": "பின்னணி",
+  "Follows the theme color": "தீம் நிறத்தைப் பின்பற்றுகிறது",
+  "Background Style": "பின்னணி பாணி"
 }

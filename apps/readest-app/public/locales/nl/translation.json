@@ -2456,5 +2456,9 @@
   "Create New Tag": "Nieuwe tag maken",
   "Tag name": "Tagnaam",
   "No tags yet": "Nog geen tags",
-  "Failed to save note. Please try again.": "Notitie opslaan mislukt. Probeer het opnieuw."
+  "Failed to save note. Please try again.": "Notitie opslaan mislukt. Probeer het opnieuw.",
+  "Dialogue Highlighting": "Dialoogmarkering",
+  "Background": "Achtergrond",
+  "Follows the theme color": "Volgt de themakleur",
+  "Background Style": "Achtergrondstijl"
 }

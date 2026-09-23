@@ -2456,5 +2456,9 @@
   "Create New Tag": "නව ටැගයක් සාදන්න",
   "Tag name": "ටැගයේ නම",
   "No tags yet": "තවම ටැග් නැත",
-  "Failed to save note. Please try again.": "සටහන සුරැකීමට නොහැකි විය. නැවත උත්සාහ කරන්න."
+  "Failed to save note. Please try again.": "සටහන සුරැකීමට නොහැකි විය. නැවත උත්සාහ කරන්න.",
+  "Dialogue Highlighting": "දෙබස් ඉස්මතු කිරීම",
+  "Background": "පසුබිම",
+  "Follows the theme color": "තේමා වර්ණය අනුගමනය කරයි",
+  "Background Style": "පසුබිම් විලාසය"
 }

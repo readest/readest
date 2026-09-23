@@ -2396,5 +2396,9 @@
   "Create New Tag": "新しいタグを作成",
   "Tag name": "タグ名",
   "No tags yet": "タグはまだありません",
-  "Failed to save note. Please try again.": "メモを保存できませんでした。もう一度お試しください。"
+  "Failed to save note. Please try again.": "メモを保存できませんでした。もう一度お試しください。",
+  "Dialogue Highlighting": "対話ハイライト",
+  "Background": "背景",
+  "Follows the theme color": "テーマカラーに従う",
+  "Background Style": "背景スタイル"
 }

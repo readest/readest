@@ -2456,5 +2456,9 @@
   "Create New Tag": "Skapa ny tagg",
   "Tag name": "Taggnamn",
   "No tags yet": "Inga taggar ännu",
-  "Failed to save note. Please try again.": "Det gick inte att spara anteckningen. Försök igen."
+  "Failed to save note. Please try again.": "Det gick inte att spara anteckningen. Försök igen.",
+  "Dialogue Highlighting": "Dialogmarkering",
+  "Background": "Bakgrund",
+  "Follows the theme color": "Följer temafärgen",
+  "Background Style": "Bakgrundsstil"
 }

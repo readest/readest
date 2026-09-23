@@ -2456,5 +2456,9 @@
   "Create New Tag": "নতুন ট্যাগ তৈরি করুন",
   "Tag name": "ট্যাগের নাম",
   "No tags yet": "এখনও কোনো ট্যাগ নেই",
-  "Failed to save note. Please try again.": "নোট সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।"
+  "Failed to save note. Please try again.": "নোট সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।",
+  "Dialogue Highlighting": "সংলাপ হাইলাইটিং",
+  "Background": "ব্যাকগ্রাউন্ড",
+  "Follows the theme color": "থিম রঙ অনুসরণ করে",
+  "Background Style": "ব্যাকগ্রাউন্ড শৈলী"
 }
