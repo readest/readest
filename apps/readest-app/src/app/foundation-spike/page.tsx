@@ -46,6 +46,7 @@ const DEFAULT_READING_SETTINGS: ReadingSettings = {
 const SIDEBAR_MIN_WIDTH = 320;
 const SIDEBAR_MAX_WIDTH = 560;
 const ANNOTATION_HIGHLIGHT = 'foundation-annotations';
+const ACTIVE_ANNOTATION_HIGHLIGHT = 'foundation-active-annotation';
 const CITATION_HIGHLIGHT = 'foundation-citation';
 
 interface HighlightRegistry {
@@ -87,6 +88,7 @@ export default function FoundationSpike() {
   const [threads, setThreads] = useState<SourceDocThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [annotationManagerOpen, setAnnotationManagerOpen] = useState(false);
   const [question, setQuestion] = useState('');
   const [highlightedCitation, setHighlightedCitation] = useState<SourceDocCitation | null>(null);
   const [selectionError, setSelectionError] = useState('');
@@ -260,6 +262,7 @@ export default function FoundationSpike() {
     setActiveThreadId(thread.id);
     setAnchor(thread.anchor);
     setSidebarOpen(true);
+    setAnnotationManagerOpen(false);
     globalThis.document
       .querySelector(`[data-block-id="${thread.anchor.blockId}"]`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -297,25 +300,12 @@ export default function FoundationSpike() {
     refreshThreads(activeThread.id);
   };
 
-  const toggleArchive = () => {
-    if (!store || !activeThread) return;
-    store.setThreadArchived(activeThread.id, activeThread.status !== 'archived');
-    refreshThreads(activeThread.id);
-  };
-
   const saveMessage = () => {
     if (!store || !editingMessageId || !messageDraft.trim()) return;
     store.editMessage(editingMessageId, messageDraft);
     setEditingMessageId(null);
     setMessageDraft('');
     refreshThreads(activeThreadId);
-  };
-
-  const deleteActiveThread = () => {
-    if (!store || !activeThread) return;
-    store.deleteThread(activeThread.id);
-    setAnchor(null);
-    refreshThreads(null);
   };
 
   const updateReadingSetting = (key: keyof ReadingSettings, value: number) => {
@@ -421,6 +411,7 @@ export default function FoundationSpike() {
       .Highlight;
     if (!css.highlights || !HighlightClass) return;
     const annotationRanges: Range[] = [];
+    const activeAnnotationRanges: Range[] = [];
     for (const thread of threads) {
       if (readingSettings.annotationDisplay === 'card') continue;
       for (const blockId of thread.anchor.selectedBlockIds) {
@@ -437,10 +428,14 @@ export default function FoundationSpike() {
             ? thread.anchor.endOffset
             : block.semanticText.length,
         );
-        if (range) annotationRanges.push(range);
+        if (range) {
+          annotationRanges.push(range);
+          if (thread.id === activeThreadId) activeAnnotationRanges.push(range.cloneRange());
+        }
       }
     }
     css.highlights.set(ANNOTATION_HIGHLIGHT, new HighlightClass(...annotationRanges));
+    css.highlights.set(ACTIVE_ANNOTATION_HIGHLIGHT, new HighlightClass(...activeAnnotationRanges));
     css.highlights.delete(CITATION_HIGHLIGHT);
     if (highlightedCitation) {
       const element = globalThis.document.querySelector<HTMLElement>(
@@ -454,9 +449,16 @@ export default function FoundationSpike() {
     }
     return () => {
       css.highlights?.delete(ANNOTATION_HIGHLIGHT);
+      css.highlights?.delete(ACTIVE_ANNOTATION_HIGHLIGHT);
       css.highlights?.delete(CITATION_HIGHLIGHT);
     };
-  }, [documentModel, highlightedCitation, readingSettings.annotationDisplay, threads]);
+  }, [
+    activeThreadId,
+    documentModel,
+    highlightedCitation,
+    readingSettings.annotationDisplay,
+    threads,
+  ]);
 
   const openThreadAtPointer = (
     event: ReactMouseEvent<HTMLElement>,
@@ -651,13 +653,18 @@ export default function FoundationSpike() {
           text-decoration: underline rgba(59, 130, 246, 0.55) 1px;
           text-underline-offset: 0.22em;
         }
+        ::highlight(${ACTIVE_ANNOTATION_HIGHLIGHT}) {
+          background-color: rgba(254, 240, 138, 0.68);
+          text-decoration: underline #2563eb 2px;
+          text-underline-offset: 0.22em;
+        }
         ::highlight(${CITATION_HIGHLIGHT}) {
           background-color: #fde047;
           color: #111827;
         }
       `}</style>
       <div
-        className='sticky top-0 z-50 -mx-4 mb-4 overflow-hidden border-b px-4 pb-1 pt-1 backdrop-blur'
+        className='absolute left-4 right-4 top-2 z-50 overflow-hidden rounded-lg border px-2 py-1 shadow-sm backdrop-blur'
         style={{ backgroundColor: `${surface}ee` }}
         onMouseEnter={() => setToolbarHovered(true)}
         onMouseLeave={() => setToolbarHovered(false)}
@@ -667,20 +674,7 @@ export default function FoundationSpike() {
           data-tauri-drag-region
           onMouseDown={(event) => void startWindowDragging(event)}
         >
-          {toolbarExpanded ? (
-            <div>
-              <p className='text-sm font-semibold text-blue-600'>
-                NL-270 · Markdown 对话批注 Alpha
-              </p>
-              <div className='text-2xl font-bold'>{documentModel.title}</div>
-              <p className='mt-1 text-sm' style={{ color: muted }}>
-                {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
-                {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
-              </p>
-            </div>
-          ) : (
-            <div className='h-5 flex-1' aria-label='窗口拖动区域' />
-          )}
+          <div className='h-5 flex-1' aria-label='窗口拖动区域' />
           <span className='sr-only'>
             {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
             {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
@@ -713,9 +707,6 @@ export default function FoundationSpike() {
           className={`mx-auto max-w-[96rem] overflow-hidden transition-[max-height,opacity,margin] duration-200 ${toolbarExpanded ? 'mt-2 max-h-64 opacity-100' : 'pointer-events-none max-h-0 opacity-0'}`}
           aria-label='阅读工具栏'
         >
-          <div className='mb-1 text-xs' style={{ color: muted }}>
-            阅读工具栏
-          </div>
           <div className='flex flex-wrap gap-2'>
             <label className='btn btn-primary btn-sm cursor-pointer'>
               导入 Markdown
@@ -848,7 +839,7 @@ export default function FoundationSpike() {
         </p>
       ) : null}
 
-      <div className='mx-auto flex max-w-[96rem] flex-col items-stretch justify-center gap-4 lg:flex-row lg:items-start'>
+      <div className='mx-auto flex max-w-[96rem] flex-col items-stretch justify-center gap-4 pt-3 lg:flex-row lg:items-start'>
         <article
           className='min-w-0 w-full rounded-xl px-5 py-8 shadow-sm sm:px-10 lg:flex-1'
           style={{
@@ -907,215 +898,229 @@ export default function FoundationSpike() {
           })}
         </article>
 
+        <div
+          role='separator'
+          aria-label='调整批注栏宽度'
+          aria-orientation='vertical'
+          aria-valuemin={SIDEBAR_MIN_WIDTH}
+          aria-valuemax={SIDEBAR_MAX_WIDTH}
+          aria-valuenow={readingSettings.sidebarWidth}
+          className='relative sticky top-4 hidden h-[calc(100vh-2rem)] w-2 shrink-0 cursor-col-resize touch-none rounded-full bg-transparent hover:bg-blue-500/20 lg:block'
+          onPointerDown={(event) => {
+            sidebarDrag.current = {
+              startX: event.clientX,
+              startWidth: readingSettings.sidebarWidth,
+            };
+            globalThis.document.body.style.cursor = 'col-resize';
+            globalThis.document.body.style.userSelect = 'none';
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            event.preventDefault();
+            updateReadingSetting(
+              'sidebarWidth',
+              Math.min(
+                SIDEBAR_MAX_WIDTH,
+                Math.max(
+                  SIDEBAR_MIN_WIDTH,
+                  readingSettings.sidebarWidth + (event.key === 'ArrowLeft' ? 10 : -10),
+                ),
+              ),
+            );
+          }}
+          tabIndex={0}
+        >
+          <button
+            type='button'
+            className='btn btn-circle btn-sm absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border border-blue-300 bg-base-100 shadow-md'
+            aria-label={sidebarOpen ? '收起批注栏' : '打开批注栏'}
+            title={sidebarOpen ? '收起批注栏' : '打开批注栏'}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={() => setSidebarOpen((value) => !value)}
+          >
+            {sidebarOpen ? '‹' : '›'}
+          </button>
+        </div>
         {sidebarOpen ? (
-          <>
-            <div
-              role='separator'
-              aria-label='调整批注栏宽度'
-              aria-orientation='vertical'
-              aria-valuemin={SIDEBAR_MIN_WIDTH}
-              aria-valuemax={SIDEBAR_MAX_WIDTH}
-              aria-valuenow={readingSettings.sidebarWidth}
-              className='relative sticky top-4 hidden h-[calc(100vh-2rem)] w-2 shrink-0 cursor-col-resize touch-none rounded-full bg-transparent hover:bg-blue-500/20 lg:block'
-              onPointerDown={(event) => {
-                sidebarDrag.current = {
-                  startX: event.clientX,
-                  startWidth: readingSettings.sidebarWidth,
-                };
-                globalThis.document.body.style.cursor = 'col-resize';
-                globalThis.document.body.style.userSelect = 'none';
-              }}
-              onKeyDown={(event) => {
-                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-                event.preventDefault();
-                updateReadingSetting(
-                  'sidebarWidth',
-                  Math.min(
-                    SIDEBAR_MAX_WIDTH,
-                    Math.max(
-                      SIDEBAR_MIN_WIDTH,
-                      readingSettings.sidebarWidth + (event.key === 'ArrowLeft' ? 10 : -10),
-                    ),
-                  ),
-                );
-              }}
-              tabIndex={0}
-            >
+          <aside
+            className='eink-bordered z-40 max-h-[calc(100vh-1.5rem)] w-full max-w-full shrink-0 overflow-y-auto rounded-xl p-4 shadow-xl lg:sticky lg:top-4 lg:z-auto lg:max-h-[calc(100vh-2rem)] lg:w-auto lg:max-w-[50vw] lg:shadow-sm'
+            style={{
+              backgroundColor: panel,
+              color: foreground,
+              width: readingSettings.sidebarWidth,
+              maxWidth: '100%',
+            }}
+            aria-label='对话批注'
+          >
+            <div className='mb-3 flex items-center justify-between gap-2'>
+              <h2 className='text-lg font-bold'>对话批注</h2>
               <button
-                type='button'
-                className='btn btn-circle btn-sm absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border border-blue-300 bg-base-100 shadow-md'
-                aria-label='收起批注栏'
-                title='收起批注栏'
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={() => setSidebarOpen(false)}
+                className='btn btn-ghost btn-sm'
+                aria-label='打开批注管理'
+                title='批注管理'
+                onClick={() => setAnnotationManagerOpen(true)}
               >
-                ‹
+                ☷
               </button>
             </div>
-            <aside
-              className='eink-bordered z-40 max-h-[calc(100vh-1.5rem)] w-full max-w-full shrink-0 overflow-y-auto rounded-xl p-4 shadow-xl lg:sticky lg:top-4 lg:z-auto lg:max-h-[calc(100vh-2rem)] lg:w-auto lg:max-w-[50vw] lg:shadow-sm'
-              style={{
-                backgroundColor: panel,
-                color: foreground,
-                width: readingSettings.sidebarWidth,
-                maxWidth: '100%',
-              }}
-              aria-label='对话批注'
-            >
-              <div className='mb-1 flex items-center justify-between gap-2'>
-                <h2 className='text-lg font-bold'>对话批注</h2>
-                <button
-                  className='btn btn-ghost btn-sm'
-                  aria-label='关闭批注栏'
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  收起
-                </button>
+            <div className='mb-3 rounded-md p-3 text-sm' style={{ backgroundColor: mutedPanel }}>
+              {anchor ? (
+                <div>
+                  <p className='mb-1 text-xs font-semibold'>
+                    当前锚点 · {anchor.selectedBlockIds.length} 块
+                  </p>
+                  <q data-testid='active-quote' className='whitespace-pre-line'>
+                    {anchor.exactQuote}
+                  </q>
+                </div>
+              ) : (
+                '请先在左侧选择一段文字'
+              )}
+            </div>
+            {selectionError ? <p className='mb-3 text-sm text-red-500'>{selectionError}</p> : null}
+
+            {activeThread ? (
+              <div className='mb-3 flex items-center justify-between gap-2'>
+                <p className='truncate font-bold'>{activeThread.title}</p>
+                <span className='badge badge-sm'>
+                  {activeThread.status === 'archived' ? '已归档' : '进行中'}
+                </span>
               </div>
-              <p className='mb-3 text-xs' style={{ color: muted }}>
-                选择连续文字可新建批注；点击左侧标记、带下划线的原文或列表可打开旧批注。
+            ) : null}
+
+            {activeThread ? (
+              <div className='mb-4 max-h-72 overflow-y-auto'>
+                {threadConversation(activeThread)}
+              </div>
+            ) : null}
+            {navigationStatus ? (
+              <p role='status' className='mb-3 text-sm font-semibold text-green-600'>
+                {navigationStatus}
               </p>
-              <div className='mb-3 rounded-md p-3 text-sm' style={{ backgroundColor: mutedPanel }}>
-                {anchor ? (
-                  <div>
-                    <p className='mb-1 text-xs font-semibold'>
-                      当前锚点 · {anchor.selectedBlockIds.length} 块
-                    </p>
-                    <q data-testid='active-quote' className='whitespace-pre-line'>
-                      {anchor.exactQuote}
-                    </q>
-                  </div>
-                ) : (
-                  '请先在左侧选择一段文字'
-                )}
-              </div>
-              {selectionError ? (
-                <p className='mb-3 text-sm text-red-500'>{selectionError}</p>
-              ) : null}
+            ) : null}
+            <label className='form-control'>
+              <span className='label-text mb-1'>问题</span>
+              <textarea
+                className='textarea textarea-bordered eink-bordered'
+                style={{ backgroundColor: mutedPanel, color: foreground }}
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder='针对所选原文提问'
+              />
+            </label>
+            <button
+              aria-label='提问'
+              className='btn btn-contrast mt-3 w-full'
+              disabled={!anchor}
+              onClick={ask}
+            >
+              {activeThreadId ? '继续追问' : '新建批注并提问'}
+            </button>
 
-              {activeThread ? (
-                <div
-                  className='mb-3 rounded-lg border p-3'
-                  style={{ borderColor: dark ? '#4b5563' : '#d1d5db' }}
-                >
-                  {editingTitle ? (
-                    <div className='flex gap-2'>
-                      <input
-                        aria-label='批注标题'
-                        className='input input-sm input-bordered min-w-0 flex-1'
-                        value={titleDraft}
-                        onChange={(event) => setTitleDraft(event.target.value)}
-                      />
-                      <button className='btn btn-sm btn-contrast' onClick={renameActiveThread}>
-                        保存标题
-                      </button>
-                    </div>
-                  ) : (
-                    <div className='flex items-start justify-between gap-2'>
-                      <div>
-                        <p className='font-bold'>{activeThread.title}</p>
-                        {activeThread.status === 'archived' ? (
-                          <span className='badge badge-sm'>已归档</span>
-                        ) : null}
-                      </div>
-                      <button
-                        className='btn btn-ghost btn-xs'
-                        aria-label='重命名批注'
-                        onClick={() => {
-                          setTitleDraft(activeThread.title);
-                          setEditingTitle(true);
-                        }}
-                      >
-                        重命名
-                      </button>
-                    </div>
-                  )}
-                  <div className='mt-2 flex flex-wrap gap-2'>
-                    <button className='btn btn-xs' aria-label='归档批注' onClick={toggleArchive}>
-                      {activeThread.status === 'archived' ? '取消归档' : '归档'}
-                    </button>
-                    <button className='btn btn-xs text-red-600' onClick={deleteActiveThread}>
-                      删除
-                    </button>
-                  </div>
+            <p className='mt-3 text-center text-xs' style={{ color: muted }}>
+              本地固定回复 · 不发送网络请求
+            </p>
+            {annotationManagerOpen ? (
+              <section
+                aria-label='批注管理'
+                className='absolute inset-0 z-50 overflow-y-auto rounded-xl p-4 shadow-xl'
+                style={{ backgroundColor: panel, color: foreground }}
+              >
+                <div className='mb-4 flex items-center justify-between gap-2'>
+                  <h2 className='text-lg font-bold'>批注管理</h2>
+                  <button
+                    className='btn btn-ghost btn-sm'
+                    aria-label='返回对话批注'
+                    onClick={() => setAnnotationManagerOpen(false)}
+                  >
+                    返回
+                  </button>
                 </div>
-              ) : null}
-
-              {activeThread ? (
-                <div className='mb-4 max-h-72 overflow-y-auto'>
-                  {threadConversation(activeThread)}
-                </div>
-              ) : null}
-              {navigationStatus ? (
-                <p role='status' className='mb-3 text-sm font-semibold text-green-600'>
-                  {navigationStatus}
-                </p>
-              ) : null}
-              <label className='form-control'>
-                <span className='label-text mb-1'>问题</span>
-                <textarea
-                  className='textarea textarea-bordered eink-bordered'
-                  style={{ backgroundColor: mutedPanel, color: foreground }}
-                  value={question}
-                  onChange={(event) => setQuestion(event.target.value)}
-                  placeholder='针对所选原文提问'
+                <input
+                  aria-label='搜索批注'
+                  className='input input-sm input-bordered mb-3 w-full'
+                  placeholder='搜索标题、原文或对话'
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
                 />
-              </label>
-              <button
-                aria-label='提问'
-                className='btn btn-contrast mt-3 w-full'
-                disabled={!anchor}
-                onClick={ask}
-              >
-                {activeThreadId ? '继续追问' : '新建批注并提问'}
-              </button>
-
-              <div
-                className='mt-5 border-t pt-4'
-                style={{ borderColor: dark ? '#4b5563' : '#d1d5db' }}
-              >
-                <div className='mb-2 flex items-center justify-between'>
-                  <h3 className='font-bold'>全部批注（{threads.length}）</h3>
+                <div className='mb-3 flex items-center justify-between text-sm'>
+                  <span className='font-semibold'>全部批注（{threads.length}）</span>
                   <button
                     className='btn btn-ghost btn-xs'
                     aria-label='显示已归档'
                     onClick={() => setShowArchived((value) => !value)}
                   >
-                    {showArchived ? '隐藏归档' : '显示已归档'}
+                    {showArchived ? '隐藏归档' : '显示归档'}
                   </button>
                 </div>
-                <input
-                  aria-label='搜索批注'
-                  className='input input-sm input-bordered mb-2 w-full'
-                  placeholder='搜索标题、原文或对话'
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-                <div className='max-h-72 space-y-2 overflow-y-auto'>
+                <div className='max-h-[calc(100vh-18rem)] space-y-2 overflow-y-auto'>
                   {visibleThreads.map((item) => (
-                    <button
+                    <div
                       key={item.id}
-                      className='block w-full rounded-md border p-2 text-left text-sm'
+                      className='flex items-start gap-2 rounded-lg border p-3'
                       style={{
                         borderColor:
                           item.id === activeThreadId ? '#2563eb' : dark ? '#4b5563' : '#d1d5db',
                       }}
-                      onClick={() => selectThread(item)}
                     >
-                      <span className='block font-semibold'>{item.title}</span>
-                      <span className='block truncate text-xs' style={{ color: muted }}>
-                        {blockLabel(item.anchor.blockId)} ·{' '}
-                        {item.status === 'archived' ? '已归档' : `${item.messages.length} 条消息`}
-                      </span>
-                    </button>
+                      <button
+                        className='min-w-0 flex-1 text-left'
+                        onClick={() => selectThread(item)}
+                      >
+                        <span className='block truncate font-semibold'>{item.title}</span>
+                        <span className='mt-1 block truncate text-xs' style={{ color: muted }}>
+                          {blockLabel(item.anchor.blockId)} ·{' '}
+                          {item.status === 'archived' ? '已归档' : `${item.messages.length} 条消息`}
+                        </span>
+                      </button>
+                      <div className='flex shrink-0 gap-1'>
+                        <button
+                          className='btn btn-ghost btn-xs'
+                          aria-label={`重命名批注：${item.title}`}
+                          title='重命名'
+                          onClick={() => {
+                            setActiveThreadId(item.id);
+                            setTitleDraft(item.title);
+                            setEditingTitle(true);
+                          }}
+                        >
+                          ✎
+                        </button>
+                        <button
+                          className='btn btn-ghost btn-xs'
+                          aria-label={`${item.status === 'archived' ? '取消归档' : '归档'}批注：${item.title}`}
+                          title={item.status === 'archived' ? '取消归档' : '归档'}
+                          onClick={() => {
+                            store?.setThreadArchived(item.id, item.status !== 'archived');
+                            refreshThreads(activeThreadId);
+                          }}
+                        >
+                          ▱
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
-              <p className='mt-3 text-xs' style={{ color: muted }}>
-                当前不接真实模型；每次回答仅从内置固定候选中本地随机选择，不发生网络请求。
-              </p>
-            </aside>
-          </>
+                {editingTitle ? (
+                  <div className='mt-4 flex gap-2'>
+                    <input
+                      aria-label='批注标题'
+                      className='input input-sm input-bordered min-w-0 flex-1'
+                      value={titleDraft}
+                      onChange={(event) => setTitleDraft(event.target.value)}
+                    />
+                    <button
+                      className='btn btn-sm btn-contrast'
+                      aria-label='保存标题'
+                      onClick={renameActiveThread}
+                    >
+                      保存
+                    </button>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+          </aside>
         ) : null}
       </div>
     </main>

@@ -160,7 +160,8 @@ describe('foundation spike page', () => {
     fireEvent.change(screen.getByLabelText('问题'), { target: { value: '旧标题问题' } });
     fireEvent.click(screen.getByRole('button', { name: '提问' }));
 
-    fireEvent.click(screen.getByRole('button', { name: '重命名批注' }));
+    fireEvent.click(screen.getByRole('button', { name: '打开批注管理' }));
+    fireEvent.click(screen.getByRole('button', { name: '重命名批注：旧标题问题' }));
     fireEvent.change(screen.getByLabelText('批注标题'), { target: { value: '新批注标题' } });
     fireEvent.click(screen.getByRole('button', { name: '保存标题' }));
     expect(screen.getAllByText('新批注标题').length).toBeGreaterThanOrEqual(1);
@@ -170,7 +171,7 @@ describe('foundation spike page', () => {
     fireEvent.click(screen.getByRole('button', { name: '保存消息' }));
     expect(screen.getByText('修改后的问题')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '归档批注' }));
+    fireEvent.click(screen.getByRole('button', { name: '归档批注：新批注标题' }));
     expect(screen.getByText('已归档')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '显示已归档' }));
     expect(screen.getByRole('button', { name: /打开源块 02 的批注/ })).not.toBeNull();
