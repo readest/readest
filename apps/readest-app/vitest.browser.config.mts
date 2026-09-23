@@ -23,7 +23,9 @@ export default defineConfig({
     alias: {
       // The @pdfjs alias from tsconfig only resolves within the app's own
       // source files.  foliate-js/pdf.js lives outside that scope, so Vite
-      // needs an explicit alias to find the vendored pdfjs build.
+      // needs an explicit alias to reach pdfjs-dist. It points at the real
+      // package rather than a copy under `public/`: a module the bundler
+      // imports must not be published too, or Tauri embeds it twice (#6368).
       '@pdfjs': resolve(import.meta.dirname, '../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build'),
     },
   },

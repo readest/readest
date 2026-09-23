@@ -14,6 +14,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // pdfjs-dist itself, not a copy under `public/`: a module the bundler
+      // imports must not be published too, or Tauri embeds it twice (#6368).
       '@pdfjs': path.resolve(__dirname, '../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build'),
     },
     conditions: ['development'],
