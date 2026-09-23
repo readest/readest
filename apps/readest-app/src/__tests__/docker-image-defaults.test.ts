@@ -6,6 +6,9 @@ import { describe, expect, test } from 'vitest';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const dockerfile = readFileSync(path.join(repoRoot, 'Dockerfile'), 'utf8');
 const productionStage = dockerfile.slice(dockerfile.indexOf('AS production-stage'));
+const pkg = JSON.parse(
+  readFileSync(path.join(repoRoot, 'apps/readest-app/package.json'), 'utf8'),
+) as { scripts: Record<string, string> };
 
 describe('Docker image runtime defaults', () => {
   /**
@@ -20,5 +23,32 @@ describe('Docker image runtime defaults', () => {
    */
   test('unlocks premium features without an operator-supplied env var', () => {
     expect(productionStage).toMatch(/^ENV SELF_HOSTED=true$/m);
+  });
+});
+
+describe('Docker build stage vendor assets', () => {
+  /**
+   * `setup-vendors` runs in the `dependencies` stage, and `.dockerignore`
+   * keeps its output out of the build context, so every directory it creates
+   * needs an explicit `COPY --from=dependencies`. `vendor/` (the pdf.js and
+   * simplecc modules the bundler imports through the @pdfjs / @simplecc
+   * aliases) was missed when it was split out of `public/vendor`, and
+   * `pnpm build-web` failed with "Can't resolve '@pdfjs/pdf.min.mjs'" (#6368).
+   */
+  test('copies every vendor root that setup-vendors creates', () => {
+    // `prepare-vendor` is the source of truth: "mkdirp ./public/vendor/pdfjs ./vendor/..."
+    const roots = new Set(
+      [...pkg.scripts['prepare-vendor']!.matchAll(/\.\/(\S+)/g)].map((m) =>
+        // keep the first two segments: public/vendor/pdfjs -> public/vendor
+        m[1]!.split('/').slice(0, m[1]!.startsWith('public/') ? 2 : 1).join('/'),
+      ),
+    );
+    expect(roots.size).toBeGreaterThan(1);
+
+    for (const root of roots) {
+      expect(dockerfile).toContain(
+        `COPY --from=dependencies /app/apps/readest-app/${root} /app/apps/readest-app/${root}`,
+      );
+    }
   });
 });
