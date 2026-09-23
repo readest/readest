@@ -65,7 +65,10 @@ src-tauri/gen
 src-tauri/tauri.*.local.json
 
 # vendor
+# `public/vendor` holds only what the reader fetches by URL; `vendor/` holds
+# the copies the bundler imports (see vendor-aliases-outside-public.test.ts).
 /public/vendor
+/vendor
 
 # docs
 docs/superpowers

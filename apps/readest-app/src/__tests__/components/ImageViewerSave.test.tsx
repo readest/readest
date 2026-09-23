@@ -117,4 +117,37 @@ describe('ImageViewer save/share button', () => {
       expect(h.dispatch).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'info' })),
     );
   });
+
+  it('falls back to saving a file when the gallery save fails', async () => {
+    // Some Android builds (HarmonyOS) reject the MediaStore insert.
+    const saveImageToGallery = vi.fn().mockResolvedValue(false);
+    const saveFile = vi.fn().mockResolvedValue(true);
+    h.appService = {
+      isMobileApp: true,
+      isMacOSApp: false,
+      isAndroidApp: true,
+      saveFile,
+      saveImageToGallery,
+    };
+
+    const { getByLabelText } = render(
+      <ImageViewer src={PNG_DATA_URL} onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+
+    fireEvent.click(getByLabelText('Save Image'));
+
+    await waitFor(() => expect(saveFile).toHaveBeenCalledTimes(1));
+    const [filename, content, options] = saveFile.mock.calls[0]!;
+    expect(filename).toBe('image.png');
+    expect(new Uint8Array(content as ArrayBuffer)).toEqual(new Uint8Array([0, 1, 2]));
+    expect(options).toMatchObject({ mimeType: 'image/png' });
+    expect(options.share).toBeFalsy();
+    await waitFor(() =>
+      expect(h.dispatch).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'info' })),
+    );
+    expect(h.dispatch).not.toHaveBeenCalledWith(
+      'toast',
+      expect.objectContaining({ type: 'error' }),
+    );
+  });
 });

@@ -283,12 +283,16 @@ for (const sub of ['schemas', 'android/keystore.properties']) {
   }
 }
 
-// Copy public/vendor to the new worktree (built assets not in git)
-const srcVendor = path.join(srcAppDir, 'public', 'vendor');
-const dstVendor = path.join(dstAppDir, 'public', 'vendor');
-if (fs.existsSync(srcVendor) && !fs.existsSync(dstVendor)) {
-  console.error('\n--- Copying public/vendor ---');
-  fs.cpSync(srcVendor, dstVendor, { recursive: true });
+// Copy the vendored assets to the new worktree (built, not in git):
+// `public/vendor` is fetched by URL at runtime, `vendor` is imported by the
+// bundler through the @pdfjs / @simplecc aliases.
+for (const sub of [['public', 'vendor'], ['vendor']]) {
+  const srcVendor = path.join(srcAppDir, ...sub);
+  const dstVendor = path.join(dstAppDir, ...sub);
+  if (fs.existsSync(srcVendor) && !fs.existsSync(dstVendor)) {
+    console.error(`\n--- Copying ${sub.join('/')} ---`);
+    fs.cpSync(srcVendor, dstVendor, { recursive: true });
+  }
 }
 
 // Print path to stdout -- allows: cd $(pnpm worktree:new <arg>)

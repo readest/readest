@@ -175,9 +175,15 @@ flate2 = "1"
 # never re-exec itself so it aborted in dyld (#5053), and its crash-handler
 # `pthread_create` interposer panics on 32-bit ARM, aborting every armeabi-v7a
 # device (#5070). See `minidump_feature_is_enabled_on_no_target`.
+#
+# `debug-images` attaches the loaded libraries and their build ids to each
+# event. The Android library ships stripped, so its frames carry addresses
+# only, and this is what lets Sentry resolve them against the debug files CI
+# uploads.
 sentry = { version = "0.42", default-features = false, features = [
   "backtrace",
   "contexts",
+  "debug-images",
   "panic",
   "reqwest",
   "rustls",
@@ -216,8 +222,9 @@ tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
 
 [target.'cfg(windows)'.dependencies]
-# Resolve the user's default browser from the registry for the cold-browser
-# OAuth-redirect fallback (see src/spawn_fresh_browser.rs).
+# Registry reads for the default-browser lookup in the cold-browser
+# OAuth-redirect fallback (see src/spawn_fresh_browser.rs) and the OS build
+# check behind the Windows 10 shadow workaround (see src/lib.rs).
 winreg = "0.52"
 
 [target.'cfg(target_os = "android")'.dependencies]
