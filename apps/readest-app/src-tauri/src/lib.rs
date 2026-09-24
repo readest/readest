@@ -270,7 +270,7 @@ fn get_executable_dir() -> String {
 /// Windows and Linux used to open at 800x600, which is cramped for the library
 /// grid and a two-page spread. It clears a 1080p work area whole.
 #[cfg(desktop)]
-const DEFAULT_WINDOW_SIZE: (f64, f64) = (1280.0, 800.0);
+const DEFAULT_WINDOW_SIZE: (f64, f64) = (1440.0, 900.0);
 
 // The first-launch window size, shrunk to fit `work_area` — the monitor minus
 // its taskbar/panels, in logical pixels — when the default is too big for it.

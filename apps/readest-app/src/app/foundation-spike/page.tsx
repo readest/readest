@@ -74,7 +74,7 @@ export function restoredWindowSize(
         width: Math.round(workArea.width / 2),
         height: Math.round(workArea.height / 2),
       }
-    : { width: 1100, height: 720 };
+    : { width: 1440, height: 900 };
   const requestedSize = savedSize ?? fallbackSize;
   return workArea
     ? {
@@ -119,9 +119,13 @@ export default function FoundationSpike() {
   const [highlightedCitation, setHighlightedCitation] = useState<SourceDocCitation | null>(null);
   const [selectionError, setSelectionError] = useState('');
   const [selectionPreview, setSelectionPreview] = useState('');
-  const [selectionAttachments, setSelectionAttachments] = useState<string[]>([]);
+  const [, setSelectionAttachments] = useState<string[]>([]);
+  const [questionAttachments, setQuestionAttachments] = useState<string[]>([]);
   const [selectedAnchors, setSelectedAnchors] = useState<SourceDocAnchor[]>([]);
   const [attachSelection, setAttachSelection] = useState(false);
+  const [annotationPickerBlockId, setAnnotationPickerBlockId] = useState<string | null>(null);
+  const [expandedAttachmentIds, setExpandedAttachmentIds] = useState<string[]>([]);
+  const [windowFullscreen, setWindowFullscreen] = useState(false);
   const [navigationStatus, setNavigationStatus] = useState('');
   const [importStatus, setImportStatus] = useState('');
   const [search, setSearch] = useState('');
@@ -239,10 +243,9 @@ export default function FoundationSpike() {
   const threadsByBlock = new Map<string, SourceDocThread[]>();
   for (const item of threads) {
     if (item.unanchored) continue;
-    threadsByBlock.set(item.anchor.blockId, [
-      ...(threadsByBlock.get(item.anchor.blockId) ?? []),
-      item,
-    ]);
+    for (const blockId of item.anchor.selectedBlockIds) {
+      threadsByBlock.set(blockId, [...(threadsByBlock.get(blockId) ?? []), item]);
+    }
   }
 
   const captureSelection = (event: ReactMouseEvent<HTMLElement>) => {
@@ -290,6 +293,12 @@ export default function FoundationSpike() {
           : (endText.textContent?.length ?? 0),
       );
       const nextText = selection.toString().trim();
+      if (attachSelection) {
+        if (nextText) setQuestionAttachments([nextText]);
+        setAttachSelection(false);
+        setSelectionError('');
+        return;
+      }
       setAnchor(nextAnchor);
       setSelectedAnchors((current) => (event.ctrlKey ? [...current, nextAnchor] : [nextAnchor]));
       setSelectionAttachments((current) =>
@@ -312,11 +321,10 @@ export default function FoundationSpike() {
       anchor,
       question.trim(),
       activeThreadId ?? undefined,
-      attachSelection && selectionAttachments.length > 0
-        ? selectionAttachments.join('\n')
-        : undefined,
+      questionAttachments.length > 0 ? questionAttachments.join('\n') : undefined,
     );
     setQuestion('');
+    setQuestionAttachments([]);
     refreshThreads(updated.id);
     requestAnimationFrame(() => {
       const conversation = conversationScrollRef.current;
@@ -330,6 +338,7 @@ export default function FoundationSpike() {
     setSelectedAnchors(thread.unanchored ? [] : [thread.anchor]);
     setSelectionPreview(thread.unanchored ? '' : thread.anchor.exactQuote);
     setSelectionAttachments(thread.unanchored ? [] : [thread.anchor.exactQuote]);
+    setAnnotationPickerBlockId(null);
     setSidebarOpen(true);
     setAnnotationManagerOpen(false);
     if (!thread.unanchored) {
@@ -392,6 +401,7 @@ export default function FoundationSpike() {
     setSelectedAnchors([]);
     setActiveThreadId(null);
     setSelectionError('');
+    setAnnotationPickerBlockId(null);
     window.getSelection()?.removeAllRanges();
   };
 
@@ -437,13 +447,15 @@ export default function FoundationSpike() {
   };
 
   const startWindowDragging = async (event: ReactMouseEvent<HTMLElement>) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || windowFullscreen) return;
     const target = event.target as HTMLElement;
     if (target.closest('button, input, label, select, a')) return;
     try {
       if (isTauriAppPlatform()) {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        await getCurrentWindow().startDragging();
+        const currentWindow = getCurrentWindow();
+        if (await currentWindow.isFullscreen()) return;
+        await currentWindow.startDragging();
       }
     } catch {
       // Window dragging is only available in the desktop shell.
@@ -467,6 +479,7 @@ export default function FoundationSpike() {
         );
         const currentWindow = getCurrentWindow();
         if (await currentWindow.isFullscreen()) {
+          setWindowFullscreen(false);
           await currentWindow.setFullscreen(false);
           await currentWindow.unmaximize();
           const monitor = await currentMonitor();
@@ -488,11 +501,17 @@ export default function FoundationSpike() {
             };
           }
           await currentWindow.setFullscreen(true);
+          setWindowFullscreen(true);
         }
         return;
       }
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await document.documentElement.requestFullscreen();
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setWindowFullscreen(false);
+      } else {
+        await document.documentElement.requestFullscreen();
+        setWindowFullscreen(true);
+      }
     } catch {
       // Fullscreen is optional in restricted webviews.
     }
@@ -735,9 +754,30 @@ export default function FoundationSpike() {
             >
               <span>{message.content}</span>
               {message.attachment ? (
-                <span className='mt-2 block rounded-lg bg-black/5 px-2 py-1 text-xs opacity-80'>
-                  原文附件：{message.attachment}
-                </span>
+                <div className='mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 text-xs'>
+                  <button
+                    type='button'
+                    className='flex w-full items-center justify-between px-2 py-1 text-left font-semibold text-amber-700'
+                    aria-expanded={expandedAttachmentIds.includes(message.id)}
+                    onClick={() =>
+                      setExpandedAttachmentIds((current) =>
+                        current.includes(message.id)
+                          ? current.filter((id) => id !== message.id)
+                          : [...current, message.id],
+                      )
+                    }
+                  >
+                    <span>原文附件</span>
+                    <span aria-hidden='true'>
+                      {expandedAttachmentIds.includes(message.id) ? '⌃' : '⌄'}
+                    </span>
+                  </button>
+                  {expandedAttachmentIds.includes(message.id) ? (
+                    <div className='max-h-24 overflow-y-auto border-t px-2 py-2 whitespace-pre-wrap'>
+                      {message.attachment}
+                    </div>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           )}
@@ -842,6 +882,10 @@ export default function FoundationSpike() {
         .foundation-reader {
           scrollbar-color: ${dark ? '#4b5563' : '#c7c8c0'} transparent;
         }
+        .foundation-gutter {
+          cursor: cell;
+          background: ${dark ? 'rgba(17, 24, 39, 0.6)' : 'rgba(229, 231, 235, 0.72)'};
+        }
         .foundation-sidebar {
           width: ${readingSettings.sidebarWidth}px;
         }
@@ -869,7 +913,7 @@ export default function FoundationSpike() {
       <header
         className='relative z-50 flex h-10 shrink-0 items-center border-b px-3'
         style={{ backgroundColor: panel, borderColor: dark ? '#374151' : '#e5e7eb' }}
-        data-tauri-drag-region
+        data-tauri-drag-region={!windowFullscreen}
         onMouseDown={(event) => void startWindowDragging(event)}
       >
         <div className='h-full flex-1' aria-label='窗口拖动区域' />
@@ -1089,7 +1133,14 @@ export default function FoundationSpike() {
               {importStatus}
             </p>
           ) : null}
-          <div className='px-5 pb-24 pt-14 sm:px-10'>
+          <div
+            className='foundation-gutter px-5 pb-24 pt-14 sm:px-10'
+            data-testid='reader-gutter'
+            title='点击正文外灰色区域取消选中'
+            onClick={(event) => {
+              if (event.target === event.currentTarget) clearSelection();
+            }}
+          >
             <article
               className='mx-auto min-w-0 rounded-xl px-6 py-12 shadow-sm sm:px-14'
               style={{
@@ -1102,11 +1153,6 @@ export default function FoundationSpike() {
               }}
               aria-label='SOURCE_DOC 阅读区'
               onMouseUp={captureSelection}
-              onContextMenu={(event) => {
-                if ((event.target as HTMLElement).closest('[data-source-text]')) return;
-                event.preventDefault();
-                clearSelection();
-              }}
             >
               {documentModel.blocks.map((item) => {
                 const highlighted = highlightedCitation?.blockId === item.id;
@@ -1123,14 +1169,22 @@ export default function FoundationSpike() {
                     className={`relative scroll-m-24 pl-1 ${item.type === 'heading' ? 'mb-5 mt-9 first:mt-0' : 'mb-[1em]'}`}
                     style={{ color: highlighted ? '#111827' : foreground }}
                   >
-                    {previewThread && readingSettings.annotationDisplay !== 'underline' ? (
+                    {previewThread &&
+                    (readingSettings.annotationDisplay !== 'underline' ||
+                      blockThreads.length > 1) ? (
                       <button
                         className='eink-bordered absolute right-full top-[0.15em] mr-3 flex h-7 min-w-7 items-center justify-center rounded-full border border-blue-500/40 bg-blue-50 px-1.5 text-xs font-bold text-blue-700 shadow-sm hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-500'
                         aria-label={`打开${blockLabel(item.id)} 的批注，共 ${blockThreads.length} 条`}
                         title={`${previewThread.title}：${previewThread.messages.at(-1)?.content ?? ''}`}
                         onClick={(event) => {
                           event.stopPropagation();
-                          selectThread(previewThread);
+                          if (blockThreads.length > 1) {
+                            setAnnotationPickerBlockId(item.id);
+                            setActiveThreadId(null);
+                            setSidebarOpen(true);
+                          } else {
+                            selectThread(previewThread);
+                          }
                         }}
                       >
                         {blockThreads.length > 1 ? blockThreads.length : '●'}
@@ -1260,7 +1314,42 @@ export default function FoundationSpike() {
                     {selectionError}
                   </p>
                 ) : null}
-                {activeThread ? (
+                {annotationPickerBlockId ? (
+                  <div className='space-y-3'>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <p className='text-sm font-semibold'>该段落的批注</p>
+                        <p className='text-xs' style={{ color: muted }}>
+                          请选择要打开的对话
+                        </p>
+                      </div>
+                      <button
+                        type='button'
+                        className='h-7 w-7 rounded-lg hover:bg-black/5'
+                        aria-label='关闭批注列表'
+                        onClick={() => setAnnotationPickerBlockId(null)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className='space-y-2'>
+                      {(threadsByBlock.get(annotationPickerBlockId) ?? []).map((thread) => (
+                        <button
+                          type='button'
+                          key={thread.id}
+                          className='w-full rounded-xl border px-3 py-3 text-left hover:bg-blue-500/10'
+                          onClick={() => selectThread(thread)}
+                        >
+                          <strong className='block truncate text-sm'>{thread.title}</strong>
+                          <span className='mt-1 block text-xs' style={{ color: muted }}>
+                            {thread.messages.length} 条消息 ·{' '}
+                            {thread.messages.at(-1)?.content ?? ''}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : activeThread ? (
                   threadConversation(activeThread)
                 ) : (
                   <div className='flex h-full min-h-48 flex-col items-center justify-center px-6 text-center'>
@@ -1298,7 +1387,18 @@ export default function FoundationSpike() {
               >
                 {selectionPreview ? (
                   <div className='mb-2 rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-xs'>
-                    <div className='mb-1 font-semibold text-blue-600'>当前选中文本</div>
+                    <div className='mb-1 flex items-center justify-between font-semibold text-blue-600'>
+                      <span>当前选中文本</span>
+                      <button
+                        type='button'
+                        className='h-5 w-5 rounded hover:bg-blue-500/10'
+                        aria-label='取消当前选中'
+                        title='取消当前选中'
+                        onClick={clearSelection}
+                      >
+                        ×
+                      </button>
+                    </div>
                     <div className='max-h-16 overflow-y-auto whitespace-pre-wrap'>
                       {selectionPreview}
                     </div>
@@ -1311,8 +1411,16 @@ export default function FoundationSpike() {
                   aria-label='将选中文本作为问题附件'
                   onClick={() => setAttachSelection((value) => !value)}
                 >
-                  ⎘ {attachSelection ? '已附加选中文本' : '附加选中文本'}
+                  ⎘ {attachSelection ? '请选择要附加的文本…' : '附加选中文本'}
                 </button>
+                {questionAttachments.length > 0 ? (
+                  <div className='mb-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs'>
+                    <div className='mb-1 font-semibold text-amber-700'>问题附件预览</div>
+                    <div className='max-h-16 overflow-y-auto whitespace-pre-wrap'>
+                      {questionAttachments.join('\n')}
+                    </div>
+                  </div>
+                ) : null}
                 <div
                   className='grid grid-cols-[1fr_auto] items-end gap-2 rounded-2xl border p-2 pl-3'
                   style={{ backgroundColor: mutedPanel, borderColor: dark ? '#4b5563' : '#d1d5db' }}

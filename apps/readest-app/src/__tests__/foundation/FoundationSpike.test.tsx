@@ -50,8 +50,8 @@ describe('foundation spike page', () => {
       },
     );
     expect(restoredWindowSize(null, { width: 1920, height: 1040 })).toEqual({
-      width: 960,
-      height: 520,
+      width: 1440,
+      height: 900,
     });
     expect(restoredWindowSize({ width: 2400, height: 1400 }, { width: 1600, height: 900 })).toEqual(
       {
