@@ -1,51 +1,8 @@
 use std::sync::OnceLock;
 
-/// Known e-ink device manufacturers and brands (case-insensitive matching)
-const EINK_MANUFACTURERS: &[&str] = &[
-    "onyx",       // BOOX devices
-    "boox",       // BOOX devices (alternate)
-    "amazon",     // Kindle devices
-    "kobo",       // Kobo e-readers
-    "remarkable", // reMarkable tablets
-    "pocketbook", // PocketBook e-readers
-    "boyue",      // Boyue/Likebook devices
-    "likebook",   // Likebook devices
-    "dasung",     // Dasung e-ink monitors
-    "bigme",      // Bigme e-readers
-    "hisense",    // Hisense e-ink phones (A5, A7, etc.)
-    "hanvon",     // Hanvon e-readers
-    "tolino",     // Tolino e-readers
-    "bookeen",    // Bookeen e-readers
-    "supernote",  // Supernote devices
-    "mobiscribe", // Mobiscribe e-readers
-    "xiaomi",     // Xiaomi InkPalm (needs model check)
-    "meebook",    // Meebook e-readers
-    "ireader",    // iReader e-readers
-];
+use crate::eink_identity::is_eink_identity;
 
-/// Known e-ink device models (for manufacturers that also make non-e-ink devices)
-const EINK_MODELS: &[&str] = &[
-    "kindle",
-    "a5pro",
-    "a7cc", // Hisense e-ink models
-    "a7e",
-    "a9",
-    "inkpalm", // Xiaomi InkPalm
-    "eink",
-    "e-ink",
-    "paper",
-    "note air",
-    "note2",
-    "note3",
-    "note5",
-    "nova",
-    "poke",
-    "leaf",
-    "page",
-    "tab ultra",
-    "max lumi",
-];
-
+/// Read a raw Android system property (`ro.*`) as a UTF-8 string, if present.
 fn get_system_property(prop: &str) -> Option<String> {
     use std::ffi::CString;
     let name = CString::new(prop).ok()?;
@@ -72,44 +29,16 @@ pub fn is_eink_device() -> bool {
     *IS_EINK.get_or_init(detect_eink_device)
 }
 
+/// Probe the device identity properties and e-ink specific properties once.
 fn detect_eink_device() -> bool {
-    // Get device manufacturer and model
-    let manufacturer = get_system_property("ro.product.manufacturer")
-        .or_else(|| get_system_property("ro.product.brand"))
-        .unwrap_or_default()
-        .to_lowercase();
+    let lower = |prop: &str| get_system_property(prop).unwrap_or_default().to_lowercase();
+    let manufacturer = lower("ro.product.manufacturer");
+    let brand = lower("ro.product.brand");
+    let model = lower("ro.product.model");
+    let device = lower("ro.product.device");
 
-    let model = get_system_property("ro.product.model")
-        .or_else(|| get_system_property("ro.product.device"))
-        .unwrap_or_default()
-        .to_lowercase();
-
-    let device = get_system_property("ro.product.device")
-        .unwrap_or_default()
-        .to_lowercase();
-
-    // Check if manufacturer matches known e-ink manufacturers
-    for eink_manufacturer in EINK_MANUFACTURERS {
-        if manufacturer.contains(eink_manufacturer) {
-            // Special case for manufacturers that make both e-ink and non-e-ink devices
-            if *eink_manufacturer == "hisense" || *eink_manufacturer == "xiaomi" {
-                // Need to also check the model for these manufacturers
-                for eink_model in EINK_MODELS {
-                    if model.contains(eink_model) || device.contains(eink_model) {
-                        return true;
-                    }
-                }
-            } else {
-                return true;
-            }
-        }
-    }
-
-    // Check if model matches known e-ink models
-    for eink_model in EINK_MODELS {
-        if model.contains(eink_model) || device.contains(eink_model) {
-            return true;
-        }
+    if is_eink_identity(&manufacturer, &brand, &model, &device) {
+        return true;
     }
 
     // Check for e-ink specific system properties
