@@ -177,6 +177,14 @@ pub(crate) async fn get_safe_area_insets<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn set_screen_wake_lock<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetScreenWakeLockRequest,
+) -> Result<()> {
+    app.native_bridge().set_screen_wake_lock(payload)
+}
+
+#[command]
 pub(crate) async fn get_screen_brightness<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<GetScreenBrightnessResponse> {

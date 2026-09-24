@@ -114,6 +114,38 @@ async function loadServiceWithOS(os: 'macos' | 'windows' | 'linux' | 'ios' | 'an
   return new mod.NativeAppService();
 }
 
+describe('NativeAppService canvas filter capability', () => {
+  test('the Chromium platforms support canvas filters', async () => {
+    for (const os of ['linux', 'windows', 'android'] as const) {
+      expect((await loadServiceWithOS(os)).supportsCanvasContext2DFilter).toBe(true);
+    }
+  });
+
+  test('the Apple platforms do not, because WKWebView ignores the filter', async () => {
+    for (const os of ['macos', 'ios'] as const) {
+      expect((await loadServiceWithOS(os)).supportsCanvasContext2DFilter).toBe(false);
+    }
+  });
+});
+
+describe('NativeAppService view transition capabilities', () => {
+  test('follow the engine probe on every platform, Linux included', async () => {
+    const startViewTransition = vi.fn();
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: startViewTransition,
+    });
+    try {
+      for (const os of ['linux', 'windows', 'macos'] as const) {
+        expect((await loadServiceWithOS(os)).supportsViewTransitionsAPI).toBe(true);
+      }
+    } finally {
+      // @ts-expect-error - removing the property the probe looks for
+      delete document.startViewTransition;
+    }
+  });
+});
+
 describe('NativeAppService cover optimization', () => {
   test('keeps original covers and only queues a visible cover on demand', async () => {
     let finishOptimization = () => {};

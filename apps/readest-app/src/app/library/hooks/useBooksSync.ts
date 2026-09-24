@@ -119,7 +119,7 @@ export const useBooksSync = () => {
           // many books it uploaded: peers read membership, tombstones and the
           // uploaded-file record from that one file. Reporting it as "N books
           // synced" is what let #5900 go unnoticed for so long.
-          fileSucceeded = result !== null && !result.indexPushFailed;
+          fileSucceeded = result !== null && !result.indexPushFailed && !result.failures;
           fileSynced = result?.booksSynced ?? 0;
         }
 

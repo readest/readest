@@ -3,20 +3,26 @@
 import clsx from 'clsx';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { IoArrowBack } from 'react-icons/io5';
 
 import type { Book } from '@/types/book';
 import type { AudiobookController } from '@/services/audiobook/AudiobookController';
 import type { ABSEpisode } from '@/types/audiobookshelf';
 import { loadAbsEpisodes, openAudiobookSession } from '@/services/audiobook/openAudiobook';
+import {
+  OpdsAudioIncompleteError,
+  OpdsAudioWebAuthError,
+  openOpdsAudiobookSession,
+} from '@/services/opds/openOpdsAudiobook';
+import { openBookOrbitAudiobookSession } from '@/services/bookorbit/openBookOrbitAudiobook';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { useEnv } from '@/context/EnvContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibrary } from '@/hooks/useLibrary';
-import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useOpenBookLink } from '@/hooks/useOpenBookLink';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useThemeStore } from '@/store/themeStore';
 import { isAudiobook } from '@/utils/audiobook';
@@ -24,6 +30,7 @@ import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import PlayerView from './components/PlayerView';
+import PlayerHeader from './components/PlayerHeader';
 import EpisodesView from './components/EpisodesView';
 
 type AudiobookSession = { bookKey: string; controller: AudiobookController };
@@ -36,9 +43,12 @@ const PlayerRoute = () => {
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
   const { libraryLoaded } = useLibrary();
+  // Picking another book from the Android Auto browse tree (or a widget tap)
+  // while the player is open arrives as a readest://book deep link. Without
+  // this the selection lands on a route with nobody listening for it.
+  useOpenBookLink();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const _ = useTranslation();
-  const iconSize24 = useResponsiveSize(24);
   useTheme({ systemUIVisible: false });
 
   const id = searchParams?.get('id') ?? '';
@@ -151,6 +161,50 @@ const PlayerRoute = () => {
         hash: resolvedBook.hash,
         promise: (async (): Promise<OpenResult> => {
           const activeAppService = appService ?? (await envConfig.getAppService());
+          // An OPDS audiobook has no ABS server behind it; its tracks come
+          // straight from the catalog's acquisition links (#6224).
+          // BookOrbit's own audiobook API carries chapters, byte ranges and a
+          // shared listening position; OPDS can express none of that (#6224).
+          if (resolvedBook.format === 'BOOKORBIT') {
+            return {
+              result: await openBookOrbitAudiobookSession({
+                appService: activeAppService,
+                book: resolvedBook,
+              }),
+            };
+          }
+          if (resolvedBook.format === 'OPDSAUDIO') {
+            try {
+              return {
+                result: await openOpdsAudiobookSession({
+                  appService: activeAppService,
+                  book: resolvedBook,
+                }),
+              };
+            } catch (error) {
+              // A password-protected catalog has no playable route on the web
+              // build; say so instead of bouncing silently to the library.
+              if (error instanceof OpdsAudioWebAuthError) {
+                eventDispatcher.dispatch('toast', {
+                  type: 'error',
+                  message: _('Playing this catalog requires the desktop or mobile app'),
+                  timeout: 5000,
+                });
+                return { result: null };
+              }
+              // Some track's length could not be read, so the timeline would be
+              // short by a chapter and every position in it wrong.
+              if (error instanceof OpdsAudioIncompleteError) {
+                eventDispatcher.dispatch('toast', {
+                  type: 'error',
+                  message: _('Could not read the length of every track in this audiobook'),
+                  timeout: 5000,
+                });
+                return { result: null };
+              }
+              throw error;
+            }
+          }
           const result = await openAudiobookSession({
             appService: activeAppService,
             book: resolvedBook,
@@ -341,20 +395,7 @@ const PlayerRoute = () => {
         />
       ) : libraryLoaded && book && isAudiobook(book) && !session && episodes ? (
         <div className='bg-base-100 flex h-full w-full flex-col overflow-hidden'>
-          <div className='relative flex h-12 w-full items-center px-2'>
-            <button
-              type='button'
-              aria-label={_('Go Back')}
-              onClick={handleGoBack}
-              className='btn btn-ghost btn-circle z-10 flex h-9 min-h-9 w-9'
-            >
-              <IoArrowBack size={iconSize24 * 0.85} className='rtl:rotate-180' />
-            </button>
-            <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-16 text-center'>
-              <span className='line-clamp-1 text-sm font-semibold'>{book.title}</span>
-              <span className='text-base-content/70 line-clamp-1 text-xs'>{_('Episodes')}</span>
-            </div>
-          </div>
+          <PlayerHeader title={book.title} subtitle={_('Episodes')} onGoBack={handleGoBack} />
           <div className='flex w-full flex-1 flex-col items-center gap-4 overflow-y-auto px-4 pb-6 pt-2'>
             <EpisodesView
               episodes={episodes.episodes}

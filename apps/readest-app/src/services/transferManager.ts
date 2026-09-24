@@ -6,7 +6,7 @@ import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { TranslationFunc } from '@/hooks/useTranslation';
 import { createProgressThrottle, ProgressHandler, ProgressPayload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
-import { isAudiobook } from '@/utils/audiobook';
+import { isAbsOfflineCapable, isAudiobook } from '@/utils/audiobook';
 import { getTransferMessages } from './transferMessages';
 
 const TRANSFER_QUEUE_KEY = 'readest_transfer_queue';
@@ -185,6 +185,31 @@ class TransferManager {
 
     const store = useTransferStore.getState();
 
+    const existing = store.getTransferByBookHash(book.hash, 'download');
+    if (existing) {
+      return existing.id;
+    }
+
+    const transferId = store.addTransfer(book.hash, book.title, 'download', priority);
+    this.persistQueue();
+    this.processQueue();
+    return transferId;
+  }
+
+  /**
+   * Queue an offline download of an Audiobookshelf book's media (#6256). A
+   * 'book' download row, so the shelf's cover overlay and the Transfer Queue
+   * track it like any book download; executeBookTransfer routes it to the
+   * ABS downloader instead of cloud storage.
+   */
+  queueAbsOfflineDownload(book: Book, priority: number = 10): string | null {
+    if (!this.isReady()) {
+      console.warn('TransferManager not initialized');
+      return null;
+    }
+    if (!isAbsOfflineCapable(book)) return null;
+
+    const store = useTransferStore.getState();
     const existing = store.getTransferByBookHash(book.hash, 'download');
     if (existing) {
       return existing.id;
@@ -452,6 +477,8 @@ class TransferManager {
       } else {
         await this.executeBookTransfer(transfer, progressHandler, abortController);
       }
+      // A transfer that cannot stop mid-flight must not report success once cancelled.
+      if (abortController.signal.aborted) return;
 
       // Land the final progress value that the throttle may still be holding.
       progressThrottle.flush();
@@ -563,7 +590,7 @@ class TransferManager {
   private async executeBookTransfer(
     transfer: TransferItem,
     progressHandler: (p: ProgressPayload) => void,
-    _abortController: AbortController,
+    abortController: AbortController,
   ): Promise<void> {
     const _ = this._!;
     const library = this.getLibrary!();
@@ -571,6 +598,15 @@ class TransferManager {
 
     if (!book) {
       throw new Error(_('Book not found in library'));
+    }
+
+    if (book.format === 'ABS' && transfer.type === 'download') {
+      const { downloadAbsForOffline } = await import('@/services/audiobookshelf/offline');
+      await downloadAbsForOffline(this.appService!, book, progressHandler, abortController.signal);
+      if (abortController.signal.aborted) return;
+      book.absDownloadedAt = Date.now();
+      await this.updateBook!(book);
+      return;
     }
 
     if (transfer.type === 'upload') {

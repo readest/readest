@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useReaderProgressStore } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { uniqueId } from '@/utils/misc';
 import { useParallelViewStore } from '@/store/parallelViewStore';
@@ -83,27 +84,31 @@ const useBooksManager = () => {
     });
   };
 
-  // Android Auto "Resume last book" cold-start: once the freshly-opened book's
-  // view has inited, start read-aloud. Mirrors goToCfiWhenReady's readiness
-  // wait. Caveat: unblockAudio (ttsMediaBridge) is gesture-gated on WebAudio, so
+  // Car autoplay needs both the view and its initial reading position.
+  // Relocation commits can arrive after view initialization; useTTSControl
+  // cannot start without that position. Caveat: unblockAudio is gesture-gated on WebAudio, so
   // an Edge-engine autoplay may be a no-op if the launch is not treated as a
   // user gesture on Android WebView; native TTS is unaffected.
   const startTTSWhenReady = (bookKey: string) => {
     const ready = (state: ReturnType<typeof useReaderStore.getState>) => {
       const vs = state.viewStates[bookKey];
-      return { done: !!vs?.error || (!!vs?.inited && !!vs?.view), ok: !!vs?.inited && !!vs?.view };
+      const ok = !!vs?.inited && !!vs?.view && !!state.getProgress(bookKey);
+      return { done: !!vs?.error || ok, ok };
     };
     const initial = ready(useReaderStore.getState());
     if (initial.done) {
       if (initial.ok) eventDispatcher.dispatch('tts-speak', { bookKey });
       return;
     }
-    const unsub = useReaderStore.subscribe((state) => {
-      const { done, ok } = ready(state);
+    const onReady = () => {
+      const { done, ok } = ready(useReaderStore.getState());
       if (!done) return;
-      unsub();
+      unsubscribeView();
+      unsubscribeProgress();
       if (ok) eventDispatcher.dispatch('tts-speak', { bookKey });
-    });
+    };
+    const unsubscribeView = useReaderStore.subscribe(onReady);
+    const unsubscribeProgress = useReaderProgressStore.subscribe(onReady);
   };
 
   // Open a book in-place when a widget/deep link targets a book while a reader

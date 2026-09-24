@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Підтримує синхронізацію пристроїв KOReader і Readest."
 
+msgid "Downloading %1 of %2…"
+msgstr "Завантаження %1 з %2…"
+
+msgid "%1 MB downloaded"
+msgstr "Завантажено %1 МБ"
+
+msgid "No downloads in progress."
+msgstr "Немає поточних завантажень."
+
+msgid "Run in background"
+msgstr "Виконувати у фоні"
+
+msgid "Cancel download"
+msgstr "Скасувати завантаження"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Завантаження скасовано. Завантажено %1 з %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Завантажено %1 з %2 (пропущено %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Завантажено %1 з %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Спочатку встановіть домашню теку у файловому менеджері, щоб увімкнути завантаження."
+
+msgid "No books to download."
+msgstr "Немає книг для завантаження."
+
 msgid "Library view"
 msgstr "Перегляд бібліотеки"
 
@@ -68,8 +98,14 @@ msgstr "За зростанням"
 msgid "Actions"
 msgstr "Дії"
 
+msgid "Sync now"
+msgstr "Синхронізувати зараз"
+
 msgid "Download all books"
 msgstr "Завантажити всі книги"
+
+msgid "Download progress"
+msgstr "Перебіг завантаження"
 
 msgid "Rescan library"
 msgstr "Пересканувати бібліотеку"
@@ -104,6 +140,12 @@ msgstr "Пошук у бібліотеці"
 msgid "Search title or author"
 msgstr "Пошук за назвою або автором"
 
+msgid "Books synced"
+msgstr "Книги синхронізовано"
+
+msgid "Books sync failed"
+msgstr "Не вдалося синхронізувати книги"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Для повного відображення бібліотеки потрібен плагін Cover Browser. Використовується звичайний список."
 
@@ -116,18 +158,6 @@ msgstr "Завантажити цю книгу з Readest?"
 msgid "Download"
 msgstr "Завантажити"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Спочатку встановіть домашню теку у файловому менеджері, щоб увімкнути завантаження."
-
-msgid "Downloading…"
-msgstr "Завантаження…"
-
-msgid "Cloud copy unavailable."
-msgstr "Копія в хмарі недоступна."
-
-msgid "Download failed."
-msgstr "Не вдалося завантажити."
-
 msgid "No cover available on Readest."
 msgstr "Обкладинка недоступна в Readest."
 
@@ -137,20 +167,8 @@ msgstr "Не вдалося завантажити обкладинку."
 msgid "Could not delete the file."
 msgstr "Не вдалося видалити файл."
 
-msgid "No books to download."
-msgstr "Немає книг для завантаження."
-
-msgid "Downloading %1 of %2…"
-msgstr "Завантаження %1 з %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Завантаження скасовано. Завантажено %1 з %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Завантажено %1 з %2 (пропущено %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Завантажено %1 з %2."
+msgid "Download group"
+msgstr "Завантажити групу"
 
 msgid "Removing from cloud…"
 msgstr "Видалення з хмари…"
@@ -287,23 +305,14 @@ msgstr "Надіслати статистику зараз"
 msgid "Pull stats now"
 msgstr "Отримати статистику зараз"
 
-msgid "Push books now"
-msgstr "Надіслати книги зараз"
-
-msgid "Pull books now"
-msgstr "Отримати книги зараз"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Отримати через Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Завантажити поточну книгу до Readest"
-
 msgid "Push reading progress now"
 msgstr "Надіслати прогрес читання зараз"
 
 msgid "Pull reading progress now"
 msgstr "Отримати прогрес читання зараз"
+
+msgid "Upload current book to Readest"
+msgstr "Завантажити поточну книгу до Readest"
 
 msgid "Push annotations now"
 msgstr "Надіслати нотатки зараз"
@@ -316,6 +325,9 @@ msgstr "Повна синхронізація всіх нотаток"
 
 msgid "Sync info"
 msgstr "Відомості про синхронізацію"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Отримати через Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Перевірити оновлення (v%1)"
@@ -349,12 +361,6 @@ msgstr "Відомості про синхронізацію"
 
 msgid "Library not initialized"
 msgstr "Бібліотека не ініціалізована"
-
-msgid "Books synced"
-msgstr "Книги синхронізовано"
-
-msgid "Books sync failed"
-msgstr "Не вдалося синхронізувати книги"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Спочатку вкажіть папку завантажень Readest або домашню папку KOReader."

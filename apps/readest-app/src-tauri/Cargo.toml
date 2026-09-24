@@ -16,10 +16,12 @@ crate-type = ["staticlib", "cdylib", "lib"]
 
 [features]
 default = ["wry"]
-# WebKitGTK / WebView2 / WKWebView runtime. The Linux CEF build turns it off
-# (`--no-default-features --features cef`, see scripts/tauri-cef.mjs).
+# WebView2 / WKWebView runtime, and on Linux the WebKitGTK one, which is left
+# only for the webdriver test harness (scripts/test-tauri.sh) — every Linux
+# build that ships runs on CEF and turns this off
+# (`--no-default-features --features cef`, see scripts/tauri.mjs).
 wry = ["tauri/wry"]
-# Chromium Embedded Framework runtime, Linux only (`pnpm tauri:cef`). The
+# Chromium Embedded Framework runtime, the Linux runtime (`pnpm tauri`). The
 # tauri CLI keys CEF bundling off this app feature, and it only becomes the
 # real runtime when `tauri` resolves to upstream's feat/cef through
 # .cargo/cef.toml; the readest fork carries a no-op stub of the same name so
@@ -44,7 +46,7 @@ minisign-verify = "0.2"
 log = "0.4"
 thiserror = "2"
 walkdir = "2"
-tokio = { version = "1", features = ["fs"] }
+tokio = { version = "1", features = ["fs", "net", "sync", "time"] }
 tokio-util = { version = "0.7", features = ["codec", "rt"] }
 futures-util = "0.3"
 futures = "0.3.31"
@@ -53,7 +55,7 @@ reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "stream",
 ] }
-# `default-features = false` so the Linux CEF build (`pnpm tauri:cef`) can pick
+# `default-features = false` so the Linux CEF build (`pnpm tauri`) can pick
 # the webview runtime: tauri's defaults are spelled out here and `wry` comes
 # back through this crate's own `default` feature, so every other build is
 # unchanged. See .cargo/cef.toml.
@@ -110,6 +112,11 @@ uuid = { version = "1", features = ["v4"] }
 pem = "4"
 anyhow = "1"
 bytes = "1"
+# Loopback media proxy (media_proxy.rs). All three already ship inside reqwest;
+# `server` just turns on hyper's serving half.
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
 tokio-stream = "0.1"
 if-addrs = "0.15"
 
@@ -135,6 +142,9 @@ percent-encoding = "2"
 # are disabled to keep the binary lean — we only need decoders for the
 # formats EPUBs actually use (jpeg/png/gif) plus the JPEG encoder.
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
+# Image sizes from header bytes alone, so comic pages are measured without
+# decoding them (comic_parser.rs).
+imagesize = { version = "0.14", default-features = false, features = ["jpeg", "png", "gif", "webp", "bmp", "jxl", "heif"] }
 
 # Native MOBI/AZW/AZW3 import path. Mirrors the EPUB fast-path: parse
 # PalmDB + MobiHeader + EXTH in Rust to extract title/author/publisher/
@@ -165,9 +175,15 @@ flate2 = "1"
 # never re-exec itself so it aborted in dyld (#5053), and its crash-handler
 # `pthread_create` interposer panics on 32-bit ARM, aborting every armeabi-v7a
 # device (#5070). See `minidump_feature_is_enabled_on_no_target`.
+#
+# `debug-images` attaches the loaded libraries and their build ids to each
+# event. The Android library ships stripped, so its frames carry addresses
+# only, and this is what lets Sentry resolve them against the debug files CI
+# uploads.
 sentry = { version = "0.42", default-features = false, features = [
   "backtrace",
   "contexts",
+  "debug-images",
   "panic",
   "reqwest",
   "rustls",
@@ -206,8 +222,9 @@ tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
 
 [target.'cfg(windows)'.dependencies]
-# Resolve the user's default browser from the registry for the cold-browser
-# OAuth-redirect fallback (see src/spawn_fresh_browser.rs).
+# Registry reads for the default-browser lookup in the cold-browser
+# OAuth-redirect fallback (see src/spawn_fresh_browser.rs) and the OS build
+# check behind the Windows 10 shadow workaround (see src/lib.rs).
 winreg = "0.52"
 
 [target.'cfg(target_os = "android")'.dependencies]

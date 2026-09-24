@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { MdLibraryAddCheck } from 'react-icons/md';
 import { DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } from '@/types/book';
@@ -20,6 +20,7 @@ const styles = [_('highlight'), _('underline'), _('squiggly')] as HighlightStyle
 void [_('red'), _('yellow'), _('green'), _('blue'), _('violet')];
 
 interface HighlightOptionsProps {
+  compact?: boolean;
   isVertical: boolean;
   popupWidth: number;
   popupHeight: number;
@@ -39,6 +40,7 @@ const OPTIONS_PADDING_PIX = 16;
 const LABEL_PREVIEW_MS = 2200;
 
 const HighlightOptions: React.FC<HighlightOptionsProps> = ({
+  compact = false,
   isVertical,
   popupWidth,
   popupHeight,
@@ -75,12 +77,59 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
+  const optionsGap = useResponsiveSize(compact ? 4 : 8);
+  const size6 = useResponsiveSize(6);
+  const size8 = useResponsiveSize(8);
+  const size10 = useResponsiveSize(10);
   const size16 = useResponsiveSize(16);
   const size24 = useResponsiveSize(24);
   const size30 = useResponsiveSize(30);
+  // Keep four colors visible for compact toolbars and five for larger toolbars.
+  const minColors = compact ? 4 : 5;
+  const colorStripMinLength = minColors * size16 + (minColors - 1) * size6 + 2 * size8 + 2;
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
   const emojis = ['👍', '❤️', '😮', '😂', '😢'];
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const preferBefore = triangleDir === 'up' || triangleDir === 'left';
+  const [placeBefore, setPlaceBefore] = useState(preferBefore);
+  const optionsOffset = highlightOptionsHeightPx + highlightOptionsPaddingPx;
+
+  useLayoutEffect(() => {
+    const popup = optionsRef.current?.offsetParent;
+    const frame = popup instanceof HTMLElement ? popup.offsetParent : null;
+    if (!popup || !frame) return;
+    const updatePlacement = () => {
+      const rect = popup.getBoundingClientRect();
+      const bounds = frame.getBoundingClientRect();
+      const before = isVertical
+        ? rect.left - Math.max(0, bounds.left)
+        : rect.top - Math.max(0, bounds.top);
+      const after = isVertical
+        ? Math.min(window.innerWidth, bounds.right) - rect.right
+        : Math.min(window.innerHeight, bounds.bottom) - rect.bottom;
+      // The toolbar is clamped separately. Keep its floating style/color row
+      // inside the book cell too, even when the selection fills the page.
+      setPlaceBefore(
+        preferBefore
+          ? before >= optionsOffset || before >= after
+          : after < optionsOffset && before > after,
+      );
+    };
+    updatePlacement();
+    // Popup adjusts its position after measuring its height; selection drags
+    // and scrolling also move it without resizing the options themselves.
+    const observer = new MutationObserver(updatePlacement);
+    observer.observe(popup, { attributes: true, attributeFilter: ['style'] });
+    const resizeObserver = new ResizeObserver(updatePlacement);
+    resizeObserver.observe(frame);
+    window.addEventListener('resize', updatePlacement);
+    return () => {
+      observer.disconnect();
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updatePlacement);
+    };
+  }, [isVertical, preferBefore, optionsOffset]);
 
   const {
     isDragging: isDraggingColorStrip,
@@ -177,26 +226,18 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
 
   return (
     <div
+      ref={optionsRef}
       className={clsx(
         'highlight-options absolute flex justify-between p-2 gap-2',
         isVertical ? 'flex-row' : 'flex-col',
       )}
       style={{
+        gap: optionsGap,
         width: `${popupWidth}px`,
         height: `${popupHeight}px`,
         ...(isVertical
-          ? {
-              left: `${
-                (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
-                (triangleDir === 'left' ? -1 : 1)
-              }px`,
-            }
-          : {
-              top: `${
-                (highlightOptionsHeightPx + highlightOptionsPaddingPx) *
-                (triangleDir === 'up' ? -1 : 1)
-              }px`,
-            }),
+          ? { left: `${optionsOffset * (placeBefore ? -1 : 1)}px` }
+          : { top: `${optionsOffset * (placeBefore ? -1 : 1)}px` }),
       }}
     >
       {/* Row 1: Styles, Global, Colors */}

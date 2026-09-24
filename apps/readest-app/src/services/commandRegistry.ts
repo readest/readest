@@ -424,6 +424,12 @@ const colorPanelItems = [
     keywords: ['code', 'highlighting', 'syntax', 'programming'],
     section: 'Code',
   },
+  {
+    id: 'settings.color.dialogueHighlight',
+    labelKey: _('Dialogue Highlighting'),
+    keywords: ['dialogue', 'dialog', 'speech', 'quote', 'highlight', 'theme'],
+    section: 'Theme',
+  },
 ];
 
 // control panel items
@@ -475,6 +481,12 @@ const controlPanelItems = [
     labelKey: _('Show Page Navigation Buttons'),
     keywords: ['show', 'pagination', 'buttons', 'navigation', 'arrows', 'chevron', 'page', 'turn'],
     section: 'Pagination',
+  },
+  {
+    id: 'settings.control.disablePullDownToBookmark',
+    labelKey: _('Pull-Down to Bookmark'),
+    keywords: ['pull', 'down', 'bookmark', 'gesture'],
+    section: 'Annotation Tools',
   },
   {
     id: 'settings.control.enableQuickActions',

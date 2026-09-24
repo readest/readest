@@ -88,3 +88,19 @@ export const sanitizerTransformer: Transformer = {
     return serialized;
   },
 };
+
+// SVG spine sections are active documents too. Keep the SVG root/namespace;
+// the XHTML transformer adds HTML wrappers that cannot be used for SVG blobs.
+export function sanitizeSvg(content: string): string {
+  const doc = new DOMParser().parseFromString(content, 'image/svg+xml');
+  if (doc.querySelector('parsererror') || doc.documentElement.localName !== 'svg') return '';
+  DOMPurify.sanitize(doc.documentElement, {
+    IN_PLACE: true,
+    USE_PROFILES: { svg: true, svgFilters: true },
+    FORBID_TAGS: ['script', 'foreignObject', 'iframe', 'object', 'embed'],
+    FORBID_ATTR: ['srcdoc'],
+    ALLOWED_URI_REGEXP:
+      /^(?:(?:(?:f|ht)tps?|mailto|tel|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+  });
+  return new XMLSerializer().serializeToString(doc.documentElement);
+}

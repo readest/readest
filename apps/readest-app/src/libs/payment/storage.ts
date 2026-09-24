@@ -38,7 +38,7 @@ const isCustomizationPurchase = (payment: PurchaseRow): boolean => {
  * order they keep the entitlement until their next purchase and silently lose
  * it when this recompute next runs.
  */
-export const STORAGE_GRANTS_CUSTOMIZATION = true;
+export const STORAGE_GRANTS_CUSTOMIZATION = false;
 
 /**
  * Whether this recompute should record the grace grant. Pure so both sides of

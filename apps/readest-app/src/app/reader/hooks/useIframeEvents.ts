@@ -10,6 +10,7 @@ import {
   endLayeredTurnTouch,
 } from '@/app/reader/utils/iframeEventHandlers';
 import { NATIVE_CAPTURED_TURN_ATTRIBUTE } from '@/app/reader/utils/turnGestureArena';
+import { getCapturedTurnStyle } from '@/app/reader/hooks/useCapturedTurn';
 import {
   dispatchTouchInterceptors,
   isLayeredTurnGestureActive,
@@ -163,13 +164,19 @@ export const useTouchEvent = (bookKey: string) => {
   const isLifecycleManagedLayeredTurn = () => isLayeredTurnGestureActive(bookKey);
   const isLayeredTurnCandidate = () => {
     const viewSettings = getViewSettings(bookKey);
-    if (!viewSettings || getBookData(bookKey)?.isFixedLayout) return false;
+    if (!viewSettings) return false;
+    // `fixed-layout.js` animates nothing of its own and ignores `turn-style`,
+    // so a fixed-layout book is only a candidate where the Tauri captured
+    // pipeline drives its turn — and not while it pans (readest#6239).
+    if (getBookData(bookKey)?.isFixedLayout && !getCapturedTurnStyle(viewSettings, true)) {
+      return false;
+    }
     const renderer = getView(bookKey)?.renderer;
     const turnStyle =
       renderer?.getAttribute?.('turn-style') ??
       renderer?.getAttribute?.(NATIVE_CAPTURED_TURN_ATTRIBUTE);
     return (
-      (turnStyle === 'slide' || turnStyle === 'curl') &&
+      (turnStyle === 'slide' || turnStyle === 'curl' || turnStyle === 'push') &&
       viewSettings.animated &&
       !viewSettings.scrolled &&
       !viewSettings.isEink &&
@@ -224,6 +231,23 @@ export const useTouchEvent = (bookKey: string) => {
     if ('preventDefault' in e) e.preventDefault();
   };
 
+  // A native captured turn has already claimed only when its move was consumed.
+  // Cancel it exactly once before a second finger discards the single-finger
+  // baseline; unclaimed starts need no synthetic lifecycle event.
+  const cancelClaimedSingleTouch = (
+    e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>,
+    fallbackTouch: IframeTouch,
+  ) => {
+    const touchStart = touchStartRef.current;
+    if (!touchConsumedRef.current || !touchStart) return;
+    const touch = touchEndRef.current ?? fallbackTouch;
+    const endTime = 'timeStamp' in e ? e.timeStamp : Date.now();
+    dispatchTouchInterceptors(
+      bookKey,
+      buildTouchDetail('cancel', touch, touchStart, touchStartTimeRef.current, endTime),
+    );
+  };
+
   const latchReflowableMultiTouch = (
     e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>,
     t0: IframeTouch | undefined,
@@ -233,18 +257,7 @@ export const useTouchEvent = (bookKey: string) => {
     cancelLayeredTurnTouch(bookKey);
     if (!reflowableMultiTouchRef.current) {
       reflowableMultiTouchRef.current = true;
-      const touchStart = touchStartRef.current;
-      // A native captured turn has already claimed only when its move was
-      // consumed. Cancel it exactly once before discarding the single-finger
-      // baseline; unclaimed starts need no synthetic lifecycle event.
-      if (touchConsumedRef.current && touchStart) {
-        const touch = touchEndRef.current ?? t0;
-        const endTime = 'timeStamp' in e ? e.timeStamp : Date.now();
-        dispatchTouchInterceptors(
-          bookKey,
-          buildTouchDetail('cancel', touch, touchStart, touchStartTimeRef.current, endTime),
-        );
-      }
+      cancelClaimedSingleTouch(e, t0);
     }
     clearSingleTouchState();
     return true;
@@ -267,6 +280,10 @@ export const useTouchEvent = (bookKey: string) => {
       const bookData = getBookData(bookKey);
       if (bookData?.isFixedLayout) {
         cancelLayeredTurnTouch(bookKey);
+        // The pinch branch owns the gesture from here. A captured curl the
+        // first finger already claimed would otherwise sit frozen over the
+        // page until the next touchstart (readest#6239).
+        cancelClaimedSingleTouch(e, t0);
         pinchPendingRef.current = true;
         isPinchingRef.current = false;
         initialTouch0Ref.current = t0;
@@ -274,8 +291,7 @@ export const useTouchEvent = (bookKey: string) => {
         initialPinchDistRef.current = getTouchDistance(t0, t1);
         initialZoomRef.current = getViewSettings(bookKey)?.zoomLevel ?? 100;
         lastPinchRatioRef.current = 1;
-        touchStartRef.current = null;
-        touchEndRef.current = null;
+        clearSingleTouchState();
         return;
       }
       latchReflowableMultiTouch(e, t0, t1);
@@ -380,7 +396,10 @@ export const useTouchEvent = (bookKey: string) => {
       const deltaY = touchEnd.screenY - touchStart.screenY;
       const deltaX = touchEnd.screenX - touchStart.screenX;
       if (Math.hypot(deltaX, deltaY) < TOUCH_TAP_SLOP_PX) return;
-      if (!viewSettings!.scrolled && !viewSettings!.vertical) {
+      // Paginated books turn pages with horizontal swipes in every writing mode
+      // (vertical ones included, readest#624), so only that hides the bars; a
+      // vertical swipe is left to the swipe-up toggle on touchend.
+      if (!viewSettings!.scrolled) {
         if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) >= TOUCH_SWIPE_THRESHOLD_PX) {
           setHoveredBookKey(null);
         }
@@ -515,7 +534,6 @@ export const useTouchEvent = (bookKey: string) => {
         // is a pan, not a toggle-the-bars gesture (#5142).
         if (
           !viewSettings!.scrolled &&
-          !viewSettings!.vertical &&
           (!bookData.isFixedLayout || !hasVerticalPanning(getView(bookKey), viewSettings))
         ) {
           setHoveredBookKey(hoveredBookKey ? null : bookKey);

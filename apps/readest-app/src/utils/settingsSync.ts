@@ -1,3 +1,4 @@
+import { mergeBookshelfStates } from '@/services/bookshelves/state';
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -51,6 +52,7 @@ export interface CloudSyncProviderFlags {
 }
 
 export interface SettingsSyncPayload {
+  bookshelves?: SystemSettings['bookshelves'];
   /** Label of the window that persisted the change, so receivers ignore their own echo. */
   sourceLabel: string;
   globalViewSettings: SystemSettings['globalViewSettings'];
@@ -72,7 +74,7 @@ export const mergeSyncedGlobalSettings = (
   local: SystemSettings,
   payload: Pick<
     SettingsSyncPayload,
-    'globalViewSettings' | 'globalReadSettings' | 'cloudSyncProviders'
+    'globalViewSettings' | 'globalReadSettings' | 'cloudSyncProviders' | 'bookshelves'
   >,
 ): SystemSettings => {
   const merged: SystemSettings = {
@@ -80,6 +82,8 @@ export const mergeSyncedGlobalSettings = (
     globalViewSettings: payload.globalViewSettings,
     globalReadSettings: payload.globalReadSettings,
   };
+  if (payload.bookshelves)
+    merged.bookshelves = mergeBookshelfStates(local.bookshelves, payload.bookshelves);
   if (payload.cloudSyncProviders) {
     merged.webdav = { ...local.webdav, ...payload.cloudSyncProviders.webdav };
     merged.googleDrive = { ...local.googleDrive, ...payload.cloudSyncProviders.googleDrive };
@@ -115,6 +119,7 @@ export const broadcastGlobalSettings = async (
   try {
     const payload: SettingsSyncPayload = {
       sourceLabel: getCurrentWindow().label,
+      bookshelves: settings.bookshelves,
       globalViewSettings: settings.globalViewSettings,
       globalReadSettings: settings.globalReadSettings,
     };

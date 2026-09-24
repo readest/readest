@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { navigateToLogin } from '@/utils/nav';
+import LibraryImportButton from './LibraryImportButton';
 
 interface LibraryEmptyStateProps {
   onImport: (anchor: HTMLElement) => void;
@@ -32,14 +33,7 @@ const LibraryEmptyState: React.FC<LibraryEmptyStateProps> = ({ onImport }) => {
             : _('Drop a book anywhere on this window, or pick one from your computer.')}
         </p>
         <div className='flex w-full max-w-xs flex-col gap-3'>
-          <button
-            type='button'
-            aria-haspopup='menu'
-            className='btn btn-primary h-11 min-h-11 rounded-lg'
-            onClick={(event) => onImport(event.currentTarget)}
-          >
-            {_('Import Books')}
-          </button>
+          <LibraryImportButton onImport={onImport} primary />
           {/* TODO: add a 'Browse free catalogs' secondary action that opens the
               OPDS dialog (handleShowOPDSDialog) once we settle on placement. */}
           {!user && (

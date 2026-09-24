@@ -44,7 +44,7 @@ import {
   isValidUrlTemplate,
 } from '@/services/dictionaries/webSearchTemplates';
 import SubPageHeader from './SubPageHeader';
-import { BoxedList, SettingsRow, SettingsSelect, Tips } from './primitives';
+import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow, Tips } from './primitives';
 
 /** Dictionary popup font-size multipliers, surfaced as percentages (#4443). */
 const FONT_SCALE_OPTIONS = [
@@ -146,7 +146,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
   });
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
     // Keep the row visible while dragging; use a slight opacity dip so the
     // user can tell it's the moving one.
@@ -265,6 +265,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     reorder,
     setEnabled,
     setFontScale,
+    setAutoPlayPronunciation,
     addWebSearch,
     updateWebSearch,
     removeWebSearch,
@@ -301,6 +302,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   }, [appService]);
   const handleFontScaleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFontScale(Number(e.target.value));
+    await saveCustomDictionaries(envConfig);
+  };
+
+  const handleAutoPlayPronunciationChange = async (enabled: boolean) => {
+    setAutoPlayPronunciation(enabled);
     await saveCustomDictionaries(envConfig);
   };
 
@@ -832,6 +838,18 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             ariaLabel={_('Font Size')}
           />
         </SettingsRow>
+      </BoxedList>
+
+      <BoxedList
+        className='mt-4'
+        title={_('Pronunciation')}
+        description={_('Plays the recording a dictionary bundles with the entry, when it has one.')}
+      >
+        <SettingsSwitchRow
+          label={_('Auto-play Pronunciation')}
+          checked={settings.autoPlayPronunciation ?? false}
+          onChange={() => void handleAutoPlayPronunciationChange(!settings.autoPlayPronunciation)}
+        />
       </BoxedList>
 
       <div className='mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2'>

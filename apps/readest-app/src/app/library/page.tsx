@@ -1,5 +1,7 @@
 'use client';
 
+import BookshelvesDialog from './components/BookshelvesDialog';
+
 import clsx from 'clsx';
 import { BRAND_NAME } from '@/services/branding';
 import * as React from 'react';
@@ -53,6 +55,7 @@ import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useLibraryFileSync } from './hooks/useLibraryFileSync';
 import { useBookTransferActions } from './hooks/useBookTransferActions';
+import { useAbsOfflineDownload } from './hooks/useAbsOfflineDownload';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
@@ -81,6 +84,7 @@ import {
   tauriSetWindowTitle,
 } from '@/utils/window';
 
+import { getActiveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
@@ -100,16 +104,10 @@ import { useDragDropImport } from './hooks/useDragDropImport';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { Toast } from '@/components/Toast';
-import {
-  createBookGroups,
-  ensureLibraryGroupByType,
-  findGroupById,
-  getBreadcrumbs,
-} from './utils/libraryUtils';
+import { createBookGroups, findGroupById, getBreadcrumbs } from './utils/libraryUtils';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
-import LibraryEmptyState from './components/LibraryEmptyState';
 import ImportMenuPopup from './components/ImportMenuPopup';
 import GroupHeader from './components/GroupHeader';
 import FailedImportsDialog, { FailedImport } from './components/FailedImportsDialog';
@@ -240,7 +238,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // 10s; module-scoped dedup means a later navigation to the reader
   // won't re-pull the same kind.
   useReplicaPull({
-    kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'settings'],
+    kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'abs_server', 'settings', 'bookshelf'],
   });
   // Hydrate the custom-font store from persisted settings so the Font
   // panel sees imported fonts even when opened straight from the
@@ -526,7 +524,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // cleanup effect below (purely cosmetic URL rewrite). See
   // https://github.com/readest/readest/issues/3782.
   const handleLibraryNavigation = useCallback(
-    (targetGroup: string) => {
+    (targetGroup: string, shelfId?: string) => {
       const params = new URLSearchParams(window.location.search);
       const currentGroup = params.get('group') || '';
 
@@ -540,6 +538,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       // Build query params — always `set` so the search string is non-empty
       // even when targetGroup is '' (the Next.js 16.2 workaround).
       params.set('group', targetGroup);
+      if (!targetGroup) params.delete('shelf');
+      else if (shelfId) params.set('shelf', shelfId);
 
       navigateToLibrary(router, `${params.toString()}`);
     },
@@ -883,8 +883,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // Track the current virtual group for the navigation header.
   useEffect(() => {
     const groupId = searchParams?.get('group') || '';
-    const groupByParam = searchParams?.get('groupBy');
-    const groupBy = ensureLibraryGroupByType(groupByParam, settings.libraryGroupBy);
+    const groupBy = getActiveBookshelfGroupBy(settings, searchParams);
 
     if (
       groupId &&
@@ -911,7 +910,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     } else {
       setCurrentVirtualGroup(null);
     }
-  }, [libraryBooks, searchParams, settings.libraryGroupBy]);
+  }, [libraryBooks, searchParams, settings.libraryGroupBy, settings.bookshelves]);
 
   useEffect(() => {
     if (demoBooks.length > 0 && libraryLoaded) {
@@ -1248,6 +1247,33 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
   };
 
+  // Audiobookshelf offline downloads (#6256): the shelf's context menu asks
+  // through events so the handlers need not be threaded through every shelf.
+  // Removing the copy is "Remove from Device Only".
+  const { handleBookOfflineDownload, offlinePremiumLabel } = useAbsOfflineDownload();
+  const offlineHandlersRef = useRef({
+    download: handleBookOfflineDownload,
+    remove: handleBookDelete('local'),
+  });
+  offlineHandlersRef.current = {
+    download: handleBookOfflineDownload,
+    remove: handleBookDelete('local'),
+  };
+  useEffect(() => {
+    const onDownload = (event: CustomEvent) => {
+      offlineHandlersRef.current.download(event.detail.book);
+    };
+    const onRemove = async (event: CustomEvent) => {
+      await offlineHandlersRef.current.remove(event.detail.book);
+    };
+    eventDispatcher.on('abs-offline-download', onDownload);
+    eventDispatcher.on('abs-offline-remove', onRemove);
+    return () => {
+      eventDispatcher.off('abs-offline-download', onDownload);
+      eventDispatcher.off('abs-offline-remove', onRemove);
+    };
+  }, []);
+
   const handleUpdateMetadata = async (book: Book, metadata: BookMetadata, tags: string[]) => {
     // Build a NEW book object instead of mutating `book` in place. <BookCover>
     // is memoized and compares fields off the book, so mutating the existing
@@ -1306,20 +1332,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleMetadataValueClick = (type: 'tag' | 'subject', value: string) => {
     const groupBy = type === 'tag' ? LibraryGroupByType.Tag : LibraryGroupByType.Subject;
-    const targetGroup = createBookGroups(libraryBooks, groupBy).find(
-      (item): item is BooksGroup => 'books' in item && item.name === value,
-    );
+    const targetGroup = createBookGroups(
+      libraryBooks.filter((book) => !book.deletedAt),
+      groupBy,
+    ).find((item): item is BooksGroup => 'books' in item && item.name === value);
     if (!targetGroup) return;
     const params = new URLSearchParams(window.location.search);
     params.set('groupBy', groupBy);
     params.set('group', targetGroup.id);
+    params.delete('shelf');
     params.delete('q');
     setShowDetailsBook(null);
     navigateToLibrary(router, params.toString());
   };
 
   const getImportTargetGroupId = () => {
-    const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
+    const groupBy = getActiveBookshelfGroupBy(settings, searchParams);
     return groupBy === LibraryGroupByType.Group ? searchParams?.get('group') || '' : '';
   };
 
@@ -2037,6 +2065,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           groupName={currentVirtualGroup.groupName}
         />
       )}
+      <BookshelvesDialog />
       {showBookshelf && !isSelectMode && token && arcBooks.length > 0 && (
         <div className='flex px-4 border-b border-base-300 gap-x-6 pb-2 mb-4 text-sm font-medium'>
           <button
@@ -2071,11 +2100,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       {showBookshelf &&
         (activeTab === 'library' ? (
           libraryBooks.some((book) => !book.deletedAt) ? (
-            <div aria-label={_('Your Bookshelf')} className='flex min-h-0 flex-grow flex-col'>
+            <div aria-label={_('Your Bookshelf')} className='flex min-h-0 grow flex-col'>
               <div
                 ref={containerRef}
                 className={clsx(
-                  'scroll-container drop-zone flex min-h-0 flex-grow flex-col',
+                  'scroll-container drop-zone flex min-h-0 grow flex-col',
                   isDragging && 'drag-over',
                 )}
                 style={{
@@ -2117,10 +2146,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             </div>
           )
         ) : arcBooks.length > 0 ? (
-          <div aria-label={_('Your Bookshelf')} className='flex min-h-0 flex-grow flex-col'>
+          <div aria-label={_('Your Bookshelf')} className='flex min-h-0 grow flex-col'>
             <div
               ref={containerRef}
-              className='scroll-container drop-zone flex min-h-0 flex-grow flex-col'
+              className='scroll-container drop-zone flex min-h-0 grow flex-col'
               style={{
                 paddingRight: `${insets.right}px`,
                 paddingLeft: `${insets.left}px`,
@@ -2203,6 +2232,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookMetadataUpdate={
             showDetailsBook.hash.startsWith('arc_') ? async () => {} : handleUpdateMetadata
           }
+          handleBookOfflineDownload={isTauriAppPlatform() ? handleBookOfflineDownload : undefined}
+          offlinePremiumLabel={offlinePremiumLabel}
           onMetadataValueClick={handleMetadataValueClick}
         />
       )}

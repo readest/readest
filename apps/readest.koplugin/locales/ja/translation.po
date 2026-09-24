@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader と Readest のデバイス間で同期を保ちます。"
 
+msgid "Downloading %1 of %2…"
+msgstr "%2 件中 %1 件目をダウンロード中…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB ダウンロード済み"
+
+msgid "No downloads in progress."
+msgstr "ダウンロード中の項目はありません。"
+
+msgid "Run in background"
+msgstr "バックグラウンドで実行"
+
+msgid "Cancel download"
+msgstr "ダウンロードをキャンセル"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ダウンロードをキャンセルしました。%2 件中 %1 件をダウンロードしました。"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 件中 %1 件をダウンロードしました（%3 件スキップ）。"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 件中 %1 件をダウンロードしました。"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "ダウンロードを有効にするには、まずファイルマネージャーでホームフォルダを設定してください。"
+
+msgid "No books to download."
+msgstr "ダウンロードする書籍がありません。"
+
 msgid "Library view"
 msgstr "ライブラリ表示"
 
@@ -68,8 +98,14 @@ msgstr "昇順"
 msgid "Actions"
 msgstr "操作"
 
+msgid "Sync now"
+msgstr "今すぐ同期"
+
 msgid "Download all books"
 msgstr "すべての書籍をダウンロード"
+
+msgid "Download progress"
+msgstr "ダウンロードの進行状況"
 
 msgid "Rescan library"
 msgstr "ライブラリを再スキャン"
@@ -104,6 +140,12 @@ msgstr "ライブラリを検索"
 msgid "Search title or author"
 msgstr "タイトルまたは著者を検索"
 
+msgid "Books synced"
+msgstr "書籍を同期しました"
+
+msgid "Books sync failed"
+msgstr "書籍の同期に失敗しました"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "完全なライブラリ表示には Cover Browser プラグインが必要です。シンプルなリスト表示に戻ります。"
 
@@ -116,18 +158,6 @@ msgstr "この書籍を Readest からダウンロードしますか？"
 msgid "Download"
 msgstr "ダウンロード"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "ダウンロードを有効にするには、まずファイルマネージャーでホームフォルダを設定してください。"
-
-msgid "Downloading…"
-msgstr "ダウンロード中…"
-
-msgid "Cloud copy unavailable."
-msgstr "クラウドのコピーは利用できません。"
-
-msgid "Download failed."
-msgstr "ダウンロードに失敗しました。"
-
 msgid "No cover available on Readest."
 msgstr "Readestに利用可能な表紙がありません。"
 
@@ -137,20 +167,8 @@ msgstr "表紙のダウンロードに失敗しました。"
 msgid "Could not delete the file."
 msgstr "ファイルを削除できませんでした。"
 
-msgid "No books to download."
-msgstr "ダウンロードする書籍がありません。"
-
-msgid "Downloading %1 of %2…"
-msgstr "%2 件中 %1 件目をダウンロード中…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "ダウンロードをキャンセルしました。%2 件中 %1 件をダウンロードしました。"
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 件中 %1 件をダウンロードしました（%3 件スキップ）。"
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 件中 %1 件をダウンロードしました。"
+msgid "Download group"
+msgstr "グループをダウンロード"
 
 msgid "Removing from cloud…"
 msgstr "クラウドから削除中…"
@@ -287,23 +305,14 @@ msgstr "今すぐ統計を送信"
 msgid "Pull stats now"
 msgstr "今すぐ統計を取得"
 
-msgid "Push books now"
-msgstr "今すぐ書籍を送信"
-
-msgid "Pull books now"
-msgstr "今すぐ書籍を取得"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop で受信"
-
-msgid "Upload current book to Readest"
-msgstr "現在の書籍を Readest にアップロード"
-
 msgid "Push reading progress now"
 msgstr "読書の進捗をすぐに送信"
 
 msgid "Pull reading progress now"
 msgstr "読書の進捗をすぐに取得"
+
+msgid "Upload current book to Readest"
+msgstr "現在の書籍を Readest にアップロード"
 
 msgid "Push annotations now"
 msgstr "注釈をすぐに送信"
@@ -316,6 +325,9 @@ msgstr "すべての注釈をフル同期"
 
 msgid "Sync info"
 msgstr "同期情報"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop で受信"
 
 msgid "Check for update (v%1)"
 msgstr "更新を確認 (v%1)"
@@ -349,12 +361,6 @@ msgstr "同期情報"
 
 msgid "Library not initialized"
 msgstr "ライブラリが初期化されていません"
-
-msgid "Books synced"
-msgstr "書籍を同期しました"
-
-msgid "Books sync failed"
-msgstr "書籍の同期に失敗しました"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "先に Readest のダウンロードフォルダまたは KOReader のホームフォルダを設定してください。"

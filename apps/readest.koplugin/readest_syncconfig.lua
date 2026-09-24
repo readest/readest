@@ -264,6 +264,7 @@ function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp)
 end
 
 function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive, logout_fn)
+    local document = ui.document
     if interactive then
         UIManager:show(InfoMessage:new{
             text = _("Pulling reading progress..."),
@@ -279,6 +280,7 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
             meta_hash = meta_hash,
         },
         function(success, response, status)
+            if ui.document ~= document then return end -- book closed while the request was running
             if not success then
                 -- Auth failure: server returns HTTP 403 with body
                 -- {error="Not authenticated"} per apps/readest-app/src/pages/api/sync.ts:31.

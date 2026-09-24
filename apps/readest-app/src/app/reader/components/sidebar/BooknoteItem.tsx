@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import dayjs from 'dayjs';
 import React, { useMemo } from 'react';
 import { MdEdit, MdDelete, MdContentCopy } from 'react-icons/md';
 
@@ -25,6 +24,7 @@ import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
 import { useInlineTextEditor } from '../../hooks/useInlineTextEditor';
 import TextButton from '@/components/TextButton';
 import TextEditor from '@/components/TextEditor';
+import { BooknoteTimeLabel } from './BooknoteTime';
 
 interface BooknoteItemProps {
   bookKey: string;
@@ -76,9 +76,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     }
   };
   const { editorRef, draftText, setDraftText, inlineEditMode, startEdit, cancelEdit, save } =
-    useInlineTextEditor(
-      isBookmark ? saveBookmarkText : (noteText) => saveBooknoteNoteText(item.id, noteText),
-    );
+    useInlineTextEditor((draftText) => {
+      if (isBookmark) return saveBookmarkText(draftText);
+      else return saveBooknoteNoteText(item.id, draftText);
+    });
   const separatorWidth = useResponsiveSize(3);
   const size18 = useResponsiveSize(18);
 
@@ -96,9 +97,6 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   // across hundreds of items. Cache by note text — note edits change
   // item.note and bust the cache automatically.
   const noteHtml = useMemo(() => (note ? parseNoteMarkdown(note) : ''), [note]);
-
-  // dayjs().fromNow() reformats every render; cache per createdAt.
-  const createdAtLabel = useMemo(() => dayjs(item.createdAt).fromNow(), [item.createdAt]);
 
   const handleClickItem = (event: React.MouseEvent | React.KeyboardEvent) => {
     event.preventDefault();
@@ -323,7 +321,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
             <span className='truncate text-sm text-gray-500 sm:text-xs'>
               {item.page ? _('p {{page}}' + ' · ', { page: item.page }) : ''}
             </span>
-            <span className='truncate text-sm text-gray-500 sm:text-xs'>{createdAtLabel}</span>
+            <BooknoteTimeLabel createdAt={item.createdAt} />
           </div>
           <div
             className={clsx('flex items-center justify-end gap-4', isEditable && 'w-full')}

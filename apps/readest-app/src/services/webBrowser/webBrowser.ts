@@ -84,3 +84,20 @@ export function isSupportedBookDownload(filename: string): boolean {
   if (dot < 0) return false;
   return SUPPORTED_BOOK_EXTS.includes(filename.slice(dot + 1).toLowerCase());
 }
+
+/** A plain `.zip` that may hold books; `.fb2.zip` is a book format of its own. */
+export function isBookArchiveDownload(filename: string): boolean {
+  return /\.zip$/i.test(filename) && !/\.fb2?\.zip$/i.test(filename);
+}
+
+// Audiobookshelf keeps `desc.txt` / `reader.txt` metadata beside the books.
+const ARCHIVE_BOOK_EXTS = SUPPORTED_BOOK_EXTS.filter((ext) => !['zip', 'txt', 'md'].includes(ext));
+
+/**
+ * Unpack the books in a downloaded archive (Audiobookshelf serves every folder
+ * item as `<title>.zip`). Returns their paths, or `[]` when the archive holds
+ * none, e.g. an EPUB saved under a `.zip` name.
+ */
+export async function extractWebBrowserArchive(path: string): Promise<string[]> {
+  return invoke<string[]>('extract_web_browser_archive', { path, exts: ARCHIVE_BOOK_EXTS });
+}

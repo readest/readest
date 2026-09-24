@@ -103,6 +103,9 @@ export function useDictionaryResults({
   const { dictionaries, settings } = useCustomDictionaryStore();
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
   const themeCode = useThemeStore((s) => s.themeCode);
+  // Speak the entry as soon as it renders, for dictionaries that carry their
+  // own recordings (#6265). Providers without bundled audio ignore it.
+  const autoPlayPronunciation = settings.autoPlayPronunciation ?? false;
 
   const computedProviders = getEnabledProviders({
     settings,
@@ -115,6 +118,14 @@ export function useDictionaryResults({
 
   const definitionProviders = useMemo(() => providers.filter((p) => p.kind !== 'web'), [providers]);
   const webSearchProviders = useMemo(() => providers.filter((p) => p.kind === 'web'), [providers]);
+  // Every provider looks the word up concurrently, but they all speak through
+  // one shared <audio> element — arming more than one lets whichever resolves
+  // its bytes last cut off the others, in an order nobody chose. Arm only the
+  // highest-ranked dictionary that can carry recordings (#6265).
+  const autoPlayProviderId = useMemo(
+    () => definitionProviders.find((p) => p.kind === 'mdict')?.id,
+    [definitionProviders],
+  );
   // Web entries live in their own section, so `providerOrder` alone can't lift
   // one above the dictionary cards (#5083). Let the top-most enabled provider
   // decide which section leads. Derived from the full enabled list rather than
@@ -309,13 +320,8 @@ export function useDictionaryResults({
           if (!container) {
             outcome = { ok: false, reason: 'error', message: 'no container' };
           } else {
-            // Try normalized query variants (trimmed, case-folded) then
-            // language-aware lemma candidates in priority order, keeping the
-            // first hit. Case-sensitive formats (mdict) otherwise miss
-            // `Hello` / `world ` style selections whose headword is stored
-            // lowercased, and dictionaries that store only base headwords
-            // (e.g. Oxford Dictionary of English) miss inflected selections
-            // like `ran` / `mice` / `analyses`.
+            // Try case/Unicode variants, lemmas, then accent-folded
+            // fallbacks across providers, keeping the first hit.
             outcome = { ok: false, reason: 'empty' };
             for (const candidate of buildLookupCandidates(currentWord, langCode)) {
               container.replaceChildren();
@@ -327,6 +333,7 @@ export function useDictionaryResults({
                 isDarkMode,
                 bg: themeCode.bg,
                 fg: themeCode.fg,
+                autoPlayPronunciation: autoPlayPronunciation && provider.id === autoPlayProviderId,
               });
               if (controller.signal.aborted) return;
               if (outcome.ok || outcome.reason !== 'empty') break;
@@ -365,6 +372,8 @@ export function useDictionaryResults({
     isDarkMode,
     themeCode.bg,
     themeCode.fg,
+    autoPlayPronunciation,
+    autoPlayProviderId,
   ]);
 
   // Visible cards = providers that are still loading or finished with a

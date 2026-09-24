@@ -119,6 +119,12 @@ impl<R: Runtime> NativeTts<R> {
             .run_mobile_plugin("update_media_session_metadata", payload)
             .map_err(Into::into)
     }
+
+    pub fn update_media_library(&self, payload: UpdateMediaLibraryRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("update_media_library", payload)
+            .map_err(Into::into)
+    }
 }
 
 impl<R: Runtime> NativeTts<R> {

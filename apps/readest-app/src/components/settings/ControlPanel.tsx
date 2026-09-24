@@ -15,6 +15,7 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { isTauriAppPlatform } from '@/services/environment';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import {
   BoxedList,
   NavigationRow,
@@ -49,6 +50,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   );
   const [isDisableClick, setIsDisableClick] = useState(viewSettings.disableClick);
   const [isDisableSwipe, setIsDisableSwipe] = useState(viewSettings.disableSwipe);
+  const [disablePullDownToBookmark, setDisablePullDownToBookmark] = useState(
+    viewSettings.disablePullDownToBookmark ?? false,
+  );
   const [fullscreenClickArea, setFullscreenClickArea] = useState(viewSettings.fullscreenClickArea);
   const [swapClickArea, setSwapClickArea] = useState(viewSettings.swapClickArea);
   const [isDisableDoubleClick, setIsDisableDoubleClick] = useState(viewSettings.disableDoubleClick);
@@ -103,6 +107,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       showPaginationButtons: setShowPaginationButtons,
       disableClick: setIsDisableClick,
       disableSwipe: setIsDisableSwipe,
+      disablePullDownToBookmark: setDisablePullDownToBookmark,
       swapClickArea: setSwapClickArea,
       animated: setAnimated,
       isEink: setIsEink,
@@ -120,6 +125,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       false,
       true,
     );
+    if (appService?.hasUpdater) {
+      const { autoCheckUpdates = true, updateChannel = 'stable' } = DEFAULT_SYSTEM_SETTINGS;
+      saveSysSettings(envConfig, 'autoCheckUpdates', autoCheckUpdates);
+      saveSysSettings(envConfig, 'updateChannel', updateChannel);
+      setIsAutoCheckUpdates(autoCheckUpdates);
+      setIsNightlyChannel(updateChannel === 'nightly');
+    }
     pageTurnerResetRef.current();
     // Keyboard/mouse bindings are NOT reset here — they are device-local and
     // have their own "Reset all" inside the Keyboard Shortcuts sub-page.
@@ -203,6 +215,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableSwipe]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'disablePullDownToBookmark',
+      disablePullDownToBookmark,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disablePullDownToBookmark]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableDoubleClick', isDisableDoubleClick, false, false);
@@ -459,6 +483,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         title={_('Annotation Tools')}
         data-setting-id='settings.control.enableQuickActions'
       >
+        <SettingsSwitchRow
+          label={_('Pull-Down to Bookmark')}
+          checked={!disablePullDownToBookmark}
+          onChange={() => setDisablePullDownToBookmark(!disablePullDownToBookmark)}
+          data-setting-id='settings.control.disablePullDownToBookmark'
+        />
         <SettingsSwitchRow
           label={_('Enable Quick Actions')}
           checked={enableAnnotationQuickActions}

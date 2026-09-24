@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "שומר על סנכרון בין מכשירי KOReader ו-Readest שלך."
 
+msgid "Downloading %1 of %2…"
+msgstr "מוריד %1 מתוך %2…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB הורדו"
+
+msgid "No downloads in progress."
+msgstr "אין הורדות פעילות."
+
+msgid "Run in background"
+msgstr "הפעלה ברקע"
+
+msgid "Cancel download"
+msgstr "ביטול הורדה"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ההורדה בוטלה. %1 מתוך %2 הורדו."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 מתוך %2 הורדו (%3 דולגו)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 מתוך %2 הורדו."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "הגדר תחילה תיקיית בית במנהל הקבצים כדי לאפשר הורדות."
+
+msgid "No books to download."
+msgstr "אין ספרים להורדה."
+
 msgid "Library view"
 msgstr "תצוגת ספרייה"
 
@@ -68,8 +98,14 @@ msgstr "עולה"
 msgid "Actions"
 msgstr "פעולות"
 
+msgid "Sync now"
+msgstr "סנכרון כעת"
+
 msgid "Download all books"
 msgstr "הורד את כל הספרים"
+
+msgid "Download progress"
+msgstr "התקדמות ההורדה"
 
 msgid "Rescan library"
 msgstr "סרוק ספרייה מחדש"
@@ -104,6 +140,12 @@ msgstr "חיפוש בספרייה"
 msgid "Search title or author"
 msgstr "חיפוש לפי כותרת או מחבר"
 
+msgid "Books synced"
+msgstr "הספרים סונכרנו"
+
+msgid "Books sync failed"
+msgstr "סנכרון הספרים נכשל"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "ההרחבה Cover Browser נדרשת להצגת ספרייה מלאה. חוזר לתצוגת רשימה."
 
@@ -116,18 +158,6 @@ msgstr "להוריד את הספר הזה מ-Readest?"
 msgid "Download"
 msgstr "הורדה"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "הגדר תחילה תיקיית בית במנהל הקבצים כדי לאפשר הורדות."
-
-msgid "Downloading…"
-msgstr "מוריד…"
-
-msgid "Cloud copy unavailable."
-msgstr "עותק ענן אינו זמין."
-
-msgid "Download failed."
-msgstr "ההורדה נכשלה."
-
 msgid "No cover available on Readest."
 msgstr "אין כריכה זמינה ב-Readest."
 
@@ -137,20 +167,8 @@ msgstr "הורדת הכריכה נכשלה."
 msgid "Could not delete the file."
 msgstr "לא ניתן למחוק את הקובץ."
 
-msgid "No books to download."
-msgstr "אין ספרים להורדה."
-
-msgid "Downloading %1 of %2…"
-msgstr "מוריד %1 מתוך %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "ההורדה בוטלה. %1 מתוך %2 הורדו."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%1 מתוך %2 הורדו (%3 דולגו)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%1 מתוך %2 הורדו."
+msgid "Download group"
+msgstr "הורדת קבוצה"
 
 msgid "Removing from cloud…"
 msgstr "מוסר מהענן…"
@@ -287,23 +305,14 @@ msgstr "שלח סטטיסטיקות עכשיו"
 msgid "Pull stats now"
 msgstr "משוך סטטיסטיקות עכשיו"
 
-msgid "Push books now"
-msgstr "שלח ספרים עכשיו"
-
-msgid "Pull books now"
-msgstr "משוך ספרים עכשיו"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "קבלה דרך Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "העלה את הספר הנוכחי ל-Readest"
-
 msgid "Push reading progress now"
 msgstr "שלח התקדמות קריאה כעת"
 
 msgid "Pull reading progress now"
 msgstr "משוך התקדמות קריאה כעת"
+
+msgid "Upload current book to Readest"
+msgstr "העלה את הספר הנוכחי ל-Readest"
 
 msgid "Push annotations now"
 msgstr "שלח הערות כעת"
@@ -316,6 +325,9 @@ msgstr "סנכרון מלא של כל ההערות"
 
 msgid "Sync info"
 msgstr "מידע סנכרון"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "קבלה דרך Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "בדוק עדכון (v%1)"
@@ -349,12 +361,6 @@ msgstr "מידע סנכרון"
 
 msgid "Library not initialized"
 msgstr "הספרייה לא אותחלה"
-
-msgid "Books synced"
-msgstr "הספרים סונכרנו"
-
-msgid "Books sync failed"
-msgstr "סנכרון הספרים נכשל"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "תחילה הגדירו תיקיית הורדות של Readest או תיקיית בית של KOReader."

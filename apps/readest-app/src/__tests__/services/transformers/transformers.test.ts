@@ -646,6 +646,34 @@ describe('styleTransformer', () => {
     expect(transformStylesheet).not.toHaveBeenCalled();
   });
 
+  // A `<style media="print">` block should stay print-only: its rules must
+  // never apply to the on-screen paginated rendering. Rewriting the tag
+  // without its original attributes drops the `media` scoping and turns a
+  // print-only rule (e.g. a `.noprint { display: none }` companion to a
+  // `<body class="noprint">`) into a rule that also hides the page on screen
+  // (readest/readest#6233).
+  test('preserves the media attribute on a <style> block', async () => {
+    const html =
+      '<html><head>' +
+      '<style type="text/css" media="print">.noprint { display: none }</style>' +
+      '</head><body class="noprint"></body></html>';
+    const result = await styleTransformer.transform(makeCtx({ content: html }));
+    expect(result).toContain('<style type="text/css" media="print">transformed-css</style>');
+    expect(result).not.toContain('<style>transformed-css</style>');
+  });
+
+  test('preserves attributes across multiple style blocks with different media', async () => {
+    transformStylesheet.mockResolvedValueOnce('screen-css').mockResolvedValueOnce('print-css');
+    const html =
+      '<html><head>' +
+      '<style>.a { margin: 0; }</style>' +
+      '<style media="print">.b { display: none; }</style>' +
+      '</head><body></body></html>';
+    const result = await styleTransformer.transform(makeCtx({ content: html }));
+    expect(result).toContain('<style>screen-css</style>');
+    expect(result).toContain('<style media="print">print-css</style>');
+  });
+
   test('returns empty string unchanged', async () => {
     const result = await styleTransformer.transform(makeCtx({ content: '' }));
     expect(result).toBe('');

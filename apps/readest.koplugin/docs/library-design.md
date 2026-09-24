@@ -1,5 +1,8 @@
 # Readest Library View for `readest.koplugin` (v1)
 
+> This document preserves the original v1 design and review history. The download,
+> sync, and view-menu sections below also describe the current implementation.
+
 ## Context
 
 `apps/readest.koplugin` today is a **sync-only** plugin: when a book is open in
@@ -489,16 +492,27 @@ This protects the local filesystem and gives the user a readable name when
 they browse `library_download_dir` in FileManager. No JS parity required —
 the only consumer is KOReader's own filesystem.
 
-**Download flow** (cloud-only book tap):
+**Download flow** (cloud-only book tap or group download):
 
-1. `withFreshToken(function() ReadestSync:getDownloadUrl(fileKey, cb) end)`
-2. `httpclient` streams response to
-   `<library_download_dir>/{safeTitle}.{ext}` — **flat directory** (KOReader
-   users prefer flat layouts to nested hash dirs in their book folders).
-   On filename collision (different book, same title-derived filename): try
-   `{safeTitle} (1).{ext}`, `(2)`, `(3)` etc. up to (10).
-3. Update SQLite: `file_path` = new path, `local_present` = 1.
-4. `ReaderUI:showReader(file_path)`.
+1. `downloadqueue.lua` queues books sequentially and deduplicates by hash.
+   Long-press a group and choose **Download group** to queue its cloud-only
+   books, including nested groups. Authors and series match exactly.
+2. `withFreshToken` obtains a fresh token before `getDownloadUrl(fileKey, cb)`.
+3. A subprocess streams the file to `<library_download_dir>/{safeTitle}.{ext}.part`.
+   The parent polls the partial file's size for progress. Successful transfers
+   rename it to the final filename; failed or cancelled transfers remove it.
+   Existing files and partial files participate in filename collision checks.
+4. The queue records `file_path` and `local_present=1` in SQLite and refreshes
+   the library. A single foreground download can open the book on completion.
+
+The progress dialog shows the current book, its position in the queue, and
+megabytes downloaded. **Run in background** keeps downloads running while
+browsing or reading, and disables automatic opening when the file completes.
+Reopen the dialog with **Library view → Actions → Download progress**.
+**Cancel download** terminates the active transfer, reaps the worker, removes
+its partial file, and stops the remaining queue. Dismissing the dialog leaves
+downloads running. Downloads continue within the current KOReader session;
+the queue is not persisted across restarts.
 
 **Why flat instead of `{hash}/{title}.{ext}`?** Codex round 2 noted that the
 nested layout would help "reconciliation by hash on full scan" since the
@@ -600,9 +614,8 @@ Cover sourced via `coverprovider.lua`:
 On tap:
 
 - `local_present=1` → `ReaderUI:showReader(file_path)`
-- `local_present=0, cloud_present=1` → `Trapper:wrap` confirm dialog →
-  `syncbooks.lua:downloadBook(book, cb)` → set `file_path` + `local_present=1`
-  → open
+- `local_present=0, cloud_present=1` → confirm dialog → shared download
+  queue → set `file_path` + `local_present=1` → open if still in foreground
 - `local_present=1` but file vanished → "File moved or deleted. Rescan?"
   ConfirmBox; don't crash.
 
@@ -620,6 +633,8 @@ On tap:
 | **Cover**            | Crop / Fit                                                           | Crop                                               | `library_cover_fit`                          |
 | **Group by**         | None / Books / Authors / Series / Groups                             | None                                               | `library_group_by`                           |
 | **Sort by**          | Title / Author / Date Read / Date Added / Series / Format + Asc/Desc | Date Read, Desc                                    | `library_sort_by` + `library_sort_ascending` |
+| **Sync now**         | (action; pulls then pushes even with Auto sync off) | — | refreshes the library and reports success/failure |
+| **Download progress** | (action; visible while downloads are running) | — | reopens the shared queue dialog |
 | **Rescan library**   | (action)                                                             | —                                                  | triggers full sidecar walk                   |
 | **Download folder…** | (action)                                                             | —                                                  | opens PathChooser                            |
 
@@ -660,8 +675,11 @@ local_present=1, last_read_at=ReadHistory time}`.
 
 3. **Download** (tap of cloud-only): see "Cloud download" section above.
 
-v1 does **not** push books up. Local-only books stay local; the existing
-config + notes sync keeps working unchanged.
+Opening the Library pulls remote book records and, with **Auto sync** enabled,
+then pushes local changes. **Library view → Actions → Sync now** runs both
+steps even when Auto sync is off. It replaces the reader menu's separate
+**Push books now** and **Pull books now** entries; syncing book records does
+not download or upload the book files themselves.
 
 ### Download directory
 
@@ -688,6 +706,15 @@ their original location.
 ---
 
 ## Performance — e-ink
+
+Sync RPCs use Turbo's asynchronous HTTP when its event loop is available.
+Without Turbo, `readest_syncclient.lua` runs the blocking HTTP request in an
+FFI subprocess and polls for completion every 100 ms. The worker writes its
+response to a temporary file so large stats or annotation responses cannot
+fill a pipe while the parent waits for exit. Callbacks run in the UI process.
+A deadline terminates stalled workers; read-only transport timeouts get one
+retry. Config, notes, and stats start together after the one-second book-open
+delay. Book-specific callbacks ignore responses after the document closes.
 
 Codex flagged real perf risks for 4000-book libraries on 1GHz Kindles:
 
@@ -782,7 +809,7 @@ Plan does NOT rebuild any of these; the plan adds glue + new UI shell + SQLite i
 | `syncbooks.pullBooks`          | Server returns malformed JSON metadata                     | busted                                     | yes (pcall around `json.decode`)                       | row skipped, log warn                     |
 | `syncbooks.getDownloadUrl`     | 404 cloud copy unavailable                                 | manual #8                                  | yes                                                    | toast "Cloud copy unavailable"            |
 | `syncbooks.downloadBook`       | Disk full mid-write                                        | manual #13                                 | yes (catch httpclient sink error)                      | toast, partial file removed               |
-| `syncbooks.downloadBook`       | User cancels (Trapper)                                     | manual #14                                 | yes                                                    | partial file removed                      |
+| `syncbooks.downloadBook`       | User cancels from progress dialog                                     | manual #14                                 | yes                                                    | partial file removed                      |
 | `syncbooks.downloadCover`      | Cover 404                                                  | (busted)                                   | yes (sentinel `_missing`)                              | FakeCover, no retry storm                 |
 | `localscanner.lightScan`       | Stat on removable storage path → nil                       | manual #15                                 | yes (lfs.attributes returns nil → set local_present=0) | row updates silently                      |
 | `localscanner.fullSidecarWalk` | `home_dir` is nil                                          | busted                                     | yes (skip + show hint)                                 | hint banner                               |
@@ -872,7 +899,7 @@ Functional tests (manual, KOReader plugins have no headless harness):
    ReadHistory.
 7. **Cover fit toggle**: Crop ↔ Fit re-renders without restart.
 8. **Download flow**: tap cloud-only book → ConfirmBox → download to
-   `{library_download_dir}/{hash}/{title}.{ext}` → opens in reader → reload
+   `{library_download_dir}/{safeTitle}.{ext}` → opens in reader → reload
    Library → row now shows `local_present=1`. **Negative case**: simulate
    `uploaded_at` set but no `files` row (404 from `/storage/download`) →
    "Cloud copy unavailable" toast, row stays cloud-only.
@@ -892,9 +919,11 @@ Functional tests (manual, KOReader plugins have no headless harness):
     tap a 5MB cloud-only book → `httpclient` write fails → toast "Not
     enough storage", row stays `local_present=0`, no partial file left
     behind. Verify temp file cleanup.
-14. **User cancels mid-download**: tap cloud-only book, hit Back during the
-    progress dialog → `Trapper:wrap` cancellation cleans up the partial
-    file, row stays `local_present=0`, no zombie progress dialog.
+14. **User cancels mid-download**: tap **Cancel download** in the progress
+    dialog → worker is terminated and reaped, partial file is removed, row
+    stays `local_present=0`, and queued books do not start. Separately verify
+    **Run in background** permits page turns and **Download progress**
+    reopens the dialog.
 15. **Removable storage ejected mid-scan**: home_dir on SD card; eject SD
     while sidecar walk is running → `lfs.dir` errors caught, scan aborts
     cleanly, no crash. Existing rows from prior scans preserved.

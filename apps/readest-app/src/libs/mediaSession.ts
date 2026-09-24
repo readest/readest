@@ -18,6 +18,10 @@ export interface PlaybackState {
 
 export interface MediaSessionState {
   active: boolean;
+  // Unique playback-session identity. Android uses it to ignore a late
+  // deactivate, metadata decode, or state write from the book that was just
+  // replaced.
+  sessionId?: string;
   // Android: whether the media service should hold the app's audio focus for
   // this session. True for audio the app renders itself (TTS engines,
   // WebAudio, the native narration player). FALSE when the audio plays through
@@ -45,6 +49,9 @@ export class TauriMediaSession {
   private handlers: { [key: string]: (() => void) | ((position: number) => void) } = {};
   private eventListenerInited: boolean = false;
   private eventListeners: PluginListener[] = [];
+  private listenerGeneration = 0;
+  private listenerSessionId: string | undefined;
+  private sessionId: string | undefined;
 
   private async requestPostNotificationPermission() {
     const permission = await invoke<Permissions>('plugin:native-tts|checkPermissions');
@@ -55,99 +62,133 @@ export class TauriMediaSession {
     }
   }
 
-  private async initializeListeners() {
-    if (this.eventListenerInited) return;
+  private async initializeListeners(sessionId: string | undefined) {
+    if (this.eventListenerInited && this.listenerSessionId === sessionId) return;
+    if (this.eventListenerInited) {
+      await this.cleanupListeners(this.detachListeners());
+    }
     this.eventListenerInited = true;
-
-    const playListener = await addPluginListener('native-tts', 'media-session-play', () => {
-      if (this.handlers['play']) {
-        (this.handlers['play'] as () => void)();
-      }
-    });
-    this.eventListeners.push(playListener);
-
-    const pauseListener = await addPluginListener('native-tts', 'media-session-pause', () => {
-      if (this.handlers['pause']) {
-        (this.handlers['pause'] as () => void)();
-      }
-    });
-    this.eventListeners.push(pauseListener);
-
-    // iOS single-button toggle (lock-screen center button, headset click).
-    // Distinct from 'play'/'pause', which are directional so that audio-focus
-    // events (interruptions, route loss) can reuse them safely.
-    const toggleListener = await addPluginListener('native-tts', 'media-session-toggle', () => {
-      if (this.handlers['toggle']) {
-        (this.handlers['toggle'] as () => void)();
-      }
-    });
-    this.eventListeners.push(toggleListener);
-
-    const nextListener = await addPluginListener('native-tts', 'media-session-next', () => {
-      if (this.handlers['nexttrack']) {
-        (this.handlers['nexttrack'] as () => void)();
-      }
-    });
-    this.eventListeners.push(nextListener);
-
-    const previousListener = await addPluginListener('native-tts', 'media-session-previous', () => {
-      if (this.handlers['previoustrack']) {
-        (this.handlers['previoustrack'] as () => void)();
-      }
-    });
-    this.eventListeners.push(previousListener);
-
-    // iOS skip-interval commands (the icons the lock-screen card renders);
-    // routed to the sentence-level seek handlers.
-    const seekForwardListener = await addPluginListener(
-      'native-tts',
-      'media-session-seek-forward',
-      () => {
-        if (this.handlers['seekforward']) {
-          (this.handlers['seekforward'] as () => void)();
+    this.listenerSessionId = sessionId;
+    const generation = ++this.listenerGeneration;
+    const listeners: PluginListener[] = [];
+    try {
+      const playListener = await addPluginListener('native-tts', 'media-session-play', () => {
+        if (this.handlers['play']) {
+          (this.handlers['play'] as () => void)();
         }
-      },
-    );
-    this.eventListeners.push(seekForwardListener);
+      });
+      listeners.push(playListener);
 
-    const seekBackwardListener = await addPluginListener(
-      'native-tts',
-      'media-session-seek-backward',
-      () => {
-        if (this.handlers['seekbackward']) {
-          (this.handlers['seekbackward'] as () => void)();
+      const pauseListener = await addPluginListener('native-tts', 'media-session-pause', () => {
+        if (this.handlers['pause']) {
+          (this.handlers['pause'] as () => void)();
         }
-      },
-    );
-    this.eventListeners.push(seekBackwardListener);
+      });
+      listeners.push(pauseListener);
 
-    const seekListener = await addPluginListener(
-      'native-tts',
-      'media-session-seek',
-      // addPluginListener delivers the payload directly (as the other native-tts
-      // and native-bridge listeners consume it) — reading `.payload.position`
-      // threw, so lock-screen / Android Auto seeks never reached seekToTime.
-      (payload: { position: number }) => {
-        const position = payload.position;
-        if (this.handlers['seekto']) {
-          (this.handlers['seekto'] as (position: number) => void)(position);
+      // iOS single-button toggle (lock-screen center button, headset click).
+      // Distinct from 'play'/'pause', which are directional so that audio-focus
+      // events (interruptions, route loss) can reuse them safely.
+      const toggleListener = await addPluginListener('native-tts', 'media-session-toggle', () => {
+        if (this.handlers['toggle']) {
+          (this.handlers['toggle'] as () => void)();
         }
-      },
-    );
-    this.eventListeners.push(seekListener);
+      });
+      listeners.push(toggleListener);
+
+      const nextListener = await addPluginListener('native-tts', 'media-session-next', () => {
+        if (this.handlers['nexttrack']) {
+          (this.handlers['nexttrack'] as () => void)();
+        }
+      });
+      listeners.push(nextListener);
+
+      const previousListener = await addPluginListener(
+        'native-tts',
+        'media-session-previous',
+        () => {
+          if (this.handlers['previoustrack']) {
+            (this.handlers['previoustrack'] as () => void)();
+          }
+        },
+      );
+      listeners.push(previousListener);
+
+      // iOS skip-interval commands (the icons the lock-screen card renders);
+      // routed to the sentence-level seek handlers.
+      const seekForwardListener = await addPluginListener(
+        'native-tts',
+        'media-session-seek-forward',
+        () => {
+          if (this.handlers['seekforward']) {
+            (this.handlers['seekforward'] as () => void)();
+          }
+        },
+      );
+      listeners.push(seekForwardListener);
+
+      const seekBackwardListener = await addPluginListener(
+        'native-tts',
+        'media-session-seek-backward',
+        () => {
+          if (this.handlers['seekbackward']) {
+            (this.handlers['seekbackward'] as () => void)();
+          }
+        },
+      );
+      listeners.push(seekBackwardListener);
+
+      const seekListener = await addPluginListener(
+        'native-tts',
+        'media-session-seek',
+        // addPluginListener delivers the payload directly (as the other native-tts
+        // and native-bridge listeners consume it) — reading `.payload.position`
+        // threw, so lock-screen / Android Auto seeks never reached seekToTime.
+        (payload: { position: number }) => {
+          const position = payload.position;
+          if (this.handlers['seekto']) {
+            (this.handlers['seekto'] as (position: number) => void)(position);
+          }
+        },
+      );
+      listeners.push(seekListener);
+    } catch (error) {
+      // Registration failed partway. The listeners already registered are
+      // unreachable from here on (eventListeners is only assigned on success),
+      // so unregister them explicitly, and clear the init flag or the guard at
+      // the top of this method would block every retry for the session.
+      this.eventListenerInited = false;
+      this.listenerSessionId = undefined;
+      await this.cleanupListeners(listeners);
+      throw error;
+    }
+
+    if (generation !== this.listenerGeneration || this.sessionId !== sessionId) {
+      await this.cleanupListeners(listeners);
+      return;
+    }
+    this.eventListeners = listeners;
   }
 
-  private async cleanupListeners() {
-    for (const listener of this.eventListeners) {
-      await listener.unregister();
-    }
+  private detachListeners(): PluginListener[] {
+    ++this.listenerGeneration;
+    const listeners = this.eventListeners;
     this.eventListeners = [];
     this.eventListenerInited = false;
+    this.listenerSessionId = undefined;
+    return listeners;
+  }
+
+  private async cleanupListeners(listeners: PluginListener[]) {
+    for (const listener of listeners) {
+      await listener.unregister();
+    }
   }
 
   async updateMetadata(metadata: MediaMetadata) {
     try {
-      await invoke('plugin:native-tts|update_media_session_metadata', { payload: metadata });
+      const payload = this.sessionId ? { ...metadata, sessionId: this.sessionId } : metadata;
+      await invoke('plugin:native-tts|update_media_session_metadata', { payload });
     } catch (error) {
       console.error('Failed to update media metadata:', error);
     }
@@ -155,14 +196,44 @@ export class TauriMediaSession {
 
   async updatePlaybackState(state: PlaybackState) {
     try {
-      await invoke('plugin:native-tts|update_media_session_state', { payload: state });
+      const payload = this.sessionId ? { ...state, sessionId: this.sessionId } : state;
+      await invoke('plugin:native-tts|update_media_session_state', { payload });
     } catch (error) {
       console.error('Failed to update playback state:', error);
     }
   }
 
   async setActive(sessionState: MediaSessionState) {
+    const sessionId = sessionState.sessionId ?? this.sessionId;
+    const payload = sessionId ? { ...sessionState, sessionId } : sessionState;
     if (sessionState.active) {
+      this.sessionId = sessionId;
+      // Starting the native foreground service is the required operation and
+      // must precede every optional setup step, including a permission prompt
+      // that may wait for user interaction.
+      try {
+        await invoke('plugin:native-tts|set_media_session_active', {
+          payload,
+        });
+      } catch (error) {
+        // Never rethrow: the caller (TTSMediaBridge.bind) is invoked as
+        // `void bind(...)`, so a rejection here becomes an unhandled rejection
+        // AND skips action-handler registration — leaving the session with no
+        // transport controls at all. Starting the service can legitimately
+        // fail (ForegroundServiceStartNotAllowedException while backgrounded);
+        // degrade to a session without native controls instead.
+        console.error('Failed to set media session active state:', error);
+      }
+      if (this.sessionId !== sessionId) return;
+      // Register transport listeners before optional notification permission
+      // work. Cold playback can already be audible when the Activity opens,
+      // and a driver's first Pause must not disappear during this setup gap.
+      try {
+        await this.initializeListeners(sessionId);
+      } catch (error) {
+        console.warn('Media session listener init failed:', error);
+      }
+      if (this.sessionId !== sessionId) return;
       // The foreground-service media notification IS the lock-screen control;
       // on Android 13+ it is silently suppressed unless POST_NOTIFICATIONS is
       // granted. Request it on every activation (no-op once decided).
@@ -173,25 +244,27 @@ export class TauriMediaSession {
       } catch (error) {
         console.warn('POST_NOTIFICATIONS request failed:', error);
       }
-      try {
-        await this.initializeListeners();
-      } catch (error) {
-        console.warn('Media session listener init failed:', error);
-      }
-    } else {
-      try {
-        await this.cleanupListeners();
-      } catch (error) {
-        console.warn('Media session listener cleanup failed:', error);
-      }
+      if (this.sessionId !== sessionId) return;
+      return;
     }
+
+    // Detach this owner's listeners before the native await. A replacement
+    // activation can then install a new listener set that this stale teardown
+    // cannot unregister when it resumes.
+    const listeners = this.sessionId === sessionId ? this.detachListeners() : [];
     try {
       await invoke('plugin:native-tts|set_media_session_active', {
-        payload: sessionState,
+        payload,
       });
     } catch (error) {
       console.error('Failed to set media session active state:', error);
     }
+    try {
+      await this.cleanupListeners(listeners);
+    } catch (error) {
+      console.warn('Media session listener cleanup failed:', error);
+    }
+    if (this.sessionId === sessionId) this.sessionId = undefined;
   }
 
   setActionHandler(action: string, handler: (() => void) | ((position: number) => void) | null) {

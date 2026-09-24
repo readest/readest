@@ -6,7 +6,10 @@ let initialized = false;
 const initSimpleCC = async () => {
   if (initialized) return;
 
-  await init('/vendor/simplecc/simplecc_wasm_bg.wasm');
+  // No path: the glue falls back to `new URL('simplecc_wasm_bg.wasm',
+  // import.meta.url)`, the copy the bundler emits. The public/vendor copy this
+  // used to fetch was the second, embedded-twice copy (#6368).
+  await init();
   initialized = true;
 };
 

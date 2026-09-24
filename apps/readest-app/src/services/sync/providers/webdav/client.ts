@@ -329,7 +329,7 @@ export const checkConnection = async (
   } catch (e) {
     // Keep the raw exception message in `message` for the dev console;
     // the UI uses `code` to render a localized string.
-    return { success: false, code: 'NETWORK', message: (e as Error).message };
+    return { success: false, code: 'NETWORK', message: e instanceof Error ? e.message : String(e) };
   }
 };
 
@@ -368,7 +368,11 @@ export const listDirectory = async (
       METADATA_TIMEOUT_MS,
     );
   } catch (e) {
-    throw new WebDAVRequestError((e as Error).message || 'Network error', undefined, 'NETWORK');
+    throw new WebDAVRequestError(
+      (e instanceof Error ? e.message : String(e)) || 'Network error',
+      undefined,
+      'NETWORK',
+    );
   }
   if (response.status === 401 || response.status === 403) {
     throw new WebDAVRequestError('Authentication failed', response.status, 'AUTH_FAILED');
@@ -458,15 +462,32 @@ const requestWithMethod = async (
     Authorization: buildAuthHeader(config.username, config.password),
     ...(init.headers || {}),
   };
-  try {
-    return await fetchWithTimeout(
-      fetchFn,
-      url,
-      { method, headers, body: init.body ?? null },
-      timeoutForMethod(method),
-    );
-  } catch (e) {
-    throw new WebDAVRequestError((e as Error).message || 'Network error', undefined, 'NETWORK');
+  // PUT bodies here are replayable strings/ArrayBuffers; MKCOL is idempotent
+  // (an already-created collection returns 405). Bound transient retries so a
+  // deadlock or brief outage does not abandon the item after one request.
+  const attempts = method === 'PUT' || method === 'MKCOL' ? 3 : 1;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await fetchWithTimeout(
+        fetchFn,
+        url,
+        { method, headers, body: init.body ?? null },
+        timeoutForMethod(method),
+      );
+      if (attempt + 1 >= attempts || ![408, 429, 500, 502, 503, 504].includes(response.status)) {
+        return response;
+      }
+      await response.body?.cancel();
+    } catch (e) {
+      if (attempt + 1 >= attempts) {
+        throw new WebDAVRequestError(
+          (e instanceof Error ? e.message : String(e)) || 'Network error',
+          undefined,
+          'NETWORK',
+        );
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** attempt));
   }
 };
 

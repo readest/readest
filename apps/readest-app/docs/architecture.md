@@ -240,10 +240,14 @@ the adapters under `src/services/annotation`, `src/services/nav`,
 features (annotations sync, navigation, content transforms, vertical/Warichu
 support, classic mode overlays, etc.).
 
-PDF rendering goes through `pdfjs-dist`, which is copied into
-`public/vendor/pdfjs` at build time (`pnpm setup-pdfjs`). Chinese conversion
-uses `simplecc-wasm` (`public/vendor/simplecc`), and Chinese segmentation uses
-`jieba-wasm` (`public/vendor/jieba`).
+PDF rendering goes through `pdfjs-dist`. Only what the reader fetches by URL at
+runtime is copied into `public/vendor/pdfjs` (`pnpm setup-pdfjs`): the worker,
+the WASM decoders, cmaps, standard fonts and the layer CSS. Everything the
+bundler imports resolves straight from `packages/` — `@pdfjs` at
+`packages/foliate-js/node_modules/pdfjs-dist`, `@simplecc` at
+`packages/simplecc-wasm/dist/web` — and is never copied into `public/`, since
+Tauri embeds every published file and would ship it twice. Chinese segmentation
+uses `jieba-wasm` straight from `node_modules` for the same reason.
 
 ### 3.4 Service worker and offline
 

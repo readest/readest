@@ -1,3 +1,4 @@
+import type { BookshelfState } from './bookshelf';
 import { CustomTheme } from '@/styles/themes';
 import { CustomFont } from '@/styles/fonts';
 import { CustomTexture } from '@/styles/textures';
@@ -455,6 +456,7 @@ export interface SystemSettings {
   savedBookCoverForLockScreenPath: string;
   telemetryEnabled: boolean;
   discordRichPresenceEnabled: boolean;
+  bookshelves?: BookshelfState;
   libraryViewMode: LibraryViewModeType;
   librarySortBy: LibrarySortByType;
   librarySortAscending: boolean;

@@ -150,7 +150,7 @@ export const parseRemoteLibraryIndex = (raw: string | null): RemoteLibraryIndex 
 /**
  * Fields that describe THIS device's copy of a book rather than the book
  * itself: an absolute path from an in-place / transient import, the blob URL of
- * the rendered cover, and the two "this device holds the bytes" stamps.
+ * the rendered cover, and the "this device holds the bytes" stamps.
  *
  * They must never cross devices. A peer that adopts a foreign `filePath` reads
  * the row as a purely-local book (that is what `book.filePath` means to the
@@ -167,6 +167,7 @@ const DEVICE_LOCAL_BOOK_FIELDS = [
   'coverImageUrl',
   'downloadedAt',
   'coverDownloadedAt',
+  'absDownloadedAt',
 ] as const satisfies readonly (keyof Book)[];
 
 /** A copy of `book` safe to publish to — or adopt from — the shared index. */

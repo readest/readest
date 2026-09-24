@@ -114,6 +114,36 @@ describe('EdgeTTSClient', () => {
   });
 
   describe('init', () => {
+    test('a hung native Edge probe stops blocking initialization after five seconds', async () => {
+      vi.useFakeTimers();
+      tauriPlatform = true;
+      let completeProbe!: () => void;
+      createBehavior = () =>
+        new Promise<undefined>((resolve) => {
+          completeProbe = () => resolve(undefined);
+        });
+      let result: boolean | undefined;
+      const init = client.init().then((value) => {
+        result = value;
+      });
+      await vi.advanceTimersByTimeAsync(4999);
+      expect(result).toBeUndefined();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(result).toBe(false);
+      await init;
+      expect(await client.getAllVoices()).toHaveLength(4);
+      completeProbe();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(client.initialized).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    test('a successful probe clears its deadline timer', async () => {
+      vi.useFakeTimers();
+      await expect(client.init()).resolves.toBe(true);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
     test('succeeds when create resolves and sets initialized to true', async () => {
       const result = await client.init();
       expect(result).toBe(true);

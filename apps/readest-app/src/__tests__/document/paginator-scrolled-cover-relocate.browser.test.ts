@@ -35,17 +35,20 @@ const makeBook = () => ({
 
 type RelocateDetail = { reason: string; index: number; range: Range; fraction: number };
 
-const waitForRelocate = (el: HTMLElement, timeout = 3000) =>
+const waitForRelocate = (el: HTMLElement, timeout = 3000, reason?: string) =>
   new Promise<RelocateDetail | null>((resolve) => {
-    const timer = setTimeout(() => resolve(null), timeout);
-    el.addEventListener(
-      'relocate',
-      (e) => {
-        clearTimeout(timer);
-        resolve((e as CustomEvent<RelocateDetail>).detail);
-      },
-      { once: true },
-    );
+    const onRelocate = (e: Event) => {
+      const { detail } = e as CustomEvent<RelocateDetail>;
+      if (reason && detail.reason !== reason) return;
+      clearTimeout(timer);
+      el.removeEventListener('relocate', onRelocate);
+      resolve(detail);
+    };
+    const timer = setTimeout(() => {
+      el.removeEventListener('relocate', onRelocate);
+      resolve(null);
+    }, timeout);
+    el.addEventListener('relocate', onRelocate);
   });
 
 describe('Paginator scrolled mode relocates on an image-only cover', () => {
@@ -109,11 +112,13 @@ describe('Paginator scrolled mode relocates on an image-only cover', () => {
     // chapter covers the centre: the relocate must report the chapter. The
     // paginator swallows the first debounced scroll after a navigation (it is
     // normally the anchoring scroll itself) and skips scrolls while the fill
-    // pass is still stabilizing, so nudge until a relocate arrives.
+    // pass is still stabilizing, so nudge until a relocate arrives. Only a
+    // scroll relocate counts: the opening goTo's anchor relocate for the cover
+    // can land late, inside the first nudge window.
     const container = paginator.shadowRoot!.getElementById('container')!;
     let detail: RelocateDetail | null = null;
     for (let nudge = 0; nudge < 6 && !detail; nudge++) {
-      const relocated = waitForRelocate(paginator, 500);
+      const relocated = waitForRelocate(paginator, 500, 'scroll');
       container.scrollTop = 1900 + nudge;
       detail = await relocated;
     }

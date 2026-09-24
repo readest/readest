@@ -23,8 +23,9 @@ export class LibraryPage extends BasePage {
     this.searchInput = page.locator('.search-input');
     this.clearSearchButton = page.locator('[aria-label="Clear Search"]');
     this.emptyState = page.getByRole('heading', { name: 'Start your library' });
-    this.emptyStateImportButton = page.locator('.hero').getByRole('button', {
+    this.emptyStateImportButton = this.bookshelf.getByRole('button', {
       name: 'Import Books',
+      exact: true,
     });
     this.importMenu = page.locator('.menu-container');
     this.localFileImportItem = this.importMenu.getByRole('menuitem', { name: 'From Local File' });

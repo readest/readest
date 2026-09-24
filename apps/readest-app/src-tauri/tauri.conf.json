@@ -67,10 +67,24 @@
     "linux": {
       "deb": {
         "section": "text",
-        "depends": ["libwebkit2gtk-4.1-0"]
+        "depends": [
+          "libgtk-3-0",
+          "libnss3",
+          "libgbm1",
+          "libasound2",
+          "libudev1",
+          "libxkbcommon-x11-0"
+        ]
       },
       "rpm": {
-        "depends": ["libwebkit2gtk-4.1.so.0()(64bit)"]
+        "depends": [
+          "libgtk-3.so.0()(64bit)",
+          "libnss3.so()(64bit)",
+          "libgbm.so.1()(64bit)",
+          "libasound.so.2()(64bit)",
+          "libudev.so.1()(64bit)",
+          "libxkbcommon-x11.so.0()(64bit)"
+        ]
       },
       "appimage": {
         "files": {

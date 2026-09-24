@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "KOReader va Readest qurilmalaringizni sinxronlashda saqlaydi."
 
+msgid "Downloading %1 of %2…"
+msgstr "%2 tadan %1-si yuklab olinmoqda…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB yuklab olindi"
+
+msgid "No downloads in progress."
+msgstr "Yuklab olishlar bajarilmayapti."
+
+msgid "Run in background"
+msgstr "Fonda bajarish"
+
+msgid "Cancel download"
+msgstr "Yuklab olishni bekor qilish"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Yuklab olish bekor qilindi. %2 tadan %1 tasi yuklab olindi."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 tadan %1 tasi yuklab olindi (%3 tasi oʻtkazib yuborildi)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 tadan %1 tasi yuklab olindi."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Yuklab olishlarni yoqish uchun avval Fayl menejerida bosh sahifa jildini belgilang."
+
+msgid "No books to download."
+msgstr "Yuklab olish uchun kitob yoʻq."
+
 msgid "Library view"
 msgstr "Kutubxona koʻrinishi"
 
@@ -68,8 +98,14 @@ msgstr "Oʻsish boʻyicha"
 msgid "Actions"
 msgstr "Amallar"
 
+msgid "Sync now"
+msgstr "Hozir sinxronlash"
+
 msgid "Download all books"
 msgstr "Barcha kitoblarni yuklab olish"
+
+msgid "Download progress"
+msgstr "Yuklab olish jarayoni"
 
 msgid "Rescan library"
 msgstr "Kutubxonani qayta skanerlash"
@@ -104,6 +140,12 @@ msgstr "Kutubxonada qidirish"
 msgid "Search title or author"
 msgstr "Sarlavha yoki muallif boʻyicha qidirish"
 
+msgid "Books synced"
+msgstr "Kitoblar sinxronlandi"
+
+msgid "Books sync failed"
+msgstr "Kitoblarni sinxronlab boʻlmadi"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Toʻliq kutubxona koʻrinishi uchun Cover Browser plagini talab qilinadi. Oddiy roʻyxatga oʻtilmoqda."
 
@@ -116,18 +158,6 @@ msgstr "Ushbu kitobni Readest-dan yuklab olasizmi?"
 msgid "Download"
 msgstr "Yuklab olish"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Yuklab olishlarni yoqish uchun avval Fayl menejerida bosh sahifa jildini belgilang."
-
-msgid "Downloading…"
-msgstr "Yuklab olinmoqda…"
-
-msgid "Cloud copy unavailable."
-msgstr "Bulutdagi nusxa mavjud emas."
-
-msgid "Download failed."
-msgstr "Yuklab olib boʻlmadi."
-
 msgid "No cover available on Readest."
 msgstr "Readest-da muqova mavjud emas."
 
@@ -137,20 +167,8 @@ msgstr "Muqovani yuklab olib boʻlmadi."
 msgid "Could not delete the file."
 msgstr "Faylni oʻchirib boʻlmadi."
 
-msgid "No books to download."
-msgstr "Yuklab olish uchun kitob yoʻq."
-
-msgid "Downloading %1 of %2…"
-msgstr "%2 tadan %1-si yuklab olinmoqda…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Yuklab olish bekor qilindi. %2 tadan %1 tasi yuklab olindi."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 tadan %1 tasi yuklab olindi (%3 tasi oʻtkazib yuborildi)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 tadan %1 tasi yuklab olindi."
+msgid "Download group"
+msgstr "Guruhni yuklab olish"
 
 msgid "Removing from cloud…"
 msgstr "Bulutdan olib tashlanmoqda…"
@@ -287,23 +305,14 @@ msgstr "Statistikani hozir yuborish"
 msgid "Pull stats now"
 msgstr "Statistikani hozir olish"
 
-msgid "Push books now"
-msgstr "Kitoblarni hozir yuborish"
-
-msgid "Pull books now"
-msgstr "Kitoblarni hozir olish"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop orqali qabul qilish"
-
-msgid "Upload current book to Readest"
-msgstr "Joriy kitobni Readest-ga yuklash"
-
 msgid "Push reading progress now"
 msgstr "Oʻqish jarayonini hozir yuborish"
 
 msgid "Pull reading progress now"
 msgstr "Oʻqish jarayonini hozir olish"
+
+msgid "Upload current book to Readest"
+msgstr "Joriy kitobni Readest-ga yuklash"
 
 msgid "Push annotations now"
 msgstr "Izohlarni hozir yuborish"
@@ -316,6 +325,9 @@ msgstr "Barcha izohlarni toʻliq sinxronlash"
 
 msgid "Sync info"
 msgstr "Sinxronlash maʼlumoti"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop orqali qabul qilish"
 
 msgid "Check for update (v%1)"
 msgstr "Yangilanishni tekshirish (v%1)"
@@ -349,12 +361,6 @@ msgstr "Sinxronlash maʼlumoti"
 
 msgid "Library not initialized"
 msgstr "Kutubxona ishga tushirilmagan"
-
-msgid "Books synced"
-msgstr "Kitoblar sinxronlandi"
-
-msgid "Books sync failed"
-msgstr "Kitoblarni sinxronlab boʻlmadi"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Avval Readest yuklab olish jildini yoki KOReader asosiy jildini belgilang."

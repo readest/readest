@@ -22,18 +22,23 @@ use tauri_plugin_fs::FsExt;
 
 #[cfg(desktop)]
 use tauri::{Listener, Url};
+mod backup_zip;
 #[cfg(target_os = "macos")]
 mod browser_cookies_macos;
 mod browser_fetch;
 mod clip_url;
+mod comic_parser;
 mod cover_thumbnail;
 mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
 mod epub_parser;
+#[cfg(all(target_os = "linux", any(feature = "cef", test)))]
+mod linux_display;
 mod localsend;
 #[cfg(target_os = "macos")]
 mod macos;
+mod media_proxy;
 mod mobi_parser;
 mod nightly_update;
 mod parser_common;
@@ -285,6 +290,29 @@ fn default_window_size(work_area: Option<(f64, f64)>) -> (f64, f64) {
     )
 }
 
+/// Windows 10 renders the native shadow of an undecorated window as a 1px
+/// border on the left, right and bottom edges but not the top, which reads
+/// as a broken frame (tauri-apps/tauri#13134). Windows 11 (build >= 22000)
+/// draws a uniform border, so only there is the shadow worth keeping.
+#[cfg(all(desktop, target_os = "windows"))]
+fn undecorated_shadow_is_symmetric() -> bool {
+    use winreg::enums::HKEY_LOCAL_MACHINE;
+    use winreg::RegKey;
+
+    RegKey::predef(HKEY_LOCAL_MACHINE)
+        .open_subkey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")
+        .and_then(|key| key.get_value::<String, _>("CurrentBuild"))
+        // Unknown version: keep the current (shadowed) behavior.
+        .map_or(true, |build| {
+            build.parse::<u32>().map_or(true, |b| b >= 22000)
+        })
+}
+
+#[cfg(all(desktop, not(target_os = "windows"), not(target_os = "macos")))]
+fn undecorated_shadow_is_symmetric() -> bool {
+    true
+}
+
 // Pure decision for whether the in-app updater should be hidden. Kept
 // dependency-free so it can be unit tested for every platform combination.
 //
@@ -331,14 +359,54 @@ fn is_updater_disabled() -> bool {
     updater_disabled()
 }
 
-// Record the WebView engine/version (parsed from the app's User-Agent) so Sentry
-// events can be correlated with WebView version. Called once from
-// `NativeAppService.init()`; no-op when Sentry is disabled.
+// Record the WebView engine/version so Sentry events can be correlated with
+// the WebView build. Chromium's UA-Reduction freezes the User-Agent to a stub
+// on Windows WebView2 (e.g. "152.0.0.0"), so prefer the version reported by
+// the runtime itself and keep the engine from the User-Agent parse. Called
+// once from `NativeAppService.init()`; no-op when Sentry is disabled.
 #[tauri::command]
 fn set_webview_info(user_agent: String) {
-    if let Some((engine, version)) = sentry_config::parse_webview_info(&user_agent) {
-        sentry_config::set_webview_info(engine, version);
+    let parsed = sentry_config::parse_webview_info(&user_agent);
+    let version =
+        runtime_webview_version().or_else(|| parsed.as_ref().map(|(_, version)| version.clone()));
+    if let (Some((engine, _)), Some(version)) = (&parsed, version) {
+        sentry_config::set_webview_info(engine.clone(), version);
     }
+}
+
+#[derive(serde::Serialize)]
+struct WebViewInfo {
+    engine: String,
+    version: String,
+}
+
+// The WebView engine/version for the About window's display. The runtime
+// query is only needed on Windows, where the User-Agent is reduced to a
+// stub; the other platforms keep their User-Agent-derived labels.
+#[tauri::command]
+fn get_webview_version() -> Option<WebViewInfo> {
+    if std::env::consts::OS != "windows" {
+        return None;
+    }
+    Some(WebViewInfo {
+        engine: "WebView2".to_string(),
+        version: runtime_webview_version()?,
+    })
+}
+
+// `tauri::webview_version()` is wry's query. On Linux the app runs on CEF, where
+// it would report the WebKitGTK version instead, and referencing it keeps the
+// WebKitGTK libraries linked, which the Nix package strips so Chromium's zygote
+// stays single-threaded. CEF's User-Agent carries the full Chromium version.
+#[cfg(not(target_os = "linux"))]
+fn runtime_webview_version() -> Option<String> {
+    let version = tauri::webview_version().ok()?;
+    Some(version.trim().to_string()).filter(|version| !version.is_empty())
+}
+
+#[cfg(target_os = "linux")]
+fn runtime_webview_version() -> Option<String> {
+    None
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -348,10 +416,14 @@ struct SingleInstancePayload {
     cwd: String,
 }
 
-/// The webview runtime this build drives: CEF for the Linux CEF build, Wry
-/// everywhere else (the `cef` feature is a no-op off Linux, see Cargo.toml). Named explicitly because several plugins pull in tauri's
-/// default `wry` feature even when CEF is selected, which leaves
-/// `Builder::default()` ambiguous there.
+/// The webview runtime this build drives: CEF on Linux, Wry everywhere else
+/// (the `cef` feature is a no-op off Linux, see Cargo.toml). Named explicitly
+/// because several plugins pull in tauri's default `wry` feature even when CEF
+/// is selected, which leaves `Builder::default()` ambiguous there.
+///
+/// The one Linux build that is still Wry is the webdriver test harness
+/// (scripts/test-tauri.sh): tauri-plugin-webdriver drives the webview through
+/// webkit2gtk there and has no CEF backend.
 #[cfg(all(feature = "cef", target_os = "linux"))]
 type AppRuntime = tauri::Cef;
 #[cfg(not(all(feature = "cef", target_os = "linux")))]
@@ -360,25 +432,13 @@ type AppRuntime = tauri::Wry;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[cfg_attr(all(feature = "cef", target_os = "linux"), tauri::cef_entry_point)]
 pub fn run() {
-    // WebKitGTK's native-Wayland surface handling has a longstanding GTK/Mutter
-    // bug where a webview's first `configure` event can report a 0 height
-    // (`gdk_wayland_window_configure: assertion 'height > 0' failed`), and
-    // subsequent frames get cropped/rescaled until the compositor forces a
-    // relayout (e.g. on focus change). It reproduces on GNOME's Wayland
-    // session but not XWayland, and only affects the WebKitGTK (`wry`)
-    // runtime used by non-CEF Linux builds such as Flatpak; the CEF runtime
-    // that ships in our official deb/rpm/AppImage builds is unaffected (see
-    // #6096). This must run before GTK/webkit initialize (i.e. before
-    // `tauri::Builder::run`), so force XWayland here unless the user already
-    // picked a backend. This mirrors the same workaround already applied to
-    // the Nix dev shell in flake.nix.
-    #[cfg(all(target_os = "linux", not(feature = "cef")))]
-    if std::env::var_os("GDK_BACKEND").is_none() && std::env::var_os("WAYLAND_DISPLAY").is_some() {
-        // SAFETY: this is the first thing `run()` does, before any other
-        // thread (tauri's async runtime, GTK, etc.) exists to race with it.
-        unsafe {
-            std::env::set_var("GDK_BACKEND", "x11");
-        }
+    // The CEF runtime forces X11, even on Wayland. Check before initializing
+    // Tauri, which otherwise hides the missing display behind CreateWindow.
+    // cef_entry_point routes helper processes away before reaching this code.
+    #[cfg(all(feature = "cef", target_os = "linux"))]
+    if let Err(message) = linux_display::check_display(std::env::var_os("DISPLAY").as_deref()) {
+        eprintln!("{message}");
+        std::process::exit(1);
     }
 
     // Initialize Sentry as early as possible so panics during startup are
@@ -493,14 +553,18 @@ pub fn run() {
             get_environment_variable,
             get_executable_dir,
             set_webview_info,
+            get_webview_version,
             #[cfg(desktop)]
             is_updater_disabled,
             allow_paths_in_scopes,
             cover_thumbnail::optimize_cover_thumbnails,
             dir_scanner::read_dir,
+            backup_zip::write_backup_zip,
+            backup_zip::extract_backup_zip,
             epub_parser::parse_epub_metadata,
             epub_parser::extract_epub_cover_full,
             epub_parser::parse_epub_full,
+            comic_parser::get_comic_page_sizes,
             mobi_parser::parse_mobi_metadata,
             mobi_parser::extract_mobi_cover_full,
             pdf_parser::parse_pdf_metadata,
@@ -512,6 +576,8 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             macos::traffic_light::set_traffic_lights,
             #[cfg(target_os = "macos")]
+            macos::traffic_light::set_window_title,
+            #[cfg(target_os = "macos")]
             macos::system_dictionary::show_lookup_popover,
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             discord_rpc::update_book_presence,
@@ -520,7 +586,9 @@ pub fn run() {
             clip_url::clip_url,
             web_browser::open_web_browser,
             browser_fetch::fetch_web_browser_resource,
+            media_proxy::get_media_proxy_base,
             web_browser::set_web_browser_status,
+            web_browser::extract_web_browser_archive,
             localsend::commands::localsend_start,
             localsend::commands::localsend_stop,
             localsend::commands::localsend_get_status,
@@ -809,7 +877,7 @@ pub fn run() {
                 let mut builder = win_builder
                     .decorations(false)
                     .visible(false)
-                    .shadow(true)
+                    .shadow(undecorated_shadow_is_symmetric())
                     .title("Readest");
 
                 #[cfg(target_os = "windows")]
