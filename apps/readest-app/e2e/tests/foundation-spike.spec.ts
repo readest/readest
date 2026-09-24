@@ -215,6 +215,14 @@ test.describe('NL-270 foundation spike', () => {
     expect(await paragraph.evaluate((element) => element.innerHTML)).toBe(htmlBefore);
     expect(await page.evaluate(() => CSS.highlights.has('foundation-annotations'))).toBe(true);
 
+    await page.getByRole('button', { name: '打开批注管理' }).click();
+    await page.getByLabel('搜索批注').fill('解释粗体');
+    expect(await page.evaluate(() => CSS.highlights.has('foundation-annotations'))).toBe(true);
+    await page.getByRole('button', { name: '选择批注：解释粗体' }).click();
+    expect(await page.evaluate(() => CSS.highlights.has('foundation-annotations'))).toBe(true);
+    await page.getByRole('button', { name: '返回对话批注' }).click();
+    expect(await page.evaluate(() => CSS.highlights.has('foundation-annotations'))).toBe(true);
+
     await expect(page.getByRole('slider', { name: '正文宽度' })).toHaveCount(0);
     await page.getByLabel('阅读工具栏').hover();
     await page.getByRole('button', { name: '展开阅读显示设置' }).click();

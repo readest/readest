@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import FoundationSpike from '@/app/foundation-spike/page';
+import FoundationSpike, { restoredWindowSize } from '@/app/foundation-spike/page';
 
 describe('foundation spike page', () => {
   beforeEach(() => {
@@ -41,6 +41,25 @@ describe('foundation spike page', () => {
     window.getSelection()?.addRange(range);
     fireEvent.mouseUp(startElement.closest('article')!);
   };
+
+  it('restores the pre-fullscreen size or half of the work area without overflowing', () => {
+    expect(restoredWindowSize({ width: 1280, height: 760 }, { width: 1920, height: 1040 })).toEqual(
+      {
+        width: 1280,
+        height: 760,
+      },
+    );
+    expect(restoredWindowSize(null, { width: 1920, height: 1040 })).toEqual({
+      width: 960,
+      height: 520,
+    });
+    expect(restoredWindowSize({ width: 2400, height: 1400 }, { width: 1600, height: 900 })).toEqual(
+      {
+        width: 1600,
+        height: 900,
+      },
+    );
+  });
 
   it('runs selection, question, citations, and navigation as one loop', () => {
     render(<FoundationSpike />);
@@ -158,26 +177,57 @@ describe('foundation spike page', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('keeps sidebar and margin marker synchronized after editing and archiving', () => {
+  it('renames annotations and deletes selected threads in bulk without opening them', () => {
     render(<FoundationSpike />);
     selectText('block-02', '紧致性');
     fireEvent.change(screen.getByLabelText('问题'), { target: { value: '旧标题问题' } });
     fireEvent.click(screen.getByRole('button', { name: '提问' }));
 
+    selectText('block-03', '因此');
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '第二条批注' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+
     fireEvent.click(screen.getByRole('button', { name: '打开批注管理' }));
-    fireEvent.click(screen.getByRole('button', { name: '重命名批注：旧标题问题' }));
+    fireEvent.click(screen.getByRole('button', { name: '选择批注：旧标题问题' }));
+    fireEvent.click(screen.getByRole('button', { name: '重命名选中批注' }));
     fireEvent.change(screen.getByLabelText('批注标题'), { target: { value: '新批注标题' } });
     fireEvent.click(screen.getByRole('button', { name: '保存标题' }));
     expect(screen.getAllByText('新批注标题').length).toBeGreaterThanOrEqual(1);
 
-    fireEvent.click(screen.getByRole('button', { name: '编辑消息：旧标题问题' }));
-    fireEvent.change(screen.getByLabelText('消息内容'), { target: { value: '修改后的问题' } });
-    fireEvent.click(screen.getByRole('button', { name: '保存消息' }));
-    expect(screen.getByText('修改后的问题')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '选择批注：第二条批注' }));
+    expect(
+      (screen.getByRole('button', { name: '批量删除 2 条批注' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: '批量删除 2 条批注' }));
+    expect(screen.queryByText('新批注标题')).toBeNull();
+    expect(screen.queryByText('第二条批注')).toBeNull();
+    expect(screen.queryByRole('button', { name: /打开源块 02 的批注/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /打开源块 03 的批注/ })).toBeNull();
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: '归档批注：新批注标题' }));
-    expect(screen.getAllByText('已归档').length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: '显示已归档' }));
+  it('keeps annotation highlights when Markdown DOM rerenders after management changes', async () => {
+    render(<FoundationSpike />);
+    fireEvent.change(screen.getByLabelText('导入 Markdown'), {
+      target: {
+        files: [
+          new File(['# 标题\n\n第一段包含 **粗体**。\n\n第二段正文。'], '高亮.md', {
+            type: 'text/markdown',
+          }),
+        ],
+      },
+    });
+    const bold = await screen.findByText('粗体');
+    const blockId = (bold.closest('[data-testid^="source-block-"]') as HTMLElement).dataset[
+      'testid'
+    ]!.replace('source-block-', '');
+    selectText(blockId, '粗体');
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '高亮稳定吗？' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+
+    expect(screen.getByRole('button', { name: /打开源块 02 的批注/ })).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '打开批注管理' }));
+    fireEvent.change(screen.getByLabelText('搜索批注'), { target: { value: '高亮稳定' } });
+    fireEvent.click(screen.getByRole('button', { name: '选择批注：高亮稳定吗？' }));
     expect(screen.getByRole('button', { name: /打开源块 02 的批注/ })).not.toBeNull();
   });
 

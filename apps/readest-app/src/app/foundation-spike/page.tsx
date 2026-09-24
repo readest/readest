@@ -4,6 +4,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -58,6 +59,30 @@ interface HighlightConstructor {
   new (...ranges: Range[]): unknown;
 }
 
+interface WindowDimensions {
+  width: number;
+  height: number;
+}
+
+export function restoredWindowSize(
+  savedSize: WindowDimensions | null,
+  workArea: WindowDimensions | null,
+): WindowDimensions {
+  const fallbackSize = workArea
+    ? {
+        width: Math.round(workArea.width / 2),
+        height: Math.round(workArea.height / 2),
+      }
+    : { width: 1100, height: 720 };
+  const requestedSize = savedSize ?? fallbackSize;
+  return workArea
+    ? {
+        width: Math.min(requestedSize.width, workArea.width),
+        height: Math.min(requestedSize.height, workArea.height),
+      }
+    : requestedSize;
+}
+
 function textBoundary(element: HTMLElement, offset: number): [Node, number] | null {
   const walker = globalThis.document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   let consumed = 0;
@@ -95,7 +120,7 @@ export default function FoundationSpike() {
   const [navigationStatus, setNavigationStatus] = useState('');
   const [importStatus, setImportStatus] = useState('');
   const [search, setSearch] = useState('');
-  const [showArchived, setShowArchived] = useState(false);
+  const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -188,13 +213,16 @@ export default function FoundationSpike() {
   });
 
   const activeThread = threads.find((item) => item.id === activeThreadId) ?? null;
+  const selectedThread =
+    selectedThreadIds.length === 1
+      ? (threads.find((item) => item.id === selectedThreadIds[0]) ?? null)
+      : null;
   const visibleThreads = threads.filter(
     (item) =>
-      (showArchived || item.status === 'active' || item.id === activeThreadId) &&
-      (!search.trim() ||
-        `${item.title} ${item.anchor.exactQuote} ${item.messages.map((message) => message.content).join(' ')}`
-          .toLowerCase()
-          .includes(search.trim().toLowerCase())),
+      !search.trim() ||
+      `${item.title} ${item.anchor.exactQuote} ${item.messages.map((message) => message.content).join(' ')}`
+        .toLowerCase()
+        .includes(search.trim().toLowerCase()),
   );
   const threadsByBlock = new Map<string, SourceDocThread[]>();
   for (const item of threads) {
@@ -304,10 +332,11 @@ export default function FoundationSpike() {
   };
 
   const renameActiveThread = () => {
-    if (!store || !activeThread) return;
-    store.renameThread(activeThread.id, titleDraft);
+    const targetThread = selectedThread ?? activeThread;
+    if (!store || !targetThread) return;
+    store.renameThread(targetThread.id, titleDraft);
     setEditingTitle(false);
-    refreshThreads(activeThread.id);
+    refreshThreads(activeThreadId);
   };
 
   const saveMessage = () => {
@@ -316,6 +345,23 @@ export default function FoundationSpike() {
     setEditingMessageId(null);
     setMessageDraft('');
     refreshThreads(activeThreadId);
+  };
+
+  const deleteSelectedThreads = () => {
+    if (!store || selectedThreadIds.length === 0) return;
+    store.deleteThreads(selectedThreadIds);
+    const removedActiveThread = activeThreadId ? selectedThreadIds.includes(activeThreadId) : false;
+    setSelectedThreadIds([]);
+    if (removedActiveThread) setAnchor(null);
+    refreshThreads(removedActiveThread ? null : activeThreadId);
+  };
+
+  const toggleThreadSelection = (threadId: string) => {
+    setSelectedThreadIds((current) =>
+      current.includes(threadId)
+        ? current.filter((selectedId) => selectedId !== threadId)
+        : [...current, threadId],
+    );
   };
 
   const updateReadingSetting = (key: keyof ReadingSettings, value: number) => {
@@ -368,12 +414,16 @@ export default function FoundationSpike() {
   const toggleFullscreen = async () => {
     try {
       if (isTauriAppPlatform()) {
-        const { getCurrentWindow, LogicalSize } = await import('@tauri-apps/api/window');
+        const { currentMonitor, getCurrentWindow, LogicalSize } = await import(
+          '@tauri-apps/api/window'
+        );
         const currentWindow = getCurrentWindow();
         if (await currentWindow.isFullscreen()) {
           await currentWindow.setFullscreen(false);
           await currentWindow.unmaximize();
-          const size = normalWindowSize.current ?? { width: 1280, height: 820 };
+          const monitor = await currentMonitor();
+          const workArea = monitor?.workArea.size.toLogical(monitor.scaleFactor);
+          const size = restoredWindowSize(normalWindowSize.current, workArea ?? null);
           await currentWindow.setSize(new LogicalSize(size.width, size.height));
           await currentWindow.center();
         } else {
@@ -417,7 +467,7 @@ export default function FoundationSpike() {
     const block = documentModel.blocks.find((item) => item.id === blockId);
     return documentModel.sections.find((item) => item.id === block?.sectionId)?.title ?? '';
   };
-  useEffect(() => {
+  useLayoutEffect(() => {
     const css = globalThis.CSS as typeof CSS & { highlights?: HighlightRegistry };
     const HighlightClass = (globalThis as typeof globalThis & { Highlight?: HighlightConstructor })
       .Highlight;
@@ -430,15 +480,14 @@ export default function FoundationSpike() {
         const element = globalThis.document.querySelector<HTMLElement>(
           `[data-source-text="${blockId}"]`,
         );
-        const block = documentModel.blocks.find((item) => item.id === blockId);
-        if (!element || !block) continue;
+        if (!element) continue;
         const blockPosition = thread.anchor.selectedBlockIds.indexOf(blockId);
         const range = domRange(
           element,
           blockPosition === 0 ? thread.anchor.startOffset : 0,
           blockPosition === thread.anchor.selectedBlockIds.length - 1
             ? thread.anchor.endOffset
-            : block.semanticText.length,
+            : (element.textContent?.length ?? 0),
         );
         if (range) {
           annotationRanges.push(range);
@@ -464,13 +513,7 @@ export default function FoundationSpike() {
       css.highlights?.delete(ACTIVE_ANNOTATION_HIGHLIGHT);
       css.highlights?.delete(CITATION_HIGHLIGHT);
     };
-  }, [
-    activeThreadId,
-    documentModel,
-    highlightedCitation,
-    readingSettings.annotationDisplay,
-    threads,
-  ]);
+  });
 
   const openThreadAtPointer = (
     event: ReactMouseEvent<HTMLElement>,
@@ -1090,7 +1133,7 @@ export default function FoundationSpike() {
                   </p>
                   <p className='mt-0.5 truncate text-[11px]' style={{ color: muted }}>
                     {activeThread
-                      ? `${activeThread.status === 'archived' ? '已归档 · ' : '选中原文 · '}${activeThread.messages.length} 条消息`
+                      ? `选中原文 · ${activeThread.messages.length} 条消息`
                       : anchor
                         ? `已选择 ${anchor.selectedBlockIds.length} 段原文`
                         : '选择原文后开始提问'}
@@ -1206,34 +1249,18 @@ export default function FoundationSpike() {
                     ‹
                   </button>
                   <h2 className='min-w-0 flex-1 truncate text-sm font-bold'>批注管理</h2>
-                  {activeThread ? (
-                    <>
-                      <button
-                        className='h-8 w-8 rounded-lg hover:bg-black/5'
-                        aria-label={`重命名批注：${activeThread.title}`}
-                        title='重命名'
-                        onClick={() => {
-                          setTitleDraft(activeThread.title);
-                          setEditingTitle(true);
-                        }}
-                      >
-                        ✎
-                      </button>
-                      <button
-                        className='h-8 w-8 rounded-lg hover:bg-black/5'
-                        aria-label={`${activeThread.status === 'archived' ? '取消归档' : '归档'}批注：${activeThread.title}`}
-                        title={activeThread.status === 'archived' ? '取消归档' : '归档'}
-                        onClick={() => {
-                          store?.setThreadArchived(
-                            activeThread.id,
-                            activeThread.status !== 'archived',
-                          );
-                          refreshThreads(activeThread.id);
-                        }}
-                      >
-                        ▱
-                      </button>
-                    </>
+                  {selectedThread ? (
+                    <button
+                      className='h-8 w-8 rounded-lg hover:bg-black/5'
+                      aria-label='重命名选中批注'
+                      title='重命名选中批注'
+                      onClick={() => {
+                        setTitleDraft(selectedThread.title);
+                        setEditingTitle(true);
+                      }}
+                    >
+                      ✎
+                    </button>
                   ) : null}
                 </header>
                 <div className='border-b p-3' style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}>
@@ -1263,26 +1290,44 @@ export default function FoundationSpike() {
                   ) : null}
                 </div>
                 <div className='min-h-0 overflow-y-auto p-2'>
-                  {visibleThreads.map((item) => (
-                    <button
-                      key={item.id}
-                      className={`mb-1 grid w-full grid-cols-[4px_1fr] gap-3 rounded-xl p-3 text-left hover:bg-black/5 ${item.id === activeThreadId ? 'bg-blue-500/10' : ''}`}
-                      onClick={() => selectThread(item)}
-                    >
-                      <span
-                        className={`h-full min-h-10 rounded-full ${item.status === 'archived' ? 'bg-gray-400' : 'bg-blue-500'}`}
-                      />
-                      <span className='min-w-0'>
-                        <strong className='block truncate text-sm'>{item.title}</strong>
-                        <span className='mt-1 block truncate text-xs' style={{ color: muted }}>
-                          {item.anchor.exactQuote}
-                        </span>
-                        <span className='mt-1 block text-[10px]' style={{ color: muted }}>
-                          {item.status === 'archived' ? '已归档' : `${item.messages.length} 条消息`}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
+                  {visibleThreads.map((item) => {
+                    const selected = selectedThreadIds.includes(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`mb-1 grid grid-cols-[36px_4px_minmax(0,1fr)] items-stretch gap-2 rounded-xl p-2 hover:bg-black/5 ${item.id === activeThreadId ? 'bg-blue-500/10' : ''} ${selected ? 'ring-1 ring-blue-500/50' : ''}`}
+                      >
+                        <button
+                          className='grid min-h-12 place-items-center rounded-lg hover:bg-blue-500/10'
+                          aria-label={`选择批注：${item.title}`}
+                          aria-pressed={selected}
+                          title={selected ? '取消选择' : '选择'}
+                          onClick={() => toggleThreadSelection(item.id)}
+                        >
+                          <span
+                            aria-hidden='true'
+                            className={`grid h-5 w-5 place-items-center rounded border text-xs ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-400'}`}
+                          >
+                            {selected ? '✓' : ''}
+                          </span>
+                        </button>
+                        <span className='my-1 rounded-full bg-blue-500' />
+                        <button
+                          className='min-w-0 rounded-lg px-2 py-1 text-left'
+                          aria-label={`打开批注：${item.title}`}
+                          onClick={() => selectThread(item)}
+                        >
+                          <strong className='block truncate text-sm'>{item.title}</strong>
+                          <span className='mt-1 block truncate text-xs' style={{ color: muted }}>
+                            {item.anchor.exactQuote}
+                          </span>
+                          <span className='mt-1 block text-[10px]' style={{ color: muted }}>
+                            {item.messages.length} 条消息
+                          </span>
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
                 <footer
                   className='flex items-center justify-between border-t px-3 py-2'
@@ -1290,25 +1335,34 @@ export default function FoundationSpike() {
                 >
                   <button
                     className='btn btn-ghost btn-xs'
-                    aria-label='显示已归档'
-                    onClick={() => setShowArchived((value) => !value)}
+                    aria-label='全选当前批注'
+                    onClick={() => {
+                      const visibleIds = visibleThreads.map((item) => item.id);
+                      const allSelected = visibleIds.every((id) => selectedThreadIds.includes(id));
+                      setSelectedThreadIds((current) =>
+                        allSelected
+                          ? current.filter((id) => !visibleIds.includes(id))
+                          : [...new Set([...current, ...visibleIds])],
+                      );
+                    }}
                   >
-                    {showArchived ? '隐藏归档' : '显示归档'}
+                    {visibleThreads.length > 0 &&
+                    visibleThreads.every((item) => selectedThreadIds.includes(item.id))
+                      ? '取消全选'
+                      : '全选'}
                   </button>
-                  {activeThread ? (
-                    <button
-                      className='btn btn-ghost btn-xs text-red-600'
-                      aria-label={`删除批注：${activeThread.title}`}
-                      title='删除'
-                      onClick={() => {
-                        store?.deleteThread(activeThread.id);
-                        setAnchor(null);
-                        refreshThreads(null);
-                      }}
-                    >
-                      ⌫
-                    </button>
-                  ) : null}
+                  <span className='text-xs' style={{ color: muted }}>
+                    已选 {selectedThreadIds.length} 条
+                  </span>
+                  <button
+                    className='btn btn-ghost btn-xs text-red-600 disabled:text-gray-400'
+                    aria-label={`批量删除 ${selectedThreadIds.length} 条批注`}
+                    title='批量删除所选批注'
+                    disabled={selectedThreadIds.length === 0}
+                    onClick={deleteSelectedThreads}
+                  >
+                    ⌫ 删除
+                  </button>
                 </footer>
               </section>
             ) : null}

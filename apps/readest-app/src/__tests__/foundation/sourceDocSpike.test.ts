@@ -240,6 +240,24 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(store.loadSchema().citations).toHaveLength(0);
   });
 
+  it('deletes multiple annotation threads atomically', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const firstBlock = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const secondBlock = SOURCE_DOC_FIXTURE.blocks[2]!;
+    const first = store.ask(SOURCE_DOC_FIXTURE, createSelectionAnchor(firstBlock, 0, 3), '第一条');
+    const second = store.ask(
+      SOURCE_DOC_FIXTURE,
+      createSelectionAnchor(secondBlock, 0, 3),
+      '第二条',
+    );
+
+    store.deleteThreads([first.id, second.id]);
+
+    expect(store.listThreads()).toHaveLength(0);
+    expect(store.loadSchema().messages).toHaveLength(0);
+    expect(store.loadSchema().citations).toHaveLength(0);
+  });
+
   it('retains other-document annotations without listing them in the current document', () => {
     const store = new SourceDocSpikeStore(localStorage);
     const block = SOURCE_DOC_FIXTURE.blocks[1]!;

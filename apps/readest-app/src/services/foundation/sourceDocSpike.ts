@@ -951,11 +951,17 @@ export class SourceDocSpikeStore {
   }
 
   deleteThread(threadId: string): void {
+    this.deleteThreads([threadId]);
+  }
+
+  deleteThreads(threadIds: string[]): void {
+    if (threadIds.length === 0) return;
     const schema = this.loadSchema();
-    const thread = schema.threads.find((item) => item.id === threadId);
-    if (!thread) return;
+    const targetIds = new Set(threadIds);
+    const threads = schema.threads.filter((item) => targetIds.has(item.id));
+    if (threads.length === 0) return;
     const messageIds = new Set(
-      schema.messages.filter((item) => item.threadId === threadId).map((item) => item.id),
+      schema.messages.filter((item) => targetIds.has(item.threadId)).map((item) => item.id),
     );
     const citationAnchorIds = new Set(
       schema.citations
@@ -963,10 +969,11 @@ export class SourceDocSpikeStore {
         .map((item) => item.anchorId),
     );
     schema.citations = schema.citations.filter((item) => !messageIds.has(item.messageId));
-    schema.messages = schema.messages.filter((item) => item.threadId !== threadId);
-    schema.threads = schema.threads.filter((item) => item.id !== threadId);
+    schema.messages = schema.messages.filter((item) => !targetIds.has(item.threadId));
+    schema.threads = schema.threads.filter((item) => !targetIds.has(item.id));
+    const threadAnchorIds = new Set(threads.map((item) => item.anchorId));
     schema.anchors = schema.anchors.filter(
-      (item) => item.id !== thread.anchorId && !citationAnchorIds.has(item.id),
+      (item) => !threadAnchorIds.has(item.id) && !citationAnchorIds.has(item.id),
     );
     this.saveSchema(schema);
   }
