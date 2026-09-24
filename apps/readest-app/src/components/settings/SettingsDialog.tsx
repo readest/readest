@@ -58,6 +58,11 @@ type SettingsScrollPosition = {
 // reopening Settings during this app run, but disappear when the app exits.
 let settingsScrollPosition: SettingsScrollPosition | null = null;
 
+// Test-only reset for the module-level runtime cache.
+export const resetSettingsScrollPosition = () => {
+  settingsScrollPosition = null;
+};
+
 type TabConfig = {
   tab: SettingsPanelType;
   icon: React.ElementType;
@@ -191,7 +196,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       // Keep the content blank while the deferred viewport is initialized and
       // the saved position is applied, then fade it in at the target position.
       hideForRestore(panel);
-      hideForRestore(panel?.closest<HTMLElement>('[data-overlayscrollbars-viewport]'));
+      hideForRestore(panel?.closest<HTMLElement>('[data-overlayscrollbars-viewport]') ?? null);
     } else {
       clearVisibility(panel);
     }

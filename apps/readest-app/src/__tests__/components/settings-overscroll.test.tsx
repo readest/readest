@@ -45,7 +45,9 @@ vi.mock('@/components/settings/AIPanel', () => ({ default: () => null }));
 vi.mock('@/components/settings/IntegrationsPanel', () => ({ default: () => null }));
 vi.mock('@/components/settings/MiscPanel', () => ({ default: () => null }));
 
-const { default: SettingsDialog } = await import('@/components/settings/SettingsDialog');
+const { default: SettingsDialog, resetSettingsScrollPosition } = await import(
+  '@/components/settings/SettingsDialog'
+);
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -60,6 +62,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  resetSettingsScrollPosition();
   vi.unstubAllGlobals();
   document.documentElement.removeAttribute('data-eink');
 });
