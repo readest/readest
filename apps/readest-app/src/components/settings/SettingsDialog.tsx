@@ -49,6 +49,15 @@ export type SettingsPanelPanelProp = {
   onRegisterReset: (resetFn: () => void) => void;
 };
 
+type SettingsScrollPosition = {
+  panel: SettingsPanelType;
+  top: number;
+};
+
+// Keep the scroll position in memory only. It should survive closing and
+// reopening Settings during this app run, but disappear when the app exits.
+let settingsScrollPosition: SettingsScrollPosition | null = null;
+
 type TabConfig = {
   tab: SettingsPanelType;
   icon: React.ElementType;
@@ -143,10 +152,116 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     return 'Font' as SettingsPanelType;
   });
+  const previousActivePanelRef = useRef(activePanel);
+  const hasSwitchedPanelRef = useRef(false);
 
   useLayoutEffect(() => {
-    const viewport = panelRef.current?.closest<HTMLElement>('[data-overlayscrollbars-viewport]');
-    if (viewport) viewport.scrollTop = 0;
+    if (previousActivePanelRef.current !== activePanel) {
+      hasSwitchedPanelRef.current = true;
+      previousActivePanelRef.current = activePanel;
+    }
+
+    const savedTop =
+      !hasSwitchedPanelRef.current && settingsScrollPosition?.panel === activePanel
+        ? settingsScrollPosition.top
+        : null;
+    const shouldAnimateRestore = savedTop !== null && savedTop !== 0;
+    const panel = panelRef.current;
+
+    const clearVisibility = (element: HTMLElement | null) => {
+      if (!element) return;
+      element.style.removeProperty('visibility');
+      element.style.removeProperty('opacity');
+      element.style.removeProperty('transition');
+    };
+    const hideForRestore = (element: HTMLElement | null) => {
+      if (!element) return;
+      element.style.visibility = 'hidden';
+      element.style.opacity = '0';
+      element.style.transition = 'none';
+    };
+    const revealAfterRestore = (element: HTMLElement | null) => {
+      if (!element) return;
+      element.style.transition = 'opacity 200ms ease-out';
+      element.style.visibility = 'visible';
+      element.style.opacity = '1';
+    };
+
+    if (shouldAnimateRestore) {
+      // Keep the content blank while the deferred viewport is initialized and
+      // the saved position is applied, then fade it in at the target position.
+      hideForRestore(panel);
+      hideForRestore(panel?.closest<HTMLElement>('[data-overlayscrollbars-viewport]'));
+    } else {
+      clearVisibility(panel);
+    }
+
+    let viewport: HTMLElement | null = null;
+    let saveScrollPosition: (() => void) | null = null;
+    let revealFrame: number | null = null;
+    let observer: MutationObserver | null = null;
+    let disposed = false;
+
+    const attachScrollTracking = () => {
+      if (disposed || viewport) return;
+      viewport =
+        panelRef.current?.closest<HTMLElement>('[data-overlayscrollbars-viewport]') ?? null;
+      if (!viewport) return;
+
+      const currentViewport = viewport;
+      saveScrollPosition = () => {
+        settingsScrollPosition = { panel: activePanel, top: currentViewport.scrollTop };
+      };
+      currentViewport.addEventListener('scroll', saveScrollPosition, { passive: true });
+      if (savedTop !== null) {
+        if (shouldAnimateRestore) hideForRestore(currentViewport);
+        currentViewport.scrollTop = savedTop;
+        if (shouldAnimateRestore) {
+          const reveal = () => {
+            revealFrame = null;
+            if (disposed) return;
+            revealAfterRestore(currentViewport);
+            revealAfterRestore(panelRef.current);
+          };
+          if (typeof window.requestAnimationFrame === 'function') {
+            revealFrame = window.requestAnimationFrame(reveal);
+          } else {
+            reveal();
+          }
+        }
+      } else {
+        currentViewport.scrollTop = 0;
+        clearVisibility(currentViewport);
+        clearVisibility(panelRef.current);
+        saveScrollPosition();
+      }
+      observer?.disconnect();
+      observer = null;
+    };
+
+    attachScrollTracking();
+    if (!viewport) {
+      // OverlayScrollbars initializes its viewport asynchronously (`defer`).
+      // Watch the dialog subtree so the saved position can be restored as soon
+      // as that viewport is created, without changing the tab-switch reset.
+      const dialog = panelRef.current?.closest<HTMLElement>('.modal-box');
+      if (dialog) {
+        observer = new MutationObserver(attachScrollTracking);
+        observer.observe(dialog, { childList: true, subtree: true });
+      }
+    }
+
+    return () => {
+      disposed = true;
+      if (revealFrame !== null) window.cancelAnimationFrame(revealFrame);
+      observer?.disconnect();
+      if (viewport && saveScrollPosition) {
+        saveScrollPosition();
+        viewport.removeEventListener('scroll', saveScrollPosition);
+      }
+      clearVisibility(panel);
+      clearVisibility(viewport);
+    };
   }, [activePanel]);
 
   // Android WebView does not rubber-band nested scrollers. Move only the

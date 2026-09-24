@@ -134,6 +134,16 @@ describe('Android Settings overscroll', () => {
 });
 
 describe('Settings tab scrolling', () => {
+  it('restores the scroll position when reopened during the same app run', () => {
+    const { viewport } = setup();
+    viewport.scrollTop = 240;
+    fireEvent.scroll(viewport);
+    cleanup();
+
+    render(<SettingsDialog bookKey='' />);
+    expect(screen.getByTestId('viewport').scrollTop).toBe(240);
+  });
+
   it.each([true, false])('starts a newly selected tab at the top (Android: %s)', (android) => {
     env.isAndroidApp = android;
     const { viewport } = setup(200);
