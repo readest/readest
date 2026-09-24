@@ -87,6 +87,7 @@ pub fn is_eink_identity(manufacturer: &str, brand: &str, model: &str, device: &s
 mod tests {
     use super::is_eink_identity;
 
+    /// HANVON Clear7 reports the SoC vendor as manufacturer; brand must still match.
     #[test]
     fn detects_hanvon_when_manufacturer_is_soc_vendor() {
         // HANVON Clear7 (Jinli): ro.product.manufacturer reports QUALCOMM,
@@ -99,6 +100,7 @@ mod tests {
         ));
     }
 
+    /// Plain e-ink-only brands match on manufacturer or brand alone.
     #[test]
     fn detects_regular_eink_brands() {
         assert!(is_eink_identity("onyx", "boox", "palma", "musu"));
@@ -106,6 +108,7 @@ mod tests {
         assert!(is_eink_identity("amazon", "amazon", "kinds3", "walleye"));
     }
 
+    /// An unknown OEM still matches when the model carries a known e-ink name.
     #[test]
     fn detects_by_model_when_no_brand_matches() {
         assert!(is_eink_identity(
@@ -116,6 +119,7 @@ mod tests {
         ));
     }
 
+    /// Mixed-lineup brands (Xiaomi, Hisense) only match with an e-ink model.
     #[test]
     fn phone_brands_need_an_eink_model() {
         assert!(!is_eink_identity("xiaomi", "redmi", "m2012k11c", "venus"));
@@ -129,6 +133,7 @@ mod tests {
         assert!(is_eink_identity("hisense", "hisense", "hlj-bd60", "a5pro"));
     }
 
+    /// Ordinary phones must not match, even with e-ink-ish substrings elsewhere.
     #[test]
     fn rejects_plain_phone() {
         assert!(!is_eink_identity("google", "google", "pixel 9", "tegu"));

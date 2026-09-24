@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 
 use crate::eink_identity::is_eink_identity;
 
+/// Read a raw Android system property (`ro.*`) as a UTF-8 string, if present.
 fn get_system_property(prop: &str) -> Option<String> {
     use std::ffi::CString;
     let name = CString::new(prop).ok()?;
@@ -28,6 +29,7 @@ pub fn is_eink_device() -> bool {
     *IS_EINK.get_or_init(detect_eink_device)
 }
 
+/// Probe the device identity properties and e-ink specific properties once.
 fn detect_eink_device() -> bool {
     let lower = |prop: &str| get_system_property(prop).unwrap_or_default().to_lowercase();
     let manufacturer = lower("ro.product.manufacturer");
