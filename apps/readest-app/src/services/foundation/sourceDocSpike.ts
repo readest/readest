@@ -50,11 +50,13 @@ export interface SourceDocMessage {
   role: 'user' | 'assistant';
   content: string;
   citations: SourceDocCitation[];
+  attachment?: string;
 }
 
 export interface SourceDocThread {
   id: string;
   anchor: SourceDocAnchor;
+  unanchored?: boolean;
   title: string;
   status: 'active' | 'archived';
   createdAt: string;
@@ -101,7 +103,7 @@ interface AnchorRecord extends SourceDocAnchor {
 
 interface ThreadRecord {
   id: string;
-  anchorId: string;
+  anchorId: string | null;
   title: string;
   status: 'active' | 'archived';
   createdAt: string;
@@ -117,6 +119,7 @@ interface MessageRecord {
   state: 'complete';
   createdAt: string;
   updatedAt: string;
+  attachment?: string;
 }
 
 interface CitationRecord {
@@ -557,12 +560,14 @@ export function validateCitation(document: SourceDocFixture, citation: SourceDoc
 
 export function generateStubAnswer(
   document: SourceDocFixture,
-  anchor: SourceDocAnchor,
+  anchor: SourceDocAnchor | null,
   _question: string,
   random: () => number = Math.random,
 ): Pick<SourceDocMessage, 'content' | 'citations'> {
-  const selected = document.blocks.find((item) => item.id === anchor.blockId);
-  if (!selected) throw new Error('Selected block does not exist');
+  const selected = anchor
+    ? document.blocks.find((item) => item.id === anchor.blockId)
+    : document.blocks.find((item) => item.type === 'paragraph');
+  if (!selected) throw new Error('No source block is available');
   const supporting =
     document.blocks.find(
       (item) =>
@@ -581,10 +586,14 @@ export function generateStubAnswer(
     citations: [
       {
         blockId: selected.id,
-        exactQuote: selected.semanticText.slice(
-          anchor.startOffset,
-          anchor.blockId === anchor.endBlockId ? anchor.endOffset : selected.semanticText.length,
-        ),
+        exactQuote: anchor
+          ? selected.semanticText.slice(
+              anchor.startOffset,
+              anchor.blockId === anchor.endBlockId
+                ? anchor.endOffset
+                : selected.semanticText.length,
+            )
+          : selected.semanticText,
       },
       { blockId: supporting.id, exactQuote: supporting.semanticText },
     ],
@@ -728,28 +737,31 @@ export class SourceDocSpikeStore {
   private insertThread(
     schema: AnnotationSchemaV1,
     document: SourceDocFixture,
-    anchor: SourceDocAnchor,
+    anchor: SourceDocAnchor | null,
     messages: SourceDocMessage[],
     threadId: string,
     title?: string,
   ): void {
     const now = new Date().toISOString();
     const versionId = document.versionId ?? schema.currentDocumentVersionId;
-    const anchorId = createId('anchor');
-    schema.anchors.push({
-      ...anchor,
-      id: anchorId,
-      documentVersionId: versionId,
-      kind: 'selection',
-      createdAt: now,
-    });
+    const anchorId = anchor ? createId('anchor') : null;
+    if (anchor && anchorId) {
+      schema.anchors.push({
+        ...anchor,
+        id: anchorId,
+        documentVersionId: versionId,
+        kind: 'selection',
+        createdAt: now,
+      });
+    }
     schema.threads.push({
       id: threadId,
       anchorId,
       title:
         title ||
         messages.find((item) => item.role === 'user')?.content.slice(0, 40) ||
-        anchor.exactQuote.slice(0, 40),
+        anchor?.exactQuote.slice(0, 40) ||
+        '无锚点会话',
       status: 'active',
       createdAt: now,
       updatedAt: now,
@@ -805,15 +817,32 @@ export class SourceDocSpikeStore {
   }
 
   private hydrateThread(schema: AnnotationSchemaV1, record: ThreadRecord): SourceDocThread | null {
-    const storedAnchor = schema.anchors.find((item) => item.id === record.anchorId);
-    if (!storedAnchor) return null;
-    const {
-      id: _id,
-      documentVersionId: _documentVersionId,
-      kind: _kind,
-      createdAt: _createdAt,
-      ...anchor
-    } = storedAnchor;
+    const storedAnchor = record.anchorId
+      ? schema.anchors.find((item) => item.id === record.anchorId)
+      : null;
+    let anchor: SourceDocAnchor = {
+      blockId: '',
+      endBlockId: '',
+      selectedBlockIds: [],
+      sectionId: '',
+      exactQuote: '',
+      prefix: '',
+      suffix: '',
+      startOffset: 0,
+      endOffset: 0,
+    };
+    let unanchored = !storedAnchor;
+    if (storedAnchor) {
+      const {
+        id: _id,
+        documentVersionId: _documentVersionId,
+        kind: _kind,
+        createdAt: _createdAt,
+        ...storedSourceAnchor
+      } = storedAnchor;
+      anchor = storedSourceAnchor;
+      unanchored = false;
+    }
     const messages = schema.messages
       .filter((item) => item.threadId === record.id)
       .sort((left, right) => left.sequenceNo - right.sequenceNo)
@@ -821,6 +850,7 @@ export class SourceDocSpikeStore {
         id: message.id,
         role: message.role,
         content: message.content,
+        attachment: message.attachment,
         citations: schema.citations
           .filter((item) => item.messageId === message.id)
           .sort((left, right) => left.ordinal - right.ordinal)
@@ -839,7 +869,8 @@ export class SourceDocSpikeStore {
       }));
     return {
       id: record.id,
-      anchor,
+      anchor: anchor as SourceDocAnchor,
+      unanchored,
       title: record.title,
       status: record.status,
       createdAt: record.createdAt,
@@ -852,6 +883,7 @@ export class SourceDocSpikeStore {
     const schema = this.loadSchema();
     return schema.threads
       .filter((record) => {
+        if (!record.anchorId) return true;
         const anchor = schema.anchors.find((item) => item.id === record.anchorId);
         return anchor?.documentVersionId === schema.currentDocumentVersionId;
       })
@@ -863,7 +895,9 @@ export class SourceDocSpikeStore {
   listThreadGroups(): SourceDocThreadGroup[] {
     const groups = new Map<string, SourceDocThread[]>();
     for (const thread of this.listThreads())
-      groups.set(thread.anchor.blockId, [...(groups.get(thread.anchor.blockId) ?? []), thread]);
+      if (thread.anchor) {
+        groups.set(thread.anchor.blockId, [...(groups.get(thread.anchor.blockId) ?? []), thread]);
+      }
     return [...groups].map(([blockId, threads]) => ({ blockId, count: threads.length, threads }));
   }
 
@@ -877,9 +911,10 @@ export class SourceDocSpikeStore {
 
   ask(
     document: SourceDocFixture,
-    anchor: SourceDocAnchor,
+    anchor: SourceDocAnchor | null,
     question: string,
     threadId?: string,
+    attachment?: string,
   ): SourceDocThread {
     const schema = this.loadSchema();
     let record = threadId ? schema.threads.find((item) => item.id === threadId) : undefined;
@@ -895,6 +930,7 @@ export class SourceDocSpikeStore {
       role: 'user',
       content: question,
       citations: [],
+      attachment,
     };
     const answer = generateStubAnswer(document, anchor, question);
     const assistantMessage: SourceDocMessage = {
@@ -913,6 +949,7 @@ export class SourceDocSpikeStore {
         state: 'complete',
         createdAt: now,
         updatedAt: now,
+        attachment: message.attachment,
       });
       this.insertCitations(schema, document, message);
     }

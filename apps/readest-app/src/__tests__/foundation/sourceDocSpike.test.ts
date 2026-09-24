@@ -114,6 +114,22 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(second.messages).toHaveLength(4);
   });
 
+  it('persists an unanchored conversation and preserves an optional text attachment', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const thread = store.ask(
+      SOURCE_DOC_FIXTURE,
+      null,
+      '没有选中文本也能提问吗？',
+      undefined,
+      '附加的原文',
+    );
+
+    expect(thread.unanchored).toBe(true);
+    expect(thread.messages[0]?.attachment).toBe('附加的原文');
+    expect(new SourceDocSpikeStore(localStorage).listThreads()[0]?.unanchored).toBe(true);
+    expect(generateStubAnswer(SOURCE_DOC_FIXTURE, null, '无锚点')).toHaveProperty('citations');
+  });
+
   it('imports real Markdown into stable sections and blocks', () => {
     const markdown = `# 第一章\n\n第一段有 **重点**。\n\n## 子节\n\n- 条目一\n- 条目二\n\n\`\`\`ts\nconst answer = 42;\n\`\`\``;
     const first = parseMarkdownDocument('测试书.md', markdown);

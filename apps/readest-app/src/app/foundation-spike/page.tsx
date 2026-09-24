@@ -49,6 +49,7 @@ const SIDEBAR_MAX_WIDTH = 560;
 const ANNOTATION_HIGHLIGHT = 'foundation-annotations';
 const ACTIVE_ANNOTATION_HIGHLIGHT = 'foundation-active-annotation';
 const CITATION_HIGHLIGHT = 'foundation-citation';
+const SELECTION_HIGHLIGHT = 'foundation-selection';
 
 interface HighlightRegistry {
   set(name: string, highlight: unknown): void;
@@ -117,6 +118,10 @@ export default function FoundationSpike() {
   const [question, setQuestion] = useState('');
   const [highlightedCitation, setHighlightedCitation] = useState<SourceDocCitation | null>(null);
   const [selectionError, setSelectionError] = useState('');
+  const [selectionPreview, setSelectionPreview] = useState('');
+  const [selectionAttachments, setSelectionAttachments] = useState<string[]>([]);
+  const [selectedAnchors, setSelectedAnchors] = useState<SourceDocAnchor[]>([]);
+  const [attachSelection, setAttachSelection] = useState(false);
   const [navigationStatus, setNavigationStatus] = useState('');
   const [importStatus, setImportStatus] = useState('');
   const [search, setSearch] = useState('');
@@ -131,6 +136,7 @@ export default function FoundationSpike() {
   const [toolbarHovered, setToolbarHovered] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [expandedEvidenceIds, setExpandedEvidenceIds] = useState<string[]>([]);
+  const [showUnanchoredOnly, setShowUnanchoredOnly] = useState(false);
   const readerScrollRef = useRef<HTMLDivElement | null>(null);
   const conversationScrollRef = useRef<HTMLDivElement | null>(null);
   const sidebarDrag = useRef<{ startX: number; startWidth: number } | null>(null);
@@ -157,7 +163,12 @@ export default function FoundationSpike() {
     setDocumentModel(currentDocument);
     setThreads(store.listThreads());
     setActiveThreadId(restored?.id ?? null);
-    setAnchor(restored?.anchor ?? null);
+    setAnchor(restored?.unanchored ? null : (restored?.anchor ?? null));
+    setSelectedAnchors(restored?.unanchored || !restored?.anchor ? [] : [restored.anchor]);
+    setSelectionPreview(restored?.unanchored ? '' : (restored?.anchor?.exactQuote ?? ''));
+    setSelectionAttachments(
+      restored?.unanchored || !restored?.anchor ? [] : [restored.anchor.exactQuote],
+    );
     try {
       const savedSettings = window.localStorage.getItem(READING_SETTINGS_KEY);
       if (savedSettings) {
@@ -219,20 +230,22 @@ export default function FoundationSpike() {
       : null;
   const visibleThreads = threads.filter(
     (item) =>
-      !search.trim() ||
-      `${item.title} ${item.anchor.exactQuote} ${item.messages.map((message) => message.content).join(' ')}`
-        .toLowerCase()
-        .includes(search.trim().toLowerCase()),
+      (!showUnanchoredOnly || item.unanchored) &&
+      (!search.trim() ||
+        `${item.title} ${item.anchor?.exactQuote ?? ''} ${item.messages.map((message) => message.content).join(' ')}`
+          .toLowerCase()
+          .includes(search.trim().toLowerCase())),
   );
   const threadsByBlock = new Map<string, SourceDocThread[]>();
   for (const item of threads) {
+    if (item.unanchored) continue;
     threadsByBlock.set(item.anchor.blockId, [
       ...(threadsByBlock.get(item.anchor.blockId) ?? []),
       item,
     ]);
   }
 
-  const captureSelection = () => {
+  const captureSelection = (event: ReactMouseEvent<HTMLElement>) => {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
     const range = selection.getRangeAt(0);
@@ -265,18 +278,25 @@ export default function FoundationSpike() {
       return prefix.toString().length;
     };
     try {
-      setAnchor(
-        createRangeAnchor(
-          documentModel,
-          startBlockId,
-          startText.contains(range.startContainer)
-            ? offsetWithin(startText, range.startContainer, range.startOffset)
-            : 0,
-          endBlockId,
-          endText.contains(range.endContainer)
-            ? offsetWithin(endText, range.endContainer, range.endOffset)
-            : (endText.textContent?.length ?? 0),
-        ),
+      const nextAnchor = createRangeAnchor(
+        documentModel,
+        startBlockId,
+        startText.contains(range.startContainer)
+          ? offsetWithin(startText, range.startContainer, range.startOffset)
+          : 0,
+        endBlockId,
+        endText.contains(range.endContainer)
+          ? offsetWithin(endText, range.endContainer, range.endOffset)
+          : (endText.textContent?.length ?? 0),
+      );
+      const nextText = selection.toString().trim();
+      setAnchor(nextAnchor);
+      setSelectedAnchors((current) => (event.ctrlKey ? [...current, nextAnchor] : [nextAnchor]));
+      setSelectionAttachments((current) =>
+        event.ctrlKey && current.length > 0 ? [...current, nextText] : [nextText],
+      );
+      setSelectionPreview((current) =>
+        event.ctrlKey && current ? `${current}\n${nextText}` : nextText,
       );
       setActiveThreadId(null);
       setSelectionError('');
@@ -286,8 +306,16 @@ export default function FoundationSpike() {
   };
 
   const ask = () => {
-    if (!store || !anchor || !question.trim()) return;
-    const updated = store.ask(documentModel, anchor, question.trim(), activeThreadId ?? undefined);
+    if (!store || !question.trim()) return;
+    const updated = store.ask(
+      documentModel,
+      anchor,
+      question.trim(),
+      activeThreadId ?? undefined,
+      attachSelection && selectionAttachments.length > 0
+        ? selectionAttachments.join('\n')
+        : undefined,
+    );
     setQuestion('');
     refreshThreads(updated.id);
     requestAnimationFrame(() => {
@@ -298,12 +326,17 @@ export default function FoundationSpike() {
 
   const selectThread = (thread: SourceDocThread) => {
     setActiveThreadId(thread.id);
-    setAnchor(thread.anchor);
+    setAnchor(thread.unanchored ? null : thread.anchor);
+    setSelectedAnchors(thread.unanchored ? [] : [thread.anchor]);
+    setSelectionPreview(thread.unanchored ? '' : thread.anchor.exactQuote);
+    setSelectionAttachments(thread.unanchored ? [] : [thread.anchor.exactQuote]);
     setSidebarOpen(true);
     setAnnotationManagerOpen(false);
-    globalThis.document
-      .querySelector(`[data-block-id="${thread.anchor.blockId}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!thread.unanchored) {
+      globalThis.document
+        .querySelector(`[data-block-id="${thread.anchor.blockId}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   const navigateToCitation = (citation: SourceDocCitation) => {
@@ -345,6 +378,21 @@ export default function FoundationSpike() {
     setEditingMessageId(null);
     setMessageDraft('');
     refreshThreads(activeThreadId);
+  };
+
+  const cancelMessageEdit = () => {
+    setEditingMessageId(null);
+    setMessageDraft('');
+  };
+
+  const clearSelection = () => {
+    setAnchor(null);
+    setSelectionPreview('');
+    setSelectionAttachments([]);
+    setSelectedAnchors([]);
+    setActiveThreadId(null);
+    setSelectionError('');
+    window.getSelection()?.removeAllRanges();
   };
 
   const deleteSelectedThreads = () => {
@@ -474,7 +522,9 @@ export default function FoundationSpike() {
     if (!css.highlights || !HighlightClass) return;
     const annotationRanges: Range[] = [];
     const activeAnnotationRanges: Range[] = [];
+    const selectionRanges: Range[] = [];
     for (const thread of threads) {
+      if (thread.unanchored) continue;
       if (readingSettings.annotationDisplay === 'card') continue;
       for (const blockId of thread.anchor.selectedBlockIds) {
         const element = globalThis.document.querySelector<HTMLElement>(
@@ -495,8 +545,26 @@ export default function FoundationSpike() {
         }
       }
     }
+    for (const selectedAnchor of selectedAnchors) {
+      for (const blockId of selectedAnchor.selectedBlockIds) {
+        const element = globalThis.document.querySelector<HTMLElement>(
+          `[data-source-text="${blockId}"]`,
+        );
+        if (!element) continue;
+        const blockPosition = selectedAnchor.selectedBlockIds.indexOf(blockId);
+        const range = domRange(
+          element,
+          blockPosition === 0 ? selectedAnchor.startOffset : 0,
+          blockPosition === selectedAnchor.selectedBlockIds.length - 1
+            ? selectedAnchor.endOffset
+            : (element.textContent?.length ?? 0),
+        );
+        if (range) selectionRanges.push(range);
+      }
+    }
     css.highlights.set(ANNOTATION_HIGHLIGHT, new HighlightClass(...annotationRanges));
     css.highlights.set(ACTIVE_ANNOTATION_HIGHLIGHT, new HighlightClass(...activeAnnotationRanges));
+    css.highlights.set(SELECTION_HIGHLIGHT, new HighlightClass(...selectionRanges));
     css.highlights.delete(CITATION_HIGHLIGHT);
     if (highlightedCitation) {
       const element = globalThis.document.querySelector<HTMLElement>(
@@ -512,6 +580,7 @@ export default function FoundationSpike() {
       css.highlights?.delete(ANNOTATION_HIGHLIGHT);
       css.highlights?.delete(ACTIVE_ANNOTATION_HIGHLIGHT);
       css.highlights?.delete(CITATION_HIGHLIGHT);
+      css.highlights?.delete(SELECTION_HIGHLIGHT);
     };
   });
 
@@ -549,6 +618,7 @@ export default function FoundationSpike() {
       offset = prefix.toString().length;
     }
     const matching = blockThreads.filter((thread) => {
+      if (!thread.anchor) return false;
       if (offset === null) return true;
       const position = thread.anchor.selectedBlockIds.indexOf(blockId);
       const start = position === 0 ? thread.anchor.startOffset : 0;
@@ -646,9 +716,14 @@ export default function FoundationSpike() {
                 value={messageDraft}
                 onChange={(event) => setMessageDraft(event.target.value)}
               />
-              <button className='btn btn-xs btn-contrast' onClick={saveMessage}>
-                保存消息
-              </button>
+              <div className='flex justify-end gap-2'>
+                <button className='btn btn-xs btn-ghost eink-bordered' onClick={cancelMessageEdit}>
+                  取消
+                </button>
+                <button className='btn btn-xs btn-contrast' onClick={saveMessage}>
+                  保存
+                </button>
+              </div>
             </div>
           ) : (
             <div
@@ -658,7 +733,12 @@ export default function FoundationSpike() {
                   : 'w-full text-[0.95rem] leading-7'
               }
             >
-              {message.content}
+              <span>{message.content}</span>
+              {message.attachment ? (
+                <span className='mt-2 block rounded-lg bg-black/5 px-2 py-1 text-xs opacity-80'>
+                  原文附件：{message.attachment}
+                </span>
+              ) : null}
             </div>
           )}
           {message.role === 'assistant' && message.citations.length > 0 ? (
@@ -753,6 +833,11 @@ export default function FoundationSpike() {
         ::highlight(${CITATION_HIGHLIGHT}) {
           background-color: #fde047;
           color: #111827;
+        }
+        ::highlight(${SELECTION_HIGHLIGHT}) {
+          background-color: rgba(96, 165, 250, 0.32);
+          text-decoration: underline rgba(37, 99, 235, 0.8) 2px;
+          text-underline-offset: 0.2em;
         }
         .foundation-reader {
           scrollbar-color: ${dark ? '#4b5563' : '#c7c8c0'} transparent;
@@ -1017,6 +1102,11 @@ export default function FoundationSpike() {
               }}
               aria-label='SOURCE_DOC 阅读区'
               onMouseUp={captureSelection}
+              onContextMenu={(event) => {
+                if ((event.target as HTMLElement).closest('[data-source-text]')) return;
+                event.preventDefault();
+                clearSelection();
+              }}
             >
               {documentModel.blocks.map((item) => {
                 const highlighted = highlightedCitation?.blockId === item.id;
@@ -1178,12 +1268,20 @@ export default function FoundationSpike() {
                       ◌
                     </div>
                     <p className='text-sm font-medium'>
-                      {anchor ? '针对所选原文提问' : '选择正文中的文字'}
+                      {anchor ? '针对所选原文提问' : '无锚点聊天'}
                     </p>
+                    {selectionPreview ? (
+                      <blockquote
+                        data-testid='selection-preview'
+                        className='mt-3 max-h-24 w-full overflow-y-auto rounded-lg border-l-2 border-blue-500 bg-blue-500/5 px-3 py-2 text-left text-xs leading-5'
+                      >
+                        {selectionPreview}
+                      </blockquote>
+                    ) : null}
                     <p className='mt-1 max-w-56 text-xs leading-5' style={{ color: muted }}>
                       {anchor
                         ? '发送后会创建批注，并生成本地固定示例回答。'
-                        : '已有批注可直接点击下划线或左侧标记打开。'}
+                        : '右键阅读区空白可取消选中；无锚点会话可从批注管理筛选。'}
                     </p>
                   </div>
                 )}
@@ -1198,6 +1296,23 @@ export default function FoundationSpike() {
                 className='border-t p-3'
                 style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
               >
+                {selectionPreview ? (
+                  <div className='mb-2 rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-xs'>
+                    <div className='mb-1 font-semibold text-blue-600'>当前选中文本</div>
+                    <div className='max-h-16 overflow-y-auto whitespace-pre-wrap'>
+                      {selectionPreview}
+                    </div>
+                  </div>
+                ) : null}
+                <button
+                  type='button'
+                  className={`mb-2 text-xs ${attachSelection ? 'text-blue-600' : ''}`}
+                  aria-pressed={attachSelection}
+                  aria-label='将选中文本作为问题附件'
+                  onClick={() => setAttachSelection((value) => !value)}
+                >
+                  ⎘ {attachSelection ? '已附加选中文本' : '附加选中文本'}
+                </button>
                 <div
                   className='grid grid-cols-[1fr_auto] items-end gap-2 rounded-2xl border p-2 pl-3'
                   style={{ backgroundColor: mutedPanel, borderColor: dark ? '#4b5563' : '#d1d5db' }}
@@ -1214,12 +1329,18 @@ export default function FoundationSpike() {
                         ask();
                       }
                     }}
-                    placeholder={activeThreadId ? '继续追问…' : '针对所选原文提问…'}
+                    placeholder={
+                      activeThreadId
+                        ? '继续追问…'
+                        : anchor
+                          ? '针对所选原文提问…'
+                          : '输入问题（无锚点）…'
+                    }
                   />
                   <button
                     aria-label='提问'
                     className='grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white disabled:cursor-not-allowed disabled:opacity-40'
-                    disabled={!anchor || !question.trim()}
+                    disabled={!question.trim()}
                     onClick={ask}
                   >
                     ➤
@@ -1271,6 +1392,14 @@ export default function FoundationSpike() {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                   />
+                  <label className='mt-2 flex items-center gap-2 text-xs' style={{ color: muted }}>
+                    <input
+                      type='checkbox'
+                      checked={showUnanchoredOnly}
+                      onChange={(event) => setShowUnanchoredOnly(event.target.checked)}
+                    />
+                    只看无锚点会话
+                  </label>
                   {editingTitle ? (
                     <div className='mt-2 flex gap-2'>
                       <input
@@ -1319,7 +1448,7 @@ export default function FoundationSpike() {
                         >
                           <strong className='block truncate text-sm'>{item.title}</strong>
                           <span className='mt-1 block truncate text-xs' style={{ color: muted }}>
-                            {item.anchor.exactQuote}
+                            {item.anchor?.exactQuote ?? '无锚点会话'}
                           </span>
                           <span className='mt-1 block text-[10px]' style={{ color: muted }}>
                             {item.messages.length} 条消息
