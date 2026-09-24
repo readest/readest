@@ -32,6 +32,8 @@ mod cover_thumbnail;
 mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
+// Kept target-independent so its unit tests run on the host in CI.
+pub mod eink_identity;
 mod epub_parser;
 #[cfg(all(target_os = "linux", any(feature = "cef", test)))]
 mod linux_display;
