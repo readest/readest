@@ -101,14 +101,14 @@ fn detect_eink_device() -> bool {
 /// Match the device identity fields against the known e-ink whitelists.
 ///
 /// Some readers report the SoC vendor (e.g. `QUALCOMM`) as the manufacturer and
-/// carry the reader brand only in `ro.product.brand`, so the whitelist is
-/// matched against all four fields joined as one identity string.
+/// carry the reader brand only in `ro.product.brand`, so the manufacturer/brand
+/// whitelist is matched against both fields joined as one string.
 fn is_eink_identity(manufacturer: &str, brand: &str, model: &str, device: &str) -> bool {
-    let identity = format!("{manufacturer} {brand} {model} {device}").to_lowercase();
+    let brands = format!("{manufacturer} {brand}").to_lowercase();
 
-    // Check if any identity field matches a known e-ink manufacturer
+    // Check if manufacturer or brand matches a known e-ink manufacturer
     for eink_manufacturer in EINK_MANUFACTURERS {
-        if identity.contains(eink_manufacturer) {
+        if brands.contains(eink_manufacturer) {
             // Special case for manufacturers that make both e-ink and non-e-ink devices
             if *eink_manufacturer == "hisense" || *eink_manufacturer == "xiaomi" {
                 // Need to also check the model for these manufacturers
@@ -180,5 +180,7 @@ mod tests {
     fn rejects_plain_phone() {
         assert!(!is_eink_identity("google", "google", "pixel 9", "tegu"));
         assert!(!is_eink_identity("samsung", "samsung", "sm-g9910", "r8q"));
+        // Manufacturer tokens must not match against model/device strings
+        assert!(!is_eink_identity("qualcomm", "samsung", "sm-boox99", "r8q"));
     }
 }
