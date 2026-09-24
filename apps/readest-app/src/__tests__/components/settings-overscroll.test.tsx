@@ -45,7 +45,9 @@ vi.mock('@/components/settings/AIPanel', () => ({ default: () => null }));
 vi.mock('@/components/settings/IntegrationsPanel', () => ({ default: () => null }));
 vi.mock('@/components/settings/MiscPanel', () => ({ default: () => null }));
 
-const { default: SettingsDialog } = await import('@/components/settings/SettingsDialog');
+const { default: SettingsDialog, resetSettingsScrollPosition } = await import(
+  '@/components/settings/SettingsDialog'
+);
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -60,6 +62,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  resetSettingsScrollPosition();
   vi.unstubAllGlobals();
   document.documentElement.removeAttribute('data-eink');
 });
@@ -134,6 +137,16 @@ describe('Android Settings overscroll', () => {
 });
 
 describe('Settings tab scrolling', () => {
+  it('restores the scroll position when reopened during the same app run', () => {
+    const { viewport } = setup();
+    viewport.scrollTop = 240;
+    fireEvent.scroll(viewport);
+    cleanup();
+
+    render(<SettingsDialog bookKey='' />);
+    expect(screen.getByTestId('viewport').scrollTop).toBe(240);
+  });
+
   it.each([true, false])('starts a newly selected tab at the top (Android: %s)', (android) => {
     env.isAndroidApp = android;
     const { viewport } = setup(200);
