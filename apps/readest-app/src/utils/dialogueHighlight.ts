@@ -1,4 +1,4 @@
-import { BookNote, ViewSettings } from '@/types/book';
+import { BookNote, BookSearchMatch, BookSearchResult, ViewSettings } from '@/types/book';
 import type { FoliateView } from '@/types/view';
 import { getIndexFromCfi } from '@/utils/cfi';
 
@@ -185,17 +185,24 @@ export const manageDialogueHighlight = (doc: Document, viewSettings: ViewSetting
   markDashBlocks(doc);
 };
 
+// foliate-js keys its search highlights by this prefix (view.js SEARCH_PREFIX).
+const SEARCH_PREFIX = 'foliate-search:';
+
 /**
  * Re-run the marking on every section a view has rendered, e.g. after the
  * setting changes. Wrapping moves quoted text into spans, which collapses any
  * overlay range with an end inside a quote, so redraw the section's
- * highlights from their CFIs.
+ * highlights and search matches from their CFIs.
  */
 export const refreshViewDialogueHighlight = (
   view: FoliateView,
   viewSettings: ViewSettings,
   booknotes: BookNote[],
+  searchResults: BookSearchResult[] | BookSearchMatch[] | null = null,
 ): void => {
+  const searchCfis = (searchResults ?? [])
+    .flatMap((result) => ('subitems' in result ? result.subitems : [result]))
+    .flatMap((match) => match.cfis ?? [match.cfi]);
   for (const { doc, index } of view.renderer.getContents()) {
     manageDialogueHighlight(doc, viewSettings);
     booknotes
@@ -207,5 +214,10 @@ export const refreshViewDialogueHighlight = (
           getIndexFromCfi(note.cfi) === index,
       )
       .forEach((note) => view.addAnnotation(note));
+    searchCfis
+      .filter((cfi) => getIndexFromCfi(cfi) === index)
+      .forEach((cfi) =>
+        view.addAnnotation({ value: SEARCH_PREFIX + cfi } as BookNote & { value: string }),
+      );
   }
 };

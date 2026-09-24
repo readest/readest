@@ -13,6 +13,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { resolveThemeIsDarkMode } from '@/utils/ambientLight';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
@@ -248,18 +249,27 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     const isGlobal = getViewSettings(bookKey)?.isGlobal ?? true;
     const keys = isGlobal ? bookKeys : bookKey ? [bookKey] : [];
     const { getConfig } = useBookDataStore.getState();
+    const { getSearchNavState } = useSidebarStore.getState();
     keys.forEach((key) => {
       const vs = getViewSettings(key);
       const view = getView(key);
       if (!vs || !view) return;
-      refreshViewDialogueHighlight(view, vs, getConfig(key)?.booknotes ?? []);
+      refreshViewDialogueHighlight(
+        view,
+        vs,
+        getConfig(key)?.booknotes ?? [],
+        getSearchNavState(key).searchResults,
+      );
     });
   };
 
   useEffect(() => {
     if (dialogueHighlight === viewSettings.dialogueHighlight) return;
-    saveViewSettings(envConfig, bookKey, 'dialogueHighlight', dialogueHighlight);
-    refreshDialogueMarks();
+    // A global save reaches the open books one at a time; refresh once every
+    // view has the new setting.
+    saveViewSettings(envConfig, bookKey, 'dialogueHighlight', dialogueHighlight).then(
+      refreshDialogueMarks,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialogueHighlight]);
 
@@ -267,47 +277,51 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // Capture before the saves below mutate viewSettings in place.
     const customTextColorChanged =
       dialogueHighlightCustomTextColor !== viewSettings.dialogueHighlightCustomTextColor;
-    let update = false;
+    const saves: Promise<void>[] = [];
     if (dialogueHighlightCustomColor !== viewSettings.dialogueHighlightCustomColor) {
-      saveViewSettings(
-        envConfig,
-        bookKey,
-        'dialogueHighlightCustomColor',
-        dialogueHighlightCustomColor,
+      saves.push(
+        saveViewSettings(
+          envConfig,
+          bookKey,
+          'dialogueHighlightCustomColor',
+          dialogueHighlightCustomColor,
+        ),
       );
-      update = true;
     }
     if (dialogueHighlightColor !== viewSettings.dialogueHighlightColor) {
-      saveViewSettings(envConfig, bookKey, 'dialogueHighlightColor', dialogueHighlightColor);
-      update = true;
+      saves.push(
+        saveViewSettings(envConfig, bookKey, 'dialogueHighlightColor', dialogueHighlightColor),
+      );
     }
     if (viewSettings.dialogueHighlightCustomTextColor !== dialogueHighlightCustomTextColor) {
-      saveViewSettings(
-        envConfig,
-        bookKey,
-        'dialogueHighlightCustomTextColor',
-        dialogueHighlightCustomTextColor,
+      saves.push(
+        saveViewSettings(
+          envConfig,
+          bookKey,
+          'dialogueHighlightCustomTextColor',
+          dialogueHighlightCustomTextColor,
+        ),
       );
-      update = true;
     }
     if (viewSettings.dialogueHighlightTextColor !== dialogueHighlightTextColor) {
-      saveViewSettings(
-        envConfig,
-        bookKey,
-        'dialogueHighlightTextColor',
-        dialogueHighlightTextColor,
+      saves.push(
+        saveViewSettings(
+          envConfig,
+          bookKey,
+          'dialogueHighlightTextColor',
+          dialogueHighlightTextColor,
+        ),
       );
-      update = true;
     }
-    if (!update) return;
     // Recoloring is pure CSS (getStyles reads these fields), so the saved
     // viewSettings refresh via saveViewSettings -> setStyles is enough when
     // the background is on and spans are guaranteed present. With the
     // background off, spans may not exist yet (text-only mode just turned
     // on), so re-wrap — but only on that toggle transition, not on every
     // color-picker tick, since each run clears and rewrites every document.
+    // Wait for every save so each open book has the new settings first.
     if (!dialogueHighlight && customTextColorChanged) {
-      refreshDialogueMarks();
+      Promise.all(saves).then(refreshDialogueMarks);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

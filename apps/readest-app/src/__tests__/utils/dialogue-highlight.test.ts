@@ -8,7 +8,7 @@ import {
   DIALOGUE_BLOCK_CLASS,
 } from '@/utils/dialogueHighlight';
 import { getStyles, ThemeCode } from '@/utils/style';
-import { BookNote, ViewSettings } from '@/types/book';
+import { BookNote, BookSearchResult, ViewSettings } from '@/types/book';
 import type { FoliateView } from '@/types/view';
 import {
   DEFAULT_BOOK_FONT,
@@ -406,5 +406,37 @@ describe('refreshViewDialogueHighlight', () => {
     expect(doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)).toHaveLength(1);
     expect(addAnnotation).toHaveBeenCalledTimes(1);
     expect(addAnnotation).toHaveBeenCalledWith(inSection);
+  });
+
+  it('redraws the search highlights in the rendered sections', () => {
+    const doc = makeDoc(`<p>He said “hello”.</p>`);
+    const addAnnotation = vi.fn();
+    const view = {
+      renderer: { getContents: () => [{ doc, index: 3 }] },
+      addAnnotation,
+    } as unknown as FoliateView;
+    const searchResults = [
+      {
+        index: 3,
+        label: '',
+        subitems: [
+          { cfi: 'epubcfi(/6/8!/4/2/1:0)', excerpt: {} },
+          { cfi: 'epubcfi(/6/8!/4/2,/1:0,/1:3)', cfis: ['epubcfi(/6/8!/4/2/1:5)'], excerpt: {} },
+        ],
+      },
+      { index: 4, label: '', subitems: [{ cfi: 'epubcfi(/6/10!/4/2/1:0)', excerpt: {} }] },
+    ] as unknown as BookSearchResult[];
+
+    refreshViewDialogueHighlight(
+      view,
+      makeViewSettings({ dialogueHighlight: true }),
+      [],
+      searchResults,
+    );
+
+    expect(addAnnotation.mock.calls.map(([note]) => note.value)).toEqual([
+      'foliate-search:epubcfi(/6/8!/4/2/1:0)',
+      'foliate-search:epubcfi(/6/8!/4/2/1:5)',
+    ]);
   });
 });
