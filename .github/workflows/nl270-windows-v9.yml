@@ -1,7 +1,10 @@
-name: NL-270 Windows v7
+name: NL-270 Windows v9
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - agent/ginit-codex/0163cd514799
 
 permissions:
   contents: read
@@ -26,7 +29,7 @@ jobs:
           targets: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16
         with:
-          key: nl-270-windows-x64-cargo-v7
+          key: nl-270-windows-x64-cargo-v9
       - name: create Tauri environment
         shell: bash
         run: |
@@ -39,7 +42,7 @@ jobs:
           READEST_FOUNDATION_SPIKE: '1'
         run: |
           cd apps/readest-app
-          pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis --config '{"productName":"Readest NL-270","identifier":"com.readest.nl270","version":"0.12.15","bundle":{"createUpdaterArtifacts":false}}'
+          pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis --config '{"productName":"Readest NL-270","identifier":"com.readest.nl270","version":"0.12.17","bundle":{"createUpdaterArtifacts":false}}'
       - name: verify installer
         shell: pwsh
         run: |
@@ -51,7 +54,7 @@ jobs:
           Write-Host "SHA256: $($hash.Hash)"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: Readest-NL-270-Windows-x64-v7
+          name: Readest-NL-270-Windows-x64-v9
           path: target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
           compression-level: 0

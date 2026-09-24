@@ -105,6 +105,9 @@ export default function FoundationSpike() {
   const [dark, setDark] = useState(false);
   const [toolbarHovered, setToolbarHovered] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
+  const [expandedEvidenceIds, setExpandedEvidenceIds] = useState<string[]>([]);
+  const readerScrollRef = useRef<HTMLDivElement | null>(null);
+  const conversationScrollRef = useRef<HTMLDivElement | null>(null);
   const sidebarDrag = useRef<{ startX: number; startWidth: number } | null>(null);
   const sourcePointerStart = useRef<{ x: number; y: number } | null>(null);
   const normalWindowSize = useRef<{ width: number; height: number } | null>(null);
@@ -142,16 +145,19 @@ export default function FoundationSpike() {
 
   useEffect(() => {
     const updateProgress = () => {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      const reader = readerScrollRef.current;
+      if (!reader) return;
+      const scrollable = reader.scrollHeight - reader.clientHeight;
       setReadingProgress(
-        scrollable > 0 ? Math.min(100, Math.max(0, (window.scrollY / scrollable) * 100)) : 0,
+        scrollable > 0 ? Math.min(100, Math.max(0, (reader.scrollTop / scrollable) * 100)) : 0,
       );
     };
+    const reader = readerScrollRef.current;
     updateProgress();
-    window.addEventListener('scroll', updateProgress, { passive: true });
+    reader?.addEventListener('scroll', updateProgress, { passive: true });
     window.addEventListener('resize', updateProgress);
     return () => {
-      window.removeEventListener('scroll', updateProgress);
+      reader?.removeEventListener('scroll', updateProgress);
       window.removeEventListener('resize', updateProgress);
     };
   }, [documentModel, readingSettings, sidebarOpen]);
@@ -184,7 +190,7 @@ export default function FoundationSpike() {
   const activeThread = threads.find((item) => item.id === activeThreadId) ?? null;
   const visibleThreads = threads.filter(
     (item) =>
-      (showArchived || item.status === 'active') &&
+      (showArchived || item.status === 'active' || item.id === activeThreadId) &&
       (!search.trim() ||
         `${item.title} ${item.anchor.exactQuote} ${item.messages.map((message) => message.content).join(' ')}`
           .toLowerCase()
@@ -256,6 +262,10 @@ export default function FoundationSpike() {
     const updated = store.ask(documentModel, anchor, question.trim(), activeThreadId ?? undefined);
     setQuestion('');
     refreshThreads(updated.id);
+    requestAnimationFrame(() => {
+      const conversation = conversationScrollRef.current;
+      conversation?.scrollTo({ top: conversation.scrollHeight, behavior: 'smooth' });
+    });
   };
 
   const selectThread = (thread: SourceDocThread) => {
@@ -325,9 +335,11 @@ export default function FoundationSpike() {
   };
 
   const jumpToProgress = (value: number) => {
-    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const reader = readerScrollRef.current;
+    if (!reader) return;
+    const scrollable = reader.scrollHeight - reader.clientHeight;
     setReadingProgress(value);
-    window.scrollTo({ top: (scrollable * value) / 100, behavior: 'smooth' });
+    reader.scrollTo({ top: (scrollable * value) / 100, behavior: 'smooth' });
   };
 
   const startWindowDragging = async (event: ReactMouseEvent<HTMLElement>) => {
@@ -577,18 +589,14 @@ export default function FoundationSpike() {
   };
 
   const threadConversation = (thread: SourceDocThread) => (
-    <div className='space-y-3'>
+    <div className='space-y-6'>
       {thread.messages.map((message) => (
         <div
           key={message.id}
-          className='rounded-md border p-3'
-          style={{ borderColor: dark ? '#4b5563' : '#d1d5db' }}
+          className={`group flex flex-col gap-2 ${message.role === 'user' ? 'items-end' : 'items-stretch'}`}
         >
-          <p className='mb-1 text-xs font-semibold uppercase'>
-            {message.role === 'user' ? '你' : '本地固定回复'}
-          </p>
           {editingMessageId === message.id ? (
-            <div className='space-y-2'>
+            <div className='w-full space-y-2'>
               <textarea
                 aria-label='消息内容'
                 className='textarea textarea-bordered w-full'
@@ -600,44 +608,85 @@ export default function FoundationSpike() {
               </button>
             </div>
           ) : (
-            <div className='flex items-start justify-between gap-2'>
-              <p>{message.content}</p>
-              {thread.id === activeThreadId ? (
-                <button
-                  className='btn btn-ghost btn-xs'
-                  aria-label={`编辑消息：${message.content}`}
-                  onClick={() => {
-                    setEditingMessageId(message.id);
-                    setMessageDraft(message.content);
-                  }}
-                >
-                  编辑
-                </button>
-              ) : null}
+            <div
+              className={
+                message.role === 'user'
+                  ? 'max-w-[88%] rounded-2xl rounded-br-sm bg-blue-600 px-4 py-2.5 text-sm leading-6 text-white'
+                  : 'w-full text-[0.95rem] leading-7'
+              }
+            >
+              {message.content}
             </div>
           )}
-          {message.citations.length > 0 ? (
-            <div className='mt-3 space-y-2'>
-              <p className='text-xs font-semibold'>回答依据（点击可回到原文）</p>
-              {message.citations.map((citation, index) => (
-                <button
-                  key={citation.id ?? `${message.id}-${citation.blockId}`}
-                  className='block w-full rounded-md border p-2 text-left text-sm'
-                  style={{ borderColor: '#2563eb', color: foreground }}
-                  aria-label={`引用 ${index + 1}：${citation.blockId}`}
-                  onClick={() => navigateToCitation(citation)}
+          {message.role === 'assistant' && message.citations.length > 0 ? (
+            <div
+              className='overflow-hidden rounded-xl border'
+              style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
+            >
+              <button
+                className='flex min-h-10 w-full items-center justify-between gap-3 px-3 text-left text-xs font-semibold hover:bg-black/5'
+                aria-expanded={expandedEvidenceIds.includes(message.id)}
+                aria-controls={`evidence-${message.id}`}
+                onClick={() =>
+                  setExpandedEvidenceIds((current) =>
+                    current.includes(message.id)
+                      ? current.filter((id) => id !== message.id)
+                      : [...current, message.id],
+                  )
+                }
+              >
+                <span>
+                  ▱　回答依据 <span style={{ color: muted }}>{message.citations.length} 段</span>
+                </span>
+                <span aria-hidden='true'>
+                  {expandedEvidenceIds.includes(message.id) ? '⌃' : '⌄'}
+                </span>
+              </button>
+              {expandedEvidenceIds.includes(message.id) ? (
+                <div
+                  id={`evidence-${message.id}`}
+                  className='max-h-48 overflow-y-auto border-t'
+                  style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
                 >
-                  <span className='block font-semibold text-blue-500'>
-                    证据 {index + 1} · {blockLabel(citation.blockId)}
-                  </span>
-                  <span className='block text-xs' style={{ color: muted }}>
-                    {sectionLabel(citation.blockId)}
-                  </span>
-                  <q className='mt-1 block line-clamp-3'>{citation.exactQuote}</q>
-                </button>
-              ))}
+                  {message.citations.map((citation, index) => (
+                    <button
+                      key={citation.id ?? `${message.id}-${citation.blockId}`}
+                      className='block w-full border-b px-3 py-3 text-left text-xs last:border-b-0 hover:bg-blue-500/10'
+                      style={{ borderColor: dark ? '#4b5563' : '#e5e7eb', color: foreground }}
+                      aria-label={`引用 ${index + 1}：${citation.blockId}`}
+                      onClick={() => navigateToCitation(citation)}
+                    >
+                      <span className='block font-semibold text-blue-500'>
+                        {blockLabel(citation.blockId)} · {sectionLabel(citation.blockId)}
+                      </span>
+                      <q className='mt-1 block leading-5' style={{ color: muted }}>
+                        {citation.exactQuote}
+                      </q>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : null}
+          <div
+            className={`flex items-center gap-1 text-[10px] ${message.role === 'user' ? 'justify-end' : ''}`}
+            style={{ color: muted }}
+          >
+            <span>{message.role === 'user' ? '你' : '本地示例回答'}</span>
+            {thread.id === activeThreadId ? (
+              <button
+                className='rounded p-1 opacity-50 hover:bg-black/5 hover:opacity-100 group-hover:opacity-100'
+                aria-label={`编辑消息：${message.content}`}
+                title='编辑'
+                onClick={() => {
+                  setEditingMessageId(message.id);
+                  setMessageDraft(message.content);
+                }}
+              >
+                ✎
+              </button>
+            ) : null}
+          </div>
         </div>
       ))}
     </div>
@@ -645,7 +694,7 @@ export default function FoundationSpike() {
 
   return (
     <main
-      className='min-h-screen px-4 py-5'
+      className='full-height flex min-h-0 flex-col overflow-hidden'
       style={{ backgroundColor: surface, color: foreground }}
     >
       <style>{`
@@ -662,241 +711,317 @@ export default function FoundationSpike() {
           background-color: #fde047;
           color: #111827;
         }
+        .foundation-reader {
+          scrollbar-color: ${dark ? '#4b5563' : '#c7c8c0'} transparent;
+        }
+        .foundation-sidebar {
+          width: ${readingSettings.sidebarWidth}px;
+        }
+        @media (max-width: 900px) {
+          .foundation-workbench {
+            grid-template-columns: minmax(0, 1fr) 0 0 !important;
+          }
+          .foundation-divider {
+            position: absolute !important;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: block !important;
+            width: 8px;
+          }
+          .foundation-sidebar {
+            position: absolute !important;
+            inset: 0 0 0 auto;
+            z-index: 40;
+            width: min(${readingSettings.sidebarWidth}px, 88vw);
+            box-shadow: -18px 0 40px rgba(15, 23, 42, 0.18);
+          }
+        }
       `}</style>
-      <div
-        className='absolute left-4 right-4 top-2 z-50 overflow-hidden rounded-lg border px-2 py-1 shadow-sm backdrop-blur'
-        style={{ backgroundColor: `${surface}ee` }}
-        onMouseEnter={() => setToolbarHovered(true)}
-        onMouseLeave={() => setToolbarHovered(false)}
+      <header
+        className='relative z-50 flex h-10 shrink-0 items-center border-b px-3'
+        style={{ backgroundColor: panel, borderColor: dark ? '#374151' : '#e5e7eb' }}
+        data-tauri-drag-region
+        onMouseDown={(event) => void startWindowDragging(event)}
       >
-        <div
-          className='mx-auto flex min-h-7 max-w-[96rem] items-center justify-between gap-3'
-          data-tauri-drag-region
-          onMouseDown={(event) => void startWindowDragging(event)}
-        >
-          <div className='h-5 flex-1' aria-label='窗口拖动区域' />
-          <span className='sr-only'>
-            {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
-            {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
-          </span>
-          <div className='flex items-center gap-1'>
-            <button
-              className='btn btn-ghost btn-sm'
-              aria-label='最小化窗口'
-              onClick={() => void minimizeWindow()}
-            >
-              −
-            </button>
-            <button
-              className='btn btn-ghost btn-sm'
-              aria-label='全屏或取消全屏'
-              onClick={() => void toggleFullscreen()}
-            >
-              □
-            </button>
-            <button
-              className='btn btn-ghost btn-sm text-red-600'
-              aria-label='关闭窗口'
-              onClick={() => void closeWindow()}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-        <div
-          className={`mx-auto max-w-[96rem] overflow-hidden transition-[max-height,opacity,margin] duration-200 ${toolbarExpanded ? 'mt-2 max-h-64 opacity-100' : 'pointer-events-none max-h-0 opacity-0'}`}
-          aria-label='阅读工具栏'
-        >
-          <div className='flex flex-wrap gap-2'>
-            <label className='btn btn-primary btn-sm cursor-pointer'>
-              导入 Markdown
-              <input
-                aria-label='导入 Markdown'
-                className='hidden'
-                type='file'
-                accept='.md,.markdown,text/markdown,text/plain'
-                onChange={(event) => void importMarkdown(event.target.files?.[0])}
-              />
-            </label>
-            <a className='btn btn-sm' href='/'>
-              打开原版书库
-            </a>
-            <button className='btn btn-sm' onClick={() => setDark((value) => !value)}>
-              切换主题
-            </button>
-            <button
-              className='btn btn-sm'
-              onClick={() => {
-                store?.clear();
-                setDocumentModel(SOURCE_DOC_FIXTURE);
-                setAnchor(null);
-                setThreads([]);
-                setActiveThreadId(null);
-              }}
-            >
-              清空测试数据
-            </button>
-            <label className='flex items-center gap-2 px-2 text-sm'>
-              <input
-                type='checkbox'
-                className='toggle toggle-sm'
-                checked={readingSettings.toolbarPinned}
-                onChange={(event) => updateToolbarPinned(event.target.checked)}
-              />
-              常驻工具栏
-            </label>
-            <button
-              className='btn btn-sm'
-              aria-label={settingsOpen ? '收起阅读显示设置' : '展开阅读显示设置'}
-              aria-expanded={settingsOpen}
-              onClick={() => setSettingsOpen((value) => !value)}
-            >
-              显示设置 {settingsOpen ? '▲' : '▼'}
-            </button>
-          </div>
-          {settingsOpen ? (
-            <div className='mt-2 grid gap-x-6 gap-y-2 border-t pt-3 sm:grid-cols-3'>
-              {(
-                [
-                  ['contentWidth', '正文宽度', 520, 1000, 20, `${readingSettings.contentWidth} px`],
-                  ['fontSize', '正文字号', 14, 28, 1, `${readingSettings.fontSize} px`],
-                  [
-                    'lineHeight',
-                    '正文行距',
-                    1.35,
-                    2.4,
-                    0.05,
-                    readingSettings.lineHeight.toFixed(2),
-                  ],
-                ] as const
-              ).map(([key, label, minimum, maximum, step, display]) => (
-                <label key={key} className='flex min-w-0 items-center gap-3 text-sm'>
-                  <span className='w-20 shrink-0 font-medium'>{label}</span>
-                  <input
-                    aria-label={label}
-                    className='range range-xs min-w-0 flex-1'
-                    type='range'
-                    min={minimum}
-                    max={maximum}
-                    step={step}
-                    value={readingSettings[key]}
-                    onChange={(event) => updateReadingSetting(key, Number(event.target.value))}
-                  />
-                  <span className='w-14 shrink-0 text-right text-xs' style={{ color: muted }}>
-                    {display}
-                  </span>
-                </label>
-              ))}
-              <label className='flex min-w-0 items-center gap-3 text-sm'>
-                <span className='w-20 shrink-0 font-medium'>批注显示</span>
-                <select
-                  aria-label='批注显示模式'
-                  className='select select-sm select-bordered min-w-0 flex-1'
-                  value={readingSettings.annotationDisplay}
-                  onChange={(event) => {
-                    const value = event.target.value as ReadingSettings['annotationDisplay'];
-                    setReadingSettings((current) => {
-                      const nextSettings = { ...current, annotationDisplay: value };
-                      window.localStorage.setItem(
-                        READING_SETTINGS_KEY,
-                        JSON.stringify(nextSettings),
-                      );
-                      return nextSettings;
-                    });
-                  }}
-                >
-                  <option value='underline'>仅下划线</option>
-                  <option value='card'>仅小卡片</option>
-                  <option value='both'>下划线 + 小卡片</option>
-                </select>
-              </label>
-            </div>
-          ) : null}
-          <label
-            className='mx-auto mt-2 flex max-w-[96rem] items-center gap-2 border-t pt-2 text-xs'
-            aria-label='阅读进度'
+        <div className='h-full flex-1' aria-label='窗口拖动区域' />
+        <span className='sr-only'>
+          {documentModel.sections.length} 章 · {documentModel.blocks.length} 个编号源块 ·{' '}
+          {documentModel.sourceFormat === 'markdown' ? '用户 Markdown' : '内置测试文档'}
+        </span>
+        <div className='flex items-center gap-0.5'>
+          <button
+            className='h-7 w-9 rounded hover:bg-black/5'
+            aria-label='最小化窗口'
+            onClick={() => void minimizeWindow()}
           >
-            <span className='w-12 shrink-0'>进度</span>
-            <input
-              className='range range-xs flex-1'
-              type='range'
-              min='0'
-              max='100'
-              step='1'
-              value={readingProgress}
-              onChange={(event) => jumpToProgress(Number(event.target.value))}
-            />
-            <span className='w-10 text-right'>{Math.round(readingProgress)}%</span>
-          </label>
+            −
+          </button>
+          <button
+            className='h-7 w-9 rounded hover:bg-black/5'
+            aria-label='全屏或取消全屏'
+            onClick={() => void toggleFullscreen()}
+          >
+            □
+          </button>
+          <button
+            className='h-7 w-9 rounded text-red-600 hover:bg-red-500/10'
+            aria-label='关闭窗口'
+            onClick={() => void closeWindow()}
+          >
+            ×
+          </button>
         </div>
-      </div>
-      {importStatus ? (
-        <p
-          role='status'
-          className='mx-auto mb-3 max-w-[96rem] rounded-md bg-blue-100 p-2 text-sm text-blue-950'
-        >
-          {importStatus}
-        </p>
-      ) : null}
+      </header>
 
-      <div className='mx-auto flex max-w-[96rem] flex-col items-stretch justify-center gap-4 pt-3 lg:flex-row lg:items-start'>
-        <article
-          className='min-w-0 w-full rounded-xl px-5 py-8 shadow-sm sm:px-10 lg:flex-1'
-          style={{
-            backgroundColor: panel,
-            color: foreground,
-            fontSize: `${readingSettings.fontSize}px`,
-            lineHeight: readingSettings.lineHeight,
-            width: `${readingSettings.contentWidth}px`,
-            maxWidth: '100%',
-          }}
-          aria-label='SOURCE_DOC 阅读区'
-          onMouseUp={captureSelection}
-        >
-          {documentModel.blocks.map((item) => {
-            const highlighted = highlightedCitation?.blockId === item.id;
-            const blockThreads = threadsByBlock.get(item.id) ?? [];
-            const previewThread =
-              blockThreads.find((candidate) => candidate.status === 'active') ?? blockThreads[0];
-            return (
-              <section
-                key={item.id}
-                data-block-id={item.id}
-                data-testid={`source-block-${item.id}`}
-                data-highlighted={highlighted ? 'true' : 'false'}
-                className={`relative scroll-m-24 pl-1 ${item.type === 'heading' ? 'mb-5 mt-9 first:mt-0' : 'mb-[1em]'}`}
-                style={{ color: highlighted ? '#111827' : foreground }}
+      <div
+        className='foundation-workbench relative grid min-h-0 flex-1'
+        style={{
+          gridTemplateColumns: sidebarOpen
+            ? `minmax(0, 1fr) 8px ${readingSettings.sidebarWidth}px`
+            : 'minmax(0, 1fr) 8px 0px',
+        }}
+      >
+        <div ref={readerScrollRef} className='foundation-reader relative min-w-0 overflow-y-auto'>
+          <div className='pointer-events-none sticky top-0 z-30 h-0 overflow-visible'>
+            <div
+              className={`pointer-events-auto absolute left-1/2 top-2 w-[min(780px,calc(100%-32px))] -translate-x-1/2 overflow-hidden rounded-xl border shadow-lg backdrop-blur-xl transition-[max-height,opacity] duration-200 ${toolbarExpanded ? 'max-h-80 opacity-100' : 'max-h-8 opacity-75 hover:opacity-100'}`}
+              style={{ backgroundColor: `${panel}f2`, borderColor: dark ? '#4b5563' : '#d1d5db' }}
+              onMouseEnter={() => setToolbarHovered(true)}
+              onMouseLeave={() => setToolbarHovered(false)}
+              aria-label='阅读工具栏'
+            >
+              <div
+                className='flex h-8 items-center justify-center px-3 text-[11px]'
+                style={{ color: muted }}
               >
-                {previewThread && readingSettings.annotationDisplay !== 'underline' ? (
+                {toolbarExpanded ? '阅读工具' : '•••'}
+              </div>
+              <div
+                className={`border-t px-3 pb-3 pt-2 ${toolbarExpanded ? 'block' : 'hidden'}`}
+                style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
+              >
+                <div className='flex flex-wrap items-center gap-1.5'>
+                  <label className='btn btn-ghost btn-sm cursor-pointer' title='导入 Markdown'>
+                    ＋ 导入
+                    <input
+                      aria-label='导入 Markdown'
+                      className='hidden'
+                      type='file'
+                      accept='.md,.markdown,text/markdown,text/plain'
+                      onChange={(event) => void importMarkdown(event.target.files?.[0])}
+                    />
+                  </label>
+                  <a
+                    className='btn btn-ghost btn-sm'
+                    href='/'
+                    aria-label='打开原版书库'
+                    title='打开原版书库'
+                  >
+                    ⌂ 书库
+                  </a>
                   <button
-                    className='eink-bordered absolute right-full top-[0.15em] mr-3 flex h-7 min-w-7 items-center justify-center rounded-full border border-blue-500/40 bg-blue-50 px-1.5 text-xs font-bold text-blue-700 shadow-sm hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-500'
-                    aria-label={`打开${blockLabel(item.id)} 的批注，共 ${blockThreads.length} 条`}
-                    title={`${previewThread.title}：${previewThread.messages.at(-1)?.content ?? ''}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      selectThread(previewThread);
+                    className='btn btn-ghost btn-sm'
+                    aria-label='切换主题'
+                    title='切换主题'
+                    onClick={() => setDark((value) => !value)}
+                  >
+                    ◐
+                  </button>
+                  <button
+                    className='btn btn-ghost btn-sm'
+                    aria-label={settingsOpen ? '收起阅读显示设置' : '展开阅读显示设置'}
+                    aria-expanded={settingsOpen}
+                    title='显示设置'
+                    onClick={() => setSettingsOpen((value) => !value)}
+                  >
+                    Aa
+                  </button>
+                  <label className='ml-auto flex items-center gap-2 px-2 text-xs'>
+                    <input
+                      type='checkbox'
+                      className='toggle toggle-xs'
+                      checked={readingSettings.toolbarPinned}
+                      onChange={(event) => updateToolbarPinned(event.target.checked)}
+                    />
+                    常驻
+                  </label>
+                  <button
+                    className='btn btn-ghost btn-sm text-xs'
+                    title='清空测试数据'
+                    onClick={() => {
+                      store?.clear();
+                      setDocumentModel(SOURCE_DOC_FIXTURE);
+                      setAnchor(null);
+                      setThreads([]);
+                      setActiveThreadId(null);
                     }}
                   >
-                    {blockThreads.length > 1 ? blockThreads.length : '●'}
+                    清空
                   </button>
-                ) : null}
-                <div
-                  data-source-text={item.id}
-                  className='source-markdown [&_p]:m-0'
-                  style={{ backgroundColor: highlighted ? '#fef08a' : undefined }}
-                  onPointerDown={(event) => {
-                    sourcePointerStart.current = { x: event.clientX, y: event.clientY };
-                  }}
-                  onClick={(event) => openThreadAtPointer(event, blockThreads)}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {markdownSource(item)}
-                  </ReactMarkdown>
                 </div>
-              </section>
-            );
-          })}
-        </article>
+                {settingsOpen ? (
+                  <div
+                    className='mt-2 grid gap-2 border-t pt-3 sm:grid-cols-2'
+                    style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
+                  >
+                    {(
+                      [
+                        [
+                          'contentWidth',
+                          '正文宽度',
+                          520,
+                          1000,
+                          20,
+                          `${readingSettings.contentWidth}px`,
+                        ],
+                        ['fontSize', '字号', 14, 28, 1, `${readingSettings.fontSize}px`],
+                        [
+                          'lineHeight',
+                          '行距',
+                          1.35,
+                          2.4,
+                          0.05,
+                          readingSettings.lineHeight.toFixed(2),
+                        ],
+                      ] as const
+                    ).map(([key, label, minimum, maximum, step, display]) => (
+                      <label key={key} className='flex min-w-0 items-center gap-2 text-xs'>
+                        <span className='w-14 shrink-0'>{label}</span>
+                        <input
+                          aria-label={
+                            label === '字号' ? '正文字号' : label === '行距' ? '正文行距' : label
+                          }
+                          className='range range-xs min-w-0 flex-1'
+                          type='range'
+                          min={minimum}
+                          max={maximum}
+                          step={step}
+                          value={readingSettings[key]}
+                          onChange={(event) =>
+                            updateReadingSetting(key, Number(event.target.value))
+                          }
+                        />
+                        <span className='w-12 text-right' style={{ color: muted }}>
+                          {display}
+                        </span>
+                      </label>
+                    ))}
+                    <label className='flex min-w-0 items-center gap-2 text-xs'>
+                      <span className='w-14 shrink-0'>批注</span>
+                      <select
+                        aria-label='批注显示模式'
+                        className='select select-xs select-bordered min-w-0 flex-1'
+                        value={readingSettings.annotationDisplay}
+                        onChange={(event) => {
+                          const value = event.target.value as ReadingSettings['annotationDisplay'];
+                          setReadingSettings((current) => {
+                            const nextSettings = { ...current, annotationDisplay: value };
+                            window.localStorage.setItem(
+                              READING_SETTINGS_KEY,
+                              JSON.stringify(nextSettings),
+                            );
+                            return nextSettings;
+                          });
+                        }}
+                      >
+                        <option value='underline'>仅下划线</option>
+                        <option value='card'>仅侧标</option>
+                        <option value='both'>下划线 + 侧标</option>
+                      </select>
+                    </label>
+                  </div>
+                ) : null}
+                <label
+                  className='mt-2 flex items-center gap-2 border-t pt-2 text-[11px]'
+                  style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
+                  aria-label='阅读进度'
+                >
+                  <span>进度</span>
+                  <input
+                    className='range range-xs flex-1'
+                    type='range'
+                    min='0'
+                    max='100'
+                    step='1'
+                    value={readingProgress}
+                    onChange={(event) => jumpToProgress(Number(event.target.value))}
+                  />
+                  <span className='w-9 text-right'>{Math.round(readingProgress)}%</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {importStatus ? (
+            <p
+              role='status'
+              className='sticky top-12 z-20 mx-auto mt-12 w-fit max-w-[calc(100%-32px)] rounded-full bg-blue-600 px-4 py-2 text-xs text-white shadow-lg'
+            >
+              {importStatus}
+            </p>
+          ) : null}
+          <div className='px-5 pb-24 pt-14 sm:px-10'>
+            <article
+              className='mx-auto min-w-0 rounded-xl px-6 py-12 shadow-sm sm:px-14'
+              style={{
+                backgroundColor: panel,
+                color: foreground,
+                fontSize: `${readingSettings.fontSize}px`,
+                lineHeight: readingSettings.lineHeight,
+                width: `${readingSettings.contentWidth}px`,
+                maxWidth: '100%',
+              }}
+              aria-label='SOURCE_DOC 阅读区'
+              onMouseUp={captureSelection}
+            >
+              {documentModel.blocks.map((item) => {
+                const highlighted = highlightedCitation?.blockId === item.id;
+                const blockThreads = threadsByBlock.get(item.id) ?? [];
+                const previewThread =
+                  blockThreads.find((candidate) => candidate.status === 'active') ??
+                  blockThreads[0];
+                return (
+                  <section
+                    key={item.id}
+                    data-block-id={item.id}
+                    data-testid={`source-block-${item.id}`}
+                    data-highlighted={highlighted ? 'true' : 'false'}
+                    className={`relative scroll-m-24 pl-1 ${item.type === 'heading' ? 'mb-5 mt-9 first:mt-0' : 'mb-[1em]'}`}
+                    style={{ color: highlighted ? '#111827' : foreground }}
+                  >
+                    {previewThread && readingSettings.annotationDisplay !== 'underline' ? (
+                      <button
+                        className='eink-bordered absolute right-full top-[0.15em] mr-3 flex h-7 min-w-7 items-center justify-center rounded-full border border-blue-500/40 bg-blue-50 px-1.5 text-xs font-bold text-blue-700 shadow-sm hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-500'
+                        aria-label={`打开${blockLabel(item.id)} 的批注，共 ${blockThreads.length} 条`}
+                        title={`${previewThread.title}：${previewThread.messages.at(-1)?.content ?? ''}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          selectThread(previewThread);
+                        }}
+                      >
+                        {blockThreads.length > 1 ? blockThreads.length : '●'}
+                      </button>
+                    ) : null}
+                    <div
+                      data-source-text={item.id}
+                      className='source-markdown [&_p]:m-0'
+                      style={{ backgroundColor: highlighted ? '#fef08a' : undefined }}
+                      onPointerDown={(event) => {
+                        sourcePointerStart.current = { x: event.clientX, y: event.clientY };
+                      }}
+                      onClick={(event) => openThreadAtPointer(event, blockThreads)}
+                    >
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                        {markdownSource(item)}
+                      </ReactMarkdown>
+                    </div>
+                  </section>
+                );
+              })}
+            </article>
+          </div>
+        </div>
 
         <div
           role='separator'
@@ -905,7 +1030,8 @@ export default function FoundationSpike() {
           aria-valuemin={SIDEBAR_MIN_WIDTH}
           aria-valuemax={SIDEBAR_MAX_WIDTH}
           aria-valuenow={readingSettings.sidebarWidth}
-          className='relative sticky top-4 hidden h-[calc(100vh-2rem)] w-2 shrink-0 cursor-col-resize touch-none rounded-full bg-transparent hover:bg-blue-500/20 lg:block'
+          className='foundation-divider relative z-50 hidden h-full w-2 shrink-0 cursor-col-resize touch-none border-x bg-black/5 hover:bg-blue-500/20 lg:block'
+          style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
           onPointerDown={(event) => {
             sidebarDrag.current = {
               startX: event.clientX,
@@ -943,108 +1069,225 @@ export default function FoundationSpike() {
         </div>
         {sidebarOpen ? (
           <aside
-            className='eink-bordered z-40 max-h-[calc(100vh-1.5rem)] w-full max-w-full shrink-0 overflow-y-auto rounded-xl p-4 shadow-xl lg:sticky lg:top-4 lg:z-auto lg:max-h-[calc(100vh-2rem)] lg:w-auto lg:max-w-[50vw] lg:shadow-sm'
+            className='foundation-sidebar relative z-40 h-full min-h-0 overflow-hidden border-l'
             style={{
               backgroundColor: panel,
               color: foreground,
+              borderColor: dark ? '#374151' : '#e5e7eb',
               width: readingSettings.sidebarWidth,
               maxWidth: '100%',
             }}
             aria-label='对话批注'
           >
-            <div className='mb-3 flex items-center justify-between gap-2'>
-              <h2 className='text-lg font-bold'>对话批注</h2>
-              <button
-                className='btn btn-ghost btn-sm'
-                aria-label='打开批注管理'
-                title='批注管理'
-                onClick={() => setAnnotationManagerOpen(true)}
+            <div className='grid h-full min-h-0 grid-rows-[58px_minmax(0,1fr)_auto]'>
+              <header
+                className='flex min-w-0 items-center justify-between gap-3 border-b px-4'
+                style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
               >
-                ☷
-              </button>
-            </div>
-            <div className='mb-3 rounded-md p-3 text-sm' style={{ backgroundColor: mutedPanel }}>
-              {anchor ? (
-                <div>
-                  <p className='mb-1 text-xs font-semibold'>
-                    当前锚点 · {anchor.selectedBlockIds.length} 块
+                <div className='min-w-0'>
+                  <p className='truncate text-sm font-bold'>
+                    {activeThread?.title ?? (anchor ? '新批注' : '对话批注')}
                   </p>
-                  <q data-testid='active-quote' className='whitespace-pre-line'>
-                    {anchor.exactQuote}
-                  </q>
+                  <p className='mt-0.5 truncate text-[11px]' style={{ color: muted }}>
+                    {activeThread
+                      ? `${activeThread.status === 'archived' ? '已归档 · ' : '选中原文 · '}${activeThread.messages.length} 条消息`
+                      : anchor
+                        ? `已选择 ${anchor.selectedBlockIds.length} 段原文`
+                        : '选择原文后开始提问'}
+                  </p>
+                  {activeThread?.status === 'archived' ? (
+                    <span className='sr-only'>已归档</span>
+                  ) : null}
+                  {anchor ? (
+                    <span className='sr-only'>当前锚点 · {anchor.selectedBlockIds.length} 块</span>
+                  ) : null}
+                  {anchor ? (
+                    <q data-testid='active-quote' className='sr-only'>
+                      {anchor.exactQuote}
+                    </q>
+                  ) : null}
                 </div>
-              ) : (
-                '请先在左侧选择一段文字'
-              )}
+                <button
+                  className='h-8 w-8 shrink-0 rounded-lg text-lg hover:bg-black/5'
+                  aria-label='打开批注管理'
+                  title='批注管理'
+                  onClick={() => setAnnotationManagerOpen(true)}
+                >
+                  ☷
+                </button>
+              </header>
+
+              <section
+                ref={conversationScrollRef}
+                className='min-h-0 overflow-y-auto px-5 py-6'
+                aria-label='批注对话消息'
+              >
+                {selectionError ? (
+                  <p className='mb-4 rounded-lg bg-red-500/10 p-3 text-xs text-red-600'>
+                    {selectionError}
+                  </p>
+                ) : null}
+                {activeThread ? (
+                  threadConversation(activeThread)
+                ) : (
+                  <div className='flex h-full min-h-48 flex-col items-center justify-center px-6 text-center'>
+                    <div className='mb-3 text-2xl' aria-hidden='true'>
+                      ◌
+                    </div>
+                    <p className='text-sm font-medium'>
+                      {anchor ? '针对所选原文提问' : '选择正文中的文字'}
+                    </p>
+                    <p className='mt-1 max-w-56 text-xs leading-5' style={{ color: muted }}>
+                      {anchor
+                        ? '发送后会创建批注，并生成本地固定示例回答。'
+                        : '已有批注可直接点击下划线或左侧标记打开。'}
+                    </p>
+                  </div>
+                )}
+                {navigationStatus ? (
+                  <p role='status' className='sr-only'>
+                    {navigationStatus}
+                  </p>
+                ) : null}
+              </section>
+
+              <footer
+                className='border-t p-3'
+                style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
+              >
+                <div
+                  className='grid grid-cols-[1fr_auto] items-end gap-2 rounded-2xl border p-2 pl-3'
+                  style={{ backgroundColor: mutedPanel, borderColor: dark ? '#4b5563' : '#d1d5db' }}
+                >
+                  <textarea
+                    aria-label='问题'
+                    className='max-h-28 min-h-10 w-full resize-none border-0 bg-transparent py-2 text-sm outline-none'
+                    style={{ color: foreground }}
+                    value={question}
+                    onChange={(event) => setQuestion(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        ask();
+                      }
+                    }}
+                    placeholder={activeThreadId ? '继续追问…' : '针对所选原文提问…'}
+                  />
+                  <button
+                    aria-label='提问'
+                    className='grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white disabled:cursor-not-allowed disabled:opacity-40'
+                    disabled={!anchor || !question.trim()}
+                    onClick={ask}
+                  >
+                    ➤
+                  </button>
+                </div>
+                <p className='mt-1.5 text-center text-[10px]' style={{ color: muted }}>
+                  Enter 发送 · Shift + Enter 换行 · 本地固定回复
+                </p>
+              </footer>
             </div>
-            {selectionError ? <p className='mb-3 text-sm text-red-500'>{selectionError}</p> : null}
-
-            {activeThread ? (
-              <div className='mb-3 flex items-center justify-between gap-2'>
-                <p className='truncate font-bold'>{activeThread.title}</p>
-                <span className='badge badge-sm'>
-                  {activeThread.status === 'archived' ? '已归档' : '进行中'}
-                </span>
-              </div>
-            ) : null}
-
-            {activeThread ? (
-              <div className='mb-4 max-h-72 overflow-y-auto'>
-                {threadConversation(activeThread)}
-              </div>
-            ) : null}
-            {navigationStatus ? (
-              <p role='status' className='mb-3 text-sm font-semibold text-green-600'>
-                {navigationStatus}
-              </p>
-            ) : null}
-            <label className='form-control'>
-              <span className='label-text mb-1'>问题</span>
-              <textarea
-                className='textarea textarea-bordered eink-bordered'
-                style={{ backgroundColor: mutedPanel, color: foreground }}
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                placeholder='针对所选原文提问'
-              />
-            </label>
-            <button
-              aria-label='提问'
-              className='btn btn-contrast mt-3 w-full'
-              disabled={!anchor}
-              onClick={ask}
-            >
-              {activeThreadId ? '继续追问' : '新建批注并提问'}
-            </button>
-
-            <p className='mt-3 text-center text-xs' style={{ color: muted }}>
-              本地固定回复 · 不发送网络请求
-            </p>
             {annotationManagerOpen ? (
               <section
                 aria-label='批注管理'
-                className='absolute inset-0 z-50 overflow-y-auto rounded-xl p-4 shadow-xl'
+                className='absolute inset-0 z-50 grid min-h-0 grid-rows-[58px_auto_minmax(0,1fr)_auto]'
                 style={{ backgroundColor: panel, color: foreground }}
               >
-                <div className='mb-4 flex items-center justify-between gap-2'>
-                  <h2 className='text-lg font-bold'>批注管理</h2>
+                <header
+                  className='flex items-center gap-2 border-b px-3'
+                  style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
+                >
                   <button
-                    className='btn btn-ghost btn-sm'
+                    className='h-8 w-8 rounded-lg hover:bg-black/5'
                     aria-label='返回对话批注'
+                    title='返回对话'
                     onClick={() => setAnnotationManagerOpen(false)}
                   >
-                    返回
+                    ‹
                   </button>
+                  <h2 className='min-w-0 flex-1 truncate text-sm font-bold'>批注管理</h2>
+                  {activeThread ? (
+                    <>
+                      <button
+                        className='h-8 w-8 rounded-lg hover:bg-black/5'
+                        aria-label={`重命名批注：${activeThread.title}`}
+                        title='重命名'
+                        onClick={() => {
+                          setTitleDraft(activeThread.title);
+                          setEditingTitle(true);
+                        }}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        className='h-8 w-8 rounded-lg hover:bg-black/5'
+                        aria-label={`${activeThread.status === 'archived' ? '取消归档' : '归档'}批注：${activeThread.title}`}
+                        title={activeThread.status === 'archived' ? '取消归档' : '归档'}
+                        onClick={() => {
+                          store?.setThreadArchived(
+                            activeThread.id,
+                            activeThread.status !== 'archived',
+                          );
+                          refreshThreads(activeThread.id);
+                        }}
+                      >
+                        ▱
+                      </button>
+                    </>
+                  ) : null}
+                </header>
+                <div className='border-b p-3' style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}>
+                  <input
+                    aria-label='搜索批注'
+                    className='input input-sm input-bordered w-full'
+                    placeholder='搜索批注或原文'
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                  {editingTitle ? (
+                    <div className='mt-2 flex gap-2'>
+                      <input
+                        aria-label='批注标题'
+                        className='input input-sm input-bordered min-w-0 flex-1'
+                        value={titleDraft}
+                        onChange={(event) => setTitleDraft(event.target.value)}
+                      />
+                      <button
+                        className='btn btn-sm btn-contrast'
+                        aria-label='保存标题'
+                        onClick={renameActiveThread}
+                      >
+                        保存
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
-                <input
-                  aria-label='搜索批注'
-                  className='input input-sm input-bordered mb-3 w-full'
-                  placeholder='搜索标题、原文或对话'
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-                <div className='mb-3 flex items-center justify-between text-sm'>
-                  <span className='font-semibold'>全部批注（{threads.length}）</span>
+                <div className='min-h-0 overflow-y-auto p-2'>
+                  {visibleThreads.map((item) => (
+                    <button
+                      key={item.id}
+                      className={`mb-1 grid w-full grid-cols-[4px_1fr] gap-3 rounded-xl p-3 text-left hover:bg-black/5 ${item.id === activeThreadId ? 'bg-blue-500/10' : ''}`}
+                      onClick={() => selectThread(item)}
+                    >
+                      <span
+                        className={`h-full min-h-10 rounded-full ${item.status === 'archived' ? 'bg-gray-400' : 'bg-blue-500'}`}
+                      />
+                      <span className='min-w-0'>
+                        <strong className='block truncate text-sm'>{item.title}</strong>
+                        <span className='mt-1 block truncate text-xs' style={{ color: muted }}>
+                          {item.anchor.exactQuote}
+                        </span>
+                        <span className='mt-1 block text-[10px]' style={{ color: muted }}>
+                          {item.status === 'archived' ? '已归档' : `${item.messages.length} 条消息`}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <footer
+                  className='flex items-center justify-between border-t px-3 py-2'
+                  style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
+                >
                   <button
                     className='btn btn-ghost btn-xs'
                     aria-label='显示已归档'
@@ -1052,72 +1295,21 @@ export default function FoundationSpike() {
                   >
                     {showArchived ? '隐藏归档' : '显示归档'}
                   </button>
-                </div>
-                <div className='max-h-[calc(100vh-18rem)] space-y-2 overflow-y-auto'>
-                  {visibleThreads.map((item) => (
-                    <div
-                      key={item.id}
-                      className='flex items-start gap-2 rounded-lg border p-3'
-                      style={{
-                        borderColor:
-                          item.id === activeThreadId ? '#2563eb' : dark ? '#4b5563' : '#d1d5db',
+                  {activeThread ? (
+                    <button
+                      className='btn btn-ghost btn-xs text-red-600'
+                      aria-label={`删除批注：${activeThread.title}`}
+                      title='删除'
+                      onClick={() => {
+                        store?.deleteThread(activeThread.id);
+                        setAnchor(null);
+                        refreshThreads(null);
                       }}
                     >
-                      <button
-                        className='min-w-0 flex-1 text-left'
-                        onClick={() => selectThread(item)}
-                      >
-                        <span className='block truncate font-semibold'>{item.title}</span>
-                        <span className='mt-1 block truncate text-xs' style={{ color: muted }}>
-                          {blockLabel(item.anchor.blockId)} ·{' '}
-                          {item.status === 'archived' ? '已归档' : `${item.messages.length} 条消息`}
-                        </span>
-                      </button>
-                      <div className='flex shrink-0 gap-1'>
-                        <button
-                          className='btn btn-ghost btn-xs'
-                          aria-label={`重命名批注：${item.title}`}
-                          title='重命名'
-                          onClick={() => {
-                            setActiveThreadId(item.id);
-                            setTitleDraft(item.title);
-                            setEditingTitle(true);
-                          }}
-                        >
-                          ✎
-                        </button>
-                        <button
-                          className='btn btn-ghost btn-xs'
-                          aria-label={`${item.status === 'archived' ? '取消归档' : '归档'}批注：${item.title}`}
-                          title={item.status === 'archived' ? '取消归档' : '归档'}
-                          onClick={() => {
-                            store?.setThreadArchived(item.id, item.status !== 'archived');
-                            refreshThreads(activeThreadId);
-                          }}
-                        >
-                          ▱
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {editingTitle ? (
-                  <div className='mt-4 flex gap-2'>
-                    <input
-                      aria-label='批注标题'
-                      className='input input-sm input-bordered min-w-0 flex-1'
-                      value={titleDraft}
-                      onChange={(event) => setTitleDraft(event.target.value)}
-                    />
-                    <button
-                      className='btn btn-sm btn-contrast'
-                      aria-label='保存标题'
-                      onClick={renameActiveThread}
-                    >
-                      保存
+                      ⌫
                     </button>
-                  </div>
-                ) : null}
+                  ) : null}
+                </footer>
               </section>
             ) : null}
           </aside>

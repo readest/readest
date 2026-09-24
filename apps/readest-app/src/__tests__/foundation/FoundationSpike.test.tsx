@@ -56,6 +56,9 @@ describe('foundation spike page', () => {
     fireEvent.click(screen.getByRole('button', { name: '提问' }));
 
     expect(screen.getAllByText('为什么需要紧致性？').length).toBeGreaterThan(0);
+    const evidenceToggle = screen.getByRole('button', { name: /回答依据 2 段/ });
+    expect(evidenceToggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(evidenceToggle);
     const citations = screen.getAllByRole('button', { name: /引用/ });
     expect(citations).toHaveLength(2);
     fireEvent.click(citations[0]!);
@@ -84,6 +87,7 @@ describe('foundation spike page', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '提问' }));
     expect(screen.getAllByText('重启后还能继续追问吗？').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getAllByRole('button', { name: /回答依据/ }).at(-1)!);
     fireEvent.click(screen.getAllByRole('button', { name: /引用/ })[0]!);
     expect(screen.getByTestId('source-block-block-02').getAttribute('data-highlighted')).toBe(
       'true',
@@ -172,7 +176,7 @@ describe('foundation spike page', () => {
     expect(screen.getByText('修改后的问题')).not.toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: '归档批注：新批注标题' }));
-    expect(screen.getByText('已归档')).not.toBeNull();
+    expect(screen.getAllByText('已归档').length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: '显示已归档' }));
     expect(screen.getByRole('button', { name: /打开源块 02 的批注/ })).not.toBeNull();
   });
@@ -207,6 +211,22 @@ describe('foundation spike page', () => {
       '760',
     );
     expect(screen.getByLabelText('对话批注').getAttribute('style')).toContain('width: 560px');
+  });
+
+  it('uses a viewport workbench with reader-scoped controls and a chat-first sidebar', () => {
+    render(<FoundationSpike />);
+
+    const main = document.querySelector('main')!;
+    expect(main.className).toContain('full-height');
+    expect(main.className).toContain('overflow-hidden');
+    const reader = document.querySelector('.foundation-reader')!;
+    expect(reader.className).toContain('overflow-y-auto');
+    expect(screen.getByLabelText('阅读工具栏').className).toContain('w-[min(780px');
+
+    const sidebar = screen.getByLabelText('对话批注');
+    expect(sidebar.className).toContain('overflow-hidden');
+    expect(screen.getByLabelText('批注对话消息').className).toContain('overflow-y-auto');
+    expect(screen.getByLabelText('问题').closest('footer')).not.toBeNull();
   });
 
   it('renders Markdown semantics without changing them after annotation', async () => {

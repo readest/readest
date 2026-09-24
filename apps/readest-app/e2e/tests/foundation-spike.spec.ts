@@ -33,8 +33,14 @@ test.describe('NL-270 foundation spike', () => {
       'title',
       /为什么需要紧致性/,
     );
+    await expect(page.getByRole('button', { name: /回答依据 2 段/ })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await page.getByRole('button', { name: /回答依据 2 段/ }).click();
     await expect(page.getByRole('button', { name: /引用/ })).toHaveCount(2);
 
+    await page.getByLabel('阅读工具栏').hover();
     await page.getByRole('button', { name: '展开阅读显示设置' }).click();
     await page.getByRole('slider', { name: '正文字号' }).fill('21');
     await page.getByRole('slider', { name: '正文行距' }).fill('1.9');
@@ -53,6 +59,14 @@ test.describe('NL-270 foundation spike', () => {
     await expect(
       page.getByRole('button', { name: /编辑消息：重启后还能继续追问吗/ }),
     ).toBeVisible();
+    await page
+      .getByRole('button', { name: /回答依据/ })
+      .first()
+      .click();
+    await page
+      .getByRole('button', { name: /回答依据/ })
+      .last()
+      .click();
     await expect(page.getByRole('button', { name: /引用/ })).toHaveCount(4);
     await page
       .getByRole('button', { name: /引用 2/ })
@@ -117,8 +131,8 @@ test.describe('NL-270 foundation spike', () => {
     await page.getByRole('button', { name: '提问' }).click();
 
     const sidebar = page.getByLabel('对话批注');
-    await expect(sidebar).toHaveCSS('position', 'fixed');
-    await page.getByRole('button', { name: '关闭批注栏' }).click();
+    await expect(sidebar).toHaveCSS('position', 'absolute');
+    await page.getByRole('button', { name: '收起批注栏' }).click();
     await expect(sidebar).toHaveCount(0);
     const annotationPoint = await sourceBlock.evaluate((element) => {
       const textNode = element.querySelector('[data-source-text]')!.querySelector('p')!.firstChild!;
@@ -132,6 +146,36 @@ test.describe('NL-270 foundation spike', () => {
     await page.mouse.click(annotationPoint.x, annotationPoint.y);
     await expect(page.getByLabel('对话批注')).toBeVisible();
     await expect(page.getByText('窄屏批注', { exact: true }).first()).toBeVisible();
+  });
+
+  test('keeps the reader toolbar reachable at mid-document without covering the sidebar', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/foundation-spike');
+
+    const reader = page.locator('.foundation-reader');
+    const toolbar = page.getByLabel('阅读工具栏');
+    const sidebar = page.getByLabel('对话批注');
+    const readerBox = await reader.boundingBox();
+    const sidebarBox = await sidebar.boundingBox();
+    const toolbarBox = await toolbar.boundingBox();
+    if (!readerBox || !sidebarBox || !toolbarBox)
+      throw new Error('Workbench layout is not visible');
+    expect(toolbarBox.x).toBeGreaterThanOrEqual(readerBox.x);
+    expect(toolbarBox.x + toolbarBox.width).toBeLessThanOrEqual(readerBox.x + readerBox.width);
+    expect(toolbarBox.x + toolbarBox.width).toBeLessThanOrEqual(sidebarBox.x);
+
+    await reader.evaluate((element) => {
+      element.scrollTop = element.scrollHeight * 0.55;
+      element.dispatchEvent(new Event('scroll'));
+    });
+    await toolbar.hover();
+    await expect(page.getByRole('button', { name: '展开阅读显示设置' })).toBeVisible();
+    await expect(page.getByLabel('导入 Markdown')).toBeAttached();
+    const toolbarAfterScroll = await toolbar.boundingBox();
+    if (!toolbarAfterScroll) throw new Error('Toolbar disappeared after reader scroll');
+    expect(Math.abs(toolbarAfterScroll.y - toolbarBox.y)).toBeLessThanOrEqual(1);
   });
 
   test('keeps rendered Markdown intact and resizes the desktop sidebar by its divider', async ({
@@ -172,6 +216,7 @@ test.describe('NL-270 foundation spike', () => {
     expect(await page.evaluate(() => CSS.highlights.has('foundation-annotations'))).toBe(true);
 
     await expect(page.getByRole('slider', { name: '正文宽度' })).toHaveCount(0);
+    await page.getByLabel('阅读工具栏').hover();
     await page.getByRole('button', { name: '展开阅读显示设置' }).click();
     await expect(page.getByRole('slider', { name: '正文宽度' })).toBeVisible();
     await expect(page.getByRole('slider', { name: '批注栏宽度' })).toHaveCount(0);

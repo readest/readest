@@ -2,9 +2,6 @@ name: NL-270 Windows v8
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/ginit-codex/0163cd514799
 
 permissions:
   contents: read
