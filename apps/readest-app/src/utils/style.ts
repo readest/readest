@@ -267,7 +267,6 @@ const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: Theme
     border-radius: 0.2em;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
-    padding: 0 0.1em;
   }
   .readest-dialogue-block {${bgDecl(12)}${text}
     border-radius: 0.3em;

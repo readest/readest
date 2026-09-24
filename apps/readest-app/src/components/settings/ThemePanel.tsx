@@ -12,6 +12,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { resolveThemeIsDarkMode } from '@/utils/ambientLight';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
@@ -26,7 +27,7 @@ import {
 } from '@/helpers/settings';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
-import { manageDialogueHighlight } from '@/utils/dialogueHighlight';
+import { refreshViewDialogueHighlight } from '@/utils/dialogueHighlight';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { PREDEFINED_TEXTURES } from '@/styles/textures';
@@ -246,12 +247,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     const { bookKeys, getView, getViewSettings } = useReaderStore.getState();
     const isGlobal = getViewSettings(bookKey)?.isGlobal ?? true;
     const keys = isGlobal ? bookKeys : bookKey ? [bookKey] : [];
+    const { getConfig } = useBookDataStore.getState();
     keys.forEach((key) => {
       const vs = getViewSettings(key);
-      if (!vs) return;
-      getView(key)
-        ?.renderer.getContents()
-        .forEach(({ doc }) => manageDialogueHighlight(doc, vs));
+      const view = getView(key);
+      if (!vs || !view) return;
+      refreshViewDialogueHighlight(view, vs, getConfig(key)?.booknotes ?? []);
     });
   };
 

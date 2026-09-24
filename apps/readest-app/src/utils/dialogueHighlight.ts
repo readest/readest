@@ -1,4 +1,6 @@
-import { ViewSettings } from '@/types/book';
+import { BookNote, ViewSettings } from '@/types/book';
+import type { FoliateView } from '@/types/view';
+import { getIndexFromCfi } from '@/utils/cfi';
 
 export const DIALOGUE_SPAN_CLASS = 'readest-dialogue';
 export const DIALOGUE_BLOCK_CLASS = 'readest-dialogue-block';
@@ -17,16 +19,20 @@ export const isDialogueHighlightActive = (viewSettings: ViewSettings): boolean =
 // (don't, it's) are indistinguishable from single-quote dialogue and would
 // flood the page with false positives.
 //
+// Curly ‘’ is kept, but ’ is also the curly apostrophe, so a ’ between two
+// letters (don’t, it’s) continues the quote instead of closing it.
+//
 // The scan runs over the section's concatenated text (not per text node), so
-// a quote may span line breaks, <br> and inline markup. Newlines are allowed
-// inside every pair except ASCII "": a stray inch mark (5" screen) would
-// otherwise tint everything up to the next quote, while CJK books never use
-// " for inches.
+// a quote may span <br> and inline markup. A newline is inserted between
+// blocks, and every pair except ASCII "" may cross it: ASCII quotes don't say
+// which side they open, so a stray inch mark (5" screen) would otherwise flip
+// the pairing and tint the narration instead of the dialogue.
 const DIALOGUE_PATTERN =
-  /“[^“”]{1,500}?[”"]|„[^„“]{1,500}?[“"]|"[^"\n]{1,500}?"|«[^«»]{1,500}?[»]|「[^「」]{1,500}?[」]|『[^『』]{1,500}?[』]|‘[^‘’]{1,300}?[’]/g;
+  /“[^“”]{1,500}?[”"]|„[^„“]{1,500}?[“"]|"[^"\n]{1,500}?"|«[^«»]{1,500}?[»]|「[^「」]{1,500}?[」]|『[^『』]{1,500}?[』]|‘(?:[^‘’]|’(?=\p{L})){1,300}?’(?!\p{L})/gu;
 
 // Paragraph-leading dashes marking dialogue lines (French/Russian/CJK style).
-const DIALOGUE_DASH_RE = /^[—–―－-][\s\u3000]/;
+// The ASCII hyphen is left out: it leads list items in converted text.
+const DIALOGUE_DASH_RE = /^[—–―－][\s\u3000]/;
 
 const SKIP_SELECTOR = 'pre, code, kbd, samp, script, style, textarea, rt, rp';
 
@@ -39,19 +45,27 @@ const isSkipped = (node: Text): boolean => {
 
 type TextEntry = { node: Text; start: number; end: number };
 
+const BLOCK_SELECTOR =
+  'p, div, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6, td, th, caption, figcaption, section, article, aside, body';
+
 // Eligible text nodes in document order plus the concatenated section text.
-// <br> and element boundaries contribute zero characters, so a match range
-// can transparently cross them and is mapped back to node slices below.
+// <br> and inline boundaries contribute zero characters, so a match range can
+// transparently cross them and is mapped back to node slices below; a block
+// boundary contributes a newline that belongs to no node.
 const collectEntries = (doc: Document): { entries: TextEntry[]; text: string } => {
   const showText = doc.defaultView?.NodeFilter.SHOW_TEXT ?? 4;
   const walker = doc.createTreeWalker(doc.body ?? doc.documentElement, showText);
   const entries: TextEntry[] = [];
   let text = '';
+  let block: Element | null = null;
   let node = walker.nextNode() as Text | null;
   while (node) {
     if (!isSkipped(node)) {
       const content = node.textContent ?? '';
       if (content) {
+        const nodeBlock = node.parentElement!.closest(BLOCK_SELECTOR);
+        if (block && nodeBlock !== block) text += '\n';
+        block = nodeBlock;
         entries.push({ node, start: text.length, end: text.length + content.length });
         text += content;
       }
@@ -99,11 +113,15 @@ const wrapSlice = (doc: Document, node: Text, start: number, end: number): void 
 
 const wrapRegions = (doc: Document, entries: TextEntry[], regions: Region[]): void => {
   // Back to front: splitting a node only detaches its trailing part, so
-  // entries pointing at earlier offsets stay valid.
+  // entries pointing at earlier offsets stay valid. Both lists are sorted, so
+  // one cursor walks the entries once; an entry holding several quotes stays
+  // under the cursor for each of them.
+  let j = entries.length - 1;
   for (let i = regions.length - 1; i >= 0; i--) {
     const region = regions[i]!;
-    for (const entry of entries) {
-      if (entry.end <= region.start || entry.start >= region.end) continue;
+    while (j >= 0 && entries[j]!.start >= region.end) j--;
+    for (let k = j; k >= 0 && entries[k]!.end > region.start; k--) {
+      const entry = entries[k]!;
       if (!entry.node.isConnected) continue;
       wrapSlice(
         doc,
@@ -165,4 +183,29 @@ export const manageDialogueHighlight = (doc: Document, viewSettings: ViewSetting
   if (entries.length === 0) return;
   wrapRegions(doc, entries, findRegions(text));
   markDashBlocks(doc);
+};
+
+/**
+ * Re-run the marking on every section a view has rendered, e.g. after the
+ * setting changes. Wrapping moves quoted text into spans, which collapses any
+ * overlay range with an end inside a quote, so redraw the section's
+ * highlights from their CFIs.
+ */
+export const refreshViewDialogueHighlight = (
+  view: FoliateView,
+  viewSettings: ViewSettings,
+  booknotes: BookNote[],
+): void => {
+  for (const { doc, index } of view.renderer.getContents()) {
+    manageDialogueHighlight(doc, viewSettings);
+    booknotes
+      .filter(
+        (note) =>
+          note.type === 'annotation' &&
+          note.style &&
+          !note.deletedAt &&
+          getIndexFromCfi(note.cfi) === index,
+      )
+      .forEach((note) => view.addAnnotation(note));
+  }
 };

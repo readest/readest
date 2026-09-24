@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
+import { vi } from 'vitest';
 import {
   manageDialogueHighlight,
   clearDialogueHighlight,
+  refreshViewDialogueHighlight,
   DIALOGUE_SPAN_CLASS,
   DIALOGUE_BLOCK_CLASS,
 } from '@/utils/dialogueHighlight';
 import { getStyles, ThemeCode } from '@/utils/style';
-import { ViewSettings } from '@/types/book';
+import { BookNote, ViewSettings } from '@/types/book';
+import type { FoliateView } from '@/types/view';
 import {
   DEFAULT_BOOK_FONT,
   DEFAULT_BOOK_LAYOUT,
@@ -336,5 +339,72 @@ describe('manageDialogueHighlight', () => {
     manageDialogueHighlight(doc, vs);
     manageDialogueHighlight(doc, vs);
     expect(doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`).length).toBe(2);
+  });
+
+  it('keeps a curly apostrophe inside single-quoted dialogue', () => {
+    const doc = makeDoc(`<p>‘I don’t know,’ she said. ‘It’s fine.’</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['‘I don’t know,’', '‘It’s fine.’']);
+  });
+
+  it('does not pair a stray ASCII quote with one in a later paragraph', () => {
+    const doc = makeDoc(`<p>The 5" screen was small.</p><p>He said "hi" and left.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const spans = [...doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+    expect(spans).toEqual(['"hi"']);
+  });
+
+  it('wraps many quotes across many text nodes', () => {
+    const html = Array.from({ length: 50 }, (_, i) => `<p>A “x${i}<b>y</b>z” b “w”.</p>`).join('');
+    const doc = makeDoc(html);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const paras = doc.querySelectorAll('p');
+    expect(paras).toHaveLength(50);
+    paras.forEach((p, i) => {
+      const spans = [...p.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)].map((s) => s.textContent);
+      expect(spans).toEqual([`“x${i}`, 'y', 'z”', '“w”']);
+    });
+  });
+
+  it('does not treat a hyphen-led paragraph as a dialogue line', () => {
+    const doc = makeDoc(`<p>- first item</p><p>– Bonjour.</p>`);
+    manageDialogueHighlight(doc, makeViewSettings({ dialogueHighlight: true }));
+    const blocks = [...doc.querySelectorAll(`.${DIALOGUE_BLOCK_CLASS}`)].map((b) => b.textContent);
+    expect(blocks).toEqual(['– Bonjour.']);
+  });
+});
+
+describe('dialogue styles', () => {
+  it('adds no horizontal padding, so toggling does not reflow the page', () => {
+    const css = getStyles(makeViewSettings({ dialogueHighlight: true }), themeCode);
+    const rules = (css.match(/\.readest-dialogue(-block)?\s*\{[^}]*\}/g) ?? []).join('\n');
+    expect(rules).not.toContain('padding');
+  });
+});
+
+describe('refreshViewDialogueHighlight', () => {
+  it('rewraps every rendered section and redraws its highlights', () => {
+    const doc = makeDoc(`<p>He said “hello”.</p>`);
+    const addAnnotation = vi.fn();
+    const view = {
+      renderer: { getContents: () => [{ doc, index: 3 }] },
+      addAnnotation,
+    } as unknown as FoliateView;
+    const note = (id: string, cfi: string, extra: Partial<BookNote> = {}) =>
+      ({ id, type: 'annotation', cfi, style: 'highlight', ...extra }) as BookNote;
+    const inSection = note('a', 'epubcfi(/6/8!/4/2/1:0)');
+    const booknotes = [
+      inSection,
+      note('b', 'epubcfi(/6/10!/4/2/1:0)'),
+      note('c', 'epubcfi(/6/8!/4/2/1:2)', { deletedAt: 1 }),
+      note('d', 'epubcfi(/6/8!/4/2/1:4)', { type: 'bookmark' }),
+    ];
+
+    refreshViewDialogueHighlight(view, makeViewSettings({ dialogueHighlight: true }), booknotes);
+
+    expect(doc.querySelectorAll(`.${DIALOGUE_SPAN_CLASS}`)).toHaveLength(1);
+    expect(addAnnotation).toHaveBeenCalledTimes(1);
+    expect(addAnnotation).toHaveBeenCalledWith(inSection);
   });
 });

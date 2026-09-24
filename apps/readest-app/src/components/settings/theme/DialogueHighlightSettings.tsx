@@ -1,7 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Toggle } from '@/components/primitives/toggle';
 import { BoxedList, SettingsRow, SettingsSwitchRow } from '../primitives';
 import ColorInput from './ColorInput';
 
@@ -33,10 +32,6 @@ const DialogueHighlightSettings: React.FC<DialogueHighlightSettingsProps> = ({
   'data-setting-id': dataSettingId,
 }) => {
   const _ = useTranslation();
-  // SettingsRow's `disabled` only dims the row; guard the pickers themselves
-  // the way ReadingRulerSettings does so a dimmed row can't be changed. The
-  // text switch is independent of the background switch.
-  const textEnabled = customTextColor;
 
   return (
     <BoxedList title={_('Dialogue Highlighting')} data-setting-id={dataSettingId}>
@@ -45,7 +40,7 @@ const DialogueHighlightSettings: React.FC<DialogueHighlightSettingsProps> = ({
         description={
           dialogueHighlight
             ? customBackground
-              ? backgroundColor
+              ? _('Custom')
               : _('Follows the theme color')
             : _('Off')
         }
@@ -101,29 +96,29 @@ const DialogueHighlightSettings: React.FC<DialogueHighlightSettingsProps> = ({
           />
         </SettingsRow>
       )}
-      <SettingsRow label={_('Text Color')} description={textColor || _('Default')}>
-        <div className='flex items-center gap-2'>
-          <span className={clsx(!textEnabled && 'opacity-50')}>
-            <ColorInput
-              label={_('Text Color')}
-              value={textColor || '#808080'}
-              onChange={(next) => textEnabled && onTextColorChange(next)}
-              showPickerIcon
-              pickerPosition='right'
-            />
-          </span>
-          <Toggle
-            checked={customTextColor}
-            aria-label={_('Text Color')}
-            onChange={() => {
-              // Seed the picker's displayed fallback so enabling the switch
-              // visibly does something instead of staying on inherited text.
-              if (!customTextColor && !textColor) onTextColorChange('#808080');
-              onCustomTextColorToggle(!customTextColor);
-            }}
+      {/* Independent of the background switch: text can be colored alone. */}
+      <SettingsSwitchRow
+        label={_('Text Color')}
+        description={customTextColor ? _('Custom') : _('Default')}
+        checked={customTextColor}
+        onChange={() => {
+          // Seed the picker so enabling the switch visibly does something
+          // instead of staying on inherited text.
+          if (!customTextColor && !textColor) onTextColorChange('#808080');
+          onCustomTextColorToggle(!customTextColor);
+        }}
+      />
+      {customTextColor && (
+        <SettingsRow label={_('Color')}>
+          <ColorInput
+            label={_('Text Color')}
+            value={textColor || '#808080'}
+            onChange={onTextColorChange}
+            showPickerIcon
+            pickerPosition='right'
           />
-        </div>
-      </SettingsRow>
+        </SettingsRow>
+      )}
     </BoxedList>
   );
 };

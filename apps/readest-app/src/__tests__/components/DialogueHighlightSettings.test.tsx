@@ -34,7 +34,7 @@ const renderPanel = (
 describe('DialogueHighlightSettings', () => {
   it('names the text-color switch accessibly', () => {
     renderPanel();
-    expect(screen.getByRole('checkbox', { name: 'Text Color' })).not.toBeNull();
+    expect(screen.getByRole('checkbox', { name: /^Text Color/ })).not.toBeNull();
   });
 
   it('seeds the fallback color when enabling text color with none set', () => {
@@ -46,7 +46,7 @@ describe('DialogueHighlightSettings', () => {
       onCustomTextColorToggle,
       onTextColorChange,
     });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Text Color' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Text Color/ }));
     expect(onTextColorChange).toHaveBeenCalledWith('#808080');
     expect(onCustomTextColorToggle).toHaveBeenCalledWith(true);
   });
@@ -60,8 +60,22 @@ describe('DialogueHighlightSettings', () => {
       onCustomTextColorToggle,
       onTextColorChange,
     });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Text Color' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Text Color/ }));
     expect(onTextColorChange).not.toHaveBeenCalled();
     expect(onCustomTextColorToggle).toHaveBeenCalledWith(false);
+  });
+
+  it('describes a custom background without printing its hex value', () => {
+    renderPanel({ customBackground: true, backgroundColor: '#facc15' });
+    expect(screen.queryByText('#facc15')).toBeNull();
+    expect(screen.getByRole('checkbox', { name: /^Background/ })).not.toBeNull();
+  });
+
+  it('shows the text color picker only while the text color switch is on', () => {
+    renderPanel({ customTextColor: false, textColor: '#112233' });
+    expect(screen.queryByText('Color')).toBeNull();
+    cleanup();
+    renderPanel({ customTextColor: true, textColor: '#112233' });
+    expect(screen.getByText('Color')).not.toBeNull();
   });
 });
