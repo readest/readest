@@ -73,43 +73,14 @@ pub fn is_eink_device() -> bool {
 }
 
 fn detect_eink_device() -> bool {
-    // Get device manufacturer and model
-    let manufacturer = get_system_property("ro.product.manufacturer")
-        .or_else(|| get_system_property("ro.product.brand"))
-        .unwrap_or_default()
-        .to_lowercase();
+    let lower = |prop: &str| get_system_property(prop).unwrap_or_default().to_lowercase();
+    let manufacturer = lower("ro.product.manufacturer");
+    let brand = lower("ro.product.brand");
+    let model = lower("ro.product.model");
+    let device = lower("ro.product.device");
 
-    let model = get_system_property("ro.product.model")
-        .or_else(|| get_system_property("ro.product.device"))
-        .unwrap_or_default()
-        .to_lowercase();
-
-    let device = get_system_property("ro.product.device")
-        .unwrap_or_default()
-        .to_lowercase();
-
-    // Check if manufacturer matches known e-ink manufacturers
-    for eink_manufacturer in EINK_MANUFACTURERS {
-        if manufacturer.contains(eink_manufacturer) {
-            // Special case for manufacturers that make both e-ink and non-e-ink devices
-            if *eink_manufacturer == "hisense" || *eink_manufacturer == "xiaomi" {
-                // Need to also check the model for these manufacturers
-                for eink_model in EINK_MODELS {
-                    if model.contains(eink_model) || device.contains(eink_model) {
-                        return true;
-                    }
-                }
-            } else {
-                return true;
-            }
-        }
-    }
-
-    // Check if model matches known e-ink models
-    for eink_model in EINK_MODELS {
-        if model.contains(eink_model) || device.contains(eink_model) {
-            return true;
-        }
+    if is_eink_identity(&manufacturer, &brand, &model, &device) {
+        return true;
     }
 
     // Check for e-ink specific system properties
@@ -125,4 +96,89 @@ fn detect_eink_device() -> bool {
     }
 
     false
+}
+
+/// Match the device identity fields against the known e-ink whitelists.
+///
+/// Some readers report the SoC vendor (e.g. `QUALCOMM`) as the manufacturer and
+/// carry the reader brand only in `ro.product.brand`, so the whitelist is
+/// matched against all four fields joined as one identity string.
+fn is_eink_identity(manufacturer: &str, brand: &str, model: &str, device: &str) -> bool {
+    let identity = format!("{manufacturer} {brand} {model} {device}").to_lowercase();
+
+    // Check if any identity field matches a known e-ink manufacturer
+    for eink_manufacturer in EINK_MANUFACTURERS {
+        if identity.contains(eink_manufacturer) {
+            // Special case for manufacturers that make both e-ink and non-e-ink devices
+            if *eink_manufacturer == "hisense" || *eink_manufacturer == "xiaomi" {
+                // Need to also check the model for these manufacturers
+                if EINK_MODELS
+                    .iter()
+                    .any(|eink_model| model.contains(eink_model) || device.contains(eink_model))
+                {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+    }
+
+    // Check if model matches known e-ink models
+    EINK_MODELS
+        .iter()
+        .any(|eink_model| model.contains(eink_model) || device.contains(eink_model))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_eink_identity;
+
+    #[test]
+    fn detects_hanvon_when_manufacturer_is_soc_vendor() {
+        // HANVON Clear7 (Jinli): ro.product.manufacturer reports QUALCOMM,
+        // the reader brand only lives in ro.product.brand.
+        assert!(is_eink_identity(
+            "qualcomm",
+            "hanvon",
+            "clear7",
+            "bengal_515"
+        ));
+    }
+
+    #[test]
+    fn detects_regular_eink_brands() {
+        assert!(is_eink_identity("onyx", "boox", "palma", "musu"));
+        assert!(is_eink_identity("", "tolino", "tab7", "ntx_6"));
+        assert!(is_eink_identity("amazon", "amazon", "kinds3", "walleye"));
+    }
+
+    #[test]
+    fn detects_by_model_when_no_brand_matches() {
+        assert!(is_eink_identity(
+            "someoem",
+            "somebrand",
+            "inknote_a5pro",
+            "xxx"
+        ));
+    }
+
+    #[test]
+    fn phone_brands_need_an_eink_model() {
+        assert!(!is_eink_identity("xiaomi", "redmi", "m2012k11c", "venus"));
+        assert!(is_eink_identity("xiaomi", "xiaomi", "inkpalm", "lapis"));
+        assert!(!is_eink_identity(
+            "hisense",
+            "hisense",
+            "dub-al00a",
+            "wayne"
+        ));
+        assert!(is_eink_identity("hisense", "hisense", "hlj-bd60", "a5pro"));
+    }
+
+    #[test]
+    fn rejects_plain_phone() {
+        assert!(!is_eink_identity("google", "google", "pixel 9", "tegu"));
+        assert!(!is_eink_identity("samsung", "samsung", "sm-g9910", "r8q"));
+    }
 }
