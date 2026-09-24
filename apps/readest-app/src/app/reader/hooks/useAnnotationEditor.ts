@@ -81,9 +81,19 @@ export const useAnnotationEditor = ({
           // range must tear down *both* — dropping only the highlight left the
           // note bubble stranded at the old anchor while a new one was drawn at
           // the new one, so one highlight showed several note markers (#5538).
+          // Mid-drag the saved record still holds the pre-drag range, and the
+          // reader repaints saved records on every relocate (a corner auto-turn,
+          // a resize). Tear that range down too, or it outlives the record as an
+          // untappable ghost once the highlight is deleted (#6141).
           const views = getViewsById(bookKey.split('-')[0]!);
           const hasNote = !!existingAnnotation.note?.trim();
-          views.forEach((v) => removeBookNoteOverlays(v, editingAnnotationRef.current));
+          const previous = editingAnnotationRef.current;
+          views.forEach((v) => {
+            removeBookNoteOverlays(v, previous);
+            if (existingAnnotation.cfi !== previous.cfi) {
+              removeBookNoteOverlays(v, existingAnnotation);
+            }
+          });
           views.forEach((v) => v?.addAnnotation(updatedAnnotation));
           if (hasNote) {
             views.forEach((v) =>

@@ -187,4 +187,45 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
       expect.objectContaining({ value: `${NOTE_PREFIX}new-cfi` }),
     ]);
   });
+
+  // While a handle is held, the saved record still holds the range from before
+  // the drag, and the reader repaints saved records whenever it relocates (a
+  // corner auto page-turn, a resize). That repaint drew the pre-drag range next
+  // to the preview, and since the editor only removed its own previous preview,
+  // it stayed painted after the highlight was deleted: an untappable ghost that
+  // lasted until the book was reopened (#6141).
+  test.each([
+    ['highlight', ''],
+    ['highlight with a note', 'my note'],
+  ])('a repaint of the saved range mid-drag does not outlive the %s', async (_, note) => {
+    const saved = { ...annotation, note } as BookNote;
+    h.annotations = [{ ...saved }];
+    const overlays = new Set<string>();
+    h.view.addAnnotation.mockImplementation((n: BookNote & { value?: string }, remove = false) => {
+      const value = n.value ?? n.cfi;
+      if (remove) overlays.delete(value);
+      else overlays.add(value);
+    });
+    const repaintSaved = () => {
+      const record = h.annotations[0]!;
+      overlays.add(record.cfi);
+      if (record.note) overlays.add(`${NOTE_PREFIX}${record.cfi}`);
+    };
+    repaintSaved();
+    h.view.getCFI
+      .mockReturnValueOnce('preview-cfi')
+      .mockReturnValueOnce('drag-cfi')
+      .mockReturnValueOnce('committed-cfi');
+    const { result } = setup(saved);
+
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    repaintSaved(); // relocate while the handle is held
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    await result.current.applyAnnotationRange(range, 2, false, false);
+
+    const expected = note ? ['committed-cfi', `${NOTE_PREFIX}committed-cfi`] : ['committed-cfi'];
+    expect(overlays).toEqual(new Set(expected));
+    removeBookNoteOverlays(h.view as unknown as FoliateView, h.annotations[0]!);
+    expect(overlays.size).toBe(0);
+  });
 });
