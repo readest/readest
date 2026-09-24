@@ -289,6 +289,41 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(new SourceDocSpikeStore(localStorage).loadCurrentDocument().title).toBe('新书');
   });
 
+  it('isolates annotation schemas for different native library books', () => {
+    const firstStore = new SourceDocSpikeStore(localStorage, 'library:first');
+    const secondStore = new SourceDocSpikeStore(localStorage, 'library:second');
+    const firstDocument = firstStore.importMarkdown(
+      '同名书.md',
+      '# 第一册\n\n第一册正文。',
+      'book-first',
+    );
+    const secondDocument = secondStore.importMarkdown(
+      '同名书.md',
+      '# 第二册\n\n第二册正文。',
+      'book-second',
+    );
+
+    firstStore.ask(
+      firstDocument,
+      createSelectionAnchor(firstDocument.blocks[1]!, 0, 3),
+      '第一册问题',
+    );
+    secondStore.ask(
+      secondDocument,
+      createSelectionAnchor(secondDocument.blocks[1]!, 0, 3),
+      '第二册问题',
+    );
+
+    expect(new SourceDocSpikeStore(localStorage, 'library:first').listThreads()[0]?.title).toBe(
+      '第一册问题',
+    );
+    expect(new SourceDocSpikeStore(localStorage, 'library:second').listThreads()[0]?.title).toBe(
+      '第二册问题',
+    );
+    expect(localStorage.getItem('readest:annotation-schema:v1:library:first')).not.toBeNull();
+    expect(localStorage.getItem('readest:annotation-schema:v1:library:second')).not.toBeNull();
+  });
+
   it('recovers from corrupt or unavailable storage', () => {
     localStorage.setItem('readest:annotation-schema:v1', '{not-json');
     expect(new SourceDocSpikeStore(localStorage).loadCurrentDocument().title).toBe(

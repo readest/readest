@@ -365,11 +365,17 @@ function migrateMarkdownSemantics(schema: AnnotationSchemaV1): boolean {
   return migrated;
 }
 
-export function parseMarkdownDocument(sourceName: string, markdown: string): SourceDocFixture {
+export function parseMarkdownDocument(
+  sourceName: string,
+  markdown: string,
+  documentIdentity?: string,
+): SourceDocFixture {
   const normalized = markdown.replace(/\r\n?/g, '\n').trim();
   if (!normalized) throw new Error('Markdown 文件不能为空');
   const contentHash = stableHash(normalized);
-  const documentId = `markdown-${stableHash(sourceName.toLowerCase())}`;
+  const documentId = documentIdentity
+    ? `markdown-library-${stableHash(documentIdentity)}`
+    : `markdown-${stableHash(sourceName.toLowerCase())}`;
   const versionId = `${documentId}-${contentHash}`;
   const sections: SourceDocSection[] = [];
   const blocks: SourceDocBlock[] = [];
@@ -648,11 +654,18 @@ function emptySchema(document: SourceDocFixture): AnnotationSchemaV1 {
 }
 
 export class SourceDocSpikeStore {
-  constructor(private readonly storage: Storage) {}
+  private readonly schemaStorageKey: string;
+
+  constructor(
+    private readonly storage: Storage,
+    namespace?: string,
+  ) {
+    this.schemaStorageKey = namespace ? `${SCHEMA_STORAGE_KEY}:${namespace}` : SCHEMA_STORAGE_KEY;
+  }
 
   private saveSchema(schema: AnnotationSchemaV1): void {
     try {
-      this.storage.setItem(SCHEMA_STORAGE_KEY, JSON.stringify(schema));
+      this.storage.setItem(this.schemaStorageKey, JSON.stringify(schema));
     } catch (error) {
       console.warn('Unable to persist annotation schema', error);
     }
@@ -661,13 +674,16 @@ export class SourceDocSpikeStore {
   loadSchema(): AnnotationSchemaV1 {
     const schema = emptySchema(SOURCE_DOC_FIXTURE);
     try {
-      const serialized = this.storage.getItem(SCHEMA_STORAGE_KEY);
+      const serialized = this.storage.getItem(this.schemaStorageKey);
       if (serialized) {
         const parsed = JSON.parse(serialized) as AnnotationSchemaV1;
         if (migrateMarkdownSemantics(parsed)) this.saveSchema(parsed);
         return parsed;
       }
-      const legacy = this.storage.getItem(LEGACY_STORAGE_KEY);
+      const legacy =
+        this.schemaStorageKey === SCHEMA_STORAGE_KEY
+          ? this.storage.getItem(LEGACY_STORAGE_KEY)
+          : null;
       if (legacy) {
         const parsed = JSON.parse(legacy) as Partial<SourceDocThread> & {
           anchor: SourceDocAnchor;
@@ -716,8 +732,12 @@ export class SourceDocSpikeStore {
     };
   }
 
-  importMarkdown(sourceName: string, markdown: string): SourceDocFixture {
-    const imported = parseMarkdownDocument(sourceName, markdown);
+  importMarkdown(
+    sourceName: string,
+    markdown: string,
+    documentIdentity?: string,
+  ): SourceDocFixture {
+    const imported = parseMarkdownDocument(sourceName, markdown, documentIdentity);
     const schema = this.loadSchema();
     const addition = emptySchema(imported);
     schema.documents = [
@@ -1017,8 +1037,8 @@ export class SourceDocSpikeStore {
 
   clear(): void {
     try {
-      this.storage.removeItem(SCHEMA_STORAGE_KEY);
-      this.storage.removeItem(LEGACY_STORAGE_KEY);
+      this.storage.removeItem(this.schemaStorageKey);
+      if (this.schemaStorageKey === SCHEMA_STORAGE_KEY) this.storage.removeItem(LEGACY_STORAGE_KEY);
     } catch (error) {
       console.warn('Unable to clear annotation schema', error);
     }

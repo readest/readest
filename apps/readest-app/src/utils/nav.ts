@@ -6,14 +6,18 @@ import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { AppService } from '@/types/system';
 
 let readerWindowsCount = 0;
-const createReaderWindow = (appService: AppService, url: string) => {
+const createReaderWindow = (
+  appService: AppService,
+  url: string,
+  size: { width: number; height: number } = { width: 800, height: 600 },
+) => {
   const currentWindow = getCurrentWindow();
   const label = currentWindow.label;
   const newLabelPrefix = label === 'main' ? 'reader' : label;
   const win = new WebviewWindow(`${newLabelPrefix}-${readerWindowsCount}`, {
     url,
-    width: 800,
-    height: 600,
+    width: size.width,
+    height: size.height,
     center: true,
     resizable: true,
     title: 'Readest',
@@ -50,6 +54,14 @@ export const showReaderWindow = (
   params.set('ids', ids);
   const url = `/reader?${params.toString()}`;
   createReaderWindow(appService, url);
+};
+
+export const showFoundationWorkspaceWindow = (appService: AppService, bookId: string) => {
+  const params = new URLSearchParams({ book: bookId });
+  createReaderWindow(appService, `/foundation-spike?${params.toString()}`, {
+    width: 1440,
+    height: 900,
+  });
 };
 
 export const showLibraryWindow = (appService: AppService, filenames: string[]) => {
@@ -108,6 +120,14 @@ export const navigateToReader = (
     params.set('ids', ids);
     router.push(`/reader?${params.toString()}`, navOptions);
   }
+};
+
+export const navigateToFoundationWorkspace = (
+  router: ReturnType<typeof useRouter>,
+  bookId: string,
+) => {
+  const params = new URLSearchParams({ book: bookId });
+  router.push(`/foundation-spike?${params.toString()}`);
 };
 
 export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {

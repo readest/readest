@@ -1,11 +1,24 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Book } from '@/types/book';
+
+const libraryAppService = vi.hoisted(() => ({
+  loadLibraryBooks: vi.fn(async (): Promise<Book[]> => []),
+  loadBookContent: vi.fn(),
+}));
+
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ appService: libraryAppService }),
+}));
 
 import FoundationSpike, { restoredWindowSize } from '@/app/foundation-spike/page';
 
 describe('foundation spike page', () => {
   beforeEach(() => {
     localStorage.clear();
+    window.history.replaceState({}, '', '/foundation-spike');
+    libraryAppService.loadLibraryBooks.mockResolvedValue([]);
+    libraryAppService.loadBookContent.mockReset();
     Element.prototype.scrollIntoView = vi.fn();
   });
 
@@ -144,7 +157,7 @@ describe('foundation spike page', () => {
 
     expect(screen.getAllByTestId(/source-block-/)).toHaveLength(12);
     expect(screen.getByText('2 章 · 12 个编号源块 · 内置测试文档')).not.toBeNull();
-    expect(screen.getByRole('link', { name: '打开原版书库' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '返回书库' }).getAttribute('href')).toBe('/library');
     selectText('block-02', '紧致性', 'block-03', '因此');
 
     expect(screen.getByText('当前锚点 · 2 块')).not.toBeNull();
@@ -175,6 +188,66 @@ describe('foundation spike page', () => {
     fireEvent.click(screen.getByTestId('source-block-block-02').querySelector('p')!);
     expect(screen.getByLabelText('对话批注')).not.toBeNull();
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('previews an annotation anchor while hovering a same-paragraph thread choice', () => {
+    render(<FoundationSpike />);
+    selectText('block-02', '紧致性');
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '第一条' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+    selectText('block-02', '局部信息');
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '第二条' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+
+    fireEvent.click(screen.getByRole('button', { name: /打开源块 02 的批注，共 2 条/ }));
+    const firstChoice = screen.getByRole('button', { name: /预览并打开批注：第一条/ });
+    fireEvent.mouseEnter(firstChoice);
+    expect(screen.getByTestId('source-block-block-02').getAttribute('data-previewed')).toBe('true');
+    fireEvent.mouseLeave(firstChoice);
+    expect(screen.getByTestId('source-block-block-02').getAttribute('data-previewed')).toBe(
+      'false',
+    );
+  });
+
+  it('keeps the gutter cursor unchanged and scrolls an overflowing attachment list', () => {
+    render(<FoundationSpike />);
+    expect(screen.getByTestId('reader-gutter').className).not.toContain('cursor-not-allowed');
+
+    for (const text of ['紧致性', '局部信息', '全局控制']) {
+      fireEvent.click(screen.getByRole('button', { name: '将选中文本作为问题附件' }));
+      selectText('block-02', text);
+    }
+
+    const list = screen.getByTestId('question-attachments-list');
+    expect(list.className).toContain('max-h-40');
+    expect(list.className).toContain('overflow-y-auto');
+    expect(screen.getAllByRole('button', { name: /删除附件/ })).toHaveLength(3);
+  });
+
+  it('loads a Markdown book from the native library into a book-scoped workspace', async () => {
+    window.history.replaceState({}, '', '/foundation-spike?book=library-md');
+    const book: Book = {
+      hash: 'library-md',
+      format: 'MD',
+      title: '书库里的书',
+      sourceTitle: '书库里的书.md',
+      author: '',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    libraryAppService.loadLibraryBooks.mockResolvedValue([book]);
+    libraryAppService.loadBookContent.mockResolvedValue({
+      book,
+      file: new File(['# 书库里的书\n\n这是原生书库文件。'], '书库里的书.md', {
+        type: 'text/markdown',
+      }),
+    });
+
+    render(<FoundationSpike />);
+
+    expect(await screen.findByText('这是原生书库文件。')).not.toBeNull();
+    expect(screen.getByText(/已从书库打开“书库里的书”/)).not.toBeNull();
+    expect(localStorage.getItem('readest:annotation-schema:v1:library:library-md')).not.toBeNull();
   });
 
   it('renames annotations and deletes selected threads in bulk without opening them', () => {

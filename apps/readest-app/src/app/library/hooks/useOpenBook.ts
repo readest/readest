@@ -2,11 +2,17 @@ import { Dispatch, SetStateAction, useCallback } from 'react';
 import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { hasFileSyncMirror, useMakeBookAvailable } from '@/hooks/useMakeBookAvailable';
 import { eventDispatcher } from '@/utils/event';
-import { navigateToReader, showReaderWindow } from '@/utils/nav';
+import {
+  navigateToFoundationWorkspace,
+  navigateToReader,
+  showFoundationWorkspaceWindow,
+  showReaderWindow,
+} from '@/utils/nav';
 import { isAbsEbook, isAudiobook } from '@/utils/audiobook';
 
 interface UseOpenBookOptions {
@@ -27,7 +33,7 @@ interface UseOpenBookOptions {
 export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptions) => {
   const _ = useTranslation();
   const router = useAppRouter();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const makeBookAvailable = useMakeBookAvailable({ setLoading, handleBookDownload });
 
@@ -75,6 +81,18 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       }
       const available = await makeBookAvailable(book);
       if (!available) return;
+      if (book.format === 'MD') {
+        const libraryStore = useLibraryStore.getState();
+        if (libraryStore.getBookByHash(book.hash)) {
+          await libraryStore.updateBook(envConfig, { ...book, updatedAt: Date.now() });
+        }
+        if (appService?.hasWindow && settings.openBookInNewWindow) {
+          showFoundationWorkspaceWindow(appService, book.hash);
+        } else {
+          setTimeout(() => navigateToFoundationWorkspace(router, book.hash), 0);
+        }
+        return;
+      }
       const params = new URLSearchParams();
       if (cfi) params.set('cfi', cfi);
       if (cfi && options?.highlightSearchResult) params.set('highlight', 'search');
@@ -88,7 +106,7 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [appService, makeBookAvailable, settings.openBookInNewWindow],
+    [appService, envConfig, makeBookAvailable, settings.openBookInNewWindow],
   );
 
   return { openBook, makeBookAvailable };

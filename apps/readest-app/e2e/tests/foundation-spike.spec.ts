@@ -111,6 +111,54 @@ test.describe('NL-270 foundation spike', () => {
     await expect(page).toHaveURL(/\/foundation-spike$/);
   });
 
+  test('previews same-paragraph anchors and scrolls multiple question attachments', async ({
+    page,
+  }) => {
+    await page.goto('/foundation-spike');
+    const sourceBlock = page.getByTestId('source-block-block-02');
+    const selectText = async (text: string) => {
+      await sourceBlock.evaluate((element, value) => {
+        const textNode = element.querySelector('[data-source-text]')!.querySelector('p')!
+          .firstChild!;
+        const start = textNode.textContent!.indexOf(value);
+        const range = document.createRange();
+        range.setStart(textNode, start);
+        range.setEnd(textNode, start + value.length);
+        const selection = window.getSelection()!;
+        selection.removeAllRanges();
+        selection.addRange(range);
+        element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      }, text);
+    };
+
+    await selectText('紧致性');
+    await page.getByRole('textbox', { name: '问题' }).fill('第一条');
+    await page.getByRole('button', { name: '提问' }).click();
+    await selectText('局部信息');
+    await page.getByRole('textbox', { name: '问题' }).fill('第二条');
+    await page.getByRole('button', { name: '提问' }).click();
+    await page.getByRole('button', { name: /打开源块 02 的批注，共 2 条/ }).click();
+    await page.getByRole('button', { name: '预览并打开批注：第一条' }).hover();
+    await expect(sourceBlock).toHaveAttribute('data-previewed', 'true');
+    expect(await page.evaluate(() => CSS.highlights.has('foundation-active-annotation'))).toBe(
+      true,
+    );
+
+    await page.getByRole('button', { name: '关闭批注列表' }).click();
+    for (const text of ['紧致性', '局部信息', '全局控制']) {
+      await page.getByRole('button', { name: '将选中文本作为问题附件' }).click();
+      await selectText(text);
+    }
+    const attachments = page.getByTestId('question-attachments-list');
+    await expect(attachments).toHaveCSS('overflow-y', 'auto');
+    await expect(page.getByRole('button', { name: /删除附件/ })).toHaveCount(3);
+    expect(
+      await page
+        .getByTestId('reader-gutter')
+        .evaluate((element) => getComputedStyle(element).cursor),
+    ).not.toBe('not-allowed');
+  });
+
   test('uses an overlay sidebar in a narrow reading window', async ({ page }) => {
     await page.setViewportSize({ width: 520, height: 800 });
     await page.goto('/foundation-spike');

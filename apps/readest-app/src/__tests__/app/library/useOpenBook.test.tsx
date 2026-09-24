@@ -25,6 +25,7 @@ const routing = vi.hoisted(() => ({
 
 const isBookAvailable = vi.hoisted(() => vi.fn(async () => false));
 const navigateToReader = vi.hoisted(() => vi.fn());
+const navigateToFoundationWorkspace = vi.hoisted(() => vi.fn());
 const routerPush = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -37,7 +38,9 @@ vi.mock('@/hooks/useAppRouter', () => ({
 
 vi.mock('@/utils/nav', () => ({
   navigateToReader,
+  navigateToFoundationWorkspace,
   showReaderWindow: vi.fn(),
+  showFoundationWorkspaceWindow: vi.fn(),
 }));
 
 vi.mock('@/services/sync/cloudSyncProvider', () => ({
@@ -148,5 +151,18 @@ describe('useOpenBook — audiobooks open in the player, not the reader', () => 
     expect(isBookAvailable).not.toHaveBeenCalled();
     expect(handleBookDownload).not.toHaveBeenCalled();
     expect(deleteIntents).toEqual([]);
+  });
+});
+
+describe('useOpenBook — Markdown books reuse the native library', () => {
+  it('opens an available Markdown library item in the AI reading workspace', async () => {
+    const book = makeBook({ format: 'MD', hash: 'markdown-book' });
+
+    const { result } = setup();
+    await result.current.openBook(book);
+    await flushNavigation();
+
+    expect(navigateToFoundationWorkspace).toHaveBeenCalledWith(expect.anything(), 'markdown-book');
+    expect(navigateToReader).not.toHaveBeenCalled();
   });
 });

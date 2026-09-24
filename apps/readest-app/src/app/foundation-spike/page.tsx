@@ -12,6 +12,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
 
 import {
@@ -109,6 +110,9 @@ function domRange(element: HTMLElement, start: number, end: number): Range | nul
 }
 
 export default function FoundationSpike() {
+  const { appService } = useEnv();
+  const libraryBookId =
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('book');
   const [documentModel, setDocumentModel] = useState<SourceDocFixture>(SOURCE_DOC_FIXTURE);
   const [anchor, setAnchor] = useState<SourceDocAnchor | null>(null);
   const [threads, setThreads] = useState<SourceDocThread[]>([]);
@@ -124,6 +128,7 @@ export default function FoundationSpike() {
   const [selectedAnchors, setSelectedAnchors] = useState<SourceDocAnchor[]>([]);
   const [attachSelection, setAttachSelection] = useState(false);
   const [annotationPickerBlockId, setAnnotationPickerBlockId] = useState<string | null>(null);
+  const [previewedThreadId, setPreviewedThreadId] = useState<string | null>(null);
   const [expandedAttachmentIds, setExpandedAttachmentIds] = useState<string[]>([]);
   const [windowFullscreen, setWindowFullscreen] = useState(false);
   const [navigationStatus, setNavigationStatus] = useState('');
@@ -148,8 +153,14 @@ export default function FoundationSpike() {
   const normalWindowSize = useRef<{ width: number; height: number } | null>(null);
   const toolbarExpanded = readingSettings.toolbarPinned || toolbarHovered;
   const store = useMemo(
-    () => (typeof window === 'undefined' ? null : new SourceDocSpikeStore(window.localStorage)),
-    [],
+    () =>
+      typeof window === 'undefined'
+        ? null
+        : new SourceDocSpikeStore(
+            window.localStorage,
+            libraryBookId ? `library:${libraryBookId}` : undefined,
+          ),
+    [libraryBookId],
   );
 
   const refreshThreads = (preferredId?: string | null) => {
@@ -182,6 +193,44 @@ export default function FoundationSpike() {
       window.localStorage.removeItem(READING_SETTINGS_KEY);
     }
   }, [store]);
+
+  useEffect(() => {
+    if (!appService || !store || !libraryBookId) return;
+    let cancelled = false;
+    const loadLibraryBook = async () => {
+      try {
+        const book = (await appService.loadLibraryBooks()).find(
+          (candidate) => candidate.hash === libraryBookId && !candidate.deletedAt,
+        );
+        if (!book) throw new Error('书库中找不到这本书');
+        if (book.format !== 'MD') throw new Error('当前 AI 阅读工作台仅支持 Markdown 书籍');
+        const { file } = await appService.loadBookContent(book);
+        const imported = store.importMarkdown(
+          book.sourceTitle || file.name || `${book.title}.md`,
+          await file.text(),
+          book.hash,
+        );
+        if (cancelled) return;
+        setDocumentModel(imported);
+        setAnchor(null);
+        setActiveThreadId(null);
+        setHighlightedCitation(null);
+        setImportStatus(
+          `已从书库打开“${book.title}”：${imported.sections.length} 章，${imported.blocks.length} 个源块。`,
+        );
+        refreshThreads(null);
+      } catch (error) {
+        if (!cancelled) {
+          setImportStatus(error instanceof Error ? error.message : '无法从书库打开 Markdown');
+        }
+      }
+    };
+    void loadLibraryBook();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appService, libraryBookId, store]);
 
   useEffect(() => {
     const updateProgress = () => {
@@ -560,7 +609,9 @@ export default function FoundationSpike() {
         );
         if (range) {
           annotationRanges.push(range);
-          if (thread.id === activeThreadId) activeAnnotationRanges.push(range.cloneRange());
+          if (thread.id === activeThreadId || thread.id === previewedThreadId) {
+            activeAnnotationRanges.push(range.cloneRange());
+          }
         }
       }
     }
@@ -883,11 +934,7 @@ export default function FoundationSpike() {
           scrollbar-color: ${dark ? '#4b5563' : '#c7c8c0'} transparent;
         }
         .foundation-gutter {
-          cursor: not-allowed;
           background: ${dark ? 'rgba(17, 24, 39, 0.6)' : 'rgba(229, 231, 235, 0.72)'};
-        }
-        .foundation-paper {
-          cursor: auto;
         }
         .foundation-sidebar {
           width: ${readingSettings.sidebarWidth}px;
@@ -977,21 +1024,23 @@ export default function FoundationSpike() {
                 style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
               >
                 <div className='flex flex-wrap items-center gap-1.5'>
-                  <label className='btn btn-ghost btn-sm cursor-pointer' title='导入 Markdown'>
-                    ＋ 导入
-                    <input
-                      aria-label='导入 Markdown'
-                      className='hidden'
-                      type='file'
-                      accept='.md,.markdown,text/markdown,text/plain'
-                      onChange={(event) => void importMarkdown(event.target.files?.[0])}
-                    />
-                  </label>
+                  {!libraryBookId ? (
+                    <label className='btn btn-ghost btn-sm cursor-pointer' title='导入 Markdown'>
+                      ＋ 导入
+                      <input
+                        aria-label='导入 Markdown'
+                        className='hidden'
+                        type='file'
+                        accept='.md,.markdown,text/markdown,text/plain'
+                        onChange={(event) => void importMarkdown(event.target.files?.[0])}
+                      />
+                    </label>
+                  ) : null}
                   <a
                     className='btn btn-ghost btn-sm'
-                    href='/'
-                    aria-label='打开原版书库'
-                    title='打开原版书库'
+                    href='/library'
+                    aria-label='返回书库'
+                    title='返回书库'
                   >
                     ⌂ 书库
                   </a>
@@ -1159,6 +1208,11 @@ export default function FoundationSpike() {
             >
               {documentModel.blocks.map((item) => {
                 const highlighted = highlightedCitation?.blockId === item.id;
+                const previewed = previewedThreadId
+                  ? threads
+                      .find((thread) => thread.id === previewedThreadId)
+                      ?.anchor.selectedBlockIds.includes(item.id) === true
+                  : false;
                 const blockThreads = threadsByBlock.get(item.id) ?? [];
                 const previewThread =
                   blockThreads.find((candidate) => candidate.status === 'active') ??
@@ -1169,6 +1223,7 @@ export default function FoundationSpike() {
                     data-block-id={item.id}
                     data-testid={`source-block-${item.id}`}
                     data-highlighted={highlighted ? 'true' : 'false'}
+                    data-previewed={previewed ? 'true' : 'false'}
                     className={`relative scroll-m-24 pl-1 ${item.type === 'heading' ? 'mb-5 mt-9 first:mt-0' : 'mb-[1em]'}`}
                     style={{ color: highlighted ? '#111827' : foreground }}
                   >
@@ -1340,8 +1395,13 @@ export default function FoundationSpike() {
                         <button
                           type='button'
                           key={thread.id}
+                          aria-label={`预览并打开批注：${thread.title}`}
                           className='w-full rounded-xl border px-3 py-3 text-left hover:bg-blue-500/10'
                           onClick={() => selectThread(thread)}
+                          onMouseEnter={() => setPreviewedThreadId(thread.id)}
+                          onMouseLeave={() => setPreviewedThreadId(null)}
+                          onFocus={() => setPreviewedThreadId(thread.id)}
+                          onBlur={() => setPreviewedThreadId(null)}
                         >
                           <strong className='block truncate text-sm'>{thread.title}</strong>
                           <span className='mt-1 block text-xs' style={{ color: muted }}>
@@ -1409,7 +1469,10 @@ export default function FoundationSpike() {
                   ⎘ {attachSelection ? '请选择要附加的文本…' : '附加选中文本'}
                 </button>
                 {questionAttachments.length > 0 ? (
-                  <div className='mb-2 space-y-1.5'>
+                  <div
+                    data-testid='question-attachments-list'
+                    className='mb-2 max-h-40 space-y-1.5 overflow-y-auto pr-1'
+                  >
                     <div className='text-xs font-semibold text-amber-700'>问题附件预览</div>
                     {questionAttachments.map((attachment, index) => (
                       <div
