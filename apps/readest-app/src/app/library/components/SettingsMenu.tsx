@@ -46,6 +46,7 @@ interface SettingsMenuProps {
 }
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdownOpen }) => {
+  const showAccountAndCloud = false;
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
@@ -292,7 +293,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       )}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
-      {user ? (
+      {showAccountAndCloud && user ? (
         <MenuItem
           label={
             userDisplayName
@@ -363,9 +364,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             <MenuItem label={_('Account')} onClick={handleUserProfile} />
           </ul>
         </MenuItem>
-      ) : (
+      ) : showAccountAndCloud ? (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
-      )}
+      ) : null}
 
       {isTauriAppPlatform() && (
         <MenuItem
@@ -421,7 +422,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           {appService?.canCustomizeRootDir && (
             <MenuItem label={_('Change Data Location')} onClick={handleSetRootDir} />
           )}
-          {user && <MenuItem label={_('Data Sync')} onClick={handleManageSync} />}
+          {showAccountAndCloud && user && (
+            <MenuItem label={_('Data Sync')} onClick={handleManageSync} />
+          )}
           <MenuItem
             label={_('Refresh Metadata')}
             description={refreshMetadataProgress}
@@ -467,7 +470,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         </ul>
       </MenuItem>
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      {user && userProfilePlan === 'free' && (
+      {showAccountAndCloud && user && userProfilePlan === 'free' && (
         <MenuItem label={_('Upgrade to Readest Premium')} onClick={handleUpgrade} />
       )}
       {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}

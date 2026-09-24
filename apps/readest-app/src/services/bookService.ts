@@ -485,6 +485,7 @@ export async function importBook(
 
   let loadedBook: BookDoc | undefined;
   let fileobj: File | undefined;
+  let originalTxtFile: File | undefined;
   // TXT conversion replaces `fileobj` with a plain in-memory EPUB File. Track
   // the opened RemoteFile/NativeFile so we can close it right after convert
   // (and still in outer `finally` for non-TXT ClosableFile paths).
@@ -524,25 +525,18 @@ export async function importBook(
         // should not read "novel.txt" either. Drop the duplicate marker before
         // anything downstream classifies or names the book (issue #5959).
         filename = stripDuplicateMarker(filename);
+        if (/\.mhtml?$/i.test(filename)) {
+          throw new Error('暂不支持 MHTML，请另存为 HTML 或 PDF 后再导入。');
+        }
         const maybeClosable = fileobj as ClosableFile;
         if (typeof maybeClosable.close === 'function') {
           openedSource = maybeClosable;
         }
-        if (/\.txt$/i.test(filename)) {
+        const isTxtSource = /\.txt$/i.test(filename);
+        if (isTxtSource) {
+          originalTxtFile = fileobj;
           const txt2epub = new TxtToEpubConverter();
-          try {
-            ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
-          } finally {
-            // Convert consumes the source; release RemoteFile/NativeFile
-            // immediately so DocumentLoader / cover / write do not keep the
-            // path handle pinned. Outer `finally` stays an idempotent net.
-            if (openedSource?.close) {
-              try {
-                await openedSource.close();
-              } catch {}
-            }
-            openedSource = undefined;
-          }
+          ({ file: fileobj } = await txt2epub.convert({ file: fileobj }));
         }
         if (!fileobj || fileobj.size === 0) {
           throw new Error('Invalid or empty book file');
@@ -594,6 +588,7 @@ export async function importBook(
         } else {
           ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
         }
+        if (isTxtSource) format = 'TXT';
       }
       if (!loadedBook) {
         throw new Error('Unsupported or corrupted book file');
@@ -607,7 +602,9 @@ export async function importBook(
       throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);
     }
 
-    const hash = isPseStream ? md5(file as string) : (nativeHash ?? (await partialMD5(fileobj!)));
+    const hash = isPseStream
+      ? md5(file as string)
+      : (nativeHash ?? (await partialMD5(originalTxtFile ?? fileobj!)));
 
     // PDF metadata is often generic boilerplate (e.g. every PowerPoint export
     // is titled "PowerPoint Presentation" by the same author), so metadata
@@ -738,16 +735,25 @@ export async function importBook(
       saveBook &&
       !transient &&
       !inPlace &&
-      !!fileobj &&
+      !!(originalTxtFile ?? fileobj) &&
       (!(await fs.exists(bookFilename, 'Books')) || overwrite);
-    if (willWriteBookFile && fileobj) {
+    const persistedFile = originalTxtFile ?? fileobj;
+    if (willWriteBookFile && persistedFile) {
       if (/\.txt$/i.test(filename)) {
-        await fs.writeFile(bookFilename, 'Books', fileobj);
+        if (typeof file === 'string' && !isValidURL(file) && !isContentURI(file)) {
+          try {
+            await fs.copyFile(file, 'None', bookFilename, 'Books');
+          } catch {
+            await fs.writeFile(bookFilename, 'Books', persistedFile);
+          }
+        } else {
+          await fs.writeFile(bookFilename, 'Books', persistedFile);
+        }
       } else if (typeof file === 'string' && isContentURI(file)) {
         // openFile has already materialized opaque providers into a seekable
         // NativeFile. Reuse that path instead of streaming the provider URI a
         // second time into Books.
-        await fs.writeFile(bookFilename, 'Books', fileobj);
+        await fs.writeFile(bookFilename, 'Books', persistedFile);
       } else if (typeof file === 'string' && !isValidURL(file)) {
         try {
           // try to copy the file directly first in case of large files to avoid memory issues
@@ -755,10 +761,10 @@ export async function importBook(
           // due to permission issues, then fallback to read and write files
           await fs.copyFile(file, 'None', bookFilename, 'Books');
         } catch {
-          await fs.writeFile(bookFilename, 'Books', await fileobj.arrayBuffer());
+          await fs.writeFile(bookFilename, 'Books', await persistedFile.arrayBuffer());
         }
       } else {
-        await fs.writeFile(bookFilename, 'Books', fileobj);
+        await fs.writeFile(bookFilename, 'Books', persistedFile);
       }
     }
     // A metaHash match re-keys the book to the incoming file's hash directory
@@ -972,9 +978,8 @@ export async function importBook(
     } catch (error) {
       console.warn('Error destroying book document:', error);
     }
-    // Prefer `openedSource` only: after TXT convert we clear it once the source
-    // is released early. Falling back to `fileobj` would double-close when
-    // convert failed and `fileobj` is still the original ClosableFile.
+    // The original TXT stays open until its bytes are persisted. Other formats
+    // also keep their source handle until all import work has completed.
     if (openedSource?.close) {
       try {
         await openedSource.close();

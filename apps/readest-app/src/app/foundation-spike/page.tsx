@@ -14,6 +14,13 @@ import remarkGfm from 'remark-gfm';
 
 import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
+import type { Book } from '@/types/book';
+import {
+  parseLibrarySourceDocument,
+  type HtmlImportMode,
+  type SourceDocumentWarning,
+  type TxtEncoding,
+} from '@/services/foundation/sourceDocumentAdapter';
 
 import {
   SOURCE_DOC_FIXTURE,
@@ -26,6 +33,7 @@ import {
 } from '@/services/foundation/sourceDocSpike';
 
 const READING_SETTINGS_KEY = 'readest:foundation-spike:reading-settings:v1';
+const SOURCE_PREFERENCES_KEY = 'readest:foundation-spike:source-preferences:v1';
 
 interface ReadingSettings {
   contentWidth: number;
@@ -132,7 +140,13 @@ export default function FoundationSpike() {
   const [expandedAttachmentIds, setExpandedAttachmentIds] = useState<string[]>([]);
   const [windowFullscreen, setWindowFullscreen] = useState(false);
   const [navigationStatus, setNavigationStatus] = useState('');
-  const [importStatus, setImportStatus] = useState('');
+  const [importError, setImportError] = useState('');
+  const [sourceWarnings, setSourceWarnings] = useState<SourceDocumentWarning[]>([]);
+  const [libraryBook, setLibraryBook] = useState<Book | null>(null);
+  const [libraryFile, setLibraryFile] = useState<File | null>(null);
+  const [txtEncoding, setTxtEncoding] = useState<TxtEncoding>('utf-8');
+  const [htmlMode, setHtmlMode] = useState<HtmlImportMode>('article');
+  const [allowRemoteImages, setAllowRemoteImages] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -203,25 +217,34 @@ export default function FoundationSpike() {
           (candidate) => candidate.hash === libraryBookId && !candidate.deletedAt,
         );
         if (!book) throw new Error('书库中找不到这本书');
-        if (book.format !== 'MD') throw new Error('当前 AI 阅读工作台仅支持 Markdown 书籍');
         const { file } = await appService.loadBookContent(book);
-        const imported = store.importMarkdown(
-          book.sourceTitle || file.name || `${book.title}.md`,
-          await file.text(),
-          book.hash,
-        );
+        let preferences: {
+          txtEncoding?: TxtEncoding;
+          htmlMode?: HtmlImportMode;
+          allowRemoteImages?: boolean;
+        } = {};
+        try {
+          const saved = JSON.parse(window.localStorage.getItem(SOURCE_PREFERENCES_KEY) ?? '{}');
+          preferences = saved[book.hash] ?? {};
+        } catch {}
+        const result = await parseLibrarySourceDocument(book, file, preferences);
         if (cancelled) return;
+        const imported = store.importDocument(result.document);
+        setLibraryBook(book);
+        setLibraryFile(file);
+        setTxtEncoding(result.txtEncoding ?? preferences.txtEncoding ?? 'utf-8');
+        setHtmlMode(result.htmlMode ?? preferences.htmlMode ?? 'article');
+        setAllowRemoteImages(preferences.allowRemoteImages ?? false);
+        setSourceWarnings(result.warnings);
         setDocumentModel(imported);
         setAnchor(null);
         setActiveThreadId(null);
         setHighlightedCitation(null);
-        setImportStatus(
-          `已从书库打开“${book.title}”：${imported.sections.length} 章，${imported.blocks.length} 个源块。`,
-        );
+        setImportError('');
         refreshThreads(null);
       } catch (error) {
         if (!cancelled) {
-          setImportStatus(error instanceof Error ? error.message : '无法从书库打开 Markdown');
+          setImportError(error instanceof Error ? error.message : '无法从书库打开此文档');
         }
       }
     };
@@ -231,6 +254,41 @@ export default function FoundationSpike() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService, libraryBookId, store]);
+
+  const saveSourcePreferences = (next: {
+    txtEncoding?: TxtEncoding;
+    htmlMode?: HtmlImportMode;
+    allowRemoteImages?: boolean;
+  }) => {
+    if (!libraryBook) return;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(SOURCE_PREFERENCES_KEY) ?? '{}');
+      saved[libraryBook.hash] = { ...(saved[libraryBook.hash] ?? {}), ...next };
+      window.localStorage.setItem(SOURCE_PREFERENCES_KEY, JSON.stringify(saved));
+    } catch {}
+  };
+
+  const reparseLibraryDocument = async (next: {
+    txtEncoding?: TxtEncoding;
+    htmlMode?: HtmlImportMode;
+    allowRemoteImages?: boolean;
+  }) => {
+    if (!store || !libraryBook || !libraryFile) return;
+    try {
+      const options = { txtEncoding, htmlMode, allowRemoteImages, ...next };
+      const result = await parseLibrarySourceDocument(libraryBook, libraryFile, options);
+      setDocumentModel(store.importDocument(result.document));
+      setSourceWarnings(result.warnings);
+      setImportError('');
+      if (result.txtEncoding) setTxtEncoding(result.txtEncoding);
+      if (result.htmlMode) setHtmlMode(result.htmlMode);
+      if (next.allowRemoteImages !== undefined) setAllowRemoteImages(next.allowRemoteImages);
+      saveSourcePreferences(next);
+      refreshThreads(activeThreadId);
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : '无法重新解析此文档');
+    }
+  };
 
   useEffect(() => {
     const updateProgress = () => {
@@ -290,8 +348,13 @@ export default function FoundationSpike() {
           .includes(search.trim().toLowerCase())),
   );
   const threadsByBlock = new Map<string, SourceDocThread[]>();
+  const markerThreadsByBlock = new Map<string, SourceDocThread[]>();
   for (const item of threads) {
     if (item.unanchored) continue;
+    markerThreadsByBlock.set(item.anchor.blockId, [
+      ...(markerThreadsByBlock.get(item.anchor.blockId) ?? []),
+      item,
+    ]);
     for (const blockId of item.anchor.selectedBlockIds) {
       threadsByBlock.set(blockId, [...(threadsByBlock.get(blockId) ?? []), item]);
     }
@@ -413,12 +476,11 @@ export default function FoundationSpike() {
       setAnchor(null);
       setActiveThreadId(null);
       setHighlightedCitation(null);
-      setImportStatus(
-        `已导入“${file.name}”：${imported.sections.length} 章，${imported.blocks.length} 个源块。`,
-      );
+      setImportError('');
+      setSourceWarnings([]);
       refreshThreads(null);
     } catch (error) {
-      setImportStatus(error instanceof Error ? error.message : 'Markdown 导入失败');
+      setImportError(error instanceof Error ? error.message : 'Markdown 导入失败');
     }
   };
 
@@ -762,12 +824,21 @@ export default function FoundationSpike() {
         {children}
       </a>
     ),
+    img: ({ src, alt }: { src?: string | Blob; alt?: string }) => (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        className='my-3 h-auto max-w-full rounded-md'
+        src={typeof src === 'string' ? src : undefined}
+        alt={alt ?? ''}
+        referrerPolicy='no-referrer'
+      />
+    ),
   };
 
   const markdownSource = (item: SourceDocFixture['blocks'][number]) => {
-    if (documentModel.sourceFormat === 'markdown') return item.sourceText;
-    if (item.type === 'heading') return `## ${item.sourceText}`;
-    if (item.type === 'code') return `\`\`\`\n${item.sourceText}\n\`\`\``;
+    if (documentModel.sourceFormat !== 'markdown' && item.type === 'heading') {
+      return `## ${item.sourceText}`;
+    }
     return item.sourceText;
   };
 
@@ -938,14 +1009,16 @@ export default function FoundationSpike() {
         }
         .foundation-sidebar {
           width: ${readingSettings.sidebarWidth}px;
+          background: ${panel};
+          flex: 0 0 ${readingSettings.sidebarWidth}px;
         }
-        @media (max-width: 900px) {
+        @media (max-width: 1100px) {
           .foundation-workbench {
-            grid-template-columns: minmax(0, 1fr) 0 0 !important;
+            display: block !important;
           }
           .foundation-divider {
             position: absolute !important;
-            right: 0;
+            right: ${sidebarOpen ? `min(${readingSettings.sidebarWidth}px, 88vw)` : '0'};
             top: 0;
             bottom: 0;
             display: block !important;
@@ -996,15 +1069,11 @@ export default function FoundationSpike() {
         </div>
       </header>
 
-      <div
-        className='foundation-workbench relative grid min-h-0 flex-1'
-        style={{
-          gridTemplateColumns: sidebarOpen
-            ? `minmax(0, 1fr) 8px ${readingSettings.sidebarWidth}px`
-            : 'minmax(0, 1fr) 8px 0px',
-        }}
-      >
-        <div ref={readerScrollRef} className='foundation-reader relative min-w-0 overflow-y-auto'>
+      <div className='foundation-workbench relative flex min-h-0 flex-1'>
+        <div
+          ref={readerScrollRef}
+          className='foundation-reader relative min-w-0 flex-1 overflow-y-auto'
+        >
           <div className='pointer-events-none sticky top-0 z-30 h-0 overflow-visible'>
             <div
               className={`pointer-events-auto absolute left-1/2 top-2 w-[min(780px,calc(100%-32px))] -translate-x-1/2 overflow-hidden rounded-xl border shadow-lg backdrop-blur-xl transition-[max-height,opacity] duration-200 ${toolbarExpanded ? 'max-h-80 opacity-100' : 'max-h-8 opacity-75 hover:opacity-100'}`}
@@ -1061,6 +1130,53 @@ export default function FoundationSpike() {
                   >
                     Aa
                   </button>
+                  {libraryBook?.format === 'TXT' ? (
+                    <button
+                      type='button'
+                      className='btn btn-ghost btn-sm text-xs'
+                      title='如果文字显示异常，切换到下一种常见编码'
+                      onClick={() => {
+                        const encodings: TxtEncoding[] = [
+                          'utf-8',
+                          'gb18030',
+                          'big5',
+                          'shift_jis',
+                          'utf-16le',
+                          'utf-16be',
+                        ];
+                        const next =
+                          encodings[(encodings.indexOf(txtEncoding) + 1) % encodings.length]!;
+                        void reparseLibraryDocument({ txtEncoding: next });
+                      }}
+                    >
+                      换一种编码
+                    </button>
+                  ) : null}
+                  {libraryBook?.format === 'HTML' ? (
+                    <>
+                      <button
+                        type='button'
+                        className='btn btn-ghost btn-sm text-xs'
+                        onClick={() =>
+                          void reparseLibraryDocument({
+                            htmlMode: htmlMode === 'article' ? 'full' : 'article',
+                          })
+                        }
+                      >
+                        {htmlMode === 'article' ? '显示完整网页' : '只看正文'}
+                      </button>
+                      <button
+                        type='button'
+                        className='btn btn-ghost btn-sm text-xs'
+                        aria-pressed={allowRemoteImages}
+                        onClick={() =>
+                          void reparseLibraryDocument({ allowRemoteImages: !allowRemoteImages })
+                        }
+                      >
+                        {allowRemoteImages ? '停止远程图片' : '加载远程图片'}
+                      </button>
+                    </>
+                  ) : null}
                   <label className='ml-auto flex items-center gap-2 px-2 text-xs'>
                     <input
                       type='checkbox'
@@ -1177,13 +1293,26 @@ export default function FoundationSpike() {
             </div>
           </div>
 
-          {importStatus ? (
-            <p
-              role='status'
-              className='sticky top-12 z-20 mx-auto mt-12 w-fit max-w-[calc(100%-32px)] rounded-full bg-blue-600 px-4 py-2 text-xs text-white shadow-lg'
+          {importError || sourceWarnings.length > 0 ? (
+            <div
+              role={importError ? 'alert' : 'status'}
+              className={`sticky top-12 z-20 mx-auto mt-12 flex w-fit max-w-[calc(100%-32px)] items-center gap-2 rounded-xl px-4 py-2 text-xs shadow-lg ${importError ? 'bg-red-600 text-white' : 'border border-amber-400 bg-amber-50 text-amber-950'}`}
             >
-              {importStatus}
-            </p>
+              <span>
+                {importError || sourceWarnings.map((warning) => warning.message).join(' ')}
+              </span>
+              {libraryBook?.format === 'HTML' ? (
+                sourceWarnings.some((warning) => warning.code === 'remote-images-blocked') ? (
+                  <button
+                    type='button'
+                    className='rounded-md border border-current px-2 py-1 font-semibold'
+                    onClick={() => void reparseLibraryDocument({ allowRemoteImages: true })}
+                  >
+                    加载远程图片
+                  </button>
+                ) : null
+              ) : null}
+            </div>
           ) : null}
           <div
             className='foundation-gutter px-5 pb-24 pt-14 sm:px-10'
@@ -1214,9 +1343,10 @@ export default function FoundationSpike() {
                       ?.anchor.selectedBlockIds.includes(item.id) === true
                   : false;
                 const blockThreads = threadsByBlock.get(item.id) ?? [];
+                const markerThreads = markerThreadsByBlock.get(item.id) ?? [];
                 const previewThread =
-                  blockThreads.find((candidate) => candidate.status === 'active') ??
-                  blockThreads[0];
+                  markerThreads.find((candidate) => candidate.status === 'active') ??
+                  markerThreads[0];
                 return (
                   <section
                     key={item.id}
@@ -1229,14 +1359,14 @@ export default function FoundationSpike() {
                   >
                     {previewThread &&
                     (readingSettings.annotationDisplay !== 'underline' ||
-                      blockThreads.length > 1) ? (
+                      markerThreads.length > 1) ? (
                       <button
                         className='eink-bordered absolute right-full top-[0.15em] mr-3 flex h-7 min-w-7 items-center justify-center rounded-full border border-blue-500/40 bg-blue-50 px-1.5 text-xs font-bold text-blue-700 shadow-sm hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-500'
-                        aria-label={`打开${blockLabel(item.id)} 的批注，共 ${blockThreads.length} 条`}
+                        aria-label={`打开${blockLabel(item.id)} 的批注，共 ${markerThreads.length} 条`}
                         title={`${previewThread.title}：${previewThread.messages.at(-1)?.content ?? ''}`}
                         onClick={(event) => {
                           event.stopPropagation();
-                          if (blockThreads.length > 1) {
+                          if (markerThreads.length > 1) {
                             setAnnotationPickerBlockId(item.id);
                             setActiveThreadId(null);
                             setSidebarOpen(true);
@@ -1245,7 +1375,7 @@ export default function FoundationSpike() {
                           }
                         }}
                       >
-                        {blockThreads.length > 1 ? blockThreads.length : '●'}
+                        {markerThreads.length > 1 ? markerThreads.length : '●'}
                       </button>
                     ) : null}
                     <div
@@ -1275,7 +1405,7 @@ export default function FoundationSpike() {
           aria-valuemin={SIDEBAR_MIN_WIDTH}
           aria-valuemax={SIDEBAR_MAX_WIDTH}
           aria-valuenow={readingSettings.sidebarWidth}
-          className='foundation-divider relative z-50 hidden h-full w-2 shrink-0 cursor-col-resize touch-none border-x bg-black/5 hover:bg-blue-500/20 lg:block'
+          className='foundation-divider relative z-50 block h-full w-2 shrink-0 cursor-col-resize touch-none border-x bg-black/5 hover:bg-blue-500/20'
           style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
           onPointerDown={(event) => {
             sidebarDrag.current = {

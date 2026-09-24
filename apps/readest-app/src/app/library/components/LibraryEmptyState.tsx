@@ -1,12 +1,8 @@
 import * as React from 'react';
-import clsx from 'clsx';
 import { PiBooks } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
-import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAppRouter } from '@/hooks/useAppRouter';
-import { navigateToLogin } from '@/utils/nav';
 import LibraryImportButton from './LibraryImportButton';
 
 interface LibraryEmptyStateProps {
@@ -16,8 +12,6 @@ interface LibraryEmptyStateProps {
 const LibraryEmptyState: React.FC<LibraryEmptyStateProps> = ({ onImport }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { user } = useAuth();
-  const router = useAppRouter();
   const isMobile = appService?.isMobile ?? false;
 
   return (
@@ -36,19 +30,6 @@ const LibraryEmptyState: React.FC<LibraryEmptyStateProps> = ({ onImport }) => {
           <LibraryImportButton onImport={onImport} primary />
           {/* TODO: add a 'Browse free catalogs' secondary action that opens the
               OPDS dialog (handleShowOPDSDialog) once we settle on placement. */}
-          {!user && (
-            <button
-              type='button'
-              className={clsx(
-                'text-base-content/70 hover:text-base-content mt-1 py-2 text-sm font-medium',
-                'underline underline-offset-4',
-                'focus-visible:text-base-content focus-visible:outline-hidden',
-              )}
-              onClick={() => navigateToLogin(router)}
-            >
-              {_('Sign in to sync your library')}
-            </button>
-          )}
         </div>
       </div>
     </div>

@@ -149,6 +149,40 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(first.blocks.map((block) => block.id)).toEqual(second.blocks.map((block) => block.id));
   });
 
+  it('refreshes derived blocks when source preferences reparse the same version', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const imported = {
+      ...SOURCE_DOC_FIXTURE,
+      id: 'html-document',
+      versionId: 'html-version',
+      sourceFormat: 'html' as const,
+      blocks: [
+        {
+          ...SOURCE_DOC_FIXTURE.blocks[0]!,
+          id: 'article-block',
+          renderSelector: 'article-block',
+          semanticText: '正文模式',
+          sourceText: '正文模式',
+        },
+      ],
+    };
+    store.importDocument(imported);
+    store.importDocument({
+      ...imported,
+      blocks: [
+        {
+          ...imported.blocks[0]!,
+          id: 'full-block',
+          renderSelector: 'full-block',
+          semanticText: '完整网页',
+          sourceText: '完整网页',
+        },
+      ],
+    });
+
+    expect(store.loadCurrentDocument().blocks.map((block) => block.id)).toEqual(['full-block']);
+  });
+
   it('keeps Markdown table anchor text aligned with its rendered cell order', () => {
     const document = parseMarkdownDocument(
       '表格.md',

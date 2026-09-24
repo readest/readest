@@ -14,6 +14,7 @@ import {
   showReaderWindow,
 } from '@/utils/nav';
 import { isAbsEbook, isAudiobook } from '@/utils/audiobook';
+import { supportsAiReadingWorkspace } from '@/services/foundation/sourceDocumentAdapter';
 
 interface UseOpenBookOptions {
   setLoading: Dispatch<SetStateAction<boolean>>;
@@ -81,7 +82,7 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       }
       const available = await makeBookAvailable(book);
       if (!available) return;
-      if (book.format === 'MD') {
+      if (supportsAiReadingWorkspace(book.format)) {
         const libraryStore = useLibraryStore.getState();
         if (libraryStore.getBookByHash(book.hash)) {
           await libraryStore.updateBook(envConfig, { ...book, updatedAt: Date.now() });

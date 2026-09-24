@@ -101,10 +101,8 @@ const TEST_METADATA = {
 };
 
 /**
- * Folder/desktop TXT import opens a ClosableFile, then replaces `fileobj` with
- * the converted EPUB File. The finally block must still close the *source*
- * handle — otherwise every TXT import leaks the opened RemoteFile/NativeFile
- * (same cleanup contract as #5387's destroy/close finally).
+ * TXT uses a derived EPUB only for metadata. The original bytes remain the
+ * authoritative library file and therefore stay open until persistence ends.
  */
 describe('importBook TXT ClosableFile lifecycle', () => {
   let service: TestAppService;
@@ -156,15 +154,23 @@ describe('importBook TXT ClosableFile lifecycle', () => {
     const result = await service.importBook('/library/novel.txt', books);
 
     expect(result).not.toBeNull();
+    expect(result?.format).toBe('TXT');
     expect(mockConvert).toHaveBeenCalledTimes(1);
+    expect(mockPartialMD5).toHaveBeenCalledWith(source);
+    expect(service.getFs().copyFile).toHaveBeenCalledWith(
+      '/library/novel.txt',
+      'None',
+      expect.stringMatching(/\.txt$/),
+      'Books',
+    );
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
 
-  it('closes the source ClosableFile before DocumentLoader.open runs', async () => {
+  it('keeps the source open through derived metadata parsing, then closes it', async () => {
     const source = makeSourceTxt();
     service.getFs().openFile.mockResolvedValue(source);
     mockOpen.mockImplementation(async () => {
-      expect(mockClose).toHaveBeenCalledTimes(1);
+      expect(mockClose).not.toHaveBeenCalled();
       return {
         book: {
           metadata: TEST_METADATA,

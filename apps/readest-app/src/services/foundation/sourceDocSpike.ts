@@ -1,19 +1,30 @@
+export type SourceDocFormat = 'markdown' | 'txt' | 'html' | 'epub' | 'source_doc';
+export type SourceDocBlockType = 'heading' | 'paragraph' | 'code' | 'table' | 'list' | 'math';
+
+export type SourceDocLocator =
+  | { kind: 'text'; startLine: number }
+  | { kind: 'html'; domPath: string }
+  | { kind: 'epub'; spineIndex: number; sectionCfi: string; domPath?: string };
+
 export interface SourceDocSection {
   id: string;
   title: string;
   ordinal: number;
   level?: number;
   parentId?: string | null;
+  generated?: boolean;
+  locator?: SourceDocLocator;
 }
 
 export interface SourceDocBlock {
   id: string;
   sectionId: string;
   ordinal: number;
-  type: 'heading' | 'paragraph' | 'code' | 'table' | 'list' | 'math';
+  type: SourceDocBlockType;
   sourceText: string;
   semanticText: string;
   renderSelector: string;
+  locator?: SourceDocLocator;
 }
 
 export interface SourceDocFixture {
@@ -21,8 +32,17 @@ export interface SourceDocFixture {
   versionId?: string;
   title: string;
   sourceName?: string;
-  sourceFormat?: 'markdown' | 'source_doc';
+  sourceFormat?: SourceDocFormat;
   contentHash?: string;
+  capabilities?: {
+    supportsStableOffsets: boolean;
+    supportsCrossBlockSelection: boolean;
+    supportsCrossSectionSelection: boolean;
+    supportsImages: boolean;
+    supportsTables: boolean;
+    supportsMath: boolean;
+    supportsReflow: boolean;
+  };
   sections: SourceDocSection[];
   blocks: SourceDocBlock[];
 }
@@ -67,7 +87,7 @@ export interface SourceDocThread {
 interface DocumentRecord {
   id: string;
   title: string;
-  sourceFormat: 'markdown' | 'source_doc';
+  sourceFormat: SourceDocFormat;
   createdAt: string;
   updatedAt: string;
 }
@@ -254,7 +274,7 @@ export const SOURCE_DOC_FIXTURE: SourceDocFixture = {
 const LEGACY_STORAGE_KEY = 'readest:foundation-spike:v1';
 const SCHEMA_STORAGE_KEY = 'readest:annotation-schema:v1';
 const CONTEXT_LENGTH = 16;
-const PARSER_VERSION = 'markdown-alpha-2';
+const PARSER_VERSION = 'source-adapter-1';
 const FIXED_REPLIES = [
   '从所选原文看，这个问题的关键是把局部条件和最终结论连接起来；另一处原文给出了补充步骤。',
   '可以先按定义理解所选句子，再对照另一章节的论证。当前回答来自本地固定候选，不代表模型判断。',
@@ -630,7 +650,7 @@ function emptySchema(document: SourceDocFixture): AnnotationSchemaV1 {
           stableHash(document.blocks.map((item) => item.sourceText).join('\n')),
         sourceName: document.sourceName ?? document.title,
         byteSize: document.blocks.reduce((size, item) => size + item.sourceText.length, 0),
-        parserVersion: document.sourceFormat === 'markdown' ? PARSER_VERSION : 'source-doc-1',
+        parserVersion: document.sourceFormat === 'source_doc' ? 'source-doc-1' : PARSER_VERSION,
         importedAt: now,
       },
     ],
@@ -748,6 +768,32 @@ export class SourceDocSpikeStore {
       schema.documentVersions.push(...addition.documentVersions);
       schema.sections.push(...addition.sections);
       schema.blocks.push(...addition.blocks);
+    }
+    schema.currentDocumentVersionId = imported.versionId!;
+    this.saveSchema(schema);
+    return imported;
+  }
+
+  importDocument(imported: SourceDocFixture): SourceDocFixture {
+    const schema = this.loadSchema();
+    const addition = emptySchema(imported);
+    schema.documents = [
+      ...schema.documents.filter((item) => item.id !== imported.id),
+      ...addition.documents,
+    ];
+    if (!schema.documentVersions.some((item) => item.id === imported.versionId)) {
+      schema.documentVersions.push(...addition.documentVersions);
+      schema.sections.push(...addition.sections);
+      schema.blocks.push(...addition.blocks);
+    } else {
+      schema.sections = [
+        ...schema.sections.filter((item) => item.documentVersionId !== imported.versionId),
+        ...addition.sections,
+      ];
+      schema.blocks = [
+        ...schema.blocks.filter((item) => item.documentVersionId !== imported.versionId),
+        ...addition.blocks,
+      ];
     }
     schema.currentDocumentVersionId = imported.versionId!;
     this.saveSchema(schema);

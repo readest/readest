@@ -64,7 +64,7 @@ const { eventDispatcher } = await import('@/utils/event');
 
 const makeBook = (over: Partial<Book> = {}): Book => ({
   hash: 'h1',
-  format: 'EPUB',
+  format: 'PDF',
   title: 'Title',
   sourceTitle: 'Title',
   author: 'Author',
@@ -154,15 +154,23 @@ describe('useOpenBook — audiobooks open in the player, not the reader', () => 
   });
 });
 
-describe('useOpenBook — Markdown books reuse the native library', () => {
-  it('opens an available Markdown library item in the AI reading workspace', async () => {
-    const book = makeBook({ format: 'MD', hash: 'markdown-book' });
+describe('useOpenBook — AI source formats reuse the native library', () => {
+  it.each([
+    'MD',
+    'TXT',
+    'HTML',
+    'EPUB',
+  ] as const)('opens an available %s library item in the AI reading workspace', async (format) => {
+    const book = makeBook({ format, hash: `${format.toLowerCase()}-book` });
 
     const { result } = setup();
     await result.current.openBook(book);
     await flushNavigation();
 
-    expect(navigateToFoundationWorkspace).toHaveBeenCalledWith(expect.anything(), 'markdown-book');
+    expect(navigateToFoundationWorkspace).toHaveBeenCalledWith(
+      expect.anything(),
+      `${format.toLowerCase()}-book`,
+    );
     expect(navigateToReader).not.toHaveBeenCalled();
   });
 });

@@ -246,8 +246,17 @@ describe('foundation spike page', () => {
     render(<FoundationSpike />);
 
     expect(await screen.findByText('这是原生书库文件。')).not.toBeNull();
-    expect(screen.getByText(/已从书库打开“书库里的书”/)).not.toBeNull();
+    expect(screen.queryByText(/已从书库打开/)).toBeNull();
     expect(localStorage.getItem('readest:annotation-schema:v1:library:library-md')).not.toBeNull();
+  });
+
+  it('shows one rail marker for one annotation spanning multiple blocks', () => {
+    render(<FoundationSpike />);
+    selectText('block-02', '紧致性', 'block-03', '因此');
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '跨段问题' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+
+    expect(screen.getAllByRole('button', { name: /打开源块 .* 的批注/ })).toHaveLength(1);
   });
 
   it('renames annotations and deletes selected threads in bulk without opening them', () => {
@@ -413,6 +422,6 @@ describe('foundation spike page', () => {
 
     expect(await screen.findByRole('heading', { name: '我的书', level: 1 })).not.toBeNull();
     expect(screen.getByText('这是上传的真实正文。')).not.toBeNull();
-    expect(screen.getByText(/已导入“我的书.md”/)).not.toBeNull();
+    expect(screen.queryByText(/已导入/)).toBeNull();
   });
 });
