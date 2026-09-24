@@ -71,10 +71,10 @@ export function restoredWindowSize(
 ): WindowDimensions {
   const fallbackSize = workArea
     ? {
-        width: Math.round(workArea.width / 2),
-        height: Math.round(workArea.height / 2),
+        width: Math.round(workArea.width * 0.75),
+        height: Math.round(workArea.height * 0.75),
       }
-    : { width: 1440, height: 900 };
+    : { width: 2160, height: 1350 };
   const requestedSize = savedSize ?? fallbackSize;
   return workArea
     ? {
@@ -294,7 +294,7 @@ export default function FoundationSpike() {
       );
       const nextText = selection.toString().trim();
       if (attachSelection) {
-        if (nextText) setQuestionAttachments([nextText]);
+        if (nextText) setQuestionAttachments((current) => [...current, nextText]);
         setAttachSelection(false);
         setSelectionError('');
         return;
@@ -883,8 +883,11 @@ export default function FoundationSpike() {
           scrollbar-color: ${dark ? '#4b5563' : '#c7c8c0'} transparent;
         }
         .foundation-gutter {
-          cursor: cell;
+          cursor: not-allowed;
           background: ${dark ? 'rgba(17, 24, 39, 0.6)' : 'rgba(229, 231, 235, 0.72)'};
+        }
+        .foundation-paper {
+          cursor: auto;
         }
         .foundation-sidebar {
           width: ${readingSettings.sidebarWidth}px;
@@ -1142,7 +1145,7 @@ export default function FoundationSpike() {
             }}
           >
             <article
-              className='mx-auto min-w-0 rounded-xl px-6 py-12 shadow-sm sm:px-14'
+              className='foundation-paper mx-auto min-w-0 rounded-xl px-6 py-12 shadow-sm sm:px-14'
               style={{
                 backgroundColor: panel,
                 color: foreground,
@@ -1360,17 +1363,28 @@ export default function FoundationSpike() {
                       {anchor ? '针对所选原文提问' : '无锚点聊天'}
                     </p>
                     {selectionPreview ? (
-                      <blockquote
-                        data-testid='selection-preview'
-                        className='mt-3 max-h-24 w-full overflow-y-auto rounded-lg border-l-2 border-blue-500 bg-blue-500/5 px-3 py-2 text-left text-xs leading-5'
-                      >
-                        {selectionPreview}
-                      </blockquote>
+                      <div className='relative mt-3 w-full'>
+                        <blockquote
+                          data-testid='selection-preview'
+                          className='max-h-24 w-full overflow-y-auto rounded-lg border-l-2 border-blue-500 bg-blue-500/5 px-3 py-2 pr-8 text-left text-xs leading-5'
+                        >
+                          {selectionPreview}
+                        </blockquote>
+                        <button
+                          type='button'
+                          className='absolute right-1.5 top-1.5 h-5 w-5 rounded hover:bg-blue-500/10'
+                          aria-label='取消当前选中'
+                          title='取消当前选中'
+                          onClick={clearSelection}
+                        >
+                          ×
+                        </button>
+                      </div>
                     ) : null}
                     <p className='mt-1 max-w-56 text-xs leading-5' style={{ color: muted }}>
                       {anchor
                         ? '发送后会创建批注，并生成本地固定示例回答。'
-                        : '右键阅读区空白可取消选中；无锚点会话可从批注管理筛选。'}
+                        : '点击正文外灰色夹缝可取消选中；无锚点会话可从批注管理筛选。'}
                     </p>
                   </div>
                 )}
@@ -1385,25 +1399,6 @@ export default function FoundationSpike() {
                 className='border-t p-3'
                 style={{ borderColor: dark ? '#374151' : '#e5e7eb' }}
               >
-                {selectionPreview ? (
-                  <div className='mb-2 rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-xs'>
-                    <div className='mb-1 flex items-center justify-between font-semibold text-blue-600'>
-                      <span>当前选中文本</span>
-                      <button
-                        type='button'
-                        className='h-5 w-5 rounded hover:bg-blue-500/10'
-                        aria-label='取消当前选中'
-                        title='取消当前选中'
-                        onClick={clearSelection}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className='max-h-16 overflow-y-auto whitespace-pre-wrap'>
-                      {selectionPreview}
-                    </div>
-                  </div>
-                ) : null}
                 <button
                   type='button'
                   className={`mb-2 text-xs ${attachSelection ? 'text-blue-600' : ''}`}
@@ -1414,11 +1409,31 @@ export default function FoundationSpike() {
                   ⎘ {attachSelection ? '请选择要附加的文本…' : '附加选中文本'}
                 </button>
                 {questionAttachments.length > 0 ? (
-                  <div className='mb-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs'>
-                    <div className='mb-1 font-semibold text-amber-700'>问题附件预览</div>
-                    <div className='max-h-16 overflow-y-auto whitespace-pre-wrap'>
-                      {questionAttachments.join('\n')}
-                    </div>
+                  <div className='mb-2 space-y-1.5'>
+                    <div className='text-xs font-semibold text-amber-700'>问题附件预览</div>
+                    {questionAttachments.map((attachment, index) => (
+                      <div
+                        key={`${attachment}-${index}`}
+                        className='relative rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 pr-8 text-xs'
+                      >
+                        <div className='max-h-16 overflow-y-auto whitespace-pre-wrap'>
+                          {attachment}
+                        </div>
+                        <button
+                          type='button'
+                          className='absolute right-1.5 top-1.5 h-5 w-5 rounded hover:bg-amber-500/10'
+                          aria-label={`删除附件 ${index + 1}`}
+                          title='删除此附件'
+                          onClick={() =>
+                            setQuestionAttachments((current) =>
+                              current.filter((_, attachmentIndex) => attachmentIndex !== index),
+                            )
+                          }
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 ) : null}
                 <div
