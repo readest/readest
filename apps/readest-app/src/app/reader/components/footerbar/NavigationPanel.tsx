@@ -93,6 +93,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
             bubbleLabel={`${Math.round(progressValue)}%`}
             initialValue={progressValue}
             onChange={handleProgressChange}
+            fillClassName='bg-primary/80'
           />
         </div>
       </div>

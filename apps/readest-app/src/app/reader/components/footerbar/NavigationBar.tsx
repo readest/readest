@@ -61,24 +61,24 @@ export const NavigationBar: React.FC<NavigationBarProps> = ({
       )}
       <Button
         label={_('Color')}
-        icon={<ColorIcon className={clsx(actionTab === 'color' && 'text-blue-500')} />}
+        icon={<ColorIcon className={clsx(actionTab === 'color' && 'text-primary')} />}
         onClick={() => onSetActionTab('color')}
       />
       <Button
         label={_('Reading Progress')}
-        icon={<SliderIcon className={clsx(actionTab === 'progress' && 'text-blue-500')} />}
+        icon={<SliderIcon className={clsx(actionTab === 'progress' && 'text-primary')} />}
         onClick={() => onSetActionTab('progress')}
       />
       <Button
         label={_('Font & Layout')}
         icon={
-          <FontIcon size={fontIconSize} className={clsx(actionTab === 'font' && 'text-blue-500')} />
+          <FontIcon size={fontIconSize} className={clsx(actionTab === 'font' && 'text-primary')} />
         }
         onClick={() => onSetActionTab('font')}
       />
       <Button
         label={_('Speak')}
-        icon={<TTSIcon className={viewState?.ttsEnabled ? 'text-blue-500' : ''} />}
+        icon={<TTSIcon className={viewState?.ttsEnabled ? 'text-primary' : ''} />}
         onClick={() => onSetActionTab('tts')}
       />
     </div>
