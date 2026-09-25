@@ -249,7 +249,7 @@ const BuddyReadJoinLanding = () => {
                     onClick={handleJoin}
                     disabled={joining}
                     aria-busy={joining}
-                    className='btn btn-primary btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                    className='btn btn-primary text-white btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
                   >
                     {joining ? (
                       <span className='loading loading-spinner loading-sm' aria-hidden='true' />
@@ -297,7 +297,7 @@ const BuddyReadJoinLanding = () => {
                 <>
                   <a
                     href={appHref}
-                    className='btn btn-primary btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                    className='btn btn-primary text-white btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
                   >
                     <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
                     {_('Open in app')}

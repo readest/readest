@@ -235,7 +235,7 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <button
             type='submit'
             disabled={creating || !book}
-            className='btn btn-sm btn-primary mt-6 w-full capitalize text-xs font-bold h-9 rounded-md'
+            className='btn btn-sm btn-primary text-white mt-6 w-full capitalize text-xs font-bold h-9 rounded-md'
           >
             {creating ? _('Creating...') : _('Create Group')}
           </button>
@@ -435,7 +435,7 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                       isSpoiler && !isRevealed
                         ? 'bg-warning/10 border-warning/35 text-warning-content cursor-pointer'
                         : isMe
-                          ? 'bg-primary text-primary-content border-transparent'
+                          ? 'bg-primary text-white border-transparent'
                           : 'bg-base-200 border-base-300 text-base-content',
                     )}
                     onClick={() => isSpoiler && toggleReveal(msg.commentId)}
@@ -477,7 +477,7 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <button
             type='submit'
             disabled={!messageText.trim()}
-            className='btn btn-sm btn-primary h-9 rounded-md px-4 capitalize text-xs font-semibold'
+            className='btn btn-sm btn-primary text-white h-9 rounded-md px-4 capitalize text-xs font-semibold'
           >
             {_('Send')}
           </button>
