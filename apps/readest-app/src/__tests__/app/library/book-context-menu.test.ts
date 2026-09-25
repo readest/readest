@@ -25,8 +25,6 @@ describe('getBookContextMenuItemIds', () => {
       'showDetails',
       'showInFinder',
       'searchGoodreads',
-      'upload',
-      'share',
       'delete',
     ]);
   });
@@ -87,8 +85,6 @@ describe('getBookContextMenuItemIds', () => {
       'showDetails',
       'showInFinder',
       'searchGoodreads',
-      'upload',
-      'share',
       'delete',
     ]);
   });
@@ -104,8 +100,6 @@ describe('getBookContextMenuItemIds', () => {
       'showDetails',
       'showInFinder',
       'searchGoodreads',
-      'upload',
-      'share',
       'delete',
     ]);
   });
@@ -120,13 +114,11 @@ describe('getBookContextMenuItemIds', () => {
       'showDetails',
       'showInFinder',
       'searchGoodreads',
-      'upload',
-      'share',
       'delete',
     ]);
   });
 
-  it('offers Download (not Upload) for a cloud-only book', () => {
+  it('hides account-backed transfers for a cloud-only book', () => {
     const book = createBook({ uploadedAt: 1 });
     expect(getBookContextMenuItemIds(book)).toEqual([
       'select',
@@ -136,8 +128,6 @@ describe('getBookContextMenuItemIds', () => {
       'showDetails',
       'showInFinder',
       'searchGoodreads',
-      'download',
-      'share',
       'delete',
     ]);
   });

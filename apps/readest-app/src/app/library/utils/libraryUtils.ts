@@ -1125,8 +1125,10 @@ export const getBookContextMenuItemIds = (
     // Share is offered for any local-or-uploaded book; the dialog uploads first
     // if the book hasn't been pushed yet.
     if (book.downloadedAt || book.uploadedAt) ids.push('share');
-    // LocalSend needs the file on this device; cloud-only books are excluded.
-    if (opts?.localSend && (book.downloadedAt || book.filePath)) ids.push('sendNearby');
+  }
+  // LocalSend is a local network feature, not an account-backed cloud transfer.
+  if (!isFeedBook(book) && opts?.localSend && (book.downloadedAt || book.filePath)) {
+    ids.push('sendNearby');
   }
   // Keep an Audiobookshelf book's media on the device (#6256); needs a native
   // filesystem, so the caller enables it on Tauri only.
