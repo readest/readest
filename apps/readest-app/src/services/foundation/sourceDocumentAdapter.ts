@@ -151,6 +151,26 @@ const markdownForElement = (element: Element, type: SourceDocBlockType, text: st
     const source = element.getAttribute('src') ?? '';
     return source ? `![${text.replace(/[\[\]]/g, '')}](${source})` : text;
   }
+  if (element.matches('table')) {
+    const rows = Array.from(element.querySelectorAll('tr')).map((row) =>
+      Array.from(row.querySelectorAll('th, td'))
+        .map((cell) => (cell.textContent ?? '').replace(/\s+/g, ' ').trim())
+        .filter(Boolean),
+    );
+    const width = Math.max(0, ...rows.map((row) => row.length));
+    if (width > 0) {
+      const normalized = rows.map((row) => [
+        ...row,
+        ...Array.from({ length: width - row.length }, () => ''),
+      ]);
+      const [first = Array.from({ length: width }, () => ''), ...rest] = normalized;
+      return [
+        `| ${first.join(' | ')} |`,
+        `| ${Array.from({ length: width }, () => '---').join(' | ')} |`,
+        ...rest.map((row) => `| ${row.join(' | ')} |`),
+      ].join('\n');
+    }
+  }
   return sourceTextForBlock(type, text);
 };
 

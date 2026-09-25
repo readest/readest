@@ -222,6 +222,20 @@ export default function FoundationSpike() {
   }, [store]);
 
   useEffect(() => {
+    if (!isTauriAppPlatform()) return;
+    let cancelled = false;
+    void import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
+      const fullscreen = await getCurrentWindow()
+        .isFullscreen()
+        .catch(() => false);
+      if (!cancelled) setWindowFullscreen(fullscreen);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!appService || !store || !libraryBookId) return;
     let cancelled = false;
     const loadLibraryBook = async () => {
@@ -1084,7 +1098,7 @@ export default function FoundationSpike() {
       <header
         className='relative z-50 flex h-10 shrink-0 items-center border-b px-3'
         style={{ backgroundColor: panel, borderColor: dark ? '#374151' : '#e5e7eb' }}
-        data-tauri-drag-region={!windowFullscreen}
+        {...(windowFullscreen ? {} : { 'data-tauri-drag-region': true })}
         onMouseDown={(event) => void startWindowDragging(event)}
       >
         <div className='h-full flex-1' aria-label='窗口拖动区域' />
@@ -1134,25 +1148,13 @@ export default function FoundationSpike() {
                 className='flex h-8 items-center justify-center px-3 text-[11px]'
                 style={{ color: muted }}
               >
-                {libraryBook && documentModel.sections.length > 0 ? (
-                  <button
-                    type='button'
-                    className='pointer-events-auto rounded px-3 py-1 font-semibold hover:bg-black/5'
-                    aria-label='打开导航目录'
-                    aria-expanded={navigationOpen}
-                    onClick={() => setNavigationOpen((value) => !value)}
-                  >
-                    ☰ 目录
-                  </button>
-                ) : (
-                  '•••'
-                )}
+                •••
               </div>
               <div
                 className={`border-t px-3 pb-3 pt-2 ${toolbarExpanded ? 'block' : 'hidden'}`}
                 style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
               >
-                <div className='flex flex-wrap items-center gap-1.5'>
+                <div className='flex flex-wrap items-center gap-1.5' aria-label='阅读工具栏操作'>
                   {!libraryBookId ? (
                     <label className='btn btn-ghost btn-sm cursor-pointer' title='导入 Markdown'>
                       ＋ 导入
@@ -1173,6 +1175,18 @@ export default function FoundationSpike() {
                   >
                     ⌂ 书库
                   </a>
+                  {documentModel.sections.length > 0 ? (
+                    <button
+                      type='button'
+                      className='btn btn-ghost btn-sm'
+                      aria-label='打开导航目录'
+                      aria-expanded={navigationOpen}
+                      title='目录'
+                      onClick={() => setNavigationOpen((value) => !value)}
+                    >
+                      ☰ 目录
+                    </button>
+                  ) : null}
                   <button
                     className='btn btn-ghost btn-sm'
                     aria-label='切换主题'

@@ -131,6 +131,11 @@ import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+import {
+  pairLatexImports,
+  saveLatexSourceSidecar,
+  sourcePairKey,
+} from '@/services/foundation/latexSource';
 
 /** Skip tiny non-book artifacts during folder auto-scan (matches the manual import dialog default). */
 const AUTO_IMPORT_MIN_SIZE_BYTES = 20 * 1024;
@@ -938,6 +943,19 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const failedPaths: string[] = [];
     const successfulImports: string[] = [];
+    const selectedFilename = (selected: SelectedFile) =>
+      selected.name || selected.file?.name || getFilename(selected.path || '');
+    const { importableFiles, latexSources, unpairedLatexSources } = pairLatexImports(
+      files,
+      selectedFilename,
+    );
+    for (const source of unpairedLatexSources) {
+      failedImports.push({
+        filename: selectedFilename(source),
+        errorMessage: '请同时选择同名 PDF 阅读版；本应用不会在本地编译 TeX。',
+      });
+      if (source.path) failedPaths.push(source.path);
+    }
 
     // Readest's own Books/ prefix is resolved once at app init and persisted
     // in `settings.localBooksDir`. We hand it to `ingestFile` so the in-place
@@ -1019,9 +1037,29 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // A true worker pool (not the old barrier batches of 4): a slow file no
     // longer stalls three finished siblings, and each completed book streams
     // into the store immediately so the shelf renders incrementally.
-    await runWithConcurrency(files, IMPORT_CONCURRENCY, async (selectedFile) => {
+    await runWithConcurrency(importableFiles, IMPORT_CONCURRENCY, async (selectedFile) => {
       const book = await processFile(selectedFile);
       if (book) {
+        const filename = selectedFilename(selectedFile);
+        const latexSource = /\.pdf$/i.test(filename)
+          ? latexSources.get(sourcePairKey(filename))
+          : undefined;
+        if (latexSource && appService) {
+          try {
+            const [{ file: pdfFile }, sourceFile] = await Promise.all([
+              appService.loadBookContent(book),
+              latexSource.file
+                ? Promise.resolve(latexSource.file)
+                : appService.openFile(latexSource.path!, 'None'),
+            ]);
+            await saveLatexSourceSidecar(appService, book, pdfFile, sourceFile);
+          } catch (error) {
+            failedImports.push({
+              filename: selectedFilename(latexSource),
+              errorMessage: error instanceof Error ? error.message : 'LaTeX 原文与 PDF 配对失败',
+            });
+          }
+        }
         await updateBooks(envConfig, [book], { skipSave: true });
         checkpoint.touch();
       }

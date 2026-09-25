@@ -113,6 +113,9 @@ describe('source document adapters', () => {
     );
     expect(full.document.blocks.some((block) => block.semanticText.includes('首页'))).toBe(true);
     expect(full.htmlMode).toBe('full');
+    expect(full.document.blocks.find((block) => block.type === 'table')?.sourceText).toContain(
+      '| --- |',
+    );
   });
 
   it('bridges reflowable EPUB spine sections to unified blocks and CFI locators', async () => {
