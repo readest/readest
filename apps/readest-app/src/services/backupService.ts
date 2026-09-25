@@ -587,7 +587,8 @@ export async function restoreFromBackupZip(
 
   // Orphan directories: hash dirs in zip not listed in library.json.
   for (const hash of orphanHashes) {
-    if (currentBooksMap.has(hash)) continue;
+    const existingBook = currentBooksMap.get(hash);
+    if (existingBook && !existingBook.deletedAt) continue;
     const orphanEntries = fileEntries.filter((e) => e.filename.startsWith(`${hash}/`));
     // Find the book file by extension
     const bookEntry = orphanEntries.find((e) => {
