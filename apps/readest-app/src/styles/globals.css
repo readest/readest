@@ -411,13 +411,19 @@
      `WindowOutline` sizes this box from the window rather than the page: a
      viewport is a whole number of CSS pixels while a window is a whole number of
      device pixels, so at a fractional scale factor `inset: 0` overshoots the
-     window and its far edges are painted off it. */
+     window and its far edges are painted off it.
+
+     Above every layer in the scale, unlike the `z-99` `.window-border` it
+     resembles: that one decorates the page, so overlays belong over it, while
+     this one stands in for the OS's non-client edge, which no page content ever
+     covered. The app-lock screen (`z-200`) paints an opaque surface over the
+     whole window, and a locked Windows 10 window still has to show its edge. */
   .window-outline {
     position: fixed;
     top: 0;
     left: 0;
     box-sizing: border-box;
-    z-index: 99;
+    z-index: 210;
     border: 1px solid var(--color-base-content);
     pointer-events: none;
   }

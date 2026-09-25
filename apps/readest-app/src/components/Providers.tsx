@@ -249,7 +249,6 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   <PassphrasePrompt />
                   {!appShellHidden && <FileSyncReport />}
                   <WindowResizeHandles />
-                  <WindowOutline />
                 </div>
                 <AppLockDialog />
                 <TelemetryConsentDialog
@@ -257,6 +256,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
                   onClose={() => setShowTelemetryConsent(false)}
                 />
                 {showAppLockScreen && <AppLockScreen />}
+                <WindowOutline />
               </CommandPaletteProvider>
             </DropdownProvider>
           </SyncProvider>
