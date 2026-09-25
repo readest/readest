@@ -227,7 +227,7 @@ const CarMediaLibraryBridge = () => {
         const book = useLibraryStore.getState().getBookByHash(bookHash);
         const autoplay = !book || !isAudiobook(book);
         const query = autoplay ? '?autoplay=tts' : '';
-        const url = `readest://book/${encodeURIComponent(bookHash)}${query}`;
+        const url = `yomi://book/${encodeURIComponent(bookHash)}${query}`;
         eventDispatcher.dispatch('app-incoming-url', { urls: [url] });
       },
     )

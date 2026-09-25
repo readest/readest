@@ -69,6 +69,7 @@ import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
 import { useOpenBookLink } from '@/hooks/useOpenBookLink';
 import { useReadingWidget } from '@/hooks/useReadingWidget';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
+import { useOpenBuddyReadLink } from '@/hooks/useOpenBuddyReadLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
@@ -435,6 +436,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useOpenBookLink();
   useReadingWidget();
   useOpenShareLink();
+  useOpenBuddyReadLink();
   useClipUrlIngress();
   useTransferQueue(libraryLoaded);
 

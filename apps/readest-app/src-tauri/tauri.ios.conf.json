@@ -10,7 +10,7 @@
           "appLink": true
         },
         {
-          "scheme": ["readest"],
+          "scheme": ["yomi", "readest"],
           "appLink": false
         },
         {

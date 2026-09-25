@@ -56,9 +56,10 @@
     <array>
       <dict>
         <key>CFBundleURLName</key>
-        <string>com.biblophile.readest</string>
+        <string>com.biblophile.yomi</string>
         <key>CFBundleURLSchemes</key>
         <array>
+          <string>yomi</string>
           <string>readest</string>
         </array>
       </dict>

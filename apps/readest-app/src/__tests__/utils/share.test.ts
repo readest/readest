@@ -1,16 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { buildShareUrl, parseShareDeepLink } from '@/utils/share';
+import { SHARE_BASE_URL } from '@/services/constants';
 
 describe('buildShareUrl', () => {
   it('builds the canonical https URL for a token', () => {
     expect(buildShareUrl('aBcDeFgHiJkLmNoPqRsTuV')).toBe(
-      'https://web.readest.com/s/aBcDeFgHiJkLmNoPqRsTuV',
+      `${SHARE_BASE_URL}/aBcDeFgHiJkLmNoPqRsTuV`,
     );
   });
 });
 
 describe('parseShareDeepLink', () => {
   const VALID_TOKEN = 'aBcDeFgHiJkLmNoPqRsTuV';
+
+  it('parses yomi://share/{token}', () => {
+    expect(parseShareDeepLink(`yomi://share/${VALID_TOKEN}`)).toEqual({ token: VALID_TOKEN });
+  });
 
   it('parses readest://share/{token}', () => {
     expect(parseShareDeepLink(`readest://share/${VALID_TOKEN}`)).toEqual({ token: VALID_TOKEN });

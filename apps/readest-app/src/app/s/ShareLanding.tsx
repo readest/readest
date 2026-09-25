@@ -11,7 +11,8 @@ import {
   IoLibraryOutline,
   IoOpenOutline,
 } from 'react-icons/io5';
-import { DOWNLOAD_READEST_URL } from '@/services/constants';
+import { DOWNLOAD_READEST_URL, READEST_WEB_BASE_URL } from '@/services/constants';
+import { BRAND_NAME } from '@/services/branding';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -84,7 +85,14 @@ const ShareLanding = () => {
     };
   }, [token, _]);
 
-  const appHref = `readest://share/${encodeURIComponent(token)}`;
+  const universalHref = `${READEST_WEB_BASE_URL}/s/${encodeURIComponent(token)}`;
+  const nativeAppScheme = `yomi://share/${encodeURIComponent(token)}`;
+
+  const handleOpenInApp = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+      window.location.href = nativeAppScheme;
+    }
+  };
 
   const handleAddToLibrary = async () => {
     if (!token || importing || !appService) return;
@@ -151,7 +159,7 @@ const ShareLanding = () => {
               rel='noopener'
               className='btn btn-ghost btn-block mt-6'
             >
-              {_('Get Readest')}
+              {_('Get {{brand}}', { brand: BRAND_NAME })}
             </a>
           </div>
         </Card>
@@ -164,7 +172,10 @@ const ShareLanding = () => {
     return (
       <main className='bg-base-200 flex min-h-dvh flex-col items-center justify-center p-4 sm:p-8'>
         <Card>
-          <BrandHeader title={_('Loading shared book…')} alt={_('Readest logo')} />
+          <BrandHeader
+            title={_('Loading shared book…')}
+            alt={_('{{brand}} logo', { brand: BRAND_NAME })}
+          />
           <div
             className='mt-6 flex flex-col items-center gap-3 py-4'
             role='status'
@@ -194,7 +205,7 @@ const ShareLanding = () => {
         <div className='flex flex-col items-center gap-2 px-5 pb-2 pt-5 sm:px-7 sm:pb-3 sm:pt-7'>
           <Image
             src={`${basePath}/icon.png`}
-            alt={_('Readest logo')}
+            alt={_('{{brand}} logo', { brand: BRAND_NAME })}
             width={40}
             height={40}
             priority
@@ -273,10 +284,14 @@ const ShareLanding = () => {
                     />
                   )}
                   <a
-                    href={appHref}
+                    href={universalHref}
                     aria-disabled={importing}
                     onClick={(e) => {
-                      if (importing) e.preventDefault();
+                      if (importing) {
+                        e.preventDefault();
+                        return;
+                      }
+                      handleOpenInApp(e);
                     }}
                     className={
                       importing
@@ -296,21 +311,22 @@ const ShareLanding = () => {
               ) : (
                 <>
                   <a
-                    href={appHref}
-                    className='btn btn-primary btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                    href={universalHref}
+                    onClick={handleOpenInApp}
+                    className='btn btn-primary text-white btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
                   >
                     <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
                     {_('Open in app')}
                   </a>
                   <p className='text-base-content/60 mt-1 text-center text-xs sm:text-left'>
-                    {_("Don't have Yomi?")}{' '}
+                    {_("Don't have {{brand}}?", { brand: BRAND_NAME })}{' '}
                     <a
                       href={DOWNLOAD_READEST_URL}
                       target='_blank'
                       rel='noopener'
                       className='text-primary font-medium hover:underline'
                     >
-                      {_('Download Yomi')}
+                      {_('Download {{brand}}', { brand: BRAND_NAME })}
                     </a>
                   </p>
                 </>

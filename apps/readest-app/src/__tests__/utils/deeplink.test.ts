@@ -6,7 +6,7 @@ describe('buildAnnotationUrl', () => {
 
   it('builds the custom-scheme app URL when linkType is "app"', () => {
     const url = buildAnnotationUrl(link, 'app');
-    expect(url.startsWith('readest://book/abc/annotation/n1')).toBe(true);
+    expect(url.startsWith('yomi://book/abc/annotation/n1')).toBe(true);
   });
 
   it('builds the HTTPS web URL when linkType is "web"', () => {
@@ -23,12 +23,21 @@ describe('buildAnnotationUrl', () => {
 
   it('omits the cfi query when no cfi is provided', () => {
     const url = buildAnnotationUrl({ bookHash: 'abc', noteId: 'n1' }, 'app');
-    expect(url).toBe('readest://book/abc/annotation/n1');
+    expect(url).toBe('yomi://book/abc/annotation/n1');
   });
 });
 
 describe('parseAnnotationDeepLink', () => {
-  it('parses custom-scheme annotation URL', () => {
+  it('parses yomi custom-scheme annotation URL', () => {
+    const parsed = parseAnnotationDeepLink('yomi://book/abc/annotation/n1?cfi=%2F6%2F4');
+    expect(parsed).toEqual({
+      bookHash: 'abc',
+      noteId: 'n1',
+      cfi: '/6/4',
+    });
+  });
+
+  it('parses legacy readest custom-scheme annotation URL', () => {
     const parsed = parseAnnotationDeepLink('readest://book/abc/annotation/n1?cfi=%2F6%2F4');
     expect(parsed).toEqual({
       bookHash: 'abc',

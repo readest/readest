@@ -43,7 +43,7 @@ export const buildAnnotationWebUrl = ({ bookHash, noteId, cfi }: AnnotationDeepL
  * and direct deeplink scenarios. Markdown export uses the HTTPS form.
  */
 export const buildAnnotationAppUrl = ({ bookHash, noteId, cfi }: AnnotationDeepLink): string => {
-  const base = `readest://book/${bookHash}/annotation/${noteId}`;
+  const base = `yomi://book/${bookHash}/annotation/${noteId}`;
   return cfi ? `${base}?cfi=${encodeURIComponent(cfi)}` : base;
 };
 
@@ -57,7 +57,7 @@ export const buildAnnotationUrl = (
 ): string => (linkType === 'app' ? buildAnnotationAppUrl(link) : buildAnnotationWebUrl(link));
 
 /**
- * Parse an incoming readest:// or https://web.readest.com annotation URL.
+ * Parse an incoming yomi://, readest:// or https://web.readest.com annotation URL.
  * Accepts the new hierarchical form (book/{hash}/annotation/{id}) and the
  * legacy flat form (annotation/{hash}/{id}) emitted by older Readwise syncs.
  * Returns null if the URL doesn't match.
@@ -70,7 +70,7 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
     return null;
   }
 
-  const isCustomScheme = parsed.protocol === 'readest:';
+  const isCustomScheme = parsed.protocol === 'yomi:' || parsed.protocol === 'readest:';
   const isWebHost =
     (parsed.protocol === 'https:' || parsed.protocol === 'http:') && isMatchingWebHost(parsed.host);
   if (!isCustomScheme && !isWebHost) return null;
@@ -120,7 +120,7 @@ export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: b
     return null;
   }
 
-  const isCustomScheme = parsed.protocol === 'readest:';
+  const isCustomScheme = parsed.protocol === 'yomi:' || parsed.protocol === 'readest:';
   const isWebHost =
     (parsed.protocol === 'https:' || parsed.protocol === 'http:') && isMatchingWebHost(parsed.host);
   if (!isCustomScheme && !isWebHost) return null;

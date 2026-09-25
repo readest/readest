@@ -10,3 +10,4 @@ export const BRAND_FULL_NAME = 'Yomi by Biblophile';
  */
 export const APP_BUNDLE_ID = 'com.biblophile.yomi';
 export const APPLE_TEAM_ID = '9W7R4BWG7X';
+export const APP_DEEP_LINK_SCHEME = 'yomi';

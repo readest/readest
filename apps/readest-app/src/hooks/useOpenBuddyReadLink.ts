@@ -22,7 +22,7 @@ export interface BuddyReadDeepLink {
 export function parseBuddyReadDeepLink(urlStr: string): BuddyReadDeepLink | null {
   try {
     const url = new URL(urlStr);
-    if (url.protocol === 'readest:') {
+    if (url.protocol === 'yomi:' || url.protocol === 'readest:') {
       if (url.host === 'buddy-read') {
         const id = url.searchParams.get('id') || url.pathname.split('/').pop();
         const shareToken = url.searchParams.get('shareToken') || url.searchParams.get('token');
@@ -39,7 +39,9 @@ export function parseBuddyReadDeepLink(urlStr: string): BuddyReadDeepLink | null
     }
   } catch {
     const match =
-      urlStr.match(/buddy-read(?:\/join)?[\/?]id=(\d+)/) || urlStr.match(/buddy-read\/(\d+)/);
+      urlStr.match(/(?:yomi|readest):\/\/buddy-read(?:\/join)?[\/?]id=(\d+)/) ||
+      urlStr.match(/buddy-read(?:\/join)?[\/?]id=(\d+)/) ||
+      urlStr.match(/buddy-read\/(\d+)/);
     if (match && match[1]) {
       const shareTokenMatch = urlStr.match(/shareToken=([^&]+)/) || urlStr.match(/token=([^&]+)/);
       return {
@@ -64,9 +66,13 @@ export function useOpenBuddyReadLink() {
       if (!user) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
-          message: _('Sign in to join buddy reads'),
+          message: _('Please sign in to join the buddy read'),
           timeout: 2500,
         });
+        const redirectPath = `/buddy-read/join?id=${encodeURIComponent(buddyReadId)}${
+          shareToken ? `&shareToken=${encodeURIComponent(shareToken)}` : ''
+        }`;
+        router.push(`/auth?redirect=${encodeURIComponent(redirectPath)}`);
         return;
       }
       if (!appService) return;

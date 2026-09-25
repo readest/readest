@@ -7,10 +7,12 @@ import {
   IoAlertCircleOutline,
   IoBookOutline,
   IoLibraryOutline,
+  IoLogInOutline,
   IoOpenOutline,
   IoPeopleOutline,
 } from 'react-icons/io5';
-import { DOWNLOAD_READEST_URL } from '@/services/constants';
+import { DOWNLOAD_READEST_URL, READEST_WEB_BASE_URL } from '@/services/constants';
+import { BRAND_NAME } from '@/services/branding';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -88,9 +90,20 @@ const BuddyReadJoinLanding = () => {
     };
   }, [id, shareToken, _]);
 
-  const appHref = `readest://buddy-read?id=${encodeURIComponent(id)}${
+  const universalHref = `${READEST_WEB_BASE_URL}/buddy-read/join?id=${encodeURIComponent(id)}${
     shareToken ? `&shareToken=${encodeURIComponent(shareToken)}` : ''
   }`;
+  const nativeAppScheme = `yomi://buddy-read?id=${encodeURIComponent(id)}${
+    shareToken ? `&shareToken=${encodeURIComponent(shareToken)}` : ''
+  }`;
+
+  const handleOpenInApp = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // If it's a standard left-click without modifier keys (not Cmd/Ctrl click to open in new tab),
+    // attempt to wake up the native app via custom URI scheme.
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+      window.location.href = nativeAppScheme;
+    }
+  };
 
   const handleJoin = async () => {
     if (!id || joining) return;
@@ -161,7 +174,7 @@ const BuddyReadJoinLanding = () => {
               rel='noopener'
               className='btn btn-ghost btn-block mt-6'
             >
-              {_('Get Readest')}
+              {_('Get {{brand}}', { brand: BRAND_NAME })}
             </a>
           </div>
         </Card>
@@ -174,7 +187,10 @@ const BuddyReadJoinLanding = () => {
     return (
       <main className='bg-base-200 flex min-h-dvh flex-col items-center justify-center p-4 sm:p-8'>
         <Card>
-          <BrandHeader title={_('Loading invitation…')} alt={_('Readest logo')} />
+          <BrandHeader
+            title={_('Loading invitation…')}
+            alt={_('{{brand}} logo', { brand: BRAND_NAME })}
+          />
           <div
             className='mt-6 flex flex-col items-center gap-3 py-4'
             role='status'
@@ -197,7 +213,7 @@ const BuddyReadJoinLanding = () => {
         <div className='flex flex-col items-center gap-2 px-5 pb-2 pt-5 sm:px-7 sm:pb-3 sm:pt-7'>
           <Image
             src={`${basePath}/icon.png`}
-            alt={_('Readest logo')}
+            alt={_('{{brand}} logo', { brand: BRAND_NAME })}
             width={40}
             height={40}
             priority
@@ -273,10 +289,14 @@ const BuddyReadJoinLanding = () => {
                     />
                   )}
                   <a
-                    href={appHref}
+                    href={universalHref}
                     aria-disabled={joining}
                     onClick={(e) => {
-                      if (joining) e.preventDefault();
+                      if (joining) {
+                        e.preventDefault();
+                        return;
+                      }
+                      handleOpenInApp(e);
                     }}
                     className={
                       joining
@@ -295,15 +315,38 @@ const BuddyReadJoinLanding = () => {
                 </>
               ) : (
                 <>
-                  <a
-                    href={appHref}
+                  <button
+                    type='button'
+                    onClick={() => {
+                      const currentPath =
+                        typeof window !== 'undefined'
+                          ? window.location.pathname + window.location.search
+                          : `/buddy-read/join?id=${encodeURIComponent(id)}${shareToken ? `&shareToken=${encodeURIComponent(shareToken)}` : ''}`;
+                      router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+                    }}
                     className='btn btn-primary text-white btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
+                  >
+                    <IoLogInOutline className='h-5 w-5' aria-hidden='true' />
+                    {_('Sign in to join')}
+                  </button>
+                  <a
+                    href={universalHref}
+                    onClick={handleOpenInApp}
+                    className='btn btn-ghost btn-block flex-nowrap gap-2 whitespace-nowrap rounded-xl'
                   >
                     <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
                     {_('Open in app')}
                   </a>
-                  <p className='text-base-content/60 mt-3 text-xs leading-normal'>
-                    {_('Please sign in on the web or open the link in the app to join.')}
+                  <p className='text-base-content/60 mt-1 text-center text-xs'>
+                    {_("Don't have {{brand}}?", { brand: BRAND_NAME })}{' '}
+                    <a
+                      href={DOWNLOAD_READEST_URL}
+                      target='_blank'
+                      rel='noopener'
+                      className='text-primary font-medium hover:underline'
+                    >
+                      {_('Download {{brand}}', { brand: BRAND_NAME })}
+                    </a>
                   </p>
                 </>
               )}

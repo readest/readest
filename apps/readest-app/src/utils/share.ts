@@ -28,9 +28,9 @@ export const parseShareDeepLink = (url: string): ShareDeepLink | null => {
   } catch {
     return null;
   }
-  if (parsed.protocol === 'readest:') {
-    // For readest://share/{token} the host portion holds the path segment
-    // before the slash. Use pathname for the token; url.host == 'share'.
+  if (parsed.protocol === 'yomi:' || parsed.protocol === 'readest:') {
+    // For yomi://share/{token} or readest://share/{token} the host portion holds
+    // the path segment before the slash. Use pathname for the token; url.host == 'share'.
     if (parsed.host !== 'share') return null;
     const token = parsed.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
     return isValidToken(token) ? { token } : null;
