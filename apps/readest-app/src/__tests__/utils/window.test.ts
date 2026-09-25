@@ -20,6 +20,7 @@ vi.mock('@tauri-apps/plugin-process', () => ({
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: vi.fn(),
+  version: vi.fn(),
 }));
 
 vi.mock('@/utils/event', () => ({
@@ -28,7 +29,7 @@ vi.mock('@/utils/event', () => ({
 
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
-import { type as osType } from '@tauri-apps/plugin-os';
+import { type as osType, version as osVersion } from '@tauri-apps/plugin-os';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import type { AppService } from '@/types/system';
 import {
@@ -36,6 +37,7 @@ import {
   tauriHandleOnCloseWindow,
   tauriHandleToggleFullScreen,
   tauriSetWindowTitle,
+  windowNeedsClientOutline,
 } from '@/utils/window';
 
 type CloseHandler = (event: { preventDefault: () => void }) => Promise<void> | void;
@@ -271,5 +273,28 @@ describe('tauriSetWindowTitle', () => {
 
     expect(win.setTitle).toHaveBeenCalledWith('Readest - The Hobbit');
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('windowNeedsClientOutline', () => {
+  const onWindows = { isWindowsApp: true } as AppService;
+  const elsewhere = { isWindowsApp: false } as AppService;
+
+  test('asks for a client outline on Windows 10, whose native frame is asymmetric', () => {
+    vi.mocked(osVersion).mockReturnValue('10.0.19045');
+    expect(windowNeedsClientOutline(onWindows)).toBe(true);
+  });
+
+  test('leaves the native frame alone on Windows 11 and an unreadable build', () => {
+    vi.mocked(osVersion).mockReturnValue('10.0.22631');
+    expect(windowNeedsClientOutline(onWindows)).toBe(false);
+
+    vi.mocked(osVersion).mockReturnValue('10.0');
+    expect(windowNeedsClientOutline(onWindows)).toBe(false);
+  });
+
+  test('never reads the OS version off Windows, where the plugin is unavailable', () => {
+    expect(windowNeedsClientOutline(elsewhere)).toBe(false);
+    expect(osVersion).not.toHaveBeenCalled();
   });
 });

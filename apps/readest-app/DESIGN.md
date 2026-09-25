@@ -717,6 +717,12 @@ rounded-window page frame (`.window-border`, `z-99` in `globals.css`), then laye
 | `120` | Modal / command palette | `ModalPortal`, `CommandPalette` |
 | `130` | Toast / alert | `Alert` |
 | `200` | Security lock screen | `AppLockScreen` |
+| `210` | Windows 10 client-area window frame | `.window-outline`, `globals.css` |
+
+`210` is the one layer above the overlays rather than between them: it stands in for the
+OS's non-client window edge, which no page content ever covered, so it has to survive the
+lock screen covering the window. Locked by
+`src/__tests__/styles/window-outline-layer.test.ts`.
 
 The non-obvious invariant: **`ModalPortal` (120) must stay above `SettingsDialog`
 (110)** so a modal opened _from inside_ Settings (e.g. Add OPDS Catalog) isn't buried.
