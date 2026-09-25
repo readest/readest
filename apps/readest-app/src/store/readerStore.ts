@@ -204,18 +204,27 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const isFeed = !!book.url && isFeedBookUrl(book.url);
       let bookDoc = bookData?.bookDoc;
       let file: File | null = bookData?.file ?? null;
-      const config = await appService.loadBookConfig(book, settings);
+      // Per-book config and the third-party annotation module are pure IO
+      // with no dependency on the document load. Kick them off here so their
+      // round trips overlap with the content fetch / document parsing below
+      // instead of serializing behind them. Every `await configPromise`
+      // resolves to the same object.
+      const configPromise = appService.loadBookConfig(book, settings);
+      const annotationImportPromise = import('@/services/annotation');
+      // Avoid an unhandled rejection if the open path throws before the
+      // annotation section below ever awaits this import.
+      annotationImportPromise.catch(() => undefined);
       // A comic's wide pages are cached in its config: those an open measured,
       // and those found as streamed pages load.
-      const widePages: WidePagesOptions = {
+      const makeWidePages = (config: BookConfig): WidePagesOptions => ({
         known: config.widePages,
         onFound: (ids) => useBookDataStore.getState().setConfig(id, { widePages: ids }),
-      };
+      });
       if (!bookDoc || (!isPseStream && !isFeed && !file) || reload) {
         console.log('Loading book', key);
         if (isPseStream) {
           const data = parsePseStreamFileName(book.url!);
-          const doc = await openPseStreamBook(data, widePages);
+          const doc = await openPseStreamBook(data, makeWidePages(await configPromise));
           bookDoc = doc.book;
           file = null;
         } else if (isFeed) {
@@ -225,25 +234,32 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           bookDoc = await openFeedBookDoc(fs, book.hash, feedUrl, book.title);
           file = null;
         } else {
-          const content = (await appService.loadBookContent(book)) as BookContent;
+          // resolveNativeBookFilePath only reads `book` (it feeds the Rust
+          // EPUB prefetch), so it can race the content load instead of
+          // queueing behind it.
+          const [content, nativeFilePath] = await Promise.all([
+            appService.loadBookContent(book) as Promise<BookContent>,
+            appService.resolveNativeBookFilePath(book).catch((err: unknown) => {
+              console.warn('resolveNativeBookFilePath failed', err);
+              return null;
+            }),
+          ]);
           file = content.file;
-          let nativeFilePath: string | null = null;
-          try {
-            nativeFilePath = await appService.resolveNativeBookFilePath(book);
-          } catch (err) {
-            console.warn('resolveNativeBookFilePath failed', err);
-          }
+          const config = await configPromise;
           const doc = await new DocumentLoader(file, {
             nativeFilePath: nativeFilePath ?? undefined,
-            widePages,
+            widePages: makeWidePages(config),
           }).open();
           bookDoc = doc.book;
           if (doc.format === 'CBZ') config.widePages = getWidePages(bookDoc.sections);
         }
       }
-      // Import annotations from third-party readers on first open
+      const config = await configPromise;
+      // Import annotations from third-party readers on first open. The
+      // module import was already kicked off above; providers still run
+      // here so the merged config lands before the first render.
       if (bookDoc.metadata.identifier) {
-        const { getAnnotationProviders } = await import('@/services/annotation');
+        const { getAnnotationProviders } = await annotationImportPromise;
         for (const provider of getAnnotationProviders()) {
           if (provider.isAvailable(appService)) {
             const merged = await provider.importAnnotations(
