@@ -103,7 +103,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
       <input
         ref={rangeInputRef}
         type='range'
-        className='accent-primary text-base-content mx-2 min-w-0 flex-1 cursor-pointer'
+        className='accent-primary/80 text-base-content mx-2 min-w-0 flex-1 cursor-pointer'
         min={0}
         max={100}
         aria-label={_('Jump to Location')}
