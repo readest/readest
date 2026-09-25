@@ -182,7 +182,7 @@ export const useNotesSync = (bookKey: string) => {
     if (!config?.location || !user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config?.booknotes, handleAutoSync]);
+  }, [!!config?.location, config?.booknotes, handleAutoSync]);
 
   useEffect(() => {
     const processNewNote = (note: BookNote) => {
