@@ -399,20 +399,27 @@
 
   /* Frame for Windows 10, where the OS draws no symmetric edge around an
      undecorated window. Square rather than rounded, because Windows 10 keeps
-     windows square-cornered too. */
+     windows square-cornered too.
+
+     The line this stands in for is normally painted by the OS in the window's
+     non-client area, in a colour that comes from the desktop theme and changes
+     with focus. Nothing in the page can read it, so rather than imitate it this
+     is tied to the surface it sits on: `base-content` is the theme's contrast
+     colour for `base-100`, so one rule stays legible across every theme and
+     background the app can switch to.
+
+     `WindowOutline` sizes this box from the window rather than the page: a
+     viewport is a whole number of CSS pixels while a window is a whole number of
+     device pixels, so at a fractional scale factor `inset: 0` overshoots the
+     window and its far edges are painted off it. */
   .window-outline {
     position: fixed;
     top: 0;
-    right: 0;
-    bottom: 0;
     left: 0;
+    box-sizing: border-box;
     z-index: 99;
-    border: 1px solid var(--color-base-300);
+    border: 1px solid var(--color-base-content);
     pointer-events: none;
-  }
-
-  [data-eink='true'] .window-outline {
-    border-color: var(--color-base-content);
   }
 
   /* daisyUI 5 fades and scales every dropdown open, <details> ones included,
