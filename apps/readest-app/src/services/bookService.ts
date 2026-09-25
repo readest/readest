@@ -739,7 +739,8 @@ export async function importBook(
       !transient &&
       !inPlace &&
       !!fileobj &&
-      (!(await fs.exists(bookFilename, 'Books')) || overwrite);
+      (!(await fs.exists(bookFilename, 'Books')) ||
+        (overwrite && file !== `${await fs.getPrefix('Books')}/${bookFilename}`));
     if (willWriteBookFile && fileobj) {
       if (/\.txt$/i.test(filename)) {
         await fs.writeFile(bookFilename, 'Books', fileobj);
