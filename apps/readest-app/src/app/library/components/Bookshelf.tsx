@@ -26,6 +26,7 @@ import {
   createBookSorter,
   ensureLibraryGroupByType,
   expandBookshelfSelection,
+  mergeUnifiedSourceVariants,
   selectDownloadableBooks,
   withReadingStatus,
 } from '../utils/libraryUtils';
@@ -249,7 +250,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // re-filtering and re-sorting every shelf.
   const absServers = useABSServerStore((state) => state.servers);
   const visibleBooks = useMemo(
-    () => libraryBooks.filter((book) => !book.deletedAt && !isAbsBookOrphaned(book)),
+    () =>
+      mergeUnifiedSourceVariants(
+        libraryBooks.filter((book) => !book.deletedAt && !isAbsBookOrphaned(book)),
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [libraryBooks, absServers, settings.absServers],
   );

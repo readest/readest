@@ -46,6 +46,11 @@ const renderRow = (item: Book) => {
 };
 
 describe('book tags in a list row', () => {
+  it('does not expose account-backed cloud upload or download controls', () => {
+    render(<BookItem {...props} book={book} />);
+    expect(screen.queryByRole('button', { name: 'Upload Book' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Download Book' })).toBeNull();
+  });
   // A book with nothing to show still renders an empty progress element, and a
   // book with no progress or status renders none at all; neither may push the
   // tags away from the row's start.

@@ -31,6 +31,7 @@ import { ingestFile } from '@/services/ingestService';
 import { eventDispatcher } from '@/utils/event';
 import { transferManager } from '@/services/transferManager';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { LOCAL_READING_ONLY } from '@/services/foundation/localReadingMode';
 import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import {
@@ -2114,15 +2115,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           isOpen={!!showDetailsBook}
           book={showDetailsBook}
           onClose={() => setShowDetailsBook(null)}
-          handleBookUpload={handleBookUpload}
-          handleBookDownload={handleBookDownload}
+          handleBookUpload={undefined}
+          handleBookDownload={undefined}
           handleBookDelete={handleBookDelete('both')}
           // Readest storage only. A third-party provider mirrors the library, so
           // removing just its cloud copy is not expressible: the next sync would
           // upload the still-local book straight back (#5084).
-          handleBookDeleteCloudBackup={
-            isReadestCloudStorageActive(settings) ? handleBookDelete('cloud') : undefined
-          }
+          handleBookDeleteCloudBackup={undefined}
           handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookPurge={handleBookDelete('purge')}
           handleBookMetadataUpdate={handleUpdateMetadata}
@@ -2131,7 +2130,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onMetadataValueClick={handleMetadataValueClick}
         />
       )}
-      {isTransferQueueOpen && (
+      {!LOCAL_READING_ONLY && isTransferQueueOpen && (
         <ModalPortal>
           <TransferQueuePanel />
         </ModalPortal>

@@ -29,6 +29,7 @@ describe('foundation spike page', () => {
     startText: string,
     endBlockId = startBlockId,
     endText = startText,
+    ctrlKey = false,
   ) => {
     const startElement = screen
       .getByTestId(`source-block-${startBlockId}`)
@@ -52,7 +53,7 @@ describe('foundation spike page', () => {
     range.setEnd(end.node, end.offset + endText.length);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
-    fireEvent.mouseUp(startElement.closest('article')!);
+    fireEvent.mouseUp(startElement.closest('article')!, { ctrlKey });
   };
 
   it('restores the pre-fullscreen size or half of the work area without overflowing', () => {
@@ -222,6 +223,114 @@ describe('foundation spike page', () => {
     expect(list.className).toContain('max-h-40');
     expect(list.className).toContain('overflow-y-auto');
     expect(screen.getAllByRole('button', { name: /删除附件/ })).toHaveLength(3);
+  });
+
+  it('shows Ctrl selections as separate cards and stores them as separate anchors', () => {
+    render(<FoundationSpike />);
+    selectText('block-02', '紧致性');
+    selectText('block-03', '因此', 'block-03', '因此', true);
+
+    expect(screen.getAllByTestId('selection-card')).toHaveLength(2);
+    expect(screen.getByText('已选择 2 处独立原文')).not.toBeNull();
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '比较这两处' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+
+    const stored = JSON.parse(localStorage.getItem('readest:annotation-schema:v1') ?? '{}');
+    expect(stored.threads[0].anchorIds).toHaveLength(2);
+  });
+
+  it('keeps sent attachments separate and opens long content in a movable dialog', () => {
+    render(<FoundationSpike />);
+    for (const text of ['紧致性', '局部信息']) {
+      fireEvent.click(screen.getByRole('button', { name: '将选中文本作为问题附件' }));
+      selectText('block-02', text);
+    }
+    fireEvent.change(screen.getByLabelText('问题'), { target: { value: '附件问题' } });
+    fireEvent.click(screen.getByRole('button', { name: '提问' }));
+
+    expect(screen.getAllByTestId('message-attachment-card')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: '查看完整附件 1' }));
+    const dialog = screen.getByRole('dialog', { name: '完整原文附件' });
+    expect(dialog.textContent).toContain('紧致性');
+    expect(screen.getByLabelText('拖动附件窗口')).not.toBeNull();
+  });
+
+  it('shows TXT navigation and allows dismissing source warnings', async () => {
+    window.history.replaceState({}, '', '/foundation-spike?book=library-txt');
+    const txtBook: Book = {
+      hash: 'library-txt',
+      format: 'TXT',
+      title: '长文本',
+      author: '',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    libraryAppService.loadLibraryBooks.mockResolvedValue([txtBook]);
+    libraryAppService.loadBookContent.mockResolvedValue({
+      book: txtBook,
+      file: new File(['chapter 1\n\nplain text'], 'low.txt'),
+    });
+    render(<FoundationSpike />);
+
+    const navigationButton = await screen.findByRole('button', { name: '打开导航目录' });
+    expect(navigationButton).not.toBeNull();
+    fireEvent.click(navigationButton);
+    expect(screen.getByRole('navigation', { name: '文档导航目录' })).not.toBeNull();
+    const warning = await screen.findByRole('status');
+    expect(warning.textContent).toContain('文字显示异常');
+    fireEvent.click(screen.getByRole('button', { name: '关闭提示' }));
+    expect(screen.queryByText(/文字显示异常/)).toBeNull();
+  });
+
+  it('loads all unified article variants and switches formats independently', async () => {
+    window.history.replaceState({}, '', '/foundation-spike?book=library-txt');
+    const books: Book[] = [
+      {
+        hash: 'library-txt',
+        format: 'TXT',
+        title: '三种格式的同一篇文章',
+        sourceTitle: '10-same-content.txt',
+        author: '',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        hash: 'library-html',
+        format: 'HTML',
+        title: '三种格式的同一篇文章',
+        sourceTitle: '10-same-content.html',
+        author: '',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      {
+        hash: 'library-epub',
+        format: 'EPUB',
+        title: '三种格式的同一篇文章',
+        sourceTitle: '10-same-content.epub',
+        author: '',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+    libraryAppService.loadLibraryBooks.mockResolvedValue(books);
+    libraryAppService.loadBookContent.mockImplementation(async (selected: Book) => ({
+      book: selected,
+      file:
+        selected.format === 'HTML'
+          ? new File(['<h1>HTML 版本</h1><p>网页正文</p>'], '10-same-content.html')
+          : new File(['TXT 版本\n\n纯文本正文'], '10-same-content.txt'),
+    }));
+    render(<FoundationSpike />);
+
+    const formatSelect = await screen.findByRole('combobox', { name: '切换统一文章格式' });
+    expect(formatSelect.querySelectorAll('option')).toHaveLength(3);
+    fireEvent.change(formatSelect, { target: { value: 'library-html' } });
+    expect(await screen.findByText('网页正文')).not.toBeNull();
+    expect(window.location.search).toBe('?book=library-html');
+    expect(
+      localStorage.getItem('readest:annotation-schema:v1:library:library-html'),
+    ).not.toBeNull();
   });
 
   it('loads a Markdown book from the native library into a book-scoped workspace', async () => {

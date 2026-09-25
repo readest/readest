@@ -166,7 +166,7 @@ const blocksFromDocument = (
   let sectionOrdinal = 0;
   const candidates = Array.from(
     doc.body.querySelectorAll(
-      'h1, h2, h3, h4, h5, h6, p, blockquote, pre, table, ul, ol, math, img',
+      'h1, h2, h3, h4, h5, h6, p, blockquote, pre, table, ul, ol, math, img, nav, aside, footer',
     ),
   ).filter((element) => !element.parentElement?.closest('p, blockquote, pre, table, ul, ol, math'));
 
@@ -366,6 +366,7 @@ const htmlAdapter: SourceDocumentAdapter = {
   async parse(file, options) {
     const rawHtml = await file.text();
     const original = new DOMParser().parseFromString(sanitizeForParsing(rawHtml), 'text/html');
+    const structuralElementCount = original.querySelectorAll('table, math, svg').length;
     for (const element of Array.from(original.querySelectorAll('svg, math'))) {
       const fallback = original.createElement('pre');
       const label = element.tagName.toLowerCase() === 'math' ? '公式' : '图示';
@@ -374,6 +375,13 @@ const htmlAdapter: SourceDocumentAdapter = {
       element.replaceWith(fallback);
     }
     const originalTextLength = original.body.textContent?.trim().length ?? 0;
+    if ((options.htmlMode ?? 'article') === 'full') {
+      for (const element of Array.from(original.querySelectorAll('nav, aside, footer'))) {
+        const fallback = original.createElement('p');
+        fallback.textContent = element.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+        element.replaceWith(fallback);
+      }
+    }
     let selectedHtml = original.body.innerHTML;
     let extractedTitle = original.title.trim();
     if ((options.htmlMode ?? 'article') === 'article') {
@@ -408,8 +416,8 @@ const htmlAdapter: SourceDocumentAdapter = {
     }
     if (
       (options.htmlMode ?? 'article') === 'article' &&
-      originalTextLength > 0 &&
-      semanticContent.length / originalTextLength < 0.35
+      ((originalTextLength > 0 && semanticContent.length / originalTextLength < 0.35) ||
+        (structuralElementCount > 0 && semanticContent.length < 800))
     ) {
       warnings.push({
         code: 'html-content-reduced',

@@ -97,6 +97,24 @@ describe('source document adapters', () => {
     expect(allowed.document.versionId).toBe(blocked.document.versionId);
   });
 
+  it('warns when article extraction risks structural content and makes full-page mode distinct', async () => {
+    const source = `<!doctype html><title>边界页</title><body>
+      <nav>首页 数据 附录</nav><main><h1>短正文</h1><p>正文。</p>
+      <table><tr><td>不可遗漏的数据</td></tr></table><math><mi>x</mi></math></main></body>`;
+    const file = new File([source], 'edge.html', { type: 'text/html' });
+    const article = await parseLibrarySourceDocument(book('HTML'), file, {
+      htmlMode: 'article',
+    });
+    const full = await parseLibrarySourceDocument(book('HTML'), file, { htmlMode: 'full' });
+
+    expect(article.warnings.map((warning) => warning.code)).toContain('html-content-reduced');
+    expect(article.document.blocks.some((block) => block.semanticText.includes('首页'))).toBe(
+      false,
+    );
+    expect(full.document.blocks.some((block) => block.semanticText.includes('首页'))).toBe(true);
+    expect(full.htmlMode).toBe('full');
+  });
+
   it('bridges reflowable EPUB spine sections to unified blocks and CFI locators', async () => {
     const destroy = vi.fn();
     const sectionDoc = new DOMParser().parseFromString(
@@ -124,6 +142,7 @@ describe('source document adapters', () => {
       new File(['epub'], 'book.epub', { type: 'application/epub+zip' }),
     );
     expect(result.document.sourceFormat).toBe('epub');
+    expect(result.document.sections.map((section) => section.title)).toContain('第一章');
     expect(result.document.blocks[1]?.locator).toMatchObject({
       kind: 'epub',
       spineIndex: 0,

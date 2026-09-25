@@ -19,6 +19,7 @@ import BookDetailView from './BookDetailView';
 import BookDetailEdit from './BookDetailEdit';
 import SourceSelector from './SourceSelector';
 import Spinner from '../Spinner';
+import { LOCAL_READING_ONLY } from '@/services/foundation/localReadingMode';
 
 interface BookDetailModalProps {
   book: Book;
@@ -287,12 +288,16 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 onEdit={handleBookMetadataUpdate ? handleEditMetadata : undefined}
                 onDelete={handleBookDelete ? handleDelete : undefined}
                 onDeleteCloudBackup={
-                  handleBookDeleteCloudBackup ? handleDeleteCloudBackup : undefined
+                  !LOCAL_READING_ONLY && handleBookDeleteCloudBackup
+                    ? handleDeleteCloudBackup
+                    : undefined
                 }
                 onDeleteLocalCopy={handleBookDeleteLocalCopy ? handleDeleteLocalCopy : undefined}
-                onDownload={handleBookDownload ? handleRedownload : undefined}
-                onUpload={handleBookUpload ? handleReupload : undefined}
-                onShare={handleShare}
+                onDownload={
+                  !LOCAL_READING_ONLY && handleBookDownload ? handleRedownload : undefined
+                }
+                onUpload={!LOCAL_READING_ONLY && handleBookUpload ? handleReupload : undefined}
+                onShare={LOCAL_READING_ONLY ? undefined : handleShare}
                 onExport={handleBookExport}
                 onDownloadOffline={
                   handleBookOfflineDownload && isAbsOfflineCapable(book)

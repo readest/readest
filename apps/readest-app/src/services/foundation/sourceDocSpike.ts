@@ -71,11 +71,13 @@ export interface SourceDocMessage {
   content: string;
   citations: SourceDocCitation[];
   attachment?: string;
+  attachments?: string[];
 }
 
 export interface SourceDocThread {
   id: string;
   anchor: SourceDocAnchor;
+  anchors: SourceDocAnchor[];
   unanchored?: boolean;
   title: string;
   status: 'active' | 'archived';
@@ -124,6 +126,7 @@ interface AnchorRecord extends SourceDocAnchor {
 interface ThreadRecord {
   id: string;
   anchorId: string | null;
+  anchorIds?: string[];
   title: string;
   status: 'active' | 'archived';
   createdAt: string;
@@ -140,6 +143,7 @@ interface MessageRecord {
   createdAt: string;
   updatedAt: string;
   attachment?: string;
+  attachments?: string[];
 }
 
 interface CitationRecord {
@@ -586,12 +590,14 @@ export function validateCitation(document: SourceDocFixture, citation: SourceDoc
 
 export function generateStubAnswer(
   document: SourceDocFixture,
-  anchor: SourceDocAnchor | null,
+  anchor: SourceDocAnchor | SourceDocAnchor[] | null,
   _question: string,
   random: () => number = Math.random,
 ): Pick<SourceDocMessage, 'content' | 'citations'> {
-  const selected = anchor
-    ? document.blocks.find((item) => item.id === anchor.blockId)
+  const anchors = Array.isArray(anchor) ? anchor : anchor ? [anchor] : [];
+  const primaryAnchor = anchors[0] ?? null;
+  const selected = primaryAnchor
+    ? document.blocks.find((item) => item.id === primaryAnchor.blockId)
     : document.blocks.find((item) => item.type === 'paragraph');
   if (!selected) throw new Error('No source block is available');
   const supporting =
@@ -612,15 +618,31 @@ export function generateStubAnswer(
     citations: [
       {
         blockId: selected.id,
-        exactQuote: anchor
+        exactQuote: primaryAnchor
           ? selected.semanticText.slice(
-              anchor.startOffset,
-              anchor.blockId === anchor.endBlockId
-                ? anchor.endOffset
+              primaryAnchor.startOffset,
+              primaryAnchor.blockId === primaryAnchor.endBlockId
+                ? primaryAnchor.endOffset
                 : selected.semanticText.length,
             )
           : selected.semanticText,
       },
+      ...anchors.slice(1).flatMap((selectedAnchor) => {
+        const target = document.blocks.find((item) => item.id === selectedAnchor.blockId);
+        return target
+          ? [
+              {
+                blockId: target.id,
+                exactQuote: target.semanticText.slice(
+                  selectedAnchor.startOffset,
+                  selectedAnchor.blockId === selectedAnchor.endBlockId
+                    ? selectedAnchor.endOffset
+                    : target.semanticText.length,
+                ),
+              },
+            ]
+          : [];
+      }),
       { blockId: supporting.id, exactQuote: supporting.semanticText },
     ],
   };
@@ -803,30 +825,32 @@ export class SourceDocSpikeStore {
   private insertThread(
     schema: AnnotationSchemaV1,
     document: SourceDocFixture,
-    anchor: SourceDocAnchor | null,
+    anchor: SourceDocAnchor | SourceDocAnchor[] | null,
     messages: SourceDocMessage[],
     threadId: string,
     title?: string,
   ): void {
     const now = new Date().toISOString();
     const versionId = document.versionId ?? schema.currentDocumentVersionId;
-    const anchorId = anchor ? createId('anchor') : null;
-    if (anchor && anchorId) {
+    const anchors = Array.isArray(anchor) ? anchor : anchor ? [anchor] : [];
+    const anchorIds = anchors.map(() => createId('anchor'));
+    anchors.forEach((selectedAnchor, index) => {
       schema.anchors.push({
-        ...anchor,
-        id: anchorId,
+        ...selectedAnchor,
+        id: anchorIds[index]!,
         documentVersionId: versionId,
         kind: 'selection',
         createdAt: now,
       });
-    }
+    });
     schema.threads.push({
       id: threadId,
-      anchorId,
+      anchorId: anchorIds[0] ?? null,
+      anchorIds,
       title:
         title ||
         messages.find((item) => item.role === 'user')?.content.slice(0, 40) ||
-        anchor?.exactQuote.slice(0, 40) ||
+        anchors[0]?.exactQuote.slice(0, 40) ||
         '无锚点会话',
       status: 'active',
       createdAt: now,
@@ -842,6 +866,8 @@ export class SourceDocSpikeStore {
         state: 'complete',
         createdAt: now,
         updatedAt: now,
+        attachment: message.attachment,
+        attachments: message.attachments,
       });
       this.insertCitations(schema, document, message);
     });
@@ -883,9 +909,13 @@ export class SourceDocSpikeStore {
   }
 
   private hydrateThread(schema: AnnotationSchemaV1, record: ThreadRecord): SourceDocThread | null {
-    const storedAnchor = record.anchorId
-      ? schema.anchors.find((item) => item.id === record.anchorId)
-      : null;
+    const storedAnchors = (record.anchorIds?.length ? record.anchorIds : [record.anchorId])
+      .filter((id): id is string => !!id)
+      .flatMap((id) => {
+        const match = schema.anchors.find((item) => item.id === id);
+        return match ? [match] : [];
+      });
+    const storedAnchor = storedAnchors[0] ?? null;
     let anchor: SourceDocAnchor = {
       blockId: '',
       endBlockId: '',
@@ -917,6 +947,7 @@ export class SourceDocSpikeStore {
         role: message.role,
         content: message.content,
         attachment: message.attachment,
+        attachments: message.attachments ?? (message.attachment ? [message.attachment] : undefined),
         citations: schema.citations
           .filter((item) => item.messageId === message.id)
           .sort((left, right) => left.ordinal - right.ordinal)
@@ -933,9 +964,20 @@ export class SourceDocSpikeStore {
               : [];
           }),
       }));
+    const anchors = storedAnchors.map((item) => {
+      const {
+        id: _id,
+        documentVersionId: _documentVersionId,
+        kind: _kind,
+        createdAt: _createdAt,
+        ...sourceAnchor
+      } = item;
+      return sourceAnchor;
+    });
     return {
       id: record.id,
       anchor: anchor as SourceDocAnchor,
+      anchors,
       unanchored,
       title: record.title,
       status: record.status,
@@ -950,8 +992,12 @@ export class SourceDocSpikeStore {
     return schema.threads
       .filter((record) => {
         if (!record.anchorId) return true;
-        const anchor = schema.anchors.find((item) => item.id === record.anchorId);
-        return anchor?.documentVersionId === schema.currentDocumentVersionId;
+        const anchorIds = record.anchorIds?.length ? record.anchorIds : [record.anchorId];
+        return anchorIds.some(
+          (anchorId) =>
+            schema.anchors.find((item) => item.id === anchorId)?.documentVersionId ===
+            schema.currentDocumentVersionId,
+        );
       })
       .map((record) => this.hydrateThread(schema, record))
       .filter((thread): thread is SourceDocThread => thread !== null)
@@ -977,10 +1023,10 @@ export class SourceDocSpikeStore {
 
   ask(
     document: SourceDocFixture,
-    anchor: SourceDocAnchor | null,
+    anchor: SourceDocAnchor | SourceDocAnchor[] | null,
     question: string,
     threadId?: string,
-    attachment?: string,
+    attachment?: string | string[],
   ): SourceDocThread {
     const schema = this.loadSchema();
     let record = threadId ? schema.threads.find((item) => item.id === threadId) : undefined;
@@ -996,7 +1042,8 @@ export class SourceDocSpikeStore {
       role: 'user',
       content: question,
       citations: [],
-      attachment,
+      attachment: typeof attachment === 'string' ? attachment : undefined,
+      attachments: Array.isArray(attachment) ? attachment : attachment ? [attachment] : undefined,
     };
     const answer = generateStubAnswer(document, anchor, question);
     const assistantMessage: SourceDocMessage = {
@@ -1016,6 +1063,7 @@ export class SourceDocSpikeStore {
         createdAt: now,
         updatedAt: now,
         attachment: message.attachment,
+        attachments: message.attachments,
       });
       this.insertCitations(schema, document, message);
     }
@@ -1074,7 +1122,9 @@ export class SourceDocSpikeStore {
     schema.citations = schema.citations.filter((item) => !messageIds.has(item.messageId));
     schema.messages = schema.messages.filter((item) => !targetIds.has(item.threadId));
     schema.threads = schema.threads.filter((item) => !targetIds.has(item.id));
-    const threadAnchorIds = new Set(threads.map((item) => item.anchorId));
+    const threadAnchorIds = new Set(
+      threads.flatMap((item) => item.anchorIds ?? (item.anchorId ? [item.anchorId] : [])),
+    );
     schema.anchors = schema.anchors.filter(
       (item) => !threadAnchorIds.has(item.id) && !citationAnchorIds.has(item.id),
     );

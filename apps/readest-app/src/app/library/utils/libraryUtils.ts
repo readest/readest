@@ -15,6 +15,11 @@ import { stubTranslation as _ } from '@/utils/misc';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { isAbsOfflineCapable, isAudiobook } from '@/utils/audiobook';
+import {
+  findUnifiedSourceVariants,
+  LOCAL_READING_ONLY,
+  UNIFIED_SOURCE_FORMATS,
+} from '@/services/foundation/localReadingMode';
 
 /** Valid sort types for the library */
 const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
@@ -216,6 +221,27 @@ export const getLibraryTags = (books: Book[]): string[] =>
   normalizeValues(books.filter((book) => !book.deletedAt).flatMap(getBookTags)).sort((a, b) =>
     a.localeCompare(b),
   );
+
+export const mergeUnifiedSourceVariants = (books: Book[]): Book[] => {
+  const supported = new Set<string>(UNIFIED_SOURCE_FORMATS);
+  const hidden = new Set<string>();
+  const replacements = new Map<string, Book>();
+  for (const book of books) {
+    if (!supported.has(book.format) || hidden.has(book.hash) || replacements.has(book.hash))
+      continue;
+    const variants = findUnifiedSourceVariants(books, book);
+    if (new Set(variants.map((book) => book.format)).size < 2) continue;
+    const primary = variants.find((book) => book.format === 'EPUB') ?? variants[0]!;
+    replacements.set(primary.hash, {
+      ...primary,
+      sourceVariants: variants.map(({ hash, format }) => ({ hash, format })),
+    });
+    for (const variant of variants) if (variant.hash !== primary.hash) hidden.add(variant.hash);
+  }
+  return books
+    .filter((book) => !hidden.has(book.hash))
+    .map((book) => replacements.get(book.hash) ?? book);
+};
 
 export type TagSelectionState = 'all' | 'some' | 'none';
 
@@ -1093,7 +1119,7 @@ export const getBookContextMenuItemIds = (
   ids.push('showDetails', 'showInFinder', 'searchGoodreads');
   // A feed book has no file to move: every transfer action would fail, and the
   // share dialog uploads before it can hand out a link (issue #5307).
-  if (!isFeedBook(book)) {
+  if (!LOCAL_READING_ONLY && !isFeedBook(book)) {
     if (book.uploadedAt && !book.downloadedAt) ids.push('download');
     if (!book.uploadedAt && book.downloadedAt) ids.push('upload');
     // Share is offered for any local-or-uploaded book; the dialog uploads first

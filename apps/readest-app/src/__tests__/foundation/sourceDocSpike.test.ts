@@ -130,6 +130,25 @@ describe('SOURCE_DOC foundation spike', () => {
     expect(generateStubAnswer(SOURCE_DOC_FIXTURE, null, '无锚点')).toHaveProperty('citations');
   });
 
+  it('persists separate question attachments and non-contiguous source anchors', () => {
+    const store = new SourceDocSpikeStore(localStorage);
+    const firstBlock = SOURCE_DOC_FIXTURE.blocks[1]!;
+    const secondBlock = SOURCE_DOC_FIXTURE.blocks[4]!;
+    const first = createSelectionAnchor(firstBlock, 0, 3);
+    const second = createSelectionAnchor(secondBlock, 0, 4);
+
+    const thread = store.ask(SOURCE_DOC_FIXTURE, [first, second], '比较两处内容', undefined, [
+      '第一份附件',
+      '第二份附件',
+    ]);
+
+    expect(thread.anchors).toEqual([first, second]);
+    expect(thread.messages[0]?.attachments).toEqual(['第一份附件', '第二份附件']);
+    expect(thread.messages[1]?.citations.map((citation) => citation.blockId)).toEqual(
+      expect.arrayContaining([firstBlock.id, secondBlock.id]),
+    );
+  });
+
   it('imports real Markdown into stable sections and blocks', () => {
     const markdown = `# 第一章\n\n第一段有 **重点**。\n\n## 子节\n\n- 条目一\n- 条目二\n\n\`\`\`ts\nconst answer = 42;\n\`\`\``;
     const first = parseMarkdownDocument('测试书.md', markdown);

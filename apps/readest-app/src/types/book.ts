@@ -110,6 +110,7 @@ export interface Book {
   hash: string;
   // Metadata md5 hash, used to aggregate different versions of the same book
   metaHash?: string;
+  sourceVariants?: Array<{ hash: string; format: BookFormat }>;
   format: BookFormat;
   title: string; // editable title from metadata
   sourceTitle?: string; // parsed when the book is imported and used to locate the file

@@ -54,6 +54,7 @@ import OneDriveForm from './integrations/OneDriveForm';
 import ICloudForm from './integrations/ICloudForm';
 import S3Form from './integrations/S3Form';
 import { persistCloudProviderEnabled } from './integrations/cloudSync';
+import { LOCAL_READING_ONLY } from '@/services/foundation/localReadingMode';
 import {
   canToggleCloudProvider,
   getReadestCloudRowStatus,
@@ -639,7 +640,10 @@ const IntegrationsPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className='w-full' data-setting-id='settings.integrations.cloudSync'>
+      <div
+        className={LOCAL_READING_ONLY ? 'hidden' : 'w-full'}
+        data-setting-id='settings.integrations.cloudSync'
+      >
         <SectionTitle className='mb-2'>{_('Cloud Sync')}</SectionTitle>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
           <div

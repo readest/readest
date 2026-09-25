@@ -21,6 +21,7 @@ import {
   type SourceDocumentWarning,
   type TxtEncoding,
 } from '@/services/foundation/sourceDocumentAdapter';
+import { findUnifiedSourceVariants } from '@/services/foundation/localReadingMode';
 
 import {
   SOURCE_DOC_FIXTURE,
@@ -119,8 +120,9 @@ function domRange(element: HTMLElement, start: number, end: number): Range | nul
 
 export default function FoundationSpike() {
   const { appService } = useEnv();
-  const libraryBookId =
-    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('book');
+  const [libraryBookId, setLibraryBookId] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('book'),
+  );
   const [documentModel, setDocumentModel] = useState<SourceDocFixture>(SOURCE_DOC_FIXTURE);
   const [anchor, setAnchor] = useState<SourceDocAnchor | null>(null);
   const [threads, setThreads] = useState<SourceDocThread[]>([]);
@@ -130,20 +132,28 @@ export default function FoundationSpike() {
   const [question, setQuestion] = useState('');
   const [highlightedCitation, setHighlightedCitation] = useState<SourceDocCitation | null>(null);
   const [selectionError, setSelectionError] = useState('');
-  const [selectionPreview, setSelectionPreview] = useState('');
+  const [, setSelectionPreview] = useState('');
   const [, setSelectionAttachments] = useState<string[]>([]);
   const [questionAttachments, setQuestionAttachments] = useState<string[]>([]);
   const [selectedAnchors, setSelectedAnchors] = useState<SourceDocAnchor[]>([]);
   const [attachSelection, setAttachSelection] = useState(false);
   const [annotationPickerBlockId, setAnnotationPickerBlockId] = useState<string | null>(null);
   const [previewedThreadId, setPreviewedThreadId] = useState<string | null>(null);
-  const [expandedAttachmentIds, setExpandedAttachmentIds] = useState<string[]>([]);
   const [windowFullscreen, setWindowFullscreen] = useState(false);
   const [navigationStatus, setNavigationStatus] = useState('');
   const [importError, setImportError] = useState('');
   const [sourceWarnings, setSourceWarnings] = useState<SourceDocumentWarning[]>([]);
+  const [dismissedWarningCodes, setDismissedWarningCodes] = useState<string[]>([]);
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const [attachmentDialog, setAttachmentDialog] = useState<{
+    title: string;
+    content: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [libraryBook, setLibraryBook] = useState<Book | null>(null);
   const [libraryFile, setLibraryFile] = useState<File | null>(null);
+  const [libraryVariants, setLibraryVariants] = useState<Book[]>([]);
   const [txtEncoding, setTxtEncoding] = useState<TxtEncoding>('utf-8');
   const [htmlMode, setHtmlMode] = useState<HtmlImportMode>('article');
   const [allowRemoteImages, setAllowRemoteImages] = useState(false);
@@ -163,6 +173,9 @@ export default function FoundationSpike() {
   const readerScrollRef = useRef<HTMLDivElement | null>(null);
   const conversationScrollRef = useRef<HTMLDivElement | null>(null);
   const sidebarDrag = useRef<{ startX: number; startWidth: number } | null>(null);
+  const attachmentDrag = useRef<{ startX: number; startY: number; x: number; y: number } | null>(
+    null,
+  );
   const sourcePointerStart = useRef<{ x: number; y: number } | null>(null);
   const normalWindowSize = useRef<{ width: number; height: number } | null>(null);
   const toolbarExpanded = readingSettings.toolbarPinned || toolbarHovered;
@@ -193,7 +206,7 @@ export default function FoundationSpike() {
     setThreads(store.listThreads());
     setActiveThreadId(restored?.id ?? null);
     setAnchor(restored?.unanchored ? null : (restored?.anchor ?? null));
-    setSelectedAnchors(restored?.unanchored || !restored?.anchor ? [] : [restored.anchor]);
+    setSelectedAnchors(restored?.unanchored ? [] : (restored?.anchors ?? []));
     setSelectionPreview(restored?.unanchored ? '' : (restored?.anchor?.exactQuote ?? ''));
     setSelectionAttachments(
       restored?.unanchored || !restored?.anchor ? [] : [restored.anchor.exactQuote],
@@ -213,7 +226,8 @@ export default function FoundationSpike() {
     let cancelled = false;
     const loadLibraryBook = async () => {
       try {
-        const book = (await appService.loadLibraryBooks()).find(
+        const library = await appService.loadLibraryBooks();
+        const book = library.find(
           (candidate) => candidate.hash === libraryBookId && !candidate.deletedAt,
         );
         if (!book) throw new Error('书库中找不到这本书');
@@ -231,11 +245,13 @@ export default function FoundationSpike() {
         if (cancelled) return;
         const imported = store.importDocument(result.document);
         setLibraryBook(book);
+        setLibraryVariants(findUnifiedSourceVariants(library, book));
         setLibraryFile(file);
         setTxtEncoding(result.txtEncoding ?? preferences.txtEncoding ?? 'utf-8');
         setHtmlMode(result.htmlMode ?? preferences.htmlMode ?? 'article');
         setAllowRemoteImages(preferences.allowRemoteImages ?? false);
         setSourceWarnings(result.warnings);
+        setDismissedWarningCodes([]);
         setDocumentModel(imported);
         setAnchor(null);
         setActiveThreadId(null);
@@ -279,6 +295,7 @@ export default function FoundationSpike() {
       const result = await parseLibrarySourceDocument(libraryBook, libraryFile, options);
       setDocumentModel(store.importDocument(result.document));
       setSourceWarnings(result.warnings);
+      setDismissedWarningCodes([]);
       setImportError('');
       if (result.txtEncoding) setTxtEncoding(result.txtEncoding);
       if (result.htmlMode) setHtmlMode(result.htmlMode);
@@ -288,6 +305,13 @@ export default function FoundationSpike() {
     } catch (error) {
       setImportError(error instanceof Error ? error.message : '无法重新解析此文档');
     }
+  };
+
+  const switchLibraryVariant = (book: Book) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('book', book.hash);
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    setLibraryBookId(book.hash);
   };
 
   useEffect(() => {
@@ -311,18 +335,32 @@ export default function FoundationSpike() {
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
-      if (!sidebarDrag.current) return;
-      const width = Math.min(
-        SIDEBAR_MAX_WIDTH,
-        Math.max(
-          SIDEBAR_MIN_WIDTH,
-          sidebarDrag.current.startWidth + sidebarDrag.current.startX - event.clientX,
-        ),
-      );
-      updateReadingSetting('sidebarWidth', width);
+      if (sidebarDrag.current) {
+        const width = Math.min(
+          SIDEBAR_MAX_WIDTH,
+          Math.max(
+            SIDEBAR_MIN_WIDTH,
+            sidebarDrag.current.startWidth + sidebarDrag.current.startX - event.clientX,
+          ),
+        );
+        updateReadingSetting('sidebarWidth', width);
+      }
+      if (attachmentDrag.current) {
+        const drag = attachmentDrag.current;
+        setAttachmentDialog((current) =>
+          current
+            ? {
+                ...current,
+                x: Math.max(16, drag.x + event.clientX - drag.startX),
+                y: Math.max(16, drag.y + event.clientY - drag.startY),
+              }
+            : null,
+        );
+      }
     };
     const onPointerUp = () => {
       sidebarDrag.current = null;
+      attachmentDrag.current = null;
       globalThis.document.body.style.removeProperty('cursor');
       globalThis.document.body.style.removeProperty('user-select');
     };
@@ -355,8 +393,11 @@ export default function FoundationSpike() {
       ...(markerThreadsByBlock.get(item.anchor.blockId) ?? []),
       item,
     ]);
-    for (const blockId of item.anchor.selectedBlockIds) {
-      threadsByBlock.set(blockId, [...(threadsByBlock.get(blockId) ?? []), item]);
+    for (const selectedAnchor of item.anchors.length > 0 ? item.anchors : [item.anchor]) {
+      for (const blockId of selectedAnchor.selectedBlockIds) {
+        const existing = threadsByBlock.get(blockId) ?? [];
+        if (!existing.includes(item)) threadsByBlock.set(blockId, [...existing, item]);
+      }
     }
   }
 
@@ -416,9 +457,7 @@ export default function FoundationSpike() {
       setSelectionAttachments((current) =>
         event.ctrlKey && current.length > 0 ? [...current, nextText] : [nextText],
       );
-      setSelectionPreview((current) =>
-        event.ctrlKey && current ? `${current}\n${nextText}` : nextText,
-      );
+      setSelectionPreview(nextText);
       setActiveThreadId(null);
       setSelectionError('');
     } catch {
@@ -428,12 +467,13 @@ export default function FoundationSpike() {
 
   const ask = () => {
     if (!store || !question.trim()) return;
+    const anchors = selectedAnchors.length > 0 ? selectedAnchors : anchor;
     const updated = store.ask(
       documentModel,
-      anchor,
+      anchors,
       question.trim(),
       activeThreadId ?? undefined,
-      questionAttachments.length > 0 ? questionAttachments.join('\n') : undefined,
+      questionAttachments.length > 0 ? questionAttachments : undefined,
     );
     setQuestion('');
     setQuestionAttachments([]);
@@ -447,7 +487,7 @@ export default function FoundationSpike() {
   const selectThread = (thread: SourceDocThread) => {
     setActiveThreadId(thread.id);
     setAnchor(thread.unanchored ? null : thread.anchor);
-    setSelectedAnchors(thread.unanchored ? [] : [thread.anchor]);
+    setSelectedAnchors(thread.unanchored ? [] : thread.anchors);
     setSelectionPreview(thread.unanchored ? '' : thread.anchor.exactQuote);
     setSelectionAttachments(thread.unanchored ? [] : [thread.anchor.exactQuote]);
     setAnnotationPickerBlockId(null);
@@ -656,23 +696,25 @@ export default function FoundationSpike() {
     for (const thread of threads) {
       if (thread.unanchored) continue;
       if (readingSettings.annotationDisplay === 'card') continue;
-      for (const blockId of thread.anchor.selectedBlockIds) {
-        const element = globalThis.document.querySelector<HTMLElement>(
-          `[data-source-text="${blockId}"]`,
-        );
-        if (!element) continue;
-        const blockPosition = thread.anchor.selectedBlockIds.indexOf(blockId);
-        const range = domRange(
-          element,
-          blockPosition === 0 ? thread.anchor.startOffset : 0,
-          blockPosition === thread.anchor.selectedBlockIds.length - 1
-            ? thread.anchor.endOffset
-            : (element.textContent?.length ?? 0),
-        );
-        if (range) {
-          annotationRanges.push(range);
-          if (thread.id === activeThreadId || thread.id === previewedThreadId) {
-            activeAnnotationRanges.push(range.cloneRange());
+      for (const threadAnchor of thread.anchors.length > 0 ? thread.anchors : [thread.anchor]) {
+        for (const blockId of threadAnchor.selectedBlockIds) {
+          const element = globalThis.document.querySelector<HTMLElement>(
+            `[data-source-text="${blockId}"]`,
+          );
+          if (!element) continue;
+          const blockPosition = threadAnchor.selectedBlockIds.indexOf(blockId);
+          const range = domRange(
+            element,
+            blockPosition === 0 ? threadAnchor.startOffset : 0,
+            blockPosition === threadAnchor.selectedBlockIds.length - 1
+              ? threadAnchor.endOffset
+              : (element.textContent?.length ?? 0),
+          );
+          if (range) {
+            annotationRanges.push(range);
+            if (thread.id === activeThreadId || thread.id === previewedThreadId) {
+              activeAnnotationRanges.push(range.cloneRange());
+            }
           }
         }
       }
@@ -750,15 +792,17 @@ export default function FoundationSpike() {
       offset = prefix.toString().length;
     }
     const matching = blockThreads.filter((thread) => {
-      if (!thread.anchor) return false;
       if (offset === null) return true;
-      const position = thread.anchor.selectedBlockIds.indexOf(blockId);
-      const start = position === 0 ? thread.anchor.startOffset : 0;
-      const end =
-        position === thread.anchor.selectedBlockIds.length - 1
-          ? thread.anchor.endOffset
-          : (sourceText.textContent?.length ?? 0);
-      return offset >= start && offset <= end;
+      return (thread.anchors.length > 0 ? thread.anchors : [thread.anchor]).some((threadAnchor) => {
+        const position = threadAnchor.selectedBlockIds.indexOf(blockId);
+        if (position < 0) return false;
+        const start = position === 0 ? threadAnchor.startOffset : 0;
+        const end =
+          position === threadAnchor.selectedBlockIds.length - 1
+            ? threadAnchor.endOffset
+            : (sourceText.textContent?.length ?? 0);
+        return offset >= start && offset <= end;
+      });
     });
     const preferred = matching.find((thread) => thread.status === 'active') ?? matching[0];
     if (preferred) selectThread(preferred);
@@ -875,32 +919,36 @@ export default function FoundationSpike() {
               }
             >
               <span>{message.content}</span>
-              {message.attachment ? (
-                <div className='mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 text-xs'>
-                  <button
-                    type='button'
-                    className='flex w-full items-center justify-between px-2 py-1 text-left font-semibold text-amber-700'
-                    aria-expanded={expandedAttachmentIds.includes(message.id)}
-                    onClick={() =>
-                      setExpandedAttachmentIds((current) =>
-                        current.includes(message.id)
-                          ? current.filter((id) => id !== message.id)
-                          : [...current, message.id],
-                      )
-                    }
-                  >
-                    <span>原文附件</span>
-                    <span aria-hidden='true'>
-                      {expandedAttachmentIds.includes(message.id) ? '⌃' : '⌄'}
-                    </span>
-                  </button>
-                  {expandedAttachmentIds.includes(message.id) ? (
-                    <div className='max-h-24 overflow-y-auto border-t px-2 py-2 whitespace-pre-wrap'>
-                      {message.attachment}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
+              {(message.attachments ?? (message.attachment ? [message.attachment] : [])).map(
+                (attachment, index) => {
+                  const attachmentId = `${message.id}-${index}`;
+                  return (
+                    <button
+                      type='button'
+                      key={attachmentId}
+                      data-testid='message-attachment-card'
+                      className='mt-2 block w-full rounded-lg border border-white/35 bg-white/10 text-left text-xs text-white'
+                      aria-label={`查看完整附件 ${index + 1}`}
+                      onClick={() =>
+                        setAttachmentDialog({
+                          title: `原文附件 ${index + 1}`,
+                          content: attachment,
+                          x: Math.max(16, window.innerWidth / 2 - 240),
+                          y: Math.max(16, window.innerHeight / 2 - 180),
+                        })
+                      }
+                    >
+                      <span className='flex w-full items-center justify-between gap-2 px-2 py-1 font-semibold'>
+                        <span>原文附件 {index + 1}</span>
+                        <span aria-hidden='true'>↗</span>
+                      </span>
+                      <div className='border-t border-white/25 px-2 py-2 text-white'>
+                        <p className='line-clamp-3 whitespace-pre-wrap'>{attachment}</p>
+                      </div>
+                    </button>
+                  );
+                },
+              )}
             </div>
           )}
           {message.role === 'assistant' && message.citations.length > 0 ? (
@@ -1086,7 +1134,19 @@ export default function FoundationSpike() {
                 className='flex h-8 items-center justify-center px-3 text-[11px]'
                 style={{ color: muted }}
               >
-                {toolbarExpanded ? '阅读工具' : '•••'}
+                {libraryBook && documentModel.sections.length > 0 ? (
+                  <button
+                    type='button'
+                    className='pointer-events-auto rounded px-3 py-1 font-semibold hover:bg-black/5'
+                    aria-label='打开导航目录'
+                    aria-expanded={navigationOpen}
+                    onClick={() => setNavigationOpen((value) => !value)}
+                  >
+                    ☰ 目录
+                  </button>
+                ) : (
+                  '•••'
+                )}
               </div>
               <div
                 className={`border-t px-3 pb-3 pt-2 ${toolbarExpanded ? 'block' : 'hidden'}`}
@@ -1176,6 +1236,28 @@ export default function FoundationSpike() {
                         {allowRemoteImages ? '停止远程图片' : '加载远程图片'}
                       </button>
                     </>
+                  ) : null}
+                  {libraryVariants.length > 1 ? (
+                    <label className='flex items-center gap-1 text-xs'>
+                      格式
+                      <select
+                        aria-label='切换统一文章格式'
+                        className='select select-xs select-bordered'
+                        value={libraryBook?.hash ?? ''}
+                        onChange={(event) => {
+                          const next = libraryVariants.find(
+                            (candidate) => candidate.hash === event.target.value,
+                          );
+                          if (next) switchLibraryVariant(next);
+                        }}
+                      >
+                        {libraryVariants.map((variant) => (
+                          <option key={variant.hash} value={variant.hash}>
+                            {variant.format}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   ) : null}
                   <label className='ml-auto flex items-center gap-2 px-2 text-xs'>
                     <input
@@ -1290,16 +1372,52 @@ export default function FoundationSpike() {
                   <span className='w-9 text-right'>{Math.round(readingProgress)}%</span>
                 </label>
               </div>
+              {navigationOpen ? (
+                <nav
+                  aria-label='文档导航目录'
+                  className='max-h-60 overflow-y-auto border-t px-3 py-2'
+                  style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
+                >
+                  {documentModel.sections.map((section) => {
+                    const target = documentModel.blocks.find(
+                      (block) => block.sectionId === section.id,
+                    );
+                    return (
+                      <button
+                        key={section.id}
+                        type='button'
+                        className='block w-full rounded px-2 py-1 text-left text-xs hover:bg-blue-500/10'
+                        onClick={() => {
+                          if (target) {
+                            globalThis.document
+                              .querySelector(`[data-block-id="${target.id}"]`)
+                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                          setNavigationOpen(false);
+                        }}
+                      >
+                        {section.generated ? '自动生成 · ' : ''}
+                        {section.title}
+                      </button>
+                    );
+                  })}
+                </nav>
+              ) : null}
             </div>
           </div>
 
-          {importError || sourceWarnings.length > 0 ? (
+          {importError ||
+          sourceWarnings.some((warning) => !dismissedWarningCodes.includes(warning.code)) ? (
             <div
               role={importError ? 'alert' : 'status'}
               className={`sticky top-12 z-20 mx-auto mt-12 flex w-fit max-w-[calc(100%-32px)] items-center gap-2 rounded-xl px-4 py-2 text-xs shadow-lg ${importError ? 'bg-red-600 text-white' : 'border border-amber-400 bg-amber-50 text-amber-950'}`}
             >
               <span>
-                {importError || sourceWarnings.map((warning) => warning.message).join(' ')}
+                {importError ||
+                  sourceWarnings
+                    .filter((warning) => !dismissedWarningCodes.includes(warning.code))
+                    .map((warning) => warning.message)
+                    .join(' ')}
               </span>
               {libraryBook?.format === 'HTML' ? (
                 sourceWarnings.some((warning) => warning.code === 'remote-images-blocked') ? (
@@ -1311,6 +1429,21 @@ export default function FoundationSpike() {
                     加载远程图片
                   </button>
                 ) : null
+              ) : null}
+              {!importError ? (
+                <button
+                  type='button'
+                  className='ml-1 grid h-6 w-6 place-items-center rounded hover:bg-black/10'
+                  aria-label='关闭提示'
+                  title='关闭提示'
+                  onClick={() =>
+                    setDismissedWarningCodes((current) => [
+                      ...new Set([...current, ...sourceWarnings.map((warning) => warning.code)]),
+                    ])
+                  }
+                >
+                  ×
+                </button>
               ) : null}
             </div>
           ) : null}
@@ -1474,7 +1607,11 @@ export default function FoundationSpike() {
                     <span className='sr-only'>已归档</span>
                   ) : null}
                   {anchor ? (
-                    <span className='sr-only'>当前锚点 · {anchor.selectedBlockIds.length} 块</span>
+                    <span className='sr-only'>
+                      {selectedAnchors.length > 1
+                        ? `已选择 ${selectedAnchors.length} 处独立原文`
+                        : `当前锚点 · ${anchor.selectedBlockIds.length} 块`}
+                    </span>
                   ) : null}
                   {anchor ? (
                     <q data-testid='active-quote' className='sr-only'>
@@ -1552,22 +1689,41 @@ export default function FoundationSpike() {
                     <p className='text-sm font-medium'>
                       {anchor ? '针对所选原文提问' : '无锚点聊天'}
                     </p>
-                    {selectionPreview ? (
-                      <div className='relative mt-3 w-full'>
-                        <blockquote
-                          data-testid='selection-preview'
-                          className='max-h-24 w-full overflow-y-auto rounded-lg border-l-2 border-blue-500 bg-blue-500/5 px-3 py-2 pr-8 text-left text-xs leading-5'
-                        >
-                          {selectionPreview}
-                        </blockquote>
+                    {selectedAnchors.length > 0 ? (
+                      <div className='mt-3 max-h-40 w-full space-y-2 overflow-y-auto pr-1'>
+                        {selectedAnchors.map((selectedAnchor, index) => (
+                          <div
+                            key={`${selectedAnchor.blockId}-${selectedAnchor.startOffset}-${index}`}
+                            data-testid='selection-card'
+                            className='relative rounded-lg border border-blue-500/35 bg-blue-500/5 px-3 py-2 pr-8 text-left text-xs leading-5'
+                          >
+                            <span className='mb-1 block font-semibold'>选中原文 {index + 1}</span>
+                            <q className='line-clamp-3'>{selectedAnchor.exactQuote}</q>
+                            <button
+                              type='button'
+                              className='absolute right-1.5 top-1.5 h-5 w-5 rounded hover:bg-blue-500/10'
+                              aria-label={`移除选中原文 ${index + 1}`}
+                              title='移除此处选中'
+                              onClick={() => {
+                                const next = selectedAnchors.filter(
+                                  (_, anchorIndex) => anchorIndex !== index,
+                                );
+                                setSelectedAnchors(next);
+                                setAnchor(next.at(-1) ?? null);
+                                setSelectionPreview(next.at(-1)?.exactQuote ?? '');
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
                         <button
                           type='button'
-                          className='absolute right-1.5 top-1.5 h-5 w-5 rounded hover:bg-blue-500/10'
+                          className='text-xs text-blue-600 underline underline-offset-2'
                           aria-label='取消当前选中'
-                          title='取消当前选中'
                           onClick={clearSelection}
                         >
-                          ×
+                          清除全部选中
                         </button>
                       </div>
                     ) : null}
@@ -1814,6 +1970,47 @@ export default function FoundationSpike() {
           </aside>
         ) : null}
       </div>
+      {attachmentDialog ? (
+        <section
+          role='dialog'
+          aria-label='完整原文附件'
+          className='eink-bordered fixed z-[100] flex max-h-[70vh] w-[min(480px,calc(100vw-32px))] flex-col overflow-hidden rounded-xl border shadow-2xl'
+          style={{
+            left: attachmentDialog.x,
+            top: attachmentDialog.y,
+            backgroundColor: panel,
+            borderColor: dark ? '#4b5563' : '#d1d5db',
+          }}
+        >
+          <header
+            className='flex cursor-move touch-none items-center justify-between border-b px-3 py-2'
+            style={{ borderColor: dark ? '#4b5563' : '#e5e7eb' }}
+            aria-label='拖动附件窗口'
+            onPointerDown={(event) => {
+              attachmentDrag.current = {
+                startX: event.clientX,
+                startY: event.clientY,
+                x: attachmentDialog.x,
+                y: attachmentDialog.y,
+              };
+              globalThis.document.body.style.userSelect = 'none';
+            }}
+          >
+            <strong className='text-sm'>{attachmentDialog.title}</strong>
+            <button
+              type='button'
+              className='grid h-7 w-7 place-items-center rounded hover:bg-black/10'
+              aria-label='关闭完整附件'
+              onClick={() => setAttachmentDialog(null)}
+            >
+              ×
+            </button>
+          </header>
+          <div className='min-h-0 overflow-y-auto p-4 text-sm leading-6 whitespace-pre-wrap'>
+            {attachmentDialog.content}
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }
