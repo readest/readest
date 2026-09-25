@@ -39,15 +39,22 @@ const WindowOutline: React.FC = () => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let unlisten: (() => void) | undefined;
 
+    // These reads go to the window backend and can reject. Nothing awaits them, so an
+    // escaping rejection would be silent; leaving the outline down is the safe outcome.
     const measure = async (token: number) => {
-      const win = getCurrentWindow();
-      const [maximized, fullscreen] = await Promise.all([win.isMaximized(), win.isFullscreen()]);
-      if (disposed || token !== moved || maximized || fullscreen) return;
-      const { width, height } = await win.innerSize();
-      if (disposed || token !== moved) return;
-      const dpr = window.devicePixelRatio || 1;
-      setBox({ width: width / dpr, height: height / dpr });
-      setActive(true);
+      try {
+        const win = getCurrentWindow();
+        const [maximized, fullscreen] = await Promise.all([win.isMaximized(), win.isFullscreen()]);
+        if (disposed || token !== moved || maximized || fullscreen) return;
+        const { width, height } = await win.innerSize();
+        if (disposed || token !== moved) return;
+        const dpr = window.devicePixelRatio || 1;
+        setBox({ width: width / dpr, height: height / dpr });
+        setActive(true);
+      } catch {
+        // A read overtaken by a newer one must not take down the frame that one drew.
+        if (!disposed && token === moved) setActive(false);
+      }
     };
 
     const resizing = () => {
@@ -58,12 +65,14 @@ const WindowOutline: React.FC = () => {
     };
     resizing();
 
+    // If registration rejects, the page's own resize listener still drives the timer.
     getCurrentWindow()
       .onResized(resizing)
       .then((stop) => {
         if (disposed) stop();
         else unlisten = stop;
-      });
+      })
+      .catch(() => {});
     window.addEventListener('resize', resizing);
 
     return () => {

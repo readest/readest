@@ -250,4 +250,65 @@ describe('WindowOutline', () => {
 
     expect(container.querySelector('.window-outline')).toBeNull();
   });
+
+  it('says nothing when the window refuses to be read', async () => {
+    needsClientOutline = true;
+    const win = windowState();
+    // A window torn down mid-flight rejects its reads; nothing awaits them here, so
+    // an unhandled rejection would land on the page instead of a quiet outline.
+    win.isMaximized.mockImplementation(() => Promise.reject(new Error('no such window')));
+
+    const { container } = render(<WindowOutline />);
+    await settled();
+
+    expect(container.querySelector('.window-outline')).toBeNull();
+  });
+
+  it('keeps a fresh outline up when an overtaken measurement fails', async () => {
+    needsClientOutline = true;
+    const win = windowState({ width: 1544, height: 979 });
+    let reads = 0;
+    let rejectStale: ((error: Error) => void) | undefined;
+    win.innerSize.mockImplementation(() => {
+      reads += 1;
+      if (reads === 1) {
+        // Left outstanding, then rejected after the newer measurement has drawn its
+        // own frame: its failure belongs to a window size that is already history.
+        return new Promise<{ width: number; height: number }>((_, reject) => {
+          rejectStale = reject;
+        });
+      }
+      return Promise.resolve({ width: 1200, height: 800 });
+    });
+
+    const { container } = render(<WindowOutline />);
+    await settled();
+    expect(win.innerSize).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('.window-outline')).toBeNull();
+
+    drag();
+    await settled();
+    expect(win.innerSize).toHaveBeenCalledTimes(2);
+    expect(outlineStyle(container).width).toBe('1200px');
+
+    await act(async () => {
+      rejectStale?.(new Error('no such window'));
+    });
+    expect(container.querySelector('.window-outline')).not.toBeNull();
+  });
+
+  it('measures anyway when only the resize listener fails to register', async () => {
+    needsClientOutline = true;
+    const win = windowState();
+    win.onResized.mockImplementation(() => Promise.reject(new Error('no event sink')));
+
+    const { container } = render(<WindowOutline />);
+    await settled();
+
+    expect(outlineStyle(container).width).toBe('1024px');
+
+    pageResize();
+    await settled();
+    expect(win.innerSize).toHaveBeenCalledTimes(2);
+  });
 });
