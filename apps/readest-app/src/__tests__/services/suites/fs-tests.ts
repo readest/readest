@@ -18,6 +18,13 @@ export function fsTests(getService: () => AppService) {
       expect(new Uint8Array(content as ArrayBuffer)).toEqual(new Uint8Array([1, 2, 3, 4]));
     });
 
+    it('should read binary files as text', async () => {
+      const service = getService();
+      await service.writeFile('test.json', 'Data', new TextEncoder().encode('{"a":1}').buffer);
+      const content = await service.readFile('test.json', 'Data', 'text');
+      expect(content).toBe('{"a":1}');
+    });
+
     it('should check file existence', async () => {
       const service = getService();
       expect(await service.exists('missing.txt', 'Data')).toBe(false);
