@@ -2,7 +2,7 @@ import type { Book } from '@/types/book';
 
 export const LOCAL_READING_ONLY = true;
 
-export const UNIFIED_SOURCE_FORMATS = ['EPUB', 'HTML', 'TXT', 'MD'] as const;
+export const UNIFIED_SOURCE_FORMATS = ['EPUB', 'HTML', 'TXT', 'MD', 'PDF'] as const;
 
 const normalizedSourceTitle = (book: Book): string =>
   book.title.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
@@ -14,7 +14,7 @@ const normalizedSourceFileStem = (book: Book): string | null => {
   const sourceTitle = book.sourceTitle?.trim();
   if (!sourceTitle) return null;
   return sourceTitle
-    .replace(/\.(?:epub|html?|txt|md|markdown)$/i, '')
+    .replace(/\.(?:epub|html?|txt|md|markdown|pdf)$/i, '')
     .normalize('NFKC')
     .trim()
     .replace(/\s+/g, ' ')

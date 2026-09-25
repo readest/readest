@@ -22,6 +22,7 @@ import {
   type TxtEncoding,
 } from '@/services/foundation/sourceDocumentAdapter';
 import { findUnifiedSourceVariants } from '@/services/foundation/localReadingMode';
+import { loadLatexSourceSidecar } from '@/services/foundation/latexSource';
 
 import {
   SOURCE_DOC_FIXTURE,
@@ -255,7 +256,12 @@ export default function FoundationSpike() {
           const saved = JSON.parse(window.localStorage.getItem(SOURCE_PREFERENCES_KEY) ?? '{}');
           preferences = saved[book.hash] ?? {};
         } catch {}
-        const result = await parseLibrarySourceDocument(book, file, preferences);
+        const latexSidecar =
+          book.format === 'PDF' ? await loadLatexSourceSidecar(appService, book) : undefined;
+        const result = await parseLibrarySourceDocument(book, file, {
+          ...preferences,
+          latexSidecar: latexSidecar ?? undefined,
+        });
         if (cancelled) return;
         const imported = store.importDocument(result.document);
         setLibraryBook(book);

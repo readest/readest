@@ -21,7 +21,6 @@ import BookCard from './BookCard';
 import useSidebar from '../../hooks/useSidebar';
 import SearchBar from './SearchBar';
 import SearchResults from './SearchResults';
-import { latexSidecarPath } from '@/services/foundation/latexSource';
 
 const MIN_SIDEBAR_WIDTH = 0.05;
 const MAX_SIDEBAR_WIDTH = 0.45;
@@ -40,8 +39,6 @@ const SideBar = ({}) => {
   const { getView, getViewSettings } = useReaderStore();
   const isMobile = window.innerWidth < 640;
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
-  const [hasLatexSource, setHasLatexSource] = useState(false);
-  const sidebarBook = sideBarBookKey ? getBookData(sideBarBookKey)?.book : undefined;
   const {
     sideBarWidth,
     isSideBarPinned,
@@ -105,21 +102,6 @@ const SideBar = ({}) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (sidebarBook?.format !== 'PDF' || !appService) {
-      setHasLatexSource(false);
-      return;
-    }
-    setHasLatexSource(false);
-    void appService.exists(latexSidecarPath(sidebarBook), 'Books').then((exists) => {
-      if (!cancelled) setHasLatexSource(exists);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [appService, sidebarBook]);
 
   const { handleResizeStart: handleHorizontalDragStart, handleResizeKeyDown: handleDragKeyDown } =
     usePanelResize({
@@ -297,11 +279,7 @@ const SideBar = ({}) => {
             onSelectResult={handleSearchResultClick}
           />
         ) : (
-          <SidebarContent
-            bookDoc={bookDoc}
-            sideBarBookKey={sideBarBookKey!}
-            hasLatexSource={hasLatexSource}
-          />
+          <SidebarContent bookDoc={bookDoc} sideBarBookKey={sideBarBookKey!} />
         )}
       </div>
     </>

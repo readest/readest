@@ -4,7 +4,6 @@ import { MdBookmarkBorder } from 'react-icons/md';
 import { IoIosList } from 'react-icons/io';
 import { PiNotePencil } from 'react-icons/pi';
 import { LuMessageSquare } from 'react-icons/lu';
-import { LuFileCode2 } from 'react-icons/lu';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,8 +13,7 @@ import { isForcedMobileLayout } from '../../utils/mobileLayout';
 const TabNavigation: React.FC<{
   activeTab: string;
   onTabChange: (tab: string) => void;
-  hasLatexSource?: boolean;
-}> = ({ activeTab, onTabChange, hasLatexSource = false }) => {
+}> = ({ activeTab, onTabChange }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -23,13 +21,7 @@ const TabNavigation: React.FC<{
 
   const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
-  const tabs = [
-    'toc',
-    'annotations',
-    'bookmarks',
-    ...(hasLatexSource ? ['latex-source'] : []),
-    ...(aiEnabled ? ['history'] : []),
-  ];
+  const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['history'] : [])];
 
   const getTabLabel = (tab: string) => {
     switch (tab) {
@@ -41,8 +33,6 @@ const TabNavigation: React.FC<{
         return _('Bookmark');
       case 'history':
         return _('Chat');
-      case 'latex-source':
-        return '原文';
       default:
         return '';
     }
@@ -84,8 +74,6 @@ const TabNavigation: React.FC<{
               <PiNotePencil className='mx-auto' />
             ) : tab === 'bookmarks' ? (
               <MdBookmarkBorder className='mx-auto' />
-            ) : tab === 'latex-source' ? (
-              <LuFileCode2 className='mx-auto' />
             ) : (
               <LuMessageSquare className='mx-auto' />
             )}

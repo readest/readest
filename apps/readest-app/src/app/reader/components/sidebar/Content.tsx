@@ -13,13 +13,11 @@ import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
 import ChatHistoryView from './ChatHistoryView';
-import LatexSourceView from './LatexSourceView';
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;
   sideBarBookKey: string;
-  hasLatexSource?: boolean;
-}> = ({ bookDoc, sideBarBookKey, hasLatexSource = false }) => {
+}> = ({ bookDoc, sideBarBookKey }) => {
   const { setHoveredBookKey } = useReaderStore();
   const { setSideBarVisible, setSearchBarVisible } = useSidebarStore();
   const { getConfig, setConfig } = useBookDataStore();
@@ -54,16 +52,6 @@ const SidebarContent: React.FC<{
       setFade(false);
     }
   }, [aiEnabled, activeTab, targetTab]);
-
-  useEffect(() => {
-    if ((activeTab === 'latex-source' || targetTab === 'latex-source') && !hasLatexSource) {
-      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-      setActiveTab('toc');
-      setTargetTab('toc');
-      setFade(false);
-    }
-  }, [activeTab, hasLatexSource, targetTab]);
 
   const handleTabChange = (tab: string) => {
     if (activeTab === tab) {
@@ -103,8 +91,6 @@ const SidebarContent: React.FC<{
       >
         {targetTab === 'history' ? (
           <ChatHistoryView bookKey={sideBarBookKey} />
-        ) : targetTab === 'latex-source' ? (
-          <LatexSourceView bookKey={sideBarBookKey} />
         ) : (
           <OverlayScrollbarsComponent
             className='min-h-0 flex-1'
@@ -148,11 +134,7 @@ const SidebarContent: React.FC<{
           }
         }
       >
-        <TabNavigation
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          hasLatexSource={hasLatexSource}
-        />
+        <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
     </>
   );

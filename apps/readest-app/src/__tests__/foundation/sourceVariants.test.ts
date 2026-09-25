@@ -53,4 +53,11 @@ describe('unified source variants', () => {
 
     expect(findUnifiedSourceVariants([txt, epub], txt)).toHaveLength(2);
   });
+
+  it('keeps a paired PDF in the same unified workspace family', () => {
+    const pdf = { ...sourceBook('pdf', 'PDF'), sourceTitle: 'compactness.pdf' };
+    const md = { ...sourceBook('md', 'MD'), sourceTitle: 'compactness.md' };
+
+    expect(findUnifiedSourceVariants([pdf, md], pdf)).toEqual([md, pdf]);
+  });
 });
