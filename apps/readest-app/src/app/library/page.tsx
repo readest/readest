@@ -67,8 +67,7 @@ import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { getLibraryViewSettings } from '@/helpers/settings';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
-import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
-import { useOpenBookLink } from '@/hooks/useOpenBookLink';
+import { useOpenLaunchLinks } from '@/hooks/useOpenLaunchLinks';
 import { useBookshelfWidget } from '@/hooks/useBookshelfWidget';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
@@ -222,6 +221,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     getGroupName,
     checkOpenWithBooks,
     checkLastOpenBooks,
+    checkPendingLaunchLink,
     setCheckOpenWithBooks,
     setCheckLastOpenBooks,
   } = useLibraryStore();
@@ -373,8 +373,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   useAppUrlIngress();
   useOpenWithBooks();
-  useOpenAnnotationLink();
-  useOpenBookLink();
+  useOpenLaunchLinks();
   useBookshelfWidget();
   useOpenShareLink();
   useClipUrlIngress();
@@ -1915,7 +1914,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     handleLibraryNavigation(group);
   };
 
-  if (!appService || !insets || checkOpenWithBooks || checkLastOpenBooks) {
+  if (
+    !appService ||
+    !insets ||
+    checkOpenWithBooks ||
+    checkLastOpenBooks ||
+    checkPendingLaunchLink
+  ) {
     return <div className='full-height bg-base-200' />;
   }
 
