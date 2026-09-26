@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import SettingsRow from '@/components/settings/primitives/SettingsRow';
 import SettingsSelect from '@/components/settings/primitives/SettingsSelect';
 import SettingsSwitchRow from '@/components/settings/primitives/SettingsSwitchRow';
@@ -11,12 +12,15 @@ interface BookshelfGroupingSectionProps {
   onChange: (patch: Partial<BookshelfDefinition>) => void;
   /** Passing the global grouping offers "Use global grouping"; omit it for a shelf that always groups by its own axis. */
   globalGroupBy?: LibraryGroupByType;
+  /** Extra rows shown after "Group by", for settings that only make sense alongside it. */
+  children?: ReactNode;
 }
 
 export default function BookshelfGroupingSection({
   shelf,
   onChange,
   globalGroupBy,
+  children,
 }: BookshelfGroupingSectionProps) {
   const _ = useTranslation();
   const useGlobal = globalGroupBy !== undefined && shelf.useGlobalGrouping !== false;
@@ -47,6 +51,7 @@ export default function BookshelfGroupingSection({
             }
           />
         </SettingsRow>
+        {children}
       </div>
     </fieldset>
   );

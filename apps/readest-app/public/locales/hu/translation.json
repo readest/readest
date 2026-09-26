@@ -2460,5 +2460,9 @@
   "Dialogue Highlighting": "Párbeszédkiemelés",
   "Background": "Háttér",
   "Follows the theme color": "Követi a téma színét",
-  "Background Style": "Háttérstílus"
+  "Background Style": "Háttérstílus",
+  "Mosaic covers": "Mozaik borítók",
+  "Rows": "Sorok",
+  "Matching books belong to the oldest exclusive widget": "Az egyező könyvek a legrégebbi kizárólagos widgethez tartoznak",
+  "Include books from exclusive widgets": "Könyvek belefoglalása a kizárólagos widgetekből"
 }

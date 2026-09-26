@@ -6,10 +6,16 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookTransferActions } from '@/app/library/hooks/useBookTransferActions';
 import { isTauriAppPlatform } from '@/services/environment';
+import { LibraryGroupByType } from '@/types/settings';
 import { isAudiobook } from '@/utils/audiobook';
 import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
-import { parseAnnotationDeepLink, parseBookDeepLink } from '@/utils/deeplink';
+import {
+  parseAnnotationDeepLink,
+  parseBookDeepLink,
+  parseWidgetGroupDeepLink,
+  parseWidgetSettingsDeepLink,
+} from '@/utils/deeplink';
 import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
 import { isMainAppWindow } from '@/utils/window';
 import { markLaunchUrl } from '@/utils/deeplinkConsume';
@@ -51,7 +57,9 @@ const releaseLaunchLinkGate = () => useLibraryStore.getState().setCheckPendingLa
  *   readest://book/{hash}                                  a widget or Android Auto tap
  *   readest://book/{hash}/annotation/{id}?cfi=...          a highlight (also the https form
  *   readest://annotation/{hash}/{id}                        and the legacy Readwise one)
-  */
+ *   readest://widget-settings/{appWidgetId}                the widget's settings screen
+ *   readest://widget-group/{groupBy}/{groupId}             a "browse groups" tile tap
+ */
 export function useOpenLaunchLinks() {
   const _ = useTranslation();
   const router = useRouter();
@@ -137,6 +145,31 @@ export function useOpenLaunchLinks() {
         id: 'launchAnnotationUrls',
         needsLibrary: true,
         open: () => openBook(annotation.bookHash, annotation.cfi),
+      };
+    }
+    const settings = parseWidgetSettingsDeepLink(url);
+    if (settings) {
+      return {
+        id: 'launchWidgetLinkUrls',
+        needsLibrary: false,
+        open: () => router.push(`/widget-settings?appWidgetId=${settings.appWidgetId}`),
+      };
+    }
+    const group = parseWidgetGroupDeepLink(url);
+    if (group) {
+      return {
+        id: 'launchWidgetLinkUrls',
+        needsLibrary: false,
+        open: () => {
+          const axes: string[] = Object.values(LibraryGroupByType);
+          if (group.groupBy !== LibraryGroupByType.None && axes.includes(group.groupBy)) {
+            router.push(
+              `/library?groupBy=${group.groupBy}&group=${encodeURIComponent(group.groupId)}`,
+            );
+          }
+          // A group opens within the Library, which never unmounts to release the gate.
+          releaseLaunchLinkGate();
+        },
       };
     }
     return null;

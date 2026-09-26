@@ -2400,5 +2400,9 @@
   "Dialogue Highlighting": "對話高亮",
   "Background": "背景",
   "Follows the theme color": "跟隨主題顏色",
-  "Background Style": "背景樣式"
+  "Background Style": "背景樣式",
+  "Mosaic covers": "馬賽克封面",
+  "Rows": "列數",
+  "Matching books belong to the oldest exclusive widget": "符合的書籍歸入最早的獨佔小工具",
+  "Include books from exclusive widgets": "包含獨佔小工具中的書籍"
 }

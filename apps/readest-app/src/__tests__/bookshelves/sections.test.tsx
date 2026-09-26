@@ -31,6 +31,17 @@ describe('BookshelfGroupingSection', () => {
     expect(onChange).toHaveBeenCalledWith({ useGlobalGrouping: true });
   });
 
+  it('renders extra rows after "Group by", inside the section', () => {
+    render(
+      <BookshelfGroupingSection shelf={shelf} onChange={vi.fn()}>
+        <div data-testid='extra' />
+      </BookshelfGroupingSection>,
+    );
+    expect(screen.getByTestId('extra').closest('fieldset')).toBe(
+      screen.getByLabelText('Group by').closest('fieldset'),
+    );
+  });
+
   it("edits the shelf's own axis when it has no global to inherit", () => {
     const onChange = vi.fn();
     render(<BookshelfGroupingSection shelf={shelf} onChange={onChange} />);

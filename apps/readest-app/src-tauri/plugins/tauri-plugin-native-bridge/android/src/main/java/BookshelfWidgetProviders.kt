@@ -79,15 +79,13 @@ private fun bookPendingIntent(context: Context, hash: String, requestCode: Int):
     return PendingIntent.getActivity(context, requestCode, intent, flags)
 }
 
-/** A "browse groups" tile tap - the app resolves (groupBy, value) against the
- * live library to find the group's real navigation id, since native has no
- * access to that (see useOpenWidgetLink.ts). */
+/** A "browse groups" tile tap: opens the group's Library view by its id. */
 private fun groupPendingIntent(
-    context: Context, groupBy: String, value: String, requestCode: Int
+    context: Context, groupBy: String, groupId: String, requestCode: Int
 ): PendingIntent {
     val intent = Intent(
         Intent.ACTION_VIEW,
-        Uri.parse("readest://widget-group/$groupBy/${Uri.encode(value)}")
+        Uri.parse("readest://widget-group/$groupBy/${Uri.encode(groupId)}")
     ).setPackage(context.packageName)
     val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     return PendingIntent.getActivity(context, requestCode, intent, flags)
@@ -209,7 +207,7 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
                             pendingIntent = groupPendingIntent(
                                 context,
                                 item.optString("groupBy"),
-                                item.optString("value"),
+                                item.optString("id"),
                                 id * 100 + itemIndex
                             )
                         )

@@ -2460,5 +2460,9 @@
   "Dialogue Highlighting": "உரையாடல் முத்திரை",
   "Background": "பின்னணி",
   "Follows the theme color": "தீம் நிறத்தைப் பின்பற்றுகிறது",
-  "Background Style": "பின்னணி பாணி"
+  "Background Style": "பின்னணி பாணி",
+  "Mosaic covers": "மொசைக் அட்டைகள்",
+  "Rows": "வரிசைகள்",
+  "Matching books belong to the oldest exclusive widget": "பொருந்தும் புத்தகங்கள் மிகப் பழைய பிரத்யேக விட்ஜெட்டுக்குச் சொந்தமாகும்",
+  "Include books from exclusive widgets": "பிரத்யேக விட்ஜெட்டுகளில் உள்ள புத்தகங்களைச் சேர்"
 }

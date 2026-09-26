@@ -15,6 +15,45 @@ export type AnnotationLinkType = 'app' | 'web';
 const ANNOTATION_PATH_PREFIX = '/o/book/';
 
 /**
+ * Shared readest:// / https://web.readest.com URL parsing: validates the
+ * scheme and returns a uniform path-segment list, or null if neither
+ * matches. Pass `allowWebHost: false` for links only ever sent natively
+ * (widget settings/group).
+ */
+const parseReadestUrl = (
+  url: string,
+  { allowWebHost = true }: { allowWebHost?: boolean } = {},
+): { segments: string[]; searchParams: URLSearchParams } | null => {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+
+  let segments: string[];
+
+  if (parsed.protocol === 'readest:') {
+    // readest:// URLs park their first path segment in `host`, not pathname.
+    segments = [parsed.host, ...parsed.pathname.split('/')].filter(Boolean);
+  } else if (
+    allowWebHost &&
+    (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+    parsed.host === 'web.readest.com'
+  ) {
+    segments = parsed.pathname.split('/').filter(Boolean);
+
+    // The HTTPS landing page is prefixed with /o/; strip it for uniform parsing.
+    if (segments[0] !== 'o') return null;
+    segments.shift();
+  } else {
+    return null;
+  }
+
+  return { segments, searchParams: parsed.searchParams };
+};
+
+/**
  * Build the canonical HTTPS URL for an annotation. Used in markdown export
  * and Readwise sync. Mobile App Links (web.readest.com) intercept this URL
  * and open the native app; on desktop browsers it resolves to the smart
@@ -50,32 +89,11 @@ export const buildAnnotationUrl = (
  * Returns null if the URL doesn't match.
  */
 export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null => {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
+  const parsed = parseReadestUrl(url);
+  if (!parsed) return null;
+  const { segments, searchParams } = parsed;
 
-  const isCustomScheme = parsed.protocol === 'readest:';
-  const isWebHost =
-    (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
-    parsed.host === 'web.readest.com';
-  if (!isCustomScheme && !isWebHost) return null;
-
-  // For readest:// URLs the URL parser stores the first path segment in the
-  // host. Reconstruct a uniform segment list across both schemes.
-  const segments: string[] = isCustomScheme
-    ? [parsed.host, ...parsed.pathname.split('/')].filter(Boolean)
-    : parsed.pathname.split('/').filter(Boolean);
-
-  // HTTPS landing page is prefixed with /o/. Strip it for uniform parsing.
-  if (isWebHost) {
-    if (segments[0] !== 'o') return null;
-    segments.shift();
-  }
-
-  const cfiParam = parsed.searchParams.get('cfi');
+  const cfiParam = searchParams.get('cfi');
   const cfi = cfiParam ? cfiParam : undefined;
 
   // Hierarchical: book/{hash}/annotation/{id}
@@ -98,36 +116,54 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
  * parseAnnotationDeepLink and must NOT match here.
  */
 export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: boolean } | null => {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-
-  const isCustomScheme = parsed.protocol === 'readest:';
-  const isWebHost =
-    (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
-    parsed.host === 'web.readest.com';
-  if (!isCustomScheme && !isWebHost) return null;
-
-  const segments: string[] = isCustomScheme
-    ? [parsed.host, ...parsed.pathname.split('/')].filter(Boolean)
-    : parsed.pathname.split('/').filter(Boolean);
-
-  if (isWebHost) {
-    if (segments[0] !== 'o') return null;
-    segments.shift();
-  }
+  const parsed = parseReadestUrl(url);
+  if (!parsed) return null;
+  const { segments, searchParams } = parsed;
 
   if (segments.length === 2 && segments[0] === 'book' && segments[1]) {
     // `?autoplay=tts` is appended by the Android Auto cold-resume launch to ask
     // the reader to start read-aloud once the book is open. Only surface the
     // flag when set so the common shape stays `{ bookHash }`.
-    if (parsed.searchParams.get('autoplay') === 'tts') {
+    if (searchParams.get('autoplay') === 'tts') {
       return { bookHash: segments[1], autoplay: true };
     }
     return { bookHash: segments[1] };
+  }
+  return null;
+};
+
+/**
+ * Parse an incoming `readest://widget-settings/{appWidgetId}` deep link, sent
+ * by the native configure Activity to hand off to the in-app settings screen.
+ */
+export const parseWidgetSettingsDeepLink = (url: string): { appWidgetId: number } | null => {
+  const parsed = parseReadestUrl(url, { allowWebHost: false });
+  if (!parsed) return null;
+  const { segments } = parsed;
+  if (segments.length === 2 && segments[0] === 'widget-settings') {
+    const appWidgetId = Number(segments[1]);
+    if (Number.isInteger(appWidgetId)) return { appWidgetId };
+  }
+  return null;
+};
+
+/**
+ * Parse an incoming `readest://widget-group/{groupBy}/{groupId}` deep link (a
+ * "browse groups" tile tap), where `groupId` is the group's Library id.
+ */
+export const parseWidgetGroupDeepLink = (
+  url: string,
+): { groupBy: string; groupId: string } | null => {
+  const parsed = parseReadestUrl(url, { allowWebHost: false });
+  if (!parsed) return null;
+  const { segments } = parsed;
+  if (segments.length === 3 && segments[0] === 'widget-group' && segments[1] && segments[2]) {
+    try {
+      return { groupBy: segments[1], groupId: decodeURIComponent(segments[2]) };
+    } catch {
+      // Malformed percent-encoding: reject the link like any other bad input.
+      return null;
+    }
   }
   return null;
 };

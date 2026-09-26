@@ -2520,5 +2520,9 @@
   "Dialogue Highlighting": "Surlignage des dialogues",
   "Background": "Fond",
   "Follows the theme color": "Suit la couleur du thème",
-  "Background Style": "Style de fond"
+  "Background Style": "Style de fond",
+  "Mosaic covers": "Couvertures en mosaïque",
+  "Rows": "Lignes",
+  "Matching books belong to the oldest exclusive widget": "Les livres correspondants appartiennent au widget exclusif le plus ancien",
+  "Include books from exclusive widgets": "Inclure les livres des widgets exclusifs"
 }

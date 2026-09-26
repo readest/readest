@@ -285,3 +285,97 @@ describe('useOpenLaunchLinks — launch URL replayed after a reload (#6104)', ()
     expect(consumePendingTTSAutoplay('linkedBook')).toBe(false);
   });
 });
+
+const settingsUrl = (id: number) => `readest://widget-settings/${id}`;
+const groupUrl = 'readest://widget-group/series/a1b2%20c3';
+
+const mountWidget = async (label = 'main') => {
+  currentWindowLabel = label;
+  const loaded = await loadHook();
+  const view = renderHook(() => loaded.useOpenLaunchLinks());
+  await flush();
+  return { ...loaded, view };
+};
+
+describe('useOpenLaunchLinks — widget links', () => {
+  beforeEach(() => {
+    coldStartUrls = [];
+    routerPushMock.mockReset();
+    libraryState.setCheckPendingLaunchLink.mockReset();
+    libraryState.libraryLoaded = true;
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('opens the settings screen for a cold-start link, but only in the launch window', async () => {
+    coldStartUrls = [settingsUrl(7)];
+    await mountWidget('reader-0');
+    expect(routerPushMock).not.toHaveBeenCalled();
+
+    await mountWidget('main');
+    expect(routerPushMock).toHaveBeenCalledWith('/widget-settings?appWidgetId=7');
+  });
+
+  it('ignores a replayed cold-start URL, but always handles a live tap', async () => {
+    coldStartUrls = [settingsUrl(7)];
+    await mountWidget();
+    routerPushMock.mockReset();
+
+    // A fresh document re-reads the same launch URL: a replay, not a new tap.
+    await mountWidget();
+    expect(routerPushMock).not.toHaveBeenCalled();
+
+    const { eventDispatcher } = await mountWidget();
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [settingsUrl(7)] });
+    await flush();
+    expect(routerPushMock).toHaveBeenCalledWith('/widget-settings?appWidgetId=7');
+  });
+
+  it('opens a tapped group by its id, without waiting for the library', async () => {
+    libraryState.libraryLoaded = false;
+    coldStartUrls = [groupUrl];
+    await mountWidget();
+    expect(routerPushMock).toHaveBeenCalledWith('/library?groupBy=series&group=a1b2%20c3');
+  });
+
+  it.each([
+    [
+      'a group link with an unknown axis',
+      ['readest://widget-group/none/x', 'readest://widget-group/bogus/x'],
+    ],
+    [
+      'links that are not widget links',
+      ['readest://book/abc', 'https://web.readest.com/o/widget-settings/7'],
+    ],
+  ])('ignores %s', async (_label, urls) => {
+    coldStartUrls = urls;
+    await mountWidget();
+    expect(routerPushMock).not.toHaveBeenCalled();
+  });
+
+  describe('Library blank-placeholder gate', () => {
+    it('is released when no link claimed the launch', async () => {
+      await mountWidget();
+      expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
+    });
+
+    it('stays held for a settings link, which leaves the Library, until unmount', async () => {
+      coldStartUrls = [settingsUrl(7)];
+      const { view } = await mountWidget();
+      expect(libraryState.setCheckPendingLaunchLink).not.toHaveBeenCalled();
+
+      view.unmount();
+      expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
+    });
+
+    it('is released after a group tap, which opens within the Library', async () => {
+      coldStartUrls = [groupUrl];
+      await mountWidget();
+      expect(routerPushMock).toHaveBeenCalled();
+      expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
+    });
+  });
+});

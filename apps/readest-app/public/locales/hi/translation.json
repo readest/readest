@@ -2460,5 +2460,9 @@
   "Dialogue Highlighting": "संवाद हाइलाइटिंग",
   "Background": "पृष्ठभूमि",
   "Follows the theme color": "थीम रंग का अनुसरण करता है",
-  "Background Style": "पृष्ठभूमि शैली"
+  "Background Style": "पृष्ठभूमि शैली",
+  "Mosaic covers": "मोज़ेक कवर",
+  "Rows": "पंक्तियाँ",
+  "Matching books belong to the oldest exclusive widget": "मेल खाने वाली पुस्तकें सबसे पुराने विशिष्ट विजेट में जाती हैं",
+  "Include books from exclusive widgets": "विशिष्ट विजेट की पुस्तकें शामिल करें"
 }
