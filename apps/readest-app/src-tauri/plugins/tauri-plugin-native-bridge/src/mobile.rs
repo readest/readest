@@ -152,6 +152,14 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn move_task_to_back(&self) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("move_task_to_back", ())
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn lock_screen_orientation(
         &self,
         payload: LockScreenOrientationRequest,

@@ -983,6 +983,14 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
               return
           }
       }
+    // Sends the app to the background, same as pressing the system Home
+    // button.
+    @Command
+    fun move_task_to_back(invoke: Invoke) {
+        activity.moveTaskToBack(true)
+        invoke.resolve()
+    }
+
       invoke.resolve()
     }
 

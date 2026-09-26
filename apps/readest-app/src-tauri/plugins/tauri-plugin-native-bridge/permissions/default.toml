@@ -12,6 +12,7 @@ permissions = [
   "allow-get-status-bar-height",
   "allow-get-sys-fonts-list",
   "allow-intercept-keys",
+  "allow-move-task-to-back",
   "allow-lock-screen-orientation",
   "allow-iap-is-available",
   "allow-iap-initialize",

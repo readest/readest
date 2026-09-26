@@ -125,6 +125,10 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn move_task_to_back(&self) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn lock_screen_orientation(
         &self,
         _payload: LockScreenOrientationRequest,

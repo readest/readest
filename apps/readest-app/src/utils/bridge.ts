@@ -222,6 +222,12 @@ export async function interceptKeys(request: InterceptKeysRequest): Promise<void
   });
 }
 
+/** Android only: sends the app to the background, same as pressing the
+ * system Home button. */
+export async function moveTaskToBack(): Promise<void> {
+  await invoke('plugin:native-bridge|move_task_to_back');
+}
+
 export async function lockScreenOrientation(request: LockScreenRequest): Promise<void> {
   await invoke('plugin:native-bridge|lock_screen_orientation', {
     payload: request,

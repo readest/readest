@@ -117,6 +117,11 @@ pub(crate) async fn intercept_keys<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn move_task_to_back<R: Runtime>(app: AppHandle<R>) -> Result<()> {
+    app.native_bridge().move_task_to_back()
+}
+
+#[command]
 pub(crate) async fn lock_screen_orientation<R: Runtime>(
     app: AppHandle<R>,
     payload: LockScreenOrientationRequest,

@@ -10,6 +10,7 @@ const COMMANDS: &[&str] = &[
     "get_status_bar_height",
     "get_sys_fonts_list",
     "intercept_keys",
+    "move_task_to_back",
     "lock_screen_orientation",
     "iap_is_available",
     "iap_initialize",
