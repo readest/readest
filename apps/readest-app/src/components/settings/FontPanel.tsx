@@ -48,13 +48,6 @@ interface FontFaceProps {
   className?: string;
   family: string;
   label: string;
-  /**
-   * Optional secondary line under the label stating what the setting affects.
-   * Wraps to two lines instead of the single-line clamp `SettingsRow` uses:
-   * the monospace scope is a whole phrase, and ellipsizing it on a phone
-   * ("…code, kbd an…") drops the one thing the line exists to say.
-   */
-  description?: string;
   options: string[];
   moreOptions?: string[];
   selected: string;
@@ -74,7 +67,6 @@ const FontFace = ({
   className,
   family,
   label,
-  description,
   options,
   moreOptions,
   selected,
@@ -84,32 +76,18 @@ const FontFace = ({
   const _ = useTranslation();
   return (
     <div
-      className={clsx('flex min-h-14 items-center justify-between gap-3 pe-4', className)}
+      className={clsx('flex h-14 items-center justify-between pe-4', className)}
       data-setting-id={settingId}
     >
-      {/* flex-1 (not just min-w-0) so this column — and only this column — yields
-          width, and the description wraps inside it. The dropdown needs shrink-0
-          on top of that: its button cannot shrink (daisyUI `.btn` is
-          flex-shrink: 0), but the wrapper around it can, and a squeezed wrapper
-          ellipsizes the selected font name ("Conso…"). */}
-      <div className='flex min-w-0 flex-1 flex-col'>
-        <SettingLabel className='min-w-10'>{label}</SettingLabel>
-        {description && (
-          <span className='text-base-content/65 line-clamp-2 text-[0.8em] leading-snug'>
-            {description}
-          </span>
-        )}
-      </div>
-      <div className='shrink-0'>
-        <FontDropdown
-          family={family}
-          options={options.map((option) => ({ option, label: _(option) }))}
-          moreOptions={moreOptions?.map((option) => ({ option, label: option })) ?? []}
-          selected={selected}
-          onSelect={onSelect}
-          onGetFontFamily={handleFontFaceFont}
-        />
-      </div>
+      <SettingLabel className='min-w-10'>{label}</SettingLabel>
+      <FontDropdown
+        family={family}
+        options={options.map((option) => ({ option, label: _(option) }))}
+        moreOptions={moreOptions?.map((option) => ({ option, label: option })) ?? []}
+        selected={selected}
+        onSelect={onSelect}
+        onGetFontFamily={handleFontFaceFont}
+      />
     </div>
   );
 };
@@ -408,7 +386,6 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         <FontFace
           family='monospace'
           label={_('Monospace Font')}
-          description={_('Only applies to pre, code, kbd and .code')}
           options={[...customFonts, ...MONOSPACE_FONTS]}
           moreOptions={sysFonts}
           selected={monospaceFont}

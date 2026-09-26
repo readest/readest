@@ -147,7 +147,6 @@
   "Notebook": "สมุดบันทึก",
   "Excerpts": "ข้อความที่เลือก",
   "Notes": "บันทึก",
-  "Only applies to pre, code, kbd and .code": "ใช้กับ pre, code, kbd และ .code เท่านั้น",
   "Add your notes here...": "เพิ่มบันทึกที่นี่...",
   "{{time}} min left in chapter": "เหลือ {{time}} นาทีในบท",
   "{{count}} pages left in chapter_other": "<1>เหลือ </1><0>{{count}}</0><1> หน้าในบท</1>",

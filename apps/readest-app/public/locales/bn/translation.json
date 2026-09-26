@@ -176,7 +176,6 @@
   "Notebook": "নোটবুক",
   "Excerpts": "উদ্ধৃতি",
   "Notes": "নোট",
-  "Only applies to pre, code, kbd and .code": "শুধুমাত্র pre, code, kbd এবং .code-এর ক্ষেত্রে প্রযোজ্য",
   "Add your notes here...": "এখানে আপনার নোট যোগ করুন...",
   "{{time}} min left in chapter": "অধ্যায়ে {{time}} মিনিট বাকি",
   "{{count}} pages left in chapter_one": "<1>অধ্যায়ে ১ পৃষ্ঠা বাকি</1>",
