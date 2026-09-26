@@ -571,20 +571,14 @@ export const createBookGroups = (
     return createValueGroups(
       activeBooks,
       'status',
-      // `readingStatus` is an optional annotation, not a lifecycle field:
-      // nothing stamps it at import, and opening a book *clears* 'unread' back
-      // to `undefined`. Grouping on it alone therefore partitions badly — on a
-      // real 750-book library it dropped 414 never-opened books out of the
-      // shelf entirely and left "Unread" holding the 1 book that had been
-      // manually re-marked. So derive both ends instead: 'reading' from the
-      // predicate the recently-read shelf and home-screen widget already share
-      // (#1010 asks for exactly that shelf), and 'unread' as the resting state
-      // for a book with no status and no progress. Every book lands in exactly
-      // one bucket and nothing is left ungrouped.
-      (book) =>
-        isCurrentlyReadingBook(book)
-          ? ['reading' satisfies ReadingStatus]
-          : [book.readingStatus ?? ('unread' satisfies ReadingStatus)],
+      // `readingStatus` alone is unreliable - it's never stamped at import and
+      // clears back to `undefined` once a book is opened - so derive 'reading'
+      // from isCurrentlyReadingBook, falling back to the stored status or 'unread'.
+      (book) => [
+        (isCurrentlyReadingBook(book)
+          ? 'reading'
+          : (book.readingStatus ?? 'unread')) satisfies ReadingStatus,
+      ],
       (status) => READING_STATUS_LABELS[status as ReadingStatus] ?? status,
     );
   }

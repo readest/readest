@@ -43,6 +43,7 @@ import {
   navigateToLogin,
   navigateToProfile,
   navigateToLibrary,
+  popNavigationOrGoToLibrary,
   navigateToResetPassword,
   navigateToUpdatePassword,
   redirectToLibrary,
@@ -253,6 +254,28 @@ describe('navigateToLibrary', () => {
 
     // Should still use the provided queryParams since sessionStorage has nothing
     expect(router.replace).toHaveBeenCalledWith('/library?sort=date', undefined);
+  });
+});
+
+describe('popNavigationOrGoToLibrary', () => {
+  test('pops history when there is more than one entry', () => {
+    Object.defineProperty(window, 'history', { value: { length: 2 }, configurable: true });
+
+    const router = mockRouter();
+    popNavigationOrGoToLibrary(router);
+
+    expect(router.back).toHaveBeenCalledTimes(1);
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  test('floors at the library when there is no history to pop', () => {
+    Object.defineProperty(window, 'history', { value: { length: 1 }, configurable: true });
+
+    const router = mockRouter();
+    popNavigationOrGoToLibrary(router);
+
+    expect(router.replace).toHaveBeenCalledWith('/library', undefined);
+    expect(router.back).not.toHaveBeenCalled();
   });
 });
 
