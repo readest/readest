@@ -291,6 +291,11 @@ export interface BookStyle {
   highlightOpacity: number;
   codeHighlighting: boolean;
   codeLanguage: string;
+  dialogueHighlight: boolean;
+  dialogueHighlightCustomColor: boolean;
+  dialogueHighlightColor: string;
+  dialogueHighlightCustomTextColor: boolean;
+  dialogueHighlightTextColor: string;
   userStylesheet: string;
   userUIStylesheet: string;
 
