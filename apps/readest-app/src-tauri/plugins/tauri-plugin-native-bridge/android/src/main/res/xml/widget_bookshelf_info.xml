@@ -6,4 +6,4 @@
   android:targetCellWidth="4" android:targetCellHeight="2"
   android:resizeMode="horizontal|vertical"
   android:updatePeriodMillis="0" android:widgetCategory="home_screen"
-  android:initialLayout="@layout/widget_reading" />
+  android:initialLayout="@layout/widget_bookshelf" />

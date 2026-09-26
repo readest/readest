@@ -461,9 +461,9 @@ export async function clearSecureItem(request: GetSecureItemRequest): Promise<Se
   return invoke<SecureItemResponse>('plugin:native-bridge|clear_secure_item', { payload: request });
 }
 
-// ── Reading widget ────────────────────────────────────────────────────────
+// ── Bookshelf widget ────────────────────────────────────────────────────────
 
-export interface ReadingWidgetBookPayload {
+export interface BookshelfWidgetBookPayload {
   hash: string;
   title: string;
   author: string;
@@ -471,20 +471,20 @@ export interface ReadingWidgetBookPayload {
   coverPath: string;
 }
 
-export interface ReadingWidgetTts {
+export interface BookshelfWidgetTts {
   active: boolean;
   playing: boolean;
 }
 
-export interface UpdateReadingWidgetRequest {
-  books: ReadingWidgetBookPayload[];
+export interface UpdateBookshelfWidgetRequest {
+  books: BookshelfWidgetBookPayload[];
   sectionTitle: string;
   emptyTitle: string;
-  tts?: ReadingWidgetTts;
+  tts?: BookshelfWidgetTts;
 }
 
-export async function updateReadingWidget(request: UpdateReadingWidgetRequest): Promise<void> {
-  await invoke('plugin:native-bridge|update_reading_widget', { payload: request });
+export async function updateBookshelfWidget(request: UpdateBookshelfWidgetRequest): Promise<void> {
+  await invoke('plugin:native-bridge|update_bookshelf_widget', { payload: request });
 }
 
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────

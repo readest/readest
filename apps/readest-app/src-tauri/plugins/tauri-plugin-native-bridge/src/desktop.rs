@@ -426,7 +426,10 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
-    pub fn update_reading_widget(&self, _payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+    pub fn update_bookshelf_widget(
+        &self,
+        _payload: UpdateBookshelfWidgetRequest,
+    ) -> crate::Result<()> {
         // Home-screen widgets are mobile-only; desktop is a no-op.
         Ok(())
     }

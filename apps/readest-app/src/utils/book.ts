@@ -412,7 +412,7 @@ export const getCurrentPage = (book: Book, progress: BookProgress) => {
  * manually-marked-unread books. A book actively being read has `readingStatus`
  * either `undefined` (cleared from 'unread' on first open) or `'reading'`, both
  * of which pass. Shared by the library's recently-read shelf and the
- * home-screen reading widget so the two surfaces stay in sync.
+ * home-screen bookshelf widget so the two surfaces stay in sync.
  */
 export const isCurrentlyReadingBook = (book: Book): boolean =>
   !book.deletedAt &&

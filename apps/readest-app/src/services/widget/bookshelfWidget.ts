@@ -2,10 +2,10 @@ import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
 import { useLibraryStore } from '@/store/libraryStore';
 import { getCoverFilename, isCurrentlyReadingBook } from '@/utils/book';
-import { updateReadingWidget } from '@/utils/bridge';
-import type { ReadingWidgetTts } from '@/utils/bridge';
+import { updateBookshelfWidget } from '@/utils/bridge';
+import type { BookshelfWidgetTts } from '@/utils/bridge';
 
-export interface ReadingWidgetBook {
+export interface BookshelfWidgetBook {
   hash: string;
   title: string;
   author: string;
@@ -13,11 +13,11 @@ export interface ReadingWidgetBook {
   coverPath: string;
 }
 
-export interface ReadingWidgetPayload {
-  books: ReadingWidgetBook[];
+export interface BookshelfWidgetPayload {
+  books: BookshelfWidgetBook[];
   sectionTitle: string;
   emptyTitle: string;
-  tts?: ReadingWidgetTts;
+  tts?: BookshelfWidgetTts;
 }
 
 export const computeReadingPercent = (book: Book): number => {
@@ -28,29 +28,29 @@ export const computeReadingPercent = (book: Book): number => {
   return Math.min(100, Math.max(0, Math.round((current / total) * 100)));
 };
 
-export const selectReadingWidgetBooks = (library: Book[], limit = 3): Book[] =>
+export const selectBookshelfWidgetBooks = (library: Book[], limit = 3): Book[] =>
   library
     .filter(isCurrentlyReadingBook)
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
     .slice(0, limit);
 
-export interface ReadingWidgetLabels {
+export interface BookshelfWidgetLabels {
   sectionTitle: string;
   emptyTitle: string;
 }
 
-export const buildReadingWidgetPayload = async (
+export const buildBookshelfWidgetPayload = async (
   books: Book[],
   appService: AppService,
-  labels: ReadingWidgetLabels,
-  tts?: ReadingWidgetTts,
-): Promise<ReadingWidgetPayload> => {
+  labels: BookshelfWidgetLabels,
+  tts?: BookshelfWidgetTts,
+): Promise<BookshelfWidgetPayload> => {
   // resolveFilePath('', 'Books') returns the absolute Books dir (no trailing
   // slash) by delegating to fs.getPrefix internally. Both platforms use `/`,
   // so plain string concatenation is correct and keeps the builder
   // unit-testable without the Tauri path plugin.
   const booksDir = (await appService.resolveFilePath('', 'Books')).replace(/\/+$/, '');
-  const widgetBooks: ReadingWidgetBook[] = books.map((book) => ({
+  const widgetBooks: BookshelfWidgetBook[] = books.map((book) => ({
     hash: book.hash,
     title: book.title ?? '',
     author: book.author ?? '',
@@ -65,18 +65,18 @@ export const buildReadingWidgetPayload = async (
   };
 };
 
-export const refreshReadingWidget = async (
+export const refreshBookshelfWidget = async (
   appService: AppService,
-  labels: ReadingWidgetLabels,
-  tts?: ReadingWidgetTts,
+  labels: BookshelfWidgetLabels,
+  tts?: BookshelfWidgetTts,
 ): Promise<void> => {
   if (!appService.isMobileApp) return;
   const library = useLibraryStore.getState().library;
-  const selected = selectReadingWidgetBooks(library);
-  const payload = await buildReadingWidgetPayload(selected, appService, labels, tts);
+  const selected = selectBookshelfWidgetBooks(library);
+  const payload = await buildBookshelfWidgetPayload(selected, appService, labels, tts);
   try {
-    await updateReadingWidget(payload);
+    await updateBookshelfWidget(payload);
   } catch (err) {
-    console.warn('Failed to update reading widget', err);
+    console.warn('Failed to update bookshelf widget', err);
   }
 };

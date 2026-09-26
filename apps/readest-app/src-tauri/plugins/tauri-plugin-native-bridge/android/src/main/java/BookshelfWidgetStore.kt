@@ -15,8 +15,8 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.math.max
 
-object ReadingWidgetStore {
-    const val PREFS = "reading_widget"
+object BookshelfWidgetStore {
+    const val PREFS = "bookshelf_widget"
     const val KEY_SNAPSHOT = "snapshot"
     private const val THUMB_WIDTH = 240
     private const val THUMB_HEIGHT = 360
@@ -155,7 +155,7 @@ object ReadingWidgetStore {
     private fun notifyWidgets(context: Context) {
         // Null on builds without app widget support (TV, automotive).
         val mgr = AppWidgetManager.getInstance(context) ?: return
-        val cls = ReadingWidgetProvider::class.java
+        val cls = BookshelfWidgetProvider::class.java
         val ids = mgr.getAppWidgetIds(ComponentName(context, cls))
         if (ids.isNotEmpty()) {
             val intent = android.content.Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)

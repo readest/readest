@@ -348,11 +348,11 @@ pub(crate) async fn refresh_eink_screen<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn update_reading_widget<R: Runtime>(
+pub(crate) async fn update_bookshelf_widget<R: Runtime>(
     app: AppHandle<R>,
-    payload: UpdateReadingWidgetRequest,
+    payload: UpdateBookshelfWidgetRequest,
 ) -> Result<()> {
-    app.native_bridge().update_reading_widget(payload)
+    app.native_bridge().update_bookshelf_widget(payload)
 }
 
 /// Snapshot a region of the calling webview and return it as binary PNG

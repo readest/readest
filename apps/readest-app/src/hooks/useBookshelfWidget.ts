@@ -1,20 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
-import { refreshReadingWidget } from '@/services/widget/readingWidget';
+import { refreshBookshelfWidget } from '@/services/widget/bookshelfWidget';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { useTranslation } from './useTranslation';
 
 /**
- * Publish the home-screen reading-widget snapshot. The widget is only visible
+ * Publish the home-screen bookshelf-widget snapshot. The widget is only visible
  * while the app is backgrounded, so we publish (1) once the library is loaded,
  * (2) whenever the app goes to the background, (3) immediately on a TTS
  * playback-state change (so controls appear/disappear), and (4) throttled on
  * TTS position advances so the progress percent stays live while speaking.
  * Mounted on both the library and reader pages.
  */
-export function useReadingWidget() {
+export function useBookshelfWidget() {
   const _ = useTranslation();
   const { appService } = useEnv();
   const libraryLoaded = useLibraryStore((s) => s.libraryLoaded);
@@ -34,7 +34,7 @@ export function useReadingWidget() {
 
     const publishNow = () => {
       const tts = ttsRef.current;
-      void refreshReadingWidget(
+      void refreshBookshelfWidget(
         appService,
         labels,
         tts.active ? { active: true, playing: tts.playing } : undefined,

@@ -13,11 +13,11 @@ import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * Instrumented tests for the reading widget thumbnail writer (run on an
+ * Instrumented tests for the bookshelf widget thumbnail writer (run on an
  * Android device/emulator via connectedAndroidTest).
  */
 @RunWith(AndroidJUnit4::class)
-class ReadingWidgetStoreTest {
+class BookshelfWidgetStoreTest {
     private val ctx: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
@@ -30,7 +30,7 @@ class ReadingWidgetStoreTest {
         return file
     }
 
-    private fun thumbnailFile(hash: String) = File(ReadingWidgetStore.coversDir(ctx), "$hash.png")
+    private fun thumbnailFile(hash: String) = File(BookshelfWidgetStore.coversDir(ctx), "$hash.png")
 
     /** Asserts the thumbnail exists and decodes to the 240x360 widget size. */
     private fun assertThumbnailWritten(hash: String) {
@@ -58,7 +58,7 @@ class ReadingWidgetStoreTest {
         val hash = "regression2x3"
         try {
             // Pre-fix: throws IllegalArgumentException. Post-fix: writes the PNG.
-            ReadingWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
             assertThumbnailWritten(hash)
         } finally {
             srcFile.delete()
@@ -83,7 +83,7 @@ class ReadingWidgetStoreTest {
         try {
             // Pre-fix: throws IllegalArgumentException("width must be > 0").
             // Post-fix: returns without writing; a 1px cover is not a cover.
-            ReadingWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
             assertFalse("degenerate cover should not leave a thumbnail", out.exists())
         } finally {
             srcFile.delete()
@@ -103,7 +103,7 @@ class ReadingWidgetStoreTest {
         val out = thumbnailFile(hash)
         out.writeBytes(byteArrayOf(1, 2, 3))
         try {
-            ReadingWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
             assertFalse("1px-tall decode should not leave a thumbnail", out.exists())
         } finally {
             srcFile.delete()
@@ -117,7 +117,7 @@ class ReadingWidgetStoreTest {
         val srcFile = writeCoverPng(3, 2, "widget-cover-3x2.png")
         val hash = "boundary3x2"
         try {
-            ReadingWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
             assertThumbnailWritten(hash)
         } finally {
             srcFile.delete()
@@ -131,7 +131,7 @@ class ReadingWidgetStoreTest {
         val srcFile = writeCoverPng(300, 900, "widget-cover-tall.png")
         val hash = "tall300x900"
         try {
-            ReadingWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
             assertThumbnailWritten(hash)
         } finally {
             srcFile.delete()
@@ -148,7 +148,7 @@ class ReadingWidgetStoreTest {
         val out = thumbnailFile(hash)
         out.writeBytes(byteArrayOf(1, 2, 3))
         try {
-            ReadingWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
             assertFalse("undecodable cover should drop the stale thumbnail", out.exists())
         } finally {
             srcFile.delete()
@@ -160,11 +160,11 @@ class ReadingWidgetStoreTest {
     @Test
     fun writeThumbnail_hashEscapingCoversDir_isIgnored() {
         val srcFile = writeCoverPng(240, 360, "widget-cover-escape.png")
-        val coversDir = ReadingWidgetStore.coversDir(ctx)
+        val coversDir = BookshelfWidgetStore.coversDir(ctx)
         val outside = File(coversDir.parentFile, "escaped.png")
         outside.writeBytes(byteArrayOf(1, 2, 3))
         try {
-            ReadingWidgetStore.writeThumbnail(ctx, "../escaped", srcFile.absolutePath, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, "../escaped", srcFile.absolutePath, 42)
             assertTrue("file outside the covers dir must be left alone", outside.exists())
             assertEquals(3, outside.length())
         } finally {
@@ -181,7 +181,7 @@ class ReadingWidgetStoreTest {
         out.writeBytes(byteArrayOf(1, 2, 3))
         try {
             val missing = File(ctx.cacheDir, "widget-cover-does-not-exist.png").absolutePath
-            ReadingWidgetStore.writeThumbnail(ctx, hash, missing, 42)
+            BookshelfWidgetStore.writeThumbnail(ctx, hash, missing, 42)
             assertFalse("missing cover should drop the stale thumbnail", out.exists())
         } finally {
             out.delete()

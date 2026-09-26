@@ -540,7 +540,7 @@ pub struct RefreshEinkScreenResponse {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReadingWidgetBook {
+pub struct BookshelfWidgetBook {
     pub hash: String,
     pub title: String,
     pub author: String,
@@ -550,19 +550,19 @@ pub struct ReadingWidgetBook {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReadingWidgetTts {
+pub struct BookshelfWidgetTts {
     pub active: bool,
     pub playing: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateReadingWidgetRequest {
-    pub books: Vec<ReadingWidgetBook>,
+pub struct UpdateBookshelfWidgetRequest {
+    pub books: Vec<BookshelfWidgetBook>,
     pub section_title: String,
     pub empty_title: String,
     #[serde(default)]
-    pub tts: Option<ReadingWidgetTts>,
+    pub tts: Option<BookshelfWidgetTts>,
 }
 
 /// Region of the webview to snapshot for the mesh page-curl (#555),

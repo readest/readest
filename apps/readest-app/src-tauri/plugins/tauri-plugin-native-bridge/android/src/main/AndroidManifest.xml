@@ -22,14 +22,14 @@
             android:name="com.readest.native_bridge.LookupChoiceReceiver"
             android:exported="false" />
         <receiver
-            android:name="com.readest.native_bridge.ReadingWidgetProvider"
+            android:name="com.readest.native_bridge.BookshelfWidgetProvider"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_reading_info" />
+                android:resource="@xml/widget_bookshelf_info" />
         </receiver>
     </application>
 </manifest>

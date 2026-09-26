@@ -479,9 +479,12 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn update_reading_widget(&self, payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+    pub fn update_bookshelf_widget(
+        &self,
+        payload: UpdateBookshelfWidgetRequest,
+    ) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin("update_reading_widget", payload)
+            .run_mobile_plugin("update_bookshelf_widget", payload)
             .map_err(Into::into)
     }
 }

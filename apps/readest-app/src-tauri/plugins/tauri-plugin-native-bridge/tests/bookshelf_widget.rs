@@ -1,4 +1,4 @@
-use tauri_plugin_native_bridge::UpdateReadingWidgetRequest;
+use tauri_plugin_native_bridge::UpdateBookshelfWidgetRequest;
 
 #[test]
 fn deserializes_camel_case_payload() {
@@ -7,7 +7,7 @@ fn deserializes_camel_case_payload() {
       "sectionTitle": "Continue reading",
       "emptyTitle": "Your books will appear here"
     }"#;
-    let req: UpdateReadingWidgetRequest = serde_json::from_str(json).unwrap();
+    let req: UpdateBookshelfWidgetRequest = serde_json::from_str(json).unwrap();
     assert_eq!(req.books.len(), 1);
     assert_eq!(req.books[0].percent, 72);
     assert_eq!(req.books[0].cover_path, "/x/h1/cover.png");
@@ -23,7 +23,7 @@ fn deserializes_tts_field_when_present() {
       "emptyTitle": "E",
       "tts": {"active": true, "playing": false}
     }"#;
-    let req: UpdateReadingWidgetRequest = serde_json::from_str(json).unwrap();
+    let req: UpdateBookshelfWidgetRequest = serde_json::from_str(json).unwrap();
     let tts = req.tts.expect("tts should be Some");
     assert_eq!(tts.active, true);
     assert_eq!(tts.playing, false);
@@ -36,6 +36,6 @@ fn tts_is_none_when_absent() {
       "sectionTitle": "S",
       "emptyTitle": "E"
     }"#;
-    let req: UpdateReadingWidgetRequest = serde_json::from_str(json).unwrap();
+    let req: UpdateBookshelfWidgetRequest = serde_json::from_str(json).unwrap();
     assert!(req.tts.is_none());
 }

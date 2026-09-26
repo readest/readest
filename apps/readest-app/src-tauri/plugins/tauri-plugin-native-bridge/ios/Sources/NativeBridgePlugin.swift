@@ -1993,7 +1993,7 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["success": false])
   }
 
-  @objc public func update_reading_widget(_ invoke: Invoke) {
+  @objc public func update_bookshelf_widget(_ invoke: Invoke) {
     guard let args = try? invoke.parseArgs(UpdateReadingWidgetRequestArgs.self) else {
       return invoke.reject("Failed to parse arguments")
     }

@@ -150,7 +150,7 @@ class PurchaseProductRequestArgs {
 }
 
 @InvokeArg
-class UpdateReadingWidgetBookArgs {
+class UpdateBookshelfWidgetBookArgs {
     var hash: String = ""
     var title: String = ""
     var author: String = ""
@@ -167,14 +167,14 @@ class CaptureWebviewRegionArgs {
 }
 
 @InvokeArg
-class UpdateReadingWidgetTtsArgs {
+class UpdateBookshelfWidgetTtsArgs {
     var active: Boolean = false
     var playing: Boolean = false
 }
 
 @InvokeArg
-class UpdateReadingWidgetRequestArgs {
-    var books: List<UpdateReadingWidgetBookArgs> = emptyList()
+class UpdateBookshelfWidgetRequestArgs {
+    var books: List<UpdateBookshelfWidgetBookArgs> = emptyList()
     var sectionTitle: String = ""
     var emptyTitle: String = ""
     // Nullable — omitted from the snapshot when the caller does not send a tts object.
@@ -182,7 +182,7 @@ class UpdateReadingWidgetRequestArgs {
     // field is set to null when the key is absent from the JSON payload, which is the
     // expected behavior. If deserialization issues arise at runtime, fall back to two
     // flat optional fields (ttsActive: Boolean? / ttsPlaying: Boolean?).
-    var tts: UpdateReadingWidgetTtsArgs? = null
+    var tts: UpdateBookshelfWidgetTtsArgs? = null
 }
 
 data class ProductData(
@@ -1464,8 +1464,8 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     @Command
-    fun update_reading_widget(invoke: Invoke) {
-        val args = invoke.parseArgs(UpdateReadingWidgetRequestArgs::class.java)
+    fun update_bookshelf_widget(invoke: Invoke) {
+        val args = invoke.parseArgs(UpdateBookshelfWidgetRequestArgs::class.java)
         pluginScope.launch {
             withContext(Dispatchers.IO) {
                 val books = org.json.JSONArray()
@@ -1475,7 +1475,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     // snapshot is republished on every library load, so one
                     // bad cover would crash the app on every launch.
                     try {
-                        ReadingWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
+                        BookshelfWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
                     } catch (e: Exception) {
                         Log.w("NativeBridgePlugin", "widget thumbnail failed for ${book.hash}", e)
                     }
@@ -1499,7 +1499,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                             .put("playing", tts.playing)
                     )
                 }
-                ReadingWidgetStore.writeSnapshot(activity, snapshot.toString())
+                BookshelfWidgetStore.writeSnapshot(activity, snapshot.toString())
             }
             if (isActive) invoke.resolve()
         }

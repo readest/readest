@@ -26,13 +26,13 @@ private fun bookAt(snapshot: JSONObject, index: Int): JSONObject? {
 }
 
 private fun setCover(context: Context, views: RemoteViews, viewId: Int, hash: String) {
-    val file = File(ReadingWidgetStore.coversDir(context), "$hash.png")
+    val file = File(BookshelfWidgetStore.coversDir(context), "$hash.png")
     val bitmap = if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
     if (bitmap != null) views.setImageViewBitmap(viewId, bitmap)
     else views.setImageViewResource(viewId, android.R.color.transparent)
 }
 
-class ReadingWidgetProvider : AppWidgetProvider() {
+class BookshelfWidgetProvider : AppWidgetProvider() {
     private val coverIds = intArrayOf(R.id.cover0, R.id.cover1, R.id.cover2)
 
     override fun onUpdate(context: Context, mgr: AppWidgetManager, ids: IntArray) {
@@ -46,7 +46,7 @@ class ReadingWidgetProvider : AppWidgetProvider() {
     }
 
     private fun updateWidget(context: Context, mgr: AppWidgetManager, id: Int) {
-        val snapshot = ReadingWidgetStore.readSnapshot(context)
+        val snapshot = BookshelfWidgetStore.readSnapshot(context)
         val opts = mgr.getAppWidgetOptions(id)
         val minW = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 110)
         val minH = opts.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
@@ -56,7 +56,7 @@ class ReadingWidgetProvider : AppWidgetProvider() {
         val cols = ((minW + 30) / 70).coerceAtLeast(1).coerceAtMost(3)
         val rows = ((minH + 30) / 70).coerceAtLeast(1)
 
-        val views = RemoteViews(context.packageName, R.layout.widget_reading)
+        val views = RemoteViews(context.packageName, R.layout.widget_bookshelf)
 
         val count = snapshot.optJSONArray("books")?.length() ?: 0
         if (count == 0) {
