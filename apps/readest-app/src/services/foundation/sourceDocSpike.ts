@@ -25,14 +25,6 @@ export interface SourceDocBlock {
   semanticText: string;
   renderSelector: string;
   locator?: SourceDocLocator;
-  latexContext?: {
-    sourceFile: string;
-    sourceText: string;
-    startLine: number;
-    endLine: number;
-    label: string;
-    mappingQuality: 'page' | 'unmapped';
-  };
 }
 
 export interface SourceDocFixture {
@@ -621,16 +613,8 @@ export function generateStubAnswer(
     FIXED_REPLIES.length - 1,
     Math.floor(random() * FIXED_REPLIES.length),
   );
-  const latexContexts = anchors.flatMap((selectedAnchor) =>
-    document.blocks
-      .filter((item) => selectedAnchor.selectedBlockIds.includes(item.id) && item.latexContext)
-      .map((item) => item.latexContext!),
-  );
-  const latexNote = latexContexts.length
-    ? ` 已自动带入对应 LaTeX 原文上下文（${latexContexts.map((context) => `${context.sourceFile}:${context.startLine}`).join('、')}），回答应同时参考 PDF 选区与源码语义。源码片段：${latexContexts.map((context) => context.sourceText).join('；')}`
-    : '';
   return {
-    content: `${FIXED_REPLIES[replyIndex]!}${latexNote}`,
+    content: FIXED_REPLIES[replyIndex]!,
     citations: [
       {
         blockId: selected.id,

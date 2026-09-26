@@ -31,13 +31,13 @@ const book = (format: Book['format'], hash = `hash-${format.toLowerCase()}`): Bo
 describe('source document adapters', () => {
   beforeEach(() => documentOpen.mockReset());
 
-  it('registers every unified reading format, including PDF', () => {
+  it('registers the first-batch source formats only', () => {
     expect(
       ['MD', 'TXT', 'HTML', 'EPUB'].every((format) =>
         supportsAiReadingWorkspace(format as Book['format']),
       ),
     ).toBe(true);
-    expect(supportsAiReadingWorkspace('PDF')).toBe(true);
+    expect(supportsAiReadingWorkspace('PDF')).toBe(false);
   });
 
   it('detects a UTF-16 BOM and keeps duplicate TXT paragraphs at distinct source lines', async () => {
@@ -113,9 +113,6 @@ describe('source document adapters', () => {
     );
     expect(full.document.blocks.some((block) => block.semanticText.includes('首页'))).toBe(true);
     expect(full.htmlMode).toBe('full');
-    expect(full.document.blocks.find((block) => block.type === 'table')?.sourceText).toContain(
-      '| --- |',
-    );
   });
 
   it('bridges reflowable EPUB spine sections to unified blocks and CFI locators', async () => {
@@ -151,63 +148,6 @@ describe('source document adapters', () => {
       spineIndex: 0,
       sectionCfi: 'epubcfi(/6/2)',
     });
-    expect(destroy).toHaveBeenCalledOnce();
-  });
-
-  it('maps PDF page text into the shared annotation document with LaTeX context', async () => {
-    const destroy = vi.fn();
-    const pageDoc = new DOMParser().parseFromString(
-      '<!doctype html><body><div class="textLayer">若 K 是紧致空间，f 连续，则取得最大值。</div></body>',
-      'text/html',
-    );
-    documentOpen.mockResolvedValue({
-      format: 'PDF',
-      book: {
-        metadata: { title: 'PDF 阅读版' },
-        rendition: { layout: 'pre-paginated' },
-        sections: [{ createDocument: vi.fn(async () => pageDoc) }],
-        destroy,
-      },
-    });
-
-    const result = await parseLibrarySourceDocument(
-      book('PDF'),
-      new File(['pdf'], 'compactness.pdf', { type: 'application/pdf' }),
-      {
-        latexSidecar: {
-          version: 1,
-          title: '紧致性源码',
-          sourceFile: 'compactness.tex',
-          rawSource: '',
-          pdf: { name: 'compactness.pdf', contentHash: 'pdf-hash' },
-          source: { name: 'compactness.tex', contentHash: 'tex-hash' },
-          mapping: { quality: 'page', reason: '未提供 SyncTeX 映射文件' },
-          createdAt: 1,
-          blocks: [
-            {
-              id: 'theorem-1',
-              kind: 'theorem',
-              label: '定理',
-              semanticText: '若 K 是紧致空间，f 连续，则取得最大值。',
-              sourceText: '\\begin{theorem}若 K 是紧致空间，f 连续，则取得最大值。\\end{theorem}',
-              sourceFile: 'compactness.tex',
-              startLine: 12,
-              endLine: 14,
-              locationQuality: 'page',
-            },
-          ],
-        },
-      },
-    );
-
-    expect(result.document.sourceFormat).toBe('source_doc');
-    expect(result.document.blocks[0]?.latexContext).toMatchObject({
-      sourceFile: 'compactness.tex',
-      startLine: 12,
-      label: '定理',
-      mappingQuality: 'page',
-    });
-    expect(result.warnings[0]?.message).toContain('统一阅读工作台');
     expect(destroy).toHaveBeenCalledOnce();
   });
 

@@ -68,33 +68,6 @@ describe('SOURCE_DOC foundation spike', () => {
     ).toBe(true);
   });
 
-  it('adds matched LaTeX source context to an answer for a PDF selection', () => {
-    const pdfDocument = {
-      ...SOURCE_DOC_FIXTURE,
-      blocks: SOURCE_DOC_FIXTURE.blocks.map((block, index) =>
-        index === 1
-          ? {
-              ...block,
-              latexContext: {
-                sourceFile: 'compactness.tex',
-                sourceText: '\\begin{theorem}紧致性\\end{theorem}',
-                startLine: 12,
-                endLine: 14,
-                label: '定理',
-                mappingQuality: 'page' as const,
-              },
-            }
-          : block,
-      ),
-    };
-    const block = pdfDocument.blocks[1]!;
-    const anchor = createSelectionAnchor(block, 0, 3);
-    const answer = generateStubAnswer(pdfDocument, anchor, '这段 PDF 文字对应什么源码？');
-
-    expect(answer.content).toContain('compactness.tex:12');
-    expect(answer.content).toContain('LaTeX 原文上下文');
-  });
-
   it('persists and restores a complete thread', () => {
     const store = new SourceDocSpikeStore(localStorage);
     const block = SOURCE_DOC_FIXTURE.blocks[1]!;

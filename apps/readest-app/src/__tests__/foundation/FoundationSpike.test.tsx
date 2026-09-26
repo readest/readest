@@ -282,29 +282,6 @@ describe('foundation spike page', () => {
     expect(screen.queryByText(/文字显示异常/)).toBeNull();
   });
 
-  it('keeps the document directory beside the other toolbar actions', async () => {
-    window.history.replaceState({}, '', '/foundation-spike?book=library-txt');
-    const txtBook: Book = {
-      hash: 'library-txt',
-      format: 'TXT',
-      title: '长文本',
-      author: '',
-      createdAt: 1,
-      updatedAt: 1,
-    };
-    libraryAppService.loadLibraryBooks.mockResolvedValue([txtBook]);
-    libraryAppService.loadBookContent.mockResolvedValue({
-      book: txtBook,
-      file: new File(['第一章\n\n正文'], 'book.txt'),
-    });
-    render(<FoundationSpike />);
-
-    await screen.findByText('正文');
-    fireEvent.mouseEnter(screen.getByLabelText('阅读工具栏'));
-    const directory = await screen.findByRole('button', { name: '打开导航目录' });
-    expect(directory.closest('[aria-label="阅读工具栏操作"]')).not.toBeNull();
-  });
-
   it('loads all unified article variants and switches formats independently', async () => {
     window.history.replaceState({}, '', '/foundation-spike?book=library-txt');
     const books: Book[] = [

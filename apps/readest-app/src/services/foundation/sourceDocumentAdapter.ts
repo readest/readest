@@ -11,7 +11,6 @@ import type {
   SourceDocSection,
 } from './sourceDocSpike';
 import { parseMarkdownDocument } from './sourceDocSpike';
-import type { LatexSourceSidecar, LatexSourceBlock } from './latexSource';
 
 export type TxtEncoding = 'utf-8' | 'utf-16le' | 'utf-16be' | 'gb18030' | 'big5' | 'shift_jis';
 export type HtmlImportMode = 'article' | 'full';
@@ -42,7 +41,6 @@ export interface SourceDocumentParseOptions {
   txtEncoding?: TxtEncoding;
   htmlMode?: HtmlImportMode;
   allowRemoteImages?: boolean;
-  latexSidecar?: LatexSourceSidecar;
 }
 
 export interface SourceDocumentParseResult {
@@ -152,26 +150,6 @@ const markdownForElement = (element: Element, type: SourceDocBlockType, text: st
   if (element.matches('img')) {
     const source = element.getAttribute('src') ?? '';
     return source ? `![${text.replace(/[\[\]]/g, '')}](${source})` : text;
-  }
-  if (element.matches('table')) {
-    const rows = Array.from(element.querySelectorAll('tr')).map((row) =>
-      Array.from(row.querySelectorAll('th, td'))
-        .map((cell) => (cell.textContent ?? '').replace(/\s+/g, ' ').trim())
-        .filter(Boolean),
-    );
-    const width = Math.max(0, ...rows.map((row) => row.length));
-    if (width > 0) {
-      const normalized = rows.map((row) => [
-        ...row,
-        ...Array.from({ length: width - row.length }, () => ''),
-      ]);
-      const [first = Array.from({ length: width }, () => ''), ...rest] = normalized;
-      return [
-        `| ${first.join(' | ')} |`,
-        `| ${Array.from({ length: width }, () => '---').join(' | ')} |`,
-        ...rest.map((row) => `| ${row.join(' | ')} |`),
-      ].join('\n');
-    }
   }
   return sourceTextForBlock(type, text);
 };
@@ -549,120 +527,11 @@ const markdownAdapter: SourceDocumentAdapter = {
   },
 };
 
-const normalizedWords = (value: string): Set<string> =>
-  new Set(
-    value
-      .toLocaleLowerCase()
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .split(/\s+/)
-      .filter((word) => word.length > 1),
-  );
-
-const matchLatexBlock = (
-  text: string,
-  blocks: LatexSourceBlock[],
-  used: Set<string>,
-): LatexSourceBlock | undefined => {
-  const words = normalizedWords(text);
-  if (words.size === 0) return undefined;
-  let best: { block: LatexSourceBlock; score: number } | undefined;
-  for (const block of blocks) {
-    if (used.has(block.id)) continue;
-    const sourceWords = normalizedWords(block.semanticText);
-    const overlap = [...words].filter((word) => sourceWords.has(word)).length;
-    const score = overlap / Math.max(words.size, sourceWords.size);
-    if (score >= 0.18 && (!best || score > best.score)) best = { block, score };
-  }
-  if (best) used.add(best.block.id);
-  return best?.block;
-};
-
-const pdfAdapter: SourceDocumentAdapter = {
-  format: 'source_doc',
-  capabilities: { ...COMMON_CAPABILITIES, supportsReflow: true },
-  async parse(file, options) {
-    const { book, format } = await new DocumentLoader(file).open();
-    try {
-      if (format !== 'PDF') throw new Error('文件不是有效的 PDF');
-      const { id, versionId, contentHash } = documentIds(
-        'source_doc',
-        options.documentIdentity,
-        options.latexSidecar?.pdf.contentHash ?? file.name,
-      );
-      const sections: SourceDocSection[] = [];
-      const blocks: SourceDocBlock[] = [];
-      const usedLatexBlocks = new Set<string>();
-      for (const [pageIndex, section] of book.sections.entries()) {
-        const doc = await section.createDocument();
-        const text = doc.body.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-        if (!text) continue;
-        const sectionId = `${versionId}-section-${pageIndex}`;
-        sections.push({
-          id: sectionId,
-          title: `第 ${pageIndex + 1} 页`,
-          ordinal: sections.length,
-          level: 1,
-          locator: { kind: 'html', domPath: `.pdf-page-${pageIndex}` },
-        });
-        const pageBlock: SourceDocBlock = {
-          id: `${versionId}-block-${pageIndex}-${stableHash(text)}`,
-          sectionId,
-          ordinal: blocks.length,
-          type: 'paragraph',
-          sourceText: text,
-          semanticText: text,
-          renderSelector: `${versionId}-block-${pageIndex}`,
-          locator: { kind: 'html', domPath: `.pdf-page-${pageIndex}` },
-        };
-        const latexBlock = options.latexSidecar
-          ? matchLatexBlock(text, options.latexSidecar.blocks, usedLatexBlocks)
-          : undefined;
-        if (latexBlock && options.latexSidecar) {
-          pageBlock.latexContext = {
-            sourceFile: latexBlock.sourceFile,
-            sourceText: latexBlock.sourceText,
-            startLine: latexBlock.startLine,
-            endLine: latexBlock.endLine,
-            label: latexBlock.label,
-            mappingQuality: options.latexSidecar.mapping.quality,
-          };
-        }
-        blocks.push(pageBlock);
-      }
-      if (!blocks.length) throw new Error('PDF 中没有可提取的文字');
-      return {
-        document: {
-          id,
-          versionId,
-          title: options.title || file.name.replace(/\.pdf$/i, ''),
-          sourceName: file.name,
-          sourceFormat: 'source_doc',
-          contentHash,
-          capabilities: this.capabilities,
-          sections,
-          blocks,
-        },
-        warnings: options.latexSidecar
-          ? [
-              {
-                code: 'fixed-layout',
-                message: 'PDF 文字已进入统一阅读工作台；选区会自动带入匹配的 LaTeX 原文上下文。',
-              },
-            ]
-          : [],
-      };
-    } finally {
-      await book.destroy?.();
-    }
-  },
-};
-
 const ADAPTERS: Partial<Record<BookFormat, SourceDocumentAdapter>> = {
   MD: markdownAdapter,
   TXT: txtAdapter,
   HTML: htmlAdapter,
   EPUB: epubAdapter,
-  PDF: pdfAdapter,
 };
 
 export const getSourceDocumentAdapter = (format: BookFormat): SourceDocumentAdapter | null =>
