@@ -3,6 +3,7 @@ import {
   buildRemotePayload,
   parseRemotePayload,
   parseRemoteLibraryIndex,
+  stripDeviceLocalFields,
 } from '@/services/sync/file/wire';
 import type { Book, BookConfig } from '@/types/book';
 
@@ -112,5 +113,11 @@ describe('wire envelope (frozen)', () => {
       JSON.stringify({ schemaVersion: 1, books: [book], updatedAt: 5 }),
     );
     expect(legacy?.uploadedHashes).toBeUndefined();
+  });
+
+  // An offline Audiobookshelf download lives on this device only (#6256).
+  test('stripDeviceLocalFields drops the offline-download stamp', () => {
+    const stripped = stripDeviceLocalFields({ ...book, format: 'ABS', absDownloadedAt: 7 });
+    expect(stripped).not.toHaveProperty('absDownloadedAt');
   });
 });

@@ -121,6 +121,25 @@ describe('cloudService', () => {
         expect(mockFs.removeFile).not.toHaveBeenCalled();
       });
 
+      test('removes an offline Audiobookshelf download and its stamp (#6256)', async () => {
+        const book = createMockBook({
+          format: 'ABS',
+          filePath: makeAbsFilePath('srv1', 'item1'),
+          downloadedAt: null,
+          absDownloadedAt: 12345,
+        });
+        await deleteBook(mockFs, book, 'local');
+
+        expect(mockFs.removeDir).toHaveBeenCalledWith(`${book.hash}/abs-offline`, 'Books', true);
+        expect(book.absDownloadedAt).toBeNull();
+      });
+
+      test('leaves the folders of other formats alone', async () => {
+        await deleteBook(mockFs, createMockBook(), 'local');
+
+        expect(mockFs.removeDir).not.toHaveBeenCalled();
+      });
+
       test('only deletes book file, not cover (local action)', async () => {
         const book = createMockBook();
         await deleteBook(mockFs, book, 'local');

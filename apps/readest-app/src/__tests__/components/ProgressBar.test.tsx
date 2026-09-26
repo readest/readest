@@ -7,6 +7,10 @@ import type { BookProgress, ViewSettings } from '@/types/book';
 import type { TOCItem } from '@/libs/document';
 
 const saveViewSettings = vi.fn();
+let medianPageDurationSecs: number | null = null;
+vi.mock('@/hooks/useMedianPageDurationSecs', () => ({
+  useMedianPageDurationSecs: () => medianPageDurationSecs,
+}));
 
 let currentViewSettings: ViewSettings;
 let currentProgress: BookProgress | null;
@@ -98,6 +102,7 @@ afterEach(() => {
 
 beforeEach(() => {
   saveViewSettings.mockClear();
+  medianPageDurationSecs = null;
   currentAppService = { isMobile: false, hasSafeAreaInset: false };
   currentProgress = null;
   currentBookData = { isFixedLayout: false };
@@ -511,5 +516,130 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
     const info = container.querySelector('.progressinfo') as HTMLElement;
     expect(container.querySelector('.progress-pill')).toBeNull();
     expect(info.classList.contains('mix-blend-difference')).toBe(true);
+  });
+});
+
+describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
+  const setup = (page: number, href: string) => {
+    currentViewSettings = { ...baseSettings, showRemainingTime: true, showRemainingPages: true };
+    currentProgress = {
+      ...makeProgress(page, 98),
+      sectionHref: href,
+      section: { current: 0, total: 1 },
+      pageinfo: { current: page, next: page + 2, total: 98 },
+    };
+    currentRenderer = { page: 13, pages: 43 };
+    currentSectionFractions = [0, 1];
+    medianPageDurationSecs = 60;
+    currentBookData = {
+      isFixedLayout: false,
+      bookDoc: {
+        toc: [0, 32, 64].map((start, i) => ({
+          id: i,
+          index: 0,
+          href: `body.xhtml#chapter${i + 1}`,
+          label: `Chapter ${i + 1}`,
+          location: { current: start, next: start, total: 98 },
+        })),
+      },
+    };
+  };
+
+  it('stops at the next TOC chapter inside the same spine file', () => {
+    setup(30, 'body.xhtml#chapter1');
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '2 min left in chapter',
+    );
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '1 pages left in chapter',
+    );
+  });
+
+  it('resets on a TOC boundary and returns to a small value when navigating back', () => {
+    setup(32, 'body.xhtml#chapter2');
+    const { container, rerender } = renderProgressBar();
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '32 min left in chapter',
+    );
+    setup(30, 'body.xhtml#chapter1');
+    rerender(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={0}
+        contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '2 min left in chapter',
+    );
+  });
+
+  it('does not inflate remaining screen pages when rounded location spans shrink', () => {
+    setup(1, 'body.xhtml#chapter1');
+    currentRenderer = { page: 1, pages: 65 };
+    currentProgress!.pageinfo.next = 3;
+    const { container, rerender } = renderProgressBar();
+    const props = {
+      bookKey: 'book-1',
+      horizontalGap: 0,
+      contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+      gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+    };
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '21 pages left in chapter',
+    );
+    currentProgress!.pageinfo = { current: 3, next: 4, total: 98 };
+    currentRenderer.page = 2;
+    rerender(<ProgressBar {...props} />);
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '20 pages left in chapter',
+    );
+    currentProgress!.pageinfo = { current: 30, next: 30, total: 98 };
+    rerender(<ProgressBar {...props} />);
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '2 pages left in chapter',
+    );
+  });
+
+  it('counts to the book end for the last chapter', () => {
+    setup(96, 'body.xhtml#chapter3');
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '2 min left in chapter',
+    );
+  });
+
+  it('uses nested TOC boundaries and ignores duplicate chapter starts', () => {
+    setup(30, 'body.xhtml#chapter1');
+    const toc = currentBookData!.bookDoc!.toc!;
+    currentBookData!.bookDoc!.toc = [
+      { ...toc[0]!, subitems: [{ ...toc[0]!, href: 'body.xhtml#part1' }, toc[1]!, toc[2]!] },
+    ];
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '2 min left in chapter',
+    );
+  });
+
+  it('uses the spine time estimate until TOC locations are available', () => {
+    setup(30, 'body.xhtml#chapter1');
+    currentBookData!.bookDoc!.toc = [];
+    currentProgress!.timeinfo.section = 10;
+    medianPageDurationSecs = null;
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '10 min left in chapter',
+    );
+  });
+
+  it('does not change the time when font size changes the number of screen pages', () => {
+    setup(30, 'body.xhtml#chapter1');
+    currentRenderer = { page: 26, pages: 86 };
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '2 min left in chapter',
+    );
   });
 });

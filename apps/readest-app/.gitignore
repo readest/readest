@@ -64,7 +64,8 @@ src-tauri/gen
 # local dev overrides (personal signing, etc.)
 src-tauri/tauri.*.local.json
 
-# vendor
+# vendor: only what the reader fetches by URL at runtime. Modules the bundler
+# imports resolve straight from packages/ (see vendor-aliases-outside-public.test.ts).
 /public/vendor
 
 # docs

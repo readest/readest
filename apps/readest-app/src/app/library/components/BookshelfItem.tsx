@@ -14,81 +14,18 @@ import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { buildDownloadLadder, isCalibreBook } from '@/utils/calibre';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
-import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import { Book, BooksGroup, ReadingStatus } from '@/types/book';
 import {
   getBookContextMenuItemIds,
   type BookContextMenuItemId,
 } from '@/app/library/utils/libraryUtils';
-import { md5Fingerprint } from '@/utils/md5';
 import { isTauriAppPlatform } from '@/services/environment';
 import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
 import BookContextMenuPopup, { type BookContextMenuItem } from './BookContextMenuPopup';
 import { useOpenBook } from '../hooks/useOpenBook';
-
-export const generateBookshelfItems = (
-  books: Book[],
-  parentGroupName: string,
-): (Book | BooksGroup)[] => {
-  const groupsMap = new Map<string, BooksGroup>();
-
-  for (const book of books) {
-    if (book.deletedAt) continue;
-
-    const groupName = book.groupName || BOOK_UNGROUPED_NAME;
-    if (
-      parentGroupName &&
-      groupName !== parentGroupName &&
-      !groupName.startsWith(parentGroupName + '/')
-    ) {
-      continue;
-    }
-
-    const relativePath = parentGroupName ? groupName.slice(parentGroupName.length + 1) : groupName;
-    // Get the immediate child group name (or empty if book is directly in parent)
-    const slashIndex = relativePath.indexOf('/');
-    const immediateChild = slashIndex > 0 ? relativePath.slice(0, slashIndex) : relativePath;
-    // Determine if this book belongs directly to the parent group
-    const isDirectChild =
-      groupName === parentGroupName || (groupName === BOOK_UNGROUPED_NAME && !parentGroupName);
-    // Build the full group name for this level
-    const fullGroupName = isDirectChild
-      ? BOOK_UNGROUPED_NAME
-      : parentGroupName
-        ? `${parentGroupName}/${immediateChild}`
-        : immediateChild;
-
-    const mapKey = fullGroupName;
-    const existingGroup = groupsMap.get(mapKey);
-    if (existingGroup) {
-      existingGroup.books.push(book);
-      existingGroup.updatedAt = Math.max(existingGroup.updatedAt, book.updatedAt);
-    } else {
-      groupsMap.set(mapKey, {
-        id: isDirectChild ? BOOK_UNGROUPED_ID : md5Fingerprint(fullGroupName),
-        name: fullGroupName,
-        displayName: isDirectChild ? BOOK_UNGROUPED_NAME : immediateChild,
-        books: [book],
-        updatedAt: book.updatedAt,
-      });
-    }
-  }
-
-  for (const group of groupsMap.values()) {
-    group.books.sort((a, b) => b.updatedAt - a.updatedAt);
-  }
-
-  const ungroupedGroup = groupsMap.get(BOOK_UNGROUPED_NAME);
-  const ungroupedBooks = ungroupedGroup?.books || [];
-  const groupedBooks = Array.from(groupsMap.values()).filter(
-    (group) => group.name !== BOOK_UNGROUPED_NAME,
-  );
-
-  return [...ungroupedBooks, ...groupedBooks].sort((a, b) => b.updatedAt - a.updatedAt);
-};
 
 // A native popup blocks Tauri's main thread until the menu is dismissed and
 // holds the webview's resources table lock for that whole time, while
@@ -149,6 +86,7 @@ interface BookshelfItemProps {
   mode: LibraryViewModeType;
   item: Book | BooksGroup;
   coverFit: LibraryCoverFitType;
+  skeuomorphicCovers?: boolean;
   isSelectMode: boolean;
   itemSelected: boolean;
   transferProgress: number | null;
@@ -172,6 +110,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   mode,
   item,
   coverFit,
+  skeuomorphicCovers,
   isSelectMode,
   itemSelected,
   transferProgress,
@@ -308,6 +247,19 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           eventDispatcher.dispatch('show-share-dialog', { book });
         },
       },
+      offlineDownload: {
+        text: _('Download for Offline'),
+        action: async () => {
+          // The library page owns the premium gate (useAbsOfflineDownload).
+          eventDispatcher.dispatch('abs-offline-download', { book });
+        },
+      },
+      offlineRemove: {
+        text: _('Remove Offline Download'),
+        action: async () => {
+          eventDispatcher.dispatch('abs-offline-remove', { book });
+        },
+      },
       sendNearby: {
         text: _('Send to Nearby Device'),
         action: async () => {
@@ -324,6 +276,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     };
     const items = getBookContextMenuItemIds(book, {
       localSend: isTauriAppPlatform() && isLocalSendEnabled(),
+      absOffline: isTauriAppPlatform(),
     }).map((id) => itemOptions[id]);
 
     // Calibre books carry every format the server advertises — offer each one
@@ -420,7 +373,6 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     };
   }, [item, itemSelected, isSelectMode, settings.localBooksDir, _]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSelectItem = useCallback(
     throttle(() => {
       if (!isSelectMode) {
@@ -432,7 +384,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         toggleSelection((item as BooksGroup).id);
       }
     }, 100),
-    [isSelectMode],
+    [isSelectMode, item, handleSetSelectMode, toggleSelection],
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -539,6 +491,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               mode={mode}
               book={item}
               coverFit={coverFit}
+              skeuomorphicCovers={skeuomorphicCovers}
               isSelectMode={isSelectMode}
               bookSelected={itemSelected}
               transferProgress={transferProgress}
@@ -551,6 +504,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
             <GroupItem
               mode={mode}
               group={item}
+              coverFit={coverFit}
+              skeuomorphicCovers={skeuomorphicCovers}
               isSelectMode={isSelectMode}
               groupSelected={itemSelected}
             />

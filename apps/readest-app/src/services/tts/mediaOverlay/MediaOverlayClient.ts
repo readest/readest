@@ -21,7 +21,7 @@
 // presents those files as one timeline on top of the same per-platform player.
 
 import type { BookDoc } from '@/libs/document';
-import { HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
+import { BlobAudioClock, HtmlAudioClock } from '@/services/audiobook/AudiobookClock';
 import { getOSPlatform, stubTranslation as _ } from '@/utils/misc';
 import { parseSSMLMarks } from '@/utils/ssml';
 import type { TTSCapabilities, TTSClient, TTSMessageEvent } from '../TTSClient';
@@ -103,6 +103,11 @@ export interface NarrationAudioSource {
   // clock. Takes precedence over the single-file resolvers when it returns
   // tracks.
   resolveTracks?: (href: string) => Promise<NarrationTrack[] | null>;
+  // Fetches one track's bytes, for a server whose audio a media element cannot
+  // load from its URL at all (BookOrbit sends `Cross-Origin-Resource-Policy:
+  // same-origin`). The track list then carries paths rather than URLs, and the
+  // composite plays them from blobs, one at a time.
+  loadTrack?: (path: string) => Promise<Blob>;
 }
 
 const seekClock = async (audio: NarrationClock, seconds: number): Promise<void> => {
@@ -257,7 +262,12 @@ export class MediaOverlayClient implements TTSClient {
         player = nativeTrackPlayer(this.#player, href);
       } else {
         this.#releaseAudio();
-        player = new HtmlAudioClock();
+        // A source with a blob loader may still resolve real URLs (BookOrbit
+        // does when the media proxy is up), and those stream and seek, so the
+        // blob clock is only for the tracks that are not URLs.
+        const loadTrack = this.#source.loadTrack;
+        const streamable = tracks.every((track) => /^https?:\/\//.test(track.url));
+        player = loadTrack && !streamable ? new BlobAudioClock(loadTrack) : new HtmlAudioClock();
       }
       const clock = new MultiTrackNarrationClock(tracks, player);
       await clock.setRate(this.#rate);

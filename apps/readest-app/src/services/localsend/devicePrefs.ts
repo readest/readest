@@ -13,20 +13,20 @@ const ALIAS_KEY = 'readest-localsend-alias';
 export const DEFAULT_ALIAS_NAMED_KEY = _("{{name}}'s Readest");
 
 /**
- * Whether this device runs the LocalSend service. Defaults to false (opt-in).
+ * Whether this device runs the LocalSend service. Defaults to true.
  *
- * Deliberately opt-in, not on-by-default: starting the service joins a
- * multicast group and binds a LAN listener, which makes iOS raise its Local
- * Network permission prompt (and macOS its firewall dialog) the first time the
- * app runs. Spending that prompt at first launch, on a user who has never
- * heard of Nearby BookDrop, risks a sticky decline that then breaks the
- * feature for good. The service starts when the user turns it on.
+ * Starting the service joins a multicast group and binds a LAN listener, so
+ * the first launch spends the iOS Local Network permission prompt (and the
+ * macOS firewall dialog) before the user has heard of Nearby BookDrop. That
+ * cost buys discoverability: a peer that is off is a peer nobody finds, and
+ * the feature only works when both ends are running. Turning it off in
+ * Settings stops the service.
  */
 export function isLocalSendEnabled(): boolean {
   try {
-    return localStorage.getItem(ENABLED_KEY) === 'true';
+    return localStorage.getItem(ENABLED_KEY) !== 'false';
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -34,7 +34,7 @@ export function setLocalSendEnabled(enabled: boolean): void {
   try {
     localStorage.setItem(ENABLED_KEY, enabled ? 'true' : 'false');
   } catch {
-    /* localStorage unavailable — the default (disabled) stands */
+    /* localStorage unavailable — the default (enabled) stands */
   }
 }
 

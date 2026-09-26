@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "आपके KOReader और Readest डिवाइसों को सिंक रखता है।"
 
+msgid "Downloading %1 of %2…"
+msgstr "%2 में से %1 डाउनलोड हो रहा है…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB डाउनलोड हो गए"
+
+msgid "No downloads in progress."
+msgstr "कोई डाउनलोड जारी नहीं है।"
+
+msgid "Run in background"
+msgstr "पृष्ठभूमि में चलाएँ"
+
+msgid "Cancel download"
+msgstr "डाउनलोड रद्द करें"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "डाउनलोड रद्द किया गया। %2 में से %1 डाउनलोड हुई।"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 में से %1 डाउनलोड हुई (%3 छोड़ी गईं)।"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 में से %1 डाउनलोड हुई।"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "डाउनलोड सक्षम करने के लिए पहले फ़ाइल प्रबंधक में होम फ़ोल्डर सेट करें।"
+
+msgid "No books to download."
+msgstr "डाउनलोड करने के लिए कोई पुस्तक नहीं है।"
+
 msgid "Library view"
 msgstr "लाइब्रेरी दृश्य"
 
@@ -68,8 +98,14 @@ msgstr "आरोही"
 msgid "Actions"
 msgstr "क्रियाएँ"
 
+msgid "Sync now"
+msgstr "अभी सिंक करें"
+
 msgid "Download all books"
 msgstr "सभी पुस्तकें डाउनलोड करें"
+
+msgid "Download progress"
+msgstr "डाउनलोड की प्रगति"
 
 msgid "Rescan library"
 msgstr "लाइब्रेरी पुनः स्कैन करें"
@@ -104,6 +140,12 @@ msgstr "लाइब्रेरी में खोजें"
 msgid "Search title or author"
 msgstr "शीर्षक या लेखक खोजें"
 
+msgid "Books synced"
+msgstr "पुस्तकें सिंक हुईं"
+
+msgid "Books sync failed"
+msgstr "पुस्तकें सिंक विफल"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "पूर्ण लाइब्रेरी रेंडरिंग के लिए Cover Browser प्लगइन आवश्यक है। सादे सूची पर वापस जा रहे हैं।"
 
@@ -116,18 +158,6 @@ msgstr "इस पुस्तक को Readest से डाउनलोड �
 msgid "Download"
 msgstr "डाउनलोड"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "डाउनलोड सक्षम करने के लिए पहले फ़ाइल प्रबंधक में होम फ़ोल्डर सेट करें।"
-
-msgid "Downloading…"
-msgstr "डाउनलोड हो रहा है…"
-
-msgid "Cloud copy unavailable."
-msgstr "क्लाउड प्रति उपलब्ध नहीं है।"
-
-msgid "Download failed."
-msgstr "डाउनलोड विफल।"
-
 msgid "No cover available on Readest."
 msgstr "Readest पर कवर उपलब्ध नहीं है।"
 
@@ -137,20 +167,8 @@ msgstr "कवर डाउनलोड विफल।"
 msgid "Could not delete the file."
 msgstr "फ़ाइल हटाई नहीं जा सकी।"
 
-msgid "No books to download."
-msgstr "डाउनलोड करने के लिए कोई पुस्तक नहीं है।"
-
-msgid "Downloading %1 of %2…"
-msgstr "%2 में से %1 डाउनलोड हो रहा है…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "डाउनलोड रद्द किया गया। %2 में से %1 डाउनलोड हुई।"
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 में से %1 डाउनलोड हुई (%3 छोड़ी गईं)।"
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 में से %1 डाउनलोड हुई।"
+msgid "Download group"
+msgstr "समूह डाउनलोड करें"
 
 msgid "Removing from cloud…"
 msgstr "क्लाउड से हटाया जा रहा है…"
@@ -287,23 +305,14 @@ msgstr "अभी आँकड़े पुश करें"
 msgid "Pull stats now"
 msgstr "अभी आँकड़े पुल करें"
 
-msgid "Push books now"
-msgstr "अभी पुस्तकें पुश करें"
-
-msgid "Pull books now"
-msgstr "अभी पुस्तकें पुल करें"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop से प्राप्त करें"
-
-msgid "Upload current book to Readest"
-msgstr "वर्तमान पुस्तक को Readest पर अपलोड करें"
-
 msgid "Push reading progress now"
 msgstr "अभी पठन प्रगति भेजें"
 
 msgid "Pull reading progress now"
 msgstr "अभी पठन प्रगति प्राप्त करें"
+
+msgid "Upload current book to Readest"
+msgstr "वर्तमान पुस्तक को Readest पर अपलोड करें"
 
 msgid "Push annotations now"
 msgstr "अभी एनोटेशन भेजें"
@@ -316,6 +325,9 @@ msgstr "सभी एनोटेशन का पूर्ण सिंक"
 
 msgid "Sync info"
 msgstr "सिंक जानकारी"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop से प्राप्त करें"
 
 msgid "Check for update (v%1)"
 msgstr "अपडेट जांचें (v%1)"
@@ -349,12 +361,6 @@ msgstr "सिंक जानकारी"
 
 msgid "Library not initialized"
 msgstr "लाइब्रेरी आरंभीकृत नहीं"
-
-msgid "Books synced"
-msgstr "पुस्तकें सिंक हुईं"
-
-msgid "Books sync failed"
-msgstr "पुस्तकें सिंक विफल"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "पहले Readest डाउनलोड फ़ोल्डर या KOReader होम फ़ोल्डर सेट करें।"

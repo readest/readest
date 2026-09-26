@@ -4,18 +4,18 @@
  * a dictionary entry the thumb sits near the bottom of the phone, and reaching
  * the handle takes a second hand.
  *
- * The swipe still has to yield to the sheet's own content: a scroller that is
- * already scrolled owns the gesture, and so does a text field.
+ * Scrollable content owns its gestures at every scroll position, including
+ * overscroll at the top. Text fields also keep their gestures.
  */
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (value: string) => value,
 }));
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ appService: null }),
+  useEnv: () => ({ appService: { hasHaptics: true } }),
 }));
 vi.mock('@/store/themeStore', () => ({
   useThemeStore: () => ({
@@ -31,6 +31,8 @@ vi.mock('@/store/deviceStore', () => ({
   }),
 }));
 vi.mock('@tauri-apps/plugin-haptics', () => ({ impactFeedback: vi.fn() }));
+
+const { impactFeedback } = await import('@tauri-apps/plugin-haptics');
 
 const { default: Dialog } = await import('@/components/Dialog');
 
@@ -69,7 +71,10 @@ const Sheet = ({ onClose }: { onClose: () => void }) => (
   </Dialog>
 );
 
-beforeEach(() => setViewport(390, 844));
+beforeEach(() => {
+  vi.clearAllMocks();
+  setViewport(390, 844);
+});
 afterEach(() => cleanup());
 
 describe('Dialog swipe-to-dismiss', () => {
@@ -79,7 +84,8 @@ describe('Dialog swipe-to-dismiss', () => {
 
     swipeDown(screen.getByTestId('entry'));
 
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(impactFeedback).toHaveBeenCalledExactlyOnceWith('light');
   });
 
   it('still dismisses on a downward swipe from the drag handle', () => {
@@ -88,17 +94,93 @@ describe('Dialog swipe-to-dismiss', () => {
 
     swipeDown(document.querySelector('.drag-handle') as HTMLElement);
 
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(impactFeedback).toHaveBeenCalledExactlyOnceWith('light');
   });
 
   it('leaves the gesture to a scroller that is already scrolled', () => {
     const onClose = vi.fn();
     render(<Sheet onClose={onClose} />);
-    mockScrollTop(screen.getByTestId('scroller'), 40);
+    const scroller = screen.getByTestId('scroller');
+    scroller.style.overflowY = 'auto';
+    Object.defineProperties(scroller, {
+      scrollHeight: { value: 600 },
+      clientHeight: { value: 200 },
+    });
+    mockScrollTop(scroller, 40);
 
     swipeDown(screen.getByTestId('entry'));
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it.each([0, -20, 400])('leaves scrollable content alone at scrollTop %s', (scrollTop) => {
+    const onClose = vi.fn();
+    render(<Sheet onClose={onClose} />);
+    const scroller = screen.getByTestId('scroller');
+    scroller.style.overflowY = 'auto';
+    Object.defineProperties(scroller, {
+      scrollHeight: { value: 600 },
+      clientHeight: { value: 200 },
+    });
+    mockScrollTop(scroller, scrollTop);
+
+    swipeDown(screen.getByTestId('entry'));
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(impactFeedback).not.toHaveBeenCalled();
+    expect(document.querySelector('.drag-shield')).toBeNull();
+  });
+
+  it('allows dismissal from the header above scrollable content', () => {
+    const onClose = vi.fn();
+    render(<Sheet onClose={onClose} />);
+    const scroller = screen.getByTestId('scroller');
+    scroller.style.overflowY = 'auto';
+    Object.defineProperties(scroller, {
+      scrollHeight: { value: 600 },
+      clientHeight: { value: 200 },
+    });
+
+    swipeDown(document.querySelector('.dialog-header') as HTMLElement);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(impactFeedback).toHaveBeenCalledExactlyOnceWith('light');
+  });
+
+  it('leaves horizontal scrollable content alone', () => {
+    const onClose = vi.fn();
+    render(<Sheet onClose={onClose} />);
+    const scroller = screen.getByTestId('scroller');
+    scroller.style.overflowX = 'auto';
+    Object.defineProperties(scroller, {
+      scrollWidth: { value: 600 },
+      clientWidth: { value: 200 },
+    });
+
+    swipeDown(screen.getByTestId('entry'));
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(impactFeedback).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    true,
+    false,
+  ])('does not vibrate when a drag returns to the sheet (snap: %s)', (snapped) => {
+    const onClose = vi.fn();
+    render(
+      <Dialog isOpen snapHeight={snapped ? 0.75 : undefined} onClose={onClose}>
+        Body
+      </Dialog>,
+    );
+    const handle = document.querySelector('.drag-handle') as HTMLElement;
+    act(() => {
+      handle.dispatchEvent(touchEvent('touchstart', 100, 300));
+      window.dispatchEvent(touchEvent('touchend', 100, 299));
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(impactFeedback).not.toHaveBeenCalled();
   });
 
   it('leaves the gesture to a text field', () => {
@@ -143,6 +225,7 @@ describe('Dialog swipe-to-dismiss', () => {
     expect(onClose).not.toHaveBeenCalled();
     expect(document.querySelector('.drag-shield')).toBeNull();
     // Back to its resting snap, not left wherever the finger was.
+    expect(impactFeedback).not.toHaveBeenCalled();
     expect(modal.style.height).toBe('75%');
     expect(modal.style.transform).toBe('');
   });

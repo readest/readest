@@ -822,3 +822,74 @@ describe('customDictionaryStore — fontScale (dictionary popup font size, #4443
     expect(useCustomDictionaryStore.getState().settings.fontScale).toBe(1.15);
   });
 });
+
+describe('customDictionaryStore — autoPlayPronunciation (#6265)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useCustomDictionaryStore.setState({
+      dictionaries: [],
+      settings: {
+        providerOrder: ['local-x'],
+        providerEnabled: { 'local-x': true },
+        webSearches: [],
+      },
+    });
+  });
+
+  it('setAutoPlayPronunciation updates the in-memory setting', () => {
+    const { setAutoPlayPronunciation } = useCustomDictionaryStore.getState();
+    setAutoPlayPronunciation(true);
+    expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+  });
+
+  it('applyRemoteDictionarySettings overlays a remote autoPlayPronunciation patch', () => {
+    const { applyRemoteDictionarySettings } = useCustomDictionaryStore.getState();
+    applyRemoteDictionarySettings({ autoPlayPronunciation: true });
+    expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+  });
+
+  it('loadCustomDictionaries defaults autoPlayPronunciation to false when persisted settings omit it', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia'],
+          providerEnabled: { 'builtin:wikipedia': true },
+          webSearches: [],
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+
+    const fakeAppService = { exists: vi.fn().mockResolvedValue(false) };
+    const fakeEnv = {
+      getAppService: () => Promise.resolve(fakeAppService),
+    } as unknown as EnvConfigType;
+
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(false);
+  });
+
+  it('loadCustomDictionaries preserves a persisted autoPlayPronunciation', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wikipedia'],
+          providerEnabled: { 'builtin:wikipedia': true },
+          webSearches: [],
+          autoPlayPronunciation: true,
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+
+    const fakeAppService = { exists: vi.fn().mockResolvedValue(false) };
+    const fakeEnv = {
+      getAppService: () => Promise.resolve(fakeAppService),
+    } as unknown as EnvConfigType;
+
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+  });
+});

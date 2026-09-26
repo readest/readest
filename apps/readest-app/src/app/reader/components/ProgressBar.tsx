@@ -11,6 +11,7 @@ import {
   formatNumber,
   formatProgress,
   getChapterTickFractions,
+  getChapterLocationsLeft,
   getReferencePageInfo,
 } from '@/utils/progress';
 import { footerInfoVisible, footerReservesBand } from '../utils/footerBand';
@@ -23,6 +24,7 @@ import {
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
 import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryUtils.ts';
+import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
 interface ProgressBarProps {
@@ -92,11 +94,32 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     (pageInfo && pageInfo.total > 0 ? (pageInfo.current + 1) / pageInfo.total : 0);
 
   const { page: current = 0, pages: total = 0 } = view?.renderer || {};
-  const pagesLeft = bookData?.isFixedLayout
+  const screenPagesLeft = bookData?.isFixedLayout
     ? pageInfo
       ? Math.max(pageInfo.total - pageInfo.current, 1)
       : 0
     : Math.min(Math.max(total - current, 1), pageInfo ? pageInfo.total - pageInfo.current : total);
+  const chapterLocationsLeft = bookData?.isFixedLayout
+    ? undefined
+    : getChapterLocationsLeft(progress, bookData?.bookDoc?.toc);
+  const sectionFractions = view?.getSectionFractions() ?? [];
+  const sectionIndex = section?.current ?? 0;
+  // Foliate rounds current/next locations down. Their difference can alternate
+  // between 0, 1 and 2 for identical screens, so use the unrounded section span.
+  const sectionFraction =
+    (sectionFractions[sectionIndex + 1] ?? 0) - (sectionFractions[sectionIndex] ?? 0);
+  const locationsPerScreen = total > 0 ? (sectionFraction * (pageinfo?.total ?? 0)) / total : 0;
+  const pagesLeft =
+    chapterLocationsLeft !== undefined && locationsPerScreen > 0
+      ? Math.max(1, Math.ceil(chapterLocationsLeft / locationsPerScreen))
+      : screenPagesLeft;
+  // Pace statistics and TOC locations use logical pages, not viewport-sized pages.
+  const timePagesLeft = bookData?.isFixedLayout
+    ? pagesLeft
+    : (chapterLocationsLeft ??
+      (progress?.timeinfo.section !== undefined
+        ? (progress.timeinfo.section * SIZE_PER_TIME_UNIT) / SIZE_PER_LOC
+        : pagesLeft));
   const showPagesLeft = pagesLeft > 0 && (total > 0 || !!bookData?.isFixedLayout);
   const md5 = bookData?.book?.hash;
   const medianPageDurationSecs = useMedianPageDurationSecs(md5) ?? undefined;
@@ -107,14 +130,14 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     ? remainingInBook
       ? _('{{time}} min left in book', {
           time: formatNumber(
-            convertPagesToTimeRemainingMinutes(pagesLeft, medianPageDurationSecs),
+            convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
             localize,
             lang,
           ),
         })
       : _('{{time}} min left in chapter', {
           time: formatNumber(
-            convertPagesToTimeRemainingMinutes(pagesLeft, medianPageDurationSecs),
+            convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
             localize,
             lang,
           ),

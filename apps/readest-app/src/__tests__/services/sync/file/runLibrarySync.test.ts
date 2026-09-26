@@ -104,6 +104,16 @@ const multiProviderSettings = {
 } as unknown as SystemSettings;
 
 describe('runFileLibrarySyncPass', () => {
+  test.each([
+    { failures: 1 },
+    { indexPushFailed: true },
+  ])('does not record partial sync as successful: %j', async (failure) => {
+    syncLibrary.mockResolvedValueOnce(syncResult(failure));
+    await runFileLibrarySyncPass(envConfig, translationFn);
+    expect(useSettingsStore.getState().settings.webdav?.lastSyncedAt).toBeUndefined();
+    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeTruthy();
+  });
+
   beforeEach(() => {
     syncLibrary.mockReset().mockResolvedValue(syncResult({ booksSynced: 1 }));
     useSettingsStore.getState().setSettings(multiProviderSettings);

@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as sortable from '@dnd-kit/sortable';
 
 import CustomDictionaries from '@/components/settings/CustomDictionaries';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
@@ -78,8 +79,11 @@ const enabledSystemSettings: DictionarySettings = {
   webSearches: [],
 };
 
+// Provider rows use the compact `toggle-sm`; the panel's own preference
+// switches (SettingsSwitchRow) use the default size, so this stays scoped to
+// the sortable provider list as more switches are added below it.
 const getToggles = (container: HTMLElement) =>
-  Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+  Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"].toggle-sm'));
 
 beforeEach(() => {
   platform.supported = false;
@@ -90,6 +94,20 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+});
+
+it('preserves dictionary row dimensions when dragging over a differently sized row', () => {
+  seedSettings(enabledSystemSettings);
+  const useSortable = sortable.useSortable;
+  vi.spyOn(sortable, 'useSortable').mockImplementation((options) => ({
+    ...useSortable(options),
+    transform: { x: 12, y: 24, scaleX: 0.5, scaleY: 1.5 },
+  }));
+  render(<CustomDictionaries onBack={() => {}} />);
+  const row = screen.getAllByRole('button', { name: 'Drag to reorder' })[0]!.parentElement!;
+  expect(row.style.transform).toContain('translate3d(12px, 24px, 0)');
+  expect(row.style.transform).not.toContain('scale');
 });
 
 describe('CustomDictionaries — system-dictionary lock', () => {
@@ -192,5 +210,30 @@ describe('CustomDictionaries — import progress', () => {
         }),
       ),
     );
+  });
+});
+
+describe('CustomDictionaries — auto-play pronunciation (#6265)', () => {
+  const baseSettings: DictionarySettings = {
+    providerOrder: [BUILTIN_PROVIDER_IDS.wiktionary],
+    providerEnabled: { [BUILTIN_PROVIDER_IDS.wiktionary]: true },
+    webSearches: [],
+  };
+
+  it('reflects the stored setting and persists a toggle', async () => {
+    const saveCustomDictionaries = vi.fn().mockResolvedValue(undefined);
+    seedSettings({ ...baseSettings, autoPlayPronunciation: false });
+    useCustomDictionaryStore.setState({ saveCustomDictionaries });
+
+    render(<CustomDictionaries onBack={() => {}} />);
+    const toggle = screen.getByRole('checkbox', { name: 'Auto-play Pronunciation' });
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+
+    await act(async () => {
+      fireEvent.click(toggle);
+    });
+
+    expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+    expect(saveCustomDictionaries).toHaveBeenCalled();
   });
 });

@@ -2,15 +2,16 @@ import clsx from 'clsx';
 import React from 'react';
 
 import { RiQuillPenLine } from 'react-icons/ri';
-import { MdArrowBackIosNew, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
+import { MdArrowBackIosNew, MdClose, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const NotebookHeader: React.FC<{
   isPinned: boolean;
+  isFullScreenMobile?: boolean;
   handleClose: () => void;
   handleTogglePin: () => void;
-}> = ({ isPinned, handleClose, handleTogglePin }) => {
+}> = ({ isPinned, isFullScreenMobile = false, handleClose, handleTogglePin }) => {
   const _ = useTranslation();
   const iconSize15 = useResponsiveSize(15);
   const iconSize18 = useResponsiveSize(18);
@@ -35,9 +36,12 @@ const NotebookHeader: React.FC<{
           title={_('Close')}
           aria-label={_('Close')}
           onClick={handleClose}
-          className='btn btn-ghost btn-circle flex h-11 min-h-11 w-11 hover:bg-transparent sm:hidden'
+          className={clsx(
+            'btn btn-ghost btn-circle flex h-11 min-h-11 w-11 hover:bg-transparent',
+            isFullScreenMobile ? 'ml-auto' : 'sm:hidden',
+          )}
         >
-          <MdArrowBackIosNew />
+          {isFullScreenMobile ? <MdClose size={iconSize18} /> : <MdArrowBackIosNew />}
         </button>
       </div>
     </div>

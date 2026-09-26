@@ -117,8 +117,8 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
           />
         </SettingsRow>
         <SettingsSwitchRow
-          label={_('Transfer Sounds')}
-          description={_('Play a sound when transfers start, finish, or fail')}
+          label={_('Transfer Sound')}
+          description={_('Play a sound when a transfer finishes')}
           checked={sounds}
           onChange={toggleSounds}
         />

@@ -269,7 +269,10 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
     expect(toastCalls[0]?.[1]).toMatchObject({ type: 'info', message: '7 book(s) synced' });
   });
 
-  it('reports a failure when the file pass could not write the shared index (#5900)', async () => {
+  it.each([
+    { indexPushFailed: true },
+    { failures: 1 },
+  ])('reports incomplete file sync: %j', async (failure) => {
     // library.json IS the convergence point: peers read membership, tombstones
     // and the uploaded-file record from it. A run that uploaded books but could
     // not write it converged nothing, and must not toast a book count.
@@ -284,7 +287,7 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
 
     dispatchSpy.mockClear();
     runFileLibrarySyncPass.mockClear();
-    runFileLibrarySyncPass.mockResolvedValueOnce({ booksSynced: 4, indexPushFailed: true });
+    runFileLibrarySyncPass.mockResolvedValueOnce({ booksSynced: 4, ...failure });
 
     await act(async () => {
       await result.current.pullLibrary(false, true);

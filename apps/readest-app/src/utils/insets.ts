@@ -35,7 +35,9 @@ export const getViewInsets = (viewSettings: ViewSettings) => {
 export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => {
   const minHeight = 16;
   const height = Math.max(marginTopPx, minHeight);
-  const top = Math.max(0, topInset + Math.min(marginTopPx, minHeight) - minHeight);
+  // Add only the lift: adding then subtracting minHeight can round a fractional
+  // inset downward and make SectionInfo incorrectly enable its z-10 layer (#6242).
+  const top = Math.max(0, topInset + Math.min(marginTopPx - minHeight, 0));
   return { top, height, bottom: top + height };
 };
 

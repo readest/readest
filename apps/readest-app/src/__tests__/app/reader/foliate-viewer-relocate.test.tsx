@@ -57,6 +57,7 @@ vi.mock('@/app/reader/hooks/useIframeEvents', () => ({
 vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({ useCapturedTurn: () => {} }));
 vi.mock('@/app/reader/hooks/usePagination', () => ({ usePagination: () => ({}) }));
 vi.mock('@/app/reader/hooks/useProgressSync', () => ({ useProgressSync: () => {} }));
+vi.mock('@/app/reader/hooks/useABSProgressSync', () => ({ useABSProgressSync: () => {} }));
 vi.mock('@/app/reader/hooks/useProgressAutoSave', () => ({ useProgressAutoSave: () => {} }));
 vi.mock('@/app/reader/hooks/useAutoSaveBookCover', () => ({ useBookCoverAutoSave: () => {} }));
 vi.mock('@/app/reader/hooks/useFileSync', () => ({ useFileSync: () => {} }));
@@ -121,6 +122,18 @@ describe('reader relocation progress', () => {
     relocate({ location: { current: 3, next: 4, total: 10 } });
     relocate({ location: { current: 4, next: 5, total: 10 } });
     act(() => vi.advanceTimersByTime(20));
+    expect(setProgress).toHaveBeenCalledOnce();
+    expect(setProgress.mock.lastCall?.[5]).toEqual({ current: 4, next: 5, total: 10 });
+    act(() => vi.advanceTimersByTime(1000));
+    expect(setProgress).toHaveBeenCalledOnce();
+  });
+
+  it('commits car-only progress even when a visible WebView suspends animation frames', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+    render(<FoliateViewer {...props} />);
+    relocate({ location: { current: 3, next: 4, total: 10 } });
+    relocate({ location: { current: 4, next: 5, total: 10 } });
+    act(() => vi.advanceTimersByTime(1000));
     expect(setProgress).toHaveBeenCalledOnce();
     expect(setProgress.mock.lastCall?.[5]).toEqual({ current: 4, next: 5, total: 10 });
   });

@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
-import { formatCompactTime, formatCountdown, formatPlaybackTime } from '@/utils/time';
+import {
+  formatCompactTime,
+  formatCountdown,
+  formatPlaybackTime,
+  splitDuration,
+} from '@/utils/time';
 
 describe('formatPlaybackTime', () => {
   test('formats minutes and seconds by default', () => {
@@ -75,5 +80,26 @@ describe('formatCountdown', () => {
 
   test('clamps negative remaining time to zero', () => {
     expect(formatCountdown(-1_000)).toBe('0:00');
+  });
+});
+
+// `formatCompactTime` renders both 7h55m and 7m55s as "7:55" — fine in the
+// mini player, where the value is a live countdown in a fixed-width row, but
+// misleading on the shelf where books of very different lengths sit side by
+// side. splitDuration gives the caller the parts to label with real units.
+describe('splitDuration', () => {
+  test('splits into hours, minutes and seconds', () => {
+    expect(splitDuration(7 * 3600 + 55 * 60 + 36)).toEqual({
+      hours: 7,
+      minutes: 55,
+      seconds: 36,
+    });
+    expect(splitDuration(35)).toEqual({ hours: 0, minutes: 0, seconds: 35 });
+    expect(splitDuration(7 * 60 + 55)).toEqual({ hours: 0, minutes: 7, seconds: 55 });
+  });
+
+  test('clamps junk to zero rather than emitting NaN', () => {
+    expect(splitDuration(-5)).toEqual({ hours: 0, minutes: 0, seconds: 0 });
+    expect(splitDuration(Number.NaN)).toEqual({ hours: 0, minutes: 0, seconds: 0 });
   });
 });

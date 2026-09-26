@@ -1,4 +1,5 @@
 import { localizeNumber } from './number';
+import type { BookProgress } from '@/types/book';
 import type { TOCItem } from '@/libs/document';
 
 interface ChapterTickSource {
@@ -175,4 +176,25 @@ export function formatNumber(
     return '';
   }
   return localize ? localizeNumber(number, language) : String(number);
+}
+
+/** Remaining logical pages to the next TOC entry, including chapters sharing a spine file. */
+export function getChapterLocationsLeft(
+  progress: BookProgress | null | undefined,
+  toc: TOCItem[] | null | undefined,
+): number | undefined {
+  if (!progress || !toc?.length) return undefined;
+  const flatten = (items: TOCItem[]): TOCItem[] =>
+    items.flatMap((item) => [item, ...flatten(item.subitems ?? [])]);
+  const items = flatten(toc);
+  const index = items.findIndex((item) => item.href === progress.sectionHref);
+  const start = items[index]?.location?.current;
+  if (index < 0 || start === undefined) return undefined;
+  const next = items
+    .slice(index + 1)
+    .find((item) => !item.location || item.location.current > start);
+  // Use the spine fallback until the next chapter's navigation location is baked.
+  if (next && !next.location) return undefined;
+  const end = Math.min(next?.location?.current ?? progress.pageinfo.total, progress.pageinfo.total);
+  return Math.max(1, end - progress.pageinfo.current);
 }

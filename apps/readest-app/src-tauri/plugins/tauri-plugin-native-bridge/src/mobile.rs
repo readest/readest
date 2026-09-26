@@ -228,6 +228,22 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    pub fn set_screen_wake_lock(&self, payload: SetScreenWakeLockRequest) -> crate::Result<()> {
+        #[cfg(target_os = "ios")]
+        {
+            self.0
+                .run_mobile_plugin("set_screen_wake_lock", payload)
+                .map_err(Into::into)
+        }
+        #[cfg(not(target_os = "ios"))]
+        {
+            let _ = payload;
+            Err(crate::Error::UnsupportedPlatformError)
+        }
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn get_screen_brightness(&self) -> crate::Result<GetScreenBrightnessResponse> {
         self.0
             .run_mobile_plugin("get_screen_brightness", ())

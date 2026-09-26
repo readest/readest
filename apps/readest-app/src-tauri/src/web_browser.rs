@@ -138,6 +138,76 @@ pub fn unique_path(dir: &Path, name: &str) -> PathBuf {
         .expect("unbounded counter")
 }
 
+const MAX_ARCHIVE_EXPANSION: u64 = 20;
+// An item download holds a book or two; thousands of tiny ones only exhaust inodes.
+const MAX_ARCHIVE_BOOKS: usize = 100;
+
+/// Servers such as Audiobookshelf hand out a multi-file item as a plain zip
+/// (`Title.zip` holding `Title.epub`, the cover, audio tracks...). Extract
+/// the entries whose extension is in `exts` next to the archive, then drop
+/// it. Returns an empty list, leaving the archive in place, when it is an
+/// EPUB saved under a `.zip` name or holds no such entry. Entries are
+/// streamed to disk, so a large audiobook archive is never held in memory.
+pub fn extract_archive_books(archive: &Path, exts: &[String]) -> Result<Vec<PathBuf>, String> {
+    let file = std::fs::File::open(archive).map_err(|e| e.to_string())?;
+    // Books are stored or already compressed, so a real book archive barely
+    // expands; past this ratio it is a zip bomb that would fill the disk.
+    let mut budget = file
+        .metadata()
+        .map_err(|e| e.to_string())?
+        .len()
+        .saturating_mul(MAX_ARCHIVE_EXPANSION);
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+    if zip.index_for_name("META-INF/container.xml").is_some() {
+        return Ok(Vec::new());
+    }
+    let dir = archive.parent().ok_or("Invalid path")?;
+    let mut books = Vec::new();
+    let mut extract = || -> Result<(), String> {
+        for i in 0..zip.len() {
+            let entry = zip.by_index(i).map_err(|e| e.to_string())?;
+            let Some(name) = entry
+                .enclosed_name()
+                .and_then(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_string))
+            else {
+                continue;
+            };
+            // Skip `__MACOSX/._Title.epub` resource forks and other dotfiles.
+            let is_book = entry.is_file()
+                && !name.starts_with('.')
+                && name
+                    .rsplit_once('.')
+                    .is_some_and(|(_, ext)| exts.iter().any(|e| e.eq_ignore_ascii_case(ext)));
+            if !is_book {
+                continue;
+            }
+            if books.len() == MAX_ARCHIVE_BOOKS {
+                return Err("Archive holds too many books".into());
+            }
+            let path = unique_path(dir, &name);
+            books.push(path.clone());
+            let mut out = std::fs::File::create(&path).map_err(|e| e.to_string())?;
+            let written = std::io::copy(&mut std::io::Read::take(entry, budget + 1), &mut out)
+                .map_err(|e| e.to_string())?;
+            if written > budget {
+                return Err("Archive expands too much to hold books".into());
+            }
+            budget -= written;
+        }
+        Ok(())
+    };
+    if let Err(error) = extract() {
+        for path in &books {
+            let _ = std::fs::remove_file(path);
+        }
+        return Err(error);
+    }
+    if !books.is_empty() {
+        let _ = std::fs::remove_file(archive);
+    }
+    Ok(books)
+}
+
 /// The injected chrome signals "Open book", "Close", or "Clip Page" by navigating to a
 /// sentinel host; `on_navigation` blocks the request and acts instead.
 pub fn sentinel_action(url: &Url) -> Option<SentinelAction> {
@@ -217,11 +287,7 @@ pub async fn open_web_browser<R: tauri::Runtime>(
     let parsed = parse_browsable_url(&url)?;
     let options = options.unwrap_or_default();
     let label = next_label();
-    let download_dir = app
-        .path()
-        .app_cache_dir()
-        .map_err(|e| e.to_string())?
-        .join("browser-downloads");
+    let download_dir = browser_downloads_dir(&app)?;
     std::fs::create_dir_all(&download_dir).map_err(|e| e.to_string())?;
 
     let (close_tx, close_rx) = tokio::sync::oneshot::channel::<WebBrowserResult>();
@@ -422,6 +488,36 @@ pub fn set_web_browser_status<R: tauri::Runtime>(
     Ok(())
 }
 
+/// Unpack a downloaded `.zip` that holds books (see `extract_archive_books`).
+/// Only the file name of `path` is used, so this never reaches outside the
+/// browser download directory.
+#[tauri::command]
+pub async fn extract_web_browser_archive<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    path: String,
+    exts: Vec<String>,
+) -> Result<Vec<String>, String> {
+    let name = Path::new(&path).file_name().ok_or("Invalid path")?;
+    let archive = browser_downloads_dir(&app)?.join(name);
+    let books =
+        tauri::async_runtime::spawn_blocking(move || extract_archive_books(&archive, &exts))
+            .await
+            .map_err(|e| e.to_string())??;
+    Ok(books
+        .into_iter()
+        .map(|p| p.to_string_lossy().into_owned())
+        .collect())
+}
+
+fn browser_downloads_dir<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<PathBuf, String> {
+    use tauri::Manager;
+    Ok(app
+        .path()
+        .app_cache_dir()
+        .map_err(|e| e.to_string())?
+        .join("browser-downloads"))
+}
+
 /// Mobile: the native-bridge plugin presents `WebBrowserController`.
 /// Same JS surface as desktop: resolves when the browser closes.
 #[cfg(mobile)]
@@ -431,16 +527,11 @@ pub async fn open_web_browser(
     url: String,
     options: Option<WebBrowserOptions>,
 ) -> Result<WebBrowserResult, String> {
-    use tauri::Manager;
     use tauri_plugin_native_bridge::{NativeBridgeExt, WebBrowserRequest};
 
     let parsed = parse_browsable_url(&url)?;
     let options = options.unwrap_or_default();
-    let download_dir = app
-        .path()
-        .app_cache_dir()
-        .map_err(|e| e.to_string())?
-        .join("browser-downloads");
+    let download_dir = browser_downloads_dir(&app)?;
     std::fs::create_dir_all(&download_dir).map_err(|e| e.to_string())?;
     let request = WebBrowserRequest {
         url: parsed.to_string(),
@@ -531,6 +622,121 @@ mod tests {
         std::fs::write(dir.join("dune (1).epub"), b"x").unwrap();
         assert_eq!(unique_path(&dir, "dune.epub"), dir.join("dune (2).epub"));
         assert_eq!(unique_path(&dir, "other.epub"), dir.join("other.epub"));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    fn write_zip(path: &Path, entries: &[(&str, &[u8])]) {
+        use std::io::Write;
+        let mut w = zip::ZipWriter::new(std::fs::File::create(path).unwrap());
+        for (name, data) in entries {
+            w.start_file(*name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            w.write_all(data).unwrap();
+        }
+        w.finish().unwrap();
+    }
+
+    fn book_exts() -> Vec<String> {
+        vec!["epub".into(), "pdf".into()]
+    }
+
+    // Audiobookshelf serves every folder item as `<title>.zip`.
+    #[test]
+    fn extract_archive_books_unpacks_book_files_and_drops_the_archive() {
+        let dir = std::env::temp_dir().join(format!("readest-wb-zip-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("Dune.epub"), b"older download").unwrap();
+        let archive = dir.join("Dune.zip");
+        write_zip(
+            &archive,
+            &[
+                ("Dune.epub", b"epub bytes"),
+                ("extras/Dune Maps.PDF", b"pdf bytes"),
+                ("cover.jpg", b"jpg"),
+                ("desc.txt", b"description"),
+                ("01 - Chapter.mp3", b"mp3"),
+                ("__MACOSX/._Dune.epub", b"resource fork"),
+            ],
+        );
+
+        let books = extract_archive_books(&archive, &book_exts()).unwrap();
+
+        assert_eq!(
+            books,
+            vec![dir.join("Dune (1).epub"), dir.join("Dune Maps.PDF")]
+        );
+        assert_eq!(std::fs::read(&books[0]).unwrap(), b"epub bytes");
+        assert_eq!(std::fs::read(&books[1]).unwrap(), b"pdf bytes");
+        assert!(!archive.exists());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn extract_archive_books_leaves_non_book_archives_alone() {
+        let dir = std::env::temp_dir().join(format!("readest-wb-zip2-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        // An EPUB saved under a .zip name is a book in its own right.
+        let epub = dir.join("book.zip");
+        write_zip(
+            &epub,
+            &[
+                ("mimetype", b"application/epub+zip"),
+                ("META-INF/container.xml", b"<container/>"),
+                ("OEBPS/bundled.pdf", b"pdf"),
+            ],
+        );
+        let audio = dir.join("audio.zip");
+        write_zip(&audio, &[("01.mp3", b"mp3"), ("cover.jpg", b"jpg")]);
+
+        assert!(extract_archive_books(&epub, &book_exts())
+            .unwrap()
+            .is_empty());
+        assert!(extract_archive_books(&audio, &book_exts())
+            .unwrap()
+            .is_empty());
+        assert!(epub.exists() && audio.exists());
+        assert!(extract_archive_books(&dir.join("missing.zip"), &book_exts()).is_err());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn extract_archive_books_refuses_a_zip_bomb_and_cleans_up() {
+        use std::io::Write;
+        let dir = std::env::temp_dir().join(format!("readest-wb-zip3-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let archive = dir.join("bomb.zip");
+        let mut w = zip::ZipWriter::new(std::fs::File::create(&archive).unwrap());
+        let deflated = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+        w.start_file("a.epub", deflated).unwrap();
+        w.write_all(b"small book").unwrap();
+        w.start_file("b.epub", deflated).unwrap();
+        w.write_all(&vec![0u8; 8 * 1024 * 1024]).unwrap();
+        w.finish().unwrap();
+
+        assert!(extract_archive_books(&archive, &book_exts()).is_err());
+        // Nothing half-extracted is left behind, and the archive is kept.
+        let left: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        assert_eq!(left, vec![archive.clone()]);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn extract_archive_books_refuses_an_archive_of_countless_books() {
+        let dir = std::env::temp_dir().join(format!("readest-wb-zip4-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let archive = dir.join("many.zip");
+        let names: Vec<String> = (0..=MAX_ARCHIVE_BOOKS)
+            .map(|i| format!("{i}.epub"))
+            .collect();
+        let entries: Vec<(&str, &[u8])> = names.iter().map(|n| (n.as_str(), &b"x"[..])).collect();
+        write_zip(&archive, &entries);
+
+        assert!(extract_archive_books(&archive, &book_exts()).is_err());
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   applyScrollableStyle,
   applyTableTouchScroll,
@@ -178,6 +178,78 @@ describe('updateTableFit', () => {
     const wrapper = makeWrapper(203, 200); // 3px slop ≤ tolerance
     updateTableFit(wrapper);
     expect(wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS)).toBe(true);
+  });
+});
+
+describe('table fit re-measurement after a late layout change (#6198)', () => {
+  // decideTableFit measures once, on the first ResizeObserver callback. A
+  // web font swapped in afterwards, or an image decoded afterwards, can widen
+  // the table past the column while the wrapper keeps its fit class.
+  let fire: () => void;
+  const fonts = { status: 'loaded' };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '';
+    fonts.status = 'loaded';
+    Object.defineProperty(document, 'fonts', { value: fonts, configurable: true });
+    class FakeResizeObserver {
+      constructor(cb: () => void) {
+        fire = cb;
+      }
+      observe() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    delete (document as unknown as { fonts?: unknown }).fonts;
+  });
+
+  const wrapWithWidths = (html: string) => {
+    document.body.innerHTML = html;
+    applyScrollableStyle(document);
+    const wrapper = document.querySelector<HTMLElement>(`.${SCROLL_WRAPPER_CLASS}`)!;
+    const widths = { scroll: 650 };
+    Object.defineProperty(wrapper, 'clientWidth', { get: () => 650, configurable: true });
+    Object.defineProperty(wrapper, 'scrollWidth', { get: () => widths.scroll, configurable: true });
+    return { wrapper, widths };
+  };
+  const isFit = (wrapper: HTMLElement) => wrapper.classList.contains(SCROLL_WRAPPER_FIT_CLASS);
+
+  it('re-measures once the fonts finish loading', () => {
+    fonts.status = 'loading';
+    const { wrapper, widths } = wrapWithWidths('<div><table><tr><td>a</td></tr></table></div>');
+    fire();
+    expect(isFit(wrapper)).toBe(true);
+    // The real font arrives and the cells grow past the column.
+    widths.scroll = 663;
+    fonts.status = 'loaded';
+    vi.advanceTimersByTime(500);
+    expect(isFit(wrapper)).toBe(false);
+  });
+
+  it('schedules nothing when the fonts are already loaded', () => {
+    const { wrapper } = wrapWithWidths('<div><table><tr><td>a</td></tr></table></div>');
+    fire();
+    expect(isFit(wrapper)).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('re-measures when an image inside the table finishes loading', () => {
+    const { wrapper, widths } = wrapWithWidths(
+      '<div><table><tr><td><img src="map.png"></td></tr></table></div>',
+    );
+    const img = wrapper.querySelector('img')!;
+    Object.defineProperty(img, 'complete', { value: false, configurable: true });
+    fire();
+    expect(isFit(wrapper)).toBe(true);
+    widths.scroll = 900;
+    img.dispatchEvent(new Event('load'));
+    expect(isFit(wrapper)).toBe(false);
   });
 });
 

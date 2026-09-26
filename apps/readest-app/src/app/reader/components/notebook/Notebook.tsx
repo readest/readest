@@ -251,6 +251,7 @@ const Notebook: React.FC = () => {
           )}
           <NotebookHeader
             isPinned={isNotebookPinned}
+            isFullScreenMobile={isMobile && isFullHeightInMobile}
             handleClose={hideNotebook}
             handleTogglePin={handleTogglePin}
           />

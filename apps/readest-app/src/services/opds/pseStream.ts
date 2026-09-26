@@ -9,6 +9,7 @@ import {
   withOriginSuppressed,
 } from '@/app/opds/utils/opdsReq';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { trackWidePages, type WidePagesOptions } from '@/utils/spread';
 import type { BookFormat } from '@/types/book';
 import type { BookDoc, BookMetadata } from '@/libs/document';
 
@@ -75,6 +76,7 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
 
 export const openPseStreamBook = async (
   data: PseStreamData,
+  widePages?: WidePagesOptions,
 ): Promise<{ book: BookDoc; format: BookFormat }> => {
   const loadPage = createPseStreamPageLoader(data);
   const entries = Array.from({ length: data.count }).map((_, i) => ({
@@ -95,7 +97,10 @@ export const openPseStreamBook = async (
   const { makeComicBook } = await import('foliate-js/comic-book.js');
   // makeComicBook only consults `file.name` as a fallback title; we override
   // metadata from `data` regardless, so a name-only stand-in is sufficient.
-  const rawComicBook = await makeComicBook(loader, { name: data.title });
+  // Each page streams in on its own request, so it is measured as it arrives.
+  const pages = widePages && trackWidePages(loader, widePages.onFound);
+  const rawComicBook = await makeComicBook(pages?.loader ?? loader, { name: data.title });
+  pages?.attach(rawComicBook.sections, widePages?.known ?? []);
   const book = {
     ...rawComicBook,
     dir: 'auto',

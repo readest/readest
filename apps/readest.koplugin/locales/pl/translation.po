@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Synchronizuje urządzenia KOReader i Readest."
 
+msgid "Downloading %1 of %2…"
+msgstr "Pobieranie %1 z %2…"
+
+msgid "%1 MB downloaded"
+msgstr "Pobrano %1 MB"
+
+msgid "No downloads in progress."
+msgstr "Brak trwających pobrań."
+
+msgid "Run in background"
+msgstr "Uruchom w tle"
+
+msgid "Cancel download"
+msgstr "Anuluj pobieranie"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Pobieranie anulowane. Pobrano %1 z %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Pobrano %1 z %2 (pominięto %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Pobrano %1 z %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Najpierw ustaw folder domowy w menedżerze plików, aby włączyć pobieranie."
+
+msgid "No books to download."
+msgstr "Brak książek do pobrania."
+
 msgid "Library view"
 msgstr "Widok biblioteki"
 
@@ -68,8 +98,14 @@ msgstr "Rosnąco"
 msgid "Actions"
 msgstr "Akcje"
 
+msgid "Sync now"
+msgstr "Synchronizuj teraz"
+
 msgid "Download all books"
 msgstr "Pobierz wszystkie książki"
+
+msgid "Download progress"
+msgstr "Postęp pobierania"
 
 msgid "Rescan library"
 msgstr "Skanuj bibliotekę ponownie"
@@ -104,6 +140,12 @@ msgstr "Szukaj w bibliotece"
 msgid "Search title or author"
 msgstr "Szukaj tytułu lub autora"
 
+msgid "Books synced"
+msgstr "Zsynchronizowano książki"
+
+msgid "Books sync failed"
+msgstr "Synchronizacja książek nie powiodła się"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Wtyczka Cover Browser wymagana do pełnego renderowania biblioteki. Powrót do zwykłej listy."
 
@@ -116,18 +158,6 @@ msgstr "Pobrać tę książkę z Readest?"
 msgid "Download"
 msgstr "Pobierz"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Najpierw ustaw folder domowy w menedżerze plików, aby włączyć pobieranie."
-
-msgid "Downloading…"
-msgstr "Pobieranie…"
-
-msgid "Cloud copy unavailable."
-msgstr "Kopia w chmurze niedostępna."
-
-msgid "Download failed."
-msgstr "Pobieranie nie powiodło się."
-
 msgid "No cover available on Readest."
 msgstr "Brak okładki w Readest."
 
@@ -137,20 +167,8 @@ msgstr "Nie udało się pobrać okładki."
 msgid "Could not delete the file."
 msgstr "Nie można usunąć pliku."
 
-msgid "No books to download."
-msgstr "Brak książek do pobrania."
-
-msgid "Downloading %1 of %2…"
-msgstr "Pobieranie %1 z %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Pobieranie anulowane. Pobrano %1 z %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Pobrano %1 z %2 (pominięto %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Pobrano %1 z %2."
+msgid "Download group"
+msgstr "Pobierz grupę"
 
 msgid "Removing from cloud…"
 msgstr "Usuwanie z chmury…"
@@ -287,23 +305,14 @@ msgstr "Wyślij statystyki teraz"
 msgid "Pull stats now"
 msgstr "Pobierz statystyki teraz"
 
-msgid "Push books now"
-msgstr "Wyślij książki teraz"
-
-msgid "Pull books now"
-msgstr "Pobierz książki teraz"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Odbierz przez Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Wyślij bieżącą książkę do Readest"
-
 msgid "Push reading progress now"
 msgstr "Wyślij teraz postęp czytania"
 
 msgid "Pull reading progress now"
 msgstr "Pobierz teraz postęp czytania"
+
+msgid "Upload current book to Readest"
+msgstr "Wyślij bieżącą książkę do Readest"
 
 msgid "Push annotations now"
 msgstr "Wyślij teraz notatki"
@@ -316,6 +325,9 @@ msgstr "Pełna synchronizacja wszystkich notatek"
 
 msgid "Sync info"
 msgstr "Informacje o synchronizacji"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Odbierz przez Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Sprawdź aktualizacje (v%1)"
@@ -349,12 +361,6 @@ msgstr "Informacje o synchronizacji"
 
 msgid "Library not initialized"
 msgstr "Biblioteka nie została zainicjowana"
-
-msgid "Books synced"
-msgstr "Zsynchronizowano książki"
-
-msgid "Books sync failed"
-msgstr "Synchronizacja książek nie powiodła się"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Najpierw ustaw folder pobierania Readest lub folder domowy KOReader."

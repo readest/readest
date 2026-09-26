@@ -30,6 +30,16 @@ describe('getHeaderBandGeometry (#5303)', () => {
     expect(getHeaderBandGeometry(0, 16)).toEqual({ top: 0, height: 16, bottom: 16 });
   });
 
+  it.each([16, 44])('preserves fractional insets for a %ipx margin (#6242)', (margin) => {
+    // Observed at 238 DPI: Android exposes this float-valued devicePixelRatio.
+    // SectionInfo uses half the CSS status-bar height as its top inset.
+    const topInset = 36 / 1.4875000715255737 / 2;
+    const band = getHeaderBandGeometry(topInset, margin);
+    // Exact equality matters: SectionInfo uses top < topInset to enable z-10.
+    expect(band.top).toBe(topInset);
+    expect(band.top < topInset).toBe(false);
+  });
+
   it('keeps a readable 16px band by borrowing from the notch below 16px margins', () => {
     // The band bottom stays at the content top (topInset + margin) while the
     // top lifts into the notch so the title is never clipped.

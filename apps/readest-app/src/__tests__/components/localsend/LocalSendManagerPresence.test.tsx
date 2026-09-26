@@ -31,8 +31,7 @@ vi.mock('@/services/localsend/devicePrefs', () => ({
 }));
 vi.mock('@/utils/bridge', () => ({ setMulticastLock: vi.fn(async () => {}) }));
 vi.mock('@/services/localsend/sounds', () => ({
-  playTransferCue: vi.fn(),
-  primeTransferCues: vi.fn(),
+  playTransferDoneCue: vi.fn(),
 }));
 vi.mock('@/services/ingestService', () => ({ ingestFile: vi.fn() }));
 vi.mock('@/services/localsend/bookFile', () => ({ resolveBookSendFile: vi.fn() }));

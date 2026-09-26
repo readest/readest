@@ -39,6 +39,7 @@ import { getMaxInlineSize } from '@/utils/config';
 import { nextThemeMode } from '@/utils/ambientLight';
 import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
+import { setCoverSpread } from '@/utils/spread';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 
@@ -282,8 +283,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     if (keepCoverSpread === viewSettings.keepCoverSpread) return;
     if (!bookData?.bookDoc?.sections?.length) return;
     viewSettings.keepCoverSpread = keepCoverSpread;
-    const coverSide = bookData.bookDoc.dir === 'rtl' ? 'right' : 'left';
-    bookData.bookDoc.sections[0]!.pageSpread = keepCoverSpread ? '' : coverSide;
+    setCoverSpread(bookData.bookDoc, keepCoverSpread);
     getView(bookKey)?.renderer.setAttribute('spread', spreadMode);
     setViewSettings(bookKey, viewSettings);
     saveViewSettings(envConfig, bookKey, 'keepCoverSpread', keepCoverSpread, true, false);
@@ -312,6 +312,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         'view-menu dropdown-content dropdown-right no-triangle z-20 mt-1.5 border',
         'bgcolor-base-200 shadow-2xl',
       )}
+      style={{ marginRight: appService?.isMobile || window.innerWidth < 640 ? '-36px' : 0 }}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
       {bookData.bookDoc?.rendition?.layout === 'pre-paginated' && (

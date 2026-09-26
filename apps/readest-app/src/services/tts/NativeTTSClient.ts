@@ -250,7 +250,13 @@ export class NativeTTSClient implements TTSClient {
     }
     try {
       const result = await invoke<{ voices: TTSVoice[] }>('plugin:native-tts|get_all_voices');
-      this.#voices = result.voices;
+      // Match Web Speech's Apple voice-family exclusions. iOS also exposes
+      // novelty and legacy Eloquence voices through the native API.
+      this.#voices = result.voices.filter(
+        (voice) =>
+          !voice.id.startsWith('com.apple.eloquence.') &&
+          !voice.id.startsWith('com.apple.speech.synthesis.voice.'),
+      );
       return this.#voices;
     } catch (error) {
       console.error('Failed to get all voices:', error);

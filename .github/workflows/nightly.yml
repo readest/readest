@@ -111,7 +111,7 @@ jobs:
 
       - name: setup Android SDK (for Android build only)
         if: matrix.config.release == 'android'
-        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
         with:
           # The legacy `tools` package (part of the action's default) no longer
           # exists in the SDK repository and makes sdkmanager fail.
@@ -245,6 +245,7 @@ jobs:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           version="${{ needs.compute-version.outputs.nightly_version }}"
           cd apps/readest-app/
@@ -269,6 +270,16 @@ jobs:
           cp ${apk_path}/app-universal-release.apk $universal_apk
           pnpm tauri android build -t aarch64
           cp ${apk_path}/app-universal-release.apk $arm64_apk
+
+          # Sentry symbolicates Rust panics from these: the APK ships the
+          # library stripped (see gen/android/app/build.gradle.kts), while
+          # `target/` keeps the unstripped copy. Crash reporting must never
+          # fail a build, and forks have no token.
+          if [ -n "$SENTRY_AUTH_TOKEN" ]; then
+            pnpm exec sentry-cli debug-files upload --org readest --project readest \
+              ../../target/*/release/libreadestlib.so || echo "::warning::Sentry debug file upload failed"
+          fi
+
           pnpm tauri signer sign $universal_apk
           pnpm tauri signer sign $arm64_apk
 

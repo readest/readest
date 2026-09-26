@@ -226,6 +226,7 @@ function SyncAnnotations:recordDeletion(doc_settings, item)
     local note = self:buildNoteDescriptor(item, book_hash, doc_readest_sync.meta_hash_v1)
     if not note then return end
     note.deletedAt = os.time() * 1000
+    note.updatedAt = note.deletedAt
 
     local deleted = doc_readest_sync.deleted_notes or {}
     for _, t in ipairs(deleted) do
@@ -237,11 +238,16 @@ function SyncAnnotations:recordDeletion(doc_settings, item)
 end
 
 function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
-    local book_hash = ui.doc_settings:readSetting("partial_md5_checksum")
-    local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
+    local doc_settings = ui.doc_settings
+    local book_hash = doc_settings:readSetting("partial_md5_checksum")
+    local doc_readest_sync = doc_settings:readSetting("readest_sync") or {}
     local meta_hash = doc_readest_sync.meta_hash_v1
     if not book_hash or not meta_hash then return end
 
+    -- KOReader timestamps have second precision. Keep this second eligible so
+    -- edits made after taking the snapshot are included in the next push.
+    local sync_started_at = os.time()
+    local sync_cursor = sync_started_at * 1000 - 1
     local annotations = self:getAnnotations(ui, settings, book_hash, meta_hash, full_sync)
 
     -- Fold in tombstones for notes deleted locally since the last push. These
@@ -249,10 +255,24 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
     -- re-stamp the current book/meta hash in case they were recorded before the
     -- book was registered for sync.
     local deleted_notes = doc_readest_sync.deleted_notes or {}
+    local sent_deletions = {}
     for _, t in ipairs(deleted_notes) do
         t.bookHash = book_hash
         t.metaHash = meta_hash
+        -- Older queued tombstones retain the highlight's creation/edit time.
+        -- Advance it to the deletion so a stale live copy cannot win on push.
+        t.updatedAt = math.max(t.updatedAt or 0, t.deletedAt)
         annotations[#annotations + 1] = t
+        sent_deletions[t.id] = t.deletedAt
+    end
+
+    -- A stale pull may have restored a locally deleted note. Never send both
+    -- versions: duplicate upsert keys reject the entire batch on the server.
+    for i = #annotations, 1, -1 do
+        local note = annotations[i]
+        if sent_deletions[note.id] and not note.deletedAt then
+            table.remove(annotations, i)
+        end
     end
 
     if #annotations == 0 then
@@ -296,23 +316,28 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
                 end
             end
             if success then
-                settings.last_notes_sync_at = os.time() * 1000
+                settings.last_notes_sync_at = math.max(settings.last_notes_sync_at or 0, sync_cursor)
                 G_reader_settings:saveSetting("readest_sync", settings)
-                if ui.doc_settings then
-                    local synced = ui.doc_settings:readSetting("readest_sync") or {}
-                    synced.last_synced_at_notes = os.time()
-                    -- The server has the tombstones now; drop them so they don't
-                    -- ride along on every future push.
-                    synced.deleted_notes = nil
-                    ui.doc_settings:saveSetting("readest_sync", synced)
+                local synced = doc_settings:readSetting("readest_sync") or {}
+                synced.last_synced_at_notes = math.max(synced.last_synced_at_notes or 0, sync_started_at)
+                -- Only acknowledge the tombstones in this request; deletions
+                -- made while the worker was running must still be uploaded.
+                local pending = {}
+                for _, tombstone in ipairs(synced.deleted_notes or {}) do
+                    if sent_deletions[tombstone.id] ~= tombstone.deletedAt then
+                        pending[#pending + 1] = tombstone
+                    end
                 end
+                synced.deleted_notes = #pending > 0 and pending or nil
+                doc_settings:saveSetting("readest_sync", synced)
             end
         end
     )
 end
 
 function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog, interactive, full_sync)
-    if ui.document.info.has_pages then
+    local document = ui.document
+    if document.info.has_pages then
         if interactive then
             UIManager:show(InfoMessage:new{
                 text = _("Annotation sync is not supported for PDF documents"),
@@ -329,6 +354,18 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
         })
     end
 
+    -- Keep the starting snapshot even if a concurrent push acknowledges it
+    -- before this pull returns with an older, live copy of the note.
+    local doc_settings = ui.doc_settings
+    local pending_deletions = {}
+    local function collectPendingDeletions()
+        local sync = doc_settings and doc_settings:readSetting("readest_sync") or {}
+        for _, note in ipairs(sync.deleted_notes or {}) do
+            pending_deletions[note.id] = true
+        end
+    end
+    collectPendingDeletions()
+
     client:pullChanges(
         {
             since = full_sync and 0 or (settings.last_notes_sync_at or 0),
@@ -337,6 +374,7 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
             meta_hash = meta_hash,
         },
         function(success, response, status)
+            if ui.document ~= document then return end -- book closed while the request was running
             if not success then
                 -- Treat HTTP 401/403 as auth failure regardless of body shape
                 -- so a future server tweak to the error string doesn't
@@ -404,9 +442,11 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
                 end
             end
 
+            -- Also include deletions made while the request was running.
+            collectPendingDeletions()
             local added = 0
             for _, note in ipairs(data) do
-                if note.deleted_at then
+                if note.deleted_at or pending_deletions[note.id] then
                     goto continue
                 end
 

@@ -164,7 +164,7 @@ function CatalogCard({
     <div
       ref={setNodeRef}
       style={{
-        transform: CSS.Transform.toString(transform),
+        transform: CSS.Translate.toString(transform),
         transition,
         // Keep the dragged card visible, just dimmed, so the user can tell
         // which one is moving.

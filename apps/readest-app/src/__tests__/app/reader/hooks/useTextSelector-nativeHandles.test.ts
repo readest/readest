@@ -186,3 +186,50 @@ describe('suppressNativeSelectionHandles', () => {
     expect(setSelection).not.toHaveBeenCalled();
   });
 });
+
+// The other half of the same trick (#6213): the instant dictionary quick action
+// deselects as it opens, and hands the selection back when the lookup closes so
+// the word can still be highlighted or copied. The re-add is programmatic for
+// the same reason — no grabbers come back — and it must publish nothing, or the
+// Annotator would read it as a fresh selection and re-run the quick action.
+describe('restoreSelectionRange', () => {
+  test('puts the range back on screen without republishing the selection', () => {
+    const page = makeSelectedPage('a selected phrase');
+    const range = page.doc.getSelection()!.getRangeAt(0).cloneRange();
+    page.doc.getSelection()!.removeAllRanges();
+    h.contents = [page];
+    const { result, setSelection } = setup();
+
+    expect(result.current.restoreSelectionRange(range)).toBe(true);
+
+    expect(page.doc.getSelection()!.toString()).toBe('a selected phrase');
+    expect(result.current.isTextSelected.current).toBe(true);
+    expect(setSelection).not.toHaveBeenCalled();
+  });
+
+  test('the selectionchange it fires is ignored', async () => {
+    const page = makeSelectedPage('a selected phrase');
+    const range = page.doc.getSelection()!.getRangeAt(0).cloneRange();
+    page.doc.getSelection()!.removeAllRanges();
+    h.contents = [page];
+    const { result, setSelection } = setup();
+
+    result.current.restoreSelectionRange(range);
+    await result.current.handleSelectionchange(page.doc, page.index);
+
+    expect(setSelection).not.toHaveBeenCalled();
+  });
+
+  test('refuses a collapsed range', () => {
+    const page = makeSelectedPage('a selected phrase');
+    const range = page.doc.createRange();
+    range.setStart(page.doc.querySelector('span')!.firstChild!, 0);
+    range.collapse(true);
+    page.doc.getSelection()!.removeAllRanges();
+    h.contents = [page];
+    const { result } = setup();
+
+    expect(result.current.restoreSelectionRange(range)).toBe(false);
+    expect(page.doc.getSelection()!.rangeCount).toBe(0);
+  });
+});

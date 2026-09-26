@@ -1,3 +1,5 @@
+import { mergeBookshelfStates, migrateBookshelfSettings } from '@/services/bookshelves/state';
+import { readPendingBookshelves } from '@/services/bookshelves/journal';
 import { FileSystem } from '@/types/system';
 import { LibrarySecondarySortByType, ReadSettings, SystemSettings } from '@/types/settings';
 import { DEFAULT_HIGHLIGHT_COLORS, UserHighlightColor, ViewSettings } from '@/types/book';
@@ -173,6 +175,17 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
   }
 
   migrateLibraryThenSort(settings);
+  // Recover this account's durable edits offline without refreshing its token.
+  // Other accounts' edits stay in the journal until their owner signs in.
+  const user = JSON.parse(localStorage.getItem('user') || '{}') as { id?: string };
+  for (const row of readPendingBookshelves()) {
+    if (row.user_id && row.user_id !== user.id) continue;
+    settings.bookshelves = mergeBookshelfStates(settings.bookshelves, {
+      rows: { [row.replica_id]: row },
+    });
+  }
+
+  if (settings.bookshelves) settings.bookshelves = mergeBookshelfStates(settings.bookshelves);
 
   if (!settings.kosync.deviceId) {
     settings.kosync.deviceId = uuidv4();
@@ -189,9 +202,37 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
     await saveSettings(ctx.fs, settings);
   }
 
+  if (migrateBookshelfSettings(settings)) {
+    await saveSettings(ctx.fs, settings);
+  }
+
   return settings;
 }
 
+let settingsWrites: Promise<void> = Promise.resolve();
+/**
+ * The newest queued settings, or null once it is safely on disk. Saves run on
+ * hot paths (every view-setting slider step) and each one reads settings.json
+ * back to merge `bookshelves`, so a burst would otherwise do one read+write per
+ * step. Only the newest object needs writing; the earlier callers still await a
+ * link that resolves after a write carrying their data or newer, and reject with
+ * it when it fails — the stamp is only dropped once the write succeeds, so the
+ * next link retries instead of reporting a silent success.
+ */
+let pendingSettings: SystemSettings | null = null;
 export async function saveSettings(fs: FileSystem, settings: SystemSettings): Promise<void> {
-  await safeSaveJSON(fs, SETTINGS_FILENAME, 'Settings', settings);
+  pendingSettings = settings;
+  const write = async () => {
+    const next = pendingSettings;
+    if (!next) return;
+    const disk = await safeLoadJSON<Partial<SystemSettings>>(fs, SETTINGS_FILENAME, 'Settings', {});
+    const merged =
+      next.bookshelves || disk.bookshelves
+        ? { ...next, bookshelves: mergeBookshelfStates(disk.bookshelves, next.bookshelves) }
+        : next;
+    await safeSaveJSON(fs, SETTINGS_FILENAME, 'Settings', merged);
+    if (pendingSettings === next) pendingSettings = null;
+  };
+  settingsWrites = settingsWrites.catch(() => {}).then(write);
+  await settingsWrites;
 }

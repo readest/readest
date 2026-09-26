@@ -176,8 +176,8 @@ describe("ReadestSync:scheduleBackgroundPull", function()
         stubs.reset()
     end)
 
-    -- One handle for every trigger: a wake or a reconnect while the open
-    -- pull is still pending replaces it instead of stacking a second one.
+    -- One handle for every trigger: wake/reconnect replaces the pending
+    -- pull instead of stacking more.
     it("keeps one pending pull when resume follows open", function()
         local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
         plugin:onReaderReady()
@@ -185,14 +185,14 @@ describe("ReadestSync:scheduleBackgroundPull", function()
         assert.are.equal(1, #UIManagerStub._scheduled)
     end)
 
-    it("keeps one pending pull when NetworkConnected follows open, and clears the handle after firing", function()
+    it("coalesces reconnect with open and clears the handle after firing", function()
         local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
         plugin:onReaderReady()
         plugin.pull_pending_offline = true
         plugin:onNetworkConnected()
         assert.are.equal(1, #UIManagerStub._scheduled)
 
-        UIManagerStub._scheduled[1].fn()
+        UIManagerStub:drain()
         assert.are.equal(3, #plugin.pull_calls)
         assert.is_nil(plugin.background_pull_task)
     end)
@@ -214,7 +214,7 @@ describe("ReadestSync:onNetworkConnected", function()
         assert.is_true(UIManagerStub._scheduled[1].delay > 0)
         assert.is_nil(plugin.pull_pending_offline)
 
-        UIManagerStub._scheduled[1].fn()
+        UIManagerStub:drain()
         assert.are.equal(3, #plugin.pull_calls)
         local pulled = {}
         for _, call in ipairs(plugin.pull_calls) do
@@ -297,7 +297,7 @@ describe("ReadestSync offline open, then reconnect (end to end)", function()
 
         plugin:onReaderReady()
         assert.are.equal(1, #UIManagerStub._scheduled)
-        table.remove(UIManagerStub._scheduled, 1).fn()
+        UIManagerStub:drain()
         assert.are.equal(0, plugin.ensure_client_calls)
         assert.are.equal(0, NetworkMgrStub._willRerunWhenOnline_calls)
         assert.is_true(plugin.pull_pending_offline)
@@ -306,7 +306,7 @@ describe("ReadestSync offline open, then reconnect (end to end)", function()
         plugin:onNetworkConnected()
         assert.are.equal(1, #UIManagerStub._scheduled)
         assert.is_nil(plugin.pull_pending_offline)
-        table.remove(UIManagerStub._scheduled, 1).fn()
+        UIManagerStub:drain()
         assert.are.equal(3, plugin.ensure_client_calls)
 
         -- A second NetworkConnected has nothing to rerun.

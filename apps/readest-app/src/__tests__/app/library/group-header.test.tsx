@@ -59,7 +59,7 @@ describe('GroupHeader back button', () => {
   });
 
   it('preserves other params while clearing the group', () => {
-    window.history.replaceState(null, '', '?groupBy=author&sort=title&group=abc123');
+    window.history.replaceState(null, '', '?groupBy=author&sort=title&group=abc123&shelf=recent');
     render(<GroupHeader groupBy={LibraryGroupByType.Author} groupName='Jane Doe' />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to library' }));
@@ -68,6 +68,7 @@ describe('GroupHeader back button', () => {
     const params = new URLSearchParams(query);
     expect(params.get('groupBy')).toBe('author');
     expect(params.get('sort')).toBe('title');
+    expect(params.has('shelf')).toBe(false);
     expect(params.get('group')).toBe('');
   });
 });

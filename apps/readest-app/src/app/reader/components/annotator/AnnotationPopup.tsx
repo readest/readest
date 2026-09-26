@@ -181,6 +181,7 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
           ) : (
             highlightOptionsVisible && (
               <HighlightOptions
+                compact={buttons.filter((button) => button.visible !== false).length <= 4}
                 isVertical={isVertical}
                 triangleDir={trianglePosition.dir!}
                 popupWidth={boxWidth}

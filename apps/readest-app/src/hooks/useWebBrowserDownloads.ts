@@ -7,6 +7,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
 import {
+  extractWebBrowserArchive,
+  isBookArchiveDownload,
   isSupportedBookDownload,
   setWebBrowserStatus,
   subscribeWebBrowserDownloads,
@@ -45,24 +47,29 @@ export function useWebBrowserDownloads() {
       }
       await setWebBrowserStatus({ state: 'importing', filename });
       try {
-        const { library } = useLibraryStore.getState();
         const { settings } = useSettingsStore.getState();
         const groupId = searchParams?.get('group') || undefined;
         const groupName = groupId
-          ? library.find((b) => b.groupId === groupId)?.groupName
+          ? useLibraryStore.getState().library.find((b) => b.groupId === groupId)?.groupName
           : undefined;
-        const book = await ingestFile(
-          { file: download.path, books: library, groupId, groupName },
-          { appService, settings, isLoggedIn: !!user },
-        );
-        if (!book) throw new Error(_('Import produced no book'));
-        await useLibraryStore.getState().updateBooks(envConfig, [book]);
-        await setWebBrowserStatus({ state: 'added', filename, bookHash: book.hash });
-        eventDispatcher.dispatch('toast', {
-          type: 'success',
-          message: _('Saved “{{title}}” to your library.', { title: book.title || filename }),
-          timeout: 3000,
-        });
+        const extracted = isBookArchiveDownload(filename)
+          ? await extractWebBrowserArchive(download.path)
+          : [];
+        for (const file of extracted.length ? extracted : [download.path]) {
+          const { library } = useLibraryStore.getState();
+          const book = await ingestFile(
+            { file, books: library, groupId, groupName },
+            { appService, settings, isLoggedIn: !!user },
+          );
+          if (!book) throw new Error(_('Import produced no book'));
+          await useLibraryStore.getState().updateBooks(envConfig, [book]);
+          await setWebBrowserStatus({ state: 'added', filename, bookHash: book.hash });
+          eventDispatcher.dispatch('toast', {
+            type: 'success',
+            message: _('Saved “{{title}}” to your library.', { title: book.title || filename }),
+            timeout: 3000,
+          });
+        }
       } catch (err) {
         await setWebBrowserStatus({ state: 'failed', filename });
         eventDispatcher.dispatch('toast', {

@@ -350,7 +350,7 @@ describe('Annotate opens the note editor at the selection', () => {
   test('saving writes the typed note onto the new annotation and closes the editor', async () => {
     await annotate();
 
-    act(() => {
+    await act(async () => {
       screen.getByText('stub-save').click();
     });
 
@@ -427,12 +427,42 @@ describe('Annotate opens the note editor at the selection', () => {
     await editExistingNote();
     expect(screen.getByTestId('note-editor-popup-value').textContent).toBe('an older thought');
 
-    act(() => {
+    await act(async () => {
       screen.getByText('stub-save').click();
     });
     expect(liveAnnotations()).toEqual([
       expect.objectContaining({ id: 'existing-note', note: 'a thought worth keeping' }),
     ]);
+  });
+
+  test.each([
+    1280, 390,
+  ])('keeps the editor open on save failure at viewport %s (#6123)', async (width) => {
+    setViewport(width, 844);
+    await editExistingNote();
+    const surface = width === 390 ? 'sheet' : 'popup';
+    let rejectSave!: (error: Error) => void;
+    h.saveConfig.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+    );
+    act(() => {
+      screen.getByText('stub-save').click();
+    });
+    expect(screen.getByTestId(`note-editor-${surface}`)).toBeTruthy();
+    act(() => {
+      screen.getByText('stub-save').click();
+    });
+    expect(h.saveConfig).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      rejectSave(new Error('disk full'));
+    });
+    expect(screen.getByTestId(`note-editor-${surface}`)).toBeTruthy();
+    await act(async () => {
+      screen.getByText('stub-save').click();
+    });
+    expect(screen.queryByTestId(`note-editor-${surface}`)).toBeNull();
   });
 
   test('cancelling an existing note never deletes it', async () => {

@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "আপনার KOReader ও Readest ডিভাইসগুলিকে সিঙ্কে রাখে।"
 
+msgid "Downloading %1 of %2…"
+msgstr "%2-এর মধ্যে %1 ডাউনলোড হচ্ছে…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB ডাউনলোড হয়েছে"
+
+msgid "No downloads in progress."
+msgstr "কোনো ডাউনলোড চলছে না।"
+
+msgid "Run in background"
+msgstr "পটভূমিতে চালান"
+
+msgid "Cancel download"
+msgstr "ডাউনলোড বাতিল করুন"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ডাউনলোড বাতিল করা হয়েছে। %2-এর মধ্যে %1 ডাউনলোড হয়েছে।"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2-এর মধ্যে %1 ডাউনলোড হয়েছে (%3 বাদ দেওয়া হয়েছে)।"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2-এর মধ্যে %1 ডাউনলোড হয়েছে।"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "ডাউনলোড সক্ষম করতে প্রথমে ফাইল ম্যানেজারে হোম ফোল্ডার সেট করুন।"
+
+msgid "No books to download."
+msgstr "ডাউনলোড করার মতো কোনো বই নেই।"
+
 msgid "Library view"
 msgstr "লাইব্রেরি ভিউ"
 
@@ -68,8 +98,14 @@ msgstr "আরোহী"
 msgid "Actions"
 msgstr "ক্রিয়াসমূহ"
 
+msgid "Sync now"
+msgstr "এখনই সিঙ্ক করুন"
+
 msgid "Download all books"
 msgstr "সব বই ডাউনলোড করুন"
+
+msgid "Download progress"
+msgstr "ডাউনলোডের অগ্রগতি"
 
 msgid "Rescan library"
 msgstr "লাইব্রেরি পুনরায় স্ক্যান করুন"
@@ -104,6 +140,12 @@ msgstr "লাইব্রেরিতে অনুসন্ধান করু�
 msgid "Search title or author"
 msgstr "শিরোনাম বা লেখক অনুসন্ধান করুন"
 
+msgid "Books synced"
+msgstr "বইগুলি সিঙ্ক হয়েছে"
+
+msgid "Books sync failed"
+msgstr "বই সিঙ্ক ব্যর্থ"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "সম্পূর্ণ লাইব্রেরি রেন্ডারিংয়ের জন্য Cover Browser প্লাগইন প্রয়োজন। সাধারণ তালিকায় ফিরে যাচ্ছে।"
 
@@ -116,18 +158,6 @@ msgstr "এই বইটি Readest থেকে ডাউনলোড করব
 msgid "Download"
 msgstr "ডাউনলোড"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "ডাউনলোড সক্ষম করতে প্রথমে ফাইল ম্যানেজারে হোম ফোল্ডার সেট করুন।"
-
-msgid "Downloading…"
-msgstr "ডাউনলোড হচ্ছে…"
-
-msgid "Cloud copy unavailable."
-msgstr "ক্লাউড কপি অনুপলব্ধ।"
-
-msgid "Download failed."
-msgstr "ডাউনলোড ব্যর্থ।"
-
 msgid "No cover available on Readest."
 msgstr "Readest-এ কোনো প্রচ্ছদ উপলব্ধ নেই।"
 
@@ -137,20 +167,8 @@ msgstr "প্রচ্ছদ ডাউনলোড ব্যর্থ।"
 msgid "Could not delete the file."
 msgstr "ফাইলটি মুছে ফেলা যায়নি।"
 
-msgid "No books to download."
-msgstr "ডাউনলোড করার মতো কোনো বই নেই।"
-
-msgid "Downloading %1 of %2…"
-msgstr "%2-এর মধ্যে %1 ডাউনলোড হচ্ছে…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "ডাউনলোড বাতিল করা হয়েছে। %2-এর মধ্যে %1 ডাউনলোড হয়েছে।"
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2-এর মধ্যে %1 ডাউনলোড হয়েছে (%3 বাদ দেওয়া হয়েছে)।"
-
-msgid "Downloaded %1 of %2."
-msgstr "%2-এর মধ্যে %1 ডাউনলোড হয়েছে।"
+msgid "Download group"
+msgstr "গ্রুপ ডাউনলোড করুন"
 
 msgid "Removing from cloud…"
 msgstr "ক্লাউড থেকে সরানো হচ্ছে…"
@@ -287,23 +305,14 @@ msgstr "এখনই পরিসংখ্যান পুশ করুন"
 msgid "Pull stats now"
 msgstr "এখনই পরিসংখ্যান পুল করুন"
 
-msgid "Push books now"
-msgstr "এখনই বই পুশ করুন"
-
-msgid "Pull books now"
-msgstr "এখনই বই পুল করুন"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop-এর মাধ্যমে গ্রহণ করুন"
-
-msgid "Upload current book to Readest"
-msgstr "বর্তমান বইটি Readest-এ আপলোড করুন"
-
 msgid "Push reading progress now"
 msgstr "এখন পড়ার অগ্রগতি পাঠান"
 
 msgid "Pull reading progress now"
 msgstr "এখন পড়ার অগ্রগতি আনুন"
+
+msgid "Upload current book to Readest"
+msgstr "বর্তমান বইটি Readest-এ আপলোড করুন"
 
 msgid "Push annotations now"
 msgstr "এখন টীকা পাঠান"
@@ -316,6 +325,9 @@ msgstr "সকল টীকার পূর্ণ সিঙ্ক"
 
 msgid "Sync info"
 msgstr "সিঙ্ক তথ্য"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop-এর মাধ্যমে গ্রহণ করুন"
 
 msgid "Check for update (v%1)"
 msgstr "আপডেট পরীক্ষা করুন (v%1)"
@@ -349,12 +361,6 @@ msgstr "সিঙ্ক তথ্য"
 
 msgid "Library not initialized"
 msgstr "লাইব্রেরি প্রারম্ভ করা হয়নি"
-
-msgid "Books synced"
-msgstr "বইগুলি সিঙ্ক হয়েছে"
-
-msgid "Books sync failed"
-msgstr "বই সিঙ্ক ব্যর্থ"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "প্রথমে একটি Readest ডাউনলোড ফোল্ডার বা KOReader হোম ফোল্ডার সেট করুন।"

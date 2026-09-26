@@ -75,28 +75,28 @@ test.describe('Annotation', () => {
     await expect(reader.popupTool('Highlight')).toBeVisible();
   });
 
-  // The instant dictionary is the other side of the #5213 boundary: the word was
-  // tapped to be looked up, not selected, so the lookup owns the gesture end to
-  // end — nothing is left to highlight or copy afterwards.
-  test('the instant dictionary drops the selection and dismisses clean (#5585)', async ({
+  // The instant dictionary drops the selection only for as long as the lookup is
+  // up: iOS paints its native selection handles and blue highlight above web
+  // content, i.e. on top of the popup (#5585). Dismissing hands the word back,
+  // or there is no route left to highlighting or copying it — with a quick
+  // action armed, re-selecting the word just opens the dictionary again (#6213).
+  test('the instant dictionary hands the selection back when it closes (#6213)', async ({
     openBook,
   }) => {
     const reader = await openBook();
 
     await reader.setQuickAction('Dictionary');
-    await reader.selectWord();
+    const word = await reader.selectWord();
 
     await expect(reader.dictionaryPopup).toBeVisible();
     await expect(reader.annotationPopup).toBeHidden();
-    // iOS paints its native selection handles and blue highlight above web
-    // content, i.e. on top of the popup, so the lookup deselects as it opens.
     expect(await reader.selectedSectionText()).toBe('');
 
     await reader.page.keyboard.press('Escape');
 
     await expect(reader.dictionaryPopup).toBeHidden();
-    // No live selection left, so the dismiss has no toolbar to return to.
-    await expect(reader.annotationPopup).toBeHidden();
+    await expect(reader.annotationPopup).toBeVisible();
+    expect(await reader.selectedSectionText()).toBe(word);
   });
 
   // Tapping a highlight (or holding one out with Instant Highlight) opens its

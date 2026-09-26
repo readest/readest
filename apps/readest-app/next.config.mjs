@@ -83,7 +83,7 @@ const nextConfig = {
       // Without an alias, webpack walks up from that source location and
       // can't find fflate (only installed in this app's node_modules).
       fflate: path.resolve(__dirname, 'node_modules/fflate'),
-      ...(appPlatform !== 'web' ? { '@tursodatabase/database-wasm': false } : {}),
+      ...(appPlatform !== 'web' ? { '@readest/turso-database-wasm/webpack': false } : {}),
       ...(isServer && appPlatform === 'web'
         ? { '@readest/turso-database-wasm/webpack': false, 'jieba-wasm': false }
         : {}),
@@ -96,7 +96,12 @@ const nextConfig = {
       // Turbopack rejects absolute paths in resolveAlias ("server relative
       // imports not implemented") — use a project-relative path.
       fflate: './node_modules/fflate',
-      ...(appPlatform !== 'web' ? { '@tursodatabase/database-wasm': './src/utils/stub.ts' } : {}),
+      // Only the web build stores its database in turso's WASM build; Tauri
+      // embeds every file in `out/`, so emitting the unused WASM there would
+      // ship it inside the app.
+      ...(appPlatform !== 'web'
+        ? { '@readest/turso-database-wasm/webpack': './src/utils/stub.ts' }
+        : {}),
     },
   },
   transpilePackages: [

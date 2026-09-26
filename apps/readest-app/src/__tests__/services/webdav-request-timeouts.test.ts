@@ -73,3 +73,8 @@ describe('WebDAV request timeouts', () => {
     expect(settled).toBe(true); // but a dead link still ends eventually
   });
 });
+
+test('preserves string errors returned by the native HTTP plugin', async () => {
+  globalThis.fetch = vi.fn().mockRejectedValue('Too many open files (os error 24)');
+  await expect(headFile(config, '/Readest/library.json')).rejects.toThrow('Too many open files');
+});

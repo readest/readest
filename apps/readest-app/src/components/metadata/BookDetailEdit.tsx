@@ -10,7 +10,7 @@ import { flattenContributors, formatAuthors, formatPublisher, formatTitle } from
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { FormField } from './FormField';
 import BookCover from '@/components/BookCover';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
 
 interface BookDetailEditProps {
   book: Book;
@@ -51,7 +51,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { settings } = useSettingsStore();
+  const { skeuomorphicCovers } = useDefaultBookshelfCovers();
   const { selectFiles } = useFileSelector(appService, _);
 
   const hasLockedFields = Object.values(lockedFields).some((locked) => locked);
@@ -189,7 +189,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
           >
             <BookCover
               mode='list'
-              showSpine={settings.librarySkeuomorphicCovers}
+              showSpine={skeuomorphicCovers}
               book={{
                 ...book,
                 metadata: {

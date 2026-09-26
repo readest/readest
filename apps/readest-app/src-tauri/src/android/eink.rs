@@ -20,6 +20,7 @@ const EINK_MANUFACTURERS: &[&str] = &[
     "mobiscribe", // Mobiscribe e-readers
     "xiaomi",     // Xiaomi InkPalm (needs model check)
     "meebook",    // Meebook e-readers
+    "ireader",    // iReader e-readers
 ];
 
 /// Known e-ink device models (for manufacturers that also make non-e-ink devices)

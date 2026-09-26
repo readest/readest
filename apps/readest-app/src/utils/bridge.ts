@@ -242,6 +242,10 @@ export async function getSafeAreaInsets(): Promise<GetSafeAreaInsetsResponse> {
   return result;
 }
 
+export async function setScreenWakeLock(enabled: boolean): Promise<void> {
+  await invoke('plugin:native-bridge|set_screen_wake_lock', { payload: { enabled } });
+}
+
 export async function getScreenBrightness(): Promise<GetScreenBrightnessResponse> {
   const result = await invoke<GetScreenBrightnessResponse>(
     'plugin:native-bridge|get_screen_brightness',

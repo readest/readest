@@ -20,7 +20,7 @@ import {
   canAutoAccept,
   refreshPairedDevice,
 } from '@/services/localsend/pairedDevices';
-import { playTransferCue, primeTransferCues } from '@/services/localsend/sounds';
+import { playTransferDoneCue } from '@/services/localsend/sounds';
 import {
   cancelLocalSendReceive,
   isLocalSendAlive,
@@ -103,17 +103,6 @@ const LocalSendManager: React.FC = () => {
       /* haptics are best-effort */
     }
   }, [appService]);
-
-  // Webview autoplay policies block sounds that fire without a user gesture
-  // (transfer complete, auto-accepted receives); unlock the cue elements on
-  // the first gesture. A session with no gesture at all degrades to
-  // toast + haptic, which is the accepted floor.
-  useEffect(() => {
-    if (!isTauriAppPlatform()) return;
-    const prime = () => primeTransferCues();
-    window.addEventListener('pointerdown', prime, { once: true });
-    return () => window.removeEventListener('pointerdown', prime);
-  }, []);
 
   const defaultAlias = useCallback(async (): Promise<string> => {
     // Prefer the signed-in user's name, AirDrop style: "<name>'s Readest".
@@ -319,7 +308,6 @@ const LocalSendManager: React.FC = () => {
           if (reason === 'cancelled') {
             toast(_('Transfer from {{alias}} cancelled', { alias: owned.alias }));
           } else if (failed > 0) {
-            playTransferCue('fail', cueOpts());
             haptic();
             toast(
               _('Received {{count}} book(s) from {{alias}}, {{failed}} failed', {
@@ -330,7 +318,7 @@ const LocalSendManager: React.FC = () => {
               'warning',
             );
           } else {
-            playTransferCue('done', cueOpts());
+            playTransferDoneCue(cueOpts());
             haptic();
             toast(
               _('Received {{count}} book(s) from {{alias}}', {
@@ -406,11 +394,10 @@ const LocalSendManager: React.FC = () => {
       if (claimed) {
         useLocalSendStore.getState().claimSession(sessionId, sender.alias);
         toast(_('Receiving from paired device {{alias}}', { alias: sender.alias }));
-        playTransferCue('start', cueOpts());
         haptic();
       }
     })();
-  }, [pendingRequest, pairingEntitled, toast, _, cueOpts, haptic]);
+  }, [pendingRequest, pairingEntitled, toast, _, haptic]);
 
   if (!isTauriAppPlatform()) return null;
 

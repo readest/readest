@@ -26,6 +26,7 @@ import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useProgressSync } from '../hooks/useProgressSync';
+import { useABSProgressSync } from '../hooks/useABSProgressSync';
 import { useProgressAutoSave } from '../hooks/useProgressAutoSave';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
@@ -77,11 +78,13 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
+import { sanitizeSvg } from '@/services/transformers/sanitizer';
 import { lockScreenOrientation, setSelectionSuppressed } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
+import { isDialogueHighlightActive, manageDialogueHighlight } from '@/utils/dialogueHighlight';
 import { getViewInsets } from '@/utils/insets';
 import { collectDocumentImages, DocumentImage } from '../utils/documentImages';
 import { footerReservesBand } from '../utils/footerBand';
@@ -94,6 +97,7 @@ import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { observeDynamicResources } from '@/utils/dynamicResources';
+import { setCoverSpread } from '@/utils/spread';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
@@ -189,6 +193,7 @@ const FoliateViewer: React.FC<{
 
   useUICSS(bookKey);
   useProgressSync(bookKey);
+  useABSProgressSync(bookKey);
   useProgressAutoSave(bookKey);
   useBookCoverAutoSave(bookKey);
   const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
@@ -216,14 +221,19 @@ const FoliateViewer: React.FC<{
   // the page is busy — which is the behaviour we want here.
   const pendingRelocateRef = useRef<CustomEvent | null>(null);
   const relocateRafRef = useRef<number | null>(null);
+  const relocateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelRelocateScheduled = useCallback(() => {
+    if (relocateTimeoutRef.current != null) {
+      clearTimeout(relocateTimeoutRef.current);
+      relocateTimeoutRef.current = null;
+    }
     const id = relocateRafRef.current;
     if (id == null) return;
     relocateRafRef.current = null;
     cancelAnimationFrame(id);
   }, []);
   const commitRelocate = useCallback(() => {
-    relocateRafRef.current = null;
+    cancelRelocateScheduled();
     const event = pendingRelocateRef.current;
     pendingRelocateRef.current = null;
     if (!event) return;
@@ -243,7 +253,7 @@ const FoliateViewer: React.FC<{
       detail.range,
       detail.fraction,
     );
-  }, [bookKey, setProgress]);
+  }, [bookKey, setProgress, cancelRelocateScheduled]);
 
   const progressRelocateHandler = (event: Event) => {
     // Foliate can emit a late relocation after close() clears its progress
@@ -260,15 +270,14 @@ const FoliateViewer: React.FC<{
     // stays current. The page-follow relocate still fires; only the commit was
     // being deferred.
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-      if (relocateRafRef.current != null) {
-        cancelAnimationFrame(relocateRafRef.current);
-        relocateRafRef.current = null;
-      }
       commitRelocate();
       return;
     }
     if (relocateRafRef.current != null) return;
     relocateRafRef.current = requestAnimationFrame(commitRelocate);
+    // A CarPlay-only WebView can report "visible" without a phone scene
+    // driving animation frames. TTS still needs its reading position.
+    relocateTimeoutRef.current = setTimeout(commitRelocate, 100);
   };
 
   useEffect(() => {
@@ -304,6 +313,9 @@ const FoliateViewer: React.FC<{
               viewSettings.vertical,
               bookData?.isFixedLayout,
             );
+          if (detail.type === 'image/svg+xml' && !viewSettings?.allowScript) {
+            return sanitizeSvg(data);
+          }
           const isHtml = detail.type === 'application/xhtml+xml' || detail.type === 'text/html';
           if (viewSettings && bookData && isHtml) {
             const ctx: TransformContext = {
@@ -438,6 +450,10 @@ const FoliateViewer: React.FC<{
         manageSyntaxHighlighting(detail.doc, viewSettings);
       }
 
+      if (isDialogueHighlightActive(viewSettings)) {
+        manageDialogueHighlight(detail.doc, viewSettings);
+      }
+
       setTimeout(() => {
         const sectionIndex = detail.index;
         const booknotes = config.booknotes || [];
@@ -530,7 +546,7 @@ const FoliateViewer: React.FC<{
     return {
       appService: appService!,
       bookLang,
-      appLang: getLocale().split('-')[0] || 'en',
+      appLang: getLocale(),
       allowDownload,
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
@@ -727,8 +743,7 @@ const FoliateViewer: React.FC<{
 
       if (bookDoc.rendition?.layout === 'pre-paginated' && bookDoc.sections) {
         bookDoc.rendition.spread = viewSettings.spreadMode;
-        const coverSide = bookDoc.dir === 'rtl' ? 'right' : 'left';
-        bookDoc.sections[0]!.pageSpread = viewSettings.keepCoverSpread ? '' : coverSide;
+        setCoverSpread(bookDoc, viewSettings.keepCoverSpread);
       }
 
       await view.open(bookDoc);

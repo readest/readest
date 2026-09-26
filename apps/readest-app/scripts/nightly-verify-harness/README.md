@@ -60,15 +60,17 @@ Throwaway-signed fixtures only (the signing key was discarded).
 In the dev window devtools console (right-click → Inspect):
 
 ```js
-const path = '<ABS>/apps/readest-app/scripts/nightly-verify-harness/artifacts/test.bin';
+const { invoke } = window.__TAURI_INTERNALS__;
+const path = await invoke('plugin:dialog|open', {
+  options: { multiple: false, directory: false },
+});
 const pubKey = 'dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZFQTAxMjIzNUEwRkE0OUIKUldTYnBBOWFJeEtnL2x4Q3dKR3dSWVJCY3dLNXdCR1l4d1YyVkhaZUppOVVNVm1kOGprbU85bTMK';
 const goodSig = 'dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYnBBOWFJeEtnL3RvRC83dEJEUXZONVFZM1hranhKTUZxQzllR2lGWnNjckZMbCtOa3RXMi80aFdDYUNDUkdOa0NqUjJUQkZDL2dqaUVTeURlNzI0cW1BcUlZY2ZsOGcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgxNDE0MzExCWZpbGU6bnYuYmluCkQzajlpbVZPOXVDYXdna2JBVWZ0TTE4K1d1cWdEYWVYQzVraGh4U1ZuOGNSTDZaOU5zV093OEVDajBvV0JydVV5VGY2K0tkb0hBbGJHYWprK0NsNUN3PT0K';
-const { invoke } = window.__TAURI_INTERNALS__;
-
 await invoke('verify_update_signature', { path, signature: goodSig, pubKey });        // → true
 await invoke('verify_update_signature', { path, signature: 'AAAAgarbage', pubKey });  // → false
 ```
-Replace `<ABS>`. (`pubKey` is the *throwaway* key that signed `test.bin`, not the
+Select `scripts/nightly-verify-harness/artifacts/test.bin` in the dialog to grant
+Readest access to the fixture. (`pubKey` is the *throwaway* key that signed `test.bin`, not the
 production key.) Tampering `test.bin` and re-running the good-sig call also → false.
 
 ## Notes

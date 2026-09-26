@@ -102,6 +102,64 @@ describe('ReadwiseClient base URL', () => {
     return JSON.parse(init.body as string).highlights[0];
   };
 
+  test('exports a bookmark page and its note instead of the captured page text', async () => {
+    const bookmark: BookNote = {
+      ...makeNote(),
+      type: 'bookmark',
+      page: 42,
+      note: 'Return to this argument',
+    };
+    await new ReadwiseClient(makeSettings()).pushHighlights([bookmark], makeBook());
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(pushedHighlight()).toMatchObject({
+      text: 'Page 42',
+      note: 'Return to this argument',
+      location: 42,
+      location_type: 'page',
+      title: 'Test Book',
+      author: 'Test Author',
+      highlighted_at: new Date(bookmark.createdAt).toISOString(),
+    });
+    expect(pushedHighlight().highlight_url).toContain(bookmark.id);
+  });
+
+  test('exports bookmarks without captured text or a note', async () => {
+    const bookmark: BookNote = { ...makeNote(), type: 'bookmark', text: undefined };
+    await new ReadwiseClient(makeSettings()).pushHighlights([bookmark], makeBook());
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(pushedHighlight().text).toBe('Page 1');
+    expect(pushedHighlight()).not.toHaveProperty('note');
+  });
+
+  test('uses the bookmark position when no page number is available', async () => {
+    const bookmark: BookNote = { ...makeNote(), type: 'bookmark', page: undefined };
+    await new ReadwiseClient(makeSettings()).pushHighlights([bookmark], makeBook());
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(pushedHighlight().text).toBe(`Position ${bookmark.cfi}`);
+    expect(pushedHighlight()).not.toHaveProperty('location');
+    expect(pushedHighlight().location_type).toBe('order');
+  });
+
+  test('keeps highlights and excerpts while excluding deleted bookmarks and notebooks', async () => {
+    const notes: BookNote[] = [
+      makeNote(),
+      { ...makeNote(), id: 'excerpt', type: 'excerpt', text: 'excerpt text' },
+      { ...makeNote(), id: 'deleted', type: 'bookmark', deletedAt: 1700000001000 },
+      { ...makeNote(), id: 'notebook', type: 'notebook' },
+      { ...makeNote(), id: 'empty', text: '' },
+    ];
+    await new ReadwiseClient(makeSettings()).pushHighlights(notes, makeBook());
+
+    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    expect(JSON.parse(init.body as string).highlights).toMatchObject([
+      { text: 'highlighted text' },
+      { text: 'excerpt text' },
+    ]);
+  });
+
   test('sends a resolved public cover URL as image_url', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
     const client = new ReadwiseClient(makeSettings());

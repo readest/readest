@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Håller dina KOReader- och Readest-enheter synkroniserade."
 
+msgid "Downloading %1 of %2…"
+msgstr "Laddar ned %1 av %2…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB hämtat"
+
+msgid "No downloads in progress."
+msgstr "Inga pågående hämtningar."
+
+msgid "Run in background"
+msgstr "Kör i bakgrunden"
+
+msgid "Cancel download"
+msgstr "Avbryt hämtning"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Nedladdning avbruten. %1 av %2 nedladdade."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Laddade ned %1 av %2 (hoppade över %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Laddade ned %1 av %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Ange startmappen i filhanteraren först för att aktivera nedladdningar."
+
+msgid "No books to download."
+msgstr "Inga böcker att ladda ned."
+
 msgid "Library view"
 msgstr "Biblioteksvy"
 
@@ -68,8 +98,14 @@ msgstr "Stigande"
 msgid "Actions"
 msgstr "Åtgärder"
 
+msgid "Sync now"
+msgstr "Synkronisera nu"
+
 msgid "Download all books"
 msgstr "Ladda ned alla böcker"
+
+msgid "Download progress"
+msgstr "Hämtningsförlopp"
 
 msgid "Rescan library"
 msgstr "Skanna biblioteket igen"
@@ -104,6 +140,12 @@ msgstr "Sök i biblioteket"
 msgid "Search title or author"
 msgstr "Sök titel eller författare"
 
+msgid "Books synced"
+msgstr "Böckerna synkroniserade"
+
+msgid "Books sync failed"
+msgstr "Synkronisering av böcker misslyckades"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Cover Browser-tillägget krävs för full biblioteksrendering. Återgår till enkel lista."
 
@@ -116,18 +158,6 @@ msgstr "Ladda ned den här boken från Readest?"
 msgid "Download"
 msgstr "Ladda ned"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Ange startmappen i filhanteraren först för att aktivera nedladdningar."
-
-msgid "Downloading…"
-msgstr "Laddar ned …"
-
-msgid "Cloud copy unavailable."
-msgstr "Molnkopia är inte tillgänglig."
-
-msgid "Download failed."
-msgstr "Nedladdning misslyckades."
-
 msgid "No cover available on Readest."
 msgstr "Inget omslag tillgängligt på Readest."
 
@@ -137,20 +167,8 @@ msgstr "Nedladdning av omslag misslyckades."
 msgid "Could not delete the file."
 msgstr "Kunde inte ta bort filen."
 
-msgid "No books to download."
-msgstr "Inga böcker att ladda ned."
-
-msgid "Downloading %1 of %2…"
-msgstr "Laddar ned %1 av %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Nedladdning avbruten. %1 av %2 nedladdade."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Laddade ned %1 av %2 (hoppade över %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Laddade ned %1 av %2."
+msgid "Download group"
+msgstr "Hämta grupp"
 
 msgid "Removing from cloud…"
 msgstr "Tar bort från molnet …"
@@ -287,23 +305,14 @@ msgstr "Skicka statistik nu"
 msgid "Pull stats now"
 msgstr "Hämta statistik nu"
 
-msgid "Push books now"
-msgstr "Skicka böcker nu"
-
-msgid "Pull books now"
-msgstr "Hämta böcker nu"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Ta emot via Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Ladda upp aktuell bok till Readest"
-
 msgid "Push reading progress now"
 msgstr "Skicka läsförloppet nu"
 
 msgid "Pull reading progress now"
 msgstr "Hämta läsförloppet nu"
+
+msgid "Upload current book to Readest"
+msgstr "Ladda upp aktuell bok till Readest"
 
 msgid "Push annotations now"
 msgstr "Skicka anteckningar nu"
@@ -316,6 +325,9 @@ msgstr "Synkronisera alla anteckningar fullständigt"
 
 msgid "Sync info"
 msgstr "Synkroniseringsinfo"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Ta emot via Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Sök efter uppdatering (v%1)"
@@ -349,12 +361,6 @@ msgstr "Synkroniseringsinfo"
 
 msgid "Library not initialized"
 msgstr "Biblioteket är inte initierat"
-
-msgid "Books synced"
-msgstr "Böckerna synkroniserade"
-
-msgid "Books sync failed"
-msgstr "Synkronisering av böcker misslyckades"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Ange först en Readest-nedladdningsmapp eller en KOReader-hemmapp."

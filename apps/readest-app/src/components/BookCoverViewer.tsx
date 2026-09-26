@@ -3,7 +3,7 @@ import { Book } from '@/types/book';
 import { Insets } from '@/types/misc';
 import { convertBlobUrlToDataUrl } from '@/libs/document';
 import { useThemeStore } from '@/store/themeStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
 import ImageViewer from '@/app/reader/components/ImageViewer';
 import ModalPortal from './ModalPortal';
 
@@ -30,7 +30,7 @@ const BookCoverViewer: React.FC<BookCoverViewerProps> = ({ src, onClose }) => {
 // Loads the cover on demand; the viewer wants a data URL (its save button
 // extracts the bytes from it), as for in-book images in FoliateViewer.
 export const useBookCoverViewer = (book: Book) => {
-  const hideCovers = useSettingsStore((state) => state.settings.libraryHideCovers);
+  const { hideCovers } = useDefaultBookshelfCovers();
   const [coverSrc, setCoverSrc] = useState<string | null>(null);
 
   const openCoverViewer = async () => {

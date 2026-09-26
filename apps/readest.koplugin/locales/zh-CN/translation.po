@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "让你的 KOReader 与 Readest 设备保持同步。"
 
+msgid "Downloading %1 of %2…"
+msgstr "正在下载第 %1 / %2 本…"
+
+msgid "%1 MB downloaded"
+msgstr "已下载 %1 MB"
+
+msgid "No downloads in progress."
+msgstr "没有正在进行的下载。"
+
+msgid "Run in background"
+msgstr "在后台运行"
+
+msgid "Cancel download"
+msgstr "取消下载"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "下载已取消。已下载 %2 本中的 %1 本。"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "已下载 %2 本中的 %1 本（跳过 %3 本）。"
+
+msgid "Downloaded %1 of %2."
+msgstr "已下载 %2 本中的 %1 本。"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "请先在文件管理器中设置主文件夹以启用下载。"
+
+msgid "No books to download."
+msgstr "没有可下载的书籍。"
+
 msgid "Library view"
 msgstr "书库视图"
 
@@ -68,8 +98,14 @@ msgstr "升序"
 msgid "Actions"
 msgstr "操作"
 
+msgid "Sync now"
+msgstr "立即同步"
+
 msgid "Download all books"
 msgstr "下载所有书籍"
+
+msgid "Download progress"
+msgstr "下载进度"
 
 msgid "Rescan library"
 msgstr "重新扫描书库"
@@ -104,6 +140,12 @@ msgstr "搜索书库"
 msgid "Search title or author"
 msgstr "搜索书名或作者"
 
+msgid "Books synced"
+msgstr "书籍已同步"
+
+msgid "Books sync failed"
+msgstr "书籍同步失败"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "完整书库渲染需要 Cover Browser 插件，将回退到简单列表。"
 
@@ -116,18 +158,6 @@ msgstr "从 Readest 下载这本书？"
 msgid "Download"
 msgstr "下载"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "请先在文件管理器中设置主文件夹以启用下载。"
-
-msgid "Downloading…"
-msgstr "下载中…"
-
-msgid "Cloud copy unavailable."
-msgstr "云端副本不可用。"
-
-msgid "Download failed."
-msgstr "下载失败。"
-
 msgid "No cover available on Readest."
 msgstr "Readest 上没有可用封面。"
 
@@ -137,20 +167,8 @@ msgstr "封面下载失败。"
 msgid "Could not delete the file."
 msgstr "无法删除文件。"
 
-msgid "No books to download."
-msgstr "没有可下载的书籍。"
-
-msgid "Downloading %1 of %2…"
-msgstr "正在下载第 %1 / %2 本…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "下载已取消。已下载 %2 本中的 %1 本。"
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "已下载 %2 本中的 %1 本（跳过 %3 本）。"
-
-msgid "Downloaded %1 of %2."
-msgstr "已下载 %2 本中的 %1 本。"
+msgid "Download group"
+msgstr "下载分组"
 
 msgid "Removing from cloud…"
 msgstr "正在从云端删除…"
@@ -287,23 +305,14 @@ msgstr "立即推送统计"
 msgid "Pull stats now"
 msgstr "立即拉取统计"
 
-msgid "Push books now"
-msgstr "立即推送书籍"
-
-msgid "Pull books now"
-msgstr "立即拉取书籍"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "通过 Nearby BookDrop 接收"
-
-msgid "Upload current book to Readest"
-msgstr "上传当前书籍到 Readest"
-
 msgid "Push reading progress now"
 msgstr "立即推送阅读进度"
 
 msgid "Pull reading progress now"
 msgstr "立即拉取阅读进度"
+
+msgid "Upload current book to Readest"
+msgstr "上传当前书籍到 Readest"
 
 msgid "Push annotations now"
 msgstr "立即推送标注"
@@ -316,6 +325,9 @@ msgstr "完整同步所有标注"
 
 msgid "Sync info"
 msgstr "同步信息"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "通过 Nearby BookDrop 接收"
 
 msgid "Check for update (v%1)"
 msgstr "检查更新（v%1）"
@@ -349,12 +361,6 @@ msgstr "同步信息"
 
 msgid "Library not initialized"
 msgstr "书库未初始化"
-
-msgid "Books synced"
-msgstr "书籍已同步"
-
-msgid "Books sync failed"
-msgstr "书籍同步失败"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "请先设置 Readest 下载文件夹或 KOReader 主文件夹。"

@@ -29,6 +29,13 @@ vi.mock('@/hooks/useAppRouter', () => ({
   useAppRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: routerBack }),
 }));
 
+// The player mounts the deep-link listener so an Android Auto selection (or a
+// widget tap) also works from this route. It has its own tests and pulls in
+// the whole book-transfer stack, so stub it out here.
+vi.mock('@/hooks/useOpenBookLink', () => ({
+  useOpenBookLink: () => {},
+}));
+
 vi.mock('@/hooks/useLibrary', () => ({
   useLibrary: () => ({ libraryLoaded: true }),
 }));

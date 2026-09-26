@@ -34,6 +34,7 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName, localized
     // resulting `/library?group=` does commit, and the trailing empty `group=`
     // is stripped cosmetically by the cleanup effect in page.tsx.
     params.set('group', '');
+    params.delete('shelf');
     navigateToLibrary(router, params.toString());
   };
 

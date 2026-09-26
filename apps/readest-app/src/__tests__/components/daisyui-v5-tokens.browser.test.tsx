@@ -247,6 +247,35 @@ describe('daisyUI 5 theme tokens', () => {
     expect(css(select, 'position-anchor', '::picker(select)')).toBe('--settings-select');
   });
 
+  for (const direction of ['ltr', 'rtl']) {
+    it(`keeps short settings values next to their chevron in ${direction}`, () => {
+      const { getByLabelText } = render(
+        <div dir={direction} style={{ width: 400, display: 'flex', justifyContent: 'end' }}>
+          <SettingsSelect
+            value='fit'
+            onChange={() => {}}
+            options={[
+              { value: 'crop', label: 'Crop' },
+              { value: 'fit', label: 'Fit' },
+            ]}
+            ariaLabel='Cover sizing'
+          />
+        </div>,
+      );
+      const select = getByLabelText('Cover sizing');
+      const style = getComputedStyle(select);
+      const context = document.createElement('canvas').getContext('2d')!;
+      context.font = `${style.fontSize} ${style.fontFamily}`;
+      const contentWidth =
+        context.measureText('Fit').width +
+        parseFloat(style.paddingLeft) +
+        parseFloat(style.paddingRight);
+      expect(select.getBoundingClientRect().width).toBeLessThanOrEqual(contentWidth + 2);
+      select.style.appearance = 'none';
+      expect(select.getBoundingClientRect().width).toBeLessThanOrEqual(contentWidth + 2);
+    });
+  }
+
   it('sizes Select to its value so the label ends against the chevron', () => {
     // daisyUI 5 gives `.select` `width: clamp(3rem,20rem,100%)`, so the box
     // stretches to its max width whatever the value is and the label sits at the

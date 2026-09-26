@@ -1,0 +1,582 @@
+# Georgian translation for readest.koplugin
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: readest.koplugin\n"
+"Last-Translator: Readest contributors\n"
+"Language-Team: Georgian\n"
+"Language: ka\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Readest"
+msgstr "Readest"
+
+msgid "Keeps your KOReader and Readest devices in sync."
+msgstr "თქვენს KOReader და Readest მოწყობილობებს სინქრონიზებულად ინარჩუნებს."
+
+msgid "Downloading %1 of %2…"
+msgstr "იტვირთება %1 / %2…"
+
+msgid "%1 MB downloaded"
+msgstr "ჩამოტვირთულია %1 მბ"
+
+msgid "No downloads in progress."
+msgstr "მიმდინარე ჩამოტვირთვები არ არის."
+
+msgid "Run in background"
+msgstr "ფონურ რეჟიმში გაშვება"
+
+msgid "Cancel download"
+msgstr "ჩამოტვირთვის გაუქმება"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ჩამოტვირთვა გაუქმდა. ჩამოტვირთულია %1 / %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "ჩამოტვირთულია %1 / %2 (გამოტოვებულია %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "ჩამოტვირთულია %1 / %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "ჩამოტვირთვის ჩასართავად ჯერ ფაილთა მენეჯერში მიუთითეთ მთავარი საქაღალდე."
+
+msgid "No books to download."
+msgstr "ჩამოსატვირთი წიგნები არ არის."
+
+msgid "Library view"
+msgstr "ბიბლიოთეკის ხედი"
+
+msgid "View"
+msgstr "ხედი"
+
+msgid "Grid"
+msgstr "ბადე"
+
+msgid "List"
+msgstr "სია"
+
+msgid "Group by"
+msgstr "დაჯგუფება"
+
+msgid "Authors"
+msgstr "ავტორები"
+
+msgid "Books"
+msgstr "წიგნები"
+
+msgid "Groups"
+msgstr "ჯგუფები"
+
+msgid "Series"
+msgstr "სერია"
+
+msgid "Sort by"
+msgstr "დალაგება"
+
+msgid "Date Read"
+msgstr "წაკითხვის თარიღი"
+
+msgid "Date Added"
+msgstr "დამატების თარიღი"
+
+msgid "Title"
+msgstr "სათაური"
+
+msgid "Author"
+msgstr "ავტორი"
+
+msgid "Descending"
+msgstr "კლებადობით"
+
+msgid "Ascending"
+msgstr "ზრდადობით"
+
+msgid "Actions"
+msgstr "მოქმედებები"
+
+msgid "Sync now"
+msgstr "სინქრონიზაცია ახლა"
+
+msgid "Download all books"
+msgstr "ყველა წიგნის ჩამოტვირთვა"
+
+msgid "Download progress"
+msgstr "ჩამოტვირთვის მიმდინარეობა"
+
+msgid "Rescan library"
+msgstr "ბიბლიოთეკის ხელახლა სკანირება"
+
+msgid "Download folder…"
+msgstr "ჩამოტვირთვის საქაღალდე…"
+
+msgid "Pick a folder for downloaded books"
+msgstr "აირჩიეთ საქაღალდე ჩამოტვირთული წიგნებისთვის"
+
+msgid "Sign in to Readest to open the Library"
+msgstr "ბიბლიოთეკის გასახსნელად შედით Readest-ში"
+
+msgid "Library"
+msgstr "ბიბლიოთეკა"
+
+msgid "Readest Library"
+msgstr "Readest-ის ბიბლიოთეკა"
+
+msgid "Cancel"
+msgstr "გაუქმება"
+
+msgid "Clear"
+msgstr "გასუფთავება"
+
+msgid "Search"
+msgstr "ძებნა"
+
+msgid "Search library"
+msgstr "ბიბლიოთეკაში ძიება"
+
+msgid "Search title or author"
+msgstr "სათაურის ან ავტორის ძიება"
+
+msgid "Books synced"
+msgstr "წიგნები სინქრონიზებულია"
+
+msgid "Books sync failed"
+msgstr "წიგნების სინქრონიზაცია ვერ მოხერხდა"
+
+msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
+msgstr "ბიბლიოთეკის სრულად საჩვენებლად საჭიროა Cover Browser მოდული. გამოყენებული იქნება მარტივი სია."
+
+msgid "File moved or deleted. Rescan library?"
+msgstr "ფაილი გადატანილია ან წაშლილია. ხელახლა დავასკანიროთ ბიბლიოთეკა?"
+
+msgid "Download this book from Readest?"
+msgstr "ჩამოვტვირთოთ ეს წიგნი Readest-იდან?"
+
+msgid "Download"
+msgstr "ჩამოტვირთვა"
+
+msgid "No cover available on Readest."
+msgstr "Readest-ზე ყდა არ არის ხელმისაწვდომი."
+
+msgid "Cover download failed."
+msgstr "ყდის ჩამოტვირთვა ვერ მოხერხდა."
+
+msgid "Could not delete the file."
+msgstr "ფაილის წაშლა ვერ მოხერხდა."
+
+msgid "Download group"
+msgstr "ჯგუფის ჩამოტვირთვა"
+
+msgid "Removing from cloud…"
+msgstr "ღრუბლიდან იშლება…"
+
+msgid "Cloud removal failed."
+msgstr "ღრუბლიდან წაშლა ვერ მოხერხდა."
+
+msgid "Remove from Cloud & Device"
+msgstr "მოშორება ღრუბლიდან და მოწყობილობიდან"
+
+msgid "Remove this book from cloud and device?"
+msgstr "წავშალოთ ეს წიგნი ღრუბლიდან და მოწყობილობიდან?"
+
+msgid "Remove"
+msgstr "წაშლა"
+
+msgid "Remove from Cloud Only"
+msgstr "მოშორება მხოლოდ ღრუბლიდან"
+
+msgid "Remove this book from the cloud only?"
+msgstr "წავშალოთ ეს წიგნი მხოლოდ ღრუბლიდან?"
+
+msgid "Remove from Device Only"
+msgstr "მოშორება მხოლოდ მოწყობილობიდან"
+
+msgid "Remove the local copy of this book?"
+msgstr "წავშალოთ ამ წიგნის ლოკალური ასლი?"
+
+msgid "Upload to Cloud"
+msgstr "ატვირთვა ღრუბელში"
+
+msgid "Uploading…"
+msgstr "იტვირთება…"
+
+msgid "Storage quota exceeded."
+msgstr "საცავის ლიმიტი გადაჭარბებულია."
+
+msgid "Upload failed."
+msgstr "ატვირთვა ვერ მოხერხდა."
+
+msgid "Send to nearby Readest devices"
+msgstr "ახლომდებარე Readest მოწყობილობებზე გაგზავნა"
+
+msgid "Download Book"
+msgstr "წიგნის ჩამოტვირთვა"
+
+msgid "Download Cover"
+msgstr "ყდის ჩამოტვირთვა"
+
+msgid "Download All"
+msgstr "ყველას ჩამოტვირთვა"
+
+msgid "Open Readest Library"
+msgstr "Readest-ის ბიბლიოთეკის გახსნა"
+
+msgid "Push Readest book library"
+msgstr "Readest-ის წიგნების ბიბლიოთეკის ატვირთვა"
+
+msgid "Pull Readest book library"
+msgstr "Readest-ის წიგნების ბიბლიოთეკის ჩამოტვირთვა"
+
+msgid "Set auto progress sync"
+msgstr "პროგრესის ავტომატური სინქრონიზაციის დაყენება"
+
+msgid "on"
+msgstr "ჩართული"
+
+msgid "off"
+msgstr "გამორთული"
+
+msgid "Toggle auto readest sync"
+msgstr "Readest-ის ავტომატური სინქრონიზაციის გადართვა"
+
+msgid "Push readest progress from this device"
+msgstr "Readest-ის პროგრესის ატვირთვა ამ მოწყობილობიდან"
+
+msgid "Pull readest progress from other devices"
+msgstr "Readest-ის პროგრესის ჩამოტვირთვა სხვა მოწყობილობებიდან"
+
+msgid "Push readest annotations from this device"
+msgstr "Readest-ის ანოტაციების ატვირთვა ამ მოწყობილობიდან"
+
+msgid "Pull readest annotations from other devices"
+msgstr "Readest-ის ანოტაციების ჩამოტვირთვა სხვა მოწყობილობებიდან"
+
+msgid "Full sync all readest annotations"
+msgstr "Readest-ის ყველა ანოტაციის სრული სინქრონიზაცია"
+
+msgid "Add to Readest library"
+msgstr "Readest-ის ბიბლიოთეკაში დამატება"
+
+msgid "Sign in to Readest first."
+msgstr "ჯერ შედით Readest-ში."
+
+msgid "File not found."
+msgstr "ფაილი ვერ მოიძებნა."
+
+msgid "Unsupported book format."
+msgstr "წიგნის ფორმატი არ არის მხარდაჭერილი."
+
+msgid "Hashing book…"
+msgstr "წიგნის ჰეში გამოითვლება…"
+
+msgid "Could not read file."
+msgstr "ფაილის წაკითხვა ვერ მოხერხდა."
+
+msgid "Already in your Readest library:"
+msgstr "უკვე არის თქვენს Readest ბიბლიოთეკაში:"
+
+msgid "Added to Readest:"
+msgstr "დაემატა Readest-ს:"
+
+msgid "No book is open"
+msgstr "არცერთი წიგნი არ არის გახსნილი"
+
+msgid "Uploaded to Readest:"
+msgstr "ატვირთულია Readest-ზე:"
+
+msgid "Log in Readest Account"
+msgstr "Readest-ის ანგარიშში შესვლა"
+
+msgid "Log out as %1"
+msgstr "%1 ანგარიშიდან გამოსვლა"
+
+msgid "Auto sync"
+msgstr "ავტომატური სინქრონიზაცია"
+
+msgid "Readest library"
+msgstr "Readest-ის ბიბლიოთეკა"
+
+msgid "Push stats now"
+msgstr "სტატისტიკის ახლავე ატვირთვა"
+
+msgid "Pull stats now"
+msgstr "სტატისტიკის ახლავე ჩამოტვირთვა"
+
+msgid "Push reading progress now"
+msgstr "კითხვის პროგრესის ახლავე ატვირთვა"
+
+msgid "Pull reading progress now"
+msgstr "კითხვის პროგრესის ახლავე ჩამოტვირთვა"
+
+msgid "Upload current book to Readest"
+msgstr "მიმდინარე წიგნის Readest-ზე ატვირთვა"
+
+msgid "Push annotations now"
+msgstr "ანოტაციების ახლავე ატვირთვა"
+
+msgid "Pull annotations now"
+msgstr "ანოტაციების ახლავე ჩამოტვირთვა"
+
+msgid "Full sync all annotations"
+msgstr "ყველა ანოტაციის სრული სინქრონიზაცია"
+
+msgid "Sync info"
+msgstr "სინქრონიზაციის ინფორმაცია"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "მიღება Nearby BookDrop-ით"
+
+msgid "Check for update (v%1)"
+msgstr "განახლების შემოწმება (v%1)"
+
+msgid "Check for update"
+msgstr "განახლების შემოწმება"
+
+msgid "Please login first"
+msgstr "ჯერ შედით ანგარიშში"
+
+msgid "Please configure Readest settings first"
+msgstr "ჯერ გამართეთ Readest-ის პარამეტრები"
+
+msgid "(none)"
+msgstr "(არცერთი)"
+
+msgid "Never synced"
+msgstr "არასდროს დასინქრონებულა"
+
+msgid "Book Fingerprint"
+msgstr "წიგნის ანაბეჭდი"
+
+msgid "Identifiers"
+msgstr "იდენტიფიკატორები"
+
+msgid "Last Synced"
+msgstr "ბოლო სინქრონიზაცია"
+
+msgid "Sync Info"
+msgstr "სინქრონიზაციის ინფორმაცია"
+
+msgid "Library not initialized"
+msgstr "ბიბლიოთეკა არ არის ინიციალიზებული"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "ჯერ მიუთითეთ Readest-ის ჩამოტვირთვის საქაღალდე ან KOReader-ის მთავარი საქაღალდე."
+
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop-ის შეცდომა: თავისუფალი პორტი ვერ მოიძებნა."
+
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop ვერ გაეშვა."
+
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop იშვება…"
+
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop გაეშვება Wi-Fi-სთან დაკავშირებისას."
+
+msgid "… and %1 more"
+msgstr "… და კიდევ %1"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1-ს სურს გამოგიგზავნოთ %2 ფაილი (%3):"
+
+msgid "Accept"
+msgstr "მიღება"
+
+msgid "Decline"
+msgstr "უარყოფა"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "მიიღება %1 ფაილი %2-დან…"
+
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: მიღებულია %1 ფაილი, %2 ვერ იქნა მიღებული."
+
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop-ით გადაცემა გაუქმდა."
+
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: მიღებულია %1 ფაილი."
+
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop ამ მოწყობილობაზე არ არის ხელმისაწვდომი"
+
+msgid "Scanning for nearby devices…"
+msgstr "მიმდინარეობს ახლომდებარე მოწყობილობების ძიება…"
+
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "ახლომდებარე მოწყობილობები ვერ მოიძებნა. დარწმუნდით, რომ სხვა მოწყობილობაზე გახსნილია Nearby BookDrop ან LocalSend."
+
+msgid "Rescan"
+msgstr "ხელახლა სკანირება"
+
+msgid "Send to…"
+msgstr "გაგზავნა…"
+
+msgid "Sending…"
+msgstr "იგზავნება…"
+
+msgid "Sending… %1%"
+msgstr "იგზავნება… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "გაიგზავნა %1 ფაილი."
+
+msgid "The other device declined the transfer."
+msgstr "სხვა მოწყობილობამ გადაცემა უარყო."
+
+msgid "Transfer cancelled."
+msgstr "გადაცემა გაუქმდა."
+
+msgid "Send failed: %1"
+msgstr "გაგზავნა ვერ მოხერხდა: %1"
+
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop-ის შეცდომა: %1"
+
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop გამორთულია"
+
+msgid "Visible as %1"
+msgstr "ჩანს სახელით %1"
+
+msgid "(limited discovery)"
+msgstr "(აღმოჩენა შეზღუდულია)"
+
+msgid "Checking for update…"
+msgstr "მოწმდება განახლება…"
+
+msgid "Failed to check for update. Please try again later."
+msgstr "განახლების შემოწმება ვერ მოხერხდა. სცადეთ მოგვიანებით."
+
+msgid "A new version is available: v%1 (current: v%2).\n\nDo you want to update now?"
+msgstr "ხელმისაწვდომია ახალი ვერსია: v%1 (მიმდინარე: v%2).\n\nგსურთ ახლავე განახლება?"
+
+msgid "A new version is available: v%1.\n\nDo you want to update now?"
+msgstr "ხელმისაწვდომია ახალი ვერსია: v%1.\n\nგსურთ ახლავე განახლება?"
+
+msgid "Update"
+msgstr "განახლება"
+
+msgid "You are up to date (v%1)."
+msgstr "თქვენ გაქვთ უახლესი ვერსია (v%1)."
+
+msgid "Downloading update…"
+msgstr "განახლება იტვირთება…"
+
+msgid "Failed to download update. Please try again later."
+msgstr "განახლების ჩამოტვირთვა ვერ მოხერხდა. სცადეთ მოგვიანებით."
+
+msgid "Readest plugin updated to v%1.\n\nPlease restart KOReader to apply the update."
+msgstr "Readest-ის მოდული განახლდა v%1 ვერსიამდე.\n\nგანახლების გამოსაყენებლად გადატვირთეთ KOReader."
+
+msgid "Restart now"
+msgstr "ახლავე გადატვირთვა"
+
+msgid "Later"
+msgstr "მოგვიანებით"
+
+msgid "Failed to install update: %1"
+msgstr "განახლების დაყენება ვერ მოხერხდა: %1"
+
+msgid "unknown error"
+msgstr "უცნობი შეცდომა"
+
+msgid "No annotations to push"
+msgstr "ასატვირთი ანოტაციები არ არის"
+
+msgid "Pushing annotations..."
+msgstr "ანოტაციები იტვირთება..."
+
+msgid "%1 annotations pushed successfully"
+msgstr "წარმატებით აიტვირთა %1 ანოტაცია"
+
+msgid "Failed to push annotations"
+msgstr "ანოტაციების ატვირთვა ვერ მოხერხდა"
+
+msgid "Annotation sync is not supported for PDF documents"
+msgstr "PDF დოკუმენტებისთვის ანოტაციების სინქრონიზაცია არ არის მხარდაჭერილი"
+
+msgid "Full sync: pulling all annotations..."
+msgstr "სრული სინქრონიზაცია: ყველა ანოტაცია იტვირთება..."
+
+msgid "Pulling annotations..."
+msgstr "ანოტაციები ჩამოიტვირთება..."
+
+msgid "Authentication failed, please login again"
+msgstr "ავთენტიფიკაცია ვერ მოხერხდა, ხელახლა შედით ანგარიშში"
+
+msgid "Failed to pull annotations"
+msgstr "ანოტაციების ჩამოტვირთვა ვერ მოხერხდა"
+
+msgid "No new annotations found"
+msgstr "ახალი ანოტაციები ვერ მოიძებნა"
+
+msgid "%1 annotations pulled"
+msgstr "ჩამოიტვირთა %1 ანოტაცია"
+
+msgid "Login"
+msgstr "შესვლა"
+
+msgid "Please enter both email and password"
+msgstr "შეიყვანეთ ელფოსტა და პაროლი"
+
+msgid "Please configure Supabase URL and API key first"
+msgstr "ჯერ მიუთითეთ Supabase-ის URL და API გასაღები"
+
+msgid "Logging in..."
+msgstr "მიმდინარეობს შესვლა..."
+
+msgid "Successfully logged in to Readest"
+msgstr "წარმატებით შეხვედით Readest-ში"
+
+msgid "Login failed: %1"
+msgstr "შესვლა ვერ მოხერხდა: %1"
+
+msgid "Logged out from Readest"
+msgstr "გამოხვედით Readest-იდან"
+
+msgid "Cannot identify the current book"
+msgstr "მიმდინარე წიგნის ამოცნობა ვერ მოხერხდა"
+
+msgid "Progress has been synchronized."
+msgstr "პროგრესი სინქრონიზებულია."
+
+msgid "Pushing reading progress..."
+msgstr "კითხვის პროგრესი იტვირთება..."
+
+msgid "Reading progress pushed successfully"
+msgstr "კითხვის პროგრესი წარმატებით აიტვირთა"
+
+msgid "Failed to push reading progress"
+msgstr "კითხვის პროგრესის ატვირთვა ვერ მოხერხდა"
+
+msgid "Pulling reading progress..."
+msgstr "კითხვის პროგრესი ჩამოიტვირთება..."
+
+msgid "Failed to pull reading progress"
+msgstr "კითხვის პროგრესის ჩამოტვირთვა ვერ მოხერხდა"
+
+msgid "Reading progress synchronized"
+msgstr "კითხვის პროგრესი სინქრონიზებულია"
+
+msgid "No saved reading progress found for this book"
+msgstr "ამ წიგნისთვის შენახული კითხვის პროგრესი ვერ მოიძებნა"
+
+msgid "Reading statistics are up to date"
+msgstr "კითხვის სტატისტიკა განახლებულია"
+
+msgid "Reading statistics pushed"
+msgstr "კითხვის სტატისტიკა აიტვირთა"
+
+msgid "Failed to push reading statistics"
+msgstr "კითხვის სტატისტიკის ატვირთვა ვერ მოხერხდა"
+
+msgid "Failed to pull reading statistics"
+msgstr "კითხვის სტატისტიკის ჩამოტვირთვა ვერ მოხერხდა"
+
+msgid "Reading statistics pulled"
+msgstr "კითხვის სტატისტიკა ჩამოიტვირთა"

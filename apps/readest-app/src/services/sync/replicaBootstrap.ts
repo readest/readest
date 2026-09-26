@@ -1,3 +1,4 @@
+import { bookshelfAdapter } from './adapters/bookshelf';
 import { findDictionaryByContentId, useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useCustomTextureStore } from '@/store/customTextureStore';
@@ -13,6 +14,7 @@ import { registerReplicaDownloadHandler } from './replicaTransferIntegration';
 import type { ReplicaAdapter } from './replicaRegistry';
 
 const KNOWN_ADAPTERS: ReplicaAdapter<unknown>[] = [
+  bookshelfAdapter as unknown as ReplicaAdapter<unknown>,
   dictionaryAdapter as unknown as ReplicaAdapter<unknown>,
   fontAdapter as unknown as ReplicaAdapter<unknown>,
   textureAdapter as unknown as ReplicaAdapter<unknown>,

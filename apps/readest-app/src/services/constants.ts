@@ -62,6 +62,8 @@ export const SUPPORTED_BOOK_EXTS = [
   'pdf',
   'txt',
   'md',
+  'html',
+  'htm',
 ];
 export const BOOK_ACCEPT_FORMATS = SUPPORTED_BOOK_EXTS.map((ext) => `.${ext}`).join(', ');
 export const BOOK_UNGROUPED_NAME = '';
@@ -348,6 +350,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   noContinuousScroll: false,
   disableClick: false,
   disableSwipe: false,
+  disablePullDownToBookmark: false,
   fullscreenClickArea: false,
   swapClickArea: false,
   disableDoubleClick: false,
@@ -386,6 +389,11 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   highlightOpacity: 0.4,
   codeHighlighting: false,
   codeLanguage: 'auto-detect',
+  dialogueHighlight: false,
+  dialogueHighlightCustomColor: false,
+  dialogueHighlightColor: HIGHLIGHT_COLOR_HEX['yellow'] ?? '#facc15',
+  dialogueHighlightCustomTextColor: false,
+  dialogueHighlightTextColor: '',
   userStylesheet: '',
   userUIStylesheet: '',
 

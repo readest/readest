@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Szinkronban tartja a KOReader és Readest eszközeidet."
 
+msgid "Downloading %1 of %2…"
+msgstr "Letöltés: %1 / %2…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB letöltve"
+
+msgid "No downloads in progress."
+msgstr "Nincs folyamatban letöltés."
+
+msgid "Run in background"
+msgstr "Futtatás a háttérben"
+
+msgid "Cancel download"
+msgstr "Letöltés megszakítása"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Letöltés megszakítva. %2 könyvből %1 letöltve."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 könyvből %1 letöltve (%3 kihagyva)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 könyvből %1 letöltve."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Először állítsd be a Kezdőkönyvtárat a Fájlkezelőben a letöltések engedélyezéséhez."
+
+msgid "No books to download."
+msgstr "Nincs letölthető könyv."
+
 msgid "Library view"
 msgstr "Könyvtár nézet"
 
@@ -68,8 +98,14 @@ msgstr "Növekvő"
 msgid "Actions"
 msgstr "Műveletek"
 
+msgid "Sync now"
+msgstr "Szinkronizálás most"
+
 msgid "Download all books"
 msgstr "Összes könyv letöltése"
+
+msgid "Download progress"
+msgstr "Letöltés folyamata"
 
 msgid "Rescan library"
 msgstr "Könyvtár újraolvasása"
@@ -104,6 +140,12 @@ msgstr "Keresés a könyvtárban"
 msgid "Search title or author"
 msgstr "Cím vagy szerző keresése"
 
+msgid "Books synced"
+msgstr "Könyvek szinkronizálva"
+
+msgid "Books sync failed"
+msgstr "A könyvek szinkronizálása sikertelen"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "A Cover Browser bővítmény szükséges a teljes könyvtár megjelenítéséhez. Visszatérés egyszerű listához."
 
@@ -116,18 +158,6 @@ msgstr "Letöltöd ezt a könyvet a Readestből?"
 msgid "Download"
 msgstr "Letöltés"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Először állítsd be a Kezdőkönyvtárat a Fájlkezelőben a letöltések engedélyezéséhez."
-
-msgid "Downloading…"
-msgstr "Letöltés…"
-
-msgid "Cloud copy unavailable."
-msgstr "A felhőmásolat nem érhető el."
-
-msgid "Download failed."
-msgstr "A letöltés sikertelen."
-
 msgid "No cover available on Readest."
 msgstr "Nincs elérhető borító a Readesten."
 
@@ -137,20 +167,8 @@ msgstr "A borító letöltése sikertelen."
 msgid "Could not delete the file."
 msgstr "A fájl nem törölhető."
 
-msgid "No books to download."
-msgstr "Nincs letölthető könyv."
-
-msgid "Downloading %1 of %2…"
-msgstr "Letöltés: %1 / %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Letöltés megszakítva. %2 könyvből %1 letöltve."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 könyvből %1 letöltve (%3 kihagyva)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 könyvből %1 letöltve."
+msgid "Download group"
+msgstr "Csoport letöltése"
 
 msgid "Removing from cloud…"
 msgstr "Eltávolítás a felhőből…"
@@ -287,23 +305,14 @@ msgstr "Statisztikák küldése most"
 msgid "Pull stats now"
 msgstr "Statisztikák lekérése most"
 
-msgid "Push books now"
-msgstr "Könyvek küldése most"
-
-msgid "Pull books now"
-msgstr "Könyvek letöltése most"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Fogadás Nearby BookDrop segítségével"
-
-msgid "Upload current book to Readest"
-msgstr "Az aktuális könyv feltöltése a Readestbe"
-
 msgid "Push reading progress now"
 msgstr "Olvasási haladás küldése most"
 
 msgid "Pull reading progress now"
 msgstr "Olvasási haladás lekérése most"
+
+msgid "Upload current book to Readest"
+msgstr "Az aktuális könyv feltöltése a Readestbe"
 
 msgid "Push annotations now"
 msgstr "Jegyzetek küldése most"
@@ -316,6 +325,9 @@ msgstr "Az összes jegyzet teljes szinkronizálása"
 
 msgid "Sync info"
 msgstr "Szinkronizálási adatok"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Fogadás Nearby BookDrop segítségével"
 
 msgid "Check for update (v%1)"
 msgstr "Frissítés keresése (v%1)"
@@ -349,12 +361,6 @@ msgstr "Szinkronizálási adatok"
 
 msgid "Library not initialized"
 msgstr "A könyvtár nincs inicializálva"
-
-msgid "Books synced"
-msgstr "Könyvek szinkronizálva"
-
-msgid "Books sync failed"
-msgstr "A könyvek szinkronizálása sikertelen"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Először állíts be egy Readest letöltési mappát vagy egy KOReader kezdőmappát."

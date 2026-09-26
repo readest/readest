@@ -175,7 +175,13 @@ item's tracks to the client as a single `NarrationClock`: seeks land on the file
 holding the position, a file running out rolls into the next, and only the last
 file's end surfaces as `ended`. It drives `HtmlAudioClock` on web/desktop and
 the client's own `NativeNarrationPlayer` (given track URLs) on mobile, selected
-through the `resolveTracks` hook on `NarrationAudioSource`.
+through the `resolveTracks` hook on `NarrationAudioSource`. On native Tauri
+(iOS excepted) those track URLs are wrapped for the loopback media proxy
+(`getMediaProxyBase` in `src/services/audiobook/mediaProxy.ts`,
+`src-tauri/src/media_proxy.rs`), the same one the audiobook player uses: the
+API client accepts a self-signed server certificate but the media element does
+not, so the proxy fetches upstream with the client's lenient TLS policy and
+streams the bytes back with `Range` intact (#6216).
 
 Consequences of that shape:
 
@@ -258,8 +264,10 @@ reader's own highlight style.
   behaviour: a sentence straddling a page break waits for the next mark.
 - **Mobile Tauri** plays narration through `NativeNarrationPlayer`: AVPlayer on
   iOS and ExoPlayer on Android. Paired audiobooks are streamed directly from
-  their local path, or by `http(s)` URL for an Audiobookshelf pairing. Desktop
-  Tauri streams its asset URL through `HTMLAudioElement`; web uses a blob URL.
+  their local path, or by `http(s)` URL for an Audiobookshelf pairing (through
+  the loopback media proxy on Android). Desktop Tauri streams its asset URL
+  through `HTMLAudioElement`, an Audiobookshelf pairing through the proxy; web
+  uses a blob URL.
 
 ### The library badge
 

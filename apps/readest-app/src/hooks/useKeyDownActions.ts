@@ -20,6 +20,12 @@ export const useKeyDownActions = ({
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const internalRef = useRef<HTMLDivElement | null>(null);
   const elementRef = providedRef || internalRef;
+  // The listener is registered once per `enabled`; read the callbacks through
+  // refs so it always calls the latest render's handlers, not stale closures.
+  const onCancelRef = useRef(onCancel);
+  const onConfirmRef = useRef(onConfirm);
+  onCancelRef.current = onCancel;
+  onConfirmRef.current = onConfirm;
 
   useEffect(() => {
     if (!enabled) return;
@@ -27,14 +33,14 @@ export const useKeyDownActions = ({
     const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
       if (event instanceof CustomEvent) {
         if (event.detail.keyName === 'Back') {
-          onCancel?.();
+          onCancelRef.current?.();
           return true;
         }
       } else {
         if (event.key === 'Escape') {
-          onCancel?.();
+          onCancelRef.current?.();
         } else if (event.key === 'Enter') {
-          onConfirm?.();
+          onConfirmRef.current?.();
         }
         event.stopPropagation();
       }

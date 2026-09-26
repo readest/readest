@@ -80,6 +80,24 @@ export const formatCompactTime = (seconds: number): string => {
   return `${minutes}:${String(total % 60).padStart(2, '0')}`;
 };
 
+/**
+ * A duration split into parts, for callers that label it with real units.
+ *
+ * `formatCompactTime` renders 7h55m and 7m55s identically as "7:55", which is
+ * the right trade in the mini player's fixed-width countdown but misleading on
+ * the shelf, where books of very different lengths sit next to each other.
+ */
+export const splitDuration = (
+  seconds: number,
+): { hours: number; minutes: number; seconds: number } => {
+  const total = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+  return {
+    hours: Math.floor(total / 3600),
+    minutes: Math.floor((total % 3600) / 60),
+    seconds: total % 60,
+  };
+};
+
 // Countdown label for TTS sleep-timer chips: total minutes : seconds
 // (a 90-minute timer reads 90:00, matching the lock-screen convention).
 export const formatCountdown = (msLeft: number): string => {

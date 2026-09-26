@@ -36,6 +36,8 @@ export interface ABSTrack {
   mimeType: string;
   /** The audio file's name, e.g. `20686-01.mp3`. */
   title?: string;
+  /** The audio file on the server; `size` in bytes. */
+  metadata?: { filename?: string; size?: number };
 }
 
 export interface ABSChapter {
@@ -84,6 +86,7 @@ export interface ABSLibraryItem {
     ebookFile?: {
       ino?: string;
       ebookFormat?: string;
+      metadata?: { filename?: string; size?: number };
     };
   };
 }
@@ -97,6 +100,12 @@ export interface ABSMediaProgress {
   duration: number; // seconds
   isFinished: boolean;
   lastUpdate: number; // ms epoch
+  /** Overall completion 0..1, what the ABS library UI draws its progress bar from. */
+  progress?: number;
+  /** Ebook reading position: an EPUB CFI, or a format-specific locator such as a PDF page. */
+  ebookLocation?: string | null;
+  /** Ebook completion 0..1, tracked separately from the audio `progress`. */
+  ebookProgress?: number;
 }
 
 /** Subset of POST /api/items/:id/play response. */

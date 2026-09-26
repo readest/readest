@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "รักษาการซิงค์ระหว่างอุปกรณ์ KOReader และ Readest ของคุณ"
 
+msgid "Downloading %1 of %2…"
+msgstr "กำลังดาวน์โหลด %1 จาก %2…"
+
+msgid "%1 MB downloaded"
+msgstr "ดาวน์โหลดแล้ว %1 MB"
+
+msgid "No downloads in progress."
+msgstr "ไม่มีการดาวน์โหลดที่กำลังดำเนินการ"
+
+msgid "Run in background"
+msgstr "ทำงานในเบื้องหลัง"
+
+msgid "Cancel download"
+msgstr "ยกเลิกการดาวน์โหลด"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ยกเลิกการดาวน์โหลดแล้ว ดาวน์โหลด %1 จาก %2 แล้ว"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "ดาวน์โหลด %1 จาก %2 แล้ว (ข้าม %3)"
+
+msgid "Downloaded %1 of %2."
+msgstr "ดาวน์โหลด %1 จาก %2 แล้ว"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "ตั้งค่าโฟลเดอร์หลักในตัวจัดการไฟล์ก่อนเพื่อเปิดใช้งานการดาวน์โหลด"
+
+msgid "No books to download."
+msgstr "ไม่มีหนังสือให้ดาวน์โหลด"
+
 msgid "Library view"
 msgstr "มุมมองคลัง"
 
@@ -68,8 +98,14 @@ msgstr "จากน้อยไปมาก"
 msgid "Actions"
 msgstr "การกระทำ"
 
+msgid "Sync now"
+msgstr "ซิงค์ตอนนี้"
+
 msgid "Download all books"
 msgstr "ดาวน์โหลดหนังสือทั้งหมด"
+
+msgid "Download progress"
+msgstr "ความคืบหน้าการดาวน์โหลด"
 
 msgid "Rescan library"
 msgstr "สแกนคลังใหม่"
@@ -104,6 +140,12 @@ msgstr "ค้นหาในคลัง"
 msgid "Search title or author"
 msgstr "ค้นหาชื่อหรือผู้แต่ง"
 
+msgid "Books synced"
+msgstr "ซิงค์หนังสือแล้ว"
+
+msgid "Books sync failed"
+msgstr "ซิงค์หนังสือไม่สำเร็จ"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "ต้องใช้ปลั๊กอิน Cover Browser เพื่อแสดงคลังเต็มรูปแบบ กลับไปใช้รายการธรรมดา"
 
@@ -116,18 +158,6 @@ msgstr "ดาวน์โหลดหนังสือเล่มนี้จ
 msgid "Download"
 msgstr "ดาวน์โหลด"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "ตั้งค่าโฟลเดอร์หลักในตัวจัดการไฟล์ก่อนเพื่อเปิดใช้งานการดาวน์โหลด"
-
-msgid "Downloading…"
-msgstr "กำลังดาวน์โหลด…"
-
-msgid "Cloud copy unavailable."
-msgstr "ไม่มีสำเนาบนคลาวด์"
-
-msgid "Download failed."
-msgstr "ดาวน์โหลดไม่สำเร็จ"
-
 msgid "No cover available on Readest."
 msgstr "ไม่มีปกบน Readest"
 
@@ -137,20 +167,8 @@ msgstr "ดาวน์โหลดปกไม่สำเร็จ"
 msgid "Could not delete the file."
 msgstr "ลบไฟล์ไม่ได้"
 
-msgid "No books to download."
-msgstr "ไม่มีหนังสือให้ดาวน์โหลด"
-
-msgid "Downloading %1 of %2…"
-msgstr "กำลังดาวน์โหลด %1 จาก %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "ยกเลิกการดาวน์โหลดแล้ว ดาวน์โหลด %1 จาก %2 แล้ว"
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "ดาวน์โหลด %1 จาก %2 แล้ว (ข้าม %3)"
-
-msgid "Downloaded %1 of %2."
-msgstr "ดาวน์โหลด %1 จาก %2 แล้ว"
+msgid "Download group"
+msgstr "ดาวน์โหลดกลุ่ม"
 
 msgid "Removing from cloud…"
 msgstr "กำลังลบจากคลาวด์…"
@@ -287,23 +305,14 @@ msgstr "ส่งสถิติเดี๋ยวนี้"
 msgid "Pull stats now"
 msgstr "ดึงสถิติเดี๋ยวนี้"
 
-msgid "Push books now"
-msgstr "ส่งหนังสือเดี๋ยวนี้"
-
-msgid "Pull books now"
-msgstr "ดึงหนังสือเดี๋ยวนี้"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "รับผ่าน Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "อัปโหลดหนังสือปัจจุบันไปยัง Readest"
-
 msgid "Push reading progress now"
 msgstr "ส่งความคืบหน้าการอ่านตอนนี้"
 
 msgid "Pull reading progress now"
 msgstr "ดึงความคืบหน้าการอ่านตอนนี้"
+
+msgid "Upload current book to Readest"
+msgstr "อัปโหลดหนังสือปัจจุบันไปยัง Readest"
 
 msgid "Push annotations now"
 msgstr "ส่งคำอธิบายตอนนี้"
@@ -316,6 +325,9 @@ msgstr "ซิงค์คำอธิบายทั้งหมดแบบเ
 
 msgid "Sync info"
 msgstr "ข้อมูลการซิงค์"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "รับผ่าน Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "ตรวจสอบการอัปเดต (v%1)"
@@ -349,12 +361,6 @@ msgstr "ข้อมูลการซิงค์"
 
 msgid "Library not initialized"
 msgstr "ยังไม่ได้เริ่มต้นคลัง"
-
-msgid "Books synced"
-msgstr "ซิงค์หนังสือแล้ว"
-
-msgid "Books sync failed"
-msgstr "ซิงค์หนังสือไม่สำเร็จ"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "กรุณาตั้งค่าโฟลเดอร์ดาวน์โหลดของ Readest หรือโฟลเดอร์หลักของ KOReader ก่อน"

@@ -606,3 +606,78 @@ describe('FileSyncEngine.syncLibrary — index write failure is reported (#5900)
     expect(res.indexPushFailed).toBe(false);
   });
 });
+
+describe('failed config uploads stay eligible for the next sync (#6184)', () => {
+  test('does not delete a locally revived book when its config upload fails', async () => {
+    const deleteDir = vi.fn(async () => {});
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 100,
+        books: [
+          makeBook('h1', {
+            updatedAt: 100,
+            deletedAt: 100,
+            fileSyncDeletionRequestedAt: 100,
+          }),
+        ],
+      }),
+      list: async () => [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }],
+      writeText: async (path) => {
+        if (path.endsWith('config.json')) throw new FileSyncError('PUT failed', 'UNKNOWN', 503);
+      },
+      deleteDir,
+    });
+
+    const result = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 200, uploadedAt: 1, downloadedAt: null })],
+      { strategy: 'silent', syncBooks: false, deviceId: 'test' },
+    );
+
+    expect(result.failures).toBe(1);
+    expect(deleteDir).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    { existing: false, syncBooks: false },
+    { existing: true, syncBooks: false },
+    { existing: false, syncBooks: true },
+    { existing: true, syncBooks: true },
+  ])('retries the config after failure ($existing, syncBooks: $syncBooks)', async ({
+    existing,
+    syncBooks,
+  }) => {
+    let index: RemoteLibraryIndex | null = existing
+      ? { schemaVersion: 1, updatedAt: 1, books: [makeBook('h1', { updatedAt: 50 })] }
+      : null;
+    let fail = true;
+    let configWrites = 0;
+    const provider = fakeProvider({
+      readText: async (path) =>
+        path.endsWith('library.json') && index ? JSON.stringify(index) : null,
+      writeText: async (path, body) => {
+        if (path.endsWith('config.json')) {
+          configWrites++;
+          if (fail) throw new FileSyncError('PUT failed', 'UNKNOWN', 503);
+        } else if (path.endsWith('library.json')) {
+          index = JSON.parse(body) as RemoteLibraryIndex;
+        }
+      },
+    });
+    const options = { strategy: 'send' as const, syncBooks, deviceId: 'test' };
+    const first = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { downloadedAt: 1 })],
+      options,
+    );
+    expect(first.failures).toBe(1);
+    fail = false;
+    const second = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { downloadedAt: 1 })],
+      options,
+    );
+    expect(second.configsUploaded).toBe(1);
+    expect(second.filesUploaded).toBe(syncBooks ? 1 : 0);
+    expect(configWrites).toBe(2);
+    expect(second.failures).toBe(0);
+  });
+});

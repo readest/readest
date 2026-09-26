@@ -4,6 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 const {
   subscribeMock,
   setStatusMock,
+  extractMock,
   ingestMock,
   updateBooksMock,
   dispatchMock,
@@ -11,6 +12,7 @@ const {
 } = vi.hoisted(() => ({
   subscribeMock: vi.fn(),
   setStatusMock: vi.fn(),
+  extractMock: vi.fn(),
   ingestMock: vi.fn(),
   updateBooksMock: vi.fn(),
   dispatchMock: vi.fn(),
@@ -23,6 +25,7 @@ vi.mock('@/services/webBrowser/webBrowser', async (importOriginal) => {
     ...actual,
     subscribeWebBrowserDownloads: subscribeMock,
     setWebBrowserStatus: setStatusMock,
+    extractWebBrowserArchive: extractMock,
   };
 });
 vi.mock('@/services/ingestService', () => ({ ingestFile: ingestMock }));
@@ -59,6 +62,7 @@ type Handler = (d: {
 beforeEach(() => {
   subscribeMock.mockReset();
   setStatusMock.mockReset().mockResolvedValue(undefined);
+  extractMock.mockReset().mockResolvedValue([]);
   ingestMock.mockReset();
   updateBooksMock.mockReset().mockResolvedValue(undefined);
   dispatchMock.mockReset();
@@ -108,6 +112,42 @@ describe('useWebBrowserDownloads', () => {
       'toast',
       expect.objectContaining({ type: 'success' }),
     );
+  });
+
+  // Audiobookshelf serves every folder item as `<title>.zip` (#6256).
+  it('imports the books unpacked from a downloaded zip archive', async () => {
+    extractMock.mockResolvedValue(['/cache/Dune.epub', '/cache/Dune Maps.pdf']);
+    ingestMock
+      .mockResolvedValueOnce({ hash: 'h1', title: 'Dune' })
+      .mockResolvedValueOnce({ hash: 'h2', title: 'Dune Maps' });
+    const handler = await mountAndGetHandler();
+    handler({ url: 'u', path: '/cache/Dune.zip', filename: 'Dune.zip', success: true });
+    await waitFor(() => expect(updateBooksMock).toHaveBeenCalledTimes(2));
+    expect(extractMock).toHaveBeenCalledWith('/cache/Dune.zip');
+    expect(ingestMock.mock.calls.map(([opts]) => opts.file)).toEqual([
+      '/cache/Dune.epub',
+      '/cache/Dune Maps.pdf',
+    ]);
+    expect(setStatusMock).toHaveBeenLastCalledWith({
+      state: 'added',
+      filename: 'Dune.zip',
+      bookHash: 'h2',
+    });
+  });
+
+  it('imports a zip that holds no separate books as a book itself', async () => {
+    ingestMock.mockResolvedValue({ hash: 'h1', title: 'Dune' });
+    const handler = await mountAndGetHandler();
+    handler({ url: 'u', path: '/cache/dune.zip', filename: 'dune.zip', success: true });
+    await waitFor(() => expect(updateBooksMock).toHaveBeenCalled());
+    expect(ingestMock).toHaveBeenCalledWith(
+      expect.objectContaining({ file: '/cache/dune.zip' }),
+      expect.anything(),
+    );
+
+    handler({ url: 'u2', path: '/cache/dune.fb2.zip', filename: 'dune.fb2.zip', success: true });
+    await waitFor(() => expect(updateBooksMock).toHaveBeenCalledTimes(2));
+    expect(extractMock).toHaveBeenCalledTimes(1);
   });
 
   it('reports unsupported files without importing them', async () => {

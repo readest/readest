@@ -106,6 +106,16 @@ export const absFetch = (url: string, init: ABSRequestOptions = {}): Promise<Res
   });
 };
 
+/** Fields accepted by PATCH /api/me/progress/:libraryItemId; ABS merges what is sent. */
+export interface ABSProgressPatch {
+  currentTime?: number;
+  duration?: number;
+  progress?: number;
+  /** Null clears a previously stored position; an omitted field leaves it as it was. */
+  ebookLocation?: string | null;
+  ebookProgress?: number;
+}
+
 type ABSTokenPatch = Pick<ABSServer, 'accessToken' | 'refreshToken' | 'serverVersion'>;
 
 /** Shape of the `user` object Audiobookshelf returns from /login and /auth/refresh. */
@@ -349,10 +359,13 @@ export class ABSClient {
     });
   }
 
-  async patchProgress(
-    libraryItemId: string,
-    payload: { currentTime: number; duration: number; progress: number },
-  ): Promise<void> {
+  /**
+   * Update the user's progress record for an item. Audio callers send
+   * `currentTime`/`duration`/`progress`; the ebook reader sends
+   * `ebookLocation`/`ebookProgress` (see services/audiobookshelf/ebookProgress.ts),
+   * and ABS merges whichever fields are present into the existing record.
+   */
+  async patchProgress(libraryItemId: string, payload: ABSProgressPatch): Promise<void> {
     await this.#request<void>(`/api/me/progress/${libraryItemId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

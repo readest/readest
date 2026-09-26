@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "ཁྱེད་ཀྱི་ KOReader དང་ Readest སྒྲིག་ཆས་མཉམ་འགྱུར་འཇོག"
 
+msgid "Downloading %1 of %2…"
+msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་བྱེད་བཞིན་པ་…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB ཕབ་ལེན་བྱས་ཟིན།"
+
+msgid "No downloads in progress."
+msgstr "ཕབ་ལེན་བྱེད་བཞིན་པ་མེད།"
+
+msgid "Run in background"
+msgstr "རྒྱབ་ལྗོངས་སུ་འཁོར་སྐྱོད་བྱེད།"
+
+msgid "Cancel download"
+msgstr "ཕབ་ལེན་ཕྱིར་འཐེན།"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ཕབ་ལེན་འདོར་སོང་། %2 ནང་གི་ %1 ཕབ་ལེན་ཟིན།"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་ཟིན། (%3 མཆོངས་སོང་།)"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་ཟིན།"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "ཕབ་ལེན་སྤྱོད་རུང་བཟོ་བར་ཡིག་ཆ་དོ་དམ་པའི་ནང་གཙོ་བོའི་ཡིག་སྣོད་སྔོན་ལ་གཏན་འབེབས་གནང་རོགས།"
+
+msgid "No books to download."
+msgstr "ཕབ་ལེན་བྱ་རྒྱུའི་དེབ་མེད།"
+
 msgid "Library view"
 msgstr "དཔེ་མཛོད་མཐོང་སྣང་"
 
@@ -68,8 +98,14 @@ msgstr "ཡར་འཛེག་"
 msgid "Actions"
 msgstr "བྱ་བ་"
 
+msgid "Sync now"
+msgstr "ད་ལྟ་མཉམ་འགྲོས་བྱེད།"
+
 msgid "Download all books"
 msgstr "དེབ་ཡོངས་ཕབ་ལེན་"
+
+msgid "Download progress"
+msgstr "ཕབ་ལེན་གྱི་འཕེལ་རིམ།"
 
 msgid "Rescan library"
 msgstr "དཔེ་མཛོད་ཡང་བསྐྱར་ཞིབ་ཤིབ་"
@@ -104,6 +140,12 @@ msgstr "དཔེ་མཛོད་ནང་འཚོལ་"
 msgid "Search title or author"
 msgstr "མིང་བྱང་ངམ་རྩོམ་པ་པོ་འཚོལ་"
 
+msgid "Books synced"
+msgstr "དེབ་མཉམ་སྦྱོར་ཟིན་"
+
+msgid "Books sync failed"
+msgstr "དེབ་མཉམ་སྦྱོར་མ་ཐུབ་"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "དཔེ་མཛོད་ཡོངས་སུ་འཆར་སྟོན་བྱེད་པར་Cover Browser གསལ་སྣོན་དགོས། མིང་ཐོ་གསལ་པོར་ལོག་སོང་།"
 
@@ -116,18 +158,6 @@ msgstr "དེབ་འདི་Readestནས་ཕབ་ལེན་བྱེ�
 msgid "Download"
 msgstr "ཕབ་ལེན་"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "ཕབ་ལེན་སྤྱོད་རུང་བཟོ་བར་ཡིག་ཆ་དོ་དམ་པའི་ནང་གཙོ་བོའི་ཡིག་སྣོད་སྔོན་ལ་གཏན་འབེབས་གནང་རོགས།"
-
-msgid "Downloading…"
-msgstr "ཕབ་ལེན་བྱེད་བཞིན་པ་…"
-
-msgid "Cloud copy unavailable."
-msgstr "སྤྲིན་གྲུབ་པར་མེད།"
-
-msgid "Download failed."
-msgstr "ཕབ་ལེན་མ་ཐུབ།"
-
 msgid "No cover available on Readest."
 msgstr "Readestལ་འགྲམ་ཤོག་མེད།"
 
@@ -137,20 +167,8 @@ msgstr "འགྲམ་ཤོག་ཕབ་ལེན་མ་ཐུབ།"
 msgid "Could not delete the file."
 msgstr "ཡིག་ཆ་སུབ་མ་ཐུབ།"
 
-msgid "No books to download."
-msgstr "ཕབ་ལེན་བྱ་རྒྱུའི་དེབ་མེད།"
-
-msgid "Downloading %1 of %2…"
-msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་བྱེད་བཞིན་པ་…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "ཕབ་ལེན་འདོར་སོང་། %2 ནང་གི་ %1 ཕབ་ལེན་ཟིན།"
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་ཟིན། (%3 མཆོངས་སོང་།)"
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 ནང་གི་ %1 ཕབ་ལེན་ཟིན།"
+msgid "Download group"
+msgstr "ཚོ་སྡེ་ཕབ་ལེན།"
 
 msgid "Removing from cloud…"
 msgstr "སྤྲིན་གྲུབ་ནས་སུབ་བཞིན་པ་…"
@@ -287,23 +305,14 @@ msgstr "གྲངས་ཐོ་ད་ལྟ་སྐུར་"
 msgid "Pull stats now"
 msgstr "གྲངས་ཐོ་ད་ལྟ་ལེན་"
 
-msgid "Push books now"
-msgstr "དེབ་རྣམས་ད་ལྟ་སྐུར་"
-
-msgid "Pull books now"
-msgstr "དེབ་རྣམས་ད་ལྟ་ལེན་"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop བརྒྱུད་ནས་ལེན།"
-
-msgid "Upload current book to Readest"
-msgstr "མིག་སྔའི་དཔེ་ཆ་ Readest ལ་སྦར་བ།"
-
 msgid "Push reading progress now"
 msgstr "ད་ལྟ་ཀློག་པའི་འཕེལ་རིམ་སྐུར་བ།"
 
 msgid "Pull reading progress now"
 msgstr "ད་ལྟ་ཀློག་པའི་འཕེལ་རིམ་ལེན་པ།"
+
+msgid "Upload current book to Readest"
+msgstr "མིག་སྔའི་དཔེ་ཆ་ Readest ལ་སྦར་བ།"
 
 msgid "Push annotations now"
 msgstr "ད་ལྟ་མཆན་འགྲེལ་སྐུར་བ།"
@@ -316,6 +325,9 @@ msgstr "མཆན་འགྲེལ་ཡོངས་རྫོགས་ཆ་ཚ
 
 msgid "Sync info"
 msgstr "མཉམ་འགྱུར་གསལ་བཤད།"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop བརྒྱུད་ནས་ལེན།"
 
 msgid "Check for update (v%1)"
 msgstr "གསར་སྤེལ་ཞིབ་བཤེར (v%1)"
@@ -349,12 +361,6 @@ msgstr "མཉམ་འགྱུར་གསལ་བཤད།"
 
 msgid "Library not initialized"
 msgstr "དཔེ་མཛོད་འགོ་འཛུགས་མ་བྱས་པ་"
-
-msgid "Books synced"
-msgstr "དེབ་མཉམ་སྦྱོར་ཟིན་"
-
-msgid "Books sync failed"
-msgstr "དེབ་མཉམ་སྦྱོར་མ་ཐུབ་"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "ཐོག་མར་ Readest ཕབ་ལེན་ཡིག་སྣོད་དམ་ KOReader གཙོ་ཡིག་སྣོད་ཅིག་སྒྲིག་རོགས།"

@@ -142,6 +142,32 @@ describe('BookmarkPullDown', () => {
     expect(container.querySelector('.bookmark-pull-band')).toBeNull();
   });
 
+  it('ignores pulls when disabled, preserves the ribbon, and can be re-enabled live', () => {
+    currentRibbonVisible = true;
+    const { container } = renderComponent();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    currentViewSettings['disablePullDownToBookmark'] = true;
+
+    dispatchTouch('touchstart', 300);
+    const move = touchEvent('touchmove', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    act(() => {
+      document.dispatchEvent(move);
+    });
+    dispatchTouch('touchend', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+
+    expect(move.defaultPrevented).toBe(false);
+    expect(container.querySelector('.bookmark-pull-band')).toBeNull();
+    expect(container.querySelector('.ribbon')).not.toBeNull();
+    expect(slide.style.transform).toBe('');
+    expect(dispatchSpy).not.toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
+
+    currentViewSettings['disablePullDownToBookmark'] = false;
+    dispatchTouch('touchstart', 300);
+    dispatchTouch('touchmove', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    dispatchTouch('touchend', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    expect(dispatchSpy).toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
+  });
+
   it('activates on a downward drag, flips at the threshold, and previews the release state', () => {
     const { container, getByText } = renderComponent();
 

@@ -13,19 +13,15 @@ describe('Nearby BookDrop enable preference', () => {
     localStorage.clear();
   });
 
-  it('stays off until the user turns it on', () => {
-    // Load-bearing, not incidental: starting the service joins a multicast
-    // group and binds a LAN listener, which makes iOS raise its Local Network
-    // prompt at first launch. A decline there is sticky and would break the
-    // feature for good, so nothing starts before the user asks for it.
-    expect(isLocalSendEnabled()).toBe(false);
+  it('is on until the user turns it off', () => {
+    expect(isLocalSendEnabled()).toBe(true);
   });
 
-  it('treats any value other than "true" as off', () => {
+  it('only "false" turns it off', () => {
     localStorage.setItem(ENABLED_KEY, 'false');
     expect(isLocalSendEnabled()).toBe(false);
     localStorage.setItem(ENABLED_KEY, '');
-    expect(isLocalSendEnabled()).toBe(false);
+    expect(isLocalSendEnabled()).toBe(true);
   });
 
   it('round-trips the toggle both ways', () => {

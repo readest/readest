@@ -25,8 +25,7 @@ local API_CALL_DEBOUNCE_DELAY = 30
 -- Delay before a background pull runs (book open, device wake, network back).
 -- Lets the reader paint and become interactive first, gives Wi-Fi a moment to
 -- settle after wake (kosync uses the same 1s), and coalesces rapid triggers
--- into a single pull for the book you settle on instead of stacking blocking
--- round-trips (#5006).
+-- into a single pull for the book you settle on (#5006).
 local BACKGROUND_PULL_DELAY = 1
 
 -- KOReader's "Action when Wi-Fi is off" (Network settings). nil is "prompt",
@@ -50,7 +49,7 @@ ReadestSync.default_settings = {
     expires_at = nil,
     expires_in = nil,
     last_sync_at = nil,
-    localsend_enabled = false,
+    localsend_enabled = true,
     localsend_alias = nil,
 }
 
@@ -59,6 +58,9 @@ ReadestSync.default_settings = {
 function ReadestSync:init()
     self.last_sync_timestamp = 0
     self.settings = G_reader_settings:readSetting("readest_sync", self.default_settings)
+    if self.settings.localsend_enabled == nil then
+        self.settings.localsend_enabled = true
+    end
 
     local meta = dofile(self.path .. "/_meta.lua")
     self.installed_version = meta and meta.version and tostring(meta.version)
@@ -119,9 +121,8 @@ function ReadestSync:onReaderReady()
 end
 
 -- Schedule the background pull of the open book's config, notes and stats.
--- One handle for every trigger (book open, device wake, network back), so
--- rapid events coalesce into a single pull instead of stacking blocking
--- round-trips on the UI thread, and onCloseWidget cancels whatever is pending.
+-- Coalesce open/wake/reconnect triggers. All requests run asynchronously,
+-- so stats can start alongside config and notes. Closing cancels the task.
 function ReadestSync:scheduleBackgroundPull(delay)
     if self.background_pull_task then
         UIManager:unschedule(self.background_pull_task)
@@ -130,7 +131,9 @@ function ReadestSync:scheduleBackgroundPull(delay)
         self.background_pull_task = nil
         self:pullBookConfig(false)
         self:pullBookNotes(false)
-        self:pullBookStats(false)
+        if self.settings.auto_sync and self.settings.access_token then
+            self:pullBookStats(false)
+        end
     end
     UIManager:scheduleIn(delay, self.background_pull_task)
 end
@@ -533,6 +536,17 @@ end
 -- ── Menu ───────────────────────────────────────────────────────────
 
 function ReadestSync:addToMainMenu(menu_items)
+    -- sorting_hint only appends unlisted plugins. Pin Readest in both
+    -- default orders; KOReader applies user menu-order overrides afterward.
+    for _, path in ipairs({ "ui/elements/reader_menu_order", "ui/elements/filemanager_menu_order" }) do
+        local ok, order = pcall(require, path)
+        if ok and type(order) == "table" and type(order.tools) == "table" then
+            for i = #order.tools, 1, -1 do
+                if order.tools[i] == "readest_sync" then table.remove(order.tools, i) end
+            end
+            table.insert(order.tools, 1, "readest_sync")
+        end
+    end
     menu_items.readest_sync = {
         sorting_hint = "tools",
         text = _("Readest"),
@@ -590,52 +604,6 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Push books now"),
-                enabled_func = function()
-                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
-                end,
-                callback = function()
-                    self:syncBooksLibrary("push", true)
-                end,
-            },
-            {
-                text = _("Pull books now"),
-                enabled_func = function()
-                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
-                end,
-                callback = function()
-                    self:syncBooksLibrary("pull", true)
-                end,
-            },
-            {
-                text = _("Receive via Nearby BookDrop"),
-                enabled_func = function()
-                    return self.localsend:isAvailable()
-                end,
-                checked_func = function()
-                    return self.settings.localsend_enabled == true
-                end,
-                callback = function()
-                    self.localsend:toggle()
-                end,
-            },
-            {
-                text_func = function()
-                    return self.localsend:statusText()
-                end,
-                enabled_func = function() return false end,
-                separator = true,
-            },
-            {
-                text = _("Upload current book to Readest"),
-                enabled_func = function()
-                    return self.settings.access_token ~= nil and self.ui.document ~= nil
-                end,
-                callback = function()
-                    self:uploadCurrentBook()
-                end,
-            },
-            {
                 text = _("Push reading progress now"),
                 enabled_func = function()
                     return self.settings.access_token ~= nil and self.ui.document ~= nil
@@ -651,6 +619,15 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self:pullBookConfig(true)
+                end,
+            },
+            {
+                text = _("Upload current book to Readest"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.ui.document ~= nil
+                end,
+                callback = function()
+                    self:uploadCurrentBook()
                 end,
                 separator = true,
             },
@@ -690,6 +667,25 @@ function ReadestSync:addToMainMenu(menu_items)
                 callback = function()
                     self:showSyncInfo()
                 end,
+                separator = true,
+            },
+            {
+                text = _("Receive via Nearby BookDrop"),
+                enabled_func = function()
+                    return self.localsend:isAvailable()
+                end,
+                checked_func = function()
+                    return self.settings.localsend_enabled == true
+                end,
+                callback = function()
+                    self.localsend:toggle()
+                end,
+            },
+            {
+                text_func = function()
+                    return self.localsend:statusText()
+                end,
+                enabled_func = function() return false end,
                 separator = true,
             },
             {

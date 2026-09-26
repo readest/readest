@@ -57,7 +57,7 @@ export const useSwipeToDismiss = (
       overlay.style.opacity = '0';
       setTimeout(() => onDismiss(), 300);
       if (appService?.hasHaptics) {
-        impactFeedback('medium');
+        impactFeedback('light');
       }
     } else {
       panel.style.transition = 'transform 0.3s ease-out';
@@ -65,9 +65,6 @@ export const useSwipeToDismiss = (
       overlay.style.transition = 'opacity 0.3s ease-out';
       overlay.style.opacity = '0.8';
       onDragMove?.({ clientY: 0 });
-      if (appService?.hasHaptics) {
-        impactFeedback('medium');
-      }
     }
   };
 

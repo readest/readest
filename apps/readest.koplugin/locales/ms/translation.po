@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Memastikan peranti KOReader dan Readest anda kekal segerak."
 
+msgid "Downloading %1 of %2…"
+msgstr "Memuat turun %1 daripada %2…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB dimuat turun"
+
+msgid "No downloads in progress."
+msgstr "Tiada muat turun sedang berjalan."
+
+msgid "Run in background"
+msgstr "Jalankan di latar belakang"
+
+msgid "Cancel download"
+msgstr "Batalkan muat turun"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Muat turun dibatalkan. %1 daripada %2 dimuat turun."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 daripada %2 dimuat turun (%3 dilangkau)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 daripada %2 dimuat turun."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Tetapkan folder Utama dalam Pengurus Fail dahulu untuk membolehkan muat turun."
+
+msgid "No books to download."
+msgstr "Tiada buku untuk dimuat turun."
+
 msgid "Library view"
 msgstr "Paparan Pustaka"
 
@@ -68,8 +98,14 @@ msgstr "Menaik"
 msgid "Actions"
 msgstr "Tindakan"
 
+msgid "Sync now"
+msgstr "Segerakkan sekarang"
+
 msgid "Download all books"
 msgstr "Muat turun semua buku"
+
+msgid "Download progress"
+msgstr "Kemajuan muat turun"
 
 msgid "Rescan library"
 msgstr "Imbas semula pustaka"
@@ -104,6 +140,12 @@ msgstr "Cari dalam Pustaka"
 msgid "Search title or author"
 msgstr "Cari tajuk atau pengarang"
 
+msgid "Books synced"
+msgstr "Buku diselaraskan"
+
+msgid "Books sync failed"
+msgstr "Penyegerakan buku gagal"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Plugin Cover Browser diperlukan untuk paparan Pustaka penuh. Kembali kepada senarai biasa."
 
@@ -116,18 +158,6 @@ msgstr "Muat turun buku ini dari Readest?"
 msgid "Download"
 msgstr "Muat turun"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Tetapkan folder Utama dalam Pengurus Fail dahulu untuk membolehkan muat turun."
-
-msgid "Downloading…"
-msgstr "Memuat turun…"
-
-msgid "Cloud copy unavailable."
-msgstr "Salinan awan tidak tersedia."
-
-msgid "Download failed."
-msgstr "Muat turun gagal."
-
 msgid "No cover available on Readest."
 msgstr "Tiada kulit tersedia di Readest."
 
@@ -137,20 +167,8 @@ msgstr "Muat turun kulit gagal."
 msgid "Could not delete the file."
 msgstr "Tidak dapat memadam fail."
 
-msgid "No books to download."
-msgstr "Tiada buku untuk dimuat turun."
-
-msgid "Downloading %1 of %2…"
-msgstr "Memuat turun %1 daripada %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Muat turun dibatalkan. %1 daripada %2 dimuat turun."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%1 daripada %2 dimuat turun (%3 dilangkau)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%1 daripada %2 dimuat turun."
+msgid "Download group"
+msgstr "Muat turun kumpulan"
 
 msgid "Removing from cloud…"
 msgstr "Mengeluarkan daripada awan…"
@@ -287,23 +305,14 @@ msgstr "Hantar statistik sekarang"
 msgid "Pull stats now"
 msgstr "Tarik statistik sekarang"
 
-msgid "Push books now"
-msgstr "Hantar buku sekarang"
-
-msgid "Pull books now"
-msgstr "Tarik buku sekarang"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Terima melalui Nearby BookDrop"
-
-msgid "Upload current book to Readest"
-msgstr "Muat naik buku semasa ke Readest"
-
 msgid "Push reading progress now"
 msgstr "Hantar kemajuan bacaan sekarang"
 
 msgid "Pull reading progress now"
 msgstr "Tarik kemajuan bacaan sekarang"
+
+msgid "Upload current book to Readest"
+msgstr "Muat naik buku semasa ke Readest"
 
 msgid "Push annotations now"
 msgstr "Hantar anotasi sekarang"
@@ -316,6 +325,9 @@ msgstr "Penyegerakan penuh semua anotasi"
 
 msgid "Sync info"
 msgstr "Maklumat penyegerakan"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Terima melalui Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Semak kemas kini (v%1)"
@@ -349,12 +361,6 @@ msgstr "Maklumat penyegerakan"
 
 msgid "Library not initialized"
 msgstr "Pustaka belum dimulakan"
-
-msgid "Books synced"
-msgstr "Buku diselaraskan"
-
-msgid "Books sync failed"
-msgstr "Penyegerakan buku gagal"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Tetapkan folder muat turun Readest atau folder utama KOReader dahulu."

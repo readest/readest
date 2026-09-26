@@ -2,6 +2,7 @@ import AVFoundation
 import MediaPlayer
 import Tauri
 import UIKit
+import WebKit
 import os
 
 private let keepAliveLog = Logger(subsystem: "com.bilingify.readest", category: "TTSKeepAlive")
@@ -36,6 +37,10 @@ struct UpdateCarPlayStateArgs: Decodable {
   let active: Bool?
   let title: String?
   let author: String?
+}
+
+struct UpdateMediaLibraryArgs: Decodable {
+  let booksJson: String
 }
 
 class UpdateMediaSessionStateArgs: Decodable {
@@ -116,6 +121,22 @@ struct GetVoicesResponse: Encodable {
 /// `NativeTTSClient` drives both platforms through the same plugin command and
 /// `tts_events` channel contract.
 class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
+  override func load(webview: WKWebView) {
+    DispatchQueue.main.async {
+      let scenes = UIApplication.shared.connectedScenes
+      guard scenes.contains(where: {
+        $0.session.role.rawValue == "CPTemplateApplicationSceneSessionRoleApplication"
+      }), !scenes.contains(where: { $0 is UIWindowScene }), webview.bounds.isEmpty else { return }
+      // A car-only launch has no phone scene to size the reader. Pagination
+      // still needs a viewport before it can initialize the book for TTS.
+      let frame = UIScreen.main.bounds
+      webview.window?.frame = frame
+      webview.superview?.frame = frame
+      webview.frame = frame
+      webview.layoutIfNeeded()
+    }
+  }
+
   private let synthesizer = AVSpeechSynthesizer()
 
   // App-level controls. `rate` arrives pre-curved by the JS client (see
@@ -476,6 +497,25 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       invoke.resolve()
     } catch {
       invoke.reject("Failed to update metadata: \(error.localizedDescription)")
+    }
+  }
+
+  @objc public func update_media_library(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(UpdateMediaLibraryArgs.self)
+      let data = Data(args.booksJson.utf8)
+      guard try JSONSerialization.jsonObject(with: data) is [[String: Any]] else {
+        invoke.reject("Invalid car media library")
+        return
+      }
+      UserDefaults.standard.set(data, forKey: "readest.carplay.books")
+      DispatchQueue.main.async {
+        NotificationCenter.default.post(
+          name: Notification.Name("readestCarPlayStateChanged"), object: nil)
+      }
+      invoke.resolve()
+    } catch {
+      invoke.reject("Failed to update CarPlay library: \(error.localizedDescription)")
     }
   }
 

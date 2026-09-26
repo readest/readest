@@ -70,6 +70,21 @@
   </supports>
 
   <releases>
+    <release version="0.12.10" date="2026-09-22">
+      <description>
+        <ul>
+          <li>Library: You can now organize books into configurable bookshelves, tag books in bulk</li>
+          <li>Audiobooks: You can download Audiobookshelf books for offline listening, stream audiobooks from OPDS catalogs and BookOrbit</li>
+          <li>Reading: You can now open HTML files as books, and select, highlight, and look up text in Paragraph Mode</li>
+          <li>Sync: Reading progress refreshes when you return to the app, WebDAV sync is more reliable, and Readwise exports now include bookmarks</li>
+          <li>TTS: You can now browse and resume your books from Android Auto and pick up recent books from CarPlay</li>
+          <li>PDF: Page-turn animations now work on PDFs, comics, and fixed-layout books, and wide comic pages get a spread of their own</li>
+          <li>KOReader: Added background sync, group downloads, and more library controls, and highlights you delete stay deleted</li>
+          <li>Dictionary: Pronunciations can play automatically on lookup, accented words are easier to find</li>
+          <li>More: Backups are much faster and keep the screen awake, and fixed freezes on App launch and in image-heavy chapters</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.12.8" date="2026-09-08">
       <description>
         <ul>
@@ -206,22 +221,6 @@
           <li>Annotations: The annotation list now scrolls back to your nearest highlight, and exporting to Readwise works again on desktop</li>
           <li>Android: Fixed a freeze when long-pressing images, plus issues with copying text and opening books directly from other apps</li>
           <li>Fixes: Kept the book menu order stable, synced KOReader book covers, and fixed a Windows launch crash</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.11.2" date="2026-05-31">
-      <description>
-        <ul>
-          <li>Send to Readest: Clip web pages and articles into your library via the system share sheet, or by emailing them in</li>
-          <li>Dictionary: Look up words with your device's built-in system dictionary on macOS, iOS, and Android, plus faster MDict and StarDict imports</li>
-          <li>Library: Import books from a folder with format and size filters, or read them in place from external folders without copying</li>
-          <li>Reading: The reading ruler now follows individual lines, you can swipe along the edge to adjust brightness on mobile, and customize hardware-button page turning</li>
-          <li>Annotations: Create global highlights that apply to every matching passage in a book</li>
-          <li>Text-to-Speech: Added a hotkey to highlight the sentence being read aloud, and made TTS more reliable</li>
-          <li>Fonts: Fixed custom fonts disappearing after restarting or reloading the app</li>
-          <li>iOS: Fixed the reader not updating when you switch between light and dark mode</li>
-          <li>Android: Fixed an issue where highlighting text could trigger unintended page turns</li>
-          <li>Fixes: Many improvements across PDFs, EPUBs, Sync, Scrolling, Highlighting</li>
         </ul>
       </description>
     </release>

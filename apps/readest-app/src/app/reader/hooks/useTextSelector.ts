@@ -411,6 +411,30 @@ export const useTextSelector = (
     setSelection((prev) => (prev ? { ...prev, handlesSuppressed: true } : prev));
   };
 
+  // Put back a selection the app dropped itself (#6213). The instant dictionary
+  // quick action deselects as it opens so no platform selection UI paints over
+  // the popup; when the lookup closes the word has to be selectable again, or
+  // there is no route left to highlighting or copying it (re-selecting with a
+  // quick action armed just opens the dictionary again).
+  //
+  // The re-add is programmatic, so the native grabbers stay away — the engine
+  // only draws them for a user-initiated selection — and the selectionchange
+  // echo is ignored. The published TextSelection is deliberately left untouched:
+  // a new object there would read as a fresh selection in the Annotator and run
+  // the quick action a second time.
+  const restoreSelectionRange = (range: Range) => {
+    const doc = range.startContainer.ownerDocument;
+    const sel = doc?.getSelection();
+    if (!sel || range.collapsed) return false;
+    guardProgrammaticSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    releaseProgrammaticSelection();
+    if (sel.rangeCount === 0) return false;
+    isTextSelected.current = true;
+    return true;
+  };
+
   const {
     isInstantAnnotationEnabled,
     handleInstantAnnotationPointerDown,
@@ -1208,6 +1232,7 @@ export const useTextSelector = (
     handleContextmenu,
     dragSelectionTo,
     suppressNativeSelectionHandles,
+    restoreSelectionRange,
     // The shared corner auto-turn feed/cancel/subscribe, re-exposed so the range
     // editors can drive the same machine from their overlay handle drags.
     noteAutoTurnPoint,

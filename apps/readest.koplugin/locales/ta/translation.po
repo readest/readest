@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "உங்கள் KOReader மற்றும் Readest சாதனங்களை ஒத்திசைவில் வைத்திருக்கிறது."
 
+msgid "Downloading %1 of %2…"
+msgstr "%2-இல் %1 பதிவிறக்கப்படுகிறது…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB பதிவிறக்கப்பட்டது"
+
+msgid "No downloads in progress."
+msgstr "பதிவிறக்கங்கள் எதுவும் நடைபெறவில்லை."
+
+msgid "Run in background"
+msgstr "பின்னணியில் இயக்கு"
+
+msgid "Cancel download"
+msgstr "பதிவிறக்கத்தை ரத்துசெய்"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "பதிவிறக்கம் ரத்து செய்யப்பட்டது. %2-இல் %1 பதிவிறக்கப்பட்டது."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2-இல் %1 பதிவிறக்கப்பட்டது (%3 தவிர்க்கப்பட்டது)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2-இல் %1 பதிவிறக்கப்பட்டது."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "பதிவிறக்கங்களை இயக்க கோப்பு மேலாளரில் முதலில் வீட்டு கோப்புறையை அமைக்கவும்."
+
+msgid "No books to download."
+msgstr "பதிவிறக்க புத்தகங்கள் எதுவும் இல்லை."
+
 msgid "Library view"
 msgstr "நூலக காட்சி"
 
@@ -68,8 +98,14 @@ msgstr "ஏறுநிலை"
 msgid "Actions"
 msgstr "செயல்கள்"
 
+msgid "Sync now"
+msgstr "இப்போது ஒத்திசை"
+
 msgid "Download all books"
 msgstr "அனைத்து புத்தகங்களையும் பதிவிறக்கு"
+
+msgid "Download progress"
+msgstr "பதிவிறக்க முன்னேற்றம்"
 
 msgid "Rescan library"
 msgstr "நூலகத்தை மீண்டும் ஸ்கேன் செய்"
@@ -104,6 +140,12 @@ msgstr "நூலகத்தில் தேடு"
 msgid "Search title or author"
 msgstr "தலைப்பு அல்லது ஆசிரியரைத் தேடு"
 
+msgid "Books synced"
+msgstr "புத்தகங்கள் ஒத்திசைக்கப்பட்டன"
+
+msgid "Books sync failed"
+msgstr "புத்தகங்கள் ஒத்திசைவு தோல்வி"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "முழு நூலக காட்சிக்கு Cover Browser செருகுநிரல் தேவை. எளிய பட்டியலுக்கு திரும்புகிறது."
 
@@ -116,18 +158,6 @@ msgstr "இந்த புத்தகத்தை Readest-இலிருந�
 msgid "Download"
 msgstr "பதிவிறக்கு"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "பதிவிறக்கங்களை இயக்க கோப்பு மேலாளரில் முதலில் வீட்டு கோப்புறையை அமைக்கவும்."
-
-msgid "Downloading…"
-msgstr "பதிவிறக்கப்படுகிறது…"
-
-msgid "Cloud copy unavailable."
-msgstr "கிளவுட் நகல் கிடைக்கவில்லை."
-
-msgid "Download failed."
-msgstr "பதிவிறக்கம் தோல்வியடைந்தது."
-
 msgid "No cover available on Readest."
 msgstr "Readest-இல் அட்டை கிடைக்கவில்லை."
 
@@ -137,20 +167,8 @@ msgstr "அட்டை பதிவிறக்கம் தோல்விய�
 msgid "Could not delete the file."
 msgstr "கோப்பை நீக்க முடியவில்லை."
 
-msgid "No books to download."
-msgstr "பதிவிறக்க புத்தகங்கள் எதுவும் இல்லை."
-
-msgid "Downloading %1 of %2…"
-msgstr "%2-இல் %1 பதிவிறக்கப்படுகிறது…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "பதிவிறக்கம் ரத்து செய்யப்பட்டது. %2-இல் %1 பதிவிறக்கப்பட்டது."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2-இல் %1 பதிவிறக்கப்பட்டது (%3 தவிர்க்கப்பட்டது)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%2-இல் %1 பதிவிறக்கப்பட்டது."
+msgid "Download group"
+msgstr "குழுவைப் பதிவிறக்கு"
 
 msgid "Removing from cloud…"
 msgstr "கிளவுட்டிலிருந்து நீக்கப்படுகிறது…"
@@ -287,23 +305,14 @@ msgstr "புள்ளிவிவரங்களை இப்போது அ�
 msgid "Pull stats now"
 msgstr "புள்ளிவிவரங்களை இப்போது பெறு"
 
-msgid "Push books now"
-msgstr "இப்போது புத்தகங்களை அனுப்பு"
-
-msgid "Pull books now"
-msgstr "இப்போது புத்தகங்களைப் பெறு"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop வழியாகப் பெறு"
-
-msgid "Upload current book to Readest"
-msgstr "தற்போதைய புத்தகத்தை Readest-இல் பதிவேற்று"
-
 msgid "Push reading progress now"
 msgstr "வாசிப்பு முன்னேற்றத்தை இப்போது அனுப்பு"
 
 msgid "Pull reading progress now"
 msgstr "வாசிப்பு முன்னேற்றத்தை இப்போது பெறு"
+
+msgid "Upload current book to Readest"
+msgstr "தற்போதைய புத்தகத்தை Readest-இல் பதிவேற்று"
 
 msgid "Push annotations now"
 msgstr "குறிப்புகளை இப்போது அனுப்பு"
@@ -316,6 +325,9 @@ msgstr "அனைத்து குறிப்புகளின் முழ�
 
 msgid "Sync info"
 msgstr "ஒத்திசைவு தகவல்"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop வழியாகப் பெறு"
 
 msgid "Check for update (v%1)"
 msgstr "புதுப்பிப்பைச் சரிபார் (v%1)"
@@ -349,12 +361,6 @@ msgstr "ஒத்திசைவு தகவல்"
 
 msgid "Library not initialized"
 msgstr "நூலகம் துவக்கப்படவில்லை"
-
-msgid "Books synced"
-msgstr "புத்தகங்கள் ஒத்திசைக்கப்பட்டன"
-
-msgid "Books sync failed"
-msgstr "புத்தகங்கள் ஒத்திசைவு தோல்வி"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "முதலில் ஒரு Readest பதிவிறக்க கோப்புறை அல்லது KOReader முகப்பு கோப்புறையை அமைக்கவும்."

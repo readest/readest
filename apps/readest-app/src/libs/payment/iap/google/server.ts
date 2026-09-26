@@ -75,7 +75,10 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
         obfuscated_external_account_id: purchase.obfuscatedExternalAccountId,
         obfuscated_external_profile_id: purchase.obfuscatedExternalProfileId,
         cancel_reason: purchase.cancelReason,
-        user_cancellation_time_millis: purchase.userCancellationTimeMillis,
+        // Google sends epoch millis as a string; the column is a timestamp.
+        user_cancellation_time_millis: purchase.userCancellationTimeMillis
+          ? new Date(Number(purchase.userCancellationTimeMillis)).toISOString()
+          : null,
         updated_at: new Date(),
       },
       {

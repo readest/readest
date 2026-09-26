@@ -20,7 +20,7 @@ vi.mock('@/store/settingsStore', () => {
       // The "File Path" entry lives under the Metadata section; tests below
       // depend on it being expanded by default so the row is in the DOM.
       metadataOthersCollapsed: false,
-      metadataDescriptionCollapsed: true,
+      metadataDescriptionCollapsed: false,
       libraryHideCovers: false,
     },
   };
@@ -284,5 +284,59 @@ describe('BookDetailView cover viewer', () => {
     fireEvent.click(findViewer()!.querySelector('button[aria-label="Close"]')!);
     expect(findViewer()).toBeNull();
     expect(container.querySelector('button[aria-label="View Book Cover"]')).toBeTruthy();
+  });
+});
+
+describe('BookDetailView offline Audiobookshelf download (#6256)', () => {
+  const absBook = (overrides?: Partial<Book>) =>
+    makeBook({
+      format: 'ABS',
+      filePath: 'abs://srv1/item1',
+      downloadedAt: null,
+      uploadedAt: null,
+      ...overrides,
+    });
+
+  it('offers the download with a Premium badge for users who need to upgrade', () => {
+    const onDownloadOffline = vi.fn();
+    const { getByRole, getByText } = renderView({
+      book: absBook(),
+      onDownloadOffline,
+      offlinePremiumLabel: 'Premium',
+    });
+
+    fireEvent.click(getByRole('button', { name: /Download for Offline/ }));
+    expect(onDownloadOffline).toHaveBeenCalledTimes(1);
+    expect(getByText('Premium')).toBeTruthy();
+  });
+
+  it('swaps the download for Remove from Device Only once the book is on the device', () => {
+    const { queryByRole, container, getByText } = renderView({
+      book: absBook({ absDownloadedAt: 1 }),
+      onDownloadOffline: vi.fn(),
+    });
+
+    expect(queryByRole('button', { name: /Download for Offline/ })).toBeNull();
+    fireEvent.click(container.querySelector('button[aria-label="Delete Book Options"]')!);
+    expect(getByText('Remove from Device Only').closest('button')!.disabled).toBe(false);
+  });
+});
+
+describe('BookDetailView untrusted description', () => {
+  it('removes executable markup while preserving description formatting', () => {
+    const { container } = renderView({
+      metadata: {
+        title: 'Test Book',
+        author: 'Test Author',
+        language: 'en',
+        description:
+          '<strong>Book summary</strong><img src="x" onerror="alert(1)"><a href="javascript:alert(1)">link</a><iframe srcdoc="evil"></iframe>',
+      },
+    });
+    const description = container.querySelector('.prose')!;
+    expect(description.querySelector('strong')?.textContent).toBe('Book summary');
+    expect(description.querySelector('img')?.hasAttribute('onerror')).toBe(false);
+    expect(description.querySelector('a')?.hasAttribute('href')).toBe(false);
+    expect(description.querySelector('iframe')).toBeNull();
   });
 });

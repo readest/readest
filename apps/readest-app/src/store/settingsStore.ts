@@ -1,3 +1,4 @@
+import { mergeBookshelfStates } from '@/services/bookshelves/state';
 import i18n from '@/i18n/i18n';
 import { create } from 'zustand';
 import { SystemSettings } from '@/types/settings';
@@ -47,7 +48,19 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   activeSettingsItemId: null,
   requestedPanel: null,
   requestedSubPage: null,
-  setSettings: (settings) => set({ settings }),
+  setSettings: (settings) =>
+    set((state) => ({
+      // An unrelated `{ ...settings, someField }` write carries the very state
+      // already stored, so skip the merge and keep the reference stable — the
+      // library memoizes whole-shelf derivations on it.
+      settings:
+        state.settings.bookshelves && state.settings.bookshelves !== settings.bookshelves
+          ? {
+              ...settings,
+              bookshelves: mergeBookshelfStates(state.settings.bookshelves, settings.bookshelves),
+            }
+          : settings,
+    })),
   saveSettings: async (envConfig: EnvConfigType, settings: SystemSettings) => {
     const appService = await envConfig.getAppService();
     await appService.saveSettings(settings);

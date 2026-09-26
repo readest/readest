@@ -48,7 +48,15 @@ fn base64_to_string(s: &str) -> Option<String> {
 /// `verify_signature` (`tauri-plugin-updater-2.10.1/src/updater.rs:1453`) so a
 /// nightly artifact accepted here is also accepted by Tauri's installer.
 #[tauri::command]
-pub async fn verify_update_signature(path: String, signature: String, pub_key: String) -> bool {
+pub async fn verify_update_signature<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    path: String,
+    signature: String,
+    pub_key: String,
+) -> bool {
+    let Ok(path) = crate::transfer_file::ensure_path_allowed(&app, &path) else {
+        return false;
+    };
     let Ok(data) = tokio::fs::read(&path).await else {
         return false;
     };

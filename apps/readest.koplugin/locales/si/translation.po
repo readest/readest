@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "ඔබේ KOReader සහ Readest උපාංග සමමුහූර්තව තබා ගනී."
 
+msgid "Downloading %1 of %2…"
+msgstr "%2 න් %1 බාගත කරමින්…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 MB බාගත කර ඇත"
+
+msgid "No downloads in progress."
+msgstr "දැනට බාගත කිරීම් නොමැත."
+
+msgid "Run in background"
+msgstr "පසුබිමේ ධාවනය කරන්න"
+
+msgid "Cancel download"
+msgstr "බාගත කිරීම අවලංගු කරන්න"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "බාගත කිරීම අවලංගු කළා. %2 න් %1 බාගත විය."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 න් %1 බාගත විය (%3 මඟ හැරියා)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 න් %1 බාගත විය."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "බාගත කිරීම සක්‍රීය කිරීමට පළමුව ගොනු කළමනාකරුවේ මුල් ෆෝල්ඩරය සකසන්න."
+
+msgid "No books to download."
+msgstr "බාගත කිරීමට පොත් නැත."
+
 msgid "Library view"
 msgstr "පුස්තකාල දසුන"
 
@@ -68,8 +98,14 @@ msgstr "ආරෝහණ"
 msgid "Actions"
 msgstr "ක්‍රියා"
 
+msgid "Sync now"
+msgstr "දැන් සමමුහුර්ත කරන්න"
+
 msgid "Download all books"
 msgstr "සියලු පොත් බාගන්න"
+
+msgid "Download progress"
+msgstr "බාගත කිරීමේ ප්‍රගතිය"
 
 msgid "Rescan library"
 msgstr "පුස්තකාලය නැවත පරිලෝකනය කරන්න"
@@ -104,6 +140,12 @@ msgstr "පුස්තකාලයේ සොයන්න"
 msgid "Search title or author"
 msgstr "මාතෘකාව හෝ කතුවරයා සොයන්න"
 
+msgid "Books synced"
+msgstr "පොත් සමමුහූර්ත විය"
+
+msgid "Books sync failed"
+msgstr "පොත් සමමුහූර්ත අසාර්ථක"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "සම්පූර්ණ පුස්තකාල පෙන්වීමට Cover Browser ප්ලගිනය අවශ්‍යයි. සරල ලැයිස්තුවට ආපසු යයි."
 
@@ -116,18 +158,6 @@ msgstr "මෙම පොත Readest වෙතින් බාගත කරන්
 msgid "Download"
 msgstr "බාගන්න"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "බාගත කිරීම සක්‍රීය කිරීමට පළමුව ගොනු කළමනාකරුවේ මුල් ෆෝල්ඩරය සකසන්න."
-
-msgid "Downloading…"
-msgstr "බාගත කරමින්…"
-
-msgid "Cloud copy unavailable."
-msgstr "වළාකුළු පිටපත නොමැත."
-
-msgid "Download failed."
-msgstr "බාගත කිරීම අසාර්ථකයි."
-
 msgid "No cover available on Readest."
 msgstr "Readest හි කවරයක් නොමැත."
 
@@ -137,20 +167,8 @@ msgstr "කවරය බාගත කිරීම අසාර්ථකයි."
 msgid "Could not delete the file."
 msgstr "ගොනුව මැකිය නොහැක."
 
-msgid "No books to download."
-msgstr "බාගත කිරීමට පොත් නැත."
-
-msgid "Downloading %1 of %2…"
-msgstr "%2 න් %1 බාගත කරමින්…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "බාගත කිරීම අවලංගු කළා. %2 න් %1 බාගත විය."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%2 න් %1 බාගත විය (%3 මඟ හැරියා)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%2 න් %1 බාගත විය."
+msgid "Download group"
+msgstr "කණ්ඩායම බාගත කරන්න"
 
 msgid "Removing from cloud…"
 msgstr "වළාකුළුවෙන් ඉවත් කරමින්…"
@@ -287,23 +305,14 @@ msgstr "සංඛ්‍යාලේඛන දැන් යවන්න"
 msgid "Pull stats now"
 msgstr "සංඛ්‍යාලේඛන දැන් ලබාගන්න"
 
-msgid "Push books now"
-msgstr "දැන් පොත් යවන්න"
-
-msgid "Pull books now"
-msgstr "දැන් පොත් ලබාගන්න"
-
-msgid "Receive via Nearby BookDrop"
-msgstr "Nearby BookDrop හරහා ලබා ගන්න"
-
-msgid "Upload current book to Readest"
-msgstr "වත්මන් පොත Readest වෙත උඩුගත කරන්න"
-
 msgid "Push reading progress now"
 msgstr "කියවීමේ ප්‍රගතිය දැන් යවන්න"
 
 msgid "Pull reading progress now"
 msgstr "කියවීමේ ප්‍රගතිය දැන් ලබාගන්න"
+
+msgid "Upload current book to Readest"
+msgstr "වත්මන් පොත Readest වෙත උඩුගත කරන්න"
 
 msgid "Push annotations now"
 msgstr "සටහන් දැන් යවන්න"
@@ -316,6 +325,9 @@ msgstr "සියලු සටහන් සම්පූර්ණ සමමුහ
 
 msgid "Sync info"
 msgstr "සමමුහූර්ත තොරතුරු"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop හරහා ලබා ගන්න"
 
 msgid "Check for update (v%1)"
 msgstr "යාවත්කාලීන කිරීම පරීක්ෂා කරන්න (v%1)"
@@ -349,12 +361,6 @@ msgstr "සමමුහූර්ත තොරතුරු"
 
 msgid "Library not initialized"
 msgstr "පුස්තකාලය ආරම්භ කර නොමැත"
-
-msgid "Books synced"
-msgstr "පොත් සමමුහූර්ත විය"
-
-msgid "Books sync failed"
-msgstr "පොත් සමමුහූර්ත අසාර්ථක"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "මුලින්ම Readest බාගැනීම් ෆෝල්ඩරයක් හෝ KOReader මුල් ෆෝල්ඩරයක් සකසන්න."

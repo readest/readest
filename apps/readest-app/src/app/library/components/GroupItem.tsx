@@ -5,7 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { BooksGroup } from '@/types/book';
-import { LibraryViewModeType } from '@/types/settings';
+import { LibraryViewModeType, LibraryCoverFitType } from '@/types/settings';
 import BookCover from '@/components/BookCover';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -20,11 +20,20 @@ const LIST_PREVIEW_COUNT = 50;
 interface GroupItemProps {
   mode: LibraryViewModeType;
   group: BooksGroup;
+  coverFit?: LibraryCoverFitType;
+  skeuomorphicCovers?: boolean;
   isSelectMode: boolean;
   groupSelected: boolean;
 }
 
-const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupSelected }) => {
+const GroupItem: React.FC<GroupItemProps> = ({
+  mode,
+  group,
+  coverFit,
+  skeuomorphicCovers,
+  isSelectMode,
+  groupSelected,
+}) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   // Status groups carry an i18n key in `displayName`; series/author/tag/subject
@@ -158,8 +167,9 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
                 >
                   <BookCover
                     book={book}
+                    coverFit={coverFit}
                     isPreview
-                    showSpine={settings.librarySkeuomorphicCovers}
+                    showSpine={skeuomorphicCovers ?? settings.librarySkeuomorphicCovers}
                     imageClassName='rounded-[2px]'
                   />
                 </div>

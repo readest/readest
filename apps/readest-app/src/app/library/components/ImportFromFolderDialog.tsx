@@ -34,6 +34,7 @@ export const DEFAULT_FORMAT_GROUPS: FormatGroup[] = [
   { id: 'fb2', label: 'FB2', exts: ['fb2'] },
   { id: 'cbz', label: 'CBZ/ZIP', exts: ['cbz', 'zip'] },
   { id: 'txt', label: 'TXT/MD', exts: ['txt', 'md'] },
+  { id: 'html', label: 'HTML', exts: ['html', 'htm'] },
 ];
 
 export interface ImportFromFolderResult {

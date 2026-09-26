@@ -109,6 +109,23 @@ describe('DocumentLoader format probes with a duplicate-download marker', () => 
   });
 });
 
+describe('DocumentLoader format probes for HTML', () => {
+  const html = '<!DOCTYPE html><html><head><title>T</title></head><body><p>hi</p></body></html>';
+
+  it('routes .html, .htm and a nameless text/html blob to HTML format', async () => {
+    for (const file of [
+      new File([html], 'page.html'),
+      new File([html], 'PAGE.HTM'),
+      new File([html], '', { type: 'text/html' }),
+      new File([html], 'page.html (1)'),
+    ]) {
+      const { book, format } = await new DocumentLoader(file).open();
+      expect(format).toBe('HTML');
+      expect(book.sections.length).toBe(1);
+    }
+  });
+});
+
 describe('getDirection', () => {
   afterEach(() => {
     document.body.removeAttribute('style');
