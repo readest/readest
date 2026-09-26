@@ -4,6 +4,8 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { refreshBookshelfWidget } from '@/services/widget/bookshelfWidget';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
+import { getBookHashFromKey } from '@/services/tts/TTSSessionManager';
+import { throttle } from '@/utils/throttle';
 import { useTranslation } from './useTranslation';
 
 /**
@@ -18,38 +20,26 @@ export function useBookshelfWidget() {
   const _ = useTranslation();
   const { appService } = useEnv();
   const libraryLoaded = useLibraryStore((s) => s.libraryLoaded);
-  const ttsRef = useRef<{ active: boolean; playing: boolean }>({
-    active: false,
-    playing: false,
-  });
+  const ttsRef = useRef({ active: false, playing: false, bookHash: '' });
 
   useEffect(() => {
     if (!appService?.isMobileApp) return;
-    const labels = {
-      // The widget intentionally shows no section header (minimal UI), so the
-      // section title is left empty.
-      sectionTitle: '',
-      emptyTitle: _('Your books will appear here'),
-    };
+    const emptyTitle = _('Your books will appear here');
 
     const publishNow = () => {
       const tts = ttsRef.current;
       void refreshBookshelfWidget(
         appService,
-        labels,
-        tts.active ? { active: true, playing: tts.playing } : undefined,
+        emptyTitle,
+        tts.active ? { active: true, playing: tts.playing, bookHash: tts.bookHash } : undefined,
       );
     };
 
     const publish = debounce(publishNow, 500);
-    // Leading interval throttle for TTS position. `tts-position` fires
-    // continuously while speaking, so a trailing debounce would perpetually
-    // reset its timer and never fire; and a pending setTimeout is unreliable
-    // once the app is backgrounded (the OS throttles background timers).
-    // Publish immediately, then at most once per interval, synchronously inside
-    // the event handler.
-    const TTS_POSITION_PUBLISH_INTERVAL = 5000;
-    let lastPositionPublishAt = 0;
+    // `tts-position` fires continuously while speaking, so a trailing debounce
+    // would never fire, and timers are unreliable once backgrounded. Publish on
+    // the leading edge, at most once per interval.
+    const publishPosition = throttle(publishNow, 5000, { emitLast: false });
 
     if (libraryLoaded) publish();
 
@@ -68,30 +58,20 @@ export function useBookshelfWidget() {
       ttsRef.current = {
         active: detail.state !== 'stopped',
         playing: detail.state === 'playing',
+        bookHash: getBookHashFromKey(detail.bookKey),
       };
       // Publish immediately so controls appear/disappear and the play/pause
       // icon flips without waiting for the next debounce cycle.
       publishNow();
     };
 
-    const onPosition = () => {
-      // Re-read the app-level book progress (the same value as the reader's
-      // progress bar) and re-publish. Leading throttle: publish immediately,
-      // then at most once per interval, synchronously so it still fires while
-      // the app is backgrounded.
-      const now = Date.now();
-      if (now - lastPositionPublishAt < TTS_POSITION_PUBLISH_INTERVAL) return;
-      lastPositionPublishAt = now;
-      publishNow();
-    };
-
     document.addEventListener('visibilitychange', onVisibility);
     eventDispatcher.on('tts-playback-state', onPlaybackState);
-    eventDispatcher.on('tts-position', onPosition);
+    eventDispatcher.on('tts-position', publishPosition);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
       eventDispatcher.off('tts-playback-state', onPlaybackState);
-      eventDispatcher.off('tts-position', onPosition);
+      eventDispatcher.off('tts-position', publishPosition);
       publish.cancel();
     };
   }, [appService, libraryLoaded, _]);

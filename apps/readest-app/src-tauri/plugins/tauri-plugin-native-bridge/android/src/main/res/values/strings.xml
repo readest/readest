@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default English copy. Per-locale variants live in sibling values-<lang>/
+  directories; Android picks one based on the device's current system locale,
+  falling back to this file when no match is found.
+-->
+<resources>
+    <string name="widget_label">Bookshelf</string>
+    <string name="widget_description">Showcase a customizable bookshelf</string>
+    <string name="widget_configure_title">Widget settings</string>
+</resources>

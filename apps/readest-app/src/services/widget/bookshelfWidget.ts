@@ -1,82 +1,281 @@
-import type { Book } from '@/types/book';
+import type { Book, BooksGroup } from '@/types/book';
 import type { AppService } from '@/types/system';
+import type { BookshelfDefinition } from '@/types/bookshelf';
 import { useLibraryStore } from '@/store/libraryStore';
+import { LibraryGroupByType } from '@/types/settings';
 import { getCoverFilename, isCurrentlyReadingBook } from '@/utils/book';
-import { updateBookshelfWidget } from '@/utils/bridge';
-import type { BookshelfWidgetTts } from '@/utils/bridge';
+import { getBookshelfWidgetInstances, updateBookshelfWidget } from '@/utils/bridge';
+import { joinScannedPath } from '@/utils/path';
+import type {
+  BookshelfWidgetInstance,
+  BookshelfWidgetTts,
+  UpdateBookshelfWidgetRequest,
+} from '@/utils/bridge';
+import {
+  bookshelfSchema,
+  createBookshelf,
+  defaultBookshelves,
+  RECENT_BOOKSHELF_ID,
+} from '@/services/bookshelves/definitions';
+import { evaluateBookshelves, type BookshelfResult } from '@/services/bookshelves/evaluate';
+import { presentBookshelf } from '@/services/bookshelves/presentation';
 
-export interface BookshelfWidgetBook {
-  hash: string;
-  title: string;
-  author: string;
-  percent: number;
-  coverPath: string;
-}
+/** What one instance publishes: everything but the widget id. */
+export type BookshelfWidgetSnapshot = Omit<UpdateBookshelfWidgetRequest, 'appWidgetId'>;
 
-export interface BookshelfWidgetPayload {
-  books: BookshelfWidgetBook[];
-  sectionTitle: string;
-  emptyTitle: string;
-  tts?: BookshelfWidgetTts;
-}
+export const MIN_GRID_SIZE = 1;
+export const MAX_GRID_SIZE = 5;
 
-export const computeReadingPercent = (book: Book): number => {
-  const progress = book.progress;
-  if (!progress) return 0;
-  const [current, total] = progress;
-  if (!total || total <= 0) return 0;
-  return Math.min(100, Math.max(0, Math.round((current / total) * 100)));
+/** The widget-only settings an instance keeps next to its shelf. */
+export type BookshelfWidgetGridSettings = Pick<
+  BookshelfWidgetInstance,
+  'gridRows' | 'gridColumns' | 'showTitles' | 'groupMosaic'
+>;
+
+/** A single row of up to 3 covers, no titles. */
+export const DEFAULT_BOOKSHELF_WIDGET_GRID: BookshelfWidgetGridSettings = {
+  gridRows: 1,
+  gridColumns: 3,
+  showTitles: false,
+  groupMosaic: true,
 };
 
-export const selectBookshelfWidgetBooks = (library: Book[], limit = 3): Book[] =>
-  library
-    .filter(isCurrentlyReadingBook)
-    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-    .slice(0, limit);
+const ensureGridDimension = (value: number): number => {
+  if (!Number.isFinite(value)) return MIN_GRID_SIZE;
+  return Math.min(MAX_GRID_SIZE, Math.max(MIN_GRID_SIZE, Math.round(value)));
+};
 
-export interface BookshelfWidgetLabels {
-  sectionTitle: string;
-  emptyTitle: string;
-}
+/** A widget-owned shelf never inherits the app's View-menu sort/grouping. Its
+ * name is the widget's heading, and blank means no heading. */
+export const normalizeWidgetShelf = (shelf: BookshelfDefinition): BookshelfDefinition => ({
+  ...shelf,
+  name: shelf.name.trim(),
+  enabled: true,
+  useGlobalSort: false,
+  useGlobalGrouping: false,
+  groupBy: shelf.groupBy ?? LibraryGroupByType.None,
+});
 
-export const buildBookshelfWidgetPayload = async (
-  books: Book[],
-  appService: AppService,
-  labels: BookshelfWidgetLabels,
-  tts?: BookshelfWidgetTts,
-): Promise<BookshelfWidgetPayload> => {
-  // resolveFilePath('', 'Books') returns the absolute Books dir (no trailing
-  // slash) by delegating to fs.getPrefix internally. Both platforms use `/`,
-  // so plain string concatenation is correct and keeps the builder
-  // unit-testable without the Tauri path plugin.
-  const booksDir = (await appService.resolveFilePath('', 'Books')).replace(/\/+$/, '');
-  const widgetBooks: BookshelfWidgetBook[] = books.map((book) => ({
-    hash: book.hash,
-    title: book.title ?? '',
-    author: book.author ?? '',
-    percent: computeReadingPercent(book),
-    coverPath: `${booksDir}/${getCoverFilename(book)}`,
-  }));
+/** Books being read now, newest first, ungrouped, with no heading (the Recent shelf's filter). */
+export const defaultWidgetShelf = (): BookshelfDefinition => {
+  const recent = defaultBookshelves({}).find((shelf) => shelf.id === RECENT_BOOKSHELF_ID)!;
   return {
-    books: widgetBooks,
-    sectionTitle: labels.sectionTitle,
-    emptyTitle: labels.emptyTitle,
+    ...createBookshelf(''),
+    filters: recent.filters,
+    useGlobalSort: false,
+    useGlobalGrouping: false,
+    groupBy: LibraryGroupByType.None,
+  };
+};
+
+// The shelf schema rejects a blank name for a custom shelf, but a blank name is
+// how a widget hides its heading. Validate and evaluate with a stand-in name.
+const withSchemaName = (shelf: BookshelfDefinition): BookshelfDefinition =>
+  shelf.name.trim() ? shelf : { ...shelf, name: 'Widget' };
+
+/** Whether a widget shelf is complete enough to save and show (a new filter
+ * condition is invalid until its value is filled in). */
+export const checkWidgetShelf = (shelf: BookshelfDefinition) =>
+  bookshelfSchema.safeParse(withSchemaName(shelf));
+
+/** Parses an instance's stored shelf JSON, falling back to the default shelf
+ * when it is empty, malformed or no longer valid. */
+export const parseWidgetShelf = (json: string): BookshelfDefinition => {
+  try {
+    const raw = JSON.parse(json) as BookshelfDefinition;
+    const parsed = bookshelfSchema.safeParse(withSchemaName(raw));
+    if (parsed.success) return normalizeWidgetShelf({ ...parsed.data, name: raw.name });
+  } catch {
+    // Empty, malformed or not an object: use the default below.
+  }
+  return defaultWidgetShelf();
+};
+
+/**
+ * Evaluates every widget's shelf together, so exclusive widgets claim their
+ * books from the others exactly as exclusive shelves do in the app. The older
+ * widget (lower id) wins a book two exclusive widgets both match; ids are
+ * sorted because the platform lists them in no defined order.
+ */
+export const evaluateWidgetShelves = (
+  library: Book[],
+  entries: { appWidgetId: number; shelf: BookshelfDefinition }[],
+): Map<number, BookshelfResult> => {
+  const sorted = [...entries].sort((a, b) => a.appWidgetId - b.appWidgetId);
+  // Ownership needs unique ids, but parsed shelves carry random ones and the
+  // schema only accepts UUIDs, so derive a valid one from the widget id.
+  const definitions = sorted.map(({ appWidgetId, shelf }) => ({
+    ...withSchemaName(shelf),
+    id: `00000000-0000-4000-8000-${appWidgetId.toString(16).padStart(12, '0')}`,
+  }));
+  // No React context here for the user's UI language, so uiLanguage stays ''.
+  const results = evaluateBookshelves(library, definitions);
+  return new Map(sorted.map(({ appWidgetId }, i) => [appWidgetId, results[i]!]));
+};
+
+// Pass `resolvedBooksDir` when it is already resolved.
+const resolveBooksDir = async (
+  appService: AppService,
+  resolvedBooksDir?: string,
+): Promise<string> => resolvedBooksDir ?? (await appService.resolveFilePath('', 'Books'));
+
+/** Resolves each tile to what native renders: books get their cover file and
+ * progress, groups up to 4 member covers (1 without mosaic), which native
+ * composites into a mosaic like the Library's group tile. */
+export const buildBookshelfWidgetItems = async (
+  items: (Book | BooksGroup)[],
+  shelf: BookshelfDefinition,
+  grid: BookshelfWidgetGridSettings,
+  appService: AppService,
+  resolvedBooksDir?: string,
+): Promise<BookshelfWidgetSnapshot['items']> => {
+  const booksDir = await resolveBooksDir(appService, resolvedBooksDir);
+  const coverPath = (book: Book) => joinScannedPath(booksDir, getCoverFilename(book));
+  const memberLimit = grid.groupMosaic ? 4 : 1;
+  return items.map((item) => {
+    if ('books' in item) {
+      return {
+        type: 'group',
+        id: item.id,
+        groupBy: shelf.groupBy ?? LibraryGroupByType.None,
+        value: item.name,
+        coverPaths: item.books.slice(0, memberLimit).map(coverPath),
+      };
+    }
+    const [current, total] = item.progress ?? [];
+    return {
+      type: 'book',
+      hash: item.hash,
+      title: item.title ?? '',
+      author: item.author ?? '',
+      percent:
+        total && total > 0
+          ? Math.min(100, Math.max(0, Math.round(((current ?? 0) / total) * 100)))
+          : 0,
+      // Only a book being read now shows the progress bar/percent badge.
+      showProgress: isCurrentlyReadingBook(item),
+      coverPath: coverPath(item),
+    };
+  });
+};
+
+/** A playing TTS session plus the book it is reading, which decides which
+ * instances get the transport bar. */
+export type BookshelfWidgetPlayback = BookshelfWidgetTts & { bookHash: string };
+
+/** One widget's snapshot: its tiles in display order, with the transport bar
+ * (`tts`) only when the playing book is one of the shown tiles - a loose book,
+ * or a member of a shown group - not just anywhere in the shelf's matches. */
+export const buildBookshelfWidgetSnapshot = async (
+  result: BookshelfResult,
+  shelf: BookshelfDefinition,
+  grid: BookshelfWidgetGridSettings,
+  appService: AppService,
+  emptyTitle: string,
+  playback?: BookshelfWidgetPlayback,
+  resolvedBooksDir?: string,
+): Promise<BookshelfWidgetSnapshot> => {
+  // The Library's presentation cut to the grid (rows x columns, each clamped to
+  // the allowed size).
+  const capacity = ensureGridDimension(grid.gridRows) * ensureGridDimension(grid.gridColumns);
+  const items = presentBookshelf(result, {}, '').slice(0, capacity);
+  const isShown = (hash: string) =>
+    items.some((item) =>
+      'books' in item ? item.books.some((b) => b.hash === hash) : item.hash === hash,
+    );
+  const tts =
+    playback && isShown(playback.bookHash)
+      ? { active: playback.active, playing: playback.playing }
+      : undefined;
+  return {
+    items: await buildBookshelfWidgetItems(items, shelf, grid, appService, resolvedBooksDir),
+    sectionTitle: shelf.name,
+    emptyTitle,
     ...(tts ? { tts } : {}),
   };
 };
 
+// The snapshot last pushed for each widget, when every tile made it. Native
+// re-encodes every thumbnail on a push, so an unchanged snapshot is not sent
+// again. Per JS session: a fresh launch always pushes.
+const lastPublished = new Map<number, string>();
+
+// Guards against overlap: useBookshelfWidget fires this from three independent
+// triggers (a debounce, a throttle, and an immediate TTS-state call) that can
+// land close together, and two runs at once would race the lastPublished cache
+// above. A call that arrives mid-refresh is dropped; the next trigger publishes
+// whatever is current by then.
+let running = false;
+
 export const refreshBookshelfWidget = async (
   appService: AppService,
-  labels: BookshelfWidgetLabels,
-  tts?: BookshelfWidgetTts,
+  emptyTitle: string,
+  playback?: BookshelfWidgetPlayback,
 ): Promise<void> => {
-  if (!appService.isMobileApp) return;
-  const library = useLibraryStore.getState().library;
-  const selected = selectBookshelfWidgetBooks(library);
-  const payload = await buildBookshelfWidgetPayload(selected, appService, labels, tts);
+  if (running) return;
+  running = true;
   try {
-    await updateBookshelfWidget(payload);
-  } catch (err) {
-    console.warn('Failed to update bookshelf widget', err);
+    if (!appService.isMobileApp) return;
+    const library = useLibraryStore.getState().library;
+
+    let targets: {
+      appWidgetId: number;
+      shelf: BookshelfDefinition;
+      grid: BookshelfWidgetGridSettings;
+    }[];
+    if (appService.isAndroidApp) {
+      let instances: BookshelfWidgetInstance[];
+      try {
+        ({ instances } = await getBookshelfWidgetInstances());
+      } catch (err) {
+        console.warn('Failed to read bookshelf widget instances', err);
+        return;
+      }
+      targets = instances.map((instance) => ({
+        appWidgetId: instance.appWidgetId,
+        shelf: parseWidgetShelf(instance.shelf),
+        grid: instance,
+      }));
+    } else {
+      // iOS has no per-instance configurable widget yet: one default snapshot.
+      targets = [
+        { appWidgetId: 0, shelf: defaultWidgetShelf(), grid: DEFAULT_BOOKSHELF_WIDGET_GRID },
+      ];
+    }
+    for (const id of lastPublished.keys()) {
+      if (!targets.some((target) => target.appWidgetId === id)) lastPublished.delete(id);
+    }
+    if (targets.length === 0) return;
+
+    const booksDir = await resolveBooksDir(appService);
+    const results = evaluateWidgetShelves(library, targets);
+
+    await Promise.all(
+      targets.map(async (target) => {
+        const snapshot = await buildBookshelfWidgetSnapshot(
+          results.get(target.appWidgetId)!,
+          target.shelf,
+          target.grid,
+          appService,
+          emptyTitle,
+          playback,
+          booksDir,
+        );
+        const request = { ...snapshot, appWidgetId: target.appWidgetId };
+        const fingerprint = JSON.stringify(request);
+        if (lastPublished.get(target.appWidgetId) === fingerprint) return;
+        try {
+          const { failed } = await updateBookshelfWidget(request);
+          // A tile that failed (e.g. its cover isn't downloaded yet) is retried next time.
+          if (failed === 0) lastPublished.set(target.appWidgetId, fingerprint);
+          else lastPublished.delete(target.appWidgetId);
+        } catch (err) {
+          lastPublished.delete(target.appWidgetId);
+          console.warn('Failed to update bookshelf widget', target.appWidgetId, err);
+        }
+      }),
+    );
+  } finally {
+    running = false;
   }
 };

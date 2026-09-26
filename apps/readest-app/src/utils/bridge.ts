@@ -223,9 +223,10 @@ export async function interceptKeys(request: InterceptKeysRequest): Promise<void
 }
 
 /** Android only: sends the app to the background, same as pressing the
- * system Home button. */
-export async function moveTaskToBack(): Promise<void> {
-  await invoke('plugin:native-bridge|move_task_to_back');
+ * system Home button. `widgetSaved` first answers a pending widget configure
+ * request (true: place the widget, false: cancel it). */
+export async function moveTaskToBack(widgetSaved?: boolean): Promise<void> {
+  await invoke('plugin:native-bridge|move_task_to_back', { payload: { widgetSaved } });
 }
 
 export async function lockScreenOrientation(request: LockScreenRequest): Promise<void> {
@@ -474,6 +475,7 @@ export interface BookshelfWidgetBookPayload {
   title: string;
   author: string;
   percent: number;
+  showProgress: boolean;
   coverPath: string;
 }
 
@@ -482,15 +484,59 @@ export interface BookshelfWidgetTts {
   playing: boolean;
 }
 
+/** A group tile: a mosaic of up to 4 member covers (see
+ * buildBookshelfWidgetItems in services/widget/bookshelfWidget.ts). */
+export interface BookshelfWidgetGroupPayload {
+  id: string;
+  groupBy: string;
+  value: string;
+  coverPaths: string[];
+}
+
+/** One grid tile: a book or a group. */
+export type BookshelfWidgetItemPayload =
+  | ({ type: 'book' } & BookshelfWidgetBookPayload)
+  | ({ type: 'group' } & BookshelfWidgetGroupPayload);
+
 export interface UpdateBookshelfWidgetRequest {
-  books: BookshelfWidgetBookPayload[];
+  appWidgetId: number;
+  /** Grid tiles in display order. */
+  items: BookshelfWidgetItemPayload[];
   sectionTitle: string;
   emptyTitle: string;
   tts?: BookshelfWidgetTts;
 }
 
-export async function updateBookshelfWidget(request: UpdateBookshelfWidgetRequest): Promise<void> {
-  await invoke('plugin:native-bridge|update_bookshelf_widget', { payload: request });
+/** `failed` counts tiles whose cover was missing or unusable (0 on iOS/desktop). */
+export async function updateBookshelfWidget(
+  request: UpdateBookshelfWidgetRequest,
+): Promise<{ failed: number }> {
+  return invoke('plugin:native-bridge|update_bookshelf_widget', { payload: request });
+}
+
+export interface BookshelfWidgetInstance {
+  appWidgetId: number;
+  gridRows: number;
+  gridColumns: number;
+  showTitles: boolean;
+  groupMosaic: boolean;
+  /** JSON of the instance's own BookshelfDefinition (filters, sort, grouping,
+   * and the name shown as the widget heading). Empty means "use the default". */
+  shelf: string;
+}
+
+export interface GetBookshelfWidgetInstancesResponse {
+  instances: BookshelfWidgetInstance[];
+}
+
+export async function getBookshelfWidgetInstances(): Promise<GetBookshelfWidgetInstancesResponse> {
+  return invoke<GetBookshelfWidgetInstancesResponse>(
+    'plugin:native-bridge|get_bookshelf_widget_instances',
+  );
+}
+
+export async function setBookshelfWidgetSettings(request: BookshelfWidgetInstance): Promise<void> {
+  await invoke('plugin:native-bridge|set_bookshelf_widget_settings', { payload: request });
 }
 
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────

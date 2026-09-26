@@ -117,8 +117,11 @@ pub(crate) async fn intercept_keys<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn move_task_to_back<R: Runtime>(app: AppHandle<R>) -> Result<()> {
-    app.native_bridge().move_task_to_back()
+pub(crate) async fn move_task_to_back<R: Runtime>(
+    app: AppHandle<R>,
+    payload: MoveTaskToBackRequest,
+) -> Result<()> {
+    app.native_bridge().move_task_to_back(payload)
 }
 
 #[command]
@@ -356,8 +359,23 @@ pub(crate) async fn refresh_eink_screen<R: Runtime>(
 pub(crate) async fn update_bookshelf_widget<R: Runtime>(
     app: AppHandle<R>,
     payload: UpdateBookshelfWidgetRequest,
-) -> Result<()> {
+) -> Result<UpdateBookshelfWidgetResponse> {
     app.native_bridge().update_bookshelf_widget(payload)
+}
+
+#[command]
+pub(crate) async fn get_bookshelf_widget_instances<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetBookshelfWidgetInstancesResponse> {
+    app.native_bridge().get_bookshelf_widget_instances()
+}
+
+#[command]
+pub(crate) async fn set_bookshelf_widget_settings<R: Runtime>(
+    app: AppHandle<R>,
+    payload: BookshelfWidgetInstanceSettings,
+) -> Result<()> {
+    app.native_bridge().set_bookshelf_widget_settings(payload)
 }
 
 /// Snapshot a region of the calling webview and return it as binary PNG

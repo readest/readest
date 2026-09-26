@@ -97,6 +97,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::clear_secure_item,
             commands::refresh_eink_screen,
             commands::update_bookshelf_widget,
+            commands::get_bookshelf_widget_instances,
+            commands::set_bookshelf_widget_settings,
             commands::capture_webview_region,
             commands::cover_webview_region,
             commands::uncover_webview_region,

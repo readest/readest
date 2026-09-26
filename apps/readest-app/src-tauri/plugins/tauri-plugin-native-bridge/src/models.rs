@@ -140,6 +140,12 @@ pub struct InterceptKeysRequest {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct MoveTaskToBackRequest {
+    pub widget_saved: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LockScreenOrientationRequest {
     pub orientation: String,
 }
@@ -545,6 +551,7 @@ pub struct BookshelfWidgetBook {
     pub title: String,
     pub author: String,
     pub percent: u8,
+    pub show_progress: bool,
     pub cover_path: String,
 }
 
@@ -555,14 +562,64 @@ pub struct BookshelfWidgetTts {
     pub playing: bool,
 }
 
+/// Tiles whose thumbnail could not be written, so the caller can retry them.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct UpdateBookshelfWidgetResponse {
+    pub failed: u32,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateBookshelfWidgetRequest {
-    pub books: Vec<BookshelfWidgetBook>,
+    pub app_widget_id: i32,
+    /// Grid tiles in display order.
+    pub items: Vec<BookshelfWidgetItem>,
     pub section_title: String,
     pub empty_title: String,
     #[serde(default)]
     pub tts: Option<BookshelfWidgetTts>,
+}
+
+/// One grid tile: a book, or a group of books (a mosaic of their covers).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum BookshelfWidgetItem {
+    Book(BookshelfWidgetBook),
+    Group(BookshelfWidgetGroupTile),
+}
+
+/// A group tile (e.g. groupBy="series", value="Foundation") with up to 4
+/// member-book cover paths for native to composite into a mosaic.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetGroupTile {
+    pub id: String,
+    pub group_by: String,
+    pub value: String,
+    pub cover_paths: Vec<String>,
+}
+
+/// One placed widget instance's stored settings, reported by native for the
+/// in-app settings screen and for computing that instance's snapshot.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetInstanceSettings {
+    pub app_widget_id: i32,
+    pub grid_rows: i32,
+    pub grid_columns: i32,
+    pub show_titles: bool,
+    pub group_mosaic: bool,
+    /// JSON of the instance's own bookshelf definition; opaque to native.
+    /// Empty means "use the default shelf".
+    #[serde(default)]
+    pub shelf: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetBookshelfWidgetInstancesResponse {
+    pub instances: Vec<BookshelfWidgetInstanceSettings>,
 }
 
 /// Region of the webview to snapshot for the mesh page-curl (#555),

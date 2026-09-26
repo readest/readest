@@ -51,6 +51,8 @@ permissions = [
   "allow-clear-secure-item",
   "allow-refresh-eink-screen",
   "allow-update-bookshelf-widget",
+  "allow-get-bookshelf-widget-instances",
+  "allow-set-bookshelf-widget-settings",
   "allow-capture-webview-region",
   "allow-cover-webview-region",
   "allow-uncover-webview-region",

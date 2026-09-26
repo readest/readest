@@ -1,41 +1,60 @@
-use tauri_plugin_native_bridge::UpdateBookshelfWidgetRequest;
+use tauri_plugin_native_bridge::{BookshelfWidgetItem, UpdateBookshelfWidgetRequest};
 
 #[test]
-fn deserializes_camel_case_payload() {
+fn deserializes_book_and_group_items_in_order() {
     let json = r#"{
-      "books": [{"hash":"h1","title":"T","author":"A","percent":72,"coverPath":"/x/h1/cover.png"}],
+      "appWidgetId": 42,
+      "items": [
+        {"type":"group","id":"g1","groupBy":"series","value":"Foundation","coverPaths":["/x/a/cover.png","/x/b/cover.png"]},
+        {"type":"book","hash":"h1","title":"T","author":"A","percent":72,"showProgress":true,"coverPath":"/x/h1/cover.png"}
+      ],
       "sectionTitle": "Continue reading",
       "emptyTitle": "Your books will appear here"
     }"#;
     let req: UpdateBookshelfWidgetRequest = serde_json::from_str(json).unwrap();
-    assert_eq!(req.books.len(), 1);
-    assert_eq!(req.books[0].percent, 72);
-    assert_eq!(req.books[0].cover_path, "/x/h1/cover.png");
+    assert_eq!(req.app_widget_id, 42);
     assert_eq!(req.section_title, "Continue reading");
-    assert!(req.tts.is_none());
-}
+    assert!(
+        req.tts.is_none(),
+        "tts should be absent when the key is missing"
+    );
+    assert_eq!(req.items.len(), 2);
+    match &req.items[0] {
+        BookshelfWidgetItem::Group(group) => {
+            assert_eq!(group.value, "Foundation");
+            assert_eq!(group.cover_paths.len(), 2);
+        }
+        other => panic!("expected a group, got {other:?}"),
+    }
+    match &req.items[1] {
+        BookshelfWidgetItem::Book(book) => {
+            assert_eq!(book.percent, 72);
+            assert_eq!(book.cover_path, "/x/h1/cover.png");
+        }
+        other => panic!("expected a book, got {other:?}"),
+    }
 
-#[test]
-fn deserializes_tts_field_when_present() {
-    let json = r#"{
-      "books": [],
+    // Same request shape, plus the optional tts field.
+    let json_with_tts = r#"{
+      "appWidgetId": 42,
+      "items": [],
       "sectionTitle": "S",
       "emptyTitle": "E",
       "tts": {"active": true, "playing": false}
     }"#;
-    let req: UpdateBookshelfWidgetRequest = serde_json::from_str(json).unwrap();
-    let tts = req.tts.expect("tts should be Some");
-    assert_eq!(tts.active, true);
-    assert_eq!(tts.playing, false);
+    let req_with_tts: UpdateBookshelfWidgetRequest = serde_json::from_str(json_with_tts).unwrap();
+    let tts = req_with_tts
+        .tts
+        .expect("tts should be Some when the key is present");
+    assert!(tts.active);
+    assert!(!tts.playing);
 }
 
 #[test]
-fn tts_is_none_when_absent() {
+fn rejects_an_item_of_an_unknown_type() {
     let json = r#"{
-      "books": [],
-      "sectionTitle": "S",
-      "emptyTitle": "E"
+      "appWidgetId": 42, "items": [{"type":"shelf"}],
+      "sectionTitle": "S", "emptyTitle": "E"
     }"#;
-    let req: UpdateBookshelfWidgetRequest = serde_json::from_str(json).unwrap();
-    assert!(req.tts.is_none());
+    assert!(serde_json::from_str::<UpdateBookshelfWidgetRequest>(json).is_err());
 }

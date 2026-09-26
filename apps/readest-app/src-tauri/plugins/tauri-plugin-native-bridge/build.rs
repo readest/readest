@@ -52,6 +52,8 @@ const COMMANDS: &[&str] = &[
     "clear_secure_item",
     "refresh_eink_screen",
     "update_bookshelf_widget",
+    "get_bookshelf_widget_instances",
+    "set_bookshelf_widget_settings",
     "capture_webview_region",
     "cover_webview_region",
     "uncover_webview_region",

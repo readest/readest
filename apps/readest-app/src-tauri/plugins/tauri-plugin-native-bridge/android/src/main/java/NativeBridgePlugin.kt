@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.app.Application
 import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
 import android.os.Bundle
 import android.content.ComponentName
 import android.content.ContentValues
@@ -106,6 +107,11 @@ class SetSystemUIVisibilityRequestArgs {
 }
 
 @InvokeArg
+class MoveTaskToBackArgs {
+    var widgetSaved: Boolean? = null
+}
+
+@InvokeArg
 class InterceptKeysRequestArgs {
     var volumeKeys: Boolean? = null
     var backKey: Boolean? = null
@@ -149,13 +155,21 @@ class PurchaseProductRequestArgs {
     val productId: String? = null
 }
 
+// One grid tile. Gson can't deserialize a union, so this holds the fields of
+// both kinds: a "book" uses hash..coverPath, a "group" uses id..coverPaths.
 @InvokeArg
-class UpdateBookshelfWidgetBookArgs {
+class UpdateBookshelfWidgetItemArgs {
+    var type: String = ""
     var hash: String = ""
     var title: String = ""
     var author: String = ""
     var percent: Int = 0
+    var showProgress: Boolean = false
     var coverPath: String = ""
+    var id: String = ""
+    var groupBy: String = ""
+    var value: String = ""
+    var coverPaths: List<String> = emptyList()
 }
 
 @InvokeArg
@@ -174,15 +188,24 @@ class UpdateBookshelfWidgetTtsArgs {
 
 @InvokeArg
 class UpdateBookshelfWidgetRequestArgs {
-    var books: List<UpdateBookshelfWidgetBookArgs> = emptyList()
+    var appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
+    var items: List<UpdateBookshelfWidgetItemArgs> = emptyList()
     var sectionTitle: String = ""
     var emptyTitle: String = ""
-    // Nullable — omitted from the snapshot when the caller does not send a tts object.
-    // Note: Tauri parseArgs uses Gson for deserialization; a nullable nested @InvokeArg
-    // field is set to null when the key is absent from the JSON payload, which is the
-    // expected behavior. If deserialization issues arise at runtime, fall back to two
-    // flat optional fields (ttsActive: Boolean? / ttsPlaying: Boolean?).
+    // Null when the caller sends no tts object.
     var tts: UpdateBookshelfWidgetTtsArgs? = null
+}
+
+@InvokeArg
+class SetBookshelfWidgetSettingsArgs {
+    var appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
+    var gridRows: Int = BookshelfWidgetStore.DEFAULT_GRID_ROWS
+    var gridColumns: Int = BookshelfWidgetStore.DEFAULT_GRID_COLUMNS
+    var showTitles: Boolean = false
+    var groupMosaic: Boolean = true
+    var shelf: String = ""
+
+    fun toSettings() = BookshelfWidgetInstanceSettings(gridRows, gridColumns, showTitles, groupMosaic, shelf)
 }
 
 data class ProductData(
@@ -956,6 +979,17 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         invoke.resolve()
     }
 
+    // Sends the app to the background, same as pressing the system Home
+    // button. widgetSaved answers a pending widget configure first, so the
+    // launcher gets the result as it comes back to the front.
+    @Command
+    fun move_task_to_back(invoke: Invoke) {
+        val args = invoke.parseArgs(MoveTaskToBackArgs::class.java)
+        args.widgetSaved?.let { BookshelfWidgetConfigureActivity.finishPending(it) }
+        activity.moveTaskToBack(true)
+        invoke.resolve()
+    }
+
     // Suppress a piece of the OS selection UI. target "menu" (#5427): gate for
     // the system text-selection floating toolbar — MainActivity consults this
     // flag in onWindowStartingActionMode; see SelectionMenuSuppressor. target
@@ -983,14 +1017,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
               return
           }
       }
-    // Sends the app to the background, same as pressing the system Home
-    // button.
-    @Command
-    fun move_task_to_back(invoke: Invoke) {
-        activity.moveTaskToBack(true)
-        invoke.resolve()
-    }
-
       invoke.resolve()
     }
 
@@ -1475,28 +1501,51 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     fun update_bookshelf_widget(invoke: Invoke) {
         val args = invoke.parseArgs(UpdateBookshelfWidgetRequestArgs::class.java)
         pluginScope.launch {
-            withContext(Dispatchers.IO) {
-                val books = org.json.JSONArray()
-                for (book in args.books) {
-                    // A thumbnail failure must never escape pluginScope: an
-                    // uncaught exception here kills the process, and the
-                    // snapshot is republished on every library load, so one
-                    // bad cover would crash the app on every launch.
+            val failed = withContext(Dispatchers.IO) {
+                val items = org.json.JSONArray()
+                var failedTiles = 0
+                for (item in args.items) {
+                    // A failure here must never escape pluginScope: an uncaught
+                    // exception kills the process, and the snapshot is republished
+                    // on every library load, so one bad cover or group tile would
+                    // crash the app on every launch. The tile is listed before its
+                    // thumbnail is written, so a failure leaves a placeholder.
                     try {
-                        BookshelfWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
+                        if (item.type == "group") {
+                            items.put(
+                                org.json.JSONObject()
+                                    .put("type", "group")
+                                    .put("id", item.id)
+                                    .put("groupBy", item.groupBy)
+                                    .put("value", item.value)
+                            )
+                            if (!BookshelfWidgetStore.writeGroupTileThumbnail(activity, item.id, item.coverPaths)) {
+                                failedTiles++
+                            }
+                        } else {
+                            items.put(
+                                org.json.JSONObject()
+                                    .put("type", "book")
+                                    .put("hash", item.hash)
+                                    .put("title", item.title)
+                                    .put("author", item.author)
+                                    .put("percent", item.percent)
+                                    .put("showProgress", item.showProgress)
+                            )
+                            if (!BookshelfWidgetStore.writeThumbnail(
+                                    activity, item.hash, item.coverPath, item.percent, item.showProgress
+                                )
+                            ) {
+                                failedTiles++
+                            }
+                        }
                     } catch (e: Exception) {
-                        Log.w("NativeBridgePlugin", "widget thumbnail failed for ${book.hash}", e)
+                        failedTiles++
+                        Log.w("NativeBridgePlugin", "widget ${item.type} tile failed for ${item.id.ifEmpty { item.hash }}", e)
                     }
-                    books.put(
-                        org.json.JSONObject()
-                            .put("hash", book.hash)
-                            .put("title", book.title)
-                            .put("author", book.author)
-                            .put("percent", book.percent)
-                    )
                 }
                 val snapshot = org.json.JSONObject()
-                    .put("books", books)
+                    .put("items", items)
                     .put("sectionTitle", args.sectionTitle)
                     .put("emptyTitle", args.emptyTitle)
                 args.tts?.let { tts ->
@@ -1507,10 +1556,37 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                             .put("playing", tts.playing)
                     )
                 }
-                BookshelfWidgetStore.writeSnapshot(activity, snapshot.toString())
+                BookshelfWidgetStore.writeSnapshot(activity, args.appWidgetId, snapshot.toString())
+                failedTiles
             }
-            if (isActive) invoke.resolve()
+            // Tiles whose cover was missing or failed, so the caller retries them.
+            if (isActive) invoke.resolve(JSObject().put("failed", failed))
         }
+    }
+
+    @Command
+    fun get_bookshelf_widget_instances(invoke: Invoke) {
+        val mgr = AppWidgetManager.getInstance(activity)
+        val ids = mgr?.getAppWidgetIds(ComponentName(activity, BookshelfWidgetProvider::class.java))
+            ?: IntArray(0)
+        val instances = org.json.JSONArray()
+        for (id in ids) {
+            instances.put(
+                BookshelfWidgetStore.readInstanceSettings(activity, id).toJson().put("appWidgetId", id)
+            )
+        }
+        val ret = JSObject()
+        ret.put("instances", instances)
+        invoke.resolve(ret)
+    }
+
+    @Command
+    fun set_bookshelf_widget_settings(invoke: Invoke) {
+        val args = invoke.parseArgs(SetBookshelfWidgetSettingsArgs::class.java)
+        val id = args.appWidgetId
+        BookshelfWidgetStore.writeInstanceSettings(activity, id, args.toSettings())
+        BookshelfWidgetStore.notifyWidget(activity, id)
+        invoke.resolve()
     }
 
     // ── Sync passphrase keychain ──────────────────────────────────────

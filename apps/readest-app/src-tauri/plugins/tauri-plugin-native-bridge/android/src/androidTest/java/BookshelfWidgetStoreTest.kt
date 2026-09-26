@@ -31,13 +31,13 @@ class BookshelfWidgetStoreTest {
     }
 
     private fun thumbnailFile(hash: String) = File(BookshelfWidgetStore.coversDir(ctx), "$hash.png")
+    private fun groupTileFile(id: String) = File(BookshelfWidgetStore.coversDir(ctx), "$id.png")
 
-    /** Asserts the thumbnail exists and decodes to the 240x360 widget size. */
-    private fun assertThumbnailWritten(hash: String) {
-        val out = thumbnailFile(hash)
-        assertTrue("thumbnail should be written", out.exists())
+    /** Asserts the thumbnail/group tile exists and decodes to the 240x360 widget size. */
+    private fun assertWritten(msg: String, out: File) {
+        assertTrue("$msg should be written", out.exists())
         val decoded = checkNotNull(BitmapFactory.decodeFile(out.absolutePath)) {
-            "thumbnail should decode to a valid bitmap"
+            "$msg should decode to a valid bitmap"
         }
         assertEquals(240, decoded.width)
         assertEquals(360, decoded.height)
@@ -59,7 +59,7 @@ class BookshelfWidgetStoreTest {
         try {
             // Pre-fix: throws IllegalArgumentException. Post-fix: writes the PNG.
             BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
-            assertThumbnailWritten(hash)
+            assertWritten("thumbnail", thumbnailFile(hash))
         } finally {
             srcFile.delete()
             thumbnailFile(hash).delete()
@@ -67,93 +67,72 @@ class BookshelfWidgetStoreTest {
     }
 
     /**
-     * Regression for the launch crash on covers that decode 1px tall, here a
-     * 1x1 placeholder cover as shipped in some EPUBs. The 2:3 center-crop
-     * computed cropW = srcH * 2 / 3 = 0, and Bitmap.createBitmap threw
+     * Regression for the launch crash on covers that decode 1px tall: a 1x1
+     * placeholder cover (as shipped in some EPUBs) hits the crash via direct
+     * decode, while a 2000x4 banner hits the SAME crash via the bounds
+     * pre-pass (inSampleSize 4 -> decodes to 500x1), so the guard has to look
+     * at the decoded size, not the file's declared size. Both crashed with
      * "width must be > 0" out of the widget coroutine, killing the app on
      * every launch since the widget snapshot is republished on library load.
      */
     @Test
-    fun writeThumbnail_1x1Cover_doesNotCrashAndDropsStaleThumbnail() {
-        val srcFile = writeCoverPng(1, 1, "widget-cover-1x1.png")
-        val hash = "regression1x1"
-        val out = thumbnailFile(hash)
-        // A stale thumbnail from an earlier, valid cover must not survive.
-        out.writeBytes(byteArrayOf(1, 2, 3))
-        try {
-            // Pre-fix: throws IllegalArgumentException("width must be > 0").
-            // Post-fix: returns without writing; a 1px cover is not a cover.
-            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
-            assertFalse("degenerate cover should not leave a thumbnail", out.exists())
-        } finally {
-            srcFile.delete()
-            out.delete()
+    fun writeThumbnail_1pxTallCover_doesNotCrashAndDropsStaleThumbnail() {
+        for ((w, h, hash) in listOf(
+            Triple(1, 1, "regression1x1"),
+            Triple(2000, 4, "regressionbanner"),
+        )) {
+            val srcFile = writeCoverPng(w, h, "widget-cover-$hash.png")
+            val out = thumbnailFile(hash)
+            out.writeBytes(byteArrayOf(1, 2, 3)) // a stale thumbnail must not survive
+            try {
+                BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+                assertFalse("$hash: degenerate cover should not leave a thumbnail", out.exists())
+            } finally {
+                srcFile.delete()
+                out.delete()
+            }
         }
     }
 
-    /**
-     * The same crash reached through the bounds pre-pass: a 2000x4 banner gets
-     * inSampleSize 4 and decodes to 500x1, so the guard has to look at the
-     * decoded size rather than the file's declared size.
-     */
+    /** Aspect ratios on either side of 2:3 take different crop branches (crop-sides vs
+     * crop-top-bottom) and must both still land at exactly 240x360. 3x2 is also the
+     * smallest accepted size (crops to 1x2, cropW = 2 * 2 / 3 = 1) and must still scale up. */
     @Test
-    fun writeThumbnail_wideBannerDownsampledTo1pxTall_dropsStaleThumbnail() {
-        val srcFile = writeCoverPng(2000, 4, "widget-cover-banner.png")
-        val hash = "regressionbanner"
-        val out = thumbnailFile(hash)
-        out.writeBytes(byteArrayOf(1, 2, 3))
-        try {
-            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
-            assertFalse("1px-tall decode should not leave a thumbnail", out.exists())
-        } finally {
-            srcFile.delete()
-            out.delete()
+    fun writeThumbnail_offAspectRatioCovers_cropToWidgetSize() {
+        for ((w, h, hash) in listOf(Triple(3, 2, "boundary3x2"), Triple(300, 900, "tall300x900"))) {
+            val srcFile = writeCoverPng(w, h, "widget-cover-$hash.png")
+            try {
+                BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
+                assertWritten(hash, thumbnailFile(hash))
+            } finally {
+                srcFile.delete()
+                thumbnailFile(hash).delete()
+            }
         }
     }
 
-    /** 3x2 is the smallest accepted size: it crops to 1x2 (cropW = 2 * 2 / 3 = 1) and must still scale up. */
+    /** A source that can't be decoded - a non-image file, or one that no longer exists -
+     * drops the stale thumbnail instead of throwing. */
     @Test
-    fun writeThumbnail_smallestAcceptedCover_writesThumbnail() {
-        val srcFile = writeCoverPng(3, 2, "widget-cover-3x2.png")
-        val hash = "boundary3x2"
-        try {
-            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
-            assertThumbnailWritten(hash)
-        } finally {
-            srcFile.delete()
-            thumbnailFile(hash).delete()
+    fun writeThumbnail_badSource_dropsStaleThumbnail() {
+        val notAnImage = File(ctx.cacheDir, "widget-cover-not-an-image.png")
+        notAnImage.writeText("<html>not an image</html>")
+        val missing = File(ctx.cacheDir, "widget-cover-does-not-exist.png")
+        for ((label, srcPath) in listOf(
+            "undecodable" to notAnImage.absolutePath,
+            "missing" to missing.absolutePath,
+        )) {
+            val hash = "badsource-$label"
+            val out = thumbnailFile(hash)
+            out.writeBytes(byteArrayOf(1, 2, 3))
+            try {
+                BookshelfWidgetStore.writeThumbnail(ctx, hash, srcPath, 42)
+                assertFalse("$label cover should drop the stale thumbnail", out.exists())
+            } finally {
+                out.delete()
+            }
         }
-    }
-
-    /** Taller than 2:3 takes the crop-top-and-bottom branch and still lands at 240x360. */
-    @Test
-    fun writeThumbnail_tallCover_cropsToWidgetSize() {
-        val srcFile = writeCoverPng(300, 900, "widget-cover-tall.png")
-        val hash = "tall300x900"
-        try {
-            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
-            assertThumbnailWritten(hash)
-        } finally {
-            srcFile.delete()
-            thumbnailFile(hash).delete()
-        }
-    }
-
-    /** A cover file that exists but is not an image drops the stale thumbnail, like a missing one. */
-    @Test
-    fun writeThumbnail_undecodableCover_dropsStaleThumbnail() {
-        val srcFile = File(ctx.cacheDir, "widget-cover-not-an-image.png")
-        srcFile.writeText("<html>not an image</html>")
-        val hash = "undecodable"
-        val out = thumbnailFile(hash)
-        out.writeBytes(byteArrayOf(1, 2, 3))
-        try {
-            BookshelfWidgetStore.writeThumbnail(ctx, hash, srcFile.absolutePath, 42)
-            assertFalse("undecodable cover should drop the stale thumbnail", out.exists())
-        } finally {
-            srcFile.delete()
-            out.delete()
-        }
+        notAnImage.delete()
     }
 
     /** A hash that tries to escape the covers dir is ignored: nothing is written or deleted outside it. */
@@ -173,18 +152,192 @@ class BookshelfWidgetStoreTest {
         }
     }
 
-    /** A cover file that no longer exists drops the stale thumbnail instead of throwing. */
+    /** The progress bar/percent badge is only baked in when showProgress is true (the
+     * default): off, two covers differing only in percent are byte-identical; on vs off
+     * must differ; omitting the argument must match passing it explicitly. */
     @Test
-    fun writeThumbnail_missingCover_dropsStaleThumbnail() {
-        val hash = "missingcover"
-        val out = thumbnailFile(hash)
-        out.writeBytes(byteArrayOf(1, 2, 3))
+    fun writeThumbnail_showProgressTogglesTheBakedInPixels() {
+        val srcFile = writeCoverPng(240, 360, "widget-cover-progress.png")
         try {
-            val missing = File(ctx.cacheDir, "widget-cover-does-not-exist.png").absolutePath
-            BookshelfWidgetStore.writeThumbnail(ctx, hash, missing, 42)
-            assertFalse("missing cover should drop the stale thumbnail", out.exists())
+            BookshelfWidgetStore.writeThumbnail(ctx, "low", srcFile.absolutePath, 10, showProgress = false)
+            BookshelfWidgetStore.writeThumbnail(ctx, "high", srcFile.absolutePath, 90, showProgress = false)
+            BookshelfWidgetStore.writeThumbnail(ctx, "onExplicit", srcFile.absolutePath, 50, showProgress = true)
+            BookshelfWidgetStore.writeThumbnail(ctx, "onDefault", srcFile.absolutePath, 50)
+
+            assertTrue(
+                "showProgress=false should ignore percent entirely",
+                thumbnailFile("low").readBytes().contentEquals(thumbnailFile("high").readBytes()),
+            )
+            assertFalse(
+                "showProgress on vs off must not produce the same bitmap",
+                thumbnailFile("onExplicit").readBytes().contentEquals(thumbnailFile("low").readBytes()),
+            )
+            assertTrue(
+                "omitting showProgress should default to true",
+                thumbnailFile("onDefault").readBytes().contentEquals(thumbnailFile("onExplicit").readBytes()),
+            )
         } finally {
-            out.delete()
+            srcFile.delete()
+            listOf("low", "high", "onExplicit", "onDefault").forEach { thumbnailFile(it).delete() }
+        }
+    }
+
+    /** Whatever the input cover-path list looks like - the normal 4-cover mosaic, fewer
+     * (placeholder-filled quadrants), more (extras dropped), some or all undecodable
+     * (placeholder-filled), or exactly one (rendered full-size, not a 1-of-4 mosaic) -
+     * writeGroupTileThumbnail always succeeds with a correctly-sized composite. */
+    @Test
+    fun writeGroupTileThumbnail_anyCoverListShape_writesComposite() {
+        fun covers(n: Int, w: Int = 240, h: Int = 360) = (1..n).map { writeCoverPng(w, h, "group-$it-$w-$h.png") }
+        val missing = File(ctx.cacheDir, "group-missing.png").absolutePath
+        val allWritten = mutableListOf<File>()
+        try {
+            val four = covers(4)
+            val two = covers(2, 300, 900)
+            val six = covers(6)
+            val oneValid = covers(1)
+            allWritten += four + two + six + oneValid
+
+            val cases = listOf(
+                "four" to four.map { it.absolutePath },
+                "fewerThanFour" to two.map { it.absolutePath },
+                "moreThanFour" to six.map { it.absolutePath },
+                "someUndecodable" to oneValid.map { it.absolutePath } + missing,
+                "allUndecodable" to listOf(missing, missing),
+                "single" to oneValid.map { it.absolutePath },
+            )
+            for ((label, paths) in cases) {
+                val id = "grouptile-$label"
+                BookshelfWidgetStore.writeGroupTileThumbnail(ctx, id, paths)
+                assertWritten(label, groupTileFile(id))
+                groupTileFile(id).delete()
+            }
+        } finally {
+            allWritten.forEach { it.delete() }
+        }
+    }
+
+    /** No usable cover at all - an empty list, or a sole undecodable one - drops the
+     * stale tile rather than writing an all-placeholder composite. */
+    @Test
+    fun writeGroupTileThumbnail_noUsableCovers_dropsStaleThumbnail() {
+        val missing = File(ctx.cacheDir, "group-cover-single-missing.png").absolutePath
+        for ((label, paths) in listOf("empty" to emptyList(), "singleUndecodable" to listOf(missing))) {
+            val id = "groupbad-$label"
+            val out = groupTileFile(id)
+            out.writeBytes(byteArrayOf(1, 2, 3))
+            try {
+                BookshelfWidgetStore.writeGroupTileThumbnail(ctx, id, paths)
+                assertFalse("$label cover list should drop the stale tile", out.exists())
+            } finally {
+                out.delete()
+            }
+        }
+    }
+
+    /** An id that tries to escape the covers dir is ignored: nothing is written or deleted outside it. */
+    @Test
+    fun writeGroupTileThumbnail_idEscapingCoversDir_isIgnored() {
+        val cover = writeCoverPng(240, 360, "group-cover-escape.png")
+        val coversDir = BookshelfWidgetStore.coversDir(ctx)
+        val outside = File(coversDir.parentFile, "escaped-group.png")
+        outside.writeBytes(byteArrayOf(1, 2, 3))
+        try {
+            BookshelfWidgetStore.writeGroupTileThumbnail(ctx, "../escaped-group", listOf(cover.absolutePath))
+            assertTrue("file outside the covers dir must be left alone", outside.exists())
+            assertEquals(3, outside.length())
+        } finally {
+            cover.delete()
+            outside.delete()
+        }
+    }
+
+    // The shelf is opaque JSON to native: quotes, backslashes and non-ASCII must
+    // survive the settings blob unchanged.
+    private val shelfJson = """{"name":"Sci-fi \"classics\" \\ 読書","filters":{"type":"group"}}"""
+
+    @Test
+    fun instanceSettings_roundTripsPerWidgetId() {
+        try {
+            BookshelfWidgetStore.writeInstanceSettings(
+                ctx, 601,
+                BookshelfWidgetInstanceSettings(
+                    gridRows = 4, gridColumns = 5,
+                    showTitles = true, groupMosaic = false,
+                    shelf = shelfJson,
+                )
+            )
+            BookshelfWidgetStore.writeInstanceSettings(
+                ctx, 602, BookshelfWidgetInstanceSettings(gridRows = 2)
+            )
+
+            val a = BookshelfWidgetStore.readInstanceSettings(ctx, 601)
+            assertEquals(4, a.gridRows)
+            assertEquals(5, a.gridColumns)
+            assertTrue(a.showTitles)
+            assertFalse(a.groupMosaic)
+            assertEquals(shelfJson, a.shelf)
+
+            assertEquals(2, BookshelfWidgetStore.readInstanceSettings(ctx, 602).gridRows)
+        } finally {
+            BookshelfWidgetStore.clear(ctx, 601)
+            BookshelfWidgetStore.clear(ctx, 602)
+        }
+    }
+
+    @Test
+    fun instanceSettings_fallsBackToDefaultsWhenNeverSetOrMalformed() {
+        val neverSet = BookshelfWidgetStore.readInstanceSettings(ctx, 999998)
+        assertEquals(BookshelfWidgetInstanceSettings(), neverSet)
+        assertEquals(1, neverSet.gridRows)
+        assertEquals(3, neverSet.gridColumns)
+        assertFalse(neverSet.showTitles)
+        assertTrue(neverSet.groupMosaic)
+        assertEquals("", neverSet.shelf)
+
+        val prefs = ctx.getSharedPreferences(BookshelfWidgetStore.PREFS, Context.MODE_PRIVATE)
+        try {
+            prefs.edit().putString("instanceSettings_603", "not json").apply()
+            assertEquals(
+                "malformed JSON",
+                BookshelfWidgetInstanceSettings(),
+                BookshelfWidgetStore.readInstanceSettings(ctx, 603),
+            )
+        } finally {
+            BookshelfWidgetStore.clear(ctx, 603)
+        }
+    }
+
+    @Test
+    fun snapshot_roundTripsPerWidgetId() {
+        try {
+            BookshelfWidgetStore.writeSnapshot(ctx, 701, "{\"books\":[{\"hash\":\"a\"}]}")
+            BookshelfWidgetStore.writeSnapshot(ctx, 702, "{\"books\":[{\"hash\":\"b\"}]}")
+            assertEquals("a", BookshelfWidgetStore.readSnapshot(ctx, 701).getJSONArray("books").getJSONObject(0).getString("hash"))
+            assertEquals("b", BookshelfWidgetStore.readSnapshot(ctx, 702).getJSONArray("books").getJSONObject(0).getString("hash"))
+        } finally {
+            BookshelfWidgetStore.clear(ctx, 701)
+            BookshelfWidgetStore.clear(ctx, 702)
+        }
+    }
+
+    @Test
+    fun clear_removesTheSnapshotAndSettingsOfOnlyTheGivenWidgetId() {
+        try {
+            for ((id, rows) in listOf(651 to 4, 652 to 2)) {
+                BookshelfWidgetStore.writeInstanceSettings(ctx, id, BookshelfWidgetInstanceSettings(gridRows = rows))
+                BookshelfWidgetStore.writeSnapshot(ctx, id, "{\"books\":[{\"hash\":\"h$id\"}]}")
+            }
+
+            BookshelfWidgetStore.clear(ctx, 651)
+
+            assertEquals(BookshelfWidgetInstanceSettings(), BookshelfWidgetStore.readInstanceSettings(ctx, 651))
+            assertEquals(0, BookshelfWidgetStore.readSnapshot(ctx, 651).optJSONArray("books")?.length() ?: 0)
+            assertEquals(2, BookshelfWidgetStore.readInstanceSettings(ctx, 652).gridRows)
+            assertEquals("h652", BookshelfWidgetStore.readSnapshot(ctx, 652).getJSONArray("books").getJSONObject(0).getString("hash"))
+        } finally {
+            BookshelfWidgetStore.clear(ctx, 651)
+            BookshelfWidgetStore.clear(ctx, 652)
         }
     }
 }

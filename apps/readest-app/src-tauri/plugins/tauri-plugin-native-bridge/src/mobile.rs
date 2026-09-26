@@ -152,10 +152,20 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn move_task_to_back(&self) -> crate::Result<()> {
-        self.0
-            .run_mobile_plugin("move_task_to_back", ())
-            .map_err(Into::into)
+    pub fn move_task_to_back(&self, payload: MoveTaskToBackRequest) -> crate::Result<()> {
+        // iOS has no public API to programmatically background the app (unlike
+        // Android's moveTaskToBack), so this is Android-only.
+        #[cfg(target_os = "android")]
+        {
+            self.0
+                .run_mobile_plugin("move_task_to_back", payload)
+                .map_err(Into::into)
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            let _ = payload;
+            Err(crate::Error::UnsupportedPlatformError)
+        }
     }
 }
 
@@ -462,8 +472,13 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
-    pub fn web_browser_cookies(&self, payload: WebBrowserCookiesRequest) -> crate::Result<WebBrowserCookiesResponse> {
-        self.0.run_mobile_plugin("web_browser_cookies", payload).map_err(Into::into)
+    pub fn web_browser_cookies(
+        &self,
+        payload: WebBrowserCookiesRequest,
+    ) -> crate::Result<WebBrowserCookiesResponse> {
+        self.0
+            .run_mobile_plugin("web_browser_cookies", payload)
+            .map_err(Into::into)
     }
 
     /// Push an import status into the open browser's banner.
@@ -490,9 +505,31 @@ impl<R: Runtime> NativeBridge<R> {
     pub fn update_bookshelf_widget(
         &self,
         payload: UpdateBookshelfWidgetRequest,
+    ) -> crate::Result<UpdateBookshelfWidgetResponse> {
+        // iOS resolves without a body, which reads as no failures.
+        self.0
+            .run_mobile_plugin::<Option<UpdateBookshelfWidgetResponse>>(
+                "update_bookshelf_widget",
+                payload,
+            )
+            .map(Option::unwrap_or_default)
+            .map_err(Into::into)
+    }
+
+    pub fn get_bookshelf_widget_instances(
+        &self,
+    ) -> crate::Result<GetBookshelfWidgetInstancesResponse> {
+        self.0
+            .run_mobile_plugin("get_bookshelf_widget_instances", ())
+            .map_err(Into::into)
+    }
+
+    pub fn set_bookshelf_widget_settings(
+        &self,
+        payload: BookshelfWidgetInstanceSettings,
     ) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin("update_bookshelf_widget", payload)
+            .run_mobile_plugin("set_bookshelf_widget_settings", payload)
             .map_err(Into::into)
     }
 }
