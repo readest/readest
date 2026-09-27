@@ -18,6 +18,7 @@ import {
   LOCAL_IMAGES_SUBDIR,
   SETTINGS_FILENAME,
   SUPPORTED_BOOK_EXTS,
+  LATEX_COMPANION_EXTS,
   BOOK_ACCEPT_FORMATS,
   BOOK_UNGROUPED_NAME,
   BOOK_UNGROUPED_ID,
@@ -148,7 +149,9 @@ describe('services/constants', () => {
       expect(typeof BOOK_ACCEPT_FORMATS).toBe('string');
       expect(BOOK_ACCEPT_FORMATS).toContain('.epub');
       expect(BOOK_ACCEPT_FORMATS).toContain('.pdf');
-      expect(BOOK_ACCEPT_FORMATS.split(', ').length).toBe(SUPPORTED_BOOK_EXTS.length);
+      expect(BOOK_ACCEPT_FORMATS.split(', ').length).toBe(
+        SUPPORTED_BOOK_EXTS.length + LATEX_COMPANION_EXTS.length,
+      );
     });
 
     it('BOOK_UNGROUPED_NAME and BOOK_UNGROUPED_ID are empty strings', () => {
