@@ -200,14 +200,19 @@ export const buildBookshelfWidgetSnapshot = async (
 // again. Per JS session: a fresh launch always pushes.
 const lastPublished = new Map<number, string>();
 
-// Guards against overlap: useBookshelfWidget fires this from three independent
-// triggers (a debounce, a throttle, and an immediate TTS-state call) that can
-// land close together, and two runs at once would race the lastPublished cache
-// above. A call that arrives mid-refresh is queued (coalesced to the latest
-// one) and runs once the current pass finishes, so a caller with no other
-// trigger of its own - the widget-settings page's Save - never gets dropped.
+// Serializes overlapping calls (debounce/throttle/TTS triggers can land close
+// together) so they don't race the lastPublished cache below. A call mid-run
+// is queued (coalesced to the latest) and its promise settles only once that
+// rerun finishes, so Save - which backgrounds the app right after awaiting
+// this, with no other trigger to retry - isn't dropped or resolved early.
 let running = false;
-let pending: Parameters<typeof refreshBookshelfWidget> | null = null;
+// Args overwrite to the latest queued call; promise/resolve are shared so
+// every queued caller settles together after the one rerun below.
+let pending: {
+  args: Parameters<typeof refreshBookshelfWidget>;
+  promise: Promise<void>;
+  resolve: () => void;
+} | null = null;
 
 export const refreshBookshelfWidget = async (
   appService: AppService,
@@ -215,8 +220,15 @@ export const refreshBookshelfWidget = async (
   playback?: BookshelfWidgetPlayback,
 ): Promise<void> => {
   if (running) {
-    pending = [appService, emptyTitle, playback];
-    return;
+    const args: Parameters<typeof refreshBookshelfWidget> = [appService, emptyTitle, playback];
+    if (pending) {
+      pending.args = args;
+    } else {
+      let resolve!: () => void;
+      const promise = new Promise<void>((r) => (resolve = r));
+      pending = { args, promise, resolve };
+    }
+    return pending.promise;
   }
   running = true;
   try {
@@ -284,6 +296,7 @@ export const refreshBookshelfWidget = async (
     running = false;
     const next = pending;
     pending = null;
-    if (next) await refreshBookshelfWidget(...next);
+    if (next) await refreshBookshelfWidget(...next.args);
+    next?.resolve();
   }
 };

@@ -552,6 +552,45 @@ describe('refreshBookshelfWidget', () => {
     expect(getBookshelfWidgetInstances).toHaveBeenCalledTimes(2);
   });
 
+  it("a queued caller's promise settles only once its coalesced pass finishes, not immediately", async () => {
+    const { getBookshelfWidgetInstances } = await bridge();
+    vi.mocked(getBookshelfWidgetInstances).mockClear();
+    let releaseFirst!: () => void;
+    const firstBlocked = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    let releaseSecond!: () => void;
+    const secondBlocked = new Promise<void>((resolve) => {
+      releaseSecond = resolve;
+    });
+    vi.mocked(getBookshelfWidgetInstances)
+      .mockImplementationOnce(async () => {
+        await firstBlocked;
+        return { instances: [instance(1)] };
+      })
+      .mockImplementationOnce(async () => {
+        await secondBlocked;
+        return { instances: [instance(1)] };
+      });
+
+    const first = refreshBookshelfWidget(androidAppService, emptyTitle);
+    await Promise.resolve();
+    let queuedResolved = false;
+    const queued = refreshBookshelfWidget(androidAppService, emptyTitle).then(() => {
+      queuedResolved = true;
+    });
+
+    releaseFirst();
+    // Let the coalesced re-run start (and block on its own instances read).
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(queuedResolved).toBe(false);
+
+    releaseSecond();
+    await Promise.all([first, queued]);
+    expect(queuedResolved).toBe(true);
+  });
+
   it('a call from a caller with no other trigger of its own (Save) is not lost to a run already in flight', async () => {
     const { updateBookshelfWidget, getBookshelfWidgetInstances } = await bridge();
     vi.mocked(getBookshelfWidgetInstances).mockClear();

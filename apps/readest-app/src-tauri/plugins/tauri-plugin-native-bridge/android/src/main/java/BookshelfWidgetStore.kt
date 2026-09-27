@@ -149,11 +149,21 @@ object BookshelfWidgetStore {
     /** Writes `dst` atomically: encodes into a uniquely-named temp file in the
      * same directory, then renames it over the destination, so a reader (or a
      * second writer - e.g. two widgets sharing a book's cover) never sees a
-     * partially-written file, and two concurrent writes never tear into one file. */
-    private fun writeBitmapAtomically(dst: File, bitmap: Bitmap) {
+     * partially-written file, and two concurrent writes never tear into one file.
+     * Returns false - always cleaning up the temp file - if encoding or the
+     * rename fails, so the caller can report the tile as failed and retry. */
+    private fun writeBitmapAtomically(dst: File, bitmap: Bitmap): Boolean {
         val tmp = File(dst.parentFile, "${dst.name}.${System.nanoTime()}.tmp")
-        tmp.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        if (!tmp.renameTo(dst)) tmp.delete()
+        val encoded = try {
+            tmp.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        } catch (e: Exception) {
+            false
+        }
+        if (!encoded || !tmp.renameTo(dst)) {
+            tmp.delete()
+            return false
+        }
+        return true
     }
 
     fun writeThumbnail(
@@ -222,9 +232,9 @@ object BookshelfWidgetStore {
         }
 
         // Write as PNG so the alpha channel for rounded corners is preserved.
-        writeBitmapAtomically(dst, rounded)
+        val ok = writeBitmapAtomically(dst, rounded)
         rounded.recycle()
-        return true
+        return ok
     }
 
     /**
@@ -250,9 +260,9 @@ object BookshelfWidgetStore {
                 ?: run { dst.delete(); return false }
             val roundedSingle = applyRoundedCorners(single)
             single.recycle()
-            writeBitmapAtomically(dst, roundedSingle)
+            val ok = writeBitmapAtomically(dst, roundedSingle)
             roundedSingle.recycle()
-            return true
+            return ok
         }
 
         val pad = 8f
@@ -284,9 +294,9 @@ object BookshelfWidgetStore {
 
         val rounded = applyRoundedCorners(composite)
         composite.recycle()
-        writeBitmapAtomically(dst, rounded)
+        val ok = writeBitmapAtomically(dst, rounded)
         rounded.recycle()
-        return missing == 0
+        return missing == 0 && ok
     }
 
     fun writeSnapshot(context: Context, appWidgetId: Int, json: String) {
@@ -311,8 +321,21 @@ object BookshelfWidgetStore {
         return json?.let(BookshelfWidgetInstanceSettings::fromJson) ?: BookshelfWidgetInstanceSettings()
     }
 
-    /** Called on widget removal, so neither its snapshot nor its settings linger in prefs. */
+    /** Called on widget removal, so neither its snapshot, its settings, nor any
+     * group-tile covers it wrote linger. Book thumbnails are named by hash and
+     * shared across widgets, so only the group covers named in this widget's
+     * own last snapshot (by their widget-scoped coverKey) are deleted. */
     fun clear(context: Context, appWidgetId: Int) {
+        val items = readSnapshot(context, appWidgetId).optJSONArray("items")
+        if (items != null) {
+            val dir = coversDir(context)
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                if (item.optString("type") != "group") continue
+                val coverKey = item.optString("coverKey")
+                if (coverKey.isNotEmpty()) File(dir, "$coverKey.png").delete()
+            }
+        }
         prefs(context).edit()
             .remove(KEY_SNAPSHOT_PREFIX + appWidgetId)
             .remove(KEY_INSTANCE_SETTINGS_PREFIX + appWidgetId)
