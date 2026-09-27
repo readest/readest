@@ -8,7 +8,7 @@ type Fixtures = {
    * Imports a book (the sample EPUB by default), opens it, and returns a
    * {@link ReaderPage} that is ready to interact with.
    */
-  openBook: (filePath?: string) => Promise<ReaderPage>;
+  openBook: (filePath?: string | string[]) => Promise<ReaderPage>;
 };
 
 /**
@@ -25,6 +25,7 @@ export const test = base.extend<Fixtures>({
     await page.addInitScript(() => {
       try {
         window.localStorage.setItem('demoBooksFetched', 'true');
+        window.localStorage.setItem('i18nextLng', 'zh-CN');
       } catch {
         // localStorage may be unavailable in some contexts; ignore.
       }

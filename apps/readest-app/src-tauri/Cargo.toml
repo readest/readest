@@ -211,7 +211,6 @@ tauri-plugin-dialog = "2"
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-cli = "2"
 tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
 

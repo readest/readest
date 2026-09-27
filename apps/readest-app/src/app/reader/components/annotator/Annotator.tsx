@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
-
+import { FileCode2Icon, MessageCircleQuestionIcon, PaperclipIcon } from 'lucide-react';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { useEnv } from '@/context/EnvContext';
 import {
@@ -89,6 +89,7 @@ import AnnotationRangeEditor from './AnnotationRangeEditor';
 import PageTurnHint from './PageTurnHint';
 import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
+import SelectionActionPopup from './SelectionActionPopup';
 import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
 import NoteEditorSheet from './NoteEditorSheet';
@@ -118,6 +119,16 @@ import {
   parseReadEraBackup,
 } from '@/utils/readera';
 import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
+import { showLatexSourceWindow } from '@/utils/nav';
+import { pdfPointFromRange } from '@/services/pdfSourceLocation';
+import { useAIChatStore } from '@/store/aiChatStore';
+import {
+  addConversationMarker,
+  conversationIdFromMarkerValue,
+  getConversationMarkersForSection,
+  syncConversationMarkers,
+  type ConversationMarker,
+} from '@/services/ai/conversationMarkers';
 
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   bookKey,
@@ -138,7 +149,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const getView = useReaderStore((s) => s.getView);
   const getViewsById = useReaderStore((s) => s.getViewsById);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
-  const { setNotebookVisible, setNotebookActiveTab } = useNotebookStore();
+  const {
+    setNotebookVisible,
+    setNotebookPin,
+    setNotebookActiveTab,
+    setAIQuestionAnchor,
+    addAIDraftAttachment,
+    requestSourceLocation,
+  } = useNotebookStore();
+  const conversations = useAIChatStore((state) => state.conversations);
+  const loadConversations = useAIChatStore((state) => state.loadConversations);
+  const setActiveConversation = useAIChatStore((state) => state.setActiveConversation);
   const { clearBooknotesNav, isSideBarVisible } = useSidebarStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
   const { loadCustomDictionaries } = useCustomDictionaryStore();
@@ -170,6 +191,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   const primaryLang = bookData.book?.primaryLanguage || 'en';
+  const bookHash = bookKey.split('-')[0] || '';
+
+  useEffect(() => {
+    if (bookHash) void loadConversations(bookHash);
+  }, [bookHash, loadConversations]);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -255,10 +281,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
   const toolbarToolTypes = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare);
+  const selectionActionCount = 3;
+  const selectionActionWidth = Math.min(
+    useResponsiveSize(330),
+    Math.max(selectionActionCount * useResponsiveSize(92), useResponsiveSize(264)),
+    maxWidth,
+  );
   const highlightOptionsAvailable = shouldShowHighlightOptions(toolbarToolTypes, selection ?? null);
   const annotPopupWidth = highlightOptionsAvailable
     ? annotPopupMaxWidth
     : Math.min(Math.max(toolbarToolTypes.length, 1) * annotPopupToolSize, annotPopupMaxWidth);
+  const selectionPopupWidth =
+    selection && !selection.annotated ? selectionActionWidth : annotPopupWidth;
   const annotPopupHeight = useResponsiveSize(44);
   const androidSelectionHandlerHeight = 0;
 
@@ -272,8 +306,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const annotPopupPos = getPopupPosition(
       triangPos,
       rect,
-      viewSettings.vertical ? annotPopupHeight : annotPopupWidth,
-      viewSettings.vertical ? annotPopupWidth : annotPopupHeight,
+      viewSettings.vertical ? annotPopupHeight : selectionPopupWidth,
+      viewSettings.vertical ? selectionPopupWidth : annotPopupHeight,
       popupPadding,
     );
     if (annotPopupPos.dir === 'down' && osPlatform === 'android') {
@@ -308,7 +342,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setProofreadPopupPosition(proofreadPopupPos);
     setTrianglePosition(triangPos);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection, bookKey, viewSettings.vertical]);
+  }, [selection, bookKey, viewSettings.vertical, selectionPopupWidth]);
 
   useEffect(() => {
     const highlightStyle = settings.globalReadSettings.highlightStyle;
@@ -586,6 +620,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
     const activeAnnotations = booknotes.filter((b) => b.type === 'annotation' && !b.deletedAt);
 
+    const sectionIndex = detail.index;
+    queueMicrotask(() => {
+      const currentConversations = useAIChatStore
+        .getState()
+        .conversations.filter((conversation) => conversation.bookHash === bookHash);
+      for (const marker of getConversationMarkersForSection(currentConversations, sectionIndex)) {
+        void addConversationMarker(view ?? null, marker);
+      }
+    });
+
     // 1. Draw native overlays only for notes whose anchor (cfi) lives
     //    inside this section — same as before.
     activeAnnotations
@@ -615,8 +659,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   };
 
   const onDrawAnnotation = (event: Event) => {
+    const detail = (event as CustomEvent).detail;
     const viewSettings = getViewSettings(bookKey)!;
-    drawAnnotationOverlay((event as CustomEvent).detail, {
+    drawAnnotationOverlay(detail, {
       settings,
       viewSettings,
       isDarkMode,
@@ -627,6 +672,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const onShowAnnotation = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     const { value, index, range } = detail;
+    const conversationId = conversationIdFromMarkerValue(value);
+    if (conversationId) {
+      void setActiveConversation(conversationId);
+      setNotebookActiveTab('ai');
+      setNotebookPin(true);
+      setNotebookVisible(true);
+      handleDismissPopupAndSelection();
+      return;
+    }
     const { booknotes = [] } = getConfig(bookKey)!;
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
@@ -710,6 +764,28 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     onShowAnnotation,
     onRelocate,
   });
+
+  const previousConversationMarkersRef = useRef(new Map<string, ConversationMarker>());
+  useEffect(() => {
+    previousConversationMarkersRef.current = syncConversationMarkers(
+      view ?? null,
+      previousConversationMarkersRef.current,
+      conversations,
+      bookHash,
+    );
+  }, [bookHash, conversations, view]);
+
+  useEffect(
+    () => () => {
+      previousConversationMarkersRef.current = syncConversationMarkers(
+        view ?? null,
+        previousConversationMarkersRef.current,
+        [],
+        bookHash,
+      );
+    },
+    [bookHash, view],
+  );
 
   // Mobile native-touch handler (Android MainActivity / iOS touch observer).
   // Registered once per view by useRendererInputListeners; it
@@ -1093,8 +1169,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       const annotPopupPos = getPopupPosition(
         triangPos,
         rect,
-        viewSettings.vertical ? annotPopupHeight : annotPopupWidth,
-        viewSettings.vertical ? annotPopupWidth : annotPopupHeight,
+        viewSettings.vertical ? annotPopupHeight : selectionPopupWidth,
+        viewSettings.vertical ? selectionPopupWidth : annotPopupHeight,
         popupPadding,
       );
       if (annotPopupPos.dir === 'down' && osPlatform === 'android') {
@@ -2329,6 +2405,73 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // synthesized text with no real text node in the book) can't anchor
   // anything; and TTS always needs a range in a main view document.
   const popupSelectionNoCfi = !!selection?.popup && !selection?.cfi;
+  const isPlainSelection = !!selection && !selection.annotated && !showAnnotationNotes;
+  const getSelectionContext = () => {
+    if (!selection) return null;
+    const pdfPoint = bookData.isFixedLayout ? pdfPointFromRange(selection.range) : null;
+    const cfi =
+      selection.cfi ||
+      (selection.popup ? undefined : view?.getCFI(selection.index, selection.range));
+    return {
+      id: `${bookKey}:${cfi ?? `${selection.index}:${selection.text}`}`,
+      bookKey,
+      text: selection.text,
+      page: selection.page,
+      index: selection.index,
+      cfi,
+      href: selection.href,
+      pdfX: pdfPoint?.x,
+      pdfY: pdfPoint?.y,
+    };
+  };
+  const openAISelectionDraft = () => {
+    setNotebookActiveTab('ai');
+    setNotebookPin(true);
+    setNotebookVisible(true);
+    handleDismissPopupAndSelection();
+  };
+  const selectionActions = [
+    {
+      label: _('提问'),
+      Icon: MessageCircleQuestionIcon,
+      onClick: () => {
+        const context = getSelectionContext();
+        if (!context) return;
+        setAIQuestionAnchor(context);
+        openAISelectionDraft();
+      },
+    },
+    {
+      label: _('作为附件'),
+      Icon: PaperclipIcon,
+      onClick: () => {
+        const context = getSelectionContext();
+        if (!context) return;
+        addAIDraftAttachment(context);
+        openAISelectionDraft();
+      },
+    },
+    {
+      label: _('查看源码'),
+      Icon: FileCode2Icon,
+      onClick: async () => {
+        const context = getSelectionContext();
+        if (!context) return;
+        requestSourceLocation(context);
+        handleDismissPopupAndSelection();
+        if (!appService) return;
+        try {
+          await showLatexSourceWindow(appService, context);
+        } catch (error) {
+          void eventDispatcher.dispatch('toast', {
+            type: 'error',
+            message: error instanceof Error ? error.message : '源码窗口打开失败。',
+            timeout: 3000,
+          });
+        }
+      },
+    },
+  ];
   const buildToolButton = (type: AnnotationToolType) => {
     const def = annotationToolButtons.find((button) => button.type === type);
     if (!def) return null;
@@ -2501,6 +2644,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         !noteEditorInSheet &&
         trianglePosition &&
         annotPopupPosition &&
+        isPlainSelection && (
+          <SelectionActionPopup
+            actions={selectionActions}
+            position={annotPopupPosition}
+            trianglePosition={trianglePosition}
+            isVertical={viewSettings.vertical}
+            width={selectionActionWidth}
+            height={annotPopupHeight}
+            onDismiss={handleDismissPopupAndSelection}
+          />
+        )}
+      {showAnnotPopup &&
+        !noteEditorInSheet &&
+        trianglePosition &&
+        annotPopupPosition &&
+        !isPlainSelection &&
         // With an empty toolbar, suppress the popup on a plain selection rather
         // than showing an empty bar. Still allow it for editing an existing
         // highlight (options), viewing its notes, or writing a new one.

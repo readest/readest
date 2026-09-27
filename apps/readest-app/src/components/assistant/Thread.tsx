@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type FC } from 'react';
+import { useEffect, useRef, type FC, type FormEvent } from 'react';
 import {
   ActionBarPrimitive,
   AssistantIf,
@@ -9,6 +9,7 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
   useAssistantState,
+  useComposerRuntime,
   useThreadViewport,
   useThread,
 } from '@assistant-ui/react';
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import { MarkdownText } from './MarkdownText';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -35,6 +37,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/utils/tailwind';
 import type { SourceItem } from '@/services/ai/adapters/reedySourceStore';
+import { useNotebookStore } from '@/store/notebookStore';
+import { buildSelectionPayload } from './selectionDraft';
+import {
+  selectionPayloadFromMessage,
+  selectionPayloadToRunConfig,
+} from '@/services/ai/storage/threadHistoryAdapter';
+import { SelectionContextBadges } from './SelectionContextBadges';
 
 interface ThreadProps {
   sources?: SourceItem[];
@@ -62,6 +71,7 @@ const LoadingOverlay: FC<{ isVisible: boolean }> = ({ isVisible }) => {
 };
 
 const ScrollToBottomButton: FC = () => {
+  const _ = useTranslation();
   const isAtBottom = useThreadViewport((v) => v.isAtBottom);
   const lastMessageRole = useThread((t) => t.messages.at(-1)?.role);
   const isRunning = useThread((t) => t.isRunning);
@@ -88,7 +98,7 @@ const ScrollToBottomButton: FC = () => {
         animation: isAtBottom ? 'none' : 'subtleBounce 2.5s ease-in-out infinite',
       }}
       aria-hidden={isAtBottom}
-      aria-label='Scroll to bottom'
+      aria-label={_('Scroll to bottom')}
     >
       <ChevronDownIcon className='size-4' />
       <style>{`
@@ -109,6 +119,7 @@ export const Thread: FC<ThreadProps> = ({
   isLoadingHistory = false,
   hasActiveConversation = false,
 }) => {
+  const _ = useTranslation();
   const viewportRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
   const messageCount = useThread((t) => t.messages.length);
@@ -170,9 +181,11 @@ export const Thread: FC<ThreadProps> = ({
             <div className='bg-base-content/10 mb-4 rounded-full p-3'>
               <BookOpenIcon className='text-base-content size-6' />
             </div>
-            <h3 className='text-base-content mb-1 text-sm font-medium'>Ask about this book</h3>
+            <h3 className='text-base-content mb-1 text-sm font-medium'>
+              {_('Ask about this book')}
+            </h3>
             <p className='text-base-content/60 mb-4 text-xs'>
-              Get answers based on the book content
+              {_('Get answers based on the book content')}
             </p>
             <Composer onClear={onClear} onResetIndex={onResetIndex} />
           </div>
@@ -201,7 +214,7 @@ export const Thread: FC<ThreadProps> = ({
               }}
             />
             <p className='text-base-content/40 mx-auto w-full p-1 text-center text-[10px]'>
-              AI can make mistakes. Verify with the book.
+              {_('AI can make mistakes. Verify with the book.')}
             </p>
             <div
               className={cn('shrink transition-all duration-300', getSpacerHeight())}
@@ -224,14 +237,38 @@ interface ComposerProps {
 }
 
 const Composer: FC<ComposerProps> = ({ onClear, onResetIndex }) => {
+  const _ = useTranslation();
   const isEmpty = useAssistantState((s) => s.composer.isEmpty);
   const isRunning = useAssistantState((s) => s.thread.isRunning);
+  const composerRuntime = useComposerRuntime();
+  const { aiQuestionAnchor, aiDraftAttachments, clearAISelectionDraft } = useNotebookStore();
+  const hasSelectionDraft = !!aiQuestionAnchor || aiDraftAttachments.length > 0;
+
+  const sendSelectionDraft = () => {
+    if (!hasSelectionDraft || isEmpty || isRunning) return;
+    const unsubscribe = composerRuntime.unstable_on('send', () => {
+      unsubscribe();
+      composerRuntime.setRunConfig({});
+    });
+    composerRuntime.setRunConfig(
+      selectionPayloadToRunConfig(buildSelectionPayload(aiQuestionAnchor, aiDraftAttachments)),
+    );
+    composerRuntime.send();
+    clearAISelectionDraft();
+  };
+
+  const handleSubmit = (event: FormEvent) => {
+    if (!hasSelectionDraft) return;
+    event.preventDefault();
+    sendSelectionDraft();
+  };
 
   return (
     <ComposerPrimitive.Root
       className='group/composer animate-in fade-in slide-in-from-bottom-2 mx-auto mb-2 w-full duration-300'
       data-empty={isEmpty}
       data-running={isRunning}
+      onSubmit={handleSubmit}
     >
       <div className='bg-base-200 ring-base-content/10 focus-within:ring-base-content/20 overflow-hidden rounded-2xl shadow-xs ring-1 ring-inset transition-all duration-200'>
         <div className='flex items-end gap-0.5 p-1.5'>
@@ -240,7 +277,7 @@ const Composer: FC<ComposerProps> = ({ onClear, onResetIndex }) => {
               type='button'
               onClick={onClear}
               className='text-base-content hover:bg-base-300 mb-0.5 flex size-7 shrink-0 items-center justify-center rounded-full transition-colors'
-              aria-label='Clear chat'
+              aria-label={_('Clear chat')}
             >
               <Trash2Icon className='size-3.5' />
             </button>
@@ -251,23 +288,35 @@ const Composer: FC<ComposerProps> = ({ onClear, onResetIndex }) => {
               type='button'
               onClick={onResetIndex}
               className='text-base-content hover:bg-base-300 mb-0.5 flex size-7 shrink-0 items-center justify-center rounded-full transition-colors'
-              title='Re-index book'
-              aria-label='Re-index book'
+              title={_('Re-index book')}
+              aria-label={_('Re-index book')}
             >
               <RefreshCwIcon className='size-3.5' />
             </button>
           )}
 
           <ComposerPrimitive.Input
-            placeholder='Ask about this book...'
+            placeholder={_('继续追问或补充自己的想法…')}
             rows={1}
             className='text-base-content placeholder:text-base-content/40 my-1 h-5 max-h-[200px] min-w-0 flex-1 resize-none bg-transparent text-sm leading-5 outline-hidden'
           />
 
           <div className='bg-base-content text-base-100 relative mb-0.5 size-7 shrink-0 rounded-full'>
-            <ComposerPrimitive.Send className='absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out group-data-[empty=true]/composer:scale-0 group-data-[running=true]/composer:scale-0 group-data-[empty=true]/composer:opacity-0 group-data-[running=true]/composer:opacity-0'>
-              <ArrowUpIcon className='size-3.5' />
-            </ComposerPrimitive.Send>
+            {hasSelectionDraft ? (
+              <button
+                type='button'
+                onClick={sendSelectionDraft}
+                disabled={isEmpty || isRunning}
+                className='absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out group-data-[empty=true]/composer:scale-0 group-data-[running=true]/composer:scale-0 group-data-[empty=true]/composer:opacity-0 group-data-[running=true]/composer:opacity-0'
+                aria-label={_('Send message')}
+              >
+                <ArrowUpIcon className='size-3.5' />
+              </button>
+            ) : (
+              <ComposerPrimitive.Send className='absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out group-data-[empty=true]/composer:scale-0 group-data-[running=true]/composer:scale-0 group-data-[empty=true]/composer:opacity-0 group-data-[running=true]/composer:opacity-0'>
+                <ArrowUpIcon className='size-3.5' />
+              </ComposerPrimitive.Send>
+            )}
 
             <ComposerPrimitive.Cancel className='absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out group-data-[running=false]/composer:scale-0 group-data-[running=false]/composer:opacity-0'>
               <SquareIcon className='size-3' fill='currentColor' />
@@ -290,6 +339,7 @@ interface AssistantMessageProps {
 }
 
 const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [], onSourceClick }) => {
+  const _ = useTranslation();
   return (
     <MessagePrimitive.Root className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'>
       <div className='flex flex-col items-start'>
@@ -309,7 +359,7 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [], onSourceCli
                     <button
                       type='button'
                       className='text-base-content/40 hover:bg-base-200 hover:text-base-content flex size-6 items-center justify-center rounded-full transition-colors'
-                      aria-label='View sources'
+                      aria-label={_('View sources')}
                     >
                       <BookOpenIcon className='size-3' />
                     </button>
@@ -319,7 +369,7 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [], onSourceCli
                     className='bg-base-100 border-base-content/10 w-80 p-2'
                   >
                     <div className='text-base-content/60 mb-2 px-1 text-[11px] font-semibold'>
-                      Sources from book
+                      {_('Sources from book')}
                     </div>
                     <div className='flex flex-col gap-1.5'>
                       {sources.map((source, i) => {
@@ -329,7 +379,7 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [], onSourceCli
                         const content = (
                           <>
                             <div className='text-base-content font-medium'>
-                              {source.chapterTitle || `Section ${source.sectionIndex + 1}`}
+                              {source.chapterTitle || `${_('Section')} ${source.sectionIndex + 1}`}
                             </div>
                             <div className='text-base-content/60 mt-0.5 line-clamp-3'>
                               {source.text}
@@ -381,12 +431,14 @@ const AssistantMessage: FC<AssistantMessageProps> = ({ sources = [], onSourceCli
 };
 
 const UserMessage: FC = () => {
+  const selection = useAssistantState(({ message }) => selectionPayloadFromMessage(message));
   return (
     <MessagePrimitive.Root
       className='group/message animate-in fade-in slide-in-from-bottom-1 relative mx-auto mb-1 flex w-full flex-col pb-0.5 duration-200'
       data-message-role='user'
     >
       <div className='flex flex-col items-end'>
+        <SelectionContextBadges selection={selection} />
         <div className='border-base-content/10 bg-base-200 text-base-content relative max-w-[90%] rounded-2xl rounded-br-md border px-3 py-2'>
           <div className='prose prose-xs text-base-content [&_*]:text-base-content! select-text text-sm'>
             <MessagePrimitive.Parts components={{ Text: MarkdownText }} />
@@ -413,6 +465,7 @@ const UserMessage: FC = () => {
 };
 
 const EditComposer: FC = () => {
+  const _ = useTranslation();
   return (
     <MessagePrimitive.Root className='mx-auto flex w-full flex-col py-2'>
       <ComposerPrimitive.Root className='border-base-content/10 bg-base-200 ml-auto flex w-full max-w-[90%] flex-col overflow-hidden rounded-2xl border'>
@@ -420,12 +473,12 @@ const EditComposer: FC = () => {
         <div className='mx-2 mb-2 flex items-center gap-1.5 self-end'>
           <ComposerPrimitive.Cancel asChild>
             <Button variant='ghost' size='sm' className='h-7 px-2 text-xs'>
-              Cancel
+              {_('Cancel')}
             </Button>
           </ComposerPrimitive.Cancel>
           <ComposerPrimitive.Send asChild>
             <Button size='sm' className='h-7 px-2 text-xs'>
-              Update
+              {_('Update')}
             </Button>
           </ComposerPrimitive.Send>
         </div>

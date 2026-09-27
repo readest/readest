@@ -27,6 +27,15 @@ import HintInfo from './HintInfo';
 import ReadingRuler from './ReadingRuler';
 import DoubleBorder from './DoubleBorder';
 import ReadingStatsTracker from './ReadingStatsTracker';
+import SidebarToggler from './SidebarToggler';
+import BookmarkToggler from './BookmarkToggler';
+import TranslationToggler from './TranslationToggler';
+import NotebookToggler from './NotebookToggler';
+import ViewMenu from './ViewMenu';
+import Dropdown from '@/components/Dropdown';
+import { useNotebookStore } from '@/store/notebookStore';
+import { MdArrowBackIosNew, MdArrowForwardIos, MdMenu, MdMenuBook } from 'react-icons/md';
+import { useAIChatStore } from '@/store/aiChatStore';
 
 interface BooksGridProps {
   bookKeys: string[];
@@ -90,6 +99,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
   onCloseBook,
   onGoToLibrary,
 }) => {
+  const _ = useTranslation();
   // Per-field selectors — see store/readerProgressStore.ts header for the
   // "destructure-subscribes-the-whole-store" rationale.
   const getConfig = useBookDataStore((s) => s.getConfig);
@@ -118,6 +128,27 @@ const BookCellInner: React.FC<BookCellProps> = ({
   const bookData = getBookData(bookKey);
   const config = getConfig(bookKey);
   const { book, bookDoc } = bookData || {};
+  const setNotebookVisible = useNotebookStore((s) => s.setNotebookVisible);
+  const setNotebookPin = useNotebookStore((s) => s.setNotebookPin);
+  const setNotebookActiveTab = useNotebookStore((s) => s.setNotebookActiveTab);
+  const getView = useReaderStore((s) => s.getView);
+  const setSideBarBookKey = useSidebarStore((s) => s.setSideBarBookKey);
+  const setSideBarVisible = useSidebarStore((s) => s.setSideBarVisible);
+  const conversations = useAIChatStore((state) => state.conversations);
+  const loadConversations = useAIChatStore((state) => state.loadConversations);
+  const activeConversationId = useAIChatStore((state) => state.activeConversationId);
+  const setActiveConversation = useAIChatStore((state) => state.setActiveConversation);
+  const isPdf = book?.format === 'PDF';
+  const bookHash = bookKey.split('-')[0] || '';
+  const [pdfPageCount, setPdfPageCount] = useState(1);
+
+  useEffect(() => {
+    if (isPdf && bookHash) void loadConversations(bookHash);
+  }, [bookHash, isPdf, loadConversations]);
+
+  const handlePdfPageCount = useCallback((total: number) => {
+    setPdfPageCount((previous) => (previous === total ? previous : total));
+  }, []);
 
   // viewInsets/contentInsets stay stable while the user is just turning pages
   // (margins are unchanged) but update when a margin setting changes — even
@@ -135,6 +166,21 @@ const BookCellInner: React.FC<BookCellProps> = ({
     [bookKey, setDropdownOpenForBook],
   );
 
+  const handleOpenConversation = useCallback(
+    (conversationId: string) => {
+      void setActiveConversation(conversationId);
+      setNotebookActiveTab('ai');
+      setNotebookPin(true);
+      setNotebookVisible(true);
+    },
+    [setActiveConversation, setNotebookActiveTab, setNotebookPin, setNotebookVisible],
+  );
+
+  const handleOpenContents = useCallback(() => {
+    setSideBarBookKey(bookKey);
+    setSideBarVisible(true);
+  }, [bookKey, setSideBarBookKey, setSideBarVisible]);
+
   if (!book || !config || !bookDoc || !viewSettings || !viewState) return null;
 
   const { section, pageinfo, sectionLabel } = progress || {};
@@ -142,6 +188,11 @@ const BookCellInner: React.FC<BookCellProps> = ({
   const horizontalGapPercent = viewSettings.gapPercent;
   const showHeader = viewSettings.showHeader;
   const showFooter = viewSettings.showFooter;
+  const anchoredConversations = isPdf
+    ? conversations
+        .filter((conversation) => conversation.bookHash === bookHash && conversation.anchor)
+        .sort((left, right) => (left.anchor?.page ?? 0) - (right.anchor?.page ?? 0))
+    : [];
 
   return (
     <div
@@ -152,20 +203,97 @@ const BookCellInner: React.FC<BookCellProps> = ({
       data-view-transition-root=''
       className={clsx(
         'relative h-full w-full overflow-hidden',
+        isPdf && 'flex flex-col',
+        isPdf && 'pdf-reader-cell',
         appServiceHasRoundedWindow && 'rounded-window',
       )}
     >
-      <HeaderBar
-        bookKey={bookKey}
-        gridInsets={gridInsets}
-        screenInsets={screenInsets}
-        bookTitle={book.title}
-        isTopLeft={index === 0}
-        isHoveredAnim={isHoveredAnim}
-        onCloseBook={onCloseBook}
-        onGoToLibrary={onGoToLibrary}
-        onDropdownOpenChange={onDropdownOpenChange}
-      />
+      {isPdf ? (
+        <div className='pdf-reader-topbar grid h-14 shrink-0 grid-cols-[minmax(180px,1fr)_auto_minmax(180px,1fr)] items-center gap-3 border-b border-base-content/10 bg-base-100 px-4'>
+          <div className='flex min-w-0 items-center gap-3'>
+            <div className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-content'>
+              R
+            </div>
+            <div className='min-w-0'>
+              <div className='truncate text-sm font-semibold'>AI 学术阅读器</div>
+              <div className='truncate text-[11px] text-base-content/60'>深度阅读工作台</div>
+            </div>
+          </div>
+          <div className='flex items-center justify-center gap-1'>
+            <button
+              type='button'
+              className='btn btn-ghost btn-sm btn-square'
+              aria-label='目录'
+              title='目录'
+              onClick={handleOpenContents}
+            >
+              <MdMenuBook size={18} />
+            </button>
+            <button
+              type='button'
+              className='btn btn-ghost btn-sm btn-square'
+              aria-label='上一页'
+              title='上一页'
+              onClick={() => getView(bookKey)?.goLeft()}
+            >
+              <MdArrowBackIosNew size={16} />
+            </button>
+            <span className='hidden max-w-60 truncate rounded-full border border-base-content/10 px-3 py-1.5 text-xs text-base-content/70 md:inline-flex'>
+              {sectionLabel || 'PDF 原版阅读'}
+            </span>
+            <button
+              type='button'
+              className='btn btn-ghost btn-sm btn-square'
+              aria-label='下一页'
+              title='下一页'
+              onClick={() => getView(bookKey)?.goRight()}
+            >
+              <MdArrowForwardIos size={16} />
+            </button>
+          </div>
+          <div className='flex min-w-0 items-center justify-end gap-1.5 text-xs text-base-content/60'>
+            <span className='hidden sm:inline'>共 {pdfPageCount} 页</span>
+            <Dropdown
+              label='显示设置'
+              className='dropdown-bottom dropdown-end'
+              buttonClassName='btn btn-ghost btn-sm h-8 min-h-8 px-2'
+              toggleButton={<span aria-hidden='true'>Aa</span>}
+              onToggle={onDropdownOpenChange}
+            >
+              <ViewMenu bookKey={bookKey} />
+            </Dropdown>
+          </div>
+        </div>
+      ) : (
+        <HeaderBar
+          bookKey={bookKey}
+          gridInsets={gridInsets}
+          screenInsets={screenInsets}
+          bookTitle={book.title}
+          isTopLeft={index === 0}
+          isHoveredAnim={isHoveredAnim}
+          onCloseBook={onCloseBook}
+          onGoToLibrary={onGoToLibrary}
+          onDropdownOpenChange={onDropdownOpenChange}
+        />
+      )}
+      {isPdf && (
+        <div className='pdf-floating-toolbar' role='toolbar' aria-label='阅读工具'>
+          <SidebarToggler bookKey={bookKey} />
+          <BookmarkToggler bookKey={bookKey} />
+          <TranslationToggler bookKey={bookKey} />
+          <NotebookToggler bookKey={bookKey} />
+          <Dropdown
+            label='更多阅读设置'
+            className='dropdown-bottom dropdown-end'
+            buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
+            toggleButton={<MdMenu />}
+            onToggle={onDropdownOpenChange}
+          >
+            <ViewMenu bookKey={bookKey} />
+          </Dropdown>
+        </div>
+      )}
       {/*
         bg-base-100: while the pull-down bookmark gesture translates this
         wrapper, the transform makes it a stacking context, which isolates the
@@ -174,7 +302,13 @@ const BookCellInner: React.FC<BookCellProps> = ({
         An opaque background inside the wrapper keeps the blend backdrop with
         the transformed group, so the drag is luminance-invariant.
       */}
-      <div ref={slideRef} className='bg-base-100 absolute inset-0'>
+      <div
+        ref={slideRef}
+        className={clsx(
+          'bg-base-100',
+          isPdf ? 'pdf-reader-stage relative min-h-0 flex-1' : 'absolute inset-0',
+        )}
+      >
         <FoliateViewer
           key={viewerKey}
           bookKey={bookKey}
@@ -182,7 +316,32 @@ const BookCellInner: React.FC<BookCellProps> = ({
           config={config}
           gridInsets={gridInsets}
           contentInsets={contentInsets}
+          className={isPdf ? 'pdf-reader-viewer' : undefined}
+          onPdfPageCount={isPdf ? handlePdfPageCount : undefined}
         />
+        {isPdf && anchoredConversations.length > 0 && (
+          <aside className='pdf-annotation-rail' aria-label={_('PDF annotations')}>
+            {anchoredConversations.map((conversation, conversationIndex) => (
+              <button
+                key={conversation.id}
+                type='button'
+                className={clsx(
+                  'pdf-annotation-dot',
+                  activeConversationId === conversation.id && 'is-active',
+                )}
+                style={{
+                  top: `${Math.max(5, Math.min(92, (((conversation.anchor?.page ?? 1) - 0.5) / Math.max(pageinfo?.total ?? 1, 1)) * 100))}%`,
+                }}
+                aria-label={`打开批注 ${conversationIndex + 1}`}
+                title={conversation.anchor?.text}
+                onClick={() => handleOpenConversation(conversation.id)}
+              >
+                <span>✦</span>
+                <small>{conversationIndex + 1}</small>
+              </button>
+            ))}
+          </aside>
+        )}
         {viewSettings.vertical && viewSettings.scrolled && (
           <>
             {(showFooter || viewSettings.doubleBorder) && (

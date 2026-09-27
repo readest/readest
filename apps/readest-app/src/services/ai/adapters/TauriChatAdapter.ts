@@ -3,10 +3,15 @@ import type { ChatModelAdapter, ChatModelRunResult } from '@assistant-ui/react';
 import { getAIProvider } from '../providers';
 import { aiLogger } from '../logger';
 import { buildSystemPrompt } from '../prompts';
-import type { AISettings, ScoredChunk } from '../types';
+import type { AISelectionPayload, AISettings, ScoredChunk } from '../types';
 import type { RetrievalBackend } from './retrievalBackend';
 import type { ReedySourceStore } from './reedySourceStore';
 import type { RetrievedChunk } from '@/services/reedy/retrieval/BookRetriever';
+import {
+  appendSelectionContext,
+  selectionPayloadFromMessage,
+  selectionPayloadFromRunConfig,
+} from '../storage/threadHistoryAdapter';
 
 /**
  * Per-turn metadata the host (AIAssistant) needs to keep in sync with the
@@ -24,6 +29,7 @@ export interface TauriAdapterOptions {
   sourceStore: ReedySourceStore;
   /** Called when a new turn starts so the UI can switch its subscription. */
   onTurnStart?: (turnId: string) => void;
+  getMessageSelection?: (messageId: string) => AISelectionPayload | undefined;
 }
 
 async function* streamViaApiRoute(
@@ -61,7 +67,7 @@ async function* streamViaApiRoute(
 
 export function createTauriAdapter(getOptions: () => TauriAdapterOptions): ChatModelAdapter {
   return {
-    async *run({ messages, abortSignal }): AsyncGenerator<ChatModelRunResult> {
+    async *run({ messages, runConfig, abortSignal }): AsyncGenerator<ChatModelRunResult> {
       const options = getOptions();
       const {
         settings,
@@ -93,12 +99,19 @@ export function createTauriAdapter(getOptions: () => TauriAdapterOptions): ChatM
 
       aiLogger.chat.send(query.length, backend.kind === 'reedy');
 
-      const aiMessages = messages.map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content
-          .filter((c) => c.type === 'text')
-          .map((c) => c.text)
-          .join('\n'),
+      const lastUserIndex = messages.findLastIndex((message) => message.role === 'user');
+      const currentSelection = selectionPayloadFromRunConfig(runConfig);
+      const aiMessages = messages.map((message, index) => ({
+        role: message.role as 'user' | 'assistant',
+        content: appendSelectionContext(
+          message.content
+            .filter((part) => part.type === 'text')
+            .map((part) => part.text)
+            .join('\n'),
+          selectionPayloadFromMessage(message) ??
+            options.getMessageSelection?.(message.id) ??
+            (index === lastUserIndex ? currentSelection : undefined),
+        ),
       }));
 
       const useApiRoute = typeof window !== 'undefined' && settings.provider === 'ai-gateway';

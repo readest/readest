@@ -252,6 +252,9 @@ vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
     onEditNote?: (note: { id: string }) => void;
   }) => stub.render('popup', props.noteEditor, props.onEditNote),
 }));
+vi.mock('@/app/reader/components/annotator/SelectionActionPopup', () => ({
+  default: () => <div data-testid='selection-action-toolbar' />,
+}));
 vi.mock('@/app/reader/components/annotator/NoteEditorSheet', () => ({
   default: (props: NoteEditorStub) => stub.render('sheet', props),
 }));
@@ -267,7 +270,7 @@ const setViewport = (width: number, height: number) => {
   });
 };
 
-const selectText = async () => {
+const selectText = async (annotated = false, isNote = false) => {
   // repositionPopups needs the book's grid cell to measure against.
   if (!document.querySelector('#gridcell-book-1')) {
     const gridCell = document.createElement('div');
@@ -285,6 +288,8 @@ const selectText = async () => {
       range,
       index: 0,
       cfi: 'epubcfi(/6/2!/4/2)',
+      annotated,
+      isNote,
     });
   });
 };
@@ -387,7 +392,7 @@ describe('Annotate opens the note editor at the selection', () => {
   const editExistingNote = async () => {
     h.config.booknotes = [{ ...existingNote }];
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
-    await selectText();
+    await selectText(true, true);
     act(() => {
       screen.getByText('stub-edit-note').click();
     });

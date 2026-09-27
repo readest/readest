@@ -154,23 +154,24 @@ describe('useOpenBook — audiobooks open in the player, not the reader', () => 
   });
 });
 
-describe('useOpenBook — AI source formats reuse the native library', () => {
+describe('useOpenBook — all document formats reuse the unified reader shell', () => {
   it.each([
     'MD',
     'TXT',
     'HTML',
     'EPUB',
-  ] as const)('opens an available %s library item in the AI reading workspace', async (format) => {
+  ] as const)('opens an available %s library item in the native reader', async (format) => {
     const book = makeBook({ format, hash: `${format.toLowerCase()}-book` });
 
     const { result } = setup();
     await result.current.openBook(book);
     await flushNavigation();
 
-    expect(navigateToFoundationWorkspace).toHaveBeenCalledWith(
+    expect(navigateToFoundationWorkspace).not.toHaveBeenCalled();
+    expect(navigateToReader).toHaveBeenCalledWith(
       expect.anything(),
-      `${format.toLowerCase()}-book`,
+      [`${format.toLowerCase()}-book`],
+      undefined,
     );
-    expect(navigateToReader).not.toHaveBeenCalled();
   });
 });

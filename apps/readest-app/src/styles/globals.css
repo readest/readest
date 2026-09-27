@@ -1301,6 +1301,140 @@
     }
   }
 
+  .pdf-reader-cell {
+    background: #eef0f3;
+  }
+
+  .pdf-notebook {
+    width: 390px !important;
+    max-width: 390px !important;
+  }
+
+  .pdf-reader-stage {
+    background: #eef0f3;
+    overflow: auto;
+    padding: 72px 56px 88px;
+    scrollbar-gutter: stable;
+  }
+
+  .pdf-floating-toolbar {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    z-index: 35;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 6px;
+    border: 1px solid rgb(148 163 184 / 28%);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 92%);
+    box-shadow: 0 8px 24px rgb(15 23 42 / 16%);
+    transform: translateX(-50%);
+    backdrop-filter: blur(10px);
+  }
+
+  .pdf-floating-toolbar > * {
+    display: inline-flex;
+    height: 30px;
+    min-height: 30px;
+    width: 30px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pdf-reader-stage .pdf-reader-viewer {
+    position: relative;
+    inset: auto;
+    display: block;
+    width: min(100%, 1040px);
+    min-width: min(720px, 100%);
+    height: max-content;
+    min-height: 100%;
+    margin: 0 auto;
+    overflow: visible;
+    border-radius: 4px;
+    background: #dfe2e6;
+    box-shadow: 0 12px 36px rgb(15 23 42 / 14%);
+  }
+
+  .pdf-reader-stage .pdf-reader-viewer > foliate-view {
+    display: block;
+    min-height: 100%;
+  }
+
+  .pdf-annotation-rail {
+    position: absolute;
+    top: 72px;
+    bottom: 88px;
+    left: 16px;
+    z-index: 10;
+    width: 48px;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .pdf-annotation-dot {
+    position: absolute;
+    left: 3px;
+    display: flex;
+    width: 42px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(59 130 246 / 35%);
+    border-radius: 10px 10px 4px 10px;
+    background: #fff;
+    color: #2563eb;
+    gap: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 12%);
+    pointer-events: auto;
+    transform: translateY(-50%);
+    transition:
+      transform 150ms ease,
+      background 150ms ease;
+  }
+
+  .pdf-annotation-dot:hover {
+    transform: translate(3px, -50%);
+  }
+
+  .pdf-annotation-dot::after {
+    position: absolute;
+    right: -6px;
+    width: 6px;
+    height: 1px;
+    background: #c9a98a;
+    content: '';
+  }
+
+  .pdf-annotation-dot small {
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .pdf-annotation-dot.is-active {
+    background: #2563eb;
+    color: #fff;
+  }
+
+  @media (max-width: 900px) {
+    .pdf-reader-stage {
+      padding: 28px 24px 64px;
+    }
+
+    .pdf-reader-stage .pdf-reader-viewer {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .pdf-annotation-rail {
+      display: none;
+    }
+  }
+
   /* Atmosphere overlay */
   #atmosphere-overlay {
     position: fixed;

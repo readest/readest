@@ -39,7 +39,6 @@ import {
   isTauriAppPlatform,
   isWebAppPlatform,
 } from '@/services/environment';
-import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 
@@ -95,7 +94,6 @@ import { AboutWindow } from '@/components/AboutWindow';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import { BookDetailModal } from '@/components/metadata';
-import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { CatalogDialog } from './components/OPDSDialog';
 import { FeedsView } from './components/feeds/FeedsView';
 import AddFeedModal from './components/feeds/AddFeedModal';
@@ -122,6 +120,8 @@ import WebSourcesDialog from './components/WebSourcesDialog';
 import ImportNovelDialog from './components/ImportNovelDialog';
 import NowPlayingBar from './components/NowPlayingBar';
 import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWorker';
+import { pairLatexImports, saveLatexSource, sourcePairKey } from '@/services/latexSource';
+import { parseSyncTex } from '@/services/syncTex';
 import type { WebBrowserPage } from '@/services/webBrowser/webBrowser';
 import ClipSignInAlert from '@/components/ClipSignInAlert';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -501,19 +501,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   });
 
   useEffect(() => {
-    const doCheckAppUpdates = async () => {
-      if (appService?.hasUpdater && settings.autoCheckUpdates) {
-        await checkForAppUpdates(_, true, settings.updateChannel);
-      } else if (appService?.hasUpdater === false) {
-        checkAppReleaseNotes();
-      }
-    };
     if (settings.alwaysOnTop) {
       tauriHandleSetAlwaysOnTop(settings.alwaysOnTop);
     }
-    doCheckAppUpdates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService?.hasUpdater, settings]);
+  }, [settings.alwaysOnTop]);
 
   useEffect(() => {
     if (appService?.isMobileApp) {
@@ -938,6 +930,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const failedImports: Array<{ filename: string; errorMessage: string }> = [];
     const failedPaths: string[] = [];
     const successfulImports: string[] = [];
+    const selectedFilename = (selected: SelectedFile) =>
+      selected.name || selected.file?.name || getFilename(selected.path || '');
+    const {
+      importableFiles,
+      sources: latexSources,
+      syncTexFiles,
+      unpairedSources,
+      unpairedSyncTexFiles,
+    } = pairLatexImports(files, selectedFilename);
+    for (const source of [...unpairedSources, ...unpairedSyncTexFiles]) {
+      failedImports.push({
+        filename: selectedFilename(source),
+        errorMessage: '请同时选择同名的 PDF 和 LaTeX 源文件。',
+      });
+      if (source.path) failedPaths.push(source.path);
+    }
 
     // Readest's own Books/ prefix is resolved once at app init and persisted
     // in `settings.localBooksDir`. We hand it to `ingestFile` so the in-place
@@ -1019,9 +1027,31 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // A true worker pool (not the old barrier batches of 4): a slow file no
     // longer stalls three finished siblings, and each completed book streams
     // into the store immediately so the shelf renders incrementally.
-    await runWithConcurrency(files, IMPORT_CONCURRENCY, async (selectedFile) => {
+    await runWithConcurrency(importableFiles, IMPORT_CONCURRENCY, async (selectedFile) => {
       const book = await processFile(selectedFile);
       if (book) {
+        const filename = selectedFilename(selectedFile);
+        const latexSource = /\.pdf$/i.test(filename)
+          ? latexSources.get(sourcePairKey(filename))
+          : undefined;
+        if (latexSource && appService) {
+          try {
+            const syncTex = syncTexFiles.get(sourcePairKey(filename));
+            const sourceFile = latexSource.file
+              ? latexSource.file
+              : await appService.openFile(latexSource.path!, 'None');
+            const syncTexFile = syncTex
+              ? syncTex.file || (await appService.openFile(syncTex.path!, 'None'))
+              : undefined;
+            if (syncTexFile) parseSyncTex(await syncTexFile.arrayBuffer());
+            await saveLatexSource(appService, book, sourceFile, syncTexFile);
+          } catch (error) {
+            failedImports.push({
+              filename: selectedFilename(latexSource),
+              errorMessage: error instanceof Error ? error.message : 'LaTeX 源文件关联失败。',
+            });
+          }
+        }
         await updateBooks(envConfig, [book], { skipSave: true });
         checkpoint.touch();
       }
@@ -2138,7 +2168,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <AboutWindow />
       <KeyboardShortcutsHelp />
       <LocalSendManager />
-      <UpdaterWindow />
       <MigrateDataWindow />
       <BackupWindow onPullLibrary={pullLibrary} />
       <CacheManagerWindow />

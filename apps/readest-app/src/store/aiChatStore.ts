@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AIConversation, AIMessage } from '@/services/ai/types';
+import { AIConversation, AIMessage, AISelectionContext } from '@/services/ai/types';
 import { aiStore } from '@/services/ai/storage/aiStore';
 
 interface AIChatState {
@@ -11,7 +11,12 @@ interface AIChatState {
 
   loadConversations: (bookHash: string) => Promise<void>;
   setActiveConversation: (id: string | null) => Promise<void>;
-  createConversation: (bookHash: string, title: string) => Promise<string>;
+  createConversation: (
+    bookHash: string,
+    title: string,
+    anchor?: AISelectionContext | null,
+    activate?: boolean,
+  ) => Promise<string>;
   addMessage: (message: Omit<AIMessage, 'id' | 'createdAt'>) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
   renameConversation: (id: string, title: string) => Promise<void>;
@@ -64,13 +69,14 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
     }
   },
 
-  createConversation: async (bookHash: string, title: string) => {
+  createConversation: async (bookHash, title, anchor = null, activate = true) => {
     const id = generateId();
     const now = Date.now();
     const conversation: AIConversation = {
       id,
       bookHash,
       title: title.slice(0, 50) || 'New conversation',
+      ...(anchor ? { anchor } : {}),
       createdAt: now,
       updatedAt: now,
     };
@@ -78,9 +84,8 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
     const conversations = await aiStore.getConversations(bookHash);
     set({
       conversations,
-      activeConversationId: id,
-      messages: [],
       currentBookHash: bookHash,
+      ...(activate ? { activeConversationId: id, messages: [] } : {}),
     });
     return id;
   },
@@ -96,18 +101,19 @@ export const useAIChatStore = create<AIChatState>((set, get) => ({
 
     // update conversation updatedAt
     const { activeConversationId, currentBookHash } = get();
-    if (activeConversationId && currentBookHash) {
+    if (currentBookHash) {
       const conversations = get().conversations;
-      const conv = conversations.find((c) => c.id === activeConversationId);
+      const conv = conversations.find((c) => c.id === message.conversationId);
       if (conv) {
-        conv.updatedAt = Date.now();
-        await aiStore.saveConversation(conv);
+        await aiStore.saveConversation({ ...conv, updatedAt: Date.now() });
       }
     }
 
-    set((state) => ({
-      messages: [...state.messages, fullMessage],
-    }));
+    if (activeConversationId === message.conversationId) {
+      set((state) => ({
+        messages: [...state.messages, fullMessage],
+      }));
+    }
   },
 
   deleteConversation: async (id: string) => {

@@ -36,6 +36,5 @@ tauri-plugin-persisted-scope = { git = "https://github.com/readest/tauri-plugins
 tauri-plugin-process = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
 tauri-plugin-shell = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
 tauri-plugin-single-instance = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
-tauri-plugin-updater = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
 tauri-plugin-websocket = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }
 tauri-plugin-window-state = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }

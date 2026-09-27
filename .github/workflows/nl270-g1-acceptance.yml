@@ -1,0 +1,95 @@
+name: NL-270 G1 acceptance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/nl270-g1-acceptance.yml'
+      - 'apps/readest-app/e2e/**'
+      - 'apps/readest-app/package.json'
+      - 'apps/readest-app/public/locales/**'
+      - 'apps/readest-app/src/app/library/**'
+      - 'apps/readest-app/src/app/reader/**'
+      - 'apps/readest-app/src/services/constants.ts'
+      - 'apps/readest-app/src/store/notebookStore.ts'
+      - 'packages/foliate-js/**'
+
+permissions:
+  contents: read
+
+jobs:
+  g1_acceptance:
+    name: Original PDF and selection workflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: 'true'
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies and reader assets
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm --filter @readest/readest-app setup-vendors
+
+      - name: Verify focused unit contracts
+        working-directory: apps/readest-app
+        run: >-
+          pnpm test --run
+          src/__tests__/app/library/useOpenBook.test.tsx
+          src/__tests__/components/annotator/AnnotateNoteEditorFlow.test.tsx
+          src/__tests__/components/annotator/AnnotatorLookupSurfaces.test.tsx
+          src/__tests__/store/notebook-store.test.ts
+
+      - name: Verify TypeScript contracts
+        working-directory: apps/readest-app
+        run: pnpm exec tsc --noEmit
+
+      - name: Build the web acceptance target
+        working-directory: apps/readest-app
+        run: pnpm build-web
+
+      - name: Install Chromium
+        working-directory: apps/readest-app
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Each acceptance item is a separate blocking step. A later item cannot
+      # hide an earlier failure, and no step updates screenshot baselines.
+      - name: G1-01 Original PDF canvas, text layer, and unified shell
+        working-directory: apps/readest-app
+        run: pnpm exec playwright test e2e/tests/nl270-g1.spec.ts --project=chromium --workers=1 --grep G1-01
+
+      - name: G1-02 Exactly three first-level selection actions
+        working-directory: apps/readest-app
+        run: pnpm exec playwright test e2e/tests/nl270-g1.spec.ts --project=chromium --workers=1 --grep G1-02
+
+      - name: G1-03 Ctrl-selection has no automatic action
+        working-directory: apps/readest-app
+        run: pnpm exec playwright test e2e/tests/nl270-g1.spec.ts --project=chromium --workers=1 --grep G1-03
+
+      - name: G1-04 Ask and Attach create drafts without sending
+        working-directory: apps/readest-app
+        run: pnpm exec playwright test e2e/tests/nl270-g1.spec.ts --project=chromium --workers=1 --grep G1-04
+
+      - name: G1-05 View Source has an explicit phase boundary
+        working-directory: apps/readest-app
+        run: pnpm exec playwright test e2e/tests/nl270-g1.spec.ts --project=chromium --workers=1 --grep G1-05
+
+      - name: Upload G1 visual evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nl270-g1-visual-evidence
+          path: |
+            apps/readest-app/e2e/tests/nl270-g1.spec.ts-snapshots/
+            apps/readest-app/playwright-report/
+            apps/readest-app/test-results/
+          if-no-files-found: warn
+          retention-days: 14

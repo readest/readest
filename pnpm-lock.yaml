@@ -242,9 +242,6 @@ importers:
       '@tauri-apps/plugin-shell':
         specifier: ~2.3.6
         version: 2.3.6
-      '@tauri-apps/plugin-updater':
-        specifier: ^2.11.0
-        version: 2.11.0
       '@tauri-apps/plugin-websocket':
         specifier: ~2.4.3
         version: 2.4.3
@@ -3527,9 +3524,6 @@ packages:
 
   '@tauri-apps/plugin-shell@2.3.6':
     resolution: {integrity: sha512-C2AG+QmBJPK0E3gccLXfRdjTfGBC9DgwzGi/PfYa61ieAZbYvhvOss4OdSGfn/D28N3THGhJZEhf3lozOh/Uqw==}
-
-  '@tauri-apps/plugin-updater@2.11.0':
-    resolution: {integrity: sha512-AE36XkOoSna24G40jZMY15nzAnkXEPL/73tGoseGrtGOHuI/cZwWzHpZFLjKXDPgzYZ435z1gHu28LgrsBwIxQ==}
 
   '@tauri-apps/plugin-websocket@2.4.3':
     resolution: {integrity: sha512-c85ykljg6AzY6Zw4KpYsEBaLirjPIs6m8xxC6hZcdwAchckaBU368US+oSsa5B43PjSLukjwD5vOOqzYYnswWA==}
@@ -11984,10 +11978,6 @@ snapshots:
       '@tauri-apps/api': 2.10.1
 
   '@tauri-apps/plugin-shell@2.3.6':
-    dependencies:
-      '@tauri-apps/api': 2.11.1
-
-  '@tauri-apps/plugin-updater@2.11.0':
     dependencies:
       '@tauri-apps/api': 2.11.1
 

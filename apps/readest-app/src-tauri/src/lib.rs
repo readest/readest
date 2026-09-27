@@ -33,6 +33,8 @@ mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
 mod epub_parser;
+#[cfg(desktop)]
+mod latex;
 #[cfg(all(target_os = "linux", any(feature = "cef", test)))]
 mod linux_display;
 mod localsend;
@@ -40,7 +42,6 @@ mod localsend;
 mod macos;
 mod media_proxy;
 mod mobi_parser;
-mod nightly_update;
 mod parser_common;
 mod pdf_parser;
 mod range_file;
@@ -290,52 +291,6 @@ fn default_window_size(work_area: Option<(f64, f64)>) -> (f64, f64) {
     )
 }
 
-// Pure decision for whether the in-app updater should be hidden. Kept
-// dependency-free so it can be unit tested for every platform combination.
-//
-// - `env_disable`: READEST_DISABLE_UPDATER is set (explicit opt-out).
-// - Linux only: Tauri's updater can self-update AppImage bundles *only*, so
-//   deb/rpm/pacman (`!is_appimage`) and Flatpak installs are updated by the
-//   system package manager and must not show the in-app updater.
-#[cfg(desktop)]
-fn compute_updater_disabled(
-    env_disable: bool,
-    is_linux: bool,
-    is_flatpak: bool,
-    is_appimage: bool,
-) -> bool {
-    env_disable || (is_linux && (is_flatpak || !is_appimage))
-}
-
-#[cfg(desktop)]
-fn updater_disabled() -> bool {
-    let env_disable = std::env::var("READEST_DISABLE_UPDATER").is_ok();
-    #[cfg(target_os = "linux")]
-    {
-        let is_flatpak =
-            std::env::var("FLATPAK_ID").is_ok() || std::path::Path::new("/.flatpak-info").exists();
-        let is_appimage = std::env::var("APPIMAGE").is_ok()
-            || std::env::current_exe()
-                .map(|path| path.to_string_lossy().contains("/tmp/.mount_"))
-                .unwrap_or(false);
-        compute_updater_disabled(env_disable, true, is_flatpak, is_appimage)
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        compute_updater_disabled(env_disable, false, false, false)
-    }
-}
-
-// Authoritative source of truth for the frontend `hasUpdater` capability.
-// Read via IPC in `NativeAppService.init()` so the decision does not depend on
-// the injected init-script global, which is not reliably visible to page
-// scripts on every Linux/WebKitGTK setup (see issue #4874).
-#[cfg(desktop)]
-#[tauri::command]
-fn is_updater_disabled() -> bool {
-    updater_disabled()
-}
-
 // Record the WebView engine/version so Sentry events can be correlated with
 // the WebView build. Chromium's UA-Reduction freezes the User-Agent to a stub
 // on Windows WebView2 (e.g. "152.0.0.0"), so prefer the version reported by
@@ -531,8 +486,6 @@ pub fn run() {
             get_executable_dir,
             set_webview_info,
             get_webview_version,
-            #[cfg(desktop)]
-            is_updater_disabled,
             allow_paths_in_scopes,
             cover_thumbnail::optimize_cover_thumbnails,
             dir_scanner::read_dir,
@@ -546,6 +499,12 @@ pub fn run() {
             mobi_parser::extract_mobi_cover_full,
             pdf_parser::parse_pdf_metadata,
             pdf_parser::render_pdf_cover,
+            #[cfg(desktop)]
+            latex::detect_latex_engines,
+            #[cfg(desktop)]
+            latex::compile_latex_source,
+            #[cfg(desktop)]
+            latex::cancel_latex_compile,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]
@@ -579,9 +538,6 @@ pub fn run() {
             localsend::commands::localsend_cancel_send,
             #[cfg(desktop)]
             spawn_fresh_browser::spawn_fresh_browser,
-            nightly_update::verify_update_signature,
-            #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
-            nightly_update::install_nightly_update,
         ])
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init())
@@ -621,9 +577,6 @@ pub fn run() {
     );
 
     let builder = builder.plugin(tauri_plugin_deep_link::init());
-
-    #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
     // Strip invalid geometry from the saved window state before the
     // window-state plugin loads it, so a bad `.window-state.json` (e.g. the
@@ -678,6 +631,8 @@ pub fn run() {
                 app.manage(discord_client);
             }
             app.manage(localsend::LocalSendState::default());
+            #[cfg(desktop)]
+            app.manage(latex::LatexJobState::default());
 
             #[cfg(desktop)]
             {
@@ -732,16 +687,6 @@ pub fn run() {
             #[cfg(not(target_os = "linux"))]
             let is_appimage = false;
 
-            // The in-app updater is hidden for installs it can't actually update
-            // (Linux deb/rpm/pacman and Flatpak) and when READEST_DISABLE_UPDATER
-            // is set. This mirrors the `is_updater_disabled` command that
-            // `NativeAppService.init()` reads authoritatively; the injected global
-            // below is only a best-effort fast path.
-            #[cfg(desktop)]
-            let updater_disabled = updater_disabled();
-            #[cfg(not(desktop))]
-            let updater_disabled = false;
-
             // One id per app run. The OS keeps re-delivering the URL the app was
             // launched with — Android re-reads the sticky `activity.intent`
             // every time it recreates the Activity, iOS reloads the document
@@ -764,7 +709,6 @@ pub fn run() {
                     if ({is_eink}) window.__READEST_IS_EINK = true;
                     if ({cli_access}) window.__READEST_CLI_ACCESS = true;
                     if ({is_appimage}) window.__READEST_IS_APPIMAGE = true;
-                    if ({updater_disabled}) window.__READEST_UPDATER_DISABLED = true;
                     window.addEventListener('DOMContentLoaded', function() {{
                         document.documentElement.classList.add('edge-to-edge');
                         const isTauriLocal = window.location.protocol === 'tauri:' ||
@@ -789,8 +733,7 @@ pub fn run() {
                 app_run_id = app_run_id,
                 is_eink = is_eink,
                 cli_access = cli_access,
-                is_appimage = is_appimage,
-                updater_disabled = updater_disabled
+                is_appimage = is_appimage
             );
 
             let app_handle = app.handle().clone();
@@ -981,7 +924,7 @@ pub fn run() {
 
 #[cfg(all(test, desktop))]
 mod tests {
-    use super::{compute_updater_disabled, default_window_size, DEFAULT_WINDOW_SIZE};
+    use super::{default_window_size, DEFAULT_WINDOW_SIZE};
 
     #[test]
     fn monitor_with_room_keeps_the_shipped_default() {
@@ -1012,37 +955,5 @@ mod tests {
         // is off, or a compositor that has not laid out the screen yet).
         assert_eq!(default_window_size(None), DEFAULT_WINDOW_SIZE);
         assert_eq!(default_window_size(Some((0.0, 0.0))), DEFAULT_WINDOW_SIZE);
-    }
-
-    #[test]
-    fn env_opt_out_disables_on_any_desktop() {
-        // READEST_DISABLE_UPDATER is an explicit opt-out on every desktop OS.
-        assert!(compute_updater_disabled(true, false, false, false));
-        assert!(compute_updater_disabled(true, true, false, true));
-    }
-
-    #[test]
-    fn linux_system_package_install_is_disabled() {
-        // deb/rpm/pacman installs are not AppImage and not Flatpak. Tauri's
-        // Linux updater can't self-update them, so the in-app updater is hidden.
-        assert!(compute_updater_disabled(false, true, false, false));
-    }
-
-    #[test]
-    fn linux_flatpak_is_disabled() {
-        assert!(compute_updater_disabled(false, true, true, false));
-    }
-
-    #[test]
-    fn linux_appimage_keeps_updater() {
-        // AppImage is the one Linux bundle Tauri can self-update.
-        assert!(!compute_updater_disabled(false, true, false, true));
-    }
-
-    #[test]
-    fn non_linux_desktop_keeps_updater_without_opt_out() {
-        // macOS / Windows: the flatpak/appimage clause must not apply, so the
-        // updater stays enabled unless the env opt-out is set.
-        assert!(!compute_updater_disabled(false, false, false, false));
     }
 }

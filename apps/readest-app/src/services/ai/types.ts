@@ -101,8 +101,26 @@ export interface AIConversation {
   id: string;
   bookHash: string;
   title: string;
+  anchor?: AISelectionContext;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface AISelectionContext {
+  id: string;
+  bookKey: string;
+  text: string;
+  page: number;
+  index: number;
+  cfi?: string;
+  href?: string;
+  pdfX?: number;
+  pdfY?: number;
+}
+
+export interface AISelectionPayload {
+  questionAnchor: AISelectionContext | null;
+  attachments: AISelectionContext[];
 }
 
 // single message in an AI conversation
@@ -111,5 +129,6 @@ export interface AIMessage {
   conversationId: string;
   role: 'user' | 'assistant';
   content: string;
+  selection?: AISelectionPayload;
   createdAt: number;
 }

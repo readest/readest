@@ -75,8 +75,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [gamepadEnabled, setGamepadEnabled] = useState(settings.gamepadEnabled);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
-  const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
-  const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
   const [isTelemetryEnabled, setIsTelemetryEnabled] = useState(settings.telemetryEnabled);
 
   const resetToDefaults = useResetViewSettings();
@@ -324,18 +322,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copyToNotebook]);
 
-  const toggleAutoCheckUpdates = () => {
-    const newValue = !isAutoCheckUpdates;
-    saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
-    setIsAutoCheckUpdates(newValue);
-  };
-
-  const toggleNightlyChannel = () => {
-    const newValue = !isNightlyChannel;
-    saveSysSettings(envConfig, 'updateChannel', newValue ? 'nightly' : 'stable');
-    setIsNightlyChannel(newValue);
-  };
-
   const toggleTelemetry = () => {
     const newValue = !isTelemetryEnabled;
     saveSysSettings(envConfig, 'telemetryEnabled', newValue);
@@ -582,23 +568,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           data-setting-id='settings.control.gamepadEnabled'
         />
       </BoxedList>
-
-      {appService?.hasUpdater && (
-        <BoxedList title={_('Update')} data-setting-id='settings.control.checkUpdates'>
-          <SettingsSwitchRow
-            label={_('Check Updates on Start')}
-            checked={isAutoCheckUpdates}
-            onChange={toggleAutoCheckUpdates}
-          />
-          <SettingsSwitchRow
-            label={_('Nightly Builds')}
-            description={isNightlyChannel ? _('Early daily builds') : ''}
-            checked={isNightlyChannel}
-            onChange={toggleNightlyChannel}
-            data-setting-id='settings.control.nightlyChannel'
-          />
-        </BoxedList>
-      )}
 
       <BoxedList title={_('Security')} data-setting-id='settings.control.allowJavascript'>
         <SettingsSwitchRow

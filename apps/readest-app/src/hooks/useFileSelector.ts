@@ -6,7 +6,11 @@ import { isContentURI, isFileURI, stubTranslation as _ } from '@/utils/misc';
 import { getFileExtension, getFilename } from '@/utils/path';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
+import {
+  BOOK_ACCEPT_FORMATS,
+  LATEX_COMPANION_EXTS,
+  SUPPORTED_BOOK_EXTS,
+} from '@/services/constants';
 
 export interface FileSelectorOptions {
   type: SelectionType;
@@ -230,7 +234,7 @@ export const FILE_SELECTION_PRESETS = {
   },
   books: {
     accept: BOOK_ACCEPT_FORMATS,
-    extensions: SUPPORTED_BOOK_EXTS,
+    extensions: [...SUPPORTED_BOOK_EXTS, ...LATEX_COMPANION_EXTS],
     dialogTitle: _('Select Books'),
   },
   fonts: {

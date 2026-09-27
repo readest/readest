@@ -4,6 +4,8 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { isPWA, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { AppService } from '@/types/system';
+import type { SelectionContext } from '@/store/notebookStore';
+import { buildLatexSourceWindowUrl } from '@/app/latex-source/sourceWindowQuery';
 
 let readerWindowsCount = 0;
 const createReaderWindow = (
@@ -54,6 +56,52 @@ export const showReaderWindow = (
   params.set('ids', ids);
   const url = `/reader?${params.toString()}`;
   createReaderWindow(appService, url);
+};
+
+const latexSourceWindowLabel = (bookKey: string) =>
+  `latex-source-${bookKey.split('-')[0]!.replace(/[^a-zA-Z0-9-]/g, '-')}`;
+
+export const showLatexSourceWindow = async (
+  appService: AppService,
+  request: SelectionContext,
+): Promise<'created' | 'reused'> => {
+  if (!isTauriAppPlatform()) {
+    const sourceWindow = window.open(
+      buildLatexSourceWindowUrl(request, window.name || 'main'),
+      latexSourceWindowLabel(request.bookKey),
+      'popup,width=960,height=760,resizable=yes,scrollbars=yes',
+    );
+    if (!sourceWindow) throw new Error('浏览器阻止了源码窗口，请允许此站点打开弹窗。');
+    sourceWindow.focus();
+    return 'created';
+  }
+  const readerWindowLabel = getCurrentWindow().label;
+  const label = latexSourceWindowLabel(request.bookKey);
+  const existing = await WebviewWindow.getByLabel(label);
+  if (existing) {
+    await existing.emit('source-location-requested', { request, readerWindowLabel });
+    await existing.show();
+    await existing.unminimize();
+    await existing.setFocus();
+    return 'reused';
+  }
+  const win = new WebviewWindow(label, {
+    url: buildLatexSourceWindowUrl(request, readerWindowLabel),
+    width: 960,
+    height: 760,
+    center: true,
+    resizable: true,
+    title: 'LaTeX 源代码',
+    decorations: !!appService.isMacOSApp,
+    transparent: !appService.isMacOSApp && !appService.isLinuxApp,
+    shadow: appService.isMacOSApp ? undefined : true,
+    titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
+    scrollBarStyle: (appService.osPlatform === 'windows'
+      ? 'fluentOverlay'
+      : 'default') as unknown as ScrollBarStyle,
+  });
+  win.once('tauri://error', (event) => console.error('error creating source window', event));
+  return 'created';
 };
 
 export const showFoundationWorkspaceWindow = (appService: AppService, bookId: string) => {

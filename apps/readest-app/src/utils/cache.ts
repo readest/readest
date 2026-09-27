@@ -63,7 +63,13 @@ export const getCacheEntries = async (
  * `audiobook/` stay with them: config.json still points at those files, and
  * only the pairing's own removal path clears that association.
  */
-const KEPT_SIDECARS = new Set(['cover.png', 'config.json', 'nav.json']);
+const KEPT_SIDECARS = new Set([
+  'cover.png',
+  'config.json',
+  'nav.json',
+  'latex-source.json',
+  'source.synctex',
+]);
 
 /**
  * A dir written more recently than this may belong to an import whose row is

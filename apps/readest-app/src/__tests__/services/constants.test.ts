@@ -67,8 +67,6 @@ import {
   DOWNLOAD_READEST_URL,
   READEST_WEB_BASE_URL,
   READEST_NODE_BASE_URL,
-  READEST_UPDATER_FILE,
-  READEST_CHANGELOG_FILE,
   READEST_PUBLIC_STORAGE_BASE_URL,
   READEST_OPDS_USER_AGENT,
   SYNC_PROGRESS_INTERVAL_SEC,
@@ -888,16 +886,6 @@ describe('services/constants', () => {
 
     it('READEST_NODE_BASE_URL is a valid URL', () => {
       expect(READEST_NODE_BASE_URL).toMatch(/^https:\/\//);
-    });
-
-    it('READEST_UPDATER_FILE is a URL ending with .json', () => {
-      expect(READEST_UPDATER_FILE).toMatch(/^https:\/\//);
-      expect(READEST_UPDATER_FILE).toMatch(/\.json$/);
-    });
-
-    it('READEST_CHANGELOG_FILE is a URL ending with .json', () => {
-      expect(READEST_CHANGELOG_FILE).toMatch(/^https:\/\//);
-      expect(READEST_CHANGELOG_FILE).toMatch(/\.json$/);
     });
 
     it('READEST_PUBLIC_STORAGE_BASE_URL is a valid URL', () => {

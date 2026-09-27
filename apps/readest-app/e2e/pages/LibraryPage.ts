@@ -17,18 +17,20 @@ export class LibraryPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.container = page.locator('[aria-label="Your Library"]');
-    this.header = page.locator('[aria-label="Library Header"]');
-    this.bookshelf = page.locator('[aria-label="Bookshelf"]');
+    this.container = page.getByLabel(/^(Your Library|书库)$/);
+    this.header = page.getByLabel(/^(Library Header|图书馆标题)$/);
+    this.bookshelf = page.getByRole('main', { name: /^(Bookshelf|书架)$/ });
     this.searchInput = page.locator('.search-input');
     this.clearSearchButton = page.locator('[aria-label="Clear Search"]');
-    this.emptyState = page.getByRole('heading', { name: 'Start your library' });
+    this.emptyState = page.getByRole('heading', { name: /^(Start your library|开启你的书库)$/ });
     this.emptyStateImportButton = this.bookshelf.getByRole('button', {
-      name: 'Import Books',
+      name: /^(Import Books|导入书籍)$/,
       exact: true,
     });
     this.importMenu = page.locator('.menu-container');
-    this.localFileImportItem = this.importMenu.getByRole('menuitem', { name: 'From Local File' });
+    this.localFileImportItem = this.importMenu.getByRole('menuitem', {
+      name: /^(From Local File|从本地文件导入)$/,
+    });
   }
 
   async goto(): Promise<void> {
@@ -53,7 +55,7 @@ export class LibraryPage extends BasePage {
    * so a `filechooser` event must be awaited rather than locating an
    * `<input type="file">`.
    */
-  async importBook(filePath: string): Promise<void> {
+  async importBook(filePath: string | string[]): Promise<void> {
     await this.emptyStateImportButton.click();
     await this.localFileImportItem.waitFor({ state: 'visible' });
 

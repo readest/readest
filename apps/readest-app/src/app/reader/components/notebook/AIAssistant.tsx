@@ -5,7 +5,6 @@ import {
   AssistantRuntimeProvider,
   useLocalRuntime,
   useAssistantRuntime,
-  type ThreadMessage,
   type ThreadHistoryAdapter,
 } from '@assistant-ui/react';
 
@@ -24,7 +23,7 @@ import {
   type RetrievalBackend,
   type SourceItem,
 } from '@/services/ai/adapters';
-import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
+import type { AISelectionPayload, EmbeddingProgress, AISettings } from '@/services/ai/types';
 import type { RetrievedChunk } from '@/services/reedy/retrieval/BookRetriever';
 import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -33,42 +32,9 @@ import { ReedyAssistant } from '@/services/reedy/ui/ReedyAssistant';
 import type { ReadingContextSnapshot } from '@/services/reedy/tools/builtins/types';
 
 import { Button } from '@/components/ui/button';
-import { Loader2Icon, BookOpenIcon } from 'lucide-react';
+import { ArrowUpIcon, Loader2Icon, BookOpenIcon, SparklesIcon } from 'lucide-react';
 import { Thread } from '@/components/assistant/Thread';
-
-// Helper function to convert AIMessage array to ExportedMessageRepository format
-// Each message needs to be wrapped with { message, parentId } structure
-function convertToExportedMessages(
-  aiMessages: AIMessage[],
-): { message: ThreadMessage; parentId: string | null }[] {
-  return aiMessages.map((msg, idx) => {
-    const baseMessage = {
-      id: msg.id,
-      content: [{ type: 'text' as const, text: msg.content }],
-      createdAt: new Date(msg.createdAt),
-      metadata: { custom: {} },
-    };
-
-    // Build role-specific message to satisfy ThreadMessage union type
-    const threadMessage: ThreadMessage =
-      msg.role === 'user'
-        ? ({
-            ...baseMessage,
-            role: 'user' as const,
-            attachments: [] as const,
-          } as unknown as ThreadMessage)
-        : ({
-            ...baseMessage,
-            role: 'assistant' as const,
-            status: { type: 'complete' as const, reason: 'stop' as const },
-          } as unknown as ThreadMessage);
-
-    return {
-      message: threadMessage,
-      parentId: idx > 0 ? (aiMessages[idx - 1]?.id ?? null) : null,
-    };
-  });
-}
+import { createAIThreadHistoryAdapter } from '@/services/ai/storage/threadHistoryAdapter';
 
 interface AIAssistantProps {
   bookKey: string;
@@ -105,7 +71,10 @@ const AIAssistantChat = ({
     messages: storedMessages,
     addMessage,
     isLoadingHistory,
+    createConversation,
+    setActiveConversation,
   } = useAIChatStore();
+  const messageSelections = useMemo(() => new Map<string, AISelectionPayload>(), []);
 
   // use a ref to keep up-to-date options without triggering re-renders of the runtime
   const optionsRef = useRef({
@@ -117,6 +86,7 @@ const AIAssistantChat = ({
     backend,
     sourceStore,
     onTurnStart: setCurrentTurnId,
+    getMessageSelection: (messageId: string) => messageSelections.get(messageId),
   });
 
   // update ref on every render with latest values
@@ -130,6 +100,7 @@ const AIAssistantChat = ({
       backend,
       sourceStore,
       onTurnStart: setCurrentTurnId,
+      getMessageSelection: (messageId: string) => messageSelections.get(messageId),
     };
   });
 
@@ -140,40 +111,28 @@ const AIAssistantChat = ({
   }, []);
 
   // Create history adapter to load/persist messages
-  const historyAdapter = useMemo<ThreadHistoryAdapter | undefined>(() => {
-    if (!activeConversationId) return undefined;
+  const activeConversationIdRef = useRef(activeConversationId);
+  const storedMessagesRef = useRef(storedMessages);
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+    storedMessagesRef.current = storedMessages;
+  }, [activeConversationId, storedMessages]);
 
-    return {
-      async load() {
-        // storedMessages are already loaded by aiChatStore when conversation is selected
-        return {
-          messages: convertToExportedMessages(storedMessages),
-        };
-      },
-      async append(item) {
-        // item is ExportedMessageRepositoryItem - access the actual message via .message
-        const msg = item.message;
-        // Persist new messages to our store
-        if (activeConversationId && msg.role !== 'system') {
-          const textContent = msg.content
-            .filter(
-              (part): part is { type: 'text'; text: string } =>
-                'type' in part && part.type === 'text',
-            )
-            .map((part) => part.text)
-            .join('\n');
-
-          if (textContent) {
-            await addMessage({
-              conversationId: activeConversationId,
-              role: msg.role as 'user' | 'assistant',
-              content: textContent,
-            });
-          }
-        }
-      },
-    };
-  }, [activeConversationId, storedMessages, addMessage]);
+  const historyAdapter = useMemo<ThreadHistoryAdapter>(
+    () =>
+      createAIThreadHistoryAdapter({
+        bookHash,
+        bookTitle,
+        getActiveConversationId: () => activeConversationIdRef.current,
+        getStoredMessages: () => storedMessagesRef.current,
+        createConversation,
+        addMessage,
+        activateConversation: setActiveConversation,
+        rememberMessageSelection: (messageId, selection) =>
+          messageSelections.set(messageId, selection),
+      }),
+    [addMessage, bookHash, bookTitle, createConversation, messageSelections, setActiveConversation],
+  );
 
   return (
     <AIAssistantWithRuntime
@@ -323,7 +282,7 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
   const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
 
   const bookHash = bookKey.split('-')[0] || '';
-  const bookTitle = bookData?.book?.title || 'Unknown';
+  const bookTitle = bookData?.book?.title || _('Unknown');
   const authorName = bookData?.book?.author || '';
   const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
@@ -390,8 +349,33 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
 
   if (!aiSettings?.enabled) {
     return (
-      <div className='flex h-full items-center justify-center p-4'>
-        <p className='text-muted-foreground text-sm'>{_('Enable AI in Settings')}</p>
+      <div className='flex min-h-0 flex-1 flex-col bg-base-100'>
+        <div className='flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-8 text-center'>
+          <div className='flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
+            <SparklesIcon className='size-6' />
+          </div>
+          <p className='text-foreground text-base font-semibold'>{_('在原版 PDF 上选择文字')}</p>
+          <p className='text-muted-foreground max-w-72 text-xs leading-5'>
+            {_('划选后请选择提问、作为附件或查看源码；按住 Ctrl 可继续选择，不会自动执行操作。')}
+          </p>
+        </div>
+        <div className='border-base-content/10 border-t bg-base-100 p-3'>
+          <div className='border-base-content/15 flex min-h-20 items-end gap-2 rounded-2xl border bg-base-100 px-3 py-2 shadow-sm'>
+            <textarea
+              aria-label='AI 提问输入框'
+              placeholder='询问当前页面，或直接开始一个无锚点对话…'
+              className='min-h-14 flex-1 resize-none bg-transparent text-sm leading-5 outline-none placeholder:text-base-content/40'
+            />
+            <button
+              type='button'
+              className='mb-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-content'
+              aria-label='发送'
+              title='请先在设置中启用 AI 服务'
+            >
+              <ArrowUpIcon className='size-4' />
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -434,7 +418,7 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
           <p className='text-foreground mb-1 text-sm font-medium'>{_('Indexing book...')}</p>
           <p className='text-muted-foreground text-xs'>
             {indexProgress?.phase === 'embedding'
-              ? `${indexProgress.current} / ${indexProgress.total} chunks`
+              ? `${indexProgress.current} / ${indexProgress.total} ${_('chunks')}`
               : _('Preparing...')}
           </p>
         </div>

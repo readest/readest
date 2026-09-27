@@ -24,16 +24,7 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ appService: { hasUpdater: true } }),
-}));
-
-vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({ settings: { updateChannel: 'stable' } }),
-}));
-
-vi.mock('@/helpers/updater', () => ({
-  checkForAppUpdates: vi.fn(),
-  checkAppReleaseNotes: vi.fn(),
+  useEnv: () => ({ appService: {} }),
 }));
 
 vi.mock('@/utils/ua', () => ({

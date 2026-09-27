@@ -39,10 +39,10 @@ export class ReaderPage extends BasePage {
     this.headerBar = page.locator('.header-bar').first();
     this.footerBar = page.locator('.footer-bar').first();
     this.sidebar = page.locator('[role="navigation"][aria-label="Sidebar"]');
-    this.notebook = page.locator('[role="group"][aria-label="Notebook"]');
+    this.notebook = page.getByRole('group', { name: /^(Notebook|笔记本)$/ });
     this.tocItems = page.locator('.toc-list [role="treeitem"]');
     this.searchResults = page.locator('.search-results li[role="button"]');
-    this.annotationPopup = page.locator('.selection-popup');
+    this.annotationPopup = page.locator('.selection-action-popup, .selection-popup').first();
     // The dictionary shares Popup's `.popup-container` chrome with the
     // translator, so key off its results header test id instead.
     this.dictionaryPopup = page.locator('.popup-container:has([data-testid="dict-title"])');
@@ -458,6 +458,249 @@ export class ReaderPage extends BasePage {
   }
 
   /**
+   * Select text in a PDF.js text layer with actual mouse input.
+   *
+   * This deliberately avoids creating a Range in page script. It proves the
+   * transparent text layer is aligned with the original PDF canvas and takes
+   * part in the browser's native pointer-selection pipeline.
+   */
+  async selectPdfTextWithMouse(modifier?: 'Control' | 'Meta'): Promise<string> {
+    const viewport = this.page.viewportSize() ?? { width: 1280, height: 720 };
+
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const iframes = this.page.locator('.foliate-viewer iframe');
+      const frameCount = await iframes.count();
+      for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
+        const frame = iframes.nth(frameIndex).contentFrame();
+        const spans = frame.locator('.textLayer span');
+        const spanCount = await spans.count().catch(() => 0);
+        for (let spanIndex = 0; spanIndex < Math.min(spanCount, 80); spanIndex += 1) {
+          const span = spans.nth(spanIndex);
+          const text = (await span.textContent().catch(() => ''))?.trim() ?? '';
+          const box = await span.boundingBox().catch(() => null);
+          if (
+            text.length < 8 ||
+            !box ||
+            box.width < 50 ||
+            box.height < 5 ||
+            box.x < 0 ||
+            box.y < 0 ||
+            box.x + box.width > viewport.width ||
+            box.y + box.height > viewport.height
+          ) {
+            continue;
+          }
+
+          const style = await span.evaluate((node) => {
+            const computed = getComputedStyle(node);
+            return {
+              cursor: computed.cursor,
+              position: computed.position,
+              userSelect: computed.userSelect,
+            };
+          });
+          if (
+            style.position !== 'absolute' ||
+            style.cursor !== 'text' ||
+            style.userSelect === 'none'
+          ) {
+            continue;
+          }
+
+          const y = box.y + box.height / 2;
+          if (modifier) await this.page.keyboard.down(modifier);
+          try {
+            await this.page.mouse.move(box.x + Math.min(3, box.width * 0.05), y);
+            await this.page.mouse.down();
+            await this.page.mouse.move(box.x + box.width * 0.8, y, { steps: 12 });
+            await this.page.mouse.up();
+          } finally {
+            if (modifier) await this.page.keyboard.up(modifier);
+          }
+
+          const selected = await frame
+            .locator('body')
+            .evaluate(() => document.getSelection()?.toString().trim() ?? '');
+          if (selected) return selected;
+        }
+      }
+      await this.page.waitForTimeout(400);
+    }
+
+    throw new Error('real mouse drag did not select text in a visible PDF.js text layer');
+  }
+
+  async selectedPdfAnchor(): Promise<{
+    bookKey: string;
+    bookHash: string;
+    text: string;
+    page: number;
+    index: number;
+    cfi: string;
+  }> {
+    return this.foliateView.evaluate((element) => {
+      const view = element as HTMLElement & {
+        getCFI: (index: number, range: Range) => string;
+        renderer: { getContents: () => { doc?: Document; index: number }[] };
+      };
+      for (const content of view.renderer.getContents()) {
+        const selection = content.doc?.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) continue;
+        const range = selection.getRangeAt(0);
+        const bookKey = view.id.replace(/^foliate-view-/, '');
+        return {
+          bookKey,
+          bookHash: bookKey.split('-')[0] ?? '',
+          text: selection.toString().trim(),
+          page: content.index + 1,
+          index: content.index,
+          cfi: view.getCFI(content.index, range),
+        };
+      }
+      throw new Error('no live PDF selection was available to anchor');
+    });
+  }
+
+  async persistAnchoredConversation(
+    conversationId: string,
+    anchor: Awaited<ReturnType<ReaderPage['selectedPdfAnchor']>>,
+  ): Promise<void> {
+    await this.page.evaluate(
+      async ({ id, selection }) => {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('readest-ai', 3);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        await new Promise<void>((resolve, reject) => {
+          const transaction = db.transaction('conversations', 'readwrite');
+          transaction.objectStore('conversations').put({
+            id,
+            bookHash: selection.bookHash,
+            title: '已保存的 PDF 提问',
+            anchor: { ...selection, id: `${id}:anchor` },
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          });
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+        });
+        db.close();
+      },
+      { id: conversationId, selection: anchor },
+    );
+  }
+
+  async conversationMarkerCount(): Promise<number> {
+    return this.foliateView.evaluate((element) => {
+      const view = element as HTMLElement & {
+        renderer: { getContents: () => { overlayer?: { element: SVGSVGElement } }[] };
+      };
+      return view.renderer
+        .getContents()
+        .reduce(
+          (count, content) =>
+            count +
+            (content.overlayer?.element.querySelectorAll('circle[fill="#2563eb"]').length ?? 0),
+          0,
+        );
+    });
+  }
+
+  async clickConversationMarker(): Promise<string> {
+    return this.foliateView.evaluate(async (element) => {
+      const view = element as HTMLElement & {
+        renderer: {
+          getContents: () => {
+            doc?: Document;
+            overlayer?: { element: SVGSVGElement };
+          }[];
+        };
+      };
+      const content = view.renderer
+        .getContents()
+        .find((item) => item.overlayer?.element.querySelector('circle[fill="#2563eb"]'));
+      const circle = content?.overlayer?.element.querySelector('circle[fill="#2563eb"]');
+      if (!content?.doc || !circle) throw new Error('no conversation marker was available');
+      const shown = new Promise<string>((resolve) => {
+        view.addEventListener(
+          'show-annotation',
+          (event) => resolve((event as CustomEvent<{ value: string }>).detail.value),
+          { once: true },
+        );
+      });
+      content.doc.body.dispatchEvent(
+        new MouseEvent('click', {
+          clientX: Number(circle.getAttribute('cx')),
+          clientY: Number(circle.getAttribute('cy')),
+          bubbles: true,
+        }),
+      );
+      return shown;
+    });
+  }
+
+  async originalPdfCanvasCount(): Promise<number> {
+    let total = 0;
+    const iframes = this.page.locator('.foliate-viewer iframe');
+    for (let index = 0; index < (await iframes.count()); index += 1) {
+      total += await iframes.nth(index).contentFrame().locator('#canvas > canvas').count();
+    }
+    return total;
+  }
+
+  async pdfTextLayerCount(): Promise<number> {
+    let total = 0;
+    const iframes = this.page.locator('.foliate-viewer iframe');
+    for (let index = 0; index < (await iframes.count()); index += 1) {
+      total += await iframes.nth(index).contentFrame().locator('.textLayer').count();
+    }
+    return total;
+  }
+
+  async pdfScrollPageCount(): Promise<number> {
+    return this.page.evaluate(() => {
+      const view = document.querySelector('foliate-view') as HTMLElement & {
+        renderer?: HTMLElement;
+      };
+      const root = view?.renderer?.shadowRoot;
+      return root?.querySelectorAll('.scroll-page').length ?? 0;
+    });
+  }
+
+  async scrollToPdfPage(index: number): Promise<void> {
+    await this.foliateView.evaluate((view, pageIndex) => {
+      const renderer = (view as HTMLElement & { renderer?: HTMLElement }).renderer;
+      const pages = renderer?.shadowRoot?.querySelectorAll<HTMLElement>('.scroll-page');
+      pages?.item(pageIndex).scrollIntoView({ block: 'center' });
+    }, index);
+  }
+
+  async pdfPageGeometry(): Promise<{
+    count: number;
+    width: number;
+    center: number;
+    viewerCenter: number;
+  }> {
+    return this.page.evaluate(() => {
+      const viewer = document.querySelector('.foliate-viewer')?.getBoundingClientRect();
+      const view = document.querySelector('foliate-view') as HTMLElement & {
+        renderer?: HTMLElement;
+      };
+      const pages = [...(view?.renderer?.shadowRoot?.querySelectorAll('.scroll-page') ?? [])]
+        .map((node) => node.getBoundingClientRect())
+        .filter((rect) => rect.width > 0 && rect.height > 0);
+      const first = pages[0];
+      return {
+        count: pages.length,
+        width: first?.width ?? 0,
+        center: first ? first.left + first.width / 2 : 0,
+        viewerCenter: viewer ? viewer.left + viewer.width / 2 : 0,
+      };
+    });
+  }
+
+  /**
    * Turn on an instant quick action (`Instant Dictionary`, `Instant Highlight`,
    * …) from the header bar's quick-action dropdown.
    */
@@ -567,5 +810,16 @@ export class ReaderPage extends BasePage {
     const item = this.annotationItems.first();
     await item.hover();
     await item.getByRole('button', { name: 'Delete' }).click();
+  }
+
+  /** Page containing the temporary SyncTeX target over an actual PDF canvas. */
+  async pdfSourceMarkerPage(): Promise<number | null> {
+    for (const frame of this.page.frames()) {
+      const marker = frame.locator('[data-testid="pdf-source-target"]');
+      if ((await marker.count()) === 0) continue;
+      if ((await frame.locator('#canvas canvas').count()) === 0) return null;
+      return Number(await marker.first().getAttribute('data-page'));
+    }
+    return null;
   }
 }

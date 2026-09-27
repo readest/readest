@@ -4,6 +4,7 @@ import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
 import type { MediaOverlayTTS } from '@/services/tts/mediaOverlay/MediaOverlayTTS';
 import { LocaleWithTextInfo } from './misc';
+import type { ConversationMarker } from '@/services/ai/conversationMarkers';
 
 // The mark source driving Read Aloud: foliate's text segmentation for
 // synthesized speech, or the book's own Media Overlay pars when playing its
@@ -13,6 +14,23 @@ export type ViewTTS = TTS | MediaOverlayTTS;
 export const NOTE_PREFIX = 'foliate-note:';
 
 type RangeAnchor = (doc: Document) => Range;
+
+interface FoliateOverlayer {
+  element: SVGSVGElement;
+  add: (
+    key: string,
+    range: Range,
+    draw: (rects: DOMRect[], options?: { color?: string }) => SVGElement,
+    options?: { color?: string },
+  ) => void;
+  remove: (key: string) => void;
+}
+
+interface RendererContent {
+  doc: Document;
+  index?: number;
+  overlayer?: FoliateOverlayer;
+}
 
 export interface Renderer extends HTMLElement {
   scrolled?: boolean;
@@ -47,7 +65,7 @@ export interface Renderer extends HTMLElement {
   goTo: (params: { index: number; anchor?: number | RangeAnchor }) => Promise<void>;
   setStyles?: (css: string) => void;
   primaryIndex: number;
-  getContents: () => { doc: Document; index?: number; overlayer?: unknown }[];
+  getContents: () => RendererContent[];
   scrollToAnchor?: (anchor: number | Range, reason?: string, smooth?: boolean) => void;
   addEventListener: (
     type: string,
@@ -78,7 +96,7 @@ export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
   close: () => void;
   init: (options: { lastLocation: string }) => void;
-  goTo: (target: string | number) => void;
+  goTo: (target: string | number) => Promise<void>;
   goToFraction: (fraction: number) => void;
   getSectionFractions: () => number[];
   prev: (distance?: number) => void;
@@ -96,9 +114,12 @@ export interface FoliateView extends HTMLElement {
     time: { section: number; total: number };
   } | null>;
   resolveCFI: (cfi: string) => { index: number; anchor: RangeAnchor };
-  resolveNavigation: (cfiOrHrefOrIndex: string | number) => { index: number; anchor?: RangeAnchor };
+  resolveNavigation: (cfiOrHrefOrIndex: string | number) => {
+    index: number;
+    anchor?: RangeAnchor;
+  };
   addAnnotation: (
-    note: BookNote & { value?: string },
+    note: (BookNote & { value?: string }) | ConversationMarker,
     remove?: boolean,
   ) => { index: number; label: string };
   search: (config: BookSearchConfig) => AsyncGenerator<BookSearchResult | string, void, void>;
@@ -134,7 +155,7 @@ export interface FoliateView extends HTMLElement {
 
 export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   const originalAddAnnotation = originalView.addAnnotation.bind(originalView);
-  originalView.addAnnotation = (note: BookNote, remove = false) => {
+  originalView.addAnnotation = (note: BookNote | ConversationMarker, remove = false) => {
     // transform BookNote to foliate annotation
     const annotation = {
       value: note.cfi,

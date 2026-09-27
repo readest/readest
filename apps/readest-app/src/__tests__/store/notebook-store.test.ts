@@ -13,6 +13,9 @@ beforeEach(() => {
     notebookNewHighlightIds: [],
     notebookEditAnnotation: null,
     notebookAnnotationDrafts: {},
+    aiQuestionAnchor: null,
+    aiDraftAttachments: [],
+    sourceLocationRequest: null,
   });
 });
 
@@ -234,6 +237,41 @@ describe('notebookStore', () => {
       expect(state.notebookNewHighlightIds).toEqual([]);
       expect(state.notebookEditAnnotation).toBeNull();
       expect(state.notebookAnnotationDrafts).toEqual({});
+      expect(state.aiQuestionAnchor).toBeNull();
+      expect(state.aiDraftAttachments).toEqual([]);
+      expect(state.sourceLocationRequest).toBeNull();
     });
+  });
+});
+
+describe('explicit selection actions', () => {
+  const context = {
+    id: 'book:selection',
+    bookKey: 'book-1',
+    text: 'Selected text',
+    page: 2,
+    index: 1,
+  };
+
+  test('stores a question target only after Ask is chosen', () => {
+    expect(useNotebookStore.getState().aiQuestionAnchor).toBeNull();
+    useNotebookStore.getState().setAIQuestionAnchor(context);
+    expect(useNotebookStore.getState().aiQuestionAnchor).toEqual(context);
+    expect(useNotebookStore.getState().aiDraftAttachments).toEqual([]);
+  });
+
+  test('keeps attachments independent and removable', () => {
+    useNotebookStore.getState().addAIDraftAttachment(context);
+    useNotebookStore.getState().addAIDraftAttachment({ ...context, id: 'book:selection-2' });
+    expect(useNotebookStore.getState().aiDraftAttachments).toHaveLength(2);
+    useNotebookStore.getState().removeAIDraftAttachment(context.id);
+    expect(useNotebookStore.getState().aiDraftAttachments.map((item) => item.id)).toEqual([
+      'book:selection-2',
+    ]);
+  });
+
+  test('records source intent without pretending a source window exists', () => {
+    useNotebookStore.getState().requestSourceLocation(context);
+    expect(useNotebookStore.getState().sourceLocationRequest).toEqual(context);
   });
 });

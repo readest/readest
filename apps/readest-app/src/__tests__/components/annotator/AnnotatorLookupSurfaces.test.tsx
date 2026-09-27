@@ -234,6 +234,9 @@ vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
   default: () => <div data-testid='annotation-toolbar' />,
 }));
+vi.mock('@/app/reader/components/annotator/SelectionActionPopup', () => ({
+  default: () => <div data-testid='selection-action-toolbar' />,
+}));
 // The dismiss button stands in for the popup's close / backdrop tap, so a test
 // can drive the route back out of the lookup.
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
@@ -435,7 +438,7 @@ describe('the instant dictionary hands the selection back when it closes', () =>
 
     expect(h.restoreSelectionRange).toHaveBeenCalledWith(range);
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
-    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+    expect(screen.getByTestId('selection-action-toolbar')).toBeTruthy();
   });
 
   // Xiaomi 13: highlighting the handed-back word re-opened the dictionary.
@@ -459,7 +462,7 @@ describe('the instant dictionary hands the selection back when it closes', () =>
     await act(async () => {
       screen.getByTestId('dictionary-dismiss').click();
     });
-    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+    expect(screen.getByTestId('selection-action-toolbar')).toBeTruthy();
 
     // The tap on the toolbar's highlight swatch: a new gesture (Android bridges
     // every touch on the window, not just those over the page), then the

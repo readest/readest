@@ -15,3 +15,21 @@ export const SAMPLE_EPUB = path.join(
   fixturesDir,
   '../../src/__tests__/fixtures/data/sample-alice.epub',
 );
+
+/** Real PDF with selectable text, used for native PDF.js interaction coverage. */
+export const SAMPLE_PDF = path.join(
+  fixturesDir,
+  '../../src/__tests__/fixtures/data/sample-paper.pdf',
+);
+
+/** Same-named source paired with SAMPLE_PDF during multi-file import. */
+export const SAMPLE_TEX = path.join(
+  fixturesDir,
+  '../../src/__tests__/fixtures/data/sample-paper.tex',
+);
+
+/** Minimal valid SyncTeX map covering page 1 and pointing to source line 4. */
+export const SAMPLE_SYNCTEX = path.join(
+  fixturesDir,
+  '../../src/__tests__/fixtures/data/sample-paper.synctex',
+);

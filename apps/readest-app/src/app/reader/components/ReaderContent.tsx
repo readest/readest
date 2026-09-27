@@ -88,6 +88,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const pendingNotebookTransitionRef = useRef<(() => Promise<void>) | null>(null);
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
+
   const isAndroidApp = appService?.isAndroidApp === true;
   // Settings > Behavior > Device > Gamepad Support. Off when the device's own
   // remapper already binds the controller to keys (issue #5979).

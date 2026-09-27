@@ -75,6 +75,7 @@ import {
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
 import { lockScreenOrientation, setSelectionSuppressed } from '@/utils/bridge';
@@ -98,6 +99,13 @@ import { setCoverSpread } from '@/utils/spread';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
+import {
+  PDF_SOURCE_LOCATION_EVENT,
+  isPdfSourceLocationMessage,
+  isPdfSourceTarget,
+  showPdfSourceTarget,
+  type PdfSourceTarget,
+} from '@/services/pdfSourceNavigation';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
@@ -121,7 +129,17 @@ const FoliateViewer: React.FC<{
   config: BookConfig;
   gridInsets: Insets;
   contentInsets: Insets;
-}> = ({ bookKey, bookDoc, config, gridInsets, contentInsets: insets }) => {
+  className?: string;
+  onPdfPageCount?: (total: number) => void;
+}> = ({
+  bookKey,
+  bookDoc,
+  config,
+  gridInsets,
+  contentInsets: insets,
+  className,
+  onPdfPageCount,
+}) => {
   const _ = useTranslation();
   const searchParams = useSearchParams();
   const { appService, envConfig } = useEnv();
@@ -188,6 +206,37 @@ const FoliateViewer: React.FC<{
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
+  useEffect(() => {
+    const navigate = (target: PdfSourceTarget) => {
+      if (target.bookKey !== bookKey || bookData?.book?.format !== 'PDF' || !viewRef.current)
+        return;
+      void showPdfSourceTarget(viewRef.current, target).then((shown) => {
+        if (!shown) setToastMessage('无法在 PDF 中定位这行源码。');
+      });
+    };
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || !isPdfSourceLocationMessage(event.data))
+        return;
+      navigate(event.data.target);
+    };
+    window.addEventListener('message', onMessage);
+
+    let unlisten: (() => void) | undefined;
+    if (isTauriAppPlatform()) {
+      void getCurrentWebviewWindow()
+        .listen<unknown>(PDF_SOURCE_LOCATION_EVENT, (event) => {
+          if (isPdfSourceTarget(event.payload)) navigate(event.payload);
+        })
+        .then((cleanup) => {
+          unlisten = cleanup;
+        });
+    }
+    return () => {
+      window.removeEventListener('message', onMessage);
+      unlisten?.();
+    };
+  }, [bookData?.book?.format, bookKey]);
+
   useUICSS(bookKey);
   useProgressSync(bookKey);
   useABSProgressSync(bookKey);
@@ -216,6 +265,7 @@ const FoliateViewer: React.FC<{
   // by the browser's normal vsync loop, and doesn't accumulate when
   // the page is busy — which is the behaviour we want here.
   const pendingRelocateRef = useRef<CustomEvent | null>(null);
+  const pdfPageCountCleanupRef = useRef<(() => void) | null>(null);
   const relocateRafRef = useRef<number | null>(null);
   const cancelRelocateScheduled = useCallback(() => {
     const id = relocateRafRef.current;
@@ -287,6 +337,8 @@ const FoliateViewer: React.FC<{
       }
       cancelRelocateScheduled();
       pendingRelocateRef.current = null;
+      pdfPageCountCleanupRef.current?.();
+      pdfPageCountCleanupRef.current = null;
     };
   }, [cancelRelocateScheduled, commitRelocate]);
 
@@ -736,6 +788,21 @@ const FoliateViewer: React.FC<{
       viewRef.current = view;
       setFoliateView(bookKey, view);
 
+      if (bookData?.book?.format === 'PDF' && onPdfPageCount) {
+        const root = view.renderer.shadowRoot;
+        if (root) {
+          const updatePdfPageCount = () => {
+            const total = root.querySelectorAll('.scroll-page').length;
+            if (total > 0) onPdfPageCount(total);
+          };
+          const mutationObserver = new MutationObserver(updatePdfPageCount);
+          mutationObserver.observe(root, { childList: true, subtree: true });
+          pdfPageCountCleanupRef.current = () => {
+            mutationObserver.disconnect();
+          };
+        }
+      }
+
       const { book } = view;
 
       book.transformTarget?.addEventListener('load', async (event: Event) => {
@@ -816,6 +883,15 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
         view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
         view.renderer.toggleAttribute('lock-pan-x', !!viewSettings.lockHorizontalPan);
+        // PDF is a continuous document, not a two-page spread. Keep the
+        // original PDF.js canvas/text layer for every section, but use the
+        // renderer's native scroll mode so all pages are mounted in one
+        // vertically centered reading surface. EPUB fixed-layout books keep
+        // their user-selected pagination settings.
+        if (bookData?.book?.format === 'PDF') {
+          view.renderer.setAttribute('flow', 'scrolled');
+          view.renderer.setAttribute('scroll-direction', 'vertical');
+        }
       } else {
         view.renderer.setAttribute('max-column-count', maxColumnCount);
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
@@ -901,7 +977,8 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-left', `${leftMargin}px`);
 
-    if (viewSettings.scrolled) {
+    const isPdfContinuous = bookData?.book?.format === 'PDF' && bookData.isFixedLayout;
+    if (viewSettings.scrolled || isPdfContinuous) {
       const headerVisible = showTopHeader;
       const footerVisible = showBottomFooter;
       const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
@@ -913,7 +990,10 @@ const FoliateViewer: React.FC<{
       const scrollBottom = footerVisible
         ? Math.max(footerBarHeight, miniPlayerClearance)
         : miniPlayerClearance;
-      setScrollMargins({ top: bookData?.isFixedLayout ? 0 : scrollTop, bottom: scrollBottom });
+      setScrollMargins({
+        top: isPdfContinuous ? 0 : bookData?.isFixedLayout ? 0 : scrollTop,
+        bottom: scrollBottom,
+      });
     } else {
       setScrollMargins({ top: 0, bottom: 0 });
     }
@@ -922,9 +1002,9 @@ const FoliateViewer: React.FC<{
       'scroll-direction',
       viewSettings.scrolledDirection === 'horizontal' ? 'horizontal' : 'vertical',
     );
-    if (viewSettings.scrolled) {
+    if (viewSettings.scrolled || isPdfContinuous) {
       viewRef.current?.renderer.setAttribute('flow', 'scrolled');
-      if (viewSettings.noContinuousScroll) {
+      if (!isPdfContinuous && viewSettings.noContinuousScroll) {
         viewRef.current?.renderer.setAttribute('no-continuous-scroll', '');
       } else {
         viewRef.current?.renderer.removeAttribute('no-continuous-scroll');
@@ -1148,6 +1228,7 @@ const FoliateViewer: React.FC<{
         aria-label={_('Book Content')}
         className={clsx(
           'foliate-viewer absolute h-[100%] w-[100%] focus:outline-hidden',
+          className,
           viewState?.loading && 'bg-base-100',
         )}
         style={{
