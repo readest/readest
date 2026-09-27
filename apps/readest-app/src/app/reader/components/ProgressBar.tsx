@@ -14,7 +14,13 @@ import {
   getChapterLocationsLeft,
   getReferencePageInfo,
 } from '@/utils/progress';
-import { footerInfoVisible, footerReservesBand, getCornerClearance } from '../utils/footerBand';
+import {
+  type BottomCornerRadii,
+  footerInfoVisible,
+  footerReservesBand,
+  getCornerClearance,
+  NO_CORNERS,
+} from '../utils/footerBand';
 import {
   getChromeChip,
   getChromeFontSize,
@@ -32,8 +38,8 @@ interface ProgressBarProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
-  // Radius (px) of the rounded screen corners this footer's ends run into.
-  cornerRadius?: number;
+  // Rounded screen corners this footer's ends run into.
+  cornerRadii?: BottomCornerRadii;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -41,7 +47,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
-  cornerRadius = 0,
+  cornerRadii = NO_CORNERS,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -214,15 +220,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // screen corners a small bottom margin drops its ends into the corner arc.
   // Pull them inward just enough to clear it; the book layout is untouched.
   const bottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-  const cornerClearance = isVertical
-    ? 0
-    : getCornerClearance(
-        cornerRadius,
-        bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2,
-      );
-  const inlinePadding = (inset: number) => {
+  const textBottom = bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2;
+  const cornerClearance = (radius: number) =>
+    isVertical ? 0 : getCornerClearance(radius, textBottom);
+  const inlinePadding = (inset: number, clearance: number) => {
     const padding = `calc(${horizontalGap / 2}% + ${inset / 2}px)`;
-    return cornerClearance > 0 ? `max(${padding}, ${cornerClearance.toFixed(1)}px)` : padding;
+    return clearance > 0 ? `max(${padding}, ${clearance.toFixed(1)}px)` : padding;
   };
 
   return (
@@ -270,8 +273,16 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
             }
           : {
-              paddingInlineStart: inlinePadding(contentInsets.left),
-              paddingInlineEnd: inlinePadding(contentInsets.right),
+              // The reader never sets dir=rtl on this container, so inline
+              // start is always the physical left.
+              paddingInlineStart: inlinePadding(
+                contentInsets.left,
+                cornerClearance(cornerRadii.left),
+              ),
+              paddingInlineEnd: inlinePadding(
+                contentInsets.right,
+                cornerClearance(cornerRadii.right),
+              ),
               paddingBottom: bottomPadding ? `${bottomPadding}px` : 0,
             }),
       }}

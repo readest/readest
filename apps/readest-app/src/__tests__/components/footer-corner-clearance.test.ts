@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getCornerClearance } from '@/app/reader/utils/footerBand';
+import { getCellCornerRadii, getCornerClearance } from '@/app/reader/utils/footerBand';
 
 // Phones with rounded screen corners clip the ends of the footer when its text
 // sits low enough to fall inside the corner arc. The clearance is how far the
@@ -25,5 +25,30 @@ describe('getCornerClearance', () => {
   it('treats text touching the screen edge as needing the full radius', () => {
     expect(getCornerClearance(45, 0)).toBe(49);
     expect(getCornerClearance(45, -3)).toBe(49);
+  });
+});
+
+// A book cell only meets the rounded corners its bottom edge actually shares
+// with the screen: side by side, the inner edges sit mid-screen.
+describe('getCellCornerRadii', () => {
+  const landscape = 16 / 9;
+  const portrait = 9 / 16;
+
+  it('gives a single book both bottom corners', () => {
+    expect(getCellCornerRadii(0, 1, portrait, 49)).toEqual({ left: 49, right: 49 });
+  });
+
+  it('gives side-by-side books only their outer corner', () => {
+    expect(getCellCornerRadii(0, 2, landscape, 49)).toEqual({ left: 49, right: 0 });
+    expect(getCellCornerRadii(1, 2, landscape, 49)).toEqual({ left: 0, right: 49 });
+  });
+
+  it('gives stacked books corners only on the bottom row', () => {
+    expect(getCellCornerRadii(0, 2, portrait, 49)).toEqual({ left: 0, right: 0 });
+    expect(getCellCornerRadii(1, 2, portrait, 49)).toEqual({ left: 49, right: 49 });
+  });
+
+  it('gives nothing when the screen reports no radius', () => {
+    expect(getCellCornerRadii(0, 1, portrait, 0)).toEqual({ left: 0, right: 0 });
   });
 });
