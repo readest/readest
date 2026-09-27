@@ -539,6 +539,10 @@ export class DocumentLoader {
         // directory means N chunked scheme round trips, all of which used
         // to sit in front of EPUB.init().
         const entriesPromise = isEPUBLike ? openZipEntries(this.file) : null;
+        // Avoid an unhandled rejection while the Rust prefetch below is still
+        // awaited; the rejection still surfaces via the await in makeZipLoader
+        // and the catch in open().
+        entriesPromise?.catch(() => undefined);
         let prefetch: { textCache: Map<string, string>; sizes: Map<string, number> } | undefined;
         if (isEPUBLike && this.nativeFilePath) {
           const { tryNativePrefetchEpub } = await import('@/utils/tauriEpubBridge');

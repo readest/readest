@@ -210,6 +210,10 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       // instead of serializing behind them. Every `await configPromise`
       // resolves to the same object.
       const configPromise = appService.loadBookConfig(book, settings);
+      // Avoid an unhandled rejection if the open path fails before the
+      // config awaits below are ever reached; the rejection still propagates
+      // at those await sites.
+      configPromise.catch(() => undefined);
       const annotationImportPromise = import('@/services/annotation');
       // Avoid an unhandled rejection if the open path throws before the
       // annotation section below ever awaits this import.
