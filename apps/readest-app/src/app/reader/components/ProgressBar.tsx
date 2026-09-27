@@ -14,7 +14,7 @@ import {
   getChapterLocationsLeft,
   getReferencePageInfo,
 } from '@/utils/progress';
-import { footerInfoVisible, footerReservesBand } from '../utils/footerBand';
+import { footerInfoVisible, footerReservesBand, getCornerClearance } from '../utils/footerBand';
 import {
   getChromeChip,
   getChromeFontSize,
@@ -32,6 +32,8 @@ interface ProgressBarProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  // Radius (px) of the rounded screen corners this footer's ends run into.
+  cornerRadius?: number;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -39,6 +41,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  cornerRadius = 0,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -207,6 +210,21 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const fontSize = getChromeFontSize(viewSettings, isEink);
   const showStatusInfo = hasTimeInfo || hasBatteryInfo;
 
+  // The text is centered in the marginBottomPx strip, so on phones with rounded
+  // screen corners a small bottom margin drops its ends into the corner arc.
+  // Pull them inward just enough to clear it; the book layout is untouched.
+  const bottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
+  const cornerClearance = isVertical
+    ? 0
+    : getCornerClearance(
+        cornerRadius,
+        bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2,
+      );
+  const inlinePadding = (inset: number) => {
+    const padding = `calc(${horizontalGap / 2}% + ${inset / 2}px)`;
+    return cornerClearance > 0 ? `max(${padding}, ${cornerClearance.toFixed(1)}px)` : padding;
+  };
+
   return (
     <div
       role='presentation'
@@ -252,9 +270,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
             }
           : {
-              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
-              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right / 2}px)`,
-              paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
+              paddingInlineStart: inlinePadding(contentInsets.left),
+              paddingInlineEnd: inlinePadding(contentInsets.right),
+              paddingBottom: bottomPadding ? `${bottomPadding}px` : 0,
             }),
       }}
     >

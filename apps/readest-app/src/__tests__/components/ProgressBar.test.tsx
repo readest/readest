@@ -643,3 +643,31 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     );
   });
 });
+
+describe('ProgressBar — rounded screen corners', () => {
+  const renderWithCorner = (cornerRadius: number) =>
+    render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={5}
+        contentInsets={{ top: 0, right: 16, bottom: 0, left: 16 }}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        cornerRadius={cornerRadius}
+      />,
+    );
+
+  it('pulls the footer ends clear of the corner arc when the bottom margin is small', () => {
+    currentViewSettings = { ...baseSettings, marginBottomPx: 16, headerFooterFontSize: 12 };
+    const { container } = renderWithCorner(45);
+    const style = container.querySelector<HTMLElement>('.progressinfo')!.getAttribute('style');
+    expect(style).toContain('max(calc(2.5% + 8px), 35.7px)');
+  });
+
+  it('keeps the regular padding when the text sits above the corner arc', () => {
+    // Text bottom = 104 / 2 - 12 / 2 = 46px, above the 45px corner.
+    currentViewSettings = { ...baseSettings, marginBottomPx: 104, headerFooterFontSize: 12 };
+    const { container } = renderWithCorner(45);
+    const style = container.querySelector<HTMLElement>('.progressinfo')!.getAttribute('style');
+    expect(style).not.toContain('max(');
+  });
+});

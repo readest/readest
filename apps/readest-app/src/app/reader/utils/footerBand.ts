@@ -14,6 +14,20 @@ export const footerInfoVisible = (viewSettings: ViewSettings): boolean =>
   );
 
 /**
+ * Inline padding (px) the footer needs so its text keeps clear of a rounded
+ * screen corner of `radius` px, given the height (px above the screen bottom)
+ * of the text's lowest point. At height h the corner arc reaches
+ * R - sqrt(R^2 - (R - h)^2) px inward; a small gap is added on top. Zero when
+ * there is no corner or the text sits above the arc.
+ */
+export const getCornerClearance = (radius: number, textBottom: number): number => {
+  if (radius <= 0 || textBottom >= radius) return 0;
+  const gap = 4;
+  const rise = radius - Math.max(0, textBottom);
+  return radius - Math.sqrt(radius * radius - rise * rise) + gap;
+};
+
+/**
  * Whether the book layout must reserve the full-width bottom band
  * (marginBottomPx of page margin / scroll padding) for the footer.
  *

@@ -235,6 +235,10 @@ pub struct GetSafeAreaInsetsResponse {
     pub bottom: f64,
     pub left: f64,
     pub right: f64,
+    /// Radius (CSS px) of the rounded bottom screen corners; absent where the
+    /// platform does not report it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bottom_corner_radius: Option<f64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

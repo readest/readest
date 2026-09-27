@@ -68,6 +68,8 @@ interface BookCellProps {
   index: number;
   gridInsets: Insets;
   screenInsets: Insets;
+  // Radius of the rounded screen corner(s) this cell's bottom edge meets.
+  cornerRadius: number;
   appServiceHasRoundedWindow: boolean;
   isHoveredAnim: boolean;
   hoveredBookKey: string | null;
@@ -82,6 +84,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
   index,
   gridInsets,
   screenInsets,
+  cornerRadius,
   appServiceHasRoundedWindow,
   isHoveredAnim,
   hoveredBookKey,
@@ -257,6 +260,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
             horizontalGap={horizontalGapPercent}
             contentInsets={contentInsets}
             gridInsets={gridInsets}
+            cornerRadius={cornerRadius}
           />
         )}
       </div>
@@ -297,7 +301,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
   const sideBarBookKey = useSidebarStore((s) => s.sideBarBookKey);
   const [dropdownOpenBook, setDropdownOpenBook] = useState<string>('');
 
-  const { safeAreaInsets: screenInsets } = useThemeStore();
+  const { safeAreaInsets: screenInsets, screenCornerRadius } = useThemeStore();
   const aspectRatio = window.innerWidth / window.innerHeight;
   const gridTemplate = getGridTemplate(bookKeys.length, aspectRatio);
 
@@ -334,6 +338,16 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
     // and won't change between resizes; including it explicitly so an
     // orientation change still busts the cache.
   }, [bookKeys, screenInsets, aspectRatio]);
+
+  // Only cells sitting in a bottom corner of the screen meet a rounded corner.
+  const perBookCornerRadius = useMemo<number[]>(
+    () =>
+      bookKeys.map((_bookKey, index) => {
+        const { right, bottom, left } = getInsetEdges(index, bookKeys.length, aspectRatio);
+        return bottom && (left || right) ? screenCornerRadius : 0;
+      }),
+    [bookKeys, screenCornerRadius, aspectRatio],
+  );
 
   useEffect(() => {
     if (!screenInsets) return;
@@ -373,6 +387,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           index={index}
           gridInsets={perBookGridInsets[index]!}
           screenInsets={screenInsets}
+          cornerRadius={perBookCornerRadius[index] ?? 0}
           appServiceHasRoundedWindow={appServiceHasRoundedWindow}
           isHoveredAnim={isHoveredAnim}
           hoveredBookKey={hoveredBookKey}

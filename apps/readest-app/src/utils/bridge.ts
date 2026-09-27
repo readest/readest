@@ -84,6 +84,7 @@ export interface GetSafeAreaInsetsResponse {
   right: number;
   bottom: number;
   left: number;
+  bottomCornerRadius?: number;
   error?: string;
 }
 
