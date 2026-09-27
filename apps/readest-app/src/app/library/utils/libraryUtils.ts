@@ -211,11 +211,6 @@ export const getBookSubjects = (book: Book): string[] => {
   return getContributorNames(book.metadata?.subject);
 };
 
-const getBookYears = (book: Book): string[] => {
-  const year = book.metadata?.published?.slice(0, 4);
-  return year && /^\d{4}$/.test(year) ? [year] : [];
-};
-
 export const getBookTags = (book: Book): string[] => normalizeValues(book.tags ?? []);
 
 export const getLibraryTags = (books: Book[]): string[] =>
@@ -573,10 +568,6 @@ export const createBookGroups = (
   if (groupBy === LibraryGroupByType.Subject) {
     return createValueGroups(activeBooks, 'subject', getBookSubjects);
   }
-  if (groupBy === LibraryGroupByType.Year) {
-    // Publication year from calibre's pubdate (ISO string → first four digits).
-    return createValueGroups(activeBooks, 'year', getBookYears);
-  }
   if (groupBy === LibraryGroupByType.Status) {
     return createValueGroups(
       activeBooks,
@@ -685,7 +676,7 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
 
 const createValueGroups = (
   books: Book[],
-  namespace: 'tag' | 'subject' | 'status' | 'year',
+  namespace: 'tag' | 'subject' | 'status',
   getValues: (book: Book) => string[],
   /**
    * Maps an internal value to a translation *key*. Supply this only for

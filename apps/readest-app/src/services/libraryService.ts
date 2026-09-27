@@ -5,39 +5,6 @@ import { safeLoadJSON, safeSaveJSON } from './persistence';
 
 const COVER_CONCURRENCY = 20;
 
-/**
- * The mtime+size of library.json as of THIS window's last write. While the
- * file on disk still matches it, the merge-floor reload below can be
- * skipped: reloading and parsing the whole file before every save (a 15k
- * book library runs tens of MB) dominated large-library sync saves. Any
- * other window's write changes mtime/size and restores the defensive
- * reload, so multi-window correctness is kept.
- */
-let lastLibraryWrite: { mtimeMs: number; size: number } | null = null;
-
-const diskMatchesLastWrite = async (fs: FileSystem, libraryFile: string): Promise<boolean> => {
-  if (!lastLibraryWrite) return false;
-  try {
-    const info = await fs.stats(libraryFile, 'Books');
-    return (
-      !!info?.mtime &&
-      info.mtime.getTime() === lastLibraryWrite.mtimeMs &&
-      info.size === lastLibraryWrite.size
-    );
-  } catch {
-    return false;
-  }
-};
-
-const recordLibraryWrite = async (fs: FileSystem, libraryFile: string): Promise<void> => {
-  try {
-    const info = await fs.stats(libraryFile, 'Books');
-    lastLibraryWrite = info?.mtime ? { mtimeMs: info.mtime.getTime(), size: info.size } : null;
-  } catch {
-    lastLibraryWrite = null;
-  }
-};
-
 async function processInBatches<T>(
   items: T[],
   concurrency: number,
@@ -75,11 +42,9 @@ export async function saveLibraryBooks(
 ): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const incoming = books.map(({ coverImageUrl, ...rest }) => rest);
-  const libraryFile = getLibraryFilename();
 
   if (options?.replace) {
-    await safeSaveJSON(fs, libraryFile, 'Books', incoming);
-    await recordLibraryWrite(fs, libraryFile);
+    await safeSaveJSON(fs, getLibraryFilename(), 'Books', incoming);
     return;
   }
 
@@ -89,18 +54,9 @@ export async function saveLibraryBooks(
   // This stops a stale or partially-loaded in-memory library (e.g. the
   // cold-start "Open with" race) from wiping library.json. Deliberate removals
   // must go through `{ replace: true }`.
-  //
-  // The reload is skipped while the file still matches this window's last
-  // write — the floor is then provably the data we just wrote (see
-  // lastLibraryWrite), and re-reading tens of MB per save is pure overhead.
-  if (!(await diskMatchesLastWrite(fs, libraryFile))) {
-    const existing = await safeLoadJSON<Book[]>(fs, getLibraryFilename(), 'Books', []);
-    const merged = new Map<string, Book>();
-    for (const book of existing) merged.set(book.hash, book);
-    for (const book of incoming) merged.set(book.hash, book); // incoming wins per hash
-    await safeSaveJSON(fs, libraryFile, 'Books', Array.from(merged.values()));
-  } else {
-    await safeSaveJSON(fs, libraryFile, 'Books', incoming);
-  }
-  await recordLibraryWrite(fs, libraryFile);
+  const existing = await safeLoadJSON<Book[]>(fs, getLibraryFilename(), 'Books', []);
+  const merged = new Map<string, Book>();
+  for (const book of existing) merged.set(book.hash, book);
+  for (const book of incoming) merged.set(book.hash, book); // incoming wins per hash
+  await safeSaveJSON(fs, getLibraryFilename(), 'Books', Array.from(merged.values()));
 }

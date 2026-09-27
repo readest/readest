@@ -48,7 +48,6 @@ export const LibraryGroupByType = {
   Tag: 'tag',
   Subject: 'subject',
   Status: 'status',
-  Year: 'year',
 } as const;
 
 export type LibraryGroupByType = (typeof LibraryGroupByType)[keyof typeof LibraryGroupByType];

@@ -71,7 +71,6 @@ export const BOOKSHELF_GROUP_LABELS: Record<LibraryGroupByType, string> = {
   tag: _('Tags'),
   subject: _('Subjects'),
   status: _('Status'),
-  year: _('Year'),
 };
 const ruleSchema: z.ZodType<BookshelfRule> = z
   .object({
