@@ -1497,9 +1497,22 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
     }
 
+    // A caller-supplied appWidgetId that isn't a currently bound Bookshelf
+    // Widget instance would otherwise write a preference/cover entry keyed by
+    // whatever id was given, orphaned since onDeleted only ever fires for real
+    // ids.
+    private fun isBoundBookshelfWidget(id: Int): Boolean {
+        val mgr = AppWidgetManager.getInstance(activity) ?: return false
+        return id in mgr.getAppWidgetIds(ComponentName(activity, BookshelfWidgetProvider::class.java))
+    }
+
     @Command
     fun update_bookshelf_widget(invoke: Invoke) {
         val args = invoke.parseArgs(UpdateBookshelfWidgetRequestArgs::class.java)
+        if (!isBoundBookshelfWidget(args.appWidgetId)) {
+            invoke.reject("appWidgetId is not a bound widget")
+            return
+        }
         pluginScope.launch {
             val failed = withContext(Dispatchers.IO) {
                 val items = org.json.JSONArray()
@@ -1512,14 +1525,22 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     // thumbnail is written, so a failure leaves a placeholder.
                     try {
                         if (item.type == "group") {
+                            // The composited cover depends on this widget's own
+                            // filter and mosaic setting, not just the group's
+                            // identity, so two widgets sharing a group (e.g. the
+                            // same "Foundation" series with different settings)
+                            // must not overwrite each other's cover file. "id"
+                            // stays the real group id for the tap intent below.
+                            val coverKey = "${args.appWidgetId}_${item.id}"
                             items.put(
                                 org.json.JSONObject()
                                     .put("type", "group")
                                     .put("id", item.id)
+                                    .put("coverKey", coverKey)
                                     .put("groupBy", item.groupBy)
                                     .put("value", item.value)
                             )
-                            if (!BookshelfWidgetStore.writeGroupTileThumbnail(activity, item.id, item.coverPaths)) {
+                            if (!BookshelfWidgetStore.writeGroupTileThumbnail(activity, coverKey, item.coverPaths)) {
                                 failedTiles++
                             }
                         } else {
@@ -1584,6 +1605,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     fun set_bookshelf_widget_settings(invoke: Invoke) {
         val args = invoke.parseArgs(SetBookshelfWidgetSettingsArgs::class.java)
         val id = args.appWidgetId
+        if (!isBoundBookshelfWidget(id)) {
+            invoke.reject("appWidgetId is not a bound widget")
+            return
+        }
         BookshelfWidgetStore.writeInstanceSettings(activity, id, args.toSettings())
         BookshelfWidgetStore.notifyWidget(activity, id)
         invoke.resolve()

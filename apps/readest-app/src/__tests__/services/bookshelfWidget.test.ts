@@ -519,7 +519,7 @@ describe('refreshBookshelfWidget', () => {
     expect(updateBookshelfWidget).toHaveBeenCalledTimes(2);
   });
 
-  it('drops a call that arrives while one is already running, instead of racing the unchanged-snapshot cache', async () => {
+  it('queues a call that arrives while one is already running, instead of racing the unchanged-snapshot cache', async () => {
     const { getBookshelfWidgetInstances } = await bridge();
     vi.mocked(getBookshelfWidgetInstances).mockClear();
     let active = 0;
@@ -536,9 +536,10 @@ describe('refreshBookshelfWidget', () => {
       return { instances: [instance(1)] };
     });
 
-    // Two more calls while the first is still reading instances: the trigger
-    // that caused this (a debounce, a throttle and an immediate TTS-state
-    // publish firing close together) is fine losing them - the next one runs.
+    // Three calls while the first is still reading instances: the trigger that
+    // caused this (a debounce, a throttle and an immediate TTS-state publish
+    // firing close together) only needs the latest one to run once more, not
+    // to run concurrently with the first.
     const call1 = refreshBookshelfWidget(androidAppService, emptyTitle);
     await Promise.resolve();
     const call2 = refreshBookshelfWidget(androidAppService, emptyTitle);
@@ -547,11 +548,32 @@ describe('refreshBookshelfWidget', () => {
     await Promise.all([call1, call2, call3]);
 
     expect(maxActive).toBe(1);
-    expect(getBookshelfWidgetInstances).toHaveBeenCalledTimes(1);
-
-    // The guard releases once the run finishes, so a later call still works.
-    await refreshBookshelfWidget(androidAppService, emptyTitle);
+    // The initial run, plus one coalesced re-run for calls 2 and 3.
     expect(getBookshelfWidgetInstances).toHaveBeenCalledTimes(2);
+  });
+
+  it('a call from a caller with no other trigger of its own (Save) is not lost to a run already in flight', async () => {
+    const { updateBookshelfWidget, getBookshelfWidgetInstances } = await bridge();
+    vi.mocked(getBookshelfWidgetInstances).mockClear();
+    let releaseFirst!: () => void;
+    const firstBlocked = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    vi.mocked(getBookshelfWidgetInstances)
+      .mockImplementationOnce(async () => {
+        await firstBlocked;
+        return { instances: [instance(1, { name: 'stale' })] };
+      })
+      .mockResolvedValueOnce({ instances: [instance(1, { name: 'fresh' })] });
+
+    const hookRefresh = refreshBookshelfWidget(androidAppService, emptyTitle);
+    await Promise.resolve();
+    const saveRefresh = refreshBookshelfWidget(androidAppService, emptyTitle);
+    releaseFirst();
+    await Promise.all([hookRefresh, saveRefresh]);
+
+    expect(getBookshelfWidgetInstances).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(updateBookshelfWidget).mock.lastCall![0].sectionTitle).toBe('fresh');
   });
 
   it("Android: one instance's update rejecting does not stop the other", async () => {

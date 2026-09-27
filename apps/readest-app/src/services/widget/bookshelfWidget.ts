@@ -203,16 +203,21 @@ const lastPublished = new Map<number, string>();
 // Guards against overlap: useBookshelfWidget fires this from three independent
 // triggers (a debounce, a throttle, and an immediate TTS-state call) that can
 // land close together, and two runs at once would race the lastPublished cache
-// above. A call that arrives mid-refresh is dropped; the next trigger publishes
-// whatever is current by then.
+// above. A call that arrives mid-refresh is queued (coalesced to the latest
+// one) and runs once the current pass finishes, so a caller with no other
+// trigger of its own - the widget-settings page's Save - never gets dropped.
 let running = false;
+let pending: Parameters<typeof refreshBookshelfWidget> | null = null;
 
 export const refreshBookshelfWidget = async (
   appService: AppService,
   emptyTitle: string,
   playback?: BookshelfWidgetPlayback,
 ): Promise<void> => {
-  if (running) return;
+  if (running) {
+    pending = [appService, emptyTitle, playback];
+    return;
+  }
   running = true;
   try {
     if (!appService.isMobileApp) return;
@@ -277,5 +282,8 @@ export const refreshBookshelfWidget = async (
     );
   } finally {
     running = false;
+    const next = pending;
+    pending = null;
+    if (next) await refreshBookshelfWidget(...next);
   }
 };

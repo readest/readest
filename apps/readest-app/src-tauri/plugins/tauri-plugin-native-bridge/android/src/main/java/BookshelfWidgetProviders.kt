@@ -201,14 +201,18 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
                         // title here - mirrors the in-app Library's GroupItem label.
                         bindCell(
                             context, views, coverId, titleId, cellId,
-                            coverHash = item.optString("id"),
+                            // Not "id" (the real group id, used below for the tap
+                            // intent): the composited cover is scoped per widget,
+                            // since which members it draws from depends on this
+                            // widget's own filter and mosaic setting.
+                            coverHash = item.optString("coverKey"),
                             titleText = item.optString("value"),
                             showTitles = showTitles,
                             pendingIntent = groupPendingIntent(
                                 context,
                                 item.optString("groupBy"),
                                 item.optString("id"),
-                                id * 100 + itemIndex
+                                id * MAX_GRID_SIZE * MAX_GRID_SIZE + itemIndex
                             )
                         )
                     } else {
@@ -218,7 +222,9 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
                             coverHash = hash,
                             titleText = item.optString("title"),
                             showTitles = showTitles,
-                            pendingIntent = bookPendingIntent(context, hash, id * 100 + itemIndex)
+                            pendingIntent = bookPendingIntent(
+                                context, hash, id * MAX_GRID_SIZE * MAX_GRID_SIZE + itemIndex
+                            )
                         )
                     }
                     views.setViewVisibility(cellId, android.view.View.VISIBLE)

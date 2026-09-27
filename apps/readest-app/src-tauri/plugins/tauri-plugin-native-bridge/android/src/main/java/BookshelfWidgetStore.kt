@@ -146,6 +146,16 @@ object BookshelfWidgetStore {
         return rounded
     }
 
+    /** Writes `dst` atomically: encodes into a uniquely-named temp file in the
+     * same directory, then renames it over the destination, so a reader (or a
+     * second writer - e.g. two widgets sharing a book's cover) never sees a
+     * partially-written file, and two concurrent writes never tear into one file. */
+    private fun writeBitmapAtomically(dst: File, bitmap: Bitmap) {
+        val tmp = File(dst.parentFile, "${dst.name}.${System.nanoTime()}.tmp")
+        tmp.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        if (!tmp.renameTo(dst)) tmp.delete()
+    }
+
     fun writeThumbnail(
         context: Context,
         hash: String,
@@ -212,7 +222,7 @@ object BookshelfWidgetStore {
         }
 
         // Write as PNG so the alpha channel for rounded corners is preserved.
-        dst.outputStream().use { rounded.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        writeBitmapAtomically(dst, rounded)
         rounded.recycle()
         return true
     }
@@ -240,7 +250,7 @@ object BookshelfWidgetStore {
                 ?: run { dst.delete(); return false }
             val roundedSingle = applyRoundedCorners(single)
             single.recycle()
-            dst.outputStream().use { roundedSingle.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            writeBitmapAtomically(dst, roundedSingle)
             roundedSingle.recycle()
             return true
         }
@@ -274,7 +284,7 @@ object BookshelfWidgetStore {
 
         val rounded = applyRoundedCorners(composite)
         composite.recycle()
-        dst.outputStream().use { rounded.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        writeBitmapAtomically(dst, rounded)
         rounded.recycle()
         return missing == 0
     }
