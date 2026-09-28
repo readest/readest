@@ -136,6 +136,16 @@ describe('WindowOutline', () => {
     expect(container.querySelector('.window-outline')).not.toBeNull();
   });
 
+  it('draws nothing for a minimized window', async () => {
+    needsClientOutline = true;
+    windowState({ width: 0, height: 0 });
+
+    const { container } = render(<WindowOutline />);
+    await settled();
+
+    expect(container.querySelector('.window-outline')).toBeNull();
+  });
+
   it('sizes the box from the window, not from the page', async () => {
     needsClientOutline = true;
     // The page itself lays this out 1030 CSS pixels wide, a pixel past the

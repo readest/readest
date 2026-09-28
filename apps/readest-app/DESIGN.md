@@ -721,8 +721,7 @@ rounded-window page frame (`.window-border`, `z-99` in `globals.css`), then laye
 
 `210` is the one layer above the overlays rather than between them: it stands in for the
 OS's non-client window edge, which no page content ever covered, so it has to survive the
-lock screen covering the window. Locked by
-`src/__tests__/styles/window-outline-layer.test.ts`.
+lock screen covering the window.
 
 The non-obvious invariant: **`ModalPortal` (120) must stay above `SettingsDialog`
 (110)** so a modal opened _from inside_ Settings (e.g. Add OPDS Catalog) isn't buried.

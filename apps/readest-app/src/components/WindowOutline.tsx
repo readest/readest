@@ -47,7 +47,8 @@ const WindowOutline: React.FC = () => {
         const [maximized, fullscreen] = await Promise.all([win.isMaximized(), win.isFullscreen()]);
         if (disposed || token !== moved || maximized || fullscreen) return;
         const { width, height } = await win.innerSize();
-        if (disposed || token !== moved) return;
+        // A minimized window reports a zero size; there is no edge to draw.
+        if (disposed || token !== moved || !width || !height) return;
         const dpr = window.devicePixelRatio || 1;
         setBox({ width: width / dpr, height: height / dpr });
         setActive(true);
