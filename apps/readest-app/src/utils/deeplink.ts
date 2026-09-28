@@ -18,7 +18,7 @@ const ANNOTATION_PATH_PREFIX = '/o/book/';
  * Shared readest:// / https://web.readest.com URL parsing: validates the
  * scheme and returns a uniform path-segment list, or null if neither
  * matches. Pass `allowWebHost: false` for links only ever sent natively
- * (widget settings/group).
+ * (widget group taps).
  */
 const parseReadestUrl = (
   url: string,
@@ -128,21 +128,6 @@ export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: b
       return { bookHash: segments[1], autoplay: true };
     }
     return { bookHash: segments[1] };
-  }
-  return null;
-};
-
-/**
- * Parse an incoming `readest://widget-settings/{appWidgetId}` deep link, sent
- * by the native configure Activity to hand off to the in-app settings screen.
- */
-export const parseWidgetSettingsDeepLink = (url: string): { appWidgetId: number } | null => {
-  const parsed = parseReadestUrl(url, { allowWebHost: false });
-  if (!parsed) return null;
-  const { segments } = parsed;
-  if (segments.length === 2 && segments[0] === 'widget-settings') {
-    const appWidgetId = Number(segments[1]);
-    if (Number.isInteger(appWidgetId)) return { appWidgetId };
   }
   return null;
 };

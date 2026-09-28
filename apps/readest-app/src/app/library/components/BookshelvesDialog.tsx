@@ -44,6 +44,7 @@ import { useBookshelfDate } from '@/hooks/useBookshelfDate';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
+import { resolveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 import {
   bookshelfName,
@@ -52,6 +53,8 @@ import {
   createBookshelf,
   defaultBookshelves,
   isBuiltinBookshelf,
+  BOOKSHELF_SORT_LABELS,
+  BOOKSHELF_GROUP_LABELS,
   RECENT_BOOKSHELF_ID,
   AUDIOBOOKS_BOOKSHELF_ID,
   PODCASTS_BOOKSHELF_ID,
@@ -63,11 +66,8 @@ import { saveBookshelfDraft } from '@/services/bookshelves/persistence';
 import { discoverBookshelfFields } from '@/services/bookshelves/fields';
 import { evaluateBookshelves, matchBookshelves } from '@/services/bookshelves/evaluate';
 import { presentBookshelf } from '@/services/bookshelves/presentation';
-import type { BookshelfDefinition } from '@/types/bookshelf';
+import type { BookshelfDefinition, BookshelfSort } from '@/types/bookshelf';
 import BookshelfFilterEditor from './BookshelfFilterEditor';
-import BookshelfGroupingSection from './BookshelfGroupingSection';
-import BookshelfExclusivitySection from './BookshelfExclusivitySection';
-import BookshelfSortingSection from './BookshelfSortingSection';
 import BookshelfStream, { type ShelfSection } from './BookshelfStream';
 import BookshelfItem from './BookshelfItem';
 
@@ -277,6 +277,7 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   const saved = useRef(base);
   const latestValid = useRef(base);
   const lastValidShelf = useRef(new Map(base.map((s) => [s.id, s])));
+  const includeBeforeExclusive = useRef(new Map<string, boolean>());
   const saveQueue = useRef(Promise.resolve(true));
   const mounted = useRef(true);
   const saveContext = useRef({ envConfig, _ });
@@ -332,6 +333,10 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
     return () => clearTimeout(timer);
   }, [draft]);
   const selected = draft.find((s) => s.id === selectedId)!;
+  const useGlobalGrouping = selected.useGlobalGrouping !== false;
+  const selectedGroupBy = resolveBookshelfGroupBy(selected, globalGroupBy);
+  const useGlobalSort = selected.useGlobalSort !== false;
+  const selectedSort = resolveBookshelfSort(selected, globalSort);
   const fields = useMemo(() => discoverBookshelfFields(library), [library]);
   const books = useMemo(
     () => library.filter((b) => !b.deletedAt && !isAbsBookOrphaned(b)),
@@ -400,6 +405,7 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
     setError('');
     setDraft((shelves) => shelves.map((s) => (s.id === selectedId ? { ...s, ...patch } : s)));
   };
+  const sort = (patch: Partial<BookshelfSort>) => update({ sort: { ...selected.sort, ...patch } });
   const move = (id: string, target: number) => {
     const index = draft.findIndex((s) => s.id === id);
     if (index < 0 || target < 0 || target >= draft.length) return;
@@ -460,6 +466,9 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
       void flush();
     };
   }, [flush]);
+  const sortOptions = Object.entries(BOOKSHELF_SORT_LABELS)
+    .filter(([value]) => value !== 'size')
+    .map(([value, label]) => ({ value, label: _(label) }));
   const renderPreview = useCallback<React.ComponentProps<typeof BookshelfStream>['renderItem']>(
     (item, mode, shelf) => (
       <div inert className='pointer-events-none h-full select-none'>
@@ -650,26 +659,114 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
               fields={fields}
               onChange={(filters) => update({ filters })}
             />
-            <BookshelfGroupingSection
-              shelf={selected}
-              onChange={update}
-              globalGroupBy={globalGroupBy}
-            />
-            <BookshelfSortingSection shelf={selected} onChange={update} globalSort={globalSort} />
-            <BookshelfExclusivitySection
-              shelf={selected}
-              onChange={update}
-              description={
-                selected.id === FINISHED_BOOKSHELF_ID
-                  ? _('Matching books take priority over other exclusive shelves')
-                  : priorityShelf
-                    ? _('“{{name}}” takes priority, then exclusive shelves follow tab order', {
-                        name: priorityShelf.name || _(bookshelfName(priorityShelf)),
-                      })
-                    : _('Matching books belong to the first enabled exclusive shelf')
-              }
-              includeLabel={_('Include books from exclusive shelves')}
-            />
+            <fieldset className='eink-bordered border-base-200 min-w-0 rounded-lg border ps-4'>
+              <legend className='-ms-1 px-1 text-sm'>{_('Grouping')}</legend>
+              <div className='divide-base-200 divide-y'>
+                <SettingsSwitchRow
+                  label={_('Use global grouping')}
+                  checked={useGlobalGrouping}
+                  onChange={() => update({ useGlobalGrouping: !useGlobalGrouping })}
+                />
+                <SettingsRow label={_('Group by')} disabled={useGlobalGrouping}>
+                  <SettingsSelect
+                    ariaLabel={_('Group by')}
+                    value={selectedGroupBy}
+                    disabled={useGlobalGrouping}
+                    options={Object.entries(BOOKSHELF_GROUP_LABELS).map(([value, label]) => ({
+                      value,
+                      label: _(label),
+                    }))}
+                    onChange={(e) =>
+                      update({ groupBy: e.target.value as BookshelfDefinition['groupBy'] })
+                    }
+                  />
+                </SettingsRow>
+              </div>
+            </fieldset>
+            <fieldset className='eink-bordered border-base-200 min-w-0 rounded-lg border ps-4'>
+              <legend className='-ms-1 px-1 text-sm'>{_('Sorting')}</legend>
+              <div className='divide-base-200 divide-y'>
+                <SettingsSwitchRow
+                  label={_('Use global sorting')}
+                  checked={useGlobalSort}
+                  onChange={() => update({ useGlobalSort: !useGlobalSort })}
+                />
+                <SettingsRow label={_('Sort by')} disabled={useGlobalSort}>
+                  <SettingsSelect
+                    ariaLabel={_('Sort by')}
+                    disabled={useGlobalSort}
+                    value={selectedSort.by}
+                    options={sortOptions}
+                    onChange={(e) => sort({ by: e.target.value as BookshelfSort['by'] })}
+                  />
+                </SettingsRow>
+                <SettingsSwitchRow
+                  label={_('Ascending')}
+                  disabled={useGlobalSort}
+                  checked={selectedSort.ascending}
+                  onChange={() => sort({ ascending: !selected.sort.ascending })}
+                />
+                <SettingsRow label={_('Then by')} disabled={useGlobalSort}>
+                  <SettingsSelect
+                    ariaLabel={_('Then by')}
+                    disabled={useGlobalSort}
+                    value={selectedSort.thenBy}
+                    options={[{ value: 'none', label: _('None') }, ...sortOptions]}
+                    onChange={(e) => sort({ thenBy: e.target.value as BookshelfSort['thenBy'] })}
+                  />
+                </SettingsRow>
+                <SettingsSwitchRow
+                  label={_('Secondary sort ascending')}
+                  disabled={useGlobalSort || selectedSort.thenBy === 'none'}
+                  checked={selectedSort.thenAscending}
+                  onChange={() => sort({ thenAscending: !selected.sort.thenAscending })}
+                />
+              </div>
+            </fieldset>
+            <BoxedList>
+              <SettingsSwitchRow
+                label={_('Exclusive')}
+                description={
+                  selected.id === FINISHED_BOOKSHELF_ID
+                    ? _('Matching books take priority over other exclusive shelves')
+                    : priorityShelf
+                      ? _('“{{name}}” takes priority, then exclusive shelves follow tab order', {
+                          name: priorityShelf.name || _(bookshelfName(priorityShelf)),
+                        })
+                      : _('Matching books belong to the first enabled exclusive shelf')
+                }
+                checked={selected.exclusive}
+                disabled={
+                  !selected.exclusive &&
+                  !bookshelfSchema.safeParse({
+                    ...selected,
+                    exclusive: true,
+                    includeExclusiveBooks: false,
+                  }).success
+                }
+                onChange={() => {
+                  // Exclusive shelves cannot include other exclusive shelves, so remember the
+                  // choice while it is forced off and restore it when Exclusive goes off again.
+                  if (selected.exclusive)
+                    update({
+                      exclusive: false,
+                      includeExclusiveBooks:
+                        includeBeforeExclusive.current.get(selected.id) ??
+                        selected.includeExclusiveBooks,
+                    });
+                  else {
+                    includeBeforeExclusive.current.set(selected.id, selected.includeExclusiveBooks);
+                    update({ exclusive: true, includeExclusiveBooks: false });
+                  }
+                }}
+              />
+              <SettingsSwitchRow
+                label={_('Include books from exclusive shelves')}
+                checked={selected.includeExclusiveBooks}
+                disabled={selected.exclusive}
+                onChange={() => update({ includeExclusiveBooks: !selected.includeExclusiveBooks })}
+              />
+            </BoxedList>
             <div className='me-px flex justify-end gap-8 pe-4'>
               <button
                 type='button'

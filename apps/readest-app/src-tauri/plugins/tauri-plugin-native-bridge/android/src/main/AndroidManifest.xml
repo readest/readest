@@ -22,7 +22,7 @@
             android:name="com.readest.native_bridge.LookupChoiceReceiver"
             android:exported="false" />
         <receiver
-            android:name="com.readest.native_bridge.BookshelfWidgetProvider"
+            android:name="com.readest.native_bridge.ReadingWidgetProvider"
             android:label="@string/widget_label"
             android:exported="false">
             <intent-filter>
@@ -34,7 +34,8 @@
         </receiver>
         <!-- Launched by the launcher/system when the widget is placed (and
              from "Edit widget"), so it must be exported despite taking no
-             other external callers. -->
+             other external callers. It only edits a widget the system has
+             bound to this app. -->
         <activity
             android:name="com.readest.native_bridge.BookshelfWidgetConfigureActivity"
             android:exported="true"

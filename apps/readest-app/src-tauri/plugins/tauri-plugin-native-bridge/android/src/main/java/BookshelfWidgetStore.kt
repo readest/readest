@@ -15,33 +15,29 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.math.max
 
-/** One widget instance's grid settings plus its bookshelf definition - see
- * BookshelfWidgetStore.writeInstanceSettings/readInstanceSettings. `shelf` is
- * opaque JSON that only the app's JS layer understands (empty means "use the
- * default shelf"); native never parses it. */
+/** One placed widget's choices from BookshelfWidgetConfigureActivity. `shelfId`
+ * names one of the app's bookshelves; the app resolves it (falling back to
+ * Recently read) when it publishes the widget's snapshot. */
 data class BookshelfWidgetInstanceSettings(
+    val shelfId: String = BookshelfWidgetStore.DEFAULT_SHELF_ID,
     val gridRows: Int = BookshelfWidgetStore.DEFAULT_GRID_ROWS,
     val gridColumns: Int = BookshelfWidgetStore.DEFAULT_GRID_COLUMNS,
     val showTitles: Boolean = false,
-    val groupMosaic: Boolean = true,
-    val shelf: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject()
+        .put("shelfId", shelfId)
         .put("gridRows", gridRows)
         .put("gridColumns", gridColumns)
         .put("showTitles", showTitles)
-        .put("groupMosaic", groupMosaic)
-        .put("shelf", shelf)
 
     companion object {
         fun fromJson(json: JSONObject): BookshelfWidgetInstanceSettings {
             val defaults = BookshelfWidgetInstanceSettings()
             return BookshelfWidgetInstanceSettings(
+                shelfId = json.optString("shelfId", defaults.shelfId),
                 gridRows = json.optInt("gridRows", defaults.gridRows),
                 gridColumns = json.optInt("gridColumns", defaults.gridColumns),
                 showTitles = json.optBoolean("showTitles", defaults.showTitles),
-                groupMosaic = json.optBoolean("groupMosaic", defaults.groupMosaic),
-                shelf = json.optString("shelf", defaults.shelf),
             )
         }
     }
@@ -51,6 +47,7 @@ object BookshelfWidgetStore {
     const val PREFS = "bookshelf_widget"
     private const val KEY_SNAPSHOT_PREFIX = "snapshot_"
     private const val KEY_INSTANCE_SETTINGS_PREFIX = "instanceSettings_"
+    private const val KEY_CATALOG = "catalog"
     private const val THUMB_WIDTH = 240
     private const val THUMB_HEIGHT = 360
     private const val CORNER_RADIUS = 18f
@@ -60,8 +57,9 @@ object BookshelfWidgetStore {
     // smaller corner radius than a full-size cover.
     private const val GROUP_CELL_CORNER_RADIUS = 8f
 
-    // Matches the widget's original fixed appearance: a single row of 3
-    // columns (see updateWidget's gridRows/gridColumns clamping).
+    // Matches the widget's original fixed appearance: the app's Recently read
+    // shelf in a single row of 3 columns.
+    const val DEFAULT_SHELF_ID = "recent"
     const val DEFAULT_GRID_ROWS = 1
     const val DEFAULT_GRID_COLUMNS = 3
 
@@ -241,8 +239,8 @@ object BookshelfWidgetStore {
      * Composites up to 4 covers into a 2x2 mosaic tile for the widget's
      * "browse groups" mode (mirrors the in-app Library's GroupItem tile).
      * Fewer than 4 source paths leaves the rest as a placeholder fill rather
-     * than stretching to cover them. Exactly 1 source path (groupMosaic off,
-     * or a group with only one member) renders as a single full-size cover
+     * than stretching to cover them. Exactly 1 source path (a group with only
+     * one member) renders as a single full-size cover
      * instead, like a regular book thumbnail. Returns false when any source
      * cover could not be used, so the caller can retry once it is available.
      */
@@ -359,6 +357,17 @@ object BookshelfWidgetStore {
         return json?.let(BookshelfWidgetInstanceSettings::fromJson) ?: BookshelfWidgetInstanceSettings()
     }
 
+    /** The shelves and translated labels the app last published for the
+     * configure screen, or an empty object before the app first ran. */
+    fun writeCatalog(context: Context, json: String) {
+        prefs(context).edit().putString(KEY_CATALOG, json).apply()
+    }
+
+    fun readCatalog(context: Context): JSONObject {
+        val raw = prefs(context).getString(KEY_CATALOG, null) ?: return JSONObject()
+        return runCatching { JSONObject(raw) }.getOrDefault(JSONObject())
+    }
+
     /** Called on widget removal, so neither its snapshot, its settings, nor any
      * group-tile covers it wrote linger. Book thumbnails are named by hash and
      * shared across widgets, so only the group covers named in this widget's
@@ -375,7 +384,7 @@ object BookshelfWidgetStore {
     fun notifyWidget(context: Context, appWidgetId: Int) {
         // Null on builds without app widget support (TV, automotive).
         val mgr = AppWidgetManager.getInstance(context) ?: return
-        val cls = BookshelfWidgetProvider::class.java
+        val cls = ReadingWidgetProvider::class.java
         if (appWidgetId !in mgr.getAppWidgetIds(ComponentName(context, cls))) return
         val intent = android.content.Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
         intent.component = ComponentName(context, cls)

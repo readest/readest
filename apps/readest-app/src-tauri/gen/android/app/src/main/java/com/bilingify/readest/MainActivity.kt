@@ -42,7 +42,6 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var interceptBackKeyEnabled = false
     private var interceptPageTurnerKeysEnabled = false
     private var keyLearnModeEnabled = false
-    private var backKeyDownWasIntercepted = false
     // touchmove fires continuously; throttle its dispatch to ~10/s since each one
     // is an evaluateJavascript round-trip into the WebView.
     private val touchMoveThrottleMs = 100L
@@ -184,25 +183,8 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        // UP must be consumed too, or it falls through to onBackPressedDispatcher
-        // and re-forwards this press. Uses the DOWN-time decision (below), not
-        // live state - JS can flip interception between DOWN and UP.
-        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP &&
-            backKeyDownWasIntercepted
-        ) {
-            return true
-        }
         if (event.action == KeyEvent.ACTION_DOWN) {
             val keyCode = event.keyCode
-            val intercepted = when (keyCode) {
-                KeyEvent.KEYCODE_BACK -> interceptBackKeyEnabled
-                KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> interceptVolumeKeysEnabled
-                else -> false
-            }
-
-            if (keyCode == KeyEvent.KEYCODE_BACK) {
-                backKeyDownWasIntercepted = intercepted
-            }
 
             // Only keys forwarded natively at runtime are learned natively.
             // Keyboard, D-pad, and remote keys continue to WebView so their
@@ -220,7 +202,14 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
 
             val keyName = keyEventMap[keyCode]
             if (keyName != null) {
-                if (intercepted) {
+                val shouldIntercept = when (keyCode) {
+                    KeyEvent.KEYCODE_BACK -> interceptBackKeyEnabled
+                    KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN ->
+                        interceptVolumeKeysEnabled
+                    else -> false
+                }
+
+                if (shouldIntercept) {
                     forwardKeyToWebView(keyName, keyCode)
                     return true
                 }
@@ -241,11 +230,11 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 }
                 """.trimIndent()
             ) { result ->
-                run {
-                    if (result.equals("true", ignoreCase = true)) {
-                        Log.d("Key Event", "Key event $keyName intercepted")
-                    }
+              run {
+                if (result.equals("true", ignoreCase = true)) {
+                  Log.d("Key Event", "Key event $keyName intercepted")
                 }
+              }
             }
             return when (keyCode) {
               KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {

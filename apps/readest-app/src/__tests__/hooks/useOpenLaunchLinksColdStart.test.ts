@@ -286,7 +286,6 @@ describe('useOpenLaunchLinks — launch URL replayed after a reload (#6104)', ()
   });
 });
 
-const settingsUrl = (id: number) => `readest://widget-settings/${id}`;
 const groupUrl = 'readest://widget-group/series/a1b2%20c3';
 
 const mountWidget = async (label = 'main') => {
@@ -310,17 +309,17 @@ describe('useOpenLaunchLinks — widget links', () => {
     cleanup();
   });
 
-  it('opens the settings screen for a cold-start link, but only in the launch window', async () => {
-    coldStartUrls = [settingsUrl(7)];
+  it('opens a group for a cold-start link, but only in the launch window', async () => {
+    coldStartUrls = [groupUrl];
     await mountWidget('reader-0');
     expect(routerPushMock).not.toHaveBeenCalled();
 
     await mountWidget('main');
-    expect(routerPushMock).toHaveBeenCalledWith('/widget-settings?appWidgetId=7');
+    expect(routerPushMock).toHaveBeenCalledWith('/library?groupBy=series&group=a1b2%20c3');
   });
 
   it('ignores a replayed cold-start URL, but always handles a live tap', async () => {
-    coldStartUrls = [settingsUrl(7)];
+    coldStartUrls = [groupUrl];
     await mountWidget();
     routerPushMock.mockReset();
 
@@ -329,9 +328,9 @@ describe('useOpenLaunchLinks — widget links', () => {
     expect(routerPushMock).not.toHaveBeenCalled();
 
     const { eventDispatcher } = await mountWidget();
-    await eventDispatcher.dispatch('app-incoming-url', { urls: [settingsUrl(7)] });
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [groupUrl] });
     await flush();
-    expect(routerPushMock).toHaveBeenCalledWith('/widget-settings?appWidgetId=7');
+    expect(routerPushMock).toHaveBeenCalledWith('/library?groupBy=series&group=a1b2%20c3');
   });
 
   it('opens a tapped group by its id, without waiting for the library', async () => {
@@ -348,7 +347,7 @@ describe('useOpenLaunchLinks — widget links', () => {
     ],
     [
       'links that are not widget links',
-      ['readest://book/abc', 'https://web.readest.com/o/widget-settings/7'],
+      ['readest://book/abc', 'https://web.readest.com/o/widget-group/series/x'],
     ],
   ])('ignores %s', async (_label, urls) => {
     coldStartUrls = urls;
@@ -359,15 +358,6 @@ describe('useOpenLaunchLinks — widget links', () => {
   describe('Library blank-placeholder gate', () => {
     it('is released when no link claimed the launch', async () => {
       await mountWidget();
-      expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
-    });
-
-    it('stays held for a settings link, which leaves the Library, until unmount', async () => {
-      coldStartUrls = [settingsUrl(7)];
-      const { view } = await mountWidget();
-      expect(libraryState.setCheckPendingLaunchLink).not.toHaveBeenCalled();
-
-      view.unmount();
       expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
     });
 

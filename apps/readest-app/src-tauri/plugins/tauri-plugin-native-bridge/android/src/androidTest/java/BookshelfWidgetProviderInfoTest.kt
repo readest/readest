@@ -25,9 +25,9 @@ class BookshelfWidgetProviderInfoTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val manager = AppWidgetManager.getInstance(context)
         val info = manager.installedProviders.firstOrNull {
-            it.provider.className == BookshelfWidgetProvider::class.java.name
+            it.provider.className == ReadingWidgetProvider::class.java.name
         }
-        assertNotNull("BookshelfWidgetProvider should be registered", info)
+        assertNotNull("ReadingWidgetProvider should be registered under its shipped name", info)
         assertTrue(
             "widgetFeatures should include WIDGET_FEATURE_RECONFIGURABLE so launchers keep " +
                 "offering 'Widget settings' after initial placement",

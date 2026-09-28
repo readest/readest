@@ -140,12 +140,6 @@ pub struct InterceptKeysRequest {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MoveTaskToBackRequest {
-    pub widget_saved: Option<bool>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct LockScreenOrientationRequest {
     pub orientation: String,
 }
@@ -573,6 +567,8 @@ pub struct UpdateBookshelfWidgetResponse {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateBookshelfWidgetRequest {
     pub app_widget_id: i32,
+    /// The shelf the widget asked for; native shows a placeholder until they match.
+    pub shelf_id: String,
     /// Grid tiles in display order.
     pub items: Vec<BookshelfWidgetItem>,
     pub section_title: String,
@@ -600,26 +596,47 @@ pub struct BookshelfWidgetGroupTile {
     pub cover_paths: Vec<String>,
 }
 
-/// One placed widget instance's stored settings, reported by native for the
-/// in-app settings screen and for computing that instance's snapshot.
+/// A placed widget, as chosen in its native configure screen.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct BookshelfWidgetInstanceSettings {
+pub struct BookshelfWidgetInstance {
     pub app_widget_id: i32,
+    pub shelf_id: String,
     pub grid_rows: i32,
     pub grid_columns: i32,
-    pub show_titles: bool,
-    pub group_mosaic: bool,
-    /// JSON of the instance's own bookshelf definition; opaque to native.
-    /// Empty means "use the default shelf".
-    #[serde(default)]
-    pub shelf: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetBookshelfWidgetInstancesResponse {
-    pub instances: Vec<BookshelfWidgetInstanceSettings>,
+    pub instances: Vec<BookshelfWidgetInstance>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetCatalogShelf {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetCatalogLabels {
+    pub title: String,
+    pub rows: String,
+    pub columns: String,
+    pub show_titles: String,
+    pub cancel: String,
+    pub save: String,
+    pub open_app: String,
+}
+
+/// What the native configure screen offers, translated by the app.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetCatalog {
+    pub shelves: Vec<BookshelfWidgetCatalogShelf>,
+    pub labels: BookshelfWidgetCatalogLabels,
 }
 
 /// Region of the webview to snapshot for the mesh page-curl (#555),

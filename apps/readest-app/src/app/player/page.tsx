@@ -26,7 +26,7 @@ import { eventDispatcher } from '@/utils/event';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useThemeStore } from '@/store/themeStore';
 import { isAudiobook } from '@/utils/audiobook';
-import { navigateToLibrary, navigateToReader, popNavigationOrGoToLibrary } from '@/utils/nav';
+import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import PlayerView from './components/PlayerView';
@@ -279,7 +279,16 @@ const PlayerRoute = () => {
     return () => ttsSessionManager.removeEventListener('session-changed', onSessionChanged);
   }, [book, session, appService, envConfig, router]);
 
-  const handleGoBack = () => popNavigationOrGoToLibrary(router);
+  const handleGoBack = () => {
+    // A direct deep link (external share, cold app start) has nowhere for
+    // router.back() to land - it would either no-op or exit the app/webview.
+    // Mirrors the same window.history.length check src/app/error.tsx uses.
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      navigateToLibrary(router);
+    }
+  };
 
   // Without this, the Android system Back button falls through to Kotlin's
   // default handler, which finishes the whole activity instead of navigating

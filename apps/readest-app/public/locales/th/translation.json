@@ -2401,8 +2401,6 @@
   "Background": "พื้นหลัง",
   "Follows the theme color": "ตามสีธีม",
   "Background Style": "รูปแบบพื้นหลัง",
-  "Mosaic covers": "ปกแบบโมเสก",
   "Rows": "แถว",
-  "Matching books belong to the oldest exclusive widget": "หนังสือที่ตรงกันจะอยู่ในวิดเจ็ตเฉพาะที่เก่าที่สุด",
-  "Include books from exclusive widgets": "รวมหนังสือจากวิดเจ็ตเฉพาะ"
+  "Open Readest to show this bookshelf": "เปิด Readest เพื่อแสดงชั้นหนังสือนี้"
 }

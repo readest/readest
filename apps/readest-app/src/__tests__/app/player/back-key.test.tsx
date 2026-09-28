@@ -18,15 +18,15 @@ const mocks = vi.hoisted(() => ({
   getSessionByHash: vi.fn(() => null as { bookKey: string; controller: unknown } | null),
   acquireBackKeyInterception: vi.fn(),
   releaseBackKeyInterception: vi.fn(),
-  popNavigationOrGoToLibrary: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('id=h1'),
 }));
 
+const routerBack = vi.fn();
 vi.mock('@/hooks/useAppRouter', () => ({
-  useAppRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  useAppRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: routerBack }),
 }));
 
 // The player mounts the deep-link listener so an Android Auto selection (or a
@@ -81,7 +81,6 @@ vi.mock('@/store/deviceStore', () => ({
 vi.mock('@/utils/nav', () => ({
   navigateToLibrary: vi.fn(),
   navigateToReader: vi.fn(),
-  popNavigationOrGoToLibrary: mocks.popNavigationOrGoToLibrary,
 }));
 
 vi.mock('@/components/Toast', () => ({ Toast: () => null }));
@@ -93,6 +92,7 @@ vi.mock('@/app/player/components/PlayerView', () => ({
 }));
 
 import { useLibraryStore } from '@/store/libraryStore';
+import { navigateToLibrary } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import PlayerPage from '@/app/player/page';
 
@@ -136,14 +136,20 @@ describe('PlayerPage — Android system Back', () => {
     expect(mocks.releaseBackKeyInterception).toHaveBeenCalledTimes(1);
   });
 
-  it('routes a native Back event through the shared pop-or-library helper instead of leaving it for the OS default', async () => {
+  it('routes a native Back event to the library instead of leaving it for the OS default', async () => {
     render(<PlayerPage />);
     await waitFor(() => expect(mocks.acquireBackKeyInterception).toHaveBeenCalledTimes(1));
 
-    // Branching (pop vs floor at the library) is covered by nav.test.ts.
+    // Simulates the JS-side event MainActivity.kt's onNativeKeyDown("Back", 4)
+    // forwards once interception is acquired. jsdom's window.history has
+    // nothing to pop (length 1), the same as a cold deep-link launch - so
+    // this must floor at navigateToLibrary exactly like the header back
+    // button's handleGoBack does, not fall through to the OS default
+    // (finish the activity).
     eventDispatcher.dispatchSync('native-key-down', { keyName: 'Back', keyCode: 4 });
 
-    expect(mocks.popNavigationOrGoToLibrary).toHaveBeenCalledTimes(1);
+    expect(navigateToLibrary).toHaveBeenCalledTimes(1);
+    expect(routerBack).not.toHaveBeenCalled();
   });
 
   it('does not acquire back-key interception outside the Android app', async () => {

@@ -1,116 +1,73 @@
 import type { Book, BooksGroup } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { BookshelfDefinition } from '@/types/bookshelf';
+import { LibraryGroupByType, type SystemSettings } from '@/types/settings';
 import { useLibraryStore } from '@/store/libraryStore';
-import { LibraryGroupByType } from '@/types/settings';
+import { useSettingsStore } from '@/store/settingsStore';
 import { getCoverFilename, isCurrentlyReadingBook } from '@/utils/book';
-import { getBookshelfWidgetInstances, updateBookshelfWidget } from '@/utils/bridge';
+import {
+  getBookshelfWidgetInstances,
+  setBookshelfWidgetCatalog,
+  updateBookshelfWidget,
+} from '@/utils/bridge';
 import { joinScannedPath } from '@/utils/path';
 import type {
+  BookshelfWidgetCatalog,
   BookshelfWidgetInstance,
   BookshelfWidgetTts,
   UpdateBookshelfWidgetRequest,
 } from '@/utils/bridge';
-import {
-  bookshelfSchema,
-  createBookshelf,
-  defaultBookshelves,
-  RECENT_BOOKSHELF_ID,
-} from '@/services/bookshelves/definitions';
+import { bookshelfName, RECENT_BOOKSHELF_ID } from '@/services/bookshelves/definitions';
 import { evaluateBookshelves, type BookshelfResult } from '@/services/bookshelves/evaluate';
+import { resolveBookshelfGroupBy } from '@/services/bookshelves/grouping';
 import { presentBookshelf } from '@/services/bookshelves/presentation';
+import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
+import { readBookshelves } from '@/services/bookshelves/state';
 
-/** What one instance publishes: everything but the widget id. */
+type Translate = (key: string) => string;
+
+/** What one widget publishes: everything but its id. */
 export type BookshelfWidgetSnapshot = Omit<UpdateBookshelfWidgetRequest, 'appWidgetId'>;
 
-export const MIN_GRID_SIZE = 1;
-export const MAX_GRID_SIZE = 5;
+type BookshelfWidgetGrid = Pick<BookshelfWidgetInstance, 'gridRows' | 'gridColumns'>;
 
-/** The widget-only settings an instance keeps next to its shelf. */
-export type BookshelfWidgetGridSettings = Pick<
-  BookshelfWidgetInstance,
-  'gridRows' | 'gridColumns' | 'showTitles' | 'groupMosaic'
->;
+const MAX_GRID_SIZE = 5;
+const clampGrid = (value: number) => Math.min(MAX_GRID_SIZE, Math.max(1, Math.round(value) || 1));
 
-/** A single row of up to 3 covers, no titles. */
-export const DEFAULT_BOOKSHELF_WIDGET_GRID: BookshelfWidgetGridSettings = {
+/** The old "currently reading" widget; iOS always shows this. */
+const DEFAULT_WIDGET: Omit<BookshelfWidgetInstance, 'appWidgetId'> = {
+  shelfId: RECENT_BOOKSHELF_ID,
   gridRows: 1,
   gridColumns: 3,
-  showTitles: false,
-  groupMosaic: true,
 };
 
-const ensureGridDimension = (value: number): number => {
-  if (!Number.isFinite(value)) return MIN_GRID_SIZE;
-  return Math.min(MAX_GRID_SIZE, Math.max(MIN_GRID_SIZE, Math.round(value)));
-};
-
-/** A widget-owned shelf never inherits the app's View-menu sort/grouping. Its
- * name is the widget's heading, and blank means no heading. */
-export const normalizeWidgetShelf = (shelf: BookshelfDefinition): BookshelfDefinition => ({
-  ...shelf,
-  name: shelf.name.trim(),
-  enabled: true,
-  useGlobalSort: false,
-  useGlobalGrouping: false,
-  groupBy: shelf.groupBy ?? LibraryGroupByType.None,
-});
-
-/** Books being read now, newest first, ungrouped, with no heading (the Recent shelf's filter). */
-export const defaultWidgetShelf = (): BookshelfDefinition => {
-  const recent = defaultBookshelves({}).find((shelf) => shelf.id === RECENT_BOOKSHELF_ID)!;
-  return {
-    ...createBookshelf(''),
-    filters: recent.filters,
-    useGlobalSort: false,
-    useGlobalGrouping: false,
-    groupBy: LibraryGroupByType.None,
-  };
-};
-
-// The shelf schema rejects a blank name for a custom shelf, but a blank name is
-// how a widget hides its heading. Validate and evaluate with a stand-in name.
-const withSchemaName = (shelf: BookshelfDefinition): BookshelfDefinition =>
-  shelf.name.trim() ? shelf : { ...shelf, name: 'Widget' };
-
-/** Whether a widget shelf is complete enough to save and show (a new filter
- * condition is invalid until its value is filled in). */
-export const checkWidgetShelf = (shelf: BookshelfDefinition) =>
-  bookshelfSchema.safeParse(withSchemaName(shelf));
-
-/** Parses an instance's stored shelf JSON, falling back to the default shelf
- * when it is empty, malformed or no longer valid. */
-export const parseWidgetShelf = (json: string): BookshelfDefinition => {
-  try {
-    const raw = JSON.parse(json) as BookshelfDefinition;
-    const parsed = bookshelfSchema.safeParse(withSchemaName(raw));
-    if (parsed.success) return normalizeWidgetShelf({ ...parsed.data, name: raw.name });
-  } catch {
-    // Empty, malformed or not an object: use the default below.
-  }
-  return defaultWidgetShelf();
-};
+const shelfTitle = (shelf: BookshelfDefinition, _: Translate) =>
+  shelf.name || _(bookshelfName(shelf));
 
 /**
- * Evaluates every widget's shelf together, so exclusive widgets claim their
- * books from the others exactly as exclusive shelves do in the app. The older
- * widget (lower id) wins a book two exclusive widgets both match; ids are
- * sorted because the platform lists them in no defined order.
+ * Evaluates the Library's shelves (same sort and exclusivity) and returns a
+ * lookup from a widget's shelf id to its books. A shelf shown on a widget is
+ * evaluated even while hidden in the Library, and a deleted one falls back to
+ * Recently read.
  */
 export const evaluateWidgetShelves = (
   library: Book[],
-  entries: { appWidgetId: number; shelf: BookshelfDefinition }[],
-): Map<number, BookshelfResult> => {
-  const sorted = [...entries].sort((a, b) => a.appWidgetId - b.appWidgetId);
-  // Ownership needs unique ids, but parsed shelves carry random ones and the
-  // schema only accepts UUIDs, so derive a valid one from the widget id.
-  const definitions = sorted.map(({ appWidgetId, shelf }) => ({
-    ...withSchemaName(shelf),
-    id: `00000000-0000-4000-8000-${appWidgetId.toString(16).padStart(12, '0')}`,
+  settings: Partial<SystemSettings>,
+  shelfIds: string[],
+): ((shelfId: string) => BookshelfResult) => {
+  const shelves = readBookshelves(settings);
+  const resolve = (id: string) => (shelves.some((s) => s.id === id) ? id : RECENT_BOOKSHELF_ID);
+  const shown = new Set(shelfIds.map(resolve));
+  const globalSort = getGlobalBookshelfSort(settings);
+  const definitions = shelves.map((shelf) => ({
+    ...shelf,
+    enabled: shelf.enabled || shown.has(shelf.id),
+    sort: resolveBookshelfSort(shelf, globalSort),
   }));
-  // No React context here for the user's UI language, so uiLanguage stays ''.
-  const results = evaluateBookshelves(library, definitions);
-  return new Map(sorted.map(({ appWidgetId }, i) => [appWidgetId, results[i]!]));
+  const results = new Map(
+    evaluateBookshelves(library, definitions).map((result) => [result.definition.id, result]),
+  );
+  return (shelfId) => results.get(resolve(shelfId))!;
 };
 
 // Pass `resolvedBooksDir` when it is already resolved.
@@ -120,26 +77,24 @@ const resolveBooksDir = async (
 ): Promise<string> => resolvedBooksDir ?? (await appService.resolveFilePath('', 'Books'));
 
 /** Resolves each tile to what native renders: books get their cover file and
- * progress, groups up to 4 member covers (1 without mosaic), which native
- * composites into a mosaic like the Library's group tile. */
+ * progress, groups up to 4 member covers, which native composites into a
+ * mosaic like the Library's group tile. */
 export const buildBookshelfWidgetItems = async (
   items: (Book | BooksGroup)[],
-  shelf: BookshelfDefinition,
-  grid: BookshelfWidgetGridSettings,
+  groupBy: string,
   appService: AppService,
   resolvedBooksDir?: string,
 ): Promise<BookshelfWidgetSnapshot['items']> => {
   const booksDir = await resolveBooksDir(appService, resolvedBooksDir);
   const coverPath = (book: Book) => joinScannedPath(booksDir, getCoverFilename(book));
-  const memberLimit = grid.groupMosaic ? 4 : 1;
   return items.map((item) => {
     if ('books' in item) {
       return {
         type: 'group',
         id: item.id,
-        groupBy: shelf.groupBy ?? LibraryGroupByType.None,
-        value: item.name,
-        coverPaths: item.books.slice(0, memberLimit).map(coverPath),
+        groupBy,
+        value: item.displayName || item.name,
+        coverPaths: item.books.slice(0, 4).map(coverPath),
       };
     }
     const [current, total] = item.progress ?? [];
@@ -160,25 +115,29 @@ export const buildBookshelfWidgetItems = async (
 };
 
 /** A playing TTS session plus the book it is reading, which decides which
- * instances get the transport bar. */
+ * widgets get the transport bar. */
 export type BookshelfWidgetPlayback = BookshelfWidgetTts & { bookHash: string };
 
-/** One widget's snapshot: its tiles in display order, with the transport bar
- * (`tts`) only when the playing book is one of the shown tiles - a loose book,
- * or a member of a shown group - not just anywhere in the shelf's matches. */
+/** One widget's snapshot: its shelf as the Library presents it, cut to the
+ * grid, with the transport bar only when the playing book is one of the tiles
+ * shown (a loose book or a member of a shown group). `shelfId` is the one the
+ * widget asked for, so native can tell a snapshot of its current shelf. */
 export const buildBookshelfWidgetSnapshot = async (
   result: BookshelfResult,
-  shelf: BookshelfDefinition,
-  grid: BookshelfWidgetGridSettings,
-  appService: AppService,
-  emptyTitle: string,
-  playback?: BookshelfWidgetPlayback,
-  resolvedBooksDir?: string,
+  shelfId: string,
+  grid: BookshelfWidgetGrid,
+  options: {
+    settings: Partial<SystemSettings>;
+    appService: AppService;
+    _: Translate;
+    emptyTitle: string;
+    playback?: BookshelfWidgetPlayback;
+    booksDir?: string;
+  },
 ): Promise<BookshelfWidgetSnapshot> => {
-  // The Library's presentation cut to the grid (rows x columns, each clamped to
-  // the allowed size).
-  const capacity = ensureGridDimension(grid.gridRows) * ensureGridDimension(grid.gridColumns);
-  const items = presentBookshelf(result, {}, '').slice(0, capacity);
+  const { settings, appService, _, emptyTitle, playback, booksDir } = options;
+  const capacity = clampGrid(grid.gridRows) * clampGrid(grid.gridColumns);
+  const items = presentBookshelf(result, settings, '').slice(0, capacity);
   const isShown = (hash: string) =>
     items.some((item) =>
       'books' in item ? item.books.some((b) => b.hash === hash) : item.hash === hash,
@@ -187,27 +146,51 @@ export const buildBookshelfWidgetSnapshot = async (
     playback && isShown(playback.bookHash)
       ? { active: playback.active, playing: playback.playing }
       : undefined;
+  const { definition } = result;
+  const groupBy = resolveBookshelfGroupBy(
+    definition,
+    settings.libraryGroupBy || LibraryGroupByType.Group,
+  );
   return {
-    items: await buildBookshelfWidgetItems(items, shelf, grid, appService, resolvedBooksDir),
-    sectionTitle: shelf.name,
+    shelfId,
+    items: await buildBookshelfWidgetItems(items, groupBy, appService, booksDir),
+    // Recently read keeps the old widget's look: covers only, no heading.
+    sectionTitle: definition.id === RECENT_BOOKSHELF_ID ? '' : shelfTitle(definition, _),
     emptyTitle,
     ...(tts ? { tts } : {}),
   };
 };
 
-// The snapshot last pushed for each widget, when every tile made it. Native
-// re-encodes every thumbnail on a push, so an unchanged snapshot is not sent
-// again. Per JS session: a fresh launch always pushes.
+/** The shelves and translated labels the native configure screen offers. */
+export const buildBookshelfWidgetCatalog = (
+  settings: Partial<SystemSettings>,
+  _: Translate,
+): BookshelfWidgetCatalog => ({
+  shelves: readBookshelves(settings).map((shelf) => ({
+    id: shelf.id,
+    name: shelfTitle(shelf, _),
+  })),
+  labels: {
+    title: _('Bookshelf'),
+    rows: _('Rows'),
+    columns: _('Columns'),
+    showTitles: _('Book title'),
+    cancel: _('Cancel'),
+    save: _('Save'),
+    openApp: _('Open Readest to show this bookshelf'),
+  },
+});
+
+// What was last pushed, when it fully succeeded. Native re-encodes every
+// thumbnail on a push, so an unchanged snapshot is not sent again. Per JS
+// session: a fresh launch always pushes.
 const lastPublished = new Map<number, string>();
+let lastCatalog = '';
 
 // Serializes overlapping calls (debounce/throttle/TTS triggers can land close
-// together) so they don't race the lastPublished cache below. A call mid-run
-// is queued (coalesced to the latest) and its promise settles only once that
-// rerun finishes, so Save - which backgrounds the app right after awaiting
-// this, with no other trigger to retry - isn't dropped or resolved early.
+// together) so they don't race the caches above. A call mid-run is queued
+// (coalesced to the latest) and its promise settles once that rerun finishes.
 let running = false;
-// Args overwrite to the latest queued call; promise/resolve are shared so
-// every queued caller settles together after the one rerun below.
 let pending: {
   args: Parameters<typeof refreshBookshelfWidget>;
   promise: Promise<void>;
@@ -216,11 +199,11 @@ let pending: {
 
 export const refreshBookshelfWidget = async (
   appService: AppService,
-  emptyTitle: string,
+  _: Translate,
   playback?: BookshelfWidgetPlayback,
 ): Promise<void> => {
   if (running) {
-    const args: Parameters<typeof refreshBookshelfWidget> = [appService, emptyTitle, playback];
+    const args: Parameters<typeof refreshBookshelfWidget> = [appService, _, playback];
     if (pending) {
       pending.args = args;
     } else {
@@ -234,30 +217,30 @@ export const refreshBookshelfWidget = async (
   try {
     if (!appService.isMobileApp) return;
     const library = useLibraryStore.getState().library;
+    const { settings } = useSettingsStore.getState();
 
-    let targets: {
-      appWidgetId: number;
-      shelf: BookshelfDefinition;
-      grid: BookshelfWidgetGridSettings;
-    }[];
+    let targets: BookshelfWidgetInstance[];
     if (appService.isAndroidApp) {
-      let instances: BookshelfWidgetInstance[];
+      // Published even with no widget placed: the configure screen reads it.
+      const catalog = buildBookshelfWidgetCatalog(settings, _);
+      const catalogJson = JSON.stringify(catalog);
+      if (catalogJson !== lastCatalog) {
+        try {
+          await setBookshelfWidgetCatalog(catalog);
+          lastCatalog = catalogJson;
+        } catch (err) {
+          console.warn('Failed to publish bookshelf widget catalog', err);
+        }
+      }
       try {
-        ({ instances } = await getBookshelfWidgetInstances());
+        ({ instances: targets } = await getBookshelfWidgetInstances());
       } catch (err) {
         console.warn('Failed to read bookshelf widget instances', err);
         return;
       }
-      targets = instances.map((instance) => ({
-        appWidgetId: instance.appWidgetId,
-        shelf: parseWidgetShelf(instance.shelf),
-        grid: instance,
-      }));
     } else {
-      // iOS has no per-instance configurable widget yet: one default snapshot.
-      targets = [
-        { appWidgetId: 0, shelf: defaultWidgetShelf(), grid: DEFAULT_BOOKSHELF_WIDGET_GRID },
-      ];
+      // iOS has no configurable widget yet: one default snapshot.
+      targets = [{ appWidgetId: 0, ...DEFAULT_WIDGET }];
     }
     for (const id of lastPublished.keys()) {
       if (!targets.some((target) => target.appWidgetId === id)) lastPublished.delete(id);
@@ -265,18 +248,20 @@ export const refreshBookshelfWidget = async (
     if (targets.length === 0) return;
 
     const booksDir = await resolveBooksDir(appService);
-    const results = evaluateWidgetShelves(library, targets);
+    const shelfFor = evaluateWidgetShelves(
+      library,
+      settings,
+      targets.map((target) => target.shelfId),
+    );
+    const emptyTitle = _('Your books will appear here');
 
     await Promise.all(
       targets.map(async (target) => {
         const snapshot = await buildBookshelfWidgetSnapshot(
-          results.get(target.appWidgetId)!,
-          target.shelf,
-          target.grid,
-          appService,
-          emptyTitle,
-          playback,
-          booksDir,
+          shelfFor(target.shelfId),
+          target.shelfId,
+          target,
+          { settings, appService, _, emptyTitle, playback, booksDir },
         );
         const request = { ...snapshot, appWidgetId: target.appWidgetId };
         const fingerprint = JSON.stringify(request);
@@ -296,7 +281,12 @@ export const refreshBookshelfWidget = async (
     running = false;
     const next = pending;
     pending = null;
-    if (next) await refreshBookshelfWidget(...next.args);
-    next?.resolve();
+    if (next) {
+      try {
+        await refreshBookshelfWidget(...next.args);
+      } finally {
+        next.resolve();
+      }
+    }
   }
 };

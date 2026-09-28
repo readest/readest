@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  buildAnnotationUrl,
-  parseWidgetGroupDeepLink,
-  parseWidgetSettingsDeepLink,
-} from '../../utils/deeplink';
+import { buildAnnotationUrl, parseWidgetGroupDeepLink } from '../../utils/deeplink';
 
 describe('buildAnnotationUrl', () => {
   const link = { bookHash: 'abc', noteId: 'n1', cfi: '/6/4!/4/2' };
@@ -31,14 +27,7 @@ describe('buildAnnotationUrl', () => {
   });
 });
 
-describe('widget deep links', () => {
-  it('parses a settings link by widget id', () => {
-    expect(parseWidgetSettingsDeepLink('readest://widget-settings/42')).toEqual({
-      appWidgetId: 42,
-    });
-    expect(parseWidgetSettingsDeepLink('readest://widget-settings/x')).toBeNull();
-  });
-
+describe('widget group deep link', () => {
   it('parses a group link into its axis and decoded group id', () => {
     expect(parseWidgetGroupDeepLink('readest://widget-group/series/a1b2%20c3')).toEqual({
       groupBy: 'series',
@@ -50,7 +39,6 @@ describe('widget deep links', () => {
   });
 
   it('only accepts the readest:// scheme, never the web host', () => {
-    expect(parseWidgetSettingsDeepLink('https://web.readest.com/o/widget-settings/42')).toBeNull();
     expect(parseWidgetGroupDeepLink('https://web.readest.com/o/widget-group/series/x')).toBeNull();
   });
 });

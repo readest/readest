@@ -103,10 +103,12 @@ private fun bindCell(
     coverHash: String,
     titleText: String,
     showTitles: Boolean,
+    sampleSize: Int,
     pendingIntent: PendingIntent,
 ) {
     val file = File(BookshelfWidgetStore.coversDir(context), "$coverHash.png")
-    val bitmap = if (file.exists()) BitmapFactory.decodeFile(file.absolutePath) else null
+    val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+    val bitmap = if (file.exists()) BitmapFactory.decodeFile(file.absolutePath, options) else null
     if (bitmap != null) views.setImageViewBitmap(coverId, bitmap)
     else views.setImageViewResource(coverId, android.R.color.transparent)
     if (showTitles) {
@@ -118,7 +120,10 @@ private fun bindCell(
     views.setOnClickPendingIntent(cellId, pendingIntent)
 }
 
-class BookshelfWidgetProvider : AppWidgetProvider() {
+/** The bookshelf widget. It keeps the name the first ("currently reading")
+ * widget shipped under: Android deletes every placed widget whose provider
+ * class disappears on upgrade. */
+class ReadingWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         for (id in ids) updateWidget(context, mgr, id)
     }
@@ -139,12 +144,20 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
         val gridRows = settings.gridRows.coerceIn(1, MAX_GRID_SIZE)
         val gridCols = settings.gridColumns.coerceIn(1, MAX_GRID_SIZE)
         val showTitles = settings.showTitles
+        // AppWidgetService rejects an update whose bitmaps exceed 6 x the
+        // screen's pixel area (~4.7 MB on a 758x1024 e-ink panel); 25 full
+        // 240x360 ARGB tiles are 8.6 MB, so larger grids decode at half size.
+        val sampleSize = if (gridRows * gridCols > 9) 2 else 1
 
         val views = RemoteViews(context.packageName, R.layout.widget_bookshelf)
 
-        // The heading is the instance's shelf name, which JS puts in the snapshot.
+        // Only the app can evaluate a shelf, so a new or reconfigured widget
+        // waits for it; tapping opens the app, which publishes the snapshot.
+        val loaded = snapshot.optString("shelfId") == settings.shelfId
+
+        // The heading is the shelf's name, which JS puts in the snapshot.
         val heading = snapshot.optString("sectionTitle")
-        if (heading.isBlank()) {
+        if (!loaded || heading.isBlank()) {
             views.setViewVisibility(R.id.heading, android.view.View.GONE)
         } else {
             views.setTextViewText(R.id.heading, heading)
@@ -153,14 +166,23 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
 
         val tts = snapshot.optJSONObject("tts")
         // JS only includes `tts` for instances whose shelf matches the playing book.
-        val showTtsBar = tts != null && tts.optBoolean("active")
+        val showTtsBar = loaded && tts != null && tts.optBoolean("active")
 
         // Group tiles and book tiles share the grid, in the order JS sent them.
         val count = snapshot.optJSONArray("items")?.length() ?: 0
-        if (count == 0) {
+        if (!loaded || count == 0) {
             views.setViewVisibility(R.id.empty, android.view.View.VISIBLE)
             views.setViewVisibility(R.id.grid, android.view.View.GONE)
-            views.setTextViewText(R.id.empty, snapshot.optString("emptyTitle"))
+            views.setTextViewText(
+                R.id.empty,
+                if (loaded) snapshot.optString("emptyTitle") else openAppLabel(context),
+            )
+            context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
+                views.setOnClickPendingIntent(
+                    R.id.empty,
+                    PendingIntent.getActivity(context, id, it, PendingIntent.FLAG_IMMUTABLE),
+                )
+            }
         } else {
             views.setViewVisibility(R.id.empty, android.view.View.GONE)
             views.setViewVisibility(R.id.grid, android.view.View.VISIBLE)
@@ -208,6 +230,7 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
                             coverHash = item.optString("coverKey"),
                             titleText = item.optString("value"),
                             showTitles = showTitles,
+                            sampleSize = sampleSize,
                             pendingIntent = groupPendingIntent(
                                 context,
                                 item.optString("groupBy"),
@@ -222,6 +245,7 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
                             coverHash = hash,
                             titleText = item.optString("title"),
                             showTitles = showTitles,
+                            sampleSize = sampleSize,
                             pendingIntent = bookPendingIntent(
                                 context, hash, id * MAX_GRID_SIZE * MAX_GRID_SIZE + itemIndex
                             )
@@ -260,6 +284,17 @@ class BookshelfWidgetProvider : AppWidgetProvider() {
         } else {
             views.setViewVisibility(R.id.tts_bar, android.view.View.GONE)
         }
-        mgr.updateAppWidget(id, views)
+        // Never let a rejected update escape: the app republishes on every
+        // launch, so a crash here would repeat on every launch.
+        try {
+            mgr.updateAppWidget(id, views)
+        } catch (e: IllegalArgumentException) {
+            android.util.Log.w("ReadingWidgetProvider", "widget $id update rejected", e)
+        }
     }
+
+    private fun openAppLabel(context: Context): String =
+        BookshelfWidgetStore.readCatalog(context).optJSONObject("labels")?.optString("openApp")
+            ?.takeIf { it.isNotBlank() }
+            ?: context.getString(R.string.widget_open_app)
 }

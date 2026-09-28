@@ -222,13 +222,6 @@ export async function interceptKeys(request: InterceptKeysRequest): Promise<void
   });
 }
 
-/** Android only: sends the app to the background, same as pressing the
- * system Home button. `widgetSaved` first answers a pending widget configure
- * request (true: place the widget, false: cancel it). */
-export async function moveTaskToBack(widgetSaved?: boolean): Promise<void> {
-  await invoke('plugin:native-bridge|move_task_to_back', { payload: { widgetSaved } });
-}
-
 export async function lockScreenOrientation(request: LockScreenRequest): Promise<void> {
   await invoke('plugin:native-bridge|lock_screen_orientation', {
     payload: request,
@@ -500,6 +493,8 @@ export type BookshelfWidgetItemPayload =
 
 export interface UpdateBookshelfWidgetRequest {
   appWidgetId: number;
+  /** The shelf the widget asked for; native shows a placeholder until they match. */
+  shelfId: string;
   /** Grid tiles in display order. */
   items: BookshelfWidgetItemPayload[];
   sectionTitle: string;
@@ -514,15 +509,12 @@ export async function updateBookshelfWidget(
   return invoke('plugin:native-bridge|update_bookshelf_widget', { payload: request });
 }
 
+/** A placed widget, as chosen in its native configure screen. */
 export interface BookshelfWidgetInstance {
   appWidgetId: number;
+  shelfId: string;
   gridRows: number;
   gridColumns: number;
-  showTitles: boolean;
-  groupMosaic: boolean;
-  /** JSON of the instance's own BookshelfDefinition (filters, sort, grouping,
-   * and the name shown as the widget heading). Empty means "use the default". */
-  shelf: string;
 }
 
 export interface GetBookshelfWidgetInstancesResponse {
@@ -535,8 +527,23 @@ export async function getBookshelfWidgetInstances(): Promise<GetBookshelfWidgetI
   );
 }
 
-export async function setBookshelfWidgetSettings(request: BookshelfWidgetInstance): Promise<void> {
-  await invoke('plugin:native-bridge|set_bookshelf_widget_settings', { payload: request });
+/** What the native configure screen offers, translated, since it can't read the app's settings. */
+export interface BookshelfWidgetCatalog {
+  shelves: { id: string; name: string }[];
+  labels: {
+    title: string;
+    rows: string;
+    columns: string;
+    showTitles: string;
+    cancel: string;
+    save: string;
+    /** Shown on a widget whose shelf hasn't been loaded by the app yet. */
+    openApp: string;
+  };
+}
+
+export async function setBookshelfWidgetCatalog(catalog: BookshelfWidgetCatalog): Promise<void> {
+  await invoke('plugin:native-bridge|set_bookshelf_widget_catalog', { payload: catalog });
 }
 
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────

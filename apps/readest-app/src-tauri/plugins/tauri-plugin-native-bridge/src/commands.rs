@@ -117,14 +117,6 @@ pub(crate) async fn intercept_keys<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn move_task_to_back<R: Runtime>(
-    app: AppHandle<R>,
-    payload: MoveTaskToBackRequest,
-) -> Result<()> {
-    app.native_bridge().move_task_to_back(payload)
-}
-
-#[command]
 pub(crate) async fn lock_screen_orientation<R: Runtime>(
     app: AppHandle<R>,
     payload: LockScreenOrientationRequest,
@@ -371,11 +363,11 @@ pub(crate) async fn get_bookshelf_widget_instances<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn set_bookshelf_widget_settings<R: Runtime>(
+pub(crate) async fn set_bookshelf_widget_catalog<R: Runtime>(
     app: AppHandle<R>,
-    payload: BookshelfWidgetInstanceSettings,
+    payload: BookshelfWidgetCatalog,
 ) -> Result<()> {
-    app.native_bridge().set_bookshelf_widget_settings(payload)
+    app.native_bridge().set_bookshelf_widget_catalog(payload)
 }
 
 /// Snapshot a region of the calling webview and return it as binary PNG

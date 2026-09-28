@@ -2521,8 +2521,6 @@
   "Background": "Fondo",
   "Follows the theme color": "Sigue el color del tema",
   "Background Style": "Estilo de fondo",
-  "Mosaic covers": "Portadas en mosaico",
   "Rows": "Filas",
-  "Matching books belong to the oldest exclusive widget": "Los libros coincidentes pertenecen al widget exclusivo más antiguo",
-  "Include books from exclusive widgets": "Incluir libros de widgets exclusivos"
+  "Open Readest to show this bookshelf": "Abre Readest para mostrar esta estantería"
 }

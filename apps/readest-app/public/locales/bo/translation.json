@@ -2401,8 +2401,6 @@
   "Background": "གནས་སྟངས།",
   "Follows the theme color": "བརྗོད་བྱའི་ཚོན་མདོག་ལ་རྗེས་སུ་འབྲང་།",
   "Background Style": "གནས་སྟངས་ཀྱི་རྣམ་པ།",
-  "Mosaic covers": "ཤོག་ཁེབས་ཚོམ་བཀོད",
   "Rows": "ཐིག་ཕྲེང་",
-  "Matching books belong to the oldest exclusive widget": "མཐུན་པའི་དཔེ་དེབ་ནི་རྙིང་ཤོས་ཀྱི་ཁེར་སྤྱོད་ཝིཇེཊ་ལ་གཏོགས།",
-  "Include books from exclusive widgets": "ཁེར་སྤྱོད་ཝིཇེཊ་ཀྱི་དཔེ་དེབ་འདུས་པ།"
+  "Open Readest to show this bookshelf": "དཔེ་ཁྲི་འདི་སྟོན་པར་ Readest ཁ་ཕྱེ།"
 }

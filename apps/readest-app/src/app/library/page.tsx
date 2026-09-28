@@ -804,6 +804,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       console.error('Failed to initialize library:', error);
       setCheckOpenWithBooks(false);
       setCheckLastOpenBooks(false);
+      // A launch link waiting on the library would otherwise hold the page blank for good.
+      useLibraryStore.getState().setCheckPendingLaunchLink(false);
       setLibraryLoaded(true);
       if (loadingTimeout) clearTimeout(loadingTimeout);
       setLoading(false);

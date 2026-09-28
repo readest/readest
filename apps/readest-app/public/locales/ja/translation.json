@@ -2401,8 +2401,6 @@
   "Background": "背景",
   "Follows the theme color": "テーマカラーに従う",
   "Background Style": "背景スタイル",
-  "Mosaic covers": "モザイク表紙",
   "Rows": "行",
-  "Matching books belong to the oldest exclusive widget": "一致する本は最も古い排他ウィジェットに属します",
-  "Include books from exclusive widgets": "排他ウィジェットの本を含める"
+  "Open Readest to show this bookshelf": "Readest を開くとこの本棚が表示されます"
 }

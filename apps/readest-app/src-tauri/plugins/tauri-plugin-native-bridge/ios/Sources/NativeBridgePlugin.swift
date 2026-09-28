@@ -2029,7 +2029,7 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["instances": [] as [Any]])
   }
 
-  @objc public func set_bookshelf_widget_settings(_ invoke: Invoke) {
+  @objc public func set_bookshelf_widget_catalog(_ invoke: Invoke) {
     invoke.resolve()
   }
 

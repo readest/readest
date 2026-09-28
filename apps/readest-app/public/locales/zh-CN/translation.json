@@ -2401,8 +2401,6 @@
   "Background": "背景",
   "Follows the theme color": "跟随主题颜色",
   "Background Style": "背景样式",
-  "Mosaic covers": "马赛克封面",
   "Rows": "行数",
-  "Matching books belong to the oldest exclusive widget": "匹配的书籍归入最早的独占小组件",
-  "Include books from exclusive widgets": "包含独占小组件中的书籍"
+  "Open Readest to show this bookshelf": "打开 Readest 以显示此书架"
 }

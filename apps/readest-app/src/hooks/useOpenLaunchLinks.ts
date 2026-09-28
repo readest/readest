@@ -14,7 +14,6 @@ import {
   parseAnnotationDeepLink,
   parseBookDeepLink,
   parseWidgetGroupDeepLink,
-  parseWidgetSettingsDeepLink,
 } from '@/utils/deeplink';
 import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
 import { isMainAppWindow } from '@/utils/window';
@@ -57,7 +56,6 @@ const releaseLaunchLinkGate = () => useLibraryStore.getState().setCheckPendingLa
  *   readest://book/{hash}                                  a widget or Android Auto tap
  *   readest://book/{hash}/annotation/{id}?cfi=...          a highlight (also the https form
  *   readest://annotation/{hash}/{id}                        and the legacy Readwise one)
- *   readest://widget-settings/{appWidgetId}                the widget's settings screen
  *   readest://widget-group/{groupBy}/{groupId}             a "browse groups" tile tap
  */
 export function useOpenLaunchLinks() {
@@ -145,14 +143,6 @@ export function useOpenLaunchLinks() {
         id: 'launchAnnotationUrls',
         needsLibrary: true,
         open: () => openBook(annotation.bookHash, annotation.cfi),
-      };
-    }
-    const settings = parseWidgetSettingsDeepLink(url);
-    if (settings) {
-      return {
-        id: 'launchWidgetLinkUrls',
-        needsLibrary: false,
-        open: () => router.push(`/widget-settings?appWidgetId=${settings.appWidgetId}`),
       };
     }
     const group = parseWidgetGroupDeepLink(url);

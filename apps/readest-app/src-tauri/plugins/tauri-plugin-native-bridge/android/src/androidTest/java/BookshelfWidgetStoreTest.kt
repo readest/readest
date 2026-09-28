@@ -252,19 +252,14 @@ class BookshelfWidgetStoreTest {
         }
     }
 
-    // The shelf is opaque JSON to native: quotes, backslashes and non-ASCII must
-    // survive the settings blob unchanged.
-    private val shelfJson = """{"name":"Sci-fi \"classics\" \\ 読書","filters":{"type":"group"}}"""
-
     @Test
     fun instanceSettings_roundTripsPerWidgetId() {
         try {
             BookshelfWidgetStore.writeInstanceSettings(
                 ctx, 601,
                 BookshelfWidgetInstanceSettings(
-                    gridRows = 4, gridColumns = 5,
-                    showTitles = true, groupMosaic = false,
-                    shelf = shelfJson,
+                    shelfId = "11111111-1111-4111-8111-111111111111",
+                    gridRows = 4, gridColumns = 5, showTitles = true,
                 )
             )
             BookshelfWidgetStore.writeInstanceSettings(
@@ -272,11 +267,10 @@ class BookshelfWidgetStoreTest {
             )
 
             val a = BookshelfWidgetStore.readInstanceSettings(ctx, 601)
+            assertEquals("11111111-1111-4111-8111-111111111111", a.shelfId)
             assertEquals(4, a.gridRows)
             assertEquals(5, a.gridColumns)
             assertTrue(a.showTitles)
-            assertFalse(a.groupMosaic)
-            assertEquals(shelfJson, a.shelf)
 
             assertEquals(2, BookshelfWidgetStore.readInstanceSettings(ctx, 602).gridRows)
         } finally {
@@ -292,8 +286,7 @@ class BookshelfWidgetStoreTest {
         assertEquals(1, neverSet.gridRows)
         assertEquals(3, neverSet.gridColumns)
         assertFalse(neverSet.showTitles)
-        assertTrue(neverSet.groupMosaic)
-        assertEquals("", neverSet.shelf)
+        assertEquals("recent", neverSet.shelfId)
 
         val prefs = ctx.getSharedPreferences(BookshelfWidgetStore.PREFS, Context.MODE_PRIVATE)
         try {

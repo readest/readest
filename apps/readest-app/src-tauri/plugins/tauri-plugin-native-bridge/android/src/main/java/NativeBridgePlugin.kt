@@ -107,11 +107,6 @@ class SetSystemUIVisibilityRequestArgs {
 }
 
 @InvokeArg
-class MoveTaskToBackArgs {
-    var widgetSaved: Boolean? = null
-}
-
-@InvokeArg
 class InterceptKeysRequestArgs {
     var volumeKeys: Boolean? = null
     var backKey: Boolean? = null
@@ -189,6 +184,7 @@ class UpdateBookshelfWidgetTtsArgs {
 @InvokeArg
 class UpdateBookshelfWidgetRequestArgs {
     var appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
+    var shelfId: String = ""
     var items: List<UpdateBookshelfWidgetItemArgs> = emptyList()
     var sectionTitle: String = ""
     var emptyTitle: String = ""
@@ -196,17 +192,6 @@ class UpdateBookshelfWidgetRequestArgs {
     var tts: UpdateBookshelfWidgetTtsArgs? = null
 }
 
-@InvokeArg
-class SetBookshelfWidgetSettingsArgs {
-    var appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
-    var gridRows: Int = BookshelfWidgetStore.DEFAULT_GRID_ROWS
-    var gridColumns: Int = BookshelfWidgetStore.DEFAULT_GRID_COLUMNS
-    var showTitles: Boolean = false
-    var groupMosaic: Boolean = true
-    var shelf: String = ""
-
-    fun toSettings() = BookshelfWidgetInstanceSettings(gridRows, gridColumns, showTitles, groupMosaic, shelf)
-}
 
 data class ProductData(
     val id: String,
@@ -339,6 +324,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         private var pendingFilePickerData: Intent? = null
         private var instance: NativeBridgePlugin? = null
         fun getInstance(): NativeBridgePlugin? = instance
+
+        /** Asks a running app to publish a just-configured widget's snapshot. */
+        fun notifyWidgetConfigured() {
+            instance?.triggerEvent("bookshelf-widget-configured", JSObject())
+        }
 
         fun deliverActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             val plugin = instance
@@ -979,17 +969,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         invoke.resolve()
     }
 
-    // Sends the app to the background, same as pressing the system Home
-    // button. widgetSaved answers a pending widget configure first, so the
-    // launcher gets the result as it comes back to the front.
-    @Command
-    fun move_task_to_back(invoke: Invoke) {
-        val args = invoke.parseArgs(MoveTaskToBackArgs::class.java)
-        args.widgetSaved?.let { BookshelfWidgetConfigureActivity.finishPending(it) }
-        activity.moveTaskToBack(true)
-        invoke.resolve()
-    }
-
     // Suppress a piece of the OS selection UI. target "menu" (#5427): gate for
     // the system text-selection floating toolbar — MainActivity consults this
     // flag in onWindowStartingActionMode; see SelectionMenuSuppressor. target
@@ -1503,7 +1482,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     // ids.
     private fun isBoundBookshelfWidget(id: Int): Boolean {
         val mgr = AppWidgetManager.getInstance(activity) ?: return false
-        return id in mgr.getAppWidgetIds(ComponentName(activity, BookshelfWidgetProvider::class.java))
+        return id in mgr.getAppWidgetIds(ComponentName(activity, ReadingWidgetProvider::class.java))
     }
 
     @Command
@@ -1566,6 +1545,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     }
                 }
                 val snapshot = org.json.JSONObject()
+                    .put("shelfId", args.shelfId)
                     .put("items", items)
                     .put("sectionTitle", args.sectionTitle)
                     .put("emptyTitle", args.emptyTitle)
@@ -1577,7 +1557,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                             .put("playing", tts.playing)
                     )
                 }
-                BookshelfWidgetStore.writeSnapshot(activity, args.appWidgetId, snapshot.toString())
+                // Removed while its covers were written: onDeleted has already
+                // cleared it, and nothing would clear a snapshot written now.
+                if (isBoundBookshelfWidget(args.appWidgetId)) {
+                    BookshelfWidgetStore.writeSnapshot(activity, args.appWidgetId, snapshot.toString())
+                }
                 failedTiles
             }
             // Tiles whose cover was missing or failed, so the caller retries them.
@@ -1588,12 +1572,17 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     @Command
     fun get_bookshelf_widget_instances(invoke: Invoke) {
         val mgr = AppWidgetManager.getInstance(activity)
-        val ids = mgr?.getAppWidgetIds(ComponentName(activity, BookshelfWidgetProvider::class.java))
+        val ids = mgr?.getAppWidgetIds(ComponentName(activity, ReadingWidgetProvider::class.java))
             ?: IntArray(0)
         val instances = org.json.JSONArray()
         for (id in ids) {
+            val settings = BookshelfWidgetStore.readInstanceSettings(activity, id)
             instances.put(
-                BookshelfWidgetStore.readInstanceSettings(activity, id).toJson().put("appWidgetId", id)
+                org.json.JSONObject()
+                    .put("appWidgetId", id)
+                    .put("shelfId", settings.shelfId)
+                    .put("gridRows", settings.gridRows)
+                    .put("gridColumns", settings.gridColumns)
             )
         }
         val ret = JSObject()
@@ -1601,16 +1590,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         invoke.resolve(ret)
     }
 
+    // The configure screen can't read the app's settings, so the app publishes
+    // its shelves and the screen's translated labels here.
     @Command
-    fun set_bookshelf_widget_settings(invoke: Invoke) {
-        val args = invoke.parseArgs(SetBookshelfWidgetSettingsArgs::class.java)
-        val id = args.appWidgetId
-        if (!isBoundBookshelfWidget(id)) {
-            invoke.reject("appWidgetId is not a bound widget")
-            return
-        }
-        BookshelfWidgetStore.writeInstanceSettings(activity, id, args.toSettings())
-        BookshelfWidgetStore.notifyWidget(activity, id)
+    fun set_bookshelf_widget_catalog(invoke: Invoke) {
+        BookshelfWidgetStore.writeCatalog(activity, invoke.getArgs().toString())
         invoke.resolve()
     }
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { addPluginListener, type PluginListener } from '@tauri-apps/api/core';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { refreshBookshelfWidget } from '@/services/widget/bookshelfWidget';
@@ -12,8 +13,9 @@ import { useTranslation } from './useTranslation';
  * Publish the home-screen bookshelf-widget snapshot. The widget is only visible
  * while the app is backgrounded, so we publish (1) once the library is loaded,
  * (2) whenever the app goes to the background, (3) immediately on a TTS
- * playback-state change (so controls appear/disappear), and (4) throttled on
- * TTS position advances so the progress percent stays live while speaking.
+ * playback-state change (so controls appear/disappear), (4) throttled on TTS
+ * position advances so the progress percent stays live while speaking, and
+ * (5) when a widget is placed or reconfigured while the app is running.
  * Mounted on both the library and reader pages.
  */
 export function useBookshelfWidget() {
@@ -24,13 +26,12 @@ export function useBookshelfWidget() {
 
   useEffect(() => {
     if (!appService?.isMobileApp) return;
-    const emptyTitle = _('Your books will appear here');
 
     const publishNow = () => {
       const tts = ttsRef.current;
       void refreshBookshelfWidget(
         appService,
-        emptyTitle,
+        _,
         tts.active ? { active: true, playing: tts.playing, bookHash: tts.bookHash } : undefined,
       );
     };
@@ -65,10 +66,23 @@ export function useBookshelfWidget() {
       publishNow();
     };
 
+    let configuredListener: PluginListener | undefined;
+    let unmounted = false;
+    if (appService.isAndroidApp) {
+      addPluginListener('native-bridge', 'bookshelf-widget-configured', publishNow)
+        .then((listener) => {
+          if (unmounted) void listener.unregister();
+          else configuredListener = listener;
+        })
+        .catch((err) => console.warn('Failed to listen for widget configuration', err));
+    }
+
     document.addEventListener('visibilitychange', onVisibility);
     eventDispatcher.on('tts-playback-state', onPlaybackState);
     eventDispatcher.on('tts-position', publishPosition);
     return () => {
+      unmounted = true;
+      void configuredListener?.unregister();
       document.removeEventListener('visibilitychange', onVisibility);
       eventDispatcher.off('tts-playback-state', onPlaybackState);
       eventDispatcher.off('tts-position', publishPosition);

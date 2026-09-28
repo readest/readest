@@ -150,20 +150,6 @@ export const navigateToLibrary = (
   router.replace(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
 };
 
-/**
- * Back-button floor for a screen with no reliable navigation history (a
- * direct deep link, or a cold app start) - router.back() would either no-op
- * or exit the app/webview in that case, so fall back to the library instead.
- * Mirrors the same window.history.length check src/app/error.tsx uses.
- */
-export const popNavigationOrGoToLibrary = (router: ReturnType<typeof useRouter>) => {
-  if (window.history.length > 1) {
-    router.back();
-  } else {
-    navigateToLibrary(router);
-  }
-};
-
 // Recovery action when a reader has nothing to display — e.g. all books were
 // closed, or a book failed to load in a freshly-opened reader window.
 // In a dedicated reader window we close the window itself, ensuring the main

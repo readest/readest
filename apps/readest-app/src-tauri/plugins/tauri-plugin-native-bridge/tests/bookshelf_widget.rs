@@ -1,9 +1,12 @@
-use tauri_plugin_native_bridge::{BookshelfWidgetItem, UpdateBookshelfWidgetRequest};
+use tauri_plugin_native_bridge::{
+    BookshelfWidgetCatalog, BookshelfWidgetItem, UpdateBookshelfWidgetRequest,
+};
 
 #[test]
 fn deserializes_book_and_group_items_in_order() {
     let json = r#"{
       "appWidgetId": 42,
+      "shelfId": "recent",
       "items": [
         {"type":"group","id":"g1","groupBy":"series","value":"Foundation","coverPaths":["/x/a/cover.png","/x/b/cover.png"]},
         {"type":"book","hash":"h1","title":"T","author":"A","percent":72,"showProgress":true,"coverPath":"/x/h1/cover.png"}
@@ -13,6 +16,7 @@ fn deserializes_book_and_group_items_in_order() {
     }"#;
     let req: UpdateBookshelfWidgetRequest = serde_json::from_str(json).unwrap();
     assert_eq!(req.app_widget_id, 42);
+    assert_eq!(req.shelf_id, "recent");
     assert_eq!(req.section_title, "Continue reading");
     assert!(
         req.tts.is_none(),
@@ -37,6 +41,7 @@ fn deserializes_book_and_group_items_in_order() {
     // Same request shape, plus the optional tts field.
     let json_with_tts = r#"{
       "appWidgetId": 42,
+      "shelfId": "recent",
       "items": [],
       "sectionTitle": "S",
       "emptyTitle": "E",
@@ -53,8 +58,20 @@ fn deserializes_book_and_group_items_in_order() {
 #[test]
 fn rejects_an_item_of_an_unknown_type() {
     let json = r#"{
-      "appWidgetId": 42, "items": [{"type":"shelf"}],
+      "appWidgetId": 42, "shelfId": "recent", "items": [{"type":"shelf"}],
       "sectionTitle": "S", "emptyTitle": "E"
     }"#;
     assert!(serde_json::from_str::<UpdateBookshelfWidgetRequest>(json).is_err());
+}
+
+#[test]
+fn deserializes_the_configure_screen_catalog() {
+    let json = r#"{
+      "shelves": [{"id":"recent","name":"Recently read"}],
+      "labels": {"title":"Bookshelf","rows":"Rows","columns":"Columns","showTitles":"Book title",
+                 "cancel":"Cancel","save":"Save","openApp":"Open Readest"}
+    }"#;
+    let catalog: BookshelfWidgetCatalog = serde_json::from_str(json).unwrap();
+    assert_eq!(catalog.shelves[0].name, "Recently read");
+    assert_eq!(catalog.labels.show_titles, "Book title");
 }

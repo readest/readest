@@ -152,24 +152,6 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn move_task_to_back(&self, payload: MoveTaskToBackRequest) -> crate::Result<()> {
-        // iOS has no public API to programmatically background the app (unlike
-        // Android's moveTaskToBack), so this is Android-only.
-        #[cfg(target_os = "android")]
-        {
-            self.0
-                .run_mobile_plugin("move_task_to_back", payload)
-                .map_err(Into::into)
-        }
-        #[cfg(not(target_os = "android"))]
-        {
-            let _ = payload;
-            Err(crate::Error::UnsupportedPlatformError)
-        }
-    }
-}
-
-impl<R: Runtime> NativeBridge<R> {
     pub fn lock_screen_orientation(
         &self,
         payload: LockScreenOrientationRequest,
@@ -524,12 +506,12 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
-    pub fn set_bookshelf_widget_settings(
+    pub fn set_bookshelf_widget_catalog(
         &self,
-        payload: BookshelfWidgetInstanceSettings,
+        payload: BookshelfWidgetCatalog,
     ) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin("set_bookshelf_widget_settings", payload)
+            .run_mobile_plugin("set_bookshelf_widget_catalog", payload)
             .map_err(Into::into)
     }
 }
