@@ -49,18 +49,13 @@ export type SettingsPanelPanelProp = {
   onRegisterReset: (resetFn: () => void) => void;
 };
 
-type SettingsScrollPosition = {
-  panel: SettingsPanelType;
-  top: number;
-};
-
-// Keep the scroll position in memory only. It should survive closing and
-// reopening Settings during this app run, but disappear when the app exits.
-let settingsScrollPosition: SettingsScrollPosition | null = null;
+// Where Settings was left, kept for this app run only so reopening the dialog
+// returns to the same spot on the same panel.
+let savedScroll: { panel: SettingsPanelType; top: number } | null = null;
 
 // Test-only reset for the module-level runtime cache.
 export const resetSettingsScrollPosition = () => {
-  settingsScrollPosition = null;
+  savedScroll = null;
 };
 
 type TabConfig = {
@@ -157,115 +152,36 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
     return 'Font' as SettingsPanelType;
   });
-  const previousActivePanelRef = useRef(activePanel);
-  const hasSwitchedPanelRef = useRef(false);
 
   useLayoutEffect(() => {
-    if (previousActivePanelRef.current !== activePanel) {
-      hasSwitchedPanelRef.current = true;
-      previousActivePanelRef.current = activePanel;
-    }
-
-    const savedTop =
-      !hasSwitchedPanelRef.current && settingsScrollPosition?.panel === activePanel
-        ? settingsScrollPosition.top
-        : null;
-    const shouldAnimateRestore = savedTop !== null && savedTop !== 0;
     const panel = panelRef.current;
+    const scroller = panel?.closest<HTMLElement>('[data-overlayscrollbars-contents]');
+    if (!panel || !scroller) return;
+    // Cleanup records the panel being left, so only a fresh open of the same
+    // panel restores; switching tabs starts the new panel at the top.
+    const top = savedScroll?.panel === activePanel ? savedScroll.top : 0;
 
-    const clearVisibility = (element: HTMLElement | null) => {
-      if (!element) return;
-      element.style.removeProperty('visibility');
-      element.style.removeProperty('opacity');
-      element.style.removeProperty('transition');
-    };
-    const hideForRestore = (element: HTMLElement | null) => {
-      if (!element) return;
-      element.style.visibility = 'hidden';
-      element.style.opacity = '0';
-      element.style.transition = 'none';
-    };
-    const revealAfterRestore = (element: HTMLElement | null) => {
-      if (!element) return;
-      element.style.transition = 'opacity 200ms ease-out';
-      element.style.visibility = 'visible';
-      element.style.opacity = '1';
-    };
-
-    if (shouldAnimateRestore) {
-      // Keep the content blank while the deferred viewport is initialized and
-      // the saved position is applied, then fade it in at the target position.
-      hideForRestore(panel);
-      hideForRestore(panel?.closest<HTMLElement>('[data-overlayscrollbars-viewport]') ?? null);
-    } else {
-      clearVisibility(panel);
-    }
-
-    let viewport: HTMLElement | null = null;
-    let saveScrollPosition: (() => void) | null = null;
-    let revealFrame: number | null = null;
+    // OverlayScrollbars initializes deferred, so on open the scroller cannot
+    // take a position yet. Hide the panel until it becomes the viewport.
     let observer: MutationObserver | null = null;
-    let disposed = false;
-
-    const attachScrollTracking = () => {
-      if (disposed || viewport) return;
-      viewport =
-        panelRef.current?.closest<HTMLElement>('[data-overlayscrollbars-viewport]') ?? null;
-      if (!viewport) return;
-
-      const currentViewport = viewport;
-      saveScrollPosition = () => {
-        settingsScrollPosition = { panel: activePanel, top: currentViewport.scrollTop };
-      };
-      currentViewport.addEventListener('scroll', saveScrollPosition, { passive: true });
-      if (savedTop !== null) {
-        if (shouldAnimateRestore) hideForRestore(currentViewport);
-        currentViewport.scrollTop = savedTop;
-        if (shouldAnimateRestore) {
-          const reveal = () => {
-            revealFrame = null;
-            if (disposed) return;
-            revealAfterRestore(currentViewport);
-            revealAfterRestore(panelRef.current);
-          };
-          if (typeof window.requestAnimationFrame === 'function') {
-            revealFrame = window.requestAnimationFrame(reveal);
-          } else {
-            reveal();
-          }
-        }
-      } else {
-        currentViewport.scrollTop = 0;
-        clearVisibility(currentViewport);
-        clearVisibility(panelRef.current);
-        saveScrollPosition();
-      }
+    const apply = () => {
+      if (!scroller.hasAttribute('data-overlayscrollbars-viewport')) return false;
+      scroller.scrollTop = top;
+      panel.style.visibility = '';
       observer?.disconnect();
       observer = null;
+      return true;
     };
-
-    attachScrollTracking();
-    if (!viewport) {
-      // OverlayScrollbars initializes its viewport asynchronously (`defer`).
-      // Watch the dialog subtree so the saved position can be restored as soon
-      // as that viewport is created, without changing the tab-switch reset.
-      const dialog = panelRef.current?.closest<HTMLElement>('.modal-box');
-      if (dialog) {
-        observer = new MutationObserver(attachScrollTracking);
-        observer.observe(dialog, { childList: true, subtree: true });
-      }
+    if (!apply() && top) {
+      panel.style.visibility = 'hidden';
+      observer = new MutationObserver(apply);
+      observer.observe(scroller, { attributeFilter: ['data-overlayscrollbars-viewport'] });
     }
 
     return () => {
-      disposed = true;
-      if (revealFrame !== null) window.cancelAnimationFrame(revealFrame);
-      observer?.disconnect();
-      if (viewport && saveScrollPosition) {
-        saveScrollPosition();
-        viewport.removeEventListener('scroll', saveScrollPosition);
-      }
-      clearVisibility(panel);
-      clearVisibility(viewport);
+      if (observer) observer.disconnect();
+      else savedScroll = { panel: activePanel, top: scroller.scrollTop };
+      panel.style.visibility = '';
     };
   }, [activePanel]);
 
