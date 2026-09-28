@@ -24,8 +24,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/components/ui/*": ["./src/components/primitives/*"],
-      "@pdfjs/*": ["./vendor/pdfjs/*"],
-      "@simplecc/*": ["./vendor/simplecc/*"],
+      "@pdfjs/*": ["../../packages/foliate-js/node_modules/pdfjs-dist/legacy/build/*"],
+      "@simplecc/*": ["../../packages/simplecc-wasm/dist/web/*"],
       "js-mdict": ["../../packages/js-mdict/src/index.ts"],
       "fflate": ["./node_modules/fflate"],
       "tauri-plugin-turso": ["./src-tauri/plugins/tauri-plugin-turso/guest-js"]
@@ -36,6 +36,7 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "raw-loader.d.ts",
+    "pdfjs.d.ts",
     ".next/types/**/*.ts",
     "scripts/**/*.ts",
     "bench/**/*.ts"

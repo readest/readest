@@ -1,7 +1,6 @@
 'use client';
 
 import '@/utils/polyfill';
-import posthog from 'posthog-js';
 import i18n from '@/i18n/i18n';
 import { useEffect, useState } from 'react';
 import { IconContext } from 'react-icons';
@@ -9,7 +8,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import WindowResizeHandles from '@/components/WindowResizeHandles';
 import WindowOutline from '@/components/WindowOutline';
-import { CSPostHogProvider } from '@/context/PHContext';
+import { CSPostHogProvider, initPostHog } from '@/context/PHContext';
 import { SyncProvider } from '@/context/SyncContext';
 import { initSystemThemeListener, loadDataTheme } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -24,9 +23,11 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { getAndroidPatchedViewportContent } from '@/utils/viewport';
 import {
   getTelemetryDecision,
+  optInTelemetry,
+  optOutTelemetry,
+  reconcileTelemetryConsent,
   rollIntoTelemetryPromptBucket,
   setTelemetryDecision,
-  TELEMETRY_OPT_OUT_KEY,
 } from '@/utils/telemetry';
 import { getLibraryViewSettings } from '@/helpers/settings';
 import { SETTINGS_FILENAME } from '@/services/constants';
@@ -71,19 +72,27 @@ const finalizeTelemetryDecision = ({
     onShowPrompt();
     return;
   }
-  if (existing !== null) return;
+  if (existing !== null) {
+    // The decision is recorded. PostHog's consent can still drift from the
+    // settings file (a command-palette toggle, another window, or an edited
+    // settings file), so line the two up on every boot (issue #6422).
+    const telemetryEnabled = reconcileTelemetryConsent(settings.telemetryEnabled);
+    if (settings.telemetryEnabled !== telemetryEnabled) {
+      // A recorded opt-out wins over a stale `true` in the file. Save it so
+      // the settings switch shows telemetry as off.
+      settings.telemetryEnabled = telemetryEnabled;
+      void appService.saveSettings(settings);
+    }
+    return;
+  }
 
   if (!isNewUser) {
-    // Existing user: don't change anything they had set. Sync PostHog to
-    // their saved preference and record the decision so we stop checking.
+    // Existing user: keep their saved preference and record the decision so
+    // we stop checking.
     if (settings.telemetryEnabled) {
-      localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'false');
-      posthog.opt_in_capturing();
-      setTelemetryDecision('opt-in');
+      optInTelemetry();
     } else {
-      localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'true');
-      posthog.opt_out_capturing();
-      setTelemetryDecision('opt-out');
+      optOutTelemetry();
     }
     return;
   }
@@ -94,9 +103,7 @@ const finalizeTelemetryDecision = ({
     setTelemetryDecision('pending');
     onShowPrompt();
   } else {
-    localStorage.setItem(TELEMETRY_OPT_OUT_KEY, 'true');
-    posthog.opt_out_capturing();
-    setTelemetryDecision('opt-out');
+    optOutTelemetry();
     // Persist the off-by-default to the settings file directly. The settings
     // store isn't seeded yet at this point in boot, so saveSysSettings would
     // write a malformed partial object — write through appService instead.
@@ -154,6 +161,8 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
           isNewUser: !hadSettingsFile,
           onShowPrompt: () => setShowTelemetryConsent(true),
         });
+        // Consent is final now, so PostHog may start.
+        initPostHog();
         applyUILanguage(globalViewSettings.uiLanguage);
         // Seed the customTextureStore with the disk-loaded textures (preserving
         // their saved ids) so the boot-time applyBackgroundTexture below can

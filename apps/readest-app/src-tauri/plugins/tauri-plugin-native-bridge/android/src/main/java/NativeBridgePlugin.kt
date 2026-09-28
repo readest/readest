@@ -18,6 +18,7 @@ import android.provider.Settings
 import android.provider.DocumentsContract
 import android.view.View
 import android.view.KeyEvent
+import android.view.RoundedCorner
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.WindowInsetsController
@@ -1002,6 +1003,16 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 ret.put("right", insets.right / density)
                 ret.put("bottom", insets.bottom / density)
                 ret.put("left", insets.left / density)
+                // Rounded screen corners are not part of the cutout insets; report
+                // the bottom radius so the reader footer can keep clear of the curve.
+                var bottomCornerRadius = 0
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val platformInsets = rootView.rootWindowInsets
+                    val left = platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)?.radius ?: 0
+                    val right = platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)?.radius ?: 0
+                    bottomCornerRadius = maxOf(left, right)
+                }
+                ret.put("bottomCornerRadius", bottomCornerRadius / density)
             } else {
                 ret.put("top", 0)
                 ret.put("right", 0)

@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { StrictMode, type ReactNode } from 'react';
 
 const env = vi.hoisted(() => ({ isAndroidApp: true, isMobile: true }));
+// OverlayScrollbars initializes with `defer`, so on open the contents element
+// exists but is not yet the scrolling viewport.
+const scroller = vi.hoisted(() => ({ initialized: true }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: env }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (text: string) => text }));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (size: number) => size }));
@@ -23,7 +26,12 @@ vi.mock('@/components/Dialog', () => ({
   default: ({ children, header }: { children: ReactNode; header: ReactNode }) => (
     <>
       {header}
-      <div data-testid='viewport' data-overlayscrollbars-viewport='' style={{ overflowY: 'auto' }}>
+      <div
+        data-testid='viewport'
+        data-overlayscrollbars-contents=''
+        data-overlayscrollbars-viewport={scroller.initialized ? '' : undefined}
+        style={{ overflowY: 'auto' }}
+      >
         {children}
       </div>
     </>
@@ -45,7 +53,9 @@ vi.mock('@/components/settings/AIPanel', () => ({ default: () => null }));
 vi.mock('@/components/settings/IntegrationsPanel', () => ({ default: () => null }));
 vi.mock('@/components/settings/MiscPanel', () => ({ default: () => null }));
 
-const { default: SettingsDialog } = await import('@/components/settings/SettingsDialog');
+const { default: SettingsDialog, resetSettingsScrollPosition } = await import(
+  '@/components/settings/SettingsDialog'
+);
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -56,10 +66,12 @@ beforeEach(() => {
     },
   );
   env.isAndroidApp = true;
+  scroller.initialized = true;
   localStorage.clear();
 });
 afterEach(() => {
   cleanup();
+  resetSettingsScrollPosition();
   vi.unstubAllGlobals();
   document.documentElement.removeAttribute('data-eink');
 });
@@ -134,6 +146,62 @@ describe('Android Settings overscroll', () => {
 });
 
 describe('Settings tab scrolling', () => {
+  const scrollAndClose = (top: number) => {
+    const { viewport } = setup();
+    viewport.scrollTop = top;
+    cleanup();
+  };
+
+  it('restores the scroll position when reopened during the same app run', () => {
+    scrollAndClose(240);
+    render(<SettingsDialog bookKey='' />);
+    expect(screen.getByTestId('viewport').scrollTop).toBe(240);
+  });
+
+  it('hides the panel until the deferred scroller can take the saved position', async () => {
+    scrollAndClose(240);
+    scroller.initialized = false;
+    render(<SettingsDialog bookKey='' />);
+    const viewport = screen.getByTestId('viewport');
+    const panel = screen.getByTestId('content').parentElement!;
+    expect(panel.style.visibility).toBe('hidden');
+
+    viewport.setAttribute('data-overlayscrollbars-viewport', '');
+    await waitFor(() => expect(panel.style.visibility).toBe(''));
+    expect(viewport.scrollTop).toBe(240);
+  });
+
+  it('keeps the saved position when closed before the scroller initializes', () => {
+    scrollAndClose(240);
+    scroller.initialized = false;
+    render(<SettingsDialog bookKey='' />);
+    cleanup();
+
+    scroller.initialized = true;
+    render(<SettingsDialog bookKey='' />);
+    expect(screen.getByTestId('viewport').scrollTop).toBe(240);
+  });
+
+  it('restores under StrictMode double-invoked effects', async () => {
+    scrollAndClose(240);
+    scroller.initialized = false;
+    render(
+      <StrictMode>
+        <SettingsDialog bookKey='' />
+      </StrictMode>,
+    );
+    const viewport = screen.getByTestId('viewport');
+    viewport.setAttribute('data-overlayscrollbars-viewport', '');
+    await waitFor(() => expect(viewport.scrollTop).toBe(240));
+  });
+
+  it('does not restore a position saved on another panel', () => {
+    scrollAndClose(240);
+    localStorage.setItem('lastConfigPanel', 'Layout');
+    render(<SettingsDialog bookKey='' />);
+    expect(screen.getByTestId('viewport').scrollTop).toBe(0);
+  });
+
   it.each([true, false])('starts a newly selected tab at the top (Android: %s)', (android) => {
     env.isAndroidApp = android;
     const { viewport } = setup(200);

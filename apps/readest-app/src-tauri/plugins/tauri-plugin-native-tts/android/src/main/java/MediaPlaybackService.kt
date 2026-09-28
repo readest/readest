@@ -561,6 +561,16 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED, 0L, 1f).build()
             )
             setCallback(SessionCallback())
+            packageManager.getLaunchIntentForPackage(packageName)?.let { launchIntent ->
+                setSessionActivity(
+                    PendingIntent.getActivity(
+                        this@MediaPlaybackService,
+                        0,
+                        launchIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
+                )
+            }
             // A browser client can select a book while no TTS session is
             // already playing. Keep the media session command-ready for the
             // lifetime of the bound service; sessionActive separately gates

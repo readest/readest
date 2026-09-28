@@ -14,6 +14,7 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { isTauriAppPlatform } from '@/services/environment';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import {
   BoxedList,
   NavigationRow,
@@ -123,6 +124,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       false,
       true,
     );
+    if (appService?.hasUpdater) {
+      const { autoCheckUpdates = true, updateChannel = 'stable' } = DEFAULT_SYSTEM_SETTINGS;
+      saveSysSettings(envConfig, 'autoCheckUpdates', autoCheckUpdates);
+      saveSysSettings(envConfig, 'updateChannel', updateChannel);
+      setIsAutoCheckUpdates(autoCheckUpdates);
+      setIsNightlyChannel(updateChannel === 'nightly');
+    }
     pageTurnerResetRef.current();
     // Keyboard/mouse bindings are NOT reset here — they are device-local and
     // have their own "Reset all" inside the Keyboard Shortcuts sub-page.

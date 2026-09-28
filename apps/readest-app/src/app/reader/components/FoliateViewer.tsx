@@ -83,6 +83,7 @@ import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
+import { isDialogueHighlightActive, manageDialogueHighlight } from '@/utils/dialogueHighlight';
 import { getViewInsets } from '@/utils/insets';
 import { collectDocumentImages, DocumentImage } from '../utils/documentImages';
 import { footerReservesBand } from '../utils/footerBand';
@@ -445,6 +446,10 @@ const FoliateViewer: React.FC<{
       // only call on load if we have highlighting turned on.
       if (viewSettings.codeHighlighting) {
         manageSyntaxHighlighting(detail.doc, viewSettings);
+      }
+
+      if (isDialogueHighlightActive(viewSettings)) {
+        manageDialogueHighlight(detail.doc, viewSettings);
       }
 
       setTimeout(() => {

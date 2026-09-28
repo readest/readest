@@ -782,6 +782,11 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
   const handleContentClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
+      const anchor =
+        e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('a[href]') : null;
+      // The clone lives in the app document, so even a consumed selection tap
+      // must not let a book-relative link navigate the reader's host page.
+      if (anchor) e.preventDefault();
       // Keep keyboard focus on the dialog so it keeps receiving keys after a tap.
       containerRef.current?.focus({ preventScroll: true });
       cancelPendingTap();
@@ -798,6 +803,38 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       // itself, as it does for a tap on the book page (#6200).
       if (eventDispatcher.dispatchSync('iframe-single-click')) {
         lastTapTimeRef.current = 0;
+        return;
+      }
+
+      if (anchor) {
+        lastTapTimeRef.current = 0;
+        const view = getView(bookKey);
+        const source = sourceRangeRef.current;
+        if (!view || !source) return;
+        const index = view.renderer
+          .getContents()
+          .find(({ doc }) => doc === source.startContainer.ownerDocument)?.index;
+        if (index === undefined) return;
+        const section = view.book.sections[index];
+        const rawHref = anchor.getAttribute('href')!;
+        let href = section?.resolveHref?.(rawHref) ?? rawHref;
+        if (view.book.isExternal?.(href)) {
+          view.dispatchEvent(
+            new CustomEvent('external-link', { detail: { a: anchor, href }, cancelable: true }),
+          );
+          return;
+        }
+        // Match foliate's fallback for fragment links with an outdated filename.
+        if (!view.resolveNavigation(href)) {
+          const hashIndex = rawHref.indexOf('#');
+          if (hashIndex >= 0) href = section?.resolveHref?.(rawHref.slice(hashIndex)) ?? href;
+        }
+        // Keep the visible anchor so the footnote popup is positioned at the clone.
+        const event = new CustomEvent('link', { detail: { a: anchor, href }, cancelable: true });
+        if (view.dispatchEvent(event)) {
+          onCloseRef.current?.();
+          view.goTo(href);
+        }
         return;
       }
 
@@ -861,6 +898,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       viewSettings,
       cancelPendingTap,
       getCloneSelection,
+      getView,
     ],
   );
 

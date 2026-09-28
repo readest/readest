@@ -643,3 +643,42 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     );
   });
 });
+
+describe('ProgressBar — rounded screen corners', () => {
+  const renderWithCorners = (left: number, right: number) =>
+    render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={5}
+        contentInsets={{ top: 0, right: 16, bottom: 0, left: 16 }}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        cornerRadii={{ left, right }}
+      />,
+    );
+  const footerStyle = (container: HTMLElement) =>
+    (container.querySelector<HTMLElement>('.progressinfo') as HTMLElement).style;
+
+  it('pulls the footer ends clear of the corner arc when the bottom margin is small', () => {
+    currentViewSettings = { ...baseSettings, marginBottomPx: 16, headerFooterFontSize: 12 };
+    const style = footerStyle(renderWithCorners(45, 45).container);
+    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 35.7px)');
+    expect(style.paddingInlineEnd).toBe('max(calc(2.5% + 8px), 35.7px)');
+  });
+
+  it('keeps the regular padding when the text sits above the corner arc', () => {
+    // Text bottom = 104 / 2 - 12 / 2 = 46px, above the 45px corner.
+    currentViewSettings = { ...baseSettings, marginBottomPx: 104, headerFooterFontSize: 12 };
+    const style = renderWithCorners(45, 45)
+      .container.querySelector<HTMLElement>('.progressinfo')
+      ?.getAttribute('style');
+    expect(style).not.toContain('max(');
+  });
+
+  it('only clears the side that meets a rounded corner', () => {
+    // Left of two side-by-side books: its right edge sits mid-screen.
+    currentViewSettings = { ...baseSettings, marginBottomPx: 16, headerFooterFontSize: 12 };
+    const style = footerStyle(renderWithCorners(45, 0).container);
+    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 35.7px)');
+    expect(style.paddingInlineEnd).toBe('calc(2.5% + 8px)');
+  });
+});

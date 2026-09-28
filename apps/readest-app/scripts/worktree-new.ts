@@ -5,7 +5,7 @@ import path from 'node:path';
 // Submodules skipped during worktree setup (shared via symlinks or pre-built)
 const SKIPPED_SUBMODULES = [
   'apps/readest-app/.claude/skills/gstack', // shared via .claude symlink
-  'packages/simplecc-wasm', // built assets already in public/vendor
+  'packages/simplecc-wasm', // committed dist/web is copied in below
 ];
 
 const arg = process.argv[2];
@@ -283,16 +283,22 @@ for (const sub of ['schemas', 'android/keystore.properties']) {
   }
 }
 
-// Copy the vendored assets to the new worktree (built, not in git):
-// `public/vendor` is fetched by URL at runtime, `vendor` is imported by the
-// bundler through the @pdfjs / @simplecc aliases.
-for (const sub of [['public', 'vendor'], ['vendor']]) {
-  const srcVendor = path.join(srcAppDir, ...sub);
-  const dstVendor = path.join(dstAppDir, ...sub);
-  if (fs.existsSync(srcVendor) && !fs.existsSync(dstVendor)) {
-    console.error(`\n--- Copying ${sub.join('/')} ---`);
-    fs.cpSync(srcVendor, dstVendor, { recursive: true });
-  }
+// Copy public/vendor to the new worktree (built assets not in git)
+const srcVendor = path.join(srcAppDir, 'public', 'vendor');
+const dstVendor = path.join(dstAppDir, 'public', 'vendor');
+if (fs.existsSync(srcVendor) && !fs.existsSync(dstVendor)) {
+  console.error('\n--- Copying public/vendor ---');
+  fs.cpSync(srcVendor, dstVendor, { recursive: true });
+}
+
+// `packages/simplecc-wasm` is a skipped submodule (SKIPPED_SUBMODULES), but the
+// @simplecc alias resolves straight into its committed `dist/web`, so the new
+// worktree needs that directory to build.
+const srcSimplecc = path.join(repoRoot, 'packages', 'simplecc-wasm', 'dist');
+const dstSimplecc = path.join(worktreePath, 'packages', 'simplecc-wasm', 'dist');
+if (fs.existsSync(srcSimplecc) && !fs.existsSync(dstSimplecc)) {
+  console.error('\n--- Copying packages/simplecc-wasm/dist ---');
+  fs.cpSync(srcSimplecc, dstSimplecc, { recursive: true });
 }
 
 // Print path to stdout -- allows: cd $(pnpm worktree:new <arg>)

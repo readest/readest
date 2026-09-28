@@ -46,6 +46,7 @@ export interface SectionItem {
   fragments?: Array<SectionFragment>;
 
   loadText?: () => Promise<string | null>;
+  resolveHref?: (href: string) => string;
   // Resolve a reference a script introduces after load (see observeDynamicResources).
   loadHref?: (href: string) => Promise<string>;
   createDocument: () => Promise<Document>;
@@ -123,6 +124,7 @@ export interface BookDoc {
   sections: Array<SectionItem>;
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
+  isExternal?(href: string): boolean;
   getCover(): Promise<Blob | null>;
   // Present on formats that carry a real spine (EPUB); absent for the ones
   // foliate-js gives synthetic per-index CFIs. Mirrors `view.resolveCFI`.
@@ -241,6 +243,18 @@ export { WorkerMessageHandler };`,
   pdfjsLib.GlobalWorkerOptions.workerSrc = compatPDFWorkerURL;
 }
 
+// Read the ZIP central directory, resolving entry metadata. Kept standalone
+// so the read can be started BEFORE the (slower) Rust prefetch RPC and the
+// two overlap instead of serializing in front of EPUB.init().
+type Entry = import('@zip.js/zip.js').Entry;
+
+async function openZipEntries(file: File): Promise<Entry[]> {
+  await configureZip();
+  const { ZipReader, BlobReader } = await import('@zip.js/zip.js');
+  const reader = new ZipReader(new BlobReader(file));
+  return reader.getEntries();
+}
+
 export class DocumentLoader {
   private file: File;
   private nativeFilePath?: string;
@@ -300,10 +314,13 @@ export class DocumentLoader {
     );
   }
 
-  private async makeZipLoader(prefetch?: {
-    textCache?: Map<string, string>;
-    sizes?: Map<string, number>;
-  }) {
+  private async makeZipLoader(
+    entriesPromise: Promise<Entry[]> | null,
+    prefetch?: {
+      textCache?: Map<string, string>;
+      sizes?: Map<string, number>;
+    },
+  ) {
     const getComment = async (): Promise<string | null> => {
       const EOCD_SIGNATURE = [0x50, 0x4b, 0x05, 0x06];
       const maxEOCDSearch = 1024 * 64;
@@ -329,11 +346,11 @@ export class DocumentLoader {
       return null;
     };
 
-    await configureZip();
-    const { ZipReader, BlobReader, TextWriter, BlobWriter } = await import('@zip.js/zip.js');
-    type Entry = import('@zip.js/zip.js').Entry;
-    const reader = new ZipReader(new BlobReader(this.file));
-    const entries = await reader.getEntries();
+    const { TextWriter, BlobWriter } = await import('@zip.js/zip.js');
+    // The central-directory read may already be in flight (started by the
+    // caller before the Rust prefetch, see open()); fall back to starting
+    // it here for formats that never prefetch (CBZ/FBZ).
+    const entries = await (entriesPromise ?? openZipEntries(this.file));
     const map = new Map(entries.map((entry) => [entry.filename, entry]));
     const lowercaseMap = new Map<string, Entry | null>();
     for (const entry of entries) {
@@ -516,6 +533,16 @@ export class DocumentLoader {
         // for them. We probe `isEPUBLike()` (= isZip but not CBZ/FBZ)
         // so the prefetch RPC only fires when it can actually be used.
         const isEPUBLike = !this.isCBZ() && !this.isFBZ();
+        // The central-directory read has no data dependency on the Rust
+        // prefetch (which only feeds loadText's textCache/sizes), so start
+        // it first and let the two overlap. On Android a multi-MB central
+        // directory means N chunked scheme round trips, all of which used
+        // to sit in front of EPUB.init().
+        const entriesPromise = isEPUBLike ? openZipEntries(this.file) : null;
+        // Avoid an unhandled rejection while the Rust prefetch below is still
+        // awaited; the rejection still surfaces via the await in makeZipLoader
+        // and the catch in open().
+        entriesPromise?.catch(() => undefined);
         let prefetch: { textCache: Map<string, string>; sizes: Map<string, number> } | undefined;
         if (isEPUBLike && this.nativeFilePath) {
           const { tryNativePrefetchEpub } = await import('@/utils/tauriEpubBridge');
@@ -524,7 +551,7 @@ export class DocumentLoader {
             prefetch = { textCache: native.textCache, sizes: native.sizes };
           }
         }
-        const loader = await this.makeZipLoader(prefetch);
+        const loader = await this.makeZipLoader(entriesPromise, prefetch);
         const { entries } = loader;
 
         if (this.isCBZ()) {

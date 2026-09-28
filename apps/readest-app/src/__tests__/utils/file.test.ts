@@ -193,3 +193,41 @@ describe('RemoteFile fetcher injection', () => {
     expect(calls.map((c) => c.self)).toEqual([undefined, undefined]);
   });
 });
+
+describe('RemoteFile multi-chunk fetchRange', () => {
+  it('keeps chunk order and caps in-flight requests when responses resolve out of order', async () => {
+    const SIZE = 10 * 1024 * 1000;
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const fetcher = (async (_input: unknown, init?: RequestInit) => {
+      const range = (init?.headers as Record<string, string> | undefined)?.['Range'];
+      if (!range) {
+        return { ok: true, headers: new Headers({ 'Content-Length': String(SIZE) }) } as Response;
+      }
+      const [start, end] = range.replace('bytes=', '').split('-').map(Number) as [number, number];
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      // Later chunks resolve first.
+      await new Promise((r) => setTimeout(r, (SIZE - start) / 1024 / 1000));
+      inFlight--;
+      const body = new Uint8Array(end - start + 1);
+      for (let i = 0; i < body.length; i++) body[i] = (start + i) & 0xff;
+      return { ok: true, arrayBuffer: async () => body.buffer } as unknown as Response;
+    }) as unknown as typeof fetch;
+
+    const file = await new RemoteFile(
+      'http://example.test/book.epub',
+      'book.epub',
+      '',
+      0,
+      fetcher,
+    ).open();
+    const start = 100;
+    const end = SIZE - 100;
+    const bytes = new Uint8Array(await file.fetchRange(start, end));
+
+    expect(bytes.length).toBe(end - start + 1);
+    expect(bytes.every((b, i) => b === ((start + i) & 0xff))).toBe(true);
+    expect(maxInFlight).toBe(RemoteFile.MAX_PARALLEL_RANGE_FETCHES);
+  });
+});

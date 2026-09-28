@@ -15,6 +15,7 @@ import {
   generateDarkPalette,
 } from '@/styles/themes';
 import { createFontCSS, CustomFont } from '@/styles/fonts';
+import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
@@ -238,6 +239,39 @@ const getEinkSelectionStyles = () => {
       background: var(--theme-fg-color);
     }
   `;
+};
+
+const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
+  // Background and text are independent switches; off means the default
+  // (theme primary tint for the background, inherited text). An empty stored
+  // value (e.g. carried over from older configs) also falls back to default.
+  const bgBase = viewSettings.dialogueHighlight
+    ? viewSettings.dialogueHighlightCustomColor && viewSettings.dialogueHighlightColor
+      ? viewSettings.dialogueHighlightColor
+      : themeCode.primary
+    : null;
+  const bgDecl = (percent: number) =>
+    bgBase
+      ? `\n    background-color: color-mix(in srgb, ${bgBase} ${percent}%, transparent) !important;`
+      : '';
+  const text =
+    viewSettings.dialogueHighlightCustomTextColor && viewSettings.dialogueHighlightTextColor
+      ? `\n    color: ${viewSettings.dialogueHighlightTextColor} !important;`
+      : '';
+  return `
+  /* Dialogue lines tinted with the custom color or, by default, the theme's
+     primary color. !important so the tint survives "Override Book Color",
+     which repaints spans/paragraphs with the theme background at the same
+     importance level but lower specificity. */
+  .readest-dialogue {${bgDecl(22)}${text}
+    border-radius: 0.2em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .readest-dialogue-block {${bgDecl(12)}${text}
+    border-radius: 0.3em;
+  }
+`;
 };
 
 const getColorStyles = (
@@ -986,6 +1020,9 @@ export const getStyles = (
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const warichuStyles = getWarichuStyles();
   const rubyStyles = getRubyStyles(viewSettings);
+  const dialogueStyles = isDialogueHighlightActive(viewSettings)
+    ? getDialogueHighlightStyles(viewSettings, themeCode)
+    : '';
   const userStylesheet = viewSettings.userStylesheet!;
   // The `@namespace` declaration must lead the stylesheet: a `@namespace` rule
   // placed after any style or `@font-face` rule is invalid and silently ignored,
@@ -993,7 +1030,7 @@ export const getStyles = (
   // the footnote aside's border show as a stray horizontal line (#4438). Keep it
   // ahead of the inlined custom `@font-face` rules.
   const epubNamespace = `@namespace epub "http://www.idpf.org/2007/ops";`;
-  return `${epubNamespace}\n${customFontFaces}\n${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
+  return `${epubNamespace}\n${customFontFaces}\n${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${dialogueStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
 };
 
 // Build a CSS chunk of `@font-face` rules for the given user custom

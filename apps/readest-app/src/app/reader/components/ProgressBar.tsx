@@ -14,7 +14,13 @@ import {
   getChapterLocationsLeft,
   getReferencePageInfo,
 } from '@/utils/progress';
-import { footerInfoVisible, footerReservesBand } from '../utils/footerBand';
+import {
+  type BottomCornerRadii,
+  footerInfoVisible,
+  footerReservesBand,
+  getCornerClearance,
+  NO_CORNERS,
+} from '../utils/footerBand';
 import {
   getChromeChip,
   getChromeFontSize,
@@ -32,6 +38,8 @@ interface ProgressBarProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  // Rounded screen corners this footer's ends run into.
+  cornerRadii?: BottomCornerRadii;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -39,6 +47,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  cornerRadii = NO_CORNERS,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -207,6 +216,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const fontSize = getChromeFontSize(viewSettings, isEink);
   const showStatusInfo = hasTimeInfo || hasBatteryInfo;
 
+  // The text is centered in the marginBottomPx strip, so on phones with rounded
+  // screen corners a small bottom margin drops its ends into the corner arc.
+  // Pull them inward just enough to clear it; the book layout is untouched.
+  const bottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
+  const textBottom = bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2;
+  const cornerClearance = (radius: number) =>
+    isVertical ? 0 : getCornerClearance(radius, textBottom);
+  const inlinePadding = (inset: number, clearance: number) => {
+    const padding = `calc(${horizontalGap / 2}% + ${inset / 2}px)`;
+    return clearance > 0 ? `max(${padding}, ${clearance.toFixed(1)}px)` : padding;
+  };
+
   return (
     <div
       role='presentation'
@@ -252,9 +273,17 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
             }
           : {
-              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
-              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right / 2}px)`,
-              paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
+              // The reader never sets dir=rtl on this container, so inline
+              // start is always the physical left.
+              paddingInlineStart: inlinePadding(
+                contentInsets.left,
+                cornerClearance(cornerRadii.left),
+              ),
+              paddingInlineEnd: inlinePadding(
+                contentInsets.right,
+                cornerClearance(cornerRadii.right),
+              ),
+              paddingBottom: bottomPadding ? `${bottomPadding}px` : 0,
             }),
       }}
     >
