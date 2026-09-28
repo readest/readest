@@ -48,15 +48,13 @@ export const optOutTelemetry = () => {
 /**
  * Line PostHog's consent up with the saved setting. The switch can change
  * from the settings panel, the command palette, or another window, so this
- * runs on every boot and repairs any drift between the two stores.
+ * runs on every boot. It enforces an opt-out only: a recorded opt-out stays
+ * even when the settings file says enabled, because a failed or interrupted
+ * settings save must not re-enable capture. Turning telemetry back on goes
+ * through the explicit controls, which update both stores.
  */
 export const reconcileTelemetryConsent = (telemetryEnabled: boolean) => {
-  const shouldOptOut = !telemetryEnabled;
-  if (shouldOptOut !== hasOptedOutTelemetry()) {
-    if (shouldOptOut) {
-      optOutTelemetry();
-    } else {
-      optInTelemetry();
-    }
+  if (!telemetryEnabled && !hasOptedOutTelemetry()) {
+    optOutTelemetry();
   }
 };

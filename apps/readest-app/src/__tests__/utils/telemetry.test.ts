@@ -109,15 +109,16 @@ describe('reconcileTelemetryConsent', () => {
     expect(getTelemetryDecision()).toBe('opt-out');
   });
 
-  it('opts in when the saved settings have telemetry enabled', () => {
+  it('keeps a recorded opt-out when the settings file says telemetry is on', () => {
     optOutTelemetry();
     vi.clearAllMocks();
 
     reconcileTelemetryConsent(true);
 
-    expect(posthog.opt_in_capturing).toHaveBeenCalledOnce();
-    expect(hasOptedOutTelemetry()).toBe(false);
-    expect(getTelemetryDecision()).toBe('opt-in');
+    expect(posthog.opt_in_capturing).not.toHaveBeenCalled();
+    expect(posthog.opt_out_capturing).not.toHaveBeenCalled();
+    expect(hasOptedOutTelemetry()).toBe(true);
+    expect(getTelemetryDecision()).toBe('opt-out');
   });
 
   it('leaves the consent alone when it already matches the settings', () => {

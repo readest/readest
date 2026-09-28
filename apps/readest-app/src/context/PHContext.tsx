@@ -1,23 +1,10 @@
 'use client';
 
 import posthog from 'posthog-js';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { PostHogProvider } from 'posthog-js/react';
-import { TELEMETRY_DECISION_KEY, TELEMETRY_OPT_OUT_KEY } from '@/utils/telemetry';
+import { getTelemetryDecision } from '@/utils/telemetry';
 import { getAppVersion } from '@/utils/version';
-
-// Returns true if PostHog should be opted-out at boot time, before settings
-// have loaded. Honors any explicit decision the user has made; otherwise
-// returns true (opt-out by default) so brand-new users never ping PostHog
-// before Providers can finalize the decision. Existing users whose settings
-// have telemetry enabled are re-opted-in once Providers loads their settings.
-const shouldOptOutAtBoot = () => {
-  if (typeof window === 'undefined') return true;
-  const decision = localStorage.getItem(TELEMETRY_DECISION_KEY);
-  if (decision === 'opt-in') return false;
-  if (decision === 'opt-out' || decision === 'pending') return true;
-  return localStorage.getItem(TELEMETRY_OPT_OUT_KEY) !== 'false';
-};
 
 const posthogUrl =
   process.env['NEXT_PUBLIC_POSTHOG_HOST'] ||
@@ -26,12 +13,31 @@ const posthogKey =
   process.env['NEXT_PUBLIC_POSTHOG_KEY'] ||
   atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_KEY_BASE64']!);
 
-if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' && posthogKey) {
+let initialized = false;
+
+/**
+ * Start PostHog after the boot code has resolved the consent decision, so the
+ * SDK cannot capture an event of its own (an initial pageview, for example)
+ * before it knows the saved setting. Providers calls this once the settings
+ * file is loaded and `reconcileTelemetryConsent` has run (issue #6422).
+ */
+export const initPostHog = () => {
+  if (
+    initialized ||
+    typeof window === 'undefined' ||
+    process.env['NODE_ENV'] !== 'production' ||
+    !posthogKey
+  ) {
+    return;
+  }
+
+  initialized = true;
   posthog.init(posthogKey, {
     api_host: posthogUrl,
     person_profiles: 'always',
     autocapture: false,
-    opt_out_capturing_by_default: shouldOptOutAtBoot(),
+    // Opted out unless the user said yes. The decision is final at this point.
+    opt_out_capturing_by_default: getTelemetryDecision() !== 'opt-in',
     // Readest uses no feature flags, surveys, or session recordings. Their
     // loaders fetch remote assets even while capture is opted out, so turn
     // them off: an opted-out user then sends no request at all (issue #6422).
@@ -40,12 +46,9 @@ if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' &&
     disable_session_recording: true,
     disable_surveys: true,
   });
-}
+  posthog.register_for_session({ $app_version: getAppVersion() });
+};
+
 export const CSPostHogProvider = ({ children }: { children: ReactNode }) => {
-  useEffect(() => {
-    posthog.register_for_session({
-      $app_version: getAppVersion(),
-    });
-  }, []);
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
 };
