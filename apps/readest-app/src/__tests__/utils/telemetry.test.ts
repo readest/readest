@@ -14,6 +14,7 @@ import {
   hasOptedOutTelemetry,
   optInTelemetry,
   optOutTelemetry,
+  reconcileTelemetryConsent,
   rollIntoTelemetryPromptBucket,
   setTelemetryDecision,
   TELEMETRY_DECISION_KEY,
@@ -88,5 +89,44 @@ describe('rollIntoTelemetryPromptBucket', () => {
     }
     // Deterministic uniform sweep: floor(n * rate) = 1000.
     expect(inBucket).toBe(Math.floor(n * TELEMETRY_PROMPT_BUCKET_RATE));
+  });
+});
+
+describe('reconcileTelemetryConsent', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it('opts out when the saved settings have telemetry disabled', () => {
+    optInTelemetry();
+    vi.clearAllMocks();
+
+    reconcileTelemetryConsent(false);
+
+    expect(posthog.opt_out_capturing).toHaveBeenCalledOnce();
+    expect(hasOptedOutTelemetry()).toBe(true);
+    expect(getTelemetryDecision()).toBe('opt-out');
+  });
+
+  it('opts in when the saved settings have telemetry enabled', () => {
+    optOutTelemetry();
+    vi.clearAllMocks();
+
+    reconcileTelemetryConsent(true);
+
+    expect(posthog.opt_in_capturing).toHaveBeenCalledOnce();
+    expect(hasOptedOutTelemetry()).toBe(false);
+    expect(getTelemetryDecision()).toBe('opt-in');
+  });
+
+  it('leaves the consent alone when it already matches the settings', () => {
+    optOutTelemetry();
+    vi.clearAllMocks();
+
+    reconcileTelemetryConsent(false);
+
+    expect(posthog.opt_in_capturing).not.toHaveBeenCalled();
+    expect(posthog.opt_out_capturing).not.toHaveBeenCalled();
   });
 });

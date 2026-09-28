@@ -23,6 +23,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { getAndroidPatchedViewportContent } from '@/utils/viewport';
 import {
   getTelemetryDecision,
+  reconcileTelemetryConsent,
   rollIntoTelemetryPromptBucket,
   setTelemetryDecision,
   TELEMETRY_OPT_OUT_KEY,
@@ -70,7 +71,13 @@ const finalizeTelemetryDecision = ({
     onShowPrompt();
     return;
   }
-  if (existing !== null) return;
+  if (existing !== null) {
+    // The decision is recorded. PostHog's consent can still drift from the
+    // settings file (a command-palette toggle, another window, or an edited
+    // settings file), so line the two up on every boot (issue #6422).
+    reconcileTelemetryConsent(settings.telemetryEnabled);
+    return;
+  }
 
   if (!isNewUser) {
     // Existing user: don't change anything they had set. Sync PostHog to

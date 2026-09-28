@@ -32,6 +32,13 @@ if (typeof window !== 'undefined' && process.env['NODE_ENV'] === 'production' &&
     person_profiles: 'always',
     autocapture: false,
     opt_out_capturing_by_default: shouldOptOutAtBoot(),
+    // Readest uses no feature flags, surveys, or session recordings. Their
+    // loaders fetch remote assets even while capture is opted out, so turn
+    // them off: an opted-out user then sends no request at all (issue #6422).
+    advanced_disable_flags: true,
+    disable_external_dependency_loading: true,
+    disable_session_recording: true,
+    disable_surveys: true,
   });
 }
 export const CSPostHogProvider = ({ children }: { children: ReactNode }) => {
