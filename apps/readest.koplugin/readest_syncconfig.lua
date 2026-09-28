@@ -182,7 +182,7 @@ function SyncConfig:applyBookConfig(ui, config)
         local page, _total_pages = progress:match(progress_pattern)
         local current_page = ui:getCurrentPage()
         local new_page = tonumber(page)
-        if new_page > current_page then
+        if new_page and new_page > current_page then
             ui.link:addCurrentLocationToStack()
             ui:handleEvent(Event:new("GotoPage", new_page))
             self:showSyncedMessage()
@@ -201,7 +201,7 @@ function SyncConfig:applyBookConfig(ui, config)
                 break
             end
         end
-        if cmp_result > 0 then
+        if cmp_result and cmp_result > 0 then
             ui.link:addCurrentLocationToStack()
             ui:handleEvent(Event:new("GotoXPointer", working_xpointer))
             self:showSyncedMessage()
