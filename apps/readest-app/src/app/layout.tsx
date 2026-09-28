@@ -1,3 +1,4 @@
+import Polyfills from '../polyfills';
 import * as React from 'react';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
@@ -130,6 +131,27 @@ const devHmrPatchScript = `(${patchTauriHmrWebSocket.toString()})(${JSON.stringi
 // consumers fall back to `NEXT_PUBLIC_*` envs baked at build time on Tauri.
 const shouldInjectRuntimeConfig = process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web';
 
+// WebKit APIs the bundled chunks call that ship in Safari 17.4/17.5
+// (macOS 14.4/14.5). On macOS ≤ 14.3 the missing functions throw as soon as
+// an async chunk evaluates, crashing the app to a blank window before the
+// <Polyfills /> client module gets a chance to run. This inline script sits
+// at the top of <head>, so the parser executes it before any chunk script
+// element even exists. Feature-detected: a no-op on current browsers.
+const webkitCompatPolyfillScript = `(function(){
+if(typeof Promise.withResolvers!=="function"){Promise.withResolvers=function(){var resolve,reject;var promise=new Promise(function(res,rej){resolve=res;reject=rej});return{promise:promise,resolve:resolve,reject:reject}}}
+if(typeof Promise.try!=="function"){Promise.try=function(handler){var args=Array.prototype.slice.call(arguments,1);return new Promise(function(resolve){resolve(handler.apply(null,args))})}}
+if(typeof Object.groupBy!=="function"){Object.groupBy=function(iterable,callback){var groups=Object.create(null);var index=0;for(var _i=0,_a=iterable;_i<_a.length;_i++){var value=_a[_i];var key=String(callback(value,index++)).replace("-0","0");(groups[key]||(groups[key]=[])).push(value)}return groups}}
+if(typeof Map.groupBy!=="function"){Map.groupBy=function(iterable,callback){var groups=new Map();var index=0;for(var _i=0,_a=iterable;_i<_a.length;_i++){var value=_a[_i];var key=callback(value,index++);var bucket=groups.get(key);if(bucket)bucket.push(value);else groups.set(key,[value])}return groups}}
+function asSet(v){return v instanceof Set?v:new Set(v)}
+if(typeof Set.prototype.union!=="function"){Set.prototype.union=function(other){var r=new Set(this);for(var _i=0,_a=asSet(other);_i<_a.length;_i++){var item=_a[_i];r.add(item)}return r}}
+if(typeof Set.prototype.intersection!=="function"){Set.prototype.intersection=function(other){var r=new Set();var o=asSet(other);for(var _i=0,_a=this;_i<_a.length;_i++){var item=_a[_i];if(o.has(item))r.add(item)}return r}}
+if(typeof Set.prototype.difference!=="function"){Set.prototype.difference=function(other){var r=new Set();var o=asSet(other);for(var _i=0,_a=this;_i<_a.length;_i++){var item=_a[_i];if(!o.has(item))r.add(item)}return r}}
+if(typeof Set.prototype.symmetricDifference!=="function"){Set.prototype.symmetricDifference=function(other){var r=new Set(this);for(var _i=0,_a=asSet(other);_i<_a.length;_i++){var item=_a[_i];if(r.has(item))r.delete(item);else r.add(item)}return r}}
+if(typeof Set.prototype.isSubsetOf!=="function"){Set.prototype.isSubsetOf=function(other){var o=asSet(other);for(var _i=0,_a=this;_i<_a.length;_i++){var item=_a[_i];if(!o.has(item))return false}return true}}
+if(typeof Set.prototype.isSupersetOf!=="function"){Set.prototype.isSupersetOf=function(other){var o=asSet(other);for(var _i=0,_a=o;_i<_a.length;_i++){var item=_a[_i];if(!this.has(item))return false}return true}}
+if(typeof Set.prototype.isDisjointFrom!=="function"){Set.prototype.isDisjointFrom=function(other){var o=asSet(other);for(var _i=0,_a=this;_i<_a.length;_i++){var item=_a[_i];if(o.has(item))return false}return true}}
+})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Browser extensions can inject attributes on <html> before React hydrates it.
   return (
@@ -139,6 +161,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'edge-to-edge' : ''}
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: webkitCompatPolyfillScript }} />
         {shouldInjectRuntimeConfig ? (
           <Script src='/runtime-config.js' strategy='beforeInteractive' />
         ) : null}
@@ -147,6 +170,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : null}
       </head>
       <body>
+        <Polyfills />
         <ViewTransitions>
           <EnvProvider>
             <Providers>{children}</Providers>
