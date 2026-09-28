@@ -46,6 +46,15 @@ export const initPostHog = () => {
     disable_session_recording: true,
     disable_surveys: true,
   });
+  // Apply the decision now that init has set the project token. PostHog keeps
+  // consent under a token-specific key, so a call before init writes another
+  // key and an older grant can win. The SDK's initial pageview reads consent
+  // one tick from now, so this synchronous call stops it (issue #6422).
+  if (getTelemetryDecision() === 'opt-in') {
+    posthog.opt_in_capturing();
+  } else {
+    posthog.opt_out_capturing();
+  }
   posthog.register_for_session({ $app_version: getAppVersion() });
 };
 
