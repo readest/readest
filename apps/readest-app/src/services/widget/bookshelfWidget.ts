@@ -154,8 +154,8 @@ export const buildBookshelfWidgetSnapshot = async (
   return {
     shelfId,
     items: await buildBookshelfWidgetItems(items, groupBy, appService, booksDir),
-    // Recently read keeps the old widget's look: covers only, no heading.
-    sectionTitle: definition.id === RECENT_BOOKSHELF_ID ? '' : shelfTitle(definition, _),
+    // Heading visibility is the native-only showShelfName setting; the name is always sent.
+    sectionTitle: shelfTitle(definition, _),
     emptyTitle,
     ...(tts ? { tts } : {}),
   };
@@ -175,8 +175,11 @@ export const buildBookshelfWidgetCatalog = (
     rows: _('Rows'),
     columns: _('Columns'),
     showTitles: _('Book title'),
+    showShelfName: _('Shelf name'),
     cancel: _('Cancel'),
     save: _('Save'),
+    edit: _('Edit'),
+    addShelf: _('Add'),
     openApp: _('Open Readest to show this bookshelf'),
   },
 });

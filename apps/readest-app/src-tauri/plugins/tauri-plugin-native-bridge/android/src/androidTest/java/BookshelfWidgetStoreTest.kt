@@ -259,7 +259,7 @@ class BookshelfWidgetStoreTest {
                 ctx, 601,
                 BookshelfWidgetInstanceSettings(
                     shelfId = "11111111-1111-4111-8111-111111111111",
-                    gridRows = 4, gridColumns = 5, showTitles = true,
+                    gridRows = 4, gridColumns = 5, showTitles = true, showShelfName = true,
                 )
             )
             BookshelfWidgetStore.writeInstanceSettings(
@@ -271,6 +271,7 @@ class BookshelfWidgetStoreTest {
             assertEquals(4, a.gridRows)
             assertEquals(5, a.gridColumns)
             assertTrue(a.showTitles)
+            assertTrue(a.showShelfName)
 
             assertEquals(2, BookshelfWidgetStore.readInstanceSettings(ctx, 602).gridRows)
         } finally {
@@ -286,6 +287,7 @@ class BookshelfWidgetStoreTest {
         assertEquals(1, neverSet.gridRows)
         assertEquals(3, neverSet.gridColumns)
         assertFalse(neverSet.showTitles)
+        assertFalse(neverSet.showShelfName)
         assertEquals("recent", neverSet.shelfId)
 
         val prefs = ctx.getSharedPreferences(BookshelfWidgetStore.PREFS, Context.MODE_PRIVATE)

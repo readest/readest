@@ -630,8 +630,11 @@ pub struct BookshelfWidgetCatalogLabels {
     pub rows: String,
     pub columns: String,
     pub show_titles: String,
+    pub show_shelf_name: String,
     pub cancel: String,
     pub save: String,
+    pub edit: String,
+    pub add_shelf: String,
     pub open_app: String,
 }
 

@@ -152,7 +152,7 @@ describe('buildBookshelfWidgetSnapshot', () => {
   const library = [reading('r1', 1), reading('r2', 2), reading('r3', 3), reading('r4', 4)];
   const grid = { gridRows: 1, gridColumns: 3 };
 
-  it('shows the newest currently-read books, cut to the grid, with no heading for Recently read', async () => {
+  it('shows the newest currently-read books, cut to the grid, naming Recently read like any other shelf', async () => {
     const settings = settingsWith();
     const result = evaluateWidgetShelves(library, settings, [RECENT_BOOKSHELF_ID])(
       RECENT_BOOKSHELF_ID,
@@ -164,7 +164,8 @@ describe('buildBookshelfWidgetSnapshot', () => {
       emptyTitle: 'Empty',
     });
     expect(hashesOf(snapshot.items)).toEqual(['r4', 'r3', 'r2']);
-    expect(snapshot.sectionTitle).toBe('');
+    // Heading visibility is a native-only setting (showShelfName); the snapshot always carries a name.
+    expect(snapshot.sectionTitle).toBe('t:Recently read');
     expect(snapshot.shelfId).toBe(RECENT_BOOKSHELF_ID);
     expect(snapshot.emptyTitle).toBe('Empty');
   });
@@ -221,6 +222,9 @@ describe('buildBookshelfWidgetCatalog', () => {
     expect(catalog.shelves).toContainEqual({ id: sciFi.id, name: 'Sci-fi' });
     expect(catalog.shelves).toContainEqual({ id: FINISHED_BOOKSHELF_ID, name: 't:Finished books' });
     expect(catalog.labels.save).toBe('t:Save');
+    expect(catalog.labels.showShelfName).toBe('t:Shelf name');
+    expect(catalog.labels.edit).toBe('t:Edit');
+    expect(catalog.labels.addShelf).toBe('t:Add');
   });
 });
 

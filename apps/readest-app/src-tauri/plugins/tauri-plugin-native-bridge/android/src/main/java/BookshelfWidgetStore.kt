@@ -23,12 +23,14 @@ data class BookshelfWidgetInstanceSettings(
     val gridRows: Int = BookshelfWidgetStore.DEFAULT_GRID_ROWS,
     val gridColumns: Int = BookshelfWidgetStore.DEFAULT_GRID_COLUMNS,
     val showTitles: Boolean = false,
+    val showShelfName: Boolean = false,
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("shelfId", shelfId)
         .put("gridRows", gridRows)
         .put("gridColumns", gridColumns)
         .put("showTitles", showTitles)
+        .put("showShelfName", showShelfName)
 
     companion object {
         fun fromJson(json: JSONObject): BookshelfWidgetInstanceSettings {
@@ -38,6 +40,7 @@ data class BookshelfWidgetInstanceSettings(
                 gridRows = json.optInt("gridRows", defaults.gridRows),
                 gridColumns = json.optInt("gridColumns", defaults.gridColumns),
                 showTitles = json.optBoolean("showTitles", defaults.showTitles),
+                showShelfName = json.optBoolean("showShelfName", defaults.showShelfName),
             )
         }
     }

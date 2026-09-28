@@ -577,9 +577,6 @@ class WebBrowserController(
     private fun isLight(color: Int): Boolean =
         (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) > 153
 
-    private fun dp(act: Activity, units: Int): Int =
-        (units * act.resources.displayMetrics.density + 0.5f).toInt()
-
     /** Parse `#rrggbb` into an Android ARGB int; null on malformed input. */
     private fun parseHexColor(s: String?): Int? {
         if (s == null) return null

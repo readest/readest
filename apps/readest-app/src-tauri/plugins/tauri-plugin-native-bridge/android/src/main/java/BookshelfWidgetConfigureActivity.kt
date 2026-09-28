@@ -1,20 +1,24 @@
 package com.readest.native_bridge
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.appwidget.AppWidgetManager
+import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
+import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.View
-import android.widget.Button
-import android.widget.CheckBox
 import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.textfield.TextInputLayout
 import org.json.JSONObject
 
 /**
@@ -42,59 +46,107 @@ class BookshelfWidgetConfigureActivity : Activity() {
         fun label(key: String, fallback: Int) = labels.optString(key).ifBlank { getString(fallback) }
         val current = BookshelfWidgetStore.readInstanceSettings(this, appWidgetId)
 
-        val dp = resources.displayMetrics.density
-        val content = LinearLayout(this).apply {
+        // The activity's own theme (Theme.Translucent, for the floating dialog
+        // look) carries none of Material's attributes, so views built under it
+        // render as plain platform widgets. Wrapping in a Material dialog theme
+        // (DayNight, so it follows the system setting on its own) fixes that for
+        // everything built from this context, matching the app's own MDC theme.
+        val dialogContext = ContextThemeWrapper(
+            this, com.google.android.material.R.style.Theme_MaterialComponents_DayNight_Dialog_Alert
+        )
+
+        val content = LinearLayout(dialogContext).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding((20 * dp).toInt(), (8 * dp).toInt(), (20 * dp).toInt(), 0)
+            setPadding(dp(dialogContext, 20), dp(dialogContext, 8), dp(dialogContext, 20), 0)
         }
 
-        val shelves = RadioGroup(this)
-        for ((id, name) in shelfChoices(catalog)) {
-            shelves.addView(RadioButton(this).apply {
-                this.id = View.generateViewId()
-                text = name
-                tag = id
-                isChecked = id == current.shelfId
-            })
+        val shelfList = shelfChoices(catalog)
+        val selectedShelf = shelfList.firstOrNull { it.first == current.shelfId } ?: shelfList.first()
+        var selectedShelfId = selectedShelf.first
+        val shelfField = TextInputLayout(
+            dialogContext, null,
+            com.google.android.material.R.attr.textInputOutlinedExposedDropdownMenuStyle,
+        )
+        val shelfDropdown = MaterialAutoCompleteTextView(shelfField.context).apply {
+            tag = "shelf_dropdown"
+            // A picker, not a free-text field with autocomplete: typing would
+            // never update selectedShelfId, silently ignoring the user's input.
+            inputType = InputType.TYPE_NULL
+            keyListener = null
+            setSimpleItems(shelfList.map { it.second }.toTypedArray())
+            setText(selectedShelf.second, false)
+            setOnItemClickListener { _, _, position, _ -> selectedShelfId = shelfList[position].first }
         }
-        if (shelves.checkedRadioButtonId == View.NO_ID) {
-            (shelves.getChildAt(0) as RadioButton).isChecked = true
-        }
-        content.addView(shelves)
+        shelfField.addView(shelfDropdown)
+        content.addView(shelfField)
+        // Icon-only; contentDescription carries the label for accessibility instead.
+        // Click listeners wired below, once rows/columns/showTitles/showShelfName exist.
+        fun iconButton(icon: Int, description: String) =
+            flatButton(dialogContext).apply {
+                setIconResource(icon)
+                iconPadding = 0
+                contentDescription = description
+            }
+        val editShelfButton = iconButton(R.drawable.ic_widget_edit, label("edit", R.string.widget_edit))
+        val addShelfButton = iconButton(R.drawable.ic_widget_add, label("addShelf", R.string.widget_add))
+        content.addView(LinearLayout(dialogContext).apply {
+            gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            addView(editShelfButton)
+            addView(addShelfButton)
+        })
 
         val rows = intArrayOf(current.gridRows.coerceIn(1, MAX_GRID_SIZE))
         val columns = intArrayOf(current.gridColumns.coerceIn(1, MAX_GRID_SIZE))
-        content.addView(stepper(label("rows", R.string.widget_rows), rows))
-        content.addView(stepper(label("columns", R.string.widget_columns), columns))
-        val showTitles = CheckBox(this).apply {
+        content.addView(stepper(dialogContext, label("rows", R.string.widget_rows), rows))
+        content.addView(stepper(dialogContext, label("columns", R.string.widget_columns), columns))
+        val showTitles = MaterialCheckBox(dialogContext).apply {
             text = label("showTitles", R.string.widget_show_titles)
             isChecked = current.showTitles
         }
         content.addView(showTitles)
-
-        val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
-            Configuration.UI_MODE_NIGHT_YES
-        val theme = if (night) {
-            android.R.style.Theme_DeviceDefault_Dialog_Alert
-        } else {
-            android.R.style.Theme_DeviceDefault_Light_Dialog_Alert
+        val showShelfName = MaterialCheckBox(dialogContext).apply {
+            text = label("showShelfName", R.string.widget_show_shelf_name)
+            isChecked = current.showShelfName
         }
-        dialog = AlertDialog.Builder(this, theme)
+        content.addView(showShelfName)
+
+        // Current picks as instance settings - what Save writes, and what Edit/Add
+        // write before leaving too (see below).
+        fun currentSettings() = BookshelfWidgetInstanceSettings(
+            shelfId = selectedShelfId,
+            gridRows = rows[0],
+            gridColumns = columns[0],
+            showTitles = showTitles.isChecked,
+            showShelfName = showShelfName.isChecked,
+        )
+        // Leaving this screen for the app - for any reason, including via Edit/Add
+        // below - cancels widget placement; that's enforced by the launcher itself
+        // and there's no way around it, saving first or not. Edit/Add still save
+        // the current picks before navigating (same as Save) so they aren't lost
+        // for whenever the widget does get placed - e.g. reconfiguring it via
+        // "Edit widget" after placing it normally with Save.
+        editShelfButton.setOnClickListener {
+            save(appWidgetId, currentSettings())
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("readest://widget-edit-shelf/${Uri.encode(selectedShelfId)}"),
+                ).setPackage(packageName),
+            )
+        }
+        addShelfButton.setOnClickListener {
+            save(appWidgetId, currentSettings())
+            startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse("readest://widget-add-shelf"))
+                    .setPackage(packageName),
+            )
+        }
+
+        dialog = MaterialAlertDialogBuilder(dialogContext)
             .setTitle(label("title", R.string.widget_label))
-            .setView(ScrollView(this).apply { addView(content) })
+            .setView(ScrollView(dialogContext).apply { addView(content) })
             .setNegativeButton(label("cancel", android.R.string.cancel)) { _, _ -> finish() }
-            .setPositiveButton(label("save", android.R.string.ok)) { _, _ ->
-                val checked = shelves.findViewById<RadioButton>(shelves.checkedRadioButtonId)
-                save(
-                    appWidgetId,
-                    BookshelfWidgetInstanceSettings(
-                        shelfId = checked.tag as String,
-                        gridRows = rows[0],
-                        gridColumns = columns[0],
-                        showTitles = showTitles.isChecked,
-                    ),
-                )
-            }
+            .setPositiveButton(label("save", android.R.string.ok)) { _, _ -> save(appWidgetId, currentSettings()) }
             .setOnCancelListener { finish() }
             .show()
     }
@@ -127,25 +179,26 @@ class BookshelfWidgetConfigureActivity : Activity() {
     }
 
     /** A "label  -  n  +" row editing value[0] within 1..MAX_GRID_SIZE. */
-    private fun stepper(label: String, value: IntArray): View {
-        val count = TextView(this).apply {
+    private fun stepper(context: Context, label: String, value: IntArray): View {
+        val count = TextView(context).apply {
             text = value[0].toString()
             gravity = Gravity.CENTER
             minEms = 2
         }
         fun button(sign: String, delta: Int) =
-            Button(this, null, android.R.attr.borderlessButtonStyle).apply {
+            flatButton(context).apply {
                 text = sign
+                setPadding(dp(context, 12), 0, dp(context, 12), 0)
                 setOnClickListener {
                     value[0] = (value[0] + delta).coerceIn(1, MAX_GRID_SIZE)
                     count.text = value[0].toString()
                 }
             }
-        return LinearLayout(this).apply {
+        return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             addView(
-                TextView(this@BookshelfWidgetConfigureActivity).apply { text = label },
+                TextView(context).apply { text = label },
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
             )
             addView(button("−", -1))
@@ -153,4 +206,15 @@ class BookshelfWidgetConfigureActivity : Activity() {
             addView(button("+", 1))
         }
     }
+
+    /** A flat (borderless) MaterialButton shrunk to content - the default TextButton
+     * spec sizing (min width, top/bottom insets) is made for buttons with real
+     * label text, and looks oversized for the single-glyph/icon-only buttons here. */
+    private fun flatButton(context: Context) =
+        MaterialButton(context, null, android.R.attr.borderlessButtonStyle).apply {
+            setMinWidth(0)
+            setMinimumWidth(0)
+            setInsetTop(0)
+            setInsetBottom(0)
+        }
 }

@@ -157,7 +157,7 @@ class ReadingWidgetProvider : AppWidgetProvider() {
 
         // The heading is the shelf's name, which JS puts in the snapshot.
         val heading = snapshot.optString("sectionTitle")
-        if (!loaded || heading.isBlank()) {
+        if (!loaded || !settings.showShelfName || heading.isBlank()) {
             views.setViewVisibility(R.id.heading, android.view.View.GONE)
         } else {
             views.setTextViewText(R.id.heading, heading)
