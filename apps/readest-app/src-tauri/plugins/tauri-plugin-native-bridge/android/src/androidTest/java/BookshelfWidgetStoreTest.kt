@@ -376,4 +376,26 @@ class BookshelfWidgetStoreTest {
             BookshelfWidgetStore.clear(ctx, 652)
         }
     }
+
+    /** A stored coverKey that tries to escape the covers dir is ignored on cleanup,
+     * just like the writers: nothing outside the covers dir is deleted. */
+    @Test
+    fun clear_coverKeyEscapingCoversDir_isIgnored() {
+        val id = 761
+        val coversDir = BookshelfWidgetStore.coversDir(ctx)
+        val outside = File(coversDir.parentFile, "escaped-cleanup.png")
+        outside.writeBytes(byteArrayOf(1, 2, 3))
+        try {
+            BookshelfWidgetStore.writeSnapshot(
+                ctx, id,
+                """{"items":[{"type":"group","id":"g1","coverKey":"../escaped-cleanup"}]}""",
+            )
+            BookshelfWidgetStore.clear(ctx, id)
+            assertTrue("file outside the covers dir must be left alone", outside.exists())
+            assertEquals(3, outside.length())
+        } finally {
+            outside.delete()
+            BookshelfWidgetStore.clear(ctx, id)
+        }
+    }
 }

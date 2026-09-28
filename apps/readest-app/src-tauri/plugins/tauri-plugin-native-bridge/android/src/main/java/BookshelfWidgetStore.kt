@@ -316,7 +316,12 @@ object BookshelfWidgetStore {
     private fun deleteGroupCovers(context: Context, keys: Set<String>) {
         if (keys.isEmpty()) return
         val dir = coversDir(context)
-        for (key in keys) File(dir, "$key.png").delete()
+        for (key in keys) {
+            // Same reasoning as the writers: never let a stored key escape the covers dir.
+            val file = File(dir, "$key.png")
+            if (file.canonicalFile.parentFile != dir.canonicalFile) continue
+            file.delete()
+        }
     }
 
     /** Replaces a widget's snapshot, deleting any group-cover file the previous
@@ -325,15 +330,16 @@ object BookshelfWidgetStore {
      * so it doesn't linger until the widget itself is deleted. An unparseable
      * `json` skips cleanup rather than deleting everything (it isn't stored as
      * valid JSON either way, so there's nothing to diff against); the new
-     * snapshot is persisted before deleting the stale files, so a process
-     * death in between only leaks an orphan file rather than leaving the
-     * still-stored old snapshot pointing at an already-deleted cover. */
+     * snapshot is committed to disk (not the usual async apply - a process
+     * death before it lands must not leave the still-stored old snapshot
+     * pointing at an already-deleted cover) before the stale files are
+     * deleted, so a death after that only leaks an orphan file. */
     fun writeSnapshot(context: Context, appWidgetId: Int, json: String) {
         val next = runCatching { JSONObject(json) }.getOrNull()
         val staleKeys = next?.let { groupCoverKeys(readSnapshot(context, appWidgetId)) - groupCoverKeys(it) }
-        writeStr(context, KEY_SNAPSHOT_PREFIX, appWidgetId, json)
+        val committed = prefs(context).edit().putString(KEY_SNAPSHOT_PREFIX + appWidgetId, json).commit()
         notifyWidget(context, appWidgetId)
-        staleKeys?.let { deleteGroupCovers(context, it) }
+        if (committed) staleKeys?.let { deleteGroupCovers(context, it) }
     }
 
     fun readSnapshot(context: Context, appWidgetId: Int): JSONObject {
