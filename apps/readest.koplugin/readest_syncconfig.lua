@@ -142,6 +142,9 @@ function SyncConfig:getDocumentIdentifier(ui)
     return ui.doc_settings:readSetting("partial_md5_checksum")
 end
 
+-- Build the sync payload for the open book: its hashes, current page and
+-- page count, plus the xpointer for reflowable documents. Returns nil if
+-- the book can't be identified.
 function SyncConfig:getCurrentBookConfig(ui)
     local book_hash = self:getDocumentIdentifier(ui)
     local meta_hash = self:getMetaHash(ui)
