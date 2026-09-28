@@ -150,6 +150,12 @@ if(typeof Set.prototype.symmetricDifference!=="function"){Set.prototype.symmetri
 if(typeof Set.prototype.isSubsetOf!=="function"){Set.prototype.isSubsetOf=function(other){var o=asSet(other);for(var _i=0,_a=this;_i<_a.length;_i++){var item=_a[_i];if(!o.has(item))return false}return true}}
 if(typeof Set.prototype.isSupersetOf!=="function"){Set.prototype.isSupersetOf=function(other){var o=asSet(other);for(var _i=0,_a=o;_i<_a.length;_i++){var item=_a[_i];if(!this.has(item))return false}return true}}
 if(typeof Set.prototype.isDisjointFrom!=="function"){Set.prototype.isDisjointFrom=function(other){var o=asSet(other);for(var _i=0,_a=this;_i<_a.length;_i++){var item=_a[_i];if(o.has(item))return false}return true}}
+if(typeof Uint8Array.fromBase64!=="function"){Uint8Array.fromBase64=function(s){s=String(s).replace(/-/g,"+").replace(/_/g,"/").replace(/\\s+/g,"");while(s.length%4)s+="=";var bin=atob(s);var out=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}}
+if(typeof Uint8Array.prototype.setFromBase64!=="function"){Uint8Array.prototype.setFromBase64=function(s){s=String(s).replace(/-/g,"+").replace(/_/g,"/").replace(/\\s+/g,"");while(s.length%4)s+="=";var bin=atob(s);var n=Math.min(bin.length,this.length);for(var i=0;i<n;i++)this[i]=bin.charCodeAt(i);return{read:n,written:n}}}
+if(typeof Uint8Array.prototype.toBase64!=="function"){Uint8Array.prototype.toBase64=function(){var s="";for(var i=0;i<this.length;i++)s+=String.fromCharCode(this[i]);return btoa(s)}}
+if(typeof Uint8Array.prototype.toHex!=="function"){Uint8Array.prototype.toHex=function(){var h="";for(var i=0;i<this.length;i++){var b=this[i].toString(16);h+=b.length<2?"0"+b:b}return h}}
+if(typeof Uint8Array.prototype.setFromHex!=="function"){Uint8Array.prototype.setFromHex=function(s){var n=Math.min(Math.floor(s.length/2),this.length);for(var i=0;i<n;i++)this[i]=parseInt(s.slice(i*2,i*2+2),16);return{read:n*2,written:n}}}
+if(typeof RegExp.escape!=="function"){RegExp.escape=function(s){return String(s).replace(/[.*+?\u0024\u007b()|[\\]\\\\]/g,"\\\\$&")}}
 })();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
