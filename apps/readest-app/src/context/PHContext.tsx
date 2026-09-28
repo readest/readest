@@ -3,7 +3,7 @@
 import posthog from 'posthog-js';
 import { ReactNode } from 'react';
 import { PostHogProvider } from 'posthog-js/react';
-import { getTelemetryDecision } from '@/utils/telemetry';
+import { applyPostHogConsent, getTelemetryDecision } from '@/utils/telemetry';
 import { getAppVersion } from '@/utils/version';
 
 const posthogUrl =
@@ -47,15 +47,15 @@ export const initPostHog = () => {
     disable_surveys: true,
   });
   // Apply the decision now that init has set the project token. PostHog keeps
-  // consent under a token-specific key, so a call before init writes another
-  // key and an older grant can win. The SDK's initial pageview reads consent
-  // one tick from now, so this synchronous call stops it (issue #6422).
-  if (getTelemetryDecision() === 'opt-in') {
-    posthog.opt_in_capturing();
-  } else {
-    posthog.opt_out_capturing();
-  }
+  // consent under a token-specific key, so an older grant stored there would
+  // otherwise win. The SDK's initial pageview reads consent one tick from
+  // now, so this synchronous call stops it (issue #6422).
+  applyPostHogConsent();
   posthog.register_for_session({ $app_version: getAppVersion() });
+  // AuthContext identifies a restored session at boot, usually before this
+  // runs, and PostHog drops calls made before init. Identify it again here.
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) posthog.identify((JSON.parse(storedUser) as { id: string }).id);
 };
 
 export const CSPostHogProvider = ({ children }: { children: ReactNode }) => {

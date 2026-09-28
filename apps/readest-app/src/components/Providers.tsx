@@ -75,7 +75,13 @@ const finalizeTelemetryDecision = ({
     // The decision is recorded. PostHog's consent can still drift from the
     // settings file (a command-palette toggle, another window, or an edited
     // settings file), so line the two up on every boot (issue #6422).
-    reconcileTelemetryConsent(settings.telemetryEnabled);
+    const telemetryEnabled = reconcileTelemetryConsent(settings.telemetryEnabled);
+    if (settings.telemetryEnabled !== telemetryEnabled) {
+      // A recorded opt-out wins over a stale `true` in the file. Save it so
+      // the settings switch shows telemetry as off.
+      settings.telemetryEnabled = telemetryEnabled;
+      void appService.saveSettings(settings);
+    }
     return;
   }
 
