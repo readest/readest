@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildAnnotationUrl, parseWidgetGroupDeepLink } from '../../utils/deeplink';
+import {
+  buildAnnotationUrl,
+  parseWidgetAddShelfDeepLink,
+  parseWidgetEditShelfDeepLink,
+  parseWidgetGroupDeepLink,
+} from '../../utils/deeplink';
 
 describe('buildAnnotationUrl', () => {
   const link = { bookHash: 'abc', noteId: 'n1', cfi: '/6/4!/4/2' };
@@ -40,5 +45,31 @@ describe('widget group deep link', () => {
 
   it('only accepts the readest:// scheme, never the web host', () => {
     expect(parseWidgetGroupDeepLink('https://web.readest.com/o/widget-group/series/x')).toBeNull();
+  });
+});
+
+describe('widget edit-shelf deep link', () => {
+  it('parses the decoded shelf id', () => {
+    expect(parseWidgetEditShelfDeepLink('readest://widget-edit-shelf/a1b2%20c3')).toEqual({
+      shelfId: 'a1b2 c3',
+    });
+    expect(parseWidgetEditShelfDeepLink('readest://widget-edit-shelf/')).toBeNull();
+    // Malformed percent-encoding is rejected, not thrown.
+    expect(parseWidgetEditShelfDeepLink('readest://widget-edit-shelf/a%')).toBeNull();
+  });
+
+  it('only accepts the readest:// scheme, never the web host', () => {
+    expect(
+      parseWidgetEditShelfDeepLink('https://web.readest.com/o/widget-edit-shelf/x'),
+    ).toBeNull();
+  });
+});
+
+describe('widget add-shelf deep link', () => {
+  it('matches only the bare widget-add-shelf link', () => {
+    expect(parseWidgetAddShelfDeepLink('readest://widget-add-shelf')).toBe(true);
+    expect(parseWidgetAddShelfDeepLink('readest://widget-add-shelf/extra')).toBe(false);
+    expect(parseWidgetAddShelfDeepLink('https://web.readest.com/o/widget-add-shelf')).toBe(false);
+    expect(parseWidgetAddShelfDeepLink('readest://book/abc')).toBe(false);
   });
 });

@@ -287,6 +287,8 @@ describe('useOpenLaunchLinks — launch URL replayed after a reload (#6104)', ()
 });
 
 const groupUrl = 'readest://widget-group/series/a1b2%20c3';
+const editShelfUrl = 'readest://widget-edit-shelf/sf';
+const addShelfUrl = 'readest://widget-add-shelf';
 
 const mountWidget = async (label = 'main') => {
   currentWindowLabel = label;
@@ -341,10 +343,23 @@ describe('useOpenLaunchLinks — widget links', () => {
   });
 
   it.each([
+    // Edit/Add always append a per-tap nonce (`t`), so only the prefix is fixed.
+    ['Edit', editShelfUrl, /^\/library\?editBookshelf=sf&t=\d+$/],
+    ['Add', addShelfUrl, /^\/library\?addBookshelf=1&t=\d+$/],
+  ])('opens the bookshelf editor for a tapped %s button, without waiting for the library', async (_label, url, expected) => {
+    libraryState.libraryLoaded = false;
+    coldStartUrls = [url];
+    await mountWidget();
+    expect(routerPushMock).toHaveBeenCalledWith(expect.stringMatching(expected));
+  });
+
+  it.each([
     [
       'a group link with an unknown axis',
       ['readest://widget-group/none/x', 'readest://widget-group/bogus/x'],
     ],
+    ['a malformed edit-shelf link', ['readest://widget-edit-shelf/']],
+    ['an add-shelf link with an extra segment', ['readest://widget-add-shelf/extra']],
     [
       'links that are not widget links',
       ['readest://book/abc', 'https://web.readest.com/o/widget-group/series/x'],
@@ -361,8 +376,12 @@ describe('useOpenLaunchLinks — widget links', () => {
       expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
     });
 
-    it('is released after a group tap, which opens within the Library', async () => {
-      coldStartUrls = [groupUrl];
+    it.each([
+      ['a group tap', groupUrl],
+      ['an edit-shelf tap', editShelfUrl],
+      ['an add-shelf tap', addShelfUrl],
+    ])('is released after %s, which opens within the Library', async (_label, url) => {
+      coldStartUrls = [url];
       await mountWidget();
       expect(routerPushMock).toHaveBeenCalled();
       expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);

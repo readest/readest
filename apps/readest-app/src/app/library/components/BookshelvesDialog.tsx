@@ -8,7 +8,7 @@ import {
   useState,
   type Ref,
 } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   DndContext,
   MouseSensor,
@@ -41,6 +41,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { isAbsBookOrphaned, useABSServerStore } from '@/store/absServerStore';
 import { useMedianPageDurationsSecs } from '@/hooks/useMedianPageDurationSecs';
 import { useBookshelfDate } from '@/hooks/useBookshelfDate';
+import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
@@ -220,6 +221,7 @@ export interface BookshelvesEditorHandle {
 export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> }) {
   const _ = useTranslation();
   const { envConfig } = useEnv();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const settings = useSettingsStore((s) => s.settings);
   const viewMode = searchParams?.get('view') || settings.libraryViewMode;
@@ -243,6 +245,47 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   useEffect(() => {
     localStorage.setItem('lastBookshelfTab', selectedId);
   }, [selectedId]);
+  // Inserts a freshly numbered "New bookshelf N" after Recently read and
+  // selects it - shared by the "+" button below and the widget configure
+  // dialog's Add button (see the effect below it).
+  const addNewBookshelf = (shelves: BookshelfDefinition[]) => {
+    let number = 1;
+    while (shelves.some((s) => s.name === _('New bookshelf {{number}}', { number }))) number++;
+    const shelf = createBookshelf(_('New bookshelf {{number}}', { number }));
+    const index = shelves.findIndex((s) => s.id === RECENT_BOOKSHELF_ID) + 1;
+    setSelectedId(shelf.id);
+    return [...shelves.slice(0, index), shelf, ...shelves.slice(index)];
+  };
+  // The widget configure dialog's Edit/Add buttons (readest://widget-edit-shelf/{id},
+  // readest://widget-add-shelf) land here as /library?editBookshelf={id}&t=... or
+  // ?addBookshelf=1&t=.... `t` is a per-tap nonce (see useOpenLaunchLinks) that's
+  // always a real dependency change, so a repeat tap - even for the same shelf,
+  // or one that arrives while this editor is already open - is never missed (this
+  // editor otherwise only computes selectedId/draft once, at mount).
+  const editBookshelfId = searchParams?.get('editBookshelf');
+  const addBookshelf = searchParams?.get('addBookshelf') === '1';
+  const widgetRequestNonce = searchParams?.get('t');
+  // Strips the one-shot editBookshelf/addBookshelf/t params once acted on, so
+  // a later, unrelated reopen (the in-app "+"/ViewMenu trigger) - which mounts
+  // a fresh BookshelvesEditor whose effects below run regardless of whether
+  // these params "changed" - doesn't silently replay a stale widget request.
+  const clearWidgetRequestParams = () => {
+    const params = new URLSearchParams(searchParams?.toString());
+    params.delete('editBookshelf');
+    params.delete('addBookshelf');
+    params.delete('t');
+    router.replace(params.size ? `/library?${params}` : '/library');
+  };
+  useEffect(() => {
+    if (!editBookshelfId) return;
+    setSelectedId((id) => base.find((shelf) => shelf.id === editBookshelfId)?.id ?? id);
+    clearWidgetRequestParams();
+  }, [base, editBookshelfId, widgetRequestNonce]);
+  useEffect(() => {
+    if (!addBookshelf) return;
+    setDraft(addNewBookshelf);
+    clearWidgetRequestParams();
+  }, [addBookshelf, widgetRequestNonce]);
   const tabsRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const tabLabels = draft.map((s) => s.name || _(bookshelfName(s))).join('\0');
@@ -562,15 +605,7 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
           aria-label={_('Add bookshelf')}
           title={_('Add bookshelf')}
           className='btn btn-ghost eink-bordered border-base-200 h-11 min-h-11 w-11 shrink-0 rounded-full border px-0 focus-visible:ring-2 focus-visible:ring-base-content/15'
-          onClick={() => {
-            let number = 1;
-            while (draft.some((s) => s.name === _('New bookshelf {{number}}', { number })))
-              number++;
-            const shelf = createBookshelf(_('New bookshelf {{number}}', { number }));
-            const index = draft.findIndex((s) => s.id === RECENT_BOOKSHELF_ID) + 1;
-            setDraft([...draft.slice(0, index), shelf, ...draft.slice(index)]);
-            setSelectedId(shelf.id);
-          }}
+          onClick={() => setDraft(addNewBookshelf)}
         >
           <MdAdd aria-hidden className='h-5 w-5' />
         </button>
@@ -910,6 +945,25 @@ export default function BookshelvesDialog() {
     eventDispatcher.on('show-bookshelves', show);
     return () => eventDispatcher.off('show-bookshelves', show);
   }, []);
+  // The widget configure dialog's Edit/Add buttons (readest://widget-edit-shelf/{id},
+  // readest://widget-add-shelf) land here as /library?editBookshelf={id}&t=... or
+  // ?addBookshelf=1&t=.... BookshelvesEditor reacts to these itself (it needs
+  // base/draft/setDraft, which live there); this just needs to open the dialog -
+  // including reopening it for a repeat tap with the same editBookshelf/addBookshelf
+  // value, which `t` (a per-tap nonce, see useOpenLaunchLinks) is what signals.
+  const searchParams = useSearchParams();
+  const editBookshelfId = searchParams?.get('editBookshelf');
+  const addBookshelf = searchParams?.get('addBookshelf') === '1';
+  const widgetRequestNonce = searchParams?.get('t');
+  useEffect(() => {
+    if (editBookshelfId || addBookshelf) setOpen(true);
+  }, [editBookshelfId, addBookshelf, widgetRequestNonce]);
+  // BookshelvesEditor snapshots settings once, at mount, so it must not mount
+  // before they've actually loaded - which a widget deep link can't assume,
+  // unlike the normal 'show-bookshelves' trigger (only reachable once the
+  // Library page, and its settings load, already has). Without this, opening
+  // cold shows only built-in shelves and Edit can't find a custom one.
+  const settingsHydrated = useEnsureSettingsLoaded();
   return (
     <Dialog
       isOpen={open}
@@ -918,7 +972,7 @@ export default function BookshelvesDialog() {
       fullScreen
       contentClassName='min-h-0 flex-1 overflow-hidden! sm:px-6!'
     >
-      {open && <BookshelvesEditor ref={editor} />}
+      {open && settingsHydrated && <BookshelvesEditor ref={editor} />}
     </Dialog>
   );
 }
