@@ -172,6 +172,11 @@ function SyncConfig:getCurrentBookConfig(ui)
     return config
 end
 
+-- Jump to the remote reading position if it's ahead of the local one.
+-- Paged documents compare page numbers, reflowable ones compare xpointers,
+-- trimming the remote xpointer until it resolves in the local document.
+-- Skip positions that can't be parsed or resolved (e.g. a different copy
+-- of the book) instead of erroring.
 function SyncConfig:applyBookConfig(ui, config)
     logger.dbg("ReadestSync: Applying book config:", config)
     local xpointer = config.xpointer
