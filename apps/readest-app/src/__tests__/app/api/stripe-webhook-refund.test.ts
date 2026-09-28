@@ -8,6 +8,7 @@ const hooks = vi.hoisted(() => ({
   constructEvent: vi.fn(),
   markPaymentRefunded: vi.fn(),
   paymentRow: { user_id: 'user-1' } as { user_id: string } | null,
+  lookupError: null as { message: string } | null,
 }));
 
 vi.mock('@/libs/payment/stripe/server', () => ({
@@ -26,7 +27,14 @@ vi.mock('@/utils/supabase', () => ({
       if (table !== 'payments') throw new Error(`unexpected table: ${table}`);
       return {
         select: () => ({
-          eq: () => ({ maybeSingle: () => Promise.resolve({ data: hooks.paymentRow }) }),
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve(
+                hooks.lookupError
+                  ? { data: null, error: hooks.lookupError }
+                  : { data: hooks.paymentRow, error: null },
+              ),
+          }),
         }),
       };
     },
@@ -51,6 +59,7 @@ beforeEach(() => {
   hooks.constructEvent.mockReset();
   hooks.markPaymentRefunded.mockReset();
   hooks.paymentRow = { user_id: 'user-1' };
+  hooks.lookupError = null;
   process.env['STRIPE_WEBHOOK_SECRET'] = 'whsec_dummy';
 });
 
@@ -74,6 +83,16 @@ describe('POST /api/stripe/webhook — charge refunded', () => {
     const res = await POST(makeReq());
 
     expect(res.status).toBe(200);
+    expect(hooks.markPaymentRefunded).not.toHaveBeenCalled();
+  });
+
+  it('fails the webhook when the payment lookup errors, so Stripe retries', async () => {
+    hooks.lookupError = { message: 'connection reset' };
+    hooks.constructEvent.mockReturnValue(refundEvent({}));
+
+    const res = await POST(makeReq());
+
+    expect(res.status).toBe(500);
     expect(hooks.markPaymentRefunded).not.toHaveBeenCalled();
   });
 

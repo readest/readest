@@ -94,12 +94,14 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   if (!charge.refunded || !paymentIntentId) return;
 
   const supabase = createSupabaseAdminClient();
-  const { data: payment } = await supabase
+  const { data: payment, error } = await supabase
     .from('payments')
     .select('user_id')
     .eq('stripe_payment_intent_id', paymentIntentId)
     .maybeSingle();
 
+  // Throw so the webhook answers 500 and Stripe retries the refund.
+  if (error) throw new Error(`Failed to look up refunded payment: ${error.message}`);
   if (!payment?.user_id) return;
 
   await markPaymentRefunded(payment.user_id, 'stripe_payment_intent_id', paymentIntentId);
