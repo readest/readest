@@ -321,6 +321,42 @@ class BookshelfWidgetStoreTest {
         }
     }
 
+    /** A group dropped from a widget's snapshot (a filter or groupBy change) must
+     * not leave its cover file behind until the widget itself is deleted. */
+    @Test
+    fun writeSnapshot_deletesGroupCoversDroppedFromTheNewSnapshot() {
+        val id = 751
+        val cover = writeCoverPng(240, 360, "widget-cover-snapshot-group.png")
+        val keptKey = "$id-kept"
+        val droppedKey = "$id-dropped"
+        try {
+            BookshelfWidgetStore.writeGroupTileThumbnail(ctx, keptKey, listOf(cover.absolutePath))
+            BookshelfWidgetStore.writeGroupTileThumbnail(ctx, droppedKey, listOf(cover.absolutePath))
+            BookshelfWidgetStore.writeSnapshot(
+                ctx, id,
+                """{"items":[
+                    {"type":"group","id":"g1","coverKey":"$keptKey"},
+                    {"type":"group","id":"g2","coverKey":"$droppedKey"}
+                ]}""",
+            )
+            assertTrue("kept cover should exist after the first snapshot", groupTileFile(keptKey).exists())
+            assertTrue("dropped cover should exist after the first snapshot", groupTileFile(droppedKey).exists())
+
+            BookshelfWidgetStore.writeSnapshot(
+                ctx, id,
+                """{"items":[{"type":"group","id":"g1","coverKey":"$keptKey"}]}""",
+            )
+
+            assertTrue("cover still referenced by the new snapshot must survive", groupTileFile(keptKey).exists())
+            assertFalse("cover dropped from the new snapshot must be deleted", groupTileFile(droppedKey).exists())
+        } finally {
+            BookshelfWidgetStore.clear(ctx, id)
+            cover.delete()
+            groupTileFile(keptKey).delete()
+            groupTileFile(droppedKey).delete()
+        }
+    }
+
     @Test
     fun clear_removesTheSnapshotAndSettingsOfOnlyTheGivenWidgetId() {
         try {

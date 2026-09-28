@@ -299,9 +299,41 @@ object BookshelfWidgetStore {
         return missing == 0 && ok
     }
 
+    /** The coverKey of every group tile in a snapshot, i.e. the group-cover
+     * files it owns (see writeGroupTileThumbnail/clear). */
+    private fun groupCoverKeys(snapshot: JSONObject): Set<String> {
+        val items = snapshot.optJSONArray("items") ?: return emptySet()
+        val keys = mutableSetOf<String>()
+        for (i in 0 until items.length()) {
+            val item = items.optJSONObject(i) ?: continue
+            if (item.optString("type") != "group") continue
+            val coverKey = item.optString("coverKey")
+            if (coverKey.isNotEmpty()) keys.add(coverKey)
+        }
+        return keys
+    }
+
+    private fun deleteGroupCovers(context: Context, keys: Set<String>) {
+        if (keys.isEmpty()) return
+        val dir = coversDir(context)
+        for (key in keys) File(dir, "$key.png").delete()
+    }
+
+    /** Replaces a widget's snapshot, deleting any group-cover file the previous
+     * snapshot owned that the new one doesn't - e.g. a group dropped by a
+     * filter change, or a groupBy change that replaces the whole tile set -
+     * so it doesn't linger until the widget itself is deleted. An unparseable
+     * `json` skips cleanup rather than deleting everything (it isn't stored as
+     * valid JSON either way, so there's nothing to diff against); the new
+     * snapshot is persisted before deleting the stale files, so a process
+     * death in between only leaks an orphan file rather than leaving the
+     * still-stored old snapshot pointing at an already-deleted cover. */
     fun writeSnapshot(context: Context, appWidgetId: Int, json: String) {
+        val next = runCatching { JSONObject(json) }.getOrNull()
+        val staleKeys = next?.let { groupCoverKeys(readSnapshot(context, appWidgetId)) - groupCoverKeys(it) }
         writeStr(context, KEY_SNAPSHOT_PREFIX, appWidgetId, json)
         notifyWidget(context, appWidgetId)
+        staleKeys?.let { deleteGroupCovers(context, it) }
     }
 
     fun readSnapshot(context: Context, appWidgetId: Int): JSONObject {
@@ -326,16 +358,7 @@ object BookshelfWidgetStore {
      * shared across widgets, so only the group covers named in this widget's
      * own last snapshot (by their widget-scoped coverKey) are deleted. */
     fun clear(context: Context, appWidgetId: Int) {
-        val items = readSnapshot(context, appWidgetId).optJSONArray("items")
-        if (items != null) {
-            val dir = coversDir(context)
-            for (i in 0 until items.length()) {
-                val item = items.optJSONObject(i) ?: continue
-                if (item.optString("type") != "group") continue
-                val coverKey = item.optString("coverKey")
-                if (coverKey.isNotEmpty()) File(dir, "$coverKey.png").delete()
-            }
-        }
+        deleteGroupCovers(context, groupCoverKeys(readSnapshot(context, appWidgetId)))
         prefs(context).edit()
             .remove(KEY_SNAPSHOT_PREFIX + appWidgetId)
             .remove(KEY_INSTANCE_SETTINGS_PREFIX + appWidgetId)
