@@ -349,9 +349,8 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onGetFontFamily={handleFontFamilyFont}
           />
         </SettingsRow>
-        {/* The two faces the category selects between live in one child, so the
-            card's divider only separates them from the category above; a book
-            asking for a generic family can still reach the other one. */}
+        {/* The faces live in one child so the card's divider only separates
+            them from the category above. */}
         <div>
           <FontFace
             family='serif'
@@ -379,19 +378,16 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onSelect={setSansSerifFont}
             data-setting-id='settings.font.sansSerifFont'
           />
+          <FontFace
+            family='monospace'
+            label={_('Monospace Font')}
+            options={[...customFonts, ...MONOSPACE_FONTS]}
+            moreOptions={sysFonts}
+            selected={monospaceFont}
+            onSelect={setMonospaceFont}
+            data-setting-id='settings.font.monospaceFont'
+          />
         </div>
-      </BoxedList>
-
-      <BoxedList title={_('Preferred Coding Font')}>
-        <FontFace
-          family='monospace'
-          label={_('Monospace Font')}
-          options={[...customFonts, ...MONOSPACE_FONTS]}
-          moreOptions={sysFonts}
-          selected={monospaceFont}
-          onSelect={setMonospaceFont}
-          data-setting-id='settings.font.monospaceFont'
-        />
       </BoxedList>
 
       {(isCJKEnv() || view?.language.isCJK) && (

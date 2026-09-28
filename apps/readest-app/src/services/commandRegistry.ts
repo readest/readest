@@ -212,7 +212,7 @@ const fontPanelItems = [
     id: 'settings.font.monospaceFont',
     labelKey: _('Monospace Font'),
     keywords: ['font', 'monospace', 'mono', 'code', 'fixed', 'width'],
-    section: 'Preferred Coding Font',
+    section: 'Preferred Font',
   },
 ];
 
