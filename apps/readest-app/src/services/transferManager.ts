@@ -183,7 +183,7 @@ class TransferManager {
     return transferId;
   }
 
-  queueDownload(book: Book, priority: number = 10): string | null {
+  queueDownload(book: Book, priority: number = 10, isBackground: boolean = false): string | null {
     if (!this.isReady()) {
       console.warn('TransferManager not initialized');
       return null;
@@ -199,7 +199,7 @@ class TransferManager {
       return existing.id;
     }
 
-    const transferId = store.addTransfer(book.hash, book.title, 'download', priority);
+    const transferId = store.addTransfer(book.hash, book.title, 'download', priority, isBackground);
     this.persistQueue();
     this.processQueue();
     return transferId;

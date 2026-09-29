@@ -216,7 +216,18 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
     expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
-    expect(queueDownload).toHaveBeenCalledWith(book, 1);
+    expect(queueDownload).toHaveBeenCalledWith(book, 1, false);
+    expect(ok).toBe(true);
+  });
+
+  it('queues a silent download in the background so it does not toast on completion (#6418)', async () => {
+    routing.readestEnabled = true;
+
+    const { result } = setup();
+    const book = makeBook({ uploadedAt: 12345 });
+    const ok = await result.current.handleBookDownload(book, { queued: true, silent: true });
+
+    expect(queueDownload).toHaveBeenCalledWith(book, 1, true);
     expect(ok).toBe(true);
   });
 

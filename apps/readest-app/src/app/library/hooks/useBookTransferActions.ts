@@ -218,8 +218,9 @@ export const useBookTransferActions = (
         }
       }
 
-      // Use transfer queue for normal downloads - priority 1 for manual downloads
-      const transferId = transferManager.queueDownload(book, 1);
+      // Use transfer queue for normal downloads - priority 1 for manual downloads.
+      // A silent (bulk) download also stays quiet when each transfer completes.
+      const transferId = transferManager.queueDownload(book, 1, silent);
       if (transferId) {
         if (!silent) {
           eventDispatcher.dispatch('toast', {

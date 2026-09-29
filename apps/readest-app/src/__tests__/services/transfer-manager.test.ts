@@ -309,6 +309,20 @@ describe('TransferManager', () => {
       const id2 = transferManager.queueDownload(makeBook());
       expect(id1).toBe(id2);
     });
+
+    test('supports isBackground flag so bulk downloads skip per-book toasts (#6418)', async () => {
+      const appService = makeAppService();
+      await transferManager.initialize(
+        appService as never,
+        () => [makeBook()],
+        vi.fn(),
+        translationFn,
+      );
+
+      const id = transferManager.queueDownload(makeBook(), 10, true);
+      const transfer = useTransferStore.getState().transfers[id!];
+      expect(transfer!.isBackground).toBe(true);
+    });
   });
 
   // ── queueDelete ──────────────────────────────────────────────────

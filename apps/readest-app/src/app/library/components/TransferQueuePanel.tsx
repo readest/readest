@@ -213,7 +213,8 @@ const TransferQueuePanel: React.FC = () => {
   };
 
   const handleDownloadAll = () => {
-    booksToDownload.forEach((book) => queueDownload(book));
+    // Background: a library-wide download must not toast once per book (#6418).
+    booksToDownload.forEach((book) => queueDownload(book, undefined, true));
   };
 
   const filteredTransfers = transfers
