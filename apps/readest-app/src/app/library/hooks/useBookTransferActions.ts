@@ -120,8 +120,10 @@ export const useBookTransferActions = (
         });
         return true;
       }
-      // An explicit Upload action must never silently no-op.
-      if (booksSyncOff) {
+      // An explicit Upload action must never silently no-op. A failed file
+      // backend upload is the real error, so the Books hint is only for when
+      // Readest Cloud was the sole destination.
+      if (booksSyncOff && backends.length === 0) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           timeout: 5000,

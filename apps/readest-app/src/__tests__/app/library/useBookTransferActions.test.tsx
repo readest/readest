@@ -172,6 +172,24 @@ describe('useBookTransferActions upload with Books sync off', () => {
     expect(queueUpload).not.toHaveBeenCalled();
     expect(ok).toBe(true);
   });
+
+  it('reports a failed file-backend upload instead of the Books sync hint', async () => {
+    routing.booksSyncEnabled = false;
+    routing.backends = ['gdrive'];
+    runFileBookUpload.mockResolvedValueOnce(false);
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    const { result } = setup();
+    const ok = await result.current.handleBookUpload(makeBook());
+
+    expect(ok).toBe(false);
+    const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
+    expect(toastCalls).toHaveLength(1);
+    expect(toastCalls[0]?.[1]).toMatchObject({
+      type: 'error',
+      message: 'Failed to upload book: Title',
+    });
+  });
 });
 
 describe('useBookTransferActions download routing (issue #5062)', () => {
