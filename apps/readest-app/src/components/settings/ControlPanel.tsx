@@ -570,7 +570,8 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           label={_('Hide Bookshelf Buttons')}
           description={_('Previous and Next in the library')}
           checked={hideBookshelfPageButtons}
-          disabled={!isEink}
+          // The library follows the global E-Ink setting, not this book's.
+          disabled={!settings.globalViewSettings?.isEink}
           onChange={() => setHideBookshelfPageButtons(!hideBookshelfPageButtons)}
           data-setting-id='settings.control.hideBookshelfPageButtons'
         />
