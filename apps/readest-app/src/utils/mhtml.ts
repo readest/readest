@@ -66,22 +66,29 @@ const resolveUrl = (url: string, base?: string) => {
 };
 
 export const parseMhtml = (bytes: Uint8Array): MhtmlPage | null => {
-  // An archive opens with its message headers; a plain HTML page never does.
-  const top = splitHeaders(toBinaryString(bytes.subarray(0, 8192)));
+  // An archive opens with a message header line; a plain HTML page never does,
+  // so only a header gets the whole file converted and its header block read.
+  if (!/^[!-9;-~]+:/.test(toBinaryString(bytes.subarray(0, 256)))) return null;
+  const top = splitHeaders(toBinaryString(bytes));
   const contentType = top.headers.get('content-type');
   const boundary = param(contentType, 'boundary');
   if (!/^multipart\/related\b/i.test(contentType ?? '') || !boundary) return null;
 
-  const parts = splitHeaders(toBinaryString(bytes))
-    .body.split(`--${boundary}`)
+  // A delimiter is "--boundary" at the start of a line (RFC 2046), and the
+  // line break before it belongs to the delimiter, not to the part.
+  const escaped = boundary.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = `\r\n${top.body}`
+    .split(new RegExp(`\\r?\\n--${escaped}(?=--|[ \\t]*\\r?\\n|$)`))
     .slice(1)
     .filter((chunk) => !chunk.startsWith('--'))
-    .map((chunk) => splitHeaders(chunk.replace(/^\r?\n/, '').replace(/\r?\n$/, '')));
+    .map((chunk) => splitHeaders(chunk.replace(/^[ \t]*\r?\n/, '')));
 
   const page = parts.find((p) => /^text\/html\b/i.test(p.headers.get('content-type') ?? ''));
-  if (!page) return null;
+  if (!page) throw new Error('The MHTML archive has no HTML page');
 
   const location = page.headers.get('content-location') ?? '';
+  // A relative part URL resolves against the message's own location (RFC 2557).
+  const partBase = top.headers.get('content-location') || location || undefined;
   const resources = new Map<string, string>();
   for (const part of parts) {
     // Only images are kept: makeHtmlBook drops the stylesheets, fonts and frames.
@@ -93,7 +100,7 @@ export const parseMhtml = (bytes: Uint8Array): MhtmlPage | null => {
         : btoa(decodeBody(part));
     const dataUri = `data:${type};base64,${base64}`;
     const partLocation = part.headers.get('content-location');
-    if (partLocation) resources.set(resolveUrl(partLocation, location || undefined), dataUri);
+    if (partLocation) resources.set(resolveUrl(partLocation, partBase), dataUri);
     const cid = part.headers.get('content-id')?.replace(/^<|>$/g, '');
     if (cid) resources.set(`cid:${cid}`, dataUri);
   }

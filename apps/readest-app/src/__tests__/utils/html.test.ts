@@ -294,4 +294,52 @@ describe('makeHtmlBook with an MHTML archive', () => {
     );
     expect(book.metadata.title).toBe('Saved Page');
   });
+
+  it('reads a long header block, splits only at delimiter lines, and resolves part URLs against the message', async () => {
+    const html = page(
+      `<article><h1>Archive</h1><!--banner-->${prose()}<p><img src="../archive/pics/a.gif" alt="A"></p>${prose()}</article>`,
+      '<title>Archive</title>',
+    );
+    const book = await make(
+      [
+        `Subject: ${'x'.repeat(10000)}`,
+        'Content-Location: https://example.com/archive/',
+        'Content-Type: multipart/related; boundary="b"',
+        '',
+        '--b',
+        'Content-Type: text/html',
+        'Content-Location: https://example.com/dir/page',
+        '',
+        html,
+        '--b',
+        'Content-Type: image/gif',
+        'Content-Transfer-Encoding: base64',
+        'Content-Location: pics/a.gif',
+        '',
+        'AAAA',
+        '--b--',
+      ].join('\r\n'),
+      'archive.mhtml',
+      '',
+    );
+    expect(book.metadata.title).toBe('Archive');
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.body.textContent).toContain('Lorem ipsum');
+    expect(doc.querySelector('img[alt="A"]')?.getAttribute('src')).toBe(
+      'data:image/gif;base64,AAAA',
+    );
+  });
+
+  it('rejects an archive without an HTML page instead of rendering the MIME text', async () => {
+    const mhtml = [
+      'Content-Type: multipart/related; boundary="b"',
+      '',
+      '--b',
+      'Content-Type: image/gif',
+      '',
+      'GIF',
+      '--b--',
+    ].join('\r\n');
+    await expect(make(mhtml, 'images.mhtml', '')).rejects.toThrow(/no HTML page/);
+  });
 });
