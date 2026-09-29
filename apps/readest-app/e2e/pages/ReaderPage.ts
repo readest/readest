@@ -206,6 +206,24 @@ export class ReaderPage extends BasePage {
   }
 
   /**
+   * Settings -> Control -> Keep Text Selected After Lookup. The row only shows
+   * while the quick action is Dictionary, so set that first.
+   */
+  async setKeepSelectionAfterLookup(keep: boolean): Promise<void> {
+    await this.openSettings();
+    await this.page.locator('[data-tab="Control"]').click();
+
+    const toggle = this.page
+      .locator('[data-setting-id="settings.control.keepSelectionAfterLookup"]')
+      .getByRole('checkbox')
+      .first();
+    await toggle.waitFor({ state: 'visible' });
+    await toggle.setChecked(keep);
+
+    await this.page.keyboard.press('Escape');
+  }
+
+  /**
    * Turn the in-page header band (the running section title) on or off from
    * the settings dialog. With it off the book text moves up to the compact top
    * margin, right under the header bar's hover strip.
