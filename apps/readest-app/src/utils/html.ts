@@ -2,6 +2,7 @@ import { Readability } from '@mozilla/readability';
 
 import type { BookDoc } from '@/libs/document';
 import { buildHtmlBook } from './htmlBook';
+import { inlineMhtmlImages, parseMhtml } from './mhtml';
 import { sanitizeForParsing, sanitizeHtml } from './sanitize';
 
 // Render a standalone HTML page (a SingleFile save, a browser "Save as HTML")
@@ -35,7 +36,13 @@ const liftWrappedHeadings = (doc: Document) => {
 };
 
 export async function makeHtmlBook(file: File): Promise<BookDoc> {
-  const doc = new DOMParser().parseFromString(sanitizeForParsing(await file.text()), 'text/html');
+  // Sniffed from the content, not the name: the library keeps an imported
+  // .mhtml under the HTML format's .html filename.
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const mhtml = parseMhtml(bytes);
+  const html = mhtml?.html ?? new TextDecoder().decode(bytes);
+  const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
+  if (mhtml) inlineMhtmlImages(doc, mhtml);
   const documentTitle = doc.title.trim();
   const language = doc.documentElement.lang.trim() || 'en';
   const dirAttr = (doc.documentElement.getAttribute('dir') || doc.body.getAttribute('dir') || '')
@@ -55,7 +62,7 @@ export async function makeHtmlBook(file: File): Promise<BookDoc> {
     console.warn('Readability failed, rendering the whole page:', e);
   }
 
-  const basename = file.name.replace(/\.(?:html?|xhtml)$/i, '');
+  const basename = file.name.replace(/\.(?:html?|xhtml|mht(?:ml)?)$/i, '');
   return buildHtmlBook(
     sanitizeHtml(parsed?.content || rawBody),
     {

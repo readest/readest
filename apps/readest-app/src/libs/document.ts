@@ -493,7 +493,9 @@ export class DocumentLoader {
     return (
       this.file.type.startsWith('text/html') ||
       name.endsWith(`.${EXTS.HTML}`) ||
-      name.endsWith('.htm')
+      name.endsWith('.htm') ||
+      name.endsWith('.mhtml') ||
+      name.endsWith('.mht')
     );
   }
 
