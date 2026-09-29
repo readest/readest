@@ -262,4 +262,23 @@ describe('BooknoteView — OverlayScrollbars init does not rewind the list to th
     });
     expect(scrollToIndexSpy).toHaveBeenCalledWith(expect.objectContaining({ index: 9 }));
   });
+
+  it('still scrolls to a nearest note that is only partly visible', () => {
+    mockProgress = { location: 'epubcfi(/6/6!/4/4:0)' };
+    const { rerender } = render(<BooknoteView type='annotation' bookKey='book1' toc={[]} />);
+
+    // The note at index 7 straddles the bottom edge of the viewport.
+    const rect = (top: number, bottom: number) => ({ top, bottom }) as DOMRect;
+    mockScroller.getBoundingClientRect = () => rect(0, 400);
+    const row = document.createElement('div');
+    row.setAttribute('data-index', '7');
+    row.getBoundingClientRect = () => rect(380, 440);
+    mockScroller.appendChild(row);
+
+    mockProgress = { location: 'epubcfi(/6/10!/4/6:0)' };
+    act(() => {
+      rerender(<BooknoteView type='annotation' bookKey='book1' toc={[]} />);
+    });
+    expect(scrollToIndexSpy).toHaveBeenCalledWith(expect.objectContaining({ index: 7 }));
+  });
 });
