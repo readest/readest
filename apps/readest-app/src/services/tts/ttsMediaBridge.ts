@@ -53,7 +53,11 @@ export const unblockAudio = (): void => {
   // 'playback' via navigator.audioSession) makes WebKit register its own
   // now-playing client — a bare "localhost" card with dead buttons that
   // fights the native session.
-  if (getOSPlatform() === 'ios' && isTauriAppPlatform()) return;
+  //
+  // Desktop Tauri: the plugin drives the OS media controls, so the element
+  // has nothing to host, and on Windows it would register WebView2's own
+  // media session next to the native one.
+  if (isTauriAppPlatform() && getOSPlatform() !== 'android') return;
   if (unblockerAudio) return;
   unblockerAudio = document.createElement('audio');
   unblockerAudio.setAttribute('x-webkit-airplay', 'deny');

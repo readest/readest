@@ -109,6 +109,32 @@ pub(crate) async fn playout_control<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn playout_position<R: Runtime>(app: AppHandle<R>) -> Result<PlayoutPositionResponse> {
+pub(crate) async fn playout_position<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<PlayoutPositionResponse> {
     app.native_tts().playout_position()
+}
+
+// Desktop only: on mobile the native plugin owns listener registration, and a
+// Rust handler for these would shadow it.
+#[cfg(desktop)]
+#[command]
+pub(crate) async fn register_listener<R: Runtime>(
+    app: AppHandle<R>,
+    event: String,
+    handler: tauri::ipc::Channel<serde_json::Value>,
+) -> Result<()> {
+    app.native_tts().register_listener(event, handler);
+    Ok(())
+}
+
+#[cfg(desktop)]
+#[command]
+pub(crate) async fn remove_listener<R: Runtime>(
+    app: AppHandle<R>,
+    event: String,
+    channel_id: u32,
+) -> Result<()> {
+    app.native_tts().remove_listener(&event, channel_id);
+    Ok(())
 }
