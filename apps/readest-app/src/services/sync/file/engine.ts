@@ -663,7 +663,9 @@ export class FileSyncEngine {
     const isLocalNewer = (book: Book): boolean => {
       const remote = remoteByHash.get(book.hash);
       if (!remote) return true;
-      return (book.updatedAt ?? 0) > (remote.updatedAt ?? 0);
+      // Arguments swapped on purpose: "local newer on any clock". A metadata /
+      // cover edit leaves updatedAt alone (#6414), and its cover still has to go.
+      return isRemoteBookClockNewer(remote, book);
     };
 
     // File-upload cursor (#4856): the index records which book FILES already

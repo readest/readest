@@ -232,7 +232,8 @@ export interface BookTagEdits {
 
 // Returns a new array where only the books whose tags actually change are new
 // objects. Tags merge with the metadata group on its own clock, so a changed
-// book stamps metadataUpdatedAt like a metadata edit does.
+// book stamps metadataUpdatedAt like a metadata edit does, leaving updatedAt
+// (the Date Read sort key) alone (#6414).
 export const applyBookTagEdits = (
   books: Book[],
   selectedHashes: string[],
@@ -245,7 +246,7 @@ export const applyBookTagEdits = (
     const kept = current.filter((tag) => !edits.remove.includes(tag.trim()));
     const added = edits.add.filter((tag) => !kept.some((k) => k.trim() === tag));
     if (kept.length === current.length && added.length === 0) return book;
-    return { ...book, tags: [...kept, ...added], updatedAt: now, metadataUpdatedAt: now };
+    return { ...book, tags: [...kept, ...added], metadataUpdatedAt: now };
   });
 
 const getBookValuesText = (book: Book): string =>

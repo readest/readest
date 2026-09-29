@@ -1282,7 +1282,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         );
         // Cover-change sync (issue #4544): recompute the cover's content hash.
         // If it actually changed, bump coverHash + coverUpdatedAt so peers
-        // re-download it (the book row already syncs via updatedAt).
+        // re-download it (the book row already syncs via metadataUpdatedAt).
         // computeCoverHash returns null for a '_blank' deletion — we skip the
         // bump there (cover deletion is intentionally not synced; peers keep
         // their cover until a new one is set).

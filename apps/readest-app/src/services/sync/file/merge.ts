@@ -228,8 +228,13 @@ export const isRemoteBookClockNewer = (local: Book, remote: Book): boolean =>
   (remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0) ||
   (remote.metadataUpdatedAt ?? 0) > (local.metadataUpdatedAt ?? 0);
 
+// Grouping stamps only groupUpdatedAt (#6414), so a group-only change must
+// reach this device too. It is not in isRemoteBookClockNewer: no bytes moved.
 export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolean =>
-  !remote.deletedAt && !local.deletedAt && isRemoteBookClockNewer(local, remote);
+  !remote.deletedAt &&
+  !local.deletedAt &&
+  (isRemoteBookClockNewer(local, remote) ||
+    (remote.groupUpdatedAt ?? 0) > (local.groupUpdatedAt ?? 0));
 
 /**
  * FULL SYNC ONLY. Fields the remote index holds that this device is missing
