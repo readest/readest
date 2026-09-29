@@ -15,7 +15,7 @@ name = "readestlib"
 crate-type = ["staticlib", "cdylib", "lib"]
 
 [features]
-default = ["wry", "custom-protocol"]
+default = ["wry"]
 # WebView2 / WKWebView runtime, and on Linux the WebKitGTK one, which is left
 # only for the webdriver test harness (scripts/test-tauri.sh) — every Linux
 # build that ships runs on CEF and turns this off
@@ -32,14 +32,6 @@ cargo-clippy = []
 # Enable WebDriver plugin for E2E testing (use with `tauri build --debug --features webdriver`)
 webdriver = ["tauri-plugin-webdriver"]
 devtools = ["tauri/devtools"]
-# Production asset embedding. `tauri build` is supposed to pass
-# `tauri/custom-protocol` itself, but locally it demonstrably doesn't reach
-# the tauri crate (the app then boots in dev mode: it navigates to `devUrl`,
-# no `__TAURI_INTERNALS__` gets injected into the page, and every Tauri API
-# fails — a blank window). Pass `--features custom-protocol` on release
-# builds so the embedded tauri://localhost asset handler is compiled in
-# regardless of the CLI's own feature handling.
-custom-protocol = ["tauri/custom-protocol"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
