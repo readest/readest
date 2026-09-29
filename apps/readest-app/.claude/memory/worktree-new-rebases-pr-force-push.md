@@ -38,3 +38,14 @@ only one commit was mine.
 Rebasing the contributor's branch onto main is a separate, history-rewriting
 decision — leave it to the user. Related: [[worktree-rebase-submodule-drift]],
 [[worktree-rm-deinits-shared-git-config]], [[feedback_pr_rebase]].
+
+**Two more traps (seen on #6325, 2026-09-28):**
+- A leftover local `pr-<N>` branch from an earlier review makes `worktree:new <N>`
+  die with `! [rejected] ... -> pr-<N> (non-fast-forward)` once the contributor
+  force-pushes. Check it isn't checked out and holds only their commits
+  (`git log --format='%h %an' pr-<N> --not FETCH_HEAD origin/main`), then
+  `git branch -D pr-<N>` and rerun. Delete both `pr-<N>` branches after merging.
+- The fork remote the script adds is an `https://` URL, which fails here
+  (`send-pack: unexpected disconnect`). Push to the SSH URL instead:
+  `git push --no-verify git@github.com:<owner>/readest.git <tmp>:<head-branch>`
+  (see [[git-push-socks-proxy]]).

@@ -1,6 +1,6 @@
 ---
 name: kosync-html-fallback-dom-mismatch-5271
-description: "#5271 (KOReader highlights land on page 1 / Readest shows KO highlights in the wrong place) was NOT fixed by #5630 and is now FIXED in foliate epub.js (closeVoidElements + parseContentDocument, 2026-09-07, PR pending): the text/html fallback for malformed XHTML builds a DOM where self-closed <a id=page_N/> anchors swallow the following <p>s, so it no longer matches crengine's; fix = close void tags and re-parse as XML before falling back to HTML (verified 19/20 byte-identical XPointers against the emulator's crengine, 2026-09-07)"
+description: "#5271 (KOReader highlights land on page 1 / Readest shows KO highlights in the wrong place) was NOT fixed by #5630 and is FIXED and MERGED: foliate-js #92 (cb3896f) + readest #6122 (d05fb5338): the text/html fallback for malformed XHTML builds a DOM where self-closed <a id=page_N/> anchors swallow the following <p>s, so it no longer matches crengine's; fix = close void tags and re-parse as XML before falling back to HTML (verified 19/20 byte-identical XPointers against the emulator's crengine, 2026-09-07)"
 metadata:
   type: project
   originSessionId: 85280a2e-03e0-46da-8144-1e680cc6af56
@@ -81,3 +81,5 @@ Related: [[loaddocument-xhtml-parsererror-5625]] (the crash half, fixed),
 [[koreader-highlight-deletion-dedupe-5818]], [[koreader-emulator-headless-verify]].
 
 **Follow-up 2026-09-07:** a crengine oracle now exists ([[crengine-xpointer-oracle]]); on these two books it reports ~99% KOReader->Readest mismatches, all from the DOM shape, so the void-tag repair above remains the fix.
+
+**Status 2026-09-29:** MERGED as foliate-js #92 + readest #6122 (which also carries the xcfi crengine-parity fixes and oracle). Issue closed. Worktree fix/xpointer-crengine-parity-5271 held only a pre-review snapshot.

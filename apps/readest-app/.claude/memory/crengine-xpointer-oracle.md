@@ -45,7 +45,7 @@ crengine also resolves.
 - A word at raw offset 0 of a text node that follows an element (`eta<br/>theta`,
   `<a id=.../>upsilon`) is `text()[2].0` in crengine.
 
-**Fix shipped in `src/utils/xcfi.ts`** (same session, tests in
+**Fix MERGED in readest #6122 (d05fb5338) in `src/utils/xcfi.ts`** (same session, tests in
 `xcfi.crengine-semantics.test.ts`): `crengineTextChildren()` (drop the leading blank node),
 `toCollapsedOffset/toRawOffset` (whitespace runs), unindexed `text().N` → the sole text child,
 `DocFragment(?:\[N\])?` in `extractSpineIndex` and `resolveXPointerPath`, and push builds the

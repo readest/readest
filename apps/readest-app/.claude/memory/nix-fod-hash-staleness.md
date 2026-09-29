@@ -28,3 +28,12 @@ Both bumped in dcf5d1e9a + 555c887bf. GOTCHA: this PR's head is
 `chrox/readest-app:dev` (remote `chrox`), NOT `readest/readest:dev`; a push to
 `origin dev` created a stray branch on the main repo (deleted right away).
 Check `gh pr view N --json isCrossRepository,headRepositoryOwner` before pushing.
+
+Fifth hit 2026-09-29 (NEW failure shape): #6457 added crates (souvlaki) to
+`Cargo.lock` ONLY. Nix vendors `Cargo.cef.lock` (package.nix copies it over
+Cargo.lock), so `fod-hashes` PASSED on the PR (cef lock unchanged = same FOD)
+and main's `Build with Nix` failed late with `no matching package named
+souvlaki found`. RULE: any PR adding/removing crates must regenerate
+`Cargo.cef.lock` too (recipe in [[tauri-fork-bump-workspace-exclude-swift-rs]]:
+swap in, `cargo metadata --config .cargo/cef.toml` from src-tauri, copy back),
+THEN read the new cargoHash from fod-hashes. Fixed in PR #6459.
