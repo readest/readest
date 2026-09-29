@@ -907,11 +907,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         </button>
       </div>
     ) : undefined;
-  const importAction = !visibleBooks.length ? (
-    <div className='flex justify-center p-6'>
-      <LibraryEmptyState onImport={handleImportBooks} />
-    </div>
-  ) : !importTile ? (
+  const importAction = !importTile ? (
     <div className='flex justify-center px-4 py-4'>
       <LibraryImportButton onImport={handleImportBooks} />
     </div>
@@ -951,6 +947,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onSelectResult={openSearchResult}
           onProgress={onSearchProgress}
         />
+      ) : !visibleBooks.length ? (
+        <div className='flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto p-6'>
+          <LibraryEmptyState onImport={handleImportBooks} />
+        </div>
       ) : (
         // The OverlayScrollbars root and the search results are siblings on
         // purpose: OS decorates this subtree with its own DOM, and letting

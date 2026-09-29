@@ -100,6 +100,20 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe('library scrollbar integration in Chromium', () => {
+  it('centers the empty library state vertically', async () => {
+    useLibraryStore.setState({ library: [] });
+    const { getByRole, getByTestId } = render(
+      <div data-testid='frame' style={{ width: 375, height: 900, display: 'flex' }}>
+        <Bookshelf {...props} libraryBooks={[]} />
+      </div>,
+    );
+    await waitFor(() => {
+      const frame = getByTestId('frame').getBoundingClientRect();
+      const heading = getByRole('heading', { name: 'Start your library' }).getBoundingClientRect();
+      expect(heading.top).toBeGreaterThan(frame.top + frame.height / 4);
+      expect(heading.bottom).toBeLessThan(frame.bottom - frame.height / 4);
+    });
+  });
   for (const empty of [false, true]) {
     it(`keeps import reachable with a ${empty ? 'hidden empty shelf' : 'full grid row'}`, async () => {
       const base = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS);
