@@ -510,7 +510,16 @@ export class TTSMediaBridge {
     if (mediaSession instanceof TauriMediaSession) {
       await mediaSession.updatePlaybackState({ playing: ctrl.state === 'playing' });
     } else {
-      mediaSession.playbackState = ctrl.state === 'playing' ? 'playing' : 'paused';
+      const playing = ctrl.state === 'playing';
+      mediaSession.playbackState = playing ? 'playing' : 'paused';
+      // Chromium treats the session as playing while any media element plays
+      // and won't let playbackState 'paused' override it, so a looping
+      // keep-alive made the play/pause media key send 'pause' forever (#6433).
+      // Pause it with TTS so the key resumes.
+      if (unblockerAudio) {
+        if (playing) void unblockerAudio.play()?.catch(() => {});
+        else unblockerAudio.pause();
+      }
     }
   }
 }
