@@ -508,6 +508,32 @@ describe('DictionarySheet — expand / collapse', () => {
     await waitFor(() => expect(expanded()).toBe('true'));
   });
 
+  it('keeps a tap that lands before the auto-expand effects settle', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: 'hello' });
+
+    // Tap the moment the card first renders expanded, before React flushes
+    // that render's effects: the pending auto-expand pass must not undo it.
+    const card = () => screen.queryByTestId('dict-card');
+    let tapped = false;
+    const observer = new MutationObserver(() => {
+      if (tapped || card()?.getAttribute('aria-expanded') !== 'true') return;
+      tapped = true;
+      card()!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    observer.observe(screen.getByTestId('dialog-body'), {
+      attributes: true,
+      attributeFilter: ['aria-expanded'],
+      subtree: true,
+    });
+    await waitFor(() => expect(tapped).toBe(true));
+    observer.disconnect();
+
+    await waitFor(() => expect(card()?.getAttribute('aria-expanded')).toBe('false'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(card()?.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('defaults to collapsed when more than 3 providers have results', async () => {
     // Four providers, all with content → > 3 → default-collapsed.
     const providers: DictionaryProvider[] = [];

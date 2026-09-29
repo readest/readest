@@ -145,7 +145,9 @@ export function useDictionaryResults({
   const [cards, setCards] = useState<Record<string, CardState>>({});
   // Cards the user has manually toggled. The auto-expand reconciliation
   // (≤ 3 results → default expanded) only writes to cards NOT in this set.
-  const [manuallyToggled, setManuallyToggled] = useState<Record<string, boolean>>({});
+  // A ref, not state: a tap can land while an auto-expand pass is still
+  // pending, and that pass must see the tap or it re-expands the card.
+  const manuallyToggled = useRef<Record<string, boolean>>({});
 
   const containerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const setContainerRef = useCallback(
@@ -200,13 +202,13 @@ export function useDictionaryResults({
       if (!old) return prev;
       return { ...prev, [id]: { ...old, expanded: !old.expanded } };
     });
-    setManuallyToggled((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+    manuallyToggled.current[id] = true;
   }, []);
 
   // Reset manual-toggle tracking when the looked-up word changes — the
   // auto-expand decision should re-evaluate against the new result count.
   useEffect(() => {
-    setManuallyToggled({});
+    manuallyToggled.current = {};
   }, [currentWord]);
 
   // Auto-expand decision: when ≤ 3 providers have settled with results,
@@ -222,7 +224,7 @@ export function useDictionaryResults({
       let changed = false;
       const next = { ...prev };
       for (const id of loadedIds) {
-        if (manuallyToggled[id]) continue;
+        if (manuallyToggled.current[id]) continue;
         const c = prev[id];
         if (!c) continue;
         if (c.expanded !== shouldExpand) {
@@ -232,7 +234,7 @@ export function useDictionaryResults({
       }
       return changed ? next : prev;
     });
-  }, [cards, manuallyToggled]);
+  }, [cards]);
 
   const [zoomedImageSrc, setZoomedImageSrc] = useState<string | null>(null);
   // Reading the image out of the entry is async, so a second tap (or a close)
