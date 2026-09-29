@@ -253,11 +253,10 @@ export class FileSyncEngine {
    * instance's sync session. The engine passes the FULL ancestor chain
    * (`/Readest`, `/Readest/books`, `/Readest/books/<hash>`) to `ensureDir` for
    * every book, so without this cache the shared parents get re-created on each
-   * book — a redundant round-trip, and a 409 "name already exists" flood on
-   * providers that create folders explicitly (OneDrive) or re-MKCOL (WebDAV).
-   * S3's `ensureDir` no-ops and Drive caches path->id internally, so both are
-   * unaffected. The engine is built per sync session, so the cache lifetime is
-   * one run.
+   * book — a redundant round-trip, and a 405 flood on WebDAV's re-MKCOL.
+   * S3's and OneDrive's `ensureDir` no-op and Drive caches path->id
+   * internally, so those are unaffected. The engine is built per sync session,
+   * so the cache lifetime is one run.
    */
   private readonly ensuredDirs = new Set<string>();
   /**
