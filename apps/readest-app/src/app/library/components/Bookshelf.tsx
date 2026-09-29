@@ -938,7 +938,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           </button>
         </div>
       )}
-      {contentSearch?.query.trim() && appService ? (
+      {!visibleBooks.length ? (
+        <div className='flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto p-6'>
+          <LibraryEmptyState onImport={handleImportBooks} />
+        </div>
+      ) : contentSearch?.query.trim() && appService ? (
         <LibrarySearchResults
           appService={appService}
           books={visibleBooks}
@@ -947,10 +951,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           onSelectResult={openSearchResult}
           onProgress={onSearchProgress}
         />
-      ) : !visibleBooks.length ? (
-        <div className='flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto p-6'>
-          <LibraryEmptyState onImport={handleImportBooks} />
-        </div>
       ) : (
         // The OverlayScrollbars root and the search results are siblings on
         // purpose: OS decorates this subtree with its own DOM, and letting

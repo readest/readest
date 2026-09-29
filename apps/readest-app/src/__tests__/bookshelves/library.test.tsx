@@ -29,13 +29,17 @@ const mocks = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn() },
   initialize: () => {},
   instance: () => undefined,
+  appService: null as object | null,
 }));
 vi.mock('next/navigation', () => ({
   useRouter: () => mocks.router,
   useSearchParams: () => mocks.params,
 }));
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: mocks.env, appService: null }),
+  useEnv: () => ({ envConfig: mocks.env, appService: mocks.appService }),
+}));
+vi.mock('@/app/library/components/LibrarySearchResults', () => ({
+  default: () => <div data-testid='content-search-results' />,
 }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => mocks.translate }));
@@ -177,6 +181,7 @@ const configure = (draft: BookshelfDefinition[]) => {
 };
 beforeEach(() => {
   mocks.params = new URLSearchParams();
+  mocks.appService = null;
   mocks.router.replace.mockClear();
   window.history.replaceState(null, '', '/library');
   useSettingsStore.setState({
@@ -193,6 +198,22 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe('library bookshelf integration', () => {
+  it('shows the empty library state over a lingering content search', () => {
+    mocks.appService = {};
+    useLibraryStore.setState({ library: [] });
+    render(
+      <Bookshelf
+        {...props}
+        libraryBooks={[]}
+        contentSearch={{
+          query: 'whale',
+          config: { scope: 'book', mode: 'contains', matchCase: false, matchDiacritics: false },
+        }}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Start your library' })).toBeTruthy();
+    expect(screen.queryByTestId('content-search-results')).toBeNull();
+  });
   it('hides enabled shelves without matching books from the library', () => {
     const emptyShelf = bookshelfSchema.parse({
       ...createBookshelf('Empty shelf'),
