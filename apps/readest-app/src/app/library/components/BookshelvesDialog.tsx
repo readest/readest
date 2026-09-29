@@ -270,9 +270,11 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   const widgetRequestNonce = searchParams?.get('t');
   useEffect(() => {
     if (!editBookshelfId) return;
-    setSelectedId((id) => base.find((shelf) => shelf.id === editBookshelfId)?.id ?? id);
+    // The draft, not the saved shelves: a shelf deleted in this open editor is
+    // still saved until its removal lands, and selecting it would crash.
+    setSelectedId((id) => draft.find((shelf) => shelf.id === editBookshelfId)?.id ?? id);
     clearWidgetRequestParams(router, searchParams);
-  }, [base, editBookshelfId, widgetRequestNonce]);
+  }, [draft, editBookshelfId, widgetRequestNonce]);
   const tabsRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const tabLabels = draft.map((s) => s.name || _(bookshelfName(s))).join('\0');

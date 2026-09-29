@@ -215,6 +215,39 @@ describe('bookshelf editor', () => {
       ).toBe('true'),
     );
   });
+  it('keeps the current tab when an Edit tap names a shelf deleted in the open editor', async () => {
+    const base = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS);
+    const clock = new HlcGenerator('test');
+    const custom = createBookshelf('My custom shelf');
+    const state = applyBookshelfDraft({ rows: {} }, base, [...base, custom], {
+      userId: '',
+      deviceId: 'test',
+      next: () => clock.next(),
+    }).state;
+    useSettingsStore.setState({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, version: 1, bookshelves: state },
+    });
+    searchParamsRef.current = new URLSearchParams(`editBookshelf=${custom.id}&t=1`);
+    const { rerender } = render(<BookshelvesEditor />);
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'My custom shelf' }).getAttribute('aria-pressed'),
+      ).toBe('true'),
+    );
+    // Deleted from the draft; the saved settings (base) still have it until the save lands.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Delete bookshelf?' })).getByRole('button', {
+        name: 'Delete',
+      }),
+    );
+    expect(screen.queryByRole('button', { name: 'My custom shelf' })).toBeNull();
+
+    searchParamsRef.current = new URLSearchParams(`editBookshelf=${custom.id}&t=2`);
+    rerender(<BookshelvesEditor />);
+    await waitFor(() => expect(searchParamsRef.current.get('editBookshelf')).toBeNull());
+    expect(document.querySelector('[aria-pressed="true"]')).toBeTruthy();
+  });
   it('reopens for a repeated Edit tap on the same shelf after being closed', async () => {
     searchParamsRef.current = new URLSearchParams('editBookshelf=default&t=1');
     const { rerender } = render(<BookshelvesDialog />);
