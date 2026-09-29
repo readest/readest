@@ -22,13 +22,16 @@ const mocks = vi.hoisted(() => {
   }
   return {
     invoke: vi.fn(),
+    writeFile: vi.fn(),
+    saveDialog: vi.fn(),
     Channel,
     entries: [] as FakeEntry[],
   };
 });
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke, Channel: mocks.Channel }));
-vi.mock('@tauri-apps/plugin-fs', () => ({ writeFile: vi.fn() }));
+vi.mock('@tauri-apps/plugin-fs', () => ({ writeFile: mocks.writeFile }));
+vi.mock('@tauri-apps/plugin-dialog', () => ({ save: mocks.saveDialog }));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
   isWebAppPlatform: () => false,
@@ -38,6 +41,19 @@ vi.mock('@zip.js/zip.js', () => ({
   BlobReader: class {},
   Uint8ArrayReader: class {},
   Uint8ArrayWriter: class {},
+  // Writes one byte per entry into the stream it was given, like zip.js.
+  ZipWriter: class {
+    private writer: WritableStreamDefaultWriter<Uint8Array>;
+    constructor(writable: WritableStream<Uint8Array>) {
+      this.writer = writable.getWriter();
+    }
+    async add() {
+      await this.writer.write(new Uint8Array(1));
+    }
+    async close() {
+      await this.writer.close();
+    }
+  },
   ZipReader: class {
     async getEntries() {
       return mocks.entries;
@@ -46,7 +62,11 @@ vi.mock('@zip.js/zip.js', () => ({
   },
 }));
 
-import { createBackupZipToFile, restoreFromBackupZip } from '@/services/backupService';
+import {
+  createBackupZipToFile,
+  restoreFromBackupZip,
+  saveBackupFile,
+} from '@/services/backupService';
 
 const LIVE_HASH = '1111111111111111111111111111aaaa';
 const NEW_HASH = '2222222222222222222222222222bbbb';
@@ -136,6 +156,61 @@ describe('createBackupZipToFile on Tauri', () => {
       [1, 2, `${LIVE_HASH}/book.epub`],
       [2, 2, `${LIVE_HASH}/cover.png`],
     ]);
+  });
+});
+
+describe('createBackupZipToFile fallback', () => {
+  const appService = {
+    loadLibraryBooks: async () => [],
+    loadSettings: async () => ({ globalReadSettings: {} }) as never,
+    resolveFilePath: async () => '/data/Books',
+    readDirectory: async () => [],
+  } as unknown as AppService;
+
+  // #6375: iOS hands back a picker URL the app may not write to. Both writers
+  // hit EPERM; the streamed fallback's write rejected while nothing drained
+  // the stream, so the zip writer waited forever and the dialog sat at 0%.
+  it('fails instead of hanging when the streamed file write fails', async () => {
+    const denied = new Error('Operation not permitted (os error 1)');
+    mocks.invoke.mockRejectedValue(denied);
+    mocks.writeFile.mockImplementation(async (_path: string, data: unknown) => {
+      if (data instanceof ReadableStream) throw denied;
+    });
+
+    await expect(createBackupZipToFile(appService, 'file:///picked/backup.zip')).rejects.toThrow(
+      'Operation not permitted',
+    );
+  }, 2000);
+});
+
+describe('saveBackupFile on iOS', () => {
+  it('writes the zip inside the sandbox and hands it to the share sheet', async () => {
+    mocks.invoke.mockResolvedValue(undefined);
+    const saveFile = vi.fn(async () => true);
+    const deleteFile = vi.fn(async () => {});
+    const appService = {
+      isIOSApp: true,
+      loadLibraryBooks: async () => [],
+      loadSettings: async () => ({ globalReadSettings: {} }) as never,
+      resolveFilePath: async (path: string, base: string) =>
+        base === 'Temp' ? `/tmp/${path}` : '/data/Books',
+      readDirectory: async () => [],
+      createDir: vi.fn(async () => {}),
+      saveFile,
+      deleteFile,
+    } as unknown as AppService;
+
+    const saved = await saveBackupFile(appService, 'readest-backup.zip');
+
+    expect(saved).toBe(true);
+    expect(mocks.saveDialog).not.toHaveBeenCalled();
+    const [, args] = mocks.invoke.mock.calls[0] as [string, { dest: string }];
+    expect(args.dest).toBe('/tmp/shared/readest-backup.zip');
+    expect(saveFile).toHaveBeenCalledWith('readest-backup.zip', null, {
+      filePath: '/tmp/shared/readest-backup.zip',
+      mimeType: 'application/zip',
+    });
+    expect(deleteFile).toHaveBeenCalledWith('shared/readest-backup.zip', 'Temp');
   });
 });
 

@@ -467,12 +467,19 @@ export async function createBackupZipToFile(
   const { readable, writable } = new TransformStream<Uint8Array>();
 
   // Start streaming readable side to the file (runs concurrently)
-  const writePromise = writeFile(filePath, readable);
+  const writePromise = writeFile(filePath, readable).catch((error) => {
+    // Nothing drains the stream once the file write fails, so the zip writer
+    // would wait on backpressure forever (#6375). Error its side too.
+    readable.cancel(error).catch(() => {});
+    throw error;
+  });
 
-  const writer = new ZipWriter(writable);
-  await addBackupEntriesToZip(writer, appService, options, onProgress);
-  await writer.close();
-  await writePromise;
+  const zipPromise = (async () => {
+    const writer = new ZipWriter(writable);
+    await addBackupEntriesToZip(writer, appService, options, onProgress);
+    await writer.close();
+  })();
+  await Promise.all([writePromise, zipPromise]);
 }
 
 /**
@@ -724,7 +731,23 @@ export async function saveBackupFile(
   options: BackupOptions = {},
   onProgress?: ProgressCallback,
 ): Promise<boolean> {
-  if (isTauriAppPlatform()) {
+  if (isTauriAppPlatform() && appService.isIOSApp) {
+    // The iOS save picker only exports a file: the URL it returns is not
+    // writable afterwards (EPERM, #6375). Write the zip inside the sandbox
+    // and let the share sheet's "Save to Files" copy it out.
+    const stagedName = `shared/${filename}`;
+    await appService.createDir('shared', 'Temp', true);
+    const stagedPath = await appService.resolveFilePath(stagedName, 'Temp');
+    try {
+      await createBackupZipToFile(appService, stagedPath, options, onProgress);
+      return await appService.saveFile(filename, null, {
+        filePath: stagedPath,
+        mimeType: 'application/zip',
+      });
+    } finally {
+      await appService.deleteFile(stagedName, 'Temp').catch(() => {});
+    }
+  } else if (isTauriAppPlatform()) {
     // Tauri: stream directly to the chosen file path
     const { save: saveDialog } = await import('@tauri-apps/plugin-dialog');
     const ext = filename.split('.').pop() || 'zip';
