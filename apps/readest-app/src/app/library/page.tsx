@@ -13,6 +13,7 @@ import { AppService, DeleteAction } from '@/types/system';
 import {
   buildBookLookupIndex,
   collectKnownSourcePaths,
+  isInHiddenDir,
   normalizeFilePathForIndex,
   selectNewImportableFiles,
   toWatchedFolderImports,
@@ -1097,10 +1098,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           autoImportGrantedFoldersRef.current.add(folder);
         }
         const items = await appService.readDirectory(folder, 'None', SUPPORTED_BOOK_EXTS);
-        const entries = items.map((item) => ({
-          fullPath: joinScannedPath(folder, item.path),
-          size: item.size,
-        }));
+        const entries = items
+          .filter((item) => !isInHiddenDir(item.path))
+          .map((item) => ({
+            fullPath: joinScannedPath(folder, item.path),
+            size: item.size,
+          }));
         const fresh = selectNewImportableFiles(entries, {
           extensions: SUPPORTED_BOOK_EXTS,
           minSizeBytes: AUTO_IMPORT_MIN_SIZE_BYTES,
@@ -1786,6 +1789,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // Re-filter by extension because the JS fallback of readDirectory ignores
     // the extensions argument (only the native Rust walk filters in-scan).
     const filtered = files.filter((file) => {
+      if (isInHiddenDir(file.path)) return false;
       const ext = file.path.split('.').pop()?.toLowerCase() || '';
       if (!exts.includes(ext)) return false;
       if (minSizeBytes > 0 && file.size < minSizeBytes) return false;

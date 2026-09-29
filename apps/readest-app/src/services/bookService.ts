@@ -153,6 +153,19 @@ export function selectNewImportableFiles(
 }
 
 /**
+ * Whether a scanned file sits under a hidden (dot-prefixed) subdirectory of the
+ * scanned folder, e.g. Resilio Sync's `.sync/Archive` or `.git` (issue #6425).
+ * `relativePath` is relative to the chosen folder, so a folder that is itself
+ * hidden can still be imported.
+ */
+export function isInHiddenDir(relativePath: string): boolean {
+  return relativePath
+    .split(/[\\/]/)
+    .slice(0, -1)
+    .some((dir) => dir.startsWith('.'));
+}
+
+/**
  * Turn the newly-found entries of one watched folder into importer inputs.
  *
  * `flatten` mirrors the Import-from-Folder dialog's "Folder Structure" choice
