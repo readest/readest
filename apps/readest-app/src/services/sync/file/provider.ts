@@ -67,7 +67,12 @@ export interface FileSyncProvider {
   /** PUT binary. Parent directories must already exist. */
   writeBinary(path: string, body: ArrayBuffer, contentType?: string): Promise<void>;
 
-  /** Create each directory in `paths` (top-down). Idempotent. */
+  /**
+   * Prepare each directory in `paths` (top-down) so a later write beneath it
+   * succeeds. Idempotent. Providers whose writes create missing parents
+   * themselves (S3 keys, OneDrive path-addressed PUTs) may no-op, so an empty
+   * directory is not guaranteed to exist on its own.
+   */
   ensureDir(paths: string[]): Promise<void>;
   /** Recursively delete a directory subtree. A missing dir is success. */
   deleteDir(path: string): Promise<void>;
