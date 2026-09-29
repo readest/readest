@@ -61,6 +61,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [annotationQuickAction, setAnnotationQuickAction] = useState(
     viewSettings.annotationQuickAction,
   );
+  const [keepSelectionAfterLookup, setKeepSelectionAfterLookup] = useState(
+    viewSettings.keepSelectionAfterLookup,
+  );
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [showToolbarCustomizer, setShowToolbarCustomizer] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -118,6 +121,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       fullscreenClickArea: setFullscreenClickArea,
       disableDoubleClick: setIsDisableDoubleClick,
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
+      keepSelectionAfterLookup: setKeepSelectionAfterLookup,
       copyToNotebook: setCopyToNotebook,
     });
     saveViewSettings(
@@ -344,6 +348,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [enableAnnotationQuickActions]);
 
   useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'keepSelectionAfterLookup',
+      keepSelectionAfterLookup,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keepSelectionAfterLookup]);
+
+  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'copyToNotebook', copyToNotebook, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copyToNotebook]);
@@ -518,6 +534,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             disabled={!enableAnnotationQuickActions}
           />
         </SettingsRow>
+        {annotationQuickAction === 'dictionary' && (
+          <SettingsSwitchRow
+            label={_('Keep Text Selected After Lookup')}
+            checked={keepSelectionAfterLookup}
+            disabled={!enableAnnotationQuickActions}
+            onChange={() => setKeepSelectionAfterLookup(!keepSelectionAfterLookup)}
+            data-setting-id='settings.control.keepSelectionAfterLookup'
+          />
+        )}
         <SettingsSwitchRow
           label={_('Copy to Notebook')}
           checked={copyToNotebook}

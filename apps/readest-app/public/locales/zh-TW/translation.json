@@ -2407,5 +2407,6 @@
   "Hide Bookshelf Buttons": "隱藏書架按鈕",
   "Previous and Next in the library": "書庫中的上一頁和下一頁",
   "Reverse Mouse Wheel": "反轉滑鼠滾輪",
-  "Scroll up for the next page": "向上捲動翻到下一頁"
+  "Scroll up for the next page": "向上捲動翻到下一頁",
+  "Keep Text Selected After Lookup": "查詞後保持文字選取"
 }

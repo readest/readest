@@ -459,6 +459,9 @@ export interface NoteExportConfig {
 export interface AnnotatorConfig {
   enableAnnotationQuickActions: boolean;
   annotationQuickAction: AnnotationToolType | null;
+  // Hand the word back selected, with the toolbar, when an instant dictionary
+  // lookup closes (#6213). Off: closing it returns straight to reading (#6454).
+  keepSelectionAfterLookup: boolean;
   annotationToolbarItems: AnnotationToolType[];
   copyToNotebook: boolean;
   noteExportConfig: NoteExportConfig;

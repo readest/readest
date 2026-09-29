@@ -2707,5 +2707,6 @@
   "Hide Bookshelf Buttons": "إخفاء أزرار رف الكتب",
   "Previous and Next in the library": "السابق والتالي في المكتبة",
   "Reverse Mouse Wheel": "عكس عجلة الماوس",
-  "Scroll up for the next page": "مرّر لأعلى للانتقال إلى الصفحة التالية"
+  "Scroll up for the next page": "مرّر لأعلى للانتقال إلى الصفحة التالية",
+  "Keep Text Selected After Lookup": "إبقاء النص محددًا بعد البحث"
 }

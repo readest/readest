@@ -2407,5 +2407,6 @@
   "Hide Bookshelf Buttons": "དེབ་སྡེབས་ཀྱི་མཐེབ་སྦས་པ།",
   "Previous and Next in the library": "དེབ་མཛོད་ནང་གི་སྔོན་མ་དང་རྗེས་མ།",
   "Reverse Mouse Wheel": "བྱི་བའི་འཁོར་ལོ་ལྡོག་པ།",
-  "Scroll up for the next page": "ཤོག་ལྷེ་རྗེས་མར་ཡར་འདྲེད།"
+  "Scroll up for the next page": "ཤོག་ལྷེ་རྗེས་མར་ཡར་འདྲེད།",
+  "Keep Text Selected After Lookup": "འཚོལ་ཞིབ་རྗེས་སུ་ཡི་གེ་འདེམས་ཟིན་པ་ཉར་བ།"
 }

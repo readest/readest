@@ -2407,5 +2407,6 @@
   "Hide Bookshelf Buttons": "ซ่อนปุ่มชั้นวางหนังสือ",
   "Previous and Next in the library": "ก่อนหน้าและถัดไปในคลังหนังสือ",
   "Reverse Mouse Wheel": "กลับทิศล้อเมาส์",
-  "Scroll up for the next page": "เลื่อนขึ้นเพื่อไปหน้าถัดไป"
+  "Scroll up for the next page": "เลื่อนขึ้นเพื่อไปหน้าถัดไป",
+  "Keep Text Selected After Lookup": "คงการเลือกข้อความไว้หลังค้นหา"
 }

@@ -2527,5 +2527,6 @@
   "Hide Bookshelf Buttons": "Ocultar botones de la estantería",
   "Previous and Next in the library": "Anterior y Siguiente en la biblioteca",
   "Reverse Mouse Wheel": "Invertir rueda del ratón",
-  "Scroll up for the next page": "Desplazar hacia arriba para la página siguiente"
+  "Scroll up for the next page": "Desplazar hacia arriba para la página siguiente",
+  "Keep Text Selected After Lookup": "Mantener el texto seleccionado tras la consulta"
 }

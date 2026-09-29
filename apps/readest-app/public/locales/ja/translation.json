@@ -2407,5 +2407,6 @@
   "Hide Bookshelf Buttons": "本棚のボタンを隠す",
   "Previous and Next in the library": "ライブラリの「前へ」と「次へ」",
   "Reverse Mouse Wheel": "マウスホイールを反転",
-  "Scroll up for the next page": "上にスクロールで次のページ"
+  "Scroll up for the next page": "上にスクロールで次のページ",
+  "Keep Text Selected After Lookup": "辞書を閉じた後も選択を保持"
 }

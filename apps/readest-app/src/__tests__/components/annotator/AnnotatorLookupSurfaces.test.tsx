@@ -31,6 +31,7 @@ const h = vi.hoisted(() => ({
     vertical: false,
     enableAnnotationQuickActions: false,
     annotationQuickAction: '' as string,
+    keepSelectionAfterLookup: false,
   },
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(),
@@ -413,6 +414,7 @@ describe('the instant dictionary hands the selection back when it closes', () =>
   beforeEach(() => {
     h.viewSettings.enableAnnotationQuickActions = true;
     h.viewSettings.annotationQuickAction = 'dictionary';
+    h.viewSettings.keepSelectionAfterLookup = true;
   });
 
   test('drops the selection while the lookup is open', async () => {
@@ -484,6 +486,52 @@ describe('the instant dictionary hands the selection back when it closes', () =>
       screen.getByTestId('dictionary-dismiss').click();
     });
 
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+});
+
+/**
+ * #6454 — handing the selection back (#6213) raised the toolbar after every
+ * instant lookup, an extra dismiss for readers who look up word after word.
+ * It is now opt-in: by default closing the lookup goes straight back to reading.
+ */
+describe('the instant dictionary dismisses clean unless told to keep the selection', () => {
+  beforeEach(() => {
+    h.viewSettings.enableAnnotationQuickActions = true;
+    h.viewSettings.annotationQuickAction = 'dictionary';
+    h.viewSettings.keepSelectionAfterLookup = false;
+  });
+
+  test('closing the lookup restores nothing and shows no toolbar', async () => {
+    if (!document.querySelector('#gridcell-book-1')) {
+      const gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'fortune';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+    await act(async () => {
+      h.setSelection?.(() => ({
+        key: 'book-1',
+        text: 'fortune',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        range,
+        index: 0,
+        page: 1,
+      }));
+    });
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+
+    await act(async () => {
+      screen.getByTestId('dictionary-dismiss').click();
+    });
+
+    expect(h.restoreSelectionRange).not.toHaveBeenCalled();
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   });
