@@ -485,7 +485,10 @@ export async function createBackupZipToFile(
     await addBackupEntriesToZip(writer, appService, options, onProgress);
     await writer.close();
   })().catch(failBoth);
-  await Promise.all([writePromise, zipPromise]);
+  // Wait for both: the caller may delete the file as soon as this returns.
+  const results = await Promise.allSettled([writePromise, zipPromise]);
+  const failure = results.find((result) => result.status === 'rejected');
+  if (failure) throw failure.reason;
 }
 
 /**

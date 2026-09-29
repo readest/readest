@@ -189,21 +189,24 @@ describe('createBackupZipToFile fallback', () => {
   it('ends the file write when building the zip fails', async () => {
     mocks.invoke.mockRejectedValue(new Error('native writer unavailable'));
     mocks.zipAddError = new Error('zip failed');
-    let fileWrite: Promise<void> | undefined;
+    let fileClosed = false;
     // Same read loop as plugin-fs: the file closes only once the stream ends.
     mocks.writeFile.mockImplementation(async (_path: string, data: unknown) => {
       if (!(data instanceof ReadableStream)) return;
       const reader = data.getReader();
-      fileWrite = (async () => {
+      try {
         while (!(await reader.read()).done);
-      })();
-      await fileWrite;
+      } finally {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        fileClosed = true;
+      }
     });
 
     await expect(createBackupZipToFile(appService, '/picked/backup.zip')).rejects.toThrow(
       'zip failed',
     );
-    await expect(fileWrite).rejects.toThrow('zip failed');
+    // The caller may delete the file next (iOS staging), so it must be closed.
+    expect(fileClosed).toBe(true);
   }, 2000);
 });
 
