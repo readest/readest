@@ -236,23 +236,27 @@ vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
   default: () => <div data-testid='annotation-toolbar' />,
 }));
 // The dismiss button stands in for the popup's close / backdrop tap, so a test
-// can drive the route back out of the lookup.
+// can drive the route back out of the lookup. Each surface reads its text the
+// way the real one does on every render, so rendering one without a word fails
+// the same way (#6419).
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
-  default: ({ onDismiss }: { onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface'>
+  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
+    <div data-testid='dictionary-surface' data-word={word.trim()}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
 }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
-  default: ({ onDismiss }: { onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface'>
+  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
+    <div data-testid='dictionary-surface' data-word={word.trim()}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
 }));
 vi.mock('@/app/reader/components/annotator/TranslatorPopup', () => ({
-  default: () => <div data-testid='translator-surface' />,
+  default: ({ text }: { text: string }) => (
+    <div data-testid='translator-surface' data-text={text.trim()} />
+  ),
 }));
 vi.mock('@/app/reader/components/annotator/ProofreadPopup', () => ({
   default: () => <div data-testid='proofread-surface' />,
@@ -323,6 +327,42 @@ describe('a lookup surface survives the selection it is anchored to being republ
 
     expect(screen.queryByTestId(testId)).toBeTruthy();
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+});
+
+/**
+ * #6419 — clicking outside the dictionary crashed the reader on Windows.
+ *
+ * The lookup surfaces are fed `selection.text`, but the selection can be
+ * cleared without going through the dismiss that closes them: with the instant
+ * highlight quick action armed, a tap on the page clears it from
+ * `useInstantAnnotation`. The surface then rendered once with no text and
+ * threw on `word.trim()`, taking the whole reader down to the error page.
+ */
+describe('a lookup surface closes when its selection is cleared', () => {
+  test.each([
+    ['onDictionarySelection', 'dictionary-surface'],
+    ['onTranslateSelection', 'translator-surface'],
+    ['onProofreadSelection', 'proofread-surface'],
+  ])('%s closes instead of rendering without text', async (action, testId) => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText();
+
+    act(() => {
+      h.actions?.[action]?.();
+    });
+    expect(screen.getByTestId(testId)).toBeTruthy();
+
+    // What `clearInstantAnnotationState` does on a tap.
+    await act(async () => {
+      h.setSelection?.(() => null);
+    });
+    expect(screen.queryByTestId(testId)).toBeNull();
+
+    // And the next selection gets the toolbar, not the stale lookup.
+    await selectText();
+    expect(screen.queryByTestId(testId)).toBeNull();
+    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
   });
 });
 
