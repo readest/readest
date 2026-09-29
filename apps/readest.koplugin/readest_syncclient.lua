@@ -7,6 +7,7 @@ local SYNC_TIMEOUTS = { 5, 10 }
 local RETRY_TIMEOUTS = { 10, 20 }
 local READ_METHODS = { pullChanges = true, pullBooks = true, getDownloadUrl = true, listFiles = true }
 local response_seq = 0
+local swept_stale_responses = false
 
 -- LuaSec reports TLS handshake timeouts as "wantread"/"wantwrite";
 -- Spore wraps these strings with a source location. Only retry transport
@@ -102,9 +103,24 @@ function ReadestSyncClient:_dispatchInSubprocess(name, args, timeouts, receive)
     -- Not os.tmpname: /tmp is unwritable for the app on Android and a
     -- small, often full tmpfs on Kindle. The settings dir already holds
     -- the access token, so the response is no less private there.
+    local settings_dir = require("datastorage"):getSettingsDir()
+    -- A request dispatched while KOReader exits never reaches its poll, so
+    -- its file outlives the run. Nothing from this run exists before the
+    -- first request: remove whatever earlier runs left behind.
+    if not swept_stale_responses then
+        swept_stale_responses = true
+        local lfs = require("libs/libkoreader-lfs")
+        pcall(function()
+            for name in lfs.dir(settings_dir) do
+                if name:match("^readest_sync_%d+_%d+%.json$") then
+                    os.remove(settings_dir .. "/" .. name)
+                end
+            end
+        end)
+    end
     response_seq = response_seq + 1
     local result_path = string.format("%s/readest_sync_%d_%d.json",
-        require("datastorage"):getSettingsDir(), os.time(), response_seq)
+        settings_dir, os.time(), response_seq)
     local created = io.open(result_path, "wb")
     if not created then receive(false, "cannot create sync response file"); return end
     created:close()
