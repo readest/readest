@@ -1445,11 +1445,24 @@ class NativeBridgePlugin: Plugin {
     DispatchQueue.main.async {
       if let window = UIApplication.shared.windows.first {
         let insets = window.safeAreaInsets
+        // Rounded screen corners are not part of the safe area; report the
+        // bottom radius so the reader footer can keep clear of the curve. The
+        // window's own effective radius is 0, but a window-sized child with a
+        // container-concentric configuration resolves to the display radius.
+        var bottomCornerRadius: CGFloat = 0
+        if #available(iOS 26.0, *) {
+          let probe = UIView(frame: window.bounds)
+          probe.cornerConfiguration = .corners(radius: .containerConcentric())
+          window.addSubview(probe)
+          bottomCornerRadius = probe.effectiveRadius(corner: [.bottomLeft, .bottomRight])
+          probe.removeFromSuperview()
+        }
         invoke.resolve([
           "top": insets.top,
           "left": insets.left,
           "bottom": insets.bottom,
-          "right": insets.right
+          "right": insets.right,
+          "bottomCornerRadius": bottomCornerRadius
         ])
       } else {
         invoke.resolve([
