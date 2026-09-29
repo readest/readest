@@ -43,7 +43,8 @@ function SyncAuth:withFreshToken(settings, path, callback)
         return
     end
 
-    client:refresh_token(settings.refresh_token, function(success, response, status)
+    local refresh_token = settings.refresh_token
+    client:refresh_token(refresh_token, function(success, response, status)
         if success then
             settings.access_token  = response.access_token
             settings.refresh_token = response.refresh_token
@@ -53,16 +54,15 @@ function SyncAuth:withFreshToken(settings, path, callback)
             if callback then callback(true) end
         else
             logger.err("ReadestSync: Token refresh failed:", status, response or "Unknown error")
-            -- The auth server answered and turned the refresh token down
-            -- (revoked, already used, or the session ended). Every later
-            -- call would fail the same way, so drop the dead session and ask
-            -- for a new login. Without a status the request never got an
-            -- answer (offline, timeout): keep the session for the next try.
-            -- Prompt after the callback so the caller's own failure message
-            -- does not cover it.
-            if status then
+            -- The auth server turned the refresh token down (revoked, already
+            -- used, or the session ended). Every later call would fail the
+            -- same way, so drop the dead session and ask for a new login.
+            -- Anything else (offline, timeout, 429, 5xx) is transient: keep
+            -- the session for the next try. Prompt after the callback so the
+            -- caller's own failure message does not cover it.
+            if status == 400 or status == 401 or status == 403 then
                 if callback then callback(false, "session expired") end
-                self:expireSession(settings, path)
+                self:expireSession(settings, path, refresh_token)
                 return
             end
             if callback then callback(false, response and response.msg or "refresh failed") end
@@ -70,9 +70,10 @@ function SyncAuth:withFreshToken(settings, path, callback)
     end)
 end
 
-function SyncAuth:expireSession(settings, path)
-    -- Refreshes already in flight fail together; prompt only once.
-    if not settings.refresh_token then return end
+function SyncAuth:expireSession(settings, path, rejected_token)
+    -- A concurrent refresh may already have saved new tokens, or an earlier
+    -- rejection already expired the session: only drop the token that failed.
+    if settings.refresh_token ~= rejected_token then return end
     settings.access_token = nil
     settings.refresh_token = nil
     settings.expires_at = nil

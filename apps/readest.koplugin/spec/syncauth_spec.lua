@@ -240,6 +240,38 @@ describe("SyncAuth:withFreshToken rejected refresh", function()
         assert.are.equal(1, #shown)
     end)
 
+    it("keeps the session on a transient server error", function()
+        refresh_result = { false, { msg = "Too Many Requests" }, 429 }
+        local settings = staleSettings()
+
+        local got_ok
+        SyncAuth:withFreshToken(settings, "/plugin", function(ok) got_ok = ok end)
+
+        assert.is_false(got_ok)
+        assert.are.equal("revoked-refresh", settings.refresh_token)
+        assert.are.equal(0, #shown)
+    end)
+
+    it("keeps tokens a concurrent refresh saved before a stale rejection lands", function()
+        local settings = staleSettings()
+        local pending = {}
+        SyncAuth.getSupabaseAuthClient = function()
+            return { refresh_token = function(_, _, cb) table.insert(pending, cb) end }
+        end
+
+        SyncAuth:withFreshToken(settings, "/plugin", function() end)
+        SyncAuth:withFreshToken(settings, "/plugin", function() end)
+        pending[1](true, {
+            access_token = "new-access", refresh_token = "new-refresh",
+            expires_at = os.time() + 3600, expires_in = 3600,
+        })
+        pending[2](false, { msg = "Invalid Refresh Token: Already Used" }, 400)
+
+        assert.are.equal("new-refresh", settings.refresh_token)
+        assert.are.equal("new-access", settings.access_token)
+        assert.are.equal(0, #shown)
+    end)
+
     it("keeps the session when the refresh fails without a server answer", function()
         refresh_result = { false, { msg = "connection refused" } }
         local settings = staleSettings()
