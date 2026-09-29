@@ -15,6 +15,7 @@ import { useContentInsets } from '../hooks/useContentInsets';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
+import HandwritingOverlay from './handwriting/HandwritingOverlay';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
 import PageNavigationButtons from './PageNavigationButtons';
@@ -183,6 +184,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
           gridInsets={gridInsets}
           contentInsets={contentInsets}
         />
+        <HandwritingOverlay bookKey={bookKey} />
         {viewSettings.vertical && viewSettings.scrolled && (
           <>
             {(showFooter || viewSettings.doubleBorder) && (

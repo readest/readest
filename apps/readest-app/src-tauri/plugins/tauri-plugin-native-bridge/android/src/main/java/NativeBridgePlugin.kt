@@ -2052,6 +2052,78 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             }
         }
     }
+
+    // Handwriting (issue #3673). penController isolates every BOOX-specific
+    // type behind PenInputController — see PenInputController.kt. Points are
+    // forwarded to JS as batches (the SDK already batches per callback; see
+    // doc/Onyx-Pen-SDK.md), never one IPC event per raw point.
+    private val penController: PenInputController by lazy { PenInputControllerFactory.create(activity) }
+
+    @Command
+    fun query_pen_capabilities(invoke: Invoke) {
+        val ret = JSObject()
+        ret.put("isBoox", penController.isBooxDevice())
+        ret.put("rawDrawing", penController.canRawDraw())
+        invoke.resolve(ret)
+    }
+
+    @InvokeArg
+    class StartRawDrawingArgs {
+        var left: Double = 0.0
+        var top: Double = 0.0
+        var width: Double = 0.0
+        var height: Double = 0.0
+        var strokeWidth: Double = 1.0
+        var strokeColor: String? = null
+    }
+
+    @Command
+    fun start_raw_drawing(invoke: Invoke) {
+        val args = invoke.parseArgs(StartRawDrawingArgs::class.java)
+        activity.runOnUiThread {
+            penController.start(
+                PenRegion(args.left.toFloat(), args.top.toFloat(), args.width.toFloat(), args.height.toFloat()),
+                args.strokeWidth.toFloat(),
+            ) { points, kind -> emitPenBatch(points, kind) }
+            invoke.resolve()
+        }
+    }
+
+    @InvokeArg
+    class SetRawDrawingEnabledArgs {
+        var enabled: Boolean = true
+    }
+
+    @Command
+    fun set_raw_drawing_enabled(invoke: Invoke) {
+        val args = invoke.parseArgs(SetRawDrawingEnabledArgs::class.java)
+        penController.setEnabled(args.enabled)
+        invoke.resolve()
+    }
+
+    @Command
+    fun stop_raw_drawing(invoke: Invoke) {
+        activity.runOnUiThread {
+            penController.stop()
+            invoke.resolve()
+        }
+    }
+
+    private fun emitPenBatch(points: List<PenPoint>, kind: PenEventKind) {
+        val arr = JSArray()
+        for (p in points) {
+            val o = JSObject()
+            o.put("x", p.x)
+            o.put("y", p.y)
+            o.put("pressure", p.pressure)
+            o.put("t", p.timestamp)
+            arr.put(o)
+        }
+        val payload = JSObject()
+        payload.put("kind", kind.name)
+        payload.put("points", arr)
+        triggerEvent("pen-stroke-batch", payload)
+    }
 }
 
 @app.tauri.annotation.InvokeArg

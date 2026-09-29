@@ -88,6 +88,7 @@ export const useProgressSync = (bookKey: string) => {
     );
     delete compressedConfig.booknotes;
     delete compressedConfig.audiobook;
+    delete compressedConfig.handwriting;
     // The /api/sync POST handler piggybacks books.progress + books.updated_at
     // off this configs push (saves the separate syncBooks round-trip that
     // used to keep the library record fresh while a reader stayed open —

@@ -1,3 +1,4 @@
+import type { HandwritingDoc } from '@/services/handwriting/model';
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
 import { TTSHighlightGranularity } from '@/services/tts/types';
@@ -652,6 +653,11 @@ export interface BookConfig {
    * carries it; both copy an explicit list of fields.
    */
   widePages?: string[];
+  /**
+   * Handwritten ink (see services/handwriting/model.ts), keyed by page.
+   * Device-local for now: useProgressSync strips it before pushing configs.
+   */
+  handwriting?: HandwritingDoc;
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;

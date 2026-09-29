@@ -1,0 +1,115 @@
+import { describe, it, expect, vi } from 'vitest';
+import { PointerHandwritingBackend } from '@/services/handwriting/pointerBackend';
+
+class FakeElement extends EventTarget {
+  setPointerCapture = vi.fn();
+}
+
+const dispatch = (
+  el: FakeElement,
+  type: string,
+  init: Partial<PointerEvent> & { pointerId?: number },
+) => {
+  const ev = new Event(type) as PointerEvent;
+  Object.assign(ev, {
+    pointerId: 0,
+    pointerType: 'pen',
+    pressure: 0.5,
+    clientX: 0,
+    clientY: 0,
+    button: 0,
+    buttons: 0,
+    ...init,
+  });
+  el.dispatchEvent(ev);
+};
+
+const identity = (x: number, y: number): [number, number] => [x, y];
+
+describe('PointerHandwritingBackend', () => {
+  it('batches a move on the next animation frame, not per event', async () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const onBatch = vi.fn();
+    backend.onBatch(onBatch);
+    backend.attach(el as unknown as HTMLElement, identity);
+
+    dispatch(el, 'pointerdown', { clientX: 1, clientY: 1 });
+    dispatch(el, 'pointermove', { clientX: 2, clientY: 2 });
+    dispatch(el, 'pointermove', { clientX: 3, clientY: 3 });
+    expect(onBatch).not.toHaveBeenCalled();
+
+    await new Promise((r) => requestAnimationFrame(r));
+    expect(onBatch).toHaveBeenCalledTimes(1);
+    expect(onBatch.mock.calls[0]![0]).toHaveLength(3);
+    expect(onBatch.mock.calls[0]![1]).toBe('move');
+  });
+
+  it('flushes immediately on pointerup with kind "end"', async () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const onBatch = vi.fn();
+    backend.onBatch(onBatch);
+    backend.attach(el as unknown as HTMLElement, identity);
+
+    dispatch(el, 'pointerdown', { clientX: 1, clientY: 1 });
+    await new Promise((r) => requestAnimationFrame(r));
+    dispatch(el, 'pointerup', {});
+    expect(onBatch).toHaveBeenLastCalledWith(expect.any(Array), 'end', false);
+  });
+
+  it('ignores a second pointer while one is already active', async () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const onBatch = vi.fn();
+    backend.onBatch(onBatch);
+    backend.attach(el as unknown as HTMLElement, identity);
+
+    dispatch(el, 'pointerdown', { pointerId: 0, clientX: 1, clientY: 1 });
+    dispatch(el, 'pointerdown', { pointerId: 1, clientX: 9, clientY: 9 });
+    dispatch(el, 'pointermove', { pointerId: 1, clientX: 8, clientY: 8 });
+    await new Promise((r) => requestAnimationFrame(r));
+    expect(onBatch.mock.calls[0]![0]).toEqual([[1, 1, 0.5]]);
+  });
+
+  it('discards pending points on pointercancel', async () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const onBatch = vi.fn();
+    backend.onBatch(onBatch);
+    backend.attach(el as unknown as HTMLElement, identity);
+
+    dispatch(el, 'pointerdown', { clientX: 1, clientY: 1 });
+    await new Promise((r) => requestAnimationFrame(r));
+    onBatch.mockClear();
+    dispatch(el, 'pointermove', { clientX: 2, clientY: 2 });
+    dispatch(el, 'pointercancel', {});
+    await new Promise((r) => requestAnimationFrame(r));
+    expect(onBatch).not.toHaveBeenCalled();
+  });
+
+  it('detects eraser via button 5 and omits pressure for mouse', async () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const onBatch = vi.fn();
+    backend.onBatch(onBatch);
+    backend.attach(el as unknown as HTMLElement, identity);
+
+    dispatch(el, 'pointerdown', { clientX: 1, clientY: 1, button: 5 });
+    await new Promise((r) => requestAnimationFrame(r));
+    dispatch(el, 'pointerup', {});
+    expect(onBatch).toHaveBeenLastCalledWith(expect.any(Array), 'end', true);
+  });
+
+  it('detach stops listening', async () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    const onBatch = vi.fn();
+    backend.onBatch(onBatch);
+    backend.attach(el as unknown as HTMLElement, identity);
+    backend.detach();
+    dispatch(el, 'pointerdown', { clientX: 1, clientY: 1 });
+    await new Promise((r) => requestAnimationFrame(r));
+    expect(onBatch).not.toHaveBeenCalled();
+  });
+});
