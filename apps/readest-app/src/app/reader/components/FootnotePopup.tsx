@@ -241,6 +241,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const handleBeforeRender = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const { view: popupView } = detail;
+      // Whether the Annotator is showing a text selection reported from this
+      // view, as opposed to nothing or a highlight's toolbar opened by a tap.
+      let selectionReported = false;
       popupView.addEventListener('link', (e: Event) => {
         e.preventDefault();
         const { detail: popupLinkDetail } = e as CustomEvent;
@@ -278,13 +281,21 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         // Annotator. The CFI is mapped into the pristine section when the
         // extraction mapping allows it; without one the toolbar still shows,
         // with the CFI-dependent tools disabled.
-        const report = () => {
+        // A tap reports an empty selection so it dismisses the toolbar; a mere
+        // caret only clears a selection reported before. On touch devices the
+        // caret a tap on a highlight drops lands after the click that opened
+        // its toolbar, and used to close it again (#6395).
+        const report = (tap: boolean) => {
           if (!doc.defaultView) return; // popup already torn down
           const sel = doc.getSelection();
           if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-            eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+            if (tap || selectionReported) {
+              eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+            }
+            selectionReported = false;
             return;
           }
+          selectionReported = true;
           const range = sel.getRangeAt(0);
           const info = popupMapRef.current;
           const extract = info && info.index === index ? info.extract : null;
@@ -302,11 +313,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         let selectionTimer: ReturnType<typeof setTimeout> | null = null;
         doc.addEventListener('selectionchange', () => {
           if (selectionTimer) clearTimeout(selectionTimer);
-          selectionTimer = setTimeout(report, 250);
+          selectionTimer = setTimeout(() => report(false), 250);
         });
         doc.addEventListener('pointerup', () => {
           if (selectionTimer) clearTimeout(selectionTimer);
-          report();
+          report(true);
         });
         if (appService?.isMobile) {
           // Same as the main view: the selection handles suffice on mobile.
@@ -357,6 +368,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           (n) => n.id === noteId && !n.deletedAt,
         );
         if (!note) return;
+        selectionReported = false;
         const isNote = detail.value.startsWith(NOTE_PREFIX);
         eventDispatcher.dispatch('footnote-selection', {
           key: bookKey,

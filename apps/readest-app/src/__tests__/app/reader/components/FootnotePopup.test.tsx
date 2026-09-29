@@ -7,7 +7,7 @@
  * way out to the real page. Popups synthesized from a `data-*` attribute have
  * no location in the book and must not offer one.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { BookDoc } from '@/libs/document';
@@ -242,6 +242,89 @@ describe('FootnotePopup jump to location', () => {
     const view = await openFootnotePopup();
     expect(screen.getByLabelText('Jump to Location')).toBeTruthy();
     expect(stylesOf(view)).not.toContain('padding-block-start');
+  });
+
+  describe('selection reports (#6395)', () => {
+    const loadPopupDoc = async () => {
+      await renderPopup();
+      const view = await openFootnotePopup();
+      const iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument!;
+      doc.body.innerHTML = '<p>A footnote with a highlight in it.</p>';
+      await act(async () => {
+        view.dispatchEvent(new CustomEvent('load', { detail: { doc, index: 3 } }));
+      });
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      const cleared = () =>
+        dispatch.mock.calls.filter(
+          ([name, detail]) => name === 'footnote-selection' && !(detail as { range?: Range }).range,
+        ).length;
+      return { doc, view, dispatch, cleared };
+    };
+
+    const settle = async () => {
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.restoreAllMocks();
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          observe() {}
+          disconnect() {}
+        },
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    });
+
+    // A tap on a highlight opens the toolbar from its click, and on touch
+    // devices the caret it drops lands after that; the debounced report of it
+    // used to close the toolbar the tap had just opened.
+    it('does not report a clear for a caret when no selection was reported', async () => {
+      const { doc, cleared } = await loadPopupDoc();
+
+      doc.getSelection()!.collapse(doc.body.firstChild!.firstChild!, 3);
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+
+      expect(cleared()).toBe(0);
+    });
+
+    it('reports a clear once a reported selection collapses', async () => {
+      const { doc, dispatch, cleared } = await loadPopupDoc();
+
+      doc.getSelection()!.selectAllChildren(doc.body.firstChild!);
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+      expect(dispatch).toHaveBeenCalledWith(
+        'footnote-selection',
+        expect.objectContaining({ range: expect.anything() }),
+      );
+
+      doc.getSelection()!.removeAllRanges();
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+
+      expect(cleared()).toBe(1);
+    });
+
+    // A tap elsewhere in the note is how a highlight's toolbar gets dismissed.
+    it('reports a clear for a tap that leaves no selection', async () => {
+      const { doc, cleared } = await loadPopupDoc();
+
+      doc.dispatchEvent(new Event('pointerup'));
+
+      expect(cleared()).toBe(1);
+    });
   });
 
   it('offers no jump for popups synthesized from a data attribute', async () => {

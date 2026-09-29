@@ -447,10 +447,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   // Whether the currently shown selection came from the footnote popup, for
   // event handlers that only know the incoming event, not the selection state.
+  // The note editor spends that selection (dropSelectionForOverlay), so the
+  // cleared report it echoes back must not dismiss the editor (#6395).
   const selectionIsPopupRef = useRef(false);
   useEffect(() => {
-    selectionIsPopupRef.current = !!selection?.popup;
-  }, [selection]);
+    selectionIsPopupRef.current = !!selection?.popup && !noteEditorTarget;
+  }, [selection, noteEditorTarget]);
 
   // Selections made outside the book's section documents arrive via this
   // event: the footnote popup renders its own foliate view (or a host-document

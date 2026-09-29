@@ -393,6 +393,19 @@ describe('Annotate opens the note editor at the selection', () => {
     });
   };
 
+  // Dropping a footnote-popup selection makes the popup report it cleared a
+  // beat later; that echo must not take the editor down with it (#6395).
+  test('keeps the editor open when the dropped popup selection reports cleared', async () => {
+    await annotate();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', { key: 'book-1' });
+    });
+
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    expect(liveAnnotations()).toHaveLength(1);
+  });
+
   test('drops the selection so the range handles cannot cover the editor (#5815)', async () => {
     await annotate();
 
