@@ -11,7 +11,7 @@ import {
   formatNumber,
   formatProgress,
   getChapterTickFractions,
-  getChapterLocationsLeft,
+  getChapterEndLocation,
   getReferencePageInfo,
 } from '@/utils/progress';
 import {
@@ -108,19 +108,33 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       ? Math.max(pageInfo.total - pageInfo.current, 1)
       : 0
     : Math.min(Math.max(total - current, 1), pageInfo ? pageInfo.total - pageInfo.current : total);
-  const chapterLocationsLeft = bookData?.isFixedLayout
+  const chapterEnd = bookData?.isFixedLayout
     ? undefined
-    : getChapterLocationsLeft(progress, bookData?.bookDoc?.toc);
+    : getChapterEndLocation(progress, bookData?.bookDoc?.toc);
+  const chapterLocationsLeft =
+    chapterEnd !== undefined && progress
+      ? Math.max(1, chapterEnd - progress.pageinfo.current)
+      : undefined;
   const sectionFractions = view?.getSectionFractions() ?? [];
   const sectionIndex = section?.current ?? 0;
+  const sectionLocation = bookData?.bookDoc?.sections?.[sectionIndex]?.location;
   // Foliate rounds current/next locations down. Their difference can alternate
   // between 0, 1 and 2 for identical screens, so use the unrounded section span.
   const sectionFraction =
     (sectionFractions[sectionIndex + 1] ?? 0) - (sectionFractions[sectionIndex] ?? 0);
   const locationsPerScreen = total > 0 ? (sectionFraction * (pageinfo?.total ?? 0)) / total : 0;
+  // Count from the current screen, not the rounded current location, which can
+  // stay put for several page turns when a screen holds less than a location.
+  // Only the chapter end (a fixed screen within this section) is estimated.
+  const chapterEndScreen =
+    chapterEnd === undefined || !sectionLocation || locationsPerScreen <= 0
+      ? undefined
+      : chapterEnd >= sectionLocation.next
+        ? total + (chapterEnd - sectionLocation.next) / locationsPerScreen
+        : (chapterEnd - sectionLocation.current) / locationsPerScreen;
   const pagesLeft =
-    chapterLocationsLeft !== undefined && locationsPerScreen > 0
-      ? Math.max(1, Math.ceil(chapterLocationsLeft / locationsPerScreen))
+    chapterEndScreen !== undefined
+      ? Math.max(1, Math.round(chapterEndScreen) - current)
       : screenPagesLeft;
   // Pace statistics and TOC locations use logical pages, not viewport-sized pages.
   const timePagesLeft = bookData?.isFixedLayout

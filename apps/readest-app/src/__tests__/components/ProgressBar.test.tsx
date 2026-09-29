@@ -16,7 +16,11 @@ let currentViewSettings: ViewSettings;
 let currentProgress: BookProgress | null;
 let currentBookData: {
   isFixedLayout: boolean;
-  bookDoc?: { metadata?: Record<string, unknown>; toc?: TOCItem[] };
+  bookDoc?: {
+    metadata?: Record<string, unknown>;
+    toc?: TOCItem[];
+    sections?: { location?: { current: number; next: number; total: number } }[];
+  };
 } | null;
 let currentRenderer: { page: number; pages: number };
 let currentSectionFractions: number[] = [];
@@ -534,6 +538,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     currentBookData = {
       isFixedLayout: false,
       bookDoc: {
+        sections: [{ location: { current: 0, next: 98, total: 98 } }],
         toc: [0, 32, 64].map((start, i) => ({
           id: i,
           index: 0,
@@ -576,7 +581,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     );
   });
 
-  it('does not inflate remaining screen pages when rounded location spans shrink', () => {
+  it('does not move remaining screen pages when only the rounded location changes', () => {
     setup(1, 'body.xhtml#chapter1');
     currentRenderer = { page: 1, pages: 65 };
     currentProgress!.pageinfo.next = 3;
@@ -588,18 +593,17 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
       gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
     };
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '21 pages left in chapter',
+      '20 pages left in chapter',
     );
     currentProgress!.pageinfo = { current: 3, next: 4, total: 98 };
-    currentRenderer.page = 2;
     rerender(<ProgressBar {...props} />);
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
       '20 pages left in chapter',
     );
-    currentProgress!.pageinfo = { current: 30, next: 30, total: 98 };
+    currentRenderer.page = 2;
     rerender(<ProgressBar {...props} />);
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '2 pages left in chapter',
+      '19 pages left in chapter',
     );
   });
 
@@ -680,5 +684,58 @@ describe('ProgressBar — rounded screen corners', () => {
     const style = footerStyle(renderWithCorners(45, 0).container);
     expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 35.7px)');
     expect(style.paddingInlineEnd).toBe('calc(2.5% + 8px)');
+  });
+});
+
+describe('ProgressBar — pages left on every page turn (#6442)', () => {
+  it('decrements by one on every screen when a screen holds less than one location', () => {
+    currentViewSettings = { ...baseSettings, showRemainingPages: true };
+    currentSectionFractions = [0, 1];
+    currentBookData = {
+      isFixedLayout: false,
+      bookDoc: {
+        sections: [{ location: { current: 0, next: 10, total: 10 } }],
+        toc: [
+          {
+            id: 0,
+            index: 0,
+            href: 'body.xhtml',
+            label: 'Chapter 1',
+            location: { current: 0, next: 10, total: 10 },
+          },
+        ],
+      },
+    };
+    const labels: string[] = [];
+    const { container, rerender } = renderProgressBar();
+    for (let page = 1; page <= 6; page++) {
+      // 16 screens over 10 locations: foliate floors the location, so it
+      // stays put across some page turns.
+      const location = Math.floor((page * 10) / 16);
+      currentProgress = {
+        ...makeProgress(location, 10),
+        sectionHref: 'body.xhtml',
+        section: { current: 0, total: 1 },
+        pageinfo: { current: location, next: location, total: 10 },
+      };
+      currentRenderer = { page, pages: 16 };
+      rerender(
+        <ProgressBar
+          bookKey='book-1'
+          horizontalGap={0}
+          contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+          gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        />,
+      );
+      labels.push(container.querySelector('.progressinfo')?.getAttribute('aria-label') ?? '');
+    }
+    expect(labels.map((l) => l.match(/(\d+) pages left in chapter/)?.[1])).toEqual([
+      '15',
+      '14',
+      '13',
+      '12',
+      '11',
+      '10',
+    ]);
   });
 });
