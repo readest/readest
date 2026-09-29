@@ -464,21 +464,27 @@ export async function createBackupZipToFile(
   const { writeFile } = await import('@tauri-apps/plugin-fs');
 
   await writeFile(filePath, new Uint8Array());
-  const { readable, writable } = new TransformStream<Uint8Array>();
+  let stream!: TransformStreamDefaultController<Uint8Array>;
+  const { readable, writable } = new TransformStream<Uint8Array>({
+    start: (controller) => {
+      stream = controller;
+    },
+  });
+  // When either side fails, error the stream so the other one stops too:
+  // the zip writer would wait on backpressure forever (#6375) and the file
+  // write would keep reading, its file open, until the stream ends.
+  const failBoth = (error: unknown) => {
+    stream.error(error);
+    throw error;
+  };
 
   // Start streaming readable side to the file (runs concurrently)
-  const writePromise = writeFile(filePath, readable).catch((error) => {
-    // Nothing drains the stream once the file write fails, so the zip writer
-    // would wait on backpressure forever (#6375). Error its side too.
-    readable.cancel(error).catch(() => {});
-    throw error;
-  });
-
+  const writePromise = writeFile(filePath, readable).catch(failBoth);
   const zipPromise = (async () => {
     const writer = new ZipWriter(writable);
     await addBackupEntriesToZip(writer, appService, options, onProgress);
     await writer.close();
-  })();
+  })().catch(failBoth);
   await Promise.all([writePromise, zipPromise]);
 }
 
@@ -740,10 +746,12 @@ export async function saveBackupFile(
     const stagedPath = await appService.resolveFilePath(stagedName, 'Temp');
     try {
       await createBackupZipToFile(appService, stagedPath, options, onProgress);
-      return await appService.saveFile(filename, null, {
-        filePath: stagedPath,
-        mimeType: 'application/zip',
-      });
+      const { shareFile } = await import('@choochmeque/tauri-plugin-sharekit-api');
+      await shareFile(stagedPath, { mimeType: 'application/zip' });
+      return true;
+    } catch (error) {
+      if (error === 'Share cancelled') return false;
+      throw error;
     } finally {
       await appService.deleteFile(stagedName, 'Temp').catch(() => {});
     }

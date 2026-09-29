@@ -24,6 +24,8 @@ const mocks = vi.hoisted(() => {
     invoke: vi.fn(),
     writeFile: vi.fn(),
     saveDialog: vi.fn(),
+    shareFile: vi.fn(),
+    zipAddError: null as Error | null,
     Channel,
     entries: [] as FakeEntry[],
   };
@@ -32,6 +34,7 @@ const mocks = vi.hoisted(() => {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke, Channel: mocks.Channel }));
 vi.mock('@tauri-apps/plugin-fs', () => ({ writeFile: mocks.writeFile }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: mocks.saveDialog }));
+vi.mock('@choochmeque/tauri-plugin-sharekit-api', () => ({ shareFile: mocks.shareFile }));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
   isWebAppPlatform: () => false,
@@ -48,6 +51,7 @@ vi.mock('@zip.js/zip.js', () => ({
       this.writer = writable.getWriter();
     }
     async add() {
+      if (mocks.zipAddError) throw mocks.zipAddError;
       await this.writer.write(new Uint8Array(1));
     }
     async close() {
@@ -94,6 +98,7 @@ const entry = (filename: string, content = 'bytes'): FakeEntry => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.entries = [];
+  mocks.zipAddError = null;
 });
 
 describe('createBackupZipToFile on Tauri', () => {
@@ -181,35 +186,68 @@ describe('createBackupZipToFile fallback', () => {
       'Operation not permitted',
     );
   }, 2000);
+  it('ends the file write when building the zip fails', async () => {
+    mocks.invoke.mockRejectedValue(new Error('native writer unavailable'));
+    mocks.zipAddError = new Error('zip failed');
+    let fileWrite: Promise<void> | undefined;
+    // Same read loop as plugin-fs: the file closes only once the stream ends.
+    mocks.writeFile.mockImplementation(async (_path: string, data: unknown) => {
+      if (!(data instanceof ReadableStream)) return;
+      const reader = data.getReader();
+      fileWrite = (async () => {
+        while (!(await reader.read()).done);
+      })();
+      await fileWrite;
+    });
+
+    await expect(createBackupZipToFile(appService, '/picked/backup.zip')).rejects.toThrow(
+      'zip failed',
+    );
+    await expect(fileWrite).rejects.toThrow('zip failed');
+  }, 2000);
 });
 
 describe('saveBackupFile on iOS', () => {
+  const deleteFile = vi.fn(async () => {});
+  const appService = {
+    isIOSApp: true,
+    loadLibraryBooks: async () => [],
+    loadSettings: async () => ({ globalReadSettings: {} }) as never,
+    resolveFilePath: async (path: string, base: string) =>
+      base === 'Temp' ? `/tmp/${path}` : '/data/Books',
+    readDirectory: async () => [],
+    createDir: vi.fn(async () => {}),
+    deleteFile,
+  } as unknown as AppService;
+
+  beforeEach(() => mocks.invoke.mockResolvedValue(undefined));
+
   it('writes the zip inside the sandbox and hands it to the share sheet', async () => {
-    mocks.invoke.mockResolvedValue(undefined);
-    const saveFile = vi.fn(async () => true);
-    const deleteFile = vi.fn(async () => {});
-    const appService = {
-      isIOSApp: true,
-      loadLibraryBooks: async () => [],
-      loadSettings: async () => ({ globalReadSettings: {} }) as never,
-      resolveFilePath: async (path: string, base: string) =>
-        base === 'Temp' ? `/tmp/${path}` : '/data/Books',
-      readDirectory: async () => [],
-      createDir: vi.fn(async () => {}),
-      saveFile,
-      deleteFile,
-    } as unknown as AppService;
+    mocks.shareFile.mockResolvedValue(undefined);
 
-    const saved = await saveBackupFile(appService, 'readest-backup.zip');
+    expect(await saveBackupFile(appService, 'readest-backup.zip')).toBe(true);
 
-    expect(saved).toBe(true);
     expect(mocks.saveDialog).not.toHaveBeenCalled();
     const [, args] = mocks.invoke.mock.calls[0] as [string, { dest: string }];
     expect(args.dest).toBe('/tmp/shared/readest-backup.zip');
-    expect(saveFile).toHaveBeenCalledWith('readest-backup.zip', null, {
-      filePath: '/tmp/shared/readest-backup.zip',
+    expect(mocks.shareFile).toHaveBeenCalledWith('/tmp/shared/readest-backup.zip', {
       mimeType: 'application/zip',
     });
+    expect(deleteFile).toHaveBeenCalledWith('shared/readest-backup.zip', 'Temp');
+  });
+
+  it('reports a cancelled share as not saved', async () => {
+    mocks.shareFile.mockRejectedValue('Share cancelled');
+
+    expect(await saveBackupFile(appService, 'readest-backup.zip')).toBe(false);
+  });
+
+  it('surfaces a failed share instead of reporting the backup saved', async () => {
+    mocks.shareFile.mockRejectedValue('The operation couldn’t be completed.');
+
+    await expect(saveBackupFile(appService, 'readest-backup.zip')).rejects.toBe(
+      'The operation couldn’t be completed.',
+    );
     expect(deleteFile).toHaveBeenCalledWith('shared/readest-backup.zip', 'Temp');
   });
 });
