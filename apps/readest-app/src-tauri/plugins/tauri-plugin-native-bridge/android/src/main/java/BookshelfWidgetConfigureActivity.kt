@@ -121,12 +121,13 @@ class BookshelfWidgetConfigureActivity : Activity() {
         )
         // Leaving this screen for the app - for any reason, including via Edit/Add
         // below - cancels widget placement; that's enforced by the launcher itself
-        // and there's no way around it, saving first or not. Edit/Add still save
-        // the current picks before navigating (same as Save) so they aren't lost
-        // for whenever the widget does get placed - e.g. reconfiguring it via
-        // "Edit widget" after placing it normally with Save.
+        // and there's no way around it. Edit/Add persist the current picks first
+        // so they aren't lost for whenever the widget does get placed - e.g.
+        // reconfiguring it via "Edit widget" after placing it normally with Save -
+        // but, unlike Save, don't finish() or set RESULT_OK: that result is what
+        // tells the launcher configuration is done, and tapping Edit/Add isn't that.
         editShelfButton.setOnClickListener {
-            save(appWidgetId, currentSettings())
+            persistSettings(appWidgetId, currentSettings())
             startActivity(
                 Intent(
                     Intent.ACTION_VIEW,
@@ -135,7 +136,7 @@ class BookshelfWidgetConfigureActivity : Activity() {
             )
         }
         addShelfButton.setOnClickListener {
-            save(appWidgetId, currentSettings())
+            persistSettings(appWidgetId, currentSettings())
             startActivity(
                 Intent(Intent.ACTION_VIEW, Uri.parse("readest://widget-add-shelf"))
                     .setPackage(packageName),
@@ -156,10 +157,18 @@ class BookshelfWidgetConfigureActivity : Activity() {
         super.onDestroy()
     }
 
-    private fun save(appWidgetId: Int, settings: BookshelfWidgetInstanceSettings) {
+    /** Writes settings and notifies the widget/app, without finishing - see save(). */
+    private fun persistSettings(appWidgetId: Int, settings: BookshelfWidgetInstanceSettings) {
         BookshelfWidgetStore.writeInstanceSettings(this, appWidgetId, settings)
         BookshelfWidgetStore.notifyWidget(this, appWidgetId)
         NativeBridgePlugin.notifyWidgetConfigured()
+    }
+
+    /** Persists settings and completes configuration. RESULT_OK/finish are reserved
+     * for Save - Edit/Add persist too, but only via persistSettings(), since tapping
+     * them isn't "done configuring" the way tapping Save is. */
+    private fun save(appWidgetId: Int, settings: BookshelfWidgetInstanceSettings) {
+        persistSettings(appWidgetId, settings)
         setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
         finish()
     }

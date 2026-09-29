@@ -245,16 +245,18 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   useEffect(() => {
     localStorage.setItem('lastBookshelfTab', selectedId);
   }, [selectedId]);
-  // Inserts a freshly numbered "New bookshelf N" after Recently read and
-  // selects it - shared by the "+" button below and the widget configure
-  // dialog's Add button (see the effect below it).
+  // Builds a freshly numbered "New bookshelf N", inserted after Recently read
+  // - shared by the "+" button below and the widget configure dialog's Add
+  // button (see the effect below it). Callers apply the result to draft and
+  // selectedId together (not as a setDraft updater with a setSelectedId side
+  // effect - an updater must be pure, and the two could otherwise disagree on
+  // which shelf.id ended up selected vs. actually in draft).
   const addNewBookshelf = (shelves: BookshelfDefinition[]) => {
     let number = 1;
     while (shelves.some((s) => s.name === _('New bookshelf {{number}}', { number }))) number++;
     const shelf = createBookshelf(_('New bookshelf {{number}}', { number }));
     const index = shelves.findIndex((s) => s.id === RECENT_BOOKSHELF_ID) + 1;
-    setSelectedId(shelf.id);
-    return [...shelves.slice(0, index), shelf, ...shelves.slice(index)];
+    return { shelf, shelves: [...shelves.slice(0, index), shelf, ...shelves.slice(index)] };
   };
   // The widget configure dialog's Edit/Add buttons (readest://widget-edit-shelf/{id},
   // readest://widget-add-shelf) land here as /library?editBookshelf={id}&t=... or
@@ -283,7 +285,9 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   }, [base, editBookshelfId, widgetRequestNonce]);
   useEffect(() => {
     if (!addBookshelf) return;
-    setDraft(addNewBookshelf);
+    const { shelf, shelves } = addNewBookshelf(draft);
+    setDraft(shelves);
+    setSelectedId(shelf.id);
     clearWidgetRequestParams();
   }, [addBookshelf, widgetRequestNonce]);
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -605,7 +609,11 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
           aria-label={_('Add bookshelf')}
           title={_('Add bookshelf')}
           className='btn btn-ghost eink-bordered border-base-200 h-11 min-h-11 w-11 shrink-0 rounded-full border px-0 focus-visible:ring-2 focus-visible:ring-base-content/15'
-          onClick={() => setDraft(addNewBookshelf)}
+          onClick={() => {
+            const { shelf, shelves } = addNewBookshelf(draft);
+            setDraft(shelves);
+            setSelectedId(shelf.id);
+          }}
         >
           <MdAdd aria-hidden className='h-5 w-5' />
         </button>
@@ -936,9 +944,15 @@ export default function BookshelvesDialog() {
   const [open, setOpen] = useState(false);
   const editor = useRef<BookshelvesEditorHandle>(null);
   const close = async () => {
+    // No editor to flush - e.g. still waiting on settingsHydrated below - so
+    // there's nothing to save; just close.
+    if (!editor.current) {
+      setOpen(false);
+      return;
+    }
     // The controls stay live while the first save runs, so flush again for anything edited
     // meanwhile; the second flush is a no-op when nothing changed.
-    if ((await editor.current?.flush()) && (await editor.current?.flush())) setOpen(false);
+    if ((await editor.current.flush()) && (await editor.current.flush())) setOpen(false);
   };
   useEffect(() => {
     const show = () => setOpen(true);

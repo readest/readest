@@ -167,6 +167,18 @@ describe('bookshelf editor', () => {
       ).toBe('true'),
     );
   });
+  it('closes immediately when clicked before the editor has mounted (still waiting on settings to hydrate)', async () => {
+    useSettingsStore.setState({ settings: {} as SystemSettings });
+    render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy());
+    expect(screen.queryByRole('button', { name: 'Default' })).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Close Manage Bookshelves'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
   it('opens directly to the shelf named by an editBookshelf query param (widget Edit button)', async () => {
     searchParamsRef.current = new URLSearchParams('editBookshelf=default');
     render(<BookshelvesDialog />);
