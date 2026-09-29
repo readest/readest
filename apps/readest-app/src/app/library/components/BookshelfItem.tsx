@@ -538,6 +538,7 @@ export default memo(
     prev.item === next.item &&
     prev.mode === next.mode &&
     prev.coverFit === next.coverFit &&
+    prev.skeuomorphicCovers === next.skeuomorphicCovers &&
     prev.isSelectMode === next.isSelectMode &&
     prev.itemSelected === next.itemSelected &&
     prev.transferProgress === next.transferProgress &&
