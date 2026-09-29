@@ -518,6 +518,9 @@ msgstr "새 주석을 찾을 수 없습니다"
 msgid "%1 annotations pulled"
 msgstr "%1개 주석을 가져왔습니다"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest 세션이 만료되었습니다. 다시 로그인하세요."
+
 msgid "Login"
 msgstr "로그인"
 

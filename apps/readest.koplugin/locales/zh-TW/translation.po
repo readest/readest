@@ -518,6 +518,9 @@ msgstr "未發現新註釋"
 msgid "%1 annotations pulled"
 msgstr "已拉取 %1 條註釋"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest 登入已過期，請重新登入。"
+
 msgid "Login"
 msgstr "登入"
 

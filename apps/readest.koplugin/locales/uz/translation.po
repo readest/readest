@@ -518,6 +518,9 @@ msgstr "Yangi izohlar topilmadi"
 msgid "%1 annotations pulled"
 msgstr "%1 ta izoh olindi"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest sessiyangiz muddati tugadi. Qayta tizimga kiring."
+
 msgid "Login"
 msgstr "Kirish"
 

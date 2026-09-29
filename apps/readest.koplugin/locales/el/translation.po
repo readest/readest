@@ -518,6 +518,9 @@ msgstr "Δεν βρέθηκαν νέα σχόλια"
 msgid "%1 annotations pulled"
 msgstr "Ελήφθησαν %1 σχόλια"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Η συνεδρία Readest έληξε. Συνδεθείτε ξανά."
+
 msgid "Login"
 msgstr "Σύνδεση"
 

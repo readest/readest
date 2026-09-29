@@ -19,6 +19,7 @@ import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import {
   TransferItem,
@@ -194,6 +195,9 @@ const TransferQueuePanel: React.FC = () => {
   // replica transfers keep flowing regardless).
   const settings = useSettingsStore((s) => s.settings);
   const readestStorageActive = isReadestCloudStorageActive(settings);
+  // Uploads made with Books sync off never get a `books` row, so no other
+  // device could list them; the queue refuses them too.
+  const uploadAllowed = readestStorageActive && isSyncCategoryEnabled('book');
 
   // Feed books are fileless (#5307): sweeping them into "Upload All" only fills
   // the queue with transfers that can never resolve a source.
@@ -261,7 +265,7 @@ const TransferQueuePanel: React.FC = () => {
         <div className='border-base-300 flex items-center justify-between border-b p-4'>
           <h2 className='text-lg font-semibold'>{_('Transfer Queue')}</h2>
           <div className='flex items-center gap-2'>
-            {readestStorageActive && booksToUpload.length > 0 && (
+            {uploadAllowed && booksToUpload.length > 0 && (
               <button
                 onClick={handleUploadAll}
                 className='btn btn-ghost btn-sm gap-1'

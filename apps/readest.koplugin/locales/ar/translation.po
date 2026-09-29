@@ -518,6 +518,9 @@ msgstr "لم يتم العثور على ملاحظات جديدة"
 msgid "%1 annotations pulled"
 msgstr "تم جلب %1 ملاحظات"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "انتهت صلاحية جلسة Readest. يرجى تسجيل الدخول مرة أخرى."
+
 msgid "Login"
 msgstr "تسجيل الدخول"
 

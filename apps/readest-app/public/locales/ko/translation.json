@@ -2402,5 +2402,6 @@
   "Background Style": "배경 스타일",
   "Rows": "행",
   "Open Readest to show this bookshelf": "이 책장을 표시하려면 Readest를 여세요",
+  "Turn on Books in Manage Sync to upload this book": "이 책을 업로드하려면 \"동기화 관리\"에서 \"도서\"를 켜세요",
   "Shelf name": "책장 이름"
 }

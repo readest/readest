@@ -518,6 +518,9 @@ msgstr "མཆན་འགྲེལ་གསར་པ་མ་རྙེད།"
 msgid "%1 annotations pulled"
 msgstr "མཆན་འགྲེལ་ %1 ལེན་སོང་།"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "ཁྱེད་ཀྱི་ Readest འཛུལ་ཞུགས་ཀྱི་དུས་ཚོད་རྫོགས་སོང་། ཡང་བསྐྱར་འཛུལ་ཞུགས་གནང་རོགས།"
+
 msgid "Login"
 msgstr "འཛུལ་ཞུགས།"
 

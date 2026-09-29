@@ -518,6 +518,9 @@ msgstr "Không tìm thấy ghi chú mới"
 msgid "%1 annotations pulled"
 msgstr "Đã lấy %1 ghi chú"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Phiên Readest của bạn đã hết hạn. Vui lòng đăng nhập lại."
+
 msgid "Login"
 msgstr "Đăng nhập"
 

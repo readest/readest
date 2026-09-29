@@ -19,6 +19,7 @@ import { INDETERMINATE_PROGRESS, type ProgressHandler } from '@/utils/transfer';
 
 const routing = vi.hoisted(() => ({
   readestEnabled: true,
+  booksSyncEnabled: true,
   backends: [] as ('webdav' | 'gdrive' | 's3' | 'onedrive')[],
 }));
 
@@ -50,6 +51,10 @@ vi.mock('@/hooks/useTranslation', () => ({
 vi.mock('@/services/sync/cloudSyncProvider', () => ({
   isReadestCloudEnabled: () => routing.readestEnabled,
   getActiveFileSyncBackends: () => routing.backends,
+}));
+
+vi.mock('@/services/sync/syncCategories', () => ({
+  isSyncCategoryEnabled: (id: string) => id !== 'book' || routing.booksSyncEnabled,
 }));
 
 vi.mock('@/services/sync/file/runLibrarySync', () => ({
@@ -98,6 +103,7 @@ const setup = (appService: AppService | null = null) => {
 beforeEach(() => {
   vi.clearAllMocks();
   routing.readestEnabled = true;
+  routing.booksSyncEnabled = true;
   routing.backends = [];
 });
 
@@ -132,6 +138,56 @@ describe('useBookTransferActions upload routing (issue #5062)', () => {
     expect(toastCalls[0]?.[1]).toMatchObject({
       type: 'info',
       message: 'Turn on a provider in Cloud Sync settings to upload this book',
+    });
+  });
+});
+
+describe('useBookTransferActions upload with Books sync off', () => {
+  it('does not queue a Readest Cloud upload and points the user to Manage Sync', async () => {
+    routing.booksSyncEnabled = false;
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    const { result } = setup();
+    const ok = await result.current.handleBookUpload(makeBook());
+
+    expect(queueUpload).not.toHaveBeenCalled();
+    expect(ok).toBe(false);
+    const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
+    expect(toastCalls).toHaveLength(1);
+    expect(toastCalls[0]?.[1]).toMatchObject({
+      type: 'info',
+      message: 'Turn on Books in Manage Sync to upload this book',
+    });
+  });
+
+  it('still uploads to an enabled file backend', async () => {
+    routing.booksSyncEnabled = false;
+    routing.backends = ['gdrive'];
+
+    const { result } = setup();
+    const book = makeBook();
+    const ok = await result.current.handleBookUpload(book);
+
+    expect(runFileBookUpload).toHaveBeenCalledWith(envConfig, book);
+    expect(queueUpload).not.toHaveBeenCalled();
+    expect(ok).toBe(true);
+  });
+
+  it('reports a failed file-backend upload instead of the Books sync hint', async () => {
+    routing.booksSyncEnabled = false;
+    routing.backends = ['gdrive'];
+    runFileBookUpload.mockResolvedValueOnce(false);
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    const { result } = setup();
+    const ok = await result.current.handleBookUpload(makeBook());
+
+    expect(ok).toBe(false);
+    const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
+    expect(toastCalls).toHaveLength(1);
+    expect(toastCalls[0]?.[1]).toMatchObject({
+      type: 'error',
+      message: 'Failed to upload book: Title',
     });
   });
 });
