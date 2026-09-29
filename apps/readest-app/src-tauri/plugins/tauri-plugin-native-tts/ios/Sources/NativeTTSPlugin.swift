@@ -668,11 +668,30 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         .contains(.shouldResume)
       let wasForwarded = interruptionForwarded
       interruptionForwarded = false
-      keepAliveLog.log("interruption ended shouldResume=\(shouldResume) forwarded=\(wasForwarded)")
-      guard wasForwarded, shouldResume else { return }
+      // The system paused the playout player but JS still wants it playing:
+      // the webview never ran the forwarded pause because its content process
+      // is suspended while the native player alone carries the audio (an
+      // audiobook in CarPlay with the phone locked, #6444), or the .began fell
+      // inside the self-op window. The play event below would sit in the same
+      // queue, so the player has to be restarted here. Index -1 means the
+      // item already ended (inter-sentence gap); restarting it would replay
+      // its end and advance twice.
+      let resumeNatively =
+        playoutPlaying && playoutCurrentIndex != -1 && playoutPlayer?.currentItem != nil
+        && playoutPlayer?.rate == 0
+      keepAliveLog.log(
+        "interruption ended shouldResume=\(shouldResume) forwarded=\(wasForwarded) native=\(resumeNatively)"
+      )
+      guard shouldResume, wasForwarded || resumeNatively else { return }
       // The interruption deactivated our session; reclaim before resuming.
       claimAudioSession()
-      triggerMediaSession("media-session-play")
+      if resumeNatively {
+        playoutPlayer?.rate = playoutRate
+        setKeepAlivePlaying(true)
+      }
+      if wasForwarded {
+        triggerMediaSession("media-session-play")
+      }
     @unknown default:
       break
     }
