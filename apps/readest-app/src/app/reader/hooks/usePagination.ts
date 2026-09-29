@@ -265,6 +265,15 @@ export const usePagination = (
                 viewSettings.disableClick! ||
                 (screenX >= centerStartX && screenX <= centerEndX)
               ) {
+                // A page-filling image/table leaves nowhere else to tap for
+                // its viewer, so the center opens it (#6424).
+                if (msg.data.media) {
+                  window.postMessage(
+                    { type: 'iframe-open-media', bookKey, ...msg.data.media },
+                    '*',
+                  );
+                  return;
+                }
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? null : bookKey);
                 return;
