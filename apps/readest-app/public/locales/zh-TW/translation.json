@@ -2401,5 +2401,6 @@
   "Follows the theme color": "跟隨主題顏色",
   "Background Style": "背景樣式",
   "Rows": "列數",
-  "Open Readest to show this bookshelf": "開啟 Readest 以顯示此書架"
+  "Open Readest to show this bookshelf": "開啟 Readest 以顯示此書架",
+  "Shelf name": "書架名稱"
 }

@@ -2461,5 +2461,6 @@
   "Follows the theme color": "از رنگ تم پیروی می‌کند",
   "Background Style": "سبک پس‌زمینه",
   "Rows": "ردیف‌ها",
-  "Open Readest to show this bookshelf": "برای نمایش این قفسه، Readest را باز کنید"
+  "Open Readest to show this bookshelf": "برای نمایش این قفسه، Readest را باز کنید",
+  "Shelf name": "نام قفسه"
 }
