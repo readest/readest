@@ -260,6 +260,24 @@ describe('restoreFromBackupZip on Tauri', () => {
     );
   });
 
+  it('imports an orphan whose library row is soft-deleted', async () => {
+    const withDeletedOrphan = {
+      ...appService,
+      loadLibraryBooks: async () => [
+        makeBook({ hash: LIVE_HASH }),
+        makeBook({ hash: ORPHAN_HASH, deletedAt: 1 }),
+      ],
+    } as AppService;
+
+    await restoreFromBackupZip(withDeletedOrphan, new Blob());
+
+    expect(importBook).toHaveBeenCalledWith(
+      `/data/Books/${ORPHAN_HASH}/book.pdf`,
+      expect.anything(),
+      { overwrite: true },
+    );
+  });
+
   it('keeps the JS path when no source location is known (web)', async () => {
     await restoreFromBackupZip(appService, new Blob());
     expect(mocks.invoke).not.toHaveBeenCalled();

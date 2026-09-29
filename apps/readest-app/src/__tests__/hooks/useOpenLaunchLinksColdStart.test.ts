@@ -11,6 +11,10 @@ import { cleanup, renderHook } from '@testing-library/react';
 // and swapped the clicked book for the deep-linked one. A cold-start URL belongs
 // to the window that received the launch; windows the app spawns itself carry
 // their own intent in their URL and must never consume it.
+//
+// This file's widget-links tests below share that same module-level cold-start
+// guard, so they need the vi.resetModules()/loadHook harness too; the plain
+// live-tap tests in useOpenLaunchLinks.test.ts don't touch it.
 
 let currentWindowLabel = 'main';
 let coldStartUrls: string[] = [];
@@ -25,6 +29,8 @@ const books: Record<string, { hash: string; format: string }> = {
 const libraryState = {
   libraryLoaded: true,
   getBookByHash: (hash: string) => books[hash],
+  updateBook: vi.fn(),
+  setCheckPendingLaunchLink: vi.fn(),
 };
 
 vi.mock('@tauri-apps/plugin-deep-link', () => ({
@@ -57,15 +63,15 @@ vi.mock('@/store/libraryStore', () => {
 // Warm the module graph once at file scope: vi.resetModules() below only has to
 // re-execute cached modules instead of resolving and transforming the whole
 // hook graph inside a test's timeout.
-import '@/hooks/useOpenBookLink';
+import '@/hooks/useOpenLaunchLinks';
 
 // The hook's cold-start guard is module state, so each case needs a fresh module
 // registry — and with it a fresh eventDispatcher to listen on.
 const loadHook = async () => {
   vi.resetModules();
-  const { useOpenBookLink } = await import('@/hooks/useOpenBookLink');
+  const { useOpenLaunchLinks } = await import('@/hooks/useOpenLaunchLinks');
   const { eventDispatcher } = await import('@/utils/event');
-  return { useOpenBookLink, eventDispatcher };
+  return { useOpenLaunchLinks, eventDispatcher };
 };
 
 const flush = async () => {
@@ -75,17 +81,17 @@ const flush = async () => {
 const runColdStart = async (label: string, pathname: string) => {
   currentWindowLabel = label;
   window.history.replaceState({}, '', pathname);
-  const { useOpenBookLink, eventDispatcher } = await loadHook();
+  const { useOpenLaunchLinks, eventDispatcher } = await loadHook();
   const switched = vi.fn();
   const handler = (e: Event) => switched((e as CustomEvent).detail);
   eventDispatcher.on('open-book-in-reader', handler);
-  renderHook(() => useOpenBookLink());
+  renderHook(() => useOpenLaunchLinks());
   await flush();
   eventDispatcher.off('open-book-in-reader', handler);
   return switched;
 };
 
-describe('useOpenBookLink — cold-start deep link ownership (#6104)', () => {
+describe('useOpenLaunchLinks — cold-start deep link ownership (#6104)', () => {
   beforeEach(() => {
     coldStartUrls = ['readest://book/linkedBook'];
     navigateToReaderMock.mockReset();
@@ -97,15 +103,11 @@ describe('useOpenBookLink — cold-start deep link ownership (#6104)', () => {
     window.history.replaceState({}, '', '/');
   });
 
-  it('does not hijack a reader window the app spawned for another book', async () => {
-    const switched = await runColdStart('reader-0', '/reader?ids=clickedBook');
-
-    expect(switched).not.toHaveBeenCalled();
-    expect(navigateToReaderMock).not.toHaveBeenCalled();
-  });
-
-  it('does not re-open the deep-linked book in a spawned library window', async () => {
-    const switched = await runColdStart('reader-1', '/library');
+  it.each([
+    ['a reader window the app spawned for another book', 'reader-0', '/reader?ids=clickedBook'],
+    ['a library window the app spawned', 'reader-1', '/library'],
+  ])('does not act on the cold-start URL in %s', async (_label, label, pathname) => {
+    const switched = await runColdStart(label, pathname);
 
     expect(switched).not.toHaveBeenCalled();
     expect(navigateToReaderMock).not.toHaveBeenCalled();
@@ -118,6 +120,66 @@ describe('useOpenBookLink — cold-start deep link ownership (#6104)', () => {
   });
 });
 
+// checkPendingLaunchLink must be released once there's nothing left to wait on,
+// or a normal launch (no widget tap) leaves the Library permanently blank.
+describe('useOpenLaunchLinks — releases the Library page blank-placeholder gate', () => {
+  beforeEach(() => {
+    coldStartUrls = ['readest://book/linkedBook'];
+    navigateToReaderMock.mockReset();
+    routerPushMock.mockReset();
+    libraryState.setCheckPendingLaunchLink.mockReset();
+    sessionStorage.clear();
+  });
+  afterEach(() => {
+    cleanup();
+    libraryState.libraryLoaded = true;
+    window.history.replaceState({}, '', '/');
+  });
+
+  it('does not release the gate when a live delivery already queued the URL getCurrent() replays', async () => {
+    // On Android the same URL can arrive both live and via getCurrent(); the
+    // live delivery queues it first, so getCurrent()'s dedup-as-replay must
+    // not be read as "nothing pending" and release the gate early.
+    libraryState.libraryLoaded = false;
+    window.history.replaceState({}, '', '/library');
+    const { useOpenLaunchLinks, eventDispatcher } = await loadHook();
+    renderHook(() => useOpenLaunchLinks());
+
+    await eventDispatcher.dispatch('app-incoming-url', { urls: ['readest://book/linkedBook'] });
+    await flush();
+
+    expect(libraryState.setCheckPendingLaunchLink).not.toHaveBeenCalled();
+    expect(navigateToReaderMock).not.toHaveBeenCalled();
+  });
+
+  it('releases the gate immediately when the cold-start URL is not a book link', async () => {
+    coldStartUrls = [];
+    await runColdStart('main', '/library');
+
+    expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
+    expect(navigateToReaderMock).not.toHaveBeenCalled();
+  });
+
+  it('does not release the gate until Library unmounts, avoiding a mid-navigation flash', async () => {
+    window.history.replaceState({}, '', '/library');
+    const { useOpenLaunchLinks } = await loadHook();
+    const { unmount } = renderHook(() => useOpenLaunchLinks());
+    await flush();
+
+    expect(navigateToReaderMock).toHaveBeenCalledWith(expect.anything(), ['linkedBook']);
+    expect(libraryState.setCheckPendingLaunchLink).not.toHaveBeenCalled();
+
+    unmount();
+    expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
+  });
+
+  it('does not release the gate for a window that never owned the cold start', async () => {
+    await runColdStart('reader-2', '/reader?ids=clickedBook');
+
+    expect(libraryState.setCheckPendingLaunchLink).not.toHaveBeenCalled();
+  });
+});
+
 // A document reload within one app run - iOS recycling the WebContent process,
 // Android recreating the Activity - re-reads getCurrent(), which still holds
 // whatever URL the plugin last stored. The consume marker has to survive that
@@ -125,7 +187,7 @@ describe('useOpenBookLink — cold-start deep link ownership (#6104)', () => {
 // replayed A through once B has been opened), and never touch live deliveries:
 // re-tapping the same `readest://book/<hash>` bookmark is the reporter's whole
 // workflow.
-describe('useOpenBookLink — launch URL replayed after a reload (#6104)', () => {
+describe('useOpenLaunchLinks — launch URL replayed after a reload (#6104)', () => {
   const URL_A = 'readest://book/linkedBook';
   const URL_B = 'readest://book/clickedBook';
 
@@ -134,8 +196,8 @@ describe('useOpenBookLink — launch URL replayed after a reload (#6104)', () =>
   const bootDocument = async (urls: string[]) => {
     coldStartUrls = urls;
     window.history.replaceState({}, '', '/library');
-    const { useOpenBookLink, eventDispatcher } = await loadHook();
-    renderHook(() => useOpenBookLink());
+    const { useOpenLaunchLinks, eventDispatcher } = await loadHook();
+    renderHook(() => useOpenLaunchLinks());
     await flush();
     return eventDispatcher;
   };
@@ -213,5 +275,112 @@ describe('useOpenBookLink — launch URL replayed after a reload (#6104)', () =>
     await bootDocument([URL_A]);
 
     expect(navigateToReaderMock).toHaveBeenCalledWith(expect.anything(), ['linkedBook']);
+  });
+
+  it('does not arm read-aloud for a replayed launch URL', async () => {
+    const URL_AUTOPLAY = 'readest://book/linkedBook?autoplay=tts';
+    await bootDocument([URL_AUTOPLAY]);
+    await bootDocument([URL_AUTOPLAY]);
+    const { consumePendingTTSAutoplay } = await import('@/utils/ttsAutoplay');
+    expect(consumePendingTTSAutoplay('linkedBook')).toBe(false);
+  });
+});
+
+const groupUrl = 'readest://widget-group/series/a1b2%20c3';
+const editShelfUrl = 'readest://widget-edit-shelf/sf';
+
+const mountWidget = async (label = 'main') => {
+  currentWindowLabel = label;
+  const loaded = await loadHook();
+  const view = renderHook(() => loaded.useOpenLaunchLinks());
+  await flush();
+  return { ...loaded, view };
+};
+
+describe('useOpenLaunchLinks — widget links', () => {
+  beforeEach(() => {
+    coldStartUrls = [];
+    routerPushMock.mockReset();
+    libraryState.setCheckPendingLaunchLink.mockReset();
+    libraryState.libraryLoaded = true;
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('opens a group for a cold-start link, but only in the launch window', async () => {
+    coldStartUrls = [groupUrl];
+    await mountWidget('reader-0');
+    expect(routerPushMock).not.toHaveBeenCalled();
+
+    await mountWidget('main');
+    expect(routerPushMock).toHaveBeenCalledWith('/library?groupBy=series&group=a1b2%20c3');
+  });
+
+  it('ignores a replayed cold-start URL, but always handles a live tap', async () => {
+    coldStartUrls = [groupUrl];
+    await mountWidget();
+    routerPushMock.mockReset();
+
+    // A fresh document re-reads the same launch URL: a replay, not a new tap.
+    await mountWidget();
+    expect(routerPushMock).not.toHaveBeenCalled();
+
+    const { eventDispatcher } = await mountWidget();
+    await eventDispatcher.dispatch('app-incoming-url', { urls: [groupUrl] });
+    await flush();
+    expect(routerPushMock).toHaveBeenCalledWith('/library?groupBy=series&group=a1b2%20c3');
+  });
+
+  it('opens a tapped group by its id, without waiting for the library', async () => {
+    libraryState.libraryLoaded = false;
+    coldStartUrls = [groupUrl];
+    await mountWidget();
+    expect(routerPushMock).toHaveBeenCalledWith('/library?groupBy=series&group=a1b2%20c3');
+  });
+
+  it('opens the bookshelf editor for a tapped Edit button, without waiting for the library', async () => {
+    libraryState.libraryLoaded = false;
+    coldStartUrls = [editShelfUrl];
+    await mountWidget();
+    // Edit always appends a per-tap nonce (`t`), so only the prefix is fixed.
+    expect(routerPushMock).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/library\?editBookshelf=sf&t=\d+$/),
+    );
+  });
+
+  it.each([
+    [
+      'a group link with an unknown axis',
+      ['readest://widget-group/none/x', 'readest://widget-group/bogus/x'],
+    ],
+    ['a malformed edit-shelf link', ['readest://widget-edit-shelf/']],
+    [
+      'links that are not widget links',
+      ['readest://book/abc', 'https://web.readest.com/o/widget-group/series/x'],
+    ],
+  ])('ignores %s', async (_label, urls) => {
+    coldStartUrls = urls;
+    await mountWidget();
+    expect(routerPushMock).not.toHaveBeenCalled();
+  });
+
+  describe('Library blank-placeholder gate', () => {
+    it('is released when no link claimed the launch', async () => {
+      await mountWidget();
+      expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
+    });
+
+    it.each([
+      ['a group tap', groupUrl],
+      ['an edit-shelf tap', editShelfUrl],
+    ])('is released after %s, which opens within the Library', async (_label, url) => {
+      coldStartUrls = [url];
+      await mountWidget();
+      expect(routerPushMock).toHaveBeenCalled();
+      expect(libraryState.setCheckPendingLaunchLink).toHaveBeenCalledWith(false);
+    });
   });
 });

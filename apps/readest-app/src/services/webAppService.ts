@@ -124,8 +124,15 @@ const indexedDBFileSystem: FileSystem = {
       request.onsuccess = async () => {
         if (request.result) {
           const content = request.result.content;
-          if (mode === 'text') resolve(content);
-          else {
+          if (mode === 'text') {
+            if (content instanceof Blob) {
+              resolve(await content.text());
+            } else if (content instanceof ArrayBuffer) {
+              resolve(new TextDecoder().decode(content));
+            } else {
+              resolve(content);
+            }
+          } else {
             if (content instanceof Blob) {
               const arrayBuffer = await content.arrayBuffer();
               resolve(arrayBuffer);

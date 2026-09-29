@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Shared styles for widget_bookshelf.xml's 25 identical grid cells - each
+       cell repeats the same cover/title attribute blocks (only layout_row/
+       layout_column vary per cell, so those stay as explicit attributes). -->
+  <style name="BookshelfWidgetCell">
+    <item name="android:layout_width">0dp</item>
+    <item name="android:layout_height">0dp</item>
+    <item name="android:layout_rowWeight">1</item>
+    <item name="android:layout_columnWeight">1</item>
+    <item name="android:layout_gravity">fill</item>
+    <item name="android:orientation">vertical</item>
+  </style>
+
+  <!-- The two flexible spacers flanking a cell's cover+title, splitting any
+       leftover row height evenly above and below (true symmetric centering -
+       see widget_bookshelf.xml's own doc comment). -->
+  <style name="BookshelfWidgetCellSpacer">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">0dp</item>
+    <item name="android:layout_weight">1</item>
+  </style>
+
+  <!-- Shown when titles are off: no reserved margin, so the cover uses the
+       cell's full available height. -->
+  <style name="BookshelfWidgetCover">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:layout_margin">4dp</item>
+    <item name="android:scaleType">fitCenter</item>
+    <item name="android:adjustViewBounds">true</item>
+    <item name="android:contentDescription">@null</item>
+  </style>
+
+  <!-- Shown when titles are on: the extra 20dp bottom margin unconditionally
+       reserves the title's space below (see widget_bookshelf.xml). -->
+  <style name="BookshelfWidgetCoverWithTitle">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:layout_marginHorizontal">4dp</item>
+    <item name="android:layout_marginTop">4dp</item>
+    <item name="android:layout_marginBottom">24dp</item>
+    <item name="android:scaleType">fitCenter</item>
+    <item name="android:adjustViewBounds">true</item>
+    <item name="android:visibility">gone</item>
+    <item name="android:contentDescription">@null</item>
+  </style>
+
+  <!-- The matching -20dp top margin reclaims BookshelfWidgetCoverWithTitle's
+       reservation as this title's own guaranteed space. -->
+  <style name="BookshelfWidgetTitle">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:layout_marginHorizontal">4dp</item>
+    <item name="android:layout_marginTop">-20dp</item>
+    <item name="android:layout_marginBottom">2dp</item>
+    <item name="android:visibility">gone</item>
+    <item name="android:gravity">center</item>
+    <item name="android:maxLines">1</item>
+    <item name="android:ellipsize">end</item>
+    <item name="android:textSize">12sp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textColor">?android:attr/textColorPrimary</item>
+  </style>
+</resources>

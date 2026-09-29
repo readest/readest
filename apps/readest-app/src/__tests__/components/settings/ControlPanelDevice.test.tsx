@@ -2,7 +2,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, cleanup, screen, fireEvent } from '@testing-library/react';
 
 /**
- * Settings > Behavior > Device > Gamepad Support (issue #5979).
+ * Settings > Behavior > Device switches: Gamepad Support (issue #5979) and
+ * Hide Bookshelf Buttons.
+ *
+ * Gamepad Support (issue #5979).
  *
  * The reader polls the Web Gamepad API and replays every button as a
  * synthetic key event. On a Steam Deck that fights Steam Input, which is
@@ -11,6 +14,7 @@ import { render, cleanup, screen, fireEvent } from '@testing-library/react';
  */
 
 const sysSettings: Record<string, unknown> = { gamepadEnabled: true };
+const view = { bookEink: false, globalEink: false };
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: { isMobileApp: false } }),
@@ -24,7 +28,11 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => null,
     getViews: () => [],
-    getViewSettings: () => ({ scrolled: false, noContinuousScroll: false }),
+    getViewSettings: () => ({
+      scrolled: false,
+      noContinuousScroll: false,
+      isEink: view.bookEink,
+    }),
     recreateViewer: vi.fn(),
   }),
 }));
@@ -36,7 +44,9 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({ settings: { globalViewSettings: {}, ...sysSettings } }),
+  useSettingsStore: () => ({
+    settings: { globalViewSettings: { isEink: view.globalEink }, ...sysSettings },
+  }),
 }));
 
 vi.mock('@/hooks/useResetSettings', () => ({
@@ -92,6 +102,8 @@ afterEach(() => {
   cleanup();
   saveSysSettings.mockClear();
   sysSettings['gamepadEnabled'] = true;
+  view.bookEink = false;
+  view.globalEink = false;
 });
 
 describe('Settings > Behavior > Device > Gamepad Support', () => {
@@ -109,5 +121,29 @@ describe('Settings > Behavior > Device > Gamepad Support', () => {
     fireEvent.click(gamepadSwitch()!);
 
     expect(saveSysSettings).toHaveBeenCalledWith({}, 'gamepadEnabled', false);
+  });
+});
+
+const hideButtonsSwitch = () =>
+  screen
+    .getByText('Hide Bookshelf Buttons')
+    .closest('[data-setting-id="settings.control.hideBookshelfPageButtons"]')
+    ?.querySelector('input') as HTMLInputElement | null;
+
+describe('Settings > Behavior > Device > Hide Bookshelf Buttons', () => {
+  // The library shows its e-ink buttons from the global E-Ink setting, so a
+  // book with its own E-Ink value must not gate the switch.
+  it('is enabled when the library is in e-ink mode but the book is not', () => {
+    view.globalEink = true;
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+
+    expect(hideButtonsSwitch()?.disabled).toBe(false);
+  });
+
+  it('is disabled when only the book is in e-ink mode', () => {
+    view.bookEink = true;
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+
+    expect(hideButtonsSwitch()?.disabled).toBe(true);
   });
 });

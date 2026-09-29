@@ -47,8 +47,8 @@ vi.mock('@/hooks/useAppRouter', () => ({
 // The player mounts the deep-link listener so an Android Auto selection (or a
 // widget tap) also works from this route. It has its own tests and pulls in
 // the whole book-transfer stack, so stub it out here.
-vi.mock('@/hooks/useOpenBookLink', () => ({
-  useOpenBookLink: () => {},
+vi.mock('@/hooks/useOpenLaunchLinks', () => ({
+  useOpenLaunchLinks: () => {},
 }));
 
 vi.mock('@/hooks/useLibrary', () => ({
@@ -237,6 +237,9 @@ describe('PlayerPage under React StrictMode', () => {
 describe('PlayerPage with a podcast show', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // clearAllMocks keeps queued mockResolvedValueOnce values; drop them so
+    // one test's unconsumed episode fetch can't leak into the next.
+    mocks.loadAbsEpisodes.mockReset();
     mocks.getSessionByHash.mockReturnValue(null);
     mocks.sessionListeners.clear();
     useLibraryStore.getState().setLibrary([podcastBook]);
@@ -455,6 +458,10 @@ describe('PlayerPage with a podcast show', () => {
     await waitFor(() => expect(screen.getByTestId('player-view')).toBeTruthy());
 
     // The live session ends elsewhere (natural end, error, or user stop).
+    // `player-view` appears on commit, but the route subscribes to
+    // 'session-changed' in a passive effect that can run a task later on a
+    // loaded runner - firing before it lands would reach no listener.
+    await waitFor(() => expect(mocks.sessionListeners.size).toBe(1));
     mocks.getSessionByHash.mockReturnValue(null);
     act(() => {
       mocks.sessionListeners.forEach((fn) => fn());
@@ -482,6 +489,10 @@ describe('PlayerPage with a podcast show', () => {
 
     await waitFor(() => expect(screen.getByTestId('player-view')).toBeTruthy());
 
+    // `player-view` appears on commit, but the route subscribes to
+    // 'session-changed' in a passive effect that can run a task later on a
+    // loaded runner - firing before it lands would reach no listener.
+    await waitFor(() => expect(mocks.sessionListeners.size).toBe(1));
     mocks.getSessionByHash.mockReturnValue(null);
     act(() => {
       mocks.sessionListeners.forEach((fn) => fn());

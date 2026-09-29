@@ -228,8 +228,18 @@ export const isRemoteBookClockNewer = (local: Book, remote: Book): boolean =>
   (remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0) ||
   (remote.metadataUpdatedAt ?? 0) > (local.metadataUpdatedAt ?? 0);
 
+/**
+ * {@link isRemoteBookClockNewer} plus the group clock: true when the remote
+ * index ROW is newer. Grouping stamps only groupUpdatedAt (#6414), so a
+ * group-only change must still travel through library.json — but it moves no
+ * bytes, which is why the group clock stays out of isRemoteBookClockNewer.
+ */
+export const isRemoteBookRowNewer = (local: Book, remote: Book): boolean =>
+  isRemoteBookClockNewer(local, remote) ||
+  (remote.groupUpdatedAt ?? 0) > (local.groupUpdatedAt ?? 0);
+
 export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolean =>
-  !remote.deletedAt && !local.deletedAt && isRemoteBookClockNewer(local, remote);
+  !remote.deletedAt && !local.deletedAt && isRemoteBookRowNewer(local, remote);
 
 /**
  * FULL SYNC ONLY. Fields the remote index holds that this device is missing

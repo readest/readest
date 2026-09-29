@@ -24,7 +24,7 @@ import {
   pickFresherCover,
   pickFresherMetadata,
 } from '@/app/library/utils/libraryUtils';
-import { getPrimaryLanguage, pickFresherGroup } from '@/utils/book';
+import { getBookChangedAt, getPrimaryLanguage, pickFresherGroup } from '@/utils/book';
 import { isAudiobook, parseAbsFilePath } from '@/utils/audiobook';
 import { parseCalibreFilePath } from '@/utils/calibre';
 
@@ -64,7 +64,7 @@ export const useBooksSync = () => {
       .filter(
         (book) =>
           !book.syncedAt ||
-          lastSyncedAtBooks < book.updatedAt ||
+          lastSyncedAtBooks < getBookChangedAt(book) ||
           lastSyncedAtBooks < (book.deletedAt ?? 0),
       )
       // book.filePath is a device-local absolute path used by the in-place

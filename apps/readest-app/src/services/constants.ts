@@ -64,6 +64,8 @@ export const SUPPORTED_BOOK_EXTS = [
   'md',
   'html',
   'htm',
+  'mhtml',
+  'mht',
 ];
 export const BOOK_ACCEPT_FORMATS = SUPPORTED_BOOK_EXTS.map((ext) => `.${ext}`).join(', ');
 export const BOOK_UNGROUPED_NAME = '';
@@ -208,6 +210,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     },
   },
   gamepadEnabled: true,
+  reverseWheelPaging: false,
+  hideBookshelfPageButtons: false,
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,
@@ -533,6 +537,7 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
 export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
   enableAnnotationQuickActions: true,
   annotationQuickAction: null,
+  keepSelectionAfterLookup: false,
   annotationToolbarItems: DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
   copyToNotebook: false,
   noteExportConfig: DEFAULT_NOTE_EXPORT_CONFIG,

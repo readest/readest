@@ -518,6 +518,9 @@ msgstr "ไม่พบคำอธิบายใหม่"
 msgid "%1 annotations pulled"
 msgstr "ดึงคำอธิบาย %1 รายการ"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "เซสชัน Readest ของคุณหมดอายุแล้ว โปรดเข้าสู่ระบบอีกครั้ง"
+
 msgid "Login"
 msgstr "เข้าสู่ระบบ"
 

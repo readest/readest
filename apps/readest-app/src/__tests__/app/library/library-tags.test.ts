@@ -53,8 +53,10 @@ describe('applyBookTagEdits', () => {
       { add: ['Favorites'], remove: ['Classic'] },
       now,
     );
-    expect(result[0]).toMatchObject({ tags: ['Sci-Fi', 'Favorites'], updatedAt: now });
+    expect(result[0]!.tags).toEqual(['Sci-Fi', 'Favorites']);
     expect(result[0]!.metadataUpdatedAt).toBe(now);
+    // updatedAt is the Date Read sort key; tagging is not reading (#6414).
+    expect(result[0]!.updatedAt).toBe(1);
     expect(result[1]!.tags).toEqual(['Favorites']);
     expect(result[2]).toBe(books[2]);
   });

@@ -518,6 +518,9 @@ msgstr "ახალი ანოტაციები ვერ მოიძე
 msgid "%1 annotations pulled"
 msgstr "ჩამოიტვირთა %1 ანოტაცია"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest-ის სესიას ვადა გაუვიდა. ხელახლა შედით ანგარიშში."
+
 msgid "Login"
 msgstr "შესვლა"
 

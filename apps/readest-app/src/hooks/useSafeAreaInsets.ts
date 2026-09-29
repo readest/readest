@@ -10,7 +10,7 @@ export const useSafeAreaInsets = () => {
   const { appService } = useEnv();
   const currentInsets = useRef({ top: 0, right: 0, bottom: 0, left: 0 });
 
-  const { updateSafeAreaInsets } = useThemeStore();
+  const { updateSafeAreaInsets, updateScreenCornerRadius } = useThemeStore();
 
   const updateInsets = (insets: Insets) => {
     const { top, right, bottom, left } = currentInsets.current;
@@ -52,6 +52,7 @@ export const useSafeAreaInsets = () => {
             left: Math.round(response.left),
           };
           updateInsets(insets);
+          updateScreenCornerRadius(Math.round(response.bottomCornerRadius ?? 0));
         }
       });
     } else if (hasCustomProperties) {

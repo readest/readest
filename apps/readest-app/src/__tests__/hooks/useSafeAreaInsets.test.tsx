@@ -5,13 +5,17 @@ const h = vi.hoisted(() => ({
   appService: { hasSafeAreaInset: true, isIOSApp: true },
   getInsets: vi.fn(),
   updateInsets: vi.fn(),
+  updateCornerRadius: vi.fn(),
   focus: undefined as ((event: { payload: boolean }) => void) | undefined,
   unlisten: vi.fn(),
 }));
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: h.appService }) }));
 vi.mock('@/store/themeStore', () => ({
-  useThemeStore: () => ({ updateSafeAreaInsets: h.updateInsets }),
+  useThemeStore: () => ({
+    updateSafeAreaInsets: h.updateInsets,
+    updateScreenCornerRadius: h.updateCornerRadius,
+  }),
 }));
 vi.mock('@/utils/bridge', () => ({ getSafeAreaInsets: h.getInsets }));
 vi.mock('@/utils/misc', () => ({ getOSPlatform: () => 'ios' }));
@@ -40,4 +44,11 @@ it('refreshes CarPlay-only insets when the native phone window gains focus', asy
 
   unmount();
   await waitFor(() => expect(h.unlisten).toHaveBeenCalledOnce());
+});
+
+it('reports the rounded bottom corner radius from the native bridge', async () => {
+  h.getInsets.mockResolvedValue({ top: 0, right: 0, bottom: 0, left: 0, bottomCornerRadius: 44.6 });
+  const { unmount } = renderHook(() => useSafeAreaInsets());
+  await waitFor(() => expect(h.updateCornerRadius).toHaveBeenLastCalledWith(45));
+  unmount();
 });

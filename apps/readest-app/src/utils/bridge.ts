@@ -84,6 +84,7 @@ export interface GetSafeAreaInsetsResponse {
   right: number;
   bottom: number;
   left: number;
+  bottomCornerRadius?: number;
   error?: string;
 }
 
@@ -461,30 +462,92 @@ export async function clearSecureItem(request: GetSecureItemRequest): Promise<Se
   return invoke<SecureItemResponse>('plugin:native-bridge|clear_secure_item', { payload: request });
 }
 
-// ── Reading widget ────────────────────────────────────────────────────────
+// ── Bookshelf widget ────────────────────────────────────────────────────────
 
-export interface ReadingWidgetBookPayload {
+export interface BookshelfWidgetBookPayload {
   hash: string;
   title: string;
   author: string;
   percent: number;
+  showProgress: boolean;
   coverPath: string;
 }
 
-export interface ReadingWidgetTts {
+export interface BookshelfWidgetTts {
   active: boolean;
   playing: boolean;
 }
 
-export interface UpdateReadingWidgetRequest {
-  books: ReadingWidgetBookPayload[];
-  sectionTitle: string;
-  emptyTitle: string;
-  tts?: ReadingWidgetTts;
+/** A group tile: a mosaic of up to 4 member covers (see
+ * buildBookshelfWidgetItems in services/widget/bookshelfWidget.ts). */
+export interface BookshelfWidgetGroupPayload {
+  id: string;
+  groupBy: string;
+  value: string;
+  coverPaths: string[];
 }
 
-export async function updateReadingWidget(request: UpdateReadingWidgetRequest): Promise<void> {
-  await invoke('plugin:native-bridge|update_reading_widget', { payload: request });
+/** One grid tile: a book or a group. */
+export type BookshelfWidgetItemPayload =
+  | ({ type: 'book' } & BookshelfWidgetBookPayload)
+  | ({ type: 'group' } & BookshelfWidgetGroupPayload);
+
+export interface UpdateBookshelfWidgetRequest {
+  appWidgetId: number;
+  /** The shelf the widget asked for; native shows a placeholder until they match. */
+  shelfId: string;
+  /** Grid tiles in display order. */
+  items: BookshelfWidgetItemPayload[];
+  sectionTitle: string;
+  emptyTitle: string;
+  tts?: BookshelfWidgetTts;
+}
+
+/** `failed` counts tiles whose cover was missing or unusable (0 on iOS/desktop). */
+export async function updateBookshelfWidget(
+  request: UpdateBookshelfWidgetRequest,
+): Promise<{ failed: number }> {
+  return invoke('plugin:native-bridge|update_bookshelf_widget', { payload: request });
+}
+
+/** A placed widget, as chosen in its native configure screen. */
+export interface BookshelfWidgetInstance {
+  appWidgetId: number;
+  shelfId: string;
+  gridRows: number;
+  gridColumns: number;
+}
+
+export interface GetBookshelfWidgetInstancesResponse {
+  instances: BookshelfWidgetInstance[];
+}
+
+export async function getBookshelfWidgetInstances(): Promise<GetBookshelfWidgetInstancesResponse> {
+  return invoke<GetBookshelfWidgetInstancesResponse>(
+    'plugin:native-bridge|get_bookshelf_widget_instances',
+  );
+}
+
+/** What the native configure screen offers, translated, since it can't read the app's settings. */
+export interface BookshelfWidgetCatalog {
+  shelves: { id: string; name: string }[];
+  labels: {
+    title: string;
+    rows: string;
+    columns: string;
+    showTitles: string;
+    showShelfName: string;
+    cancel: string;
+    save: string;
+    /** Opens the app to edit the selected shelf (readest://widget-edit-shelf/{id}). */
+    edit: string;
+    /** Shown on a widget whose shelf hasn't been loaded by the app yet. */
+    openApp: string;
+  };
+}
+
+export async function setBookshelfWidgetCatalog(catalog: BookshelfWidgetCatalog): Promise<void> {
+  await invoke('plugin:native-bridge|set_bookshelf_widget_catalog', { payload: catalog });
 }
 
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────

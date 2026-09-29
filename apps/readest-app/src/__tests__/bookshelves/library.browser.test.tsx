@@ -211,23 +211,28 @@ describe('library scrollbar integration in Chromium', () => {
             <Bookshelf {...props} isSelectMode={false} />
           </div>,
         );
-        await waitFor(() => {
-          const library = container.querySelector<HTMLElement>('[role="main"]')!;
-          const viewport = container.querySelector<HTMLElement>(
-            '[data-overlayscrollbars-viewport]',
-          )!;
-          expect(viewport).toBeTruthy();
-          const bounds = library.getBoundingClientRect();
-          const viewportBounds = viewport.getBoundingClientRect();
-          expect(viewportBounds.width).toBeCloseTo(bounds.width, 0);
-          expect(viewportBounds.left).toBeCloseTo(bounds.left, 0);
-          const measurement = container.querySelector<HTMLElement>(
-            '[data-testid="bookshelf-stream"]',
-          )!;
-          expect(measurement.contains(viewport)).toBe(true);
-          expect(getByRole('button', { name: 'Book 19' })).toBeTruthy();
-          expect(queryByRole('heading', { name: /^Default/ })).toBeNull();
-        });
+        // OverlayScrollbars `defer` creates the viewport in an idle callback,
+        // which a busy CI runner can hold past waitFor's 1s default.
+        await waitFor(
+          () => {
+            const library = container.querySelector<HTMLElement>('[role="main"]')!;
+            const viewport = container.querySelector<HTMLElement>(
+              '[data-overlayscrollbars-viewport]',
+            )!;
+            expect(viewport).toBeTruthy();
+            const bounds = library.getBoundingClientRect();
+            const viewportBounds = viewport.getBoundingClientRect();
+            expect(viewportBounds.width).toBeCloseTo(bounds.width, 0);
+            expect(viewportBounds.left).toBeCloseTo(bounds.left, 0);
+            const measurement = container.querySelector<HTMLElement>(
+              '[data-testid="bookshelf-stream"]',
+            )!;
+            expect(measurement.contains(viewport)).toBe(true);
+            expect(getByRole('button', { name: 'Book 19' })).toBeTruthy();
+            expect(queryByRole('heading', { name: /^Default/ })).toBeNull();
+          },
+          { timeout: 5000 },
+        );
       });
     }
   }

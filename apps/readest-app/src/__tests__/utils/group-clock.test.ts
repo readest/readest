@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickFresherGroup } from '@/utils/book';
+import { getBookChangedAt, pickFresherGroup, setBookGroup } from '@/utils/book';
 import type { Book } from '@/types/book';
 
 const base: Book = {
@@ -82,5 +82,34 @@ describe('pickFresherGroup (issue #5911)', () => {
     const out = pickFresherGroup(book({}), book({}), true);
     expect(out.groupId).toBeUndefined();
     expect(out.groupName).toBeUndefined();
+  });
+});
+
+/**
+ * #6414: `updatedAt` is the Date Read sort key, so grouping must stamp only the
+ * group's own clock. Sync then has to look past `updatedAt` to see the edit.
+ */
+describe('group edits leave Date Read alone (issue #6414)', () => {
+  it('moves a book into a group on the group clock only', () => {
+    const b = book({ updatedAt: 2 });
+    setBookGroup(b, 'g1', 'Sci-Fi', 500);
+    expect(b).toMatchObject({ groupId: 'g1', groupName: 'Sci-Fi', groupUpdatedAt: 500 });
+    expect(b.updatedAt).toBe(2);
+  });
+
+  it('stamps a removal too', () => {
+    const b = book({ groupId: 'g1', groupName: 'Sci-Fi', groupUpdatedAt: 100 });
+    setBookGroup(b, undefined, undefined, 500);
+    expect(b.groupId).toBeUndefined();
+    expect(b.groupName).toBeUndefined();
+    expect(b.groupUpdatedAt).toBe(500);
+    expect(b.updatedAt).toBe(2);
+  });
+
+  it('reports the latest edit on any of the row clocks', () => {
+    expect(getBookChangedAt(book({}))).toBe(2);
+    expect(getBookChangedAt(book({ groupUpdatedAt: 30 }))).toBe(30);
+    expect(getBookChangedAt(book({ metadataUpdatedAt: 40, groupUpdatedAt: null }))).toBe(40);
+    expect(getBookChangedAt(book({ coverUpdatedAt: 50 }))).toBe(50);
   });
 });

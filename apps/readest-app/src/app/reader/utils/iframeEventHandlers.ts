@@ -444,6 +444,21 @@ const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
   return null;
 };
 
+// A full-bleed cover or full-page illustration spans the page-turn zones, so
+// tapping it has to stay a page turn (#6424). foliate publishes the page's
+// content box on the root element; half of it separates such pages from inline
+// figures.
+const fillsPage = (target: HTMLElement) => {
+  const element = target.closest('img, svg, table');
+  if (!element) return false;
+  const { style } = element.ownerDocument.documentElement;
+  const pageArea =
+    parseFloat(style.getPropertyValue('--available-width')) *
+    parseFloat(style.getPropertyValue('--available-height'));
+  const { width, height } = element.getBoundingClientRect();
+  return width * height >= pageArea / 2;
+};
+
 export const handleClick = (
   bookKey: string,
   doubleClickDisabled: React.MutableRefObject<boolean>,
@@ -510,6 +525,7 @@ export const handleClick = (
     // (#4757). Footnotes are excluded so footnote links keep their
     // popup/navigation behavior.
     const media = !isFixedLayout && !footnote ? detectMediaTarget(element) : null;
+    const pageMedia = media && element && fillsPage(element) ? media : null;
     if (
       !media &&
       element?.closest('sup, a, audio, video') &&
@@ -557,8 +573,10 @@ export const handleClick = (
     // / table zoom (#4584) — it is the only gesture that does, since long-press
     // fired mid-scroll and was removed (#5069). Fixed-layout books
     // (PDF/comics/manga) keep tap-to-turn, since there the tap is the page-turn
-    // gesture (media is null there).
-    if (media) {
+    // gesture (media is null there). Media filling the page rides along on the
+    // single click instead, so the tap zone picks between turning the page and
+    // opening the viewer.
+    if (media && !pageMedia) {
       window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
       return;
     }
@@ -574,6 +592,7 @@ export const handleClick = (
         offsetX: event.offsetX,
         offsetY: event.offsetY,
         ...getKeyStatus(event),
+        ...(pageMedia && { media: pageMedia }),
       },
       '*',
     );

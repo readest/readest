@@ -3,6 +3,7 @@ import { AppService, BaseDir } from '@/types/system';
 import { useTransferStore, TransferItem, ReplicaTransferFile } from '@/store/transferStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { TranslationFunc } from '@/hooks/useTranslation';
 import { createProgressThrottle, ProgressHandler, ProgressPayload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
@@ -61,8 +62,16 @@ class TransferManager {
     return !!useSettingsStore.getState().settings?.version;
   }
 
-  private isBookUploadAllowed(): boolean {
-    return isReadestCloudStorageActive(useSettingsStore.getState().settings);
+  /**
+   * A Readest Cloud file is only reachable through its `books` row, and that
+   * row is pushed only while Books sync is on. Uploading with it off stores
+   * files no other device can ever list, while still spending quota.
+   */
+  isBookUploadAllowed(): boolean {
+    return (
+      isReadestCloudStorageActive(useSettingsStore.getState().settings) &&
+      isSyncCategoryEnabled('book')
+    );
   }
 
   private isDeferredBookUpload(t: TransferItem): boolean {
@@ -71,7 +80,7 @@ class TransferManager {
 
   /**
    * Cancel pending book uploads when Readest Cloud is not the selected
-   * provider. Idempotent (acts on pending rows only) — safe to run on
+   * provider or Books sync is off. Idempotent (acts on pending rows only) — safe to run on
    * every processQueue pass, which also re-settles rows another window
    * or a rogue retry re-pended. Cancellation is visible ('cancelled'
    * with cancelReason 'policy'), never a silent drop.
@@ -89,7 +98,7 @@ class TransferManager {
       store.setTransferStatus(t.id, 'cancelled', undefined, 'policy');
     });
     console.info(
-      `[cloudSync] cancelled ${gated.length} pending Readest Cloud upload(s): third-party provider selected`,
+      `[cloudSync] cancelled ${gated.length} pending Readest Cloud upload(s): Readest Cloud or Books sync is off`,
     );
     this.persistQueue();
   }
@@ -174,7 +183,7 @@ class TransferManager {
     return transferId;
   }
 
-  queueDownload(book: Book, priority: number = 10): string | null {
+  queueDownload(book: Book, priority: number = 10, isBackground: boolean = false): string | null {
     if (!this.isReady()) {
       console.warn('TransferManager not initialized');
       return null;
@@ -190,7 +199,7 @@ class TransferManager {
       return existing.id;
     }
 
-    const transferId = store.addTransfer(book.hash, book.title, 'download', priority);
+    const transferId = store.addTransfer(book.hash, book.title, 'download', priority, isBackground);
     this.persistQueue();
     this.processQueue();
     return transferId;

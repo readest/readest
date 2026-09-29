@@ -5,9 +5,8 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
-import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
-import { useOpenBookLink } from '@/hooks/useOpenBookLink';
-import { useReadingWidget } from '@/hooks/useReadingWidget';
+import { useOpenLaunchLinks } from '@/hooks/useOpenLaunchLinks';
+import { useBookshelfWidget } from '@/hooks/useBookshelfWidget';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -24,9 +23,8 @@ export default function Page() {
 
   useAppUrlIngress();
   useOpenWithBooks();
-  useOpenAnnotationLink();
-  useOpenBookLink();
-  useReadingWidget();
+  useOpenLaunchLinks();
+  useBookshelfWidget();
   useOpenShareLink();
   useClipUrlIngress();
 

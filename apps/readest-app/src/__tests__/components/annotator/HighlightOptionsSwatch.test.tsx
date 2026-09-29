@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import type { HighlightColor, HighlightStyle } from '@/types/book';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
 
@@ -131,6 +131,33 @@ describe('highlight style marker swatch', () => {
     const { container } = renderOptions('red', 'underline');
 
     expect(getStyleGlyph(container, 'highlight').style.backgroundColor).toBe('rgb(167, 139, 250)');
+  });
+});
+
+describe('highlight selection dismissal', () => {
+  it('dismisses after choosing a color, but keeps the popup open when choosing a style', () => {
+    const onHandleHighlight = vi.fn();
+    const onDismiss = vi.fn();
+    const { getByRole } = render(
+      <HighlightOptions
+        isVertical={false}
+        popupWidth={300}
+        popupHeight={44}
+        triangleDir='up'
+        selectedStyle='highlight'
+        selectedColor='yellow'
+        onHandleHighlight={onHandleHighlight}
+        onDismiss={onDismiss}
+      />,
+    );
+
+    fireEvent.click(getByRole('button', { name: 'Select underline style' }));
+    expect(onHandleHighlight).toHaveBeenCalledWith(true);
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    fireEvent.click(getByRole('button', { name: 'Select red color' }));
+    expect(onHandleHighlight).toHaveBeenCalledTimes(2);
+    expect(onDismiss).toHaveBeenCalledOnce();
   });
 });
 

@@ -60,6 +60,8 @@ interface ThemeState {
   statusBarHeight: number;
   systemUIAlwaysHidden: boolean;
   safeAreaInsets: Insets | null;
+  // Radius (px) of the rounded bottom screen corners, 0 when unknown.
+  screenCornerRadius: number;
   isRoundedWindow: boolean;
   setSystemUIAlwaysHidden: (hidden: boolean) => void;
   setStatusBarHeight: (height: number) => void;
@@ -83,6 +85,7 @@ interface ThemeState {
   handleSystemThemeChange: (isDark: boolean) => void;
   handleAmbientLightChange: (lux: number) => void;
   updateSafeAreaInsets: (insets: Insets) => void;
+  updateScreenCornerRadius: (radius: number) => void;
 }
 
 const LIBRARY_THEME_MODE_KEY = 'libraryThemeMode';
@@ -296,6 +299,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     statusBarHeight: 24,
     systemUIAlwaysHidden: false,
     safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+    screenCornerRadius: 0,
     isRoundedWindow: true,
     showSystemUI: () => set({ systemUIVisible: true }),
     dismissSystemUI: () => set({ systemUIVisible: false }),
@@ -407,6 +411,9 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     },
     updateSafeAreaInsets: (insets) => {
       set({ safeAreaInsets: insets });
+    },
+    updateScreenCornerRadius: (radius) => {
+      if (get().screenCornerRadius !== radius) set({ screenCornerRadius: radius });
     },
   };
 });

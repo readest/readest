@@ -518,6 +518,9 @@ msgstr "Nie znaleziono nowych notatek"
 msgid "%1 annotations pulled"
 msgstr "Pobrano %1 notatek"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Sesja Readest wygasła. Zaloguj się ponownie."
+
 msgid "Login"
 msgstr "Zaloguj"
 

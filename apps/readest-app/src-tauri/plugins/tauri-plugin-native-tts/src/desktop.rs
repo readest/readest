@@ -2,16 +2,19 @@ use serde::de::DeserializeOwned;
 use tauri::{plugin::PluginApi, AppHandle, Runtime};
 
 use crate::models::*;
+use crate::now_playing::{self, Listeners};
+use serde_json::Value;
+use tauri::ipc::Channel;
 
 pub fn init<R: Runtime, C: DeserializeOwned>(
     app: &AppHandle<R>,
     _api: PluginApi<R, C>,
 ) -> crate::Result<NativeTts<R>> {
-    Ok(NativeTts(app.clone()))
+    Ok(NativeTts(app.clone(), Listeners::default()))
 }
 
 /// Access to the native-tts APIs.
-pub struct NativeTts<R: Runtime>(AppHandle<R>);
+pub struct NativeTts<R: Runtime>(AppHandle<R>, Listeners);
 
 impl<R: Runtime> NativeTts<R> {
     pub fn init(&self) -> crate::Result<InitResponse> {
@@ -43,21 +46,30 @@ impl<R: Runtime> NativeTts<R> {
     }
     pub fn set_media_session_active(
         &self,
-        _payload: SetMediaSessionActiveRequest,
+        payload: SetMediaSessionActiveRequest,
     ) -> crate::Result<()> {
-        Err(crate::Error::UnsupportedPlatformError)
+        now_playing::set_active(&self.0, &self.1, payload);
+        Ok(())
     }
     pub fn update_media_session_state(
         &self,
-        _payload: UpdateMediaSessionStateRequest,
+        payload: UpdateMediaSessionStateRequest,
     ) -> crate::Result<()> {
-        Err(crate::Error::UnsupportedPlatformError)
+        now_playing::update_state(&self.0, payload);
+        Ok(())
     }
     pub fn update_media_session_metadata(
         &self,
-        _payload: UpdateMediaSessionMetadataRequest,
+        payload: UpdateMediaSessionMetadataRequest,
     ) -> crate::Result<()> {
-        Err(crate::Error::UnsupportedPlatformError)
+        now_playing::update_metadata(&self.0, payload);
+        Ok(())
+    }
+    pub fn register_listener(&self, event: String, handler: Channel<Value>) {
+        now_playing::register_listener(&self.1, event, handler);
+    }
+    pub fn remove_listener(&self, event: &str, channel_id: u32) {
+        now_playing::remove_listener(&self.1, event, channel_id);
     }
     pub fn update_media_library(&self, _payload: UpdateMediaLibraryRequest) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)

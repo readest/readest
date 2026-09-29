@@ -178,11 +178,14 @@ export const useNotesSync = (bookKey: string) => {
     [syncNotes],
   );
 
+  // A book's first reading position is saved after its notes load, and that
+  // write keeps the same booknotes array, so re-run once it appears.
+  const hasLocation = !!config?.location;
   useEffect(() => {
-    if (!config?.location || !user) return;
+    if (!hasLocation || !user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config?.booknotes, handleAutoSync]);
+  }, [hasLocation, config?.booknotes, handleAutoSync]);
 
   useEffect(() => {
     const processNewNote = (note: BookNote) => {

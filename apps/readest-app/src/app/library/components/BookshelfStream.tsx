@@ -31,6 +31,8 @@ interface StreamProps {
   importAction?: ReactNode;
   importTile?: ReactNode;
   pageNavigation?: boolean;
+  /** Drop the e-ink Previous/Next buttons; keys still page. */
+  hidePageButtons?: boolean;
   navigationBottomInset?: number;
 }
 type StreamRow = {
@@ -90,11 +92,13 @@ export const BookshelfCarousel = ({
   columns,
   width,
   renderItem,
+  hidePageButtons = false,
 }: {
   section: ShelfSection;
   columns: number;
   width: number;
   renderItem: StreamProps['renderItem'];
+  hidePageButtons?: boolean;
 }) => {
   const _ = useTranslation();
   const scroller = useRef<HTMLDivElement>(null);
@@ -200,7 +204,7 @@ export const BookshelfCarousel = ({
             </button>
           );
         })}
-        {section.items.length > columns && (
+        {!hidePageButtons && section.items.length > columns && (
           <div className='not-eink:hidden flex justify-end gap-2 pb-1 sm:px-4 sm:pb-3'>
             {[-1, 1].map((direction) => (
               <button
@@ -258,6 +262,7 @@ export default function BookshelfStream({
   pageDurations,
   scale = 1,
   pageNavigation = false,
+  hidePageButtons = false,
   navigationBottomInset = 0,
 }: StreamProps) {
   const _ = useTranslation();
@@ -354,6 +359,7 @@ export default function BookshelfStream({
                       columns={columns}
                       width={width / scale}
                       renderItem={renderItem}
+                      hidePageButtons={hidePageButtons}
                     />
                   </div>
                 );
@@ -386,7 +392,7 @@ export default function BookshelfStream({
             }}
           />
         </div>
-        {pageNavigation && (
+        {pageNavigation && !hidePageButtons && (
           <nav
             aria-label={_('Pagination')}
             className='not-eink:hidden bg-base-100 border-base-content shrink-0 border-t px-4 sm:px-6'

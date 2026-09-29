@@ -518,6 +518,9 @@ msgstr "Novih opomb ni"
 msgid "%1 annotations pulled"
 msgstr "Pridobljenih %1 opomb"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Vaša seja Readest je potekla. Prijavite se znova."
+
 msgid "Login"
 msgstr "Prijava"
 

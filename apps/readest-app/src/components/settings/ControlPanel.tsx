@@ -61,6 +61,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [annotationQuickAction, setAnnotationQuickAction] = useState(
     viewSettings.annotationQuickAction,
   );
+  const [keepSelectionAfterLookup, setKeepSelectionAfterLookup] = useState(
+    viewSettings.keepSelectionAfterLookup,
+  );
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [showToolbarCustomizer, setShowToolbarCustomizer] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -75,6 +78,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [gamepadEnabled, setGamepadEnabled] = useState(settings.gamepadEnabled);
+  const [reverseWheelPaging, setReverseWheelPaging] = useState(settings.reverseWheelPaging);
+  const [hideBookshelfPageButtons, setHideBookshelfPageButtons] = useState(
+    settings.hideBookshelfPageButtons,
+  );
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
@@ -114,6 +121,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       fullscreenClickArea: setFullscreenClickArea,
       disableDoubleClick: setIsDisableDoubleClick,
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
+      keepSelectionAfterLookup: setKeepSelectionAfterLookup,
       copyToNotebook: setCopyToNotebook,
     });
     saveViewSettings(
@@ -308,6 +316,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [gamepadEnabled]);
 
   useEffect(() => {
+    if (reverseWheelPaging === settings.reverseWheelPaging) return;
+    saveSysSettings(envConfig, 'reverseWheelPaging', reverseWheelPaging);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reverseWheelPaging]);
+
+  useEffect(() => {
+    if (hideBookshelfPageButtons === settings.hideBookshelfPageButtons) return;
+    saveSysSettings(envConfig, 'hideBookshelfPageButtons', hideBookshelfPageButtons);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hideBookshelfPageButtons]);
+
+  useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
     saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false).then(() => {
       recreateViewer(envConfig, bookKey);
@@ -326,6 +346,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enableAnnotationQuickActions]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'keepSelectionAfterLookup',
+      keepSelectionAfterLookup,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keepSelectionAfterLookup]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'copyToNotebook', copyToNotebook, false, false);
@@ -502,6 +534,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             disabled={!enableAnnotationQuickActions}
           />
         </SettingsRow>
+        {annotationQuickAction === 'dictionary' && (
+          <SettingsSwitchRow
+            label={_('Keep Text Selected After Lookup')}
+            checked={keepSelectionAfterLookup}
+            disabled={!enableAnnotationQuickActions}
+            onChange={() => setKeepSelectionAfterLookup(!keepSelectionAfterLookup)}
+            data-setting-id='settings.control.keepSelectionAfterLookup'
+          />
+        )}
         <SettingsSwitchRow
           label={_('Copy to Notebook')}
           checked={copyToNotebook}
@@ -550,6 +591,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setIsColorEink(!isColorEink)}
           data-setting-id='settings.control.colorEinkMode'
         />
+        <SettingsSwitchRow
+          label={_('Hide Bookshelf Buttons')}
+          description={_('Previous and Next in the library')}
+          checked={hideBookshelfPageButtons}
+          // The library follows the global E-Ink setting, not this book's.
+          disabled={!settings.globalViewSettings?.isEink}
+          onChange={() => setHideBookshelfPageButtons(!hideBookshelfPageButtons)}
+          data-setting-id='settings.control.hideBookshelfPageButtons'
+        />
         {appService?.isMobileApp && (
           <SettingsSwitchRow
             label={_('System Screen Brightness')}
@@ -582,6 +632,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             data-setting-id='settings.control.autohideCursor'
           />
         )}
+        <SettingsSwitchRow
+          label={_('Reverse Mouse Wheel')}
+          description={_('Scroll up for the next page')}
+          checked={reverseWheelPaging}
+          onChange={() => setReverseWheelPaging(!reverseWheelPaging)}
+          data-setting-id='settings.control.reverseWheelPaging'
+        />
         <SettingsSwitchRow
           label={_('Gamepad Support')}
           description={_('Navigate with a connected controller')}

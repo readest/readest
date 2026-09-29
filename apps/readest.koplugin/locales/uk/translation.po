@@ -518,6 +518,9 @@ msgstr "Нових нотаток не знайдено"
 msgid "%1 annotations pulled"
 msgstr "Отримано нотаток: %1"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Сеанс Readest завершився. Увійдіть знову."
+
 msgid "Login"
 msgstr "Увійти"
 

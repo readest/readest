@@ -116,6 +116,27 @@ describe('mixed bookshelf stream in Chromium', () => {
     expect(queryByRole('button', { name: 'Next page' })).toBeNull();
     expect(queryByRole('button', { name: 'Previous page' })).toBeNull();
   });
+  it('hides the e-ink page buttons on request but keeps key paging', async () => {
+    document.documentElement.setAttribute('data-eink', 'true');
+    const { container, queryByRole } = render(
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          pageNavigation
+          hidePageButtons
+          sections={[section('carousel', 'carousel', 12), section('books', 'grid', 60)]}
+          autoColumns={false}
+          fixedColumns={3}
+          renderItem={renderItem}
+        />
+      </div>,
+    );
+    const scroller = container.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+    await waitFor(() => expect(container.querySelector('[data-book]')).toBeTruthy());
+    expect(queryByRole('button', { name: 'Next page' })).toBeNull();
+    expect(queryByRole('button', { name: 'Next books' })).toBeNull();
+    fireEvent.keyDown(window, { key: 'PageDown', code: 'PageDown' });
+    await waitFor(() => expect(scroller.scrollTop).toBeGreaterThan(0));
+  });
   it('keeps a heading with its first grid row across mixed shelves and reaches the last page', async () => {
     document.documentElement.setAttribute('data-eink', 'true');
     const { container, getByRole } = render(
