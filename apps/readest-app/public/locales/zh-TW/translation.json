@@ -2403,5 +2403,9 @@
   "Rows": "列數",
   "Open Readest to show this bookshelf": "開啟 Readest 以顯示此書架",
   "Turn on Books in Manage Sync to upload this book": "請在「管理同步」中開啟「書籍」以上傳此書",
-  "Shelf name": "書架名稱"
+  "Shelf name": "書架名稱",
+  "Hide Bookshelf Buttons": "隱藏書架按鈕",
+  "Previous and Next in the library": "書庫中的上一頁和下一頁",
+  "Reverse Mouse Wheel": "反轉滑鼠滾輪",
+  "Scroll up for the next page": "向上捲動翻到下一頁"
 }

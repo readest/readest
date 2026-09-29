@@ -2703,5 +2703,9 @@
   "Rows": "الصفوف",
   "Open Readest to show this bookshelf": "افتح Readest لعرض هذا الرف",
   "Turn on Books in Manage Sync to upload this book": "فعّل «الكتب» في «إدارة المزامنة» لرفع هذا الكتاب",
-  "Shelf name": "اسم الرف"
+  "Shelf name": "اسم الرف",
+  "Hide Bookshelf Buttons": "إخفاء أزرار رف الكتب",
+  "Previous and Next in the library": "السابق والتالي في المكتبة",
+  "Reverse Mouse Wheel": "عكس عجلة الماوس",
+  "Scroll up for the next page": "مرّر لأعلى للانتقال إلى الصفحة التالية"
 }

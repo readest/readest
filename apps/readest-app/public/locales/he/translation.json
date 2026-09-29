@@ -2523,5 +2523,9 @@
   "Rows": "שורות",
   "Open Readest to show this bookshelf": "פתחו את Readest כדי להציג את המדף הזה",
   "Turn on Books in Manage Sync to upload this book": "הפעל את \"ספרים\" ב\"ניהול סנכרון\" כדי להעלות את הספר הזה",
-  "Shelf name": "שם המדף"
+  "Shelf name": "שם המדף",
+  "Hide Bookshelf Buttons": "הסתרת כפתורי מדף הספרים",
+  "Previous and Next in the library": "הקודם והבא בספרייה",
+  "Reverse Mouse Wheel": "היפוך גלגלת העכבר",
+  "Scroll up for the next page": "גלילה למעלה לדף הבא"
 }

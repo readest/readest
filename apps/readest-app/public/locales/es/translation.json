@@ -2523,5 +2523,9 @@
   "Rows": "Filas",
   "Open Readest to show this bookshelf": "Abre Readest para mostrar esta estantería",
   "Turn on Books in Manage Sync to upload this book": "Activa «Libros» en «Gestionar sincronización» para subir este libro",
-  "Shelf name": "Nombre de la estantería"
+  "Shelf name": "Nombre de la estantería",
+  "Hide Bookshelf Buttons": "Ocultar botones de la estantería",
+  "Previous and Next in the library": "Anterior y Siguiente en la biblioteca",
+  "Reverse Mouse Wheel": "Invertir rueda del ratón",
+  "Scroll up for the next page": "Desplazar hacia arriba para la página siguiente"
 }

@@ -2463,5 +2463,9 @@
   "Rows": "Zeilen",
   "Open Readest to show this bookshelf": "Öffne Readest, um dieses Bücherregal anzuzeigen",
   "Turn on Books in Manage Sync to upload this book": "Aktiviere „Bücher“ unter „Synchronisierung verwalten“, um dieses Buch hochzuladen",
-  "Shelf name": "Regalname"
+  "Shelf name": "Regalname",
+  "Hide Bookshelf Buttons": "Bücherregal-Schaltflächen ausblenden",
+  "Previous and Next in the library": "Vorherige und Nächste in der Bibliothek",
+  "Reverse Mouse Wheel": "Mausrad umkehren",
+  "Scroll up for the next page": "Nach oben scrollen für die nächste Seite"
 }

@@ -2463,5 +2463,9 @@
   "Rows": "පේළි",
   "Open Readest to show this bookshelf": "මෙම පොත් රාක්කය පෙන්වීමට Readest විවෘත කරන්න",
   "Turn on Books in Manage Sync to upload this book": "මෙම පොත උඩුගත කිරීමට \"සමමුහූර්තය කළමනාකරණය\" තුළ \"පොත්\" සක්‍රිය කරන්න",
-  "Shelf name": "රාක්කයේ නම"
+  "Shelf name": "රාක්කයේ නම",
+  "Hide Bookshelf Buttons": "පොත් රාක්ක බොත්තම් සඟවන්න",
+  "Previous and Next in the library": "පුස්තකාලයේ පෙර සහ ඊළඟ",
+  "Reverse Mouse Wheel": "මූසික රෝදය ප්‍රතිලෝම කරන්න",
+  "Scroll up for the next page": "ඊළඟ පිටුව සඳහා ඉහළට අනුචලනය කරන්න"
 }

@@ -2583,5 +2583,9 @@
   "Rows": "Vrstice",
   "Open Readest to show this bookshelf": "Odprite Readest za prikaz te knjižne police",
   "Turn on Books in Manage Sync to upload this book": "Za nalaganje te knjige vklopite »Knjige« v »Upravljaj sinhronizacijo«",
-  "Shelf name": "Ime police"
+  "Shelf name": "Ime police",
+  "Hide Bookshelf Buttons": "Skrij gumbe knjižne police",
+  "Previous and Next in the library": "Prejšnja in Naslednja v knjižnici",
+  "Reverse Mouse Wheel": "Obrni kolesce miške",
+  "Scroll up for the next page": "Za naslednjo stran se pomaknite navzgor"
 }

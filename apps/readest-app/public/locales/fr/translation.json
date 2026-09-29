@@ -2523,5 +2523,9 @@
   "Rows": "Lignes",
   "Open Readest to show this bookshelf": "Ouvrez Readest pour afficher cette étagère",
   "Turn on Books in Manage Sync to upload this book": "Activez « Livres » dans « Gérer la synchronisation » pour téléverser ce livre",
-  "Shelf name": "Nom de l'étagère"
+  "Shelf name": "Nom de l'étagère",
+  "Hide Bookshelf Buttons": "Masquer les boutons de l’étagère",
+  "Previous and Next in the library": "Précédent et Suivant dans la bibliothèque",
+  "Reverse Mouse Wheel": "Inverser la molette de la souris",
+  "Scroll up for the next page": "Défiler vers le haut pour la page suivante"
 }

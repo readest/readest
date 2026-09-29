@@ -2463,5 +2463,9 @@
   "Rows": "რიგები",
   "Open Readest to show this bookshelf": "ამ თაროს საჩვენებლად გახსენით Readest",
   "Turn on Books in Manage Sync to upload this book": "ამ წიგნის ასატვირთად ჩართეთ „წიგნები“ „სინქრონიზაციის მართვაში“",
-  "Shelf name": "თაროს სახელი"
+  "Shelf name": "თაროს სახელი",
+  "Hide Bookshelf Buttons": "წიგნის თაროს ღილაკების დამალვა",
+  "Previous and Next in the library": "წინა და შემდეგი ბიბლიოთეკაში",
+  "Reverse Mouse Wheel": "მაუსის ბორბლის შებრუნება",
+  "Scroll up for the next page": "შემდეგი გვერდისთვის გადაახვიეთ ზემოთ"
 }

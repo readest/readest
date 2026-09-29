@@ -2583,5 +2583,9 @@
   "Rows": "Строки",
   "Open Readest to show this bookshelf": "Откройте Readest, чтобы показать эту полку",
   "Turn on Books in Manage Sync to upload this book": "Включите «Книги» в разделе «Управление синхронизацией», чтобы загрузить эту книгу",
-  "Shelf name": "Название полки"
+  "Shelf name": "Название полки",
+  "Hide Bookshelf Buttons": "Скрыть кнопки книжной полки",
+  "Previous and Next in the library": "«Предыдущая» и «Следующая» в библиотеке",
+  "Reverse Mouse Wheel": "Обратное направление колёсика мыши",
+  "Scroll up for the next page": "Прокрутка вверх — следующая страница"
 }

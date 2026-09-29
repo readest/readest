@@ -2463,5 +2463,9 @@
   "Rows": "Rijen",
   "Open Readest to show this bookshelf": "Open Readest om deze boekenplank te tonen",
   "Turn on Books in Manage Sync to upload this book": "Zet \"Boeken\" aan in \"Synchronisatie beheren\" om dit boek te uploaden",
-  "Shelf name": "Naam van boekenkast"
+  "Shelf name": "Naam van boekenkast",
+  "Hide Bookshelf Buttons": "Boekenkastknoppen verbergen",
+  "Previous and Next in the library": "Vorige en Volgende in de bibliotheek",
+  "Reverse Mouse Wheel": "Muiswiel omkeren",
+  "Scroll up for the next page": "Scroll omhoog voor de volgende pagina"
 }

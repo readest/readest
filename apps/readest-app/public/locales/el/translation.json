@@ -2463,5 +2463,9 @@
   "Rows": "Γραμμές",
   "Open Readest to show this bookshelf": "Ανοίξτε το Readest για να εμφανιστεί αυτό το ράφι",
   "Turn on Books in Manage Sync to upload this book": "Ενεργοποιήστε τα «Βιβλία» στη «Διαχείριση συγχρονισμού» για να ανεβάσετε αυτό το βιβλίο",
-  "Shelf name": "Όνομα ραφιού"
+  "Shelf name": "Όνομα ραφιού",
+  "Hide Bookshelf Buttons": "Απόκρυψη κουμπιών ραφιού",
+  "Previous and Next in the library": "Προηγούμενο και Επόμενο στη βιβλιοθήκη",
+  "Reverse Mouse Wheel": "Αντιστροφή τροχού ποντικιού",
+  "Scroll up for the next page": "Κύλιση προς τα πάνω για την επόμενη σελίδα"
 }

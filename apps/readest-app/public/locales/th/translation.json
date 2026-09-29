@@ -2403,5 +2403,9 @@
   "Rows": "แถว",
   "Open Readest to show this bookshelf": "เปิด Readest เพื่อแสดงชั้นหนังสือนี้",
   "Turn on Books in Manage Sync to upload this book": "เปิด \"หนังสือ\" ใน \"จัดการการซิงค์\" เพื่ออัปโหลดหนังสือเล่มนี้",
-  "Shelf name": "ชื่อชั้นวาง"
+  "Shelf name": "ชื่อชั้นวาง",
+  "Hide Bookshelf Buttons": "ซ่อนปุ่มชั้นวางหนังสือ",
+  "Previous and Next in the library": "ก่อนหน้าและถัดไปในคลังหนังสือ",
+  "Reverse Mouse Wheel": "กลับทิศล้อเมาส์",
+  "Scroll up for the next page": "เลื่อนขึ้นเพื่อไปหน้าถัดไป"
 }

@@ -448,6 +448,10 @@ export interface SystemSettings {
    * otherwise land twice (issue #5979).
    */
   gamepadEnabled: boolean;
+  /** Mouse wheel down turns to the previous page in paginated mode (#6439). */
+  reverseWheelPaging: boolean;
+  /** Hide the e-ink library's Previous/Next buttons; keys still page. */
+  hideBookshelfPageButtons: boolean;
   alwaysShowStatusBar: boolean;
   openLastBooks: boolean;
   lastOpenBooks: string[];

@@ -525,6 +525,12 @@ const controlPanelItems = [
     section: 'Device',
   },
   {
+    id: 'settings.control.hideBookshelfPageButtons',
+    labelKey: _('Hide Bookshelf Buttons'),
+    keywords: ['eink', 'e-ink', 'library', 'bookshelf', 'previous', 'next', 'page', 'buttons'],
+    section: 'Device',
+  },
+  {
     id: 'settings.control.screenWakeLock',
     labelKey: _('Keep Screen Awake'),
     keywords: ['screen', 'wake', 'lock', 'awake', 'sleep', 'display'],
@@ -534,6 +540,12 @@ const controlPanelItems = [
     id: 'settings.control.autohideCursor',
     labelKey: _('Auto-hide Cursor'),
     keywords: ['cursor', 'mouse', 'pointer', 'hide', 'autohide', 'idle'],
+    section: 'Device',
+  },
+  {
+    id: 'settings.control.reverseWheelPaging',
+    labelKey: _('Reverse Mouse Wheel'),
+    keywords: ['mouse', 'wheel', 'scroll', 'reverse', 'invert', 'direction', 'page'],
     section: 'Device',
   },
   {

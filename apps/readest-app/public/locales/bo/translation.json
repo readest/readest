@@ -2403,5 +2403,9 @@
   "Rows": "ཐིག་ཕྲེང་",
   "Open Readest to show this bookshelf": "དཔེ་ཁྲི་འདི་སྟོན་པར་ Readest ཁ་ཕྱེ།",
   "Turn on Books in Manage Sync to upload this book": "དཔེ་དེབ་འདི་ཡར་སྤྲོད་བྱེད་པར་\"མཉམ་འགྲོ་སྟངས་འཛིན།\"ནང་\"དཔེ་ཆ།\"ཁ་ཕྱེ་རོགས།",
-  "Shelf name": "དེབ་སྡེབས་ཀྱི་མིང་།"
+  "Shelf name": "དེབ་སྡེབས་ཀྱི་མིང་།",
+  "Hide Bookshelf Buttons": "དེབ་སྡེབས་ཀྱི་མཐེབ་སྦས་པ།",
+  "Previous and Next in the library": "དེབ་མཛོད་ནང་གི་སྔོན་མ་དང་རྗེས་མ།",
+  "Reverse Mouse Wheel": "བྱི་བའི་འཁོར་ལོ་ལྡོག་པ།",
+  "Scroll up for the next page": "ཤོག་ལྷེ་རྗེས་མར་ཡར་འདྲེད།"
 }

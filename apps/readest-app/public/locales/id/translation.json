@@ -2403,5 +2403,9 @@
   "Rows": "Baris",
   "Open Readest to show this bookshelf": "Buka Readest untuk menampilkan rak buku ini",
   "Turn on Books in Manage Sync to upload this book": "Aktifkan \"Buku\" di \"Kelola sinkronisasi\" untuk mengunggah buku ini",
-  "Shelf name": "Nama rak"
+  "Shelf name": "Nama rak",
+  "Hide Bookshelf Buttons": "Sembunyikan Tombol Rak Buku",
+  "Previous and Next in the library": "Sebelumnya dan Berikutnya di perpustakaan",
+  "Reverse Mouse Wheel": "Balik Roda Mouse",
+  "Scroll up for the next page": "Gulir ke atas untuk halaman berikutnya"
 }

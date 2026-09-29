@@ -2403,5 +2403,9 @@
   "Rows": "Hàng",
   "Open Readest to show this bookshelf": "Mở Readest để hiển thị kệ sách này",
   "Turn on Books in Manage Sync to upload this book": "Bật \"Sách\" trong \"Quản lý đồng bộ\" để tải sách này lên",
-  "Shelf name": "Tên kệ sách"
+  "Shelf name": "Tên kệ sách",
+  "Hide Bookshelf Buttons": "Ẩn nút kệ sách",
+  "Previous and Next in the library": "Trước và Tiếp theo trong thư viện",
+  "Reverse Mouse Wheel": "Đảo chiều con lăn chuột",
+  "Scroll up for the next page": "Cuộn lên để sang trang tiếp theo"
 }

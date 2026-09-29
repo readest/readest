@@ -2403,5 +2403,9 @@
   "Rows": "행",
   "Open Readest to show this bookshelf": "이 책장을 표시하려면 Readest를 여세요",
   "Turn on Books in Manage Sync to upload this book": "이 책을 업로드하려면 \"동기화 관리\"에서 \"도서\"를 켜세요",
-  "Shelf name": "책장 이름"
+  "Shelf name": "책장 이름",
+  "Hide Bookshelf Buttons": "책장 버튼 숨기기",
+  "Previous and Next in the library": "라이브러리의 이전 및 다음",
+  "Reverse Mouse Wheel": "마우스 휠 반전",
+  "Scroll up for the next page": "위로 스크롤하면 다음 페이지"
 }

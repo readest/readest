@@ -2463,5 +2463,9 @@
   "Rows": "ردیف‌ها",
   "Open Readest to show this bookshelf": "برای نمایش این قفسه، Readest را باز کنید",
   "Turn on Books in Manage Sync to upload this book": "برای بارگذاری این کتاب، «کتاب‌ها» را در «مدیریت همگام‌سازی» روشن کنید",
-  "Shelf name": "نام قفسه"
+  "Shelf name": "نام قفسه",
+  "Hide Bookshelf Buttons": "پنهان کردن دکمه‌های قفسه",
+  "Previous and Next in the library": "قبلی و بعدی در کتابخانه",
+  "Reverse Mouse Wheel": "معکوس کردن چرخ ماوس",
+  "Scroll up for the next page": "برای صفحه‌ی بعد به بالا پیمایش کنید"
 }

@@ -2583,5 +2583,9 @@
   "Rows": "Рядки",
   "Open Readest to show this bookshelf": "Відкрийте Readest, щоб показати цю полицю",
   "Turn on Books in Manage Sync to upload this book": "Увімкніть «Книги» в розділі «Керування синхронізацією», щоб вивантажити цю книгу",
-  "Shelf name": "Назва полиці"
+  "Shelf name": "Назва полиці",
+  "Hide Bookshelf Buttons": "Приховати кнопки книжкової полиці",
+  "Previous and Next in the library": "«Попередня» і «Наступна» в бібліотеці",
+  "Reverse Mouse Wheel": "Зворотний напрямок коліщатка миші",
+  "Scroll up for the next page": "Прокрутка вгору — наступна сторінка"
 }

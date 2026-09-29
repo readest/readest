@@ -2463,5 +2463,9 @@
   "Rows": "पंक्तियाँ",
   "Open Readest to show this bookshelf": "इस बुकशेल्फ़ को दिखाने के लिए Readest खोलें",
   "Turn on Books in Manage Sync to upload this book": "इस पुस्तक को अपलोड करने के लिए \"सिंक प्रबंधित करें\" में \"पुस्तकें\" चालू करें",
-  "Shelf name": "शेल्फ़ का नाम"
+  "Shelf name": "शेल्फ़ का नाम",
+  "Hide Bookshelf Buttons": "पुस्तक शेल्फ बटन छिपाएँ",
+  "Previous and Next in the library": "लाइब्रेरी में पिछला और अगला",
+  "Reverse Mouse Wheel": "माउस व्हील उलटें",
+  "Scroll up for the next page": "अगले पृष्ठ के लिए ऊपर स्क्रॉल करें"
 }

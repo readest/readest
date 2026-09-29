@@ -2523,5 +2523,9 @@
   "Rows": "Righe",
   "Open Readest to show this bookshelf": "Apri Readest per mostrare questo scaffale",
   "Turn on Books in Manage Sync to upload this book": "Attiva «Libri» in «Gestisci sincronizzazione» per caricare questo libro",
-  "Shelf name": "Nome dello scaffale"
+  "Shelf name": "Nome dello scaffale",
+  "Hide Bookshelf Buttons": "Nascondi i pulsanti dello scaffale",
+  "Previous and Next in the library": "Precedente e Successivo nella libreria",
+  "Reverse Mouse Wheel": "Inverti la rotella del mouse",
+  "Scroll up for the next page": "Scorri verso l’alto per la pagina successiva"
 }

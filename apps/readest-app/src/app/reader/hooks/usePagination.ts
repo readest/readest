@@ -301,7 +301,9 @@ export const usePagination = (
           !isPanningView(viewRef.current, viewSettings)
         ) {
           // The wheel event is handled by the iframe itself in scrolled mode.
-          const { deltaY, deltaX } = msg.data;
+          const { deltaX } = msg.data;
+          const reverse = useSettingsStore.getState().settings.reverseWheelPaging;
+          const deltaY = reverse ? -msg.data.deltaY : msg.data.deltaY;
           if (deltaY > 0) {
             viewPagination(viewRef.current, viewSettings, 'down');
           } else if (deltaY < 0) {

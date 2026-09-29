@@ -2463,5 +2463,9 @@
   "Rows": "Satırlar",
   "Open Readest to show this bookshelf": "Bu rafı göstermek için Readest'i açın",
   "Turn on Books in Manage Sync to upload this book": "Bu kitabı yüklemek için \"Eşitlemeyi yönet\" bölümünde \"Kitaplar\"ı açın",
-  "Shelf name": "Kitaplık adı"
+  "Shelf name": "Kitaplık adı",
+  "Hide Bookshelf Buttons": "Kitaplık Düğmelerini Gizle",
+  "Previous and Next in the library": "Kütüphanede Önceki ve Sonraki",
+  "Reverse Mouse Wheel": "Fare Tekerleğini Ters Çevir",
+  "Scroll up for the next page": "Sonraki sayfa için yukarı kaydırın"
 }

@@ -2403,5 +2403,9 @@
   "Rows": "行",
   "Open Readest to show this bookshelf": "Readest を開くとこの本棚が表示されます",
   "Turn on Books in Manage Sync to upload this book": "この本をアップロードするには「同期を管理」で「書籍」をオンにしてください",
-  "Shelf name": "本棚の名前"
+  "Shelf name": "本棚の名前",
+  "Hide Bookshelf Buttons": "本棚のボタンを隠す",
+  "Previous and Next in the library": "ライブラリの「前へ」と「次へ」",
+  "Reverse Mouse Wheel": "マウスホイールを反転",
+  "Scroll up for the next page": "上にスクロールで次のページ"
 }

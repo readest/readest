@@ -208,6 +208,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     },
   },
   gamepadEnabled: true,
+  reverseWheelPaging: false,
+  hideBookshelfPageButtons: false,
   openLastBooks: false,
   lastOpenBooks: [],
   autoImportBooksOnOpen: false,

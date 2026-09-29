@@ -2463,5 +2463,9 @@
   "Rows": "সারি",
   "Open Readest to show this bookshelf": "এই বুকশেলফ দেখাতে Readest খুলুন",
   "Turn on Books in Manage Sync to upload this book": "এই বইটি আপলোড করতে \"সিঙ্ক ব্যবস্থাপনা\"-তে \"বই\" চালু করুন",
-  "Shelf name": "তাকের নাম"
+  "Shelf name": "তাকের নাম",
+  "Hide Bookshelf Buttons": "বইয়ের তাকের বোতাম লুকান",
+  "Previous and Next in the library": "লাইব্রেরিতে পূর্ববর্তী ও পরবর্তী",
+  "Reverse Mouse Wheel": "মাউস হুইল উল্টান",
+  "Scroll up for the next page": "পরবর্তী পৃষ্ঠার জন্য উপরে স্ক্রোল করুন"
 }

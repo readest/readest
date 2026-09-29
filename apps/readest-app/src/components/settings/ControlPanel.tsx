@@ -75,6 +75,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [gamepadEnabled, setGamepadEnabled] = useState(settings.gamepadEnabled);
+  const [reverseWheelPaging, setReverseWheelPaging] = useState(settings.reverseWheelPaging);
+  const [hideBookshelfPageButtons, setHideBookshelfPageButtons] = useState(
+    settings.hideBookshelfPageButtons,
+  );
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
@@ -306,6 +310,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveSysSettings(envConfig, 'gamepadEnabled', gamepadEnabled);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamepadEnabled]);
+
+  useEffect(() => {
+    if (reverseWheelPaging === settings.reverseWheelPaging) return;
+    saveSysSettings(envConfig, 'reverseWheelPaging', reverseWheelPaging);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reverseWheelPaging]);
+
+  useEffect(() => {
+    if (hideBookshelfPageButtons === settings.hideBookshelfPageButtons) return;
+    saveSysSettings(envConfig, 'hideBookshelfPageButtons', hideBookshelfPageButtons);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hideBookshelfPageButtons]);
 
   useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
@@ -550,6 +566,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setIsColorEink(!isColorEink)}
           data-setting-id='settings.control.colorEinkMode'
         />
+        <SettingsSwitchRow
+          label={_('Hide Bookshelf Buttons')}
+          description={_('Previous and Next in the library')}
+          checked={hideBookshelfPageButtons}
+          disabled={!isEink}
+          onChange={() => setHideBookshelfPageButtons(!hideBookshelfPageButtons)}
+          data-setting-id='settings.control.hideBookshelfPageButtons'
+        />
         {appService?.isMobileApp && (
           <SettingsSwitchRow
             label={_('System Screen Brightness')}
@@ -582,6 +606,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             data-setting-id='settings.control.autohideCursor'
           />
         )}
+        <SettingsSwitchRow
+          label={_('Reverse Mouse Wheel')}
+          description={_('Scroll up for the next page')}
+          checked={reverseWheelPaging}
+          onChange={() => setReverseWheelPaging(!reverseWheelPaging)}
+          data-setting-id='settings.control.reverseWheelPaging'
+        />
         <SettingsSwitchRow
           label={_('Gamepad Support')}
           description={_('Navigate with a connected controller')}

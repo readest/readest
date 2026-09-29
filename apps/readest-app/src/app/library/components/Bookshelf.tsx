@@ -959,6 +959,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         <div className='min-h-0 flex-1'>
           <BookshelfStream
             pageNavigation={!!settings.globalViewSettings?.isEink}
+            hidePageButtons={settings.hideBookshelfPageButtons}
             navigationBottomInset={
               selectModeActionsHeight ||
               (appService?.hasSafeAreaInset ? (safeAreaInsets?.bottom || 0) * 0.33 : 0)

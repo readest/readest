@@ -2463,5 +2463,9 @@
   "Rows": "Rader",
   "Open Readest to show this bookshelf": "Öppna Readest för att visa den här bokhyllan",
   "Turn on Books in Manage Sync to upload this book": "Aktivera ”Böcker” i ”Hantera synkronisering” för att ladda upp den här boken",
-  "Shelf name": "Hyllans namn"
+  "Shelf name": "Hyllans namn",
+  "Hide Bookshelf Buttons": "Dölj bokhyllans knappar",
+  "Previous and Next in the library": "Föregående och Nästa i biblioteket",
+  "Reverse Mouse Wheel": "Omvänt mushjul",
+  "Scroll up for the next page": "Scrolla uppåt för nästa sida"
 }

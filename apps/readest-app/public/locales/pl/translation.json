@@ -2583,5 +2583,9 @@
   "Rows": "Wiersze",
   "Open Readest to show this bookshelf": "Otwórz Readest, aby wyświetlić tę półkę",
   "Turn on Books in Manage Sync to upload this book": "Włącz „Książki” w „Zarządzaj synchronizacją”, aby przesłać tę książkę",
-  "Shelf name": "Nazwa półki"
+  "Shelf name": "Nazwa półki",
+  "Hide Bookshelf Buttons": "Ukryj przyciski półki",
+  "Previous and Next in the library": "Poprzednia i Następna w bibliotece",
+  "Reverse Mouse Wheel": "Odwróć kółko myszy",
+  "Scroll up for the next page": "Przewiń w górę, aby przejść do następnej strony"
 }

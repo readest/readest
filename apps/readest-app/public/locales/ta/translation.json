@@ -2463,5 +2463,9 @@
   "Rows": "வரிசைகள்",
   "Open Readest to show this bookshelf": "இந்த புத்தக அலமாரியைக் காட்ட Readest-ஐத் திறக்கவும்",
   "Turn on Books in Manage Sync to upload this book": "இந்தப் புத்தகத்தைப் பதிவேற்ற \"ஒத்திசைவை நிர்வகிக்க\" என்பதில் \"புத்தகங்கள்\" என்பதை இயக்கவும்",
-  "Shelf name": "அலமாரியின் பெயர்"
+  "Shelf name": "அலமாரியின் பெயர்",
+  "Hide Bookshelf Buttons": "புத்தக அலமாரி பொத்தான்களை மறை",
+  "Previous and Next in the library": "நூலகத்தில் முந்தையது மற்றும் அடுத்தது",
+  "Reverse Mouse Wheel": "மவுஸ் சக்கரத்தைத் தலைகீழாக்கு",
+  "Scroll up for the next page": "அடுத்த பக்கத்திற்கு மேலே உருட்டவும்"
 }

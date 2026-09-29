@@ -2463,5 +2463,9 @@
   "Rows": "Qatorlar",
   "Open Readest to show this bookshelf": "Ushbu javonni ko‘rsatish uchun Readest’ni oching",
   "Turn on Books in Manage Sync to upload this book": "Ushbu kitobni yuklash uchun \"Sinxronlashni boshqarish\" bo‘limida \"Kitoblar\"ni yoqing",
-  "Shelf name": "Javon nomi"
+  "Shelf name": "Javon nomi",
+  "Hide Bookshelf Buttons": "Kitob javoni tugmalarini yashirish",
+  "Previous and Next in the library": "Kutubxonada Oldingi va Keyingi",
+  "Reverse Mouse Wheel": "Sichqoncha g‘ildiragini teskari qilish",
+  "Scroll up for the next page": "Keyingi sahifa uchun yuqoriga aylantiring"
 }
