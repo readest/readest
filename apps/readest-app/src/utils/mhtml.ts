@@ -86,9 +86,14 @@ export const parseMhtml = (bytes: Uint8Array): MhtmlPage | null => {
   const page = parts.find((p) => /^text\/html\b/i.test(p.headers.get('content-type') ?? ''));
   if (!page) throw new Error('The MHTML archive has no HTML page');
 
-  const location = page.headers.get('content-location') ?? '';
-  // A relative part URL resolves against the message's own location (RFC 2557).
-  const partBase = top.headers.get('content-location') || location || undefined;
+  // Relative part URLs, the page's included, resolve against the message's
+  // own location (RFC 2557), which also stands in for a page without one.
+  const messageLocation = top.headers.get('content-location') || undefined;
+  const pageLocation = page.headers.get('content-location');
+  const location = pageLocation
+    ? resolveUrl(pageLocation, messageLocation)
+    : (messageLocation ?? '');
+  const partBase = messageLocation || location || undefined;
   const resources = new Map<string, string>();
   for (const part of parts) {
     // Only images are kept: makeHtmlBook drops the stylesheets, fonts and frames.

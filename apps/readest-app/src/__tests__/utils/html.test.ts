@@ -330,6 +330,36 @@ describe('makeHtmlBook with an MHTML archive', () => {
     );
   });
 
+  it('resolves the page against the message location when the page part has none', async () => {
+    const html = page(
+      `<article><h1>Archive</h1>${prose()}<p><img src="pics/a.gif" alt="A"></p>${prose()}</article>`,
+    );
+    const book = await make(
+      [
+        'Content-Location: https://example.com/archive/',
+        'Content-Type: multipart/related; boundary="b"',
+        '',
+        '--b',
+        'Content-Type: text/html',
+        '',
+        html,
+        '--b',
+        'Content-Type: image/gif',
+        'Content-Transfer-Encoding: base64',
+        'Content-Location: pics/a.gif',
+        '',
+        'AAAA',
+        '--b--',
+      ].join('\r\n'),
+      'archive.mhtml',
+      '',
+    );
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.querySelector('img[alt="A"]')?.getAttribute('src')).toBe(
+      'data:image/gif;base64,AAAA',
+    );
+  });
+
   it('rejects an archive without an HTML page instead of rendering the MIME text', async () => {
     const mhtml = [
       'Content-Type: multipart/related; boundary="b"',
