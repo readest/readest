@@ -129,3 +129,11 @@ CarPlay window did not register as touches; `System Events click at` needs the
 window raised (AXRaise errored -25204). chrox tapped the CarPlay icon by hand.
 `xcrun simctl io booted screenshot --display external` captures the CarPlay
 framebuffer (800x480).
+
+2026-09-30 (#6397 PR): readest/tauri `feat/cef` was rebased onto upstream
+alpha.27 (runtime decoupled from `tauri`). The app now declares
+`cef = ["dep:tauri-runtime-cef"]`, resolved on the wry graph to
+packages/tauri-runtime-cef-stub, so the `cef = []` stub in packages/tauri is no
+longer needed (harmless, left in place). The mirror stubs (`wry`, `x11`,
+`dbus`) now live on readest/tauri `feat/cef`. Old `feat/cef` head kept
+reachable as `archive/feat/cef-48d8802`, for the same fetch-by-SHA reason.

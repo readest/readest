@@ -20,18 +20,18 @@ default = ["wry"]
 # only for the webdriver test harness (scripts/test-tauri.sh) — every Linux
 # build that ships runs on CEF and turns this off
 # (`--no-default-features --features cef`, see scripts/tauri.mjs).
-wry = ["tauri/wry"]
-# Chromium Embedded Framework runtime, the Linux runtime (`pnpm tauri`). The
-# tauri CLI keys CEF bundling off this app feature, and it only becomes the
-# real runtime when `tauri` resolves to upstream's feat/cef through
-# .cargo/cef.toml; the readest fork carries a no-op stub of the same name so
-# the feature can be declared here on every platform.
-cef = ["tauri/cef"]
+wry = ["tauri/wry", "tauri/x11", "tauri/dbus"]
+# Chromium Embedded Framework runtime, the Linux runtime (`pnpm tauri`). On
+# feat/cef the runtime is its own crate, which tauri-build and the tauri CLI
+# detect to build and bundle for CEF. It is only real when .cargo/cef.toml
+# takes it from feat/cef; every other build resolves it to the empty stub in
+# packages/tauri-runtime-cef-stub (see the root Cargo.toml).
+cef = ["dep:tauri-runtime-cef"]
 # Internal feature to suppress warnings from old objc crate
 cargo-clippy = []
 # Enable WebDriver plugin for E2E testing (use with `tauri build --debug --features webdriver`)
 webdriver = ["tauri-plugin-webdriver"]
-devtools = ["tauri/devtools"]
+devtools = ["tauri/devtools", "tauri-runtime-cef?/devtools"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -56,16 +56,15 @@ reqwest = { version = "0.12", default-features = false, features = [
   "stream",
 ] }
 # `default-features = false` so the Linux CEF build (`pnpm tauri`) can pick
-# the webview runtime: tauri's defaults are spelled out here and `wry` comes
-# back through this crate's own `default` feature, so every other build is
-# unchanged. See .cargo/cef.toml.
+# the webview runtime: tauri's defaults are spelled out here and `wry` (with
+# its `x11` and `dbus` options, which feat/cef's runtime-less tauri lacks)
+# comes back through this crate's own `default` feature, so every other build
+# is unchanged. See .cargo/cef.toml.
 tauri = { version = "2", default-features = false, features = [
   "protocol-asset",
   "compression",
   "common-controls-v6",
   "dynamic-acl",
-  "x11",
-  "dbus",
 ] }
 tauri-build = "2"
 tauri-plugin-log = "2"
@@ -210,6 +209,8 @@ objc2-foundation = { version = "0.3", features = ["NSError", "NSArray"] }
 # runs out of process over D-Bus; other platforms keep the native chooser.
 [target.'cfg(target_os = "linux")'.dependencies]
 tauri-plugin-dialog = { version = "2", default-features = false, features = ["xdg-portal"] }
+# The CEF runtime, enabled by the `cef` feature above.
+tauri-runtime-cef = { version = "0.1", optional = true }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 tauri-plugin-dialog = "2"

@@ -54,6 +54,9 @@ tauri = { path = "packages/tauri/crates/tauri" }
 # without that cargo cannot unify swift-rs and silently drops the tauri patch
 # above in favour of crates.io tauri. See packages/swift-rs.
 swift-rs = { path = "packages/swift-rs" }
+# The Linux CEF runtime crate exists only on feat/cef; .cargo/cef.toml takes it
+# from there. Other builds only need it to resolve. See the stub's manifest.
+tauri-runtime-cef = { path = "packages/tauri-runtime-cef-stub" }
 
 [profile.release]
 # The Android library is 95% of the APK, and one codegen unit is the one knob

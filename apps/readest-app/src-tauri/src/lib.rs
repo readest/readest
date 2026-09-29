@@ -420,19 +420,23 @@ struct SingleInstancePayload {
 
 /// The webview runtime this build drives: CEF on Linux, Wry everywhere else
 /// (the `cef` feature is a no-op off Linux, see Cargo.toml). Named explicitly
-/// because several plugins pull in tauri's default `wry` feature even when CEF
-/// is selected, which leaves `Builder::default()` ambiguous there.
+/// so the app is statically dispatched on both tauri graphs: on feat/cef the
+/// runtime lives in its own crate and `Builder::default()` would be the
+/// type-erased `tauri::DynRuntime`.
 ///
 /// The one Linux build that is still Wry is the webdriver test harness
 /// (scripts/test-tauri.sh): tauri-plugin-webdriver drives the webview through
 /// webkit2gtk there and has no CEF backend.
 #[cfg(all(feature = "cef", target_os = "linux"))]
-type AppRuntime = tauri::Cef;
+type AppRuntime = tauri_runtime_cef::CefRuntime;
 #[cfg(not(all(feature = "cef", target_os = "linux")))]
 type AppRuntime = tauri::Wry;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-#[cfg_attr(all(feature = "cef", target_os = "linux"), tauri::cef_entry_point)]
+#[cfg_attr(
+    all(feature = "cef", target_os = "linux"),
+    tauri_runtime_cef::cef_entry_point
+)]
 pub fn run() {
     // The CEF runtime forces X11, even on Wayland. Check before initializing
     // Tauri, which otherwise hides the missing display behind CreateWindow.
@@ -522,19 +526,28 @@ pub fn run() {
 
     let builder = tauri::Builder::<AppRuntime>::new();
 
-    // `READEST_CDP_PORT=9222` hands the port to CEF as `--remote-debugging-port`,
-    // so a debugger or test driver can attach over the Chrome DevTools Protocol
-    // on 127.0.0.1 (see docs/testing.md). CEF also honours the switch straight
-    // off argv, but tauri-plugin-cli parses the same argv for open-with paths and
-    // warns about the unknown argument on every launch, so the env var is the
-    // supported way in.
     #[cfg(all(feature = "cef", target_os = "linux"))]
-    let builder = match std::env::var("READEST_CDP_PORT") {
-        Ok(port) if !port.is_empty() => builder.runtime_init_attrs(
-            tauri::CefRuntimeAttributes::default()
-                .command_line_arg("remote-debugging-port", Some(port)),
-        ),
-        _ => builder,
+    let builder = {
+        // Chromium runs unsandboxed, as it always has here. The runtime's
+        // default keeps the sandbox outside AppImages, but where unprivileged
+        // user namespaces are restricted (Ubuntu 24.04+) that needs a
+        // root-owned setuid chrome-sandbox, which only the deb installs:
+        // Flatpak, Nix and unpacked builds would abort at startup instead.
+        let cef =
+            tauri_runtime_cef::Cef::default().sandbox(tauri_runtime_cef::SandboxPolicy::Disabled);
+        // `READEST_CDP_PORT=9222` starts CEF's DevTools protocol server on that
+        // port, so a debugger or test driver can attach over the Chrome DevTools
+        // Protocol on 127.0.0.1 (see docs/testing.md). The runtime refuses a
+        // `--remote-debugging-port` switch it was not asked for, so this is the
+        // only way in.
+        let cef = match std::env::var("READEST_CDP_PORT").map(|port| port.parse::<u16>()) {
+            Ok(Ok(port)) => cef.remote_debugging(tauri_runtime_cef::RemoteDebugging::Port {
+                port,
+                allowed_origins: Vec::new(),
+            }),
+            _ => cef,
+        };
+        builder.runtime(cef)
     };
 
     let builder = builder

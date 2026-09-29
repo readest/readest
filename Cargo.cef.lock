@@ -77,6 +77,7 @@ dependencies = [
  "tauri-plugin-websocket",
  "tauri-plugin-webview-upgrade",
  "tauri-plugin-window-state",
+ "tauri-runtime-cef",
  "thiserror 2.0.20",
  "tokio",
  "tokio-stream",
@@ -3198,47 +3199,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gdkwayland-sys"
-version = "0.18.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "140071d506d223f7572b9f09b5e155afbd77428cd5cc7af8f2694c41d98dfe69"
-dependencies = [
- "gdk-sys",
- "glib-sys 0.18.1",
- "gobject-sys 0.18.0",
- "libc",
- "pkg-config",
- "system-deps 6.2.2",
-]
-
-[[package]]
-name = "gdkx11"
-version = "0.18.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3caa00e14351bebbc8183b3c36690327eb77c49abc2268dd4bd36b856db3fbfe"
-dependencies = [
- "gdk",
- "gdkx11-sys",
- "gio",
- "glib 0.18.5",
- "libc",
- "x11",
-]
-
-[[package]]
-name = "gdkx11-sys"
-version = "0.18.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e2e7445fe01ac26f11601db260dd8608fe172514eb63b3b5e261ea6b0f4428d"
-dependencies = [
- "gdk-sys",
- "glib-sys 0.18.1",
- "libc",
- "system-deps 6.2.2",
- "x11",
-]
-
-[[package]]
 name = "genawaiter"
 version = "0.99.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5355,7 +5315,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a12a8ed07aefc768292f076dc3ac8c48f3781c8f2d5851dd3d98950e8c5a89f"
 dependencies = [
  "objc2-encode",
- "objc2-exception-helper",
 ]
 
 [[package]]
@@ -5513,15 +5472,6 @@ name = "objc2-encode"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef25abbcd74fb2609453eb695bd2f860d389e457f67dc17cafc8b8cbc89d0c33"
-
-[[package]]
-name = "objc2-exception-helper"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7a1c5fbb72d7735b076bb47b578523aedc40f3c439bea6dfd595c089d79d98a"
-dependencies = [
- "cc",
-]
 
 [[package]]
 name = "objc2-foundation"
@@ -8609,58 +8559,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tao"
-version = "0.37.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d12c8607b01516c5d4a37e471a9cfb40b4a25cebce8fecbc6a559e125e51b6b"
-dependencies = [
- "bitflags 2.13.0",
- "block2",
- "core-foundation 0.10.1",
- "core-graphics 0.25.0",
- "crossbeam-channel",
- "dbus",
- "dispatch2",
- "dlopen2 0.8.2",
- "dpi",
- "gdkwayland-sys",
- "gdkx11-sys",
- "gtk",
- "jni 0.21.1",
- "libc",
- "log",
- "ndk",
- "ndk-context",
- "ndk-sys",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "objc2-ui-kit",
- "once_cell",
- "parking_lot",
- "percent-encoding",
- "raw-window-handle",
- "tao-macros",
- "unicode-segmentation",
- "url",
- "windows 0.62.2",
- "windows-core 0.62.2",
- "windows-version",
- "x11-dl",
-]
-
-[[package]]
-name = "tao-macros"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f7eeb6d99155545da6150a1795945f16ac9c178deb2a5f2e74d776107bd5849"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.118",
-]
-
-[[package]]
 name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8692,7 +8590,7 @@ checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 [[package]]
 name = "tauri"
 version = "2.11.5"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "anyhow",
  "bytes",
@@ -8728,15 +8626,11 @@ dependencies = [
  "tauri-build",
  "tauri-macros",
  "tauri-runtime",
- "tauri-runtime-cef",
- "tauri-runtime-wry",
  "tauri-utils",
  "thiserror 2.0.20",
  "tokio",
  "tray-icon",
  "url",
- "webkit2gtk",
- "webview2-com",
  "window-vibrancy",
  "windows 0.61.3",
 ]
@@ -8744,7 +8638,7 @@ dependencies = [
 [[package]]
 name = "tauri-build"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "anyhow",
  "cargo_toml",
@@ -8764,7 +8658,7 @@ dependencies = [
 [[package]]
 name = "tauri-codegen"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "base64 0.22.1",
  "brotli",
@@ -8790,7 +8684,7 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -8803,7 +8697,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin"
 version = "2.6.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "anyhow",
  "glob",
@@ -8818,7 +8712,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-biometric"
 version = "2.3.2"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "log",
  "serde",
@@ -8832,7 +8726,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-cli"
 version = "2.4.1"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "clap",
  "log",
@@ -8846,7 +8740,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-clipboard-manager"
 version = "2.3.2"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "arboard",
  "log",
@@ -8860,7 +8754,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-deep-link"
 version = "2.4.9"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "dunce",
  "plist",
@@ -8901,7 +8795,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-dialog"
 version = "2.7.1"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "log",
  "raw-window-handle",
@@ -8918,7 +8812,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-fs"
 version = "2.5.1"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "anyhow",
  "dunce",
@@ -8939,7 +8833,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-haptics"
 version = "2.3.2"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "log",
  "serde",
@@ -8952,7 +8846,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-http"
 version = "2.5.9"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "bytes",
  "cookie_store",
@@ -8975,7 +8869,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-log"
 version = "2.8.0"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "android_logger",
  "fern",
@@ -9051,7 +8945,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-opener"
 version = "2.5.4"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "dunce",
  "glob",
@@ -9072,7 +8966,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-os"
 version = "2.3.2"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "gethostname",
  "log",
@@ -9089,7 +8983,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-persisted-scope"
 version = "2.3.7"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "aho-corasick",
  "bincode",
@@ -9104,7 +8998,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-process"
 version = "2.3.1"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "tauri",
  "tauri-plugin",
@@ -9143,13 +9037,13 @@ dependencies = [
  "tauri-plugin",
  "thiserror 2.0.20",
  "windows 0.61.3",
- "windows-collections 0.2.0",
+ "windows-collections",
 ]
 
 [[package]]
 name = "tauri-plugin-shell"
 version = "2.3.5"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "encoding_rs",
  "log",
@@ -9181,7 +9075,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-single-instance"
 version = "2.4.2"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "serde",
  "serde_json",
@@ -9211,7 +9105,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-updater"
 version = "2.10.1"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "base64 0.22.1",
  "dirs",
@@ -9276,7 +9170,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-websocket"
 version = "2.4.2"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "futures-util",
  "http",
@@ -9303,7 +9197,7 @@ dependencies = [
 [[package]]
 name = "tauri-plugin-window-state"
 version = "2.4.1"
-source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#1423992771e0b57582ca3b06a6adc46ec26aa784"
+source = "git+https://github.com/readest/tauri-plugins-workspace?branch=feat/cef#835adce473e8f059f6ba84660dd07bcb19fb9030"
 dependencies = [
  "bitflags 2.13.0",
  "log",
@@ -9317,7 +9211,7 @@ dependencies = [
 [[package]]
 name = "tauri-runtime"
 version = "2.11.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "cookie",
  "dpi",
@@ -9338,7 +9232,7 @@ dependencies = [
 [[package]]
 name = "tauri-runtime-cef"
 version = "0.1.0"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "base64 0.22.1",
  "cef",
@@ -9362,6 +9256,8 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "softbuffer",
+ "tauri",
+ "tauri-macros",
  "tauri-runtime",
  "tauri-utils",
  "url",
@@ -9371,35 +9267,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "tauri-runtime-wry"
-version = "2.11.4"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
-dependencies = [
- "gtk",
- "http",
- "jni 0.21.1",
- "log",
- "objc2",
- "objc2-app-kit",
- "objc2-web-kit",
- "once_cell",
- "percent-encoding",
- "raw-window-handle",
- "softbuffer",
- "tao",
- "tauri-runtime",
- "tauri-utils",
- "url",
- "webkit2gtk",
- "webview2-com",
- "windows 0.61.3",
- "wry",
-]
-
-[[package]]
 name = "tauri-utils"
 version = "2.9.3"
-source = "git+https://github.com/readest/tauri?branch=feat/cef#48d880217ecf325620f59f2a1c6ab31686a0c335"
+source = "git+https://github.com/readest/tauri?branch=feat/cef#f238ea5b8e0c533423f2df9d81ac275fa3037446"
 dependencies = [
  "anyhow",
  "brotli",
@@ -11074,23 +10944,11 @@ version = "0.61.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9babd3a767a4c1aef6900409f85f5d53ce2544ccdfaa86dad48c91782c6d6893"
 dependencies = [
- "windows-collections 0.2.0",
+ "windows-collections",
  "windows-core 0.61.2",
- "windows-future 0.2.1",
+ "windows-future",
  "windows-link 0.1.3",
- "windows-numerics 0.2.0",
-]
-
-[[package]]
-name = "windows"
-version = "0.62.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580"
-dependencies = [
- "windows-collections 0.3.2",
- "windows-core 0.62.2",
- "windows-future 0.3.2",
- "windows-numerics 0.3.1",
+ "windows-numerics",
 ]
 
 [[package]]
@@ -11100,15 +10958,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3beeceb5e5cfd9eb1d76b381630e82c4241ccd0d27f1a39ed41b2760b255c5e8"
 dependencies = [
  "windows-core 0.61.2",
-]
-
-[[package]]
-name = "windows-collections"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23b2d95af1a8a14a3c7367e1ed4fc9c20e0a26e79551b1454d72583c97cc6610"
-dependencies = [
- "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -11170,18 +11019,7 @@ checksum = "fc6a41e98427b19fe4b73c550f060b59fa592d7d686537eebf9385621bfbad8e"
 dependencies = [
  "windows-core 0.61.2",
  "windows-link 0.1.3",
- "windows-threading 0.1.0",
-]
-
-[[package]]
-name = "windows-future"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1d6f90251fe18a279739e78025bd6ddc52a7e22f921070ccdc67dde84c605cb"
-dependencies = [
- "windows-core 0.62.2",
- "windows-link 0.2.1",
- "windows-threading 0.2.1",
+ "windows-threading",
 ]
 
 [[package]]
@@ -11283,16 +11121,6 @@ checksum = "9150af68066c4c5c07ddc0ce30421554771e528bde427614c61038bc2c92c2b1"
 dependencies = [
  "windows-core 0.61.2",
  "windows-link 0.1.3",
-]
-
-[[package]]
-name = "windows-numerics"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e2e40844ac143cdb44aead537bbf727de9b044e107a0f1220392177d15b0f26"
-dependencies = [
- "windows-core 0.62.2",
- "windows-link 0.2.1",
 ]
 
 [[package]]
@@ -11494,15 +11322,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b66463ad2e0ea3bbf808b7f1d371311c80e115c0b71d60efc142cafbcfb057a6"
 dependencies = [
  "windows-link 0.1.3",
-]
-
-[[package]]
-name = "windows-threading"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3949bd5b99cafdf1c7ca86b43ca564028dfe27d66958f2470940f73d86d75b37"
-dependencies = [
- "windows-link 0.2.1",
 ]
 
 [[package]]
@@ -12012,66 +11831,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
 
 [[package]]
-name = "wry"
-version = "0.56.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "375becb4aded9913f736443cf88000c6311478db69814cc06070465e4cc44c98"
-dependencies = [
- "base64 0.22.1",
- "block2",
- "cookie",
- "crossbeam-channel",
- "dirs",
- "dom_query",
- "dpi",
- "dunce",
- "gdkx11",
- "gtk",
- "http",
- "javascriptcore-rs",
- "jni 0.21.1",
- "libc",
- "ndk",
- "objc2",
- "objc2-app-kit",
- "objc2-core-foundation",
- "objc2-foundation",
- "objc2-ui-kit",
- "objc2-web-kit",
- "once_cell",
- "percent-encoding",
- "raw-window-handle",
- "sha2 0.10.9",
- "soup3",
- "tao-macros",
- "thiserror 2.0.20",
- "url",
- "webkit2gtk",
- "webkit2gtk-sys",
- "webview2-com",
- "windows 0.61.3",
- "windows-core 0.61.2",
- "windows-version",
- "x11-dl",
-]
-
-[[package]]
 name = "wyz"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
 dependencies = [
  "tap",
-]
-
-[[package]]
-name = "x11"
-version = "2.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "502da5464ccd04011667b11c435cb992822c2c0dbde1770c988480d312a0db2e"
-dependencies = [
- "libc",
- "pkg-config",
 ]
 
 [[package]]
