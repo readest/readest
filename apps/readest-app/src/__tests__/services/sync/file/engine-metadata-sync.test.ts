@@ -427,6 +427,32 @@ describe('FileSyncEngine field-only edits (#6414)', () => {
     expect(saveBookCover).not.toHaveBeenCalled();
   });
 
+  test('publishes a group-only local edit to the index without pushing the config', async () => {
+    const local = makeLocalBook({
+      groupId: 'g1',
+      groupName: 'Sci-Fi',
+      groupUpdatedAt: 300,
+      updatedAt: 100,
+    });
+    const remote = makeLocalBook({ updatedAt: 100 });
+    const capture: { index?: RemoteLibraryIndex | null; config?: RemoteBookConfig | null } = {};
+    const provider = makeProvider(makeRemoteIndex(remote), null, capture);
+
+    const engine = new FileSyncEngine(provider, makeStore());
+    await engine.syncLibrary([local], {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'pc-device',
+    });
+
+    expect(capture.index?.books.find((b) => b.hash === 'h1')).toMatchObject({
+      groupId: 'g1',
+      groupName: 'Sci-Fi',
+      groupUpdatedAt: 300,
+    });
+    expect(capture.config).toBeUndefined();
+  });
+
   test('pushes the config and cover for a metadata-only local edit', async () => {
     const local = makeLocalBook({ title: 'Edited', metadataUpdatedAt: 300, updatedAt: 100 });
     const remote = makeLocalBook({ updatedAt: 100 });

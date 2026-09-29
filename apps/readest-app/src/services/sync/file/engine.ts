@@ -24,6 +24,7 @@ import {
 } from './wire';
 import {
   isRemoteBookClockNewer,
+  isRemoteBookRowNewer,
   isRemoteBookMissingLocally,
   mergeBookConfig,
   mergeBookMetadata,
@@ -1342,7 +1343,9 @@ export class FileSyncEngine {
           if (!!r.deletedAt !== !!b.deletedAt) return true;
           if ((r.fileSyncDeletionRequestedAt ?? 0) !== (b.fileSyncDeletionRequestedAt ?? 0))
             return true;
-          return (b.updatedAt ?? 0) > (r.updatedAt ?? 0);
+          // Local row newer on any clock — a group-only edit leaves updatedAt
+          // alone (#6414) but still has to reach library.json.
+          return isRemoteBookRowNewer(r, b);
         });
 
       if (indexDirty) {
