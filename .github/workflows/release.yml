@@ -312,9 +312,9 @@ jobs:
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    # The Android build alone runs ~50min on a cold cache, so 60 was not enough
-    # headroom once setup and signing are counted.
-    timeout-minutes: 90
+    # The Android build alone runs ~60min and its step is capped at 90 below;
+    # the job backstop leaves room for setup and signing on top of that.
+    timeout-minutes: ${{ matrix.config.release == 'android' && 110 || 90 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -448,6 +448,7 @@ jobs:
 
       - name: build and upload Android apks
         if: matrix.config.release == 'android'
+        timeout-minutes: 90
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
