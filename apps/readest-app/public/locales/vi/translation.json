@@ -2401,5 +2401,6 @@
   "Follows the theme color": "Theo màu chủ đề",
   "Background Style": "Kiểu nền",
   "Rows": "Hàng",
-  "Open Readest to show this bookshelf": "Mở Readest để hiển thị kệ sách này"
+  "Open Readest to show this bookshelf": "Mở Readest để hiển thị kệ sách này",
+  "Turn on Books in Manage Sync to upload this book": "Bật \"Sách\" trong \"Quản lý đồng bộ\" để tải sách này lên"
 }

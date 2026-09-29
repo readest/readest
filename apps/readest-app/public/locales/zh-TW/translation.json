@@ -2401,5 +2401,6 @@
   "Follows the theme color": "跟隨主題顏色",
   "Background Style": "背景樣式",
   "Rows": "列數",
-  "Open Readest to show this bookshelf": "開啟 Readest 以顯示此書架"
+  "Open Readest to show this bookshelf": "開啟 Readest 以顯示此書架",
+  "Turn on Books in Manage Sync to upload this book": "請在「管理同步」中開啟「書籍」以上傳此書"
 }

@@ -2461,5 +2461,6 @@
   "Follows the theme color": "მიჰყვება თემის ფერს",
   "Background Style": "ფონის სტილი",
   "Rows": "რიგები",
-  "Open Readest to show this bookshelf": "ამ თაროს საჩვენებლად გახსენით Readest"
+  "Open Readest to show this bookshelf": "ამ თაროს საჩვენებლად გახსენით Readest",
+  "Turn on Books in Manage Sync to upload this book": "ამ წიგნის ასატვირთად ჩართეთ „წიგნები“ „სინქრონიზაციის მართვაში“"
 }

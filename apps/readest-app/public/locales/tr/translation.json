@@ -2461,5 +2461,6 @@
   "Follows the theme color": "Tema rengini kullanır",
   "Background Style": "Arka Plan Stili",
   "Rows": "Satırlar",
-  "Open Readest to show this bookshelf": "Bu rafı göstermek için Readest'i açın"
+  "Open Readest to show this bookshelf": "Bu rafı göstermek için Readest'i açın",
+  "Turn on Books in Manage Sync to upload this book": "Bu kitabı yüklemek için \"Eşitlemeyi yönet\" bölümünde \"Kitaplar\"ı açın"
 }

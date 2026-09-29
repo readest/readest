@@ -2461,5 +2461,6 @@
   "Follows the theme color": "Följer temafärgen",
   "Background Style": "Bakgrundsstil",
   "Rows": "Rader",
-  "Open Readest to show this bookshelf": "Öppna Readest för att visa den här bokhyllan"
+  "Open Readest to show this bookshelf": "Öppna Readest för att visa den här bokhyllan",
+  "Turn on Books in Manage Sync to upload this book": "Aktivera ”Böcker” i ”Hantera synkronisering” för att ladda upp den här boken"
 }

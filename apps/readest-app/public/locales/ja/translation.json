@@ -2401,5 +2401,6 @@
   "Follows the theme color": "テーマカラーに従う",
   "Background Style": "背景スタイル",
   "Rows": "行",
-  "Open Readest to show this bookshelf": "Readest を開くとこの本棚が表示されます"
+  "Open Readest to show this bookshelf": "Readest を開くとこの本棚が表示されます",
+  "Turn on Books in Manage Sync to upload this book": "この本をアップロードするには「同期を管理」で「書籍」をオンにしてください"
 }

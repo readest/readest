@@ -2401,5 +2401,6 @@
   "Follows the theme color": "བརྗོད་བྱའི་ཚོན་མདོག་ལ་རྗེས་སུ་འབྲང་།",
   "Background Style": "གནས་སྟངས་ཀྱི་རྣམ་པ།",
   "Rows": "ཐིག་ཕྲེང་",
-  "Open Readest to show this bookshelf": "དཔེ་ཁྲི་འདི་སྟོན་པར་ Readest ཁ་ཕྱེ།"
+  "Open Readest to show this bookshelf": "དཔེ་ཁྲི་འདི་སྟོན་པར་ Readest ཁ་ཕྱེ།",
+  "Turn on Books in Manage Sync to upload this book": "དཔེ་དེབ་འདི་ཡར་སྤྲོད་བྱེད་པར་\"མཉམ་འགྲོ་སྟངས་འཛིན།\"ནང་\"དཔེ་ཆ།\"ཁ་ཕྱེ་རོགས།"
 }

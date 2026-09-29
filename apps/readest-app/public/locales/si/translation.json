@@ -2461,5 +2461,6 @@
   "Follows the theme color": "තේමා වර්ණය අනුගමනය කරයි",
   "Background Style": "පසුබිම් විලාසය",
   "Rows": "පේළි",
-  "Open Readest to show this bookshelf": "මෙම පොත් රාක්කය පෙන්වීමට Readest විවෘත කරන්න"
+  "Open Readest to show this bookshelf": "මෙම පොත් රාක්කය පෙන්වීමට Readest විවෘත කරන්න",
+  "Turn on Books in Manage Sync to upload this book": "මෙම පොත උඩුගත කිරීමට \"සමමුහූර්තය කළමනාකරණය\" තුළ \"පොත්\" සක්‍රිය කරන්න"
 }

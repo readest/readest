@@ -2461,5 +2461,6 @@
   "Follows the theme color": "थीम रंग का अनुसरण करता है",
   "Background Style": "पृष्ठभूमि शैली",
   "Rows": "पंक्तियाँ",
-  "Open Readest to show this bookshelf": "इस बुकशेल्फ़ को दिखाने के लिए Readest खोलें"
+  "Open Readest to show this bookshelf": "इस बुकशेल्फ़ को दिखाने के लिए Readest खोलें",
+  "Turn on Books in Manage Sync to upload this book": "इस पुस्तक को अपलोड करने के लिए \"सिंक प्रबंधित करें\" में \"पुस्तकें\" चालू करें"
 }

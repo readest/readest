@@ -2461,5 +2461,6 @@
   "Follows the theme color": "Mavzu rangidan foydalanadi",
   "Background Style": "Fon uslubi",
   "Rows": "Qatorlar",
-  "Open Readest to show this bookshelf": "Ushbu javonni ko‘rsatish uchun Readest’ni oching"
+  "Open Readest to show this bookshelf": "Ushbu javonni ko‘rsatish uchun Readest’ni oching",
+  "Turn on Books in Manage Sync to upload this book": "Ushbu kitobni yuklash uchun \"Sinxronlashni boshqarish\" bo‘limida \"Kitoblar\"ni yoqing"
 }

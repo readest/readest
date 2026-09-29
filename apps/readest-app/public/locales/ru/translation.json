@@ -2581,5 +2581,6 @@
   "Follows the theme color": "Следует цвету темы",
   "Background Style": "Стиль фона",
   "Rows": "Строки",
-  "Open Readest to show this bookshelf": "Откройте Readest, чтобы показать эту полку"
+  "Open Readest to show this bookshelf": "Откройте Readest, чтобы показать эту полку",
+  "Turn on Books in Manage Sync to upload this book": "Включите «Книги» в разделе «Управление синхронизацией», чтобы загрузить эту книгу"
 }
