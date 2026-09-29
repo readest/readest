@@ -32,6 +32,7 @@ export const useAnnotationEditor = ({
 
   const view = getView(bookKey);
   const editingAnnotationRef = useRef(annotation);
+  const rangeRequestRef = useRef(0);
   const [handlePositions, setHandlePositions] = useState<HandlePositions | null>(null);
 
   const getHandlePositionsFromRange = useCallback(
@@ -45,6 +46,7 @@ export const useAnnotationEditor = ({
   const applyAnnotationRange = useCallback(
     async (newRange: Range, targetIndex: number, isVertical: boolean, isDragging: boolean) => {
       if (!editingAnnotationRef.current || !view) return;
+      const request = ++rangeRequestRef.current;
 
       const newPositions = getHandlePositionsFromRange(newRange, isVertical);
       if (newPositions) {
@@ -53,6 +55,10 @@ export const useAnnotationEditor = ({
 
       const newCfi = view.getCFI(targetIndex, newRange);
       const newText = await getAnnotationText(newRange);
+      // A later drag or pointer-up commit owns the range. Applying a late
+      // preview could otherwise paint a CFI that no longer matches the saved
+      // record, leaving an orphaned highlight when that record is deleted.
+      if (request !== rangeRequestRef.current) return;
 
       if (newCfi && newText) {
         const config = getConfig(bookKey)!;
@@ -75,9 +81,19 @@ export const useAnnotationEditor = ({
           // range must tear down *both* — dropping only the highlight left the
           // note bubble stranded at the old anchor while a new one was drawn at
           // the new one, so one highlight showed several note markers (#5538).
+          // Mid-drag the saved record still holds the pre-drag range, and the
+          // reader repaints saved records on every relocate (a corner auto-turn,
+          // a resize). Tear that range down too, or it outlives the record as an
+          // untappable ghost once the highlight is deleted (#6141).
           const views = getViewsById(bookKey.split('-')[0]!);
           const hasNote = !!existingAnnotation.note?.trim();
-          views.forEach((v) => removeBookNoteOverlays(v, editingAnnotationRef.current));
+          const previous = editingAnnotationRef.current;
+          views.forEach((v) => {
+            removeBookNoteOverlays(v, previous);
+            if (existingAnnotation.cfi !== previous.cfi) {
+              removeBookNoteOverlays(v, existingAnnotation);
+            }
+          });
           views.forEach((v) => v?.addAnnotation(updatedAnnotation));
           if (hasNote) {
             views.forEach((v) =>

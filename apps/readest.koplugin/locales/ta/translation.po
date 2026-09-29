@@ -518,6 +518,9 @@ msgstr "புதிய குறிப்புகள் காணப்பட�
 msgid "%1 annotations pulled"
 msgstr "%1 குறிப்புகள் பெறப்பட்டன"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "உங்கள் Readest அமர்வு காலாவதியானது. மீண்டும் உள்நுழைக."
+
 msgid "Login"
 msgstr "உள்நுழை"
 

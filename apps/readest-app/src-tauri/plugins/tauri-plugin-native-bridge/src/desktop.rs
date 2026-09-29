@@ -426,8 +426,25 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
-    pub fn update_reading_widget(&self, _payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+    pub fn update_bookshelf_widget(
+        &self,
+        _payload: UpdateBookshelfWidgetRequest,
+    ) -> crate::Result<UpdateBookshelfWidgetResponse> {
         // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(UpdateBookshelfWidgetResponse::default())
+    }
+
+    pub fn get_bookshelf_widget_instances(
+        &self,
+    ) -> crate::Result<GetBookshelfWidgetInstancesResponse> {
+        // No home-screen widgets on desktop.
+        Ok(GetBookshelfWidgetInstancesResponse { instances: vec![] })
+    }
+
+    pub fn set_bookshelf_widget_catalog(
+        &self,
+        _payload: BookshelfWidgetCatalog,
+    ) -> crate::Result<()> {
         Ok(())
     }
 
@@ -596,10 +613,7 @@ mod tests {
 
     #[test]
     fn windows_secure_item_detects_legacy_password_encoding() {
-        let encoded = "legacy"
-            .encode_utf16()
-            .flat_map(u16::to_le_bytes)
-            .collect();
+        let encoded = "legacy".encode_utf16().flat_map(u16::to_le_bytes).collect();
 
         assert_eq!(decode_windows_secure_item_value(encoded).unwrap(), None);
     }

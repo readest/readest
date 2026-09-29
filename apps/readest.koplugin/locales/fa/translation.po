@@ -518,6 +518,9 @@ msgstr "یادداشت جدیدی یافت نشد"
 msgid "%1 annotations pulled"
 msgstr "%1 یادداشت دریافت شد"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "نشست Readest شما منقضی شده است. لطفاً دوباره وارد شوید."
+
 msgid "Login"
 msgstr "ورود"
 

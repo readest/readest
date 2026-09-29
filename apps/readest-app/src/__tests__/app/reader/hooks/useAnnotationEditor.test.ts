@@ -37,7 +37,8 @@ vi.mock('@/app/reader/utils/annotatorUtil', async () => {
   return { ...actual, getHandlePositionsFromRange: () => null };
 });
 
-import { NOTE_PREFIX } from '@/types/view';
+import { FoliateView, NOTE_PREFIX } from '@/types/view';
+import { removeBookNoteOverlays } from '@/app/reader/utils/annotatorUtil';
 import { useAnnotationEditor } from '@/app/reader/hooks/useAnnotationEditor';
 
 const annotation = {
@@ -50,13 +51,16 @@ const annotation = {
   note: '',
 } as unknown as BookNote;
 
-const setup = (edited: BookNote = annotation) => {
+const setup = (
+  edited: BookNote = annotation,
+  getAnnotationText: (range: Range) => Promise<string> = vi.fn(async () => 'edited text'),
+) => {
   const setSelection = vi.fn();
   const hook = renderHook(() =>
     useAnnotationEditor({
       bookKey: 'book-1',
       annotation: edited,
-      getAnnotationText: vi.fn(async () => 'edited text'),
+      getAnnotationText,
       setSelection: setSelection as never,
     }),
   );
@@ -67,6 +71,8 @@ const range = {} as Range;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  h.view.getCFI.mockReset().mockReturnValue('new-cfi');
+  h.view.addAnnotation.mockReset();
   h.annotations = [{ ...annotation }];
 });
 
@@ -97,6 +103,67 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     expect(setSelection).not.toHaveBeenCalled();
   });
 
+  test.each([
+    true,
+    false,
+  ])('a late range result cannot replace a newer commit (isDragging=%s)', async (isDragging) => {
+    const noted = { ...annotation, note: 'my note' } as BookNote;
+    h.annotations = [{ ...noted }];
+    const overlays = new Set([noted.cfi, `${NOTE_PREFIX}${noted.cfi}`]);
+    h.view.addAnnotation.mockImplementation(
+      (note: BookNote & { value?: string }, remove = false) => {
+        const value = note.value ?? note.cfi;
+        if (remove) overlays.delete(value);
+        else overlays.add(value);
+      },
+    );
+    h.view.getCFI.mockReturnValueOnce('stale-cfi').mockReturnValueOnce('committed-cfi');
+    const pending = Promise.withResolvers<string>();
+    const { result, setSelection } = setup(
+      noted,
+      vi.fn().mockReturnValueOnce(pending.promise).mockResolvedValue('committed text'),
+    );
+
+    const stale = result.current.applyAnnotationRange(range, 2, false, isDragging);
+    await result.current.applyAnnotationRange(range, 2, false, false);
+    pending.resolve('stale text');
+    await stale;
+
+    expect(h.annotations[0]).toMatchObject({ cfi: 'committed-cfi', text: 'committed text' });
+    expect(h.updateBooknotes).toHaveBeenCalledTimes(1);
+    expect(h.saveConfig).toHaveBeenCalledTimes(1);
+    expect(setSelection).toHaveBeenCalledTimes(1);
+    expect(setSelection).toHaveBeenCalledWith(
+      expect.objectContaining({ cfi: 'committed-cfi', text: 'committed text' }),
+    );
+    expect(overlays).toEqual(new Set(['committed-cfi', `${NOTE_PREFIX}committed-cfi`]));
+
+    // Deleting the saved record must also remove everything painted for it.
+    // A late preview used to leave its stale CFI outside this cleanup (#6141).
+    removeBookNoteOverlays(h.view as unknown as FoliateView, h.annotations[0]!);
+    expect(overlays.size).toBe(0);
+  });
+
+  test('an older drag cannot rewind a newer preview', async () => {
+    h.view.getCFI.mockReturnValueOnce('stale-cfi').mockReturnValueOnce('latest-cfi');
+    const pending = Promise.withResolvers<string>();
+    const { result } = setup(
+      annotation,
+      vi.fn().mockReturnValueOnce(pending.promise).mockResolvedValue('latest text'),
+    );
+
+    const stale = result.current.applyAnnotationRange(range, 2, false, true);
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    pending.resolve('stale text');
+    await stale;
+
+    expect(h.view.addAnnotation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ cfi: 'latest-cfi', text: 'latest text' }),
+    );
+    expect(h.updateBooknotes).not.toHaveBeenCalled();
+    expect(h.saveConfig).not.toHaveBeenCalled();
+  });
+
   // Adjusting the boundaries of a highlight that carries a note moves the record
   // to a new CFI, and both of its overlays are keyed by that CFI. Tearing down
   // only the highlight overlay left the note bubble stranded at the old anchor
@@ -119,5 +186,46 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     expect(bubbleCalls).toContainEqual([
       expect.objectContaining({ value: `${NOTE_PREFIX}new-cfi` }),
     ]);
+  });
+
+  // While a handle is held, the saved record still holds the range from before
+  // the drag, and the reader repaints saved records whenever it relocates (a
+  // corner auto page-turn, a resize). That repaint drew the pre-drag range next
+  // to the preview, and since the editor only removed its own previous preview,
+  // it stayed painted after the highlight was deleted: an untappable ghost that
+  // lasted until the book was reopened (#6141).
+  test.each([
+    ['highlight', ''],
+    ['highlight with a note', 'my note'],
+  ])('a repaint of the saved range mid-drag does not outlive the %s', async (_, note) => {
+    const saved = { ...annotation, note } as BookNote;
+    h.annotations = [{ ...saved }];
+    const overlays = new Set<string>();
+    h.view.addAnnotation.mockImplementation((n: BookNote & { value?: string }, remove = false) => {
+      const value = n.value ?? n.cfi;
+      if (remove) overlays.delete(value);
+      else overlays.add(value);
+    });
+    const repaintSaved = () => {
+      const record = h.annotations[0]!;
+      overlays.add(record.cfi);
+      if (record.note) overlays.add(`${NOTE_PREFIX}${record.cfi}`);
+    };
+    repaintSaved();
+    h.view.getCFI
+      .mockReturnValueOnce('preview-cfi')
+      .mockReturnValueOnce('drag-cfi')
+      .mockReturnValueOnce('committed-cfi');
+    const { result } = setup(saved);
+
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    repaintSaved(); // relocate while the handle is held
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    await result.current.applyAnnotationRange(range, 2, false, false);
+
+    const expected = note ? ['committed-cfi', `${NOTE_PREFIX}committed-cfi`] : ['committed-cfi'];
+    expect(overlays).toEqual(new Set(expected));
+    removeBookNoteOverlays(h.view as unknown as FoliateView, h.annotations[0]!);
+    expect(overlays.size).toBe(0);
   });
 });

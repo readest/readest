@@ -230,6 +230,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // annotation toolbar. Cleared as soon as it's consumed.
   const pendingWordLensDictRef = useRef(false);
 
+  // The lookup surfaces read the selection they were opened on, but it can be
+  // cleared without the dismiss that closes them: the instant highlight quick
+  // action clears it on a tap (#6419). Close them in the same render, before
+  // they can render without text.
+  if (!selection && (showDictionaryPopup || showDeepLPopup || showProofreadPopup)) {
+    setShowDictionaryPopup(false);
+    setShowDeepLPopup(false);
+    setShowProofreadPopup(false);
+  }
+
   const showingPopup =
     showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
 
@@ -1072,10 +1082,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             handleDictionary();
             // Drop the selection for as long as the lookup is up, so iOS's
             // native handles and blue highlight — painted above web content —
-            // don't sit on top of the popup (#5585). It is handed back on
-            // dismiss (#6213): keeping it dropped for good left no way to
-            // highlight or copy the word, because re-selecting it with a quick
-            // action armed only opens the dictionary again.
+            // don't sit on top of the popup (#5585). With
+            // keepSelectionAfterLookup it is handed back on dismiss (#6213):
+            // re-selecting the word with a quick action armed only opens the
+            // dictionary again, so that is the only way to highlight or copy it.
             // Clear the flag before deselecting: the selectionchange this fires
             // would otherwise dismiss the popup we just opened.
             isTextSelected.current = false;
@@ -2418,9 +2428,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // The instant dictionary is the one lookup that deselects as it opens, so
     // its dismiss has to put the range back before the check below — otherwise
     // the word it just defined can never be highlighted or copied (#6213).
+    // That is opt-in: by default the dismiss returns straight to reading (#6454).
     if (instantLookupDeselectedRef.current) {
       instantLookupDeselectedRef.current = false;
-      if (selection && restoreSelectionRange(selection.range)) {
+      if (
+        viewSettings.keepSelectionAfterLookup &&
+        selection &&
+        restoreSelectionRange(selection.range)
+      ) {
         isTextSelected.current = true;
         // `quickActionHandled` rides along with the selection from here on, so a
         // later republish of it (handleHighlight stamps `annotated`) can't be

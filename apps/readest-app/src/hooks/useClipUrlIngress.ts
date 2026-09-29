@@ -70,7 +70,7 @@ async function convertSharedHtml(url: string, htmlFile: string): Promise<Convert
  *
  * Filter rules — only act on URLs that are:
  *   - http(s) (not file://, content://, readest://, blob:, data:)
- *   - NOT an annotation deep link (those go to useOpenAnnotationLink)
+ *   - NOT an annotation deep link (those go to useOpenLaunchLinks)
  *
  * Failures surface as toasts. Successful clips show "Saving article…"
  * then "Saved to your library." once `ingestFile` completes.
@@ -187,7 +187,7 @@ export function useClipUrlIngress() {
       // to other consumers (or aren't shareable URLs).
       if (!/^https?:\/\//i.test(url)) return;
       // Annotation deep links can come over https (web.readest.com).
-      // Skip them — useOpenAnnotationLink owns that path.
+      // Skip them — useOpenLaunchLinks owns that path.
       if (parseAnnotationDeepLink(url)) return;
       // Share links (https://web.readest.com/s/{token}) also arrive over https.
       // Skip them — useOpenShareLink owns that path. Without this guard the

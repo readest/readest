@@ -138,7 +138,7 @@ export const createOrUpdatePayment = async (
   const supabase = createSupabaseAdminClient();
 
   const session = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
-    expand: ['line_items.data.price.product', 'payment_intent'],
+    expand: ['line_items.data.price.product', 'payment_intent.latest_charge'],
   });
 
   if (!session.payment_intent) {
@@ -146,6 +146,10 @@ export const createOrUpdatePayment = async (
   }
 
   const paymentIntent = session.payment_intent as Stripe.PaymentIntent;
+  // A refunded intent stays `succeeded`; the refund is only on the charge.
+  // Without this, re-running this for a refunded session restores the
+  // entitlement.
+  const refunded = (paymentIntent.latest_charge as Stripe.Charge | null)?.refunded;
   const lineItem = session.line_items?.data[0];
   const product = lineItem?.price?.product as Stripe.Product & {
     metadata: { plan: UserPlan; storageGB: string };
@@ -161,7 +165,7 @@ export const createOrUpdatePayment = async (
       stripe_payment_intent_id: paymentIntent.id,
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
-      status: paymentIntent.status as PaymentStatus,
+      status: refunded ? 'refunded' : (paymentIntent.status as PaymentStatus),
       payment_method: paymentIntent.payment_method as string | null,
       product_id: product?.id,
       storage_gb: productMetadata?.storageGB ? parseInt(productMetadata.storageGB) : 0,

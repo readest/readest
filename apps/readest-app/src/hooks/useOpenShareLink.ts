@@ -14,7 +14,7 @@ import { isMainAppWindow } from '@/utils/window';
 import { markLaunchUrl } from '@/utils/deeplinkConsume';
 import { useTranslation } from './useTranslation';
 
-// Module-scoped flag matches the useOpenAnnotationLink pattern. Tauri's
+// Module-scoped flag matches the useOpenLaunchLinks pattern. Tauri's
 // getCurrent() keeps returning the launch URL for the entire app session, so
 // without this every remount would re-process the cold-start URL.
 let coldStartConsumed = false;
@@ -103,7 +103,7 @@ export function useOpenShareLink() {
     const handle = (url: string, coldStart = false) => {
       const parsed = parseShareDeepLink(url);
       if (!parsed) return;
-      // See useOpenBookLink: getCurrent() re-reports the launch URL to every
+      // See useOpenLaunchLinks: getCurrent() re-reports the launch URL to every
       // fresh document, so a cold-start read is acted on once per app run;
       // live deliveries are only recorded (#6104).
       const fresh = markLaunchUrl('launchShareUrls', url);

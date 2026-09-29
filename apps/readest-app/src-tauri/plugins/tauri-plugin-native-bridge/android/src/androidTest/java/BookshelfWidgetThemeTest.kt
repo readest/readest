@@ -14,7 +14,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class ReadingWidgetThemeTest {
+class BookshelfWidgetThemeTest {
     @Test
     fun backgroundFollowsNightModeRegardlessOfHostTheme() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -26,7 +26,7 @@ class ReadingWidgetThemeTest {
                         if (night) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
                 }
                 val host = ContextThemeWrapper(context.createConfigurationContext(config), hostTheme)
-                val view = RemoteViews(context.packageName, R.layout.widget_reading)
+                val view = RemoteViews(context.packageName, R.layout.widget_bookshelf)
                     .apply(host, FrameLayout(host))
                 val bitmap = Bitmap.createBitmap(40, 40, Bitmap.Config.ARGB_8888)
                 view.background.setBounds(0, 0, 40, 40)

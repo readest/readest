@@ -515,9 +515,6 @@ class ClipUrlController(
         completion(result)
     }
 
-    private fun dp(act: Activity, units: Int): Int =
-        (units * act.resources.displayMetrics.density + 0.5f).toInt()
-
     /** Parse `#rrggbb` into an Android ARGB int; null on malformed input. */
     private fun parseHexColor(s: String): Int? {
         val hex = s.trim().removePrefix("#")

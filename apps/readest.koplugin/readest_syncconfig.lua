@@ -142,6 +142,9 @@ function SyncConfig:getDocumentIdentifier(ui)
     return ui.doc_settings:readSetting("partial_md5_checksum")
 end
 
+-- Build the sync payload for the open book: its hashes, current page and
+-- page count, plus the xpointer for reflowable documents. Returns nil if
+-- the book can't be identified.
 function SyncConfig:getCurrentBookConfig(ui)
     local book_hash = self:getDocumentIdentifier(ui)
     local meta_hash = self:getMetaHash(ui)
@@ -172,6 +175,11 @@ function SyncConfig:getCurrentBookConfig(ui)
     return config
 end
 
+-- Jump to the remote reading position if it's ahead of the local one.
+-- Paged documents compare page numbers, reflowable ones compare xpointers,
+-- trimming the remote xpointer until it resolves in the local document.
+-- Skip positions that can't be parsed or resolved (e.g. a different copy
+-- of the book) instead of erroring.
 function SyncConfig:applyBookConfig(ui, config)
     logger.dbg("ReadestSync: Applying book config:", config)
     local xpointer = config.xpointer
@@ -182,7 +190,7 @@ function SyncConfig:applyBookConfig(ui, config)
         local page, _total_pages = progress:match(progress_pattern)
         local current_page = ui:getCurrentPage()
         local new_page = tonumber(page)
-        if new_page > current_page then
+        if new_page and new_page > current_page then
             ui.link:addCurrentLocationToStack()
             ui:handleEvent(Event:new("GotoPage", new_page))
             self:showSyncedMessage()
@@ -201,7 +209,7 @@ function SyncConfig:applyBookConfig(ui, config)
                 break
             end
         end
-        if cmp_result > 0 then
+        if cmp_result and cmp_result > 0 then
             ui.link:addCurrentLocationToStack()
             ui:handleEvent(Event:new("GotoXPointer", working_xpointer))
             self:showSyncedMessage()

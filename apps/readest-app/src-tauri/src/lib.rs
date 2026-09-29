@@ -32,6 +32,8 @@ mod cover_thumbnail;
 mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
+#[cfg(any(target_os = "android", test))]
+mod eink_identity;
 mod epub_parser;
 #[cfg(all(target_os = "linux", any(feature = "cef", test)))]
 mod linux_display;

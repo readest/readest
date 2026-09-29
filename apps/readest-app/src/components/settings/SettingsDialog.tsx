@@ -49,6 +49,15 @@ export type SettingsPanelPanelProp = {
   onRegisterReset: (resetFn: () => void) => void;
 };
 
+// Where Settings was left, kept for this app run only so reopening the dialog
+// returns to the same spot on the same panel.
+let savedScroll: { panel: SettingsPanelType; top: number } | null = null;
+
+// Test-only reset for the module-level runtime cache.
+export const resetSettingsScrollPosition = () => {
+  savedScroll = null;
+};
+
 type TabConfig = {
   tab: SettingsPanelType;
   icon: React.ElementType;
@@ -145,8 +154,35 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   });
 
   useLayoutEffect(() => {
-    const viewport = panelRef.current?.closest<HTMLElement>('[data-overlayscrollbars-viewport]');
-    if (viewport) viewport.scrollTop = 0;
+    const panel = panelRef.current;
+    const scroller = panel?.closest<HTMLElement>('[data-overlayscrollbars-contents]');
+    if (!panel || !scroller) return;
+    // Cleanup records the panel being left, so only a fresh open of the same
+    // panel restores; switching tabs starts the new panel at the top.
+    const top = savedScroll?.panel === activePanel ? savedScroll.top : 0;
+
+    // OverlayScrollbars initializes deferred, so on open the scroller cannot
+    // take a position yet. Hide the panel until it becomes the viewport.
+    let observer: MutationObserver | null = null;
+    const apply = () => {
+      if (!scroller.hasAttribute('data-overlayscrollbars-viewport')) return false;
+      scroller.scrollTop = top;
+      panel.style.visibility = '';
+      observer?.disconnect();
+      observer = null;
+      return true;
+    };
+    if (!apply() && top) {
+      panel.style.visibility = 'hidden';
+      observer = new MutationObserver(apply);
+      observer.observe(scroller, { attributeFilter: ['data-overlayscrollbars-viewport'] });
+    }
+
+    return () => {
+      if (observer) observer.disconnect();
+      else savedScroll = { panel: activePanel, top: scroller.scrollTop };
+      panel.style.visibility = '';
+    };
   }, [activePanel]);
 
   // Android WebView does not rubber-band nested scrollers. Move only the

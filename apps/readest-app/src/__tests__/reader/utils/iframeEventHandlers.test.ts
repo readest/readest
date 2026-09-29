@@ -282,6 +282,49 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     const types = postedMessages().map((m) => m['type']);
     expect(types).not.toContain('iframe-open-media');
   });
+
+  describe('page-filling media leaves the tap to the page-turn zones (#6424)', () => {
+    // foliate publishes the page's content box on the root element.
+    beforeEach(() => {
+      document.documentElement.style.setProperty('--available-width', '1000');
+      document.documentElement.style.setProperty('--available-height', '2000');
+    });
+
+    afterEach(() => {
+      document.documentElement.style.removeProperty('--available-width');
+      document.documentElement.style.removeProperty('--available-height');
+    });
+
+    const sizedImage = (width: number, height: number) => {
+      const img = document.createElement('img');
+      img.src = 'blob:http://localhost/cover';
+      img.getBoundingClientRect = () => ({ width, height }) as DOMRect;
+      return img;
+    };
+
+    test('a full-bleed cover posts iframe-single-click carrying the media', async () => {
+      const handlers = await importHandlers();
+      const img = sizedImage(1000, 1700);
+
+      tap(handlers, false, img);
+
+      const messages = postedMessages();
+      expect(messages.map((m) => m['type'])).not.toContain('iframe-open-media');
+      const click = messages.find((m) => m['type'] === 'iframe-single-click')!;
+      expect(click['media']).toEqual({ elementType: 'image', src: img.src });
+    });
+
+    test('an inline illustration still opens the viewer', async () => {
+      const handlers = await importHandlers();
+      const img = sizedImage(600, 400);
+
+      tap(handlers, false, img);
+
+      const types = postedMessages().map((m) => m['type']);
+      expect(types).toContain('iframe-open-media');
+      expect(types).not.toContain('iframe-single-click');
+    });
+  });
 });
 
 describe('long-press does not open the image gallery / table zoom (#5069)', () => {

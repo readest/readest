@@ -10,6 +10,7 @@ import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/
 import { nextThemeMode } from '@/utils/ambientLight';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { saveSysSettings } from '@/helpers/settings';
+import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import { SettingsPanelType } from '@/components/settings/SettingsDialog';
 import {
   CommandItem,
@@ -98,6 +99,13 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
   const toggleTelemetry = useCallback(() => {
     const newValue = !settings.telemetryEnabled;
     saveSysSettings(envConfig, 'telemetryEnabled', newValue);
+    // Keep PostHog's consent in step with the setting, exactly as the
+    // settings panel does. Without this the toggle only changed the file.
+    if (newValue) {
+      optInTelemetry();
+    } else {
+      optOutTelemetry();
+    }
   }, [envConfig, settings.telemetryEnabled]);
 
   const openSettingsPanel = useCallback(

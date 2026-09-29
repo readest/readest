@@ -9,7 +9,7 @@ vi.mock('@/services/tts/carPlaySession', () => ({
   notifyCarPlayState: (...a: unknown[]) => notifyCarPlayMock(...a),
 }));
 
-import { TTSMediaBridge } from '@/services/tts/ttsMediaBridge';
+import { TTSMediaBridge, releaseUnblockAudio, unblockAudio } from '@/services/tts/ttsMediaBridge';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { TauriMediaSession, type MediaSessionState } from '@/libs/mediaSession';
 import type { TTSController } from '@/services/tts/TTSController';
@@ -210,6 +210,28 @@ describe('TTSMediaBridge', () => {
     controller.emitState('playing');
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.playbackState).toBe('playing');
+  });
+
+  // #6433: Chromium reports the session as playing while ANY media element
+  // plays, ignoring playbackState 'paused'. With the looping keep-alive still
+  // running after a pause, the hardware play/pause key kept sending 'pause'
+  // and TTS could never be resumed from the keyboard.
+  test('pauses the keep-alive element while paused so media keys can resume', async () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    const pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+    unblockAudio();
+    play.mockClear();
+    await bind();
+    controller.emitState('paused');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(pause).toHaveBeenCalledTimes(1);
+    controller.emitState('stopped'); // transit: paragraph advance
+    controller.emitState('playing');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(play).toHaveBeenCalledTimes(1);
+    releaseUnblockAudio();
+    play.mockRestore();
+    pause.mockRestore();
   });
 
   // Every paragraph advance transits 'playing' -> 'stopped' -> 'playing'. A

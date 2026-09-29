@@ -19,7 +19,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibrary } from '@/hooks/useLibrary';
-import { useOpenBookLink } from '@/hooks/useOpenBookLink';
+import { useOpenLaunchLinks } from '@/hooks/useOpenLaunchLinks';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
@@ -43,10 +43,10 @@ const PlayerRoute = () => {
   const searchParams = useSearchParams();
   const { envConfig, appService } = useEnv();
   const { libraryLoaded } = useLibrary();
-  // Picking another book from the Android Auto browse tree (or a widget tap)
-  // while the player is open arrives as a readest://book deep link. Without
-  // this the selection lands on a route with nobody listening for it.
-  useOpenBookLink();
+  // Picking another book from the Android Auto browse tree, or a widget tap,
+  // while the player is open arrives as a deep link. Without this the
+  // selection lands on a route with nobody listening for it.
+  useOpenLaunchLinks();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const _ = useTranslation();
   useTheme({ systemUIVisible: false });

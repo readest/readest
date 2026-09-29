@@ -1993,16 +1993,25 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["success": false])
   }
 
-  @objc public func update_reading_widget(_ invoke: Invoke) {
+  @objc public func update_bookshelf_widget(_ invoke: Invoke) {
     guard let args = try? invoke.parseArgs(UpdateReadingWidgetRequestArgs.self) else {
       return invoke.reject("Failed to parse arguments")
     }
+    // The iOS widget shows books only; group tiles are an Android feature.
+    let books = args.items.compactMap { item -> UpdateReadingWidgetBookArgs? in
+      guard item.type == "book", let hash = item.hash, let coverPath = item.coverPath else {
+        return nil
+      }
+      return UpdateReadingWidgetBookArgs(
+        hash: hash, title: item.title ?? "", author: item.author ?? "",
+        percent: item.percent ?? 0, coverPath: coverPath)
+    }
     DispatchQueue.global(qos: .utility).async {
-      for book in args.books {
+      for book in books {
         ReadingWidgetWriter.writeThumbnail(hash: book.hash, sourcePath: book.coverPath)
       }
       let snapshot = ReadingWidgetWriter.Snapshot(
-        books: args.books.map {
+        books: books.map {
           .init(hash: $0.hash, title: $0.title, author: $0.author, percent: $0.percent)
         },
         sectionTitle: args.sectionTitle,
@@ -2011,6 +2020,17 @@ class NativeBridgePlugin: Plugin {
       ReadingWidgetWriter.write(snapshot: snapshot)
       invoke.resolve()
     }
+  }
+
+  // iOS has no per-instance configurable widget yet (one default snapshot,
+  // written above); these two resolve as no-ops so a caller gets a clean
+  // empty result instead of a bridge "unknown command" failure.
+  @objc public func get_bookshelf_widget_instances(_ invoke: Invoke) {
+    invoke.resolve(["instances": [] as [Any]])
+  }
+
+  @objc public func set_bookshelf_widget_catalog(_ invoke: Invoke) {
+    invoke.resolve()
   }
 
   /// Snapshot a region of the webview for the mesh page-curl texture
@@ -2338,8 +2358,18 @@ struct UpdateReadingWidgetBookArgs: Decodable {
   let percent: Int
   let coverPath: String
 }
+// One grid tile from JS: a "book" carries the book fields, a "group" other
+// fields this platform ignores.
+struct UpdateReadingWidgetItemArgs: Decodable {
+  let type: String
+  let hash: String?
+  let title: String?
+  let author: String?
+  let percent: Int?
+  let coverPath: String?
+}
 struct UpdateReadingWidgetRequestArgs: Decodable {
-  let books: [UpdateReadingWidgetBookArgs]
+  let items: [UpdateReadingWidgetItemArgs]
   let sectionTitle: String
   let emptyTitle: String
 }
