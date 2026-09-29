@@ -147,6 +147,25 @@ fn write_entries<W: Write + Seek>(
     for entry in entries.iter().filter(|e| e.content.is_none()) {
         validate_entry_name(&entry.name)?;
     }
+    // Entries are opened by their resolved path, so a symlink can't pull a
+    // file from outside the authorized source into the backup.
+    let root = std::fs::canonicalize(src_dir).ok();
+    let open_within = |name: &str| -> io::Result<File> {
+        let Some(root) = &root else {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "source directory not found",
+            ));
+        };
+        let path = std::fs::canonicalize(root.join(name))?;
+        if !path.starts_with(root) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "resolves outside the source directory",
+            ));
+        }
+        File::open(path)
+    };
     let mut zip = ZipWriter::new(BufWriter::new(out));
     let total = entries.len();
     let mut files = 0usize;
@@ -167,7 +186,7 @@ fn write_entries<W: Write + Seek>(
             continue;
         }
         files += 1;
-        let mut src = match File::open(src_dir.join(&entry.name)) {
+        let mut src = match open_within(&entry.name) {
             Ok(file) => file,
             Err(err) => {
                 // Same as the JS writer: an unreadable file is skipped,
@@ -272,6 +291,31 @@ mod tests {
             name: name.into(),
             content: None,
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn backup_skips_entries_that_link_outside_the_source() {
+        let src = temp_dir("link-src");
+        let outside = temp_dir("link-outside");
+        std::fs::write(outside.join("secret"), b"secret").unwrap();
+        std::fs::create_dir_all(src.join("h")).unwrap();
+        std::fs::write(src.join("h/book.epub"), b"book").unwrap();
+        std::os::unix::fs::symlink(outside.join("secret"), src.join("h/cover.png")).unwrap();
+        std::os::unix::fs::symlink(&outside, src.join("g")).unwrap();
+        let entries = vec![
+            file_entry("h/book.epub"),
+            file_entry("h/cover.png"),
+            file_entry("g/secret"),
+        ];
+
+        let mut cursor = Cursor::new(Vec::new());
+        write_entries(&mut cursor, &src, &entries, |_| {}).unwrap();
+        let archive = ZipArchive::new(Cursor::new(cursor.into_inner())).unwrap();
+        let names: Vec<&str> = archive.file_names().collect();
+        assert_eq!(names, ["h/book.epub"]);
+        std::fs::remove_dir_all(src).unwrap();
+        std::fs::remove_dir_all(outside).unwrap();
     }
 
     #[test]
