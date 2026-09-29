@@ -6,21 +6,37 @@ import { useLibraryPagination } from '@/app/library/hooks/useLibraryPagination';
 
 const h = vi.hoisted(() => ({
   hardware: undefined as HardwarePageTurnerSettings | undefined,
+  volumeKeysToFlip: false,
   acquire: vi.fn(),
   release: vi.fn(),
+  acquireVolume: vi.fn(),
+  releaseVolume: vi.fn(),
   forward: vi.fn(),
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: { isMobileApp: true } }) }));
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: (
-    selector: (s: { settings: { hardwarePageTurner?: HardwarePageTurnerSettings } }) => unknown,
-  ) => selector({ settings: { hardwarePageTurner: h.hardware } }),
+    selector: (s: {
+      settings: {
+        hardwarePageTurner?: HardwarePageTurnerSettings;
+        globalViewSettings: { volumeKeysToFlip: boolean };
+      };
+    }) => unknown,
+  ) =>
+    selector({
+      settings: {
+        hardwarePageTurner: h.hardware,
+        globalViewSettings: { volumeKeysToFlip: h.volumeKeysToFlip },
+      },
+    }),
 }));
 vi.mock('@/store/deviceStore', () => ({
   useDeviceControlStore: {
     getState: () => ({
       acquirePageTurnerKeyInterception: h.acquire,
       releasePageTurnerKeyInterception: h.release,
+      acquireVolumeKeyInterception: h.acquireVolume,
+      releaseVolumeKeyInterception: h.releaseVolume,
       ensureKeyForwarding: h.forward,
     }),
   },
@@ -28,6 +44,7 @@ vi.mock('@/store/deviceStore', () => ({
 let scroller: HTMLDivElement;
 beforeEach(() => {
   vi.clearAllMocks();
+  h.volumeKeysToFlip = false;
   h.hardware = {
     enabled: true,
     bindings: {
@@ -91,5 +108,21 @@ describe('library page-turn bindings', () => {
     rerender({ enabled: true });
     expect(h.forward).toHaveBeenCalledOnce();
     expect(h.acquire).not.toHaveBeenCalled();
+  });
+  it('pages with volume keys only when Use Volume Keys is on', async () => {
+    scroller.scrollTop = 500;
+    const { rerender, unmount } = renderHook(() => useLibraryPagination(scroller, true));
+    await act(() => eventDispatcher.dispatch('native-key-down', { keyName: 'VolumeDown' }));
+    expect(scroller.scrollTo).not.toHaveBeenCalled();
+    expect(h.acquireVolume).not.toHaveBeenCalled();
+    h.volumeKeysToFlip = true;
+    rerender();
+    expect(h.acquireVolume).toHaveBeenCalledOnce();
+    await act(() => eventDispatcher.dispatch('native-key-down', { keyName: 'VolumeDown' }));
+    expect(scroller.scrollTo).toHaveBeenLastCalledWith({ top: 1000, behavior: 'instant' });
+    await act(() => eventDispatcher.dispatch('native-key-down', { keyName: 'VolumeUp' }));
+    expect(scroller.scrollTo).toHaveBeenLastCalledWith({ top: 0, behavior: 'instant' });
+    unmount();
+    expect(h.releaseVolume).toHaveBeenCalledOnce();
   });
 });
