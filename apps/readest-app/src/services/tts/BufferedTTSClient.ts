@@ -12,6 +12,7 @@ import { TTSUtils } from './TTSUtils';
 import { findBoundaryIndexAtTime } from './wordHighlight';
 import { applyEdgeFade, findSpeechBounds } from './pcm';
 import { timeStretch } from './timeStretch';
+import { gapAfterSentence } from './gap';
 import {
   calibrateVoiceRate,
   recordMeasuredDuration,
@@ -426,7 +427,7 @@ export class BufferedTTSClient implements TTSClient {
           chunkMeta.push(meta);
           try {
             const durationSec = await this.#player.scheduleRawChunk(generation, index, audio.data, {
-              gapSec: this.#sentenceGapSec,
+              gapSec: gapAfterSentence(this.#sentenceGapSec, mark.text),
             });
             meta.trimmedDurationSec = durationSec;
             this.#recordDurations(voiceId, mark.text, audio.boundaries, durationSec);
@@ -465,7 +466,7 @@ export class BufferedTTSClient implements TTSClient {
         this.#player.scheduleChunk(generation, prepared.buffer, {
           trimStartSec: prepared.trimStartSec,
           mediaScale: prepared.trimmedDurationSec / prepared.buffer.duration,
-          gapSec: this.#sentenceGapSec,
+          gapSec: gapAfterSentence(this.#sentenceGapSec, mark.text),
         });
       }
       if (!signal.aborted && this.#activeGeneration === generation) {
