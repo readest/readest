@@ -541,8 +541,6 @@ export interface BookshelfWidgetCatalog {
     save: string;
     /** Opens the app to edit the selected shelf (readest://widget-edit-shelf/{id}). */
     edit: string;
-    /** Opens the app to create a new shelf (readest://widget-add-shelf). */
-    addShelf: string;
     /** Shown on a widget whose shelf hasn't been loaded by the app yet. */
     openApp: string;
   };

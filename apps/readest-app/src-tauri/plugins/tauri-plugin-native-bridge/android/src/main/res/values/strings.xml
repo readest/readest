@@ -16,6 +16,5 @@
     <string name="widget_show_titles">Book title</string>
     <string name="widget_show_shelf_name">Shelf name</string>
     <string name="widget_edit">Edit</string>
-    <string name="widget_add">Add</string>
     <string name="widget_open_app">Open Readest to show this bookshelf</string>
 </resources>

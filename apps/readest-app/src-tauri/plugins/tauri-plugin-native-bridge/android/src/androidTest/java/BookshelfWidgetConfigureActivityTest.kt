@@ -3,6 +3,7 @@ package com.readest.native_bridge
 import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -84,6 +85,25 @@ class BookshelfWidgetConfigureActivityTest {
                 val dropdown = activity.dialog!!.window!!.decorView
                     .findViewWithTag<MaterialAutoCompleteTextView>("shelf_dropdown")
                 assertEquals(activity.getString(R.string.widget_default_shelf), dropdown.text.toString())
+            }
+        }
+    }
+
+    // Opening the app from a first placement cancels it, so Edit is only
+    // offered once the widget has been saved (i.e. when reconfiguring it).
+    @Test
+    fun offersEditOnlyWhenReconfiguringAPlacedWidget() {
+        launch().use { scenario ->
+            scenario.onActivity { activity ->
+                val edit = activity.dialog!!.window!!.decorView.findViewWithTag<View>("edit_shelf")
+                assertEquals(null, edit)
+            }
+        }
+        BookshelfWidgetStore.writeInstanceSettings(context, id, BookshelfWidgetInstanceSettings())
+        launch().use { scenario ->
+            scenario.onActivity { activity ->
+                val edit = activity.dialog!!.window!!.decorView.findViewWithTag<View>("edit_shelf")
+                assertEquals(View.VISIBLE, edit.visibility)
             }
         }
     }

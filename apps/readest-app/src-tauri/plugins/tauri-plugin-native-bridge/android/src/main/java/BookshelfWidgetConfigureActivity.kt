@@ -79,21 +79,27 @@ class BookshelfWidgetConfigureActivity : Activity() {
         }
         shelfField.addView(shelfDropdown)
         content.addView(shelfField)
-        // Icon-only; contentDescription carries the label for accessibility instead.
-        // Click listeners wired below, once rows/columns/showTitles/showShelfName exist.
-        fun iconButton(icon: Int, description: String) =
+        // Opening the app cancels a first placement (the launcher drops the
+        // widget), so Edit is only offered when reconfiguring a placed widget.
+        // Icon-only; contentDescription carries the label for accessibility.
+        // Its click listener is wired below, once the other controls exist.
+        val editShelfButton = if (BookshelfWidgetStore.hasInstanceSettings(this, appWidgetId)) {
             flatButton(dialogContext).apply {
-                setIconResource(icon)
+                tag = "edit_shelf"
+                setIconResource(R.drawable.ic_widget_edit)
                 iconPadding = 0
-                contentDescription = description
+                contentDescription = label("edit", R.string.widget_edit)
+            }.also {
+                content.addView(
+                    it,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ),
+                )
             }
-        val editShelfButton = iconButton(R.drawable.ic_widget_edit, label("edit", R.string.widget_edit))
-        val addShelfButton = iconButton(R.drawable.ic_widget_add, label("addShelf", R.string.widget_add))
-        content.addView(LinearLayout(dialogContext).apply {
-            gravity = Gravity.CENTER_VERTICAL or Gravity.START
-            addView(editShelfButton)
-            addView(addShelfButton)
-        })
+        } else {
+            null
+        }
 
         val rows = intArrayOf(current.gridRows.coerceIn(1, MAX_GRID_SIZE))
         val columns = intArrayOf(current.gridColumns.coerceIn(1, MAX_GRID_SIZE))
@@ -110,8 +116,6 @@ class BookshelfWidgetConfigureActivity : Activity() {
         }
         content.addView(showShelfName)
 
-        // Current picks as instance settings - what Save writes, and what Edit/Add
-        // write before leaving too (see below).
         fun currentSettings() = BookshelfWidgetInstanceSettings(
             shelfId = selectedShelfId,
             gridRows = rows[0],
@@ -119,28 +123,15 @@ class BookshelfWidgetConfigureActivity : Activity() {
             showTitles = showTitles.isChecked,
             showShelfName = showShelfName.isChecked,
         )
-        // Leaving this screen for the app - for any reason, including via Edit/Add
-        // below - cancels widget placement; that's enforced by the launcher itself
-        // and there's no way around it. Edit/Add persist the current picks first
-        // so they aren't lost for whenever the widget does get placed - e.g.
-        // reconfiguring it via "Edit widget" after placing it normally with Save -
-        // but, unlike Save, don't finish() or set RESULT_OK: that result is what
-        // tells the launcher configuration is done, and tapping Edit/Add isn't that.
-        editShelfButton.setOnClickListener {
-            persistSettings(appWidgetId, currentSettings())
+        // Saves the current picks, then opens the shelf in the app's editor.
+        editShelfButton?.setOnClickListener {
             startActivity(
                 Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("readest://widget-edit-shelf/${Uri.encode(selectedShelfId)}"),
                 ).setPackage(packageName),
             )
-        }
-        addShelfButton.setOnClickListener {
-            persistSettings(appWidgetId, currentSettings())
-            startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse("readest://widget-add-shelf"))
-                    .setPackage(packageName),
-            )
+            save(appWidgetId, currentSettings())
         }
 
         dialog = MaterialAlertDialogBuilder(dialogContext)
@@ -157,18 +148,10 @@ class BookshelfWidgetConfigureActivity : Activity() {
         super.onDestroy()
     }
 
-    /** Writes settings and notifies the widget/app, without finishing - see save(). */
-    private fun persistSettings(appWidgetId: Int, settings: BookshelfWidgetInstanceSettings) {
+    private fun save(appWidgetId: Int, settings: BookshelfWidgetInstanceSettings) {
         BookshelfWidgetStore.writeInstanceSettings(this, appWidgetId, settings)
         BookshelfWidgetStore.notifyWidget(this, appWidgetId)
         NativeBridgePlugin.notifyWidgetConfigured()
-    }
-
-    /** Persists settings and completes configuration. RESULT_OK/finish are reserved
-     * for Save - Edit/Add persist too, but only via persistSettings(), since tapping
-     * them isn't "done configuring" the way tapping Save is. */
-    private fun save(appWidgetId: Int, settings: BookshelfWidgetInstanceSettings) {
-        persistSettings(appWidgetId, settings)
         setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
         finish()
     }

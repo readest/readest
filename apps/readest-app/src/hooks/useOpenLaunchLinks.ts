@@ -13,7 +13,6 @@ import { eventDispatcher } from '@/utils/event';
 import {
   parseAnnotationDeepLink,
   parseBookDeepLink,
-  parseWidgetAddShelfDeepLink,
   parseWidgetEditShelfDeepLink,
   parseWidgetGroupDeepLink,
 } from '@/utils/deeplink';
@@ -60,7 +59,6 @@ const releaseLaunchLinkGate = () => useLibraryStore.getState().setCheckPendingLa
  *   readest://annotation/{hash}/{id}                        and the legacy Readwise one)
  *   readest://widget-group/{groupBy}/{groupId}             a "browse groups" tile tap
  *   readest://widget-edit-shelf/{shelfId}                  the configure dialog's Edit button
- *   readest://widget-add-shelf                             the configure dialog's Add button
  */
 export function useOpenLaunchLinks() {
   const _ = useTranslation();
@@ -181,19 +179,6 @@ export function useOpenLaunchLinks() {
           router.push(
             `/library?editBookshelf=${encodeURIComponent(editShelf.shelfId)}&t=${Date.now()}`,
           );
-          // Opens within the Library, which never unmounts to release the gate.
-          releaseLaunchLinkGate();
-        },
-      };
-    }
-    if (parseWidgetAddShelfDeepLink(url)) {
-      return {
-        id: 'launchWidgetAddShelfUrls',
-        needsLibrary: false,
-        open: () => {
-          // See the editBookshelf nonce note above: without it, a repeat Add
-          // tap wouldn't be seen as a change and no second shelf would be created.
-          router.push(`/library?addBookshelf=1&t=${Date.now()}`);
           // Opens within the Library, which never unmounts to release the gate.
           releaseLaunchLinkGate();
         },

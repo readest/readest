@@ -215,7 +215,7 @@ function BookshelfTab({
   );
 }
 
-// Strips the one-shot editBookshelf/addBookshelf/t widget-request params (see
+// Strips the one-shot editBookshelf/t widget-request params (see
 // useOpenLaunchLinks) from the URL - shared by BookshelvesEditor, once it has
 // acted on them, and BookshelvesDialog, when it closes before the editor ever
 // mounted to do so itself - so a dismissed or already-handled request is
@@ -226,7 +226,6 @@ const clearWidgetRequestParams = (
 ) => {
   const params = new URLSearchParams(searchParams?.toString());
   params.delete('editBookshelf');
-  params.delete('addBookshelf');
   params.delete('t');
   router.replace(params.size ? `/library?${params}` : '/library');
 };
@@ -261,40 +260,19 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   useEffect(() => {
     localStorage.setItem('lastBookshelfTab', selectedId);
   }, [selectedId]);
-  // Builds a freshly numbered "New bookshelf N", inserted after Recently read
-  // - shared by the "+" button below and the widget configure dialog's Add
-  // button (see the effect below it). Callers apply the result to draft and
-  // selectedId together (not as a setDraft updater with a setSelectedId side
-  // effect - an updater must be pure, and the two could otherwise disagree on
-  // which shelf.id ended up selected vs. actually in draft).
-  const addNewBookshelf = (shelves: BookshelfDefinition[]) => {
-    let number = 1;
-    while (shelves.some((s) => s.name === _('New bookshelf {{number}}', { number }))) number++;
-    const shelf = createBookshelf(_('New bookshelf {{number}}', { number }));
-    const index = shelves.findIndex((s) => s.id === RECENT_BOOKSHELF_ID) + 1;
-    return { shelf, shelves: [...shelves.slice(0, index), shelf, ...shelves.slice(index)] };
-  };
-  // The widget configure dialog's Edit/Add buttons (readest://widget-edit-shelf/{id},
-  // readest://widget-add-shelf) land here as /library?editBookshelf={id}&t=... or
-  // ?addBookshelf=1&t=.... `t` is a per-tap nonce (see useOpenLaunchLinks) that's
-  // always a real dependency change, so a repeat tap - even for the same shelf,
-  // or one that arrives while this editor is already open - is never missed (this
-  // editor otherwise only computes selectedId/draft once, at mount).
+  // The widget configure dialog's Edit button (readest://widget-edit-shelf/{id})
+  // lands here as /library?editBookshelf={id}&t=.... `t` is a per-tap nonce (see
+  // useOpenLaunchLinks) that's always a real dependency change, so a repeat tap -
+  // even for the same shelf, or one that arrives while this editor is already
+  // open - is never missed (this editor otherwise only computes selectedId once,
+  // at mount).
   const editBookshelfId = searchParams?.get('editBookshelf');
-  const addBookshelf = searchParams?.get('addBookshelf') === '1';
   const widgetRequestNonce = searchParams?.get('t');
   useEffect(() => {
     if (!editBookshelfId) return;
     setSelectedId((id) => base.find((shelf) => shelf.id === editBookshelfId)?.id ?? id);
     clearWidgetRequestParams(router, searchParams);
   }, [base, editBookshelfId, widgetRequestNonce]);
-  useEffect(() => {
-    if (!addBookshelf) return;
-    const { shelf, shelves } = addNewBookshelf(draft);
-    setDraft(shelves);
-    setSelectedId(shelf.id);
-    clearWidgetRequestParams(router, searchParams);
-  }, [addBookshelf, widgetRequestNonce]);
   const tabsRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const tabLabels = draft.map((s) => s.name || _(bookshelfName(s))).join('\0');
@@ -615,8 +593,12 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
           title={_('Add bookshelf')}
           className='btn btn-ghost eink-bordered border-base-200 h-11 min-h-11 w-11 shrink-0 rounded-full border px-0 focus-visible:ring-2 focus-visible:ring-base-content/15'
           onClick={() => {
-            const { shelf, shelves } = addNewBookshelf(draft);
-            setDraft(shelves);
+            let number = 1;
+            while (draft.some((s) => s.name === _('New bookshelf {{number}}', { number })))
+              number++;
+            const shelf = createBookshelf(_('New bookshelf {{number}}', { number }));
+            const index = draft.findIndex((s) => s.id === RECENT_BOOKSHELF_ID) + 1;
+            setDraft([...draft.slice(0, index), shelf, ...draft.slice(index)]);
             setSelectedId(shelf.id);
           }}
         >
@@ -954,26 +936,24 @@ export default function BookshelvesDialog() {
     eventDispatcher.on('show-bookshelves', show);
     return () => eventDispatcher.off('show-bookshelves', show);
   }, []);
-  // The widget configure dialog's Edit/Add buttons (readest://widget-edit-shelf/{id},
-  // readest://widget-add-shelf) land here as /library?editBookshelf={id}&t=... or
-  // ?addBookshelf=1&t=.... BookshelvesEditor reacts to these itself (it needs
-  // base/draft/setDraft, which live there); this just needs to open the dialog -
-  // including reopening it for a repeat tap with the same editBookshelf/addBookshelf
-  // value, which `t` (a per-tap nonce, see useOpenLaunchLinks) is what signals.
+  // The widget configure dialog's Edit button (readest://widget-edit-shelf/{id})
+  // lands here as /library?editBookshelf={id}&t=.... BookshelvesEditor selects the
+  // shelf itself (it owns selectedId); this just needs to open the dialog -
+  // including reopening it for a repeat tap on the same shelf, which `t` (a
+  // per-tap nonce, see useOpenLaunchLinks) is what signals.
   const searchParams = useSearchParams();
   const editBookshelfId = searchParams?.get('editBookshelf');
-  const addBookshelf = searchParams?.get('addBookshelf') === '1';
   const widgetRequestNonce = searchParams?.get('t');
   useEffect(() => {
-    if (editBookshelfId || addBookshelf) setOpen(true);
-  }, [editBookshelfId, addBookshelf, widgetRequestNonce]);
+    if (editBookshelfId) setOpen(true);
+  }, [editBookshelfId, widgetRequestNonce]);
   const close = async () => {
     if (!editor.current) {
       // No editor to flush - e.g. still waiting on settingsHydrated below, so
       // it never got to consume/clear these itself - clear them here instead,
       // so a dismissed widget request isn't misapplied the next time this
       // dialog opens normally.
-      if (editBookshelfId || addBookshelf) clearWidgetRequestParams(router, searchParams);
+      if (editBookshelfId) clearWidgetRequestParams(router, searchParams);
       setOpen(false);
       return;
     }

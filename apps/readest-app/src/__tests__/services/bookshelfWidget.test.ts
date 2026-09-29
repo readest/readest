@@ -224,7 +224,6 @@ describe('buildBookshelfWidgetCatalog', () => {
     expect(catalog.labels.save).toBe('t:Save');
     expect(catalog.labels.showShelfName).toBe('t:Shelf name');
     expect(catalog.labels.edit).toBe('t:Edit');
-    expect(catalog.labels.addShelf).toBe('t:Add');
   });
 });
 

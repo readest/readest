@@ -354,6 +354,10 @@ object BookshelfWidgetStore {
         writeStr(context, KEY_INSTANCE_SETTINGS_PREFIX, appWidgetId, settings.toJson().toString())
     }
 
+    /** Whether this widget has been configured before, i.e. is already placed. */
+    fun hasInstanceSettings(context: Context, appWidgetId: Int): Boolean =
+        prefs(context).contains(KEY_INSTANCE_SETTINGS_PREFIX + appWidgetId)
+
     fun readInstanceSettings(context: Context, appWidgetId: Int): BookshelfWidgetInstanceSettings {
         val raw = prefs(context).getString(KEY_INSTANCE_SETTINGS_PREFIX + appWidgetId, null)
         val json = raw?.let { runCatching { JSONObject(it) }.getOrNull() }

@@ -172,13 +172,3 @@ export const parseWidgetEditShelfDeepLink = (url: string): { shelfId: string } |
   }
   return null;
 };
-
-/**
- * Matches the bare `readest://widget-add-shelf` deep link (the configure
- * dialog's "Add bookshelf" button). No payload: it just opens the editor
- * already creating a new shelf, same as its in-app "+" button.
- */
-export const parseWidgetAddShelfDeepLink = (url: string): boolean => {
-  const parsed = parseReadestUrl(url, { allowWebHost: false });
-  return !!parsed && parsed.segments.length === 1 && parsed.segments[0] === 'widget-add-shelf';
-};

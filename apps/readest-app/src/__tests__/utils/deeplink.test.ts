@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildAnnotationUrl,
-  parseWidgetAddShelfDeepLink,
   parseWidgetEditShelfDeepLink,
   parseWidgetGroupDeepLink,
 } from '../../utils/deeplink';
@@ -62,14 +61,5 @@ describe('widget edit-shelf deep link', () => {
     expect(
       parseWidgetEditShelfDeepLink('https://web.readest.com/o/widget-edit-shelf/x'),
     ).toBeNull();
-  });
-});
-
-describe('widget add-shelf deep link', () => {
-  it('matches only the bare widget-add-shelf link', () => {
-    expect(parseWidgetAddShelfDeepLink('readest://widget-add-shelf')).toBe(true);
-    expect(parseWidgetAddShelfDeepLink('readest://widget-add-shelf/extra')).toBe(false);
-    expect(parseWidgetAddShelfDeepLink('https://web.readest.com/o/widget-add-shelf')).toBe(false);
-    expect(parseWidgetAddShelfDeepLink('readest://book/abc')).toBe(false);
   });
 });
