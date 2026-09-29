@@ -179,6 +179,26 @@ describe('bookshelf editor', () => {
     fireEvent.click(screen.getByLabelText('Close Manage Bookshelves'));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
+  it('clears addBookshelf/t on close when the editor never mounted, so a later normal open does not replay it', async () => {
+    useSettingsStore.setState({ settings: {} as SystemSettings }); // not hydrated
+    searchParamsRef.current = new URLSearchParams('addBookshelf=1&t=1');
+    render(<BookshelvesDialog />);
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy());
+    expect(screen.queryByRole('button', { name: 'New bookshelf 1' })).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Close Manage Bookshelves'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(searchParamsRef.current.get('addBookshelf')).toBeNull();
+
+    // Settings hydrate later, and the user opens the dialog normally - the
+    // dismissed widget request must not be replayed.
+    useSettingsStore.setState({ settings: { ...DEFAULT_SYSTEM_SETTINGS, version: 1 } });
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeTruthy());
+    expect(screen.queryByRole('button', { name: 'New bookshelf 1' })).toBeNull();
+  });
   it('opens directly to the shelf named by an editBookshelf query param (widget Edit button)', async () => {
     searchParamsRef.current = new URLSearchParams('editBookshelf=default');
     render(<BookshelvesDialog />);

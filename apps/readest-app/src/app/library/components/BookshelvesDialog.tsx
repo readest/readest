@@ -215,6 +215,22 @@ function BookshelfTab({
   );
 }
 
+// Strips the one-shot editBookshelf/addBookshelf/t widget-request params (see
+// useOpenLaunchLinks) from the URL - shared by BookshelvesEditor, once it has
+// acted on them, and BookshelvesDialog, when it closes before the editor ever
+// mounted to do so itself - so a dismissed or already-handled request is
+// never misapplied to a later, unrelated open of this dialog.
+const clearWidgetRequestParams = (
+  router: ReturnType<typeof useRouter>,
+  searchParams: ReturnType<typeof useSearchParams>,
+) => {
+  const params = new URLSearchParams(searchParams?.toString());
+  params.delete('editBookshelf');
+  params.delete('addBookshelf');
+  params.delete('t');
+  router.replace(params.size ? `/library?${params}` : '/library');
+};
+
 export interface BookshelvesEditorHandle {
   flush: () => Promise<boolean>;
 }
@@ -267,28 +283,17 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   const editBookshelfId = searchParams?.get('editBookshelf');
   const addBookshelf = searchParams?.get('addBookshelf') === '1';
   const widgetRequestNonce = searchParams?.get('t');
-  // Strips the one-shot editBookshelf/addBookshelf/t params once acted on, so
-  // a later, unrelated reopen (the in-app "+"/ViewMenu trigger) - which mounts
-  // a fresh BookshelvesEditor whose effects below run regardless of whether
-  // these params "changed" - doesn't silently replay a stale widget request.
-  const clearWidgetRequestParams = () => {
-    const params = new URLSearchParams(searchParams?.toString());
-    params.delete('editBookshelf');
-    params.delete('addBookshelf');
-    params.delete('t');
-    router.replace(params.size ? `/library?${params}` : '/library');
-  };
   useEffect(() => {
     if (!editBookshelfId) return;
     setSelectedId((id) => base.find((shelf) => shelf.id === editBookshelfId)?.id ?? id);
-    clearWidgetRequestParams();
+    clearWidgetRequestParams(router, searchParams);
   }, [base, editBookshelfId, widgetRequestNonce]);
   useEffect(() => {
     if (!addBookshelf) return;
     const { shelf, shelves } = addNewBookshelf(draft);
     setDraft(shelves);
     setSelectedId(shelf.id);
-    clearWidgetRequestParams();
+    clearWidgetRequestParams(router, searchParams);
   }, [addBookshelf, widgetRequestNonce]);
   const tabsRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
@@ -943,17 +948,7 @@ export default function BookshelvesDialog() {
   const _ = useTranslation();
   const [open, setOpen] = useState(false);
   const editor = useRef<BookshelvesEditorHandle>(null);
-  const close = async () => {
-    // No editor to flush - e.g. still waiting on settingsHydrated below - so
-    // there's nothing to save; just close.
-    if (!editor.current) {
-      setOpen(false);
-      return;
-    }
-    // The controls stay live while the first save runs, so flush again for anything edited
-    // meanwhile; the second flush is a no-op when nothing changed.
-    if ((await editor.current.flush()) && (await editor.current.flush())) setOpen(false);
-  };
+  const router = useRouter();
   useEffect(() => {
     const show = () => setOpen(true);
     eventDispatcher.on('show-bookshelves', show);
@@ -972,6 +967,20 @@ export default function BookshelvesDialog() {
   useEffect(() => {
     if (editBookshelfId || addBookshelf) setOpen(true);
   }, [editBookshelfId, addBookshelf, widgetRequestNonce]);
+  const close = async () => {
+    if (!editor.current) {
+      // No editor to flush - e.g. still waiting on settingsHydrated below, so
+      // it never got to consume/clear these itself - clear them here instead,
+      // so a dismissed widget request isn't misapplied the next time this
+      // dialog opens normally.
+      if (editBookshelfId || addBookshelf) clearWidgetRequestParams(router, searchParams);
+      setOpen(false);
+      return;
+    }
+    // The controls stay live while the first save runs, so flush again for anything edited
+    // meanwhile; the second flush is a no-op when nothing changed.
+    if ((await editor.current.flush()) && (await editor.current.flush())) setOpen(false);
+  };
   // BookshelvesEditor snapshots settings once, at mount, so it must not mount
   // before they've actually loaded - which a widget deep link can't assume,
   // unlike the normal 'show-bookshelves' trigger (only reachable once the

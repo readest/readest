@@ -46,6 +46,10 @@ beforeEach(() => {
   useSettingsStore.setState({
     settings: {
       ...DEFAULT_SYSTEM_SETTINGS,
+      // version: real settings always have one; its absence is what
+      // useEnsureSettingsLoaded (BookshelvesDialog) treats as "not hydrated
+      // yet", which would leave BookshelvesEditor never mounting here.
+      version: 1,
       libraryGroupBy: 'none',
       libraryAutoColumns: false,
       libraryColumns: 3,
