@@ -518,6 +518,9 @@ msgstr "Keine neuen Anmerkungen gefunden"
 msgid "%1 annotations pulled"
 msgstr "%1 Anmerkungen abgerufen"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Deine Readest-Sitzung ist abgelaufen. Bitte melde dich erneut an."
+
 msgid "Login"
 msgstr "Anmelden"
 
