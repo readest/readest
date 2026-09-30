@@ -294,6 +294,38 @@ describe('useBrightnessGesture (listener-level)', () => {
     expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeLessThan(0.5);
   });
 
+  it('writes the swipe through to the system in system-brightness mode (#6374)', () => {
+    h.autoScreenBrightness = true;
+    const { target } = setup();
+    fireTouch(target, 'touchstart', 10, 800);
+    fireTouch(target, 'touchmove', 10, 300);
+    fireTouch(target, 'touchend', 10, 300);
+    expect(h.setScreenBrightness.mock.calls.at(-1)).toEqual([expect.any(Number), true]);
+  });
+
+  it('applies the swipe as a reader-only override in manual mode', () => {
+    const { target } = setup();
+    fireTouch(target, 'touchstart', 10, 800);
+    fireTouch(target, 'touchmove', 10, 300);
+    fireTouch(target, 'touchend', 10, 300);
+    expect(h.setScreenBrightness.mock.calls.at(-1)).toEqual([expect.any(Number), false]);
+  });
+
+  it('re-reads the device brightness on touch down in system-brightness mode (#6374)', async () => {
+    h.autoScreenBrightness = true;
+    h.getScreenBrightness.mockResolvedValue(0.1);
+    const { target } = setup();
+    await act(async () => {});
+    // Control Center changed the brightness behind the reader's back.
+    h.lastScreenBrightness = 0.1;
+    h.getScreenBrightness.mockResolvedValue(0.9);
+    fireTouch(target, 'touchstart', 10, 500);
+    await act(async () => {});
+    fireTouch(target, 'touchmove', 10, 550); // small downward drag → slightly dimmer
+    fireTouch(target, 'touchend', 10, 550);
+    expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeGreaterThan(0.5);
+  });
+
   it('is inert when the setting is disabled', () => {
     h.swipeSetting = false;
     const { target, paginator, rerender } = setup();

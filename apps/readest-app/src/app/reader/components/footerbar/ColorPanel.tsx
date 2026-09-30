@@ -59,7 +59,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
         if (!settings.autoScreenBrightness) {
           saveSysSettings(envConfig, 'screenBrightness', value);
         }
-        await setScreenBrightness(value / 100);
+        await setScreenBrightness(value / 100, settings.autoScreenBrightness);
       }, 100),
     [envConfig, setScreenBrightness, settings.autoScreenBrightness],
   );

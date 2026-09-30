@@ -95,6 +95,7 @@ interface GetScreenBrightnessResponse {
 
 interface SetScreenBrightnessRequest {
   brightness: number; // 0.0 to 1.0
+  persist?: boolean; // iOS: keep the value as the system brightness, don't restore it
 }
 
 interface SetScreenBrightnessResponse {

@@ -120,7 +120,7 @@ export const useBrightnessGesture = (bookKey: string) => {
   const flushBrightness = useCallback(() => {
     rafIdRef.current = null;
     if (pendingValueRef.current !== null) {
-      setScreenBrightness(pendingValueRef.current);
+      setScreenBrightness(pendingValueRef.current, latestRef.current.autoBrightness);
       pendingValueRef.current = null;
     }
   }, [setScreenBrightness]);
@@ -185,6 +185,16 @@ export const useBrightnessGesture = (bookKey: string) => {
         armedRef.current = isInLeftEdge(t.screenX, viewWidth);
         const applied = useDeviceControlStore.getState().lastScreenBrightness;
         startValueRef.current = applied ?? seedRef.current;
+        // In system mode the brightness can change outside the reader (Control
+        // Center, Home) without a visibilitychange, so re-read the device value;
+        // it lands long before the drag passes the activation distance (#6374).
+        if (armedRef.current && latestRef.current.autoBrightness) {
+          getScreenBrightness().then((b) => {
+            if (armedRef.current && !activeRef.current && b >= 0 && b <= 1) {
+              startValueRef.current = b;
+            }
+          });
+        }
       };
 
       const onTouchMove = (e: TouchEvent) => {
@@ -253,7 +263,7 @@ export const useBrightnessGesture = (bookKey: string) => {
         setLayeredTurnTouchClaimed(bookKey, false);
         cancelRaf();
         const value = levelRef.current;
-        setScreenBrightness(value);
+        setScreenBrightness(value, latestRef.current.autoBrightness);
         seedRef.current = value;
         if (!latestRef.current.autoBrightness) {
           saveSysSettings(envConfig, 'screenBrightness', Math.round(value * 100));
@@ -271,7 +281,15 @@ export const useBrightnessGesture = (bookKey: string) => {
       doc.addEventListener('touchend', onTouchEnd, opts);
       doc.addEventListener('touchcancel', onTouchEnd, opts);
     },
-    [abortGesture, resetGesture, scheduleBrightness, cancelRaf, setScreenBrightness, envConfig],
+    [
+      abortGesture,
+      resetGesture,
+      scheduleBrightness,
+      cancelRaf,
+      setScreenBrightness,
+      getScreenBrightness,
+      envConfig,
+    ],
   );
 
   useEffect(() => {

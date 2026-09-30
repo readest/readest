@@ -257,6 +257,7 @@ pub struct SetScreenWakeLockRequest {
 #[serde(rename_all = "camelCase")]
 pub struct SetScreenBrightnessRequest {
     pub brightness: f64, // 0.0 to 1.0
+    pub persist: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
