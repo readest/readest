@@ -5,6 +5,8 @@ import { EXTS } from '@/libs/document';
 import { isTauriAppPlatform } from '@/services/environment';
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
+import type { PageStatEvent, StatBook } from '@/types/statistics';
+import { StatisticsDb } from '@/services/statistics/statisticsDb';
 import { getBookDirOfPath, getLibraryFilename } from '@/utils/book';
 import { getAbsOfflineDir } from '@/utils/audiobook';
 import { stampBookConfigSchema } from '@/utils/serializer';
@@ -20,6 +22,9 @@ const isAbsOfflineEntry = (entryName: string): boolean => {
 
 /** Root-level zip entry name for the backed-up global settings snapshot. */
 export const SETTINGS_BACKUP_FILENAME = 'settings.json';
+
+/** Root-level zip entry name for the reading statistics (#6488). */
+export const STATISTICS_BACKUP_FILENAME = 'statistics.json';
 
 /**
  * Options controlling what a backup zip includes.
@@ -322,6 +327,19 @@ async function collectBackupEntries(
     console.warn('Skipping settings backup:', error);
   }
 
+  // Reading statistics live in statistics.db under the Data dir, outside the
+  // Books tree walked below: export every book and page event.
+  try {
+    const stats = await StatisticsDb.open(appService);
+    const { books: statBooks, events } = await stats.getEventsForPush(0);
+    texts.push({
+      name: STATISTICS_BACKUP_FILENAME,
+      content: JSON.stringify({ books: statBooks, events }),
+    });
+  } catch (error) {
+    console.warn('Skipping statistics backup:', error);
+  }
+
   // Add the files of every live library book. Only a book's own `<hash>/`
   // dir is exported: the Books/ tree also holds root-level library metadata
   // and dirs no live row references — a soft-deleted book whose file
@@ -506,6 +524,7 @@ export function validateBackupStructure(entryNames: string[]): boolean {
  * - Add new books not present in current library
  * - Import orphan hash directories not listed in library.json
  * - Restore global settings (settings.json), deep-merged onto current
+ * - Merge reading statistics (statistics.json) into statistics.db
  */
 export async function restoreFromBackupZip(
   appService: AppService,
@@ -684,6 +703,22 @@ export async function restoreFromBackupZip(
       settingsRestored = true;
     } catch (error) {
       console.warn('Failed to restore settings from backup:', error);
+    }
+  }
+
+  // Merge reading statistics the same way a stats sync pull does: book rows
+  // matched by md5, a session already on this device keeps its longer duration.
+  const statsEntry = fileEntries.find((e) => e.filename === STATISTICS_BACKUP_FILENAME);
+  if (statsEntry) {
+    try {
+      const data = await statsEntry.getData!(new Uint8ArrayWriter());
+      const { books, events }: { books: StatBook[]; events: PageStatEvent[] } = JSON.parse(
+        new TextDecoder().decode(data),
+      );
+      const stats = await StatisticsDb.open(appService);
+      await stats.applyRemoteEvents(books, events);
+    } catch (error) {
+      console.warn('Failed to restore statistics from backup:', error);
     }
   }
 
