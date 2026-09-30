@@ -2540,7 +2540,7 @@
   "{{time}} and {{count}} pages left_one": "{{time}} y {{count}} página restantes",
   "{{time}} and {{count}} pages left_many": "{{time}} y {{count}} de páginas restantes",
   "{{time}} and {{count}} pages left_other": "{{time}} y {{count}} páginas restantes",
-  "{{time}} left in book": "{{time}} restantes en el libro",
+  "{{time}} left in book": "{{time}} restante en el libro",
   "{{time}} and {{number}} pages left in book": "{{time}} y {{number}} páginas restantes en el libro",
   "{{time}} and {{number}} pages left in chapter": "{{time}} y {{number}} páginas restantes en el capítulo",
   "{{time}} and {{count}} pages left in book_one": "{{time}} y {{count}} página restantes en el libro",

@@ -2485,5 +2485,5 @@
   "{{time}} and {{count}} pages left in book_other": "{{time}} und {{count}} Seiten verbleibend im Buch",
   "{{time}} and {{count}} pages left in chapter_one": "{{time}} und {{count}} Seite verbleibend im Kapitel",
   "{{time}} and {{count}} pages left in chapter_other": "{{time}} und {{count}} Seiten verbleibend im Kapitel",
-  "Resets in {{time}}": "Zurückgesetzt in {{time}}"
+  "Resets in {{time}}": "Wird in {{time}} zurückgesetzt"
 }
