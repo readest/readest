@@ -129,6 +129,11 @@ export interface RefreshEinkScreenResponse {
   error?: string;
 }
 
+export interface EinkRefreshSupportedResponse {
+  supported: boolean;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -332,6 +337,34 @@ export async function getStorefrontRegionCode(): Promise<GetStorefrontRegionCode
  */
 export async function refreshEinkScreen(): Promise<RefreshEinkScreenResponse> {
   return await invoke<RefreshEinkScreenResponse>('plugin:native-bridge|refresh_eink_screen');
+}
+
+/**
+ * Whether this device exposes a deep e-ink full-refresh mechanism we can
+ * drive (Onyx / NTX / Rockchip vendor hooks). Android-only; the native side
+ * resolves the probe with pure class-level reflection — it never flashes the
+ * panel — so it is safe to call once at startup to decide whether to offer the
+ * "Auto Full Refresh" / "Refresh Page" options. Non-e-ink devices and other
+ * platforms report `supported: false`.
+ */
+export async function isEinkRefreshSupported(): Promise<EinkRefreshSupportedResponse> {
+  return await invoke<EinkRefreshSupportedResponse>(
+    'plugin:native-bridge|is_eink_refresh_supported',
+  );
+}
+
+// Memoized so the capability probe — a one-shot, pure-reflection query against
+// the vendor hooks — runs a single time per app session, no matter how many
+// settings surfaces read it. Resolves false on any platform without a
+// drivable e-ink controller.
+let einkRefreshSupportedPromise: Promise<boolean> | null = null;
+export function checkEinkRefreshSupported(): Promise<boolean> {
+  if (!einkRefreshSupportedPromise) {
+    einkRefreshSupportedPromise = isEinkRefreshSupported()
+      .then((response) => response.supported)
+      .catch(() => false);
+  }
+  return einkRefreshSupportedPromise;
 }
 
 /** Webview region to snapshot, in CSS pixels of the viewport (origin top-left). */

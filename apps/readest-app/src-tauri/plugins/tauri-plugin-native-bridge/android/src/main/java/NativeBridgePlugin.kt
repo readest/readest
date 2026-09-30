@@ -2178,6 +2178,24 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     /**
+     * Whether this device exposes a deep e-ink full-refresh mechanism we can
+     * drive. Pure class-level reflection against [EinkRefreshController] — it
+     * never touches the panel — so it is safe to call once at startup to decide
+     * whether to offer the "Refresh Page" / "Auto Full Refresh" options.
+     */
+    @Command
+    fun is_eink_refresh_supported(invoke: Invoke) {
+        val ret = JSObject()
+        try {
+            ret.put("supported", EinkRefreshController.isSupported())
+        } catch (e: Exception) {
+            Log.e("NativeBridgePlugin", "is_eink_refresh_supported failed", e)
+            ret.put("supported", false)
+        }
+        invoke.resolve(ret)
+    }
+
+    /**
      * Snapshot a region of the webview for the mesh page-curl texture
      * (readest#555). The rect arrives in CSS pixels of the JS viewport;
      * scaling by the display density (devicePixelRatio) maps it to window

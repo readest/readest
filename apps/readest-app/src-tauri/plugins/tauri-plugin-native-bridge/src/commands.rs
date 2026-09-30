@@ -348,6 +348,13 @@ pub(crate) async fn refresh_eink_screen<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn is_eink_refresh_supported<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<EinkRefreshSupportedResponse> {
+    app.native_bridge().is_eink_refresh_supported()
+}
+
+#[command]
 pub(crate) async fn update_bookshelf_widget<R: Runtime>(
     app: AppHandle<R>,
     payload: UpdateBookshelfWidgetRequest,

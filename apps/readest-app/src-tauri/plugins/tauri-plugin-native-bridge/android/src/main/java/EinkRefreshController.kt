@@ -3,6 +3,7 @@ package com.readest.native_bridge
 import android.content.Context
 import android.util.Log
 import android.view.View
+import java.lang.reflect.Method
 
 /**
  * Best-effort, device-agnostic deep e-ink full refresh (GC / GC16 waveform)
@@ -32,6 +33,61 @@ object EinkRefreshController {
     // EINK_UPDATE_MODE_FULL (32) + EINK_WAVEFORM_MODE_GC16 (2) = 34.
     private const val NTX_FULL_GC16 = 34
 
+    // The vendor hooks, resolved once via class-level reflection and cached.
+    // `getMethod` / `Class.forName` only read the framework's method table; they
+    // neither invoke the mechanism nor flash the panel, so resolving them is a
+    // safe capability probe. [refresh] and [isSupported] share these handles, so
+    // the UI is shown for exactly the devices [refresh] can act on.
+    private val onyxRefreshScreen: Method? by lazy {
+        try {
+            View::class.java.getMethod(
+                "refreshScreen",
+                Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE,
+            )
+        } catch (e: Throwable) {
+            Log.d(TAG, "onyx refresh unavailable: ${e.message}")
+            null
+        }
+    }
+
+    private val ntxPostInvalidateDelayed: Method? by lazy {
+        try {
+            View::class.java.getMethod(
+                "postInvalidateDelayed",
+                java.lang.Long.TYPE,
+                Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE,
+            )
+        } catch (e: Throwable) {
+            Log.d(TAG, "ntx refresh unavailable: ${e.message}")
+            null
+        }
+    }
+
+    private val rockchipRequestEpdMode: Pair<Method, Enum<*>>? by lazy {
+        try {
+            @Suppress("UNCHECKED_CAST")
+            val einkEnum = Class.forName("android.view.View\$EINK_MODE") as Class<out Enum<*>>
+            val full = einkEnum.enumConstants?.firstOrNull { it.name == "EPD_FULL" }
+            if (full == null) {
+                null
+            } else {
+                View::class.java.getMethod("requestEpdMode", einkEnum, java.lang.Boolean.TYPE) to full
+            }
+        } catch (e: Throwable) {
+            Log.d(TAG, "rockchip refresh unavailable: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Whether this device exposes at least one known full-refresh mechanism.
+     * Drives the "Auto Full Refresh" UI: the option is only offered where a
+     * deep refresh is actually possible, so it never misleads owners of panels
+     * we cannot drive. Pure reflection — never touches the panel.
+     */
+    fun isSupported(): Boolean =
+        onyxRefreshScreen != null || ntxPostInvalidateDelayed != null || rockchipRequestEpdMode != null
+
     /**
      * Attempt a deep full refresh over [view]'s region. Returns true when a
      * vendor mechanism accepted the request, false when none is available
@@ -50,17 +106,13 @@ object EinkRefreshController {
     // Onyx BOOX (Qualcomm models): `refreshScreen` is an instance method patched
     // onto View that performs an EPD update of the given region.
     private fun onyxRefresh(view: View, width: Int, height: Int): Boolean {
+        val method = onyxRefreshScreen ?: return false
         return try {
-            View::class.java
-                .getMethod(
-                    "refreshScreen",
-                    Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE,
-                )
-                .invoke(view, 0, 0, width, height, ONYX_FULL_GC16)
+            method.invoke(view, 0, 0, width, height, ONYX_FULL_GC16)
             Log.i(TAG, "onyx full refresh requested")
             true
         } catch (e: Throwable) {
-            Log.d(TAG, "onyx refresh unavailable: ${e.message}")
+            Log.d(TAG, "onyx refresh failed: ${e.message}")
             false
         }
     }
@@ -68,18 +120,13 @@ object EinkRefreshController {
     // NTX / Freescale (Tolino, Nook): the thread-safe postInvalidateDelayed
     // overload that carries an e-ink waveform mode.
     private fun ntxRefresh(view: View, width: Int, height: Int): Boolean {
+        val method = ntxPostInvalidateDelayed ?: return false
         return try {
-            View::class.java
-                .getMethod(
-                    "postInvalidateDelayed",
-                    java.lang.Long.TYPE,
-                    Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE,
-                )
-                .invoke(view, 0L, 0, 0, width, height, NTX_FULL_GC16)
+            method.invoke(view, 0L, 0, 0, width, height, NTX_FULL_GC16)
             Log.i(TAG, "ntx full refresh requested")
             true
         } catch (e: Throwable) {
-            Log.d(TAG, "ntx refresh unavailable: ${e.message}")
+            Log.d(TAG, "ntx refresh failed: ${e.message}")
             false
         }
     }
@@ -87,17 +134,13 @@ object EinkRefreshController {
     // Rockchip (Boyue T61/T62 clones): View.requestEpdMode(View$EINK_MODE, boolean)
     // with the EPD_FULL enum constant.
     private fun rockchipRefresh(view: View): Boolean {
+        val resolved = rockchipRequestEpdMode ?: return false
         return try {
-            @Suppress("UNCHECKED_CAST")
-            val einkEnum = Class.forName("android.view.View\$EINK_MODE") as Class<out Enum<*>>
-            val full = einkEnum.enumConstants?.firstOrNull { it.name == "EPD_FULL" } ?: return false
-            View::class.java
-                .getMethod("requestEpdMode", einkEnum, java.lang.Boolean.TYPE)
-                .invoke(view, full, true)
+            resolved.first.invoke(view, resolved.second, true)
             Log.i(TAG, "rockchip full refresh requested")
             true
         } catch (e: Throwable) {
-            Log.d(TAG, "rockchip refresh unavailable: ${e.message}")
+            Log.d(TAG, "rockchip refresh failed: ${e.message}")
             false
         }
     }

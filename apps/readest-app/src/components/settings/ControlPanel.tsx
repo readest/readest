@@ -27,6 +27,7 @@ import PageTurnerSettings from './PageTurnerSettings';
 import AnnotationToolbarCustomizer from './AnnotationToolbarCustomizer';
 import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 import { canShareText } from '@/utils/share';
+import { checkEinkRefreshSupported } from '@/utils/bridge';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import KeyboardShortcutsSettings from './KeyboardShortcutsSettings';
 
@@ -74,6 +75,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [einkAutoRefreshInterval, setEinkAutoRefreshInterval] = useState(
     viewSettings.einkAutoRefreshInterval,
   );
+  // Whether this device exposes a full-refresh mechanism we can drive. The
+  // "Auto Full Refresh" row is only offered when true, so it never appears on
+  // panels (or phones) where the deep refresh silently does nothing.
+  const [einkRefreshSupported, setEinkRefreshSupported] = useState(false);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [swipeBrightnessGesture, setSwipeBrightnessGesture] = useState(
     settings.swipeBrightnessGesture,
@@ -299,6 +304,17 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [einkAutoRefreshInterval]);
+
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+    let active = true;
+    checkEinkRefreshSupported().then((supported) => {
+      if (active) setEinkRefreshSupported(supported);
+    });
+    return () => {
+      active = false;
+    };
+  }, [appService]);
 
   useEffect(() => {
     if (autoScreenBrightness === settings.autoScreenBrightness) return;
@@ -600,7 +616,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setIsEink(!isEink)}
           data-setting-id='settings.control.einkMode'
         />
-        {appService?.isAndroidApp && (
+        {appService?.isAndroidApp && einkRefreshSupported && (
           <SettingsRow
             label={_('Auto Full Refresh')}
             disabled={!isEink}

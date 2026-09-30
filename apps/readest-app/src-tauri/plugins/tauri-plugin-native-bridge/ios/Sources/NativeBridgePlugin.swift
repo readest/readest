@@ -2076,6 +2076,11 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["success": false])
   }
 
+  // iOS has no e-ink panel to drive, so the deep refresh is never supported.
+  @objc public func is_eink_refresh_supported(_ invoke: Invoke) {
+    invoke.resolve(["supported": false])
+  }
+
   @objc public func update_bookshelf_widget(_ invoke: Invoke) {
     guard let args = try? invoke.parseArgs(UpdateReadingWidgetRequestArgs.self) else {
       return invoke.reject("Failed to parse arguments")

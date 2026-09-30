@@ -95,6 +95,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_secure_item,
             commands::clear_secure_item,
             commands::refresh_eink_screen,
+            commands::is_eink_refresh_supported,
             commands::update_bookshelf_widget,
             commands::get_bookshelf_widget_instances,
             commands::set_bookshelf_widget_catalog,
