@@ -129,8 +129,23 @@ vi.mock('@/components/Overlay', () => ({
 // when closed, which FootnotePopup relies on to fill `footnoteRef` ahead of
 // the first render.
 vi.mock('@/components/Popup', () => ({
-  default: ({ isOpen, children }: { isOpen?: boolean; children: ReactNode }) => (
-    <div data-testid='popup' data-open={isOpen ? 'true' : 'false'}>
+  default: ({
+    isOpen,
+    height,
+    trianglePosition,
+    children,
+  }: {
+    isOpen?: boolean;
+    height?: number;
+    trianglePosition?: { point: { y: number } };
+    children: ReactNode;
+  }) => (
+    <div
+      data-testid='popup'
+      data-open={isOpen ? 'true' : 'false'}
+      data-height={height}
+      data-anchor-y={trianglePosition?.point.y}
+    >
       {children}
     </div>
   ),
@@ -432,5 +447,39 @@ describe('FootnotePopup jump to location', () => {
     expect(view.addAnnotation).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'here', value: 'local-cfi' }),
     );
+  });
+
+  // #6390: near a page edge the highlight toolbar has no room on the side the
+  // popup left free, so it stays by the word and the popup opens beyond it.
+  describe('with the highlight toolbar on its side', () => {
+    const block = (value: { dir: string; size: number } | null) =>
+      act(async () => {
+        await eventDispatcher.dispatch('annotation-toolbar-block', { key: BOOK_KEY, block: value });
+      });
+
+    it('opens beyond the toolbar, refitted to the room left', async () => {
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 300 });
+      await renderPopup();
+      await openFootnotePopup();
+      const popup = screen.getByTestId('popup');
+      expect(popup.dataset['anchorY']).toBe('10');
+      expect(popup.dataset['height']).toBe('242');
+
+      await block({ dir: 'down', size: 100 });
+
+      expect(popup.dataset['anchorY']).toBe('110');
+      // 300 tall, anchored at 110 with 10px padding: 180px left, not 242.
+      expect(popup.dataset['height']).toBe('180');
+    });
+
+    it('stays put when the toolbar goes away while it is open', async () => {
+      await renderPopup();
+      await openFootnotePopup();
+      await block({ dir: 'down', size: 100 });
+
+      await block(null);
+
+      expect(screen.getByTestId('popup').dataset['anchorY']).toBe('110');
+    });
   });
 });

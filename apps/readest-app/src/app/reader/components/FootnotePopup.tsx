@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MdArrowBack, MdOutlineArrowOutward } from 'react-icons/md';
 
 import { BookDoc } from '@/libs/document';
@@ -62,6 +62,22 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const footnoteViewRef = useRef<FoliateView | null>(null);
   const trianglePositionRef = useRef<Position | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position | null>();
+  // The highlight toolbar, when it had to open on this popup's side of the
+  // tapped word for lack of room on the other (#6390): open beyond it. Kept
+  // until the popup closes, so the popup never moves under the reader.
+  const [toolbarBlock, setToolbarBlock] = useState<{ dir: Position['dir']; size: number } | null>(
+    null,
+  );
+  const anchor = useMemo(() => {
+    if (!trianglePosition || !toolbarBlock || toolbarBlock.dir !== trianglePosition.dir) {
+      return trianglePosition;
+    }
+    const { point, dir } = trianglePosition;
+    const shift = dir === 'up' || dir === 'left' ? -toolbarBlock.size : toolbarBlock.size;
+    return dir === 'up' || dir === 'down'
+      ? { dir, point: { x: point.x, y: point.y + shift } }
+      : { dir, point: { x: point.x + shift, y: point.y } };
+  }, [trianglePosition, toolbarBlock]);
   const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
 
@@ -457,15 +473,43 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     }
   }, [showPopup]);
 
+  // A tap on a highlighted link opens the highlight's toolbar at the same word
+  // as this popup; tell it which side is taken so the two don't stack (#6390).
+  const anchorDir = showPopup ? (trianglePosition?.dir ?? null) : null;
+  useEffect(() => {
+    eventDispatcher.dispatch('footnote-popup-anchor', { key: bookKey, dir: anchorDir });
+  }, [bookKey, anchorDir]);
+
   useEffect(() => {
     if (!showPopup) seedPopupSize(viewSettings.vertical);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings, showPopup]);
 
   useEffect(() => {
-    if (trianglePosition && gridRect) {
+    const onToolbarBlock = (event: CustomEvent) => {
+      const { key, block } = event.detail as {
+        key: string;
+        block: { dir: Position['dir']; size: number } | null;
+      };
+      if (key === bookKey && block) setToolbarBlock(block);
+    };
+    eventDispatcher.on('annotation-toolbar-block', onToolbarBlock);
+    return () => eventDispatcher.off('annotation-toolbar-block', onToolbarBlock);
+  }, [bookKey]);
+
+  // The room the popup measured itself against moves with the anchor.
+  useEffect(() => {
+    if (!anchor) return;
+    trianglePositionRef.current = anchor;
+    const view = footnoteViewRef.current;
+    if (showPopup && view) fitPopupToContent(view);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchor]);
+
+  useEffect(() => {
+    if (anchor && gridRect) {
       const popupPos = getPopupPosition(
-        trianglePosition,
+        anchor,
         gridRect,
         responsiveWidth,
         responsiveHeight,
@@ -473,7 +517,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       );
       setPopupPosition(popupPos);
     }
-  }, [trianglePosition, gridRect, responsiveWidth, responsiveHeight, popupPadding]);
+  }, [anchor, gridRect, responsiveWidth, responsiveHeight, popupPadding]);
 
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -499,6 +543,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     }
     historyRef.current = { items: [detail], index: 0 };
     setCanGoBack(false);
+    setToolbarBlock(null);
     const popupPromise = footnoteHandler.handle(bookDoc, event);
     if (popupPromise) {
       popupPromise.catch((err: unknown) => {
@@ -556,6 +601,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setGridRect(null);
     setPopupPosition(null);
     setTrianglePosition(null);
+    setToolbarBlock(null);
     setResponsiveWidth(popupWidth);
     setResponsiveHeight(popupHeight);
     setShowPopup(false);
@@ -793,7 +839,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           width={responsiveWidth}
           height={responsiveHeight}
           position={showPopup ? popupPosition! : undefined}
-          trianglePosition={showPopup ? trianglePosition! : undefined}
+          trianglePosition={showPopup ? anchor! : undefined}
           // Scroll along the note's block axis and clip the other one. A note
           // that wraps can never need a horizontal scrollbar, but leaving that
           // axis `visible` promotes it to `auto` (CSS resolves `visible` to
