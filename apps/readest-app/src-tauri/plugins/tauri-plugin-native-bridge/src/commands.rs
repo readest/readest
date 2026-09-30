@@ -370,10 +370,10 @@ pub(crate) async fn set_bookshelf_widget_catalog<R: Runtime>(
     app.native_bridge().set_bookshelf_widget_catalog(payload)
 }
 
-/// Snapshot a region of the calling webview and return it as binary PNG
-/// (`tauri::ipc::Response`, no JSON encoding) for the mesh page-curl
+/// Snapshot a region of the calling webview and return it as binary image
+/// bytes (`tauri::ipc::Response`, no JSON encoding) for the mesh page-curl
 /// texture (#555). Platforms without a capture implementation reject,
-/// which the JS side treats as "fall back to the CSS curl".
+/// which the JS side treats as "fall back to the renderer's own turns".
 #[command]
 pub(crate) async fn capture_webview_region<R: Runtime>(
     app: AppHandle<R>,

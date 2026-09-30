@@ -8904,7 +8904,10 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-plugin",
+ "tauri-runtime-cef",
  "thiserror 2.0.20",
+ "webview2-com",
+ "windows-core 0.61.2",
  "windows-native-keyring-store",
 ]
 

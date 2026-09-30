@@ -26,7 +26,7 @@ wry = ["tauri/wry", "tauri/x11", "tauri/dbus"]
 # detect to build and bundle for CEF. It is only real when .cargo/cef.toml
 # takes it from feat/cef; every other build resolves it to the empty stub in
 # packages/tauri-runtime-cef-stub (see the root Cargo.toml).
-cef = ["dep:tauri-runtime-cef", "dep:zbus"]
+cef = ["dep:tauri-runtime-cef", "dep:zbus", "tauri-plugin-native-bridge/cef"]
 # Internal feature to suppress warnings from old objc crate
 cargo-clippy = []
 # Enable WebDriver plugin for E2E testing (use with `tauri build --debug --features webdriver`)

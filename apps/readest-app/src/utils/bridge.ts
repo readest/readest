@@ -341,10 +341,11 @@ export interface CaptureWebviewRegionRequest {
 /**
  * Capture a region of the running webview as compressed image bytes for
  * the mesh page-curl texture (#555): PNG on macOS, JPEG on iOS/Android
- * (phone-CPU PNG encoding took ~1.5s per turn). The snapshot is taken at
- * screen scale, capped at 2x CSS pixels on mobile. Rejects on platforms
- * without a native capture implementation (web, Windows/Linux so far) —
- * callers fall back to the CSS curl.
+ * (phone-CPU PNG encoding took ~1.5s per turn) and on Windows and the Linux
+ * CEF runtime (DevTools `Page.captureScreenshot`). The snapshot is taken at
+ * screen scale, capped at 2x CSS pixels on mobile. Rejects where there is no
+ * native capture (web, the Linux WebKitGTK test runtime), and callers fall
+ * back to the renderer's own turns.
  */
 export async function captureWebviewRegion(
   request: CaptureWebviewRegionRequest,
