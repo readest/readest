@@ -448,11 +448,11 @@ impl<R: Runtime> NativeBridge<R> {
         Ok(())
     }
 
-    /// Snapshot a region of `window`'s webview as PNG bytes for the mesh
-    /// page-curl texture (#555). macOS only so far; Windows
-    /// (`ICoreWebView2::CapturePreview`) and Linux
-    /// (`webkit_web_view_get_snapshot`) reject until implemented, and the
-    /// JS side falls back to the CSS curl.
+    /// Snapshot a region of `window`'s webview as image bytes for the mesh
+    /// page-curl texture (#555): PNG from WKWebView on macOS, JPEG from the
+    /// DevTools protocol on Windows (WebView2) and the Linux CEF runtime.
+    /// The Linux WebKitGTK runtime (only the webdriver E2E lane) rejects,
+    /// and the JS side falls back to the renderer's own turns.
     pub fn capture_webview_region(
         &self,
         window: &tauri::WebviewWindow<R>,
@@ -462,7 +462,19 @@ impl<R: Runtime> NativeBridge<R> {
         {
             crate::platform::macos::capture_webview_region(window, payload)
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(windows)]
+        {
+            crate::platform::windows::capture_webview_region(window, payload)
+        }
+        #[cfg(all(target_os = "linux", feature = "cef"))]
+        {
+            crate::platform::linux_cef::capture_webview_region(window, payload)
+        }
+        #[cfg(not(any(
+            target_os = "macos",
+            windows,
+            all(target_os = "linux", feature = "cef")
+        )))]
         {
             let _ = (window, payload);
             Err(crate::Error::UnsupportedPlatformError)
