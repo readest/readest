@@ -1668,7 +1668,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                             .put("playing", tts.playing)
                     )
                 }
-                ReadingWidgetStore.writeSnapshot(activity, args.appWidgetId, snapshot.toString())
+                // The widget may have been removed while the cover was written; don't orphan its snapshot.
+                if (isBoundReadingWidget(args.appWidgetId)) {
+                    ReadingWidgetStore.writeSnapshot(activity, args.appWidgetId, snapshot.toString())
+                }
                 failedCover
             }
             if (isActive) invoke.resolve(JSObject().put("failed", failed))
