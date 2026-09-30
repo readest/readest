@@ -437,6 +437,8 @@ export interface NoteExportConfig {
   includeCoverImage: boolean;
   includeChapterTitles: boolean;
   includeQuotes: boolean;
+  // The sentence around each highlight, read from the book at export time.
+  includeContext: boolean;
   includeNotes: boolean;
   includePageNumber: boolean;
   includeTimestamp: boolean;

@@ -517,6 +517,7 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   includeCoverImage: false,
   includeChapterTitles: true,
   includeQuotes: true,
+  includeContext: false,
   includeNotes: true,
   includePageNumber: true,
   includeTimestamp: false,

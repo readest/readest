@@ -1,5 +1,6 @@
 import type { FoliateView } from '@/types/view';
 import { Overlayer } from 'foliate-js/overlayer.js';
+import { SENTENCE_CONTAINER, getSentenceBounds } from '@/utils/sentence';
 
 // resolveNavigation's anchor is typed as returning a Range, but for hash
 // hrefs foliate resolves to the target Element (and 0 for section-only
@@ -20,7 +21,6 @@ type TransientHighlightOverlayer = {
   remove: (key: string) => void;
 };
 
-const SENTENCE_CONTAINER = 'p, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6';
 const HIGHLIGHT_KEY = 'transient-highlight';
 const HIGHLIGHT_COLOR = '#808080';
 
@@ -70,38 +70,10 @@ const getTargetHighlight = async (view: TransientHighlightView, target: string) 
       return { overlayer, range: getBlockRange(doc, resolved) };
     }
     const range = resolved;
-    const startElement =
-      range.startContainer.nodeType === 1
-        ? (range.startContainer as Element)
-        : range.startContainer.parentElement;
-    const root = startElement?.closest(SENTENCE_CONTAINER) ?? startElement;
-    if (!root?.contains(range.endContainer)) return { overlayer, range };
+    const bounds = getSentenceBounds(range);
+    if (!bounds) return { overlayer, range };
 
-    const before = doc.createRange();
-    before.selectNodeContents(root);
-    before.setEnd(range.startContainer, range.startOffset);
-    const matchStart = before.toString().length;
-    const matchEnd = matchStart + range.toString().length;
-    const text = root.textContent ?? '';
-    const segmentationText = text.replace(/\s/g, ' ');
-    const locale = doc.documentElement.lang || undefined;
-    const segments = Array.from(
-      new Intl.Segmenter(locale, { granularity: 'sentence' }).segment(segmentationText),
-    );
-    const startSegment = segments.find(
-      ({ index: start, segment }) => start <= matchStart && matchStart < start + segment.length,
-    );
-    const endOffset = Math.max(matchStart, matchEnd - 1);
-    const endSegment = segments.find(
-      ({ index: start, segment }) => start <= endOffset && endOffset < start + segment.length,
-    );
-    if (!startSegment || !endSegment) return { overlayer, range };
-
-    const rawStart = startSegment.index;
-    const rawEnd = endSegment.index + endSegment.segment.length;
-    const selectedText = text.slice(rawStart, rawEnd);
-    const sentenceStart = rawStart + selectedText.search(/\S|$/);
-    const sentenceEnd = rawEnd - (selectedText.length - selectedText.trimEnd().length);
+    const { root, start: sentenceStart, end: sentenceEnd } = bounds;
     const start = getTextPosition(root, sentenceStart);
     const end = getTextPosition(root, sentenceEnd);
     if (!start || !end) return { overlayer, range };

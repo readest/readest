@@ -15,6 +15,7 @@ import {
   NoteExportFormat,
 } from '@/types/book';
 import { buildAnnotationExport } from '@/services/annotation/providers/readest';
+import { getAnnotationContexts } from '@/services/annotation/context';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
 import {
@@ -128,6 +129,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       excludedStyles: noteExportConfig.excludedStyles ?? [],
       // Configs persisted before the cover option existed.
       includeCoverImage: noteExportConfig.includeCoverImage ?? false,
+      includeContext: noteExportConfig.includeContext ?? false,
       // Configs persisted before the format select existed only recorded the
       // markdown/plain-text toggle.
       exportFormat:
@@ -161,6 +163,35 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, wantsCoverImage, bookKey, appService]);
+
+  // Context is read from the book's section documents, so it is only loaded
+  // when the export shows it: the checkbox in simple mode, the
+  // annotation.context variable in template mode.
+  const wantsContext =
+    !isJson &&
+    (exportConfig.useCustomTemplate
+      ? exportConfig.customTemplate.includes('annotation.context')
+      : exportConfig.includeContext);
+  const [contexts, setContexts] = useState<Record<string, string> | null>(null);
+  useEffect(() => {
+    if (!isOpen || !wantsContext || contexts) return;
+    const bookDoc = getBookData(bookKey)?.bookDoc;
+    if (!bookDoc) {
+      setContexts({});
+      return;
+    }
+    let cancelled = false;
+    const notes = Object.values(booknoteGroups).flatMap((group) => group.booknotes);
+    getAnnotationContexts(bookDoc, notes).then((result) => {
+      if (!cancelled) setContexts(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, wantsContext, bookKey, booknoteGroups]);
+  // Hold the export until the requested context is in the output.
+  const isLoadingContext = wantsContext && !contexts;
 
   useEffect(() => {
     const customTemplate = exportConfig.customTemplate;
@@ -287,6 +318,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             webLink: buildAnnotationWebUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
             appLink: buildAnnotationAppUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
             text: note.text || '',
+            context: contexts?.[note.id] ?? '',
             note: note.note || '',
             style: note.style,
             color: note.color,
@@ -349,6 +381,13 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             lines.push(formatBlockQuote(note.text));
           }
 
+          // Add context
+          const context = contexts?.[note.id];
+          if (exportConfig.includeContext && context) {
+            lines.push('');
+            lines.push(`**${_('Context')}**: ${context}`);
+          }
+
           // Add note
           if (exportConfig.includeNotes && note.note) {
             lines.push('');
@@ -409,6 +448,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     progress,
     location,
     coverImageUrl,
+    contexts,
     _,
   ]);
 
@@ -575,6 +615,17 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                   disabled={exportConfig.useCustomTemplate}
                 />
                 <span className='text-sm'>{_('Highlights')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeContext}
+                  onChange={() => handleToggle('includeContext')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Context')}</span>
               </label>
 
               <label className='flex cursor-pointer items-center gap-2'>
@@ -807,6 +858,10 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                             {_('Highlighted text')}
                           </li>
                           <li className='ml-8'>
+                            <code className='bg-base-300 rounded-sm px-1'>annotation.context</code>{' '}
+                            - {_('Sentence around the highlight')}
+                          </li>
+                          <li className='ml-8'>
                             <code className='bg-base-300 rounded-sm px-1'>annotation.note</code> -{' '}
                             {_('Annotation note')}
                           </li>
@@ -988,7 +1043,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
               <button
                 onClick={(e) => handleExport(e, true)}
                 className='btn btn-ghost btn-sm'
-                disabled={filteredNotesCount === 0}
+                disabled={filteredNotesCount === 0 || isLoadingContext}
               >
                 {_('Share')}
               </button>
@@ -996,7 +1051,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             <button
               onClick={(e) => handleExport(e, !canSaveAndShare)}
               className='btn btn-primary btn-sm'
-              disabled={filteredNotesCount === 0}
+              disabled={filteredNotesCount === 0 || isLoadingContext}
             >
               {canSaveAndShare ? _('Save') : _('Export')}
             </button>
