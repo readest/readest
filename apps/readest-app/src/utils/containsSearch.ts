@@ -16,6 +16,8 @@ export const foldValue = (
   { matchCase, matchDiacritics }: ContainsSearchOptions,
   locale?: string,
 ): string => {
+  // Soft hyphens are invisible break hints; never let them split a match.
+  value = value.replace(/\u00AD/g, '');
   if (!matchCase) {
     try {
       value = value.toLocaleLowerCase(locale);
