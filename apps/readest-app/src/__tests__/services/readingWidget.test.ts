@@ -154,6 +154,17 @@ describe('refreshReadingWidget', () => {
     expect(stats.some((stat) => stat.endsWith('left'))).toBe(true);
   });
 
+  it('still publishes when the reference page count cannot be loaded', async () => {
+    const { updateReadingWidget, getReadingWidgetInstances } = await bridge();
+    mocks.library = [mk({ hash: 'a', readingStatus: 'reading', progress: [50, 100] })];
+    vi.mocked(getReadingWidgetInstances).mockResolvedValueOnce({
+      instances: [instance(1, { referencePages: true })],
+    });
+    vi.mocked(androidAppService.loadBookConfig).mockRejectedValueOnce(new Error('disk error'));
+    await expect(refreshReadingWidget(androidAppService, _)).resolves.toBeUndefined();
+    expect(vi.mocked(updateReadingWidget).mock.lastCall![0].stats).toContain('50 / 100');
+  });
+
   it('never shows NaN reference pages for a book with a zero page total', async () => {
     const { updateReadingWidget, getReadingWidgetInstances } = await bridge();
     mocks.referencePageCount = 500;

@@ -119,11 +119,15 @@ const refreshReadingWidgetImpl = async (
     // The footer's reference pages: a book's page list needs the book open, so use the
     // page count saved in its config, read only when a widget asks for it.
     if (book.progress?.[1] && instances.some((instance) => instance.referencePages)) {
-      const config = await appService.loadBookConfig(book, settings);
-      referencePageInfo = getReferencePageInfo({
-        fraction: book.progress[0] / book.progress[1],
-        referencePageCount: config.viewSettings?.referencePageCount,
-      });
+      try {
+        const config = await appService.loadBookConfig(book, settings);
+        referencePageInfo = getReferencePageInfo({
+          fraction: book.progress[0] / book.progress[1],
+          referencePageCount: config.viewSettings?.referencePageCount,
+        });
+      } catch (err) {
+        console.warn('Failed to load the reference page count for the reading widget', err);
+      }
     }
   }
 
