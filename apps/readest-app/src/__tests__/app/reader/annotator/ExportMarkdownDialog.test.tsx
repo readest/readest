@@ -154,14 +154,25 @@ describe('ExportMarkdownDialog highlight context', () => {
   it('adds the containing sentence below each highlight when Context is checked', async () => {
     const onExport = renderDialog();
 
+    let resolveContexts!: (contexts: Record<string, string>) => void;
+    vi.mocked(getAnnotationContexts).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveContexts = resolve;
+      }),
+    );
+
     fireEvent.click(screen.getByRole('checkbox', { name: 'Context' }));
     await waitFor(() => expect(getAnnotationContexts).toHaveBeenCalledTimes(1));
+    // Exporting before the context is read would silently leave it out.
+    expect(screen.getByRole('button', { name: 'Export' })).toHaveProperty('disabled', true);
 
-    await waitFor(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Export' }));
-      expect(onExport.mock.lastCall?.[0]).toContain(
-        '> hello\n\n**Context**: Say hello to the world.',
-      );
-    });
+    resolveContexts({ 'note-1': 'Say hello to the world.' });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Export' })).toHaveProperty('disabled', false),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(onExport.mock.lastCall?.[0]).toContain(
+      '> hello\n\n**Context**: Say hello to the world.',
+    );
   });
 });

@@ -176,7 +176,10 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   useEffect(() => {
     if (!isOpen || !wantsContext || contexts) return;
     const bookDoc = getBookData(bookKey)?.bookDoc;
-    if (!bookDoc) return;
+    if (!bookDoc) {
+      setContexts({});
+      return;
+    }
     let cancelled = false;
     const notes = Object.values(booknoteGroups).flatMap((group) => group.booknotes);
     getAnnotationContexts(bookDoc, notes).then((result) => {
@@ -187,6 +190,8 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, wantsContext, bookKey, booknoteGroups]);
+  // Hold the export until the requested context is in the output.
+  const isLoadingContext = wantsContext && !contexts;
 
   useEffect(() => {
     const customTemplate = exportConfig.customTemplate;
@@ -1038,7 +1043,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
               <button
                 onClick={(e) => handleExport(e, true)}
                 className='btn btn-ghost btn-sm'
-                disabled={filteredNotesCount === 0}
+                disabled={filteredNotesCount === 0 || isLoadingContext}
               >
                 {_('Share')}
               </button>
@@ -1046,7 +1051,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             <button
               onClick={(e) => handleExport(e, !canSaveAndShare)}
               className='btn btn-primary btn-sm'
-              disabled={filteredNotesCount === 0}
+              disabled={filteredNotesCount === 0 || isLoadingContext}
             >
               {canSaveAndShare ? _('Save') : _('Export')}
             </button>
