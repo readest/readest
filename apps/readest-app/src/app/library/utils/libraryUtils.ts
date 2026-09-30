@@ -196,6 +196,26 @@ export const selectDownloadableBooks = (
   );
 };
 
+/**
+ * The Audiobookshelf audiobooks a bulk Download should keep on the device
+ * (#6256): the expanded selection narrowed to the books the per-book
+ * "Download for Offline" action applies to and that aren't offline yet.
+ */
+export const selectAbsOfflineBooks = (
+  ids: string[],
+  items: (Book | BooksGroup)[],
+  books: Book[],
+): Book[] => {
+  const hashes = new Set(expandBookshelfSelection(ids, items));
+  return books.filter(
+    (book) =>
+      hashes.has(book.hash) &&
+      !book.deletedAt &&
+      isAbsOfflineCapable(book) &&
+      !book.absDownloadedAt,
+  );
+};
+
 // Calibre custom column names and values, flattened for searching (#4811).
 const getCalibreColumnsText = (item: Book) =>
   (item.metadata?.calibreColumns ?? [])

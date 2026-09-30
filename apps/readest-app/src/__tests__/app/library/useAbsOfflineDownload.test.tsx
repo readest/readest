@@ -71,6 +71,26 @@ describe('useAbsOfflineDownload', () => {
     expect(queueAbsOfflineDownload).not.toHaveBeenCalled();
   });
 
+  it('queues every book of a bulk download for a premium user', () => {
+    state.plan = 'plus';
+    const other = { hash: 'h2', format: 'ABS', title: 'Bob' } as Book;
+    const { result } = renderHook(() => useAbsOfflineDownload());
+
+    result.current.handleBooksOfflineDownload([book, other]);
+
+    expect(queueAbsOfflineDownload).toHaveBeenCalledWith(book, 1);
+    expect(queueAbsOfflineDownload).toHaveBeenCalledWith(other, 1);
+  });
+
+  it('routes a free user to the upgrade page once for a bulk download', () => {
+    const { result } = renderHook(() => useAbsOfflineDownload());
+
+    result.current.handleBooksOfflineDownload([book, { ...book, hash: 'h2' }]);
+
+    expect(queueAbsOfflineDownload).not.toHaveBeenCalled();
+    expect(navigateToProfile).toHaveBeenCalledTimes(1);
+  });
+
   it('shows no Premium label while a signed-in plan is still loading', () => {
     state.plan = undefined;
     const { result } = renderHook(() => useAbsOfflineDownload());

@@ -1243,18 +1243,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // Audiobookshelf offline downloads (#6256): the shelf's context menu asks
   // through events so the handlers need not be threaded through every shelf.
   // Removing the copy is "Remove from Device Only".
-  const { handleBookOfflineDownload, offlinePremiumLabel } = useAbsOfflineDownload();
+  const { handleBookOfflineDownload, handleBooksOfflineDownload, offlinePremiumLabel } =
+    useAbsOfflineDownload();
   const offlineHandlersRef = useRef({
-    download: handleBookOfflineDownload,
+    download: handleBooksOfflineDownload,
     remove: handleBookDelete('local'),
   });
   offlineHandlersRef.current = {
-    download: handleBookOfflineDownload,
+    download: handleBooksOfflineDownload,
     remove: handleBookDelete('local'),
   };
   useEffect(() => {
+    // `books` from a select-mode bulk Download, `book` from a context menu.
     const onDownload = (event: CustomEvent) => {
-      offlineHandlersRef.current.download(event.detail.book);
+      offlineHandlersRef.current.download(event.detail.books ?? [event.detail.book]);
     };
     const onRemove = async (event: CustomEvent) => {
       await offlineHandlersRef.current.remove(event.detail.book);

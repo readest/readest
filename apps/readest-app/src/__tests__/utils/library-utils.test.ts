@@ -15,6 +15,7 @@ import {
   getGroupDisplayName,
   expandBookshelfSelection,
   selectDownloadableBooks,
+  selectAbsOfflineBooks,
   buildGroupNameUpdatedAt,
   resolveCurrentShelfBooks,
   withTimeRemainingLast,
@@ -1490,6 +1491,36 @@ describe('selectDownloadableBooks', () => {
 
   it('returns an empty array when nothing is selected', () => {
     expect(selectDownloadableBooks([], [], [])).toEqual([]);
+  });
+});
+
+describe('selectAbsOfflineBooks', () => {
+  // Bulk Download in select mode keeps Audiobookshelf audiobooks on the
+  // device (#6256), the same action as the per-book "Download for Offline".
+  it('picks ABS audiobooks not yet downloaded for offline', () => {
+    const abs = createMockBook({ hash: 'abs', format: 'ABS' });
+    const offline = createMockBook({ hash: 'offline', format: 'ABS', absDownloadedAt: 100 });
+    const podcast = createMockBook({ hash: 'podcast', format: 'ABS', absMediaType: 'podcast' });
+    const epub = createMockBook({ hash: 'epub', format: 'EPUB', uploadedAt: 100 });
+    const gone = createMockBook({ hash: 'gone', format: 'ABS', deletedAt: 300 });
+    const books = [abs, offline, podcast, epub, gone];
+
+    expect(
+      selectAbsOfflineBooks(
+        books.map((b) => b.hash),
+        books,
+        books,
+      ),
+    ).toEqual([abs]);
+  });
+
+  it('expands a selected group into its ABS audiobooks', () => {
+    const abs = createMockBook({ hash: 'abs', format: 'ABS', groupName: 'Audio' });
+    const items: (Book | BooksGroup)[] = [
+      { id: 'group-audio', name: 'Audio', displayName: 'Audio', books: [abs], updatedAt: 0 },
+    ];
+
+    expect(selectAbsOfflineBooks(['group-audio'], items, [abs])).toEqual([abs]);
   });
 });
 
