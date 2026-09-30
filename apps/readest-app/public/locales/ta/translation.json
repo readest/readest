@@ -2468,5 +2468,7 @@
   "Previous and Next in the library": "நூலகத்தில் முந்தையது மற்றும் அடுத்தது",
   "Reverse Mouse Wheel": "மவுஸ் சக்கரத்தைத் தலைகீழாக்கு",
   "Scroll up for the next page": "அடுத்த பக்கத்திற்கு மேலே உருட்டவும்",
-  "Keep Text Selected After Lookup": "தேடலுக்குப் பிறகு உரையைத் தேர்ந்தெடுத்தபடி வைத்திரு"
+  "Keep Text Selected After Lookup": "தேடலுக்குப் பிறகு உரையைத் தேர்ந்தெடுத்தபடி வைத்திரு",
+  "Visible as {{name}}": "{{name}} என்ற பெயரில் தெரியும்",
+  "Local Network": "உள்ளூர் நெட்வொர்க்"
 }

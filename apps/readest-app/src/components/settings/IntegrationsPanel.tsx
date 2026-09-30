@@ -34,12 +34,17 @@ import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
-import { getLocalSendAlias, isLocalSendEnabled } from '@/services/localsend/devicePrefs';
+import {
+  getLocalSendAlias,
+  isLocalSendEnabled,
+  setLocalSendEnabled,
+} from '@/services/localsend/devicePrefs';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
 import { getICloudContainerStatus } from '@/utils/bridge';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
+import { eventDispatcher } from '@/utils/event';
 import ABSForm from './integrations/ABSForm';
 import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
@@ -115,6 +120,14 @@ const IntegrationsPanel: React.FC = () => {
   // The device name Nearby BookDrop announces once its service is running,
   // so the integrations row can show it in place of a bare "On".
   const localSendAlias = useLocalSendStore((s) => s.status?.alias);
+  // Toggled inline here or on the BookDrop sub-page; both announce the change
+  // with `localsend-prefs-changed`, which also starts/stops the service.
+  const [localSendEnabled, setLocalSendEnabledState] = useState(isLocalSendEnabled);
+  useEffect(() => {
+    const onPrefsChanged = () => setLocalSendEnabledState(isLocalSendEnabled());
+    eventDispatcher.on('localsend-prefs-changed', onPrefsChanged);
+    return () => eventDispatcher.off('localsend-prefs-changed', onPrefsChanged);
+  }, []);
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
   // status line. Keeps the user from feeling like the run was lost
   // when they back out of the WebDAV sub-page or close the dialog.
@@ -588,9 +601,17 @@ const IntegrationsPanel: React.FC = () => {
   const absStatus = absCount > 0 ? _('{{count}} server', { count: absCount }) : _('No servers');
   // Enabled rows show the announced device name (falling back to the stored
   // custom alias, then a bare "On" until the service reports its alias).
-  const localSendStatus = !isLocalSendEnabled()
+  const localSendName = localSendAlias || getLocalSendAlias();
+  const localSendStatus = !localSendEnabled
     ? _('Off')
-    : localSendAlias || getLocalSendAlias() || _('On');
+    : localSendName
+      ? _('Visible as {{name}}', { name: localSendName })
+      : _('On');
+
+  const toggleLocalSend = (next: boolean) => {
+    setLocalSendEnabled(next);
+    eventDispatcher.dispatch('localsend-prefs-changed', {});
+  };
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -600,6 +621,26 @@ const IntegrationsPanel: React.FC = () => {
           {_('Connect Readest to external services for sync, highlights, and catalogs.')}
         </p>
       </div>
+
+      {/* Nearby BookDrop is the one integration that is on by default, and it
+          listens on the local network, so it leads the panel (#6360). */}
+      {isTauriAppPlatform() && (
+        <div className='w-full' data-setting-id='settings.integrations.localsend'>
+          <SectionTitle className='mb-2'>{_('Local Network')}</SectionTitle>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+            <CloudProviderRow
+              icon={RiWifiLine}
+              title={_('Nearby BookDrop')}
+              status={localSendStatus}
+              checked={localSendEnabled}
+              canToggle
+              onToggle={toggleLocalSend}
+              onOpen={() => setSubPage('localsend')}
+              toggleLabel={_('Enable Nearby BookDrop')}
+            />
+          </div>
+        </div>
+      )}
 
       <div className='w-full' data-setting-id='settings.integrations.sync'>
         <SectionTitle className='mb-2'>{_('Reading Sync')}</SectionTitle>
@@ -797,14 +838,6 @@ const IntegrationsPanel: React.FC = () => {
               status={_('Email books to your library')}
               onClick={() => setSubPage('send')}
             />
-            {isTauriAppPlatform() && (
-              <IntegrationRow
-                icon={RiWifiLine}
-                title={_('Nearby BookDrop')}
-                status={localSendStatus}
-                onClick={() => setSubPage('localsend')}
-              />
-            )}
           </div>
         </div>
       </div>
@@ -883,10 +916,11 @@ interface CloudProviderRowProps {
 }
 
 /**
- * A cloud-sync provider row. Two controls: a trailing checkbox that turns
- * this provider's library sync on or off (several may be on at once) —
- * enabled only when it's already configured — and the row body / chevron
- * that opens its config sub-page (connect, sync options, disconnect).
+ * A cloud-sync provider row (also used for Nearby BookDrop). Two controls: a
+ * trailing checkbox that turns this provider's library sync on or off
+ * (several may be on at once) — enabled only when it's already configured —
+ * and the row body / chevron that opens its config sub-page (connect, sync
+ * options, disconnect).
  */
 const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
   icon: Icon,

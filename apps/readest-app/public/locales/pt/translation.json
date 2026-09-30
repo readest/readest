@@ -2528,5 +2528,7 @@
   "Previous and Next in the library": "Anterior e Seguinte na biblioteca",
   "Reverse Mouse Wheel": "Inverter roda do rato",
   "Scroll up for the next page": "Deslize para cima para a página seguinte",
-  "Keep Text Selected After Lookup": "Manter o texto selecionado após a consulta"
+  "Keep Text Selected After Lookup": "Manter o texto selecionado após a consulta",
+  "Visible as {{name}}": "Visível como {{name}}",
+  "Local Network": "Rede local"
 }
