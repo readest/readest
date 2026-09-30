@@ -6,21 +6,29 @@ import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { AppService } from '@/types/system';
 import { windowNeedsClientOutline } from '@/utils/window';
 
-// Take the first label no open window holds. A counter of open windows would
-// hand out the label of a window that is still open once an earlier one
-// closes, and Tauri refuses to create a second window with that label (#6363).
-const nextFreeWindowLabel = async (prefix: string) => {
+// Labels handed out whose windows are not created yet, so two overlapping
+// launches that read the same window list do not pick the same label.
+const pendingLabels = new Set<string>();
+
+// Take the first label no open or pending window holds. A counter of open
+// windows would hand out the label of a window that is still open once an
+// earlier one closes, and Tauri refuses to create a second window with that
+// label (#6363).
+const reserveWindowLabel = async (prefix: string) => {
   const labels = new Set((await getAllWebviewWindows()).map((w) => w.label));
   let index = 0;
-  while (labels.has(`${prefix}-${index}`)) index += 1;
-  return `${prefix}-${index}`;
+  while (labels.has(`${prefix}-${index}`) || pendingLabels.has(`${prefix}-${index}`)) index += 1;
+  const label = `${prefix}-${index}`;
+  pendingLabels.add(label);
+  return label;
 };
 
 const createReaderWindow = async (appService: AppService, url: string) => {
   const currentWindow = getCurrentWindow();
   const label = currentWindow.label;
   const newLabelPrefix = label === 'main' ? 'reader' : label;
-  const win = new WebviewWindow(await nextFreeWindowLabel(newLabelPrefix), {
+  const newLabel = await reserveWindowLabel(newLabelPrefix);
+  const win = new WebviewWindow(newLabel, {
     url,
     width: 800,
     height: 600,
@@ -38,7 +46,11 @@ const createReaderWindow = async (appService: AppService, url: string) => {
       ? 'fluentOverlay'
       : 'default') as unknown as ScrollBarStyle,
   });
+  win.once('tauri://created', () => {
+    pendingLabels.delete(newLabel);
+  });
   win.once('tauri://error', (e) => {
+    pendingLabels.delete(newLabel);
     console.error('error creating window', e);
   });
 };
