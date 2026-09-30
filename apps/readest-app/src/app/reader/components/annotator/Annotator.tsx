@@ -35,7 +35,7 @@ import { useHardcoverSync } from '../../hooks/useHardcoverSync';
 import { useNotionSync } from '../../hooks/useNotionSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
 import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
-import { Point, Position, TextSelection } from '@/utils/sel';
+import { hasRoomFor, Point, Position, TextSelection } from '@/utils/sel';
 import {
   getPopupPosition,
   getPosition,
@@ -181,6 +181,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
   const [annotPopupPosition, setAnnotPopupPosition] = useState<Position>();
+  // The side of the tapped word the footnote popup took, when one is open: a
+  // tap on a highlighted link opens both it and this toolbar (#6390).
+  const [footnotePopupDir, setFootnotePopupDir] = useState<Position['dir'] | null>(null);
   const [dictPopupPosition, setDictPopupPosition] = useState<Position>();
   const [translatorPopupPosition, setTranslatorPopupPosition] = useState<Position>();
   const [proofreadPopupPosition, setProofreadPopupPosition] = useState<Position>();
@@ -298,6 +301,33 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           annotPopupMaxWidth,
         );
   const annotPopupHeight = useResponsiveSize(44);
+  // The style/color strip that rides on the toolbar's far side, with its gap.
+  const highlightOptionsBlock = useResponsiveSize(28 + 16);
+  // Set while the toolbar shares its side with the footnote popup because the
+  // other side has no room for it; the popup then opens beyond it (#6390).
+  const [toolbarBlock, setToolbarBlock] = useState<{ dir: Position['dir']; size: number } | null>(
+    null,
+  );
+
+  // Where to anchor the toolbar. A tap on a highlighted link opens the footnote
+  // popup at the same word, so the toolbar takes the side the popup left free
+  // when it fits there, and otherwise stays put and has the popup make room.
+  const getToolbarPosition = (sel: TextSelection, rect: DOMRect) => {
+    const avoidDir = sel.popup ? null : footnotePopupDir;
+    const free = getPosition(sel, rect, trianglePadding, viewSettings.vertical, avoidDir);
+    if (!avoidDir || free.dir === avoidDir) {
+      setToolbarBlock(null);
+      return free;
+    }
+    const size = annotPopupHeight + (highlightOptionsAvailable ? highlightOptionsBlock : 0);
+    if (hasRoomFor(free, rect, size, popupPadding)) {
+      setToolbarBlock(null);
+      return free;
+    }
+    const shared = getPosition(sel, rect, trianglePadding, viewSettings.vertical);
+    setToolbarBlock({ dir: shared.dir, size });
+    return shared;
+  };
   const androidSelectionHandlerHeight = 0;
 
   // Reposition popups on scroll without dismissing them
@@ -306,7 +336,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
     const rect = gridFrame.getBoundingClientRect();
-    const triangPos = getPosition(selection, rect, trianglePadding, viewSettings.vertical);
+    const triangPos = getToolbarPosition(selection, rect);
     const annotPopupPos = getPopupPosition(
       triangPos,
       rect,
@@ -346,7 +376,37 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setProofreadPopupPosition(proofreadPopupPos);
     setTrianglePosition(triangPos);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection, bookKey, viewSettings.vertical, annotPopupWidth, annotPopupHeight]);
+  }, [
+    selection,
+    bookKey,
+    viewSettings.vertical,
+    annotPopupWidth,
+    annotPopupHeight,
+    footnotePopupDir,
+  ]);
+
+  useEffect(() => {
+    const onFootnotePopupAnchor = (event: CustomEvent) => {
+      const { key, dir } = event.detail as { key: string; dir: Position['dir'] | null };
+      if (key === bookKey) setFootnotePopupDir(dir);
+    };
+    eventDispatcher.on('footnote-popup-anchor', onFootnotePopupAnchor);
+    return () => eventDispatcher.off('footnote-popup-anchor', onFootnotePopupAnchor);
+  }, [bookKey]);
+
+  useEffect(() => {
+    eventDispatcher.dispatch('annotation-toolbar-block', {
+      key: bookKey,
+      block: showAnnotPopup ? toolbarBlock : null,
+    });
+  }, [bookKey, showAnnotPopup, toolbarBlock]);
+
+  // The footnote popup renders after the tap's selection has placed the
+  // toolbar, so move the toolbar off its side once it is known.
+  useEffect(() => {
+    repositionPopups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [footnotePopupDir]);
 
   useEffect(() => {
     repositionPopups();
@@ -1135,7 +1195,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
       const rect = gridFrame.getBoundingClientRect();
-      const triangPos = getPosition(selection, rect, trianglePadding, viewSettings.vertical);
+      const triangPos = getToolbarPosition(selection, rect);
       const annotPopupPos = getPopupPosition(
         triangPos,
         rect,

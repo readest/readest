@@ -237,6 +237,43 @@ describe('sel utilities', () => {
       expect(result.dir).toBeDefined();
     });
 
+    // #6390: a tap on a highlighted footnote link opens both the highlight's
+    // toolbar and the footnote popup at the same word. Both used to take the
+    // roomier side and stack on top of each other; the toolbar now takes the
+    // side the footnote popup left free.
+    it.each([
+      ['down', 'up'],
+      ['up', 'down'],
+    ] as const)('takes the other side when %s is taken', async (taken, expected) => {
+      const { getPosition } = await import('@/utils/sel');
+      const mockRange = {
+        getClientRects: () =>
+          [{ top: 300, right: 300, bottom: 320, left: 200 }] as unknown as DOMRectList,
+        commonAncestorContainer: document.createElement('div'),
+      } as unknown as Range;
+      const rect: Rect = { top: 0, right: 1024, bottom: 768, left: 0 };
+
+      expect(getPosition(mockRange, rect, 10).dir).toBe('down');
+      expect(getPosition(mockRange, rect, 10, false, taken).dir).toBe(expected);
+    });
+
+    // #6390: at the page's top edge there is no room above the word for the
+    // toolbar and its style strip, so taking the side the footnote popup left
+    // free only squeezed them into the popup's edge.
+    it.each([
+      ['up', 120, true],
+      ['up', 40, false],
+      ['down', 600, true],
+      ['down', 700, false],
+      ['left', 120, true],
+      ['right', 1000, false],
+    ] as const)('knows whether a %s block fits at %i', async (dir, at, fits) => {
+      const { hasRoomFor } = await import('@/utils/sel');
+      const rect: Rect = { top: 0, right: 1024, bottom: 768, left: 0 };
+      const point = dir === 'up' || dir === 'down' ? { x: 500, y: at } : { x: at, y: 400 };
+      expect(hasRoomFor({ point, dir }, rect, 88, 10)).toBe(fits);
+    });
+
     it('anchors to the on-screen end when the selection start is off-screen (cross-page)', async () => {
       const { getPosition } = await import('@/utils/sel');
       // A selection that spans a page boundary: its first line is on the

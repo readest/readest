@@ -290,6 +290,9 @@ export const getPosition = (
   rect: Rect,
   paddingPx: number,
   isVertical: boolean = false,
+  // A side already taken by another popup at the same spot (#6390): the
+  // footnote popup a tap on a highlighted link opens along with the toolbar.
+  avoidDir: Position['dir'] | null = null,
 ) => {
   const {
     range: target,
@@ -315,7 +318,8 @@ export const getPosition = (
   if (isVertical) {
     const leftSpace = first.left - rect.left;
     const rightSpace = rect.right - first.right;
-    const dir = leftSpace > rightSpace ? 'left' : 'right';
+    const roomier = leftSpace > rightSpace ? 'left' : 'right';
+    const dir = roomier === avoidDir ? (roomier === 'left' ? 'right' : 'left') : roomier;
     const position = {
       point: constrainPointWithinRect(
         {
@@ -378,7 +382,24 @@ export const getPosition = (
   }
   if (!startInView) return end;
   if (!endInView) return start;
+  if (avoidDir === 'down') return start;
+  if (avoidDir === 'up') return end;
   return start.point.y > window.innerHeight - end.point.y ? start : end;
+};
+
+// Whether a popup `sizePx` deep fits beyond the triangle on its side, within
+// the book cell (`rect`) and its padding.
+export const hasRoomFor = (position: Position, rect: Rect, sizePx: number, paddingPx: number) => {
+  const { point, dir } = position;
+  const room =
+    dir === 'up'
+      ? point.y
+      : dir === 'down'
+        ? rect.bottom - rect.top - point.y
+        : dir === 'left'
+          ? point.x
+          : rect.right - rect.left - point.x;
+  return room >= sizePx + paddingPx;
 };
 
 // The popup will be positioned based on the triangle position and the direction
