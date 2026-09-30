@@ -630,6 +630,17 @@ describe('getColorStyles branches (via getStyles)', () => {
     expect(css).not.toContain('::-moz-selection');
   });
 
+  // Chromium's default selection paints near-black text, unreadable on a dark
+  // page (#6503). A background-only rule keeps each element's own text color.
+  it('gives dark mode a theme selection background without forcing a text color', () => {
+    const vs = makeViewSettings({ isEink: false });
+    const theme = makeThemeCode({ isDarkMode: true, bg: '#222222', fg: '#e0e0e0' });
+    const css = getStyles(vs, theme);
+    const rule = css.match(/::selection\s*{([^}]*)}/);
+    expect(rule?.[1]).toContain('background: color-mix(in srgb, #3366cc 40%, transparent)');
+    expect(rule?.[1]).not.toMatch(/(^|[\s;])color:/);
+  });
+
   it('sets text-decoration to underline for links when isEink is true', () => {
     const vs = makeViewSettings({ isEink: true });
     const theme = makeThemeCode();
