@@ -402,6 +402,25 @@ export const hasRoomFor = (position: Position, rect: Rect, sizePx: number, paddi
   return room >= sizePx + paddingPx;
 };
 
+// Where the highlight toolbar goes when the footnote popup has taken
+// `avoidDir` at the same word (#6390): the free side when it lands there with
+// room to spare, otherwise the popup's side (`shared`), where the popup is to
+// open beyond it. `place` anchors the toolbar, avoiding the side it is given.
+export const placeToolbar = (
+  place: (avoidDir: Position['dir'] | null) => Position,
+  avoidDir: Position['dir'] | null,
+  rect: Rect,
+  sizePx: number,
+  paddingPx: number,
+) => {
+  if (!avoidDir) return { position: place(null), shared: false };
+  const free = place(avoidDir);
+  if (free.dir !== avoidDir && hasRoomFor(free, rect, sizePx, paddingPx)) {
+    return { position: free, shared: false };
+  }
+  return { position: free.dir === avoidDir ? free : place(null), shared: true };
+};
+
 // The popup will be positioned based on the triangle position and the direction
 // up: above the triangle
 // down: below the triangle

@@ -63,7 +63,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const trianglePositionRef = useRef<Position | null>(null);
   const [trianglePosition, setTrianglePosition] = useState<Position | null>();
   // The highlight toolbar, when it had to open on this popup's side of the
-  // tapped word for lack of room on the other (#6390): open beyond it.
+  // tapped word for lack of room on the other (#6390): open beyond it. Kept
+  // until the popup closes, so the popup never moves under the reader.
   const [toolbarBlock, setToolbarBlock] = useState<{ dir: Position['dir']; size: number } | null>(
     null,
   );
@@ -490,14 +491,19 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         key: string;
         block: { dir: Position['dir']; size: number } | null;
       };
-      if (key === bookKey) setToolbarBlock(block);
+      if (key === bookKey && block) setToolbarBlock(block);
     };
     eventDispatcher.on('annotation-toolbar-block', onToolbarBlock);
     return () => eventDispatcher.off('annotation-toolbar-block', onToolbarBlock);
   }, [bookKey]);
 
+  // The room the popup measured itself against moves with the anchor.
   useEffect(() => {
-    if (anchor) trianglePositionRef.current = anchor;
+    if (!anchor) return;
+    trianglePositionRef.current = anchor;
+    const view = footnoteViewRef.current;
+    if (showPopup && view) fitPopupToContent(view);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor]);
 
   useEffect(() => {
@@ -537,6 +543,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     }
     historyRef.current = { items: [detail], index: 0 };
     setCanGoBack(false);
+    setToolbarBlock(null);
     const popupPromise = footnoteHandler.handle(bookDoc, event);
     if (popupPromise) {
       popupPromise.catch((err: unknown) => {
@@ -594,6 +601,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setGridRect(null);
     setPopupPosition(null);
     setTrianglePosition(null);
+    setToolbarBlock(null);
     setResponsiveWidth(popupWidth);
     setResponsiveHeight(popupHeight);
     setShowPopup(false);

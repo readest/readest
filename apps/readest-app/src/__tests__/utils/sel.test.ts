@@ -274,6 +274,51 @@ describe('sel utilities', () => {
       expect(hasRoomFor({ point, dir }, rect, 88, 10)).toBe(fits);
     });
 
+    // #6390 review: the toolbar only leaves the footnote popup's side when it
+    // actually lands on the other one with room to spare; anything else (a
+    // selection whose other end is off-screen lands on the taken side anyway)
+    // shares the side and has the popup open beyond it.
+    describe('placeToolbar', () => {
+      const rect: Rect = { top: 0, right: 1024, bottom: 768, left: 0 };
+      const at = (dir: 'up' | 'down', y: number) => ({ point: { x: 500, y }, dir });
+
+      it('keeps the usual side when no side is taken', async () => {
+        const { placeToolbar } = await import('@/utils/sel');
+        const place = () => at('down', 300);
+        expect(placeToolbar(place, null, rect, 88, 10)).toEqual({
+          position: at('down', 300),
+          shared: false,
+        });
+      });
+
+      it('takes the free side when it fits there', async () => {
+        const { placeToolbar } = await import('@/utils/sel');
+        const place = (avoid?: string | null) => (avoid ? at('up', 300) : at('down', 320));
+        expect(placeToolbar(place, 'down', rect, 88, 10)).toEqual({
+          position: at('up', 300),
+          shared: false,
+        });
+      });
+
+      it('shares the side when the free side has no room', async () => {
+        const { placeToolbar } = await import('@/utils/sel');
+        const place = (avoid?: string | null) => (avoid ? at('up', 40) : at('down', 60));
+        expect(placeToolbar(place, 'down', rect, 88, 10)).toEqual({
+          position: at('down', 60),
+          shared: true,
+        });
+      });
+
+      it('shares the side when the placement lands on the taken side anyway', async () => {
+        const { placeToolbar } = await import('@/utils/sel');
+        const place = () => at('down', 300);
+        expect(placeToolbar(place, 'down', rect, 88, 10)).toEqual({
+          position: at('down', 300),
+          shared: true,
+        });
+      });
+    });
+
     it('anchors to the on-screen end when the selection start is off-screen (cross-page)', async () => {
       const { getPosition } = await import('@/utils/sel');
       // A selection that spans a page boundary: its first line is on the

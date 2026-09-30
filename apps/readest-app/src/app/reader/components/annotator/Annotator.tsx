@@ -35,7 +35,7 @@ import { useHardcoverSync } from '../../hooks/useHardcoverSync';
 import { useNotionSync } from '../../hooks/useNotionSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
 import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
-import { hasRoomFor, Point, Position, TextSelection } from '@/utils/sel';
+import { placeToolbar, Point, Position, TextSelection } from '@/utils/sel';
 import {
   getPopupPosition,
   getPosition,
@@ -313,20 +313,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // popup at the same word, so the toolbar takes the side the popup left free
   // when it fits there, and otherwise stays put and has the popup make room.
   const getToolbarPosition = (sel: TextSelection, rect: DOMRect) => {
-    const avoidDir = sel.popup ? null : footnotePopupDir;
-    const free = getPosition(sel, rect, trianglePadding, viewSettings.vertical, avoidDir);
-    if (!avoidDir || free.dir === avoidDir) {
-      setToolbarBlock(null);
-      return free;
-    }
     const size = annotPopupHeight + (highlightOptionsAvailable ? highlightOptionsBlock : 0);
-    if (hasRoomFor(free, rect, size, popupPadding)) {
-      setToolbarBlock(null);
-      return free;
-    }
-    const shared = getPosition(sel, rect, trianglePadding, viewSettings.vertical);
-    setToolbarBlock({ dir: shared.dir, size });
-    return shared;
+    const { position, shared } = placeToolbar(
+      (avoidDir) => getPosition(sel, rect, trianglePadding, viewSettings.vertical, avoidDir),
+      sel.popup ? null : footnotePopupDir,
+      rect,
+      size,
+      popupPadding,
+    );
+    setToolbarBlock(shared ? { dir: position.dir, size } : null);
+    return position;
   };
   const androidSelectionHandlerHeight = 0;
 
