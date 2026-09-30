@@ -72,7 +72,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const { isTrafficLightVisible } = useTrafficLight(headerRef);
   const iconSize18 = useResponsiveSize(18);
-  const { safeAreaInsets: insets } = useThemeStore();
+  const { safeAreaInsets: insets, isIPhoneDuo } = useThemeStore();
 
   useShortcuts({
     onToggleSelectMode,
@@ -101,6 +101,12 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
         marginTop: appService?.hasSafeAreaInset
           ? `max(${insets.top}px, ${systemUIVisible ? statusBarHeight : 0}px)`
           : '0px',
+        // Keep the trailing buttons clear of iPhone Duo's side status strip /
+        // camera cutout (#6307); bases match pl-0 / pr-4. Only with a side
+        // inset, so responsive sm:pl-2 / sm:pr-6 keep applying otherwise.
+        ...(isIPhoneDuo && (insets.left || insets.right)
+          ? { paddingLeft: `${insets.left}px`, paddingRight: `${insets.right + 16}px` }
+          : {}),
       }}
     >
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>

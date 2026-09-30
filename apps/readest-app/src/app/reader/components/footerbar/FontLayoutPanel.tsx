@@ -35,6 +35,8 @@ interface FontLayoutPanelProps {
   bottomOffset: string;
   marginIconSize: number;
   forceMobileLayout: boolean;
+  // Keeps the panel clear of iPhone Duo's side status strip (#6307).
+  insetStyle?: React.CSSProperties;
 }
 
 export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
@@ -43,6 +45,7 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
   bottomOffset,
   marginIconSize,
   forceMobileLayout,
+  insetStyle,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -128,6 +131,7 @@ export const FontLayoutPanel: React.FC<FontLayoutPanelProps> = ({
         bottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 64px)`
           : bottomOffset,
+        ...insetStyle,
       }}
     >
       <Slider

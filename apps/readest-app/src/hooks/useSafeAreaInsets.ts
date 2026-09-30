@@ -10,7 +10,7 @@ export const useSafeAreaInsets = () => {
   const { appService } = useEnv();
   const currentInsets = useRef({ top: 0, right: 0, bottom: 0, left: 0 });
 
-  const { updateSafeAreaInsets, updateScreenCornerRadius } = useThemeStore();
+  const { updateSafeAreaInsets, updateScreenCornerRadius, setIsIPhoneDuo } = useThemeStore();
 
   const updateInsets = (insets: Insets) => {
     const { top, right, bottom, left } = currentInsets.current;
@@ -53,6 +53,7 @@ export const useSafeAreaInsets = () => {
           };
           updateInsets(insets);
           updateScreenCornerRadius(Math.round(response.bottomCornerRadius ?? 0));
+          setIsIPhoneDuo(!!response.isIPhoneDuo);
         }
       });
     } else if (hasCustomProperties) {
@@ -104,6 +105,14 @@ export const useSafeAreaInsets = () => {
         })
       : undefined;
 
+    // Folding or unfolding iPhone Duo and entering Split View move its status
+    // strip to another edge without an orientation event (#6307). Only the Duo
+    // refetches on resize, so no other device changes.
+    const handleResize = () => {
+      if (useThemeStore.getState().isIPhoneDuo) onUpdateInsets();
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
       if (window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', onUpdateInsets);
@@ -112,6 +121,7 @@ export const useSafeAreaInsets = () => {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('resize', handleResize);
       void unlistenFocus?.then((unlisten) => unlisten());
     };
   }, [onUpdateInsets]);

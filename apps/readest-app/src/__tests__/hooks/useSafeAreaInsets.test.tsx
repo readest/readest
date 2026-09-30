@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
   getInsets: vi.fn(),
   updateInsets: vi.fn(),
   updateCornerRadius: vi.fn(),
+  setIsIPhoneDuo: vi.fn(),
   focus: undefined as ((event: { payload: boolean }) => void) | undefined,
   unlisten: vi.fn(),
 }));
@@ -15,6 +16,7 @@ vi.mock('@/store/themeStore', () => ({
   useThemeStore: () => ({
     updateSafeAreaInsets: h.updateInsets,
     updateScreenCornerRadius: h.updateCornerRadius,
+    setIsIPhoneDuo: h.setIsIPhoneDuo,
   }),
 }));
 vi.mock('@/utils/bridge', () => ({ getSafeAreaInsets: h.getInsets }));

@@ -1451,6 +1451,24 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  // iOS exposes no foldable API and the viewport size cannot identify the
+  // device, so iPhone Duo is recognized by its model identifier.
+  private static let iPhoneDuoModelIdentifiers: Set<String> = ["iPhone19,4"]
+
+  private static let isIPhoneDuo: Bool = {
+    let identifier: String
+    if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] {
+      identifier = simulated
+    } else {
+      var systemInfo = utsname()
+      uname(&systemInfo)
+      identifier = withUnsafePointer(to: &systemInfo.machine) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 1) { String(cString: $0) }
+      }
+    }
+    return iPhoneDuoModelIdentifiers.contains(identifier)
+  }()
+
   @objc public func get_safe_area_insets(_ invoke: Invoke) {
     DispatchQueue.main.async {
       if let window = UIApplication.shared.windows.first {
@@ -1472,7 +1490,8 @@ class NativeBridgePlugin: Plugin {
           "left": insets.left,
           "bottom": insets.bottom,
           "right": insets.right,
-          "bottomCornerRadius": bottomCornerRadius
+          "bottomCornerRadius": bottomCornerRadius,
+          "isIPhoneDuo": NativeBridgePlugin.isIPhoneDuo
         ])
       } else {
         invoke.resolve([

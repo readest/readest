@@ -21,6 +21,8 @@ interface NavigationPanelProps {
   bottomOffset: string;
   sliderHeight: number;
   forceMobileLayout: boolean;
+  // Keeps the panel clear of iPhone Duo's side status strip (#6307).
+  insetStyle?: React.CSSProperties;
 }
 
 export const NavigationPanel: React.FC<NavigationPanelProps> = ({
@@ -32,6 +34,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
   bottomOffset,
   sliderHeight,
   forceMobileLayout,
+  insetStyle,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -78,6 +81,7 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
         bottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 64px)`
           : bottomOffset,
+        ...insetStyle,
       }}
     >
       <div className='flex w-full flex-col items-center gap-y-4'>

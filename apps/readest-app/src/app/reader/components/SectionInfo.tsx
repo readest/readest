@@ -42,7 +42,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const { hoveredBookKey, getView, getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const { systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const getBookData = useBookDataStore((s) => s.getBookData);
   const viewSettings = getViewSettings(bookKey)!;
   const bookData = getBookData(bookKey);
@@ -141,7 +141,17 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
               }
             : {
                 top: `${band.top}px`,
-                paddingInline: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
+                ...(isIPhoneDuo
+                  ? {
+                      // Per side: a Duo status strip widens only one inset
+                      // (#6307). Half the page margin past the safe-area inset,
+                      // matching the paginator's gutter.
+                      paddingLeft: `calc(${horizontalGap / 2}% + ${(contentInsets.left + gridInsets.left) / 2}px)`,
+                      paddingRight: `calc(${horizontalGap / 2}% + ${(contentInsets.right + gridInsets.right) / 2}px)`,
+                    }
+                  : {
+                      paddingInline: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
+                    }),
                 width: '100%',
                 height: `${band.height}px`,
               }),

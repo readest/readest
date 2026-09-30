@@ -86,6 +86,7 @@ export interface GetSafeAreaInsetsResponse {
   bottom: number;
   left: number;
   bottomCornerRadius?: number;
+  isIPhoneDuo?: boolean;
   error?: string;
 }
 
