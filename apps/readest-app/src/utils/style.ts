@@ -241,6 +241,17 @@ const getEinkSelectionStyles = () => {
   `;
 };
 
+// Chromium's default selection colors force near-black text (on blue when
+// focused, on grey when not), unreadable on a dark page — most visibly on the
+// selection a lookup popup holds while it has focus (#6503). Setting only the
+// background keeps each element's own text color, and pdf.js's transparent
+// text layer stays transparent.
+const getDarkSelectionStyles = (primary: string) => `
+    ::selection {
+      background: color-mix(in srgb, ${primary} 40%, transparent);
+    }
+  `;
+
 const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
   // Background and text are independent switches; off means the default
   // (theme primary tint for the background, inherited text). An empty stored
@@ -295,7 +306,7 @@ const getColorStyles = (
     html, body {
       color: ${fg};
     }
-    ${isEink ? getEinkSelectionStyles() : ''}
+    ${isEink ? getEinkSelectionStyles() : isDarkMode ? getDarkSelectionStyles(primary) : ''}
     html[has-background], body[has-background] {
       --background-set: var(--theme-bg-color);
     }
