@@ -2602,6 +2602,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         )}
       {editingAnnotation && editingAnnotation.color && selection && !overlaySurfaceOpen && (
         <AnnotationRangeEditor
+          // The editor latches its annotation on mount; going straight from
+          // one highlight to another must not reuse it.
+          key={editingAnnotation.id}
           bookKey={bookKey}
           isVertical={viewSettings.vertical}
           annotation={editingAnnotation}

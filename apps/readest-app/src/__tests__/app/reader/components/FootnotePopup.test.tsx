@@ -113,6 +113,14 @@ vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
   isLinkTargetVisible: hoisted.isLinkTargetVisible,
 }));
 
+// Map every booknote into whatever popup is open, as a fragment path shared
+// by two sections would; which section a note belongs to is then left to the
+// popup's own spine check.
+vi.mock('@/app/reader/utils/footnoteCfi', () => ({
+  getFootnoteLocalCfi: () => 'local-cfi',
+  getFootnoteSelectionCfi: () => null,
+}));
+
 vi.mock('@/components/Overlay', () => ({
   Overlay: () => <div data-testid='overlay' />,
 }));
@@ -363,5 +371,66 @@ describe('FootnotePopup jump to location', () => {
     });
     Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
     expect(screen.getByTestId('popup').dataset['open']).toBe('false');
+  });
+
+  // #6390 review: a range-editor preview is dispatched after an await, so it
+  // can land once the popup shows another section. It must not draw there.
+  it('draws a drag preview only for a note in the section the popup shows', async () => {
+    globalThis.ResizeObserver ??= class {
+      observe() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+    await renderPopup();
+    const anchor = document.createElement('a');
+    anchor.setAttribute('href', HREF);
+    document.body.appendChild(anchor);
+    await act(async () => {
+      hoisted.onLinkClick.current?.(
+        new CustomEvent('link', { detail: { a: anchor, href: HREF }, cancelable: true }),
+      );
+    });
+    const handler = hoisted.handlers.at(-1)!;
+    const view = Object.assign(createPopupView(), {
+      getCFI: () => 'epubcfi(/6/8!/4)',
+      addAnnotation: vi.fn(),
+    });
+    await act(async () => {
+      handler.dispatchEvent(new CustomEvent('before-render', { detail: { view } }));
+      handler.dispatchEvent(
+        new CustomEvent('render', { detail: { view, href: HREF, index: 3, extract: {} } }),
+      );
+      view.dispatchEvent(
+        new CustomEvent('load', {
+          detail: { doc: document.implementation.createHTMLDocument(), index: 3 },
+        }),
+      );
+      view.dispatchEvent(new CustomEvent('relocate', { detail: {} }));
+    });
+    const note = (id: string, cfi: string) => ({
+      id,
+      type: 'annotation',
+      cfi,
+      style: 'highlight',
+      color: 'yellow',
+      updatedAt: 1,
+    });
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-annotation-preview', {
+        key: BOOK_KEY,
+        note: note('elsewhere', 'epubcfi(/6/4!/4/2,/1:0,/1:5)'),
+      });
+    });
+    expect(view.addAnnotation).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-annotation-preview', {
+        key: BOOK_KEY,
+        note: note('here', 'epubcfi(/6/8!/4/2,/1:0,/1:5)'),
+      });
+    });
+    expect(view.addAnnotation).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'here', value: 'local-cfi' }),
+    );
   });
 });

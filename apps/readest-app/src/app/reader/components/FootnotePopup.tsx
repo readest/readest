@@ -676,6 +676,19 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     return keys;
   };
 
+  // Only notes anchored in the popup's own section can map into it. Compare
+  // spine prefixes (id assertions stripped, since a foreign/imported CFI may
+  // spell them differently) as a pure string check, which also spares a heavy
+  // library the parse and DOM work inside getFootnoteLocalCfi.
+  const stripAssertions = (prefix: string | null) => prefix?.replace(/\[[^\]]*\]/g, '') ?? null;
+  const getPopupSectionPrefix = () => {
+    const view = footnoteViewRef.current;
+    const info = popupMapRef.current;
+    return view && info ? stripAssertions(getCfiSpinePrefix(view.getCFI(info.index))) : null;
+  };
+  const isInPopupSection = (note: BookNote, sectionPrefix: string | null) =>
+    !sectionPrefix || stripAssertions(getCfiSpinePrefix(note.cfi)) === sectionPrefix;
+
   // Mirror the book's highlight annotations into the popup document: draw the
   // ones whose CFIs map into the extracted fragment, keep them in sync as the
   // user highlights/restyles/deletes via the selection toolbar, and remove
@@ -687,16 +700,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     if (!showPopup || !view || !info?.doc || !info.extract) return;
     const drawn = drawnNotesRef.current;
     const seen = new Set<string>();
-    // Only notes anchored in the popup's own section can map into it, and a
-    // heavy library carries thousands elsewhere. Reject those with a pure
-    // string compare of the spine prefix (id assertions stripped, since a
-    // foreign/imported CFI may spell them differently) before paying for the
-    // parse and DOM work inside getFootnoteLocalCfi.
-    const stripAssertions = (prefix: string | null) => prefix?.replace(/\[[^\]]*\]/g, '') ?? null;
-    const sectionPrefix = stripAssertions(getCfiSpinePrefix(view.getCFI(info.index)));
+    const sectionPrefix = getPopupSectionPrefix();
     for (const note of booknotes ?? []) {
       if (note.type !== 'annotation' || note.deletedAt || (!note.style && !note.note)) continue;
-      if (sectionPrefix && stripAssertions(getCfiSpinePrefix(note.cfi)) !== sectionPrefix) continue;
+      if (!isInPopupSection(note, sectionPrefix)) continue;
       drawPopupNote(note).forEach((key) => seen.add(key));
     }
     for (const [key, prev] of drawn) {
@@ -708,11 +715,13 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   }, [booknotes, showPopup, popupContentEpoch]);
 
   // A highlight whose range handles are being dragged in the popup is only
-  // saved on release; follow the drag here meanwhile (#6390).
+  // saved on release; follow the drag here meanwhile (#6390). A preview is
+  // sent after an await, so it can land once the popup shows another section.
   useEffect(() => {
     const onPreview = (event: CustomEvent) => {
       const { key, note } = event.detail as { key: string; note: BookNote };
-      if (key === bookKey) drawPopupNote(note);
+      if (key !== bookKey || !isInPopupSection(note, getPopupSectionPrefix())) return;
+      drawPopupNote(note);
     };
     eventDispatcher.on('footnote-annotation-preview', onPreview);
     return () => eventDispatcher.off('footnote-annotation-preview', onPreview);
