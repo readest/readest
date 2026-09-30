@@ -762,8 +762,6 @@
   "Play audio": "აუდიოს დაკვრა",
   "Exit Paragraph Mode": "აბზაცის რეჟიმიდან გასვლა",
   "Stopped following audio": "აუდიოს მიყოლა შეწყდა",
-  "{{time}} min left in book": "წიგნში დარჩა {{time}} წთ",
-  "{{time}} min left in chapter": "თავში დარჩა {{time}} წთ",
   "{{number}} pages left in book": "წიგნში დარჩა {{number}} გვერდი",
   "{{number}} pages left in chapter": "თავში დარჩა {{number}} გვერდი",
   "{{count}} pages left in book_one": "<1>წიგნში დარჩა </1><0>{{count}}</0><1> გვერდი</1>",
@@ -1315,7 +1313,6 @@
   "Confirm passphrase": "დაადასტურეთ საიდუმლო ფრაზა",
   "Unlock": "განბლოკვა",
   "{{percentage}}% used": "გამოყენებულია {{percentage}}%",
-  "Resets in {{hours}} hr {{minutes}} min": "განულდება {{hours}} სთ {{minutes}} წთ-ში",
   "Failed to fetch models": "მოდელების მიღება ვერ მოხერხდა",
   "Please enter a model ID": "გთხოვთ, შეიყვანოთ მოდელის ID",
   "Model not available or invalid": "მოდელი მიუწვდომელია ან არასწორია",
@@ -2480,5 +2477,13 @@
   "Nothing being read right now": "ამჟამად არც ერთი წიგნი არ იკითხება",
   "{{hours}}h": "{{hours}}სთ",
   "{{time}} and {{count}} pages left_one": "დარჩა {{time}} და {{count}} გვერდი",
-  "{{time}} and {{count}} pages left_other": "დარჩა {{time}} და {{count}} გვერდი"
+  "{{time}} and {{count}} pages left_other": "დარჩა {{time}} და {{count}} გვერდი",
+  "{{time}} left in book": "წიგნში დარჩა {{time}}",
+  "{{time}} and {{number}} pages left in book": "წიგნში დარჩა {{time}} და {{number}} გვერდი",
+  "{{time}} and {{number}} pages left in chapter": "თავში დარჩა {{time}} და {{number}} გვერდი",
+  "{{time}} and {{count}} pages left in book_one": "წიგნში დარჩა {{time}} და {{count}} გვერდი",
+  "{{time}} and {{count}} pages left in book_other": "წიგნში დარჩა {{time}} და {{count}} გვერდი",
+  "{{time}} and {{count}} pages left in chapter_one": "თავში დარჩა {{time}} და {{count}} გვერდი",
+  "{{time}} and {{count}} pages left in chapter_other": "თავში დარჩა {{time}} და {{count}} გვერდი",
+  "Resets in {{time}}": "განულდება {{time}}-ში"
 }

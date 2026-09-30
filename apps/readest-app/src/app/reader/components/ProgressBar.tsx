@@ -30,6 +30,7 @@ import {
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
 import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryUtils.ts';
+import { formatDuration } from '@/utils/duration';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
@@ -149,23 +150,43 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // Fixed-layout formats (CBZ, PDF) have no chapter structure — every page is
   // its own section — so the remaining count is the whole book, not a chapter.
   const remainingInBook = !!bookData?.isFixedLayout;
+  const showBothRemaining = viewSettings.showRemainingTime && viewSettings.showRemainingPages;
+  const durationLeft = showPagesLeft
+    ? formatDuration(
+        convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
+        _,
+        (n) => formatNumber(n, localize, lang),
+      )
+    : '';
   const timeLeftStr = showPagesLeft
     ? remainingInBook
-      ? _('{{time}} min left in book', {
-          time: formatNumber(
-            convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
-            localize,
-            lang,
-          ),
-        })
-      : _('{{time}} min left in chapter', {
-          time: formatNumber(
-            convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
-            localize,
-            lang,
-          ),
-        })
+      ? _('{{time}} left in book', { time: durationLeft })
+      : _('{{time}} left in chapter', { time: durationLeft })
     : '';
+  // One sentence when both are on, so "left in book/chapter" isn't said twice.
+  const numberLeft = localize && showBothRemaining ? formatNumber(pagesLeft, true, lang) : '';
+  const timeAndPagesLeftStr =
+    showBothRemaining && showPagesLeft
+      ? localize
+        ? remainingInBook
+          ? _('{{time}} and {{number}} pages left in book', {
+              time: durationLeft,
+              number: numberLeft,
+            })
+          : _('{{time}} and {{number}} pages left in chapter', {
+              time: durationLeft,
+              number: numberLeft,
+            })
+        : remainingInBook
+          ? _('{{time}} and {{count}} pages left in book', {
+              time: durationLeft,
+              count: pagesLeft,
+            })
+          : _('{{time}} and {{count}} pages left in chapter', {
+              time: durationLeft,
+              count: pagesLeft,
+            })
+      : '';
   const pagesLeftStr = showPagesLeft
     ? localize
       ? remainingInBook
@@ -267,8 +288,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               total: total,
             })
           : '',
-        timeLeftStr,
-        pagesLeftStr,
+        ...(showBothRemaining ? [timeAndPagesLeftStr] : [timeLeftStr, pagesLeftStr]),
       ]
         .filter(Boolean)
         .join(', ')}
@@ -332,7 +352,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               !stickyBarActive && 'flex-1 min-w-0',
             )}
           >
-            {viewSettings.showRemainingTime ? (
+            {showBothRemaining ? (
+              <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
+                {timeAndPagesLeftStr}
+              </span>
+            ) : viewSettings.showRemainingTime ? (
               <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
                 {timeLeftStr}
               </span>

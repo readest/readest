@@ -288,7 +288,6 @@
   "Search in {{count}} Book(s)..._other": "Zoeken in {{count}} Boeken...",
   "Sign in to Sync": "Meld je aan om te synchroniseren",
   "Never synced": "Nooit gesynchroniseerd",
-  "{{time}} min left in chapter": "Nog {{time}} min in hoofdstuk",
   "Override Book Color": "Boekkleur overschrijven",
   "Login Required": "Inloggen vereist",
   "Quota Exceeded": "Limiet overschreden",
@@ -572,7 +571,6 @@
   "Cover": "Omslag",
   "Contain": "Bevatten",
   "{{number}} pages left in chapter": "<1>Nog </1><0>{{number}}</0><1> pagina’s in hoofdstuk</1>",
-  "{{time}} min left in book": "Nog {{time}} min in boek",
   "{{count}} pages left in book_one": "<1>Nog </1><0>{{count}}</0><1> pagina in boek</1>",
   "{{count}} pages left in book_other": "<1>Nog </1><0>{{count}}</0><1> pagina’s in boek</1>",
   "{{number}} pages left in book": "<1>Nog </1><0>{{number}}</0><1> pagina’s in boek</1>",
@@ -1346,7 +1344,6 @@
   "App settings": "App-instellingen",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Thema, markeringskleuren en integraties (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "Vereist zolang synchronisatie van Woordenboeken is ingeschakeld",
-  "Resets in {{hours}} hr {{minutes}} min": "Reset over {{hours}} u {{minutes}} min",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Kies een viercijferige pincode. Je moet deze elke keer invoeren wanneer je Readest opent. Een vergeten pincode kan niet worden hersteld. Het wissen van de app-gegevens is de enige manier om deze opnieuw in te stellen.",
   "Credentials": "Inloggegevens",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Tokens, gebruikersnamen en wachtwoorden voor OPDS, KOReader, Hardcover, Readwise en WebDAV. Wanneer uitgeschakeld blijven inloggegevens alleen op dit apparaat en worden ze nooit geüpload.",
@@ -2480,5 +2477,13 @@
   "Nothing being read right now": "Er wordt nu geen boek gelezen",
   "{{hours}}h": "{{hours}} u",
   "{{time}} and {{count}} pages left_one": "Nog {{time}} en {{count}} pagina",
-  "{{time}} and {{count}} pages left_other": "Nog {{time}} en {{count}} pagina’s"
+  "{{time}} and {{count}} pages left_other": "Nog {{time}} en {{count}} pagina’s",
+  "{{time}} left in book": "Nog {{time}} in boek",
+  "{{time}} and {{number}} pages left in book": "Nog {{time}} en {{number}} pagina’s in boek",
+  "{{time}} and {{number}} pages left in chapter": "Nog {{time}} en {{number}} pagina’s in hoofdstuk",
+  "{{time}} and {{count}} pages left in book_one": "Nog {{time}} en {{count}} pagina in boek",
+  "{{time}} and {{count}} pages left in book_other": "Nog {{time}} en {{count}} pagina’s in boek",
+  "{{time}} and {{count}} pages left in chapter_one": "Nog {{time}} en {{count}} pagina in hoofdstuk",
+  "{{time}} and {{count}} pages left in chapter_other": "Nog {{time}} en {{count}} pagina’s in hoofdstuk",
+  "Resets in {{time}}": "Reset over {{time}}"
 }

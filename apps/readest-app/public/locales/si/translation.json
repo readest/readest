@@ -177,7 +177,6 @@
   "Excerpts": "උදාහරණ",
   "Notes": "සටහන්",
   "Add your notes here...": "මෙහි ඔබේ සටහන් එක් කරන්න...",
-  "{{time}} min left in chapter": "පරිච්ඡේදයේ මිනිත්තු {{time}} ක් ඉතිරි",
   "{{count}} pages left in chapter_one": "<1>පරිච්ඡේදයේ පිටුව 1 ක් ඉතිරි</1>",
   "{{count}} pages left in chapter_other": "<1>පරිච්ඡේදයේ පිටු </1><0>{{count}}</0><1> ක් ඉතිරි</1>",
   "Theme Mode": "තේමා ආකාරය",
@@ -572,7 +571,6 @@
   "Cover": "ආවරණය",
   "Contain": "අඩංගු වන්න",
   "{{number}} pages left in chapter": "<1>පරිච්ඡේදයේ පිටු </1><0>{{number}}</0><1> ඉතිරිව ඇත</1>",
-  "{{time}} min left in book": "පොතේ මිනිත්තු {{time}} ක් ඉතිරි",
   "{{count}} pages left in book_one": "<1>පොතේ පිටුව 1 ක් ඉතිරි</1>",
   "{{count}} pages left in book_other": "<1>පොතේ පිටු </1><0>{{count}}</0><1> ක් ඉතිරි</1>",
   "{{number}} pages left in book": "<1>පොතේ පිටු </1><0>{{number}}</0><1> ඉතිරිව ඇත</1>",
@@ -1346,7 +1344,6 @@
   "App settings": "යෙදුමේ සැකසුම්",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "තේමාව, උද්දීපන වර්ණ සහ ඒකාබද්ධතා (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "ශබ්දකෝෂ සමමුහූර්තය සක්‍රිය වී ඇති විට අවශ්‍යයි",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} පැ {{minutes}} මි කින් යළි පිහිටුවයි",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "අංක 4ක PIN එකක් තෝරන්න. ඔබ Readest විවෘත කරන සෑම විටම ඔබට එය ඇතුළත් කිරීමට අවශ්‍ය වේ. අමතක වූ PIN එකක් ලබා ගැනීමට ක්‍රමයක් නැත. එය යළි පිහිටුවීමට ඇති එකම ක්‍රමය යෙදුම් දත්ත මකා දැමීමයි.",
   "Credentials": "අක්තපත්‍ර",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise, සහ WebDAV සඳහා ටෝකන, පරිශීලක නාම සහ මුරපද. අක්‍රිය කළ විට, අක්තපත්‍ර මෙම උපාංගයේ පමණක් රැඳී පවතින අතර කිසිදා උඩුගත නොකෙරේ.",
@@ -2480,5 +2477,13 @@
   "Nothing being read right now": "දැනට කියවන පොතක් නැත",
   "{{hours}}h": "{{hours}}පැ",
   "{{time}} and {{count}} pages left_one": "{{time}} සහ පිටුව {{count}} ක් ඉතිරි",
-  "{{time}} and {{count}} pages left_other": "{{time}} සහ පිටු {{count}} ක් ඉතිරි"
+  "{{time}} and {{count}} pages left_other": "{{time}} සහ පිටු {{count}} ක් ඉතිරි",
+  "{{time}} left in book": "පොතේ {{time}} ඉතිරිය",
+  "{{time}} and {{number}} pages left in book": "පොතේ {{time}} සහ පිටු {{number}} ක් ඉතිරි",
+  "{{time}} and {{number}} pages left in chapter": "පරිච්ඡේදයේ {{time}} සහ පිටු {{number}} ක් ඉතිරි",
+  "{{time}} and {{count}} pages left in book_one": "පොතේ {{time}} සහ පිටුව {{count}} ක් ඉතිරි",
+  "{{time}} and {{count}} pages left in book_other": "පොතේ {{time}} සහ පිටු {{count}} ක් ඉතිරි",
+  "{{time}} and {{count}} pages left in chapter_one": "පරිච්ඡේදයේ {{time}} සහ පිටුව {{count}} ක් ඉතිරි",
+  "{{time}} and {{count}} pages left in chapter_other": "පරිච්ඡේදයේ {{time}} සහ පිටු {{count}} ක් ඉතිරි",
+  "Resets in {{time}}": "{{time}} කින් යළි පිහිටුවයි"
 }

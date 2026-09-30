@@ -177,7 +177,6 @@
   "Excerpts": "উদ্ধৃতি",
   "Notes": "নোট",
   "Add your notes here...": "এখানে আপনার নোট যোগ করুন...",
-  "{{time}} min left in chapter": "অধ্যায়ে {{time}} মিনিট বাকি",
   "{{count}} pages left in chapter_one": "<1>অধ্যায়ে ১ পৃষ্ঠা বাকি</1>",
   "{{count}} pages left in chapter_other": "<1>অধ্যায়ে </1><0>{{count}}</0><1> পৃষ্ঠা বাকি</1>",
   "Theme Mode": "থিম মোড",
@@ -572,7 +571,6 @@
   "Cover": "ঢাকা",
   "Contain": "ধারণ",
   "{{number}} pages left in chapter": "<1>অধ্যায়ে </1><0>{{number}}</0><1> পৃষ্ঠা বাকি</1>",
-  "{{time}} min left in book": "বইয়ে {{time}} মিনিট বাকি",
   "{{count}} pages left in book_one": "<1>বইয়ে ১ পৃষ্ঠা বাকি</1>",
   "{{count}} pages left in book_other": "<1>বইয়ে </1><0>{{count}}</0><1> পৃষ্ঠা বাকি</1>",
   "{{number}} pages left in book": "<1>বইয়ে </1><0>{{number}}</0><1> পৃষ্ঠা বাকি</1>",
@@ -1346,7 +1344,6 @@
   "App settings": "অ্যাপ সেটিংস",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "থিম, হাইলাইট রং এবং ইন্টিগ্রেশন (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "অভিধান সিঙ্ক সক্রিয় থাকাকালীন প্রয়োজনীয়",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} ঘ {{minutes}} মি পরে রিসেট হবে",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "একটি ৪-অঙ্কের পিন বেছে নিন। প্রতিবার Readest খোলার সময় আপনাকে এটি প্রবেশ করাতে হবে। ভুলে যাওয়া পিন পুনরুদ্ধারের কোনো উপায় নেই। অ্যাপের ডেটা মুছে ফেলাই এটি রিসেট করার একমাত্র উপায়।",
   "Credentials": "ক্রেডেনশিয়াল",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise এবং WebDAV-এর জন্য টোকেন, ব্যবহারকারীর নাম এবং পাসওয়ার্ড। নিষ্ক্রিয় থাকলে ক্রেডেনশিয়ালগুলি কেবল এই ডিভাইসেই থাকে এবং কখনই আপলোড হয় না।",
@@ -2480,5 +2477,13 @@
   "Nothing being read right now": "এখন কোনো বই পড়া হচ্ছে না",
   "{{hours}}h": "{{hours}}ঘ",
   "{{time}} and {{count}} pages left_one": "{{time}} ও {{count}} পৃষ্ঠা বাকি",
-  "{{time}} and {{count}} pages left_other": "{{time}} ও {{count}} পৃষ্ঠা বাকি"
+  "{{time}} and {{count}} pages left_other": "{{time}} ও {{count}} পৃষ্ঠা বাকি",
+  "{{time}} left in book": "বইয়ে {{time}} বাকি",
+  "{{time}} and {{number}} pages left in book": "বইয়ে {{time}} ও {{number}} পৃষ্ঠা বাকি",
+  "{{time}} and {{number}} pages left in chapter": "অধ্যায়ে {{time}} ও {{number}} পৃষ্ঠা বাকি",
+  "{{time}} and {{count}} pages left in book_one": "বইয়ে {{time}} ও {{count}} পৃষ্ঠা বাকি",
+  "{{time}} and {{count}} pages left in book_other": "বইয়ে {{time}} ও {{count}} পৃষ্ঠা বাকি",
+  "{{time}} and {{count}} pages left in chapter_one": "অধ্যায়ে {{time}} ও {{count}} পৃষ্ঠা বাকি",
+  "{{time}} and {{count}} pages left in chapter_other": "অধ্যায়ে {{time}} ও {{count}} পৃষ্ঠা বাকি",
+  "Resets in {{time}}": "{{time}} পরে রিসেট হবে"
 }

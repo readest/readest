@@ -288,7 +288,6 @@
   "Search in {{count}} Book(s)..._other": "{{count}} पुस्तकों में खोजें...",
   "Sign in to Sync": "सिंक करने के लिए साइन इन करें",
   "Never synced": "कभी सिंक नहीं किया गया",
-  "{{time}} min left in chapter": "{{time}} मिनट शेष अध्याय में",
   "Override Book Color": "पुस्तक रंग ओवरराइड करें",
   "Login Required": "लॉगिन ज़रूरी",
   "Quota Exceeded": "सीमा पार",
@@ -572,7 +571,6 @@
   "Cover": "कवर",
   "Contain": "समाहित करें",
   "{{number}} pages left in chapter": "<1>इस अध्याय में </1><0>{{number}}</0><1> पृष्ठ शेष हैं</1>",
-  "{{time}} min left in book": "{{time}} मिनट शेष पुस्तक में",
   "{{count}} pages left in book_one": "<1>इस पुस्तक में </1><0>{{count}}</0><1> पृष्ठ शेष हैं</1>",
   "{{count}} pages left in book_other": "<1>इस पुस्तक में </1><0>{{count}}</0><1> पृष्ठ शेष हैं</1>",
   "{{number}} pages left in book": "<1>इस पुस्तक में </1><0>{{number}}</0><1> पृष्ठ शेष हैं</1>",
@@ -1346,7 +1344,6 @@
   "App settings": "ऐप सेटिंग्स",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "थीम, हाइलाइट रंग और एकीकरण (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "शब्दकोश सिंक सक्षम होने पर आवश्यक",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} घं {{minutes}} मि में रीसेट",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "एक 4-अंकों का पिन चुनें। Readest खोलने पर आपको हर बार इसे दर्ज करना होगा। भूले हुए पिन को पुनः प्राप्त करने का कोई तरीका नहीं है। ऐप डेटा मिटाना इसे रीसेट करने का एकमात्र तरीका है।",
   "Credentials": "क्रेडेंशियल",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise और WebDAV के लिए टोकन, उपयोगकर्ता नाम और पासवर्ड। अक्षम होने पर, क्रेडेंशियल केवल इसी डिवाइस पर रहते हैं और कभी अपलोड नहीं किए जाते।",
@@ -2480,5 +2477,13 @@
   "Nothing being read right now": "अभी कोई पुस्तक नहीं पढ़ी जा रही",
   "{{hours}}h": "{{hours}}घं",
   "{{time}} and {{count}} pages left_one": "{{time}} और {{count}} पृष्ठ शेष",
-  "{{time}} and {{count}} pages left_other": "{{time}} और {{count}} पृष्ठ शेष"
+  "{{time}} and {{count}} pages left_other": "{{time}} और {{count}} पृष्ठ शेष",
+  "{{time}} left in book": "पुस्तक में {{time}} शेष",
+  "{{time}} and {{number}} pages left in book": "पुस्तक में {{time}} और {{number}} पृष्ठ शेष",
+  "{{time}} and {{number}} pages left in chapter": "अध्याय में {{time}} और {{number}} पृष्ठ शेष",
+  "{{time}} and {{count}} pages left in book_one": "पुस्तक में {{time}} और {{count}} पृष्ठ शेष",
+  "{{time}} and {{count}} pages left in book_other": "पुस्तक में {{time}} और {{count}} पृष्ठ शेष",
+  "{{time}} and {{count}} pages left in chapter_one": "अध्याय में {{time}} और {{count}} पृष्ठ शेष",
+  "{{time}} and {{count}} pages left in chapter_other": "अध्याय में {{time}} और {{count}} पृष्ठ शेष",
+  "Resets in {{time}}": "{{time}} में रीसेट"
 }

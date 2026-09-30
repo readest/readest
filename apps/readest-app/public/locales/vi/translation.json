@@ -286,7 +286,6 @@
   "Search in {{count}} Book(s)..._other": "Tìm kiếm trong {{count}} cuốn sách...",
   "Sign in to Sync": "Đăng nhập",
   "Never synced": "Chưa từng đồng bộ",
-  "{{time}} min left in chapter": "{{time}} phút còn lại trong chương",
   "Override Book Color": "Đổi màu sách",
   "Login Required": "Cần đăng nhập",
   "Quota Exceeded": "Vượt hạn mức",
@@ -568,7 +567,6 @@
   "Cover": "Bìa",
   "Contain": "Chứa",
   "{{number}} pages left in chapter": "<1>Còn </1><0>{{number}}</0><1> trang trong chương</1>",
-  "{{time}} min left in book": "{{time}} phút còn lại trong sách",
   "{{count}} pages left in book_other": "<1>Còn </1><0>{{count}}</0><1> trang trong sách</1>",
   "{{number}} pages left in book": "<1>Còn </1><0>{{number}}</0><1> trang trong sách</1>",
   "Device": "Thiết bị",
@@ -1321,7 +1319,6 @@
   "App settings": "Cài đặt ứng dụng",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Chủ đề, màu tô sáng và tích hợp (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "Bắt buộc khi đồng bộ Từ điển đang bật",
-  "Resets in {{hours}} hr {{minutes}} min": "Đặt lại sau {{hours}} g {{minutes}} ph",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Chọn mã PIN 4 chữ số. Bạn sẽ cần nhập mã mỗi khi mở Readest. Không có cách nào để khôi phục mã PIN đã quên. Xóa dữ liệu ứng dụng là cách duy nhất để đặt lại mã.",
   "Credentials": "Thông tin xác thực",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Mã thông báo, tên người dùng và mật khẩu cho OPDS, KOReader, Hardcover, Readwise và WebDAV. Khi bị tắt, thông tin xác thực chỉ ở trên thiết bị này và không bao giờ được tải lên.",
@@ -2418,5 +2415,11 @@
   "{{percent}}% Read": "Đã đọc {{percent}}%",
   "Nothing being read right now": "Hiện không có sách nào đang đọc",
   "{{hours}}h": "{{hours}} giờ",
-  "{{time}} and {{count}} pages left_other": "Còn {{time}} và {{count}} trang"
+  "{{time}} and {{count}} pages left_other": "Còn {{time}} và {{count}} trang",
+  "{{time}} left in book": "Còn {{time}} trong sách",
+  "{{time}} and {{number}} pages left in book": "Còn {{time}} và {{number}} trang trong sách",
+  "{{time}} and {{number}} pages left in chapter": "Còn {{time}} và {{number}} trang trong chương",
+  "{{time}} and {{count}} pages left in book_other": "Còn {{time}} và {{count}} trang trong sách",
+  "{{time}} and {{count}} pages left in chapter_other": "Còn {{time}} và {{count}} trang trong chương",
+  "Resets in {{time}}": "Đặt lại sau {{time}}"
 }

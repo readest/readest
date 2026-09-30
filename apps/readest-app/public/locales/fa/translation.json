@@ -286,7 +286,6 @@
   "Search in {{count}} Book(s)..._other": "جستجو در {{count}} کتاب...",
   "Sign in to Sync": "برای همگام‌سازی وارد شوید",
   "Never synced": "هرگز همگام‌سازی نشده",
-  "{{time}} min left in chapter": "{{time}} دقیقه تا انتهای فصل",
   "Override Book Color": "جایگزینی رنگ کتاب",
   "Login Required": "نیازمند ورود",
   "Quota Exceeded": "سهمیه به پایان رسیده است",
@@ -572,7 +571,6 @@
   "Cover": "جلد",
   "Contain": "شامل",
   "{{number}} pages left in chapter": "<0>{{number}}</0><1> صفحه تا انتهای فصل</1>",
-  "{{time}} min left in book": "{{time}} دقیقه تا انتهای کتاب",
   "{{count}} pages left in book_one": "<0>{{count}}</0><1> صفحه تا انتهای کتاب</1>",
   "{{count}} pages left in book_other": "<0>{{count}}</0><1> صفحه تا انتهای کتاب</1>",
   "{{number}} pages left in book": "<0>{{number}}</0><1> صفحه تا انتهای کتاب</1>",
@@ -1346,7 +1344,6 @@
   "App settings": "تنظیمات برنامه",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "پوسته، رنگ‌های هایلایت و یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover)",
   "Required while Dictionaries sync is enabled": "هنگام فعال‌بودن همگام‌سازی فرهنگ‌لغت‌ها لازم است",
-  "Resets in {{hours}} hr {{minutes}} min": "تنظیم مجدد در {{hours}} ساعت {{minutes}} دقیقه",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "یک پین ۴ رقمی انتخاب کنید. هر بار که Readest را باز می‌کنید باید آن را وارد کنید. راهی برای بازیابی پین فراموش‌شده وجود ندارد. پاک کردن داده‌های برنامه تنها راه بازنشانی آن است.",
   "Credentials": "اعتبارنامه‌ها",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "توکن‌ها، نام‌های کاربری و رمزهای عبور OPDS، KOReader، Hardcover، Readwise و WebDAV. هنگام غیرفعال بودن، اعتبارنامه‌ها فقط روی این دستگاه باقی می‌مانند و هرگز بارگذاری نمی‌شوند.",
@@ -2480,5 +2477,13 @@
   "Nothing being read right now": "اکنون کتابی در حال خواندن نیست",
   "{{hours}}h": "{{hours}} س",
   "{{time}} and {{count}} pages left_one": "{{time}} و {{count}} صفحه باقی‌مانده",
-  "{{time}} and {{count}} pages left_other": "{{time}} و {{count}} صفحه باقی‌مانده"
+  "{{time}} and {{count}} pages left_other": "{{time}} و {{count}} صفحه باقی‌مانده",
+  "{{time}} left in book": "{{time}} تا انتهای کتاب",
+  "{{time}} and {{number}} pages left in book": "{{time}} و {{number}} صفحه تا انتهای کتاب",
+  "{{time}} and {{number}} pages left in chapter": "{{time}} و {{number}} صفحه تا انتهای فصل",
+  "{{time}} and {{count}} pages left in book_one": "{{time}} و {{count}} صفحه تا انتهای کتاب",
+  "{{time}} and {{count}} pages left in book_other": "{{time}} و {{count}} صفحه تا انتهای کتاب",
+  "{{time}} and {{count}} pages left in chapter_one": "{{time}} و {{count}} صفحه تا انتهای فصل",
+  "{{time}} and {{count}} pages left in chapter_other": "{{time}} و {{count}} صفحه تا انتهای فصل",
+  "Resets in {{time}}": "بازنشانی در {{time}}"
 }

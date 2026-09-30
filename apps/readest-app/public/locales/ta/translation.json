@@ -177,7 +177,6 @@
   "Excerpts": "உதாரணங்கள்",
   "Notes": "குறிப்புகள்",
   "Add your notes here...": "உங்கள் குறிப்புகளை இங்கே சேர்க்கவும்...",
-  "{{time}} min left in chapter": "அத்தியாயத்தில் {{time}} நிமிடங்கள் மீதமுள்ளன",
   "{{count}} pages left in chapter_one": "<1>அத்தியாயத்தில் 1 பக்கம் மீதமுள்ளது</1>",
   "{{count}} pages left in chapter_other": "<1>அத்தியாயத்தில் </1><0>{{count}}</0><1> பக்கங்கள் மீதமுள்ளன</1>",
   "Theme Mode": "தீம் பயன்முறை",
@@ -572,7 +571,6 @@
   "Cover": "மூடு",
   "Contain": "அடங்கும்",
   "{{number}} pages left in chapter": "<1>அத்தியாயத்தில் </1><0>{{number}}</0><1> பக்கங்கள் மீதமுள்ளன</1>",
-  "{{time}} min left in book": "புத்தகத்தில் {{time}} நிமிடங்கள் மீதமுள்ளன",
   "{{count}} pages left in book_one": "<1>புத்தகத்தில் 1 பக்கம் மீதமுள்ளது</1>",
   "{{count}} pages left in book_other": "<1>புத்தகத்தில் </1><0>{{count}}</0><1> பக்கங்கள் மீதமுள்ளன</1>",
   "{{number}} pages left in book": "<1>புத்தகத்தில் </1><0>{{number}}</0><1> பக்கங்கள் மீதமுள்ளன</1>",
@@ -1346,7 +1344,6 @@
   "App settings": "ஆப் அமைப்புகள்",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "தீம், ஹைலைட் வண்ணங்கள் மற்றும் ஒருங்கிணைப்புகள் (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "அகராதிகள் ஒத்திசைவு இயக்கத்தில் இருக்கும்போது தேவை",
-  "Resets in {{hours}} hr {{minutes}} min": "{{hours}} மணி {{minutes}} நிமிடத்தில் மீட்டமைக்கப்படும்",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 இலக்க PIN ஒன்றைத் தேர்ந்தெடுக்கவும். Readest திறக்கும் ஒவ்வொரு முறையும் அதை உள்ளிட வேண்டும். மறந்துபோன PIN ஐ மீட்டெடுக்க வழியில்லை. அதை மீட்டமைக்க ஒரே வழி பயன்பாட்டுத் தரவை அழிப்பதே ஆகும்.",
   "Credentials": "அங்கீகாரத் தரவுகள்",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise மற்றும் WebDAV-க்கான டோக்கன்கள், பயனர் பெயர்கள் மற்றும் கடவுச்சொற்கள். முடக்கப்பட்டிருக்கும் போது, அங்கீகாரத் தரவுகள் இந்த சாதனத்தில் மட்டுமே இருக்கும், ஒருபோதும் பதிவேற்றப்படாது.",
@@ -2480,5 +2477,13 @@
   "Nothing being read right now": "இப்போது எந்தப் புத்தகமும் படிக்கப்படவில்லை",
   "{{hours}}h": "{{hours}}ம",
   "{{time}} and {{count}} pages left_one": "{{time}} மற்றும் {{count}} பக்கம் மீதமுள்ளன",
-  "{{time}} and {{count}} pages left_other": "{{time}} மற்றும் {{count}} பக்கங்கள் மீதமுள்ளன"
+  "{{time}} and {{count}} pages left_other": "{{time}} மற்றும் {{count}} பக்கங்கள் மீதமுள்ளன",
+  "{{time}} left in book": "புத்தகத்தில் {{time}} மீதமுள்ளது",
+  "{{time}} and {{number}} pages left in book": "புத்தகத்தில் {{time}} மற்றும் {{number}} பக்கங்கள் மீதமுள்ளன",
+  "{{time}} and {{number}} pages left in chapter": "அத்தியாயத்தில் {{time}} மற்றும் {{number}} பக்கங்கள் மீதமுள்ளன",
+  "{{time}} and {{count}} pages left in book_one": "புத்தகத்தில் {{time}} மற்றும் {{count}} பக்கம் மீதமுள்ளன",
+  "{{time}} and {{count}} pages left in book_other": "புத்தகத்தில் {{time}} மற்றும் {{count}} பக்கங்கள் மீதமுள்ளன",
+  "{{time}} and {{count}} pages left in chapter_one": "அத்தியாயத்தில் {{time}} மற்றும் {{count}} பக்கம் மீதமுள்ளன",
+  "{{time}} and {{count}} pages left in chapter_other": "அத்தியாயத்தில் {{time}} மற்றும் {{count}} பக்கங்கள் மீதமுள்ளன",
+  "Resets in {{time}}": "{{time}} இல் மீட்டமைக்கப்படும்"
 }

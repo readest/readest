@@ -769,27 +769,13 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           label={_('Remaining Time')}
           checked={showRemainingTime}
           disabled={!showFooter}
-          onChange={() => {
-            if (!showRemainingTime) {
-              setShowRemainingTime(true);
-              setShowRemainingPages(false);
-            } else {
-              setShowRemainingTime(false);
-            }
-          }}
+          onChange={() => setShowRemainingTime(!showRemainingTime)}
         />
         <SettingsSwitchRow
           label={_('Remaining Pages')}
           checked={showRemainingPages}
           disabled={!showFooter}
-          onChange={() => {
-            if (!showRemainingPages) {
-              setShowRemainingPages(true);
-              setShowRemainingTime(false);
-            } else {
-              setShowRemainingPages(false);
-            }
-          }}
+          onChange={() => setShowRemainingPages(!showRemainingPages)}
         />
         <SettingsSwitchRow
           label={_('Reading Progress')}
