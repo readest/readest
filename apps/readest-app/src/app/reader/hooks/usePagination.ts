@@ -139,6 +139,9 @@ const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
   const turns = (einkPageTurnsSinceRefresh.get(view) ?? 0) + 1;
   if (turns >= interval) {
     einkPageTurnsSinceRefresh.set(view, 0);
+    // No platform gate here (unlike the manual binding): the interval is set
+    // only on Android but a synced per-book config can carry it elsewhere, and
+    // off-Android the bridge rejects — swallowed below as an intentional no-op.
     refreshEinkScreen().catch(() => {});
   } else {
     einkPageTurnsSinceRefresh.set(view, turns);

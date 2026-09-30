@@ -2424,5 +2424,10 @@
   "{{count}} pages left_other": "{{count}} halaman tersisa",
   "Resets in {{time}}": "Direset dalam {{time}}",
   "{{time}} and {{number}} pages left in chapter": "{{time}} dan {{number}} halaman tersisa di bab ini",
-  "Header Size": "Ukuran header"
+  "Header Size": "Ukuran header",
+  "Auto Refresh": "Penyegaran Otomatis",
+  "Every 5 pages": "Setiap 5 Halaman",
+  "Every 10 pages": "Setiap 10 Halaman",
+  "Every 15 pages": "Setiap 15 Halaman",
+  "Every 20 pages": "Setiap 20 Halaman"
 }

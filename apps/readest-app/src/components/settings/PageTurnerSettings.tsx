@@ -235,7 +235,10 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
           viewSettings.isEink &&
           renderSlot('refresh', _('Refresh Page'))}
         {appService?.isAndroidApp && viewSettings.isEink && (
-          <SettingsRow label={_('Auto Refresh')}>
+          <SettingsRow
+            label={_('Auto Refresh')}
+            data-setting-id='settings.control.pageTurner.autoRefresh'
+          >
             <SettingsSelect
               value={String(einkAutoRefreshInterval)}
               onChange={(e) => setEinkAutoRefreshInterval(Number(e.target.value))}

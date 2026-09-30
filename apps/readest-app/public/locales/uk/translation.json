@@ -2616,5 +2616,10 @@
   "{{time}} and {{count}} pages left_one": "Залишилось {{time}} і {{count}} сторінка",
   "{{time}} and {{count}} pages left in book_one": "Залишилось {{time}} і {{count}} сторінка у книзі",
   "Resets in {{time}}": "Скидання через {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "Залишилось {{time}} і {{number}} сторінки у розділі"
+  "{{time}} and {{number}} pages left in chapter": "Залишилось {{time}} і {{number}} сторінки у розділі",
+  "Auto Refresh": "Автоматичне оновлення",
+  "Every 5 pages": "Кожні 5 сторінок",
+  "Every 10 pages": "Кожні 10 сторінок",
+  "Every 15 pages": "Кожні 15 сторінок",
+  "Every 20 pages": "Кожні 20 сторінок"
 }

@@ -2424,5 +2424,10 @@
   "{{count}} pages left_other": "Còn {{count}} trang",
   "Resets in {{time}}": "Đặt lại sau {{time}}",
   "{{time}} and {{number}} pages left in chapter": "Còn {{time}} và {{number}} trang trong chương",
-  "Header Size": "Cỡ tiêu đề"
+  "Header Size": "Cỡ tiêu đề",
+  "Auto Refresh": "Tự động làm mới",
+  "Every 5 pages": "Mỗi 5 trang",
+  "Every 10 pages": "Mỗi 10 trang",
+  "Every 15 pages": "Mỗi 15 trang",
+  "Every 20 pages": "Mỗi 20 trang"
 }

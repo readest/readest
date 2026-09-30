@@ -2488,5 +2488,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} ve {{count}} sayfa kaldı",
   "{{time}} and {{count}} pages left in book_one": "Kitapta {{time}} ve {{count}} sayfa kaldı",
   "Resets in {{time}}": "{{time}} içinde sıfırlanır",
-  "{{time}} and {{number}} pages left in chapter": "Bölümde {{time}} ve {{number}} sayfa kaldı"
+  "{{time}} and {{number}} pages left in chapter": "Bölümde {{time}} ve {{number}} sayfa kaldı",
+  "Auto Refresh": "Otomatik Yenileme",
+  "Every 5 pages": "Her 5 Sayfa",
+  "Every 10 pages": "Her 10 Sayfa",
+  "Every 15 pages": "Her 15 Sayfa",
+  "Every 20 pages": "Her 20 Sayfa"
 }

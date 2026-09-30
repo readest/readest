@@ -2488,5 +2488,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} و {{count}} صفحه باقی‌مانده",
   "{{time}} and {{count}} pages left in book_one": "{{time}} و {{count}} صفحه تا انتهای کتاب",
   "Resets in {{time}}": "بازنشانی در {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "{{time}} و {{number}} صفحه تا انتهای فصل"
+  "{{time}} and {{number}} pages left in chapter": "{{time}} و {{number}} صفحه تا انتهای فصل",
+  "Auto Refresh": "به‌روزرسانی خودکار",
+  "Every 5 pages": "هر 5 صفحه",
+  "Every 10 pages": "هر 10 صفحه",
+  "Every 15 pages": "هر 15 صفحه",
+  "Every 20 pages": "هر 20 صفحه"
 }

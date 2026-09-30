@@ -2488,5 +2488,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} සහ පිටුව {{count}} ක් ඉතිරි",
   "{{time}} and {{count}} pages left in book_one": "පොතේ {{time}} සහ පිටුව {{count}} ක් ඉතිරි",
   "Resets in {{time}}": "{{time}} කින් යළි පිහිටුවයි",
-  "{{time}} and {{number}} pages left in chapter": "පරිච්ඡේදයේ {{time}} සහ පිටු {{number}} ක් ඉතිරි"
+  "{{time}} and {{number}} pages left in chapter": "පරිච්ඡේදයේ {{time}} සහ පිටු {{number}} ක් ඉතිරි",
+  "Auto Refresh": "ස්වයංක්‍රීය නැවුම් කිරීම",
+  "Every 5 pages": "සෑම පිටු 5 කම",
+  "Every 10 pages": "සෑම පිටු 10 කම",
+  "Every 15 pages": "සෑම පිටු 15 කම",
+  "Every 20 pages": "සෑම පිටු 20 කම"
 }

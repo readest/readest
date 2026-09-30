@@ -2616,5 +2616,10 @@
   "{{time}} and {{count}} pages left_one": "Pozostało {{time}} i {{count}} strona",
   "{{time}} and {{count}} pages left in book_one": "Pozostało {{time}} i {{count}} strona w książce",
   "Resets in {{time}}": "Resetuje się za {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "Pozostało {{time}} i {{number}} strony w rozdziale"
+  "{{time}} and {{number}} pages left in chapter": "Pozostało {{time}} i {{number}} strony w rozdziale",
+  "Auto Refresh": "Automatyczne odświeżanie",
+  "Every 5 pages": "Co 5 stron",
+  "Every 10 pages": "Co 10 stron",
+  "Every 15 pages": "Co 15 stron",
+  "Every 20 pages": "Co 20 stron"
 }

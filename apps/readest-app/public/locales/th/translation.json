@@ -2424,5 +2424,10 @@
   "{{count}} pages left_other": "เหลือ {{count}} หน้า",
   "Resets in {{time}}": "รีเซ็ตใน {{time}}",
   "{{time}} and {{number}} pages left in chapter": "เหลือ {{time}} และ {{number}} หน้า ในบทนี้",
-  "Header Size": "ขนาดส่วนหัว"
+  "Header Size": "ขนาดส่วนหัว",
+  "Auto Refresh": "รีเฟรชอัตโนมัติ",
+  "Every 5 pages": "ทุก 5 หน้า",
+  "Every 10 pages": "ทุก 10 หน้า",
+  "Every 15 pages": "ทุก 15 หน้า",
+  "Every 20 pages": "ทุก 20 หน้า"
 }

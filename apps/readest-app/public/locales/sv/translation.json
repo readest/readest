@@ -2488,5 +2488,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} och {{count}} sida kvar",
   "{{time}} and {{count}} pages left in book_one": "{{time}} och {{count}} sida kvar i boken",
   "Resets in {{time}}": "Återställs om {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "{{time}} och {{number}} sidor kvar i kapitlet"
+  "{{time}} and {{number}} pages left in chapter": "{{time}} och {{number}} sidor kvar i kapitlet",
+  "Auto Refresh": "Automatisk uppdatering",
+  "Every 5 pages": "Varje 5 sidor",
+  "Every 10 pages": "Varje 10 sidor",
+  "Every 15 pages": "Varje 15 sidor",
+  "Every 20 pages": "Varje 20 sidor"
 }

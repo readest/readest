@@ -2488,5 +2488,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} மற்றும் {{count}} பக்கம் மீதமுள்ளன",
   "{{time}} and {{count}} pages left in book_one": "புத்தகத்தில் {{time}} மற்றும் {{count}} பக்கம் மீதமுள்ளன",
   "Resets in {{time}}": "{{time}} இல் மீட்டமைக்கப்படும்",
-  "{{time}} and {{number}} pages left in chapter": "அத்தியாயத்தில் {{time}} மற்றும் {{number}} பக்கங்கள் மீதமுள்ளன"
+  "{{time}} and {{number}} pages left in chapter": "அத்தியாயத்தில் {{time}} மற்றும் {{number}} பக்கங்கள் மீதமுள்ளன",
+  "Auto Refresh": "தானியங்கி புதுப்பித்தல்",
+  "Every 5 pages": "ஒவ்வொரு 5 பக்கங்களும்",
+  "Every 10 pages": "ஒவ்வொரு 10 பக்கங்களும்",
+  "Every 15 pages": "ஒவ்வொரு 15 பக்கங்களும்",
+  "Every 20 pages": "ஒவ்வொரு 20 பக்கங்களும்"
 }
