@@ -12,6 +12,7 @@ import { uniqueId } from '@/utils/misc';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point, snapRangeToWords } from '@/utils/sel';
+import { expandAllRenderedSections, removeGlobalAnnotationOverlays } from './globalAnnotations';
 
 export const isDefaultHighlightColor = (
   color: HighlightColor,
@@ -251,6 +252,7 @@ export function removeBookNoteOverlays(view: FoliateView | null, note: BookNote)
   if (note.note && note.note.trim().length > 0) {
     view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, true);
   }
+  if (note.global) removeGlobalAnnotationOverlays(view, note);
 }
 
 /**
@@ -558,5 +560,10 @@ export function applyNoteBubbleTransition(
   if (transition === 'none') return;
   for (const view of views) {
     view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, transition === 'remove');
+    // The copies of a global annotation carry the bubble too: redraw them.
+    if (note.global) {
+      removeGlobalAnnotationOverlays(view, note);
+      expandAllRenderedSections(view, note);
+    }
   }
 }
