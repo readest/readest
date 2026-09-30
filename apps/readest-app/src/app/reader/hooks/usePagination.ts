@@ -133,9 +133,17 @@ const resetEinkRefreshCounter = (view: FoliateView | null) => {
   if (view) einkPageTurnsSinceRefresh.set(view, 0);
 };
 
-const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
+const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings, forward: boolean) => {
   const interval = viewSettings.einkAutoRefreshInterval;
   if (!viewSettings.isEink || !interval || interval <= 0) return;
+  // Counts turns dispatched through this helper (tap zones, wheel, keyboard,
+  // hardware keys, navigation buttons). The native swipe the paginator commits
+  // directly is intentionally not counted here; revisit if swipe becomes the
+  // default turn gesture. A turn that hits the start/end boundary doesn't move,
+  // so it isn't a real page turn — skip it, otherwise hammering "next" on the
+  // last page would refresh every N presses with nothing actually changing.
+  const renderer = view.renderer;
+  if (forward ? renderer.atEnd : renderer.atStart) return;
   const turns = (einkPageTurnsSinceRefresh.get(view) ?? 0) + 1;
   if (turns >= interval) {
     einkPageTurnsSinceRefresh.set(view, 0);
@@ -186,7 +194,7 @@ export const viewPagination = (
             view.book.rendition?.layout === 'pre-paginated')
             ? distance
             : snapScrolledDistanceToLines(view, distance, forward);
-        noteEinkPageTurn(view, viewSettings);
+        noteEinkPageTurn(view, viewSettings, forward);
         return forward ? view.next(snapped) : view.prev(snapped);
       }
     }
@@ -196,7 +204,7 @@ export const viewPagination = (
     } else if (hasVerticalPanning(view, viewSettings) && (side === 'up' || side === 'down')) {
       return view.pan(0, side === 'up' ? -panDistance : panDistance);
     } else {
-      noteEinkPageTurn(view, viewSettings);
+      noteEinkPageTurn(view, viewSettings, !(side === 'left' || side === 'up'));
       return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   } else {
@@ -210,7 +218,7 @@ export const viewPagination = (
       case 'pan':
       case 'page':
       default:
-        noteEinkPageTurn(view, viewSettings);
+        noteEinkPageTurn(view, viewSettings, !(side === 'left' || side === 'up'));
         return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   }

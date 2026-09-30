@@ -35,7 +35,13 @@ import { viewPagination } from '@/app/reader/hooks/usePagination';
 
 // A minimal paginated (non-scrolled) view: `viewPagination` only reaches
 // `view.next/prev` on a page turn, which is exactly what the counter tracks.
-const makeView = () => ({ renderer: { scrolled: false }, next: vi.fn(), prev: vi.fn() });
+// `atEnd`/`atStart` mirror foliate's boundary getters so we can prove a turn
+// that cannot move is not counted.
+const makeView = (opts: { atEnd?: boolean; atStart?: boolean } = {}) => ({
+  renderer: { scrolled: false, atEnd: !!opts.atEnd, atStart: !!opts.atStart },
+  next: vi.fn(),
+  prev: vi.fn(),
+});
 
 const turnPages = (view: unknown, viewSettings: ViewSettings, times: number) => {
   for (let i = 0; i < times; i++) {
@@ -82,5 +88,14 @@ describe('usePagination e-ink auto full refresh', () => {
     expect(h.refreshEinkScreen).not.toHaveBeenCalled();
     turnPages(viewB, viewSettings, 1);
     expect(h.refreshEinkScreen).toHaveBeenCalledTimes(1);
+  });
+
+  test('a boundary turn that cannot move does not count', () => {
+    const view = makeView({ atEnd: true });
+    const viewSettings = { isEink: true, einkAutoRefreshInterval: 2 } as ViewSettings;
+    // 'down' is a forward turn; at the end of the book view.next() is a no-op,
+    // so repeatedly pressing it must not fire the refresh.
+    turnPages(view, viewSettings, 4);
+    expect(h.refreshEinkScreen).not.toHaveBeenCalled();
   });
 });
