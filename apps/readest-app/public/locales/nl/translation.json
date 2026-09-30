@@ -2489,7 +2489,7 @@
   "{{time}} and {{count}} pages left in book_one": "Nog {{time}} en {{count}} pagina in boek",
   "Resets in {{time}}": "Reset over {{time}}",
   "{{time}} and {{number}} pages left in chapter": "Nog {{time}} en {{number}} pagina’s in hoofdstuk",
-  "Auto Refresh": "Automatisch vernieuwen",
+  "Auto Full Refresh": "Automatische volledige vernieuwing",
   "Every 5 pages": "Elke 5 pagina's",
   "Every 10 pages": "Elke 10 pagina's",
   "Every 15 pages": "Elke 15 pagina's",

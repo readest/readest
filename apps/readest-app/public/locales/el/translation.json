@@ -2489,7 +2489,7 @@
   "{{time}} and {{count}} pages left in book_one": "Μένουν {{time}} και {{count}} σελίδα στο βιβλίο",
   "Resets in {{time}}": "Επαναφορά σε {{time}}",
   "{{time}} and {{number}} pages left in chapter": "Μένουν {{time}} και {{number}} σελίδες στο κεφάλαιο",
-  "Auto Refresh": "Αυτόματη ανανέωση",
+  "Auto Full Refresh": "Αυτόματη πλήρης ανανέωση",
   "Every 5 pages": "Κάθε 5 σελίδες",
   "Every 10 pages": "Κάθε 10 σελίδες",
   "Every 15 pages": "Κάθε 15 σελίδες",

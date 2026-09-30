@@ -2489,7 +2489,7 @@
   "{{time}} and {{count}} pages left in book_one": "წიგნში დარჩა {{time}} და {{count}} გვერდი",
   "Resets in {{time}}": "განულდება {{time}}-ში",
   "{{time}} and {{number}} pages left in chapter": "თავში დარჩა {{time}} და {{number}} გვერდი",
-  "Auto Refresh": "ავტომატური განახლება",
+  "Auto Full Refresh": "ავტომატური სრული განახლება",
   "Every 5 pages": "ყოველ 5 გვერდზე",
   "Every 10 pages": "ყოველ 10 გვერდზე",
   "Every 15 pages": "ყოველ 15 გვერდზე",

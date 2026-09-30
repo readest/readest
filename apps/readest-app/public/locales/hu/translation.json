@@ -2489,7 +2489,7 @@
   "{{time}} and {{count}} pages left in book_one": "{{time}} és {{count}} oldal van hátra a könyvből",
   "Resets in {{time}}": "Visszaállás {{time}} múlva",
   "{{time}} and {{number}} pages left in chapter": "{{time}} és {{number}} oldal van hátra a fejezetből",
-  "Auto Refresh": "Automatikus frissítés",
+  "Auto Full Refresh": "Automatikus teljes frissítés",
   "Every 5 pages": "Minden 5 oldalnál",
   "Every 10 pages": "Minden 10 oldalnál",
   "Every 15 pages": "Minden 15 oldalnál",

@@ -2425,7 +2425,7 @@
   "Resets in {{time}}": "{{time}}後にリセット",
   "{{time}} and {{number}} pages left in chapter": "この章の残り {{time}}と{{number}}ページ",
   "Header Size": "見出しのサイズ",
-  "Auto Refresh": "自動更新",
+  "Auto Full Refresh": "自動フルリフレッシュ",
   "Every 5 pages": "5ページごと",
   "Every 10 pages": "10ページごと",
   "Every 15 pages": "15ページごと",

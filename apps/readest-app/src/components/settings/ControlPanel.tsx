@@ -71,6 +71,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [pageTurnStyle, setPageTurnStyle] = useState(viewSettings.pageTurnStyle || 'push');
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
+  const [einkAutoRefreshInterval, setEinkAutoRefreshInterval] = useState(
+    viewSettings.einkAutoRefreshInterval,
+  );
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [swipeBrightnessGesture, setSwipeBrightnessGesture] = useState(
     settings.swipeBrightnessGesture,
@@ -117,6 +120,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       swapClickArea: setSwapClickArea,
       animated: setAnimated,
       isEink: setIsEink,
+      einkAutoRefreshInterval: setEinkAutoRefreshInterval,
       allowScript: setAllowScript,
       fullscreenClickArea: setFullscreenClickArea,
       disableDoubleClick: setIsDisableDoubleClick,
@@ -283,6 +287,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'isColorEink', isColorEink);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isColorEink]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'einkAutoRefreshInterval',
+      einkAutoRefreshInterval,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einkAutoRefreshInterval]);
 
   useEffect(() => {
     if (autoScreenBrightness === settings.autoScreenBrightness) return;
@@ -584,6 +600,27 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setIsEink(!isEink)}
           data-setting-id='settings.control.einkMode'
         />
+        {appService?.isAndroidApp && (
+          <SettingsRow
+            label={_('Auto Full Refresh')}
+            disabled={!isEink}
+            data-setting-id='settings.control.autoFullRefresh'
+          >
+            <SettingsSelect
+              value={String(einkAutoRefreshInterval)}
+              onChange={(e) => setEinkAutoRefreshInterval(Number(e.target.value))}
+              ariaLabel={_('Auto Full Refresh')}
+              disabled={!isEink}
+              options={[
+                { value: '0', label: _('Off') },
+                { value: '5', label: _('Every 5 pages') },
+                { value: '10', label: _('Every 10 pages') },
+                { value: '15', label: _('Every 15 pages') },
+                { value: '20', label: _('Every 20 pages') },
+              ]}
+            />
+          </SettingsRow>
+        )}
         <SettingsSwitchRow
           label={_('Color E-Ink Mode')}
           checked={isColorEink}

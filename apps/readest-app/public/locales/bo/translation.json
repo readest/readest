@@ -2425,7 +2425,7 @@
   "Resets in {{time}}": "{{time}} ནང་སླར་གསོ་བྱེད།",
   "{{time}} and {{number}} pages left in chapter": "ལེའུ་འདིར་ {{time}} དང་ {{number}} ཤོག་ལྷེ་ལྷག་ཡོད།",
   "Header Size": "ཁ་བྱང་གི་ཆེ་ཆུང་",
-  "Auto Refresh": "རང་འགུལ་གསར་སྒྲིག",
+  "Auto Full Refresh": "རང་འགུལ་ཡོངས་བསྐྱར་གསོ།",
   "Every 5 pages": "ཤོག་ངོས་5 རེ་རེ",
   "Every 10 pages": "ཤོག་ངོས་10 རེ་རེ",
   "Every 15 pages": "ཤོག་ངོས་15 རེ་རེ",

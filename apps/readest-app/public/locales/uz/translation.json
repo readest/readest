@@ -2489,7 +2489,7 @@
   "{{time}} and {{count}} pages left in book_one": "Kitobda {{time}} va {{count}} sahifa qoldi",
   "Resets in {{time}}": "{{time}} ichida tiklanadi",
   "{{time}} and {{number}} pages left in chapter": "Bobda {{time}} va {{number}} sahifa qoldi",
-  "Auto Refresh": "Avtomatik yangilash",
+  "Auto Full Refresh": "Avtomatik to'liq yangilash",
   "Every 5 pages": "Har 5 sahifa",
   "Every 10 pages": "Har 10 sahifa",
   "Every 15 pages": "Har 15 sahifa",

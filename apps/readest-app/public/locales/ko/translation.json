@@ -2425,7 +2425,7 @@
   "Resets in {{time}}": "{{time}} 후 재설정",
   "{{time}} and {{number}} pages left in chapter": "이 장에 {{time}}, {{number}}페이지 남음",
   "Header Size": "머리글 크기",
-  "Auto Refresh": "자동 새로고침",
+  "Auto Full Refresh": "자동 전체 새로고침",
   "Every 5 pages": "5페이지마다",
   "Every 10 pages": "10페이지마다",
   "Every 15 pages": "15페이지마다",

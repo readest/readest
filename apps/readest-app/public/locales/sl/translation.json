@@ -2617,7 +2617,7 @@
   "{{time}} and {{count}} pages left in book_one": "{{time}} in {{count}} stran do konca knjige",
   "Resets in {{time}}": "Ponastavi se čez {{time}}",
   "{{time}} and {{number}} pages left in chapter": "{{time}} in {{number}} strani do konca poglavja",
-  "Auto Refresh": "Samodejno osveževanje",
+  "Auto Full Refresh": "Samodejno popolno osveževanje",
   "Every 5 pages": "Vsakih 5 strani",
   "Every 10 pages": "Vsakih 10 strani",
   "Every 15 pages": "Vsakih 15 strani",

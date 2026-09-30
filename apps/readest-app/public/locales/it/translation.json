@@ -2553,7 +2553,7 @@
   "{{time}} and {{count}} pages left in book_one": "{{time}} e {{count}} pagina rimanenti nel libro",
   "Resets in {{time}}": "Si reimposta tra {{time}}",
   "{{time}} and {{number}} pages left in chapter": "{{time}} e {{number}} pagine rimanenti nel capitolo",
-  "Auto Refresh": "Aggiornamento automatico",
+  "Auto Full Refresh": "Aggiornamento completo automatico",
   "Every 5 pages": "Ogni 5 pagine",
   "Every 10 pages": "Ogni 10 pagine",
   "Every 15 pages": "Ogni 15 pagine",
