@@ -2415,7 +2415,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} chce wysłać Ci {{count}} książki",
   "Speech": "Mowa",
   "Skip Parenthetical Readings": "Pomijaj odczyty w nawiasach",
-  "Do not speak kana or Han readings shown after Han text": "Nie odczytuj zapisów kana ani han wyświetlanych po tekście han",
   "Regex": "Regex",
   "Case sensitive": "Uwzględniaj wielkość liter",
   "Only for TTS": "Tylko dla TTS",
@@ -2588,5 +2587,6 @@
   "Previous and Next in the library": "Poprzednia i Następna w bibliotece",
   "Reverse Mouse Wheel": "Odwróć kółko myszy",
   "Scroll up for the next page": "Przewiń w górę, aby przejść do następnej strony",
-  "Keep Text Selected After Lookup": "Zachowaj zaznaczenie tekstu po wyszukaniu"
+  "Keep Text Selected After Lookup": "Zachowaj zaznaczenie tekstu po wyszukaniu",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Nie odczytuj odczytań ani glos w hanja w nawiasach po słowie"
 }

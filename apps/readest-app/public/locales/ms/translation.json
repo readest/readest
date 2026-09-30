@@ -2235,7 +2235,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} mahu menghantar {{count}} buku kepada anda",
   "Speech": "Pertuturan",
   "Skip Parenthetical Readings": "Langkau Bacaan dalam Kurungan",
-  "Do not speak kana or Han readings shown after Han text": "Jangan sebut bacaan kana atau Han yang dipaparkan selepas teks Han",
   "Regex": "Regex",
   "Case sensitive": "Peka huruf besar dan kecil",
   "Only for TTS": "Hanya untuk TTS",
@@ -2408,5 +2407,6 @@
   "Previous and Next in the library": "Sebelumnya dan Seterusnya dalam perpustakaan",
   "Reverse Mouse Wheel": "Terbalikkan Roda Tetikus",
   "Scroll up for the next page": "Tatal ke atas untuk halaman seterusnya",
-  "Keep Text Selected After Lookup": "Kekalkan teks dipilih selepas carian"
+  "Keep Text Selected After Lookup": "Kekalkan teks dipilih selepas carian",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Jangan sebut bacaan atau glosari Hanja dalam kurungan selepas perkataan"
 }

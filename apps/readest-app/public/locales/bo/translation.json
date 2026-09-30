@@ -2235,7 +2235,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ཡིས་ཁྱེད་ལ་དེབ་ {{count}} སྐུར་འདོད་ཡོད།",
   "Speech": "སྐད་ཆ།",
   "Skip Parenthetical Readings": "གུག་རྟགས་ནང་གི་ཀློག་ཚུལ་སྐྱུར་བ།",
-  "Do not speak kana or Han readings shown after Han text": "ཧན་ཡི་གེའི་རྗེས་སུ་བསྟན་པའི་ཀ་ནའམ་ཧན་གྱི་ཀློག་ཚུལ་མ་ཀློག",
   "Regex": "Regex",
   "Case sensitive": "གནས་སྟངས་འདི་ལ་འབད་དགོས།",
   "Only for TTS": "TTS ལ་ཁོ་ན།",
@@ -2408,5 +2407,6 @@
   "Previous and Next in the library": "དེབ་མཛོད་ནང་གི་སྔོན་མ་དང་རྗེས་མ།",
   "Reverse Mouse Wheel": "བྱི་བའི་འཁོར་ལོ་ལྡོག་པ།",
   "Scroll up for the next page": "ཤོག་ལྷེ་རྗེས་མར་ཡར་འདྲེད།",
-  "Keep Text Selected After Lookup": "འཚོལ་ཞིབ་རྗེས་སུ་ཡི་གེ་འདེམས་ཟིན་པ་ཉར་བ།"
+  "Keep Text Selected After Lookup": "འཚོལ་ཞིབ་རྗེས་སུ་ཡི་གེ་འདེམས་ཟིན་པ་ཉར་བ།",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "ཚིག་གི་རྗེས་སུ་ཡོད་པའི་སྒྲིལ་ཐིག་ནང་གི་ཀློག་སྟངས་སམ་ཧན་ཅ་འགྲེལ་བཤད་མི་ཀློག"
 }

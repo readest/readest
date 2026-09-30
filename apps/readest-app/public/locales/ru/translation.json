@@ -2415,7 +2415,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} хочет отправить вам {{count}} книги",
   "Speech": "Речь",
   "Skip Parenthetical Readings": "Пропускать чтения в скобках",
-  "Do not speak kana or Han readings shown after Han text": "Не произносить чтения каной или ханскими иероглифами после текста хан",
   "Regex": "Regex",
   "Case sensitive": "Учитывать регистр",
   "Only for TTS": "Только для TTS",
@@ -2588,5 +2587,6 @@
   "Previous and Next in the library": "«Предыдущая» и «Следующая» в библиотеке",
   "Reverse Mouse Wheel": "Обратное направление колёсика мыши",
   "Scroll up for the next page": "Прокрутка вверх — следующая страница",
-  "Keep Text Selected After Lookup": "Сохранять выделение текста после поиска"
+  "Keep Text Selected After Lookup": "Сохранять выделение текста после поиска",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Не озвучивать чтения или ханча-глоссы в скобках после слова"
 }

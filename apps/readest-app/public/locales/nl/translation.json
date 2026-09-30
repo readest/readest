@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} wil u {{count}} boeken sturen",
   "Speech": "Spraak",
   "Skip Parenthetical Readings": "Lezingen tussen haakjes overslaan",
-  "Do not speak kana or Han readings shown after Han text": "Kana- of Han-lezingen na Han-tekst niet uitspreken",
   "Regex": "Regex",
   "Case sensitive": "Hoofdlettergevoelig",
   "Only for TTS": "Alleen voor TTS",
@@ -2468,5 +2467,6 @@
   "Previous and Next in the library": "Vorige en Volgende in de bibliotheek",
   "Reverse Mouse Wheel": "Muiswiel omkeren",
   "Scroll up for the next page": "Scroll omhoog voor de volgende pagina",
-  "Keep Text Selected After Lookup": "Tekst geselecteerd houden na opzoeken"
+  "Keep Text Selected After Lookup": "Tekst geselecteerd houden na opzoeken",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Lezingen of Hanja-glossen tussen haakjes na een woord niet uitspreken"
 }

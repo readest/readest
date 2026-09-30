@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} می‌خواهد {{count}} کتاب برای شما بفرستد",
   "Speech": "گفتار",
   "Skip Parenthetical Readings": "رد کردن خوانش‌های داخل پرانتز",
-  "Do not speak kana or Han readings shown after Han text": "خوانش‌های کانا یا هان که پس از متن هان آمده‌اند خوانده نشوند",
   "Regex": "Regex",
   "Case sensitive": "حساس به حروف بزرگ و کوچک",
   "Only for TTS": "فقط برای TTS",
@@ -2468,5 +2467,6 @@
   "Previous and Next in the library": "قبلی و بعدی در کتابخانه",
   "Reverse Mouse Wheel": "معکوس کردن چرخ ماوس",
   "Scroll up for the next page": "برای صفحه‌ی بعد به بالا پیمایش کنید",
-  "Keep Text Selected After Lookup": "متن پس از جستجو انتخاب‌شده بماند"
+  "Keep Text Selected After Lookup": "متن پس از جستجو انتخاب‌شده بماند",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "خوانش‌ها یا معادل‌های هانجا داخل پرانتز پس از واژه خوانده نشوند"
 }

@@ -2415,7 +2415,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} хоче надіслати вам {{count}} книги",
   "Speech": "Мовлення",
   "Skip Parenthetical Readings": "Пропускати читання в дужках",
-  "Do not speak kana or Han readings shown after Han text": "Не вимовляти читання каною або ханськими ієрогліфами після тексту хан",
   "Regex": "Regex",
   "Case sensitive": "З урахуванням реґістру",
   "Only for TTS": "Тільки для TTS",
@@ -2588,5 +2587,6 @@
   "Previous and Next in the library": "«Попередня» і «Наступна» в бібліотеці",
   "Reverse Mouse Wheel": "Зворотний напрямок коліщатка миші",
   "Scroll up for the next page": "Прокрутка вгору — наступна сторінка",
-  "Keep Text Selected After Lookup": "Залишати текст виділеним після пошуку"
+  "Keep Text Selected After Lookup": "Залишати текст виділеним після пошуку",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Не озвучувати читання чи ханчжа-глоси в дужках після слова"
 }

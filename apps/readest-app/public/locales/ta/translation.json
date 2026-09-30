@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} உங்களுக்கு {{count}} புத்தகங்களை அனுப்ப விரும்புகிறார்",
   "Speech": "பேச்சு",
   "Skip Parenthetical Readings": "அடைப்புக்குறி வாசிப்புகளைத் தவிர்",
-  "Do not speak kana or Han readings shown after Han text": "ஹான் உரைக்குப் பின் காட்டப்படும் கனா அல்லது ஹான் வாசிப்புகளைப் பேச வேண்டாம்",
   "Regex": "Regex",
   "Case sensitive": "எழுத்து பெரிய/சிறிய வேறுபாட்டை கருத்தில் கொள்ளவும்",
   "Only for TTS": "TTS க்கு மட்டும்",
@@ -2468,5 +2467,6 @@
   "Previous and Next in the library": "நூலகத்தில் முந்தையது மற்றும் அடுத்தது",
   "Reverse Mouse Wheel": "மவுஸ் சக்கரத்தைத் தலைகீழாக்கு",
   "Scroll up for the next page": "அடுத்த பக்கத்திற்கு மேலே உருட்டவும்",
-  "Keep Text Selected After Lookup": "தேடலுக்குப் பிறகு உரையைத் தேர்ந்தெடுத்தபடி வைத்திரு"
+  "Keep Text Selected After Lookup": "தேடலுக்குப் பிறகு உரையைத் தேர்ந்தெடுத்தபடி வைத்திரு",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "ஒரு சொல்லுக்குப் பின் அடைப்புக்குறிக்குள் உள்ள உச்சரிப்புகள் அல்லது ஹஞ்சா விளக்கங்களைப் படிக்க வேண்டாம்"
 }

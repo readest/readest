@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} {{count}} könyvet szeretne küldeni Önnek",
   "Speech": "Beszéd",
   "Skip Parenthetical Readings": "Zárójeles olvasatok kihagyása",
-  "Do not speak kana or Han readings shown after Han text": "A han szöveg után megjelenő kana- vagy han-olvasatokat ne olvassa fel",
   "Regex": "Regex",
   "Case sensitive": "Kis- és nagybetű megkülönböztetése",
   "Only for TTS": "Csak TTS esetén",
@@ -2468,5 +2467,6 @@
   "Previous and Next in the library": "Előző és Következő a könyvtárban",
   "Reverse Mouse Wheel": "Egérgörgő megfordítása",
   "Scroll up for the next page": "Görgessen felfelé a következő oldalhoz",
-  "Keep Text Selected After Lookup": "Szöveg kijelölve marad keresés után"
+  "Keep Text Selected After Lookup": "Szöveg kijelölve marad keresés után",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Ne olvassa fel a szó utáni zárójeles olvasatokat vagy handzsa glosszákat"
 }

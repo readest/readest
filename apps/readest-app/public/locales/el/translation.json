@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "Ο/Η {{alias}} θέλει να σας στείλει {{count}} βιβλία",
   "Speech": "Ομιλία",
   "Skip Parenthetical Readings": "Παράλειψη αναγνώσεων σε παρενθέσεις",
-  "Do not speak kana or Han readings shown after Han text": "Να μην εκφωνούνται αναγνώσεις κάνα ή χαν μετά από κείμενο χαν",
   "Regex": "Regex",
   "Case sensitive": "Διάκριση πεζών-κεφαλαίων",
   "Only for TTS": "Μόνο για TTS",
@@ -2468,5 +2467,6 @@
   "Previous and Next in the library": "Προηγούμενο και Επόμενο στη βιβλιοθήκη",
   "Reverse Mouse Wheel": "Αντιστροφή τροχού ποντικιού",
   "Scroll up for the next page": "Κύλιση προς τα πάνω για την επόμενη σελίδα",
-  "Keep Text Selected After Lookup": "Διατήρηση επιλογής κειμένου μετά την αναζήτηση"
+  "Keep Text Selected After Lookup": "Διατήρηση επιλογής κειμένου μετά την αναζήτηση",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Να μην εκφωνούνται αναγνώσεις ή επεξηγήσεις hanja σε παρένθεση μετά από μια λέξη"
 }

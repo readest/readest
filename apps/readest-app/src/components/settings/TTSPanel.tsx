@@ -22,7 +22,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const { getViewSettings } = useReaderStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
-  const isJapaneseUI = getLocale().toLowerCase().split('-')[0] === 'ja';
+  const showInlineReadings = ['ja', 'ko'].includes(getLocale().toLowerCase().split('-')[0]!);
 
   const [ttsMediaMetadata, setTtsMediaMetadata] = useState<TTSMediaMetadataMode>(
     viewSettings.ttsMediaMetadata ?? 'sentence',
@@ -158,11 +158,11 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
         data-setting-id='settings.tts.ttsHighlightStyle'
       />
 
-      {isJapaneseUI && (
+      {showInlineReadings && (
         <BoxedList title={_('Speech')} data-setting-id='settings.tts.speech'>
           <SettingsSwitchRow
             label={_('Skip Parenthetical Readings')}
-            description={_('Do not speak kana or Han readings shown after Han text')}
+            description={_('Do not speak readings or Hanja glosses in parentheses after a word')}
             checked={ttsSkipInlineAnnotations}
             onChange={() => setTtsSkipInlineAnnotations(!ttsSkipInlineAnnotations)}
             data-setting-id='settings.tts.skipInlineAnnotations'

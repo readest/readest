@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ඔබට පොත් {{count}}ක් යැවීමට කැමතියි",
   "Speech": "කථනය",
   "Skip Parenthetical Readings": "වරහන් තුළ ඇති කියවීම් මඟ හරින්න",
-  "Do not speak kana or Han readings shown after Han text": "හන් පෙළට පසුව පෙන්වන කනා හෝ හන් කියවීම් උච්චාරණය නොකරන්න",
   "Regex": "Regex",
   "Case sensitive": "අකුරු විශාල/කුඩා භේදය සලකා බලන්න",
   "Only for TTS": "TTS සඳහා පමණක්",
@@ -2468,5 +2467,6 @@
   "Previous and Next in the library": "පුස්තකාලයේ පෙර සහ ඊළඟ",
   "Reverse Mouse Wheel": "මූසික රෝදය ප්‍රතිලෝම කරන්න",
   "Scroll up for the next page": "ඊළඟ පිටුව සඳහා ඉහළට අනුචලනය කරන්න",
-  "Keep Text Selected After Lookup": "සෙවීමෙන් පසු පෙළ තෝරාගෙන තබන්න"
+  "Keep Text Selected After Lookup": "සෙවීමෙන් පසු පෙළ තෝරාගෙන තබන්න",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "වචනයකට පසු වරහන් තුළ ඇති උච්චාරණ හෝ හංජා විවරණ කියවන්න එපා"
 }

@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} আপনাকে {{count}}টি বই পাঠাতে চায়",
   "Speech": "কথন",
   "Skip Parenthetical Readings": "বন্ধনীর মধ্যের পাঠ এড়িয়ে যান",
-  "Do not speak kana or Han readings shown after Han text": "হান পাঠ্যের পরে দেখানো কানা বা হান পাঠ উচ্চারণ করবেন না",
   "Regex": "Regex",
   "Case sensitive": "কেস সংবেদনশীল",
   "Only for TTS": "শুধুমাত্র TTS-এর জন্য",
@@ -2468,5 +2467,6 @@
   "Previous and Next in the library": "লাইব্রেরিতে পূর্ববর্তী ও পরবর্তী",
   "Reverse Mouse Wheel": "মাউস হুইল উল্টান",
   "Scroll up for the next page": "পরবর্তী পৃষ্ঠার জন্য উপরে স্ক্রোল করুন",
-  "Keep Text Selected After Lookup": "খোঁজার পরে টেক্সট নির্বাচিত রাখুন"
+  "Keep Text Selected After Lookup": "খোঁজার পরে টেক্সট নির্বাচিত রাখুন",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "শব্দের পরে বন্ধনীর ভেতরের উচ্চারণ বা হানজা টীকা পড়বেন না"
 }
