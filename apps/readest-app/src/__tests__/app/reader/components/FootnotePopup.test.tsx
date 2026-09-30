@@ -342,4 +342,26 @@ describe('FootnotePopup jump to location', () => {
     expect(screen.getByTestId('popup').dataset['open']).toBe('true');
     expect(screen.queryByLabelText('Jump to Location')).toBeNull();
   });
+
+  // #6390: the soft keyboard the note editor raises fires a window resize on
+  // Android without the window changing width, which closed the popup under
+  // the editor. Only a real width change (rotation, window resize) moves the
+  // anchor out from under the popup.
+  it('stays open through a resize that keeps the window width', async () => {
+    await renderPopup();
+    await openFootnotePopup();
+
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(screen.getByTestId('popup').dataset['open']).toBe('true');
+
+    const width = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { value: width + 100, configurable: true });
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+    expect(screen.getByTestId('popup').dataset['open']).toBe('false');
+  });
 });

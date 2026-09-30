@@ -25,9 +25,12 @@ interface AnnotationNoteItemProps {
   onDismiss: () => void;
 }
 
+// Same chrome as Popup's own container: without the border a dark theme's
+// card has the page's colour and no edge over the page or a footnote popup.
 const cardClassName = clsx(
-  'popup-container rounded-lg',
-  'not-eink:shadow-lg bg-base-300 theme-dark:bg-base-100',
+  'popup-container rounded-lg border',
+  'not-eink:border-base-content/20 not-eink:shadow-2xl',
+  'bg-base-300 theme-dark:bg-base-100',
 );
 
 const AnnotationNoteItem: React.FC<AnnotationNoteItemProps> = ({

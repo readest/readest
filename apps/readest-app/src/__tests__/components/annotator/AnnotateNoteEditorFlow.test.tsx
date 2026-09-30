@@ -235,7 +235,11 @@ vi.mock('@/services/transformService', () => ({
   transformContent: ({ content }: { content: string }) => Promise.resolve(content),
 }));
 
-vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', () => ({
+  default: (props: { annotation: { id: string } }) => (
+    <div data-testid='annotation-range-editor'>{props.annotation.id}</div>
+  ),
+}));
 vi.mock('@/app/reader/components/annotator/SelectionRangeEditor', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({ default: () => null }));
@@ -533,5 +537,43 @@ describe('Annotate opens the note editor at the selection', () => {
     });
 
     expect(liveAnnotations()).toHaveLength(1);
+  });
+});
+
+// #6390: a highlight tapped inside the footnote popup opens its range handles,
+// the same as one tapped on the page, so its boundaries can be adjusted there.
+describe('Tapping a highlight in the footnote popup', () => {
+  test('opens the range editor on that highlight', async () => {
+    h.config.booknotes = [
+      {
+        id: 'popup-highlight',
+        type: 'annotation',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        text: 'selected text',
+        style: 'highlight',
+        color: 'yellow',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      } as BookNote,
+    ];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'selected text';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', {
+        key: 'book-1',
+        range,
+        index: 0,
+        cfi: 'epubcfi(/6/2!/4/2)',
+        annotated: true,
+      });
+    });
+
+    expect(screen.getByTestId('annotation-range-editor').textContent).toBe('popup-highlight');
   });
 });

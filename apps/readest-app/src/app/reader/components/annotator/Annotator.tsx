@@ -473,6 +473,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         annotated?: boolean;
         isNote?: boolean;
         rect?: TextSelection['rect'];
+        getPopupCfi?: TextSelection['getPopupCfi'];
       };
       if (detail.key !== bookKey) return;
       // Every event for this book advances the epoch so a handler still
@@ -484,10 +485,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return;
       }
       // A click on an overlay drawn in the popup: a highlight opens the
-      // toolbar in its annotated state (Delete Highlight + style options), a
-      // note bubble opens the note view — like the same clicks in the main
-      // view, minus the range-edit handles, which only operate on main view
-      // documents.
+      // toolbar in its annotated state (Delete Highlight + style options) with
+      // its range handles (#6390), a note bubble opens the note view — like
+      // the same clicks in the main view.
       if (detail.annotated && detail.cfi) {
         const { booknotes = [] } = getConfig(bookKey)!;
         const annotation = booknotes.find(
@@ -511,7 +511,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             setShowAnnotationNotes(false);
             setAnnotationNotes([]);
           }
-          setEditingAnnotation(null);
+          setEditingAnnotation(!detail.isNote && annotation.style ? annotation : null);
           setSelection({
             key: bookKey,
             text,
@@ -523,6 +523,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             page: annotation.page ?? getBookProgress(bookKey)?.page ?? 0,
             annotated: true,
             popup: true,
+            getPopupCfi: detail.getPopupCfi,
           });
           return;
         }
@@ -538,6 +539,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         href: detail.href,
         page: getBookProgress(bookKey)?.page ?? 0,
         popup: true,
+        getPopupCfi: detail.getPopupCfi,
       });
     };
     eventDispatcher.on('footnote-selection', onFootnoteSelection);

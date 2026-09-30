@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 import type { BookNote } from '@/types/book';
+import type { TextSelection } from '@/utils/sel';
 
 // applyAnnotationRange now takes an already-built (DOM-anchored) range instead of
 // resolving both ends from window coordinates, so the edited highlight survives a
@@ -38,6 +39,7 @@ vi.mock('@/app/reader/utils/annotatorUtil', async () => {
 });
 
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
+import { eventDispatcher } from '@/utils/event';
 import { removeBookNoteOverlays } from '@/app/reader/utils/annotatorUtil';
 import { useAnnotationEditor } from '@/app/reader/hooks/useAnnotationEditor';
 
@@ -54,12 +56,14 @@ const annotation = {
 const setup = (
   edited: BookNote = annotation,
   getAnnotationText: (range: Range) => Promise<string> = vi.fn(async () => 'edited text'),
+  selection: Partial<TextSelection> = {},
 ) => {
   const setSelection = vi.fn();
   const hook = renderHook(() =>
     useAnnotationEditor({
       bookKey: 'book-1',
       annotation: edited,
+      selection: selection as TextSelection,
       getAnnotationText,
       setSelection: setSelection as never,
     }),
@@ -89,6 +93,47 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     expect(h.saveConfig).toHaveBeenCalledTimes(1);
     expect(setSelection).toHaveBeenCalledWith(
       expect.objectContaining({ cfi: 'new-cfi', text: 'edited text', range, annotated: true }),
+    );
+  });
+
+  // #6390: a range in the footnote popup's document means nothing to the main
+  // view's getCFI; the popup's own mapping into the section must place it, and
+  // the republished selection must still be known as the popup's.
+  test('a footnote popup range is placed by the popup mapping, not the main view', async () => {
+    const getPopupCfi = vi.fn(() => 'popup-cfi');
+    const { result, setSelection } = setup(annotation, undefined, {
+      popup: true,
+      href: 'notes.xhtml',
+      getPopupCfi,
+    });
+
+    await result.current.applyAnnotationRange(range, 2, false, false);
+
+    expect(getPopupCfi).toHaveBeenCalledWith(range);
+    expect(h.view.getCFI).not.toHaveBeenCalled();
+    expect(h.annotations[0]).toMatchObject({ cfi: 'popup-cfi', text: 'edited text' });
+    expect(setSelection).toHaveBeenCalledWith(
+      expect.objectContaining({ cfi: 'popup-cfi', popup: true, href: 'notes.xhtml', getPopupCfi }),
+    );
+  });
+
+  // The popup's overlays live in its own view, out of reach of the main views
+  // the editor repaints, so the popup is told to redraw the moving range.
+  test('a footnote popup drag asks the popup to redraw the preview', async () => {
+    const onPreview = vi.fn();
+    eventDispatcher.on('footnote-annotation-preview', onPreview);
+    const { result } = setup(annotation, undefined, {
+      popup: true,
+      getPopupCfi: () => 'popup-cfi',
+    });
+
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    eventDispatcher.off('footnote-annotation-preview', onPreview);
+
+    expect(onPreview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: { key: 'book-1', note: expect.objectContaining({ id: 'a1', cfi: 'popup-cfi' }) },
+      }),
     );
   });
 
