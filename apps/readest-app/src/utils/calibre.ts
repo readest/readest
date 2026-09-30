@@ -12,13 +12,15 @@ export const CALIBRE_FILE_SCHEME = 'calibre://';
  * Builds the synthetic filePath for a Calibre book:
  * `calibre://<serverId>/<libraryId>/<bookId>`. The server id is the URL-derived
  * contentId (stable across devices), so the filePath — and the stub hash
- * derived from it — identifies the same server book everywhere.
+ * derived from it — identifies the same server book everywhere. The library id
+ * is a folder name and may contain `/`; it is percent-encoded to keep the path
+ * a strict 3-segment form (the same encoding the API requests use).
  */
 export const makeCalibreFilePath = (
   serverId: string,
   libraryId: string,
   bookId: string | number,
-): string => `${CALIBRE_FILE_SCHEME}${serverId}/${libraryId}/${bookId}`;
+): string => `${CALIBRE_FILE_SCHEME}${serverId}/${encodeURIComponent(libraryId)}/${bookId}`;
 
 /** Parses a `filePath` produced by {@link makeCalibreFilePath}, or returns null if it isn't one. */
 export const parseCalibreFilePath = (
@@ -28,7 +30,12 @@ export const parseCalibreFilePath = (
   const rest = filePath.slice(CALIBRE_FILE_SCHEME.length);
   const parts = rest.split('/');
   if (parts.length !== 3 || parts.some((p) => !p)) return null;
-  return { serverId: parts[0]!, libraryId: parts[1]!, bookId: parts[2]! };
+  try {
+    return { serverId: parts[0]!, libraryId: decodeURIComponent(parts[1]!), bookId: parts[2]! };
+  } catch {
+    // Malformed percent-encoding in a hand-edited or legacy path.
+    return null;
+  }
 };
 
 /**

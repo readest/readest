@@ -10,6 +10,7 @@ const AUTO_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 export function useCalibreSync() {
   const { appService, envConfig } = useEnv();
   const isSyncingRef = useRef(false);
+  const pendingManualRef = useRef(false);
 
   // Retry hydration while the store is empty instead of caching the first
   // attempt: `EnvProvider` publishes `appService` BEFORE
@@ -24,7 +25,15 @@ export function useCalibreSync() {
   const checkCalibreServers = useCallback(
     async (manual = false) => {
       if (!appService) return;
-      if (isSyncingRef.current) return;
+      if (isSyncingRef.current) {
+        // A pass is already running: remember a manual request instead of
+        // dropping it, and the running pass re-runs it once it settles —
+        // otherwise "Sync now" right after Connect waits out the next
+        // 5-minute tick. Auto requests during a pass stay dropped; the
+        // periodic tick will come around again.
+        if (manual) pendingManualRef.current = true;
+        return;
+      }
       await ensureHydrated();
       if (useCalibreServerStore.getState().getAvailableServers().length === 0) return;
 
@@ -40,6 +49,10 @@ export function useCalibreSync() {
         console.error('Calibre sync error:', error);
       } finally {
         isSyncingRef.current = false;
+        if (pendingManualRef.current) {
+          pendingManualRef.current = false;
+          void checkCalibreServers(true);
+        }
       }
     },
     [appService, ensureHydrated],

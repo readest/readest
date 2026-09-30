@@ -111,7 +111,10 @@ export class CalibreClient {
    * small authenticated downloads (covers) ride it directly.
    */
   async authedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    if (this.cachedBasicAuth) {
+    // The cached fast path hits the server URL directly from this client, so
+    // it must not bypass the web platform's OPDS proxy routing — a proxied
+    // request fired with the original URL from the browser just fails CORS.
+    if (this.cachedBasicAuth && !needsProxy(url)) {
       const res = await this.rawFetch(url, {
         ...options,
         headers: {

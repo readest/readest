@@ -267,6 +267,8 @@ export default memo(
   (prev, next) =>
     prev.group === next.group &&
     prev.mode === next.mode &&
+    prev.coverFit === next.coverFit &&
+    prev.skeuomorphicCovers === next.skeuomorphicCovers &&
     prev.isSelectMode === next.isSelectMode &&
     prev.groupSelected === next.groupSelected,
 );

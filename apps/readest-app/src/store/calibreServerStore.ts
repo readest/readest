@@ -75,8 +75,13 @@ export const useCalibreServerStore = create<CalibreServerStoreState>((set, get) 
   removeServer: (id) => {
     const server = get().servers.find((s) => s.id === id);
     if (!server) return undefined;
+    // Tombstone instead of removing: the row must survive in `servers` so the
+    // next saveCalibreServers persists deletedAt into settings — dropping it
+    // here would let the unseen-rows merge resurrect the server on the next
+    // save. getAvailableServers/loadCalibreServers/findCalibreServerById all
+    // skip tombstoned rows, so nothing active ever sees it.
     set((state) => ({
-      servers: state.servers.filter((s) => s.id !== id),
+      servers: state.servers.map((s) => (s.id === id ? { ...s, deletedAt: Date.now() } : s)),
     }));
     return server;
   },

@@ -55,7 +55,9 @@ if (typeof ObjectC['groupBy'] !== 'function') {
     const groups: Record<string, T[]> = Object.create(null);
     let index = 0;
     for (const value of iterable) {
-      const key = `${callback(value, index++) as unknown}`.replace('-0', '0');
+      // `String(-0)` is already `"0"`, so no -0 normalization is needed here;
+      // a `.replace('-0', '0')` would corrupt legitimate keys like "-0.5".
+      const key = `${callback(value, index++) as unknown}`;
       const bucket = groups[key] as T[] | undefined;
       if (bucket) bucket.push(value);
       else groups[key] = [value];
@@ -248,6 +250,20 @@ if (typeof U8Proto['setFromHex'] !== 'function') {
       this[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
     }
     return { read: written * 2, written };
+  };
+}
+
+// Safari 18.2 — inverse of `toHex`; skips ASCII whitespace like the spec's
+// forgiving hex parsing.
+const U8Ctor = Uint8Array as unknown as Record<string, unknown>;
+if (typeof U8Ctor['fromHex'] !== 'function') {
+  U8Ctor['fromHex'] = function fromHex(s: string): Uint8Array {
+    const clean = String(s).replace(/[\t\n\f\r ]/g, '');
+    const out = new Uint8Array(Math.floor(clean.length / 2));
+    for (let i = 0; i < out.length; i++) {
+      out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
+    }
+    return out;
   };
 }
 

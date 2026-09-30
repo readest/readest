@@ -98,11 +98,21 @@ export const downloadCalibreBook = async (
       });
       // Follow the format that actually downloaded: the managed filename,
       // the format badge, and every EXTS[format] lookup derive from it.
-      book.format = format.toUpperCase() as Book['format'];
+      // The format fields are only committed after the copy succeeds —
+      // a failed copyFile (disk, permissions) must leave the book pointing
+      // at its previous format, and the next ladder rung must derive its
+      // target filename from the candidate format, not a mutated one.
+      const nextFormat = format.toUpperCase() as Book['format'];
+      await appService.copyFile(
+        dstTmp,
+        'None',
+        getLocalBookFilename({ ...book, format: nextFormat }),
+        'Books',
+      );
+      book.format = nextFormat;
       if (book.metadata?.calibreSource) {
         book.metadata.calibreSource = { ...book.metadata.calibreSource, format };
       }
-      await appService.copyFile(dstTmp, 'None', getLocalBookFilename(book), 'Books');
       book.downloadedAt = Date.now();
       // The calibre:// path is an identity for a fileless stub; once the real
       // file is in the managed shelf dir it would only misroute availability

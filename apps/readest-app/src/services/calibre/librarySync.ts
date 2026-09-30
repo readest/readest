@@ -347,8 +347,22 @@ const syncCalibreServerInner = async (
     );
   }
 
-  const merged = new Map(library.map((book) => [book.hash, book]));
-  for (const book of replaced.values()) merged.set(book.hash, book);
+  // Re-read the library right before merging: the cover downloads above
+  // crossed many awaits, and importing/deleting/progress updates that
+  // happened meanwhile must survive this sync — merging into the stale
+  // snapshot from line ~304 would overwrite them.
+  const currentLibrary = useLibraryStore.getState().library;
+  const merged = new Map(currentLibrary.map((book) => [book.hash, book]));
+  for (const [hash, clone] of replaced) {
+    // The clone carries freshly downloaded cover fields but is based on the
+    // pre-download snapshot; rebase them onto the current row instead of
+    // reverting concurrent changes to that row.
+    const live = merged.get(hash);
+    merged.set(
+      hash,
+      live ? { ...live, coverImageUrl: clone.coverImageUrl, coverHash: clone.coverHash } : clone,
+    );
+  }
   for (const book of upserts) merged.set(book.hash, book);
   for (const hash of tombstoneHashes) {
     const existing = merged.get(hash);

@@ -98,9 +98,15 @@ export const useCalibreProgressSync = (bookKey: string) => {
 
   const pullProgress = useCallback(async () => {
     if (!appService || hasPulledOnce.current) return;
-    hasPulledOnce.current = true; // gate pushes before any await so an in-flight pull can't race one
+    // Resolve the context before consuming the single pull attempt: a null
+    // context (book data or server row not loaded yet) must leave the pull
+    // available for the next page-turn effect run, and keep pushes gated
+    // (pushProgress also bails on a null context) so a stale local position
+    // can't overwrite the newer server position. Still set before any await
+    // so an in-flight pull can't race one.
     const ctx = resolveContext();
     if (!ctx) return;
+    hasPulledOnce.current = true;
 
     try {
       // Wire form is `bookId-fmt` (pairs joined by `_`); the response is
