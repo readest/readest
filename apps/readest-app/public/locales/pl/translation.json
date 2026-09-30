@@ -2592,5 +2592,17 @@
   "Visible as {{name}}": "Widoczne jako {{name}}",
   "Local Network": "Sieć lokalna",
   "Book Title": "Tytuł książki",
-  "Header Size": "Rozmiar nagłówka"
+  "Header Size": "Rozmiar nagłówka",
+  "Currently Reading": "Aktualnie czytane",
+  "{{count}} pages left_one": "Pozostała {{count}} strona",
+  "{{count}} pages left_few": "Pozostało {{count}} strony",
+  "{{count}} pages left_many": "Pozostało {{count}} stron",
+  "{{count}} pages left_other": "Pozostało {{count}} strony",
+  "{{percent}}% Read": "Przeczytano {{percent}}%",
+  "Nothing being read right now": "Żadna książka nie jest teraz czytana",
+  "{{hours}}h": "{{hours}} godz.",
+  "{{time}} and {{count}} pages left_one": "Pozostało {{time}} i {{count}} strona",
+  "{{time}} and {{count}} pages left_few": "Pozostało {{time}} i {{count}} strony",
+  "{{time}} and {{count}} pages left_many": "Pozostało {{time}} i {{count}} stron",
+  "{{time}} and {{count}} pages left_other": "Pozostało {{time}} i {{count}} strony"
 }

@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "{{name}} nomi bilan koʻrinadi",
   "Local Network": "Mahalliy tarmoq",
   "Book Title": "Kitob sarlavhasi",
-  "Header Size": "Sarlavha o‘lchami"
+  "Header Size": "Sarlavha o‘lchami",
+  "Currently Reading": "Hozir o‘qilmoqda",
+  "{{count}} pages left_one": "{{count}} sahifa qoldi",
+  "{{count}} pages left_other": "{{count}} sahifa qoldi",
+  "{{percent}}% Read": "{{percent}}% o‘qildi",
+  "Nothing being read right now": "Hozir hech qanday kitob o‘qilmayapti",
+  "{{hours}}h": "{{hours}} soat",
+  "{{time}} and {{count}} pages left_one": "{{time}} va {{count}} sahifa qoldi",
+  "{{time}} and {{count}} pages left_other": "{{time}} va {{count}} sahifa qoldi"
 }

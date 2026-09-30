@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "{{name}} olarak görünür",
   "Local Network": "Yerel Ağ",
   "Book Title": "Kitap başlığı",
-  "Header Size": "Başlık boyutu"
+  "Header Size": "Başlık boyutu",
+  "Currently Reading": "Şu an okunan",
+  "{{count}} pages left_one": "{{count}} sayfa kaldı",
+  "{{count}} pages left_other": "{{count}} sayfa kaldı",
+  "{{percent}}% Read": "%{{percent}} okundu",
+  "Nothing being read right now": "Şu anda okunan kitap yok",
+  "{{hours}}h": "{{hours}} sa",
+  "{{time}} and {{count}} pages left_one": "{{time}} ve {{count}} sayfa kaldı",
+  "{{time}} and {{count}} pages left_other": "{{time}} ve {{count}} sayfa kaldı"
 }

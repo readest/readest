@@ -2532,5 +2532,15 @@
   "Visible as {{name}}": "גלוי בשם {{name}}",
   "Local Network": "רשת מקומית",
   "Book Title": "כותרת הספר",
-  "Header Size": "גודל כותרת"
+  "Header Size": "גודל כותרת",
+  "Currently Reading": "בקריאה כעת",
+  "{{count}} pages left_one": "נותר דף אחד",
+  "{{count}} pages left_two": "נותרו שני דפים",
+  "{{count}} pages left_other": "נותרו {{count}} דפים",
+  "{{percent}}% Read": "{{percent}}% נקראו",
+  "Nothing being read right now": "אין ספר בקריאה כרגע",
+  "{{hours}}h": "{{hours}} ש׳",
+  "{{time}} and {{count}} pages left_one": "נותרו {{time}} ודף אחד",
+  "{{time}} and {{count}} pages left_two": "נותרו {{time}} ושני דפים",
+  "{{time}} and {{count}} pages left_other": "נותרו {{time}} ו{{count}} דפים"
 }

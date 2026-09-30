@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "มองเห็นในชื่อ {{name}}",
   "Local Network": "เครือข่ายท้องถิ่น",
   "Book Title": "ชื่อหนังสือ",
-  "Header Size": "ขนาดส่วนหัว"
+  "Header Size": "ขนาดส่วนหัว",
+  "Currently Reading": "กำลังอ่านอยู่",
+  "{{count}} pages left_other": "เหลือ {{count}} หน้า",
+  "{{percent}}% Read": "อ่านแล้ว {{percent}}%",
+  "Nothing being read right now": "ตอนนี้ไม่มีหนังสือที่กำลังอ่าน",
+  "{{hours}}h": "{{hours}} ชม.",
+  "{{time}} and {{count}} pages left_other": "เหลือ {{time}} และ {{count}} หน้า"
 }

@@ -648,6 +648,93 @@ pub struct BookshelfWidgetCatalog {
     pub labels: BookshelfWidgetCatalogLabels,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateReadingWidgetRequest {
+    pub app_widget_id: i32,
+    /// Empty means "nothing currently reading".
+    #[serde(default)]
+    pub hash: String,
+    #[serde(default)]
+    pub title: String,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default)]
+    pub percent: u8,
+    #[serde(default)]
+    pub cover_path: String,
+    /// The text stats to show in order, already localized by JS.
+    #[serde(default)]
+    pub stats: Vec<String>,
+    #[serde(default)]
+    pub header_text: String,
+    pub empty_title: String,
+    #[serde(default)]
+    pub is_eink: bool,
+    #[serde(default)]
+    pub tts: Option<BookshelfWidgetTts>,
+}
+
+/// The cover, if any, that could not be written, so the caller can retry.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct UpdateReadingWidgetResponse {
+    pub failed: u32,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// One placed widget instance's display toggles.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetInstanceSettings {
+    pub app_widget_id: i32,
+    #[serde(default)]
+    pub show_time_left: bool,
+    #[serde(default = "default_true")]
+    pub show_page_count: bool,
+    #[serde(default)]
+    pub show_pages_remaining: bool,
+    #[serde(default = "default_true")]
+    pub show_header: bool,
+    #[serde(default = "default_true")]
+    pub show_percent: bool,
+    #[serde(default)]
+    pub reference_pages: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetCatalogLabels {
+    pub title: String,
+    pub show_header: String,
+    pub header_size: String,
+    pub show_tts_bar: String,
+    pub reference_pages: String,
+    pub show_percent: String,
+    pub show_time_left: String,
+    pub show_page_count: String,
+    pub show_pages_remaining: String,
+    pub text_size: String,
+    pub cancel: String,
+    pub save: String,
+}
+
+/// What the native configure screen shows, translated by the app.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetCatalog {
+    pub labels: ReadingWidgetCatalogLabels,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetReadingWidgetInstancesResponse {
+    pub instances: Vec<ReadingWidgetInstanceSettings>,
+}
+
 /// Region of the webview to snapshot for the mesh page-curl (#555),
 /// in CSS pixels of the webview viewport (origin top-left). The native
 /// side applies the screen scale factor.

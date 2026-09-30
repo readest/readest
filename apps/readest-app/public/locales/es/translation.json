@@ -2532,5 +2532,15 @@
   "Visible as {{name}}": "Visible como {{name}}",
   "Local Network": "Red local",
   "Book Title": "Título del libro",
-  "Header Size": "Tamaño del encabezado"
+  "Header Size": "Tamaño del encabezado",
+  "Currently Reading": "Leyendo ahora",
+  "{{count}} pages left_one": "{{count}} página restante",
+  "{{count}} pages left_many": "{{count}} de páginas restantes",
+  "{{count}} pages left_other": "{{count}} páginas restantes",
+  "{{percent}}% Read": "{{percent}} % leído",
+  "Nothing being read right now": "No hay ningún libro en lectura",
+  "{{hours}}h": "{{hours}} h",
+  "{{time}} and {{count}} pages left_one": "{{time}} y {{count}} página restantes",
+  "{{time}} and {{count}} pages left_many": "{{time}} y {{count}} de páginas restantes",
+  "{{time}} and {{count}} pages left_other": "{{time}} y {{count}} páginas restantes"
 }

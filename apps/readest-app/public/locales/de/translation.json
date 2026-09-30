@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "Sichtbar als {{name}}",
   "Local Network": "Lokales Netzwerk",
   "Book Title": "Buchtitel",
-  "Header Size": "Kopfzeilengröße"
+  "Header Size": "Kopfzeilengröße",
+  "Currently Reading": "Aktuelle Lektüre",
+  "{{count}} pages left_one": "{{count}} Seite übrig",
+  "{{count}} pages left_other": "{{count}} Seiten übrig",
+  "{{percent}}% Read": "{{percent}} % gelesen",
+  "Nothing being read right now": "Gerade wird kein Buch gelesen",
+  "{{hours}}h": "{{hours}} Std.",
+  "{{time}} and {{count}} pages left_one": "{{time}} und {{count}} Seite übrig",
+  "{{time}} and {{count}} pages left_other": "{{time}} und {{count}} Seiten übrig"
 }

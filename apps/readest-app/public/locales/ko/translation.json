@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "{{name}}(으)로 표시됨",
   "Local Network": "로컬 네트워크",
   "Book Title": "책 제목",
-  "Header Size": "머리글 크기"
+  "Header Size": "머리글 크기",
+  "Currently Reading": "읽는 중",
+  "{{count}} pages left_other": "{{count}}페이지 남음",
+  "{{percent}}% Read": "{{percent}}% 읽음",
+  "Nothing being read right now": "현재 읽고 있는 책이 없습니다",
+  "{{hours}}h": "{{hours}}시간",
+  "{{time}} and {{count}} pages left_other": "{{time}}, {{count}}페이지 남음"
 }

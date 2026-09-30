@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "{{name}} என்ற பெயரில் தெரியும்",
   "Local Network": "உள்ளூர் நெட்வொர்க்",
   "Book Title": "புத்தகத் தலைப்பு",
-  "Header Size": "தலைப்பின் அளவு"
+  "Header Size": "தலைப்பின் அளவு",
+  "Currently Reading": "இப்போது படிக்கிறீர்கள்",
+  "{{count}} pages left_one": "{{count}} பக்கம் மீதமுள்ளது",
+  "{{count}} pages left_other": "{{count}} பக்கங்கள் மீதமுள்ளன",
+  "{{percent}}% Read": "{{percent}}% படிக்கப்பட்டது",
+  "Nothing being read right now": "இப்போது எந்தப் புத்தகமும் படிக்கப்படவில்லை",
+  "{{hours}}h": "{{hours}}ம",
+  "{{time}} and {{count}} pages left_one": "{{time}} மற்றும் {{count}} பக்கம் மீதமுள்ளன",
+  "{{time}} and {{count}} pages left_other": "{{time}} மற்றும் {{count}} பக்கங்கள் மீதமுள்ளன"
 }

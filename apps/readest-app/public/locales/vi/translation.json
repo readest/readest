@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "Hiển thị với tên {{name}}",
   "Local Network": "Mạng cục bộ",
   "Book Title": "Tiêu đề sách",
-  "Header Size": "Cỡ tiêu đề"
+  "Header Size": "Cỡ tiêu đề",
+  "Currently Reading": "Đang đọc",
+  "{{count}} pages left_other": "Còn {{count}} trang",
+  "{{percent}}% Read": "Đã đọc {{percent}}%",
+  "Nothing being read right now": "Hiện không có sách nào đang đọc",
+  "{{hours}}h": "{{hours}} giờ",
+  "{{time}} and {{count}} pages left_other": "Còn {{time}} và {{count}} trang"
 }

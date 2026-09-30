@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "Zichtbaar als {{name}}",
   "Local Network": "Lokaal netwerk",
   "Book Title": "Boektitel",
-  "Header Size": "Koptekstgrootte"
+  "Header Size": "Koptekstgrootte",
+  "Currently Reading": "Nu aan het lezen",
+  "{{count}} pages left_one": "Nog {{count}} pagina",
+  "{{count}} pages left_other": "Nog {{count}} pagina’s",
+  "{{percent}}% Read": "{{percent}}% gelezen",
+  "Nothing being read right now": "Er wordt nu geen boek gelezen",
+  "{{hours}}h": "{{hours}} u",
+  "{{time}} and {{count}} pages left_one": "Nog {{time}} en {{count}} pagina",
+  "{{time}} and {{count}} pages left_other": "Nog {{time}} en {{count}} pagina’s"
 }

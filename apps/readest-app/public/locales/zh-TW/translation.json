@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "顯示為 {{name}}",
   "Local Network": "區域網路",
   "Book Title": "書名",
-  "Header Size": "標題大小"
+  "Header Size": "標題大小",
+  "Currently Reading": "正在閱讀",
+  "{{count}} pages left_other": "剩餘 {{count}} 頁",
+  "{{percent}}% Read": "已讀 {{percent}}%",
+  "Nothing being read right now": "目前沒有正在閱讀的書",
+  "{{hours}}h": "{{hours}} 小時",
+  "{{time}} and {{count}} pages left_other": "剩餘 {{time}} 和 {{count}} 頁"
 }

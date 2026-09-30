@@ -2592,5 +2592,17 @@
   "Visible as {{name}}": "Viden kot {{name}}",
   "Local Network": "Lokalno omrežje",
   "Book Title": "Naslov knjige",
-  "Header Size": "Velikost glave"
+  "Header Size": "Velikost glave",
+  "Currently Reading": "Trenutno berete",
+  "{{count}} pages left_one": "{{count}} stran do konca",
+  "{{count}} pages left_two": "{{count}} strani do konca",
+  "{{count}} pages left_few": "{{count}} strani do konca",
+  "{{count}} pages left_other": "{{count}} strani do konca",
+  "{{percent}}% Read": "Prebrano {{percent}} %",
+  "Nothing being read right now": "Trenutno se ne bere nobena knjiga",
+  "{{hours}}h": "{{hours}} h",
+  "{{time}} and {{count}} pages left_one": "{{time}} in {{count}} stran do konca",
+  "{{time}} and {{count}} pages left_two": "{{time}} in {{count}} strani do konca",
+  "{{time}} and {{count}} pages left_few": "{{time}} in {{count}} strani do konca",
+  "{{time}} and {{count}} pages left_other": "{{time}} in {{count}} strani do konca"
 }

@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "显示为 {{name}}",
   "Local Network": "局域网",
   "Book Title": "书名",
-  "Header Size": "标题大小"
+  "Header Size": "标题大小",
+  "Currently Reading": "正在阅读",
+  "{{count}} pages left_other": "剩余 {{count}} 页",
+  "{{percent}}% Read": "已读 {{percent}}%",
+  "Nothing being read right now": "当前没有正在阅读的书",
+  "{{hours}}h": "{{hours}} 小时",
+  "{{time}} and {{count}} pages left_other": "剩余 {{time}} 和 {{count}} 页"
 }

@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "{{name}} নামে দৃশ্যমান",
   "Local Network": "লোকাল নেটওয়ার্ক",
   "Book Title": "বইয়ের শিরোনাম",
-  "Header Size": "শিরোনামের আকার"
+  "Header Size": "শিরোনামের আকার",
+  "Currently Reading": "এখন পড়ছেন",
+  "{{count}} pages left_one": "{{count}} পৃষ্ঠা বাকি",
+  "{{count}} pages left_other": "{{count}} পৃষ্ঠা বাকি",
+  "{{percent}}% Read": "{{percent}}% পঠিত",
+  "Nothing being read right now": "এখন কোনো বই পড়া হচ্ছে না",
+  "{{hours}}h": "{{hours}}ঘ",
+  "{{time}} and {{count}} pages left_one": "{{time}} ও {{count}} পৃষ্ঠা বাকি",
+  "{{time}} and {{count}} pages left_other": "{{time}} ও {{count}} পৃষ্ঠা বাকি"
 }

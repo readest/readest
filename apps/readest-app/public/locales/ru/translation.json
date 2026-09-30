@@ -2592,5 +2592,17 @@
   "Visible as {{name}}": "Виден как {{name}}",
   "Local Network": "Локальная сеть",
   "Book Title": "Название книги",
-  "Header Size": "Размер заголовка"
+  "Header Size": "Размер заголовка",
+  "Currently Reading": "Сейчас читаете",
+  "{{count}} pages left_one": "Осталась {{count}} страница",
+  "{{count}} pages left_few": "Осталось {{count}} страницы",
+  "{{count}} pages left_many": "Осталось {{count}} страниц",
+  "{{count}} pages left_other": "Осталось {{count}} страницы",
+  "{{percent}}% Read": "Прочитано {{percent}}%",
+  "Nothing being read right now": "Сейчас ничего не читается",
+  "{{hours}}h": "{{hours}} ч",
+  "{{time}} and {{count}} pages left_one": "Осталось {{time}} и {{count}} страница",
+  "{{time}} and {{count}} pages left_few": "Осталось {{time}} и {{count}} страницы",
+  "{{time}} and {{count}} pages left_many": "Осталось {{time}} и {{count}} страниц",
+  "{{time}} and {{count}} pages left_other": "Осталось {{time}} и {{count}} страницы"
 }

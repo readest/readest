@@ -2592,5 +2592,17 @@
   "Visible as {{name}}": "Видимий як {{name}}",
   "Local Network": "Локальна мережа",
   "Book Title": "Назва книги",
-  "Header Size": "Розмір заголовка"
+  "Header Size": "Розмір заголовка",
+  "Currently Reading": "Зараз читаєте",
+  "{{count}} pages left_one": "Залишилася {{count}} сторінка",
+  "{{count}} pages left_few": "Залишилось {{count}} сторінки",
+  "{{count}} pages left_many": "Залишилось {{count}} сторінок",
+  "{{count}} pages left_other": "Залишилось {{count}} сторінки",
+  "{{percent}}% Read": "Прочитано {{percent}}%",
+  "Nothing being read right now": "Зараз жодна книга не читається",
+  "{{hours}}h": "{{hours}} год",
+  "{{time}} and {{count}} pages left_one": "Залишилось {{time}} і {{count}} сторінка",
+  "{{time}} and {{count}} pages left_few": "Залишилось {{time}} і {{count}} сторінки",
+  "{{time}} and {{count}} pages left_many": "Залишилось {{time}} і {{count}} сторінок",
+  "{{time}} and {{count}} pages left_other": "Залишилось {{time}} і {{count}} сторінки"
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One wide card with constant content, so no per-size layout logic. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:minWidth="250dp" android:minHeight="90dp"
+  android:minResizeWidth="180dp" android:minResizeHeight="60dp"
+  android:maxResizeWidth="450dp" android:maxResizeHeight="180dp"
+  android:targetCellWidth="4" android:targetCellHeight="1"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="0" android:widgetCategory="home_screen"
+  android:initialLayout="@layout/widget_reading"
+  android:description="@string/reading_widget_description"
+  android:configure="com.readest.native_bridge.ReadingWidgetConfigureActivity"
+  android:widgetFeatures="reconfigurable" />

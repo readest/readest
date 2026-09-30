@@ -2712,5 +2712,21 @@
   "Visible as {{name}}": "مرئي باسم {{name}}",
   "Local Network": "الشبكة المحلية",
   "Book Title": "عنوان الكتاب",
-  "Header Size": "حجم العنوان"
+  "Header Size": "حجم العنوان",
+  "Currently Reading": "قيد القراءة حاليًا",
+  "{{count}} pages left_zero": "متبقي {{count}} صفحة",
+  "{{count}} pages left_one": "متبقي صفحة واحدة",
+  "{{count}} pages left_two": "متبقي صفحتان",
+  "{{count}} pages left_few": "متبقي {{count}} صفحات",
+  "{{count}} pages left_many": "متبقي {{count}} صفحة",
+  "{{count}} pages left_other": "متبقي {{count}} صفحة",
+  "{{percent}}% Read": "تمت قراءة {{percent}}%",
+  "Nothing being read right now": "لا يوجد كتاب قيد القراءة حاليًا",
+  "{{hours}}h": "{{hours}} س",
+  "{{time}} and {{count}} pages left_zero": "متبقي {{time}} و{{count}} صفحة",
+  "{{time}} and {{count}} pages left_one": "متبقي {{time}} وصفحة واحدة",
+  "{{time}} and {{count}} pages left_two": "متبقي {{time}} وصفحتان",
+  "{{time}} and {{count}} pages left_few": "متبقي {{time}} و{{count}} صفحات",
+  "{{time}} and {{count}} pages left_many": "متبقي {{time}} و{{count}} صفحة",
+  "{{time}} and {{count}} pages left_other": "متبقي {{time}} و{{count}} صفحة"
 }

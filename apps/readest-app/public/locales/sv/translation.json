@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "Synlig som {{name}}",
   "Local Network": "Lokalt nätverk",
   "Book Title": "Boktitel",
-  "Header Size": "Sidhuvudets storlek"
+  "Header Size": "Sidhuvudets storlek",
+  "Currently Reading": "Läser nu",
+  "{{count}} pages left_one": "{{count}} sida kvar",
+  "{{count}} pages left_other": "{{count}} sidor kvar",
+  "{{percent}}% Read": "{{percent}} % läst",
+  "Nothing being read right now": "Ingen bok läses just nu",
+  "{{hours}}h": "{{hours}} tim",
+  "{{time}} and {{count}} pages left_one": "{{time}} och {{count}} sida kvar",
+  "{{time}} and {{count}} pages left_other": "{{time}} och {{count}} sidor kvar"
 }

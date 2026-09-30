@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "Látható ezen a néven: {{name}}",
   "Local Network": "Helyi hálózat",
   "Book Title": "Könyv címe",
-  "Header Size": "Fejléc mérete"
+  "Header Size": "Fejléc mérete",
+  "Currently Reading": "Jelenleg olvasott",
+  "{{count}} pages left_one": "{{count}} oldal van hátra",
+  "{{count}} pages left_other": "{{count}} oldal van hátra",
+  "{{percent}}% Read": "{{percent}}% elolvasva",
+  "Nothing being read right now": "Jelenleg nincs olvasott könyv",
+  "{{hours}}h": "{{hours}} ó",
+  "{{time}} and {{count}} pages left_one": "{{time}} és {{count}} oldal van hátra",
+  "{{time}} and {{count}} pages left_other": "{{time}} és {{count}} oldal van hátra"
 }

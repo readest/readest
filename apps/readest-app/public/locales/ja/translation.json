@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "{{name}} として表示中",
   "Local Network": "ローカルネットワーク",
   "Book Title": "本のタイトル",
-  "Header Size": "見出しのサイズ"
+  "Header Size": "見出しのサイズ",
+  "Currently Reading": "読書中",
+  "{{count}} pages left_other": "残り{{count}}ページ",
+  "{{percent}}% Read": "{{percent}}% 読了",
+  "Nothing being read right now": "現在読んでいる本はありません",
+  "{{hours}}h": "{{hours}}時間",
+  "{{time}} and {{count}} pages left_other": "残り{{time}}と{{count}}ページ"
 }

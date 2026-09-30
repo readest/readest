@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "{{name}} के रूप में दिखाई दे रहा है",
   "Local Network": "लोकल नेटवर्क",
   "Book Title": "पुस्तक शीर्षक",
-  "Header Size": "शीर्षक का आकार"
+  "Header Size": "शीर्षक का आकार",
+  "Currently Reading": "अभी पढ़ रहे हैं",
+  "{{count}} pages left_one": "{{count}} पृष्ठ शेष",
+  "{{count}} pages left_other": "{{count}} पृष्ठ शेष",
+  "{{percent}}% Read": "{{percent}}% पढ़ा गया",
+  "Nothing being read right now": "अभी कोई पुस्तक नहीं पढ़ी जा रही",
+  "{{hours}}h": "{{hours}}घं",
+  "{{time}} and {{count}} pages left_one": "{{time}} और {{count}} पृष्ठ शेष",
+  "{{time}} and {{count}} pages left_other": "{{time}} और {{count}} पृष्ठ शेष"
 }

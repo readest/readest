@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "{{name}} ཞེས་པའི་མིང་ཐོག་མཐོང་ཐུབ།",
   "Local Network": "ས་གནས་དྲ་བ།",
   "Book Title": "དེབ་མཚན།",
-  "Header Size": "ཁ་བྱང་གི་ཆེ་ཆུང་"
+  "Header Size": "ཁ་བྱང་གི་ཆེ་ཆུང་",
+  "Currently Reading": "ད་ལྟ་ཀློག་བཞིན་པ།",
+  "{{count}} pages left_other": "{{count}} ཤོག་ལྷེ ལྷག་ཡོད།",
+  "{{percent}}% Read": "{{percent}}% ཀློག་ཟིན།",
+  "Nothing being read right now": "ད་ལྟ་ཀློག་བཞིན་པའི་དེབ་མེད།",
+  "{{hours}}h": "{{hours}}ཆུ",
+  "{{time}} and {{count}} pages left_other": "{{time}} དང་ {{count}} ཤོག་ལྷེ ལྷག་ཡོད།"
 }

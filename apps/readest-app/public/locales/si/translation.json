@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "{{name}} ලෙස දෘශ්‍යමානයි",
   "Local Network": "දේශීය ජාලය",
   "Book Title": "පොත් මාතෘකාව",
-  "Header Size": "ශීර්ෂයේ ප්‍රමාණය"
+  "Header Size": "ශීර්ෂයේ ප්‍රමාණය",
+  "Currently Reading": "දැන් කියවමින්",
+  "{{count}} pages left_one": "පිටුව {{count}} ක් ඉතිරි",
+  "{{count}} pages left_other": "පිටු {{count}} ක් ඉතිරි",
+  "{{percent}}% Read": "{{percent}}% කියවා ඇත",
+  "Nothing being read right now": "දැනට කියවන පොතක් නැත",
+  "{{hours}}h": "{{hours}}පැ",
+  "{{time}} and {{count}} pages left_one": "{{time}} සහ පිටුව {{count}} ක් ඉතිරි",
+  "{{time}} and {{count}} pages left_other": "{{time}} සහ පිටු {{count}} ක් ඉතිරි"
 }

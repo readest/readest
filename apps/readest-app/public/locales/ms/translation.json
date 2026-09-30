@@ -2412,5 +2412,11 @@
   "Visible as {{name}}": "Kelihatan sebagai {{name}}",
   "Local Network": "Rangkaian Setempat",
   "Book Title": "Tajuk buku",
-  "Header Size": "Saiz pengepala"
+  "Header Size": "Saiz pengepala",
+  "Currently Reading": "Sedang dibaca",
+  "{{count}} pages left_other": "{{count}} halaman lagi",
+  "{{percent}}% Read": "{{percent}}% dibaca",
+  "Nothing being read right now": "Tiada buku sedang dibaca",
+  "{{hours}}h": "{{hours}} j",
+  "{{time}} and {{count}} pages left_other": "{{time}} dan {{count}} halaman lagi"
 }

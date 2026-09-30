@@ -3,6 +3,7 @@ import { addPluginListener, type PluginListener } from '@tauri-apps/api/core';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { refreshBookshelfWidget } from '@/services/widget/bookshelfWidget';
+import { refreshReadingWidget } from '@/services/widget/readingWidget';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { getBookHashFromKey } from '@/services/tts/TTSSessionManager';
@@ -10,15 +11,16 @@ import { throttle } from '@/utils/throttle';
 import { useTranslation } from './useTranslation';
 
 /**
- * Publish the home-screen bookshelf-widget snapshot. The widget is only visible
- * while the app is backgrounded, so we publish (1) once the library is loaded,
- * (2) whenever the app goes to the background, (3) immediately on a TTS
- * playback-state change (so controls appear/disappear), (4) throttled on TTS
- * position advances so the progress percent stays live while speaking, and
- * (5) when a widget is placed or reconfigured while the app is running.
- * Mounted on both the library and reader pages.
+ * Publish the home-screen widget snapshots (Bookshelf and Currently Reading).
+ * The widgets are only visible while the app is backgrounded, so we publish
+ * (1) once the library is loaded, (2) whenever the app goes to the background,
+ * (3) immediately on a TTS playback-state change (so controls appear/disappear),
+ * (4) throttled on TTS position advances so the progress stays live while
+ * speaking, and (5) when a widget is placed or reconfigured while the app is
+ * running. Mounted on both the library and reader pages. Each refresh is
+ * coalesced independently, so one never blocks the other.
  */
-export function useBookshelfWidget() {
+export function useHomeScreenWidgets() {
   const _ = useTranslation();
   const { appService } = useEnv();
   const libraryLoaded = useLibraryStore((s) => s.libraryLoaded);
@@ -29,11 +31,11 @@ export function useBookshelfWidget() {
 
     const publishNow = () => {
       const tts = ttsRef.current;
-      void refreshBookshelfWidget(
-        appService,
-        _,
-        tts.active ? { active: true, playing: tts.playing, bookHash: tts.bookHash } : undefined,
-      );
+      const playback = tts.active
+        ? { active: true, playing: tts.playing, bookHash: tts.bookHash }
+        : undefined;
+      void refreshBookshelfWidget(appService, _, playback);
+      void refreshReadingWidget(appService, _, playback);
     };
 
     const publish = debounce(publishNow, 500);
@@ -47,8 +49,8 @@ export function useBookshelfWidget() {
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
         // Flush now: the WebView may be suspended before a debounced timer
-        // fires, and backgrounding is exactly when the widget needs the latest
-        // reading progress.
+        // fires, and backgrounding is exactly when the widgets need the
+        // latest reading progress.
         publish();
         publish.flush();
       }

@@ -2532,5 +2532,15 @@
   "Visible as {{name}}": "Vizibil ca {{name}}",
   "Local Network": "Rețea locală",
   "Book Title": "Titlul cărții",
-  "Header Size": "Dimensiunea antetului"
+  "Header Size": "Dimensiunea antetului",
+  "Currently Reading": "Se citește acum",
+  "{{count}} pages left_one": "{{count}} pagină rămasă",
+  "{{count}} pages left_few": "{{count}} pagini rămase",
+  "{{count}} pages left_other": "{{count}} de pagini rămase",
+  "{{percent}}% Read": "{{percent}}% citit",
+  "Nothing being read right now": "Nicio carte nu este citită acum",
+  "{{hours}}h": "{{hours}} h",
+  "{{time}} and {{count}} pages left_one": "{{time}} și {{count}} pagină rămase",
+  "{{time}} and {{count}} pages left_few": "{{time}} și {{count}} pagini rămase",
+  "{{time}} and {{count}} pages left_other": "{{time}} și {{count}} de pagini rămase"
 }

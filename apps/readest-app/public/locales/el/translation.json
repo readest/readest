@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "Ορατό ως {{name}}",
   "Local Network": "Τοπικό δίκτυο",
   "Book Title": "Τίτλος βιβλίου",
-  "Header Size": "Μέγεθος κεφαλίδας"
+  "Header Size": "Μέγεθος κεφαλίδας",
+  "Currently Reading": "Διαβάζετε τώρα",
+  "{{count}} pages left_one": "Μένει {{count}} σελίδα",
+  "{{count}} pages left_other": "Μένουν {{count}} σελίδες",
+  "{{percent}}% Read": "{{percent}}% διαβασμένο",
+  "Nothing being read right now": "Κανένα βιβλίο δεν διαβάζεται αυτή τη στιγμή",
+  "{{hours}}h": "{{hours}}ώ",
+  "{{time}} and {{count}} pages left_one": "Μένουν {{time}} και {{count}} σελίδα",
+  "{{time}} and {{count}} pages left_other": "Μένουν {{time}} και {{count}} σελίδες"
 }

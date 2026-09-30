@@ -2532,5 +2532,15 @@
   "Visible as {{name}}": "Visibile come {{name}}",
   "Local Network": "Rete locale",
   "Book Title": "Titolo libro",
-  "Header Size": "Dimensione intestazione"
+  "Header Size": "Dimensione intestazione",
+  "Currently Reading": "In lettura",
+  "{{count}} pages left_one": "{{count}} pagina rimasta",
+  "{{count}} pages left_many": "{{count}} di pagine rimaste",
+  "{{count}} pages left_other": "{{count}} pagine rimaste",
+  "{{percent}}% Read": "{{percent}}% letto",
+  "Nothing being read right now": "Nessun libro in lettura",
+  "{{hours}}h": "{{hours}} h",
+  "{{time}} and {{count}} pages left_one": "{{time}} e {{count}} pagina rimaste",
+  "{{time}} and {{count}} pages left_many": "{{time}} e {{count}} di pagine rimaste",
+  "{{time}} and {{count}} pages left_other": "{{time}} e {{count}} pagine rimaste"
 }

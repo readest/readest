@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "قابل مشاهده با نام {{name}}",
   "Local Network": "شبکه محلی",
   "Book Title": "عنوان کتاب",
-  "Header Size": "اندازه سرصفحه"
+  "Header Size": "اندازه سرصفحه",
+  "Currently Reading": "در حال مطالعه",
+  "{{count}} pages left_one": "{{count}} صفحه باقی‌مانده",
+  "{{count}} pages left_other": "{{count}} صفحه باقی‌مانده",
+  "{{percent}}% Read": "{{percent}}٪ خوانده شده",
+  "Nothing being read right now": "اکنون کتابی در حال خواندن نیست",
+  "{{hours}}h": "{{hours}} س",
+  "{{time}} and {{count}} pages left_one": "{{time}} و {{count}} صفحه باقی‌مانده",
+  "{{time}} and {{count}} pages left_other": "{{time}} و {{count}} صفحه باقی‌مانده"
 }

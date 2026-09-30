@@ -2472,5 +2472,13 @@
   "Visible as {{name}}": "ხილულია როგორც {{name}}",
   "Local Network": "ლოკალური ქსელი",
   "Book Title": "წიგნის სათაური",
-  "Header Size": "სათაურის ზომა"
+  "Header Size": "სათაურის ზომა",
+  "Currently Reading": "ახლა იკითხება",
+  "{{count}} pages left_one": "დარჩა {{count}} გვერდი",
+  "{{count}} pages left_other": "დარჩა {{count}} გვერდი",
+  "{{percent}}% Read": "წაკითხულია {{percent}}%",
+  "Nothing being read right now": "ამჟამად არც ერთი წიგნი არ იკითხება",
+  "{{hours}}h": "{{hours}}სთ",
+  "{{time}} and {{count}} pages left_one": "დარჩა {{time}} და {{count}} გვერდი",
+  "{{time}} and {{count}} pages left_other": "დარჩა {{time}} და {{count}} გვერდი"
 }
