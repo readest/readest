@@ -25,12 +25,18 @@ const SNAPSHOT_TIMEOUT: Duration = Duration::from_millis(1000);
 static NEXT_MESSAGE_ID: AtomicI32 = AtomicI32::new(0x4000_0000);
 
 type SnapshotSender = mpsc::Sender<Result<Vec<u8>, String>>;
+/// The observer's registration. It keeps the observer alive and the
+/// observer holds it, so every way out of a capture must take it: the
+/// result, the DevTools agent detaching, or the caller timing out.
+type SharedRegistration = Arc<Mutex<Option<Registration>>>;
 
 pub fn capture_webview_region<R: Runtime>(
     window: &tauri::WebviewWindow<R>,
     payload: CaptureWebviewRegionRequest,
 ) -> crate::Result<Vec<u8>> {
     let (tx, rx) = mpsc::channel::<Result<Vec<u8>, String>>();
+    let registration = SharedRegistration::default();
+    let observer_registration = registration.clone();
     window
         .with_webview(move |webview| {
             // Runs on the CEF UI thread, which also delivers the result.
@@ -42,15 +48,19 @@ pub fn capture_webview_region<R: Runtime>(
                 let _ = tx.send(Err("not a CEF webview".into()));
                 return;
             };
-            request_screenshot(&host, payload, tx);
+            request_screenshot(&host, payload, tx, observer_registration);
         })
         .map_err(|e| crate::Error::NativeBridgeError(e.to_string()))?;
     match rx.recv_timeout(SNAPSHOT_TIMEOUT) {
         Ok(Ok(image)) => Ok(image),
         Ok(Err(err)) => Err(crate::Error::NativeBridgeError(err)),
-        Err(_) => Err(crate::Error::NativeBridgeError(
-            "webview snapshot timed out".into(),
-        )),
+        Err(_) => {
+            // Unregister on the UI thread, where the observer lives.
+            let _ = window.with_webview(move |_| drop(registration.lock().unwrap().take()));
+            Err(crate::Error::NativeBridgeError(
+                "webview snapshot timed out".into(),
+            ))
+        }
     }
 }
 
@@ -58,10 +68,10 @@ fn request_screenshot(
     host: &BrowserHost,
     payload: CaptureWebviewRegionRequest,
     tx: SnapshotSender,
+    registration: SharedRegistration,
 ) {
     let message_id = NEXT_MESSAGE_ID.fetch_add(1, Ordering::Relaxed);
     let tx = Arc::new(Mutex::new(Some(tx)));
-    let registration = Arc::new(Mutex::new(None));
     let mut observer =
         ScreenshotDevToolsObserver::new(message_id, tx.clone(), registration.clone());
     let Some(observer_registration) = host.add_dev_tools_message_observer(Some(&mut observer))
@@ -92,7 +102,7 @@ wrap_dev_tools_message_observer! {
     struct ScreenshotDevToolsObserver {
         message_id: c_int,
         tx: Arc<Mutex<Option<SnapshotSender>>>,
-        registration: Arc<Mutex<Option<Registration>>>,
+        registration: SharedRegistration,
     }
 
     impl DevToolsMessageObserver {
@@ -116,6 +126,12 @@ wrap_dev_tools_message_observer! {
                 },
             );
             // Unregisters this observer.
+            let _ = self.registration.lock().unwrap().take();
+        }
+
+        // CEF drops pending results when the agent detaches.
+        fn on_dev_tools_agent_detached(&self, _browser: Option<&mut Browser>) {
+            send(&self.tx, Err("DevTools agent detached".into()));
             let _ = self.registration.lock().unwrap().take();
         }
     }
