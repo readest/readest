@@ -326,6 +326,42 @@ describe('useBrightnessGesture (listener-level)', () => {
     expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeGreaterThan(0.5);
   });
 
+  it('waits for the touch-down reading when the swipe activates before it resolves (#6374)', async () => {
+    h.autoScreenBrightness = true;
+    h.getScreenBrightness.mockResolvedValue(0.1);
+    const { target } = setup();
+    await act(async () => {});
+    h.lastScreenBrightness = 0.1;
+    let resolve: (b: number) => void = () => {};
+    h.getScreenBrightness.mockImplementation(() => new Promise<number>((r) => (resolve = r)));
+    h.setScreenBrightness.mockClear();
+    fireTouch(target, 'touchstart', 10, 500);
+    fireTouch(target, 'touchmove', 10, 540); // activates while the read is pending
+    expect(h.setScreenBrightness).not.toHaveBeenCalled();
+    await act(async () => resolve(0.9));
+    fireTouch(target, 'touchmove', 10, 550);
+    fireTouch(target, 'touchend', 10, 550);
+    expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeGreaterThan(0.5);
+  });
+
+  it('ignores a touch-down reading that resolves during a later gesture', async () => {
+    h.autoScreenBrightness = true;
+    h.getScreenBrightness.mockResolvedValue(0.1);
+    const { target } = setup();
+    await act(async () => {});
+    h.lastScreenBrightness = 0.1;
+    const resolvers: ((b: number) => void)[] = [];
+    h.getScreenBrightness.mockImplementation(() => new Promise<number>((r) => resolvers.push(r)));
+    fireTouch(target, 'touchstart', 10, 500);
+    fireTouch(target, 'touchend', 10, 500);
+    fireTouch(target, 'touchstart', 10, 500);
+    await act(async () => resolvers[1]!(0.2));
+    await act(async () => resolvers[0]!(0.9)); // stale reading from the first touch
+    fireTouch(target, 'touchmove', 10, 550);
+    fireTouch(target, 'touchend', 10, 550);
+    expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeLessThan(0.5);
+  });
+
   it('is inert when the setting is disabled', () => {
     h.swipeSetting = false;
     const { target, paginator, rerender } = setup();

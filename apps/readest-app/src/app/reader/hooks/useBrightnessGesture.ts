@@ -85,6 +85,8 @@ export const useBrightnessGesture = (bookKey: string) => {
   const viewHeightRef = useRef(0);
   const startValueRef = useRef(DEFAULT_BRIGHTNESS);
   const levelRef = useRef(DEFAULT_BRIGHTNESS);
+  const gestureIdRef = useRef(0);
+  const readPendingRef = useRef(false);
   const rafIdRef = useRef<number | null>(null);
   const pendingValueRef = useRef<number | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -186,13 +188,15 @@ export const useBrightnessGesture = (bookKey: string) => {
         const applied = useDeviceControlStore.getState().lastScreenBrightness;
         startValueRef.current = applied ?? seedRef.current;
         // In system mode the brightness can change outside the reader (Control
-        // Center, Home) without a visibilitychange, so re-read the device value;
-        // it lands long before the drag passes the activation distance (#6374).
-        if (armedRef.current && latestRef.current.autoBrightness) {
+        // Center, Home) without a visibilitychange, so re-read the device value
+        // and hold brightness writes until this gesture's reading lands (#6374).
+        const gestureId = ++gestureIdRef.current;
+        readPendingRef.current = armedRef.current && latestRef.current.autoBrightness;
+        if (readPendingRef.current) {
           getScreenBrightness().then((b) => {
-            if (armedRef.current && !activeRef.current && b >= 0 && b <= 1) {
-              startValueRef.current = b;
-            }
+            if (gestureIdRef.current !== gestureId) return;
+            readPendingRef.current = false;
+            if (b >= 0 && b <= 1) startValueRef.current = b;
           });
         }
       };
@@ -242,6 +246,7 @@ export const useBrightnessGesture = (bookKey: string) => {
         e.stopImmediatePropagation();
         const value = computeBrightness(startValueRef.current, dy, viewHeightRef.current);
         levelRef.current = value;
+        if (readPendingRef.current) return;
         scheduleBrightness(value);
         setOverlayVisible(true);
         setOverlayLevel(value);
