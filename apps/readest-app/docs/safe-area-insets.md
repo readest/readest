@@ -112,6 +112,31 @@ The reader page follows the same gate:
   without shifting moves every popup up by the top inset (59px on an iPhone), onto the
   selected word.
 
+The status bar mechanism is the one thing that changes on every iOS device. It is hidden
+through the root view controller's `prefersStatusBarHidden` (tao's
+`setPrefersStatusBarHidden:`), which needs `UIViewControllerBasedStatusBarAppearance` set to
+true in `src-tauri/Info.plist`: apps built with the iOS 27 SDK can no longer hide it with
+`UIApplication.setStatusBarHidden`. `set_system_ui_visibility` and `get_safe_area_insets`
+both use `appWindow()` (the webview's own window), and `get_safe_area_insets` reports
+`statusBarHidden`. Everything below stays behind `isIPhoneDuo`:
+
+- **Inset re-read.** Hiding or showing the strip moves its inset (84pt to 0 on the inner
+  display), so `Reader` and `useTheme` re-read the insets after `setSystemUIVisibility`
+  resolves. Other iPhones never did, and a re-read would apply their 20 to 0 top inset.
+- **Reading page.** `BooksGrid` lays each cell's page out against `getReadingScreenInsets()`,
+  which keeps the side insets recorded with the status bar hidden
+  (`themeStore.statusBarHiddenInsets`, recorded by `useSafeAreaInsets`, keyed by window
+  size), so opening the toolbar does not re-paginate and the strip overlaps the page margin
+  while it is up. `HeaderBar` and `FooterBar` take the cell's live insets (`chromeInsets`) so
+  their buttons clear the strip. With Always Show Status Bar on, the page uses the live
+  insets. Off the Duo nothing is recorded or applied: page and chrome insets are the same.
+- **Landscape rule.** An iPhone held landscape shows no status bar whatever the app asks
+  for, so `useTheme` sets `systemUIAlwaysHidden` on any landscape orientation change
+  (unchanged). On the Duo it instead uses `isStatusBarHiddenBySystem()`, landscape and under
+  500pt tall, which leaves the 669pt inner display free to show its strip. It is evaluated on
+  mount, resize and orientation change, since folding between two landscape displays fires no
+  orientation event.
+
 ### Passing `gridInsets`
 
 When creating overlay components (image viewers, table viewers, zoom controls, etc.), always pass `gridInsets` as a prop so they can position their controls correctly:

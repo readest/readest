@@ -18,7 +18,12 @@ vi.mock('@/store/themeStore', () => ({
       updateScreenCornerRadius: h.updateCornerRadius,
       setIsIPhoneDuo: h.setIsIPhoneDuo,
     }),
-    { getState: () => ({ isIPhoneDuo: h.storeIsIPhoneDuo }) },
+    {
+      getState: () => ({
+        isIPhoneDuo: h.storeIsIPhoneDuo,
+        safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+      }),
+    },
   ),
 }));
 vi.mock('@/utils/bridge', () => ({ getSafeAreaInsets: h.getInsets }));

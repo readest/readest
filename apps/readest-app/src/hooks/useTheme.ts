@@ -7,6 +7,7 @@ import { applyCustomTheme, Palette, ThemeScope } from '@/styles/themes';
 import { getStatusBarHeight, setSystemUIVisibility } from '@/utils/bridge';
 import { getOverlayerBlendMode } from '@/utils/style';
 import { getOSPlatform } from '@/utils/misc';
+import { isStatusBarHiddenBySystem } from '@/utils/insets';
 
 type UseThemeProps = {
   systemUIVisible?: boolean;
@@ -38,6 +39,7 @@ export const useTheme = ({
     updateAppTheme,
     setStatusBarHeight,
     systemUIAlwaysHidden,
+    isIPhoneDuo,
     setSystemUIAlwaysHidden,
     setThemeScope,
   } = useThemeStore();
@@ -67,14 +69,21 @@ export const useTheme = ({
     (updateInsets = false) => {
       if (!appService?.isMobileApp) return;
 
-      const visible = !!(systemUIVisible && !systemUIAlwaysHidden);
+      // iPhone Duo's rule sets systemUIAlwaysHidden and calls this in one tick,
+      // so read it fresh there; other devices keep the render's value.
+      const state = useThemeStore.getState();
+      const alwaysHidden = state.isIPhoneDuo ? state.systemUIAlwaysHidden : systemUIAlwaysHidden;
+      const visible = !!(systemUIVisible && !alwaysHidden);
       if (visible) {
         showSystemUI();
       } else {
         dismissSystemUI();
       }
       setSystemUIVisibility({ visible, darkMode: isDarkMode }).then(() => {
-        if (updateInsets) {
+        // iPhone Duo's status bar carries a side safe-area inset of its own
+        // (its strip), so re-read the insets for the new state. Other iOS
+        // devices never did, and a re-read would change their top inset.
+        if (updateInsets || useThemeStore.getState().isIPhoneDuo) {
           onUpdateInsets();
         }
       });
@@ -99,8 +108,23 @@ export const useTheme = ({
         handleSystemUIVisibility();
       }
     };
+    // iPhone Duo: a status bar is hidden by the system only in a compact-height
+    // window (its cover display, not the 669pt inner one). innerHeight can still
+    // be stale when the orientation event fires; the resize that follows
+    // re-evaluates, and covers folding between two landscape displays, which
+    // fires no orientation event.
+    const updateDuoStatusBarRule = () => {
+      const hidden = isStatusBarHiddenBySystem(screen.orientation?.type, window.innerHeight);
+      if (hidden === useThemeStore.getState().systemUIAlwaysHidden) return;
+      setSystemUIAlwaysHidden(hidden);
+      handleSystemUIVisibility();
+    };
     const handleOrientationChange = () => {
       if (appService?.isIOSApp && getOSPlatform() === 'ios') {
+        if (isIPhoneDuo) {
+          updateDuoStatusBarRule();
+          return;
+        }
         // FIXME: This is a workaround for iPhone apps where the system UI is not visible in landscape mode
         // when the app is in fullscreen mode until we find a better solution to override the prefersStatusBarHidden
         // in the ViewController. Note that screen.orientation.type is not abailable in iOS before 16.4.
@@ -109,14 +133,22 @@ export const useTheme = ({
         handleSystemUIVisibility();
       }
     };
+    const handleResize = () => {
+      if (isIPhoneDuo && appService?.isIOSApp && getOSPlatform() === 'ios') {
+        updateDuoStatusBarRule();
+      }
+    };
+    handleResize();
     document.addEventListener('visibilitychange', handleVisibilityChange);
     screen.orientation?.addEventListener('change', handleOrientationChange);
+    window.addEventListener('resize', handleResize);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       screen.orientation?.removeEventListener('change', handleOrientationChange);
+      window.removeEventListener('resize', handleResize);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handleSystemUIVisibility]);
+  }, [handleSystemUIVisibility, isIPhoneDuo]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings?.customThemes ?? [];
@@ -146,4 +178,6 @@ export const useTheme = ({
       isDarkMode ? 'lighten' : 'multiply',
     );
   }, [themeColor, isDarkMode, isBwEink, highlightOpacity]);
+
+  return { onUpdateInsets };
 };
