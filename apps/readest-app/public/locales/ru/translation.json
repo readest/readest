@@ -2588,5 +2588,6 @@
   "Previous and Next in the library": "«Предыдущая» и «Следующая» в библиотеке",
   "Reverse Mouse Wheel": "Обратное направление колёсика мыши",
   "Scroll up for the next page": "Прокрутка вверх — следующая страница",
-  "Keep Text Selected After Lookup": "Сохранять выделение текста после поиска"
+  "Keep Text Selected After Lookup": "Сохранять выделение текста после поиска",
+  "Sentence around the highlight": "Предложение вокруг выделения"
 }

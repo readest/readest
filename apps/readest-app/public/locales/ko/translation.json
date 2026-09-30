@@ -2408,5 +2408,6 @@
   "Previous and Next in the library": "라이브러리의 이전 및 다음",
   "Reverse Mouse Wheel": "마우스 휠 반전",
   "Scroll up for the next page": "위로 스크롤하면 다음 페이지",
-  "Keep Text Selected After Lookup": "사전 검색 후 텍스트 선택 유지"
+  "Keep Text Selected After Lookup": "사전 검색 후 텍스트 선택 유지",
+  "Sentence around the highlight": "하이라이트가 포함된 문장"
 }

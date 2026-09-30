@@ -2408,5 +2408,6 @@
   "Previous and Next in the library": "書庫中的上一頁和下一頁",
   "Reverse Mouse Wheel": "反轉滑鼠滾輪",
   "Scroll up for the next page": "向上捲動翻到下一頁",
-  "Keep Text Selected After Lookup": "查詞後保持文字選取"
+  "Keep Text Selected After Lookup": "查詞後保持文字選取",
+  "Sentence around the highlight": "醒目提示所在的句子"
 }

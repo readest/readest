@@ -2588,5 +2588,6 @@
   "Previous and Next in the library": "«Попередня» і «Наступна» в бібліотеці",
   "Reverse Mouse Wheel": "Зворотний напрямок коліщатка миші",
   "Scroll up for the next page": "Прокрутка вгору — наступна сторінка",
-  "Keep Text Selected After Lookup": "Залишати текст виділеним після пошуку"
+  "Keep Text Selected After Lookup": "Залишати текст виділеним після пошуку",
+  "Sentence around the highlight": "Речення навколо виділення"
 }

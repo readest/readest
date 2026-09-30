@@ -2468,5 +2468,6 @@
   "Previous and Next in the library": "පුස්තකාලයේ පෙර සහ ඊළඟ",
   "Reverse Mouse Wheel": "මූසික රෝදය ප්‍රතිලෝම කරන්න",
   "Scroll up for the next page": "ඊළඟ පිටුව සඳහා ඉහළට අනුචලනය කරන්න",
-  "Keep Text Selected After Lookup": "සෙවීමෙන් පසු පෙළ තෝරාගෙන තබන්න"
+  "Keep Text Selected After Lookup": "සෙවීමෙන් පසු පෙළ තෝරාගෙන තබන්න",
+  "Sentence around the highlight": "උද්දීපනය වටා ඇති වාක්‍යය"
 }

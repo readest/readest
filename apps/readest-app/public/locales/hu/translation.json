@@ -2468,5 +2468,6 @@
   "Previous and Next in the library": "Előző és Következő a könyvtárban",
   "Reverse Mouse Wheel": "Egérgörgő megfordítása",
   "Scroll up for the next page": "Görgessen felfelé a következő oldalhoz",
-  "Keep Text Selected After Lookup": "Szöveg kijelölve marad keresés után"
+  "Keep Text Selected After Lookup": "Szöveg kijelölve marad keresés után",
+  "Sentence around the highlight": "A kiemelést tartalmazó mondat"
 }

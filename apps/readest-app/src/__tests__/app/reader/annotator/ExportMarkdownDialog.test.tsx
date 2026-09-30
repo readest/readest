@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BooknoteGroup } from '@/types/book';
 
 const h = vi.hoisted(() => ({
   appService: {} as Record<string, unknown>,
+  bookData: undefined as unknown,
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -19,7 +20,7 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => undefined }),
+  useBookDataStore: () => ({ getBookData: () => h.bookData }),
 }));
 
 vi.mock('@/store/readerStore', () => ({
@@ -28,6 +29,10 @@ vi.mock('@/store/readerStore', () => ({
 
 vi.mock('@/helpers/settings', () => ({
   saveViewSettings: vi.fn(),
+}));
+
+vi.mock('@/services/annotation/context', () => ({
+  getAnnotationContexts: vi.fn(async () => ({ 'note-1': 'Say hello to the world.' })),
 }));
 
 vi.mock('@/components/Dialog', () => ({
@@ -39,6 +44,7 @@ vi.mock('@/components/Dialog', () => ({
   ),
 }));
 
+import { getAnnotationContexts } from '@/services/annotation/context';
 import ExportMarkdownDialog from '@/app/reader/components/annotator/ExportMarkdownDialog';
 
 const booknoteGroups: Record<string, BooknoteGroup> = {
@@ -123,5 +129,39 @@ describe('ExportMarkdownDialog export actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     expect(onExport).toHaveBeenCalledTimes(1);
     expect(onExport.mock.calls[0]?.[2]).toMatchObject({ share: true });
+  });
+});
+
+describe('ExportMarkdownDialog highlight context', () => {
+  beforeEach(() => {
+    h.appService = {};
+    h.bookData = { bookDoc: {} };
+    vi.mocked(getAnnotationContexts).mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('leaves context out by default and never reads the book', () => {
+    const onExport = renderDialog();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(onExport.mock.calls[0]?.[0]).not.toContain('Context');
+    expect(getAnnotationContexts).not.toHaveBeenCalled();
+  });
+
+  it('adds the containing sentence below each highlight when Context is checked', async () => {
+    const onExport = renderDialog();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Context' }));
+    await waitFor(() => expect(getAnnotationContexts).toHaveBeenCalledTimes(1));
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+      expect(onExport.mock.lastCall?.[0]).toContain(
+        '> hello\n\n**Context**: Say hello to the world.',
+      );
+    });
   });
 });

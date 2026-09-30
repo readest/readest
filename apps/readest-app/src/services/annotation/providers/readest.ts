@@ -214,7 +214,7 @@ interface ResolvedCfi {
  * the fake-CFI scheme foliate-js generates from the spine index (mirrors
  * `view.resolveCFI`).
  */
-const resolveCfi = (bookDoc: BookDoc, cfi: string): ResolvedCfi | null => {
+export const resolveCfi = (bookDoc: BookDoc, cfi: string): ResolvedCfi | null => {
   try {
     if (bookDoc.resolveCFI) return bookDoc.resolveCFI(cfi);
     const parts = CFI.parse(cfi);

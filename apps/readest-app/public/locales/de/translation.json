@@ -2468,5 +2468,6 @@
   "Previous and Next in the library": "Vorherige und Nächste in der Bibliothek",
   "Reverse Mouse Wheel": "Mausrad umkehren",
   "Scroll up for the next page": "Nach oben scrollen für die nächste Seite",
-  "Keep Text Selected After Lookup": "Text nach dem Nachschlagen markiert lassen"
+  "Keep Text Selected After Lookup": "Text nach dem Nachschlagen markiert lassen",
+  "Sentence around the highlight": "Satz um die Markierung"
 }
