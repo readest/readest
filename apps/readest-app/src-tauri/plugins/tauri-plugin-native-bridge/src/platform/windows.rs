@@ -1,6 +1,6 @@
-//! WebView2 region snapshot for the mesh page-curl (#555), through the
+//! WebView2 view snapshot for the mesh page-curl (#555), through the
 //! DevTools protocol (see `cdp.rs`). `ICoreWebView2::CapturePreview` would
-//! capture the whole view as PNG and leave the crop to us.
+//! also capture the whole view, but only as slow-to-encode PNG.
 
 use std::sync::mpsc;
 use std::time::Duration;
@@ -10,7 +10,6 @@ use webview2_com::CallDevToolsProtocolMethodCompletedHandler;
 use windows_core::HSTRING;
 
 use super::cdp;
-use crate::models::CaptureWebviewRegionRequest;
 
 /// Chromium produces a fresh frame for the screenshot, so the first one can
 /// take longer than WebKit's snapshot on macOS. A timeout makes the JS side
@@ -19,7 +18,6 @@ const SNAPSHOT_TIMEOUT: Duration = Duration::from_millis(1000);
 
 pub fn capture_webview_region<R: Runtime>(
     window: &tauri::WebviewWindow<R>,
-    payload: CaptureWebviewRegionRequest,
 ) -> crate::Result<Vec<u8>> {
     let (tx, rx) = mpsc::channel::<Result<Vec<u8>, String>>();
     window
@@ -41,7 +39,7 @@ pub fn capture_webview_region<R: Runtime>(
                 webview.controller().CoreWebView2().and_then(|core| {
                     core.CallDevToolsProtocolMethod(
                         &HSTRING::from(cdp::SCREENSHOT_METHOD),
-                        &HSTRING::from(cdp::screenshot_params(&payload)),
+                        &HSTRING::from(cdp::screenshot_params()),
                         &handler,
                     )
                 })
