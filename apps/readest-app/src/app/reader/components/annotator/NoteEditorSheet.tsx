@@ -24,9 +24,14 @@ const NoteEditorSheet: React.FC<NoteEditorSheetProps> = ({ value, onSave, onCanc
     <Dialog
       isOpen
       title={_('Note')}
-      // Just over half the screen: enough room for a few lines above the
-      // keyboard, without burying the passage the note is about.
-      snapHeight={0.6}
+      // A partial sheet over the page, not a page of its own: no back arrow
+      // (Cancel, a swipe down or a tap outside close it) and no title spending
+      // its few lines. The title still names the dialog for assistive tech.
+      header={<></>}
+      // A third of the screen, resting on the keyboard: room for a few lines
+      // and Save/Cancel without burying the passage the note is about.
+      snapHeight={0.3}
+      aboveKeyboard
       dismissible
       contentClassName='px-0! mt-0! flex-1 min-h-0'
       onClose={onCancel}

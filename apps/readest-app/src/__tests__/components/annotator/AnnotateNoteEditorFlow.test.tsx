@@ -235,7 +235,20 @@ vi.mock('@/services/transformService', () => ({
   transformContent: ({ content }: { content: string }) => Promise.resolve(content),
 }));
 
-vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', async () => {
+  const { useState } = await import('react');
+  // Renders the annotation it was mounted for next to the one it is showing:
+  // the real editor latches its target on mount.
+  const RangeEditor = (props: { annotation: { id: string } }) => {
+    const [mountedFor] = useState(props.annotation.id);
+    return (
+      <div data-testid='annotation-range-editor' data-mounted-for={mountedFor}>
+        {props.annotation.id}
+      </div>
+    );
+  };
+  return { default: RangeEditor };
+});
 vi.mock('@/app/reader/components/annotator/SelectionRangeEditor', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({ default: () => null }));
@@ -533,5 +546,89 @@ describe('Annotate opens the note editor at the selection', () => {
     });
 
     expect(liveAnnotations()).toHaveLength(1);
+  });
+});
+
+// #6390: a highlight tapped inside the footnote popup opens its range handles,
+// the same as one tapped on the page, so its boundaries can be adjusted there.
+describe('Tapping a highlight in the footnote popup', () => {
+  test('opens the range editor on that highlight', async () => {
+    h.config.booknotes = [
+      {
+        id: 'popup-highlight',
+        type: 'annotation',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        text: 'selected text',
+        style: 'highlight',
+        color: 'yellow',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      } as BookNote,
+    ];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'selected text';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', {
+        key: 'book-1',
+        range,
+        index: 0,
+        cfi: 'epubcfi(/6/2!/4/2)',
+        annotated: true,
+      });
+    });
+
+    expect(screen.getByTestId('annotation-range-editor').textContent).toBe('popup-highlight');
+  });
+
+  // #6390 review: the range editor latches the annotation it edits when it
+  // mounts. Going straight from one popup highlight to another kept it
+  // mounted, so dragging the second one's handles rewrote the first.
+  test('gives the next highlight tapped its own range editor', async () => {
+    const highlight = (id: string, cfi: string) =>
+      ({
+        id,
+        type: 'annotation',
+        cfi,
+        text: 'selected text',
+        style: 'highlight',
+        color: 'yellow',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      }) as BookNote;
+    h.config.booknotes = [
+      highlight('first', 'epubcfi(/6/2!/4/2)'),
+      highlight('second', 'epubcfi(/6/2!/4/4)'),
+    ];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const tap = async (cfi: string) => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = 'selected text';
+      document.body.append(paragraph);
+      const range = document.createRange();
+      range.selectNodeContents(paragraph);
+      await act(async () => {
+        await eventDispatcher.dispatch('footnote-selection', {
+          key: 'book-1',
+          range,
+          index: 0,
+          cfi,
+          annotated: true,
+        });
+      });
+    };
+
+    await tap('epubcfi(/6/2!/4/2)');
+    await tap('epubcfi(/6/2!/4/4)');
+
+    const editor = screen.getByTestId('annotation-range-editor');
+    expect(editor.textContent).toBe('second');
+    expect(editor.dataset['mountedFor']).toBe('second');
   });
 });

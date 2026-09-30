@@ -59,6 +59,9 @@ export interface TextSelection {
   // section document; tools that need a live main-document range or that
   // cannot work without a CFI must be disabled accordingly.
   popup?: boolean;
+  // Maps a range in the popup's document to a CFI in the pristine section, so
+  // a popup highlight can be re-anchored when its range handles move (#6390).
+  getPopupCfi?: (range: Range) => string | undefined;
 }
 
 const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {

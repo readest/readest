@@ -174,7 +174,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   const isEink = settings.globalViewSettings.isEink;
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
   const { handlePositions, getHandlePositionsFromRange, applyAnnotationRange } =
-    useAnnotationEditor({ bookKey, annotation, getAnnotationText, setSelection });
+    useAnnotationEditor({ bookKey, annotation, selection, getAnnotationText, setSelection });
 
   const handleColorHex = getHighlightColorHex(settings, handleColor) ?? '#FFFF00';
   const draggingRef = useRef<'start' | 'end' | null>(null);

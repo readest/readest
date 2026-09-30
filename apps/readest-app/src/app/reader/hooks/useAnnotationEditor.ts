@@ -6,6 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { eventDispatcher } from '@/utils/event';
 import {
   getHandlePositionsFromRange as getHandlePositionsForBook,
   HandlePositions,
@@ -15,6 +16,7 @@ import {
 interface UseAnnotationEditorProps {
   bookKey: string;
   annotation: BookNote;
+  selection: TextSelection;
   getAnnotationText: (range: Range) => Promise<string>;
   setSelection: React.Dispatch<React.SetStateAction<TextSelection | null>>;
 }
@@ -22,6 +24,7 @@ interface UseAnnotationEditorProps {
 export const useAnnotationEditor = ({
   bookKey,
   annotation,
+  selection,
   getAnnotationText,
   setSelection,
 }: UseAnnotationEditorProps) => {
@@ -53,7 +56,11 @@ export const useAnnotationEditor = ({
         setHandlePositions(newPositions);
       }
 
-      const newCfi = view.getCFI(targetIndex, newRange);
+      // A footnote popup range lives in the popup's own document, which only
+      // the popup can map back into the section.
+      const newCfi = selection.popup
+        ? selection.getPopupCfi?.(newRange)
+        : view.getCFI(targetIndex, newRange);
       const newText = await getAnnotationText(newRange);
       // A later drag or pointer-up commit owns the range. Applying a late
       // preview could otherwise paint a CFI that no longer matches the saved
@@ -100,6 +107,13 @@ export const useAnnotationEditor = ({
               v?.addAnnotation({ ...updatedAnnotation, value: `${NOTE_PREFIX}${newCfi}` }),
             );
           }
+          // The footnote popup draws its overlays in its own view.
+          if (selection.popup) {
+            eventDispatcher.dispatch('footnote-annotation-preview', {
+              key: bookKey,
+              note: updatedAnnotation,
+            });
+          }
           editingAnnotationRef.current = updatedAnnotation;
 
           if (!isDragging) {
@@ -117,13 +131,18 @@ export const useAnnotationEditor = ({
               index: targetIndex,
               range: newRange,
               page: existingAnnotation.page || progress.page,
+              ...(selection.popup && {
+                popup: true,
+                href: selection.href,
+                getPopupCfi: selection.getPopupCfi,
+              }),
             });
           }
         }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bookKey, getHandlePositionsFromRange, getAnnotationText, setSelection],
+    [bookKey, selection, getHandlePositionsFromRange, getAnnotationText, setSelection],
   );
 
   return {
