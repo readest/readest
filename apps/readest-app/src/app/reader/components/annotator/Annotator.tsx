@@ -699,7 +699,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       cfi,
       index,
       range,
-      page: annotation.page || progress.page,
+      // This listener is registered once per view, so the `progress` it closes
+      // over is null until the first relocate: read the live progress instead.
+      page: annotation.page || getBookProgress(bookKey)?.page || 0,
     };
     if (isNote) {
       setShowAnnotationNotes(true);
