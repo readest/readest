@@ -449,8 +449,9 @@ impl<R: Runtime> NativeBridge<R> {
     }
 
     /// Snapshot a region of `window`'s webview as image bytes for the mesh
-    /// page-curl texture (#555): PNG from WKWebView on macOS, JPEG from the
-    /// DevTools protocol on Windows (WebView2) and the Linux CEF runtime.
+    /// page-curl texture (#555): PNG from WKWebView on macOS, JPEG of the
+    /// whole view from the DevTools protocol on Windows (WebView2) and the
+    /// Linux CEF runtime, where the JS side crops the region.
     /// The Linux WebKitGTK runtime (only the webdriver E2E lane) rejects,
     /// and the JS side falls back to the renderer's own turns.
     pub fn capture_webview_region(
@@ -464,11 +465,13 @@ impl<R: Runtime> NativeBridge<R> {
         }
         #[cfg(windows)]
         {
-            crate::platform::windows::capture_webview_region(window, payload)
+            let _ = payload;
+            crate::platform::windows::capture_webview_region(window)
         }
         #[cfg(all(target_os = "linux", feature = "cef"))]
         {
-            crate::platform::linux_cef::capture_webview_region(window, payload)
+            let _ = payload;
+            crate::platform::linux_cef::capture_webview_region(window)
         }
         #[cfg(not(any(
             target_os = "macos",

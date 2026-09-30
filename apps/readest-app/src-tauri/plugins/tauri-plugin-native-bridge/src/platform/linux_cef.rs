@@ -1,4 +1,4 @@
-//! CEF region snapshot for the mesh page-curl (#555), through the browser's
+//! CEF view snapshot for the mesh page-curl (#555), through the browser's
 //! DevTools protocol (see `cdp.rs`). The observer pattern follows
 //! `tauri-runtime-cef`'s own `Runtime.evaluate` callback.
 
@@ -13,7 +13,6 @@ use tauri::Runtime;
 use tauri_runtime_cef::cef::*;
 
 use super::cdp;
-use crate::models::CaptureWebviewRegionRequest;
 
 /// Chromium produces a fresh frame for the screenshot, so the first one can
 /// take longer than WebKit's snapshot on macOS. A timeout makes the JS side
@@ -32,7 +31,6 @@ type SharedRegistration = Arc<Mutex<Option<Registration>>>;
 
 pub fn capture_webview_region<R: Runtime>(
     window: &tauri::WebviewWindow<R>,
-    payload: CaptureWebviewRegionRequest,
 ) -> crate::Result<Vec<u8>> {
     let (tx, rx) = mpsc::channel::<Result<Vec<u8>, String>>();
     let registration = SharedRegistration::default();
@@ -48,7 +46,7 @@ pub fn capture_webview_region<R: Runtime>(
                 let _ = tx.send(Err("not a CEF webview".into()));
                 return;
             };
-            request_screenshot(&host, payload, tx, observer_registration);
+            request_screenshot(&host, tx, observer_registration);
         })
         .map_err(|e| crate::Error::NativeBridgeError(e.to_string()))?;
     match rx.recv_timeout(SNAPSHOT_TIMEOUT) {
@@ -64,12 +62,7 @@ pub fn capture_webview_region<R: Runtime>(
     }
 }
 
-fn request_screenshot(
-    host: &BrowserHost,
-    payload: CaptureWebviewRegionRequest,
-    tx: SnapshotSender,
-    registration: SharedRegistration,
-) {
+fn request_screenshot(host: &BrowserHost, tx: SnapshotSender, registration: SharedRegistration) {
     let message_id = NEXT_MESSAGE_ID.fetch_add(1, Ordering::Relaxed);
     let tx = Arc::new(Mutex::new(Some(tx)));
     let mut observer =
@@ -84,7 +77,7 @@ fn request_screenshot(
     let message = format!(
         r#"{{"id":{message_id},"method":"{}","params":{}}}"#,
         cdp::SCREENSHOT_METHOD,
-        cdp::screenshot_params(&payload),
+        cdp::screenshot_params(),
     );
     if host.send_dev_tools_message(Some(message.as_bytes())) != 1 {
         let _ = registration.lock().unwrap().take();

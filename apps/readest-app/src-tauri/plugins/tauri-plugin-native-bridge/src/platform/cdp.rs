@@ -1,31 +1,21 @@
 //! Chrome DevTools Protocol screenshot for the mesh page-curl (#555) on
 //! the Chromium desktops: WebView2 on Windows, CEF on Linux.
-//!
-//! `Page.captureScreenshot` with a `clip` returns exactly the requested
-//! region, so neither platform has to decode and crop a full-view capture.
-
-use crate::models::CaptureWebviewRegionRequest;
 
 pub const SCREENSHOT_METHOD: &str = "Page.captureScreenshot";
 
-/// The clip is in CSS pixels of the page, which equal the viewport's
-/// because the app shell never scrolls; Chromium renders it at the
-/// device scale, so HiDPI screens get a full-resolution texture. JPEG,
-/// as on Android: the page is opaque and PNG encoding is several times
-/// slower. `captureBeyondViewport: false` keeps Chromium from resizing
-/// the view to fit the clip, which would reflow the live page.
-pub fn screenshot_params(payload: &CaptureWebviewRegionRequest) -> String {
+/// The whole view, which the JS side crops to the requested region while
+/// decoding. A `clip` would do the crop here, but Chromium implements it by
+/// scrolling the viewport to the clip origin and shrinking the view to the
+/// clip size for the capture, which flashes on screen: with the sidebar
+/// open, the page jumped left over a black strip on every turn. Chromium
+/// renders at the device scale, so HiDPI screens get a full-resolution
+/// texture. JPEG, as on Android: the page is opaque and PNG encoding is
+/// several times slower.
+pub fn screenshot_params() -> String {
     serde_json::json!({
         "format": "jpeg",
         "quality": 90,
         "captureBeyondViewport": false,
-        "clip": {
-            "x": payload.x,
-            "y": payload.y,
-            "width": payload.width,
-            "height": payload.height,
-            "scale": 1.0,
-        },
     })
     .to_string()
 }
@@ -52,22 +42,11 @@ mod tests {
     use base64::Engine;
 
     #[test]
-    fn params_clip_the_region_without_growing_the_viewport() {
-        let params: serde_json::Value =
-            serde_json::from_str(&screenshot_params(&CaptureWebviewRegionRequest {
-                x: 10.5,
-                y: 20.0,
-                width: 300.0,
-                height: 400.25,
-            }))
-            .unwrap();
+    fn params_capture_the_whole_view_without_a_clip() {
+        let params: serde_json::Value = serde_json::from_str(&screenshot_params()).unwrap();
         assert_eq!(params["format"], "jpeg");
         assert_eq!(params["captureBeyondViewport"], false);
-        assert_eq!(params["clip"]["x"], 10.5);
-        assert_eq!(params["clip"]["y"], 20.0);
-        assert_eq!(params["clip"]["width"], 300.0);
-        assert_eq!(params["clip"]["height"], 400.25);
-        assert_eq!(params["clip"]["scale"], 1.0);
+        assert!(params.get("clip").is_none());
     }
 
     #[test]
