@@ -13,8 +13,10 @@
     <string name="widget_default_shelf">Recently read</string>
     <string name="widget_rows">Rows</string>
     <string name="widget_columns">Columns</string>
-    <string name="widget_show_titles">Book title</string>
-    <string name="widget_show_shelf_name">Shelf name</string>
+    <string name="widget_show_titles">Book Title</string>
+    <string name="widget_show_header">Show Header</string>
     <string name="widget_edit">Edit</string>
     <string name="widget_open_app">Open Readest to show this bookshelf</string>
+    <string name="widget_header_size">Header Size</string>
+    <string name="widget_show_tts_bar">Text to Speech</string>
 </resources>

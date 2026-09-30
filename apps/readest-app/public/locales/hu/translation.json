@@ -2462,7 +2462,6 @@
   "Rows": "Sorok",
   "Open Readest to show this bookshelf": "Nyisd meg a Readestet a könyvespolc megjelenítéséhez",
   "Turn on Books in Manage Sync to upload this book": "A könyv feltöltéséhez kapcsold be a „Könyvek” lehetőséget a „Szinkronizálás kezelése” menüben",
-  "Shelf name": "Polc neve",
   "Hide Bookshelf Buttons": "Könyvespolc gombjainak elrejtése",
   "Previous and Next in the library": "Előző és Következő a könyvtárban",
   "Reverse Mouse Wheel": "Egérgörgő megfordítása",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "A kiemelést tartalmazó mondat",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Ne olvassa fel a szó utáni zárójeles olvasatokat vagy handzsa glosszákat",
   "Visible as {{name}}": "Látható ezen a néven: {{name}}",
-  "Local Network": "Helyi hálózat"
+  "Local Network": "Helyi hálózat",
+  "Book Title": "Könyv címe",
+  "Header Size": "Fejléc mérete"
 }

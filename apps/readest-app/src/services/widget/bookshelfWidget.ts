@@ -11,6 +11,7 @@ import {
   updateBookshelfWidget,
 } from '@/utils/bridge';
 import { joinScannedPath } from '@/utils/path';
+import { coalesceAsync } from '@/utils/coalesceAsync';
 import type {
   BookshelfWidgetCatalog,
   BookshelfWidgetInstance,
@@ -71,7 +72,7 @@ export const evaluateWidgetShelves = (
 };
 
 // Pass `resolvedBooksDir` when it is already resolved.
-const resolveBooksDir = async (
+export const resolveBooksDir = async (
   appService: AppService,
   resolvedBooksDir?: string,
 ): Promise<string> => resolvedBooksDir ?? (await appService.resolveFilePath('', 'Books'));
@@ -174,8 +175,10 @@ export const buildBookshelfWidgetCatalog = (
     title: _('Bookshelf'),
     rows: _('Rows'),
     columns: _('Columns'),
-    showTitles: _('Book title'),
-    showShelfName: _('Shelf name'),
+    showTitles: _('Book Title'),
+    showShelfName: _('Show Header'),
+    headerSize: _('Header Size'),
+    showTtsBar: _('Text to Speech'),
     cancel: _('Cancel'),
     save: _('Save'),
     edit: _('Edit'),
@@ -189,106 +192,73 @@ export const buildBookshelfWidgetCatalog = (
 const lastPublished = new Map<number, string>();
 let lastCatalog = '';
 
-// Serializes overlapping calls (debounce/throttle/TTS triggers can land close
-// together) so they don't race the caches above. A call mid-run is queued
-// (coalesced to the latest) and its promise settles once that rerun finishes.
-let running = false;
-let pending: {
-  args: Parameters<typeof refreshBookshelfWidget>;
-  promise: Promise<void>;
-  resolve: () => void;
-} | null = null;
-
-export const refreshBookshelfWidget = async (
+const refreshBookshelfWidgetImpl = async (
   appService: AppService,
   _: Translate,
   playback?: BookshelfWidgetPlayback,
 ): Promise<void> => {
-  if (running) {
-    const args: Parameters<typeof refreshBookshelfWidget> = [appService, _, playback];
-    if (pending) {
-      pending.args = args;
-    } else {
-      let resolve!: () => void;
-      const promise = new Promise<void>((r) => (resolve = r));
-      pending = { args, promise, resolve };
-    }
-    return pending.promise;
-  }
-  running = true;
-  try {
-    if (!appService.isMobileApp) return;
-    const library = useLibraryStore.getState().library;
-    const { settings } = useSettingsStore.getState();
+  if (!appService.isMobileApp) return;
+  const library = useLibraryStore.getState().library;
+  const { settings } = useSettingsStore.getState();
 
-    let targets: BookshelfWidgetInstance[];
-    if (appService.isAndroidApp) {
-      // Published even with no widget placed: the configure screen reads it.
-      const catalog = buildBookshelfWidgetCatalog(settings, _);
-      const catalogJson = JSON.stringify(catalog);
-      if (catalogJson !== lastCatalog) {
-        try {
-          await setBookshelfWidgetCatalog(catalog);
-          lastCatalog = catalogJson;
-        } catch (err) {
-          console.warn('Failed to publish bookshelf widget catalog', err);
-        }
-      }
+  let targets: BookshelfWidgetInstance[];
+  if (appService.isAndroidApp) {
+    // Published even with no widget placed: the configure screen reads it.
+    const catalog = buildBookshelfWidgetCatalog(settings, _);
+    const catalogJson = JSON.stringify(catalog);
+    if (catalogJson !== lastCatalog) {
       try {
-        ({ instances: targets } = await getBookshelfWidgetInstances());
+        await setBookshelfWidgetCatalog(catalog);
+        lastCatalog = catalogJson;
       } catch (err) {
-        console.warn('Failed to read bookshelf widget instances', err);
-        return;
-      }
-    } else {
-      // iOS has no configurable widget yet: one default snapshot.
-      targets = [{ appWidgetId: 0, ...DEFAULT_WIDGET }];
-    }
-    for (const id of lastPublished.keys()) {
-      if (!targets.some((target) => target.appWidgetId === id)) lastPublished.delete(id);
-    }
-    if (targets.length === 0) return;
-
-    const booksDir = await resolveBooksDir(appService);
-    const shelfFor = evaluateWidgetShelves(
-      library,
-      settings,
-      targets.map((target) => target.shelfId),
-    );
-    const emptyTitle = _('Your books will appear here');
-
-    await Promise.all(
-      targets.map(async (target) => {
-        const snapshot = await buildBookshelfWidgetSnapshot(
-          shelfFor(target.shelfId),
-          target.shelfId,
-          target,
-          { settings, appService, _, emptyTitle, playback, booksDir },
-        );
-        const request = { ...snapshot, appWidgetId: target.appWidgetId };
-        const fingerprint = JSON.stringify(request);
-        if (lastPublished.get(target.appWidgetId) === fingerprint) return;
-        try {
-          const { failed } = await updateBookshelfWidget(request);
-          // A tile that failed (e.g. its cover isn't downloaded yet) is retried next time.
-          if (failed === 0) lastPublished.set(target.appWidgetId, fingerprint);
-          else lastPublished.delete(target.appWidgetId);
-        } catch (err) {
-          lastPublished.delete(target.appWidgetId);
-          console.warn('Failed to update bookshelf widget', target.appWidgetId, err);
-        }
-      }),
-    );
-  } finally {
-    running = false;
-    const next = pending;
-    pending = null;
-    if (next) {
-      try {
-        await refreshBookshelfWidget(...next.args);
-      } finally {
-        next.resolve();
+        console.warn('Failed to publish bookshelf widget catalog', err);
       }
     }
+    try {
+      ({ instances: targets } = await getBookshelfWidgetInstances());
+    } catch (err) {
+      console.warn('Failed to read bookshelf widget instances', err);
+      return;
+    }
+  } else {
+    // iOS has no configurable widget yet: one default snapshot.
+    targets = [{ appWidgetId: 0, ...DEFAULT_WIDGET }];
   }
+  for (const id of lastPublished.keys()) {
+    if (!targets.some((target) => target.appWidgetId === id)) lastPublished.delete(id);
+  }
+  if (targets.length === 0) return;
+
+  const booksDir = await resolveBooksDir(appService);
+  const shelfFor = evaluateWidgetShelves(
+    library,
+    settings,
+    targets.map((target) => target.shelfId),
+  );
+  const emptyTitle = _('Your books will appear here');
+
+  await Promise.all(
+    targets.map(async (target) => {
+      const snapshot = await buildBookshelfWidgetSnapshot(
+        shelfFor(target.shelfId),
+        target.shelfId,
+        target,
+        { settings, appService, _, emptyTitle, playback, booksDir },
+      );
+      const request = { ...snapshot, appWidgetId: target.appWidgetId };
+      const fingerprint = JSON.stringify(request);
+      if (lastPublished.get(target.appWidgetId) === fingerprint) return;
+      try {
+        const { failed } = await updateBookshelfWidget(request);
+        // A tile that failed (e.g. its cover isn't downloaded yet) is retried next time.
+        if (failed === 0) lastPublished.set(target.appWidgetId, fingerprint);
+        else lastPublished.delete(target.appWidgetId);
+      } catch (err) {
+        lastPublished.delete(target.appWidgetId);
+        console.warn('Failed to update bookshelf widget', target.appWidgetId, err);
+      }
+    }),
+  );
 };
+
+export const refreshBookshelfWidget = coalesceAsync(refreshBookshelfWidgetImpl);

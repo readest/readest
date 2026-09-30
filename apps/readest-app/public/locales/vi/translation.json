@@ -2402,7 +2402,6 @@
   "Rows": "Hàng",
   "Open Readest to show this bookshelf": "Mở Readest để hiển thị kệ sách này",
   "Turn on Books in Manage Sync to upload this book": "Bật \"Sách\" trong \"Quản lý đồng bộ\" để tải sách này lên",
-  "Shelf name": "Tên kệ sách",
   "Hide Bookshelf Buttons": "Ẩn nút kệ sách",
   "Previous and Next in the library": "Trước và Tiếp theo trong thư viện",
   "Reverse Mouse Wheel": "Đảo chiều con lăn chuột",
@@ -2411,5 +2410,7 @@
   "Sentence around the highlight": "Câu chứa phần tô sáng",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Không đọc cách đọc hoặc chú thích Hanja trong ngoặc đơn sau một từ",
   "Visible as {{name}}": "Hiển thị với tên {{name}}",
-  "Local Network": "Mạng cục bộ"
+  "Local Network": "Mạng cục bộ",
+  "Book Title": "Tiêu đề sách",
+  "Header Size": "Cỡ tiêu đề"
 }

@@ -2462,7 +2462,6 @@
   "Rows": "Satırlar",
   "Open Readest to show this bookshelf": "Bu rafı göstermek için Readest'i açın",
   "Turn on Books in Manage Sync to upload this book": "Bu kitabı yüklemek için \"Eşitlemeyi yönet\" bölümünde \"Kitaplar\"ı açın",
-  "Shelf name": "Kitaplık adı",
   "Hide Bookshelf Buttons": "Kitaplık Düğmelerini Gizle",
   "Previous and Next in the library": "Kütüphanede Önceki ve Sonraki",
   "Reverse Mouse Wheel": "Fare Tekerleğini Ters Çevir",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "Vurgunun geçtiği cümle",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Bir kelimeden sonra parantez içindeki okunuşları veya Hanja açıklamalarını seslendirme",
   "Visible as {{name}}": "{{name}} olarak görünür",
-  "Local Network": "Yerel Ağ"
+  "Local Network": "Yerel Ağ",
+  "Book Title": "Kitap başlığı",
+  "Header Size": "Başlık boyutu"
 }

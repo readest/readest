@@ -2462,7 +2462,6 @@
   "Rows": "সারি",
   "Open Readest to show this bookshelf": "এই বুকশেলফ দেখাতে Readest খুলুন",
   "Turn on Books in Manage Sync to upload this book": "এই বইটি আপলোড করতে \"সিঙ্ক ব্যবস্থাপনা\"-তে \"বই\" চালু করুন",
-  "Shelf name": "তাকের নাম",
   "Hide Bookshelf Buttons": "বইয়ের তাকের বোতাম লুকান",
   "Previous and Next in the library": "লাইব্রেরিতে পূর্ববর্তী ও পরবর্তী",
   "Reverse Mouse Wheel": "মাউস হুইল উল্টান",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "হাইলাইটের চারপাশের বাক্য",
   "Do not speak readings or Hanja glosses in parentheses after a word": "শব্দের পরে বন্ধনীর ভেতরের উচ্চারণ বা হানজা টীকা পড়বেন না",
   "Visible as {{name}}": "{{name}} নামে দৃশ্যমান",
-  "Local Network": "লোকাল নেটওয়ার্ক"
+  "Local Network": "লোকাল নেটওয়ার্ক",
+  "Book Title": "বইয়ের শিরোনাম",
+  "Header Size": "শিরোনামের আকার"
 }

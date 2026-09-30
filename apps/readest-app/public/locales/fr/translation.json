@@ -2522,7 +2522,6 @@
   "Rows": "Lignes",
   "Open Readest to show this bookshelf": "Ouvrez Readest pour afficher cette étagère",
   "Turn on Books in Manage Sync to upload this book": "Activez « Livres » dans « Gérer la synchronisation » pour téléverser ce livre",
-  "Shelf name": "Nom de l'étagère",
   "Hide Bookshelf Buttons": "Masquer les boutons de l’étagère",
   "Previous and Next in the library": "Précédent et Suivant dans la bibliothèque",
   "Reverse Mouse Wheel": "Inverser la molette de la souris",
@@ -2531,5 +2530,7 @@
   "Sentence around the highlight": "Phrase autour du surlignage",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Ne pas lire les lectures ni les gloses en hanja entre parenthèses après un mot",
   "Visible as {{name}}": "Visible en tant que {{name}}",
-  "Local Network": "Réseau local"
+  "Local Network": "Réseau local",
+  "Book Title": "Titre du livre",
+  "Header Size": "Taille de l’en-tête"
 }

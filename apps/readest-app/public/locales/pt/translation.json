@@ -2522,7 +2522,6 @@
   "Rows": "Linhas",
   "Open Readest to show this bookshelf": "Abra o Readest para mostrar esta estante",
   "Turn on Books in Manage Sync to upload this book": "Ative \"Livros\" em \"Gerenciar sincronização\" para carregar este livro",
-  "Shelf name": "Nome da estante",
   "Hide Bookshelf Buttons": "Ocultar botões da estante",
   "Previous and Next in the library": "Anterior e Seguinte na biblioteca",
   "Reverse Mouse Wheel": "Inverter roda do rato",
@@ -2531,5 +2530,7 @@
   "Sentence around the highlight": "Frase em torno do destaque",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Não ler em voz alta leituras ou glosas em hanja entre parênteses após uma palavra",
   "Visible as {{name}}": "Visível como {{name}}",
-  "Local Network": "Rede local"
+  "Local Network": "Rede local",
+  "Book Title": "Título do livro",
+  "Header Size": "Tamanho do cabeçalho"
 }

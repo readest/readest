@@ -2402,7 +2402,6 @@
   "Rows": "行数",
   "Open Readest to show this bookshelf": "打开 Readest 以显示此书架",
   "Turn on Books in Manage Sync to upload this book": "请在“管理同步”中开启“书籍”以上传此书",
-  "Shelf name": "书架名称",
   "Hide Bookshelf Buttons": "隐藏书架按钮",
   "Previous and Next in the library": "书库中的上一页和下一页",
   "Reverse Mouse Wheel": "反转鼠标滚轮",
@@ -2411,5 +2410,7 @@
   "Sentence around the highlight": "高亮所在的句子",
   "Do not speak readings or Hanja glosses in parentheses after a word": "不朗读词语后括号内的读音或汉字注释",
   "Visible as {{name}}": "显示为 {{name}}",
-  "Local Network": "局域网"
+  "Local Network": "局域网",
+  "Book Title": "书名",
+  "Header Size": "标题大小"
 }

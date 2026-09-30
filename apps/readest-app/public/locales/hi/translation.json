@@ -2462,7 +2462,6 @@
   "Rows": "पंक्तियाँ",
   "Open Readest to show this bookshelf": "इस बुकशेल्फ़ को दिखाने के लिए Readest खोलें",
   "Turn on Books in Manage Sync to upload this book": "इस पुस्तक को अपलोड करने के लिए \"सिंक प्रबंधित करें\" में \"पुस्तकें\" चालू करें",
-  "Shelf name": "शेल्फ़ का नाम",
   "Hide Bookshelf Buttons": "पुस्तक शेल्फ बटन छिपाएँ",
   "Previous and Next in the library": "लाइब्रेरी में पिछला और अगला",
   "Reverse Mouse Wheel": "माउस व्हील उलटें",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "हाइलाइट के आसपास का वाक्य",
   "Do not speak readings or Hanja glosses in parentheses after a word": "किसी शब्द के बाद कोष्ठक में दिए उच्चारण या हांजा अर्थ न बोलें",
   "Visible as {{name}}": "{{name}} के रूप में दिखाई दे रहा है",
-  "Local Network": "लोकल नेटवर्क"
+  "Local Network": "लोकल नेटवर्क",
+  "Book Title": "पुस्तक शीर्षक",
+  "Header Size": "शीर्षक का आकार"
 }

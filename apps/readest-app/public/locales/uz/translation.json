@@ -2462,7 +2462,6 @@
   "Rows": "Qatorlar",
   "Open Readest to show this bookshelf": "Ushbu javonni ko‘rsatish uchun Readest’ni oching",
   "Turn on Books in Manage Sync to upload this book": "Ushbu kitobni yuklash uchun \"Sinxronlashni boshqarish\" bo‘limida \"Kitoblar\"ni yoqing",
-  "Shelf name": "Javon nomi",
   "Hide Bookshelf Buttons": "Kitob javoni tugmalarini yashirish",
   "Previous and Next in the library": "Kutubxonada Oldingi va Keyingi",
   "Reverse Mouse Wheel": "Sichqoncha g‘ildiragini teskari qilish",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "Ajratilgan matn atrofidagi gap",
   "Do not speak readings or Hanja glosses in parentheses after a word": "So‘zdan keyingi qavs ichidagi o‘qilishlar yoki hanja izohlarini o‘qimaslik",
   "Visible as {{name}}": "{{name}} nomi bilan koʻrinadi",
-  "Local Network": "Mahalliy tarmoq"
+  "Local Network": "Mahalliy tarmoq",
+  "Book Title": "Kitob sarlavhasi",
+  "Header Size": "Sarlavha o‘lchami"
 }

@@ -22,7 +22,7 @@
             android:name="com.readest.native_bridge.LookupChoiceReceiver"
             android:exported="false" />
         <receiver
-            android:name="com.readest.native_bridge.ReadingWidgetProvider"
+            android:name="com.readest.native_bridge.BookshelfWidgetProvider"
             android:label="@string/widget_label"
             android:exported="false">
             <intent-filter>

@@ -2582,7 +2582,6 @@
   "Rows": "Wiersze",
   "Open Readest to show this bookshelf": "Otwórz Readest, aby wyświetlić tę półkę",
   "Turn on Books in Manage Sync to upload this book": "Włącz „Książki” w „Zarządzaj synchronizacją”, aby przesłać tę książkę",
-  "Shelf name": "Nazwa półki",
   "Hide Bookshelf Buttons": "Ukryj przyciski półki",
   "Previous and Next in the library": "Poprzednia i Następna w bibliotece",
   "Reverse Mouse Wheel": "Odwróć kółko myszy",
@@ -2591,5 +2590,7 @@
   "Sentence around the highlight": "Zdanie wokół zaznaczenia",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Nie odczytuj odczytań ani glos w hanja w nawiasach po słowie",
   "Visible as {{name}}": "Widoczne jako {{name}}",
-  "Local Network": "Sieć lokalna"
+  "Local Network": "Sieć lokalna",
+  "Book Title": "Tytuł książki",
+  "Header Size": "Rozmiar nagłówka"
 }

@@ -2462,7 +2462,6 @@
   "Rows": "Rader",
   "Open Readest to show this bookshelf": "Öppna Readest för att visa den här bokhyllan",
   "Turn on Books in Manage Sync to upload this book": "Aktivera ”Böcker” i ”Hantera synkronisering” för att ladda upp den här boken",
-  "Shelf name": "Hyllans namn",
   "Hide Bookshelf Buttons": "Dölj bokhyllans knappar",
   "Previous and Next in the library": "Föregående och Nästa i biblioteket",
   "Reverse Mouse Wheel": "Omvänt mushjul",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "Mening runt markeringen",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Läs inte upp läsningar eller hanja-glosor inom parentes efter ett ord",
   "Visible as {{name}}": "Synlig som {{name}}",
-  "Local Network": "Lokalt nätverk"
+  "Local Network": "Lokalt nätverk",
+  "Book Title": "Boktitel",
+  "Header Size": "Sidhuvudets storlek"
 }

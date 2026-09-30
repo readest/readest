@@ -2462,7 +2462,6 @@
   "Rows": "Γραμμές",
   "Open Readest to show this bookshelf": "Ανοίξτε το Readest για να εμφανιστεί αυτό το ράφι",
   "Turn on Books in Manage Sync to upload this book": "Ενεργοποιήστε τα «Βιβλία» στη «Διαχείριση συγχρονισμού» για να ανεβάσετε αυτό το βιβλίο",
-  "Shelf name": "Όνομα ραφιού",
   "Hide Bookshelf Buttons": "Απόκρυψη κουμπιών ραφιού",
   "Previous and Next in the library": "Προηγούμενο και Επόμενο στη βιβλιοθήκη",
   "Reverse Mouse Wheel": "Αντιστροφή τροχού ποντικιού",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "Πρόταση γύρω από την επισήμανση",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Να μην εκφωνούνται αναγνώσεις ή επεξηγήσεις hanja σε παρένθεση μετά από μια λέξη",
   "Visible as {{name}}": "Ορατό ως {{name}}",
-  "Local Network": "Τοπικό δίκτυο"
+  "Local Network": "Τοπικό δίκτυο",
+  "Book Title": "Τίτλος βιβλίου",
+  "Header Size": "Μέγεθος κεφαλίδας"
 }

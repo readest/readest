@@ -2522,7 +2522,6 @@
   "Rows": "Rânduri",
   "Open Readest to show this bookshelf": "Deschide Readest pentru a afișa acest raft",
   "Turn on Books in Manage Sync to upload this book": "Activează „Cărți” în „Gestionează sincronizarea” pentru a încărca această carte",
-  "Shelf name": "Numele raftului",
   "Hide Bookshelf Buttons": "Ascunde butoanele raftului",
   "Previous and Next in the library": "Anterior și Următorul în bibliotecă",
   "Reverse Mouse Wheel": "Inversează rotița mouse-ului",
@@ -2531,5 +2530,7 @@
   "Sentence around the highlight": "Propoziția din jurul evidențierii",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Nu rosti citirile sau glosele hanja din paranteze de după un cuvânt",
   "Visible as {{name}}": "Vizibil ca {{name}}",
-  "Local Network": "Rețea locală"
+  "Local Network": "Rețea locală",
+  "Book Title": "Titlul cărții",
+  "Header Size": "Dimensiunea antetului"
 }

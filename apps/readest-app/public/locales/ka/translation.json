@@ -2462,7 +2462,6 @@
   "Rows": "რიგები",
   "Open Readest to show this bookshelf": "ამ თაროს საჩვენებლად გახსენით Readest",
   "Turn on Books in Manage Sync to upload this book": "ამ წიგნის ასატვირთად ჩართეთ „წიგნები“ „სინქრონიზაციის მართვაში“",
-  "Shelf name": "თაროს სახელი",
   "Hide Bookshelf Buttons": "წიგნის თაროს ღილაკების დამალვა",
   "Previous and Next in the library": "წინა და შემდეგი ბიბლიოთეკაში",
   "Reverse Mouse Wheel": "მაუსის ბორბლის შებრუნება",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "მონიშვნის გარშემო არსებული წინადადება",
   "Do not speak readings or Hanja glosses in parentheses after a word": "არ წაიკითხო სიტყვის შემდეგ ფრჩხილებში მოცემული წაკითხვები ან ჰანჯა განმარტებები",
   "Visible as {{name}}": "ხილულია როგორც {{name}}",
-  "Local Network": "ლოკალური ქსელი"
+  "Local Network": "ლოკალური ქსელი",
+  "Book Title": "წიგნის სათაური",
+  "Header Size": "სათაურის ზომა"
 }

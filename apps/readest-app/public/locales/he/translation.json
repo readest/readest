@@ -2522,7 +2522,6 @@
   "Rows": "שורות",
   "Open Readest to show this bookshelf": "פתחו את Readest כדי להציג את המדף הזה",
   "Turn on Books in Manage Sync to upload this book": "הפעל את \"ספרים\" ב\"ניהול סנכרון\" כדי להעלות את הספר הזה",
-  "Shelf name": "שם המדף",
   "Hide Bookshelf Buttons": "הסתרת כפתורי מדף הספרים",
   "Previous and Next in the library": "הקודם והבא בספרייה",
   "Reverse Mouse Wheel": "היפוך גלגלת העכבר",
@@ -2531,5 +2530,7 @@
   "Sentence around the highlight": "המשפט סביב ההדגשה",
   "Do not speak readings or Hanja glosses in parentheses after a word": "אל תקריא הגיות או ביאורי האנג'ה בסוגריים אחרי מילה",
   "Visible as {{name}}": "גלוי בשם {{name}}",
-  "Local Network": "רשת מקומית"
+  "Local Network": "רשת מקומית",
+  "Book Title": "כותרת הספר",
+  "Header Size": "גודל כותרת"
 }

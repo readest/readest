@@ -2582,7 +2582,6 @@
   "Rows": "Vrstice",
   "Open Readest to show this bookshelf": "Odprite Readest za prikaz te knjižne police",
   "Turn on Books in Manage Sync to upload this book": "Za nalaganje te knjige vklopite »Knjige« v »Upravljaj sinhronizacijo«",
-  "Shelf name": "Ime police",
   "Hide Bookshelf Buttons": "Skrij gumbe knjižne police",
   "Previous and Next in the library": "Prejšnja in Naslednja v knjižnici",
   "Reverse Mouse Wheel": "Obrni kolesce miške",
@@ -2591,5 +2590,7 @@
   "Sentence around the highlight": "Stavek okoli označbe",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Ne izgovarjaj branj ali glos v hanji v oklepajih za besedo",
   "Visible as {{name}}": "Viden kot {{name}}",
-  "Local Network": "Lokalno omrežje"
+  "Local Network": "Lokalno omrežje",
+  "Book Title": "Naslov knjige",
+  "Header Size": "Velikost glave"
 }

@@ -2702,7 +2702,6 @@
   "Rows": "الصفوف",
   "Open Readest to show this bookshelf": "افتح Readest لعرض هذا الرف",
   "Turn on Books in Manage Sync to upload this book": "فعّل «الكتب» في «إدارة المزامنة» لرفع هذا الكتاب",
-  "Shelf name": "اسم الرف",
   "Hide Bookshelf Buttons": "إخفاء أزرار رف الكتب",
   "Previous and Next in the library": "السابق والتالي في المكتبة",
   "Reverse Mouse Wheel": "عكس عجلة الماوس",
@@ -2711,5 +2710,7 @@
   "Sentence around the highlight": "الجملة المحيطة بالتظليل",
   "Do not speak readings or Hanja glosses in parentheses after a word": "عدم نطق القراءات أو شروح الهانجا بين الأقواس بعد الكلمة",
   "Visible as {{name}}": "مرئي باسم {{name}}",
-  "Local Network": "الشبكة المحلية"
+  "Local Network": "الشبكة المحلية",
+  "Book Title": "عنوان الكتاب",
+  "Header Size": "حجم العنوان"
 }

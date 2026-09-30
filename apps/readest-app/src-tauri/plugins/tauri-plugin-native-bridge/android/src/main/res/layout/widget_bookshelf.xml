@@ -8,9 +8,9 @@
        screen. Hidden (GONE) when no heading is set. -->
   <TextView android:id="@+id/heading"
     android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginHorizontal="8dp" android:layout_marginBottom="4dp"
+    android:layout_marginHorizontal="4dp"
     android:visibility="gone"
-    android:textStyle="bold" android:textSize="18sp"
+    android:textStyle="bold" android:textSize="14sp"
     android:maxLines="1" android:ellipsize="end"
     android:textColor="?android:attr/textColorPrimary" />
   <!-- Up to 5x5 grid of book covers, as 25 pre-declared cells placed via
@@ -235,21 +235,7 @@
           <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
       </LinearLayout>
   </GridLayout>
-  <LinearLayout android:id="@+id/tts_bar"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:orientation="horizontal" android:gravity="center"
-    android:layout_marginTop="6dp" android:visibility="gone">
-    <ImageView android:id="@+id/btn_prev"
-      android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp"
-      android:src="@drawable/ic_widget_skip_previous" android:contentDescription="@null" />
-    <ImageView android:id="@+id/btn_play_pause"
-      android:layout_width="48dp" android:layout_height="48dp" android:padding="8dp"
-      android:layout_marginHorizontal="20dp"
-      android:src="@drawable/ic_widget_play" android:contentDescription="@null" />
-    <ImageView android:id="@+id/btn_next"
-      android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp"
-      android:src="@drawable/ic_widget_skip_next" android:contentDescription="@null" />
-  </LinearLayout>
+  <include layout="@layout/widget_tts_bar" />
   <TextView android:id="@+id/empty"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:gravity="center" android:visibility="gone" android:textSize="12sp"

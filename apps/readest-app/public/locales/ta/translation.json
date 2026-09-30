@@ -2462,7 +2462,6 @@
   "Rows": "வரிசைகள்",
   "Open Readest to show this bookshelf": "இந்த புத்தக அலமாரியைக் காட்ட Readest-ஐத் திறக்கவும்",
   "Turn on Books in Manage Sync to upload this book": "இந்தப் புத்தகத்தைப் பதிவேற்ற \"ஒத்திசைவை நிர்வகிக்க\" என்பதில் \"புத்தகங்கள்\" என்பதை இயக்கவும்",
-  "Shelf name": "அலமாரியின் பெயர்",
   "Hide Bookshelf Buttons": "புத்தக அலமாரி பொத்தான்களை மறை",
   "Previous and Next in the library": "நூலகத்தில் முந்தையது மற்றும் அடுத்தது",
   "Reverse Mouse Wheel": "மவுஸ் சக்கரத்தைத் தலைகீழாக்கு",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "சிறப்பம்சத்தைச் சுற்றியுள்ள வாக்கியம்",
   "Do not speak readings or Hanja glosses in parentheses after a word": "ஒரு சொல்லுக்குப் பின் அடைப்புக்குறிக்குள் உள்ள உச்சரிப்புகள் அல்லது ஹஞ்சா விளக்கங்களைப் படிக்க வேண்டாம்",
   "Visible as {{name}}": "{{name}} என்ற பெயரில் தெரியும்",
-  "Local Network": "உள்ளூர் நெட்வொர்க்"
+  "Local Network": "உள்ளூர் நெட்வொர்க்",
+  "Book Title": "புத்தகத் தலைப்பு",
+  "Header Size": "தலைப்பின் அளவு"
 }

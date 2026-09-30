@@ -2462,7 +2462,6 @@
   "Rows": "ردیف‌ها",
   "Open Readest to show this bookshelf": "برای نمایش این قفسه، Readest را باز کنید",
   "Turn on Books in Manage Sync to upload this book": "برای بارگذاری این کتاب، «کتاب‌ها» را در «مدیریت همگام‌سازی» روشن کنید",
-  "Shelf name": "نام قفسه",
   "Hide Bookshelf Buttons": "پنهان کردن دکمه‌های قفسه",
   "Previous and Next in the library": "قبلی و بعدی در کتابخانه",
   "Reverse Mouse Wheel": "معکوس کردن چرخ ماوس",
@@ -2471,5 +2470,7 @@
   "Sentence around the highlight": "جملهٔ پیرامون هایلایت",
   "Do not speak readings or Hanja glosses in parentheses after a word": "خوانش‌ها یا معادل‌های هانجا داخل پرانتز پس از واژه خوانده نشوند",
   "Visible as {{name}}": "قابل مشاهده با نام {{name}}",
-  "Local Network": "شبکه محلی"
+  "Local Network": "شبکه محلی",
+  "Book Title": "عنوان کتاب",
+  "Header Size": "اندازه سرصفحه"
 }

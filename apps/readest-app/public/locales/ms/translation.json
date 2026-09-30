@@ -2402,7 +2402,6 @@
   "Rows": "Baris",
   "Open Readest to show this bookshelf": "Buka Readest untuk memaparkan rak buku ini",
   "Turn on Books in Manage Sync to upload this book": "Hidupkan \"Buku\" dalam \"Urus penyegerakan\" untuk memuat naik buku ini",
-  "Shelf name": "Nama rak",
   "Hide Bookshelf Buttons": "Sembunyikan Butang Rak Buku",
   "Previous and Next in the library": "Sebelumnya dan Seterusnya dalam perpustakaan",
   "Reverse Mouse Wheel": "Terbalikkan Roda Tetikus",
@@ -2411,5 +2410,7 @@
   "Sentence around the highlight": "Ayat di sekitar serlahan",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Jangan sebut bacaan atau glosari Hanja dalam kurungan selepas perkataan",
   "Visible as {{name}}": "Kelihatan sebagai {{name}}",
-  "Local Network": "Rangkaian Setempat"
+  "Local Network": "Rangkaian Setempat",
+  "Book Title": "Tajuk buku",
+  "Header Size": "Saiz pengepala"
 }

@@ -551,6 +551,8 @@ export interface BookshelfWidgetCatalog {
     columns: string;
     showTitles: string;
     showShelfName: string;
+    headerSize: string;
+    showTtsBar: string;
     cancel: string;
     save: string;
     /** Opens the app to edit the selected shelf (readest://widget-edit-shelf/{id}). */

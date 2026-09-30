@@ -1493,7 +1493,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     // ids.
     private fun isBoundBookshelfWidget(id: Int): Boolean {
         val mgr = AppWidgetManager.getInstance(activity) ?: return false
-        return id in mgr.getAppWidgetIds(ComponentName(activity, ReadingWidgetProvider::class.java))
+        return id in mgr.getAppWidgetIds(ComponentName(activity, BookshelfWidgetProvider::class.java))
     }
 
     @Command
@@ -1583,7 +1583,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     @Command
     fun get_bookshelf_widget_instances(invoke: Invoke) {
         val mgr = AppWidgetManager.getInstance(activity)
-        val ids = mgr?.getAppWidgetIds(ComponentName(activity, ReadingWidgetProvider::class.java))
+        val ids = mgr?.getAppWidgetIds(ComponentName(activity, BookshelfWidgetProvider::class.java))
             ?: IntArray(0)
         val instances = org.json.JSONArray()
         for (id in ids) {

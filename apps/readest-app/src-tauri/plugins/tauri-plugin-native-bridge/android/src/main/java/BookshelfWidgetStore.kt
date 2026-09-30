@@ -4,16 +4,14 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.Shader
 import android.graphics.Typeface
+import com.readest.native_bridge.WidgetImageUtils.THUMB_HEIGHT
+import com.readest.native_bridge.WidgetImageUtils.THUMB_WIDTH
 import org.json.JSONObject
 import java.io.File
-import kotlin.math.max
 
 /** One placed widget's choices from BookshelfWidgetConfigureActivity. `shelfId`
  * names one of the app's bookshelves; the app resolves it (falling back to
@@ -24,6 +22,8 @@ data class BookshelfWidgetInstanceSettings(
     val gridColumns: Int = BookshelfWidgetStore.DEFAULT_GRID_COLUMNS,
     val showTitles: Boolean = false,
     val showShelfName: Boolean = false,
+    val headerSize: Int = DEFAULT_HEADER_SIZE,
+    val showTtsBar: Boolean = true,
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("shelfId", shelfId)
@@ -31,6 +31,8 @@ data class BookshelfWidgetInstanceSettings(
         .put("gridColumns", gridColumns)
         .put("showTitles", showTitles)
         .put("showShelfName", showShelfName)
+        .put("headerSize", headerSize)
+        .put("showTtsBar", showTtsBar)
 
     companion object {
         fun fromJson(json: JSONObject): BookshelfWidgetInstanceSettings {
@@ -41,6 +43,8 @@ data class BookshelfWidgetInstanceSettings(
                 gridColumns = json.optInt("gridColumns", defaults.gridColumns),
                 showTitles = json.optBoolean("showTitles", defaults.showTitles),
                 showShelfName = json.optBoolean("showShelfName", defaults.showShelfName),
+                headerSize = json.optInt("headerSize", defaults.headerSize),
+                showTtsBar = json.optBoolean("showTtsBar", defaults.showTtsBar),
             )
         }
     }
@@ -51,9 +55,6 @@ object BookshelfWidgetStore {
     private const val KEY_SNAPSHOT_PREFIX = "snapshot_"
     private const val KEY_INSTANCE_SETTINGS_PREFIX = "instanceSettings_"
     private const val KEY_CATALOG = "catalog"
-    private const val THUMB_WIDTH = 240
-    private const val THUMB_HEIGHT = 360
-    private const val CORNER_RADIUS = 18f
 
     // Smaller radius for each individual cover within a group-tile mosaic —
     // mirrors the in-app Library's GroupItem, whose mini covers use a much
@@ -75,98 +76,6 @@ object BookshelfWidgetStore {
         prefs(context).edit().putString(prefix + appWidgetId, value).apply()
     }
 
-    /**
-     * Decodes an image file, center-crops it to the given target aspect ratio,
-     * and scales it to exactly targetW x targetH. Returns null for a missing,
-     * undecodable, or degenerate (sub-2px either dimension) source — callers
-     * treat that as "no usable cover" rather than crashing.
-     */
-    private fun decodeCoverCroppedAndScaled(sourcePath: String, targetW: Int, targetH: Int): Bitmap? {
-        val src = File(sourcePath)
-        if (!src.exists()) return null
-
-        // Bounds pre-pass for memory safety before full decode.
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(sourcePath, bounds)
-        val longEdge = max(bounds.outWidth, bounds.outHeight).coerceAtLeast(1)
-        var sample = 1
-        while (longEdge / sample > max(targetW, targetH) * 2) sample *= 2
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        val bitmap = BitmapFactory.decodeFile(sourcePath, opts) ?: return null
-
-        val srcW = bitmap.width
-        val srcH = bitmap.height
-        // A cover that decodes 1px tall (a 1x1 placeholder cover shipped in
-        // some EPUBs, or a wide banner that inSampleSize downsamples to a
-        // single row) makes cropW = srcH * targetW / targetH = 0, and
-        // Bitmap.createBitmap throws "width must be > 0". A 1px-wide cover
-        // crops fine but is just as useless, so reject both.
-        if (srcW < 2 || srcH < 2) {
-            bitmap.recycle()
-            return null
-        }
-        val cropW: Int
-        val cropH: Int
-        if (srcW.toLong() * targetH > srcH.toLong() * targetW) {
-            // Source is wider than the target aspect — crop the sides.
-            cropH = srcH
-            cropW = (srcH.toLong() * targetW / targetH).toInt()
-        } else {
-            // Source is taller than the target aspect — crop top/bottom.
-            cropW = srcW
-            cropH = (srcW.toLong() * targetH / targetW).toInt()
-        }
-        val cropX = (srcW - cropW) / 2
-        val cropY = (srcH - cropH) / 2
-        val cropped = Bitmap.createBitmap(bitmap, cropX, cropY, cropW, cropH)
-        // createBitmap returns the SAME instance when the crop covers the whole
-        // (immutable) source — i.e. covers already at exactly the target aspect.
-        // Recycling here would recycle `cropped` too and crash
-        // createScaledBitmap below with "cannot use a recycled source".
-        if (cropped !== bitmap) bitmap.recycle()
-
-        val scaled = Bitmap.createScaledBitmap(cropped, targetW, targetH, true)
-        if (scaled !== cropped) cropped.recycle()
-        return scaled
-    }
-
-    /** Draws `source` through a BitmapShader onto a transparent canvas of the
-     * same size, clipped to a rounded rect — the shared rounded-corner finish
-     * for a single book cover, a composited group-tile mosaic, and (with a
-     * smaller radius) each individual cover within that mosaic. */
-    private fun applyRoundedCorners(source: Bitmap, radius: Float = CORNER_RADIUS): Bitmap {
-        val rounded = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(rounded)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.shader = BitmapShader(source, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-        canvas.drawRoundRect(
-            RectF(0f, 0f, source.width.toFloat(), source.height.toFloat()),
-            radius, radius,
-            paint
-        )
-        return rounded
-    }
-
-    /** Writes `dst` atomically: encodes into a uniquely-named temp file in the
-     * same directory, then renames it over the destination, so a reader (or a
-     * second writer - e.g. two widgets sharing a book's cover) never sees a
-     * partially-written file, and two concurrent writes never tear into one file.
-     * Returns false - always cleaning up the temp file - if encoding or the
-     * rename fails, so the caller can report the tile as failed and retry. */
-    private fun writeBitmapAtomically(dst: File, bitmap: Bitmap): Boolean {
-        val tmp = File(dst.parentFile, "${dst.name}.${System.nanoTime()}.tmp")
-        val encoded = try {
-            tmp.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        } catch (e: Exception) {
-            false
-        }
-        if (!encoded || !tmp.renameTo(dst)) {
-            tmp.delete()
-            return false
-        }
-        return true
-    }
-
     fun writeThumbnail(
         context: Context,
         hash: String,
@@ -180,10 +89,10 @@ object BookshelfWidgetStore {
         // and is used as a file name; never let it escape the covers dir.
         if (dst.canonicalFile.parentFile != dir.canonicalFile) return false
         // No skip-if-unchanged check: the composite depends on the live percent.
-        val scaled = decodeCoverCroppedAndScaled(sourcePath, THUMB_WIDTH, THUMB_HEIGHT)
+        val scaled = WidgetImageUtils.decodeCoverCroppedAndScaled(sourcePath, THUMB_WIDTH, THUMB_HEIGHT)
             ?: run { dst.delete(); return false }
 
-        val rounded = applyRoundedCorners(scaled)
+        val rounded = WidgetImageUtils.applyRoundedCorners(scaled)
         scaled.recycle()
 
         // Bake progress bar and % badge into the cover bitmap — only for a book
@@ -233,7 +142,7 @@ object BookshelfWidgetStore {
         }
 
         // Write as PNG so the alpha channel for rounded corners is preserved.
-        val ok = writeBitmapAtomically(dst, rounded)
+        val ok = WidgetImageUtils.writeBitmapAtomically(dst, rounded)
         rounded.recycle()
         return ok
     }
@@ -257,11 +166,11 @@ object BookshelfWidgetStore {
         }
 
         if (coverPaths.size == 1) {
-            val single = decodeCoverCroppedAndScaled(coverPaths[0], THUMB_WIDTH, THUMB_HEIGHT)
+            val single = WidgetImageUtils.decodeCoverCroppedAndScaled(coverPaths[0], THUMB_WIDTH, THUMB_HEIGHT)
                 ?: run { dst.delete(); return false }
-            val roundedSingle = applyRoundedCorners(single)
+            val roundedSingle = WidgetImageUtils.applyRoundedCorners(single)
             single.recycle()
-            val ok = writeBitmapAtomically(dst, roundedSingle)
+            val ok = WidgetImageUtils.writeBitmapAtomically(dst, roundedSingle)
             roundedSingle.recycle()
             return ok
         }
@@ -280,12 +189,12 @@ object BookshelfWidgetStore {
 
         var missing = 0
         for (i in 0 until 4.coerceAtMost(coverPaths.size)) {
-            val cell = decodeCoverCroppedAndScaled(coverPaths[i], cellW, cellH)
+            val cell = WidgetImageUtils.decodeCoverCroppedAndScaled(coverPaths[i], cellW, cellH)
             if (cell == null) {
                 missing++
                 continue
             }
-            val roundedCell = applyRoundedCorners(cell, GROUP_CELL_CORNER_RADIUS)
+            val roundedCell = WidgetImageUtils.applyRoundedCorners(cell, GROUP_CELL_CORNER_RADIUS)
             cell.recycle()
             val left = pad + (i % 2) * (cellW + gap)
             val top = pad + (i / 2) * (cellH + gap)
@@ -293,9 +202,9 @@ object BookshelfWidgetStore {
             roundedCell.recycle()
         }
 
-        val rounded = applyRoundedCorners(composite)
+        val rounded = WidgetImageUtils.applyRoundedCorners(composite)
         composite.recycle()
-        val ok = writeBitmapAtomically(dst, rounded)
+        val ok = WidgetImageUtils.writeBitmapAtomically(dst, rounded)
         rounded.recycle()
         return missing == 0 && ok
     }
@@ -391,7 +300,7 @@ object BookshelfWidgetStore {
     fun notifyWidget(context: Context, appWidgetId: Int) {
         // Null on builds without app widget support (TV, automotive).
         val mgr = AppWidgetManager.getInstance(context) ?: return
-        val cls = ReadingWidgetProvider::class.java
+        val cls = BookshelfWidgetProvider::class.java
         if (appWidgetId !in mgr.getAppWidgetIds(ComponentName(context, cls))) return
         val intent = android.content.Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
         intent.component = ComponentName(context, cls)

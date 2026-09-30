@@ -2522,7 +2522,6 @@
   "Rows": "Righe",
   "Open Readest to show this bookshelf": "Apri Readest per mostrare questo scaffale",
   "Turn on Books in Manage Sync to upload this book": "Attiva «Libri» in «Gestisci sincronizzazione» per caricare questo libro",
-  "Shelf name": "Nome dello scaffale",
   "Hide Bookshelf Buttons": "Nascondi i pulsanti dello scaffale",
   "Previous and Next in the library": "Precedente e Successivo nella libreria",
   "Reverse Mouse Wheel": "Inverti la rotella del mouse",
@@ -2531,5 +2530,7 @@
   "Sentence around the highlight": "Frase intorno all'evidenziazione",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Non leggere le letture o le glosse in hanja tra parentesi dopo una parola",
   "Visible as {{name}}": "Visibile come {{name}}",
-  "Local Network": "Rete locale"
+  "Local Network": "Rete locale",
+  "Book Title": "Titolo libro",
+  "Header Size": "Dimensione intestazione"
 }
