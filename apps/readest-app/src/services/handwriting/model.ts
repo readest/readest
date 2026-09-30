@@ -33,6 +33,78 @@ export interface HandwritingDoc {
 
 export const emptyHandwriting = (): HandwritingDoc => ({ version: HANDWRITING_VERSION, pages: {} });
 
+/** Squared distance from `p` to segment `a`–`b`. */
+const segDistSq = (p: InkPoint, a: InkPoint, b: InkPoint) => {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy;
+  const t =
+    len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2));
+  const ex = p[0] - (a[0] + t * dx);
+  const ey = p[1] - (a[1] + t * dy);
+  return ex * ex + ey * ey;
+};
+
+/**
+ * Ramer–Douglas–Peucker simplification, one stroke at a time.
+ *
+ * Ink stores every coalesced pointer sample, so a page of handwriting runs to
+ * tens of thousands of points. Dropping points that sit within `tolerance`
+ * (in normalized page units) of the line through their neighbours shrinks the
+ * export substantially without any visible change at reading zoom — the points
+ * removed are ones the pen path already passed within a fraction of a pixel of.
+ * Endpoints always survive, and pressure is kept on the retained samples so
+ * width variation survives too.
+ */
+const simplifyStroke = (points: InkPoint[], tolerance: number) => {
+  if (points.length < 3) return points;
+  const tol2 = tolerance * tolerance;
+  const keep = new Uint8Array(points.length);
+  keep[0] = 1;
+  keep[points.length - 1] = 1;
+  // Explicit stack rather than recursion: a long stroke can nest deeply enough
+  // to overflow the JS call stack.
+  const stack: [number, number][] = [[0, points.length - 1]];
+  while (stack.length > 0) {
+    const [start, end] = stack.pop()!;
+    let furthest = -1;
+    let furthestDist = tol2;
+    for (let i = start + 1; i < end; i++) {
+      const d = segDistSq(points[i]!, points[start]!, points[end]!);
+      if (d > furthestDist) {
+        furthestDist = d;
+        furthest = i;
+      }
+    }
+    if (furthest === -1) continue;
+    keep[furthest] = 1;
+    stack.push([start, furthest], [furthest, end]);
+  }
+  const out: InkPoint[] = [];
+  for (let i = 0; i < points.length; i++) if (keep[i]) out.push(points[i]!);
+  return out;
+};
+
+/**
+ * Simplify every stroke in a document, for export. `tolerance` is in
+ * normalized page units, so 0.001 is roughly a pixel on a 1000px page.
+ * Returns the input unchanged when there is nothing to gain.
+ */
+export const simplifyHandwriting = (doc: HandwritingDoc, tolerance = 0.001): HandwritingDoc => {
+  let changed = false;
+  const pages: Record<string, InkPage> = {};
+  for (const [key, page] of Object.entries(doc.pages)) {
+    const strokes = page.strokes.map((stroke) => {
+      const points = simplifyStroke(stroke.points, tolerance);
+      if (points.length === stroke.points.length) return stroke;
+      changed = true;
+      return { ...stroke, points };
+    });
+    pages[key] = { strokes, updatedAt: page.updatedAt };
+  }
+  return changed ? { version: HANDWRITING_VERSION, pages } : doc;
+};
+
 export const serializeHandwriting = (doc: HandwritingDoc): string => JSON.stringify(doc);
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);

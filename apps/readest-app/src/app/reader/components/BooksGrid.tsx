@@ -184,7 +184,6 @@ const BookCellInner: React.FC<BookCellProps> = ({
           gridInsets={gridInsets}
           contentInsets={contentInsets}
         />
-        <HandwritingOverlay bookKey={bookKey} />
         {viewSettings.vertical && viewSettings.scrolled && (
           <>
             {(showFooter || viewSettings.doubleBorder) && (
@@ -262,6 +261,11 @@ const BookCellInner: React.FC<BookCellProps> = ({
           />
         )}
       </div>
+      {/* Ink sits after the page chrome (side panels, double border, header,
+          ruler) so opaque page furniture can't paint over strokes near the
+          page edges, but before the Annotator so the selection popup's z-[43]
+          band still wins over the ink canvas. */}
+      <HandwritingOverlay bookKey={bookKey} />
       <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
       <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
       <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />

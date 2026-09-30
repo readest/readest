@@ -98,6 +98,26 @@ export class HandwritingEditor {
     if (this.strokes(page).length > 0) this.commit(page, []);
   }
 
+  /**
+   * Repaint every stroke on one page in a new pen. A single undoable step, so
+   * a mis-tap on "restyle all" is one gesture to revert rather than needing the
+   * reader to undo stroke by stroke. Returns false when the page has no ink,
+   * letting callers skip the write.
+   */
+  restylePage(page: string, pen: { color: string; width: number }): boolean {
+    const current = this.strokes(page);
+    if (current.length === 0) return false;
+    const alreadySame = current.every(
+      (stroke) => stroke.color === pen.color && stroke.width === pen.width,
+    );
+    if (alreadySame) return false;
+    this.commit(
+      page,
+      current.map((stroke) => ({ ...stroke, color: pen.color, width: pen.width })),
+    );
+    return true;
+  }
+
   undo(page: string) {
     const state = this.pages.get(page);
     const prev = state?.undo.pop();

@@ -15,6 +15,7 @@ import {
   NoteExportFormat,
 } from '@/types/book';
 import { buildAnnotationExport } from '@/services/annotation/providers/readest';
+import { simplifyHandwriting } from '@/services/handwriting/model';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
 import {
@@ -74,9 +75,15 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
+  const { getBookData, getConfig } = useBookDataStore();
   const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
+  // Simplify on the way out: the stored ink keeps every sample (so erasing and
+  // restyling stay exact), but an export only needs the shape of the stroke.
+  const handwriting = useMemo(() => {
+    const doc = getConfig(bookKey)?.handwriting;
+    return doc ? simplifyHandwriting(doc) : undefined;
+  }, [getConfig, bookKey]);
 
   const defaultTemplate = `{% if coverImageUrl %}![cover|300]({{ coverImageUrl }})
 
@@ -258,6 +265,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
           progress,
           location,
           exportedAt: Date.now(),
+          handwriting,
         }),
         null,
         2,

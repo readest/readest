@@ -19,6 +19,7 @@ export class BooxHandwritingBackend {
   private toPage: ((x: number, y: number) => InkPoint) | null = null;
   private listener: BooxBatchListener | null = null;
   private unlisten: (() => void) | null = null;
+  private region: { left: number; top: number; width: number; height: number } | null = null;
 
   onBatch(listener: BooxBatchListener) {
     this.listener = listener;
@@ -31,6 +32,7 @@ export class BooxHandwritingBackend {
     strokeColor: string,
   ) {
     this.toPage = toPage;
+    this.region = region;
     const { addPluginListener } = await import('@tauri-apps/api/core');
     const handle = await addPluginListener<PenStrokeBatch>(
       'native-bridge',
@@ -41,6 +43,21 @@ export class BooxHandwritingBackend {
     await startRawDrawing({ ...region, strokeWidth: strokeWidthPx, strokeColor });
   }
 
+  /**
+   * The native pen takes its color and width as start-time arguments and has
+   * no update command, so changing either re-issues startRawDrawing with the
+   * stored region. The listener stays registered — re-registering it on every
+   * color tap would leak a subscription per change.
+   */
+  async updatePen(strokeWidthPx: number, strokeColor: string) {
+    if (!this.region) return;
+    await startRawDrawing({
+      ...this.region,
+      strokeWidth: strokeWidthPx,
+      strokeColor,
+    });
+  }
+
   setEnabled(enabled: boolean) {
     void setRawDrawingEnabled(enabled);
   }
@@ -49,6 +66,7 @@ export class BooxHandwritingBackend {
     this.unlisten?.();
     this.unlisten = null;
     this.toPage = null;
+    this.region = null;
     await stopRawDrawing();
   }
 

@@ -20,6 +20,8 @@ export class PointerHandwritingBackend {
   private pending: InkPoint[] = [];
   private rafId: number | null = null;
   private activePointerId: number | null = null;
+  /** Pointer type owning the active slot, so a pen can displace a palm touch. */
+  private activePointerType: string | null = null;
   private erasing = false;
 
   attach(el: HTMLElement, toPage: (x: number, y: number) => InkPoint) {
@@ -55,8 +57,27 @@ export class PointerHandwritingBackend {
   }
 
   private onDown = (e: PointerEvent) => {
-    if (this.activePointerId !== null || !this.toPage) return;
+    if (!this.toPage) return;
+    const isTouch = e.pointerType === 'touch';
+
+    // Palm rejection. A resting hand reaches the digitizer before the pen
+    // does, so the touch has to give way when a pen arrives — otherwise the
+    // palm claims the one active-pointer slot and the intended stroke is
+    // silently discarded, which is worse than a stray mark. The reverse order
+    // (pen already down) needs no special case: the active-pointer guard below
+    // already rejects the extra contact.
+    if (isTouch && this.activePointerId !== null) return;
+    if (!isTouch && this.activePointerType === 'touch') {
+      // Hand the slot over: drop the palm's queued points without committing a
+      // stroke for it, then claim it for the pen.
+      this.pending = [];
+      this.activePointerId = null;
+      this.activePointerType = null;
+    }
+    if (this.activePointerId !== null) return;
+
     this.activePointerId = e.pointerId;
+    this.activePointerType = e.pointerType;
     this.erasing = this.isEraserEvent(e);
     this.el?.setPointerCapture(e.pointerId);
     this.pending.push(this.samplePoint(e));
@@ -74,12 +95,14 @@ export class PointerHandwritingBackend {
     if (e.pointerId !== this.activePointerId) return;
     this.flush('end');
     this.activePointerId = null;
+    this.activePointerType = null;
   };
 
   private onCancel = (e: PointerEvent) => {
     if (e.pointerId !== this.activePointerId) return;
     this.pending = [];
     this.activePointerId = null;
+    this.activePointerType = null;
   };
 
   private samplePoint(e: PointerEvent): InkPoint {

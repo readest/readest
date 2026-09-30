@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
+import { eventDispatcher } from '@/utils/event';
 import { useHandwriting } from '../../hooks/useHandwriting';
 import HandwritingCanvas from './HandwritingCanvas';
 import HandwritingToolbar from './HandwritingToolbar';
@@ -17,18 +18,37 @@ interface HandwritingOverlayProps {
 const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey: _bookKey }) => {
   const {
     strokes,
+    hasInk,
     rect,
     containerRef,
     attach,
     detach,
     enabled,
     setEnabled,
+    reload,
     erasing,
     setErasing,
     undo,
     redo,
     clear,
+    penColor,
+    penWidth,
+    selectPenColor,
+    selectPenWidth,
+    restylePage,
   } = useHandwriting(_bookKey);
+
+  useEffect(() => {
+    const onHandwritingEvent = (event: CustomEvent) => {
+      const { action } = event.detail as { action?: string };
+      if (action === 'enable') setEnabled(true);
+      if (action === 'reload') reload();
+    };
+    eventDispatcher.on('handwriting', onHandwritingEvent);
+    return () => {
+      eventDispatcher.off('handwriting', onHandwritingEvent);
+    };
+  }, [setEnabled, reload]);
 
   return (
     <>
@@ -40,7 +60,7 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey: _bookK
         attach={attach}
         detach={detach}
       />
-      <div className='bg-base-100/90 eink-bordered absolute bottom-4 right-4 z-10 rounded-md p-1'>
+      <div className='bg-base-100/90 eink-bordered absolute right-4 top-4 z-10 rounded-md p-1'>
         <HandwritingToolbar
           enabled={enabled}
           onToggle={() => setEnabled(!enabled)}
@@ -49,6 +69,12 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey: _bookK
           onUndo={undo}
           onRedo={redo}
           onClear={clear}
+          penColor={penColor}
+          penWidth={penWidth}
+          onSelectColor={selectPenColor}
+          onSelectWidth={selectPenWidth}
+          onRestyle={restylePage}
+          hasInk={hasInk}
         />
       </div>
     </>
