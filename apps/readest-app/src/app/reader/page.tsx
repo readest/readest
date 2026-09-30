@@ -9,6 +9,7 @@ import { useOpenLaunchLinks } from '@/hooks/useOpenLaunchLinks';
 import { useBookshelfWidget } from '@/hooks/useBookshelfWidget';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
+import { useRestoreLibraryOnRelaunch } from '@/hooks/useRestoreLibraryOnRelaunch';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { tauriHandleSetAlwaysOnTop } from '@/utils/window';
@@ -27,6 +28,7 @@ export default function Page() {
   useBookshelfWidget();
   useOpenShareLink();
   useClipUrlIngress();
+  useRestoreLibraryOnRelaunch();
 
   useEffect(() => {
     const doCheckAppUpdates = async () => {

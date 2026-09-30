@@ -37,6 +37,8 @@ mod eink_identity;
 mod epub_parser;
 #[cfg(all(target_os = "linux", any(feature = "cef", test)))]
 mod linux_display;
+#[cfg(all(target_os = "linux", any(feature = "cef", test)))]
+mod linux_single_instance;
 mod localsend;
 #[cfg(target_os = "macos")]
 mod macos;
@@ -432,6 +434,9 @@ type AppRuntime = tauri_runtime_cef::CefRuntime;
 #[cfg(not(all(feature = "cef", target_os = "linux")))]
 type AppRuntime = tauri::Wry;
 
+#[cfg(desktop)]
+const SINGLE_INSTANCE_DBUS_ID: &str = "com.bilingify.readest";
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[cfg_attr(
     all(feature = "cef", target_os = "linux"),
@@ -446,6 +451,9 @@ pub fn run() {
         eprintln!("{message}");
         std::process::exit(1);
     }
+
+    #[cfg(all(feature = "cef", target_os = "linux"))]
+    linux_single_instance::forward_to_running_instance(SINGLE_INSTANCE_DBUS_ID);
 
     // Initialize Sentry as early as possible so panics during startup are
     // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
@@ -654,7 +662,7 @@ pub fn run() {
                 app.emit("single-instance", SingleInstancePayload { args: argv, cwd })
                     .unwrap();
             })
-            .dbus_id("com.bilingify.readest".to_owned())
+            .dbus_id(SINGLE_INSTANCE_DBUS_ID.to_owned())
             .build(),
     );
 
