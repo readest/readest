@@ -123,6 +123,28 @@ const snapScrolledDistanceToLines = (
   }
 };
 
+// Page turns since the last deep full refresh, per open view. Keyed by the
+// FoliateView so the count is scoped to the book and dropped when it closes.
+// Drives the automatic e-ink refresh that fires every `einkAutoRefreshInterval`
+// pages — the only ghosting-cleanup path usable on readers without spare buttons.
+const einkPageTurnsSinceRefresh = new WeakMap<FoliateView, number>();
+
+const resetEinkRefreshCounter = (view: FoliateView | null) => {
+  if (view) einkPageTurnsSinceRefresh.set(view, 0);
+};
+
+const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
+  const interval = viewSettings.einkAutoRefreshInterval;
+  if (!viewSettings.isEink || !interval || interval <= 0) return;
+  const turns = (einkPageTurnsSinceRefresh.get(view) ?? 0) + 1;
+  if (turns >= interval) {
+    einkPageTurnsSinceRefresh.set(view, 0);
+    refreshEinkScreen().catch(() => {});
+  } else {
+    einkPageTurnsSinceRefresh.set(view, turns);
+  }
+};
+
 export const viewPagination = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
@@ -161,6 +183,7 @@ export const viewPagination = (
             view.book.rendition?.layout === 'pre-paginated')
             ? distance
             : snapScrolledDistanceToLines(view, distance, forward);
+        noteEinkPageTurn(view, viewSettings);
         return forward ? view.next(snapped) : view.prev(snapped);
       }
     }
@@ -170,6 +193,7 @@ export const viewPagination = (
     } else if (hasVerticalPanning(view, viewSettings) && (side === 'up' || side === 'down')) {
       return view.pan(0, side === 'up' ? -panDistance : panDistance);
     } else {
+      noteEinkPageTurn(view, viewSettings);
       return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   } else {
@@ -183,6 +207,7 @@ export const viewPagination = (
       case 'pan':
       case 'page':
       default:
+        noteEinkPageTurn(view, viewSettings);
         return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   }
@@ -402,6 +427,7 @@ export const usePagination = (
     if (action === 'refresh') {
       if (appService?.isAndroidApp) {
         refreshEinkScreen().catch(() => {});
+        resetEinkRefreshCounter(viewRef.current);
       }
       return true;
     }

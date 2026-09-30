@@ -16,7 +16,7 @@ import {
   PageTurnAction,
 } from '@/utils/keybinding';
 import { HardwarePageTurnerSettings, KeyBinding } from '@/types/settings';
-import { BoxedList, SettingsRow, SettingsSwitchRow } from './primitives';
+import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
 import { useReaderStore } from '@/store/readerStore';
 
 type Slot = PageTurnAction;
@@ -38,6 +38,9 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
   const resetToDefaults = useResetViewSettings();
 
   const [volumeKeysToFlip, setVolumeKeysToFlip] = useState(viewSettings.volumeKeysToFlip);
+  const [einkAutoRefreshInterval, setEinkAutoRefreshInterval] = useState(
+    viewSettings.einkAutoRefreshInterval,
+  );
   const [config, setConfig] = useState<HardwarePageTurnerSettings>(settings.hardwarePageTurner);
   const configRef = useRef(config);
   configRef.current = config;
@@ -131,7 +134,24 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
   }, [volumeKeysToFlip]);
 
   useEffect(() => {
-    onRegisterReset?.(() => resetToDefaults({ volumeKeysToFlip: setVolumeKeysToFlip }));
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'einkAutoRefreshInterval',
+      einkAutoRefreshInterval,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einkAutoRefreshInterval]);
+
+  useEffect(() => {
+    onRegisterReset?.(() =>
+      resetToDefaults({
+        volumeKeysToFlip: setVolumeKeysToFlip,
+        einkAutoRefreshInterval: setEinkAutoRefreshInterval,
+      }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -214,6 +234,22 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
         {appService?.isAndroidApp &&
           viewSettings.isEink &&
           renderSlot('refresh', _('Refresh Page'))}
+        {appService?.isAndroidApp && viewSettings.isEink && (
+          <SettingsRow label={_('Auto Refresh')}>
+            <SettingsSelect
+              value={String(einkAutoRefreshInterval)}
+              onChange={(e) => setEinkAutoRefreshInterval(Number(e.target.value))}
+              ariaLabel={_('Auto Refresh')}
+              options={[
+                { value: '0', label: _('Off') },
+                { value: '5', label: _('Every 5 pages') },
+                { value: '10', label: _('Every 10 pages') },
+                { value: '15', label: _('Every 15 pages') },
+                { value: '20', label: _('Every 20 pages') },
+              ]}
+            />
+          </SettingsRow>
+        )}
       </BoxedList>
     </div>
   );
