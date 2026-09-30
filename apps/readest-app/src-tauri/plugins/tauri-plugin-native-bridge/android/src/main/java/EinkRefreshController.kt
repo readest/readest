@@ -1,5 +1,6 @@
 package com.readest.native_bridge
 
+import android.content.Context
 import android.util.Log
 import android.view.View
 
@@ -11,9 +12,9 @@ import android.view.View
  * into the platform `android.view.View` (or ships a private SDK). We probe
  * each known framework mechanism via reflection in turn and stop at the first
  * that succeeds, so one call works across Onyx BOOX (Qualcomm), Tolino / Nook
- * (NTX / Freescale) and Boyue-style Rockchip devices without compiling against
- * any vendor SDK. Reflection targets are adapted from KOReader's EPD
- * controllers (koreader/android-luajit-launcher).
+ * (NTX / Freescale), Boyue-style Rockchip devices and Hanvon readers without
+ * compiling against any vendor SDK. Reflection targets are adapted from
+ * KOReader's EPD controllers (koreader/android-luajit-launcher).
  *
  * Unlike a reader that owns the whole update loop, Readest leaves the device's
  * automatic e-ink handling in place, so we deliberately do NOT switch the panel
@@ -42,7 +43,8 @@ object EinkRefreshController {
         if (width <= 0 || height <= 0) return false
         return onyxRefresh(view, width, height) ||
             ntxRefresh(view, width, height) ||
-            rockchipRefresh(view)
+            rockchipRefresh(view) ||
+            hanvonRefresh(view.context)
     }
 
     // Onyx BOOX (Qualcomm models): `refreshScreen` is an instance method patched
@@ -96,6 +98,21 @@ object EinkRefreshController {
             true
         } catch (e: Throwable) {
             Log.d(TAG, "rockchip refresh unavailable: ${e.message}")
+            false
+        }
+    }
+
+    // Hanvon readers: instead of patching View they register an "eink" system
+    // service (a hidden android.os.EinkManager) whose sendOneFullFrame() performs
+    // a one-shot full-panel update, the same call the stock readers use.
+    private fun hanvonRefresh(context: Context): Boolean {
+        return try {
+            val einkManager = context.getSystemService("eink") ?: return false
+            einkManager.javaClass.getMethod("sendOneFullFrame").invoke(einkManager)
+            Log.i(TAG, "hanvon full refresh requested")
+            true
+        } catch (e: Throwable) {
+            Log.d(TAG, "hanvon refresh unavailable: ${e.message}")
             false
         }
     }
