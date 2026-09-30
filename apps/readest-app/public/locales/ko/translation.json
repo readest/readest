@@ -2235,7 +2235,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}}이(가) 책 {{count}}권을 보내려고 합니다",
   "Speech": "음성",
   "Skip Parenthetical Readings": "괄호 안 읽기 건너뛰기",
-  "Do not speak kana or Han readings shown after Han text": "한자 뒤에 표시된 가나 또는 한자 읽기를 발음하지 않음",
   "Regex": "정규식",
   "Case sensitive": "대소문자 구분",
   "Only for TTS": "TTS 전용",
@@ -2409,6 +2408,8 @@
   "Reverse Mouse Wheel": "마우스 휠 반전",
   "Scroll up for the next page": "위로 스크롤하면 다음 페이지",
   "Keep Text Selected After Lookup": "사전 검색 후 텍스트 선택 유지",
+  "Sentence around the highlight": "하이라이트가 포함된 문장",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "단어 뒤 괄호 안의 읽기나 한자 병기를 읽지 않음",
   "Visible as {{name}}": "{{name}}(으)로 표시됨",
   "Local Network": "로컬 네트워크"
 }

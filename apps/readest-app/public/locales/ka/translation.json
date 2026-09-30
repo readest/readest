@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}}-ს სურს გამოგიგზავნოთ {{count}} წიგნი",
   "Speech": "მეტყველება",
   "Skip Parenthetical Readings": "ფრჩხილებში მოცემული წაკითხვის გამოტოვება",
-  "Do not speak kana or Han readings shown after Han text": "არ წაიკითხოს ჰანის ტექსტის შემდეგ ნაჩვენები კანა ან ჰანის წაკითხვები",
   "Regex": "Regex",
   "Case sensitive": "რეგისტრის დაცვა",
   "Only for TTS": "მხოლოდ TTS-ისთვის",
@@ -2469,6 +2468,8 @@
   "Reverse Mouse Wheel": "მაუსის ბორბლის შებრუნება",
   "Scroll up for the next page": "შემდეგი გვერდისთვის გადაახვიეთ ზემოთ",
   "Keep Text Selected After Lookup": "ძიების შემდეგ ტექსტის მონიშვნის შენარჩუნება",
+  "Sentence around the highlight": "მონიშვნის გარშემო არსებული წინადადება",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "არ წაიკითხო სიტყვის შემდეგ ფრჩხილებში მოცემული წაკითხვები ან ჰანჯა განმარტებები",
   "Visible as {{name}}": "ხილულია როგორც {{name}}",
   "Local Network": "ლოკალური ქსელი"
 }

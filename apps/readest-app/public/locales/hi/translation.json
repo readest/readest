@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} आपको {{count}} पुस्तकें भेजना चाहता है",
   "Speech": "वाक्",
   "Skip Parenthetical Readings": "कोष्ठक में दिए उच्चारण छोड़ें",
-  "Do not speak kana or Han readings shown after Han text": "हान पाठ के बाद दिखाए गए काना या हान उच्चारण न बोलें",
   "Regex": "Regex",
   "Case sensitive": "अक्षर संवेदनशील",
   "Only for TTS": "केवल TTS के लिए",
@@ -2469,6 +2468,8 @@
   "Reverse Mouse Wheel": "माउस व्हील उलटें",
   "Scroll up for the next page": "अगले पृष्ठ के लिए ऊपर स्क्रॉल करें",
   "Keep Text Selected After Lookup": "खोज के बाद टेक्स्ट चयनित रखें",
+  "Sentence around the highlight": "हाइलाइट के आसपास का वाक्य",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "किसी शब्द के बाद कोष्ठक में दिए उच्चारण या हांजा अर्थ न बोलें",
   "Visible as {{name}}": "{{name}} के रूप में दिखाई दे रहा है",
   "Local Network": "लोकल नेटवर्क"
 }

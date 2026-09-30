@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} size {{count}} kitap göndermek istiyor",
   "Speech": "Konuşma",
   "Skip Parenthetical Readings": "Parantez İçindeki Okunuşları Atla",
-  "Do not speak kana or Han readings shown after Han text": "Han metninden sonra gösterilen kana veya Han okunuşlarını seslendirme",
   "Regex": "Regex",
   "Case sensitive": "Büyük/küçük harfe duyarlı",
   "Only for TTS": "Sadece TTS için",
@@ -2469,6 +2468,8 @@
   "Reverse Mouse Wheel": "Fare Tekerleğini Ters Çevir",
   "Scroll up for the next page": "Sonraki sayfa için yukarı kaydırın",
   "Keep Text Selected After Lookup": "Aramadan sonra metni seçili tut",
+  "Sentence around the highlight": "Vurgunun geçtiği cümle",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Bir kelimeden sonra parantez içindeki okunuşları veya Hanja açıklamalarını seslendirme",
   "Visible as {{name}}": "{{name}} olarak görünür",
   "Local Network": "Yerel Ağ"
 }

@@ -2235,7 +2235,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} ต้องการส่งหนังสือ {{count}} เล่มให้คุณ",
   "Speech": "เสียงพูด",
   "Skip Parenthetical Readings": "ข้ามคำอ่านในวงเล็บ",
-  "Do not speak kana or Han readings shown after Han text": "ไม่อ่านคำอ่านคานะหรือฮั่นที่แสดงหลังข้อความฮั่น",
   "Regex": "Regex",
   "Case sensitive": "คำนึงถึงตัวพิมพ์เล็ก/ใหญ่",
   "Only for TTS": "สำหรับ TTS เท่านั้น",
@@ -2409,6 +2408,8 @@
   "Reverse Mouse Wheel": "กลับทิศล้อเมาส์",
   "Scroll up for the next page": "เลื่อนขึ้นเพื่อไปหน้าถัดไป",
   "Keep Text Selected After Lookup": "คงการเลือกข้อความไว้หลังค้นหา",
+  "Sentence around the highlight": "ประโยคที่อยู่รอบไฮไลต์",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "ไม่อ่านคำอ่านหรือคำกำกับฮันจาในวงเล็บหลังคำ",
   "Visible as {{name}}": "มองเห็นในชื่อ {{name}}",
   "Local Network": "เครือข่ายท้องถิ่น"
 }

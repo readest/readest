@@ -2235,7 +2235,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} muốn gửi cho bạn {{count}} cuốn sách",
   "Speech": "Giọng đọc",
   "Skip Parenthetical Readings": "Bỏ qua cách đọc trong ngoặc",
-  "Do not speak kana or Han readings shown after Han text": "Không đọc cách đọc bằng kana hoặc Hán tự hiển thị sau văn bản Hán tự",
   "Regex": "Regex",
   "Case sensitive": "Phân biệt chữ hoa/thường",
   "Only for TTS": "Chỉ dành cho TTS",
@@ -2409,6 +2408,8 @@
   "Reverse Mouse Wheel": "Đảo chiều con lăn chuột",
   "Scroll up for the next page": "Cuộn lên để sang trang tiếp theo",
   "Keep Text Selected After Lookup": "Giữ văn bản được chọn sau khi tra cứu",
+  "Sentence around the highlight": "Câu chứa phần tô sáng",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Không đọc cách đọc hoặc chú thích Hanja trong ngoặc đơn sau một từ",
   "Visible as {{name}}": "Hiển thị với tên {{name}}",
   "Local Network": "Mạng cục bộ"
 }

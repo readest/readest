@@ -2235,7 +2235,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} 想要向您发送 {{count}} 本书",
   "Speech": "语音",
   "Skip Parenthetical Readings": "跳过括号内的读音",
-  "Do not speak kana or Han readings shown after Han text": "不朗读汉字文本后显示的假名或汉字读音",
   "Regex": "正则",
   "Case sensitive": "区分大小写",
   "Only for TTS": "仅用于TTS",
@@ -2409,6 +2408,8 @@
   "Reverse Mouse Wheel": "反转鼠标滚轮",
   "Scroll up for the next page": "向上滚动翻到下一页",
   "Keep Text Selected After Lookup": "查词后保持文本选中",
+  "Sentence around the highlight": "高亮所在的句子",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "不朗读词语后括号内的读音或汉字注释",
   "Visible as {{name}}": "显示为 {{name}}",
   "Local Network": "局域网"
 }

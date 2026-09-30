@@ -2535,7 +2535,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "يريد {{alias}} إرسال {{count}} كتاب إليك",
   "Speech": "النطق",
   "Skip Parenthetical Readings": "تخطي القراءات بين قوسين",
-  "Do not speak kana or Han readings shown after Han text": "عدم نطق قراءات الكانا أو الهان الظاهرة بعد نص الهان",
   "Regex": "Regex",
   "Case sensitive": "حساس لحالة الأحرف",
   "Only for TTS": "فقط لـ TTS",
@@ -2709,6 +2708,8 @@
   "Reverse Mouse Wheel": "عكس عجلة الماوس",
   "Scroll up for the next page": "مرّر لأعلى للانتقال إلى الصفحة التالية",
   "Keep Text Selected After Lookup": "إبقاء النص محددًا بعد البحث",
+  "Sentence around the highlight": "الجملة المحيطة بالتظليل",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "عدم نطق القراءات أو شروح الهانجا بين الأقواس بعد الكلمة",
   "Visible as {{name}}": "مرئي باسم {{name}}",
   "Local Network": "الشبكة المحلية"
 }

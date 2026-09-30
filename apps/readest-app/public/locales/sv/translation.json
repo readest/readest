@@ -2295,7 +2295,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vill skicka {{count}} böcker till dig",
   "Speech": "Tal",
   "Skip Parenthetical Readings": "Hoppa över läsningar inom parentes",
-  "Do not speak kana or Han readings shown after Han text": "Läs inte upp kana- eller han-läsningar som visas efter han-text",
   "Regex": "Regex",
   "Case sensitive": "Skiftlägeskänslig",
   "Only for TTS": "Endast för TTS",
@@ -2469,6 +2468,8 @@
   "Reverse Mouse Wheel": "Omvänt mushjul",
   "Scroll up for the next page": "Scrolla uppåt för nästa sida",
   "Keep Text Selected After Lookup": "Behåll texten markerad efter uppslag",
+  "Sentence around the highlight": "Mening runt markeringen",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Läs inte upp läsningar eller hanja-glosor inom parentes efter ett ord",
   "Visible as {{name}}": "Synlig som {{name}}",
   "Local Network": "Lokalt nätverk"
 }

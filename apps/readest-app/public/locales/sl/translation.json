@@ -2415,7 +2415,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vam želi poslati {{count}} knjig",
   "Speech": "Govor",
   "Skip Parenthetical Readings": "Preskoči branja v oklepajih",
-  "Do not speak kana or Han readings shown after Han text": "Ne izgovori zapisov v kani ali hanu, prikazanih za besedilom han",
   "Regex": "Regex",
   "Case sensitive": "Razlikovanje velikih/malih črk",
   "Only for TTS": "Samo za TTS",
@@ -2589,6 +2588,8 @@
   "Reverse Mouse Wheel": "Obrni kolesce miške",
   "Scroll up for the next page": "Za naslednjo stran se pomaknite navzgor",
   "Keep Text Selected After Lookup": "Ohrani izbrano besedilo po iskanju",
+  "Sentence around the highlight": "Stavek okoli označbe",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Ne izgovarjaj branj ali glos v hanji v oklepajih za besedo",
   "Visible as {{name}}": "Viden kot {{name}}",
   "Local Network": "Lokalno omrežje"
 }

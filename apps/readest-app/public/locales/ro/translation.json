@@ -2355,7 +2355,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} vrea să vă trimită {{count}} de cărți",
   "Speech": "Vorbire",
   "Skip Parenthetical Readings": "Omite citirile dintre paranteze",
-  "Do not speak kana or Han readings shown after Han text": "Nu rosti citirile kana sau han afișate după textul han",
   "Regex": "Regex",
   "Case sensitive": "Sensibil la majuscule/minuscule",
   "Only for TTS": "Doar pentru TTS",
@@ -2529,6 +2528,8 @@
   "Reverse Mouse Wheel": "Inversează rotița mouse-ului",
   "Scroll up for the next page": "Derulează în sus pentru pagina următoare",
   "Keep Text Selected After Lookup": "Păstrează textul selectat după căutare",
+  "Sentence around the highlight": "Propoziția din jurul evidențierii",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "Nu rosti citirile sau glosele hanja din paranteze de după un cuvânt",
   "Visible as {{name}}": "Vizibil ca {{name}}",
   "Local Network": "Rețea locală"
 }

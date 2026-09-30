@@ -2355,7 +2355,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}} רוצה לשלוח לכם {{count}} ספרים",
   "Speech": "דיבור",
   "Skip Parenthetical Readings": "דלג על קריאות בסוגריים",
-  "Do not speak kana or Han readings shown after Han text": "אל תקריא קריאות בקאנה או בהאן המוצגות אחרי טקסט בהאן",
   "Regex": "Regex",
   "Case sensitive": "תלוי רישיות (Case sensitive)",
   "Only for TTS": "רק עבור TTS",
@@ -2529,6 +2528,8 @@
   "Reverse Mouse Wheel": "היפוך גלגלת העכבר",
   "Scroll up for the next page": "גלילה למעלה לדף הבא",
   "Keep Text Selected After Lookup": "השאר את הטקסט מסומן לאחר החיפוש",
+  "Sentence around the highlight": "המשפט סביב ההדגשה",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "אל תקריא הגיות או ביאורי האנג'ה בסוגריים אחרי מילה",
   "Visible as {{name}}": "גלוי בשם {{name}}",
   "Local Network": "רשת מקומית"
 }

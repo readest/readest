@@ -292,6 +292,22 @@
     scale: 1;
   }
 
+  /* WebKit before Safari 17 (iOS <= 16) crashes the page when a color-mix()
+     that takes currentColor wins box-shadow, and the app reloads to the
+     library (#6355). daisyUI 5 puts one in the toggle and range thumb shadows;
+     the themes pin `--depth: 0`, so those layers mix at 0% and never paint.
+     Drop them and keep the range fill layers. */
+  .toggle,
+  .toggle::before {
+    box-shadow: none;
+  }
+
+  .range::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 2rem var(--range-thumb) inset,
+      var(--range-fill-x) var(--range-fill-y) 0 var(--range-fill-spread);
+  }
+
   html[data-page='default'] {
     background: var(--color-base-100);
   }

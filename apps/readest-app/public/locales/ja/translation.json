@@ -2235,7 +2235,6 @@
   "{{alias}} wants to send you {{count}} book(s)_other": "{{alias}}が{{count}}冊の本を送信しようとしています",
   "Speech": "読み上げ",
   "Skip Parenthetical Readings": "括弧内の読みをスキップ",
-  "Do not speak kana or Han readings shown after Han text": "漢字の後に表示される仮名または漢字の読みを読み上げない",
   "Regex": "正規表現",
   "Case sensitive": "大文字と小文字を区別",
   "Only for TTS": "TTSのみ",
@@ -2409,6 +2408,8 @@
   "Reverse Mouse Wheel": "マウスホイールを反転",
   "Scroll up for the next page": "上にスクロールで次のページ",
   "Keep Text Selected After Lookup": "辞書を閉じた後も選択を保持",
+  "Sentence around the highlight": "ハイライトを含む文",
+  "Do not speak readings or Hanja glosses in parentheses after a word": "語の後の括弧内の読みや漢字表記を読み上げない",
   "Visible as {{name}}": "{{name}} として表示中",
   "Local Network": "ローカルネットワーク"
 }
