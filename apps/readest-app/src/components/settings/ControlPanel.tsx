@@ -112,6 +112,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       : []),
   ];
 
+  const einkAutoRefreshIntervalOptions = [
+    { value: '0', label: _('Off') },
+    { value: '5', label: _('Every 5 pages') },
+    { value: '10', label: _('Every 10 pages') },
+    { value: '15', label: _('Every 15 pages') },
+    { value: '20', label: _('Every 20 pages') },
+  ];
+
   const handleReset = () => {
     resetToDefaults({
       scrolled: setScrolledMode,
@@ -612,17 +620,17 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             data-setting-id='settings.control.autoFullRefresh'
           >
             <SettingsSelect
-              value={String(einkAutoRefreshInterval)}
+              value={
+                einkAutoRefreshIntervalOptions.some(
+                  (opt) => opt.value === String(einkAutoRefreshInterval),
+                )
+                  ? String(einkAutoRefreshInterval)
+                  : '0'
+              }
               onChange={(e) => setEinkAutoRefreshInterval(Number(e.target.value))}
               ariaLabel={_('Auto Full Refresh')}
               disabled={!isEink}
-              options={[
-                { value: '0', label: _('Off') },
-                { value: '5', label: _('Every 5 pages') },
-                { value: '10', label: _('Every 10 pages') },
-                { value: '15', label: _('Every 15 pages') },
-                { value: '20', label: _('Every 20 pages') },
-              ]}
+              options={einkAutoRefreshIntervalOptions}
             />
           </SettingsRow>
         )}

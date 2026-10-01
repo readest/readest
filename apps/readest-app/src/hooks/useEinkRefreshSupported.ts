@@ -4,8 +4,9 @@ import { checkEinkRefreshSupported, getCachedEinkRefreshSupported } from '@/util
 
 // A rejection means the probe was inconclusive (e.g. the bridge not ready at
 // first mount), not that the device lacks a hook — so we retry, a bounded
-// number of times so a permanently failing command can't spin.
-const MAX_PROBE_ATTEMPTS = 3;
+// number of times so a permanently failing command can't spin. The first probe
+// runs unconditionally, so up to MAX_PROBE_RETRIES retries give N+1 total calls.
+const MAX_PROBE_RETRIES = 3;
 const PROBE_RETRY_DELAY_MS = 400;
 
 /**
@@ -28,7 +29,7 @@ export function useEinkRefreshSupported(): boolean {
       return;
     }
     let active = true;
-    let attempts = 0;
+    let retries = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const probe = () => {
       checkEinkRefreshSupported().then(() => {
@@ -40,8 +41,8 @@ export function useEinkRefreshSupported(): boolean {
         const now = getCachedEinkRefreshSupported();
         if (now !== null) {
           setSupported(now);
-        } else if (attempts < MAX_PROBE_ATTEMPTS) {
-          attempts++;
+        } else if (retries < MAX_PROBE_RETRIES) {
+          retries++;
           timer = setTimeout(probe, PROBE_RETRY_DELAY_MS);
         } else {
           setSupported(false);
