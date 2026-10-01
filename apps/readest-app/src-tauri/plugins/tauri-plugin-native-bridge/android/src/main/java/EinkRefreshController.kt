@@ -37,7 +37,9 @@ object EinkRefreshController {
     // `getMethod` / `Class.forName` only read the framework's method table; they
     // neither invoke the mechanism nor flash the panel, so resolving them is a
     // safe capability probe. [refresh] and [isSupported] share these handles, so
-    // the UI is shown for exactly the devices [refresh] can act on.
+    // the UI is offered only where a vendor full-refresh hook is present — a
+    // best-effort signal: a stubbed or hidden-API hook could still be present yet
+    // fail at [refresh] time, which then just reports `success: false`.
     private val onyxRefreshScreen: Method? by lazy {
         try {
             View::class.java.getMethod(

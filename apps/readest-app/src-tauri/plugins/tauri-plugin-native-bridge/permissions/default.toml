@@ -49,6 +49,7 @@ permissions = [
   "allow-get-secure-item",
   "allow-clear-secure-item",
   "allow-refresh-eink-screen",
+  "allow-is-eink-refresh-supported",
   "allow-update-bookshelf-widget",
   "allow-get-bookshelf-widget-instances",
   "allow-set-bookshelf-widget-catalog",

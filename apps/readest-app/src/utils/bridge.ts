@@ -131,7 +131,6 @@ export interface RefreshEinkScreenResponse {
 
 export interface EinkRefreshSupportedResponse {
   supported: boolean;
-  error?: string;
 }
 
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
@@ -355,14 +354,19 @@ export async function isEinkRefreshSupported(): Promise<EinkRefreshSupportedResp
 
 // Memoized so the capability probe — a one-shot, pure-reflection query against
 // the vendor hooks — runs a single time per app session, no matter how many
-// settings surfaces read it. Resolves false on any platform without a
-// drivable e-ink controller.
+// settings surfaces read it. Only a successful probe is cached: a transient
+// rejection (e.g. the bridge not ready on first mount) clears the cache so a
+// later call can retry, instead of latching the option hidden for the session.
 let einkRefreshSupportedPromise: Promise<boolean> | null = null;
 export function checkEinkRefreshSupported(): Promise<boolean> {
   if (!einkRefreshSupportedPromise) {
-    einkRefreshSupportedPromise = isEinkRefreshSupported()
-      .then((response) => response.supported)
-      .catch(() => false);
+    einkRefreshSupportedPromise = isEinkRefreshSupported().then(
+      (response) => response.supported,
+      () => {
+        einkRefreshSupportedPromise = null;
+        return false;
+      },
+    );
   }
   return einkRefreshSupportedPromise;
 }

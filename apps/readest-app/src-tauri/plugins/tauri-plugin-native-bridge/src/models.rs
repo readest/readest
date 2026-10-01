@@ -560,7 +560,6 @@ pub struct RefreshEinkScreenResponse {
 #[serde(rename_all = "camelCase")]
 pub struct EinkRefreshSupportedResponse {
     pub supported: bool,
-    pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
