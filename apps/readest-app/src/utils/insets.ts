@@ -151,6 +151,49 @@ export const getPageAreaInsets = (insets: Insets, isSpread: boolean): Insets => 
   return { ...insets, left: side, right: side };
 };
 
+// iOS hides the status bar in a vertically compact window: an iPhone held
+// landscape (at most 440pt tall) or iPhone Duo's cover display (466pt). The
+// Duo's inner display is 669pt tall in landscape and keeps its side strip.
+const COMPACT_HEIGHT_MAX_PX = 500;
+
+/**
+ * Whether iOS shows no status bar in this window regardless of what the app
+ * asks for. Only iPhone Duo uses this: other iPhones treat any landscape as
+ * status-bar-hidden (see useTheme).
+ */
+export const isStatusBarHiddenBySystem = (
+  orientationType: string | undefined,
+  windowHeight: number,
+) => !!orientationType?.includes('landscape') && windowHeight < COMPACT_HEIGHT_MAX_PX;
+
+/** Side safe-area insets recorded while the status bar was hidden, at one window size. */
+export interface StatusBarHiddenInsets {
+  width: number;
+  height: number;
+  left: number;
+  right: number;
+}
+
+/**
+ * Screen insets the reading page lays out against on iPhone Duo. The reader
+ * hides the status bar while reading; on the Duo that also removes the side
+ * strip's safe-area inset (84pt on the inner display), and opening the toolbar
+ * brings it back. The page keeps the sides recorded with the status bar hidden,
+ * for this window size, so opening the toolbar does not re-paginate: the strip
+ * overlaps the page margin while the toolbar is up. Top and bottom stay live.
+ * Without a record (`hidden` null) the live insets are used.
+ */
+export const getReadingScreenInsets = (
+  live: Insets,
+  hidden: StatusBarHiddenInsets | null,
+  width: number,
+  height: number,
+): Insets => {
+  if (!hidden || hidden.width !== width || hidden.height !== height) return live;
+  if (hidden.left === live.left && hidden.right === live.right) return live;
+  return { ...live, left: hidden.left, right: hidden.right };
+};
+
 export interface PopupBounds {
   rect: Rect;
   origin: Point;

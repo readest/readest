@@ -19,6 +19,7 @@ import { CustomTheme, Palette, ThemeMode, ThemeScope } from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
 import { Insets } from '@/types/misc';
+import { StatusBarHiddenInsets } from '@/utils/insets';
 
 declare global {
   interface Window {
@@ -60,6 +61,9 @@ interface ThemeState {
   statusBarHeight: number;
   systemUIAlwaysHidden: boolean;
   safeAreaInsets: Insets | null;
+  // iPhone Duo: side insets seen with the status bar hidden; the reading page
+  // keeps them while the toolbar shows the status bar (see getReadingScreenInsets).
+  statusBarHiddenInsets: StatusBarHiddenInsets | null;
   // Radius (px) of the rounded bottom screen corners, 0 when unknown.
   screenCornerRadius: number;
   // iPhone Duo, whose vertical status strip is a large left/right inset (#6307).
@@ -88,6 +92,7 @@ interface ThemeState {
   handleSystemThemeChange: (isDark: boolean) => void;
   handleAmbientLightChange: (lux: number) => void;
   updateSafeAreaInsets: (insets: Insets) => void;
+  recordStatusBarHiddenInsets: (insets: Insets) => void;
   updateScreenCornerRadius: (radius: number) => void;
   setIsIPhoneDuo: (isIPhoneDuo: boolean) => void;
 }
@@ -303,6 +308,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     statusBarHeight: 24,
     systemUIAlwaysHidden: false,
     safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+    statusBarHiddenInsets: null,
     screenCornerRadius: 0,
     isIPhoneDuo: false,
     isRoundedWindow: true,
@@ -416,6 +422,21 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     },
     updateSafeAreaInsets: (insets) => {
       set({ safeAreaInsets: insets });
+    },
+    recordStatusBarHiddenInsets: ({ left, right }) => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const prev = get().statusBarHiddenInsets;
+      if (
+        prev &&
+        prev.width === width &&
+        prev.height === height &&
+        prev.left === left &&
+        prev.right === right
+      ) {
+        return;
+      }
+      set({ statusBarHiddenInsets: { width, height, left, right } });
     },
     updateScreenCornerRadius: (radius) => {
       if (get().screenCornerRadius !== radius) set({ screenCornerRadius: radius });
