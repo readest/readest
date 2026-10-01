@@ -2531,5 +2531,7 @@
   "Sentence around the highlight": "Frase intorno all'evidenziazione",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Non leggere le letture o le glosse in hanja tra parentesi dopo una parola",
   "Visible as {{name}}": "Visibile come {{name}}",
-  "Local Network": "Rete locale"
+  "Local Network": "Rete locale",
+  "Italic Text": "Testo in corsivo",
+  "Mark italic text like dialogue": "Evidenzia il testo in corsivo come i dialoghi"
 }

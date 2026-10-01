@@ -2591,5 +2591,7 @@
   "Sentence around the highlight": "Предложение вокруг выделения",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Не озвучивать чтения или ханча-глоссы в скобках после слова",
   "Visible as {{name}}": "Виден как {{name}}",
-  "Local Network": "Локальная сеть"
+  "Local Network": "Локальная сеть",
+  "Italic Text": "Курсивный текст",
+  "Mark italic text like dialogue": "Подсвечивать курсивный текст как диалоги"
 }

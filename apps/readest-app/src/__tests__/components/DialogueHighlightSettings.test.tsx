@@ -22,11 +22,13 @@ const renderPanel = (
       backgroundColor='#facc15'
       customTextColor={false}
       textColor=''
+      italic={false}
       onToggle={() => {}}
       onCustomBackgroundToggle={() => {}}
       onBackgroundColorChange={() => {}}
       onCustomTextColorToggle={() => {}}
       onTextColorChange={() => {}}
+      onItalicToggle={() => {}}
       {...overrides}
     />,
   );
@@ -77,5 +79,12 @@ describe('DialogueHighlightSettings', () => {
     cleanup();
     renderPanel({ customTextColor: true, textColor: '#112233' });
     expect(screen.getByText('Color')).not.toBeNull();
+  });
+
+  it('toggles italic text marking', () => {
+    const onItalicToggle = vi.fn();
+    renderPanel({ italic: false, onItalicToggle });
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Italic Text/ }));
+    expect(onItalicToggle).toHaveBeenCalledWith(true);
   });
 });

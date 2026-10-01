@@ -2411,5 +2411,7 @@
   "Sentence around the highlight": "ハイライトを含む文",
   "Do not speak readings or Hanja glosses in parentheses after a word": "語の後の括弧内の読みや漢字表記を読み上げない",
   "Visible as {{name}}": "{{name}} として表示中",
-  "Local Network": "ローカルネットワーク"
+  "Local Network": "ローカルネットワーク",
+  "Italic Text": "斜体テキスト",
+  "Mark italic text like dialogue": "斜体テキストを対話と同様にハイライト"
 }

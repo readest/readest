@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "Vurgunun geçtiği cümle",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Bir kelimeden sonra parantez içindeki okunuşları veya Hanja açıklamalarını seslendirme",
   "Visible as {{name}}": "{{name}} olarak görünür",
-  "Local Network": "Yerel Ağ"
+  "Local Network": "Yerel Ağ",
+  "Italic Text": "İtalik Metin",
+  "Mark italic text like dialogue": "İtalik metni diyalog gibi vurgula"
 }

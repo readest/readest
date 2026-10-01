@@ -2711,5 +2711,7 @@
   "Sentence around the highlight": "الجملة المحيطة بالتظليل",
   "Do not speak readings or Hanja glosses in parentheses after a word": "عدم نطق القراءات أو شروح الهانجا بين الأقواس بعد الكلمة",
   "Visible as {{name}}": "مرئي باسم {{name}}",
-  "Local Network": "الشبكة المحلية"
+  "Local Network": "الشبكة المحلية",
+  "Italic Text": "نص مائل",
+  "Mark italic text like dialogue": "تمييز النص المائل مثل الحوار"
 }

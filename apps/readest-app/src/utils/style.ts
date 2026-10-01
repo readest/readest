@@ -281,6 +281,20 @@ const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: Theme
   }
   .readest-dialogue-block {${bgDecl(12)}${text}
     border-radius: 0.3em;
+  }${
+    viewSettings.dialogueHighlightItalic
+      ? `
+  /* Italic runs marked like quoted dialogue; nested marks drop their own
+     tint so overlapping translucent backgrounds don't stack. */
+  :is(i, em) {${bgDecl(22)}${text}
+    border-radius: 0.2em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  :is(i, em) :is(i, em, .readest-dialogue), .readest-dialogue :is(i, em) {
+    background-color: transparent !important;
+  }`
+      : ''
   }
 `;
 };

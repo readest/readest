@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "Mening runt markeringen",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Läs inte upp läsningar eller hanja-glosor inom parentes efter ett ord",
   "Visible as {{name}}": "Synlig som {{name}}",
-  "Local Network": "Lokalt nätverk"
+  "Local Network": "Lokalt nätverk",
+  "Italic Text": "Kursiv text",
+  "Mark italic text like dialogue": "Markera kursiv text som dialog"
 }

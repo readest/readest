@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "Πρόταση γύρω από την επισήμανση",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Να μην εκφωνούνται αναγνώσεις ή επεξηγήσεις hanja σε παρένθεση μετά από μια λέξη",
   "Visible as {{name}}": "Ορατό ως {{name}}",
-  "Local Network": "Τοπικό δίκτυο"
+  "Local Network": "Τοπικό δίκτυο",
+  "Italic Text": "Πλάγιο κείμενο",
+  "Mark italic text like dialogue": "Επισήμανση πλάγιου κειμένου όπως ο διάλογος"
 }

@@ -2531,5 +2531,7 @@
   "Sentence around the highlight": "Phrase autour du surlignage",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Ne pas lire les lectures ni les gloses en hanja entre parenthèses après un mot",
   "Visible as {{name}}": "Visible en tant que {{name}}",
-  "Local Network": "Réseau local"
+  "Local Network": "Réseau local",
+  "Italic Text": "Texte en italique",
+  "Mark italic text like dialogue": "Surligner le texte en italique comme les dialogues"
 }

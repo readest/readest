@@ -10,11 +10,13 @@ interface DialogueHighlightSettingsProps {
   backgroundColor: string;
   customTextColor: boolean;
   textColor: string;
+  italic: boolean;
   onToggle: (enabled: boolean) => void;
   onCustomBackgroundToggle: (enabled: boolean) => void;
   onBackgroundColorChange: (color: string) => void;
   onCustomTextColorToggle: (enabled: boolean) => void;
   onTextColorChange: (color: string) => void;
+  onItalicToggle: (enabled: boolean) => void;
   'data-setting-id'?: string;
 }
 
@@ -24,11 +26,13 @@ const DialogueHighlightSettings: React.FC<DialogueHighlightSettingsProps> = ({
   backgroundColor,
   customTextColor,
   textColor,
+  italic,
   onToggle,
   onCustomBackgroundToggle,
   onBackgroundColorChange,
   onCustomTextColorToggle,
   onTextColorChange,
+  onItalicToggle,
   'data-setting-id': dataSettingId,
 }) => {
   const _ = useTranslation();
@@ -119,6 +123,12 @@ const DialogueHighlightSettings: React.FC<DialogueHighlightSettingsProps> = ({
           />
         </SettingsRow>
       )}
+      <SettingsSwitchRow
+        label={_('Italic Text')}
+        description={_('Mark italic text like dialogue')}
+        checked={italic}
+        onChange={() => onItalicToggle(!italic)}
+      />
     </BoxedList>
   );
 };

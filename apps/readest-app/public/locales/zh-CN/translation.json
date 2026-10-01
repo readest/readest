@@ -2411,5 +2411,7 @@
   "Sentence around the highlight": "高亮所在的句子",
   "Do not speak readings or Hanja glosses in parentheses after a word": "不朗读词语后括号内的读音或汉字注释",
   "Visible as {{name}}": "显示为 {{name}}",
-  "Local Network": "局域网"
+  "Local Network": "局域网",
+  "Italic Text": "斜体文本",
+  "Mark italic text like dialogue": "像对话一样高亮斜体文本"
 }

@@ -2591,5 +2591,7 @@
   "Sentence around the highlight": "Zdanie wokół zaznaczenia",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Nie odczytuj odczytań ani glos w hanja w nawiasach po słowie",
   "Visible as {{name}}": "Widoczne jako {{name}}",
-  "Local Network": "Sieć lokalna"
+  "Local Network": "Sieć lokalna",
+  "Italic Text": "Tekst kursywą",
+  "Mark italic text like dialogue": "Podświetlaj tekst kursywą jak dialogi"
 }
