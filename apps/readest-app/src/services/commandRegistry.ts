@@ -531,6 +531,12 @@ const controlPanelItems = [
     section: 'Device',
   },
   {
+    id: 'settings.control.autoFullRefresh',
+    labelKey: _('Auto Full Refresh'),
+    keywords: ['eink', 'e-ink', 'ghosting', 'full', 'refresh', 'interval', 'pages'],
+    section: 'Device',
+  },
+  {
     id: 'settings.control.hideBookshelfPageButtons',
     labelKey: _('Hide Bookshelf Buttons'),
     keywords: ['eink', 'e-ink', 'library', 'bookshelf', 'previous', 'next', 'page', 'buttons'],

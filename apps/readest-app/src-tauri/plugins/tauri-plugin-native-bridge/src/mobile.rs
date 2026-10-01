@@ -427,6 +427,12 @@ impl<R: Runtime> NativeBridge<R> {
             .run_mobile_plugin("refresh_eink_screen", ())
             .map_err(Into::into)
     }
+
+    pub fn is_eink_refresh_supported(&self) -> crate::Result<EinkRefreshSupportedResponse> {
+        self.0
+            .run_mobile_plugin("is_eink_refresh_supported", ())
+            .map_err(Into::into)
+    }
 }
 
 impl<R: Runtime> NativeBridge<R> {

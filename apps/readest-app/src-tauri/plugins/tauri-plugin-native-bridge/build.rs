@@ -50,6 +50,7 @@ const COMMANDS: &[&str] = &[
     "get_secure_item",
     "clear_secure_item",
     "refresh_eink_screen",
+    "is_eink_refresh_supported",
     "update_bookshelf_widget",
     "get_bookshelf_widget_instances",
     "set_bookshelf_widget_catalog",

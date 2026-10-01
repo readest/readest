@@ -490,6 +490,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   pageTurnStyle: 'push',
   isEink: false,
   isColorEink: false,
+  einkAutoRefreshInterval: 0,
 
   paragraphMode: DEFAULT_PARAGRAPH_MODE_CONFIG,
 

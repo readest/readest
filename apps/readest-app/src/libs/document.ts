@@ -1,6 +1,8 @@
 import { BookFormat } from '@/types/book';
 import { Collection, Contributor, Identifier, LanguageMap } from '@/utils/book';
 import { configureZip } from '@/utils/zip';
+import { getOSPlatform } from '@/utils/misc';
+import { installPDFImageShrink } from '@/libs/pdfImageShrink';
 import { stripDuplicateMarker } from '@/utils/path';
 import type { WidePagesOptions } from '@/utils/spread';
 import * as epubcfi from 'foliate-js/epubcfi.js';
@@ -207,21 +209,32 @@ type PDFJSGlobal = {
   GlobalWorkerOptions: { workerSrc: string };
 };
 
-let compatPDFWorkerURL: string | undefined;
+let pdfWorkerURL: string | undefined;
+
+// Matches the canvasMaxAreaInBytes cap foliate-js passes on mobile WebViews.
+const PDF_MAX_IMAGE_PIXELS = 4 * 2048 * 1536;
+
+// iPadOS reports a desktop ("Macintosh") user agent; touch points give it away.
+const isMobileWebView = () =>
+  ['ios', 'android'].includes(getOSPlatform()) ||
+  (navigator.userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1);
 
 async function configurePDFWorker() {
-  if (typeof ArrayBuffer.prototype.transferToFixedLength === 'function') return;
-
   // PDF.js 6 uses transferToFixedLength inside its worker, but WebKit 16 does
   // not provide it. PDF.js swallows the resulting worker error and renders an
   // empty operator list, leaving both the cover and every page blank (#6015).
+  const needsTransferPolyfill = typeof ArrayBuffer.prototype.transferToFixedLength !== 'function';
+  // Huge scanned pages would otherwise be decoded to full-size bitmaps that
+  // get the WebKit GPU process killed on iOS (#6521).
+  const shrinkImages = isMobileWebView();
+  if (!needsTransferPolyfill && !shrinkImages) return;
+
   await import('@pdfjs/pdf.min.mjs');
   const { pdfjsLib } = globalThis as typeof globalThis & { pdfjsLib: PDFJSGlobal };
   const workerURL = new URL('/vendor/pdfjs/pdf.worker.min.mjs', location.href).href;
-  compatPDFWorkerURL ??= URL.createObjectURL(
-    new Blob(
-      [
-        `if (!ArrayBuffer.prototype.transferToFixedLength) {
+  const prelude = [
+    needsTransferPolyfill
+      ? `if (!ArrayBuffer.prototype.transferToFixedLength) {
   Object.defineProperty(ArrayBuffer.prototype, 'transferToFixedLength', {
     configurable: true,
     writable: true,
@@ -233,14 +246,21 @@ async function configurePDFWorker() {
       return result;
     },
   });
-}
+}`
+      : '',
+    shrinkImages ? `(${installPDFImageShrink.toString()})(${PDF_MAX_IMAGE_PIXELS});` : '',
+  ];
+  pdfWorkerURL ??= URL.createObjectURL(
+    new Blob(
+      [
+        `${prelude.join('\n')}
 const { WorkerMessageHandler } = await import(${JSON.stringify(workerURL)});
 export { WorkerMessageHandler };`,
       ],
       { type: 'text/javascript' },
     ),
   );
-  pdfjsLib.GlobalWorkerOptions.workerSrc = compatPDFWorkerURL;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerURL;
 }
 
 // Read the ZIP central directory, resolving entry metadata. Kept standalone
