@@ -1941,7 +1941,6 @@
   "Back to Read Aloud": "読み上げに戻る",
   "Vertical Scrolling": "縦スクロール",
   "Horizontal Scrolling": "横スクロール",
-  "Book not found in the BookOrbit library": "BookOrbitライブラリに本が見つかりません",
   "Connect to your BookOrbit server.": "BookOrbitサーバーに接続します。",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "読書進捗を同期",
@@ -2442,5 +2441,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pageboundに接続済み。最終同期 {{time}}。",
   "Sign in with your Pagebound email and password to sync reading progress.": "読書の進捗を同期するには、Pagebound のメールアドレスとパスワードでサインインしてください。",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple または Google でサインインしている場合は、先に Pagebound でパスワードを設定してください。",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit に本が見つかりません。同期するには、BookOrbit の「Unmatched KOReader Books」でこの本をリンクしてください。"
 }

@@ -1987,7 +1987,6 @@
   "Back to Read Aloud": "Vissza a felolvasáshoz",
   "Vertical Scrolling": "Függőleges görgetés",
   "Horizontal Scrolling": "Vízszintes görgetés",
-  "Book not found in the BookOrbit library": "A könyv nem található a BookOrbit könyvtárban",
   "Connect to your BookOrbit server.": "Csatlakozzon BookOrbit szerveréhez.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "Olvasási előrehaladás szinkronizálása",
@@ -2506,5 +2505,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "Csatlakozva a Pagebound-hez. Utoljára szinkronizálva: {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Jelentkezz be a Pagebound e-mail-címeddel és jelszavaddal az olvasási előrehaladás szinkronizálásához.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Ha Apple- vagy Google-fiókkal jelentkezel be, előbb állíts be jelszót a Pageboundban.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "A könyv nem található a BookOrbitban. A szinkronizáláshoz kapcsold össze a BookOrbit „Unmatched KOReader Books” részében."
 }

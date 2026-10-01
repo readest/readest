@@ -2033,7 +2033,6 @@
   "Back to Read Aloud": "Retour à la lecture à voix haute",
   "Vertical Scrolling": "Défilement vertical",
   "Horizontal Scrolling": "Défilement horizontal",
-  "Book not found in the BookOrbit library": "Livre introuvable dans la bibliothèque BookOrbit",
   "Connect to your BookOrbit server.": "Connectez-vous à votre serveur BookOrbit.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "Synchroniser la progression de lecture",
@@ -2570,5 +2569,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "Connecté à Pagebound. Dernière synchronisation {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Connectez-vous avec l’e-mail et le mot de passe de votre compte Pagebound pour synchroniser la progression de lecture.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Si vous vous connectez avec Apple ou Google, définissez d’abord un mot de passe dans Pagebound.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Livre introuvable dans BookOrbit. Associez-le dans « Unmatched KOReader Books » sur BookOrbit pour le synchroniser."
 }

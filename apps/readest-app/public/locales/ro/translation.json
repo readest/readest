@@ -2033,7 +2033,6 @@
   "Back to Read Aloud": "Înapoi la citirea cu voce tare",
   "Vertical Scrolling": "Derulare verticală",
   "Horizontal Scrolling": "Derulare orizontală",
-  "Book not found in the BookOrbit library": "Cartea nu a fost găsită în biblioteca BookOrbit",
   "Connect to your BookOrbit server.": "Conectați-vă la serverul BookOrbit.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "Sincronizează progresul de lectură",
@@ -2570,5 +2569,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "Conectat la Pagebound. Ultima sincronizare {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Conectează-te cu e-mailul și parola Pagebound pentru a sincroniza progresul lecturii.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Dacă te conectezi cu Apple sau Google, setează mai întâi o parolă în Pagebound.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Cartea nu a fost găsită în BookOrbit. Asociaz-o în „Unmatched KOReader Books” din BookOrbit pentru a o sincroniza."
 }

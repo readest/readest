@@ -1987,7 +1987,6 @@
   "Back to Read Aloud": "Ovoz chiqarib oʻqishga qaytish",
   "Vertical Scrolling": "Vertikal aylantirish",
   "Horizontal Scrolling": "Gorizontal aylantirish",
-  "Book not found in the BookOrbit library": "Kitob BookOrbit kutubxonasida topilmadi",
   "Connect to your BookOrbit server.": "BookOrbit serveringizga ulaning.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "O‘qish jarayonini sinxronlash",
@@ -2506,5 +2505,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound'ga ulangan. Oxirgi sinxronlash {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "O‘qish jarayonini sinxronlash uchun Pagebound elektron pochtangiz va parolingiz bilan kiring.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Agar Apple yoki Google orqali kirsangiz, avval Pagebound’da parol o‘rnating.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Kitob BookOrbit'da topilmadi. Sinxronlash uchun uni BookOrbit'dagi \"Unmatched KOReader Books\" bo'limida bog'lang."
 }

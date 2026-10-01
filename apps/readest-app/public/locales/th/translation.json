@@ -1941,7 +1941,6 @@
   "Back to Read Aloud": "กลับไปที่การอ่านออกเสียง",
   "Vertical Scrolling": "เลื่อนแนวตั้ง",
   "Horizontal Scrolling": "เลื่อนแนวนอน",
-  "Book not found in the BookOrbit library": "ไม่พบหนังสือในคลัง BookOrbit",
   "Connect to your BookOrbit server.": "เชื่อมต่อกับเซิร์ฟเวอร์ BookOrbit ของคุณ",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "ซิงค์ความคืบหน้าการอ่าน",
@@ -2442,5 +2441,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "เชื่อมต่อกับ Pagebound แล้ว ซิงค์ล่าสุด {{time}}",
   "Sign in with your Pagebound email and password to sync reading progress.": "ลงชื่อเข้าใช้ด้วยอีเมลและรหัสผ่าน Pagebound เพื่อซิงค์ความคืบหน้าการอ่าน",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "หากคุณลงชื่อเข้าใช้ด้วย Apple หรือ Google ให้ตั้งรหัสผ่านใน Pagebound ก่อน",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "ไม่พบหนังสือใน BookOrbit ลิงก์หนังสือในส่วน \"Unmatched KOReader Books\" ของ BookOrbit เพื่อซิงค์"
 }

@@ -1987,7 +1987,6 @@
   "Back to Read Aloud": "Sesli Okumaya Dön",
   "Vertical Scrolling": "Dikey Kaydırma",
   "Horizontal Scrolling": "Yatay Kaydırma",
-  "Book not found in the BookOrbit library": "Kitap BookOrbit kitaplığında bulunamadı",
   "Connect to your BookOrbit server.": "BookOrbit sunucunuza bağlanın.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "Okuma İlerlemesini Eşitle",
@@ -2506,5 +2505,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound'a bağlı. Son senkronizasyon {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Okuma ilerlemesini eşitlemek için Pagebound e-posta adresiniz ve parolanızla oturum açın.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple veya Google ile oturum açıyorsanız önce Pagebound'da bir parola belirleyin.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Kitap BookOrbit'te bulunamadı. Eşitlemek için BookOrbit'te \"Unmatched KOReader Books\" altında bağlayın."
 }

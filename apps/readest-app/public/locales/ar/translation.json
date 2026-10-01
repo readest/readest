@@ -2171,7 +2171,6 @@
   "Back to Read Aloud": "العودة إلى القراءة بصوت عالٍ",
   "Vertical Scrolling": "التمرير العمودي",
   "Horizontal Scrolling": "التمرير الأفقي",
-  "Book not found in the BookOrbit library": "لم يتم العثور على الكتاب في مكتبة BookOrbit",
   "Connect to your BookOrbit server.": "اتصل بخادم BookOrbit الخاص بك.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "مزامنة تقدم القراءة",
@@ -2762,5 +2761,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "متصل بـ Pagebound. آخر مزامنة {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "سجّل الدخول باستخدام البريد الإلكتروني وكلمة المرور في Pagebound لمزامنة تقدّم القراءة.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "إذا كنت تسجّل الدخول عبر Apple أو Google، فعيّن كلمة مرور في Pagebound أولًا.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "لم يتم العثور على الكتاب في BookOrbit. اربطه ضمن \"Unmatched KOReader Books\" في BookOrbit لمزامنته."
 }
