@@ -117,17 +117,17 @@ object EinkRefreshController {
         try {
             if (onyxRefreshScreen != null) return true
         } catch (t: Throwable) {
-            inconclusive = t
+            inconclusive = inconclusive ?: t
         }
         try {
             if (ntxPostInvalidateDelayed != null) return true
         } catch (t: Throwable) {
-            inconclusive = t
+            inconclusive = inconclusive ?: t
         }
         try {
             if (rockchipRequestEpdMode != null) return true
         } catch (t: Throwable) {
-            inconclusive = t
+            inconclusive = inconclusive ?: t
         }
         inconclusive?.let { throw it }
         return false
