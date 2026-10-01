@@ -10,7 +10,7 @@ export interface DBBook {
   group_name?: string;
   group_updated_at?: string | null;
   tags?: string[];
-  progress?: [number, number];
+  progress?: [number, number] | null;
   reading_status?: string;
   reading_status_updated_at?: string | null;
   cover_hash?: string | null;
