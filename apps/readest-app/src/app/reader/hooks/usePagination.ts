@@ -133,7 +133,11 @@ const resetEinkRefreshCounter = (view: FoliateView | null) => {
   if (view) einkPageTurnsSinceRefresh.set(view, 0);
 };
 
-const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
+const noteEinkPageTurn = (
+  view: FoliateView,
+  viewSettings: ViewSettings,
+  navigation: Promise<void>,
+) => {
   const interval = viewSettings.einkAutoRefreshInterval;
   if (!viewSettings.isEink || !interval || interval <= 0) return;
   // Skip only when the startup capability probe authoritatively settled false
@@ -160,17 +164,25 @@ const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
   const turns = (einkPageTurnsSinceRefresh.get(view) ?? 0) + 1;
   if (turns >= interval) {
     resetEinkRefreshCounter(view);
+    // Fire only after the turn settles: the native hook deep-refreshes whatever
+    // is on the panel right now, so refreshing before view.next/prev commits
+    // would flash the outgoing page while the incoming one lands as an ordinary
+    // update and keeps its ghosting. Both fulfill and reject re-surface the
+    // current frame — a turn that cannot move (atStart/atEnd) should still clear
+    // on schedule rather than silently skip a cycle.
     // No platform gate here (unlike the manual binding): the interval is set
     // only on Android but a synced per-book config can carry it elsewhere, and
     // off-Android the bridge rejects — swallowed here as an intentional no-op.
     // A resolved { success: false } is only reachable on a supported device whose
     // vendor hook failed at refresh time, so it's a real 'advertised but not
     // refreshing' case worth a field log; a rejection (off-Android) stays silent.
-    refreshEinkScreen()
-      .then((result) => {
-        if (!result.success) console.debug('auto e-ink full refresh no-op:', result.error);
-      })
-      .catch(() => {});
+    const refresh = () =>
+      refreshEinkScreen()
+        .then((result) => {
+          if (!result.success) console.debug('auto e-ink full refresh no-op:', result.error);
+        })
+        .catch(() => {});
+    navigation.then(refresh, refresh);
   } else {
     einkPageTurnsSinceRefresh.set(view, turns);
   }
@@ -219,8 +231,9 @@ export const viewPagination = (
         // non-scrolled panning path below, which deliberately does not count).
         // So every scrolled turn reaching here is one page — counting all of
         // them keeps "Every N pages" at N viewports.
-        noteEinkPageTurn(view, viewSettings);
-        return forward ? view.next(snapped) : view.prev(snapped);
+        const navigation = forward ? view.next(snapped) : view.prev(snapped);
+        noteEinkPageTurn(view, viewSettings, navigation);
+        return navigation;
       }
     }
   } else if (mode === 'pan' && isPanningView(view, viewSettings)) {
@@ -229,8 +242,9 @@ export const viewPagination = (
     } else if (hasVerticalPanning(view, viewSettings) && (side === 'up' || side === 'down')) {
       return view.pan(0, side === 'up' ? -panDistance : panDistance);
     } else {
-      noteEinkPageTurn(view, viewSettings);
-      return side === 'left' || side === 'up' ? view.prev() : view.next();
+      const navigation = side === 'left' || side === 'up' ? view.prev() : view.next();
+      noteEinkPageTurn(view, viewSettings, navigation);
+      return navigation;
     }
   } else {
     switch (mode) {
@@ -242,9 +256,11 @@ export const viewPagination = (
         }
       case 'pan':
       case 'page':
-      default:
-        noteEinkPageTurn(view, viewSettings);
-        return side === 'left' || side === 'up' ? view.prev() : view.next();
+      default: {
+        const navigation = side === 'left' || side === 'up' ? view.prev() : view.next();
+        noteEinkPageTurn(view, viewSettings, navigation);
+        return navigation;
+      }
     }
   }
 };
