@@ -1,0 +1,40 @@
+{
+  "title": "Readest",
+  "description": "Download books from your Readest library and sync reading time to Readest.",
+  "token": { "file": "/.crosspoint/.readest-token.json", "path": "access_token" },
+  "config": { "file": "/.crosspoint/.readest.json" },
+  "auth": {
+    "type": "password",
+    "request": {
+      "url": "{cfg.auth}/token?grant_type=password",
+      "headers": { "apikey": "{cfg.apikey}", "Content-Type": "application/json" },
+      "body": "{\"email\":\"{cfg.email}\",\"password\":\"{cfg.password}\"}"
+    },
+    "token_path": "access_token"
+  },
+  "browse": {
+    "url": "{cfg.api}/library/books?page={page}&per_page=8",
+    "headers": { "Authorization": "Bearer {token}" },
+    "items": "items",
+    "fields": { "title": "title", "author": "author", "id": "id", "url": "url" },
+    "page_size": 8,
+    "search": { "url": "{cfg.api}/library/books?q={query}&page={page}&per_page=8" }
+  },
+  "download": {
+    "url": "{url}",
+    "headers": { "Authorization": "Bearer {token}" },
+    "url_path": "downloadUrl",
+    "dest_dir": "/Readest",
+    "filename": "{title}.epub"
+  },
+  "events": {
+    "reader.session": {
+      "request": {
+        "url": "{cfg.api}/sync",
+        "headers": { "Authorization": "Bearer {token}", "Content-Type": "application/json" },
+        "body": "{\"statPages\":[{\"book_hash\":\"{event.document}\",\"page\":{event.end_progress_bp},\"start_time\":{event.start_time},\"duration\":{event.duration_seconds},\"total_pages\":{event.progress_scale}}]}"
+      },
+      "connect": true
+    }
+  }
+}
