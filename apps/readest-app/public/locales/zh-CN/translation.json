@@ -2424,5 +2424,18 @@
   "{{count}} pages left_other": "剩余 {{count}} 页",
   "Resets in {{time}}": "{{time}}后重置",
   "{{time}} and {{number}} pages left in chapter": "本章剩余 {{time}} 和 {{number}} 页",
-  "Header Size": "标题大小"
+  "Header Size": "标题大小",
+  "Pagebound link removed. The next sync will match the book again.": "已取消 Pagebound 关联，下次同步时将重新匹配图书。",
+  "Link Pagebound Book": "关联 Pagebound 图书",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "选择与《{{book}}》对应的 Pagebound 图书，阅读进度将同步到该图书。",
+  "Search Pagebound": "搜索 Pagebound",
+  "Pagebound Sync": "Pagebound 同步",
+  "Reading progress synced to Pagebound": "阅读进度已同步到 Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Pagebound 进度同步失败：{{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "无法登录 Pagebound：{{error}}",
+  "Disconnected from Pagebound": "已断开与 Pagebound 的连接",
+  "Connected to Pagebound. Last synced {{time}}.": "已连接到 Pagebound。上次同步 {{time}}。",
+  "Sign in with your Pagebound email and password to sync reading progress.": "使用 Pagebound 邮箱和密码登录以同步阅读进度。",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "如果您使用 Apple 或 Google 登录，请先在 Pagebound 中设置密码。",
+  "Pagebound": "Pagebound"
 }

@@ -634,6 +634,13 @@ export interface HardcoverBookLink {
   title: string;
 }
 
+/** The Pagebound book this file syncs to; device-local like `hardcover`. */
+export interface PageboundBookLink {
+  bookId: number;
+  uuid: string;
+  title: string;
+}
+
 export interface BookConfig {
   schemaVersion?: number;
   bookHash?: string;
@@ -654,6 +661,7 @@ export interface BookConfig {
    */
   audiobook?: PairedAudiobook;
   hardcover?: HardcoverBookLink;
+  pagebound?: PageboundBookLink;
   /**
    * The pages of a comic laid out as spreads of their own (wide images), by
    * page path: a device-local cache of measuring them, so a later open skips

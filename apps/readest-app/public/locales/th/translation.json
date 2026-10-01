@@ -2424,5 +2424,18 @@
   "{{count}} pages left_other": "เหลือ {{count}} หน้า",
   "Resets in {{time}}": "รีเซ็ตใน {{time}}",
   "{{time}} and {{number}} pages left in chapter": "เหลือ {{time}} และ {{number}} หน้า ในบทนี้",
-  "Header Size": "ขนาดส่วนหัว"
+  "Header Size": "ขนาดส่วนหัว",
+  "Pagebound link removed. The next sync will match the book again.": "ลบการเชื่อมโยง Pagebound แล้ว การซิงค์ครั้งถัดไปจะจับคู่หนังสืออีกครั้ง",
+  "Link Pagebound Book": "เชื่อมโยงหนังสือ Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "เลือกหนังสือใน Pagebound ที่ตรงกับ “{{book}}” ความคืบหน้าการอ่านจะซิงค์ไปยังหนังสือนั้น",
+  "Search Pagebound": "ค้นหาใน Pagebound",
+  "Pagebound Sync": "การซิงค์ Pagebound",
+  "Reading progress synced to Pagebound": "ความคืบหน้าการอ่านซิงค์กับ Pagebound แล้ว",
+  "Pagebound progress sync failed: {{error}}": "การซิงค์ความคืบหน้า Pagebound ล้มเหลว: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "ไม่สามารถลงชื่อเข้าใช้ Pagebound: {{error}}",
+  "Disconnected from Pagebound": "ตัดการเชื่อมต่อจาก Pagebound แล้ว",
+  "Connected to Pagebound. Last synced {{time}}.": "เชื่อมต่อกับ Pagebound แล้ว ซิงค์ล่าสุด {{time}}",
+  "Sign in with your Pagebound email and password to sync reading progress.": "ลงชื่อเข้าใช้ด้วยอีเมลและรหัสผ่าน Pagebound เพื่อซิงค์ความคืบหน้าการอ่าน",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "หากคุณลงชื่อเข้าใช้ด้วย Apple หรือ Google ให้ตั้งรหัสผ่านใน Pagebound ก่อน",
+  "Pagebound": "Pagebound"
 }

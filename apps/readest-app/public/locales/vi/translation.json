@@ -2424,5 +2424,18 @@
   "{{count}} pages left_other": "Còn {{count}} trang",
   "Resets in {{time}}": "Đặt lại sau {{time}}",
   "{{time}} and {{number}} pages left in chapter": "Còn {{time}} và {{number}} trang trong chương",
-  "Header Size": "Cỡ tiêu đề"
+  "Header Size": "Cỡ tiêu đề",
+  "Pagebound link removed. The next sync will match the book again.": "Đã gỡ liên kết Pagebound. Lần đồng bộ tiếp theo sẽ tự khớp lại sách.",
+  "Link Pagebound Book": "Liên Kết Sách Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Chọn sách Pagebound khớp với “{{book}}”. Tiến độ đọc sẽ được đồng bộ với sách đó.",
+  "Search Pagebound": "Tìm trên Pagebound",
+  "Pagebound Sync": "Đồng bộ Pagebound",
+  "Reading progress synced to Pagebound": "Tiến trình đọc đã đồng bộ với Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Đồng bộ tiến trình Pagebound thất bại: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Không thể đăng nhập Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Đã ngắt kết nối khỏi Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Đã kết nối với Pagebound. Đồng bộ lần cuối {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Đăng nhập bằng email và mật khẩu Pagebound để đồng bộ tiến độ đọc.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Nếu bạn đăng nhập bằng Apple hoặc Google, hãy đặt mật khẩu trong Pagebound trước.",
+  "Pagebound": "Pagebound"
 }

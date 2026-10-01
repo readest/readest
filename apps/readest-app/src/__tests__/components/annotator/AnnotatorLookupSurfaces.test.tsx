@@ -164,6 +164,7 @@ vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
+vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
   useFoliateEvents: (_view: unknown, handlers: Record<string, (event: Event) => void>) => {

@@ -2488,5 +2488,18 @@
   "{{time}} and {{count}} pages left_one": "{{time}} ve {{count}} sayfa kaldı",
   "{{time}} and {{count}} pages left in book_one": "Kitapta {{time}} ve {{count}} sayfa kaldı",
   "Resets in {{time}}": "{{time}} içinde sıfırlanır",
-  "{{time}} and {{number}} pages left in chapter": "Bölümde {{time}} ve {{number}} sayfa kaldı"
+  "{{time}} and {{number}} pages left in chapter": "Bölümde {{time}} ve {{number}} sayfa kaldı",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound bağlantısı kaldırıldı. Bir sonraki senkronizasyon kitabı yeniden eşleştirecek.",
+  "Link Pagebound Book": "Pagebound Kitabını Bağla",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}” ile eşleşen Pagebound kitabını seçin. Okuma ilerlemesi bu kitapla eşitlenecek.",
+  "Search Pagebound": "Pagebound'da ara",
+  "Pagebound Sync": "Pagebound Senkronizasyonu",
+  "Reading progress synced to Pagebound": "Okuma ilerlemesi Pagebound ile senkronize edildi",
+  "Pagebound progress sync failed: {{error}}": "Pagebound ilerleme senkronizasyonu başarısız: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound'da oturum açılamadı: {{error}}",
+  "Disconnected from Pagebound": "Pagebound bağlantısı kesildi",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound'a bağlı. Son senkronizasyon {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Okuma ilerlemesini eşitlemek için Pagebound e-posta adresiniz ve parolanızla oturum açın.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple veya Google ile oturum açıyorsanız önce Pagebound'da bir parola belirleyin.",
+  "Pagebound": "Pagebound"
 }

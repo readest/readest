@@ -2488,5 +2488,18 @@
   "{{time}} and {{count}} pages left_one": "{{time}} och {{count}} sida kvar",
   "{{time}} and {{count}} pages left in book_one": "{{time}} och {{count}} sida kvar i boken",
   "Resets in {{time}}": "Återställs om {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "{{time}} och {{number}} sidor kvar i kapitlet"
+  "{{time}} and {{number}} pages left in chapter": "{{time}} och {{number}} sidor kvar i kapitlet",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound-länken har tagits bort. Nästa synkronisering matchar boken igen.",
+  "Link Pagebound Book": "Länka Pagebound-bok",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Välj den Pagebound-bok som motsvarar ”{{book}}”. Läsförloppet synkroniseras till den.",
+  "Search Pagebound": "Sök på Pagebound",
+  "Pagebound Sync": "Pagebound-synkronisering",
+  "Reading progress synced to Pagebound": "Läsframsteg synkroniserat med Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Synkronisering av Pagebound-framsteg misslyckades: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Det gick inte att logga in på Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Frånkopplad från Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Ansluten till Pagebound. Senast synkroniserad {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Logga in med din e-postadress och ditt lösenord för Pagebound för att synkronisera läsförloppet.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Om du loggar in med Apple eller Google, ange först ett lösenord i Pagebound.",
+  "Pagebound": "Pagebound"
 }

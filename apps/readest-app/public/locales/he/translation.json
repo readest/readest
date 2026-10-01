@@ -2552,5 +2552,18 @@
   "{{time}} and {{count}} pages left_one": "נותרו {{time}} ודף אחד",
   "{{time}} and {{count}} pages left in book_one": "נותרו {{time}} ודף אחד בספר",
   "Resets in {{time}}": "מתאפס בעוד {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "נותרו {{time}} ו-{{number}} דפים בפרק"
+  "{{time}} and {{number}} pages left in chapter": "נותרו {{time}} ו-{{number}} דפים בפרק",
+  "Pagebound link removed. The next sync will match the book again.": "הקישור ל-Pagebound הוסר. הסנכרון הבא יתאים את הספר מחדש.",
+  "Link Pagebound Book": "קישור ספר ב-Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "בחרו את הספר ב-Pagebound שתואם ל“{{book}}”. התקדמות הקריאה תסונכרן אליו.",
+  "Search Pagebound": "חיפוש ב-Pagebound",
+  "Pagebound Sync": "סנכרון Pagebound",
+  "Reading progress synced to Pagebound": "התקדמות הקריאה סונכרנה ל-Pagebound",
+  "Pagebound progress sync failed: {{error}}": "סנכרון התקדמות Pagebound נכשל: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "לא ניתן להתחבר ל-Pagebound: {{error}}",
+  "Disconnected from Pagebound": "מנותק מ-Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "מחובר ל-Pagebound. סנכרון אחרון {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "התחברו עם כתובת הדוא״ל והסיסמה של Pagebound כדי לסנכרן את התקדמות הקריאה.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "אם אתם מתחברים עם Apple או Google, הגדירו תחילה סיסמה ב-Pagebound.",
+  "Pagebound": "Pagebound"
 }

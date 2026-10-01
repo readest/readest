@@ -2616,5 +2616,18 @@
   "{{time}} and {{count}} pages left_one": "Залишилось {{time}} і {{count}} сторінка",
   "{{time}} and {{count}} pages left in book_one": "Залишилось {{time}} і {{count}} сторінка у книзі",
   "Resets in {{time}}": "Скидання через {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "Залишилось {{time}} і {{number}} сторінки у розділі"
+  "{{time}} and {{number}} pages left in chapter": "Залишилось {{time}} і {{number}} сторінки у розділі",
+  "Pagebound link removed. The next sync will match the book again.": "Зв'язок із Pagebound видалено. Наступна синхронізація знову зіставить книгу.",
+  "Link Pagebound Book": "Пов'язати книгу Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Виберіть книгу Pagebound, що відповідає «{{book}}». Прогрес читання синхронізуватиметься з нею.",
+  "Search Pagebound": "Пошук у Pagebound",
+  "Pagebound Sync": "Синхронізація Pagebound",
+  "Reading progress synced to Pagebound": "Прогрес читання синхронізовано з Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Помилка синхронізації прогресу Pagebound: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Не вдалося увійти в Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Від'єднано від Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Підключено до Pagebound. Остання синхронізація {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Увійдіть за допомогою електронної пошти та пароля Pagebound, щоб синхронізувати прогрес читання.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Якщо ви входите через Apple або Google, спершу встановіть пароль у Pagebound.",
+  "Pagebound": "Pagebound"
 }

@@ -136,6 +136,16 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     setIsDropdownOpen?.(false);
   };
   const hardcoverLink = sideBarBookKey ? getConfig(sideBarBookKey)?.hardcover : undefined;
+  const handlePushPageboundProgress = () => {
+    eventDispatcher.dispatch('pagebound-push-progress', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const handleLinkPageboundBook = () => {
+    eventDispatcher.dispatch('pagebound-link-book', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const pageboundLink = sideBarBookKey ? getConfig(sideBarBookKey)?.pagebound : undefined;
+  const pageboundEnabled = !!(settings.pagebound?.enabled && settings.pagebound.refreshToken);
   const bookOrbitProgressSync = settings.bookorbit.enabled && settings.bookorbit.syncProgress;
   // Routed through Annotator (per-book, long-lived) so that the
   // confirmation dialog isn't unmounted with the dropdown menu.
@@ -196,6 +206,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         bookOrbitProgressSync ||
         settings.readwise.enabled ||
         settings.hardcover.enabled ||
+        pageboundEnabled ||
         (settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId)) && (
         <hr aria-hidden='true' className='border-base-200 my-1' />
       )}
@@ -239,6 +250,19 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
               description={hardcoverLink?.title}
               noIcon
               onClick={handleLinkHardcoverBook}
+            />
+          </ul>
+        </MenuItem>
+      )}
+      {pageboundEnabled && (
+        <MenuItem label={_('Pagebound Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Progress')} noIcon onClick={handlePushPageboundProgress} />
+            <MenuItem
+              label={_('Link Book')}
+              description={pageboundLink?.title}
+              noIcon
+              onClick={handleLinkPageboundBook}
             />
           </ul>
         </MenuItem>

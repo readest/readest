@@ -2424,5 +2424,18 @@
   "{{count}} pages left_other": "{{count}} halaman tersisa",
   "Resets in {{time}}": "Direset dalam {{time}}",
   "{{time}} and {{number}} pages left in chapter": "{{time}} dan {{number}} halaman tersisa di bab ini",
-  "Header Size": "Ukuran header"
+  "Header Size": "Ukuran header",
+  "Pagebound link removed. The next sync will match the book again.": "Tautan Pagebound dihapus. Sinkronisasi berikutnya akan mencocokkan buku lagi.",
+  "Link Pagebound Book": "Tautkan Buku Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Pilih buku Pagebound yang cocok dengan “{{book}}”. Kemajuan membaca akan disinkronkan ke buku tersebut.",
+  "Search Pagebound": "Cari di Pagebound",
+  "Pagebound Sync": "Sinkronisasi Pagebound",
+  "Reading progress synced to Pagebound": "Progres membaca disinkronkan ke Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Sinkronisasi progres Pagebound gagal: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Tidak dapat masuk ke Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Terputus dari Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Terhubung ke Pagebound. Sinkronisasi terakhir {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Masuk dengan email dan kata sandi Pagebound Anda untuk menyinkronkan kemajuan membaca.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Jika Anda masuk dengan Apple atau Google, atur kata sandi di Pagebound terlebih dahulu.",
+  "Pagebound": "Pagebound"
 }

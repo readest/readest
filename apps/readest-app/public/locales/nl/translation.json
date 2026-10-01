@@ -2488,5 +2488,18 @@
   "{{time}} and {{count}} pages left_one": "Nog {{time}} en {{count}} pagina",
   "{{time}} and {{count}} pages left in book_one": "Nog {{time}} en {{count}} pagina in boek",
   "Resets in {{time}}": "Reset over {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "Nog {{time}} en {{number}} pagina’s in hoofdstuk"
+  "{{time}} and {{number}} pages left in chapter": "Nog {{time}} en {{number}} pagina’s in hoofdstuk",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound-koppeling verwijderd. De volgende synchronisatie zoekt het boek opnieuw.",
+  "Link Pagebound Book": "Pagebound-boek koppelen",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Kies het Pagebound-boek dat overeenkomt met ‘{{book}}’. De leesvoortgang wordt ermee gesynchroniseerd.",
+  "Search Pagebound": "Zoeken op Pagebound",
+  "Pagebound Sync": "Pagebound-synchronisatie",
+  "Reading progress synced to Pagebound": "Leesvoortgang gesynchroniseerd met Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Synchronisatie van Pagebound-voortgang mislukt: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Kan niet aanmelden bij Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Verbinding met Pagebound verbroken",
+  "Connected to Pagebound. Last synced {{time}}.": "Verbonden met Pagebound. Laatst gesynchroniseerd {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Meld je aan met je Pagebound-e-mailadres en -wachtwoord om de leesvoortgang te synchroniseren.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Als je inlogt met Apple of Google, stel dan eerst een wachtwoord in bij Pagebound.",
+  "Pagebound": "Pagebound"
 }

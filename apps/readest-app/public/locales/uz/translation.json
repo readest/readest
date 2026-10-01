@@ -2488,5 +2488,18 @@
   "{{time}} and {{count}} pages left_one": "{{time}} va {{count}} sahifa qoldi",
   "{{time}} and {{count}} pages left in book_one": "Kitobda {{time}} va {{count}} sahifa qoldi",
   "Resets in {{time}}": "{{time}} ichida tiklanadi",
-  "{{time}} and {{number}} pages left in chapter": "Bobda {{time}} va {{number}} sahifa qoldi"
+  "{{time}} and {{number}} pages left in chapter": "Bobda {{time}} va {{number}} sahifa qoldi",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound bogʻlanishi olib tashlandi. Keyingi sinxronlash kitobni qayta moslaydi.",
+  "Link Pagebound Book": "Pagebound kitobini bogʻlash",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}” ga mos keladigan Pagebound kitobini tanlang. O‘qish jarayoni unga sinxronlanadi.",
+  "Search Pagebound": "Pagebound’da qidirish",
+  "Pagebound Sync": "Pagebound sinxronlash",
+  "Reading progress synced to Pagebound": "Oʻqish jarayoni Pagebound-ga sinxronlandi",
+  "Pagebound progress sync failed: {{error}}": "Pagebound jarayonni sinxronlashda xato: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound’ga kirib bo‘lmadi: {{error}}",
+  "Disconnected from Pagebound": "Pagebound-dan uzildi",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound'ga ulangan. Oxirgi sinxronlash {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "O‘qish jarayonini sinxronlash uchun Pagebound elektron pochtangiz va parolingiz bilan kiring.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Agar Apple yoki Google orqali kirsangiz, avval Pagebound’da parol o‘rnating.",
+  "Pagebound": "Pagebound"
 }

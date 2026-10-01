@@ -2424,5 +2424,18 @@
   "{{count}} pages left_other": "{{count}}페이지 남음",
   "Resets in {{time}}": "{{time}} 후 재설정",
   "{{time}} and {{number}} pages left in chapter": "이 장에 {{time}}, {{number}}페이지 남음",
-  "Header Size": "머리글 크기"
+  "Header Size": "머리글 크기",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound 연결이 해제되었습니다. 다음 동기화 시 책을 다시 매칭합니다.",
+  "Link Pagebound Book": "Pagebound 책 연결",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}”에 해당하는 Pagebound 도서를 선택하세요. 읽기 진행 상황이 해당 도서로 동기화됩니다.",
+  "Search Pagebound": "Pagebound 검색",
+  "Pagebound Sync": "Pagebound 동기화",
+  "Reading progress synced to Pagebound": "독서 진행 상황이 Pagebound에 동기화됨",
+  "Pagebound progress sync failed: {{error}}": "Pagebound 진행 상황 동기화 실패: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound에 로그인할 수 없습니다: {{error}}",
+  "Disconnected from Pagebound": "Pagebound에서 연결 해제됨",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound에 연결됨. 마지막 동기화 {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "읽기 진행 상황을 동기화하려면 Pagebound 이메일과 비밀번호로 로그인하세요.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple 또는 Google로 로그인하는 경우 먼저 Pagebound에서 비밀번호를 설정하세요.",
+  "Pagebound": "Pagebound"
 }

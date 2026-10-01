@@ -2488,5 +2488,18 @@
   "{{time}} and {{count}} pages left_one": "{{time}} و {{count}} صفحه باقی‌مانده",
   "{{time}} and {{count}} pages left in book_one": "{{time}} و {{count}} صفحه تا انتهای کتاب",
   "Resets in {{time}}": "بازنشانی در {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "{{time}} و {{number}} صفحه تا انتهای فصل"
+  "{{time}} and {{number}} pages left in chapter": "{{time}} و {{number}} صفحه تا انتهای فصل",
+  "Pagebound link removed. The next sync will match the book again.": "پیوند Pagebound حذف شد. همگام‌سازی بعدی دوباره کتاب را تطبیق می‌دهد.",
+  "Link Pagebound Book": "پیوند کتاب Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "کتاب Pagebound مطابق با «{{book}}» را انتخاب کنید. پیشرفت مطالعه با آن همگام می‌شود.",
+  "Search Pagebound": "جستجو در Pagebound",
+  "Pagebound Sync": "همگام‌سازی Pagebound",
+  "Reading progress synced to Pagebound": "پیشرفت مطالعه با Pagebound همگام‌سازی شد",
+  "Pagebound progress sync failed: {{error}}": "همگام‌سازی پیشرفت Pagebound ناموفق: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "ورود به Pagebound ممکن نیست: {{error}}",
+  "Disconnected from Pagebound": "قطع اتصال از Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "متصل به Pagebound. آخرین همگام‌سازی {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "برای همگام‌سازی پیشرفت مطالعه، با ایمیل و رمز عبور Pagebound خود وارد شوید.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "اگر با Apple یا Google وارد می‌شوید، ابتدا در Pagebound یک رمز عبور تنظیم کنید.",
+  "Pagebound": "Pagebound"
 }

@@ -2488,5 +2488,18 @@
   "{{time}} and {{count}} pages left_one": "{{time}} और {{count}} पृष्ठ शेष",
   "{{time}} and {{count}} pages left in book_one": "पुस्तक में {{time}} और {{count}} पृष्ठ शेष",
   "Resets in {{time}}": "{{time}} में रीसेट",
-  "{{time}} and {{number}} pages left in chapter": "अध्याय में {{time}} और {{number}} पृष्ठ शेष"
+  "{{time}} and {{number}} pages left in chapter": "अध्याय में {{time}} और {{number}} पृष्ठ शेष",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound लिंक हटा दिया गया। अगला सिंक पुस्तक को फिर से मिलाएगा।",
+  "Link Pagebound Book": "Pagebound पुस्तक लिंक करें",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}” से मेल खाने वाली Pagebound पुस्तक चुनें। पढ़ने की प्रगति उसी से सिंक होगी।",
+  "Search Pagebound": "Pagebound में खोजें",
+  "Pagebound Sync": "Pagebound सिंक",
+  "Reading progress synced to Pagebound": "पढ़ने की प्रगति Pagebound से सिंक हो गई",
+  "Pagebound progress sync failed: {{error}}": "Pagebound प्रगति सिंक विफल: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound में साइन इन नहीं हो सका: {{error}}",
+  "Disconnected from Pagebound": "Pagebound से डिस्कनेक्ट हो गया",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound से कनेक्ट किया गया। अंतिम सिंक {{time}}।",
+  "Sign in with your Pagebound email and password to sync reading progress.": "पढ़ने की प्रगति सिंक करने के लिए अपने Pagebound ईमेल और पासवर्ड से साइन इन करें।",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "यदि आप Apple या Google से साइन इन करते हैं, तो पहले Pagebound में पासवर्ड सेट करें।",
+  "Pagebound": "Pagebound"
 }

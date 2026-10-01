@@ -2552,5 +2552,18 @@
   "{{time}} and {{count}} pages left_one": "{{time}} y {{count}} página restantes",
   "{{time}} and {{count}} pages left in book_one": "{{time}} y {{count}} página restantes en el libro",
   "Resets in {{time}}": "Se restablece en {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "{{time}} y {{number}} páginas restantes en el capítulo"
+  "{{time}} and {{number}} pages left in chapter": "{{time}} y {{number}} páginas restantes en el capítulo",
+  "Pagebound link removed. The next sync will match the book again.": "Vínculo con Pagebound eliminado. La próxima sincronización volverá a buscar el libro.",
+  "Link Pagebound Book": "Vincular libro de Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Elige el libro de Pagebound que corresponde a «{{book}}». El progreso de lectura se sincronizará con él.",
+  "Search Pagebound": "Buscar en Pagebound",
+  "Pagebound Sync": "Sincronización de Pagebound",
+  "Reading progress synced to Pagebound": "Progreso de lectura sincronizado con Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Error al sincronizar progreso de Pagebound: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "No se pudo iniciar sesión en Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Desconectado de Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Conectado a Pagebound. Última sincronización {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Inicia sesión con tu correo y contraseña de Pagebound para sincronizar el progreso de lectura.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Si usas el inicio de sesión de Apple o Google, primero establece una contraseña en Pagebound.",
+  "Pagebound": "Pagebound"
 }

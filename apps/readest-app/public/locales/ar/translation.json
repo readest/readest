@@ -2744,5 +2744,18 @@
   "{{time}} and {{count}} pages left_one": "متبقي {{time}} وصفحة واحدة",
   "{{time}} and {{count}} pages left in book_one": "متبقي {{time}} وصفحة واحدة في الكتاب",
   "Resets in {{time}}": "يُعاد الضبط خلال {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "متبقي {{time}} و{{number}} صفحة في الفصل"
+  "{{time}} and {{number}} pages left in chapter": "متبقي {{time}} و{{number}} صفحة في الفصل",
+  "Pagebound link removed. The next sync will match the book again.": "تمت إزالة رابط Pagebound. ستعيد المزامنة التالية مطابقة الكتاب.",
+  "Link Pagebound Book": "ربط كتاب Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "اختر كتاب Pagebound المطابق لـ«{{book}}». ستتم مزامنة تقدّم القراءة معه.",
+  "Search Pagebound": "البحث في Pagebound",
+  "Pagebound Sync": "مزامنة Pagebound",
+  "Reading progress synced to Pagebound": "تمت مزامنة تقدم القراءة إلى Pagebound",
+  "Pagebound progress sync failed: {{error}}": "فشلت مزامنة تقدم Pagebound: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "تعذّر تسجيل الدخول إلى Pagebound: {{error}}",
+  "Disconnected from Pagebound": "تم قطع الاتصال بـ Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "متصل بـ Pagebound. آخر مزامنة {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "سجّل الدخول باستخدام البريد الإلكتروني وكلمة المرور في Pagebound لمزامنة تقدّم القراءة.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "إذا كنت تسجّل الدخول عبر Apple أو Google، فعيّن كلمة مرور في Pagebound أولًا.",
+  "Pagebound": "Pagebound"
 }
