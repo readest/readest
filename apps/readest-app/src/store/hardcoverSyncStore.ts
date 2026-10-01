@@ -4,7 +4,7 @@ import { create } from 'zustand';
 interface HardcoverSyncState {
   /** In-flight pushes; several books can push at once. */
   pending: number;
-  /** Last push error, cleared by the next success. */
+  /** Error from the current or last batch of overlapping pushes; a new batch clears it. */
   lastError: string | null;
   begin: () => void;
   end: (error: string | null) => void;
@@ -13,6 +13,8 @@ interface HardcoverSyncState {
 export const useHardcoverSyncStore = create<HardcoverSyncState>((set) => ({
   pending: 0,
   lastError: null,
-  begin: () => set((s) => ({ pending: s.pending + 1 })),
-  end: (error) => set((s) => ({ pending: Math.max(0, s.pending - 1), lastError: error })),
+  begin: () =>
+    set((s) => ({ pending: s.pending + 1, lastError: s.pending === 0 ? null : s.lastError })),
+  end: (error) =>
+    set((s) => ({ pending: Math.max(0, s.pending - 1), lastError: error ?? s.lastError })),
 }));
