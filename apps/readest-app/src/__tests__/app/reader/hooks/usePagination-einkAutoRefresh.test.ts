@@ -9,7 +9,6 @@ import type { ViewSettings } from '@/types/book';
 const h = vi.hoisted(() => ({
   refreshEinkScreen: vi.fn(() => Promise.resolve({ success: true })),
   getCachedEinkRefreshSupported: vi.fn(() => null as boolean | null),
-  markEinkRefreshUnsupported: vi.fn(),
 }));
 
 vi.mock('@/utils/bridge', () => ({
@@ -18,7 +17,6 @@ vi.mock('@/utils/bridge', () => ({
   setScreenBrightness: vi.fn(),
   refreshEinkScreen: () => h.refreshEinkScreen(),
   getCachedEinkRefreshSupported: () => h.getCachedEinkRefreshSupported(),
-  markEinkRefreshUnsupported: () => h.markEinkRefreshUnsupported(),
 }));
 
 vi.mock('@/store/readerStore', () => ({
@@ -57,8 +55,6 @@ const turnPages = (view: unknown, viewSettings: ViewSettings, times: number) => 
 
 beforeEach(() => {
   h.refreshEinkScreen.mockClear();
-  h.refreshEinkScreen.mockImplementation(() => Promise.resolve({ success: true }));
-  h.markEinkRefreshUnsupported.mockClear();
   h.getCachedEinkRefreshSupported.mockClear();
   h.getCachedEinkRefreshSupported.mockImplementation(() => null);
 });
@@ -118,12 +114,13 @@ describe('usePagination e-ink auto full refresh', () => {
     expect(h.refreshEinkScreen).not.toHaveBeenCalled();
   });
 
-  test('a failed refresh downgrades the capability flag', async () => {
-    h.refreshEinkScreen.mockImplementation(() => Promise.resolve({ success: false }));
+  test('a single transient refresh failure does not disable the feature', () => {
+    // { success:false } is also returned for momentary conditions on a fully
+    // supported device, so the very next scheduled turn must still refresh.
+    h.refreshEinkScreen.mockImplementationOnce(() => Promise.resolve({ success: false }));
     const view = makeView();
     const viewSettings = { isEink: true, einkAutoRefreshInterval: 1 } as ViewSettings;
-    viewPagination(view as unknown as FoliateView, viewSettings, 'down', 'page');
-    await Promise.resolve(); // flush the refresh().then(...) microtask
-    expect(h.markEinkRefreshUnsupported).toHaveBeenCalledTimes(1);
+    turnPages(view, viewSettings, 3);
+    expect(h.refreshEinkScreen).toHaveBeenCalledTimes(3);
   });
 });

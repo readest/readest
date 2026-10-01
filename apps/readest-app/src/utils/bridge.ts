@@ -376,17 +376,12 @@ export function checkEinkRefreshSupported(): Promise<boolean> {
 }
 
 // Synchronous view of a settled probe (`null` = not yet resolved). Lets the
-// auto-refresh loop skip doomed refresh requests without awaiting.
+// auto-refresh loop skip the guaranteed no-op call on a device the probe
+// authoritatively ruled out, without awaiting. A false here only ever comes
+// from the probe itself, never from a refresh outcome — runtime misses on a
+// supported device are transient and must not disable the feature.
 export function getCachedEinkRefreshSupported(): boolean | null {
   return einkRefreshSupportedSettled;
-}
-
-// Downgrade support once the native side actually reports it cannot refresh
-// (a hook present but stubbed / hidden-API gated): the gated UI hides on the
-// next mount and the loop stops firing. Only ever downgrades true -> false.
-export function markEinkRefreshUnsupported(): void {
-  einkRefreshSupportedSettled = false;
-  einkRefreshSupportedPromise = Promise.resolve(false);
 }
 
 /** Webview region to snapshot, in CSS pixels of the viewport (origin top-left). */

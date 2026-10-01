@@ -14,11 +14,7 @@ import {
   isPencilNativeKey,
   KeyCandidate,
 } from '@/utils/keybinding';
-import {
-  getCachedEinkRefreshSupported,
-  markEinkRefreshUnsupported,
-  refreshEinkScreen,
-} from '@/utils/bridge';
+import { getCachedEinkRefreshSupported, refreshEinkScreen } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -140,10 +136,13 @@ const resetEinkRefreshCounter = (view: FoliateView | null) => {
 const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
   const interval = viewSettings.einkAutoRefreshInterval;
   if (!viewSettings.isEink || !interval || interval <= 0) return;
-  // Once the device is known not to do full refreshes — the probe settled
-  // false, or a refresh actually came back unsuccessful — stop counting and
-  // firing. `null` (probe still pending) keeps going: the scheduled refresh is
-  // itself the real-world test, and it downgrades the flag if it fails.
+  // Skip only when the startup capability probe authoritatively settled false
+  // (the interval can reach a non-e-ink device via synced per-book config, so
+  // the bridge call there is a guaranteed no-op). `null` (probe not yet run)
+  // keeps going. Deliberately NOT latched on refresh outcomes: { success:false }
+  // also comes back for transient conditions on a fully supported device
+  // (detached window, zero-sized view, one-off vendor exception), so a single
+  // miss must not permanently disable auto-refresh or hide the user's option.
   if (getCachedEinkRefreshSupported() === false) return;
   // Counts page turns routed through viewPagination: tap/click zones, wheel,
   // volume keys, hardware page-turner keys, and the on-screen nav buttons. Not
@@ -160,12 +159,8 @@ const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
     einkPageTurnsSinceRefresh.set(view, 0);
     // No platform gate here (unlike the manual binding): the interval is set
     // only on Android but a synced per-book config can carry it elsewhere, and
-    // off-Android the bridge rejects — swallowed below as an intentional no-op.
-    refreshEinkScreen()
-      .then((response) => {
-        if (!response.success) markEinkRefreshUnsupported();
-      })
-      .catch(() => {});
+    // off-Android the bridge rejects — swallowed here as an intentional no-op.
+    refreshEinkScreen().catch(() => {});
   } else {
     einkPageTurnsSinceRefresh.set(view, turns);
   }
