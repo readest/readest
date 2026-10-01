@@ -207,8 +207,9 @@ describe('PageboundClient', () => {
     const doc = (uuid: string, title: string) => ({ document: { id: '7', uuid, title } });
     const searched: string[] = [];
     const typesense: Route = (url) => {
-      if (!url.includes('typesense.net')) return undefined;
-      const q = new URL(url).searchParams.get('q')!;
+      const { hostname, searchParams } = new URL(url);
+      if (!hostname.endsWith('.typesense.net')) return undefined;
+      const q = searchParams.get('q')!;
       searched.push(q);
       return q.startsWith('the final empire')
         ? json({ hits: [doc('final-empire', 'The Final Empire'), doc('x', 'Mistborn')] })
