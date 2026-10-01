@@ -84,6 +84,7 @@ dependencies = [
  "tokio-util",
  "uuid 1.26.0",
  "walkdir",
+ "windows 0.61.3",
  "winreg 0.52.0",
  "zbus 5.19.0",
  "zip 2.4.2",
