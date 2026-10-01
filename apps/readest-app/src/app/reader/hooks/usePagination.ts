@@ -146,9 +146,12 @@ const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
   if (getCachedEinkRefreshSupported() === false) return;
   // Counts page turns routed through viewPagination: tap/click zones, wheel,
   // volume keys, hardware page-turner keys, and the on-screen nav buttons. Not
-  // counted: PageUp/PageDown and Shift+Arrow (their shortcuts call view.next /
-  // view.prev directly), the footer prev/next buttons (renderer.next / .prev),
-  // section jumps, and the native swipe the paginator commits on its own.
+  // counted (they call view.next/prev or renderer.next/prev directly, bypassing
+  // this path): PageUp/PageDown and Shift+Arrow selection-extension shortcuts,
+  // the footer prev/next buttons, section jumps, the native swipe the paginator
+  // commits on its own, and the hands-free turners — auto page turn (corner
+  // dwell), TTS page-follow, and auto-scroll's section hop. So auto full
+  // refresh tracks manual turns only; a hands-free session won't trigger it.
   // Intentionally no start/end boundary skip either: renderer.atEnd / atStart
   // are section-page based, so on fixed-layout / one-page-per-section books
   // they read true on nearly every real turn and would starve the counter. A

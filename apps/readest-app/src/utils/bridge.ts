@@ -346,10 +346,11 @@ export async function refreshEinkScreen(): Promise<RefreshEinkScreenResponse> {
  * "Auto Full Refresh" / "Refresh Page" options. Non-e-ink devices and other
  * platforms report `supported: false`.
  */
-export async function isEinkRefreshSupported(): Promise<EinkRefreshSupportedResponse> {
-  return await invoke<EinkRefreshSupportedResponse>(
+export async function isEinkRefreshSupported(): Promise<boolean> {
+  const response = await invoke<EinkRefreshSupportedResponse>(
     'plugin:native-bridge|is_eink_refresh_supported',
   );
+  return response.supported;
 }
 
 // Memoized so the capability probe — a one-shot, pure-reflection query against
@@ -362,9 +363,9 @@ let einkRefreshSupportedSettled: boolean | null = null;
 export function checkEinkRefreshSupported(): Promise<boolean> {
   if (!einkRefreshSupportedPromise) {
     einkRefreshSupportedPromise = isEinkRefreshSupported().then(
-      (response) => {
-        einkRefreshSupportedSettled = response.supported;
-        return response.supported;
+      (supported) => {
+        einkRefreshSupportedSettled = supported;
+        return supported;
       },
       (error) => {
         // A rejection is inconclusive (bridge not ready / native probe error),
