@@ -461,6 +461,14 @@ export const usePagination = (
     // E-ink full screen refresh (Android only) — clears ghosting without
     // turning the page. The native bridge no-ops on non-e-ink hardware.
     if (action === 'refresh') {
+      // On a device the capability probe authoritatively ruled out, don't claim
+      // the key at all: refreshEinkScreen would no-op yet still swallow the
+      // button, and the "Refresh Page" row is hidden there, so a stale binding
+      // could no longer be cleared from the UI. Returning false lets the key fall
+      // through to its normal behavior, making the stale binding inert. Unsettled
+      // (null) still claims the chord so a transient probe gap mid-read can't leak
+      // the key.
+      if (getCachedEinkRefreshSupported() === false) return false;
       if (appService?.isAndroidApp) {
         refreshEinkScreen().catch(() => {});
         resetEinkRefreshCounter(viewRef.current);

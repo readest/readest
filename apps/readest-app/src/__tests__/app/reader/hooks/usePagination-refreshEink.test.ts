@@ -29,6 +29,7 @@ const h = vi.hoisted(() => ({
   },
   viewSettings: {} as Record<string, unknown> | null,
   viewState: { inited: true } as Record<string, unknown> | null,
+  einkSupported: null as boolean | null,
   settingsState: { settings: { hardwarePageTurner: undefined as unknown } },
 }));
 
@@ -37,6 +38,7 @@ vi.mock('@/utils/bridge', () => ({
   getScreenBrightness: vi.fn(),
   setScreenBrightness: vi.fn(),
   refreshEinkScreen: vi.fn(() => Promise.resolve({ success: true })),
+  getCachedEinkRefreshSupported: () => h.einkSupported,
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -97,6 +99,7 @@ beforeEach(() => {
   h.appService = { isMobileApp: true, isAndroidApp: true };
   h.viewSettings = {};
   h.viewState = { inited: true };
+  h.einkSupported = null;
   h.settingsState = { settings: { hardwarePageTurner } };
 });
 
@@ -119,6 +122,13 @@ describe('usePagination "Refresh Page" action (#4687)', () => {
 
   test('does not call the bridge off Android even if the key is bound', async () => {
     h.appService = { isMobileApp: true, isAndroidApp: false };
+    setup();
+    await pressNativeKey('MediaPlayPause');
+    expect(refreshEinkScreen).not.toHaveBeenCalled();
+  });
+
+  test('does not consume the key once the probe rules the device out', async () => {
+    h.einkSupported = false;
     setup();
     await pressNativeKey('MediaPlayPause');
     expect(refreshEinkScreen).not.toHaveBeenCalled();
