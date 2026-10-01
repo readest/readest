@@ -2186,10 +2186,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     @Command
     fun is_eink_refresh_supported(invoke: Invoke) {
         // A confirmed-absent vendor hook resolves `supported:false` — JS caches
-        // that as authoritative and keeps the option hidden. A hard reflection/
-        // linkage failure is inconclusive, not a negative: reject so the JS probe
-        // drops its cache and retries on the next mount rather than latching a
-        // wrong 'unsupported' for the whole session.
+        // that as authoritative and keeps the option hidden. An inconclusive read
+        // (a hook the reflection layer could not definitively rule out) is not a
+        // negative: reject so the JS probe drops its cache and retries on the
+        // next mount rather than latching a wrong 'unsupported' for the session.
         val ret = JSObject()
         try {
             ret.put("supported", EinkRefreshController.isSupported())

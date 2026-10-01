@@ -33,25 +33,27 @@ object EinkRefreshController {
     // EINK_UPDATE_MODE_FULL (32) + EINK_WAVEFORM_MODE_GC16 (2) = 34.
     private const val NTX_FULL_GC16 = 34
 
-    // The vendor hooks, resolved via class-level reflection and cached. A
-    // missing method/class (NoSuchMethod / ClassNotFound) is a definitive "not
-    // here" and is cached as null; a hard reflection/linkage failure is left
-    // uncached (these blocks catch only `Exception`, not `Error`) so a later
-    // probe can retry it and an inconclusive first read is never mistaken for a
-    // confirmed negative. `getMethod` / `Class.forName` only read the framework's
-    // method table; they neither invoke the mechanism nor flash the panel, so
-    // resolving them is a safe capability probe. [refresh] and [isSupported]
-    // share these handles, so the UI is offered only where a vendor full-refresh
-    // hook is present — a best-effort signal: a stubbed or hidden-API hook could
-    // still be present yet fail at [refresh] time, which then reports
-    // `success: false`.
+    // The vendor hooks, resolved via class-level reflection and cached. Only a
+    // definitive absence is cached as null — a NoSuchMethod / ClassNotFound from
+    // the reflection lookup, or the EPD_FULL constant genuinely not being
+    // present. Anything else (a hard linkage/`Error`, or an unexpected
+    // reflection `Exception` such as a transient `SecurityException`) is left
+    // uncached — a `by lazy` re-runs its initializer on the next access when it
+    // throws — so an inconclusive first read surfaces as a retryable rejection
+    // rather than a permanent negative. `getMethod` / `Class.forName` only read
+    // the framework's method table; they neither invoke the mechanism nor flash
+    // the panel, so resolving them is a safe capability probe. [refresh] and
+    // [isSupported] share these handles, so the UI is offered only where a
+    // vendor full-refresh hook is present — a best-effort signal: a stubbed or
+    // hidden-API hook could still be present yet fail at [refresh] time, which
+    // then reports `success: false`.
     private val onyxRefreshScreen: Method? by lazy {
         try {
             View::class.java.getMethod(
                 "refreshScreen",
                 Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE,
             )
-        } catch (e: Exception) {
+        } catch (e: NoSuchMethodException) {
             Log.d(TAG, "onyx refresh unavailable: ${e.message}")
             null
         }
@@ -64,7 +66,7 @@ object EinkRefreshController {
                 java.lang.Long.TYPE,
                 Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE,
             )
-        } catch (e: Exception) {
+        } catch (e: NoSuchMethodException) {
             Log.d(TAG, "ntx refresh unavailable: ${e.message}")
             null
         }
@@ -80,7 +82,10 @@ object EinkRefreshController {
             } else {
                 View::class.java.getMethod("requestEpdMode", einkEnum, java.lang.Boolean.TYPE) to full
             }
-        } catch (e: Exception) {
+        } catch (e: ClassNotFoundException) {
+            Log.d(TAG, "rockchip refresh unavailable: ${e.message}")
+            null
+        } catch (e: NoSuchMethodException) {
             Log.d(TAG, "rockchip refresh unavailable: ${e.message}")
             null
         }
@@ -93,9 +98,10 @@ object EinkRefreshController {
      * (a stubbed or partially hidden hook can resolve yet throw at refresh()
      * time). It still keeps the "Auto Full Refresh" / "Refresh Page" options
      * away from devices with no known hook at all. Pure reflection — never
-     * touches the panel. May propagate a hard reflection/linkage [Error] (an
-     * inconclusive read), which the command layer turns into a retryable
-     * rejection rather than a false.
+     * touches the panel. A definitive absence is cached as null; any
+     * inconclusive read (a hard reflection/linkage failure, or an unexpected
+     * reflection error) propagates, which the command layer turns into a
+     * retryable rejection rather than a false.
      */
     fun isSupported(): Boolean {
         // Probe each hook independently rather than with `||`: a short-circuit
