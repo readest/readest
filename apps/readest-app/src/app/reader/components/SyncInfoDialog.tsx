@@ -37,7 +37,7 @@ const SyncInfoDialog: React.FC<SyncInfoDialogProps> = ({
   onClose,
 }) => {
   const _ = useTranslation();
-  const syncStatus = useCloudSyncStatus(nativeLastSyncedAt);
+  const syncStatus = useCloudSyncStatus(nativeLastSyncedAt, 'book');
   const info = metadata ? getMetadataHashInfo(metadata) : undefined;
   const displayHash = storedMetaHash || info?.metaHash || '';
   const placeholder = _('(none)');

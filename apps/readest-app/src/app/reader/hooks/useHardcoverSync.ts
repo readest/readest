@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useHardcoverSyncStore } from '@/store/hardcoverSyncStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
@@ -100,6 +101,9 @@ export const useHardcoverSync = (bookKey: string) => {
         return;
       }
 
+      const { begin, end } = useHardcoverSyncStore.getState();
+      let failure: string | null = null;
+      begin();
       try {
         const result = await client.syncBookNotes(book, config);
         await rememberLink(result.link);
@@ -122,14 +126,18 @@ export const useHardcoverSync = (bookKey: string) => {
         }
       } catch (error) {
         console.error('Hardcover notes sync failed:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
             message: _('Hardcover notes sync failed: {{error}}', {
-              error: error instanceof Error ? error.message : String(error),
+              error: message,
             }),
             type: 'error',
           });
         }
+      } finally {
+        end(failure);
       }
     },
     [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],
@@ -153,6 +161,9 @@ export const useHardcoverSync = (bookKey: string) => {
         return;
       }
 
+      const { begin, end } = useHardcoverSyncStore.getState();
+      let failure: string | null = null;
+      begin();
       try {
         const link = await client.pushProgress(book, config);
         await rememberLink(link);
@@ -165,14 +176,18 @@ export const useHardcoverSync = (bookKey: string) => {
         }
       } catch (error) {
         console.error('Hardcover progress sync failed:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
             message: _('Hardcover progress sync failed: {{error}}', {
-              error: error instanceof Error ? error.message : String(error),
+              error: message,
             }),
             type: 'error',
           });
         }
+      } finally {
+        end(failure);
       }
     },
     [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],
@@ -205,12 +220,12 @@ export const useHardcoverSync = (bookKey: string) => {
   useEffect(() => {
     const handlePushNotes = async (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
-      await pushNotes();
+      await pushNotes({ silent: event.detail.silent });
     };
 
     const handlePushProgress = async (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
-      await pushProgress();
+      await pushProgress({ silent: event.detail.silent });
     };
 
     eventDispatcher.on('hardcover-push-notes', handlePushNotes);
@@ -223,17 +238,16 @@ export const useHardcoverSync = (bookKey: string) => {
   }, [bookKey, pushNotes, pushProgress]);
 
   // Flush any pending auto-push when the book closes (ReaderContent dispatches
-  // 'sync-book-progress' before teardown) or when the user taps the manual
-  // cloud Sync button — so a quick close doesn't drop the pending push.
+  // 'flush-hardcover-sync' before teardown) so a quick close doesn't drop it.
   useEffect(() => {
     const handleFlush = (event: CustomEvent) => {
       if (event.detail.bookKey !== bookKey) return;
       debouncedAutoPushProgress.flush();
       debouncedAutoPushNotes.flush();
     };
-    eventDispatcher.on('sync-book-progress', handleFlush);
+    eventDispatcher.on('flush-hardcover-sync', handleFlush);
     return () => {
-      eventDispatcher.off('sync-book-progress', handleFlush);
+      eventDispatcher.off('flush-hardcover-sync', handleFlush);
     };
   }, [bookKey, debouncedAutoPushProgress, debouncedAutoPushNotes]);
 
