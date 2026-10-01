@@ -98,7 +98,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         {description && (
           <span
             className='mt-1 truncate text-start text-xs text-gray-500'
-            style={{ minWidth: 0, paddingInlineStart: noIcon ? '0' : `${iconSize + 8}px` }}
+            style={{ minWidth: 0, paddingInlineStart: noIcon ? '0.5rem' : `${iconSize + 8}px` }}
           >
             {description}
           </span>
