@@ -266,6 +266,16 @@ describe('wiktionary provider', () => {
       expect(fetchMock.mock.calls[1]![0]).toContain('https://en.wiktionary.org/api/rest_v1/');
     });
 
+    it('never builds a host from a malformed book language', async () => {
+      fetchMock.mockResolvedValue({ ok: true, json: async () => sampleResponse } as Response);
+      for (const lang of ['evil.example#', 'evil.example/', 'es.evil', 'e s']) {
+        await lookup('cat', lang).outcome;
+      }
+      for (const [url] of fetchMock.mock.calls) {
+        expect(new URL(url as string).hostname).toBe('en.wiktionary.org');
+      }
+    });
+
     it('keeps using the English endpoint for English books', async () => {
       fetchMock.mockResolvedValueOnce({ ok: true, json: async () => sampleResponse } as Response);
       await lookup('cat', 'en-US').outcome;

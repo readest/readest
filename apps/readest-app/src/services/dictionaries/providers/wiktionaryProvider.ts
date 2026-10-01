@@ -312,7 +312,9 @@ export const wiktionaryProvider: DictionaryProvider = {
       if (lang === 'zh') {
         return await renderChinese(word, ctx.container, ctx.signal);
       }
-      if (lang && lang !== 'en') {
+      // The code comes from book metadata and becomes the request host, so only
+      // a plain ISO 639 code may pick an edition.
+      if (/^[a-z]{2,3}$/.test(lang) && lang !== 'en') {
         try {
           const outcome = await renderNativeWiktionary(
             word,
