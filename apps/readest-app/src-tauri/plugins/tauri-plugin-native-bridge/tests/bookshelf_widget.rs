@@ -68,12 +68,13 @@ fn rejects_an_item_of_an_unknown_type() {
 fn deserializes_the_configure_screen_catalog() {
     let json = r#"{
       "shelves": [{"id":"recent","name":"Recently read"}],
-      "labels": {"title":"Bookshelf","rows":"Rows","columns":"Columns","showTitles":"Book title",
-                 "showShelfName":"Shelf name","cancel":"Cancel","save":"Save","edit":"Edit",
+      "labels": {"title":"Bookshelf","rows":"Rows","columns":"Columns","showTitles":"Book Title",
+                 "showShelfName":"Show Header","headerSize":"Header Size","showTtsBar":"Text to Speech","cancel":"Cancel","save":"Save","edit":"Edit",
                  "openApp":"Open Readest"}
     }"#;
     let catalog: BookshelfWidgetCatalog = serde_json::from_str(json).unwrap();
     assert_eq!(catalog.shelves[0].name, "Recently read");
-    assert_eq!(catalog.labels.show_titles, "Book title");
-    assert_eq!(catalog.labels.show_shelf_name, "Shelf name");
+    assert_eq!(catalog.labels.show_titles, "Book Title");
+    assert_eq!(catalog.labels.show_shelf_name, "Show Header");
+    assert_eq!(catalog.labels.header_size, "Header Size");
 }

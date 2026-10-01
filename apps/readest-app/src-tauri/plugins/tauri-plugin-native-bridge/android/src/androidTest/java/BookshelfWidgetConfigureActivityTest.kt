@@ -24,10 +24,14 @@ class BookshelfWidgetConfigureActivityTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
     private val id = 555002
 
-    private fun launch() = ActivityScenario.launch<BookshelfWidgetConfigureActivity>(
-        Intent(context, BookshelfWidgetConfigureActivity::class.java)
-            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id),
-    )
+    private fun intent() = Intent(context, BookshelfWidgetConfigureActivity::class.java)
+        .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+
+    private fun launch() = ActivityScenario.launch<BookshelfWidgetConfigureActivity>(intent())
+
+    // Reading `scenario.result` needs the activity started for a result.
+    private fun launchForResult() =
+        ActivityScenario.launchActivityForResult<BookshelfWidgetConfigureActivity>(intent())
 
     private fun publishShelves(vararg shelves: Pair<String, String>) {
         val list = JSONArray()
@@ -52,7 +56,7 @@ class BookshelfWidgetConfigureActivityTest {
     @Test
     fun savesTheChosenShelfAndAnswersOk() {
         publishShelves("recent" to "Recently read", "sf" to "Sci-fi")
-        launch().use { scenario ->
+        launchForResult().use { scenario ->
             scenario.onActivity { activity ->
                 val dialog = activity.dialog!!
                 dialog.pickShelf(1) // "Sci-fi"
@@ -67,7 +71,7 @@ class BookshelfWidgetConfigureActivityTest {
     @Test
     fun cancelLeavesTheSettingsAlone() {
         publishShelves("recent" to "Recently read", "sf" to "Sci-fi")
-        launch().use { scenario ->
+        launchForResult().use { scenario ->
             scenario.onActivity { activity ->
                 val dialog = activity.dialog!!
                 dialog.pickShelf(1) // "Sci-fi"

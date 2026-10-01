@@ -2,20 +2,19 @@ package com.readest.native_bridge
 
 import android.app.Activity
 import android.appwidget.AppWidgetManager
-import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
 import android.view.ContextThemeWrapper
 import android.view.Gravity
-import android.view.View
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
@@ -78,19 +77,30 @@ class BookshelfWidgetConfigureActivity : Activity() {
             setOnItemClickListener { _, _, position, _ -> selectedShelfId = shelfList[position].first }
         }
         shelfField.addView(shelfDropdown)
-        content.addView(shelfField)
+        val shelfRow = LinearLayout(dialogContext).apply { gravity = Gravity.CENTER_VERTICAL }
+        shelfRow.addView(
+            shelfField,
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+        )
+        content.addView(shelfRow)
         // Opening the app cancels a first placement (the launcher drops the
         // widget), so Edit is only offered when reconfiguring a placed widget.
-        // Icon-only; contentDescription carries the label for accessibility.
+        // Icon-only, beside the shelf picker; contentDescription carries the label.
         // Its click listener is wired below, once the other controls exist.
         val editShelfButton = if (BookshelfWidgetStore.hasInstanceSettings(this, appWidgetId)) {
             flatButton(dialogContext).apply {
                 tag = "edit_shelf"
                 setIconResource(R.drawable.ic_widget_edit)
+                // The vector's theme-attribute tint doesn't resolve here (white on light).
+                iconTint = ColorStateList.valueOf(
+                    MaterialColors.getColor(
+                        dialogContext, com.google.android.material.R.attr.colorOnSurface, Color.BLACK
+                    )
+                )
                 iconPadding = 0
                 contentDescription = label("edit", R.string.widget_edit)
             }.also {
-                content.addView(
+                shelfRow.addView(
                     it,
                     LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -101,20 +111,30 @@ class BookshelfWidgetConfigureActivity : Activity() {
             null
         }
 
+        val showShelfName = MaterialCheckBox(dialogContext).apply {
+            text = label("showShelfName", R.string.widget_show_header)
+            isChecked = current.showShelfName
+        }
+        content.addView(showShelfName)
+        val headerSize = intArrayOf(current.headerSize.coerceIn(MIN_TEXT_SIZE, MAX_TEXT_SIZE))
+        content.addView(
+            numberStepper(dialogContext, label("headerSize", R.string.widget_header_size), headerSize, MIN_TEXT_SIZE, MAX_TEXT_SIZE),
+        )
+
         val rows = intArrayOf(current.gridRows.coerceIn(1, MAX_GRID_SIZE))
         val columns = intArrayOf(current.gridColumns.coerceIn(1, MAX_GRID_SIZE))
-        content.addView(stepper(dialogContext, label("rows", R.string.widget_rows), rows))
-        content.addView(stepper(dialogContext, label("columns", R.string.widget_columns), columns))
+        content.addView(numberStepper(dialogContext, label("rows", R.string.widget_rows), rows, 1, MAX_GRID_SIZE))
+        content.addView(numberStepper(dialogContext, label("columns", R.string.widget_columns), columns, 1, MAX_GRID_SIZE))
         val showTitles = MaterialCheckBox(dialogContext).apply {
             text = label("showTitles", R.string.widget_show_titles)
             isChecked = current.showTitles
         }
         content.addView(showTitles)
-        val showShelfName = MaterialCheckBox(dialogContext).apply {
-            text = label("showShelfName", R.string.widget_show_shelf_name)
-            isChecked = current.showShelfName
+        val showTtsBar = MaterialCheckBox(dialogContext).apply {
+            text = label("showTtsBar", R.string.widget_show_tts_bar)
+            isChecked = current.showTtsBar
         }
-        content.addView(showShelfName)
+        content.addView(showTtsBar)
 
         fun currentSettings() = BookshelfWidgetInstanceSettings(
             shelfId = selectedShelfId,
@@ -122,6 +142,8 @@ class BookshelfWidgetConfigureActivity : Activity() {
             gridColumns = columns[0],
             showTitles = showTitles.isChecked,
             showShelfName = showShelfName.isChecked,
+            showTtsBar = showTtsBar.isChecked,
+            headerSize = headerSize[0],
         )
         // Saves the current picks, then opens the shelf in the app's editor.
         editShelfButton?.setOnClickListener {
@@ -169,44 +191,4 @@ class BookshelfWidgetConfigureActivity : Activity() {
             listOf(BookshelfWidgetStore.DEFAULT_SHELF_ID to getString(R.string.widget_default_shelf))
         }
     }
-
-    /** A "label  -  n  +" row editing value[0] within 1..MAX_GRID_SIZE. */
-    private fun stepper(context: Context, label: String, value: IntArray): View {
-        val count = TextView(context).apply {
-            text = value[0].toString()
-            gravity = Gravity.CENTER
-            minEms = 2
-        }
-        fun button(sign: String, delta: Int) =
-            flatButton(context).apply {
-                text = sign
-                setPadding(dp(context, 12), 0, dp(context, 12), 0)
-                setOnClickListener {
-                    value[0] = (value[0] + delta).coerceIn(1, MAX_GRID_SIZE)
-                    count.text = value[0].toString()
-                }
-            }
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            addView(
-                TextView(context).apply { text = label },
-                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
-            )
-            addView(button("−", -1))
-            addView(count)
-            addView(button("+", 1))
-        }
-    }
-
-    /** A flat (borderless) MaterialButton shrunk to content - the default TextButton
-     * spec sizing (min width, top/bottom insets) is made for buttons with real
-     * label text, and looks oversized for the single-glyph/icon-only buttons here. */
-    private fun flatButton(context: Context) =
-        MaterialButton(context, null, android.R.attr.borderlessButtonStyle).apply {
-            setMinWidth(0)
-            setMinimumWidth(0)
-            setInsetTop(0)
-            setInsetBottom(0)
-        }
 }

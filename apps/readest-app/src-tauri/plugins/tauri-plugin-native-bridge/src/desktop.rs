@@ -448,6 +448,23 @@ impl<R: Runtime> NativeBridge<R> {
         Ok(())
     }
 
+    pub fn update_reading_widget(
+        &self,
+        _payload: UpdateReadingWidgetRequest,
+    ) -> crate::Result<UpdateReadingWidgetResponse> {
+        // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(UpdateReadingWidgetResponse::default())
+    }
+
+    pub fn get_reading_widget_instances(&self) -> crate::Result<GetReadingWidgetInstancesResponse> {
+        // No home-screen widgets on desktop.
+        Ok(GetReadingWidgetInstancesResponse { instances: vec![] })
+    }
+
+    pub fn set_reading_widget_catalog(&self, _payload: ReadingWidgetCatalog) -> crate::Result<()> {
+        Ok(())
+    }
+
     /// Snapshot a region of `window`'s webview as image bytes for the mesh
     /// page-curl texture (#555): PNG from WKWebView on macOS, JPEG of the
     /// whole view from the DevTools protocol on Windows (WebView2) and the

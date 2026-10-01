@@ -69,7 +69,7 @@ import { getLibraryViewSettings } from '@/helpers/settings';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useOpenLaunchLinks } from '@/hooks/useOpenLaunchLinks';
-import { useBookshelfWidget } from '@/hooks/useBookshelfWidget';
+import { useHomeScreenWidgets } from '@/hooks/useHomeScreenWidgets';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useWebBrowserDownloads } from '@/hooks/useWebBrowserDownloads';
@@ -375,7 +375,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useAppUrlIngress();
   useOpenWithBooks();
   useOpenLaunchLinks();
-  useBookshelfWidget();
+  useHomeScreenWidgets();
   useOpenShareLink();
   useClipUrlIngress();
   useWebBrowserDownloads();

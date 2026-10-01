@@ -554,6 +554,8 @@ export interface BookshelfWidgetCatalog {
     columns: string;
     showTitles: string;
     showShelfName: string;
+    headerSize: string;
+    showTtsBar: string;
     cancel: string;
     save: string;
     /** Opens the app to edit the selected shelf (readest://widget-edit-shelf/{id}). */
@@ -565,6 +567,75 @@ export interface BookshelfWidgetCatalog {
 
 export async function setBookshelfWidgetCatalog(catalog: BookshelfWidgetCatalog): Promise<void> {
   await invoke('plugin:native-bridge|set_bookshelf_widget_catalog', { payload: catalog });
+}
+
+// ── Reading widget ──────────────────────────────────────────────────────────
+
+export interface UpdateReadingWidgetRequest {
+  appWidgetId: number;
+  /** Empty means "nothing currently reading". */
+  hash: string;
+  title: string;
+  author: string;
+  /** Numeric value for the progress bar. */
+  percent: number;
+  coverPath: string;
+  /** The text stats to show, in order (already localized); native lays them out in a row. */
+  stats: string[];
+  headerText: string;
+  emptyTitle: string;
+  /** Draws the text and progress bar in black. */
+  isEink: boolean;
+  tts?: BookshelfWidgetTts;
+}
+
+/** `failed` is 1 when the cover couldn't be written (0 on iOS/desktop). */
+export async function updateReadingWidget(
+  request: UpdateReadingWidgetRequest,
+): Promise<{ failed: number }> {
+  return invoke('plugin:native-bridge|update_reading_widget', { payload: request });
+}
+
+export interface ReadingWidgetInstance {
+  appWidgetId: number;
+  showTimeLeft: boolean;
+  showPageCount: boolean;
+  showPagesRemaining: boolean;
+  showHeader: boolean;
+  showPercent: boolean;
+  referencePages: boolean;
+}
+
+interface GetReadingWidgetInstancesResponse {
+  instances: ReadingWidgetInstance[];
+}
+
+export async function getReadingWidgetInstances(): Promise<GetReadingWidgetInstancesResponse> {
+  return invoke<GetReadingWidgetInstancesResponse>(
+    'plugin:native-bridge|get_reading_widget_instances',
+  );
+}
+
+/** Translated labels for the native configure screen, which can't read the app's settings. */
+export interface ReadingWidgetCatalog {
+  labels: {
+    title: string;
+    showHeader: string;
+    headerSize: string;
+    showTtsBar: string;
+    showPercent: string;
+    referencePages: string;
+    showTimeLeft: string;
+    showPageCount: string;
+    showPagesRemaining: string;
+    textSize: string;
+    cancel: string;
+    save: string;
+  };
+}
+
+export async function setReadingWidgetCatalog(catalog: ReadingWidgetCatalog): Promise<void> {
+  await invoke('plugin:native-bridge|set_reading_widget_catalog', { payload: catalog });
 }
 
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────

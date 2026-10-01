@@ -370,6 +370,29 @@ pub(crate) async fn set_bookshelf_widget_catalog<R: Runtime>(
     app.native_bridge().set_bookshelf_widget_catalog(payload)
 }
 
+#[command]
+pub(crate) async fn update_reading_widget<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateReadingWidgetRequest,
+) -> Result<UpdateReadingWidgetResponse> {
+    app.native_bridge().update_reading_widget(payload)
+}
+
+#[command]
+pub(crate) async fn get_reading_widget_instances<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetReadingWidgetInstancesResponse> {
+    app.native_bridge().get_reading_widget_instances()
+}
+
+#[command]
+pub(crate) async fn set_reading_widget_catalog<R: Runtime>(
+    app: AppHandle<R>,
+    payload: ReadingWidgetCatalog,
+) -> Result<()> {
+    app.native_bridge().set_reading_widget_catalog(payload)
+}
+
 /// Snapshot a region of the calling webview and return it as binary image
 /// bytes (`tauri::ipc::Response`, no JSON encoding) for the mesh page-curl
 /// texture (#555). Platforms without a capture implementation reject,

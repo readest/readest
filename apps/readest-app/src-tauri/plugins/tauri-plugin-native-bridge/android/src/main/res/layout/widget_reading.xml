@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One wide card: cover on the left, title/author/progress/stats on the
+     right. Resizable, but every field is content-driven (empty string or the
+     empty state hides a view), never size-driven - see
+     ReadingWidgetProviders.kt. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:theme="@style/BookshelfWidgetTheme"
+  android:layout_width="match_parent" android:layout_height="match_parent"
+  android:orientation="vertical" android:background="@drawable/widget_card_bg"
+  android:padding="6dp">
+  <TextView android:id="@+id/reading_header"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:visibility="gone"
+    android:textStyle="bold" android:textSize="14sp"
+    android:maxLines="1" android:ellipsize="end"
+    android:textColor="?android:attr/textColorPrimary" />
+  <LinearLayout android:id="@+id/reading_book_row"
+    android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+    android:orientation="horizontal" android:gravity="center_vertical">
+    <ImageView android:id="@+id/reading_cover"
+      android:layout_width="wrap_content" android:layout_height="match_parent"
+      android:layout_margin="4dp"
+      android:scaleType="fitCenter" android:adjustViewBounds="true"
+      android:contentDescription="@null" />
+    <LinearLayout
+      android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+      android:layout_marginStart="8dp" android:layout_marginEnd="4dp"
+      android:orientation="vertical" android:gravity="center_vertical">
+      <TextView android:id="@+id/reading_title"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textStyle="bold" android:textSize="16sp"
+        android:maxLines="2" android:ellipsize="end"
+        android:textColor="?android:attr/textColorPrimary" />
+      <TextView android:id="@+id/reading_author"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textSize="13sp" android:maxLines="1" android:ellipsize="end"
+        android:layout_marginTop="2dp"
+        android:textColor="?android:attr/textColorSecondary" />
+      <ProgressBar android:id="@+id/reading_progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:max="100" android:progress="0" />
+      <!-- E-Ink mode: black fill, shown instead of the bar above. -->
+      <ProgressBar android:id="@+id/reading_progress_bar_eink"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="6dp"
+        android:visibility="gone"
+        android:progressDrawable="@drawable/widget_progress_bar_eink"
+        android:minHeight="6dp" android:maxHeight="6dp"
+        android:max="100" android:progress="0" />
+      <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginTop="4dp">
+        <TextView android:id="@+id/reading_stat_0"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"
+          android:visibility="gone"
+          android:textSize="12sp" android:textColor="?android:attr/textColorSecondary" />
+        <FrameLayout android:id="@+id/reading_stat_1_pad"
+          android:layout_width="12dp" android:layout_height="0dp" android:visibility="gone" />
+        <FrameLayout android:id="@+id/reading_stat_1_gap"
+          android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"
+          android:visibility="gone" />
+        <TextView android:id="@+id/reading_stat_1"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"
+          android:visibility="gone"
+          android:textSize="12sp" android:textColor="?android:attr/textColorSecondary" />
+        <FrameLayout android:id="@+id/reading_stat_2_pad"
+          android:layout_width="12dp" android:layout_height="0dp" android:visibility="gone" />
+        <FrameLayout android:id="@+id/reading_stat_2_gap"
+          android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"
+          android:visibility="gone" />
+        <TextView android:id="@+id/reading_stat_2"
+          android:layout_width="wrap_content" android:layout_height="wrap_content"
+          android:visibility="gone"
+          android:textSize="12sp" android:textColor="?android:attr/textColorSecondary" />
+      </LinearLayout>
+    </LinearLayout>
+  </LinearLayout>
+  <include layout="@layout/widget_tts_bar" />
+  <TextView android:id="@+id/reading_empty"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:gravity="center" android:visibility="gone" android:textSize="12sp"
+    android:textColor="?android:attr/textColorSecondary" />
+</LinearLayout>
