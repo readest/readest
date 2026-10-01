@@ -1956,7 +1956,6 @@
   "Back to Read Aloud": "回到朗讀位置",
   "Vertical Scrolling": "垂直滾動",
   "Horizontal Scrolling": "水平滾動",
-  "Book not found in the BookOrbit library": "在 BookOrbit 書庫中找不到該書",
   "Connect to your BookOrbit server.": "連線到你的 BookOrbit 伺服器。",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "同步閱讀進度",
@@ -2442,5 +2441,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "已連線至 Pagebound。上次同步 {{time}}。",
   "Sign in with your Pagebound email and password to sync reading progress.": "使用 Pagebound 電子郵件與密碼登入以同步閱讀進度。",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "如果您使用 Apple 或 Google 登入，請先在 Pagebound 中設定密碼。",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "在 BookOrbit 中找不到這本書。請在 BookOrbit 的「Unmatched KOReader Books」中連結此書以進行同步。"
 }

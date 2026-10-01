@@ -1,4 +1,5 @@
 import type { BookNote, ReadingStatus } from '@/types/book';
+import type { BookOrbitSettings } from '@/types/settings';
 import {
   applyAnnotationResult,
   buildAnnotationExchangeBook,
@@ -48,6 +49,8 @@ export interface NotesPassDeps {
   resolvePosition: PositionResolver;
   /** Fill xpointer0/1 from cfi for the given notes (returns the enriched notes). */
   populateXPointers: (notes: BookNote[]) => Promise<BookNote[]>;
+  /** Exchange highlights and bookmarks; off still match-checks the book. */
+  syncNotes: boolean;
   syncBookStates: boolean;
   now: () => number;
   /** One-time hint that the book is not matched on the BookOrbit server. */
@@ -76,32 +79,10 @@ interface ExchangePhase<TChange> {
   }) => Promise<{ more: boolean; unmatched: boolean } | null>;
 }
 
-/**
- * One bidirectional sync pass for the open book against a BookOrbit server:
- * match-check, annotation exchange (+ack), bookmark exchange when the server
- * supports it, and a book-state push. Watermarks only advance after a phase
- * completes, so a failed pass repeats its changes next time.
- */
-export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<void> => {
-  const { client, store, book } = deps;
-  const hash = book.hash;
-
-  // Same shape the BookOrbit koplugin sends for the open document: `source`
-  // is what gets the book listed under "Unmatched KOReader Books" so the user
-  // can link it by hand, and `lastOpen` labels that entry.
-  const matchResult = await client.matchCheck([
-    {
-      hash,
-      title: book.title,
-      authors: book.author,
-      lastOpen: Math.floor(deps.now() / 1000),
-      source: 'current_file',
-    },
-  ]);
-  if (!matchResult.matches.some((match) => match.hash === hash)) {
-    deps.onUnmatched();
-    return;
-  }
+/** Annotation exchange (+ack), then bookmark exchange when the server supports it. */
+const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
+  const { client, store } = deps;
+  const hash = deps.book.hash;
 
   // Notes created in Readest carry only a CFI until a sync path needs the
   // KOReader position; fill the cache before building keys. The enriched
@@ -251,6 +232,49 @@ export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<void> 
       },
     });
   }
+};
+
+/** Whether the reader should run the pass: connected, with any sync option on. */
+export const isBookOrbitPassEnabled = (bookorbit: BookOrbitSettings): boolean =>
+  bookorbit.enabled &&
+  !!bookorbit.serverUrl &&
+  !!bookorbit.username &&
+  !!bookorbit.userkey &&
+  (bookorbit.syncProgress ||
+    bookorbit.syncNotes ||
+    bookorbit.syncStats ||
+    bookorbit.syncBookStates);
+
+/**
+ * One sync pass for the open book against a BookOrbit server: match-check,
+ * then the note exchange and book-state push the user enabled. The
+ * match-check runs whenever any BookOrbit sync is on: it is what lists an
+ * unmatched book in BookOrbit for manual linking, without which progress and
+ * stats are silently rejected. Watermarks only advance after a phase
+ * completes, so a failed pass repeats its changes next time.
+ */
+export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<void> => {
+  const { client, book } = deps;
+  const hash = book.hash;
+
+  // Same shape the BookOrbit koplugin sends for the open document: `source`
+  // is what gets the book listed under "Unmatched KOReader Books" so the user
+  // can link it by hand, and `lastOpen` labels that entry.
+  const matchResult = await client.matchCheck([
+    {
+      hash,
+      title: book.title,
+      authors: book.author,
+      lastOpen: Math.floor(deps.now() / 1000),
+      source: 'current_file',
+    },
+  ]);
+  if (!matchResult.matches.some((match) => match.hash === hash)) {
+    deps.onUnmatched();
+    return;
+  }
+
+  if (deps.syncNotes) await exchangeNotes(deps);
 
   if (deps.syncBookStates) {
     const status = readingStatusToBookOrbit(book.readingStatus);

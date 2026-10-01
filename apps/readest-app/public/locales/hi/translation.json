@@ -1987,7 +1987,6 @@
   "Back to Read Aloud": "ज़ोर से पढ़ने पर लौटें",
   "Vertical Scrolling": "ऊर्ध्वाधर स्क्रॉलिंग",
   "Horizontal Scrolling": "क्षैतिज स्क्रॉलिंग",
-  "Book not found in the BookOrbit library": "BookOrbit लाइब्रेरी में पुस्तक नहीं मिली",
   "Connect to your BookOrbit server.": "अपने BookOrbit सर्वर से कनेक्ट करें।",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "पठन प्रगति सिंक करें",
@@ -2506,5 +2505,6 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound से कनेक्ट किया गया। अंतिम सिंक {{time}}।",
   "Sign in with your Pagebound email and password to sync reading progress.": "पढ़ने की प्रगति सिंक करने के लिए अपने Pagebound ईमेल और पासवर्ड से साइन इन करें।",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "यदि आप Apple या Google से साइन इन करते हैं, तो पहले Pagebound में पासवर्ड सेट करें।",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit में पुस्तक नहीं मिली। इसे सिंक करने के लिए BookOrbit में \"Unmatched KOReader Books\" के अंतर्गत लिंक करें।"
 }
