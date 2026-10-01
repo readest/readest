@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { IoMdCloseCircleOutline } from 'react-icons/io';
 import { MdInfoOutline } from 'react-icons/md';
@@ -26,6 +26,7 @@ export default function BookshelfFilterEditor({
   const [showHelp, setShowHelp] = useState(false);
   const helpButtonRef = useRef<HTMLButtonElement>(null);
   const addRuleRef = useRef<HTMLButtonElement>(null);
+  const valuesId = useId();
   const changeChild = (index: number, node: BookshelfRule | BookshelfFilterGroup) =>
     onChange({
       ...group,
@@ -221,6 +222,11 @@ export default function BookshelfFilterEditor({
                       <input
                         aria-label={_('Filter value')}
                         className='input eink-bordered border-base-200 w-full min-w-0'
+                        list={
+                          fields.find((f) => f.id === child.field)?.values?.length
+                            ? `${valuesId}-${index}`
+                            : undefined
+                        }
                         type={
                           child.kind === 'number'
                             ? 'number'
@@ -242,6 +248,13 @@ export default function BookshelfFilterEditor({
                         }
                       />
                     ))}
+                  <datalist id={`${valuesId}-${index}`}>
+                    {fields
+                      .find((f) => f.id === child.field)
+                      ?.values?.map((value) => (
+                        <option key={value} value={value} />
+                      ))}
+                  </datalist>
                 </div>
               )}
             </div>

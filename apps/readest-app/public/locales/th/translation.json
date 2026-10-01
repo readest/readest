@@ -2442,5 +2442,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "เชื่อมต่อกับ Pagebound แล้ว ซิงค์ล่าสุด {{time}}",
   "Sign in with your Pagebound email and password to sync reading progress.": "ลงชื่อเข้าใช้ด้วยอีเมลและรหัสผ่าน Pagebound เพื่อซิงค์ความคืบหน้าการอ่าน",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "หากคุณลงชื่อเข้าใช้ด้วย Apple หรือ Google ให้ตั้งรหัสผ่านใน Pagebound ก่อน",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "สถานะการดาวน์โหลด",
+  "Local only": "ในเครื่องเท่านั้น",
+  "Cloud only": "บนคลาวด์เท่านั้น"
 }

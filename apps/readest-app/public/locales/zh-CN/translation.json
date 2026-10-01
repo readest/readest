@@ -2442,5 +2442,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "已连接到 Pagebound。上次同步 {{time}}。",
   "Sign in with your Pagebound email and password to sync reading progress.": "使用 Pagebound 邮箱和密码登录以同步阅读进度。",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "如果您使用 Apple 或 Google 登录，请先在 Pagebound 中设置密码。",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "下载状态",
+  "Local only": "仅本地",
+  "Cloud only": "仅云端"
 }

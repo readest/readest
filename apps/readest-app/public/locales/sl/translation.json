@@ -2634,5 +2634,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Povezano s Pagebound. Zadnja sinhronizacija {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Za sinhronizacijo napredka branja se prijavite z e-pošto in geslom za Pagebound.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Če se prijavljate z Apple ali Google, najprej nastavite geslo v Pagebound.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "Stanje prenosa",
+  "Local only": "Samo lokalno",
+  "Cloud only": "Samo v oblaku"
 }

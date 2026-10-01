@@ -2634,5 +2634,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Підключено до Pagebound. Остання синхронізація {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Увійдіть за допомогою електронної пошти та пароля Pagebound, щоб синхронізувати прогрес читання.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Якщо ви входите через Apple або Google, спершу встановіть пароль у Pagebound.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "Стан завантаження",
+  "Local only": "Лише локально",
+  "Cloud only": "Лише в хмарі"
 }

@@ -2506,5 +2506,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound'ga ulangan. Oxirgi sinxronlash {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "O‘qish jarayonini sinxronlash uchun Pagebound elektron pochtangiz va parolingiz bilan kiring.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Agar Apple yoki Google orqali kirsangiz, avval Pagebound’da parol o‘rnating.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "Yuklab olish holati",
+  "Local only": "Faqat mahalliy",
+  "Cloud only": "Faqat bulutda"
 }

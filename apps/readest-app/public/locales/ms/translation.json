@@ -2442,5 +2442,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Disambungkan ke Pagebound. Penyegerakan terakhir {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Log masuk dengan e-mel dan kata laluan Pagebound anda untuk menyegerakkan kemajuan membaca.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Jika anda log masuk dengan Apple atau Google, tetapkan kata laluan dalam Pagebound terlebih dahulu.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "Status muat turun",
+  "Local only": "Setempat sahaja",
+  "Cloud only": "Dalam awan sahaja"
 }

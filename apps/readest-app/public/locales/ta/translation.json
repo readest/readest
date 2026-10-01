@@ -2506,5 +2506,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound உடன் இணைக்கப்பட்டது. கடைசி ஒத்திசைவு {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "வாசிப்பு முன்னேற்றத்தை ஒத்திசைக்க உங்கள் Pagebound மின்னஞ்சல் மற்றும் கடவுச்சொல்லுடன் உள்நுழையவும்.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "நீங்கள் Apple அல்லது Google மூலம் உள்நுழைந்தால், முதலில் Pagebound-இல் கடவுச்சொல்லை அமைக்கவும்.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "பதிவிறக்க நிலை",
+  "Local only": "உள்ளூர் மட்டும்",
+  "Cloud only": "கிளவுடில் மட்டும்"
 }

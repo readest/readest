@@ -2506,5 +2506,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Συνδέθηκε στο Pagebound. Τελευταίος συγχρονισμός {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Συνδεθείτε με το email και τον κωδικό σας στο Pagebound για συγχρονισμό της προόδου ανάγνωσης.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Αν συνδέεστε με Apple ή Google, ορίστε πρώτα έναν κωδικό στο Pagebound.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "Κατάσταση λήψης",
+  "Local only": "Μόνο τοπικά",
+  "Cloud only": "Μόνο στο cloud"
 }

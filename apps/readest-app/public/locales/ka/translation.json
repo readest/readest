@@ -2506,5 +2506,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "დაკავშირებულია Pagebound-თან. ბოლო სინქრონიზაცია {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "კითხვის პროგრესის სინქრონიზაციისთვის შედით Pagebound-ის ელფოსტითა და პაროლით.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "თუ Apple-ით ან Google-ით შედიხართ, ჯერ Pagebound-ში დააყენეთ პაროლი.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "ჩამოტვირთვის სტატუსი",
+  "Local only": "მხოლოდ ლოკალური",
+  "Cloud only": "მხოლოდ ღრუბელში"
 }

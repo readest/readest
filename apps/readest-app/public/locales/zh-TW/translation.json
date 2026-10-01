@@ -2442,5 +2442,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "已連線至 Pagebound。上次同步 {{time}}。",
   "Sign in with your Pagebound email and password to sync reading progress.": "使用 Pagebound 電子郵件與密碼登入以同步閱讀進度。",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "如果您使用 Apple 或 Google 登入，請先在 Pagebound 中設定密碼。",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "下載狀態",
+  "Local only": "僅本機",
+  "Cloud only": "僅雲端"
 }

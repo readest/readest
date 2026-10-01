@@ -2570,5 +2570,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Conectado ao Pagebound. Última sincronização {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Entre com seu e-mail e senha do Pagebound para sincronizar o progresso de leitura.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Se você usa login com Apple ou Google, defina primeiro uma senha no Pagebound.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "Status do download",
+  "Local only": "Apenas local",
+  "Cloud only": "Apenas na nuvem"
 }

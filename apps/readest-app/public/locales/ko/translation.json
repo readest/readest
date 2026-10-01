@@ -2442,5 +2442,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound에 연결됨. 마지막 동기화 {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "읽기 진행 상황을 동기화하려면 Pagebound 이메일과 비밀번호로 로그인하세요.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple 또는 Google로 로그인하는 경우 먼저 Pagebound에서 비밀번호를 설정하세요.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "다운로드 상태",
+  "Local only": "로컬 전용",
+  "Cloud only": "클라우드 전용"
 }

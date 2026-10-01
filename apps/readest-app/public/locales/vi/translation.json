@@ -2442,5 +2442,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Đã kết nối với Pagebound. Đồng bộ lần cuối {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "Đăng nhập bằng email và mật khẩu Pagebound để đồng bộ tiến độ đọc.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Nếu bạn đăng nhập bằng Apple hoặc Google, hãy đặt mật khẩu trong Pagebound trước.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "Trạng thái tải xuống",
+  "Local only": "Chỉ cục bộ",
+  "Cloud only": "Chỉ trên đám mây"
 }

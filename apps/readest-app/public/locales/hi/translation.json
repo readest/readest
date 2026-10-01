@@ -2506,5 +2506,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound से कनेक्ट किया गया। अंतिम सिंक {{time}}।",
   "Sign in with your Pagebound email and password to sync reading progress.": "पढ़ने की प्रगति सिंक करने के लिए अपने Pagebound ईमेल और पासवर्ड से साइन इन करें।",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "यदि आप Apple या Google से साइन इन करते हैं, तो पहले Pagebound में पासवर्ड सेट करें।",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "डाउनलोड स्थिति",
+  "Local only": "केवल स्थानीय",
+  "Cloud only": "केवल क्लाउड में"
 }

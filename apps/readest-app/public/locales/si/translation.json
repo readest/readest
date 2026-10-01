@@ -2506,5 +2506,8 @@
   "Connected to Pagebound. Last synced {{time}}.": "Pagebound වෙත සම්බන්ධිතයි. අවසන් සමමුහුර්ත කිරීම {{time}}.",
   "Sign in with your Pagebound email and password to sync reading progress.": "කියවීමේ ප්‍රගතිය සමමුහුර්ත කිරීමට ඔබගේ Pagebound ඊමේල් සහ මුරපදය සමඟ පුරනය වන්න.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "ඔබ Apple හෝ Google සමඟ පුරනය වන්නේ නම්, පළමුව Pagebound හි මුරපදයක් සකසන්න.",
-  "Pagebound": "Pagebound"
+  "Pagebound": "Pagebound",
+  "Download status": "බාගැනීමේ තත්ත්වය",
+  "Local only": "දේශීය පමණි",
+  "Cloud only": "වලාකුළේ පමණි"
 }
