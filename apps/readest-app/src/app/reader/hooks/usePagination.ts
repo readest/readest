@@ -163,7 +163,14 @@ const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
     // No platform gate here (unlike the manual binding): the interval is set
     // only on Android but a synced per-book config can carry it elsewhere, and
     // off-Android the bridge rejects — swallowed here as an intentional no-op.
-    refreshEinkScreen().catch(() => {});
+    // A resolved { success: false } is only reachable on a supported device whose
+    // vendor hook failed at refresh time, so it's a real 'advertised but not
+    // refreshing' case worth a field log; a rejection (off-Android) stays silent.
+    refreshEinkScreen()
+      .then((result) => {
+        if (!result.success) console.debug('auto e-ink full refresh no-op:', result.error);
+      })
+      .catch(() => {});
   } else {
     einkPageTurnsSinceRefresh.set(view, turns);
   }

@@ -312,6 +312,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [isColorEink]);
 
   useEffect(() => {
+    if (einkAutoRefreshInterval === viewSettings.einkAutoRefreshInterval) return;
     saveViewSettings(
       envConfig,
       bookKey,
