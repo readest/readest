@@ -3,9 +3,13 @@ import type { FoliateView } from '@/types/view';
 import type { ViewSettings } from '@/types/book';
 
 // Only the native bridge boundary is mocked, so we can observe whether the
-// e-ink automatic full-refresh counter fires on schedule.
+// e-ink automatic full-refresh counter fires on schedule. The capability probe
+// is stubbed as `null` (unknown / still pending) by default so the counter
+// proceeds; a test overrides it to `false` to exercise the short-circuit.
 const h = vi.hoisted(() => ({
   refreshEinkScreen: vi.fn(() => Promise.resolve({ success: true })),
+  getCachedEinkRefreshSupported: vi.fn(() => null as boolean | null),
+  markEinkRefreshUnsupported: vi.fn(),
 }));
 
 vi.mock('@/utils/bridge', () => ({
@@ -13,6 +17,8 @@ vi.mock('@/utils/bridge', () => ({
   getScreenBrightness: vi.fn(),
   setScreenBrightness: vi.fn(),
   refreshEinkScreen: () => h.refreshEinkScreen(),
+  getCachedEinkRefreshSupported: () => h.getCachedEinkRefreshSupported(),
+  markEinkRefreshUnsupported: () => h.markEinkRefreshUnsupported(),
 }));
 
 vi.mock('@/store/readerStore', () => ({
@@ -35,8 +41,8 @@ import { viewPagination } from '@/app/reader/hooks/usePagination';
 
 // A minimal paginated (non-scrolled) view: `viewPagination` only reaches
 // `view.next/prev` on a page turn, which is exactly what the counter tracks.
-// `atEnd`/`atStart` mirror foliate's boundary getters so we can prove a turn
-// that cannot move is not counted.
+// `atEnd`/`atStart` stay on the fake renderer to prove the counter no longer
+// uses them to skip turns (fixed-layout books report them on most turns).
 const makeView = (opts: { atEnd?: boolean; atStart?: boolean } = {}) => ({
   renderer: { scrolled: false, atEnd: !!opts.atEnd, atStart: !!opts.atStart },
   next: vi.fn(),
@@ -51,6 +57,10 @@ const turnPages = (view: unknown, viewSettings: ViewSettings, times: number) => 
 
 beforeEach(() => {
   h.refreshEinkScreen.mockClear();
+  h.refreshEinkScreen.mockImplementation(() => Promise.resolve({ success: true }));
+  h.markEinkRefreshUnsupported.mockClear();
+  h.getCachedEinkRefreshSupported.mockClear();
+  h.getCachedEinkRefreshSupported.mockImplementation(() => null);
 });
 
 describe('usePagination e-ink auto full refresh', () => {
@@ -90,12 +100,30 @@ describe('usePagination e-ink auto full refresh', () => {
     expect(h.refreshEinkScreen).toHaveBeenCalledTimes(1);
   });
 
-  test('a boundary turn that cannot move does not count', () => {
+  test('a turn flagged atEnd still counts (no boundary skip)', () => {
+    // On fixed-layout / one-page-per-section content renderer.atEnd is true on
+    // nearly every real turn; honoring it would starve the counter, so we count
+    // the turn and accept that a true no-op refreshes with nothing changed.
     const view = makeView({ atEnd: true });
     const viewSettings = { isEink: true, einkAutoRefreshInterval: 2 } as ViewSettings;
-    // 'down' is a forward turn; at the end of the book view.next() is a no-op,
-    // so repeatedly pressing it must not fire the refresh.
+    turnPages(view, viewSettings, 2);
+    expect(h.refreshEinkScreen).toHaveBeenCalledTimes(1);
+  });
+
+  test('stops refreshing once the device is known unsupported', () => {
+    h.getCachedEinkRefreshSupported.mockReturnValue(false);
+    const view = makeView();
+    const viewSettings = { isEink: true, einkAutoRefreshInterval: 2 } as ViewSettings;
     turnPages(view, viewSettings, 4);
     expect(h.refreshEinkScreen).not.toHaveBeenCalled();
+  });
+
+  test('a failed refresh downgrades the capability flag', async () => {
+    h.refreshEinkScreen.mockImplementation(() => Promise.resolve({ success: false }));
+    const view = makeView();
+    const viewSettings = { isEink: true, einkAutoRefreshInterval: 1 } as ViewSettings;
+    viewPagination(view as unknown as FoliateView, viewSettings, 'down', 'page');
+    await Promise.resolve(); // flush the refresh().then(...) microtask
+    expect(h.markEinkRefreshUnsupported).toHaveBeenCalledTimes(1);
   });
 });

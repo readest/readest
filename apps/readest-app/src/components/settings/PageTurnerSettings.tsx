@@ -6,7 +6,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { eventDispatcher } from '@/utils/event';
-import { checkEinkRefreshSupported } from '@/utils/bridge';
+import { useEinkRefreshSupported } from '@/hooks/useEinkRefreshSupported';
 import {
   normalizeNativeKey,
   normalizeDomKeyEvent,
@@ -46,7 +46,7 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The 'Refresh Page' slot only fires a visible flash where a vendor
   // full-refresh hook actually exists, so hide it (not just no-op) elsewhere.
-  const [einkRefreshSupported, setEinkRefreshSupported] = useState(false);
+  const einkRefreshSupported = useEinkRefreshSupported();
 
   const persist = (next: HardwarePageTurnerSettings) => {
     setConfig(next);
@@ -143,17 +143,6 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
     if (!config.enabled && listening) stopListening();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.enabled]);
-
-  useEffect(() => {
-    if (!appService?.isAndroidApp) return;
-    let active = true;
-    checkEinkRefreshSupported().then((supported) => {
-      if (active) setEinkRefreshSupported(supported);
-    });
-    return () => {
-      active = false;
-    };
-  }, [appService]);
 
   const renderSlot = (slot: Slot, label: string) => {
     const binding = config.bindings[slot];

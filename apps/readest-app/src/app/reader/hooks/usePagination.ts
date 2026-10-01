@@ -14,7 +14,11 @@ import {
   isPencilNativeKey,
   KeyCandidate,
 } from '@/utils/keybinding';
-import { refreshEinkScreen } from '@/utils/bridge';
+import {
+  getCachedEinkRefreshSupported,
+  markEinkRefreshUnsupported,
+  refreshEinkScreen,
+} from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -133,24 +137,35 @@ const resetEinkRefreshCounter = (view: FoliateView | null) => {
   if (view) einkPageTurnsSinceRefresh.set(view, 0);
 };
 
-const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings, forward: boolean) => {
+const noteEinkPageTurn = (view: FoliateView, viewSettings: ViewSettings) => {
   const interval = viewSettings.einkAutoRefreshInterval;
   if (!viewSettings.isEink || !interval || interval <= 0) return;
-  // Counts turns dispatched through this helper (tap zones, wheel, keyboard,
-  // hardware keys, navigation buttons). The native swipe the paginator commits
-  // directly is intentionally not counted here; revisit if swipe becomes the
-  // default turn gesture. A turn that hits the start/end boundary doesn't move,
-  // so it isn't a real page turn — skip it, otherwise hammering "next" on the
-  // last page would refresh every N presses with nothing actually changing.
-  const renderer = view.renderer;
-  if (forward ? renderer.atEnd : renderer.atStart) return;
+  // Once the device is known not to do full refreshes — the probe settled
+  // false, or a refresh actually came back unsuccessful — stop counting and
+  // firing. `null` (probe still pending) keeps going: the scheduled refresh is
+  // itself the real-world test, and it downgrades the flag if it fails.
+  if (getCachedEinkRefreshSupported() === false) return;
+  // Counts page turns routed through viewPagination: tap/click zones, wheel,
+  // volume keys, hardware page-turner keys, and the on-screen nav buttons. Not
+  // counted: PageUp/PageDown and Shift+Arrow (their shortcuts call view.next /
+  // view.prev directly), the footer prev/next buttons (renderer.next / .prev),
+  // section jumps, and the native swipe the paginator commits on its own.
+  // Intentionally no start/end boundary skip either: renderer.atEnd / atStart
+  // are section-page based, so on fixed-layout / one-page-per-section books
+  // they read true on nearly every real turn and would starve the counter. A
+  // no-op turn that cannot move just refreshes on schedule with nothing
+  // changed — the lesser cost versus never refreshing.
   const turns = (einkPageTurnsSinceRefresh.get(view) ?? 0) + 1;
   if (turns >= interval) {
     einkPageTurnsSinceRefresh.set(view, 0);
     // No platform gate here (unlike the manual binding): the interval is set
     // only on Android but a synced per-book config can carry it elsewhere, and
     // off-Android the bridge rejects — swallowed below as an intentional no-op.
-    refreshEinkScreen().catch(() => {});
+    refreshEinkScreen()
+      .then((response) => {
+        if (!response.success) markEinkRefreshUnsupported();
+      })
+      .catch(() => {});
   } else {
     einkPageTurnsSinceRefresh.set(view, turns);
   }
@@ -194,7 +209,7 @@ export const viewPagination = (
             view.book.rendition?.layout === 'pre-paginated')
             ? distance
             : snapScrolledDistanceToLines(view, distance, forward);
-        noteEinkPageTurn(view, viewSettings, forward);
+        noteEinkPageTurn(view, viewSettings);
         return forward ? view.next(snapped) : view.prev(snapped);
       }
     }
@@ -204,7 +219,7 @@ export const viewPagination = (
     } else if (hasVerticalPanning(view, viewSettings) && (side === 'up' || side === 'down')) {
       return view.pan(0, side === 'up' ? -panDistance : panDistance);
     } else {
-      noteEinkPageTurn(view, viewSettings, !(side === 'left' || side === 'up'));
+      noteEinkPageTurn(view, viewSettings);
       return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   } else {
@@ -218,7 +233,7 @@ export const viewPagination = (
       case 'pan':
       case 'page':
       default:
-        noteEinkPageTurn(view, viewSettings, !(side === 'left' || side === 'up'));
+        noteEinkPageTurn(view, viewSettings);
         return side === 'left' || side === 'up' ? view.prev() : view.next();
     }
   }

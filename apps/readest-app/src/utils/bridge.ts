@@ -358,10 +358,14 @@ export async function isEinkRefreshSupported(): Promise<EinkRefreshSupportedResp
 // rejection (e.g. the bridge not ready on first mount) clears the cache so a
 // later call can retry, instead of latching the option hidden for the session.
 let einkRefreshSupportedPromise: Promise<boolean> | null = null;
+let einkRefreshSupportedSettled: boolean | null = null;
 export function checkEinkRefreshSupported(): Promise<boolean> {
   if (!einkRefreshSupportedPromise) {
     einkRefreshSupportedPromise = isEinkRefreshSupported().then(
-      (response) => response.supported,
+      (response) => {
+        einkRefreshSupportedSettled = response.supported;
+        return response.supported;
+      },
       () => {
         einkRefreshSupportedPromise = null;
         return false;
@@ -369,6 +373,20 @@ export function checkEinkRefreshSupported(): Promise<boolean> {
     );
   }
   return einkRefreshSupportedPromise;
+}
+
+// Synchronous view of a settled probe (`null` = not yet resolved). Lets the
+// auto-refresh loop skip doomed refresh requests without awaiting.
+export function getCachedEinkRefreshSupported(): boolean | null {
+  return einkRefreshSupportedSettled;
+}
+
+// Downgrade support once the native side actually reports it cannot refresh
+// (a hook present but stubbed / hidden-API gated): the gated UI hides on the
+// next mount and the loop stops firing. Only ever downgrades true -> false.
+export function markEinkRefreshUnsupported(): void {
+  einkRefreshSupportedSettled = false;
+  einkRefreshSupportedPromise = Promise.resolve(false);
 }
 
 /** Webview region to snapshot, in CSS pixels of the viewport (origin top-left). */
