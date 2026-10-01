@@ -192,7 +192,12 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
       { value: 'cloudOnly', label: _('Cloud only') },
     ],
     read: (b) => {
-      const local = !!(b.downloadedAt || b.absDownloadedAt);
+      // Streaming formats keep a server URL in filePath, not a local file.
+      const local = !!(
+        b.downloadedAt ||
+        b.absDownloadedAt ||
+        (b.filePath && !AUDIO_FORMATS.includes(b.format))
+      );
       if (!b.uploadedAt) return local ? 'localOnly' : undefined;
       return local ? 'downloaded' : 'cloudOnly';
     },

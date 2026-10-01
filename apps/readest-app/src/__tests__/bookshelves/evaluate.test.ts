@@ -362,7 +362,8 @@ describe('bookshelf evaluation', () => {
       { ...book('downloaded'), downloadedAt: 1, uploadedAt: 1 },
       { ...book('cloud'), uploadedAt: 1 },
       { ...book('abs'), format: 'ABS' as const, absDownloadedAt: 1, uploadedAt: 1 },
-      book('streaming'),
+      { ...book('streaming'), format: 'ABS' as const, filePath: 'abs://server/item' },
+      { ...book('referenced'), filePath: '/books/referenced.epub' },
     ];
     const matching = (value: string) =>
       books
@@ -381,7 +382,7 @@ describe('bookshelf evaluation', () => {
           }),
         )
         .map((b) => b.hash);
-    expect(matching('localOnly')).toEqual(['local']);
+    expect(matching('localOnly')).toEqual(['local', 'referenced']);
     expect(matching('downloaded')).toEqual(['downloaded', 'abs']);
     expect(matching('cloudOnly')).toEqual(['cloud']);
   });
