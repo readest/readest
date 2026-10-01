@@ -87,12 +87,15 @@ object EinkRefreshController {
     }
 
     /**
-     * Whether this device exposes at least one known full-refresh mechanism.
-     * Drives the "Auto Full Refresh" UI: the option is only offered where a
-     * deep refresh is actually possible, so it never misleads owners of panels
-     * we cannot drive. Pure reflection — never touches the panel. May propagate
-     * a hard reflection/linkage [Error] (an inconclusive read), which the
-     * command layer turns into a retryable rejection rather than a false.
+     * Whether this device exposes at least one known full-refresh mechanism we
+     * can attempt to drive. This is a best-effort *presence* check — a vendor
+     * method that resolves — not a guarantee the call actually moves the panel
+     * (a stubbed or partially hidden hook can resolve yet throw at refresh()
+     * time). It still keeps the "Auto Full Refresh" / "Refresh Page" options
+     * away from devices with no known hook at all. Pure reflection — never
+     * touches the panel. May propagate a hard reflection/linkage [Error] (an
+     * inconclusive read), which the command layer turns into a retryable
+     * rejection rather than a false.
      */
     fun isSupported(): Boolean =
         onyxRefreshScreen != null || ntxPostInvalidateDelayed != null || rockchipRequestEpdMode != null
