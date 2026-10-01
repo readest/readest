@@ -4,6 +4,7 @@ import { Trans } from 'react-i18next';
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -51,6 +52,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const getView = useReaderStore((s) => s.getView);
@@ -287,16 +289,32 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
             }
           : {
-              // The reader never sets dir=rtl on this container, so inline
-              // start is always the physical left.
-              paddingInlineStart: inlinePadding(
-                contentInsets.left,
-                cornerClearance(cornerRadii.left),
-              ),
-              paddingInlineEnd: inlinePadding(
-                contentInsets.right,
-                cornerClearance(cornerRadii.right),
-              ),
+              ...(isIPhoneDuo
+                ? {
+                    // Half the page margin past the safe-area inset, matching
+                    // the paginator's gutter (#6307), and clear of a rounded
+                    // corner. Physical sides: the insets are.
+                    paddingLeft: inlinePadding(
+                      contentInsets.left + gridInsets.left,
+                      cornerClearance(cornerRadii.left),
+                    ),
+                    paddingRight: inlinePadding(
+                      contentInsets.right + gridInsets.right,
+                      cornerClearance(cornerRadii.right),
+                    ),
+                  }
+                : {
+                    // The reader never sets dir=rtl on this container, so
+                    // inline start is always the physical left.
+                    paddingInlineStart: inlinePadding(
+                      contentInsets.left,
+                      cornerClearance(cornerRadii.left),
+                    ),
+                    paddingInlineEnd: inlinePadding(
+                      contentInsets.right,
+                      cornerClearance(cornerRadii.right),
+                    ),
+                  }),
               paddingBottom: bottomPadding ? `${bottomPadding}px` : 0,
             }),
       }}

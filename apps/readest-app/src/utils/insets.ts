@@ -1,5 +1,6 @@
 import { Insets } from '@/types/misc';
 import { ViewSettings } from '@/types/book';
+import type { Point, Position, Rect } from '@/utils/sel';
 
 export const getViewInsets = (viewSettings: ViewSettings) => {
   const showHeader = viewSettings.showHeader!;
@@ -62,6 +63,103 @@ export const getHeaderTriggerHeight = (topInset: number, viewSettings: ViewSetti
     viewSettings.showHeader && !isVertical ? Math.max(topInset + marginTopPx, 16) : marginTopPx;
   return Math.min(maxHeight, Math.max(0, contentTop));
 };
+
+/**
+ * Physical horizontal padding that keeps an edge-to-edge bar, sheet or panel
+ * clear of iPhone Duo's vertical status strip and camera cutout, which it
+ * reports as a large left or right safe-area inset (it can flip with rotation
+ * or Split View). Safe-area insets are physical, so this is
+ * `paddingLeft`/`paddingRight`, never start/end.
+ *
+ * Empty off the Duo, so no other device changes. On the Duo it is also empty
+ * without a side inset, leaving the element's own (responsive) padding classes
+ * in charge.
+ */
+export const getHorizontalInsetStyle = (
+  insets: Insets | null | undefined,
+  isIPhoneDuo: boolean,
+  basePx = 0,
+): { paddingLeft?: string; paddingRight?: string } => {
+  const left = insets?.left ?? 0;
+  const right = insets?.right ?? 0;
+  if (!isIPhoneDuo || (!left && !right)) return {};
+  return { paddingLeft: `${left + basePx}px`, paddingRight: `${right + basePx}px` };
+};
+
+/**
+ * Horizontal inset padding for a slide-in panel. The full-width mobile sheet
+ * is padded on both sides; a side panel only meets the screen on `screenEdge`
+ * (the sidebar is always physically left, the notebook right), and padding its
+ * inner edge would leave a dead band against the page.
+ */
+export const getPanelHorizontalInsetStyle = (
+  insets: Insets | null | undefined,
+  isIPhoneDuo: boolean,
+  isMobile: boolean,
+  screenEdge: 'left' | 'right',
+) => {
+  if (isMobile || !insets) return getHorizontalInsetStyle(insets, isIPhoneDuo);
+  return getHorizontalInsetStyle(
+    {
+      ...insets,
+      left: screenEdge === 'left' ? insets.left : 0,
+      right: screenEdge === 'right' ? insets.right : 0,
+    },
+    isIPhoneDuo,
+  );
+};
+
+/**
+ * Insets for a book cell's page area on iPhone Duo. A two-column spread is
+ * inset by the larger horizontal inset on both sides so it stays centred on
+ * the display: on the inner display that puts the spine on the fold (Apple:
+ * match the symmetry of the inner display, #6307). A single column keeps the
+ * asymmetric inset and the width it frees.
+ */
+export const getPageAreaInsets = (insets: Insets, isSpread: boolean): Insets => {
+  if (!isSpread || insets.left === insets.right) return insets;
+  const side = Math.max(insets.left, insets.right);
+  return { ...insets, left: side, right: side };
+};
+
+export interface PopupBounds {
+  rect: Rect;
+  origin: Point;
+}
+
+/**
+ * The rect a popup is clamped to, and the origin its points must be shifted by.
+ *
+ * `getPosition`/`getPopupPosition` return points relative to the rect's
+ * top-left, but popups render relative to the book cell. Off the Duo the rect
+ * is the raw cell (main's behaviour, no shift). On iPhone Duo it is the cell's
+ * safe region, so a popup never sits under the status strip, and `origin` is
+ * the safe region's offset inside the cell: shift the results by it with
+ * {@link offsetPosition} to get back to cell coordinates.
+ */
+export const getPopupBounds = (
+  cellRect: Rect,
+  insets: Insets,
+  isIPhoneDuo: boolean,
+): PopupBounds => {
+  if (!isIPhoneDuo) return { rect: cellRect, origin: { x: 0, y: 0 } };
+  const left = cellRect.left + insets.left;
+  const top = cellRect.top + insets.top;
+  return {
+    rect: {
+      left,
+      top,
+      right: Math.max(left, cellRect.right - insets.right),
+      bottom: Math.max(top, cellRect.bottom - insets.bottom),
+    },
+    origin: { x: insets.left, y: insets.top },
+  };
+};
+
+export const offsetPosition = (position: Position, origin: Point): Position => ({
+  ...position,
+  point: { x: position.point.x + origin.x, y: position.point.y + origin.y },
+});
 
 /**
  * Top padding (px) for a slide-in panel (sidebar / notebook) so its toolbar

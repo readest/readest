@@ -21,6 +21,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { handleAuthCallback, parseOAuthCallbackUrl } from '@/helpers/auth';
 import { getUserProfilePlan } from '@/utils/access';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
@@ -41,7 +42,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow, isIPhoneDuo } = useThemeStore();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
@@ -318,6 +319,7 @@ export default function AuthPage() {
         className={clsx('flex h-full w-full flex-col items-center overflow-y-auto')}
         style={{
           paddingTop: `${safeAreaInsets?.top || 0}px`,
+          ...getHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo),
         }}
       >
         <div
@@ -326,7 +328,20 @@ export default function AuthPage() {
             'fixed z-10 flex w-full items-center justify-between py-2 pe-6 ps-4',
             appService?.hasTrafficLight && 'pt-11',
           )}
-          style={{ top: `${safeAreaInsets?.top || 0}px` }}
+          style={{
+            top: `${safeAreaInsets?.top || 0}px`,
+            // Fixed, so it does not inherit the wrapper's inset; keep the
+            // Back button clear of iPhone Duo's side status strip (#6307).
+            // Pin it to the viewport edge: its static position is centred in
+            // the inset-padded wrapper, which puts it half a strip off-centre.
+            ...(isIPhoneDuo
+              ? {
+                  left: 0,
+                  paddingLeft: `${(safeAreaInsets?.left || 0) + 16}px`,
+                  paddingRight: `${(safeAreaInsets?.right || 0) + 24}px`,
+                }
+              : {}),
+          }}
         >
           <button
             aria-label={_('Go Back')}

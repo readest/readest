@@ -32,7 +32,7 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
   onReset,
 }) => {
   const _ = useTranslation();
-  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const { systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   return (
     <div
       className='absolute right-4 top-2 z-10 grid grid-cols-1 gap-4 text-white'
@@ -40,6 +40,8 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
         marginTop: systemUIVisible
           ? `${Math.max(gridInsets.top, statusBarHeight)}px`
           : `${gridInsets.top}px`,
+        // Clears the Duo status-bar strip / camera cutout (right inset, #6307).
+        ...(isIPhoneDuo ? { right: `${gridInsets.right + 16}px` } : {}),
       }}
     >
       <button

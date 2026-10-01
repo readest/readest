@@ -35,7 +35,7 @@ import { useHardcoverSync } from '../../hooks/useHardcoverSync';
 import { useNotionSync } from '../../hooks/useNotionSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
 import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
-import { placeToolbar, Point, Position, TextSelection } from '@/utils/sel';
+import { placeToolbar, Point, Position, Rect, TextSelection } from '@/utils/sel';
 import {
   getPopupPosition,
   getPosition,
@@ -43,6 +43,7 @@ import {
   getRangeTextStyleInWebview,
   getTextFromRange,
 } from '@/utils/sel';
+import { getPopupBounds, offsetPosition } from '@/utils/insets';
 import { eventDispatcher } from '@/utils/event';
 import { findTocItemBS } from '@/services/nav';
 import { throttle } from '@/utils/throttle';
@@ -119,15 +120,18 @@ import {
 } from '@/utils/readera';
 import { convertReadEraDocToBookNotes } from '@/services/annotation/providers/readera';
 
-const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
+const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?: Insets }> = ({
   bookKey,
   contentInsets,
+  gridInsets = ZERO_INSETS,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings, setSettingsDialogBookKey, setSettingsDialogOpen, setActiveSettingsItemId } =
     useSettingsStore();
-  const { isDarkMode } = useThemeStore();
+  const { isDarkMode, isIPhoneDuo } = useThemeStore();
   // Per-field selectors — see store/readerProgressStore.ts header for the
   // "destructure-subscribes-the-whole-store" rationale.
   const getConfig = useBookDataStore((s) => s.getConfig);
@@ -312,7 +316,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // Where to anchor the toolbar. A tap on a highlighted link opens the footnote
   // popup at the same word, so the toolbar takes the side the popup left free
   // when it fits there, and otherwise stays put and has the popup make room.
-  const getToolbarPosition = (sel: TextSelection, rect: DOMRect) => {
+  const getToolbarPosition = (sel: TextSelection, rect: Rect) => {
     const size = annotPopupHeight + (highlightOptionsAvailable ? highlightOptionsBlock : 0);
     const { position, shared } = placeToolbar(
       (avoidDir) => getPosition(sel, rect, trianglePadding, viewSettings.vertical, avoidDir),
@@ -331,7 +335,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!selection || !selection.text) return;
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    const rect = gridFrame.getBoundingClientRect();
+    // On iPhone Duo clamp to the safe region, not the physical cell (its
+    // status-bar strip can otherwise sit under a popup, #6307). The points come
+    // back relative to that region; they are shifted to cell coordinates below.
+    const { rect, origin } = getPopupBounds(
+      gridFrame.getBoundingClientRect(),
+      gridInsets,
+      isIPhoneDuo,
+    );
     const triangPos = getToolbarPosition(selection, rect);
     const annotPopupPos = getPopupPosition(
       triangPos,
@@ -366,15 +377,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       popupPadding,
     );
     if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
-    setAnnotPopupPosition(annotPopupPos);
-    setDictPopupPosition(dictPopupPos);
-    setTranslatorPopupPosition(transPopupPos);
-    setProofreadPopupPosition(proofreadPopupPos);
-    setTrianglePosition(triangPos);
+    setAnnotPopupPosition(offsetPosition(annotPopupPos, origin));
+    setDictPopupPosition(offsetPosition(dictPopupPos, origin));
+    setTranslatorPopupPosition(offsetPosition(transPopupPos, origin));
+    setProofreadPopupPosition(offsetPosition(proofreadPopupPos, origin));
+    setTrianglePosition(offsetPosition(triangPos, origin));
+    // Re-clamp when the cell's insets change, which only iPhone Duo uses;
+    // elsewhere the deps are unchanged.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selection,
     bookKey,
+    isIPhoneDuo && gridInsets,
     viewSettings.vertical,
     annotPopupWidth,
     annotPopupHeight,
@@ -1192,7 +1206,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       pendingWordLensDictRef.current = false;
       const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
       if (!gridFrame) return;
-      const rect = gridFrame.getBoundingClientRect();
+      // On iPhone Duo clamp to the safe region, not the physical cell (its
+      // status-bar strip can otherwise sit under a popup, #6307). The points come
+      // back relative to that region; they are shifted to cell coordinates below.
+      const { rect, origin } = getPopupBounds(
+        gridFrame.getBoundingClientRect(),
+        gridInsets,
+        isIPhoneDuo,
+      );
       const triangPos = getToolbarPosition(selection, rect);
       const annotPopupPos = getPopupPosition(
         triangPos,
@@ -1227,11 +1248,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         popupPadding,
       );
       if (triangPos.point.x == 0 || triangPos.point.y == 0) return;
-      setAnnotPopupPosition(annotPopupPos);
-      setDictPopupPosition(dictPopupPos);
-      setTranslatorPopupPosition(transPopupPos);
-      setProofreadPopupPosition(proofreadPopupPos);
-      setTrianglePosition(triangPos);
+      setAnnotPopupPosition(offsetPosition(annotPopupPos, origin));
+      setDictPopupPosition(offsetPosition(dictPopupPos, origin));
+      setTranslatorPopupPosition(offsetPosition(transPopupPos, origin));
+      setProofreadPopupPosition(offsetPosition(proofreadPopupPos, origin));
+      setTrianglePosition(offsetPosition(triangPos, origin));
 
       // A lookup surface republishes the very selection it is anchored to:
       // `suppressNativeSelectionHandles` empties the selection for a frame to

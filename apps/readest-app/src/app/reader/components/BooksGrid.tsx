@@ -10,6 +10,8 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
+import { expectsColumnSpread } from '@/utils/config';
+import { getPageAreaInsets } from '@/utils/insets';
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
 import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils/footerBand';
@@ -68,6 +70,8 @@ interface BookCellProps {
   bookKey: string;
   index: number;
   gridInsets: Insets;
+  // Both of the cell's side edges are screen edges (a full-width cell).
+  spansWidth: boolean;
   screenInsets: Insets;
   // Rounded screen corners this cell's bottom edge meets.
   cornerRadii: BottomCornerRadii;
@@ -83,7 +87,8 @@ interface BookCellProps {
 const BookCellInner: React.FC<BookCellProps> = ({
   bookKey,
   index,
-  gridInsets,
+  gridInsets: cellInsets,
+  spansWidth,
   screenInsets,
   cornerRadii,
   appServiceHasRoundedWindow,
@@ -115,6 +120,19 @@ const BookCellInner: React.FC<BookCellProps> = ({
   const progress = useBookProgress(bookKey);
   const viewState = useReaderStore((s) => s.viewStates[bookKey]);
   const viewSettings = viewState?.viewSettings ?? null;
+
+  // On iPhone Duo a two-column spread is centred on the display (spine on the
+  // fold) by making the cell's horizontal insets symmetric; everything in the
+  // cell lays out against these (#6307). Cells that share the screen have an
+  // inset on their outer edge only, so a symmetric pad would leave a dead band
+  // against their neighbour. Off the Duo the cell's insets are used as they are.
+  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
+  const isSpread =
+    isIPhoneDuo &&
+    spansWidth &&
+    !!viewSettings &&
+    expectsColumnSpread(viewSettings, window.innerWidth - cellInsets.left - cellInsets.right);
+  const gridInsets = useMemo(() => getPageAreaInsets(cellInsets, isSpread), [cellInsets, isSpread]);
 
   // config / bookData are read imperatively: their relevant fields are
   // written alongside progress (setProgress / saveConfig), so the
@@ -269,12 +287,12 @@ const BookCellInner: React.FC<BookCellProps> = ({
       <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
       <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
       <BooknotesNav bookKey={bookKey} gridInsets={gridInsets} toc={bookDoc.toc || []} />
-      <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
+      <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} gridInsets={gridInsets} />
       {/* After FootnotePopup so the lookup popups stack above the footnote
           popup (and its dismiss overlay) when the user selects text inside it.
           The selection toolbar no longer rides on this order — it has its own
           z-[43] band, above the footnote popup's z-[42] (#6145). */}
-      <Annotator bookKey={bookKey} contentInsets={contentInsets} />
+      <Annotator bookKey={bookKey} contentInsets={contentInsets} gridInsets={gridInsets} />
       <FooterBar
         bookKey={bookKey}
         bookFormat={book.format}
@@ -289,6 +307,11 @@ const BookCellInner: React.FC<BookCellProps> = ({
 };
 
 const BookCell = React.memo(BookCellInner);
+
+const cellSpansWidth = (index: number, count: number, aspectRatio: number) => {
+  const { left, right } = getInsetEdges(index, count, aspectRatio);
+  return left && right;
+};
 
 const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibrary }) => {
   const _ = useTranslation();
@@ -386,6 +409,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           bookKey={bookKey}
           index={index}
           gridInsets={perBookGridInsets[index]!}
+          spansWidth={cellSpansWidth(index, bookKeys.length, aspectRatio)}
           screenInsets={screenInsets}
           cornerRadii={perBookCornerRadii[index] ?? NO_CORNERS}
           appServiceHasRoundedWindow={appServiceHasRoundedWindow}

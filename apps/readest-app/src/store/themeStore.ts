@@ -62,6 +62,9 @@ interface ThemeState {
   safeAreaInsets: Insets | null;
   // Radius (px) of the rounded bottom screen corners, 0 when unknown.
   screenCornerRadius: number;
+  // iPhone Duo, whose vertical status strip is a large left/right inset (#6307).
+  // Every horizontal-inset rule is gated on it, so no other device changes.
+  isIPhoneDuo: boolean;
   isRoundedWindow: boolean;
   setSystemUIAlwaysHidden: (hidden: boolean) => void;
   setStatusBarHeight: (height: number) => void;
@@ -86,6 +89,7 @@ interface ThemeState {
   handleAmbientLightChange: (lux: number) => void;
   updateSafeAreaInsets: (insets: Insets) => void;
   updateScreenCornerRadius: (radius: number) => void;
+  setIsIPhoneDuo: (isIPhoneDuo: boolean) => void;
 }
 
 const LIBRARY_THEME_MODE_KEY = 'libraryThemeMode';
@@ -300,6 +304,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     systemUIAlwaysHidden: false,
     safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
     screenCornerRadius: 0,
+    isIPhoneDuo: false,
     isRoundedWindow: true,
     showSystemUI: () => set({ systemUIVisible: true }),
     dismissSystemUI: () => set({ systemUIVisible: false }),
@@ -414,6 +419,9 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     },
     updateScreenCornerRadius: (radius) => {
       if (get().screenCornerRadius !== radius) set({ screenCornerRadius: radius });
+    },
+    setIsIPhoneDuo: (isIPhoneDuo) => {
+      if (get().isIPhoneDuo !== isIPhoneDuo) set({ isIPhoneDuo });
     },
   };
 });
