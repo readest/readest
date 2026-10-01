@@ -2593,5 +2593,6 @@
   "Visible as {{name}}": "Виден как {{name}}",
   "Local Network": "Локальная сеть",
   "Italic Text": "Курсивный текст",
-  "Mark italic text like dialogue": "Подсвечивать курсивный текст как диалоги"
+  "Mark italic text like dialogue": "Подсвечивать курсивный текст как диалоги",
+  "Column Gap (px)": "Расстояние между колонками (пикс)"
 }

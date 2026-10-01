@@ -2593,5 +2593,6 @@
   "Visible as {{name}}": "Viden kot {{name}}",
   "Local Network": "Lokalno omrežje",
   "Italic Text": "Ležeče besedilo",
-  "Mark italic text like dialogue": "Označi ležeče besedilo kot dialog"
+  "Mark italic text like dialogue": "Označi ležeče besedilo kot dialog",
+  "Column Gap (px)": "Razmik med stolpci (px)"
 }

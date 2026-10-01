@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "{{name}} ලෙස දෘශ්‍යමානයි",
   "Local Network": "දේශීය ජාලය",
   "Italic Text": "ඇල අකුරු පෙළ",
-  "Mark italic text like dialogue": "ඇල අකුරු පෙළ දෙබස් මෙන් ඉස්මතු කරන්න"
+  "Mark italic text like dialogue": "ඇල අකුරු පෙළ දෙබස් මෙන් ඉස්මතු කරන්න",
+  "Column Gap (px)": "තීරු අතර පරතරය (px)"
 }

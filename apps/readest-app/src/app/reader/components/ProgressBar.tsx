@@ -31,6 +31,7 @@ import {
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
 import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryUtils.ts';
+import { getMarginalInlinePadding } from '@/utils/insets';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
@@ -39,6 +40,8 @@ interface ProgressBarProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  // The spread's Column Gap (px) in effect, 0 when none (getSpreadColumnGap).
+  columnGap?: number;
   // Rounded screen corners this footer's ends run into.
   cornerRadii?: BottomCornerRadii;
 }
@@ -48,6 +51,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  columnGap = 0,
   cornerRadii = NO_CORNERS,
 }) => {
   const _ = useTranslation();
@@ -239,8 +243,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const textBottom = bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2;
   const cornerClearance = (radius: number) =>
     isVertical ? 0 : getCornerClearance(radius, textBottom);
-  const inlinePadding = (inset: number, clearance: number) => {
-    const padding = `calc(${horizontalGap / 2}% + ${inset / 2}px)`;
+  const inlinePadding = (inset: number, clearance: number, hostOffset = 0) => {
+    const padding = getMarginalInlinePadding(horizontalGap, inset, columnGap, hostOffset);
     return clearance > 0 ? `max(${padding}, ${clearance.toFixed(1)}px)` : padding;
   };
 
@@ -297,10 +301,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
                     paddingLeft: inlinePadding(
                       contentInsets.left + gridInsets.left,
                       cornerClearance(cornerRadii.left),
+                      gridInsets.left,
                     ),
                     paddingRight: inlinePadding(
                       contentInsets.right + gridInsets.right,
                       cornerClearance(cornerRadii.right),
+                      gridInsets.right,
                     ),
                   }
                 : {

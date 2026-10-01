@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "{{name}} として表示中",
   "Local Network": "ローカルネットワーク",
   "Italic Text": "斜体テキスト",
-  "Mark italic text like dialogue": "斜体テキストを対話と同様にハイライト"
+  "Mark italic text like dialogue": "斜体テキストを対話と同様にハイライト",
+  "Column Gap (px)": "列の間隔 (px)"
 }

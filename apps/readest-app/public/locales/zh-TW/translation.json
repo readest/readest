@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "顯示為 {{name}}",
   "Local Network": "區域網路",
   "Italic Text": "斜體文字",
-  "Mark italic text like dialogue": "像對話一樣高亮斜體文字"
+  "Mark italic text like dialogue": "像對話一樣高亮斜體文字",
+  "Column Gap (px)": "欄間距"
 }

@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "ხილულია როგორც {{name}}",
   "Local Network": "ლოკალური ქსელი",
   "Italic Text": "დახრილი ტექსტი",
-  "Mark italic text like dialogue": "დახრილი ტექსტის მარკირება დიალოგის მსგავსად"
+  "Mark italic text like dialogue": "დახრილი ტექსტის მარკირება დიალოგის მსგავსად",
+  "Column Gap (px)": "სვეტებს შორის დაშორება (px)"
 }

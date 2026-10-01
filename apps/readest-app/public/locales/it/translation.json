@@ -2533,5 +2533,6 @@
   "Visible as {{name}}": "Visibile come {{name}}",
   "Local Network": "Rete locale",
   "Italic Text": "Testo in corsivo",
-  "Mark italic text like dialogue": "Evidenzia il testo in corsivo come i dialoghi"
+  "Mark italic text like dialogue": "Evidenzia il testo in corsivo come i dialoghi",
+  "Column Gap (px)": "Spaziatura tra colonne (px)"
 }

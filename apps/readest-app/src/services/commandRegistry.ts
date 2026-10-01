@@ -297,6 +297,12 @@ const layoutPanelItems = [
     section: 'Page',
   },
   {
+    id: 'settings.layout.columnGap',
+    labelKey: _('Column Gap (px)'),
+    keywords: ['column', 'gap', 'gutter', 'spine', 'spread', 'two', 'dual'],
+    section: 'Page',
+  },
+  {
     id: 'settings.layout.maxColumnCount',
     labelKey: _('Maximum Number of Columns'),
     keywords: ['column', 'columns', 'max', 'count', 'multi'],

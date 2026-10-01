@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "Sichtbar als {{name}}",
   "Local Network": "Lokales Netzwerk",
   "Italic Text": "Kursiver Text",
-  "Mark italic text like dialogue": "Kursiven Text wie Dialoge hervorheben"
+  "Mark italic text like dialogue": "Kursiven Text wie Dialoge hervorheben",
+  "Column Gap (px)": "Spaltenabstand (px)"
 }

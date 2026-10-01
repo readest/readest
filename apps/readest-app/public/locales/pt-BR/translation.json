@@ -2533,5 +2533,6 @@
   "Visible as {{name}}": "Visível como {{name}}",
   "Local Network": "Rede local",
   "Italic Text": "Texto em itálico",
-  "Mark italic text like dialogue": "Realçar texto em itálico como diálogos"
+  "Mark italic text like dialogue": "Realçar texto em itálico como diálogos",
+  "Column Gap (px)": "Espaçamento entre colunas (px)"
 }

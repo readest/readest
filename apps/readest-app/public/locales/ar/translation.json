@@ -2713,5 +2713,6 @@
   "Visible as {{name}}": "مرئي باسم {{name}}",
   "Local Network": "الشبكة المحلية",
   "Italic Text": "نص مائل",
-  "Mark italic text like dialogue": "تمييز النص المائل مثل الحوار"
+  "Mark italic text like dialogue": "تمييز النص المائل مثل الحوار",
+  "Column Gap (px)": "المسافة بين الأعمدة (بكسل)"
 }

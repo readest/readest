@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "{{name}} என்ற பெயரில் தெரியும்",
   "Local Network": "உள்ளூர் நெட்வொர்க்",
   "Italic Text": "சாய்வு உரை",
-  "Mark italic text like dialogue": "சாய்வு உரையை உரையாடல் போல் முத்திரையிடு"
+  "Mark italic text like dialogue": "சாய்வு உரையை உரையாடல் போல் முத்திரையிடு",
+  "Column Gap (px)": "நெடுவரிசை இடைவெளி (px)"
 }

@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "{{name}} olarak görünür",
   "Local Network": "Yerel Ağ",
   "Italic Text": "İtalik Metin",
-  "Mark italic text like dialogue": "İtalik metni diyalog gibi vurgula"
+  "Mark italic text like dialogue": "İtalik metni diyalog gibi vurgula",
+  "Column Gap (px)": "Sütun Aralığı (px)"
 }

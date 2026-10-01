@@ -110,6 +110,35 @@ export const getPanelHorizontalInsetStyle = (
 };
 
 /**
+ * The Column Gap (px) the paginator applies, or 0: it applies only to a
+ * paginated horizontal spread.
+ */
+export const getSpreadColumnGap = (
+  viewSettings: Pick<ViewSettings, 'columnGapPx' | 'scrolled' | 'vertical'>,
+  columnCount: number,
+) =>
+  !viewSettings.scrolled && !viewSettings.vertical && columnCount > 1
+    ? viewSettings.columnGapPx
+    : 0;
+
+/**
+ * Inline padding that lines the page header and footer up with the text's
+ * outer edge, `gapPercent / 2 % + insetPx / 2 px` from the paginator host. A
+ * column gap past twice the derived gap pulls that edge in to half the gap
+ * (foliate-js getColumnGapHostTracks), so the padding is floored there;
+ * `hostOffsetPx` is the host's offset inside the book cell (the Duo inset).
+ */
+export const getMarginalInlinePadding = (
+  gapPercent: number,
+  insetPx: number,
+  columnGapPx = 0,
+  hostOffsetPx = 0,
+) => {
+  const padding = `calc(${gapPercent / 2}% + ${insetPx / 2}px)`;
+  return columnGapPx > 0 ? `max(${padding}, ${columnGapPx / 2 + hostOffsetPx}px)` : padding;
+};
+
+/**
  * Insets for a book cell's page area on iPhone Duo. A two-column spread is
  * inset by the larger horizontal inset on both sides so it stays centred on
  * the display: on the inner display that puts the spine on the fold (Apple:

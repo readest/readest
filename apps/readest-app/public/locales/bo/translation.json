@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "{{name}} ཞེས་པའི་མིང་ཐོག་མཐོང་ཐུབ།",
   "Local Network": "ས་གནས་དྲ་བ།",
   "Italic Text": "གསེག་ཡིག",
-  "Mark italic text like dialogue": "གསེག་ཡིག་གཏམ་གླེང་ལྟར་རྟགས་འགོད།"
+  "Mark italic text like dialogue": "གསེག་ཡིག་གཏམ་གླེང་ལྟར་རྟགས་འགོད།",
+  "Column Gap (px)": "གྲལ་ཐིག་བར་གྱི་བར་ཐག"
 }

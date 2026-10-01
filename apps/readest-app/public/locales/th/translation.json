@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "มองเห็นในชื่อ {{name}}",
   "Local Network": "เครือข่ายท้องถิ่น",
   "Italic Text": "ข้อความตัวเอียง",
-  "Mark italic text like dialogue": "ไฮไลต์ข้อความตัวเอียงเหมือนบทสนทนา"
+  "Mark italic text like dialogue": "ไฮไลต์ข้อความตัวเอียงเหมือนบทสนทนา",
+  "Column Gap (px)": "ระยะห่างระหว่างคอลัมน์ (px)"
 }

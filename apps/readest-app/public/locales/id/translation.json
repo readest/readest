@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "Terlihat sebagai {{name}}",
   "Local Network": "Jaringan Lokal",
   "Italic Text": "Teks Miring",
-  "Mark italic text like dialogue": "Tandai teks miring seperti dialog"
+  "Mark italic text like dialogue": "Tandai teks miring seperti dialog",
+  "Column Gap (px)": "Jarak Kolom (px)"
 }

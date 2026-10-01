@@ -2473,5 +2473,6 @@
   "Visible as {{name}}": "{{name}} के रूप में दिखाई दे रहा है",
   "Local Network": "लोकल नेटवर्क",
   "Italic Text": "इटैलिक टेक्स्ट",
-  "Mark italic text like dialogue": "इटैलिक टेक्स्ट को संवाद की तरह हाइलाइट करें"
+  "Mark italic text like dialogue": "इटैलिक टेक्स्ट को संवाद की तरह हाइलाइट करें",
+  "Column Gap (px)": "कॉलम अंतराल (px)"
 }

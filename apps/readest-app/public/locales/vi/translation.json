@@ -2413,5 +2413,6 @@
   "Visible as {{name}}": "Hiển thị với tên {{name}}",
   "Local Network": "Mạng cục bộ",
   "Italic Text": "Văn bản in nghiêng",
-  "Mark italic text like dialogue": "Đánh dấu văn bản in nghiêng như hội thoại"
+  "Mark italic text like dialogue": "Đánh dấu văn bản in nghiêng như hội thoại",
+  "Column Gap (px)": "Khoảng cách cột (px)"
 }
