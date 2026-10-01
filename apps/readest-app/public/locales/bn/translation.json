@@ -1987,7 +1987,6 @@
   "Back to Read Aloud": "জোরে পড়ায় ফিরুন",
   "Vertical Scrolling": "উল্লম্ব স্ক্রলিং",
   "Horizontal Scrolling": "অনুভূমিক স্ক্রলিং",
-  "Book not found in the BookOrbit library": "BookOrbit লাইব্রেরিতে বইটি পাওয়া যায়নি",
   "Connect to your BookOrbit server.": "আপনার BookOrbit সার্ভারে সংযোগ করুন।",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "পড়ার অগ্রগতি সিঙ্ক করুন",
@@ -2507,6 +2506,7 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "পড়ার অগ্রগতি সিঙ্ক করতে আপনার Pagebound ইমেল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন।",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "আপনি Apple বা Google দিয়ে সাইন ইন করলে আগে Pagebound-এ একটি পাসওয়ার্ড সেট করুন।",
   "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit-এ বইটি পাওয়া যায়নি। সিঙ্ক করতে BookOrbit-এ \"Unmatched KOReader Books\"-এর অধীনে এটি লিঙ্ক করুন।",
   "Download status": "ডাউনলোডের অবস্থা",
   "Local only": "শুধু স্থানীয়",
   "Cloud only": "শুধু ক্লাউডে"

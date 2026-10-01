@@ -972,7 +972,6 @@
   "Page {{page}} of {{total}} ({{percentage}}%)": "გვერდი {{page}} / {{total}} ({{percentage}}%)",
   "Failed to auto-save book cover for lock screen: {{error}}": "ჩაკეტილი ეკრანისთვის წიგნის ყდის ავტომატური შენახვა ვერ მოხერხდა: {{error}}",
   "End of book": "წიგნის დასასრული",
-  "Book not found in the BookOrbit library": "წიგნი ვერ მოიძებნა BookOrbit-ის ბიბლიოთეკაში",
   "Google Drive session expired": "Google Drive-ის სესიის ვადა ამოიწურა",
   "Cloud sync session expired": "ღრუბლოვანი სინქრონიზაციის სესიის ვადა ამოიწურა",
   "Reading Progress Synced": "კითხვის პროგრესი დასინქრონდა",
@@ -2507,6 +2506,7 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "კითხვის პროგრესის სინქრონიზაციისთვის შედით Pagebound-ის ელფოსტითა და პაროლით.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "თუ Apple-ით ან Google-ით შედიხართ, ჯერ Pagebound-ში დააყენეთ პაროლი.",
   "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "წიგნი BookOrbit-ში ვერ მოიძებნა. სინქრონიზაციისთვის დააკავშირეთ ის BookOrbit-ის „Unmatched KOReader Books“ განყოფილებაში.",
   "Download status": "ჩამოტვირთვის სტატუსი",
   "Local only": "მხოლოდ ლოკალური",
   "Cloud only": "მხოლოდ ღრუბელში"

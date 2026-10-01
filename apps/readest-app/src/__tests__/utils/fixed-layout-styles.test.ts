@@ -137,3 +137,16 @@ describe('applyFixedlayoutStyles text autosizing', () => {
     expect(css).toMatch(/[^-]text-size-adjust: none/);
   });
 });
+
+describe('applyFixedlayoutStyles unsized SVG page images', () => {
+  // KCC-style comics wrap each page as `<div><svg width="100%" height="100%">
+  // <image/></svg></div>` with no viewBox or image size: the percentage height
+  // resolves against an auto-height div, so the svg is 150px tall and clips the
+  // page image to a strip (#6530)
+  it('lets an SVG without a viewBox show its unsized image beyond the svg box', () => {
+    const css = fixedLayoutCss(makeViewSettings(), makeThemeCode(), 'EPUB');
+    expect(css).toMatch(
+      /svg:not\(\[viewBox\]\):has\(> image:not\(\[width\]\)\)\s*\{\s*overflow: visible;/,
+    );
+  });
+});

@@ -1941,7 +1941,6 @@
   "Back to Read Aloud": "소리 내어 읽기로 돌아가기",
   "Vertical Scrolling": "세로 스크롤",
   "Horizontal Scrolling": "가로 스크롤",
-  "Book not found in the BookOrbit library": "BookOrbit 라이브러리에서 책을 찾을 수 없습니다",
   "Connect to your BookOrbit server.": "BookOrbit 서버에 연결하세요.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "읽기 진행률 동기화",
@@ -2443,6 +2442,7 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "읽기 진행 상황을 동기화하려면 Pagebound 이메일과 비밀번호로 로그인하세요.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple 또는 Google로 로그인하는 경우 먼저 Pagebound에서 비밀번호를 설정하세요.",
   "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit에서 책을 찾을 수 없습니다. 동기화하려면 BookOrbit의 'Unmatched KOReader Books'에서 이 책을 연결하세요.",
   "Download status": "다운로드 상태",
   "Local only": "로컬 전용",
   "Cloud only": "클라우드 전용"

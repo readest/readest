@@ -1749,6 +1749,12 @@ export const applyFixedlayoutStyles = (
     img.singlePage {
       position: relative;
     }
+    /* An unsized <image> draws at its natural size, which is the page size,
+       but a percentage-height svg in an auto-height block is only 150px tall
+       and would clip it to a strip (#6530). */
+    svg:not([viewBox]):has(> image:not([width])) {
+      overflow: visible;
+    }
   `;
   document.head.appendChild(style);
 };

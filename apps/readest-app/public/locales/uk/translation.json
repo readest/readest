@@ -2079,7 +2079,6 @@
   "Back to Read Aloud": "Повернутися до читання вголос",
   "Vertical Scrolling": "Вертикальна прокрутка",
   "Horizontal Scrolling": "Горизонтальна прокрутка",
-  "Book not found in the BookOrbit library": "Книгу не знайдено в бібліотеці BookOrbit",
   "Connect to your BookOrbit server.": "Підключіться до свого сервера BookOrbit.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "Синхронізувати прогрес читання",
@@ -2635,6 +2634,7 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Увійдіть за допомогою електронної пошти та пароля Pagebound, щоб синхронізувати прогрес читання.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Якщо ви входите через Apple або Google, спершу встановіть пароль у Pagebound.",
   "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Книгу не знайдено в BookOrbit. Щоб синхронізувати її, пов’яжіть її в розділі «Unmatched KOReader Books» у BookOrbit.",
   "Download status": "Стан завантаження",
   "Local only": "Лише локально",
   "Cloud only": "Лише в хмарі"

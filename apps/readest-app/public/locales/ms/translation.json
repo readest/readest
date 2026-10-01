@@ -1941,7 +1941,6 @@
   "Back to Read Aloud": "Kembali ke Baca Lantang",
   "Vertical Scrolling": "Tatal Menegak",
   "Horizontal Scrolling": "Tatal Mengufuk",
-  "Book not found in the BookOrbit library": "Buku tidak ditemui dalam perpustakaan BookOrbit",
   "Connect to your BookOrbit server.": "Sambung ke pelayan BookOrbit anda.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "Segerakkan Kemajuan Pembacaan",
@@ -2443,6 +2442,7 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Log masuk dengan e-mel dan kata laluan Pagebound anda untuk menyegerakkan kemajuan membaca.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Jika anda log masuk dengan Apple atau Google, tetapkan kata laluan dalam Pagebound terlebih dahulu.",
   "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Buku tidak ditemui dalam BookOrbit. Pautkannya di bawah \"Unmatched KOReader Books\" dalam BookOrbit untuk menyegerakkannya.",
   "Download status": "Status muat turun",
   "Local only": "Setempat sahaja",
   "Cloud only": "Dalam awan sahaja"

@@ -16,8 +16,14 @@ import {
   parseCustomHeadersInput,
 } from '@/utils/customHeaders';
 import SubPageHeader from '../SubPageHeader';
-import { SectionTitle, SettingLabel, SettingsSelect, SettingsSwitchRow, Tips } from '../primitives';
-import { Toggle } from '@/components/primitives/toggle';
+import {
+  BoxedList,
+  SectionTitle,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+  Tips,
+} from '../primitives';
 
 interface BookOrbitFormProps {
   onBack: () => void;
@@ -207,69 +213,64 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
 
       {isConfigured ? (
         <div className='space-y-5'>
-          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
-            <div className='divide-base-200 divide-y'>
-              <label className='flex min-h-14 items-center justify-between px-4'>
-                <SettingLabel>{_('Sync Server Connected')}</SettingLabel>
-                <Toggle checked={settings.bookorbit.enabled} onChange={handleToggleEnabled} />
-              </label>
-              {/* Off = manual sync (#6029): progress is only pushed from the
-                  book menu's "Push Progress" or the reader's Sync row, so the
-                  server's reading log isn't filled with debounce-sized
-                  updates. Pulls stay automatic. */}
-              <label className='flex min-h-14 items-center justify-between px-4'>
-                <SettingLabel>{_('Auto Sync')}</SettingLabel>
-                <Toggle
-                  checked={settings.bookorbit.autoSync !== false}
-                  onChange={handleToggleAutoSync}
-                />
-              </label>
-              <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
-                <SettingLabel>{_('Sync Strategy')}</SettingLabel>
-                <SettingsSelect
-                  value={settings.bookorbit.strategy}
-                  onChange={handleStrategyChange}
-                  ariaLabel={_('Sync Strategy')}
-                  options={[
-                    { value: 'prompt', label: _('Ask on conflict') },
-                    { value: 'silent', label: _('Always use latest') },
-                    { value: 'send', label: _('Send only') },
-                    { value: 'receive', label: _('Receive only') },
-                  ]}
-                />
-              </div>
-              <SettingsSwitchRow
-                label={_('Sync Reading Progress')}
-                checked={settings.bookorbit.syncProgress}
-                onChange={handleToggleField('syncProgress')}
+          <BoxedList>
+            <SettingsSwitchRow
+              label={_('Sync Server Connected')}
+              checked={settings.bookorbit.enabled}
+              onChange={handleToggleEnabled}
+            />
+            {/* Off = manual sync (#6029): progress is only pushed from the
+                book menu's "Push Progress" or the reader's Sync row, so the
+                server's reading log isn't filled with debounce-sized
+                updates. Pulls stay automatic. */}
+            <SettingsSwitchRow
+              label={_('Auto Sync')}
+              checked={settings.bookorbit.autoSync !== false}
+              onChange={handleToggleAutoSync}
+            />
+            <SettingsRow label={_('Sync Strategy')}>
+              <SettingsSelect
+                value={settings.bookorbit.strategy}
+                onChange={handleStrategyChange}
+                ariaLabel={_('Sync Strategy')}
+                options={[
+                  { value: 'prompt', label: _('Ask on conflict') },
+                  { value: 'silent', label: _('Always use latest') },
+                  { value: 'send', label: _('Send only') },
+                  { value: 'receive', label: _('Receive only') },
+                ]}
               />
-              <SettingsSwitchRow
-                label={_('Sync Highlights and Bookmarks')}
-                checked={settings.bookorbit.syncNotes}
-                onChange={handleToggleField('syncNotes')}
+            </SettingsRow>
+            <SettingsSwitchRow
+              label={_('Sync Reading Progress')}
+              checked={settings.bookorbit.syncProgress}
+              onChange={handleToggleField('syncProgress')}
+            />
+            <SettingsSwitchRow
+              label={_('Sync Highlights and Bookmarks')}
+              checked={settings.bookorbit.syncNotes}
+              onChange={handleToggleField('syncNotes')}
+            />
+            <SettingsSwitchRow
+              label={_('Sync Reading Statistics')}
+              checked={settings.bookorbit.syncStats}
+              onChange={handleToggleField('syncStats')}
+            />
+            <SettingsSwitchRow
+              label={_('Sync Reading Status')}
+              checked={settings.bookorbit.syncBookStates}
+              onChange={handleToggleField('syncBookStates')}
+            />
+            <SettingsRow label={_('Device Name')} className='-me-2'>
+              <input
+                type='text'
+                placeholder={osName ? `Readest (${osName})` : 'Readest'}
+                className='input h-9 max-w-[60%] rounded-md border-0! bg-transparent! pe-3! ps-2! text-end text-sm hover:bg-transparent! focus:border-0! focus:bg-transparent! focus:shadow-none! focus:outline-hidden! focus:ring-0!'
+                value={deviceName}
+                onChange={handleDeviceNameChange}
               />
-              <SettingsSwitchRow
-                label={_('Sync Reading Statistics')}
-                checked={settings.bookorbit.syncStats}
-                onChange={handleToggleField('syncStats')}
-              />
-              <SettingsSwitchRow
-                label={_('Sync Reading Status')}
-                checked={settings.bookorbit.syncBookStates}
-                onChange={handleToggleField('syncBookStates')}
-              />
-              <div className='-me-2 flex min-h-14 items-center justify-between gap-3 px-4'>
-                <SettingLabel>{_('Device Name')}</SettingLabel>
-                <input
-                  type='text'
-                  placeholder={osName ? `Readest (${osName})` : 'Readest'}
-                  className='input h-9 max-w-[60%] rounded-md border-0! bg-transparent! pe-3! ps-2! text-end text-sm hover:bg-transparent! focus:border-0! focus:bg-transparent! focus:shadow-none! focus:outline-hidden! focus:ring-0!'
-                  value={deviceName}
-                  onChange={handleDeviceNameChange}
-                />
-              </div>
-            </div>
-          </div>
+            </SettingsRow>
+          </BoxedList>
 
           <div className='space-y-1.5'>
             <SectionTitle as='label' htmlFor='bookorbit-custom-headers' className='block'>

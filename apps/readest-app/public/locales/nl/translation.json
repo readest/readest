@@ -1987,7 +1987,6 @@
   "Back to Read Aloud": "Terug naar Voorlezen",
   "Vertical Scrolling": "Verticaal scrollen",
   "Horizontal Scrolling": "Horizontaal scrollen",
-  "Book not found in the BookOrbit library": "Boek niet gevonden in de BookOrbit-bibliotheek",
   "Connect to your BookOrbit server.": "Maak verbinding met je BookOrbit-server.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "Leesvoortgang synchroniseren",
@@ -2507,6 +2506,7 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Meld je aan met je Pagebound-e-mailadres en -wachtwoord om de leesvoortgang te synchroniseren.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Als je inlogt met Apple of Google, stel dan eerst een wachtwoord in bij Pagebound.",
   "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Boek niet gevonden in BookOrbit. Koppel het in BookOrbit onder ‘Unmatched KOReader Books’ om het te synchroniseren.",
   "Download status": "Downloadstatus",
   "Local only": "Alleen lokaal",
   "Cloud only": "Alleen in de cloud"

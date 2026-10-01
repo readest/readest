@@ -1987,7 +1987,6 @@
   "Back to Read Aloud": "ශබ්ද නඟා කියවීමට ආපසු යන්න",
   "Vertical Scrolling": "සිරස් අනුචලනය",
   "Horizontal Scrolling": "තිරස් අනුචලනය",
-  "Book not found in the BookOrbit library": "BookOrbit පුස්තකාලයේ පොත හමු නොවීය",
   "Connect to your BookOrbit server.": "ඔබගේ BookOrbit සේවාදායකයට සම්බන්ධ වන්න.",
   "BookOrbit": "BookOrbit",
   "Sync Reading Progress": "කියවීමේ ප්‍රගතිය සමමුහුර්ත කරන්න",
@@ -2507,6 +2506,7 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "කියවීමේ ප්‍රගතිය සමමුහුර්ත කිරීමට ඔබගේ Pagebound ඊමේල් සහ මුරපදය සමඟ පුරනය වන්න.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "ඔබ Apple හෝ Google සමඟ පුරනය වන්නේ නම්, පළමුව Pagebound හි මුරපදයක් සකසන්න.",
   "Pagebound": "Pagebound",
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit හි පොත හමු නොවීය. සමමුහුර්ත කිරීමට BookOrbit හි \"Unmatched KOReader Books\" යටතේ එය සම්බන්ධ කරන්න.",
   "Download status": "බාගැනීමේ තත්ත්වය",
   "Local only": "දේශීය පමණි",
   "Cloud only": "වලාකුළේ පමණි"
