@@ -18,6 +18,7 @@ const h = vi.hoisted(() => {
 
   return {
     makeStore,
+    UnmatchedError: class extends Error {},
     book,
     // Mutable settings — tests flip `hardcover.autoSync` between renders.
     settings: {
@@ -97,6 +98,7 @@ vi.mock('@/services/hardcover', () => ({
     }
   },
   HardcoverSyncMapStore: class {},
+  HardcoverUnmatchedError: h.UnmatchedError,
 }));
 
 vi.mock('@/utils/event', () => ({
@@ -149,7 +151,7 @@ beforeEach(() => {
   h.saveConfigMock.mockClear();
   h.toasts.length = 0;
   h.eventListeners.clear();
-  useHardcoverSyncStore.setState({ pending: 0, lastError: null });
+  useHardcoverSyncStore.setState({ byBook: {} });
 });
 
 afterEach(() => {
@@ -361,10 +363,10 @@ describe('useHardcoverSync push health store', () => {
         dispatch('hardcover-push-progress', { bookKey: 'h1-view1', silent: true });
         await flushMicrotasks();
       });
-    const state = () => useHardcoverSyncStore.getState();
+    const state = () => useHardcoverSyncStore.getState().byBook['h1-view1'];
 
     await push();
-    expect(state().pending).toBe(1);
+    expect(state()?.pending).toBe(1);
     await act(async () => {
       finish();
       await flushMicrotasks();
@@ -376,5 +378,23 @@ describe('useHardcoverSync push health store', () => {
 
     await push();
     expect(state()).toMatchObject({ pending: 0, lastError: null });
+  });
+
+  test('a book Hardcover cannot match is not a failure', async () => {
+    h.pushProgressMock.mockRejectedValueOnce(
+      new h.UnmatchedError('Unable to resolve this book in Hardcover'),
+    );
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1', silent: true });
+      await flushMicrotasks();
+    });
+
+    expect(useHardcoverSyncStore.getState().byBook['h1-view1']).toEqual({
+      pending: 0,
+      lastError: null,
+    });
   });
 });

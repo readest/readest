@@ -7,7 +7,11 @@ import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
-import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
+import {
+  HardcoverClient,
+  HardcoverSyncMapStore,
+  HardcoverUnmatchedError,
+} from '@/services/hardcover';
 import { BookNote, HardcoverBookLink } from '@/types/book';
 
 // Hardcover throttles its API hard (≈1 req/1.15s), and the "currently reading"
@@ -103,7 +107,7 @@ export const useHardcoverSync = (bookKey: string) => {
 
       const { begin, end } = useHardcoverSyncStore.getState();
       let failure: string | null = null;
-      begin();
+      begin(bookKey);
       try {
         const result = await client.syncBookNotes(book, config);
         await rememberLink(result.link);
@@ -127,7 +131,8 @@ export const useHardcoverSync = (bookKey: string) => {
       } catch (error) {
         console.error('Hardcover notes sync failed:', error);
         const message = error instanceof Error ? error.message : String(error);
-        failure = message;
+        // A book Hardcover cannot sync is not a broken sync.
+        if (!(error instanceof HardcoverUnmatchedError)) failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
             message: _('Hardcover notes sync failed: {{error}}', {
@@ -137,7 +142,7 @@ export const useHardcoverSync = (bookKey: string) => {
           });
         }
       } finally {
-        end(failure);
+        end(bookKey, failure);
       }
     },
     [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],
@@ -163,7 +168,7 @@ export const useHardcoverSync = (bookKey: string) => {
 
       const { begin, end } = useHardcoverSyncStore.getState();
       let failure: string | null = null;
-      begin();
+      begin(bookKey);
       try {
         const link = await client.pushProgress(book, config);
         await rememberLink(link);
@@ -177,7 +182,8 @@ export const useHardcoverSync = (bookKey: string) => {
       } catch (error) {
         console.error('Hardcover progress sync failed:', error);
         const message = error instanceof Error ? error.message : String(error);
-        failure = message;
+        // A book Hardcover cannot sync is not a broken sync.
+        if (!(error instanceof HardcoverUnmatchedError)) failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
             message: _('Hardcover progress sync failed: {{error}}', {
@@ -187,7 +193,7 @@ export const useHardcoverSync = (bookKey: string) => {
           });
         }
       } finally {
-        end(failure);
+        end(bookKey, failure);
       }
     },
     [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],

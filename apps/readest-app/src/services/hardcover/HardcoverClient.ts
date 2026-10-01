@@ -97,6 +97,9 @@ const rowFlags = (row: BookRow) => ({
   onShelf: (row.user_books?.length ?? 0) > 0,
 });
 
+/** This book cannot sync to Hardcover (no match, or no page count), not a sync failure. */
+export class HardcoverUnmatchedError extends Error {}
+
 export class HardcoverClient {
   private minRequestIntervalMs = 1150;
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
@@ -548,7 +551,7 @@ export class HardcoverClient {
     const context = await this.ensureBookInLibrary(book, config.hardcover);
     const userBook = context?.userBook;
     if (!context || !userBook) {
-      throw new Error('Unable to resolve this book in Hardcover');
+      throw new HardcoverUnmatchedError('Unable to resolve this book in Hardcover');
     }
     const link: HardcoverBookLink = { bookId: context.bookId, title: context.title };
 
@@ -565,7 +568,7 @@ export class HardcoverClient {
     if (progressPages === null) {
       // Nothing can be scaled onto Hardcover's pages, so nothing is sent; the
       // caller must not report (or remember) a sync that never happened.
-      throw new Error('Hardcover has no page count for this book');
+      throw new HardcoverUnmatchedError('Hardcover has no page count for this book');
     }
     const activeRead = userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
@@ -666,7 +669,7 @@ export class HardcoverClient {
   ): Promise<{ inserted: number; updated: number; skipped: number; link: HardcoverBookLink }> {
     const context = await this.ensureBookInLibrary(book, config.hardcover);
     if (!context) {
-      throw new Error('Unable to resolve this book in Hardcover');
+      throw new HardcoverUnmatchedError('Unable to resolve this book in Hardcover');
     }
     const link: HardcoverBookLink = { bookId: context.bookId, title: context.title };
 

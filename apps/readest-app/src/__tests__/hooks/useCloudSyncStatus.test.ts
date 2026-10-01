@@ -15,7 +15,7 @@ let mockUser: { id: string } | null = null;
 let mockSettings: Partial<SystemSettings> = {};
 let mockByKind: Record<string, { isSyncing: boolean }> = {};
 let mockLastError: Record<string, string | null> = {};
-let mockHardcover = { pending: 0, lastError: null as string | null };
+let mockHardcover: Record<string, { pending: number; lastError: string | null }> = {};
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ user: mockUser }),
@@ -36,8 +36,8 @@ vi.mock('@/store/fileSyncStore', () => ({
   ): unknown => selector({ byKind: mockByKind, lastErrorByKind: mockLastError }),
 }));
 vi.mock('@/store/hardcoverSyncStore', () => ({
-  useHardcoverSyncStore: (selector: (s: typeof mockHardcover) => unknown): unknown =>
-    selector(mockHardcover),
+  useHardcoverSyncStore: (selector: (s: { byBook: typeof mockHardcover }) => unknown): unknown =>
+    selector({ byBook: mockHardcover }),
 }));
 vi.mock('@/services/sync/file/runLibrarySync', () => ({
   getReadyFileSyncBackends: (settings: Partial<SystemSettings>) => {
@@ -57,7 +57,7 @@ beforeEach(() => {
   mockSettings = {};
   mockByKind = {};
   mockLastError = {};
-  mockHardcover = { pending: 0, lastError: null };
+  mockHardcover = {};
   vi.setSystemTime(NOW);
 });
 
@@ -148,7 +148,13 @@ describe('useCloudSyncStatus Hardcover (book scope)', () => {
   const hardcover = (over = {}) =>
     ({
       readestCloud: { enabled: false },
-      hardcover: { enabled: true, accessToken: 'tok', lastSyncedAt: NOW - 60_000, ...over },
+      hardcover: {
+        enabled: true,
+        autoSync: true,
+        accessToken: 'tok',
+        lastSyncedAt: NOW - 60_000,
+        ...over,
+      },
     }) as never;
 
   it('is a book-scope provider only, with its own timestamp', () => {
@@ -158,35 +164,39 @@ describe('useCloudSyncStatus Hardcover (book scope)', () => {
     expect(library.providers).toEqual([]);
     expect(library.label).toBe('Never synced');
 
-    const book = renderHook(() => useCloudSyncStatus(0, 'book')).result.current;
+    const book = renderHook(() => useCloudSyncStatus(0, 'book-a')).result.current;
     expect(book.providers).toEqual([
       expect.objectContaining({ kind: 'hardcover', name: 'Hardcover', lastSyncedAt: NOW - 60_000 }),
     ]);
     expect(book.label).toContain('Synced {{time}}');
   });
 
-  it('is omitted when disconnected or missing a token', () => {
-    for (const over of [{ enabled: false }, { accessToken: '' }]) {
+  it('is omitted when disconnected, missing a token, or not auto-syncing', () => {
+    for (const over of [{ enabled: false }, { accessToken: '' }, { autoSync: false }]) {
       mockSettings = hardcover(over);
-      const { result } = renderHook(() => useCloudSyncStatus(0, 'book'));
+      const { result } = renderHook(() => useCloudSyncStatus(0, 'book-a'));
       expect(result.current.providers).toEqual([]);
     }
   });
 
-  it('reports in-flight and failed pushes from its store', () => {
+  it("reports this book's in-flight and failed pushes, not another book's", () => {
     mockSettings = hardcover();
-    mockHardcover = { pending: 1, lastError: null };
-    expect(renderHook(() => useCloudSyncStatus(0, 'book')).result.current.label).toBe('Syncing…');
+    mockHardcover = { 'book-a': { pending: 1, lastError: null } };
+    expect(renderHook(() => useCloudSyncStatus(0, 'book-a')).result.current.label).toBe('Syncing…');
 
-    mockHardcover = { pending: 0, lastError: 'boom' };
-    const { result } = renderHook(() => useCloudSyncStatus(0, 'book'));
-    expect(result.current.failed).toBe(true);
-    expect(result.current.label).toBe('Sync failed');
+    mockHardcover = { 'book-a': { pending: 0, lastError: 'boom' } };
+    const a = renderHook(() => useCloudSyncStatus(0, 'book-a')).result.current;
+    expect(a.failed).toBe(true);
+    expect(a.label).toBe('Sync failed');
+
+    const b = renderHook(() => useCloudSyncStatus(0, 'book-b')).result.current;
+    expect(b.failed).toBe(false);
+    expect(b.label).toContain('Synced {{time}}');
   });
 
   it('does not send a signed-out user to login when Hardcover can still sync', () => {
-    mockSettings = { hardcover: { enabled: true, accessToken: 'tok' } } as never;
-    const { result } = renderHook(() => useCloudSyncStatus(0, 'book'));
+    mockSettings = { hardcover: { enabled: true, autoSync: true, accessToken: 'tok' } } as never;
+    const { result } = renderHook(() => useCloudSyncStatus(0, 'book-a'));
 
     expect(result.current.providers.map((p) => p.kind)).toEqual(['readest', 'hardcover']);
     expect(result.current.needsSignIn).toBe(false);
