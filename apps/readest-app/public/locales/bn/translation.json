@@ -2493,5 +2493,18 @@
   "Every 5 pages": "প্রতি 5 পৃষ্ঠা পরে",
   "Every 10 pages": "প্রতি 10 পৃষ্ঠা পরে",
   "Every 15 pages": "প্রতি 15 পৃষ্ঠা পরে",
-  "Every 20 pages": "প্রতি 20 পৃষ্ঠা পরে"
+  "Every 20 pages": "প্রতি 20 পৃষ্ঠা পরে",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound লিংক সরানো হয়েছে। পরবর্তী সিঙ্কে বইটি আবার মেলানো হবে।",
+  "Link Pagebound Book": "Pagebound বই লিংক করুন",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}”-এর সাথে মেলে এমন Pagebound বই বেছে নিন। পড়ার অগ্রগতি সেটিতে সিঙ্ক হবে।",
+  "Search Pagebound": "Pagebound-এ খুঁজুন",
+  "Pagebound Sync": "Pagebound সিঙ্ক",
+  "Reading progress synced to Pagebound": "পড়ার অগ্রগতি Pagebound-এ সিঙ্ক হয়েছে",
+  "Pagebound progress sync failed: {{error}}": "Pagebound অগ্রগতি সিঙ্ক ব্যর্থ: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound-এ সাইন ইন করা যায়নি: {{error}}",
+  "Disconnected from Pagebound": "Pagebound থেকে সংযোগ বিচ্ছিন্ন",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound-এর সাথে সংযুক্ত। সর্বশেষ সিঙ্ক {{time}}।",
+  "Sign in with your Pagebound email and password to sync reading progress.": "পড়ার অগ্রগতি সিঙ্ক করতে আপনার Pagebound ইমেল ও পাসওয়ার্ড দিয়ে সাইন ইন করুন।",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "আপনি Apple বা Google দিয়ে সাইন ইন করলে আগে Pagebound-এ একটি পাসওয়ার্ড সেট করুন।",
+  "Pagebound": "Pagebound"
 }

@@ -2429,5 +2429,18 @@
   "Every 5 pages": "每 5 頁",
   "Every 10 pages": "每 10 頁",
   "Every 15 pages": "每 15 頁",
-  "Every 20 pages": "每 20 頁"
+  "Every 20 pages": "每 20 頁",
+  "Pagebound link removed. The next sync will match the book again.": "已取消 Pagebound 連結，下次同步時將重新比對書籍。",
+  "Link Pagebound Book": "連結 Pagebound 書籍",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "選擇與《{{book}}》對應的 Pagebound 書籍，閱讀進度將同步至該書籍。",
+  "Search Pagebound": "搜尋 Pagebound",
+  "Pagebound Sync": "Pagebound 同步",
+  "Reading progress synced to Pagebound": "閱讀進度已同步到 Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Pagebound 進度同步失敗：{{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "無法登入 Pagebound：{{error}}",
+  "Disconnected from Pagebound": "已中斷與 Pagebound 的連線",
+  "Connected to Pagebound. Last synced {{time}}.": "已連線至 Pagebound。上次同步 {{time}}。",
+  "Sign in with your Pagebound email and password to sync reading progress.": "使用 Pagebound 電子郵件與密碼登入以同步閱讀進度。",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "如果您使用 Apple 或 Google 登入，請先在 Pagebound 中設定密碼。",
+  "Pagebound": "Pagebound"
 }

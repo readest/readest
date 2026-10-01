@@ -2493,5 +2493,18 @@
   "Every 5 pages": "Κάθε 5 σελίδες",
   "Every 10 pages": "Κάθε 10 σελίδες",
   "Every 15 pages": "Κάθε 15 σελίδες",
-  "Every 20 pages": "Κάθε 20 σελίδες"
+  "Every 20 pages": "Κάθε 20 σελίδες",
+  "Pagebound link removed. The next sync will match the book again.": "Η σύνδεση με το Pagebound αφαιρέθηκε. Ο επόμενος συγχρονισμός θα αντιστοιχίσει ξανά το βιβλίο.",
+  "Link Pagebound Book": "Σύνδεση βιβλίου Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Επιλέξτε το βιβλίο του Pagebound που αντιστοιχεί στο «{{book}}». Η πρόοδος ανάγνωσης θα συγχρονίζεται με αυτό.",
+  "Search Pagebound": "Αναζήτηση στο Pagebound",
+  "Pagebound Sync": "Συγχρονισμός Pagebound",
+  "Reading progress synced to Pagebound": "Η πρόοδος ανάγνωσης συγχρονίστηκε στο Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Αποτυχία συγχρονισμού προόδου Pagebound: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Δεν είναι δυνατή η σύνδεση στο Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Αποσυνδέθηκε από το Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Συνδέθηκε στο Pagebound. Τελευταίος συγχρονισμός {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Συνδεθείτε με το email και τον κωδικό σας στο Pagebound για συγχρονισμό της προόδου ανάγνωσης.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Αν συνδέεστε με Apple ή Google, ορίστε πρώτα έναν κωδικό στο Pagebound.",
+  "Pagebound": "Pagebound"
 }

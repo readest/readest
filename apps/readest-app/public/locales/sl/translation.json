@@ -2621,5 +2621,18 @@
   "Every 5 pages": "Vsakih 5 strani",
   "Every 10 pages": "Vsakih 10 strani",
   "Every 15 pages": "Vsakih 15 strani",
-  "Every 20 pages": "Vsakih 20 strani"
+  "Every 20 pages": "Vsakih 20 strani",
+  "Pagebound link removed. The next sync will match the book again.": "Povezava s Pagebound je odstranjena. Naslednja sinhronizacija bo knjigo znova poiskala.",
+  "Link Pagebound Book": "Poveži knjigo Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Izberite knjigo v Pagebound, ki ustreza »{{book}}«. Napredek branja se bo sinhroniziral z njo.",
+  "Search Pagebound": "Išči v Pagebound",
+  "Pagebound Sync": "Sinhronizacija Pagebound",
+  "Reading progress synced to Pagebound": "Napredek branja sinhroniziran s Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Sinhronizacija napredka Pagebound ni uspela: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Prijava v Pagebound ni uspela: {{error}}",
+  "Disconnected from Pagebound": "Prekinjeno s Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Povezano s Pagebound. Zadnja sinhronizacija {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Za sinhronizacijo napredka branja se prijavite z e-pošto in geslom za Pagebound.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Če se prijavljate z Apple ali Google, najprej nastavite geslo v Pagebound.",
+  "Pagebound": "Pagebound"
 }

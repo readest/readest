@@ -2429,5 +2429,18 @@
   "Every 5 pages": "ཤོག་ངོས་5 རེ་རེ",
   "Every 10 pages": "ཤོག་ངོས་10 རེ་རེ",
   "Every 15 pages": "ཤོག་ངོས་15 རེ་རེ",
-  "Every 20 pages": "ཤོག་ངོས་20 རེ་རེ"
+  "Every 20 pages": "ཤོག་ངོས་20 རེ་རེ",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound སྦྲེལ་མཐུད་བསུབས་ཟིན། ཟླ་སྒྲིག་རྗེས་མའི་སྐབས་དེབ་བསྐྱར་དུ་མཐུན་སྒྲིག་བྱེད།",
+  "Link Pagebound Book": "Pagebound དེབ་སྦྲེལ་མཐུད།",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}” དང་མཐུན་པའི་ Pagebound དཔེ་དེབ་འདེམས་རོགས། ཀློག་འདོན་གྱི་མདུན་སྐྱོད་དེ་ལ་མཉམ་སྒྲིག་བྱེད་ངེས།",
+  "Search Pagebound": "Pagebound ནང་འཚོལ་བཤེར།",
+  "Pagebound Sync": "Pagebound ཟླ་སྒྲིག",
+  "Reading progress synced to Pagebound": "ཀློག་འགྲོས་ Pagebound ལ་ཟླ་སྒྲིག་བྱས་ཟིན།",
+  "Pagebound progress sync failed: {{error}}": "Pagebound ཀློག་འགྲོས་ཟླ་སྒྲིག་མི་ཚོགས: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound ལ་ནང་འཛུལ་བྱེད་མ་ཐུབ། {{error}}",
+  "Disconnected from Pagebound": "Pagebound ནས་འབྲེལ་མཐུད་ཆད་སོང་།",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound ལ་མཐུད་ཟིན། མཐའ་མའི་མཉམ་སྒྲིག་ {{time}}།",
+  "Sign in with your Pagebound email and password to sync reading progress.": "ཀློག་འདོན་གྱི་མདུན་སྐྱོད་མཉམ་སྒྲིག་བྱེད་པར་ཁྱེད་ཀྱི་ Pagebound གློག་འཕྲིན་དང་གསང་ཨང་གིས་ནང་འཛུལ་གནང་།",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "གལ་ཏེ་ Apple ཡང་ན་ Google ཡིས་ནང་འཛུལ་བྱེད་ན། སྔོན་ལ་ Pagebound ནང་གསང་ཨང་ཞིག་སྒྲིག་རོགས།",
+  "Pagebound": "Pagebound"
 }

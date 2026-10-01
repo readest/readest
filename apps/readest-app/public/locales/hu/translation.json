@@ -2493,5 +2493,18 @@
   "Every 5 pages": "Minden 5 oldalnál",
   "Every 10 pages": "Minden 10 oldalnál",
   "Every 15 pages": "Minden 15 oldalnál",
-  "Every 20 pages": "Minden 20 oldalnál"
+  "Every 20 pages": "Minden 20 oldalnál",
+  "Pagebound link removed. The next sync will match the book again.": "A Pagebound-kapcsolat eltávolítva. A következő szinkronizálás újra párosítja a könyvet.",
+  "Link Pagebound Book": "Pagebound-könyv összekapcsolása",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Válaszd ki a(z) „{{book}}” című könyvnek megfelelő Pagebound-könyvet. Az olvasási előrehaladás ehhez szinkronizálódik.",
+  "Search Pagebound": "Keresés a Pagebounden",
+  "Pagebound Sync": "Pagebound szinkronizálás",
+  "Reading progress synced to Pagebound": "Olvasási állapot szinkronizálva a Pageboundbe",
+  "Pagebound progress sync failed: {{error}}": "Pagebound állapotszinkronizálás sikertelen: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Nem sikerült bejelentkezni a Pageboundba: {{error}}",
+  "Disconnected from Pagebound": "Leválasztva a Pagebound szolgáltatásról",
+  "Connected to Pagebound. Last synced {{time}}.": "Csatlakozva a Pagebound-hez. Utoljára szinkronizálva: {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Jelentkezz be a Pagebound e-mail-címeddel és jelszavaddal az olvasási előrehaladás szinkronizálásához.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Ha Apple- vagy Google-fiókkal jelentkezel be, előbb állíts be jelszót a Pageboundban.",
+  "Pagebound": "Pagebound"
 }

@@ -2493,5 +2493,18 @@
   "Every 5 pages": "ஒவ்வொரு 5 பக்கங்களும்",
   "Every 10 pages": "ஒவ்வொரு 10 பக்கங்களும்",
   "Every 15 pages": "ஒவ்வொரு 15 பக்கங்களும்",
-  "Every 20 pages": "ஒவ்வொரு 20 பக்கங்களும்"
+  "Every 20 pages": "ஒவ்வொரு 20 பக்கங்களும்",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound இணைப்பு நீக்கப்பட்டது. அடுத்த ஒத்திசைவில் புத்தகம் மீண்டும் பொருத்தப்படும்.",
+  "Link Pagebound Book": "Pagebound புத்தகத்தை இணை",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}” உடன் பொருந்தும் Pagebound புத்தகத்தைத் தேர்ந்தெடுக்கவும். வாசிப்பு முன்னேற்றம் அதனுடன் ஒத்திசைக்கப்படும்.",
+  "Search Pagebound": "Pagebound-இல் தேடு",
+  "Pagebound Sync": "Pagebound ஒத்திசைவு",
+  "Reading progress synced to Pagebound": "வாசிப்பு முன்னேற்றம் Pagebound உடன் ஒத்திசைக்கப்பட்டது",
+  "Pagebound progress sync failed: {{error}}": "Pagebound முன்னேற்ற ஒத்திசைவு தோல்வி: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound-இல் உள்நுழைய முடியவில்லை: {{error}}",
+  "Disconnected from Pagebound": "Pagebound இலிருந்து துண்டிக்கப்பட்டது",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound உடன் இணைக்கப்பட்டது. கடைசி ஒத்திசைவு {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "வாசிப்பு முன்னேற்றத்தை ஒத்திசைக்க உங்கள் Pagebound மின்னஞ்சல் மற்றும் கடவுச்சொல்லுடன் உள்நுழையவும்.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "நீங்கள் Apple அல்லது Google மூலம் உள்நுழைந்தால், முதலில் Pagebound-இல் கடவுச்சொல்லை அமைக்கவும்.",
+  "Pagebound": "Pagebound"
 }

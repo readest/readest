@@ -2493,5 +2493,18 @@
   "Every 5 pages": "සෑම පිටු 5 කම",
   "Every 10 pages": "සෑම පිටු 10 කම",
   "Every 15 pages": "සෑම පිටු 15 කම",
-  "Every 20 pages": "සෑම පිටු 20 කම"
+  "Every 20 pages": "සෑම පිටු 20 කම",
+  "Pagebound link removed. The next sync will match the book again.": "Pagebound සම්බන්ධය ඉවත් කරන ලදී. ඊළඟ සමමුහුර්තකරණයේදී පොත නැවත ගැළපේ.",
+  "Link Pagebound Book": "Pagebound පොත සම්බන්ධ කරන්න",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "“{{book}}” ට ගැළපෙන Pagebound පොත තෝරන්න. කියවීමේ ප්‍රගතිය එයට සමමුහුර්ත වේ.",
+  "Search Pagebound": "Pagebound හි සොයන්න",
+  "Pagebound Sync": "Pagebound සමමුහුර්තකරණය",
+  "Reading progress synced to Pagebound": "කියවීමේ ප්‍රගතිය Pagebound වෙත සමමුහුර්ත විය",
+  "Pagebound progress sync failed: {{error}}": "Pagebound ප්‍රගති සමමුහුර්තකරණය අසාර්ථකයි: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound වෙත පුරනය විය නොහැක: {{error}}",
+  "Disconnected from Pagebound": "Pagebound වෙතින් විසන්ධි විය",
+  "Connected to Pagebound. Last synced {{time}}.": "Pagebound වෙත සම්බන්ධිතයි. අවසන් සමමුහුර්ත කිරීම {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "කියවීමේ ප්‍රගතිය සමමුහුර්ත කිරීමට ඔබගේ Pagebound ඊමේල් සහ මුරපදය සමඟ පුරනය වන්න.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "ඔබ Apple හෝ Google සමඟ පුරනය වන්නේ නම්, පළමුව Pagebound හි මුරපදයක් සකසන්න.",
+  "Pagebound": "Pagebound"
 }

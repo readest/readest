@@ -2557,5 +2557,18 @@
   "Every 5 pages": "A cada 5 páginas",
   "Every 10 pages": "A cada 10 páginas",
   "Every 15 pages": "A cada 15 páginas",
-  "Every 20 pages": "A cada 20 páginas"
+  "Every 20 pages": "A cada 20 páginas",
+  "Pagebound link removed. The next sync will match the book again.": "Vínculo com o Pagebound removido. A próxima sincronização buscará o livro novamente.",
+  "Link Pagebound Book": "Vincular livro do Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Escolha o livro do Pagebound que corresponde a “{{book}}”. O progresso de leitura será sincronizado com ele.",
+  "Search Pagebound": "Buscar no Pagebound",
+  "Pagebound Sync": "Sincronização do Pagebound",
+  "Reading progress synced to Pagebound": "Progresso de leitura sincronizado com o Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Falha na sincronização de progresso do Pagebound: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Não foi possível entrar no Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Desconectado do Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Conectado ao Pagebound. Última sincronização {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Entre com seu e-mail e senha do Pagebound para sincronizar o progresso de leitura.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Se você usa login com Apple ou Google, defina primeiro uma senha no Pagebound.",
+  "Pagebound": "Pagebound"
 }

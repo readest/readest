@@ -152,6 +152,18 @@ export interface HardcoverSettings {
   autoSync?: boolean;
 }
 
+export interface PageboundSettings {
+  enabled: boolean;
+  /** Display only: the account the session belongs to. */
+  email: string;
+  /** Firebase refresh token; Pagebound has no API tokens or OAuth. */
+  refreshToken: string;
+  /** Pagebound's own API token, exchanged from a Firebase id token. */
+  apiToken: string;
+  lastSyncedAt: number;
+  autoSync?: boolean;
+}
+
 export interface NotionSettings {
   enabled: boolean;
   /** Notion integration token (`secret_...`). */
@@ -538,6 +550,7 @@ export interface SystemSettings {
   bookorbit: BookOrbitSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
+  pagebound: PageboundSettings;
   notion: NotionSettings;
   /** Optional by design — see {@link ReadestCloudSettings}. Never defaulted. */
   readestCloud?: ReadestCloudSettings;

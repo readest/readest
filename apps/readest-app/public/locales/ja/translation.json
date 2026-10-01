@@ -2429,5 +2429,18 @@
   "Every 5 pages": "5ページごと",
   "Every 10 pages": "10ページごと",
   "Every 15 pages": "15ページごと",
-  "Every 20 pages": "20ページごと"
+  "Every 20 pages": "20ページごと",
+  "Pagebound link removed. The next sync will match the book again.": "Pageboundのリンクを解除しました。次回の同期で本を再度照合します。",
+  "Link Pagebound Book": "Pageboundの本をリンク",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "「{{book}}」に一致する Pagebound の本を選択してください。読書の進捗がその本に同期されます。",
+  "Search Pagebound": "Pageboundを検索",
+  "Pagebound Sync": "Pagebound同期",
+  "Reading progress synced to Pagebound": "読書の進捗がPageboundに同期されました",
+  "Pagebound progress sync failed: {{error}}": "Pagebound進捗の同期に失敗: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Pagebound にサインインできません：{{error}}",
+  "Disconnected from Pagebound": "Pageboundから切断されました",
+  "Connected to Pagebound. Last synced {{time}}.": "Pageboundに接続済み。最終同期 {{time}}。",
+  "Sign in with your Pagebound email and password to sync reading progress.": "読書の進捗を同期するには、Pagebound のメールアドレスとパスワードでサインインしてください。",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple または Google でサインインしている場合は、先に Pagebound でパスワードを設定してください。",
+  "Pagebound": "Pagebound"
 }

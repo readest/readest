@@ -2429,5 +2429,18 @@
   "Every 5 pages": "Setiap 5 Halaman",
   "Every 10 pages": "Setiap 10 Halaman",
   "Every 15 pages": "Setiap 15 Halaman",
-  "Every 20 pages": "Setiap 20 Halaman"
+  "Every 20 pages": "Setiap 20 Halaman",
+  "Pagebound link removed. The next sync will match the book again.": "Pautan Pagebound dialih keluar. Penyegerakan seterusnya akan memadankan buku semula.",
+  "Link Pagebound Book": "Pautkan Buku Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Pilih buku Pagebound yang sepadan dengan “{{book}}”. Kemajuan membaca akan disegerakkan kepadanya.",
+  "Search Pagebound": "Cari di Pagebound",
+  "Pagebound Sync": "Penyegerakan Pagebound",
+  "Reading progress synced to Pagebound": "Kemajuan bacaan disegerakkan ke Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Penyegerakan kemajuan Pagebound gagal: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Tidak dapat log masuk ke Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Diputuskan dari Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Disambungkan ke Pagebound. Penyegerakan terakhir {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Log masuk dengan e-mel dan kata laluan Pagebound anda untuk menyegerakkan kemajuan membaca.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Jika anda log masuk dengan Apple atau Google, tetapkan kata laluan dalam Pagebound terlebih dahulu.",
+  "Pagebound": "Pagebound"
 }

@@ -2557,5 +2557,18 @@
   "Every 5 pages": "La fiecare 5 pagini",
   "Every 10 pages": "La fiecare 10 pagini",
   "Every 15 pages": "La fiecare 15 pagini",
-  "Every 20 pages": "La fiecare 20 pagini"
+  "Every 20 pages": "La fiecare 20 pagini",
+  "Pagebound link removed. The next sync will match the book again.": "Asocierea cu Pagebound a fost eliminată. Următoarea sincronizare va potrivi din nou cartea.",
+  "Link Pagebound Book": "Asociază o carte Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "Alege cartea din Pagebound care corespunde cu „{{book}}”. Progresul lecturii se va sincroniza cu ea.",
+  "Search Pagebound": "Caută pe Pagebound",
+  "Pagebound Sync": "Sincronizare Pagebound",
+  "Reading progress synced to Pagebound": "Progresul lecturii sincronizat cu Pagebound",
+  "Pagebound progress sync failed: {{error}}": "Sincronizarea progresului Pagebound a eșuat: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "Nu te poți conecta la Pagebound: {{error}}",
+  "Disconnected from Pagebound": "Deconectat de la Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "Conectat la Pagebound. Ultima sincronizare {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "Conectează-te cu e-mailul și parola Pagebound pentru a sincroniza progresul lecturii.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "Dacă te conectezi cu Apple sau Google, setează mai întâi o parolă în Pagebound.",
+  "Pagebound": "Pagebound"
 }

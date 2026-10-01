@@ -2493,5 +2493,18 @@
   "Every 5 pages": "هر 5 صفحه",
   "Every 10 pages": "هر 10 صفحه",
   "Every 15 pages": "هر 15 صفحه",
-  "Every 20 pages": "هر 20 صفحه"
+  "Every 20 pages": "هر 20 صفحه",
+  "Pagebound link removed. The next sync will match the book again.": "پیوند Pagebound حذف شد. همگام‌سازی بعدی دوباره کتاب را تطبیق می‌دهد.",
+  "Link Pagebound Book": "پیوند کتاب Pagebound",
+  "Pick the Pagebound book that matches “{{book}}”. Reading progress will sync to it.": "کتاب Pagebound مطابق با «{{book}}» را انتخاب کنید. پیشرفت مطالعه با آن همگام می‌شود.",
+  "Search Pagebound": "جستجو در Pagebound",
+  "Pagebound Sync": "همگام‌سازی Pagebound",
+  "Reading progress synced to Pagebound": "پیشرفت مطالعه با Pagebound همگام‌سازی شد",
+  "Pagebound progress sync failed: {{error}}": "همگام‌سازی پیشرفت Pagebound ناموفق: {{error}}",
+  "Unable to sign in to Pagebound: {{error}}": "ورود به Pagebound ممکن نیست: {{error}}",
+  "Disconnected from Pagebound": "قطع اتصال از Pagebound",
+  "Connected to Pagebound. Last synced {{time}}.": "متصل به Pagebound. آخرین همگام‌سازی {{time}}.",
+  "Sign in with your Pagebound email and password to sync reading progress.": "برای همگام‌سازی پیشرفت مطالعه، با ایمیل و رمز عبور Pagebound خود وارد شوید.",
+  "If you use Apple or Google sign-in, set a password in Pagebound first.": "اگر با Apple یا Google وارد می‌شوید، ابتدا در Pagebound یک رمز عبور تنظیم کنید.",
+  "Pagebound": "Pagebound"
 }
