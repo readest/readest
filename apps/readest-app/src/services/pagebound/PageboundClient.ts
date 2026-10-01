@@ -54,6 +54,9 @@ const normalizeTitle = (title: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
+// "J. R. R. Tolkien" and "J.R.R. Tolkien" are the same author.
+const compactName = (name: string) => name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+
 const readJson = async (res: Response): Promise<Record<string, unknown> | null> => {
   try {
     return (await res.json()) as Record<string, unknown>;
@@ -183,8 +186,10 @@ export class PageboundClient {
   }
 
   // Search ranks by popularity, not title, so a hit is only taken when its
-  // title matches. Pagebound often drops a "Series:" prefix or a subtitle, so
-  // each part of a "Series: Title" is searched for too.
+  // title matches, preferring the same author. The author stays out of the
+  // query: Pagebound spells names its own way ("J.R.R. Tolkien") and Typesense
+  // needs every query word to match. Pagebound often drops a "Series:" prefix
+  // or a subtitle, so each part of a "Series: Title" is searched for too.
   private async resolveLink(book: Book, config: BookConfig): Promise<PageboundBookLink> {
     if (config.pagebound) return config.pagebound;
     const parts = book.title.includes(':')
@@ -192,10 +197,11 @@ export class PageboundClient {
       : [];
     const titles = new Set([normalizeTitle(book.title), ...parts]);
     for (const query of [book.title, ...parts]) {
-      const hits = await this.searchBooks(`${query} ${book.author}`);
-      const match = hits.find(
+      const matches = (await this.searchBooks(query)).filter(
         (hit) => hit.uuid && Number.isFinite(hit.bookId) && titles.has(normalizeTitle(hit.title)),
       );
+      const author = compactName(book.author);
+      const match = matches.find((hit) => compactName(hit.author) === author) ?? matches[0];
       if (match) return { bookId: match.bookId, uuid: match.uuid, title: match.title };
     }
     throw new Error('Unable to find this book on Pagebound. Use Link Book to choose it.');

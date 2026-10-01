@@ -192,7 +192,7 @@ describe('PageboundClient', () => {
     ).resolves.toEqual(LINK);
 
     expect(new URL(calls('GET', 'typesense.net')[0]![0]).searchParams.get('q')).toBe(
-      'Project Hail Mary Andy Weir',
+      'Project Hail Mary',
     );
     expect(sent('POST', '/user_books')).toMatchObject({
       user_book: { book_id: 4412, status: 'current' },
@@ -211,7 +211,7 @@ describe('PageboundClient', () => {
       if (!hostname.endsWith('.typesense.net')) return undefined;
       const q = searchParams.get('q')!;
       searched.push(q);
-      return q.startsWith('the final empire')
+      return q === 'the final empire'
         ? json({ hits: [doc('final-empire', 'The Final Empire'), doc('x', 'Mistborn')] })
         : json({
             hits: [
@@ -235,11 +235,28 @@ describe('PageboundClient', () => {
 
     expect(link.uuid).toBe(remoteBook.uuid);
     expect(calls('GET', '/books/drama')).toHaveLength(0);
-    expect(searched).toEqual([
-      'Mistborn: The Final Empire Brandon Sanderson',
-      'mistborn Brandon Sanderson',
-      'the final empire Brandon Sanderson',
-    ]);
+    expect(searched).toEqual(['Mistborn: The Final Empire', 'mistborn', 'the final empire']);
+  });
+
+  // Pagebound spells authors its own way ("J.R.R. Tolkien"), and Typesense
+  // needs every query word to match, so the author never goes in the query.
+  test('auto-match searches by title and prefers the same author however it is spelled', async () => {
+    const hit = (uuid: string, author: string) => ({
+      document: { id: '5', uuid, title: 'The Hobbit', author_name: author },
+    });
+    route(
+      on('GET', 'typesense.net', () =>
+        json({ hits: [hit('dixon', 'Chuck Dixon'), hit('tolkien', 'J.R.R. Tolkien')] }),
+      ),
+      on('GET', '/books/tolkien', () => json({ book: remoteBook, user_book: currentUserBook })),
+      on('POST', '/reading_updates', () => json({}, 201)),
+    );
+    const hobbit = { ...book, title: 'The Hobbit', author: 'J. R. R. Tolkien' };
+
+    await newClient().pushProgress(hobbit, cfg({ progress: [1, 100] }), { broadcast: false });
+
+    expect(new URL(calls('GET', 'typesense.net')[0]![0]).searchParams.get('q')).toBe('The Hobbit');
+    expect(calls('GET', '/api/v1/books/dixon')).toHaveLength(0);
   });
 
   test('auto-match fails over to Link Book when no title matches', async () => {

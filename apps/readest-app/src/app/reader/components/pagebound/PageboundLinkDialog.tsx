@@ -34,9 +34,8 @@ const PageboundLinkDialog = ({ bookKey, onClose }: PageboundLinkDialogProps) => 
   const book = getBookData(bookKey)?.book;
   const linked = getConfig(bookKey)?.pagebound ?? null;
 
-  const [query, setQuery] = useState(() =>
-    [book?.title, book?.author].filter(Boolean).join(' ').trim(),
-  );
+  // Title only: Pagebound spells authors its own way, and every query word must match.
+  const [query, setQuery] = useState(() => book?.title?.trim() ?? '');
   const [results, setResults] = useState<PageboundBookCandidate[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [busy, setBusy] = useState(false);
