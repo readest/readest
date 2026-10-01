@@ -366,7 +366,12 @@ export function checkEinkRefreshSupported(): Promise<boolean> {
         einkRefreshSupportedSettled = response.supported;
         return response.supported;
       },
-      () => {
+      (error) => {
+        // A rejection is inconclusive (bridge not ready / native probe error),
+        // NOT a confirmed 'no hook': the command only rejects on a hard
+        // reflection failure. Drop the cache so a later call retries, and log
+        // why so the field case is distinguishable from a genuine negative.
+        console.error('eink refresh capability probe inconclusive, will retry:', error);
         einkRefreshSupportedPromise = null;
         return false;
       },
