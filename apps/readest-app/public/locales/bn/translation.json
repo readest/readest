@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "হাইলাইটের চারপাশের বাক্য",
   "Do not speak readings or Hanja glosses in parentheses after a word": "শব্দের পরে বন্ধনীর ভেতরের উচ্চারণ বা হানজা টীকা পড়বেন না",
   "Visible as {{name}}": "{{name}} নামে দৃশ্যমান",
-  "Local Network": "লোকাল নেটওয়ার্ক"
+  "Local Network": "লোকাল নেটওয়ার্ক",
+  "Italic Text": "ইটালিক টেক্সট",
+  "Mark italic text like dialogue": "ইটালিক টেক্সটকে সংলাপের মতো চিহ্নিত করুন"
 }

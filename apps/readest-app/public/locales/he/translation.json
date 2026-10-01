@@ -2531,5 +2531,7 @@
   "Sentence around the highlight": "המשפט סביב ההדגשה",
   "Do not speak readings or Hanja glosses in parentheses after a word": "אל תקריא הגיות או ביאורי האנג'ה בסוגריים אחרי מילה",
   "Visible as {{name}}": "גלוי בשם {{name}}",
-  "Local Network": "רשת מקומית"
+  "Local Network": "רשת מקומית",
+  "Italic Text": "טקסט נטוי",
+  "Mark italic text like dialogue": "הדגשת טקסט נטוי כמו דיאלוג"
 }

@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "Satz um die Markierung",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Lesungen oder Hanja-Glossen in Klammern nach einem Wort nicht vorlesen",
   "Visible as {{name}}": "Sichtbar als {{name}}",
-  "Local Network": "Lokales Netzwerk"
+  "Local Network": "Lokales Netzwerk",
+  "Italic Text": "Kursiver Text",
+  "Mark italic text like dialogue": "Kursiven Text wie Dialoge hervorheben"
 }

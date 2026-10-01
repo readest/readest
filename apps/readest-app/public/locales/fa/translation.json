@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "جملهٔ پیرامون هایلایت",
   "Do not speak readings or Hanja glosses in parentheses after a word": "خوانش‌ها یا معادل‌های هانجا داخل پرانتز پس از واژه خوانده نشوند",
   "Visible as {{name}}": "قابل مشاهده با نام {{name}}",
-  "Local Network": "شبکه محلی"
+  "Local Network": "شبکه محلی",
+  "Italic Text": "متن ایتالیک",
+  "Mark italic text like dialogue": "هایلایت متن ایتالیک مانند دیالوگ"
 }

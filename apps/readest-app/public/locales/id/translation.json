@@ -2411,5 +2411,7 @@
   "Sentence around the highlight": "Kalimat di sekitar sorotan",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Jangan ucapkan bacaan atau glosa Hanja dalam tanda kurung setelah kata",
   "Visible as {{name}}": "Terlihat sebagai {{name}}",
-  "Local Network": "Jaringan Lokal"
+  "Local Network": "Jaringan Lokal",
+  "Italic Text": "Teks Miring",
+  "Mark italic text like dialogue": "Tandai teks miring seperti dialog"
 }

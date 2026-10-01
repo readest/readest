@@ -2591,5 +2591,7 @@
   "Sentence around the highlight": "Речення навколо виділення",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Не озвучувати читання чи ханчжа-глоси в дужках після слова",
   "Visible as {{name}}": "Видимий як {{name}}",
-  "Local Network": "Локальна мережа"
+  "Local Network": "Локальна мережа",
+  "Italic Text": "Курсивний текст",
+  "Mark italic text like dialogue": "Підсвічувати курсивний текст як діалоги"
 }

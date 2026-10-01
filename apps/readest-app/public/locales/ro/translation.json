@@ -2531,5 +2531,7 @@
   "Sentence around the highlight": "Propoziția din jurul evidențierii",
   "Do not speak readings or Hanja glosses in parentheses after a word": "Nu rosti citirile sau glosele hanja din paranteze de după un cuvânt",
   "Visible as {{name}}": "Vizibil ca {{name}}",
-  "Local Network": "Rețea locală"
+  "Local Network": "Rețea locală",
+  "Italic Text": "Text cursiv",
+  "Mark italic text like dialogue": "Evidențiază textul cursiv ca dialogurile"
 }

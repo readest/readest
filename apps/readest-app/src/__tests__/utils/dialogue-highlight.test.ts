@@ -73,6 +73,10 @@ describe('dialogueHighlight default', () => {
     expect(DEFAULT_BOOK_STYLE.dialogueHighlightCustomTextColor).toBe(false);
     expect(DEFAULT_BOOK_STYLE.dialogueHighlightTextColor).toBe('');
   });
+
+  it('leaves italic text unmarked by default', () => {
+    expect(DEFAULT_BOOK_STYLE.dialogueHighlightItalic).toBe(false);
+  });
 });
 
 describe('getStyles dialogue chunk', () => {
@@ -185,6 +189,35 @@ describe('getStyles dialogue chunk', () => {
       ),
     );
     expect(off).not.toContain('\n    color:');
+  });
+});
+
+describe('getStyles italic dialogue', () => {
+  const italicRule = (css: string) => css.match(/:is\(i, em\) \{[^}]*\}/)?.[0] ?? '';
+
+  it('leaves italic text alone unless its switch is on', () => {
+    const css = getStyles(makeViewSettings({ dialogueHighlight: true }), themeCode);
+    expect(italicRule(css)).toBe('');
+  });
+
+  it('tints italic text like dialogue when its switch is on', () => {
+    const css = getStyles(
+      makeViewSettings({
+        dialogueHighlight: true,
+        dialogueHighlightItalic: true,
+        dialogueHighlightCustomTextColor: true,
+        dialogueHighlightTextColor: '#112233',
+      }),
+      themeCode,
+    );
+    const rule = italicRule(css);
+    expect(rule).toContain('#0066cc');
+    expect(rule).toContain('color: #112233 !important');
+  });
+
+  it('emits nothing for italic text while dialogue marking is off', () => {
+    const css = getStyles(makeViewSettings({ dialogueHighlightItalic: true }), themeCode);
+    expect(italicRule(css)).toBe('');
   });
 });
 

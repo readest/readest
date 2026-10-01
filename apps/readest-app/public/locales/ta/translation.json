@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "சிறப்பம்சத்தைச் சுற்றியுள்ள வாக்கியம்",
   "Do not speak readings or Hanja glosses in parentheses after a word": "ஒரு சொல்லுக்குப் பின் அடைப்புக்குறிக்குள் உள்ள உச்சரிப்புகள் அல்லது ஹஞ்சா விளக்கங்களைப் படிக்க வேண்டாம்",
   "Visible as {{name}}": "{{name}} என்ற பெயரில் தெரியும்",
-  "Local Network": "உள்ளூர் நெட்வொர்க்"
+  "Local Network": "உள்ளூர் நெட்வொர்க்",
+  "Italic Text": "சாய்வு உரை",
+  "Mark italic text like dialogue": "சாய்வு உரையை உரையாடல் போல் முத்திரையிடு"
 }

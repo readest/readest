@@ -2471,5 +2471,7 @@
   "Sentence around the highlight": "Ajratilgan matn atrofidagi gap",
   "Do not speak readings or Hanja glosses in parentheses after a word": "So‘zdan keyingi qavs ichidagi o‘qilishlar yoki hanja izohlarini o‘qimaslik",
   "Visible as {{name}}": "{{name}} nomi bilan koʻrinadi",
-  "Local Network": "Mahalliy tarmoq"
+  "Local Network": "Mahalliy tarmoq",
+  "Italic Text": "Kursiv matn",
+  "Mark italic text like dialogue": "Kursiv matnni dialog kabi belgilash"
 }

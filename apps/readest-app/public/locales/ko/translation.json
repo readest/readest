@@ -2411,5 +2411,7 @@
   "Sentence around the highlight": "하이라이트가 포함된 문장",
   "Do not speak readings or Hanja glosses in parentheses after a word": "단어 뒤 괄호 안의 읽기나 한자 병기를 읽지 않음",
   "Visible as {{name}}": "{{name}}(으)로 표시됨",
-  "Local Network": "로컬 네트워크"
+  "Local Network": "로컬 네트워크",
+  "Italic Text": "기울임꼴 텍스트",
+  "Mark italic text like dialogue": "기울임꼴 텍스트를 대화처럼 하이라이트"
 }

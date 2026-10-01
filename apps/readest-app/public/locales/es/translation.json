@@ -2531,5 +2531,7 @@
   "Sentence around the highlight": "Oración alrededor del resaltado",
   "Do not speak readings or Hanja glosses in parentheses after a word": "No leer en voz alta las lecturas ni las glosas en hanja entre paréntesis tras una palabra",
   "Visible as {{name}}": "Visible como {{name}}",
-  "Local Network": "Red local"
+  "Local Network": "Red local",
+  "Italic Text": "Texto en cursiva",
+  "Mark italic text like dialogue": "Resaltar el texto en cursiva como los diálogos"
 }
