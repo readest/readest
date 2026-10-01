@@ -2570,5 +2570,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "התחברו עם כתובת הדוא״ל והסיסמה של Pagebound כדי לסנכרן את התקדמות הקריאה.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "אם אתם מתחברים עם Apple או Google, הגדירו תחילה סיסמה ב-Pagebound.",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "הספר לא נמצא ב-BookOrbit. כדי לסנכרן אותו, קשרו אותו תחת \"Unmatched KOReader Books\" ב-BookOrbit."
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "הספר לא נמצא ב-BookOrbit. כדי לסנכרן אותו, קשרו אותו תחת \"Unmatched KOReader Books\" ב-BookOrbit.",
+  "Download status": "מצב הורדה",
+  "Local only": "מקומי בלבד",
+  "Cloud only": "בענן בלבד"
 }

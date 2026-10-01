@@ -2634,5 +2634,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Zaloguj się adresem e-mail i hasłem Pagebound, aby synchronizować postęp czytania.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Jeśli logujesz się przez Apple lub Google, najpierw ustaw hasło w Pagebound.",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Nie znaleziono książki w BookOrbit. Aby ją synchronizować, połącz ją w sekcji „Unmatched KOReader Books” w BookOrbit."
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Nie znaleziono książki w BookOrbit. Aby ją synchronizować, połącz ją w sekcji „Unmatched KOReader Books” w BookOrbit.",
+  "Download status": "Stan pobrania",
+  "Local only": "Tylko lokalnie",
+  "Cloud only": "Tylko w chmurze"
 }

@@ -2506,5 +2506,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Jelentkezz be a Pagebound e-mail-címeddel és jelszavaddal az olvasási előrehaladás szinkronizálásához.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Ha Apple- vagy Google-fiókkal jelentkezel be, előbb állíts be jelszót a Pageboundban.",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "A könyv nem található a BookOrbitban. A szinkronizáláshoz kapcsold össze a BookOrbit „Unmatched KOReader Books” részében."
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "A könyv nem található a BookOrbitban. A szinkronizáláshoz kapcsold össze a BookOrbit „Unmatched KOReader Books” részében.",
+  "Download status": "Letöltési állapot",
+  "Local only": "Csak helyi",
+  "Cloud only": "Csak a felhőben"
 }

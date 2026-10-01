@@ -2442,5 +2442,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Masuk dengan email dan kata sandi Pagebound Anda untuk menyinkronkan kemajuan membaca.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Jika Anda masuk dengan Apple atau Google, atur kata sandi di Pagebound terlebih dahulu.",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Buku tidak ditemukan di BookOrbit. Tautkan di bagian \"Unmatched KOReader Books\" pada BookOrbit untuk menyinkronkannya."
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Buku tidak ditemukan di BookOrbit. Tautkan di bagian \"Unmatched KOReader Books\" pada BookOrbit untuk menyinkronkannya.",
+  "Download status": "Status unduhan",
+  "Local only": "Hanya lokal",
+  "Cloud only": "Hanya di cloud"
 }
