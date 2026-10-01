@@ -169,7 +169,7 @@ describe('ViewMenu sync row (issue #5910)', () => {
     expect(screen.queryByText('Synced via {{provider}}')).toBeNull();
   });
 
-  it('pushes to Hardcover on tap only when it is on the row (Auto Sync on)', () => {
+  it('pushes to Hardcover on tap only when it is on the row', () => {
     render(<ViewMenu bookKey='book-1' />);
     fireEvent.click(screen.getByText('Synced 2 minutes ago'));
 

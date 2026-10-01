@@ -67,8 +67,7 @@ export interface CloudSyncStatus {
  * to contribute to a timestamp. The reader's manual action still pokes it.
  *
  * `bookKey` scopes the status to one open book, which adds Hardcover: it has
- * no library-level sync, and it only counts when Auto Sync is on, since only
- * then may the row push to it.
+ * no library-level sync.
  */
 export const useCloudSyncStatus = (nativeLastSyncedAt = 0, bookKey?: string): CloudSyncStatus => {
   const _ = useTranslation();
@@ -109,10 +108,7 @@ export const useCloudSyncStatus = (nativeLastSyncedAt = 0, bookKey?: string): Cl
         syncing: !!fileSyncByKind[kind]?.isSyncing,
         failed: !!fileSyncLastError[kind],
       })),
-      ...(bookKey &&
-      settings.hardcover?.enabled &&
-      settings.hardcover.accessToken &&
-      settings.hardcover.autoSync
+      ...(bookKey && settings.hardcover?.enabled && settings.hardcover.accessToken
         ? [
             {
               kind: 'hardcover' as const,

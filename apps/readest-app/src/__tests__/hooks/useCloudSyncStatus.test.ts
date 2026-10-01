@@ -171,8 +171,14 @@ describe('useCloudSyncStatus Hardcover (book scope)', () => {
     expect(book.label).toContain('Synced {{time}}');
   });
 
-  it('is omitted when disconnected, missing a token, or not auto-syncing', () => {
-    for (const over of [{ enabled: false }, { accessToken: '' }, { autoSync: false }]) {
+  it('is a provider with Auto Sync off, since the row push is a manual sync', () => {
+    mockSettings = hardcover({ autoSync: false });
+    const { result } = renderHook(() => useCloudSyncStatus(0, 'book-a'));
+    expect(result.current.providers.map((p) => p.kind)).toEqual(['hardcover']);
+  });
+
+  it('is omitted when disconnected or missing a token', () => {
+    for (const over of [{ enabled: false }, { accessToken: '' }]) {
       mockSettings = hardcover(over);
       const { result } = renderHook(() => useCloudSyncStatus(0, 'book-a'));
       expect(result.current.providers).toEqual([]);

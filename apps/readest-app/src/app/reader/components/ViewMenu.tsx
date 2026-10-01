@@ -152,9 +152,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     eventDispatcher.dispatch('push-file-sync', { bookKey });
     eventDispatcher.dispatch('pull-file-sync', { bookKey });
     eventDispatcher.dispatch('flush-kosync', { bookKey });
-    // Hardcover is on the row only with Auto Sync on. Without it, a push would
-    // add whatever book is open to the user's Hardcover shelf, which only the
-    // book menu's explicit Push items may do.
+    // A tap is a manual sync, so Hardcover pushes even with its Auto Sync off.
     if (syncStatus.providers.some((p) => p.kind === 'hardcover')) {
       eventDispatcher.dispatch('hardcover-push-progress', { bookKey, silent: true });
       eventDispatcher.dispatch('hardcover-push-notes', { bookKey, silent: true });
