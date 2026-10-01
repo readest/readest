@@ -31,6 +31,7 @@ import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
 import { eventDispatcher } from '@/utils/event';
 import { transferManager } from '@/services/transferManager';
+import { purgeCloudBookData } from '@/services/purgeCloudBookData';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
@@ -1179,6 +1180,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       };
 
       try {
+        // Purge also erases the book's synced progress and notes, or the next
+        // open pulls them straight back (#6532). It runs first: if the network
+        // step fails, nothing irreversible has happened locally yet.
+        if (deleteAction === 'purge' && user) {
+          await purgeCloudBookData(book.hash);
+        }
+
         // Handle local deletion immediately. Purge mirrors 'both' (tombstone +
         // queued cloud delete) but hands 'purge' to deleteBook, which also wipes
         // the entire Books/<hash>/ folder (config/nav/cover) — issue #4615.
@@ -1195,6 +1203,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             book.fileSyncDeletionRequestedAt = deletedAt;
             book.downloadedAt = null;
             book.coverDownloadedAt = null;
+            // The row's progress survives the tombstone and comes back on a
+            // re-import; null (not undefined, which JSON drops) clears it in
+            // the cloud too (#6532).
+            if (deleteAction === 'purge') book.progress = null;
           } else {
             // "Remove from Device Only" must never leave stale authorization
             // from an older delete/re-import cycle on the live row.
