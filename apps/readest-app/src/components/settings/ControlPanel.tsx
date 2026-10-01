@@ -119,6 +119,17 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     { value: '15', label: _('Every 15 pages') },
     { value: '20', label: _('Every 20 pages') },
   ];
+  // A synced value outside the offered set (written by another/newer client) has
+  // no matching <option>, so the controlled select would resolve selectedIndex -1
+  // and render blank, hiding the active interval. Surface it as an extra option —
+  // shown, never rewritten — so the display still matches what noteEinkPageTurn
+  // actually reads, without coercing or destroying the stored value.
+  const currentInterval = String(einkAutoRefreshInterval);
+  const einkAutoRefreshIntervalChoices = einkAutoRefreshIntervalOptions.some(
+    (opt) => opt.value === currentInterval,
+  )
+    ? einkAutoRefreshIntervalOptions
+    : [...einkAutoRefreshIntervalOptions, { value: currentInterval, label: currentInterval }];
   const handleReset = () => {
     resetToDefaults({
       scrolled: setScrolledMode,
@@ -623,7 +634,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
               onChange={(e) => setEinkAutoRefreshInterval(Number(e.target.value))}
               ariaLabel={_('Auto Full Refresh')}
               disabled={!isEink}
-              options={einkAutoRefreshIntervalOptions}
+              options={einkAutoRefreshIntervalChoices}
             />
           </SettingsRow>
         )}
