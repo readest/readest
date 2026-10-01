@@ -207,6 +207,11 @@ export const viewPagination = (
             view.book.rendition?.layout === 'pre-paginated')
             ? distance
             : snapScrolledDistanceToLines(view, distance, forward);
+        // In scrolled mode 'pan' and 'page' both advance a full viewport (the
+        // caller's panDistance is ignored here; short pans only exist on the
+        // non-scrolled panning path below, which deliberately does not count).
+        // So every scrolled turn reaching here is one page — counting all of
+        // them keeps "Every N pages" at N viewports.
         noteEinkPageTurn(view, viewSettings);
         return forward ? view.next(snapped) : view.prev(snapped);
       }
