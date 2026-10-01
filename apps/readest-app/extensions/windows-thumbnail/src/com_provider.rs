@@ -27,8 +27,9 @@ use windows::Win32::System::Ole::{
     IObjectWithSite, IObjectWithSite_Impl, IOleWindow, IOleWindow_Impl,
 };
 use windows::Win32::System::Registry::{
-    RegCloseKey, RegCreateKeyExW, RegDeleteKeyValueW, RegDeleteTreeW, RegSetValueExW, HKEY,
-    HKEY_CLASSES_ROOT, HKEY_LOCAL_MACHINE, KEY_WRITE, REG_OPTION_NON_VOLATILE, REG_SZ,
+    RegCloseKey, RegCreateKeyExW, RegDeleteKeyValueW, RegDeleteTreeW, RegGetValueW, RegSetValueExW,
+    HKEY, HKEY_CLASSES_ROOT, HKEY_LOCAL_MACHINE, KEY_WRITE, REG_OPTION_NON_VOLATILE, REG_SZ,
+    RRF_RT_REG_SZ,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{GetFocus, SetFocus};
 use windows::Win32::UI::Shell::{
@@ -37,7 +38,9 @@ use windows::Win32::UI::Shell::{
     IThumbnailProvider_Impl, ASSOCF_NONE, ASSOCSTR_EXECUTABLE, SIGDN_FILESYSPATH, WTSAT_ARGB,
     WTS_ALPHATYPE,
 };
-use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, MSG, SWP_NOACTIVATE, SWP_NOZORDER};
+use windows::Win32::UI::WindowsAndMessaging::{
+    SetParent, SetWindowPos, MSG, SWP_NOACTIVATE, SWP_NOZORDER,
+};
 use windows_core::BOOL;
 use windows_core::{implement, Ref};
 
@@ -305,6 +308,10 @@ impl IThumbnailProvider_Impl for ThumbnailProvider_Impl {
 impl IPreviewHandler_Impl for ThumbnailProvider_Impl {
     fn SetWindow(&self, hwnd: HWND, prc: *const RECT) -> windows::core::Result<()> {
         self.parent.set(hwnd);
+        // The host may move an existing preview to a new parent.
+        if let Some(preview) = *self.preview.get() {
+            unsafe { SetParent(preview, Some(hwnd))? };
+        }
         self.SetRect(prc)
     }
 
@@ -615,6 +622,9 @@ unsafe fn register_server_impl() -> Result<(), HRESULT> {
     for ext in SUPPORTED_EXTENSIONS {
         for handler in [SHELLEX_THUMBNAIL_HANDLER, SHELLEX_PREVIEW_HANDLER] {
             let ext_shellex_path = format!("{}\\ShellEx\\{}", ext, handler);
+            if !may_claim_slot(read_reg_default(&ext_shellex_path).as_deref(), &clsid) {
+                continue;
+            }
             if let Ok(ext_shellex_key) = create_reg_key(HKEY_CLASSES_ROOT, &ext_shellex_path) {
                 let _ = set_reg_value(ext_shellex_key, "", &clsid);
                 let _ = RegCloseKey(ext_shellex_key);
@@ -635,8 +645,12 @@ unsafe fn unregister_server_impl() -> Result<(), HRESULT> {
 
     for ext in SUPPORTED_EXTENSIONS {
         for handler in [SHELLEX_THUMBNAIL_HANDLER, SHELLEX_PREVIEW_HANDLER] {
-            let ext_path = to_wide(&format!("{}\\ShellEx\\{}", ext, handler));
-            let _ = RegDeleteTreeW(HKEY_CLASSES_ROOT, PCWSTR(ext_path.as_ptr()));
+            let ext_path = format!("{}\\ShellEx\\{}", ext, handler);
+            let ours = read_reg_default(&ext_path).is_some_and(|v| v.eq_ignore_ascii_case(&clsid));
+            if ours {
+                let ext_path = to_wide(&ext_path);
+                let _ = RegDeleteTreeW(HKEY_CLASSES_ROOT, PCWSTR(ext_path.as_ptr()));
+            }
         }
     }
 
@@ -648,4 +662,51 @@ unsafe fn unregister_server_impl() -> Result<(), HRESULT> {
         PCWSTR(clsid_w.as_ptr()),
     );
     Ok(())
+}
+
+/// Whether we may write our CLSID into a ShellEx slot holding `current`:
+/// only when it is free or already ours, so other apps' handlers are left alone.
+fn may_claim_slot(current: Option<&str>, clsid: &str) -> bool {
+    current.is_none_or(|v| v.is_empty() || v.eq_ignore_ascii_case(clsid))
+}
+
+/// Read the default value of `HKCR\<subkey>`, if it exists.
+unsafe fn read_reg_default(subkey: &str) -> Option<String> {
+    let subkey_w = to_wide(subkey);
+    let mut buffer = [0u16; 64];
+    let mut size = std::mem::size_of_val(&buffer) as u32;
+    RegGetValueW(
+        HKEY_CLASSES_ROOT,
+        PCWSTR(subkey_w.as_ptr()),
+        PCWSTR::null(),
+        RRF_RT_REG_SZ,
+        None,
+        Some(buffer.as_mut_ptr() as *mut c_void),
+        Some(&mut size),
+    )
+    .ok()
+    .ok()?;
+    let len = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
+    Some(String::from_utf16_lossy(&buffer[..len]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn claims_only_free_or_own_slots() {
+        let ours = "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}";
+        assert!(may_claim_slot(None, ours));
+        assert!(may_claim_slot(Some(""), ours));
+        assert!(may_claim_slot(
+            Some("{a1b2c3d4-e5f6-7890-abcd-ef1234567890}"),
+            ours
+        ));
+        // Edge's PDF previewer
+        assert!(!may_claim_slot(
+            Some("{3A84F9C2-6164-485C-A7D9-4B27F8AC009E}"),
+            ours
+        ));
+    }
 }
