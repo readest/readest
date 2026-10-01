@@ -5,6 +5,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getActiveFileSyncBackends } from '@/services/sync/cloudSyncProvider';
 import { isAbsEbook } from '@/utils/audiobook';
+import { isCalibreBook } from '@/utils/calibre';
 
 /**
  * Whether a third-party file mirror (WebDAV / Google Drive / S3 / OneDrive) is
@@ -19,7 +20,7 @@ interface UseMakeBookAvailableOptions {
   setLoading: Dispatch<SetStateAction<boolean>>;
   handleBookDownload: (
     book: Book,
-    options?: { redownload?: boolean; queued?: boolean },
+    options?: { redownload?: boolean; queued?: boolean; format?: string },
   ) => Promise<boolean>;
 }
 
@@ -45,8 +46,12 @@ export const useMakeBookAvailable = ({
       // not the whole story for a file backend: it is stamped by the sync engine,
       // so a row it has not reconciled yet (or one poisoned by a pre-#5087
       // client, #5265) can be sitting on the mirror without carrying the stamp.
-      // Ask the mirror before giving up on it.
-      if (!book.uploadedAt && !hasFileSyncMirror()) return true;
+      // Ask the mirror before giving up on it. A Calibre book never satisfies
+      // either check — its only source is the calibre server, reached through
+      // the calibre branch of handleBookDownload — so it always falls through
+      // to the probe + download flow below, which also re-fetches a downloaded
+      // copy whose local file was deleted.
+      if (!book.uploadedAt && !hasFileSyncMirror() && !isCalibreBook(book)) return true;
       // The row's `downloadedAt` is not proof that the file is still here: a
       // "Remove from Device Only" evicts the file, and an in-place original can
       // be moved or deleted behind our back. Probe, and re-fetch from the cloud

@@ -15,6 +15,7 @@ import type { TranslationFunc } from '@/hooks/useTranslation';
 import { stubTranslation as _ } from '@/utils/misc';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
+import { isCalibreBook } from '@/utils/calibre';
 import { isAbsOfflineCapable, isAudiobook } from '@/utils/audiobook';
 
 /** Valid sort types for the library */
@@ -873,6 +874,10 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
       // Return Infinity if a book does not have time remaining (ie. if the book is unread or finished) so it is sorted after books with time remaining
       return getTimeRemainingMinutes(book) ?? Infinity;
 
+    case LibrarySortByType.Rating:
+      // Unrated books sort as 0 so they land after rated ones in ascending order.
+      return book.metadata?.rating ?? 0;
+
     default:
       return book.updatedAt;
   }
@@ -943,6 +948,10 @@ export const getGroupSortValue = (
     case LibrarySortByType.TimeRemaining:
       // Return book with least amount of time remaining
       return Math.min(...books.map((b) => getTimeRemainingMinutes(b) ?? Infinity));
+
+    case LibrarySortByType.Rating:
+      // Return the highest-rated book in the group
+      return Math.max(...books.map((b) => b.metadata?.rating ?? 0));
 
     default:
       return Math.max(...books.map((b) => b.updatedAt));
@@ -1138,7 +1147,13 @@ export const getBookContextMenuItemIds = (
   // A feed book has no file to move: every transfer action would fail, and the
   // share dialog uploads before it can hand out a link (issue #5307).
   if (!isFeedBook(book)) {
-    if (book.uploadedAt && !book.downloadedAt) ids.push('download');
+    if (isCalibreBook(book)) {
+      // Calibre books download from their own server in the preferred or a
+      // picked format, regardless of cloud state.
+      ids.push('download');
+    } else if (book.uploadedAt && !book.downloadedAt) {
+      ids.push('download');
+    }
     if (!book.uploadedAt && book.downloadedAt) ids.push('upload');
     // Share is offered for any local-or-uploaded book; the dialog uploads first
     // if the book hasn't been pushed yet.

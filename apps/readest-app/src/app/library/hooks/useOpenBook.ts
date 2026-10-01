@@ -8,12 +8,13 @@ import { hasFileSyncMirror, useMakeBookAvailable } from '@/hooks/useMakeBookAvai
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { isAbsEbook, isAudiobook } from '@/utils/audiobook';
+import { isCalibreStub } from '@/utils/calibre';
 
 interface UseOpenBookOptions {
   setLoading: Dispatch<SetStateAction<boolean>>;
   handleBookDownload: (
     book: Book,
-    options?: { redownload?: boolean; queued?: boolean },
+    options?: { redownload?: boolean; queued?: boolean; format?: string },
   ) => Promise<boolean>;
 }
 
@@ -57,6 +58,7 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       if (
         book.filePath &&
         !isAbsEbook(book) &&
+        !isCalibreStub(book) &&
         !book.uploadedAt &&
         !book.deletedAt &&
         !hasFileSyncMirror()

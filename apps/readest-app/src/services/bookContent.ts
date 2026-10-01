@@ -8,6 +8,7 @@ import { isFeedBookUrl } from '@/services/rss/feedBookUrl';
 import { findABSServerById } from '@/store/absServerStore';
 import { createAbsEbookFetcher } from '@/services/audiobookshelf/ebookFetch';
 import { buildAbsEbookUrl, isAbsEbook, parseAbsFilePath } from '@/utils/audiobook';
+import { parseCalibreFilePath } from '@/utils/calibre';
 
 export type BookContentSource =
   | { kind: 'managed'; path: string; base: 'Books'; legacy?: boolean }
@@ -72,6 +73,13 @@ export async function resolveBookContentSource(
   }
 
   if (book.filePath) {
+    // A Calibre sync stub's `calibre://<serverId>/<libraryId>/<bookId>` path is
+    // an identity, not a readable location — `isValidURL` would happily accept
+    // the scheme and send the reader off a cliff. The stub downloads through
+    // downloadCalibreBook first; until then the book is simply not available.
+    if (parseCalibreFilePath(book.filePath)) {
+      return { kind: 'missing' };
+    }
     // Android "Open with Readest" hands us a content:// URI as the
     // book.filePath (e.g. content://media/external/file/1322). Tauri's
     // fs.exists() doesn't understand content URIs and returns false,

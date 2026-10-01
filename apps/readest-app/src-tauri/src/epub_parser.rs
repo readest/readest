@@ -524,12 +524,12 @@ fn read_rootfile_path<R: Read + Seek>(zip: &mut ZipArchive<R>) -> Result<String,
     let mut buf = Vec::new();
     loop {
         match reader.read_event_into(&mut buf) {
-            Ok(Event::Empty(e)) | Ok(Event::Start(e)) => {
-                if local_name_eq(e.name().as_ref(), b"rootfile") {
-                    for attr in e.attributes().flatten() {
-                        if attr.key.as_ref() == b"full-path" {
-                            return Ok(String::from_utf8_lossy(&attr.value).into_owned());
-                        }
+            Ok(Event::Empty(e)) | Ok(Event::Start(e))
+                if local_name_eq(e.name().as_ref(), b"rootfile") =>
+            {
+                for attr in e.attributes().flatten() {
+                    if attr.key.as_ref() == b"full-path" {
+                        return Ok(String::from_utf8_lossy(&attr.value).into_owned());
                     }
                 }
             }

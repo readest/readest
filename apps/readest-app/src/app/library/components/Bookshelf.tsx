@@ -14,6 +14,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isAbsBookOrphaned, useABSServerStore } from '@/store/absServerStore';
+import { isCalibreBookOrphaned, useCalibreServerStore } from '@/store/calibreServerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { selectActiveBookDownloadProgress, useTransferStore } from '@/store/transferStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -200,13 +201,19 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const autofocusRef = useAutoFocus<HTMLDivElement>();
   useSpatialNavigation(autofocusRef);
 
-  const { setCurrentBookshelf, setLibrary, updateBooks } = useLibraryStore();
-  const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
+  // Field selectors (see LibraryPageContent): a whole-store subscription
+  // repainted every mounted shelf cell on each unrelated store change.
+  const setCurrentBookshelf = useLibraryStore((s) => s.setCurrentBookshelf);
+  const setLibrary = useLibraryStore((s) => s.setLibrary);
+  const updateBooks = useLibraryStore((s) => s.updateBooks);
+  const setSelectedBooks = useLibraryStore((s) => s.setSelectedBooks);
+  const getSelectedBooks = useLibraryStore((s) => s.getSelectedBooks);
+  const toggleSelectedBook = useLibraryStore((s) => s.toggleSelectedBook);
   // The raw Set from the store: its identity only changes when the selection
   // does, so memos keyed on it stay stable across unrelated re-renders
   // (getSelectedBooks() allocates a fresh array per call).
-  const { selectedBooks: selectedBookSet } = useLibraryStore();
-  const { getGroupName } = useLibraryStore();
+  const selectedBookSet = useLibraryStore((s) => s.selectedBooks);
+  const getGroupName = useLibraryStore((s) => s.getGroupName);
 
   const uiLanguage = localStorage?.getItem('i18nextLng') || '';
 
@@ -243,16 +250,23 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // can't stream, have no cover source, and can't be opened — hide them from
   // every shelf derivation (grid, groups, recent shelf, search). They stay in
   // the store and keep syncing; they reappear the moment the server row
-  // lands. `absServers` and `settings.absServers` are deps because the orphan
-  // check reads the server store with a settings fallback, both of which
-  // hydrate asynchronously after the cached library first renders. Keying on
-  // the one settings field it reads keeps unrelated settings writes from
+  // lands. `absServers` and `settings.absServers` are deps because the ABS
+  // orphan check reads the server store with a settings fallback, both of
+  // which hydrate asynchronously after the cached library first renders. The
+  // Calibre orphan check is keyed the same way on `calibreServers` /
+  // `settings.calibreServers`: Calibre sync stubs get the same treatment
+  // (e.g. a backup restored without the server's credentials). Keying on
+  // just the settings fields they read keeps unrelated settings writes from
   // re-filtering and re-sorting every shelf.
   const absServers = useABSServerStore((state) => state.servers);
+  const calibreServers = useCalibreServerStore((state) => state.servers);
   const visibleBooks = useMemo(
-    () => libraryBooks.filter((book) => !book.deletedAt && !isAbsBookOrphaned(book)),
+    () =>
+      libraryBooks.filter(
+        (book) => !book.deletedAt && !isAbsBookOrphaned(book) && !isCalibreBookOrphaned(book),
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [libraryBooks, absServers, settings.absServers],
+    [libraryBooks, absServers, calibreServers, settings.absServers, settings.calibreServers],
   );
 
   const filteredBooks = useMemo(() => {

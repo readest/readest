@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,6 +12,7 @@ import { openExternalUrl } from '@/utils/open';
 import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
 import { getOSPlatform } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
+import { buildDownloadLadder, isCalibreBook } from '@/utils/calibre';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import { Book, BooksGroup, ReadingStatus } from '@/types/book';
@@ -94,7 +95,7 @@ interface BookshelfItemProps {
   handleGroupBooks: () => void;
   handleBookDownload: (
     book: Book,
-    options?: { redownload?: boolean; queued?: boolean },
+    options?: { redownload?: boolean; queued?: boolean; format?: string },
   ) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
@@ -273,10 +274,28 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         },
       },
     };
-    return getBookContextMenuItemIds(book, {
+    const items = getBookContextMenuItemIds(book, {
       localSend: isTauriAppPlatform() && isLocalSendEnabled(),
       absOffline: isTauriAppPlatform(),
     }).map((id) => itemOptions[id]);
+
+    // Calibre books carry every format the server advertises — offer each one
+    // right after the standard download item ("Download EPUB", "Download
+    // MOBI", ...). The ladder still falls back through formats on a 404.
+    const formats = isCalibreBook(book) ? (book.metadata?.calibreSource?.formats ?? []) : [];
+    if (formats.length > 0) {
+      const downloadIndex = items.indexOf(itemOptions['download']);
+      if (downloadIndex >= 0) {
+        const formatItems = buildDownloadLadder(undefined, formats).map((fmt) => ({
+          text: _('Download {{format}}', { format: fmt.toUpperCase() }),
+          action: async () => {
+            handleBookDownload(book, { queued: true, format: fmt });
+          },
+        }));
+        items.splice(downloadIndex + 1, 0, ...formatItems);
+      }
+    }
+    return items;
   };
 
   const buildGroupMenuItems = (group: BooksGroup): BookContextMenuItem[] => {
@@ -504,4 +523,34 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   );
 };
 
-export default BookshelfItem;
+/**
+ * Memoized with an explicit field comparator (not shallow-equal): the
+ * handler props are compared by reference so no cell can hold stale
+ * closures, while data props (the item, selection, transfer overlay) drive
+ * re-renders. Grouped shelves render the same book in several groups and
+ * each group card mounts several BookItems — without this, every parent
+ * re-render (transfer ticks, selection churn) repaints the whole mounted
+ * range at 4× cell density.
+ */
+export default memo(
+  BookshelfItem,
+  (prev, next) =>
+    prev.item === next.item &&
+    prev.mode === next.mode &&
+    prev.coverFit === next.coverFit &&
+    prev.skeuomorphicCovers === next.skeuomorphicCovers &&
+    prev.isSelectMode === next.isSelectMode &&
+    prev.itemSelected === next.itemSelected &&
+    prev.transferProgress === next.transferProgress &&
+    prev.showTimeRemaining === next.showTimeRemaining &&
+    prev.setLoading === next.setLoading &&
+    prev.toggleSelection === next.toggleSelection &&
+    prev.handleGroupBooks === next.handleGroupBooks &&
+    prev.handleBookDownload === next.handleBookDownload &&
+    prev.handleBookUpload === next.handleBookUpload &&
+    prev.handleBookDelete === next.handleBookDelete &&
+    prev.handleSetSelectMode === next.handleSetSelectMode &&
+    prev.handleShowDetailsBook === next.handleShowDetailsBook &&
+    prev.handleLibraryNavigation === next.handleLibraryNavigation &&
+    prev.handleUpdateReadingStatus === next.handleUpdateReadingStatus,
+);

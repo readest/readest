@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { MdCheckCircle, MdCheckCircleOutline, MdChevronRight, MdChevronLeft } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -8,6 +8,14 @@ import { BooksGroup } from '@/types/book';
 import { LibraryViewModeType, LibraryCoverFitType } from '@/types/settings';
 import BookCover from '@/components/BookCover';
 import { useSettingsStore } from '@/store/settingsStore';
+
+// Grid previews always show four covers. List-mode shelves used to render
+// EVERY book in the group inside one horizontally-scrolling cell — a tag with
+// a thousand books mounted a thousand covers in a single virtual item. The
+// preview is capped and a "+N" tile points at the rest (the card navigates
+// into the group).
+const GRID_PREVIEW_COUNT = 4;
+const LIST_PREVIEW_COUNT = 50;
 
 interface GroupItemProps {
   mode: LibraryViewModeType;
@@ -146,24 +154,31 @@ const GroupItem: React.FC<GroupItemProps> = ({
             }
             onScroll={mode === 'list' ? handleScroll : undefined}
           >
-            {group.books.slice(0, mode === 'grid' ? 4 : undefined).map((book) => (
-              <div
-                key={book.hash}
-                className={clsx(
-                  'relative aspect-[28/41] h-full',
-                  mode === 'grid' && 'w-full',
-                  mode === 'list' && 'shrink-0',
-                )}
-              >
-                <BookCover
-                  book={book}
-                  coverFit={coverFit}
-                  isPreview
-                  showSpine={skeuomorphicCovers ?? settings.librarySkeuomorphicCovers}
-                  imageClassName='rounded-[2px]'
-                />
+            {group.books
+              .slice(0, mode === 'grid' ? GRID_PREVIEW_COUNT : LIST_PREVIEW_COUNT)
+              .map((book) => (
+                <div
+                  key={book.hash}
+                  className={clsx(
+                    'relative aspect-[28/41] h-full',
+                    mode === 'grid' && 'w-full',
+                    mode === 'list' && 'shrink-0',
+                  )}
+                >
+                  <BookCover
+                    book={book}
+                    coverFit={coverFit}
+                    isPreview
+                    showSpine={skeuomorphicCovers ?? settings.librarySkeuomorphicCovers}
+                    imageClassName='rounded-[2px]'
+                  />
+                </div>
+              ))}
+            {mode === 'list' && group.books.length > LIST_PREVIEW_COUNT && (
+              <div className='bg-base-200/60 text-base-content/60 border-base-content/10 flex aspect-[28/41] h-full shrink-0 items-center justify-center rounded-[2px] border text-sm'>
+                +{group.books.length - LIST_PREVIEW_COUNT}
               </div>
-            ))}
+            )}
           </div>
           {mode === 'list' && showLeftArrow && (
             <div className='absolute left-[-0.5px] top-0 h-full w-12'>
@@ -242,4 +257,18 @@ const GroupItem: React.FC<GroupItemProps> = ({
   );
 };
 
-export default GroupItem;
+/**
+ * Memoized: a grouped shelf at calibre scale (tens of thousands of group
+ * cards, each mounting a cover mosaic) must not repaint a card unless its
+ * data or selection actually changed.
+ */
+export default memo(
+  GroupItem,
+  (prev, next) =>
+    prev.group === next.group &&
+    prev.mode === next.mode &&
+    prev.coverFit === next.coverFit &&
+    prev.skeuomorphicCovers === next.skeuomorphicCovers &&
+    prev.isSelectMode === next.isSelectMode &&
+    prev.groupSelected === next.groupSelected,
+);

@@ -8,6 +8,7 @@ import {
   RiRssLine,
   RiBookReadLine,
   RiBook3Line,
+  RiBook2Line,
   RiFileList3Line,
   RiDiscordLine,
   RiSendPlaneLine,
@@ -28,6 +29,7 @@ import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { useABSServerStore } from '@/store/absServerStore';
+import { useCalibreServerStore } from '@/store/calibreServerStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { useLocalSendStore } from '@/store/localsendStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
@@ -46,6 +48,7 @@ import { getICloudContainerStatus } from '@/utils/bridge';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import ABSForm from './integrations/ABSForm';
+import CalibreForm from './integrations/CalibreForm';
 import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
@@ -91,6 +94,7 @@ type SubPage =
   | 'notion'
   | 'opds'
   | 'audiobookshelf'
+  | 'calibre'
   | 'send'
   | 'localsend'
   | null;
@@ -117,6 +121,8 @@ const IntegrationsPanel: React.FC = () => {
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
   const absServers = useABSServerStore((s) => s.servers);
   const absCount = absServers.filter((s) => !s.deletedAt).length;
+  const calibreServers = useCalibreServerStore((s) => s.servers);
+  const calibreCount = calibreServers.filter((s) => !s.deletedAt).length;
   // The device name Nearby BookDrop announces once its service is running,
   // so the integrations row can show it in place of a bare "On".
   const localSendAlias = useLocalSendStore((s) => s.status?.alias);
@@ -181,6 +187,11 @@ const IntegrationsPanel: React.FC = () => {
     void useABSServerStore.getState().loadABSServers(envConfig);
   }, [envConfig]);
 
+  // Same hydration, for the Calibre server list.
+  useEffect(() => {
+    void useCalibreServerStore.getState().loadCalibreServers();
+  }, []);
+
   // Android Back / Esc: when any integrations sub-page (KOSync, WebDAV,
   // Readwise, Hardcover, OPDS, Send-to-Readest) is open, intercept and
   // step back to the integrations list instead of letting <Dialog>'s
@@ -236,6 +247,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'notion' ||
       requestedSubPage === 'opds' ||
       requestedSubPage === 'audiobookshelf' ||
+      requestedSubPage === 'calibre' ||
       requestedSubPage === 'send' ||
       requestedSubPage === 'localsend'
     ) {
@@ -487,6 +499,12 @@ const IntegrationsPanel: React.FC = () => {
         <ABSForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'calibre')
+    return (
+      <div className='my-4 w-full'>
+        <CalibreForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'send')
     return (
       <div className='my-4 w-full'>
@@ -599,6 +617,8 @@ const IntegrationsPanel: React.FC = () => {
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
   const absStatus = absCount > 0 ? _('{{count}} server', { count: absCount }) : _('No servers');
+  const calibreStatus =
+    calibreCount > 0 ? _('{{count}} server', { count: calibreCount }) : _('No servers');
   // Enabled rows show the announced device name (falling back to the stored
   // custom alias, then a bare "On" until the service reports its alias).
   const localSendName = localSendAlias || getLocalSendAlias();
@@ -831,6 +851,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('Audiobookshelf')}
               status={absStatus}
               onClick={() => setSubPage('audiobookshelf')}
+            />
+            <IntegrationRow
+              icon={RiBook2Line}
+              title={_('Calibre')}
+              status={calibreStatus}
+              onClick={() => setSubPage('calibre')}
             />
             <IntegrationRow
               icon={RiSendPlaneLine}

@@ -26,6 +26,7 @@ import {
 } from '@/app/library/utils/libraryUtils';
 import { getBookChangedAt, getPrimaryLanguage, pickFresherGroup } from '@/utils/book';
 import { isAudiobook, parseAbsFilePath } from '@/utils/audiobook';
+import { parseCalibreFilePath } from '@/utils/calibre';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -54,6 +55,12 @@ export const useBooksSync = () => {
       // Demo books are the sample shelf we hand anonymous web visitors, not the
       // user's content — they never go to the cloud (issue #5049).
       .filter((book) => !isDemoBook(book))
+      // Undownloaded Calibre sync stubs are device-local shelf entries: their
+      // `calibre://` identity is meaningless to a peer whose Calibre server
+      // row (a settings-level config) may not exist there, and a peer copy
+      // with no file and no server can neither open nor re-sync. The
+      // downloaded copy syncs like any local book once it lands.
+      .filter((book) => !parseCalibreFilePath(book.filePath))
       .filter(
         (book) =>
           !book.syncedAt ||

@@ -93,7 +93,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     openAppLockDialogInStore(mode);
     setIsDropdownOpen?.(false);
   };
-  const { isSyncing, setLibrary } = useLibraryStore();
+  const isSyncing = useLibraryStore((s) => s.isSyncing);
+  const setLibrary = useLibraryStore((s) => s.setLibrary);
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
   const openTransferQueue = () => {

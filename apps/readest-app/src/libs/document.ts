@@ -69,6 +69,29 @@ export interface CalibreCustomColumn {
   extra?: number;
 }
 
+/**
+ * Identity anchor for a book that came from a Calibre content server, riding
+ * inside the cloud-synced `metadata` payload (see buildCalibreBookMetadata in
+ * src/utils/calibre.ts). Reconcile matches books by it, the reader's progress
+ * syncer locates the server book from it, and a downloaded copy keeps it after
+ * replacing its sync stub.
+ */
+export interface CalibreSourceInfo {
+  serverId: string;
+  libraryId: string;
+  bookId: string;
+  /** The format this row's download prefers (may change on re-sync). */
+  format: string;
+  /**
+   * Every format the server advertised for the book, lowercase. The download
+   * walks this as a fallback ladder: a 404 on the preferred format (server
+   * file missing, OPDS advertising stale data) drops to the next best one.
+   */
+  formats?: string[];
+  /** Server `last_modified`, to skip unchanged metadata on re-sync. */
+  lastModified?: string;
+}
+
 export type BookMetadata = {
   // NOTE: the title and author fields should be formatted
   title: string | LanguageMap;
@@ -92,11 +115,15 @@ export type BookMetadata = {
   seriesIndex?: number;
   seriesTotal?: number;
 
+  /** 0–5, as calibre stores it (the 0–10 database value halved). */
+  rating?: number;
+
   coverImageFile?: string;
   coverImageUrl?: string;
   coverImageBlobUrl?: string;
 
   calibreColumns?: CalibreCustomColumn[];
+  calibreSource?: CalibreSourceInfo;
   feedUrl?: string;
 
   // Audiobookshelf mirrors. An ABS stub is fileless: its identity is the

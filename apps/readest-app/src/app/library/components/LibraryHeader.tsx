@@ -67,7 +67,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
-  const { currentBookshelf } = useLibraryStore();
+  const currentBookshelf = useLibraryStore((s) => s.currentBookshelf);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const { isTrafficLightVisible } = useTrafficLight(headerRef);

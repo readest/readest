@@ -13,6 +13,9 @@ import {
 } from '@/services/sync/cloudSyncProvider';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { runFileBookDownload, runFileBookUpload } from '@/services/sync/file/runLibrarySync';
+import { isCalibreBook } from '@/utils/calibre';
+import { downloadCalibreBook } from '@/services/calibre/download';
+import { getLocalBookFilename } from '@/utils/book';
 
 /**
  * One throttle runs per in-flight transfer, and every emit re-renders the
@@ -28,6 +31,9 @@ interface BookDownloadOptions {
   // toast for the whole batch instead of one per book — a group can hold
   // hundreds.
   silent?: boolean;
+  // Calibre books: download a specific format instead of the row's preferred
+  // one (the "Download <FORMAT>" context-menu items).
+  format?: string;
 }
 
 /**
@@ -148,6 +154,67 @@ export const useBookTransferActions = (
   const handleBookDownload = useCallback(
     async (book: Book, downloadOptions: BookDownloadOptions = {}) => {
       const { redownload = false, queued = false, silent = false } = downloadOptions;
+      // Calibre books download from their own server into the managed shelf
+      // dir (keeping the row's hash) — covers undownloaded stubs and
+      // downloaded copies whose local file was deleted; identity rides
+      // metadata.calibreSource either way. The on-disk file doubles as the
+      // "already downloaded" check, so a redownload request must evict it
+      // first.
+      const tryCalibreDownload = async (): Promise<{ ok: boolean; missingOnServer?: boolean }> => {
+        if (!appService) return { ok: false };
+        if (redownload) {
+          await appService.deleteFile(getLocalBookFilename(book), 'Books').catch(() => {});
+        }
+        const tracker = trackProgress(book.hash);
+        try {
+          const result = await downloadCalibreBook(appService, book, {
+            onProgress: tracker.onProgress,
+            format: downloadOptions.format,
+          });
+          tracker.done();
+          if (result.ok) {
+            await updateBook(envConfig, book);
+            if (!silent) {
+              eventDispatcher.dispatch('toast', {
+                type: 'info',
+                timeout: 2000,
+                message: _('Book downloaded: {{title}}', { title: book.title }),
+              });
+            }
+            return { ok: true };
+          }
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              message: result.missingOnServer
+                ? _('This book is missing its file on the server. Fix it in Calibre-Web.')
+                : _('Failed to download book: {{title}}', { title: book.title }),
+              type: 'error',
+            });
+          }
+          return { ok: result.ok, missingOnServer: result.missingOnServer };
+        } catch {
+          tracker.done();
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              message: _('Failed to download book: {{title}}', { title: book.title }),
+              type: 'error',
+            });
+          }
+          return { ok: false };
+        }
+      };
+      const isCalibre = isCalibreBook(book);
+      // Calibre-first only when no cloud copy exists to prefer (undownloaded
+      // stubs), or when the user explicitly asked for a fresh pull. A book
+      // with a cloud copy must go the cloud route FIRST: on a peer device
+      // that never configured this calibre server, the calibre attempt can
+      // only fail, and the cloud file is the same bytes under the same hash.
+      let calibreTried = false;
+      if (isCalibre && (!book.uploadedAt || redownload)) {
+        calibreTried = true;
+        if ((await tryCalibreDownload()).ok) return true;
+        if (!book.uploadedAt) return false; // no cloud copy to fall back to
+      }
       const settingsNow = useSettingsStore.getState().settings;
       const backends = getActiveFileSyncBackends(settingsNow);
       const readest = isReadestCloudEnabled(settingsNow);
@@ -177,6 +244,11 @@ export const useBookTransferActions = (
         }
 
         if (!readest || !book.uploadedAt) {
+          // Cloud mirrors can't serve it — the calibre server still can.
+          if (isCalibre && !calibreTried) {
+            calibreTried = true;
+            return (await tryCalibreDownload()).ok;
+          }
           if (!silent) {
             eventDispatcher.dispatch('toast', {
               type: 'error',
@@ -206,6 +278,10 @@ export const useBookTransferActions = (
           return true;
         } catch {
           tracker.done();
+          if (isCalibre && !calibreTried && appService) {
+            calibreTried = true;
+            return (await tryCalibreDownload()).ok;
+          }
           if (!silent) {
             eventDispatcher.dispatch('toast', {
               message: _('Failed to download book: {{title}}', {
