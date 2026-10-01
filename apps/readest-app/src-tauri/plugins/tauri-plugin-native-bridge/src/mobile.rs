@@ -514,6 +514,32 @@ impl<R: Runtime> NativeBridge<R> {
             .run_mobile_plugin("set_bookshelf_widget_catalog", payload)
             .map_err(Into::into)
     }
+
+    pub fn update_reading_widget(
+        &self,
+        payload: UpdateReadingWidgetRequest,
+    ) -> crate::Result<UpdateReadingWidgetResponse> {
+        // iOS resolves without a body, which reads as no failures.
+        self.0
+            .run_mobile_plugin::<Option<UpdateReadingWidgetResponse>>(
+                "update_reading_widget",
+                payload,
+            )
+            .map(Option::unwrap_or_default)
+            .map_err(Into::into)
+    }
+
+    pub fn get_reading_widget_instances(&self) -> crate::Result<GetReadingWidgetInstancesResponse> {
+        self.0
+            .run_mobile_plugin("get_reading_widget_instances", ())
+            .map_err(Into::into)
+    }
+
+    pub fn set_reading_widget_catalog(&self, payload: ReadingWidgetCatalog) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("set_reading_widget_catalog", payload)
+            .map_err(Into::into)
+    }
 }
 
 impl<R: Runtime> NativeBridge<R> {

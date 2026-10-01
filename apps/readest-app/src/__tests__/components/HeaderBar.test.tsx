@@ -57,7 +57,10 @@ vi.mock('@/hooks/useTrafficLight', () => ({
 }));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (n: number) => n }));
 vi.mock('@/app/reader/hooks/useSpatialNavigation', () => ({ useSpatialNavigation: () => {} }));
-vi.mock('@/utils/insets', () => ({ getHeaderTriggerHeight: () => 0 }));
+vi.mock('@/utils/insets', () => ({
+  getHeaderTriggerHeight: () => 0,
+  getHorizontalInsetStyle: () => ({}),
+}));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
 
 // Child toolbar buttons are stubbed to bare, identifiable markup: this test is

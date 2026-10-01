@@ -26,6 +26,7 @@ import { eventDispatcher } from '@/utils/event';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useThemeStore } from '@/store/themeStore';
 import { isAudiobook } from '@/utils/audiobook';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 import { navigateToLibrary, navigateToReader } from '@/utils/nav';
 import { Toast } from '@/components/Toast';
 import Spinner from '@/components/Spinner';
@@ -47,7 +48,7 @@ const PlayerRoute = () => {
   // while the player is open arrives as a deep link. Without this the
   // selection lands on a route with nobody listening for it.
   useOpenLaunchLinks();
-  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow, isIPhoneDuo } = useThemeStore();
   const _ = useTranslation();
   useTheme({ systemUIVisible: false });
 
@@ -382,6 +383,8 @@ const PlayerRoute = () => {
       style={{
         paddingTop: `${safeAreaInsets?.top || 0}px`,
         paddingBottom: `${safeAreaInsets?.bottom || 0}px`,
+        // Clear iPhone Duo's side status strip (#6307).
+        ...getHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo),
       }}
     >
       {libraryLoaded && book && isAudiobook(book) && session ? (

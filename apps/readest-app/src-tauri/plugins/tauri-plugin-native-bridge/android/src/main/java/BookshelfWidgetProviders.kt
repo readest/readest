@@ -72,11 +72,34 @@ private val gridTitleIds = arrayOf(
     intArrayOf(R.id.title_4_0, R.id.title_4_1, R.id.title_4_2, R.id.title_4_3, R.id.title_4_4),
 )
 
-private fun bookPendingIntent(context: Context, hash: String, requestCode: Int): PendingIntent {
+// internal, not private: shared with ReadingWidgetProviders.kt.
+internal fun bookPendingIntent(context: Context, hash: String, requestCode: Int): PendingIntent {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("readest://book/$hash"))
         .setPackage(context.packageName)
     val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     return PendingIntent.getActivity(context, requestCode, intent, flags)
+}
+
+/** Shows the TTS transport bar (with the play/pause state) for an active session, else hides it. */
+internal fun bindTtsBar(context: Context, views: RemoteViews, tts: JSONObject?) {
+    if (tts == null || !tts.optBoolean("active")) {
+        views.setViewVisibility(R.id.tts_bar, android.view.View.GONE)
+        return
+    }
+    views.setViewVisibility(R.id.tts_bar, android.view.View.VISIBLE)
+    views.setImageViewResource(
+        R.id.btn_play_pause,
+        if (tts.optBoolean("playing")) R.drawable.ic_widget_pause else R.drawable.ic_widget_play
+    )
+    for ((buttonId, action) in listOf(
+        R.id.btn_prev to PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS,
+        R.id.btn_play_pause to PlaybackStateCompat.ACTION_PLAY_PAUSE,
+        R.id.btn_next to PlaybackStateCompat.ACTION_SKIP_TO_NEXT,
+    )) {
+        views.setOnClickPendingIntent(
+            buttonId, MediaButtonReceiver.buildMediaButtonPendingIntent(context, action)
+        )
+    }
 }
 
 /** A "browse groups" tile tap: opens the group's Library view by its id. */
@@ -120,10 +143,7 @@ private fun bindCell(
     views.setOnClickPendingIntent(cellId, pendingIntent)
 }
 
-/** The bookshelf widget. It keeps the name the first ("currently reading")
- * widget shipped under: Android deletes every placed widget whose provider
- * class disappears on upgrade. */
-class ReadingWidgetProvider : AppWidgetProvider() {
+class BookshelfWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         for (id in ids) updateWidget(context, mgr, id)
     }
@@ -161,12 +181,10 @@ class ReadingWidgetProvider : AppWidgetProvider() {
             views.setViewVisibility(R.id.heading, android.view.View.GONE)
         } else {
             views.setTextViewText(R.id.heading, heading)
+            views.setTextViewTextSize(R.id.heading, android.util.TypedValue.COMPLEX_UNIT_SP, settings.headerSize.toFloat())
+            setHeaderGap(context, views, R.id.heading, settings.headerSize)
             views.setViewVisibility(R.id.heading, android.view.View.VISIBLE)
         }
-
-        val tts = snapshot.optJSONObject("tts")
-        // JS only includes `tts` for instances whose shelf matches the playing book.
-        val showTtsBar = loaded && tts != null && tts.optBoolean("active")
 
         // Group tiles and book tiles share the grid, in the order JS sent them.
         val count = snapshot.optJSONArray("items")?.length() ?: 0
@@ -256,40 +274,13 @@ class ReadingWidgetProvider : AppWidgetProvider() {
                 index += itemsInRow
             }
         }
-        if (showTtsBar) {
-            views.setViewVisibility(R.id.tts_bar, android.view.View.VISIBLE)
-            val playing = tts?.optBoolean("playing") == true
-            views.setImageViewResource(
-                R.id.btn_play_pause,
-                if (playing) R.drawable.ic_widget_pause else R.drawable.ic_widget_play
-            )
-            views.setOnClickPendingIntent(
-                R.id.btn_prev,
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    context, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                )
-            )
-            views.setOnClickPendingIntent(
-                R.id.btn_play_pause,
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    context, PlaybackStateCompat.ACTION_PLAY_PAUSE
-                )
-            )
-            views.setOnClickPendingIntent(
-                R.id.btn_next,
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    context, PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                )
-            )
-        } else {
-            views.setViewVisibility(R.id.tts_bar, android.view.View.GONE)
-        }
+        bindTtsBar(context, views, if (loaded && settings.showTtsBar) snapshot.optJSONObject("tts") else null)
         // Never let a rejected update escape: the app republishes on every
         // launch, so a crash here would repeat on every launch.
         try {
             mgr.updateAppWidget(id, views)
         } catch (e: IllegalArgumentException) {
-            android.util.Log.w("ReadingWidgetProvider", "widget $id update rejected", e)
+            android.util.Log.w("BookshelfWidgetProvider", "widget $id update rejected", e)
         }
     }
 

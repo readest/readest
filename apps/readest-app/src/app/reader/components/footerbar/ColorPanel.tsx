@@ -24,12 +24,15 @@ interface ColorPanelProps {
   actionTab: string;
   bottomOffset: string;
   forceMobileLayout: boolean;
+  // Keeps the panel clear of iPhone Duo's side status strip (#6307).
+  insetStyle?: React.CSSProperties;
 }
 
 export const ColorPanel: React.FC<ColorPanelProps> = ({
   actionTab,
   bottomOffset,
   forceMobileLayout,
+  insetStyle,
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -98,6 +101,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
         bottom: appService?.isAndroidApp
           ? `calc(env(safe-area-inset-bottom) + 64px)`
           : bottomOffset,
+        ...insetStyle,
       }}
     >
       {appService?.hasScreenBrightness && (

@@ -1064,21 +1064,61 @@ class NativeBridgePlugin: Plugin {
     let darkMode = args.darkMode
 
     DispatchQueue.main.async {
-      UIApplication.shared.setStatusBarHidden(!visible, with: .none)
-
-      let windows = UIApplication.shared.connectedScenes
-        .compactMap { $0 as? UIWindowScene }
-        .flatMap { $0.windows }
-
-      let keyWindow = windows.first(where: { $0.isKeyWindow }) ?? windows.first
-      if let keyWindow = keyWindow {
-        keyWindow.overrideUserInterfaceStyle = darkMode ? .dark : .light
-        keyWindow.layoutIfNeeded()
-      } else {
+      guard let keyWindow = self.appWindow() else {
         logger.error("No key window found")
+        invoke.resolve(["success": false, "error": "No key window found"])
+        return
+      }
+      keyWindow.overrideUserInterfaceStyle = darkMode ? .dark : .light
+      let before = keyWindow.safeAreaInsets
+      // Apps built with the iOS 27 SDK can no longer hide the status bar with
+      // UIApplication.setStatusBarHidden (SDK 26 builds still can), so hide it
+      // through the root view controller. tao's TaoUIViewController implements
+      // prefersStatusBarHidden and setPrefersStatusBarHidden:, which calls
+      // setNeedsStatusBarAppearanceUpdate. Needs
+      // UIViewControllerBasedStatusBarAppearance = YES in Info.plist.
+      let applied = self.setPrefersStatusBarHidden(!visible, on: keyWindow.rootViewController)
+      keyWindow.layoutIfNeeded()
+      // The safe area follows the status bar a moment later (iPhone Duo's side
+      // strip is an 84pt inset on the inner display). Resolve once it has, so
+      // a follow-up get_safe_area_insets reads the insets for the new state.
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        let after = keyWindow.safeAreaInsets
+        logger.log(
+          "set_system_ui_visibility visible=\(visible) insets before=\(NSCoder.string(for: before), privacy: .public) after=\(NSCoder.string(for: after), privacy: .public)"
+        )
+        if applied {
+          invoke.resolve(["success": true])
+        } else {
+          invoke.resolve(["success": false, "error": "Root view controller cannot hide the status bar"])
+        }
       }
     }
-    invoke.resolve(["success": true])
+  }
+
+  /// The window that hosts the webview. It exists even before tao's window has
+  /// a UIWindowScene (a CarPlay-first launch), so prefer it over the scene
+  /// lookup, which is the fallback.
+  private func appWindow() -> UIWindow? {
+    if let window = webView?.window { return window }
+    let windows = UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .flatMap { $0.windows }
+    return windows.first(where: { $0.isKeyWindow }) ?? windows.first
+  }
+
+  /// Returns false when the view controller does not respond to tao's
+  /// `setPrefersStatusBarHidden:`, so the caller can report the failure.
+  private func setPrefersStatusBarHidden(_ hidden: Bool, on viewController: UIViewController?) -> Bool {
+    let selector = NSSelectorFromString("setPrefersStatusBarHidden:")
+    guard let viewController = viewController, viewController.responds(to: selector) else {
+      logger.error("Root view controller cannot hide the status bar: \(String(describing: viewController))")
+      return false
+    }
+    typealias Setter = @convention(c) (AnyObject, Selector, Bool) -> Void
+    let setter = unsafeBitCast(viewController.method(for: selector), to: Setter.self)
+    setter(viewController, selector, hidden)
+    return true
   }
 
   @objc public func get_sys_fonts_list(_ invoke: Invoke) throws {
@@ -1451,9 +1491,27 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  // iOS exposes no foldable API and the viewport size cannot identify the
+  // device, so iPhone Duo is recognized by its model identifier.
+  private static let iPhoneDuoModelIdentifiers: Set<String> = ["iPhone19,4"]
+
+  private static let isIPhoneDuo: Bool = {
+    let identifier: String
+    if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] {
+      identifier = simulated
+    } else {
+      var systemInfo = utsname()
+      uname(&systemInfo)
+      identifier = withUnsafePointer(to: &systemInfo.machine) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 1) { String(cString: $0) }
+      }
+    }
+    return iPhoneDuoModelIdentifiers.contains(identifier)
+  }()
+
   @objc public func get_safe_area_insets(_ invoke: Invoke) {
     DispatchQueue.main.async {
-      if let window = UIApplication.shared.windows.first {
+      if let window = self.appWindow() {
         let insets = window.safeAreaInsets
         // Rounded screen corners are not part of the safe area; report the
         // bottom radius so the reader footer can keep clear of the curve. The
@@ -1472,7 +1530,9 @@ class NativeBridgePlugin: Plugin {
           "left": insets.left,
           "bottom": insets.bottom,
           "right": insets.right,
-          "bottomCornerRadius": bottomCornerRadius
+          "bottomCornerRadius": bottomCornerRadius,
+          "isIPhoneDuo": NativeBridgePlugin.isIPhoneDuo,
+          "statusBarHidden": window.rootViewController?.prefersStatusBarHidden ?? false
         ])
       } else {
         invoke.resolve([

@@ -222,7 +222,9 @@ describe('buildBookshelfWidgetCatalog', () => {
     expect(catalog.shelves).toContainEqual({ id: sciFi.id, name: 'Sci-fi' });
     expect(catalog.shelves).toContainEqual({ id: FINISHED_BOOKSHELF_ID, name: 't:Finished books' });
     expect(catalog.labels.save).toBe('t:Save');
-    expect(catalog.labels.showShelfName).toBe('t:Shelf name');
+    expect(catalog.labels.showShelfName).toBe('t:Show Header');
+    expect(catalog.labels.headerSize).toBe('t:Header Size');
+    expect(catalog.labels.showTtsBar).toBe('t:Text to Speech');
     expect(catalog.labels.edit).toBe('t:Edit');
   });
 });

@@ -4,7 +4,7 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
-import { getHeaderBandGeometry } from '@/utils/insets';
+import { getHeaderBandGeometry, getMarginalInlinePadding } from '@/utils/insets';
 
 interface SectionInfoProps {
   bookKey: string;
@@ -15,6 +15,8 @@ interface SectionInfoProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  // The spread's Column Gap (px) in effect, 0 when none (getSpreadColumnGap).
+  columnGap?: number;
 }
 
 const HintInfo: React.FC<SectionInfoProps> = ({
@@ -26,9 +28,10 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  columnGap = 0,
 }) => {
   const { appService } = useEnv();
-  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const { systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const topInset = Math.max(
     gridInsets.top,
     appService?.isAndroidApp && systemUIVisible ? statusBarHeight / 2 : 0,
@@ -103,7 +106,16 @@ const HintInfo: React.FC<SectionInfoProps> = ({
             : {
                 top: `${band.top}px`,
                 height: `${band.height}px`,
-                insetInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right / 2}px)`,
+                insetInlineEnd: isIPhoneDuo
+                  ? // The page area is inset by the grid inset on the Duo
+                    // (#6307), like SectionInfo's and ProgressBar's padding.
+                    getMarginalInlinePadding(
+                      horizontalGap,
+                      contentInsets.right + gridInsets.right,
+                      columnGap,
+                      gridInsets.right,
+                    )
+                  : getMarginalInlinePadding(horizontalGap, contentInsets.right, columnGap),
               }
         }
       >

@@ -127,7 +127,7 @@ const FoliateViewer: React.FC<{
   const _ = useTranslation();
   const searchParams = useSearchParams();
   const { appService, envConfig } = useEnv();
-  const { themeCode, isDarkMode } = useThemeStore();
+  const { themeCode, isDarkMode, isIPhoneDuo } = useThemeStore();
   const { settings } = useSettingsStore();
   const { loadFont, loadCustomFonts, getLoadedFonts, getAvailableFonts } = useCustomFontStore();
   // Per-field selectors — see store/readerProgressStore.ts header for the
@@ -906,9 +906,14 @@ const FoliateViewer: React.FC<{
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
     const topMargin = (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
-    const rightMargin = insets.right + moreRightInset;
+    // On iPhone Duo the horizontal safe-area insets are applied to the viewer
+    // container itself (see the render below), not folded into these margins:
+    // the paginator treats a horizontal margin as a gutter and puts only half
+    // of it (a quarter in two-column mode) on the outer edge, which left text
+    // under the side status strip (#6307). Elsewhere they stay in the margins.
+    const rightMargin = (isIPhoneDuo ? viewInsets.right : insets.right) + moreRightInset;
     const bottomMargin = (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset;
-    const leftMargin = insets.left + moreLeftInset;
+    const leftMargin = (isIPhoneDuo ? viewInsets.left : insets.left) + moreLeftInset;
     viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);
@@ -931,6 +936,11 @@ const FoliateViewer: React.FC<{
       setScrollMargins({ top: 0, bottom: 0 });
     }
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
+    if (viewSettings.columnGapPx > 0) {
+      viewRef.current?.renderer.setAttribute('column-gap', `${viewSettings.columnGapPx}px`);
+    } else {
+      viewRef.current?.renderer.removeAttribute('column-gap');
+    }
     viewRef.current?.renderer.setAttribute(
       'scroll-direction',
       viewSettings.scrolledDirection === 'horizontal' ? 'horizontal' : 'vertical',
@@ -1113,6 +1123,7 @@ const FoliateViewer: React.FC<{
     insets.right,
     insets.bottom,
     insets.left,
+    isIPhoneDuo,
     // getViewInsets swaps the full top/bottom bands for the compact ones once
     // the page turns sideways, so the margins follow the axis too.
     viewSettings?.vertical,
@@ -1166,6 +1177,13 @@ const FoliateViewer: React.FC<{
         style={{
           paddingTop: scrollMargins.top,
           paddingBottom: scrollMargins.bottom,
+          // Keep the whole page area inside the horizontal safe area (#6307).
+          ...(isIPhoneDuo
+            ? {
+                left: `${gridInsets.left}px`,
+                width: `calc(100% - ${gridInsets.left + gridInsets.right}px)`,
+              }
+            : {}),
         }}
         {...mouseHandlers}
         {...touchHandlers}

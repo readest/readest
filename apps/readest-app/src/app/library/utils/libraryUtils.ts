@@ -11,6 +11,7 @@ import {
   isCurrentlyReadingBook,
 } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
+import type { TranslationFunc } from '@/hooks/useTranslation';
 import { stubTranslation as _ } from '@/utils/misc';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
@@ -318,6 +319,15 @@ const getBookReadRatio = (book: Book): number => {
   return current / total;
 };
 
+/** Percent read, or `null` when there's no progress to show. A total of 1
+ * (e.g. a fixed-layout book with one page) reads as finished (100%). */
+export const getProgressPercentage = (book: Book): number | null => {
+  if (!book.progress || !book.progress[1]) return null;
+  if (book.progress[1] === 1) return 100;
+  const percentage = Math.round((book.progress[0] / book.progress[1]) * 100);
+  return Math.max(0, Math.min(100, percentage));
+};
+
 export const getTimeRemainingMinutes = (
   book: Book,
   medianPageDurationSecs?: number,
@@ -364,6 +374,19 @@ export const getDisplayedTimeRemaining = (
   }
   return getTimeRemainingMinutes(book, medianPageDurationSecs);
 };
+
+// A tenth of an hour is still meaningful below 10h (1.6h); above it, a tenth
+// stops mattering once there are dozens of hours left.
+const roundedHours = (totalMinutes: number): number => {
+  const hours = totalMinutes / 60;
+  return hours < 10 ? Math.round(hours * 10) / 10 : Math.round(hours);
+};
+
+/** The library tile's short form: "45m left" under an hour, "1.6h left" / "11h left" above it. */
+export const formatTimeLeft = (totalMinutes: number, _: TranslationFunc): string =>
+  totalMinutes < 60
+    ? _('{{minutes}}m left', { minutes: totalMinutes })
+    : _('{{hours}}h left', { hours: roundedHours(totalMinutes) });
 
 /**
  * Remaining minutes for a shelf item, or `undefined` when its tile can show no

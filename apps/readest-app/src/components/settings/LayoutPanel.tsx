@@ -61,6 +61,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     viewSettings.compactMarginBottomPx,
   );
   const [gapPercent, setGapPercent] = useState(viewSettings.gapPercent);
+  const [columnGapPx, setColumnGapPx] = useState(viewSettings.columnGapPx);
   const [compactMarginLeftPx, setCompactMarginLeftPx] = useState(viewSettings.compactMarginLeftPx);
   const [compactMarginRightPx, setCompactMarginRightPx] = useState(
     viewSettings.compactMarginRightPx,
@@ -136,6 +137,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       compactMarginLeftPx: setCompactMarginLeftPx,
       compactMarginRightPx: setCompactMarginRightPx,
       gapPercent: setGapPercent,
+      columnGapPx: setColumnGapPx,
       maxColumnCount: setMaxColumnCount,
       maxInlineSize: setMaxInlineSize,
       maxBlockSize: setMaxBlockSize,
@@ -295,6 +297,17 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gapPercent]);
+
+  useEffect(() => {
+    if (columnGapPx === viewSettings.columnGapPx) return;
+    saveViewSettings(envConfig, bookKey, 'columnGapPx', columnGapPx, false, false);
+    if (columnGapPx > 0) {
+      view?.renderer.setAttribute('column-gap', `${columnGapPx}px`);
+    } else {
+      view?.renderer.removeAttribute('column-gap');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnGapPx]);
 
   useEffect(() => {
     if (maxColumnCount === viewSettings.maxColumnCount) return;
@@ -724,6 +737,16 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           data-setting-id='settings.layout.pageGap'
         />
         <NumberInput
+          label={_('Column Gap (px)')}
+          value={columnGapPx}
+          onChange={setColumnGapPx}
+          min={0}
+          max={200}
+          step={4}
+          disabled={isVertical}
+          data-setting-id='settings.layout.columnGap'
+        />
+        <NumberInput
           label={_('Maximum Number of Columns')}
           value={maxColumnCount}
           onChange={setMaxColumnCount}
@@ -769,27 +792,13 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           label={_('Remaining Time')}
           checked={showRemainingTime}
           disabled={!showFooter}
-          onChange={() => {
-            if (!showRemainingTime) {
-              setShowRemainingTime(true);
-              setShowRemainingPages(false);
-            } else {
-              setShowRemainingTime(false);
-            }
-          }}
+          onChange={() => setShowRemainingTime(!showRemainingTime)}
         />
         <SettingsSwitchRow
           label={_('Remaining Pages')}
           checked={showRemainingPages}
           disabled={!showFooter}
-          onChange={() => {
-            if (!showRemainingPages) {
-              setShowRemainingPages(true);
-              setShowRemainingTime(false);
-            } else {
-              setShowRemainingPages(false);
-            }
-          }}
+          onChange={() => setShowRemainingPages(!showRemainingPages)}
         />
         <SettingsSwitchRow
           label={_('Reading Progress')}
