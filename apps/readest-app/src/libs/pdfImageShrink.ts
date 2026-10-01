@@ -7,9 +7,10 @@
 // smaller OffscreenCanvases. For a 9000x12000 scan that full-size bitmap is
 // ~430 MB; on iOS it lands in the WebKit GPU process, which jetsam kills past
 // ~300 MB, and after the first kill every image the worker decodes stays blank
-// until the app restarts (readest#6521). This hook decodes such BMP blobs
-// itself, box-filtering straight down to about `maxPixels`, and scales the
-// source rectangle of pdf.js's next drawImage call to match.
+// until the app restarts (readest#6521). This hook keeps the bytes of such BMP
+// blobs, decodes them itself, box-filtering straight down to about
+// `maxPixels`, and scales the source rectangle of pdf.js's next drawImage call
+// to match.
 export function installPDFImageShrink(maxPixels: number): void {
   if (typeof OffscreenCanvasRenderingContext2D === 'undefined') return;
   // Where ImageDecoder exists (Android's Chromium) pdf.js decodes the BMP with
@@ -27,6 +28,29 @@ export function installPDFImageShrink(maxPixels: number): void {
   }
   const createBitmap = globalThis.createImageBitmap.bind(globalThis);
   const shrunk = new WeakMap<object, number>();
+  const pixelsOf = (bytes: Uint8Array) => {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    return view.getInt32(18, true) * Math.abs(view.getInt32(22, true));
+  };
+
+  // A Blob is copied into the browser's own storage (WebKit keeps it in the
+  // Networking process) and would be read back here: two more full-size
+  // copies. For an oversized BMP keep the bytes and hand the browser an empty
+  // Blob; pdf.js passes it straight to createImageBitmap below.
+  const NativeBlob = globalThis.Blob;
+  const held = new WeakMap<Blob, Uint8Array<ArrayBuffer>>();
+  globalThis.Blob = class extends NativeBlob {
+    constructor(parts?: BlobPart[], options?: BlobPropertyBag) {
+      const part = parts?.length === 1 ? parts[0] : null;
+      const bytes =
+        options?.type === 'image/bmp' && part instanceof ArrayBuffer && part.byteLength > 26
+          ? new Uint8Array(part)
+          : null;
+      const hold = bytes !== null && pixelsOf(bytes) > maxPixels;
+      super(hold ? [] : parts, options);
+      if (hold) held.set(this, bytes);
+    }
+  } as typeof Blob;
 
   // Decodes the BMP layouts pdf.js writes (1-bit palette, 24-bit BGR, 32-bit
   // RGBA bitfields), averaging every `factor` x `factor` block into one pixel.
@@ -92,20 +116,17 @@ export function installPDFImageShrink(maxPixels: number): void {
     source: ImageBitmapSource,
     ...rest: unknown[]
   ): Promise<ImageBitmap> {
-    if (rest.length === 0 && source instanceof Blob && source.type === 'image/bmp') {
-      const header = new DataView(await source.slice(0, 26).arrayBuffer());
-      const pixels = header.getInt32(18, true) * Math.abs(header.getInt32(22, true));
-      if (pixels > maxPixels) {
-        const factor = Math.ceil(Math.sqrt(pixels / maxPixels));
-        const image = shrinkBMP(new Uint8Array(await source.arrayBuffer()), factor);
-        if (image) {
-          const bitmap = await createBitmap(image);
-          shrunk.set(bitmap, factor);
-          return bitmap;
-        }
-      }
-    }
-    return (createBitmap as (...args: unknown[]) => Promise<ImageBitmap>)(source, ...rest);
+    const create = createBitmap as (...args: unknown[]) => Promise<ImageBitmap>;
+    const bytes = source instanceof NativeBlob ? held.get(source) : undefined;
+    if (!bytes) return create(source, ...rest);
+    held.delete(source as Blob);
+    const factor = Math.ceil(Math.sqrt(pixelsOf(bytes) / maxPixels));
+    const image = rest.length === 0 ? shrinkBMP(bytes, factor) : null;
+    // Not a layout we decode: let the browser have the real blob after all.
+    if (!image) return create(new NativeBlob([bytes], { type: 'image/bmp' }), ...rest);
+    const bitmap = await createBitmap(image);
+    shrunk.set(bitmap, factor);
+    return bitmap;
   } as typeof createImageBitmap;
 
   const context = OffscreenCanvasRenderingContext2D.prototype;

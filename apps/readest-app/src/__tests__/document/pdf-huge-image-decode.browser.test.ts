@@ -18,16 +18,17 @@ const deflate = async (data: Uint8Array<ArrayBuffer>) => {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 };
 
-// A one-page PDF filled by a single image XObject.
+// A one-page PDF filled by a single image XObject; a null colour space makes
+// it a 1-bit image mask painted in red.
 const makeImagePDF = async (
   width: number,
   height: number,
-  colorSpace: string,
+  colorSpace: string | null,
   bitsPerComponent: number,
   pixels: Uint8Array<ArrayBuffer>,
 ) => {
   const image = await deflate(pixels);
-  const content = `q ${PAGE_SIZE} 0 0 ${PAGE_SIZE} 0 0 cm /Im0 Do Q`;
+  const content = `q 1 0 0 rg ${PAGE_SIZE} 0 0 ${PAGE_SIZE} 0 0 cm /Im0 Do Q`;
   const encoder = new TextEncoder();
   const objects: (string | Uint8Array)[][] = [
     ['<< /Type /Catalog /Pages 2 0 R >>'],
@@ -38,7 +39,7 @@ const makeImagePDF = async (
     ],
     [
       `<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} ` +
-        `/ColorSpace /${colorSpace} /BitsPerComponent ${bitsPerComponent} ` +
+        `${colorSpace ? `/ColorSpace /${colorSpace}` : '/ImageMask true'} /BitsPerComponent ${bitsPerComponent} ` +
         `/Filter /FlateDecode /Length ${image.length} >>\nstream\n`,
       image,
       '\nendstream',
@@ -110,6 +111,17 @@ beforeAll(async () => {
     return transfer.call(this);
   };
   restores.push(() => (OffscreenCanvas.prototype.transferToImageBitmap = transfer));
+
+  // Blobs are copied into browser-side storage (WebKit's Networking process),
+  // so a full-size BMP blob is itself a full-size copy.
+  const NativeBlob = globalThis.Blob;
+  globalThis.Blob = class extends NativeBlob {
+    constructor(...args: ConstructorParameters<typeof Blob>) {
+      super(...args);
+      if (this.type === 'image/bmp') record('Blob image/bmp (bytes)', this.size);
+    }
+  } as typeof Blob;
+  restores.push(() => (globalThis.Blob = NativeBlob));
 
   const Decoder = g['ImageDecoder'] as (new (init: { type: string }) => object) | undefined;
   if (Decoder) {
@@ -209,6 +221,30 @@ describe('pdf.js huge image decode (#6521)', () => {
     expect([r1! > 200, g1! < 50, b1! < 50]).toEqual([true, true, true]);
     const [r2, g2, b2] = pixelAt((PAGE_SIZE * 3) / 4, PAGE_SIZE / 2);
     expect([r2! < 50, g2! < 50, b2! > 200]).toEqual([true, true, true]);
+  });
+
+  it('shrinks a 1-bit image mask and paints it in the fill colour', async () => {
+    allocations.length = 0;
+    const SIZE = 4103;
+    const PERIOD = 64;
+    const LINE = 16;
+    const rowBytes = Math.ceil(SIZE / 8);
+    // Mask samples of 0 are painted.
+    const pixels = new Uint8Array(rowBytes * SIZE).fill(0xff);
+    for (let y = 0; y < SIZE; y++) {
+      if (y % PERIOD < LINE) pixels.fill(0, y * rowBytes, (y + 1) * rowBytes);
+    }
+    const pixelAt = await renderPage(await makeImagePDF(SIZE, SIZE, null, 1, pixels));
+
+    expectNoFullSizeBitmap();
+    const scale = PAGE_SIZE / SIZE;
+    for (const k of [3, 10, 40]) {
+      const [r, g] = pixelAt(PAGE_SIZE / 2, Math.round((k * PERIOD + LINE / 2) * scale));
+      expect([r! > 200, g! < 128]).toEqual([true, true]);
+      expect(
+        pixelAt(PAGE_SIZE / 2, Math.round((k * PERIOD + PERIOD / 2) * scale))[1],
+      ).toBeGreaterThan(224);
+    }
   });
 
   // WebKit (iOS) has no ImageDecoder; Chromium (Android) does.
