@@ -103,13 +103,13 @@ object EinkRefreshController {
      * reflection error) propagates, which the command layer turns into a
      * retryable rejection rather than a false.
      */
-    fun isSupported(): Boolean {
+    fun isSupported(context: Context): Boolean {
         // Probe each hook independently rather than with `||`: a short-circuit
         // would abort on the first hook whose lazy initializer throws a hard
         // reflection/linkage Error (deliberately left uncached as the
         // inconclusive signal), never reaching a later vendor hook that actually
-        // exists — so a device whose only working mechanism is NTX/Rockchip
-        // would be hidden even though [refresh] probes all three and succeeds.
+        // exists — so a device whose only working mechanism is NTX/Rockchip/Hanvon
+        // would be hidden even though [refresh] probes all four and succeeds.
         // Any resolved handle is authoritative support; the Error is propagated
         // only when nothing is present, matching the "retry on inconclusive"
         // contract without discarding a real positive.
@@ -126,6 +126,11 @@ object EinkRefreshController {
         }
         try {
             if (rockchipRequestEpdMode != null) return true
+        } catch (t: Throwable) {
+            inconclusive = inconclusive ?: t
+        }
+        try {
+            if (resolveHanvon(context) != null) return true
         } catch (t: Throwable) {
             inconclusive = inconclusive ?: t
         }
@@ -192,15 +197,31 @@ object EinkRefreshController {
 
     // Hanvon readers: instead of patching View they register an "eink" system
     // service (a hidden android.os.EinkManager) whose sendOneFullFrame() performs
-    // a one-shot full-panel update, the same call the stock readers use.
+    // a one-shot full-panel update, the same call the stock readers use. Resolving
+    // it needs a Context, so unlike the View-method hooks it is probed per call
+    // rather than cached in a `by lazy` handle. [refresh] and [isSupported] share
+    // this resolver, so the option is offered on Hanvon readers too.
+    private fun resolveHanvon(context: Context): Pair<Any, Method>? {
+        val manager = context.getSystemService("eink") ?: return null
+        return try {
+            manager.javaClass.getMethod("sendOneFullFrame")?.let { manager to it }
+        } catch (e: NoSuchMethodException) {
+            // The service exists but exposes no full-frame call — a definitive
+            // absence (null), matching how the View-method hooks cache a missing
+            // method rather than treating it as an inconclusive, retryable read.
+            Log.d(TAG, "hanvon refresh unavailable: ${e.message}")
+            null
+        }
+    }
+
     private fun hanvonRefresh(context: Context): Boolean {
         return try {
-            val einkManager = context.getSystemService("eink") ?: return false
-            einkManager.javaClass.getMethod("sendOneFullFrame").invoke(einkManager)
+            val resolved = resolveHanvon(context) ?: return false
+            resolved.second.invoke(resolved.first)
             Log.i(TAG, "hanvon full refresh requested")
             true
         } catch (e: Throwable) {
-            Log.d(TAG, "hanvon refresh unavailable: ${e.message}")
+            Log.d(TAG, "hanvon refresh failed: ${e.message}")
             false
         }
     }

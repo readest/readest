@@ -2192,7 +2192,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         // next mount rather than latching a wrong 'unsupported' for the session.
         val ret = JSObject()
         try {
-            ret.put("supported", EinkRefreshController.isSupported())
+            ret.put("supported", EinkRefreshController.isSupported(activity.applicationContext))
             invoke.resolve(ret)
         } catch (t: Throwable) {
             Log.e("NativeBridgePlugin", "is_eink_refresh_supported inconclusive", t)
