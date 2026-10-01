@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import type { EnvConfigType } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -27,6 +27,9 @@ export const usePageboundSync = (bookKey: string) => {
   const { envConfig } = useEnv();
   const { getConfig, getBookData, setConfig, saveConfig } = useBookDataStore();
   const progress = useBookProgress(bookKey);
+  // Each push can add the book to the shelf and always adds a reading update,
+  // so a push requested while one is running is dropped, not doubled.
+  const pushingRef = useRef(false);
 
   // Remember the auto-matched book so later pushes skip the search and the
   // book menu shows it; never overwrite a link the user picked meanwhile.
@@ -47,10 +50,15 @@ export const usePageboundSync = (bookKey: string) => {
       const book = getBookData(bookKey)?.book;
       const { pagebound } = useSettingsStore.getState().settings;
       if (!config || !book || !pagebound?.enabled || !pagebound.refreshToken) return;
+      if (pushingRef.current) return;
+      pushingRef.current = true;
 
-      const client = new PageboundClient(pagebound, (session: PageboundSession) =>
-        savePagebound(envConfig, session),
-      );
+      const client = new PageboundClient(pagebound, async (session: PageboundSession) => {
+        // Skip a renewal that finished after the user disconnected or signed in again.
+        const current = useSettingsStore.getState().settings.pagebound;
+        if (!current?.enabled || current.refreshToken !== pagebound.refreshToken) return;
+        await savePagebound(envConfig, session);
+      });
       try {
         // Only an explicit push is shared with followers, like a manual
         // update in Pagebound; page-turn syncs stay out of their feeds.
@@ -73,6 +81,8 @@ export const usePageboundSync = (bookKey: string) => {
             type: 'error',
           });
         }
+      } finally {
+        pushingRef.current = false;
       }
     },
     [_, bookKey, envConfig, getBookData, getConfig, rememberLink],

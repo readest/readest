@@ -48,6 +48,12 @@ const today = () => {
   return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
 };
 
+const normalizeTitle = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+
 const readJson = async (res: Response): Promise<Record<string, unknown> | null> => {
   try {
     return (await res.json()) as Record<string, unknown>;
@@ -176,11 +182,23 @@ export class PageboundClient {
     }));
   }
 
+  // Search ranks by popularity, not title, so a hit is only taken when its
+  // title matches. Pagebound often drops a "Series:" prefix or a subtitle, so
+  // each part of a "Series: Title" is searched for too.
   private async resolveLink(book: Book, config: BookConfig): Promise<PageboundBookLink> {
     if (config.pagebound) return config.pagebound;
-    const [match] = await this.searchBooks(`${book.title} ${book.author}`);
-    if (!match) throw new Error('Unable to find this book on Pagebound');
-    return { bookId: match.bookId, uuid: match.uuid, title: match.title };
+    const parts = book.title.includes(':')
+      ? book.title.split(':').map(normalizeTitle).filter(Boolean)
+      : [];
+    const titles = new Set([normalizeTitle(book.title), ...parts]);
+    for (const query of [book.title, ...parts]) {
+      const hits = await this.searchBooks(`${query} ${book.author}`);
+      const match = hits.find(
+        (hit) => hit.uuid && Number.isFinite(hit.bookId) && titles.has(normalizeTitle(hit.title)),
+      );
+      if (match) return { bookId: match.bookId, uuid: match.uuid, title: match.title };
+    }
+    throw new Error('Unable to find this book on Pagebound. Use Link Book to choose it.');
   }
 
   private getBook(uuid: string) {

@@ -203,6 +203,58 @@ describe('PageboundClient', () => {
     expect(calls('POST', '/reading_updates')).toHaveLength(1);
   });
 
+  test('auto-match only accepts a title match, trying each part of a "Series: Title"', async () => {
+    const doc = (uuid: string, title: string) => ({ document: { id: '7', uuid, title } });
+    const searched: string[] = [];
+    const typesense: Route = (url) => {
+      if (!url.includes('typesense.net')) return undefined;
+      const q = new URL(url).searchParams.get('q')!;
+      searched.push(q);
+      return q.startsWith('the final empire')
+        ? json({ hits: [doc('final-empire', 'The Final Empire'), doc('x', 'Mistborn')] })
+        : json({
+            hits: [
+              doc('', 'Mistborn: The Final Empire'),
+              doc('drama', 'The Final Empire (1 of 3) [Dramatized Adaptation]'),
+            ],
+          });
+    };
+    route(
+      typesense,
+      on('GET', '/books/final-empire', () =>
+        json({ book: remoteBook, user_book: currentUserBook }),
+      ),
+      on('POST', '/reading_updates', () => json({}, 201)),
+    );
+    const mistborn = { ...book, title: 'Mistborn: The Final Empire', author: 'Brandon Sanderson' };
+
+    const link = await newClient().pushProgress(mistborn, cfg({ progress: [1, 100] }), {
+      broadcast: false,
+    });
+
+    expect(link.uuid).toBe(remoteBook.uuid);
+    expect(calls('GET', '/books/drama')).toHaveLength(0);
+    expect(searched).toEqual([
+      'Mistborn: The Final Empire Brandon Sanderson',
+      'mistborn Brandon Sanderson',
+      'the final empire Brandon Sanderson',
+    ]);
+  });
+
+  test('auto-match fails over to Link Book when no title matches', async () => {
+    route(
+      on('GET', 'typesense.net', () =>
+        json({
+          hits: [{ document: { id: '9', uuid: 'guide', title: 'Project Hail Mary: Study Guide' } }],
+        }),
+      ),
+    );
+    await expect(
+      newClient().pushProgress(book, cfg({ progress: [1, 100] }), { broadcast: false }),
+    ).rejects.toThrow(/Link Book/);
+    expect(calls('GET', '/api/v1/books/')).toHaveLength(0);
+  });
+
   test('moves a shelved book to current before updating progress', async () => {
     let status = 'interested';
     route(
@@ -295,6 +347,6 @@ describe('PageboundClient', () => {
         broadcast: false,
       }),
     ).rejects.toThrow(/Sign in again/);
-    expect(calls('GET', '/books/')).toHaveLength(0);
+    expect(calls('GET', '/api/v1/books/')).toHaveLength(0);
   });
 });
