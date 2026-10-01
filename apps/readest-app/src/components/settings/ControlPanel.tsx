@@ -31,6 +31,15 @@ import { useEinkRefreshSupported } from '@/hooks/useEinkRefreshSupported';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import KeyboardShortcutsSettings from './KeyboardShortcutsSettings';
 
+// The only Auto Full Refresh intervals the select offers. `einkAutoRefreshInterval`
+// is a synced per-book view setting, so a config written by another platform or an
+// older version can carry any number; both the seeded state and the persisted value
+// (which `noteEinkPageTurn` reads) are normalized to this set, so the displayed
+// option always matches what actually drives the refresh.
+const EINK_AUTO_REFRESH_INTERVAL_VALUES = [0, 5, 10, 15, 20];
+const normalizeEinkAutoRefreshInterval = (value: number) =>
+  EINK_AUTO_REFRESH_INTERVAL_VALUES.includes(value) ? value : 0;
+
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
@@ -72,8 +81,8 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [pageTurnStyle, setPageTurnStyle] = useState(viewSettings.pageTurnStyle || 'push');
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
-  const [einkAutoRefreshInterval, setEinkAutoRefreshInterval] = useState(
-    viewSettings.einkAutoRefreshInterval,
+  const [einkAutoRefreshInterval, setEinkAutoRefreshInterval] = useState(() =>
+    normalizeEinkAutoRefreshInterval(viewSettings.einkAutoRefreshInterval),
   );
   // Whether this device exposes a full-refresh mechanism we can drive. The
   // "Auto Full Refresh" row is only offered when true, so it never appears on
@@ -119,7 +128,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     { value: '15', label: _('Every 15 pages') },
     { value: '20', label: _('Every 20 pages') },
   ];
-
   const handleReset = () => {
     resetToDefaults({
       scrolled: setScrolledMode,
@@ -620,13 +628,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             data-setting-id='settings.control.autoFullRefresh'
           >
             <SettingsSelect
-              value={
-                einkAutoRefreshIntervalOptions.some(
-                  (opt) => opt.value === String(einkAutoRefreshInterval),
-                )
-                  ? String(einkAutoRefreshInterval)
-                  : '0'
-              }
+              value={String(einkAutoRefreshInterval)}
               onChange={(e) => setEinkAutoRefreshInterval(Number(e.target.value))}
               ariaLabel={_('Auto Full Refresh')}
               disabled={!isEink}
