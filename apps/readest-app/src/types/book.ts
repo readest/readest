@@ -244,6 +244,9 @@ export interface BookLayout {
   compactMarginRightPx: number;
   compactMarginPx?: number; // deprecated
   gapPercent: number;
+  /* Centre gap of a two-column spread in px; 0 derives it from the margins
+     and gapPercent as before. */
+  columnGapPx: number;
   scrolled: boolean;
   scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;
@@ -296,6 +299,7 @@ export interface BookStyle {
   dialogueHighlightColor: string;
   dialogueHighlightCustomTextColor: boolean;
   dialogueHighlightTextColor: string;
+  dialogueHighlightItalic: boolean;
   userStylesheet: string;
   userUIStylesheet: string;
 

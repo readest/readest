@@ -86,6 +86,9 @@ export interface GetSafeAreaInsetsResponse {
   bottom: number;
   left: number;
   bottomCornerRadius?: number;
+  isIPhoneDuo?: boolean;
+  /** iOS: whether the root view controller currently hides the status bar. */
+  statusBarHidden?: boolean;
   error?: string;
 }
 

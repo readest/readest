@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ViewSettings } from '@/types/book';
-import { getHeaderBandGeometry, getHeaderTriggerHeight, getPanelTopInset } from '@/utils/insets';
+import {
+  getHeaderBandGeometry,
+  getHeaderTriggerHeight,
+  getPanelTopInset,
+  getReadingScreenInsets,
+  isStatusBarHiddenBySystem,
+} from '@/utils/insets';
 
 const insets = (top: number) => ({ top, right: 0, bottom: 0, left: 0 });
 
@@ -172,5 +178,53 @@ describe('getPanelTopInset', () => {
         safeAreaInsets: null,
       }),
     ).toBe(0);
+  });
+});
+
+describe('getReadingScreenInsets (#6307)', () => {
+  // iPhone Duo's inner display in landscape: the side status strip is an 84pt
+  // right inset while shown and 0 once the reader hides the status bar.
+  const shown = { top: 0, right: 84, bottom: 34, left: 0 };
+  const hidden = { width: 951, height: 669, left: 0, right: 0 };
+
+  it('uses the live insets until the status bar has been hidden', () => {
+    expect(getReadingScreenInsets(shown, null, 951, 669)).toBe(shown);
+  });
+
+  it('keeps the page at the hidden-status-bar sides while the toolbar shows the strip', () => {
+    expect(getReadingScreenInsets(shown, hidden, 951, 669)).toEqual({
+      top: 0,
+      right: 0,
+      bottom: 34,
+      left: 0,
+    });
+  });
+
+  it('ignores sides recorded at another window size (rotated, folded)', () => {
+    expect(getReadingScreenInsets(shown, { ...hidden, width: 669, height: 951 }, 951, 669)).toBe(
+      shown,
+    );
+  });
+
+  it('returns the live object when the sides already match', () => {
+    const live = { top: 0, right: 0, bottom: 34, left: 0 };
+    expect(getReadingScreenInsets(live, hidden, 951, 669)).toBe(live);
+  });
+});
+
+describe('isStatusBarHiddenBySystem (#6307)', () => {
+  it('treats an iPhone held landscape as having no status bar', () => {
+    // iPhone 17 Pro Max landscape is 956x440; iPhone Duo's cover display 678x466.
+    expect(isStatusBarHiddenBySystem('landscape-primary', 440)).toBe(true);
+    expect(isStatusBarHiddenBySystem('landscape-secondary', 466)).toBe(true);
+  });
+
+  it("keeps iPhone Duo's inner display in landscape, which shows its side strip", () => {
+    expect(isStatusBarHiddenBySystem('landscape-primary', 669)).toBe(false);
+  });
+
+  it('never applies in portrait or without an orientation', () => {
+    expect(isStatusBarHiddenBySystem('portrait-primary', 440)).toBe(false);
+    expect(isStatusBarHiddenBySystem(undefined, 440)).toBe(false);
   });
 });

@@ -74,7 +74,10 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (n: number) => n }));
 vi.mock('@/app/reader/hooks/useSpatialNavigation', () => ({ useSpatialNavigation: () => {} }));
-vi.mock('@/utils/insets', () => ({ getHeaderTriggerHeight: () => 0 }));
+vi.mock('@/utils/insets', () => ({
+  getHeaderTriggerHeight: () => 0,
+  getHorizontalInsetStyle: () => ({}),
+}));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
 vi.mock('@/app/reader/components/SidebarToggler', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/BookmarkToggler', () => ({ default: () => null }));

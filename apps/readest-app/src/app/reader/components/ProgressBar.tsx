@@ -4,6 +4,7 @@ import { Trans } from 'react-i18next';
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -31,6 +32,7 @@ import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
 import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryUtils.ts';
 import { formatDuration } from '@/utils/duration';
+import { getMarginalInlinePadding } from '@/utils/insets';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
@@ -39,6 +41,8 @@ interface ProgressBarProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  // The spread's Column Gap (px) in effect, 0 when none (getSpreadColumnGap).
+  columnGap?: number;
   // Rounded screen corners this footer's ends run into.
   cornerRadii?: BottomCornerRadii;
 }
@@ -48,10 +52,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  columnGap = 0,
   cornerRadii = NO_CORNERS,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const getView = useReaderStore((s) => s.getView);
@@ -258,8 +264,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const textBottom = bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2;
   const cornerClearance = (radius: number) =>
     isVertical ? 0 : getCornerClearance(radius, textBottom);
-  const inlinePadding = (inset: number, clearance: number) => {
-    const padding = `calc(${horizontalGap / 2}% + ${inset / 2}px)`;
+  const inlinePadding = (inset: number, clearance: number, hostOffset = 0) => {
+    const padding = getMarginalInlinePadding(horizontalGap, inset, columnGap, hostOffset);
     return clearance > 0 ? `max(${padding}, ${clearance.toFixed(1)}px)` : padding;
   };
 
@@ -307,16 +313,34 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
             }
           : {
-              // The reader never sets dir=rtl on this container, so inline
-              // start is always the physical left.
-              paddingInlineStart: inlinePadding(
-                contentInsets.left,
-                cornerClearance(cornerRadii.left),
-              ),
-              paddingInlineEnd: inlinePadding(
-                contentInsets.right,
-                cornerClearance(cornerRadii.right),
-              ),
+              ...(isIPhoneDuo
+                ? {
+                    // Half the page margin past the safe-area inset, matching
+                    // the paginator's gutter (#6307), and clear of a rounded
+                    // corner. Physical sides: the insets are.
+                    paddingLeft: inlinePadding(
+                      contentInsets.left + gridInsets.left,
+                      cornerClearance(cornerRadii.left),
+                      gridInsets.left,
+                    ),
+                    paddingRight: inlinePadding(
+                      contentInsets.right + gridInsets.right,
+                      cornerClearance(cornerRadii.right),
+                      gridInsets.right,
+                    ),
+                  }
+                : {
+                    // The reader never sets dir=rtl on this container, so
+                    // inline start is always the physical left.
+                    paddingInlineStart: inlinePadding(
+                      contentInsets.left,
+                      cornerClearance(cornerRadii.left),
+                    ),
+                    paddingInlineEnd: inlinePadding(
+                      contentInsets.right,
+                      cornerClearance(cornerRadii.right),
+                    ),
+                  }),
               paddingBottom: bottomPadding ? `${bottomPadding}px` : 0,
             }),
       }}

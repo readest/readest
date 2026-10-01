@@ -15,6 +15,8 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
+import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
+import { Insets } from '@/types/misc';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
@@ -35,7 +37,10 @@ import Popup from '@/components/Popup';
 interface FootnotePopupProps {
   bookKey: string;
   bookDoc: BookDoc;
+  gridInsets?: Insets;
 }
+
+const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 const popupWidth = 360;
 const popupHeight = 88;
@@ -57,10 +62,19 @@ const chromeButtonClassName = clsx(
   'h-8 min-h-8 w-8 p-0 shadow-xs',
 );
 
-const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
+const FootnotePopup: React.FC<FootnotePopupProps> = ({
+  bookKey,
+  bookDoc,
+  gridInsets = ZERO_INSETS,
+}) => {
   const footnoteRef = useRef<HTMLDivElement>(null);
   const footnoteViewRef = useRef<FoliateView | null>(null);
   const trianglePositionRef = useRef<Position | null>(null);
+  // The link and footnote-popup handlers are bound once per view, so they read
+  // the cell's insets through a ref: iPhone Duo's side strip can change edge
+  // after the view opens (#6307).
+  const gridInsetsRef = useRef(gridInsets);
+  gridInsetsRef.current = gridInsets;
   const [trianglePosition, setTrianglePosition] = useState<Position | null>();
   // The highlight toolbar, when it had to open on this popup's side of the
   // tapped word for lack of room on the other (#6390): open beyond it. Kept
@@ -144,7 +158,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     flashTimerRef.current = await showTransientHighlight(view, href);
   };
 
-  const [gridRect, setGridRect] = useState<DOMRect | null>(null);
+  const [popupBounds, setPopupBounds] = useState<PopupBounds | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
   const sizeAdjustCountRef = useRef(0);
@@ -507,29 +521,41 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   }, [anchor]);
 
   useEffect(() => {
-    if (anchor && gridRect) {
+    if (anchor && popupBounds) {
+      // The anchor is in cell coordinates; getPopupPosition works relative
+      // to the bounds' origin, so shift there and back (a no-op off the Duo).
+      const { rect, origin } = popupBounds;
       const popupPos = getPopupPosition(
-        anchor,
-        gridRect,
+        offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
+        rect,
         responsiveWidth,
         responsiveHeight,
         popupPadding,
       );
-      setPopupPosition(popupPos);
+      setPopupPosition(offsetPosition(popupPos, origin));
     }
-  }, [anchor, gridRect, responsiveWidth, responsiveHeight, popupPadding]);
+  }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
 
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
     // console.log('doc link click', detail);
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    const rect = gridFrame.getBoundingClientRect();
+    // On iPhone Duo clamp to the safe region, not the physical cell: its
+    // status-bar strip can otherwise sit under a popup (#6307).
+    const bounds = getPopupBounds(
+      gridFrame.getBoundingClientRect(),
+      gridInsetsRef.current,
+      useThemeStore.getState().isIPhoneDuo,
+    );
     const viewSettings = getViewSettings(bookKey)!;
-    const triangPos = getPosition(detail.a, rect, popupPadding, viewSettings.vertical);
+    const triangPos = offsetPosition(
+      getPosition(detail.a, bounds.rect, popupPadding, viewSettings.vertical),
+      bounds.origin,
+    );
     stopTrackingPopupContentSize();
     seedPopupSize(viewSettings.vertical);
-    setGridRect(rect);
+    setPopupBounds(bounds);
     setTrianglePosition(triangPos);
     trianglePositionRef.current = triangPos;
 
@@ -598,7 +624,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     sizeAdjustCountRef.current = 0;
     trianglePositionRef.current = null;
     setCanGoBack(false);
-    setGridRect(null);
+    setPopupBounds(null);
     setPopupPosition(null);
     setTrianglePosition(null);
     setToolbarBlock(null);
@@ -619,9 +645,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setSourceHref(null);
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
-    const rect = gridFrame.getBoundingClientRect();
+    const bounds = getPopupBounds(
+      gridFrame.getBoundingClientRect(),
+      gridInsetsRef.current,
+      useThemeStore.getState().isIPhoneDuo,
+    );
     const viewSettings = getViewSettings(bookKey)!;
-    const triangPos = getPosition(element, rect, popupPadding, viewSettings.vertical);
+    const triangPos = offsetPosition(
+      getPosition(element, bounds.rect, popupPadding, viewSettings.vertical),
+      bounds.origin,
+    );
     const seed = seedPopupSize(viewSettings.vertical);
     if (footnoteRef.current) {
       const elem = document.createElement('p');
@@ -649,7 +682,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       elem.style.height = '';
       elem.style.visibility = 'visible';
       footnoteRef.current.replaceChildren(elem);
-      setGridRect(rect);
+      setPopupBounds(bounds);
       setTrianglePosition(triangPos);
       trianglePositionRef.current = triangPos;
       setShowPopup(true);

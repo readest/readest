@@ -113,6 +113,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [dialogueHighlightCustomTextColor, setDialogueHighlightCustomTextColor] = useState(
     viewSettings.dialogueHighlightCustomTextColor,
   );
+  const [dialogueHighlightItalic, setDialogueHighlightItalic] = useState(
+    viewSettings.dialogueHighlightItalic,
+  );
   const [selectedTextureId, setSelectedTextureId] = useState(currentTextureId);
   const [backgroundOpacity, setBackgroundOpacity] = useState(currentBackgroundOpacity);
   const [backgroundSize, setBackgroundSize] = useState(currentBackgroundSize);
@@ -157,6 +160,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
       dialogueHighlightColor: setDialogueHighlightColor,
       dialogueHighlightCustomTextColor: setDialogueHighlightCustomTextColor,
       dialogueHighlightTextColor: setDialogueHighlightTextColor,
+      dialogueHighlightItalic: setDialogueHighlightItalic,
       readingRulerEnabled: setReadingRulerEnabled,
       readingRulerLines: setReadingRulerLines,
       readingRulerOpacity: setReadingRulerOpacity,
@@ -303,6 +307,11 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
         ),
       );
     }
+    if (viewSettings.dialogueHighlightItalic !== dialogueHighlightItalic) {
+      saves.push(
+        saveViewSettings(envConfig, bookKey, 'dialogueHighlightItalic', dialogueHighlightItalic),
+      );
+    }
     if (viewSettings.dialogueHighlightTextColor !== dialogueHighlightTextColor) {
       saves.push(
         saveViewSettings(
@@ -329,6 +338,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     dialogueHighlightColor,
     dialogueHighlightCustomTextColor,
     dialogueHighlightTextColor,
+    dialogueHighlightItalic,
   ]);
 
   useEffect(() => {
@@ -621,7 +631,9 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             onCustomBackgroundToggle={setDialogueHighlightCustomColor}
             onBackgroundColorChange={setDialogueHighlightColor}
             onCustomTextColorToggle={setDialogueHighlightCustomTextColor}
+            italic={dialogueHighlightItalic}
             onTextColorChange={setDialogueHighlightTextColor}
+            onItalicToggle={setDialogueHighlightItalic}
             data-setting-id='settings.color.dialogueHighlight'
           />
         </>

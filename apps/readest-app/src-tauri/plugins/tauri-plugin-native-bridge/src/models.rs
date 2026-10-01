@@ -239,6 +239,16 @@ pub struct GetSafeAreaInsetsResponse {
     /// platform does not report it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bottom_corner_radius: Option<f64>,
+    /// Whether the device is an iPhone Duo (foldable); absent off iOS.
+    #[serde(
+        rename = "isIPhoneDuo",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub is_iphone_duo: Option<bool>,
+    /// iOS: whether the root view controller currently hides the status bar.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status_bar_hidden: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
