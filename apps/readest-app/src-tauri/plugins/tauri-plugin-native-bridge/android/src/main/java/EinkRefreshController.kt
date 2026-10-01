@@ -97,8 +97,35 @@ object EinkRefreshController {
      * inconclusive read), which the command layer turns into a retryable
      * rejection rather than a false.
      */
-    fun isSupported(): Boolean =
-        onyxRefreshScreen != null || ntxPostInvalidateDelayed != null || rockchipRequestEpdMode != null
+    fun isSupported(): Boolean {
+        // Probe each hook independently rather than with `||`: a short-circuit
+        // would abort on the first hook whose lazy initializer throws a hard
+        // reflection/linkage Error (deliberately left uncached as the
+        // inconclusive signal), never reaching a later vendor hook that actually
+        // exists — so a device whose only working mechanism is NTX/Rockchip
+        // would be hidden even though [refresh] probes all three and succeeds.
+        // Any resolved handle is authoritative support; the Error is propagated
+        // only when nothing is present, matching the "retry on inconclusive"
+        // contract without discarding a real positive.
+        var inconclusive: Throwable? = null
+        try {
+            if (onyxRefreshScreen != null) return true
+        } catch (t: Throwable) {
+            inconclusive = t
+        }
+        try {
+            if (ntxPostInvalidateDelayed != null) return true
+        } catch (t: Throwable) {
+            inconclusive = t
+        }
+        try {
+            if (rockchipRequestEpdMode != null) return true
+        } catch (t: Throwable) {
+            inconclusive = t
+        }
+        inconclusive?.let { throw it }
+        return false
+    }
 
     /**
      * Attempt a deep full refresh over [view]'s region. Returns true when a
