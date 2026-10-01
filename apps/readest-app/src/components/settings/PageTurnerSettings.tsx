@@ -6,6 +6,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { eventDispatcher } from '@/utils/event';
+import { checkEinkRefreshSupported } from '@/utils/bridge';
 import {
   normalizeNativeKey,
   normalizeDomKeyEvent,
@@ -43,6 +44,9 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
   configRef.current = config;
   const [listening, setListening] = useState<Slot | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The 'Refresh Page' slot only fires a visible flash where a vendor
+  // full-refresh hook actually exists, so hide it (not just no-op) elsewhere.
+  const [einkRefreshSupported, setEinkRefreshSupported] = useState(false);
 
   const persist = (next: HardwarePageTurnerSettings) => {
     setConfig(next);
@@ -140,6 +144,17 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.enabled]);
 
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+    let active = true;
+    checkEinkRefreshSupported().then((supported) => {
+      if (active) setEinkRefreshSupported(supported);
+    });
+    return () => {
+      active = false;
+    };
+  }, [appService]);
+
   const renderSlot = (slot: Slot, label: string) => {
     const binding = config.bindings[slot];
     const isListening = listening === slot;
@@ -213,6 +228,7 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
             on Android, where the native bridge can drive the panel. */}
         {appService?.isAndroidApp &&
           viewSettings.isEink &&
+          einkRefreshSupported &&
           renderSlot('refresh', _('Refresh Page'))}
       </BoxedList>
     </div>
