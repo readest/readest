@@ -426,6 +426,12 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    /// E-ink panels exist only on the mobile (Android) side. Desktop has no
+    /// e-ink controller, so the deep refresh is never supported here.
+    pub fn is_eink_refresh_supported(&self) -> crate::Result<EinkRefreshSupportedResponse> {
+        Ok(EinkRefreshSupportedResponse { supported: false })
+    }
+
     pub fn update_bookshelf_widget(
         &self,
         _payload: UpdateBookshelfWidgetRequest,

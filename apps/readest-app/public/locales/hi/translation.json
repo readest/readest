@@ -2488,5 +2488,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} और {{count}} पृष्ठ शेष",
   "{{time}} and {{count}} pages left in book_one": "पुस्तक में {{time}} और {{count}} पृष्ठ शेष",
   "Resets in {{time}}": "{{time}} में रीसेट",
-  "{{time}} and {{number}} pages left in chapter": "अध्याय में {{time}} और {{number}} पृष्ठ शेष"
+  "{{time}} and {{number}} pages left in chapter": "अध्याय में {{time}} और {{number}} पृष्ठ शेष",
+  "Auto Full Refresh": "स्वचालित पूर्ण रिफ़्रेश",
+  "Every 5 pages": "हर 5 पृष्ठ",
+  "Every 10 pages": "हर 10 पृष्ठ",
+  "Every 15 pages": "हर 15 पृष्ठ",
+  "Every 20 pages": "हर 20 पृष्ठ"
 }

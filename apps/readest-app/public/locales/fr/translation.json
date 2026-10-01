@@ -2552,5 +2552,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} et {{count}} page restantes",
   "{{time}} and {{count}} pages left in book_one": "{{time}} et {{count}} page restantes dans le livre",
   "Resets in {{time}}": "Réinitialisation dans {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "{{time}} et {{number}} pages restantes dans le chapitre"
+  "{{time}} and {{number}} pages left in chapter": "{{time}} et {{number}} pages restantes dans le chapitre",
+  "Auto Full Refresh": "Actualisation complète automatique",
+  "Every 5 pages": "Toutes les 5 pages",
+  "Every 10 pages": "Toutes les 10 pages",
+  "Every 15 pages": "Toutes les 15 pages",
+  "Every 20 pages": "Toutes les 20 pages"
 }

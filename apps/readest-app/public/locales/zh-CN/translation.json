@@ -2424,5 +2424,10 @@
   "{{count}} pages left_other": "剩余 {{count}} 页",
   "Resets in {{time}}": "{{time}}后重置",
   "{{time}} and {{number}} pages left in chapter": "本章剩余 {{time}} 和 {{number}} 页",
-  "Header Size": "标题大小"
+  "Header Size": "标题大小",
+  "Auto Full Refresh": "自动全刷",
+  "Every 5 pages": "每 5 页",
+  "Every 10 pages": "每 10 页",
+  "Every 15 pages": "每 15 页",
+  "Every 20 pages": "每 20 页"
 }

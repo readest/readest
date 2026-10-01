@@ -362,10 +362,10 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // platform needs the captured-canvas controller and prev/next wrappers.
     if (!isTauriAppPlatform()) return cleanupLayeredTurn;
 
-    // The foliate implementation returns the turn's promise even though the
-    // published type is void; navigate() awaits it so the overlay only starts
-    // animating once the instant jump underneath has landed.
-    type TurnFn = (distance?: number) => void | Promise<void>;
+    // The foliate view.prev/next return the turn's promise; navigate() awaits
+    // it so the overlay only starts animating once the instant jump underneath
+    // has landed.
+    type TurnFn = (distance?: number) => Promise<void>;
     const originals: { prev: TurnFn; next: TurnFn } = {
       prev: view.prev.bind(view),
       next: view.next.bind(view),

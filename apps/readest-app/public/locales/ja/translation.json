@@ -2424,5 +2424,10 @@
   "{{count}} pages left_other": "残り{{count}}ページ",
   "Resets in {{time}}": "{{time}}後にリセット",
   "{{time}} and {{number}} pages left in chapter": "この章の残り {{time}}と{{number}}ページ",
-  "Header Size": "見出しのサイズ"
+  "Header Size": "見出しのサイズ",
+  "Auto Full Refresh": "自動フルリフレッシュ",
+  "Every 5 pages": "5ページごと",
+  "Every 10 pages": "10ページごと",
+  "Every 15 pages": "15ページごと",
+  "Every 20 pages": "20ページごと"
 }

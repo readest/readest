@@ -390,6 +390,12 @@ export interface ViewConfig {
   pageTurnStyle: PageTurnStyle;
   isEink: boolean;
   isColorEink: boolean;
+  /**
+   * Number of page turns between automatic deep full refreshes in e-ink mode.
+   * 0 disables it. Manual refresh bindings are unusable on readers with no
+   * spare buttons, so this clears accumulated ghosting on its own.
+   */
+  einkAutoRefreshInterval: number;
 
   paragraphMode: ParagraphModeConfig;
 

@@ -2488,5 +2488,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} ও {{count}} পৃষ্ঠা বাকি",
   "{{time}} and {{count}} pages left in book_one": "বইয়ে {{time}} ও {{count}} পৃষ্ঠা বাকি",
   "Resets in {{time}}": "{{time}} পরে রিসেট হবে",
-  "{{time}} and {{number}} pages left in chapter": "অধ্যায়ে {{time}} ও {{number}} পৃষ্ঠা বাকি"
+  "{{time}} and {{number}} pages left in chapter": "অধ্যায়ে {{time}} ও {{number}} পৃষ্ঠা বাকি",
+  "Auto Full Refresh": "স্বয়ংক্রিয় পূর্ণ রিফ্রেশ",
+  "Every 5 pages": "প্রতি 5 পৃষ্ঠা পরে",
+  "Every 10 pages": "প্রতি 10 পৃষ্ঠা পরে",
+  "Every 15 pages": "প্রতি 15 পৃষ্ঠা পরে",
+  "Every 20 pages": "প্রতি 20 পৃষ্ঠা পরে"
 }

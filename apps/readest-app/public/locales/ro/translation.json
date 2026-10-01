@@ -2552,5 +2552,10 @@
   "{{time}} and {{count}} pages left_one": "{{time}} și {{count}} pagină rămase",
   "{{time}} and {{count}} pages left in book_one": "{{time}} și {{count}} pagină rămase în carte",
   "Resets in {{time}}": "Se resetează în {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "{{time}} și {{number}} de pagini rămase în capitol"
+  "{{time}} and {{number}} pages left in chapter": "{{time}} și {{number}} de pagini rămase în capitol",
+  "Auto Full Refresh": "Reîmprospătare completă automată",
+  "Every 5 pages": "La fiecare 5 pagini",
+  "Every 10 pages": "La fiecare 10 pagini",
+  "Every 15 pages": "La fiecare 15 pagini",
+  "Every 20 pages": "La fiecare 20 pagini"
 }

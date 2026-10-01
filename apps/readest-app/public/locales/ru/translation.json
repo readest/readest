@@ -2616,5 +2616,10 @@
   "{{time}} and {{count}} pages left_one": "Осталось {{time}} и {{count}} страница",
   "{{time}} and {{count}} pages left in book_one": "Осталось {{time}} и {{count}} страница в книге",
   "Resets in {{time}}": "Сброс через {{time}}",
-  "{{time}} and {{number}} pages left in chapter": "Осталось {{time}} и {{number}} страницы в главе"
+  "{{time}} and {{number}} pages left in chapter": "Осталось {{time}} и {{number}} страницы в главе",
+  "Auto Full Refresh": "Автоматическое полное обновление",
+  "Every 5 pages": "Каждые 5 страниц",
+  "Every 10 pages": "Каждые 10 страниц",
+  "Every 15 pages": "Каждые 15 страниц",
+  "Every 20 pages": "Каждые 20 страниц"
 }
