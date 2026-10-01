@@ -97,11 +97,11 @@ object EinkRefreshController {
      * method that resolves — not a guarantee the call actually moves the panel
      * (a stubbed or partially hidden hook can resolve yet throw at refresh()
      * time). It still keeps the "Auto Full Refresh" / "Refresh Page" options
-     * away from devices with no known hook at all. Pure reflection — never
-     * touches the panel. A definitive absence is cached as null; any
-     * inconclusive read (a hard reflection/linkage failure, or an unexpected
-     * reflection error) propagates, which the command layer turns into a
-     * retryable rejection rather than a false.
+     * away from devices with no known hook at all. Read-only (class reflection
+     * plus a system-service lookup) — it never drives the panel. A definitive
+     * absence is cached as null; any inconclusive read (a hard reflection/linkage
+     * failure, or an unexpected reflection error) propagates, which the command
+     * layer turns into a retryable rejection rather than a false.
      */
     fun isSupported(context: Context): Boolean {
         // Probe each hook independently rather than with `||`: a short-circuit

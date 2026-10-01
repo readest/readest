@@ -340,11 +340,11 @@ export async function refreshEinkScreen(): Promise<RefreshEinkScreenResponse> {
 
 /**
  * Whether this device exposes a deep e-ink full-refresh mechanism we can
- * drive (Onyx / NTX / Rockchip vendor hooks). Android-only; the native side
- * resolves the probe with pure class-level reflection — it never flashes the
- * panel — so it is safe to call once at startup to decide whether to offer the
- * "Auto Full Refresh" / "Refresh Page" options. Non-e-ink devices and other
- * platforms report `supported: false`.
+ * drive (Onyx / NTX / Rockchip / Hanvon vendor hooks). Android-only; the native
+ * side resolves the probe read-only (class reflection plus a system-service
+ * lookup) — it never flashes the panel — so it is safe to call once at startup
+ * to decide whether to offer the "Auto Full Refresh" / "Refresh Page" options.
+ * Non-e-ink devices and other platforms report `supported: false`.
  */
 export async function isEinkRefreshSupported(): Promise<boolean> {
   const response = await invoke<EinkRefreshSupportedResponse>(
@@ -353,8 +353,8 @@ export async function isEinkRefreshSupported(): Promise<boolean> {
   return response.supported;
 }
 
-// Memoized so the capability probe — a one-shot, pure-reflection query against
-// the vendor hooks — runs a single time per app session, no matter how many
+// Memoized so the capability probe — a one-shot, read-only query against the
+// vendor hooks — runs a single time per app session, no matter how many
 // settings surfaces read it. Only a successful probe is cached: a transient
 // rejection (e.g. the bridge not ready on first mount) clears the cache so a
 // later call can retry, instead of latching the option hidden for the session.

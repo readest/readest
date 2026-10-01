@@ -2179,9 +2179,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
     /**
      * Whether this device exposes a deep e-ink full-refresh mechanism we can
-     * drive. Pure class-level reflection against [EinkRefreshController] — it
-     * never touches the panel — so it is safe to call once at startup to decide
-     * whether to offer the "Refresh Page" / "Auto Full Refresh" options.
+     * drive. A read-only capability probe against [EinkRefreshController] (class
+     * reflection plus a system-service lookup) — it never drives the panel — so
+     * it is safe to call once at startup to decide whether to offer the "Refresh
+     * Page" / "Auto Full Refresh" options.
      */
     @Command
     fun is_eink_refresh_supported(invoke: Invoke) {
