@@ -132,7 +132,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     config?.lastPushedAtNotes || 0,
   );
   // Every provider the user actually selected, not just Readest Cloud (#5910).
-  const syncStatus = useCloudSyncStatus(nativeLastSyncTime);
+  const syncStatus = useCloudSyncStatus(nativeLastSyncTime, bookKey);
 
   const handleSync = () => {
     // Only Readest Cloud needs an account. With a third-party backend
@@ -152,6 +152,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     eventDispatcher.dispatch('push-file-sync', { bookKey });
     eventDispatcher.dispatch('pull-file-sync', { bookKey });
     eventDispatcher.dispatch('flush-kosync', { bookKey });
+    // A tap is a manual sync, so Hardcover pushes even with its Auto Sync off.
+    if (syncStatus.providers.some((p) => p.kind === 'hardcover')) {
+      eventDispatcher.dispatch('hardcover-push-progress', { bookKey, silent: true });
+      eventDispatcher.dispatch('hardcover-push-notes', { bookKey, silent: true });
+    }
     // BookOrbit may be in manual mode (#6029), where nothing is ever pending
     // and the flush above does nothing, so ask it for a real push.
     eventDispatcher.dispatch('push-kosync', { bookKey, provider: 'bookorbit' });

@@ -352,6 +352,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             <ModalPortal showOverlay={false}>
               <SyncInfoDialog
                 isOpen={isMetaHashDialogOpen}
+                bookKey={bookKey}
                 metadata={bookData?.bookDoc?.metadata ?? bookData?.book?.metadata}
                 storedMetaHash={bookData?.book?.metaHash}
                 nativeLastSyncedAt={nativeLastSyncedAt}

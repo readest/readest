@@ -250,6 +250,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       const settings = useSettingsStore.getState().settings;
       eventDispatcher.dispatch('sync-book-progress', { bookKey });
       eventDispatcher.dispatch('flush-kosync', { bookKey });
+      eventDispatcher.dispatch('flush-hardcover-sync', { bookKey });
       // Persist locally before any remote flush. `beforeunload` and `quit-app`
       // can unload the document while a flush is still in flight, and losing
       // the reading position costs the user more than deferring a Notion push
