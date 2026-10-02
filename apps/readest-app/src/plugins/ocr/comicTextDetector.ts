@@ -1,10 +1,11 @@
-import type { OcrBoundingBox } from '@/app/reader/services/ocr/types';
+import type { OcrBoundingBox } from '@/services/plugins/ocr';
 import type { InferenceSession } from 'onnxruntime-web/wasm';
 import {
   fetchVerifiedModelAsset,
   type ModelDownloadProgress,
   type VerifiedModelAsset,
-} from '@/app/reader/services/manga/modelAssets';
+} from './modelAssets';
+import { createOcrCanvas, isHtmlCanvas } from './canvas';
 
 export const COMIC_TEXT_DETECTOR_INPUT_SIZE = 1024;
 export const COMIC_TEXT_DETECTOR_MODEL_BYTES = 94_669_756;
@@ -747,9 +748,11 @@ export class ComicTextDetector {
     validatePage(page);
     if (this.#terminated) throw new Error('Comic text detector has been terminated');
     const transform = getLetterboxTransform(page);
-    const canvas = document.createElement('canvas');
-    canvas.width = COMIC_TEXT_DETECTOR_INPUT_SIZE;
-    canvas.height = COMIC_TEXT_DETECTOR_INPUT_SIZE;
+    const canvas = createOcrCanvas(
+      COMIC_TEXT_DETECTOR_INPUT_SIZE,
+      COMIC_TEXT_DETECTOR_INPUT_SIZE,
+      isHtmlCanvas(source) ? source : undefined,
+    );
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('Comic text detector could not create a canvas context');
     context.drawImage(source, 0, 0, transform.width, transform.height);
@@ -762,13 +765,18 @@ export class ComicTextDetector {
     const runtime = await this.#getRuntime();
     const session = await this.#getSession(runtime);
     if (this.#terminated) throw new Error('Comic text detector has been terminated');
-    const run = session.run({
-      images: new runtime.Tensor(
-        'float32',
-        makeImageTensor(pixels, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE),
-        [1, 3, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
-      ),
-    });
+    const input = new runtime.Tensor(
+      'float32',
+      makeImageTensor(pixels, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE),
+      [1, 3, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
+    );
+    let run: Promise<InferenceSession.ReturnType>;
+    try {
+      run = session.run({ images: input });
+    } catch (error) {
+      input.dispose();
+      throw error;
+    }
     this.#activeRuns.add(run);
     let rawOutputs: InferenceSession.ReturnType;
     try {
@@ -778,14 +786,19 @@ export class ComicTextDetector {
       throw error;
     } finally {
       this.#activeRuns.delete(run);
+      input.dispose();
     }
-    if (this.#terminated) throw new Error('Comic text detector has been terminated');
-    const outputs = {
-      blk: getOutput(rawOutputs, 'blk'),
-      seg: getOutput(rawOutputs, 'seg'),
-      det: getOutput(rawOutputs, 'det'),
-    };
-    return postprocessComicDetectorOutputs(outputs, page, this.#options);
+    try {
+      if (this.#terminated) throw new Error('Comic text detector has been terminated');
+      const outputs = {
+        blk: getOutput(rawOutputs, 'blk'),
+        seg: getOutput(rawOutputs, 'seg'),
+        det: getOutput(rawOutputs, 'det'),
+      };
+      return postprocessComicDetectorOutputs(outputs, page, this.#options);
+    } finally {
+      for (const output of Object.values(rawOutputs)) output.dispose();
+    }
   }
 
   async terminate(): Promise<void> {
@@ -818,7 +831,7 @@ export class ComicTextDetector {
     if (this.#terminated)
       return Promise.reject(new Error('Comic text detector has been terminated'));
     if (this.#sessionPromise) return this.#sessionPromise;
-    runtime.env.wasm.proxy = true;
+    runtime.env.wasm.proxy = typeof document !== 'undefined';
     runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
     const sessionPromise = fetchVerifiedModelAsset({
       ...COMIC_TEXT_DETECTOR_MODEL_ASSET,

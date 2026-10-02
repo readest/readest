@@ -8,25 +8,14 @@ import type {
   WorkerParams,
 } from 'tesseract.js';
 
-import {
-  ComicTextDetector,
-  type ComicTextDetectionResult,
-} from '@/app/reader/services/manga/comicTextDetector';
-import {
-  fetchVerifiedModelAsset,
-  type VerifiedModelAsset,
-} from '@/app/reader/services/manga/modelAssets';
-import { makeMangaTextLineCrops, readCanvasRgba } from '@/app/reader/services/ocr/mangaTextCrop';
-import {
-  MangaOcrRecognizer,
-  type JapaneseMangaRecognizer,
-} from '@/app/reader/services/ocr/mangaOcrRecognizer';
-import type { OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
-import {
-  adaptTesseractPage,
-  type TesseractPageData,
-} from '@/app/reader/services/ocr/tesseractAdapter';
-import { getTesseractLanguageAsset } from '@/app/reader/services/ocr/tesseractLanguageAssets';
+import { ComicTextDetector, type ComicTextDetectionResult } from './comicTextDetector';
+import { fetchVerifiedModelAsset, type VerifiedModelAsset } from './modelAssets';
+import { makeMangaTextLineCrops, readCanvasRgba } from './mangaTextCrop';
+import { MangaOcrRecognizer, type JapaneseMangaRecognizer } from './mangaOcrRecognizer';
+import type { OcrPage, OcrTextBlock } from '@/services/plugins/ocr';
+import { adaptTesseractPage, type TesseractPageData } from './tesseractAdapter';
+import { getTesseractLanguageAsset } from './tesseractLanguageAssets';
+import { createOcrCanvas, isHtmlCanvas, isOcrCanvas, type OcrCanvas } from './canvas';
 
 const DEFAULT_LANGUAGES = ['eng'] as const;
 const WORKER_PATH = '/vendor/tesseract/dist/worker.min.js';
@@ -70,7 +59,7 @@ interface PreparedImage {
 }
 
 interface PreparedMangaImage {
-  image: HTMLCanvasElement;
+  image: OcrCanvas;
   page: OcrImagePage;
 }
 
@@ -163,29 +152,35 @@ const createMangaDetector: MangaTextDetectorFactory = (onDownloadProgress) =>
 const createJapaneseMangaRecognizer: JapaneseMangaRecognizerFactory = (onDownloadProgress) =>
   new MangaOcrRecognizer({ onDownloadProgress });
 
-const loadMangaImage: MangaImageLoader = (source) =>
-  new Promise((resolve, reject) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => resolve({ image, width: image.naturalWidth, height: image.naturalHeight });
+const loadMangaImage: MangaImageLoader = async (source) => {
+  const response = await fetch(source);
+  if (!response.ok) throw new Error('OCR could not decode the manga page image');
+  const blob = await response.blob();
+  if (typeof createImageBitmap === 'function') {
+    const bitmap = await createImageBitmap(blob);
+    return { image: bitmap, width: bitmap.width, height: bitmap.height };
+  }
+  if (typeof document === 'undefined' || typeof Image === 'undefined') {
+    throw new Error('OCR could not decode the manga page image');
+  }
+  const image = new Image();
+  image.decoding = 'async';
+  const loaded = new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
     image.onerror = () => reject(new Error('OCR could not decode the manga page image'));
-    image.src = source;
   });
-
-const isHtmlCanvas = (image: ImageLike): image is HTMLCanvasElement =>
-  typeof image === 'object' &&
-  image !== null &&
-  'tagName' in image &&
-  image.tagName === 'CANVAS' &&
-  'ownerDocument' in image;
-
-const getCanvasDocument = (source?: HTMLCanvasElement): Document =>
-  source?.ownerDocument.defaultView?.frameElement?.ownerDocument ??
-  source?.ownerDocument ??
-  document;
+  const objectUrl = URL.createObjectURL(blob);
+  image.src = objectUrl;
+  try {
+    await loaded;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+  return { image, width: image.naturalWidth, height: image.naturalHeight };
+};
 
 const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
-  if (!isHtmlCanvas(image)) return { image, page };
+  if (!isOcrCanvas(image)) return { image, page };
   const { width, height } = image;
   const longEdge = Math.max(width, height);
   const pixelCount = width * height;
@@ -198,9 +193,11 @@ const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
   const targetHeight = scaleImageDimension(height, scale);
   if (targetWidth === width && targetHeight === height) return { image, page };
 
-  const canvas = getCanvasDocument(image).createElement('canvas');
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
+  const canvas = createOcrCanvas(
+    targetWidth,
+    targetHeight,
+    isHtmlCanvas(image) ? image : undefined,
+  );
   const context = canvas.getContext('2d');
   if (!context) return { image, page };
   context.imageSmoothingEnabled = true;
@@ -223,7 +220,7 @@ const prepareMangaImage = async (
   page: OcrImagePage,
   loadImage: MangaImageLoader,
 ): Promise<PreparedMangaImage> => {
-  const canvasSource = isHtmlCanvas(image) ? image : undefined;
+  const canvasSource = isOcrCanvas(image) ? image : undefined;
   const loaded = canvasSource
     ? { image: canvasSource, width: canvasSource.width, height: canvasSource.height }
     : await loadImage(String(image));
@@ -241,15 +238,21 @@ const prepareMangaImage = async (
     return { image: canvasSource, page: { ...page, width: targetWidth, height: targetHeight } };
   }
 
-  const canvas = getCanvasDocument(canvasSource).createElement('canvas');
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('OCR could not prepare the manga page canvas');
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = 'high';
-  context.drawImage(loaded.image, 0, 0, targetWidth, targetHeight);
-  return { image: canvas, page: { ...page, width: targetWidth, height: targetHeight } };
+  const canvas = createOcrCanvas(
+    targetWidth,
+    targetHeight,
+    isHtmlCanvas(canvasSource) ? canvasSource : undefined,
+  );
+  try {
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('OCR could not prepare the manga page canvas');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(loaded.image, 0, 0, targetWidth, targetHeight);
+    return { image: canvas, page: { ...page, width: targetWidth, height: targetHeight } };
+  } finally {
+    if ('close' in loaded.image && typeof loaded.image.close === 'function') loaded.image.close();
+  }
 };
 
 export class TesseractOcrEngine {
@@ -383,9 +386,9 @@ export class TesseractOcrEngine {
           page: detection.page,
           vertical: detectedBlock.vertical,
         });
-        let tesseractCrops: HTMLCanvasElement[] | undefined;
-        let mangaCrops: HTMLCanvasElement[] | undefined;
-        const getMangaCrop = (cropIndex: number): HTMLCanvasElement => {
+        let tesseractCrops: OcrCanvas[] | undefined;
+        let mangaCrops: OcrCanvas[] | undefined;
+        const getMangaCrop = (cropIndex: number): OcrCanvas => {
           mangaCrops ??= makeMangaTextLineCrops(prepared.image, imageData, line, {
             keepVertical: true,
             border: 0,
@@ -395,10 +398,7 @@ export class TesseractOcrEngine {
           });
           return mangaCrops[cropIndex]!;
         };
-        const getTesseractCrop = (
-          cropIndex: number,
-          crop: HTMLCanvasElement,
-        ): HTMLCanvasElement => {
+        const getTesseractCrop = (cropIndex: number, crop: OcrCanvas): OcrCanvas => {
           if (!useJapaneseRecognizer || !detectedBlock.vertical) return crop;
           tesseractCrops ??= makeMangaTextLineCrops(prepared.image, imageData, line, {
             keepVertical: true,
@@ -459,11 +459,11 @@ export class TesseractOcrEngine {
   }
 
   async #recognizeMangaCrop(
-    crop: HTMLCanvasElement,
-    getTesseractCrop: () => HTMLCanvasElement,
+    crop: OcrCanvas,
+    getTesseractCrop: () => OcrCanvas,
     vertical: boolean,
     useJapaneseRecognizer: boolean,
-    getMangaCrop: () => HTMLCanvasElement,
+    getMangaCrop: () => OcrCanvas,
     signal?: AbortSignal,
   ): Promise<{ text: string; confidence: number } | null> {
     signal?.throwIfAborted();

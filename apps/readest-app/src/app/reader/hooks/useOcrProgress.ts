@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 
-import type { OcrEngineProgress } from '@/app/reader/services/ocr/tesseractEngine';
+import type { OcrEngineProgress } from '@/app/reader/services/ocr/ocrPluginEngine';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 

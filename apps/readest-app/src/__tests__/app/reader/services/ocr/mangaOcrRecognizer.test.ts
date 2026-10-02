@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { MangaOcrRecognizer } from '@/app/reader/services/ocr/mangaOcrRecognizer';
+import { MangaOcrRecognizer } from '@/plugins/ocr/mangaOcrRecognizer';
 
 const mocks = vi.hoisted(() => ({
   fast: vi.fn(),
@@ -8,13 +8,13 @@ const mocks = vi.hoisted(() => ({
   release: vi.fn(),
   onDecoderRun: vi.fn(),
 }));
-vi.mock('@/app/reader/services/ocr/paddleJapaneseRecognizer', () => ({
+vi.mock('@/plugins/ocr/paddleJapaneseRecognizer', () => ({
   PaddleJapaneseRecognizer: class {
     recognize = mocks.fast;
     terminate = mocks.terminate;
   },
 }));
-vi.mock('@/app/reader/services/manga/modelAssets', () => ({ fetchVerifiedModelAsset: mocks.load }));
+vi.mock('@/plugins/ocr/modelAssets', () => ({ fetchVerifiedModelAsset: mocks.load }));
 vi.mock('onnxruntime-web/wasm', () => {
   class Tensor {
     constructor(

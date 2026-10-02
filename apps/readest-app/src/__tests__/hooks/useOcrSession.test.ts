@@ -1,7 +1,31 @@
 import { renderHook } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { useOcrSession } from '@/app/reader/hooks/useOcrSession';
-import { TesseractOcrEngine } from '@/app/reader/services/ocr/tesseractEngine';
+import { OcrPluginEngine } from '@/app/reader/services/ocr/ocrPluginEngine';
+import { TesseractOcrEngine } from '@/plugins/ocr/tesseractEngine';
+
+it('keeps OCR available when the webview cannot process canvases in a worker', async () => {
+  vi.stubGlobal('OffscreenCanvas', undefined);
+  vi.stubGlobal('createImageBitmap', undefined);
+  const page = { pageIndex: 0, width: 100, height: 100 };
+  const source = document.createElement('canvas');
+  const recognize = vi
+    .spyOn(TesseractOcrEngine.prototype, 'recognize')
+    .mockResolvedValue({ ...page, blocks: [] });
+  const terminate = vi.spyOn(TesseractOcrEngine.prototype, 'terminate').mockResolvedValue();
+  const engine = new OcrPluginEngine({ languages: ['eng'] });
+  try {
+    await expect(engine.recognize(source, page)).resolves.toMatchObject(page);
+    expect(recognize).toHaveBeenCalledWith(source, page, undefined);
+    await engine.terminate();
+    expect(terminate).toHaveBeenCalledOnce();
+  } finally {
+    await engine.terminate();
+    recognize.mockRestore();
+    terminate.mockRestore();
+    vi.unstubAllGlobals();
+  }
+});
 
 it('keeps the notification pending when an old page finishes after navigation', async () => {
   const docs = [0, 1].map((index) => {
@@ -17,7 +41,7 @@ it('keeps the notification pending when an old page finishes after navigation', 
   });
   const finish: (() => void)[] = [];
   const recognize = vi
-    .spyOn(TesseractOcrEngine.prototype, 'recognize')
+    .spyOn(OcrPluginEngine.prototype, 'recognize')
     .mockImplementation(async (_source, page) => {
       await new Promise<void>((resolve) => {
         finish.push(resolve);

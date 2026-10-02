@@ -1,4 +1,4 @@
-import type { OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
+import type { OcrPage, OcrTextBlock } from '@/services/plugins/ocr';
 
 interface TesseractBoundingBox {
   x0: number;

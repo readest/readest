@@ -44,7 +44,7 @@ import { setCoverSpread } from '@/utils/spread';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
 import Select from '@/components/Select';
-import { OCR_LANGUAGE_CODES } from '@/app/reader/services/ocr/tesseractLanguages';
+import { OCR_LANGUAGE_CODES } from '@/plugins/ocr/tesseractLanguages';
 
 interface ViewMenuProps {
   bookKey: string;

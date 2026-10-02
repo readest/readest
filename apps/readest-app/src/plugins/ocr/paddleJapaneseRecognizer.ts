@@ -10,7 +10,8 @@ import {
   fetchVerifiedModelAsset,
   type ModelDownloadProgress,
   type VerifiedModelAsset,
-} from '@/app/reader/services/manga/modelAssets';
+} from './modelAssets';
+import type { OcrCanvas } from './canvas';
 
 const MODEL_REVISION = 'b8f84f0b80c529de40b4fbb3544b84fa7233a513';
 const DICTIONARY_REVISION = '2661c7c0ef5c613e8f93c6e93b2e052399f0f854';
@@ -57,8 +58,8 @@ export interface JapaneseMangaRecognition {
 
 export interface JapaneseMangaRecognizer {
   recognize: (
-    source: HTMLCanvasElement,
-    getMangaCrop: () => HTMLCanvasElement,
+    source: OcrCanvas,
+    getMangaCrop: () => OcrCanvas,
     signal?: AbortSignal,
   ) => Promise<JapaneseMangaRecognition | null>;
   terminate: () => Promise<void>;
@@ -100,7 +101,7 @@ export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
     this.#loadAsset = dependencies.loadAsset ?? loadAsset;
   }
 
-  async recognize(source: HTMLCanvasElement): Promise<JapaneseMangaRecognition | null> {
+  async recognize(source: OcrCanvas): Promise<JapaneseMangaRecognition | null> {
     if (this.#terminated) throw new Error('Japanese manga recognizer has been terminated');
     const { service } = await this.#getService();
     if (this.#terminated) throw new Error('Japanese manga recognizer has been terminated');
@@ -161,7 +162,7 @@ export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
       }),
       this.#loadAsset({ ...PADDLE_JAPANESE_DICTIONARY_ASSET, signal }),
     ]).then(async ([runtime, model, dictionaryData]) => {
-      runtime.env.wasm.proxy = true;
+      runtime.env.wasm.proxy = typeof document !== 'undefined';
       runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
       const session = await runtime.InferenceSession.create(model, {
         executionProviders: ['wasm'],

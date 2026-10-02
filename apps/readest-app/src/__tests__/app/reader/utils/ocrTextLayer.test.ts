@@ -21,6 +21,12 @@ describe('OCR text layer', () => {
           box: { xMin: 800, yMin: 400, xMax: 900, yMax: 1000 },
           writingMode: 'vertical-rl',
         },
+        {
+          id: 'line-1',
+          text: '次',
+          box: { xMin: 400, yMin: 100, xMax: 600, yMax: 300 },
+          writingMode: 'horizontal-tb',
+        },
       ],
     });
     const text = layer?.querySelector<HTMLElement>('[data-readest-ocr-block-id="line-0"]');
@@ -62,42 +68,18 @@ describe('OCR text layer', () => {
     );
     expect(isOcrRange(range)).toBe(true);
 
-    removeOcrTextLayer(document);
-    expect(document.querySelector('[data-readest-ocr-layer]')).toBeNull();
-  });
-
-  it('switches directly from one OCR block to another', () => {
-    const layer = mountOcrTextLayer(document, {
-      pageIndex: 3,
-      width: 1000,
-      height: 2000,
-      blocks: [
-        {
-          id: 'line-0',
-          text: '最初',
-          box: { xMin: 100, yMin: 100, xMax: 300, yMax: 300 },
-          writingMode: 'horizontal-tb',
-        },
-        {
-          id: 'line-1',
-          text: '次',
-          box: { xMin: 400, yMin: 100, xMax: 600, yMax: 300 },
-          writingMode: 'horizontal-tb',
-        },
-      ],
-    });
-    const first = layer?.querySelector<HTMLElement>('[data-readest-ocr-block-id="line-0"]');
-    const second = layer?.querySelector<HTMLElement>('[data-readest-ocr-block-id="line-1"]');
     const selection = document.getSelection();
     const firstRange = document.createRange();
-    firstRange.selectNodeContents(first!);
+    firstRange.selectNodeContents(text!);
     selection?.removeAllRanges();
     selection?.addRange(firstRange);
-
-    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
-    second?.dispatchEvent(click);
-
-    expect(click.defaultPrevented).toBe(true);
+    const nextBlock = layer?.querySelector<HTMLElement>('[data-readest-ocr-block-id="line-1"]');
+    const switchClick = new MouseEvent('click', { bubbles: true, cancelable: true });
+    nextBlock?.dispatchEvent(switchClick);
+    expect(switchClick.defaultPrevented).toBe(true);
     expect(selection?.toString()).toBe('次');
+
+    removeOcrTextLayer(document);
+    expect(document.querySelector('[data-readest-ocr-layer]')).toBeNull();
   });
 });

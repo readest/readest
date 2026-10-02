@@ -49,6 +49,10 @@ it('shows preparation once, monotonic page progress, then keeps background pages
   rerender({ enabled: true });
   progress('loading model', 0);
   expect(dispatch.mock.calls.filter(([event]) => event === 'toast')).toHaveLength(5);
+  rerender({ enabled: false });
+  rerender({ enabled: true });
+  result.current.onPageRecognized();
+  expect(dispatch.mock.calls.filter(([event]) => event === 'toast')).toHaveLength(5);
 });
 
 it('dismisses only its owned toast when disabled or unmounted', async () => {
@@ -73,13 +77,4 @@ it('dismisses only its owned toast when disabled or unmounted', async () => {
   result.current.onProgress({ status: 'loading model', progress: 1 });
   unmount();
   expect(dispatch.mock.calls.filter(([event]) => event === 'toast-dismiss')).toHaveLength(3);
-});
-
-it('keeps cached page recognition silent when no progress toast was shown', () => {
-  const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
-  const { result } = renderHook(() => useOcrProgress(true, 'ja'));
-
-  result.current.onPageRecognized();
-
-  expect(dispatch.mock.calls.filter(([event]) => event === 'toast')).toHaveLength(0);
 });

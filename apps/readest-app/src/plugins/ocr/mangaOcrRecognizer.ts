@@ -3,14 +3,15 @@ import {
   fetchVerifiedModelAsset,
   type ModelDownloadProgress,
   type VerifiedModelAsset,
-} from '@/app/reader/services/manga/modelAssets';
-import { decodeMangaText } from '@/app/reader/services/ocr/mangaOcrDecode';
+} from './modelAssets';
+import { decodeMangaText } from './mangaOcrDecode';
+import { createOcrCanvas, isHtmlCanvas, type OcrCanvas } from './canvas';
 import {
   PaddleJapaneseRecognizer,
   type JapaneseMangaRecognition,
   type JapaneseMangaRecognizer,
-} from '@/app/reader/services/ocr/paddleJapaneseRecognizer';
-export type { JapaneseMangaRecognizer } from '@/app/reader/services/ocr/paddleJapaneseRecognizer';
+} from './paddleJapaneseRecognizer';
+export type { JapaneseMangaRecognizer } from './paddleJapaneseRecognizer';
 
 const REVISION = '3e8ddcd02cd50e897358223fce8b2784e44093ab';
 const BASE_URL = `https://huggingface.co/WhiteHades/manga-ocr-browser/resolve/${REVISION}`;
@@ -61,8 +62,8 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   }
 
   async recognize(
-    source: HTMLCanvasElement,
-    getMangaCrop: () => HTMLCanvasElement,
+    source: OcrCanvas,
+    getMangaCrop: () => OcrCanvas,
     signal?: AbortSignal,
   ): Promise<JapaneseMangaRecognition | null> {
     this.#abort.signal.throwIfAborted();
@@ -86,8 +87,8 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   }
 
   async #recognize(
-    source: HTMLCanvasElement,
-    getMangaCrop: () => HTMLCanvasElement,
+    source: OcrCanvas,
+    getMangaCrop: () => OcrCanvas,
     signal?: AbortSignal,
   ): Promise<JapaneseMangaRecognition | null> {
     const fast = await this.#fast.recognize(source);
@@ -109,7 +110,7 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   }
 
   async #recognizeManga(
-    source: HTMLCanvasElement,
+    source: OcrCanvas,
     signal?: AbortSignal,
   ): Promise<JapaneseMangaRecognition | null> {
     const { runtime, encoder, decoder, vocabulary } = await this.#getModel();
@@ -118,8 +119,7 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
     signal?.throwIfAborted();
     // MangaOCR reads upright grayscale crops, resized to 224x224 and normalized
     // to [-1, 1]. The caller preserves vertical writing and omits OCR padding.
-    const canvas = source.ownerDocument.createElement('canvas');
-    canvas.width = canvas.height = 224;
+    const canvas = createOcrCanvas(224, 224, isHtmlCanvas(source) ? source : undefined);
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('MangaOCR could not prepare the text crop');
     context.drawImage(source, 0, 0, 224, 224);
@@ -226,7 +226,7 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
         const vocabulary = new TextDecoder().decode(buffers[2]).trimEnd().split(/\r?\n/u);
         if (vocabulary.length !== 6144)
           throw new Error('MangaOCR vocabulary has an invalid length');
-        runtime.env.wasm.proxy = true;
+        runtime.env.wasm.proxy = typeof document !== 'undefined';
         runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
         for (const buffer of buffers.slice(0, 2)) {
           sessions.push(

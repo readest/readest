@@ -1,4 +1,4 @@
-import type { OcrPage } from '@/app/reader/services/ocr/types';
+import type { OcrPage } from '@/services/plugins/ocr';
 import {
   mountOcrTextLayer,
   OCR_TEXT_LAYER_SELECTOR,

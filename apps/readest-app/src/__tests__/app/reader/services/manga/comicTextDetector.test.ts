@@ -7,7 +7,7 @@ import {
   COMIC_TEXT_DETECTOR_MODEL_URL,
   extractComicLinePolygons,
   postprocessComicDetectorOutputs,
-} from '@/app/reader/services/manga/comicTextDetector';
+} from '@/plugins/ocr/comicTextDetector';
 
 const fillRectangle = (
   data: Float32Array,

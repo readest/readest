@@ -1,4 +1,4 @@
-import type { OcrBoundingBox, OcrPage, OcrTextBlock } from '@/app/reader/services/ocr/types';
+import type { OcrBoundingBox, OcrPage, OcrTextBlock } from '@/services/plugins/ocr';
 
 export const OCR_TEXT_LAYER_SELECTOR = '[data-readest-ocr-layer]';
 const OCR_TEXT_LAYER_STYLE_SELECTOR = '[data-readest-ocr-style]';

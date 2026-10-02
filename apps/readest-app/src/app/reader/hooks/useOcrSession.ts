@@ -1,15 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { OcrSession } from '@/app/reader/services/ocr/ocrSession';
-import type { OcrPage } from '@/app/reader/services/ocr/types';
-import {
-  TesseractOcrEngine,
-  type OcrEngineProgress,
-} from '@/app/reader/services/ocr/tesseractEngine';
-import {
-  getOcrTextLanguage,
-  getTesseractLanguages,
-} from '@/app/reader/services/ocr/tesseractLanguages';
+import type { OcrPage } from '@/services/plugins/ocr';
+import { OcrPluginEngine, type OcrEngineProgress } from '@/app/reader/services/ocr/ocrPluginEngine';
+import { getOcrTextLanguage, getTesseractLanguages } from '@/plugins/ocr/tesseractLanguages';
 
 interface UseOcrSessionOptions {
   enabled: boolean;
@@ -95,7 +89,7 @@ export const useOcrSession = ({
     let session!: OcrSession;
     session = new OcrSession({
       createEngine: () =>
-        new TesseractOcrEngine({
+        new OcrPluginEngine({
           languages,
           mangaMode,
           textLanguage,

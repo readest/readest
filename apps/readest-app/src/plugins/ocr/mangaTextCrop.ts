@@ -1,9 +1,5 @@
-import type {
-  ComicMask,
-  ComicPageSize,
-  ComicPoint,
-  ComicTextLine,
-} from '@/app/reader/services/manga/comicTextDetector';
+import type { ComicMask, ComicPageSize, ComicPoint, ComicTextLine } from './comicTextDetector';
+import { createOcrCanvas, isHtmlCanvas, type OcrCanvas } from './canvas';
 
 interface RgbaImage {
   data: Uint8ClampedArray;
@@ -220,16 +216,13 @@ const scalePolygon = (
     y: (y * to.height) / from.height,
   }));
 
-const makeCanvas = (
-  source: HTMLCanvasElement,
-  image: RasterImage,
-  border: number,
-): HTMLCanvasElement | null => {
+const makeCanvas = (source: OcrCanvas, image: RasterImage, border: number): OcrCanvas | null => {
   if (image.channels !== 4) return null;
-  const doc = source.ownerDocument.defaultView?.frameElement?.ownerDocument ?? source.ownerDocument;
-  const canvas = doc.createElement('canvas');
-  canvas.width = image.width + border * 2;
-  canvas.height = image.height + border * 2;
+  const canvas = createOcrCanvas(
+    image.width + border * 2,
+    image.height + border * 2,
+    isHtmlCanvas(source) ? source : undefined,
+  );
   const context = canvas.getContext('2d');
   if (!context) return null;
   context.fillStyle = '#fff';
@@ -240,7 +233,7 @@ const makeCanvas = (
   return canvas;
 };
 
-export const readCanvasRgba = (canvas: HTMLCanvasElement): RgbaImage => {
+export const readCanvasRgba = (canvas: OcrCanvas): RgbaImage => {
   const context = canvas.getContext('2d', { willReadFrequently: true });
   if (!context) throw new Error('OCR could not read the manga page canvas');
   const image = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -248,11 +241,11 @@ export const readCanvasRgba = (canvas: HTMLCanvasElement): RgbaImage => {
 };
 
 export const makeMangaTextLineCrops = (
-  source: HTMLCanvasElement,
+  source: OcrCanvas,
   image: RgbaImage,
   line: ComicTextLine,
   options: MangaTextCropOptions = {},
-): HTMLCanvasElement[] => {
+): OcrCanvas[] => {
   const vertical = options.vertical ?? line.vertical;
   const polygon =
     line.polygon.length === 4

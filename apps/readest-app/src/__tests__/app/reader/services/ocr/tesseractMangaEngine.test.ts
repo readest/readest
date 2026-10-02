@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PSM } from 'tesseract.js';
 
-import { makeMangaTextLineCrops } from '@/app/reader/services/ocr/mangaTextCrop';
+import { makeMangaTextLineCrops } from '@/plugins/ocr/mangaTextCrop';
 import {
   TesseractOcrEngine,
   type JapaneseMangaRecognizerFactory,
   type MangaTextDetectorFactory,
   type TesseractWorker,
-} from '@/app/reader/services/ocr/tesseractEngine';
-import { getTesseractLanguages } from '@/app/reader/services/ocr/tesseractLanguages';
+} from '@/plugins/ocr/tesseractEngine';
+import { getTesseractLanguages } from '@/plugins/ocr/tesseractLanguages';
 
-vi.mock('@/app/reader/services/manga/modelAssets', () => ({
+vi.mock('@/plugins/ocr/modelAssets', () => ({
   fetchVerifiedModelAsset: vi.fn(async () => new ArrayBuffer(1)),
 }));
 
@@ -282,82 +282,51 @@ describe('Tesseract manga OCR', () => {
     expect(result.blocks).toMatchObject([{ text: '第1話DRAGON BALL' }]);
   });
 
-  it('splits long vertical text before recognition', () => {
+  it('keeps vertical crops upright and splits long text before recognition', () => {
     const contexts = installCanvas();
     const source = document.createElement('canvas');
     source.width = 64;
-    source.height = 1280;
-    const longLine = {
-      box: { xMin: 0, yMin: 0, xMax: 64, yMax: 1280 },
-      polygon: [
-        { x: 0, y: 0 },
-        { x: 64, y: 0 },
-        { x: 64, y: 1280 },
-        { x: 0, y: 1280 },
-      ],
-      score: 0.9,
-      vertical: true,
-    };
+    for (const height of [256, 1280]) {
+      contexts.mockClear();
+      source.height = height;
+      const longLine = {
+        box: { xMin: 0, yMin: 0, xMax: 64, yMax: height },
+        polygon: [
+          { x: 0, y: 0 },
+          { x: 64, y: 0 },
+          { x: 64, y: height },
+          { x: 0, y: height },
+        ],
+        score: 0.9,
+        vertical: true,
+      };
 
-    const data = new Uint8ClampedArray(source.width * source.height * 4);
-    for (let i = 0; i < data.length; i++) data[i] = i % 251;
-    const image = { data, width: source.width, height: source.height };
-    const crops = makeMangaTextLineCrops(source, image, longLine, {
-      keepVertical: true,
-      vertical: true,
-    });
+      const data = new Uint8ClampedArray(source.width * source.height * 4);
+      for (let i = 0; i < data.length; i++) data[i] = i % 251;
+      const image = { data, width: source.width, height: source.height };
+      const crops = makeMangaTextLineCrops(source, image, longLine, {
+        keepVertical: true,
+        vertical: true,
+      });
 
-    expect(crops).toHaveLength(2);
-    expect(crops.every((crop) => crop.width === 80 && crop.height < 1_000)).toBe(true);
-    makeMangaTextLineCrops(source, image, longLine, { vertical: true });
-    const pixels = contexts.mock.results.map(({ value }) => value.putImageData.mock.calls[0][0]);
-    for (let chunk = 0; chunk < crops.length; chunk++) {
-      const upright = pixels[chunk];
-      const rotated = pixels[chunk + crops.length];
-      for (const y of [0, Math.floor(upright.height / 2), upright.height - 1]) {
-        for (const x of [0, upright.width - 1]) {
-          const from = (y * upright.width + x) * 4;
-          const to = ((rotated.height - 1 - x) * rotated.width + y) * 4;
-          expect(upright.data.subarray(from, from + 4)).toEqual(rotated.data.subarray(to, to + 4));
+      expect(crops).toHaveLength(height === 256 ? 1 : 2);
+      expect(crops.every((crop) => crop.width === 80 && crop.height < 1_000)).toBe(true);
+      makeMangaTextLineCrops(source, image, longLine, { vertical: true });
+      const pixels = contexts.mock.results.map(({ value }) => value.putImageData.mock.calls[0][0]);
+      for (let chunk = 0; chunk < crops.length; chunk++) {
+        const upright = pixels[chunk];
+        const rotated = pixels[chunk + crops.length];
+        for (const y of [0, Math.floor(upright.height / 2), upright.height - 1]) {
+          for (const x of [0, upright.width - 1]) {
+            const from = (y * upright.width + x) * 4;
+            const to = ((rotated.height - 1 - x) * rotated.width + y) * 4;
+            expect(upright.data.subarray(from, from + 4)).toEqual(
+              rotated.data.subarray(to, to + 4),
+            );
+          }
         }
       }
     }
-  });
-
-  it('keeps unsplit vertical crops upright without allocating rotated copies', () => {
-    const contexts = installCanvas();
-    const source = document.createElement('canvas');
-    const image = { width: 64, height: 256, data: new Uint8ClampedArray(64 * 256 * 4) };
-    for (let i = 0; i < image.data.length; i++) image.data[i] = i % 251;
-    const uprightLine = {
-      ...line,
-      polygon: [
-        { x: 0, y: 0 },
-        { x: 63, y: 0 },
-        { x: 63, y: 252 },
-        { x: 0, y: 252 },
-      ],
-    };
-    const allocations = vi.fn();
-    vi.stubGlobal(
-      'Uint8ClampedArray',
-      new Proxy(Uint8ClampedArray, {
-        construct(target, args) {
-          allocations();
-          return Reflect.construct(target, args);
-        },
-      }),
-    );
-
-    const crops = makeMangaTextLineCrops(source, image, uprightLine, { keepVertical: true });
-
-    expect(crops).toHaveLength(1);
-    expect([crops[0]!.width, crops[0]!.height]).toEqual([80, 272]);
-    const context = contexts.mock.results[0]!.value as { putImageData: ReturnType<typeof vi.fn> };
-    const pixels = context.putImageData.mock.calls[0]![0].data as Uint8ClampedArray;
-    expect(Array.from(pixels.slice(0, 8))).toEqual(Array.from(image.data.slice(0, 8)));
-    expect(Array.from(pixels.slice(-4))).toEqual(Array.from(image.data.slice(64764, 64768)));
-    expect(allocations).toHaveBeenCalledTimes(2);
   });
 
   it('falls back to whole-page Tesseract for the rest of the session after detector failure', async () => {

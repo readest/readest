@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { decodeMangaText } from '@/app/reader/services/ocr/mangaOcrDecode';
+import { decodeMangaText } from '@/plugins/ocr/mangaOcrDecode';
 
 it('keeps a better sentence even when its first character loses greedy decoding', async () => {
   const result = await decodeMangaText(async (sequences) => {
