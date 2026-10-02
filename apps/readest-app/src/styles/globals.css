@@ -1234,6 +1234,16 @@
     transition: none !important;
   }
 
+  /* `*` can't cross a shadow boundary, so the rule above never reached the reader's
+   * page gate: the paginator's `#container` fades `opacity` over 50ms on every section
+   * reveal, and on an e-ink panel each alpha step is its own greyscale refresh — the
+   * flash seen just after a chapter opens. `container` is exported in view.js, so
+   * `::part()` is the hook that reaches it, and no `!important` is needed: an
+   * outer-tree normal declaration already outranks the shadow tree's own rule. */
+  .no-transitions foliate-view::part(container) {
+    transition: none;
+  }
+
   /* settings highlight animation for command palette */
   @keyframes settings-highlight-pulse {
     0%,
