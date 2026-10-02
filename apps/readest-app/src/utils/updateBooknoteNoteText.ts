@@ -1,4 +1,5 @@
 import { BookNote } from '@/types/book';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 
 export interface UpdateBooknoteNoteTextResult {
   booknotes: BookNote[];
@@ -40,10 +41,7 @@ export function updateBooknoteNoteText(
   const updatedBooknote: BookNote = {
     ...existingBooknote,
     note: normalizedNoteText,
-    // A synced record can carry a server-stamped updatedAt ahead of this
-    // device's clock; the edit must still sort after the version it edits or
-    // sync drops it and the stale copy wins back (#6544).
-    updatedAt: Math.max(now, existingBooknote.updatedAt + 1),
+    updatedAt: nextBooknoteStamp(existingBooknote, now),
   };
 
   return {

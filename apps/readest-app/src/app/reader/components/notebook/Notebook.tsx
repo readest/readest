@@ -16,6 +16,7 @@ import { eventDispatcher } from '@/utils/event';
 import { BookNote } from '@/types/book';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { getPanelHorizontalInsetStyle, getPanelTopInset } from '@/utils/insets';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -155,7 +156,9 @@ const Notebook: React.FC = () => {
     const config = getConfig(sideBarBookKey);
     if (!config?.booknotes) return;
     const booknotes = config.booknotes.map((note) =>
-      note.id === excerpt.id && note.type === 'excerpt' ? { ...note, deletedAt: Date.now() } : note,
+      note.id === excerpt.id && note.type === 'excerpt'
+        ? { ...note, deletedAt: nextBooknoteStamp(note) }
+        : note,
     );
     const updatedConfig = updateBooknotes(sideBarBookKey, booknotes);
     if (updatedConfig) void saveConfig(envConfig, sideBarBookKey, updatedConfig, settings);

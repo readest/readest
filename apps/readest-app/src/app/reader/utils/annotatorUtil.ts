@@ -9,6 +9,7 @@ import {
   ViewSettings,
 } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point, snapRangeToWords } from '@/utils/sel';
@@ -281,7 +282,7 @@ export function removeEmptyAnnotationPlaceholder(
   );
   if (index === -1) return null;
   const placeholder = booknotes[index]!;
-  booknotes[index] = { ...placeholder, deletedAt: now };
+  booknotes[index] = { ...placeholder, deletedAt: nextBooknoteStamp(placeholder, now) };
   return placeholder;
 }
 

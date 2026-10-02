@@ -15,6 +15,7 @@ import { isCfiInLocation } from '@/utils/cfi';
 import { buildAnnotationUrl } from '@/utils/deeplink';
 import { buildAnnotationCopyMarkdown } from '@/utils/note';
 import { writeTextToClipboard } from '@/utils/clipboard';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { removeBookNoteOverlays } from '../../utils/annotatorUtil';
 import { parseNoteMarkdown } from '../../utils/noteMarkdown';
@@ -58,7 +59,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     const { booknotes: annotations = [] } = config;
     const existingIndex = annotations.findIndex((annotation) => item.id === annotation.id);
     if (existingIndex === -1) return;
-    annotations[existingIndex]!.updatedAt = Date.now();
+    annotations[existingIndex]!.updatedAt = nextBooknoteStamp(annotations[existingIndex]!);
     annotations[existingIndex]!.text = draftText;
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
@@ -103,7 +104,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     const { booknotes = [] } = config;
     booknotes.forEach((item) => {
       if (item.id === note.id) {
-        item.deletedAt = Date.now();
+        item.deletedAt = nextBooknoteStamp(item);
         const views = getViewsById(bookKey.split('-')[0]!);
         views.forEach((view) => removeBookNoteOverlays(view, item));
       }
