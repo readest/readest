@@ -83,6 +83,27 @@ describe('mergeRestyledAnnotation', () => {
     expect(merged.createdAt).toBe(100);
     expect(merged.updatedAt).toBe(200);
   });
+
+  // A restyle keeps the cfi, so the sync anchors already on the record stay
+  // valid; dropping them made the next push treat the note as never synced.
+  it('keeps fields of the existing record that the restyle does not set', () => {
+    const existing = makeNote({
+      id: 'a',
+      xpointer0: '/body/DocFragment[3]/body/p[2]/text().0',
+      xpointer1: '/body/DocFragment[3]/body/p[2]/text().4',
+      bookHash: 'hash',
+      metaHash: 'meta',
+    });
+    const restyled = makeNote({ id: 'tmp', style: 'underline' });
+    const merged = mergeRestyledAnnotation(existing, restyled);
+    expect(merged).toMatchObject({
+      xpointer0: existing.xpointer0,
+      xpointer1: existing.xpointer1,
+      bookHash: 'hash',
+      metaHash: 'meta',
+      style: 'underline',
+    });
+  });
 });
 
 describe('filterExportGroups', () => {

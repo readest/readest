@@ -108,6 +108,16 @@ describe('Notebook document helpers', () => {
     });
   });
 
+  // The record can carry a synced stamp ahead of a lagging device clock; the
+  // edit must still be the later change or sync drops it (#6544).
+  it('stamps an edit after a synced stamp that is ahead of the device clock', () => {
+    const existing = makeNotebook({ updatedAt: 9000 });
+
+    const result = upsertNotebookRecord([existing], 'edited', null, 400, true)!;
+
+    expect(result.notebook.updatedAt).toBeGreaterThan(9000);
+  });
+
   it('inserts into an empty document without surrounding blank lines', () => {
     expect(insertNotebookMarkdown('', '\n> quote\n\n', 0, 0)).toEqual({
       content: '> quote',
