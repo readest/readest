@@ -144,6 +144,40 @@ afterEach(() => {
 });
 
 describe('footnote popup box (#5999)', () => {
+  test('uses an imported reader font and measures a plain-text note with it (#3602)', async () => {
+    const font = await new FontFace('FootnoteTest', 'url(/fonts/InterVariable.woff2)').load();
+    document.fonts.add(font);
+    const iframe = document.createElement('iframe');
+    cell.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    doc.fonts.add(font);
+    doc.body.style.cssText = 'font-family: FootnoteTest; font-size: 28px; line-height: 42px;';
+    const reference = doc.createElement('span');
+    doc.body.appendChild(reference);
+
+    try {
+      render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+      act(() => {
+        h.dispatchFootnote({
+          bookKey: 'book-1',
+          element: reference,
+          footnote: 'A footnote using the book font rather than the app font.',
+        });
+      });
+
+      const popup = popupContainer();
+      const note = popup.querySelector('p')!;
+      const style = getComputedStyle(note);
+      expect(style.fontFamily).toBe('FootnoteTest');
+      expect(style.fontSize).toBe('28px');
+      expect(style.lineHeight).toBe('42px');
+      expect(popup.scrollWidth).toBeLessThanOrEqual(popup.clientWidth);
+      expect(popup.scrollHeight).toBeLessThanOrEqual(popup.clientHeight);
+    } finally {
+      document.fonts.delete(font);
+    }
+  });
+
   test('a short note leaves the popup with no scrollbars of its own', () => {
     render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
     act(() => {

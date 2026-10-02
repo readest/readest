@@ -366,6 +366,30 @@ describe('FootnotePopup jump to location', () => {
     expect(screen.queryByLabelText('Jump to Location')).toBeNull();
   });
 
+  it('uses the book typography for a plain-text footnote (#3602)', async () => {
+    await renderPopup();
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    doc.body.style.cssText = 'font-family: ImportedReader; font-size: 28px; line-height: 42px;';
+    const element = doc.createElement('span');
+    doc.body.appendChild(element);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-popup', {
+        bookKey: BOOK_KEY,
+        element,
+        footnote: 'A note that should use the selected reader font',
+      });
+    });
+
+    const note = document.querySelector<HTMLElement>('.footnote-content > p')!;
+    const style = getComputedStyle(note);
+    expect(style.fontFamily).toBe('ImportedReader');
+    expect(style.fontSize).toBe('28px');
+    expect(style.lineHeight).toBe('42px');
+  });
+
   // #6390: the soft keyboard the note editor raises fires a window resize on
   // Android without the window changing width, which closed the popup under
   // the editor. Only a real width change (rotation, window resize) moves the

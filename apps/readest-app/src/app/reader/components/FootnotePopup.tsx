@@ -636,7 +636,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   // Handle custom footnote popup event from iframe event
   const handleFootnotePopupEvent = (event: CustomEvent) => {
-    const { element, footnote } = event.detail;
+    const { element, footnote } = event.detail as { element: Element; footnote: string };
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
     // This popup shows text synthesized from a data/alt attribute in the host
@@ -660,6 +660,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const elem = document.createElement('p');
       elem.textContent = footnote;
       elem.setAttribute('style', `padding: 1em; hanging-punctuation: allow-end last;`);
+      // Data/alt footnotes render outside the book iframe. Carry its typography
+      // over before measuring so the popup uses the reader font and fits it.
+      const sourceDoc = element.ownerDocument;
+      const readerStyle = sourceDoc.defaultView?.getComputedStyle(
+        sourceDoc.body ?? sourceDoc.documentElement,
+      );
+      if (readerStyle) {
+        elem.style.fontFamily = readerStyle.fontFamily;
+        elem.style.fontSize = readerStyle.fontSize;
+        elem.style.lineHeight = readerStyle.lineHeight;
+      }
       elem.style.visibility = 'hidden';
       // Measure the text in the room the popup actually gives it — the seed
       // less the container border — so the paragraph wraps identically once
