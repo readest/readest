@@ -1530,14 +1530,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       if (existingIndex !== -1) {
         if (!update && !allExist) continue;
         const existing = annotations[existingIndex]!;
-        // Tear down both the original anchor and any global fan-outs that
-        // were drawn for the previous style/color, so the redraw below
-        // doesn't end up overlaying two highlights at the same position.
-        views.forEach((view) => view?.addAnnotation(existing, true));
-        if (existing.global) {
-          views.forEach((view) => removeGlobalAnnotationOverlays(view, existing));
-        }
         if (update) {
+          // Tear down the original highlight and its global fan-outs before
+          // redrawing the new style/color. Keep the note bubble at its anchor.
+          views.forEach((view) => view?.addAnnotation(existing, true));
+          if (existing.global) {
+            views.forEach((view) => removeGlobalAnnotationOverlays(view, existing));
+          }
           // Preserve the note/text/createdAt and the `global` flag of the existing
           // record so a restyle (color/style change) of a unified annotation
           // doesn't wipe its note or silently demote a global highlight. The note
@@ -1552,6 +1551,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             });
           }
         } else {
+          views.forEach((view) => removeBookNoteOverlays(view, existing));
           existing.deletedAt = Date.now();
           deleted = true;
         }

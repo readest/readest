@@ -13,6 +13,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import { BookNote } from '@/types/book';
+import { NOTE_PREFIX } from '@/types/view';
 
 // Stand in for the two presentation surfaces so the test can assert *where*
 // the editor was handed to, and drive its save/cancel without laying a popup
@@ -66,6 +67,7 @@ const h = vi.hoisted(() => ({
   setSearchBarVisible: vi.fn(),
   deselect: vi.fn(),
   suppressNativeSelectionHandles: vi.fn(),
+  views: [] as { addAnnotation: ReturnType<typeof vi.fn> }[],
   isSideBarVisible: false,
   isTextSelected: { current: true },
 }));
@@ -134,7 +136,7 @@ vi.mock('@/store/bookDataStore', () => {
 vi.mock('@/store/readerStore', () => {
   const state = {
     getView: () => ({ deselect: h.deselect }),
-    getViewsById: () => [],
+    getViewsById: () => h.views,
     getViewSettings: () => h.viewSettings,
   };
   return {
@@ -316,6 +318,7 @@ const liveAnnotations = () => h.config.booknotes.filter((note) => !note.deletedA
 beforeEach(() => {
   h.actions = null;
   h.config.booknotes = [];
+  h.views = [];
   h.viewSettings.copyToNotebook = false;
   // Mirror the real store: write back whatever array it is handed, since the
   // note-text save builds a new array rather than mutating in place.
@@ -372,6 +375,47 @@ describe('Annotate opens the note editor at the selection', () => {
       expect.objectContaining({ note: 'a thought worth keeping', text: 'selected text' }),
     ]);
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
+  });
+
+  test.each([
+    'onHighlightSelection',
+    'onUnderlineSelection',
+  ])('%s removes the saved note bubble when deleting its highlight (#6540)', async (action) => {
+    h.views = [{ addAnnotation: vi.fn() }, { addAnnotation: vi.fn() }];
+    await annotate();
+    await act(async () => {
+      screen.getByText('stub-save').click();
+    });
+    const annotation = liveAnnotations()[0]!;
+    for (const view of h.views) {
+      expect(view.addAnnotation).toHaveBeenCalledWith(
+        {
+          ...annotation,
+          value: `${NOTE_PREFIX}${annotation.cfi}`,
+        },
+        false,
+      );
+      view.addAnnotation.mockClear();
+    }
+
+    await selectText();
+    act(() => {
+      h.actions?.[action]?.();
+    });
+
+    expect(liveAnnotations()).toHaveLength(0);
+    expect(h.saveConfig).toHaveBeenLastCalledWith({}, 'book-1', h.config, settings);
+    for (const view of h.views) {
+      expect(view.addAnnotation).toHaveBeenCalledWith(
+        expect.objectContaining({ value: `${NOTE_PREFIX}${annotation.cfi}` }),
+        true,
+      );
+      expect(view.addAnnotation).toHaveBeenCalledWith(
+        expect.objectContaining({ cfi: annotation.cfi }),
+        true,
+      );
+      expect(view.addAnnotation).toHaveBeenCalledTimes(2);
+    }
   });
 
   test('cancelling drops the placeholder highlight it just created (#4791)', async () => {
