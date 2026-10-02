@@ -168,7 +168,7 @@ export const getLanguageInfo = (lang: string) => {
   try {
     const canonical = Intl.getCanonicalLocales(lang)[0]!;
     const locale = new Intl.Locale(canonical) as LocaleWithTextInfo;
-    const isCJK = ['zh', 'ja', 'kr'].includes(locale.language);
+    const isCJK = ['zh', 'ja', 'ko'].includes(locale.language);
     const direction = (locale.getTextInfo?.() ?? locale.textInfo)?.direction;
     return { canonical, locale, isCJK, direction };
   } catch (e) {
