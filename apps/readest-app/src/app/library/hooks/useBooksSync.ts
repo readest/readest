@@ -17,6 +17,7 @@ import {
 import { isDemoBook } from '@/services/demoBooks';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { ensureFeedBookCover } from '@/services/rss/feedBook';
+import { fetchAbsBookCover } from '@/services/audiobookshelf/librarySync';
 import { runFileLibrarySyncPass } from '@/services/sync/file/runLibrarySync';
 import {
   pickFresherReadingStatus,
@@ -335,6 +336,10 @@ export const useBooksSync = () => {
     );
 
     const processNewBook = async (newBook: Book) => {
+      // An ABS book's cover is not in cloud storage either; fetch it from its
+      // Audiobookshelf server so the book is shelved with its cover, not a
+      // placeholder waiting for the next ABS cover backfill.
+      if (appService) await fetchAbsBookCover(appService, newBook);
       // A feed book has no cover in cloud storage; its cover is derived from the
       // feed descriptor, so this device regenerates the same image locally.
       newBook.coverImageUrl =
