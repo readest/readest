@@ -2442,5 +2442,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "ཀློག་འདོན་གྱི་མདུན་སྐྱོད་མཉམ་སྒྲིག་བྱེད་པར་ཁྱེད་ཀྱི་ Pagebound གློག་འཕྲིན་དང་གསང་ཨང་གིས་ནང་འཛུལ་གནང་།",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "གལ་ཏེ་ Apple ཡང་ན་ Google ཡིས་ནང་འཛུལ་བྱེད་ན། སྔོན་ལ་ Pagebound ནང་གསང་ཨང་ཞིག་སྒྲིག་རོགས།",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit ནང་དཔེ་དེབ་རྙེད་མ་བྱུང་། མཉམ་འགྲིག་བྱེད་པར་ BookOrbit ནང་གི་ \"Unmatched KOReader Books\" འོག་ཏུ་མཐུད་རོགས།"
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit ནང་དཔེ་དེབ་རྙེད་མ་བྱུང་། མཉམ་འགྲིག་བྱེད་པར་ BookOrbit ནང་གི་ \"Unmatched KOReader Books\" འོག་ཏུ་མཐུད་རོགས།",
+  "Download status": "ཕབ་ལེན་གནས་སྟངས།",
+  "Local only": "ས་གནས་ཁོ་ན།",
+  "Cloud only": "སྤྲིན་ཁོ་ན།"
 }

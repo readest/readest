@@ -2442,5 +2442,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Đăng nhập bằng email và mật khẩu Pagebound để đồng bộ tiến độ đọc.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Nếu bạn đăng nhập bằng Apple hoặc Google, hãy đặt mật khẩu trong Pagebound trước.",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Không tìm thấy sách trong BookOrbit. Hãy liên kết sách trong mục \"Unmatched KOReader Books\" trên BookOrbit để đồng bộ."
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Không tìm thấy sách trong BookOrbit. Hãy liên kết sách trong mục \"Unmatched KOReader Books\" trên BookOrbit để đồng bộ.",
+  "Download status": "Trạng thái tải xuống",
+  "Local only": "Chỉ cục bộ",
+  "Cloud only": "Chỉ trên đám mây"
 }

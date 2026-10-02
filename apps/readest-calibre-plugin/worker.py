@@ -24,6 +24,7 @@ from calibre_plugins.readest.wire import (
     PLAN_MARKS,
     book_file_name,
     build_wire_book,
+    calibre_columns,
     cloud_book_hashes,
     cover_file_name,
     index_rows_by_uuid,
@@ -69,27 +70,18 @@ def _lower_first(text):
     return text[:1].lower() + text[1:]
 
 
-def _jsonable(value):
-    if hasattr(value, 'isoformat'):
-        return value.isoformat()
-    if isinstance(value, (list, tuple)):
-        return [_jsonable(v) for v in value]
-    if isinstance(value, (str, int, float, bool)) or value is None:
-        return value
-    return str(value)
-
-
-def _custom_columns(mi):
-    columns = {}
+def _user_metadata(mi):
+    # mi.get() evaluates composite columns, which the raw '#value#' may not hold.
+    user_metadata = {}
     for key in mi.custom_field_keys():
         try:
-            value = mi.get(key)
+            fm = dict(mi.get_user_metadata(key, make_copy=False) or {})
+            fm['#value#'] = mi.get(key)
+            fm['#extra#'] = mi.get_extra(key)
         except Exception:
             continue
-        if value in (None, '', []) or value == ():
-            continue
-        columns[key.lstrip('#')] = _jsonable(value)
-    return columns
+        user_metadata[key] = fm
+    return user_metadata
 
 
 def _book_dict(mi, include_custom_columns, source_hash):
@@ -109,7 +101,7 @@ def _book_dict(mi, include_custom_columns, source_hash):
         'series_index': mi.series_index if mi.series else None,
         'uuid': getattr(mi, 'uuid', None),
         'isbn': (mi.get_identifiers() or {}).get('isbn'),
-        'custom_columns': _custom_columns(mi) if include_custom_columns else None,
+        'custom_columns': calibre_columns(_user_metadata(mi)) if include_custom_columns else None,
         'source_hash': source_hash,
     }
 

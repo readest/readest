@@ -2570,5 +2570,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "Conectează-te cu e-mailul și parola Pagebound pentru a sincroniza progresul lecturii.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Dacă te conectezi cu Apple sau Google, setează mai întâi o parolă în Pagebound.",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Cartea nu a fost găsită în BookOrbit. Asociaz-o în „Unmatched KOReader Books” din BookOrbit pentru a o sincroniza."
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Cartea nu a fost găsită în BookOrbit. Asociaz-o în „Unmatched KOReader Books” din BookOrbit pentru a o sincroniza.",
+  "Download status": "Stare descărcare",
+  "Local only": "Doar local",
+  "Cloud only": "Doar în cloud"
 }

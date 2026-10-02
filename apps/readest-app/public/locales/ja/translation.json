@@ -2442,5 +2442,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "読書の進捗を同期するには、Pagebound のメールアドレスとパスワードでサインインしてください。",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Apple または Google でサインインしている場合は、先に Pagebound でパスワードを設定してください。",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit に本が見つかりません。同期するには、BookOrbit の「Unmatched KOReader Books」でこの本をリンクしてください。"
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit に本が見つかりません。同期するには、BookOrbit の「Unmatched KOReader Books」でこの本をリンクしてください。",
+  "Download status": "ダウンロード状態",
+  "Local only": "ローカルのみ",
+  "Cloud only": "クラウドのみ"
 }

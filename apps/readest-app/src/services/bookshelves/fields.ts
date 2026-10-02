@@ -8,6 +8,10 @@ export interface BookshelfField {
   label: string;
   kind: BookshelfFieldKind;
   choices?: { value: string; label: string }[];
+  /** Offer the library's distinct values of this field in the value picker. */
+  suggest?: boolean;
+  /** The distinct values found by discoverBookshelfFields, sorted. */
+  values?: string[];
   read: (book: Book) => FieldValue;
 }
 const textList = (value: unknown): string[] => {
@@ -25,10 +29,22 @@ const AUDIO_FORMATS = ['ABS', 'OPDSAUDIO', 'BOOKORBIT'];
 const absMediaType = (b: Book) => b.absMediaType ?? b.metadata?.absMediaType;
 export const BOOKSHELF_FIELDS: BookshelfField[] = [
   { id: 'title', label: _('Title'), kind: 'text', read: (b) => b.title },
-  { id: 'author', label: _('Author'), kind: 'text', read: (b) => b.author },
+  { id: 'author', label: _('Author'), kind: 'text', suggest: true, read: (b) => b.author },
   { id: 'subtitle', label: _('Subtitle'), kind: 'text', read: (b) => b.metadata?.subtitle },
-  { id: 'publisher', label: _('Publisher'), kind: 'text', read: (b) => b.metadata?.publisher },
-  { id: 'editor', label: _('Editor'), kind: 'text', read: (b) => b.metadata?.editor },
+  {
+    id: 'publisher',
+    label: _('Publisher'),
+    kind: 'text',
+    suggest: true,
+    read: (b) => b.metadata?.publisher,
+  },
+  {
+    id: 'editor',
+    label: _('Editor'),
+    kind: 'text',
+    suggest: true,
+    read: (b) => b.metadata?.editor,
+  },
   {
     id: 'description',
     label: _('Description'),
@@ -36,15 +52,28 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     read: (b) => b.metadata?.description,
   },
   { id: 'isbn', label: _('ISBN'), kind: 'text', read: (b) => b.metadata?.isbn },
-  { id: 'group', label: _('Group'), kind: 'text', read: (b) => b.groupName || b.group },
-  { id: 'tags', label: _('Tags'), kind: 'collection', read: (b) => b.tags },
+  {
+    id: 'group',
+    label: _('Group'),
+    kind: 'text',
+    suggest: true,
+    read: (b) => b.groupName || b.group,
+  },
+  { id: 'tags', label: _('Tags'), kind: 'collection', suggest: true, read: (b) => b.tags },
   {
     id: 'subjects',
     label: _('Subjects'),
     kind: 'collection',
+    suggest: true,
     read: (b) => textList(b.metadata?.subject),
   },
-  { id: 'series', label: _('Series'), kind: 'text', read: (b) => b.metadata?.series },
+  {
+    id: 'series',
+    label: _('Series'),
+    kind: 'text',
+    suggest: true,
+    read: (b) => b.metadata?.series,
+  },
   {
     id: 'seriesIndex',
     label: _('Series index'),
@@ -61,9 +90,10 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     id: 'language',
     label: _('Language'),
     kind: 'collection',
+    suggest: true,
     read: (b) => textList(b.metadata?.language || b.primaryLanguage),
   },
-  { id: 'format', label: _('Format'), kind: 'text', read: (b) => b.format },
+  { id: 'format', label: _('Format'), kind: 'text', suggest: true, read: (b) => b.format },
   {
     id: 'status',
     choices: [
@@ -152,6 +182,26 @@ export const BOOKSHELF_FIELDS: BookshelfField[] = [
     read: (b) => !!(b.downloadedAt || b.absDownloadedAt),
   },
   { id: 'uploaded', label: _('In Readest Cloud'), kind: 'boolean', read: (b) => !!b.uploadedAt },
+  {
+    id: 'downloadStatus',
+    label: _('Download status'),
+    kind: 'text',
+    choices: [
+      { value: 'localOnly', label: _('Local only') },
+      { value: 'downloaded', label: _('Downloaded') },
+      { value: 'cloudOnly', label: _('Cloud only') },
+    ],
+    read: (b) => {
+      // Streaming formats keep a server URL in filePath, not a local file.
+      const local = !!(
+        b.downloadedAt ||
+        b.absDownloadedAt ||
+        (b.filePath && !AUDIO_FORMATS.includes(b.format))
+      );
+      if (!b.uploadedAt) return local ? 'localOnly' : undefined;
+      return local ? 'downloaded' : 'cloudOnly';
+    },
+  },
 ];
 export const BOOKSHELF_OPERATORS: Record<BookshelfFieldKind, BookshelfOperator[]> = {
   text: ['contains', 'notContains', 'equals', 'notEquals', 'startsWith', 'set', 'unset'],
@@ -207,9 +257,22 @@ export const discoverBookshelfFields = (books: Book[]): BookshelfField[] => {
         `calibre:${column.label}`,
         calibreFieldKind(column.datatype, column.value),
       )!;
-      fields.set(field.id, { ...field, label: column.name });
+      fields.set(field.id, {
+        ...field,
+        label: column.name,
+        suggest: ['text', 'collection'].includes(field.kind) && column.datatype !== 'comments',
+      });
     }
-  return [...fields.values()];
+  return [...fields.values()].map((field) =>
+    field.suggest
+      ? {
+          ...field,
+          values: [...new Set(books.flatMap((book) => textList(field.read(book))))]
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b)),
+        }
+      : field,
+  );
 };
 
 export const bookshelfFieldOperators = (

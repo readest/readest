@@ -2506,5 +2506,8 @@
   "Sign in with your Pagebound email and password to sync reading progress.": "O‘qish jarayonini sinxronlash uchun Pagebound elektron pochtangiz va parolingiz bilan kiring.",
   "If you use Apple or Google sign-in, set a password in Pagebound first.": "Agar Apple yoki Google orqali kirsangiz, avval Pagebound’da parol o‘rnating.",
   "Pagebound": "Pagebound",
-  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Kitob BookOrbit'da topilmadi. Sinxronlash uchun uni BookOrbit'dagi \"Unmatched KOReader Books\" bo'limida bog'lang."
+  "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Kitob BookOrbit'da topilmadi. Sinxronlash uchun uni BookOrbit'dagi \"Unmatched KOReader Books\" bo'limida bog'lang.",
+  "Download status": "Yuklab olish holati",
+  "Local only": "Faqat mahalliy",
+  "Cloud only": "Faqat bulutda"
 }
