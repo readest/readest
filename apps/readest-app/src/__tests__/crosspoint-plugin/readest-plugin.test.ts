@@ -386,6 +386,20 @@ describe('Readest CrossPoint plugin', () => {
       expect(shown(field('signin'))).toBe(true);
       expect(shown(field('signout'))).toBe(false);
     });
+
+    // The account file is cleared first, so the card is signed out (a reload
+    // shows Sign in) even when clearing KOReader Sync afterwards fails.
+    it('shows Sign in once the account is cleared, even if later cleanup fails', async () => {
+      readest();
+      deviceSettings = { koServerUrl: API };
+      settingsPostStatus = 500;
+      await mount({ username: EMAIL, keyId: 'key-id' });
+      field('signout').click();
+      await vi.waitFor(() => expect(statusText()).toMatch(/^Error: /));
+      expect(files()[ACCOUNT_FILE]).toEqual({});
+      expect(shown(field('signin'))).toBe(true);
+      expect(shown(field('signout'))).toBe(false);
+    });
   });
 
   it('leaves sign-in to the web page, the only one that can set up progress sync', () => {

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MdCheckCircle } from 'react-icons/md';
 import { IoOpenOutline } from 'react-icons/io5';
 import { useAuth } from '@/context/AuthContext';
+import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
+import { useOpenDeviceLink } from '@/hooks/useOpenDeviceLink';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { useThemeStore } from '@/store/themeStore';
@@ -24,7 +26,8 @@ export default function LinkDevice() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const [code, setCode] = useState(searchParams?.get('code') ?? '');
+  const queryCode = searchParams?.get('code') ?? '';
+  const [code, setCode] = useState(queryCode);
   const [status, setStatus] = useState<Status>('idle');
   const { safeAreaInsets } = useThemeStore();
   // Opened from a reader sign-in link (useOpenDeviceLink), the app's own
@@ -33,6 +36,16 @@ export default function LinkDevice() {
   // Back to where the link arrived; a link that launched the app has no
   // history, so it goes to the library.
   const goBack = () => (window.history.length > 1 ? router.back() : navigateToLibrary(router));
+
+  // The app can still be on this page, with the library and reader pages that
+  // listen for links unmounted, when the next reader's sign-in link arrives:
+  // listen here too, and show the code of the link that opened the page.
+  useAppUrlIngress();
+  useOpenDeviceLink();
+  useEffect(() => {
+    setCode(queryCode);
+    setStatus('idle');
+  }, [queryCode]);
 
   const link = async () => {
     setStatus('linking');

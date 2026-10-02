@@ -179,6 +179,9 @@ CrossPoint.registerPlugin(async (container, api) => {
         // Revoked first: a key left anywhere on the card is then useless.
         const failed = await revokeKeys(replacedKeys());
         await saveAccount(failed.length ? { revoke: failed } : {});
+        // Signed out from here on: a reload shows Sign in even if the cleanup
+        // below fails, so the buttons say so too.
+        showSignedIn(false);
         await writeJson(TOKEN_PATH, {});
         if (syncsWithReadest(await readSettings())) await postSettings(NO_SYNC);
         status(
@@ -186,7 +189,6 @@ CrossPoint.registerPlugin(async (container, api) => {
             ? 'Signed out. Readest could not be reached to revoke the key; the next sign-in or sign-out retries.'
             : 'Signed out.',
         );
-        showSignedIn(false);
       } catch (e) {
         status(`Error: ${e.message}`);
       }
