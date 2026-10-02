@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
   const state = { booknotes: [] as { note: string; deletedAt?: number | null }[] };
   return {
     state,
+    appService: { isMobile: false, isIOSApp: false },
     setNotebookVisible: vi.fn(),
     setNotebookActiveTab: vi.fn(),
     setNotebookEditAnnotation: vi.fn(),
@@ -41,7 +42,7 @@ vi.mock('@/store/notebookStore', () => ({
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: { isMobile: false } }),
+  useEnv: () => ({ envConfig: {}, appService: mocks.appService }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({
@@ -102,6 +103,7 @@ const renderItem = (item: BookNote, inlineNoteEditing?: boolean) =>
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.state.booknotes = [];
+  mocks.appService.isIOSApp = false;
 });
 
 afterEach(() => {
@@ -246,6 +248,59 @@ describe('BooknoteItem', () => {
     renderItem(makeItem());
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add Note' })).toBeNull();
+  });
+
+  // iOS WebKit applies :hover at touchstart, so every scroll touch would
+  // expand the card under the finger (#6568). Only a tap (focus) expands there.
+  it('reveals the actions on hover except on iOS, where only focus does (#6568)', () => {
+    const actionsClass = () =>
+      screen.getByRole('button', { name: 'Delete' }).closest('.max-h-0')!.className;
+
+    renderItem(makeItem());
+    expect(actionsClass()).toContain('group-hover:max-h-8');
+    expect(actionsClass()).toContain('group-focus-within:max-h-8');
+    cleanup();
+
+    mocks.appService.isIOSApp = true;
+    renderItem(makeItem());
+    expect(actionsClass()).not.toContain('group-hover');
+    expect(actionsClass()).toContain('group-focus-within:max-h-8');
+    expect(screen.getByRole('button', { name: 'Delete' }).className).not.toContain('group-hover');
+  });
+
+  it('long press on iOS focuses the card to reveal actions without navigating (#6568)', () => {
+    vi.useFakeTimers();
+    mocks.appService.isIOSApp = true;
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    renderItem(makeItem());
+    const card = screen.getByText('highlighted words').closest('li')!;
+
+    fireEvent.pointerDown(card, { pointerType: 'touch' });
+    act(() => vi.advanceTimersByTime(300));
+    fireEvent.pointerUp(card, { pointerType: 'touch' });
+    fireEvent.click(card);
+    expect(document.activeElement).toBe(card);
+    expect(dispatch).not.toHaveBeenCalledWith('navigate', expect.anything());
+
+    // A plain tap afterwards still navigates.
+    fireEvent.pointerDown(card, { pointerType: 'touch' });
+    fireEvent.pointerUp(card, { pointerType: 'touch' });
+    fireEvent.click(card);
+    expect(dispatch).toHaveBeenCalledWith('navigate', expect.anything());
+  });
+
+  it('keyboard activation still navigates after a long press that was canceled (#6568)', () => {
+    vi.useFakeTimers();
+    mocks.appService.isIOSApp = true;
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    renderItem(makeItem());
+    const card = screen.getByText('highlighted words').closest('li')!;
+
+    fireEvent.pointerDown(card, { pointerType: 'touch' });
+    act(() => vi.advanceTimersByTime(300));
+    fireEvent.pointerCancel(card, { pointerType: 'touch' });
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(dispatch).toHaveBeenCalledWith('navigate', expect.anything());
   });
 });
 
