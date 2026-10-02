@@ -2509,5 +2509,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit இல் புத்தகம் கிடைக்கவில்லை. ஒத்திசைக்க, BookOrbit இல் \"Unmatched KOReader Books\" என்பதன் கீழ் இதை இணைக்கவும்.",
   "Download status": "பதிவிறக்க நிலை",
   "Local only": "உள்ளூர் மட்டும்",
-  "Cloud only": "கிளவுடில் மட்டும்"
+  "Cloud only": "கிளவுடில் மட்டும்",
+  "Link a CrossPoint Reader": "CrossPoint ரீடரை இணைக்கவும்",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "ரீடர் உங்கள் Readest நூலகம், வாசிப்பு புள்ளிவிவரங்கள் மற்றும் வாசிப்பு முன்னேற்றத்தைப் பெறும். உங்கள் சொந்த ரீடரில் காட்டப்படும் குறியீட்டை மட்டும் உள்ளிடவும்.",
+  "Sign in to continue": "தொடர உள்நுழையவும்",
+  "Your reader is linked. It finishes signing in on its own.": "உங்கள் ரீடர் இணைக்கப்பட்டது. அது தானாகவே உள்நுழைவை நிறைவு செய்யும்.",
+  "Code": "குறியீடு",
+  "Linking to {{account}}": "{{account}} உடன் இணைக்கிறது",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "ரீடரை இணைக்க முடியவில்லை. குறியீட்டைச் சரிபார்க்கவும், அல்லது ரீடரில் மீண்டும் உள்நுழையவும்.",
+  "Link Reader": "ரீடரை இணை"
 }

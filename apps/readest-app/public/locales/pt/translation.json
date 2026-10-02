@@ -2573,5 +2573,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Livro não encontrado no BookOrbit. Associe-o em «Unmatched KOReader Books» no BookOrbit para o sincronizar.",
   "Download status": "Estado da transferência",
   "Local only": "Apenas local",
-  "Cloud only": "Apenas na nuvem"
+  "Cloud only": "Apenas na nuvem",
+  "Link a CrossPoint Reader": "Vincular um leitor CrossPoint",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "O leitor recebe a sua biblioteca do Readest, as estatísticas de leitura e o progresso de leitura. Insira apenas um código apresentado no seu próprio leitor.",
+  "Sign in to continue": "Inicie sessão para continuar",
+  "Your reader is linked. It finishes signing in on its own.": "O seu leitor está vinculado. Ele termina o início de sessão sozinho.",
+  "Code": "Código",
+  "Linking to {{account}}": "A vincular a {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Não foi possível vincular o leitor. Verifique o código ou inicie sessão novamente no leitor.",
+  "Link Reader": "Vincular leitor"
 }

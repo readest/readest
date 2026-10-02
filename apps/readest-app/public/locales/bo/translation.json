@@ -2445,5 +2445,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit ནང་དཔེ་དེབ་རྙེད་མ་བྱུང་། མཉམ་འགྲིག་བྱེད་པར་ BookOrbit ནང་གི་ \"Unmatched KOReader Books\" འོག་ཏུ་མཐུད་རོགས།",
   "Download status": "ཕབ་ལེན་གནས་སྟངས།",
   "Local only": "ས་གནས་ཁོ་ན།",
-  "Cloud only": "སྤྲིན་ཁོ་ན།"
+  "Cloud only": "སྤྲིན་ཁོ་ན།",
+  "Link a CrossPoint Reader": "CrossPoint ཀློག་ཆས་མཐུད་པ།",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "ཀློག་ཆས་ཀྱིས་ཁྱེད་ཀྱི་ Readest དཔེ་མཛོད་དང་། ཀློག་པའི་གྲངས་ཐོ། ཀློག་པའི་ཡར་རྒྱས་བཅས་ཐོབ་ཀྱི་རེད། ཁྱེད་རང་གི་ཀློག་ཆས་སྟེང་མངོན་པའི་ཨང་རྟགས་ཁོ་ན་འཇུག་རོགས།",
+  "Sign in to continue": "མུ་མཐུད་པར་ནང་འཛུལ་གནང་རོགས།",
+  "Your reader is linked. It finishes signing in on its own.": "ཀློག་ཆས་མཐུད་ཟིན། དེས་ནང་འཛུལ་རང་བཞིན་གྱིས་མཇུག་སྒྲིལ་གྱི་རེད།",
+  "Code": "ཨང་རྟགས།",
+  "Linking to {{account}}": "{{account}} ལ་མཐུད་བཞིན་པ།",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "ཀློག་ཆས་མཐུད་མ་ཐུབ། ཨང་རྟགས་ཞིབ་བཤེར་གནང་བའམ། ཀློག་ཆས་སྟེང་ཡང་བསྐྱར་ནང་འཛུལ་གནང་རོགས།",
+  "Link Reader": "ཀློག་ཆས་མཐུད་པ།"
 }

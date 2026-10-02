@@ -2509,5 +2509,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Boken hittades inte i BookOrbit. Länka den under ”Unmatched KOReader Books” i BookOrbit för att synkronisera den.",
   "Download status": "Nedladdningsstatus",
   "Local only": "Endast lokalt",
-  "Cloud only": "Endast i molnet"
+  "Cloud only": "Endast i molnet",
+  "Link a CrossPoint Reader": "Länka en CrossPoint-läsplatta",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Läsplattan får tillgång till ditt Readest-bibliotek, din lässtatistik och dina läsframsteg. Ange bara en kod som visas på din egen läsplatta.",
+  "Sign in to continue": "Logga in för att fortsätta",
+  "Your reader is linked. It finishes signing in on its own.": "Läsplattan är länkad. Den slutför inloggningen på egen hand.",
+  "Code": "Kod",
+  "Linking to {{account}}": "Länkar till {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Det gick inte att länka läsplattan. Kontrollera koden eller logga in igen på läsplattan.",
+  "Link Reader": "Länka läsplatta"
 }

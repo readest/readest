@@ -2445,5 +2445,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "在 BookOrbit 中找不到這本書。請在 BookOrbit 的「Unmatched KOReader Books」中連結此書以進行同步。",
   "Download status": "下載狀態",
   "Local only": "僅本機",
-  "Cloud only": "僅雲端"
+  "Cloud only": "僅雲端",
+  "Link a CrossPoint Reader": "連結 CrossPoint 閱讀器",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "閱讀器將取得您的 Readest 書庫、閱讀統計與閱讀進度。請只輸入您自己的閱讀器上顯示的代碼。",
+  "Sign in to continue": "登入以繼續",
+  "Your reader is linked. It finishes signing in on its own.": "閱讀器已連結，它會自行完成登入。",
+  "Code": "代碼",
+  "Linking to {{account}}": "連結至 {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "無法連結閱讀器。請檢查代碼，或在閱讀器上重新登入。",
+  "Link Reader": "連結閱讀器"
 }

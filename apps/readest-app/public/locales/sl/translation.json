@@ -2637,5 +2637,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Knjige ni mogoče najti v BookOrbit. Za sinhronizacijo jo povežite v razdelku »Unmatched KOReader Books« v BookOrbit.",
   "Download status": "Stanje prenosa",
   "Local only": "Samo lokalno",
-  "Cloud only": "Samo v oblaku"
+  "Cloud only": "Samo v oblaku",
+  "Link a CrossPoint Reader": "Poveži bralnik CrossPoint",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Bralnik dobi dostop do vaše knjižnice Readest, statistike branja in napredka branja. Vnesite samo kodo, prikazano na vašem lastnem bralniku.",
+  "Sign in to continue": "Za nadaljevanje se prijavite",
+  "Your reader is linked. It finishes signing in on its own.": "Bralnik je povezan. Prijavo bo dokončal sam.",
+  "Code": "Koda",
+  "Linking to {{account}}": "Povezovanje z {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Bralnika ni bilo mogoče povezati. Preverite kodo ali se znova prijavite na bralniku.",
+  "Link Reader": "Poveži bralnik"
 }

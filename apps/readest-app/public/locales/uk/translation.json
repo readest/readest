@@ -2637,5 +2637,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Книгу не знайдено в BookOrbit. Щоб синхронізувати її, пов’яжіть її в розділі «Unmatched KOReader Books» у BookOrbit.",
   "Download status": "Стан завантаження",
   "Local only": "Лише локально",
-  "Cloud only": "Лише в хмарі"
+  "Cloud only": "Лише в хмарі",
+  "Link a CrossPoint Reader": "Під'єднати пристрій для читання CrossPoint",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Пристрій для читання отримає вашу бібліотеку Readest, статистику читання та прогрес читання. Вводьте лише код, показаний на вашому власному пристрої.",
+  "Sign in to continue": "Увійдіть, щоб продовжити",
+  "Your reader is linked. It finishes signing in on its own.": "Пристрій під'єднано. Він завершить вхід самостійно.",
+  "Code": "Код",
+  "Linking to {{account}}": "Під'єднання до {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Не вдалося під'єднати пристрій. Перевірте код або увійдіть на пристрої знову.",
+  "Link Reader": "Під'єднати пристрій"
 }

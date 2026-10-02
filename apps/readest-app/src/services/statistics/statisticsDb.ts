@@ -1,5 +1,6 @@
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
+import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 import type { PageStatEvent, StatBook } from '@/types/statistics';
 
 interface BookRow extends DatabaseRow {
@@ -14,6 +15,10 @@ interface BookRow extends DatabaseRow {
 }
 
 type CursorKey = 'push' | 'pull' | 'bookorbit-push';
+
+// Readest caps one page visit at this, so a longer event spans several pages
+// (a CrossPoint session recorded in whole percents) and says nothing about pace.
+const MAX_PAGE_SECONDS = DEFAULT_STATS_TRACKING_CONFIG.maxEventSeconds;
 
 /**
  * Per-tab singleton open promise. OPFS permits only ONE access handle per file
@@ -152,10 +157,10 @@ export class StatisticsDb {
     const rows = await this.db.select<{ duration: number }>(
       `SELECT duration
          FROM page_stat_data
-         WHERE id_book = ?
+         WHERE id_book = ? AND duration <= ?
          ORDER BY start_time DESC, page DESC
          LIMIT 50`,
-      [idBook],
+      [idBook, MAX_PAGE_SECONDS],
     );
     if (rows.length < PAGE_THRESHOLD) return null;
     // The query orders by recency; sort by value so the middle is the true median.
@@ -173,7 +178,9 @@ export class StatisticsDb {
          SELECT b.md5, p.duration,
            ROW_NUMBER() OVER (PARTITION BY p.id_book ORDER BY p.start_time DESC, p.page DESC) AS recency
          FROM page_stat_data p JOIN book b ON b.id = p.id_book
+         WHERE p.duration <= ?
        ) WHERE recency <= 50 ORDER BY md5, duration`,
+      [MAX_PAGE_SECONDS],
     );
     const samples = new Map<string, number[]>();
     for (const { md5, duration } of rows) {

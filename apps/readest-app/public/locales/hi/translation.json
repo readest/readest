@@ -2509,5 +2509,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "BookOrbit में पुस्तक नहीं मिली। इसे सिंक करने के लिए BookOrbit में \"Unmatched KOReader Books\" के अंतर्गत लिंक करें।",
   "Download status": "डाउनलोड स्थिति",
   "Local only": "केवल स्थानीय",
-  "Cloud only": "केवल क्लाउड में"
+  "Cloud only": "केवल क्लाउड में",
+  "Link a CrossPoint Reader": "CrossPoint रीडर लिंक करें",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "रीडर को आपकी Readest लाइब्रेरी, पढ़ने के आँकड़े और पढ़ने की प्रगति मिलती है। केवल वही कोड दर्ज करें जो आपके अपने रीडर पर दिखाया गया हो।",
+  "Sign in to continue": "जारी रखने के लिए साइन इन करें",
+  "Your reader is linked. It finishes signing in on its own.": "आपका रीडर लिंक हो गया है। यह साइन इन अपने आप पूरा कर लेगा।",
+  "Code": "कोड",
+  "Linking to {{account}}": "{{account}} से लिंक किया जा रहा है",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "रीडर लिंक नहीं हो सका। कोड जाँचें, या रीडर पर फिर से साइन इन करें।",
+  "Link Reader": "रीडर लिंक करें"
 }
