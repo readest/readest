@@ -518,6 +518,9 @@ msgstr "לא נמצאו הערות חדשות"
 msgid "%1 annotations pulled"
 msgstr "נמשכו %1 הערות"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "תוקף ההתחברות ל-Readest פג. התחבר שוב."
+
 msgid "Login"
 msgstr "התחבר"
 

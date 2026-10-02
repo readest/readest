@@ -90,7 +90,15 @@ describe('TTSPanel inline reading annotations', () => {
     );
   });
 
-  it('hides the switch when the UI language is not Japanese', () => {
+  it('shows the switch when the UI language is Korean', () => {
+    state.uiLocale = 'ko';
+
+    render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+
+    expect(screen.getByText('Skip Parenthetical Readings')).toBeTruthy();
+  });
+
+  it('hides the switch when the UI language is not Japanese or Korean', () => {
     state.uiLocale = 'en-US';
 
     render(<TTSPanel bookKey='book-1' onRegisterReset={vi.fn()} />);

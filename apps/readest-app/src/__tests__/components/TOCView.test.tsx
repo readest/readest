@@ -1,7 +1,9 @@
 import { render, act, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-import type { TOCItem } from '@/libs/document';
+import type { BookDoc, TOCItem } from '@/libs/document';
+
+const bookDoc = { sections: [], rendition: {} } as unknown as BookDoc;
 
 // ---------- Shared mutable test state (captured by the mock factories) ----------
 let scrollToIndexSpy: Mock<(arg: unknown) => void>;
@@ -37,6 +39,8 @@ vi.mock('@/utils/event', () => ({
 }));
 
 vi.mock('@/utils/misc', () => ({ getContentMd5: (s: string) => s }));
+
+vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
 
 vi.mock('@/app/reader/hooks/useTextTranslation', () => ({
   useTextTranslation: () => {},
@@ -116,14 +120,14 @@ describe('TOCView — OverlayScrollbars init does not rewind the TOC to the top'
     // Fresh refresh: TOCView mounts before the first relocate, so `progress`
     // (and thus the mount-time initialScrollTarget) has no reading position.
     mockProgress = null;
-    const { rerender } = render(<TOCView bookKey='book1' toc={toc} />);
+    const { rerender } = render(<TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />);
 
     // The relocate arrives → the normal auto-scroll effect centers the active
     // chapter. (OverlayScrollbars' deferred init, which resets scrollTop to 0,
     // has not fired yet.)
     mockProgress = { sectionHref: activeHref, location: 'epubcfi(/6/12!/4/1:0)' };
     act(() => {
-      rerender(<TOCView bookKey='book1' toc={toc} />);
+      rerender(<TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />);
     });
 
     // Ignore that first scroll; we only care whether the OverlayScrollbars init
@@ -139,7 +143,7 @@ describe('TOCView — OverlayScrollbars init does not rewind the TOC to the top'
     const toc = makeFlatToc(8);
 
     mockProgress = null;
-    render(<TOCView bookKey='book1' toc={toc} />);
+    render(<TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />);
 
     scrollToIndexSpy.mockClear();
     fireOverlayScrollbarsInitialized();

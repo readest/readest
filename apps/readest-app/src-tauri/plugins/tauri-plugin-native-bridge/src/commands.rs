@@ -348,17 +348,62 @@ pub(crate) async fn refresh_eink_screen<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn is_eink_refresh_supported<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<EinkRefreshSupportedResponse> {
+    app.native_bridge().is_eink_refresh_supported()
+}
+
+#[command]
+pub(crate) async fn update_bookshelf_widget<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateBookshelfWidgetRequest,
+) -> Result<UpdateBookshelfWidgetResponse> {
+    app.native_bridge().update_bookshelf_widget(payload)
+}
+
+#[command]
+pub(crate) async fn get_bookshelf_widget_instances<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetBookshelfWidgetInstancesResponse> {
+    app.native_bridge().get_bookshelf_widget_instances()
+}
+
+#[command]
+pub(crate) async fn set_bookshelf_widget_catalog<R: Runtime>(
+    app: AppHandle<R>,
+    payload: BookshelfWidgetCatalog,
+) -> Result<()> {
+    app.native_bridge().set_bookshelf_widget_catalog(payload)
+}
+
+#[command]
 pub(crate) async fn update_reading_widget<R: Runtime>(
     app: AppHandle<R>,
     payload: UpdateReadingWidgetRequest,
-) -> Result<()> {
+) -> Result<UpdateReadingWidgetResponse> {
     app.native_bridge().update_reading_widget(payload)
 }
 
-/// Snapshot a region of the calling webview and return it as binary PNG
-/// (`tauri::ipc::Response`, no JSON encoding) for the mesh page-curl
+#[command]
+pub(crate) async fn get_reading_widget_instances<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetReadingWidgetInstancesResponse> {
+    app.native_bridge().get_reading_widget_instances()
+}
+
+#[command]
+pub(crate) async fn set_reading_widget_catalog<R: Runtime>(
+    app: AppHandle<R>,
+    payload: ReadingWidgetCatalog,
+) -> Result<()> {
+    app.native_bridge().set_reading_widget_catalog(payload)
+}
+
+/// Snapshot a region of the calling webview and return it as binary image
+/// bytes (`tauri::ipc::Response`, no JSON encoding) for the mesh page-curl
 /// texture (#555). Platforms without a capture implementation reject,
-/// which the JS side treats as "fall back to the CSS curl".
+/// which the JS side treats as "fall back to the renderer's own turns".
 #[command]
 pub(crate) async fn capture_webview_region<R: Runtime>(
     app: AppHandle<R>,

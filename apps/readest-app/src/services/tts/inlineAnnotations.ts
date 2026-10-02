@@ -10,19 +10,28 @@ interface TextRange {
 }
 
 // Plain-text ruby has no semantic markup to distinguish it from prose. Keep
-// the opt-in heuristic conservative: the base must end in a Han ideograph and
-// the enclosed text may contain only Han or kana-script characters.
-const INLINE_READING =
-  /([\p{Unified_Ideograph}\u3005\u3006\u3007\u303b])(?:（[\p{Unified_Ideograph}\u3005\u3006\u3007\u303bぁ-ゖ゛-ゟァ-ヿ]+）|\([\p{Unified_Ideograph}\u3005\u3006\u3007\u303bぁ-ゖ゛-ゟァ-ヿ]+\)|《[\p{Unified_Ideograph}\u3005\u3006\u3007\u303bぁ-ゖ゛-ゟァ-ヿ]+》)/gu;
+// the opt-in heuristic conservative: a Han base may be followed by a Han or
+// kana reading (Japanese), and a Hangul base by a Hanja-only gloss (Korean).
+// Korean Hanja often use the CJK Compatibility Ideographs block.
+const HAN = '\\p{Unified_Ideograph}\\u3005\\u3006\\u3007\\u303b\\uf900-\\ufaff';
+const enclosed = (chars: string) => `(?:（[${chars}]+）|\\([${chars}]+\\)|《[${chars}]+》)`;
+const INLINE_READING = new RegExp(
+  `([${HAN}])${enclosed(`${HAN}ぁ-ゖ゛-ゟァ-ヿ`)}|(\\p{Script=Hangul})${enclosed(HAN)}`,
+  'gu',
+);
 
 const getAnnotationRanges = (text: string): TextRange[] =>
   Array.from(text.matchAll(INLINE_READING), (match) => ({
-    start: match.index + match[1]!.length,
+    start: match.index + (match[1] ?? match[2])!.length,
     end: match.index + match[0].length,
   }));
 
 export const stripInlineReadingAnnotations = (text: string): string =>
-  text.replace(INLINE_READING, (_match, base: string) => base);
+  text.replace(
+    INLINE_READING,
+    (_match, hanBase: string | undefined, hangulBase: string | undefined) =>
+      (hanBase ?? hangulBase)!,
+  );
 
 export const stripInlineReadingAnnotationsFromSSML = (ssml: string): string => {
   const doc = new DOMParser().parseFromString(ssml, 'application/xml');

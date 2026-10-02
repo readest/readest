@@ -124,6 +124,24 @@ describe('DocumentLoader format probes for HTML', () => {
       expect(book.sections.length).toBe(1);
     }
   });
+
+  it('routes .mhtml and .mht web archives to HTML format', async () => {
+    const mhtml = [
+      'MIME-Version: 1.0',
+      'Content-Type: multipart/related; boundary="b"',
+      '',
+      '--b',
+      'Content-Type: text/html',
+      '',
+      html,
+      '--b--',
+    ].join('\r\n');
+    for (const file of [new File([mhtml], 'page.mhtml'), new File([mhtml], 'PAGE.MHT')]) {
+      const { book, format } = await new DocumentLoader(file).open();
+      expect(format).toBe('HTML');
+      expect(book.metadata.title).toBe('T');
+    }
+  });
 });
 
 describe('getDirection', () => {

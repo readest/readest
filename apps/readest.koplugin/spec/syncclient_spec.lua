@@ -87,7 +87,7 @@ describe("ReadestSyncClient transport failures", function()
 end)
 
 describe("ReadestSyncClient without Turbo", function()
-    local Client, saved, child, exited, spawn_ok, replies, rpc_calls, result_path, original_tmpname, original_time, now, terminated
+    local Client, saved, child, exited, spawn_ok, replies, rpc_calls, result_path, original_open, original_time, now, terminated
     local function swap(name, value)
         saved[name] = package.loaded[name] or false
         package.loaded[name] = value
@@ -98,9 +98,13 @@ describe("ReadestSyncClient without Turbo", function()
         child, exited, spawn_ok, rpc_calls, result_path = nil, false, true, 0, nil
         original_time, now, terminated = os.time, 100, 0
         os.time = function() return now end
-        original_tmpname = os.tmpname
-        os.tmpname = function() result_path = original_tmpname(); return result_path end
+        original_open = io.open
+        io.open = function(path, mode)
+            if path:match("/readest_sync_") then result_path = path end
+            return original_open(path, mode)
+        end
         swap("ui/uimanager", stubs.UIManager)
+        swap("datastorage", {getSettingsDir = function() return "/tmp" end})
         swap("socketutil", {set_timeout = function() end, reset_timeout = function() end})
         swap("ffi/util", {
             runInSubProcess = function(fn)
@@ -117,7 +121,7 @@ describe("ReadestSyncClient without Turbo", function()
     after_each(function()
         for name, value in pairs(saved) do package.loaded[name] = value or nil end
         package.loaded["readest_syncclient"] = nil
-        os.tmpname = original_tmpname
+        io.open = original_open
         os.time = original_time
         if result_path then os.remove(result_path) end
     end)
@@ -188,6 +192,26 @@ describe("ReadestSyncClient without Turbo", function()
         assert.is_false(replies[1].ok)
         assert.is_nil(require("lfs").attributes(result_path))
         assert.are.equal(0, #stubs.UIManager._scheduled)
+    end)
+    it("removes response files left behind by a previous run before the first request", function()
+        local lfs = require("lfs")
+        local dir = os.tmpname()
+        os.remove(dir)
+        lfs.mkdir(dir)
+        swap("datastorage", {getSettingsDir = function() return dir end})
+        for _, name in ipairs({"readest_sync_1790194202_102.json", "readest_sync_1790194202_103.json", "other.json"}) do
+            original_open(dir .. "/" .. name, "wb"):close()
+        end
+        client(function() return {status = 200} end):pullChanges({}, callback)
+        local left = {}
+        for name in lfs.dir(dir) do
+            if name ~= "." and name ~= ".." then left[#left + 1] = name end
+        end
+        table.sort(left)
+        assert.same({"other.json", "readest_sync_100_1.json"}, left)
+        os.remove(dir .. "/other.json")
+        os.remove(dir .. "/readest_sync_100_1.json")
+        lfs.rmdir(dir)
     end)
     it("reports a dead worker instead of leaving a callback pending forever", function()
         client(function() return {status = 200} end):pullChanges({}, callback)

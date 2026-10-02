@@ -219,7 +219,7 @@ const CarMediaLibraryBridge = () => {
       'media-session-play-book',
       ({ bookHash }: { bookHash?: string }) => {
         if (!bookHash || lockedRef.current) return;
-        // Hand the selection to the shared deep-link path (useOpenBookLink):
+        // Hand the selection to the shared deep-link path (useOpenLaunchLinks):
         // it defers until the library has hydrated, downloads a cloud-only
         // book before opening it, routes an audiobook to the player, and
         // switches an already-mounted reader in place. Re-implementing any of

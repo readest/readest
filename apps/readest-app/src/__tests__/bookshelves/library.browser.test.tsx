@@ -100,6 +100,20 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 describe('library scrollbar integration in Chromium', () => {
+  it('centers the empty library state vertically', async () => {
+    useLibraryStore.setState({ library: [] });
+    const { getByRole, getByTestId } = render(
+      <div data-testid='frame' style={{ width: 375, height: 900, display: 'flex' }}>
+        <Bookshelf {...props} libraryBooks={[]} />
+      </div>,
+    );
+    await waitFor(() => {
+      const frame = getByTestId('frame').getBoundingClientRect();
+      const heading = getByRole('heading', { name: 'Start your library' }).getBoundingClientRect();
+      expect(heading.top).toBeGreaterThan(frame.top + frame.height / 4);
+      expect(heading.bottom).toBeLessThan(frame.bottom - frame.height / 4);
+    });
+  });
   for (const empty of [false, true]) {
     it(`keeps import reachable with a ${empty ? 'hidden empty shelf' : 'full grid row'}`, async () => {
       const base = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS);
@@ -211,23 +225,28 @@ describe('library scrollbar integration in Chromium', () => {
             <Bookshelf {...props} isSelectMode={false} />
           </div>,
         );
-        await waitFor(() => {
-          const library = container.querySelector<HTMLElement>('[role="main"]')!;
-          const viewport = container.querySelector<HTMLElement>(
-            '[data-overlayscrollbars-viewport]',
-          )!;
-          expect(viewport).toBeTruthy();
-          const bounds = library.getBoundingClientRect();
-          const viewportBounds = viewport.getBoundingClientRect();
-          expect(viewportBounds.width).toBeCloseTo(bounds.width, 0);
-          expect(viewportBounds.left).toBeCloseTo(bounds.left, 0);
-          const measurement = container.querySelector<HTMLElement>(
-            '[data-testid="bookshelf-stream"]',
-          )!;
-          expect(measurement.contains(viewport)).toBe(true);
-          expect(getByRole('button', { name: 'Book 19' })).toBeTruthy();
-          expect(queryByRole('heading', { name: /^Default/ })).toBeNull();
-        });
+        // OverlayScrollbars `defer` creates the viewport in an idle callback,
+        // which a busy CI runner can hold past waitFor's 1s default.
+        await waitFor(
+          () => {
+            const library = container.querySelector<HTMLElement>('[role="main"]')!;
+            const viewport = container.querySelector<HTMLElement>(
+              '[data-overlayscrollbars-viewport]',
+            )!;
+            expect(viewport).toBeTruthy();
+            const bounds = library.getBoundingClientRect();
+            const viewportBounds = viewport.getBoundingClientRect();
+            expect(viewportBounds.width).toBeCloseTo(bounds.width, 0);
+            expect(viewportBounds.left).toBeCloseTo(bounds.left, 0);
+            const measurement = container.querySelector<HTMLElement>(
+              '[data-testid="bookshelf-stream"]',
+            )!;
+            expect(measurement.contains(viewport)).toBe(true);
+            expect(getByRole('button', { name: 'Book 19' })).toBeTruthy();
+            expect(queryByRole('heading', { name: /^Default/ })).toBeNull();
+          },
+          { timeout: 5000 },
+        );
       });
     }
   }

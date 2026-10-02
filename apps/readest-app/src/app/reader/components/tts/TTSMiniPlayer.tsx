@@ -20,6 +20,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatCompactTime, formatPlaybackTime } from '@/utils/time';
@@ -113,6 +114,7 @@ const TTSMiniPlayer = ({
 }: TTSMiniPlayerProps) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const { hoveredBookKey, setHoveredBookKey, getViewSettings, bottomBarTab } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const progress = useBookProgress(bookKey);
@@ -134,7 +136,7 @@ const TTSMiniPlayer = ({
   const viewSettings = getViewSettings(bookKey);
   const barVisible = hoveredBookKey === bookKey;
   const safeAreaMargin = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
+  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile, isIPhoneDuo);
   const usesMobileBar = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
 
   // A book can carry a coverImageUrl that no longer resolves (cover never
@@ -220,6 +222,17 @@ const TTSMiniPlayer = ({
       style={{
         bottom: `${bottomOffset}px`,
         marginBottom: `${safeAreaMargin}px`,
+        // iPhone Duo's status-bar strip reports as a large left/right inset
+        // (#6307); clear it without losing the card's inset-x-4 margin. Width
+        // auto so the card fits between the offsets in a book cell narrower
+        // than max-w-md plus the strip (two books side by side).
+        ...(isIPhoneDuo
+          ? {
+              left: `${16 + gridInsets.left}px`,
+              right: `${16 + gridInsets.right}px`,
+              width: 'auto',
+            }
+          : {}),
       }}
       onMouseEnter={() => !appService?.isMobile && setHoveredBookKey('')}
       onTouchStart={() => !appService?.isMobile && setHoveredBookKey('')}

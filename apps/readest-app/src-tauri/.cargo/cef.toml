@@ -19,6 +19,7 @@ tauri-codegen = { git = "https://github.com/readest/tauri", branch = "feat/cef" 
 tauri-macros = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
 tauri-plugin = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
 tauri-runtime = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
+tauri-runtime-cef = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
 tauri-utils = { git = "https://github.com/readest/tauri", branch = "feat/cef" }
 
 tauri-plugin-biometric = { git = "https://github.com/readest/tauri-plugins-workspace", branch = "feat/cef" }

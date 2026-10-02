@@ -12,6 +12,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { eventDispatcher } from '@/utils/event';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 import { Overlay } from './Overlay';
 
 const VELOCITY_THRESHOLD = 0.5;
@@ -45,6 +46,12 @@ interface DialogProps {
    * native scrolling is fine.
    */
   useOverlayScroll?: boolean;
+  /**
+   * Rest a mobile sheet on the on-screen keyboard instead of letting the
+   * keyboard cover it. For sheets holding a text field, whose actions would
+   * otherwise sit under the keyboard (#6390).
+   */
+  aboveKeyboard?: boolean;
   onClose: () => void;
 }
 
@@ -82,11 +89,12 @@ const Dialog: React.FC<DialogProps> = ({
   boxClassName,
   contentClassName,
   useOverlayScroll = false,
+  aboveKeyboard = false,
   onClose,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { systemUIVisible, statusBarHeight, safeAreaInsets } = useThemeStore();
+  const { systemUIVisible, statusBarHeight, safeAreaInsets, isIPhoneDuo } = useThemeStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(!snapHeight);
   const [isRtl] = useState(() => getDirFromUILanguage() === 'rtl');
@@ -99,6 +107,35 @@ const Dialog: React.FC<DialogProps> = ({
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  // Where a drag that began on a sheet lifted onto the keyboard started: that
+  // sheet's top sits far above its resting place, so the usual snap bands
+  // would read a short pull down as a pull up to full height.
+  const liftedDragStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!isOpen || !aboveKeyboard || !vv) return;
+    // The webview learns the keyboard's final height in one step as the
+    // keyboard starts to slide in, and the sheet goes straight there: gliding
+    // after it left the caret under the keyboard long enough for Android to
+    // pan the whole window, and pan it back once the sheet caught up.
+    const update = () => {
+      const inset = document.documentElement.clientHeight - vv.height;
+      setKeyboardInset(inset > 1 ? inset : 0);
+      // Should the webview itself have panned the page up to reveal the
+      // caret, resting on the keyboard reveals it anyway; take the pan back.
+      if (vv.offsetTop > 0) document.documentElement.scrollIntoView({ block: 'start' });
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      setKeyboardInset(0);
+    };
+  }, [isOpen, aboveKeyboard]);
 
   // Callers gate the body on the same flag they pass as `isOpen`
   // (`<Dialog isOpen={open}>{open && <Body />}</Dialog>`), so the body would
@@ -192,6 +229,7 @@ const Dialog: React.FC<DialogProps> = ({
 
     if (modal && overlay) {
       modal.style.height = '100%';
+      modal.style.bottom = '0';
       modal.style.transform = `translateY(${newTop * 100}%)`;
       overlay.style.opacity = `${1 - heightFraction}`;
 
@@ -207,6 +245,9 @@ const Dialog: React.FC<DialogProps> = ({
     if (!modal || !overlay) return;
 
     const top = data.clientY - dragOffsetRef.current;
+    const liftedDragStart = liftedDragStartRef.current;
+    liftedDragStartRef.current = null;
+    const pulledDownFromLift = liftedDragStart !== null && data.clientY >= liftedDragStart;
     const snapUpper = snapHeight ? 1 - snapHeight - SNAP_THRESHOLD : 0.5;
     const snapLower = snapHeight ? 1 - snapHeight + SNAP_THRESHOLD : 0.5;
     // A cancelled drag is the system taking the touch away, not the user letting
@@ -233,6 +274,7 @@ const Dialog: React.FC<DialogProps> = ({
     } else if (
       snapHeight &&
       (data.canceled ||
+        pulledDownFromLift ||
         (top > window.innerHeight * snapUpper && top < window.innerHeight * snapLower))
     ) {
       // Preserve the visible top while restoring the snapped height. Keeping
@@ -270,9 +312,13 @@ const Dialog: React.FC<DialogProps> = ({
   const { handleDragStart } = useDrag(handleDragMove, handleDragKeyDown, handleDragEnd);
 
   const beginDrag = (e: React.MouseEvent | React.TouchEvent) => {
+    // The sheet follows the finger from the bottom of the window; put the
+    // keyboard away so it neither covers the sheet nor pans the page meanwhile.
+    if (aboveKeyboard) (document.activeElement as HTMLElement | null)?.blur();
     const modal = dialogRef.current?.querySelector('.modal-box') as HTMLElement | null;
     const clientY = 'touches' in e ? e.touches[0]!.clientY : e.clientY;
     dragOffsetRef.current = modal ? clientY - modal.getBoundingClientRect().top : 0;
+    liftedDragStartRef.current = keyboardInset > 0 ? clientY : null;
     handleDragStart(e);
   };
 
@@ -361,9 +407,17 @@ const Dialog: React.FC<DialogProps> = ({
             appService?.hasSafeAreaInset && fullScreen
               ? `${(safeAreaInsets?.bottom || 0) * 0.33}px`
               : undefined,
+          // The mobile sheet is edge to edge; pad (not margin) it clear of a
+          // side status strip / camera cutout (iPhone Duo, #6307).
+          ...(isMobile ? getHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo) : {}),
           ...(isMobile
             ? snapHeight
-              ? { height: `${snapHeight * 100}%`, top: 'auto', bottom: 0 }
+              ? {
+                  height: `${snapHeight * 100}%`,
+                  maxHeight: `calc(100% - ${keyboardInset}px)`,
+                  top: 'auto',
+                  bottom: keyboardInset,
+                }
               : { height: '100%', bottom: 0 }
             : {}),
         }}

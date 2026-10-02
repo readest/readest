@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared by widget_bookshelf.xml and widget_reading.xml. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/tts_bar"
+  android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:orientation="horizontal" android:gravity="center"
+  android:layout_marginTop="6dp" android:visibility="gone">
+  <ImageView android:id="@+id/btn_prev"
+    android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp"
+    android:src="@drawable/ic_widget_skip_previous" android:contentDescription="@null" />
+  <ImageView android:id="@+id/btn_play_pause"
+    android:layout_width="48dp" android:layout_height="48dp" android:padding="8dp"
+    android:layout_marginHorizontal="20dp"
+    android:src="@drawable/ic_widget_play" android:contentDescription="@null" />
+  <ImageView android:id="@+id/btn_next"
+    android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp"
+    android:src="@drawable/ic_widget_skip_next" android:contentDescription="@null" />
+</LinearLayout>

@@ -4,6 +4,7 @@ import { Trans } from 'react-i18next';
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -11,10 +12,16 @@ import {
   formatNumber,
   formatProgress,
   getChapterTickFractions,
-  getChapterLocationsLeft,
+  getChapterEndLocation,
   getReferencePageInfo,
 } from '@/utils/progress';
-import { footerInfoVisible, footerReservesBand } from '../utils/footerBand';
+import {
+  type BottomCornerRadii,
+  footerInfoVisible,
+  footerReservesBand,
+  getCornerClearance,
+  NO_CORNERS,
+} from '../utils/footerBand';
 import {
   getChromeChip,
   getChromeFontSize,
@@ -24,6 +31,8 @@ import {
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
 import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryUtils.ts';
+import { formatDuration } from '@/utils/duration';
+import { getMarginalInlinePadding } from '@/utils/insets';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
@@ -32,6 +41,10 @@ interface ProgressBarProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  // The spread's Column Gap (px) in effect, 0 when none (getSpreadColumnGap).
+  columnGap?: number;
+  // Rounded screen corners this footer's ends run into.
+  cornerRadii?: BottomCornerRadii;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -39,9 +52,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  columnGap = 0,
+  cornerRadii = NO_CORNERS,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const getView = useReaderStore((s) => s.getView);
@@ -99,19 +115,33 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       ? Math.max(pageInfo.total - pageInfo.current, 1)
       : 0
     : Math.min(Math.max(total - current, 1), pageInfo ? pageInfo.total - pageInfo.current : total);
-  const chapterLocationsLeft = bookData?.isFixedLayout
+  const chapterEnd = bookData?.isFixedLayout
     ? undefined
-    : getChapterLocationsLeft(progress, bookData?.bookDoc?.toc);
+    : getChapterEndLocation(progress, bookData?.bookDoc?.toc);
+  const chapterLocationsLeft =
+    chapterEnd !== undefined && progress
+      ? Math.max(1, chapterEnd - progress.pageinfo.current)
+      : undefined;
   const sectionFractions = view?.getSectionFractions() ?? [];
   const sectionIndex = section?.current ?? 0;
+  const sectionLocation = bookData?.bookDoc?.sections?.[sectionIndex]?.location;
   // Foliate rounds current/next locations down. Their difference can alternate
   // between 0, 1 and 2 for identical screens, so use the unrounded section span.
   const sectionFraction =
     (sectionFractions[sectionIndex + 1] ?? 0) - (sectionFractions[sectionIndex] ?? 0);
   const locationsPerScreen = total > 0 ? (sectionFraction * (pageinfo?.total ?? 0)) / total : 0;
+  // Count from the current screen, not the rounded current location, which can
+  // stay put for several page turns when a screen holds less than a location.
+  // Only the chapter end (a fixed screen within this section) is estimated.
+  const chapterEndScreen =
+    chapterEnd === undefined || !sectionLocation || locationsPerScreen <= 0
+      ? undefined
+      : chapterEnd >= sectionLocation.next
+        ? total + (chapterEnd - sectionLocation.next) / locationsPerScreen
+        : (chapterEnd - sectionLocation.current) / locationsPerScreen;
   const pagesLeft =
-    chapterLocationsLeft !== undefined && locationsPerScreen > 0
-      ? Math.max(1, Math.ceil(chapterLocationsLeft / locationsPerScreen))
+    chapterEndScreen !== undefined
+      ? Math.max(1, Math.round(chapterEndScreen) - current)
       : screenPagesLeft;
   // Pace statistics and TOC locations use logical pages, not viewport-sized pages.
   const timePagesLeft = bookData?.isFixedLayout
@@ -126,23 +156,43 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // Fixed-layout formats (CBZ, PDF) have no chapter structure — every page is
   // its own section — so the remaining count is the whole book, not a chapter.
   const remainingInBook = !!bookData?.isFixedLayout;
+  const showBothRemaining = viewSettings.showRemainingTime && viewSettings.showRemainingPages;
+  const durationLeft = showPagesLeft
+    ? formatDuration(
+        convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
+        _,
+        (n) => formatNumber(n, localize, lang),
+      )
+    : '';
   const timeLeftStr = showPagesLeft
     ? remainingInBook
-      ? _('{{time}} min left in book', {
-          time: formatNumber(
-            convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
-            localize,
-            lang,
-          ),
-        })
-      : _('{{time}} min left in chapter', {
-          time: formatNumber(
-            convertPagesToTimeRemainingMinutes(timePagesLeft, medianPageDurationSecs),
-            localize,
-            lang,
-          ),
-        })
+      ? _('{{time}} left in book', { time: durationLeft })
+      : _('{{time}} left in chapter', { time: durationLeft })
     : '';
+  // One sentence when both are on, so "left in book/chapter" isn't said twice.
+  const numberLeft = localize && showBothRemaining ? formatNumber(pagesLeft, true, lang) : '';
+  const timeAndPagesLeftStr =
+    showBothRemaining && showPagesLeft
+      ? localize
+        ? remainingInBook
+          ? _('{{time}} and {{number}} pages left in book', {
+              time: durationLeft,
+              number: numberLeft,
+            })
+          : _('{{time}} and {{number}} pages left in chapter', {
+              time: durationLeft,
+              number: numberLeft,
+            })
+        : remainingInBook
+          ? _('{{time}} and {{count}} pages left in book', {
+              time: durationLeft,
+              count: pagesLeft,
+            })
+          : _('{{time}} and {{count}} pages left in chapter', {
+              time: durationLeft,
+              count: pagesLeft,
+            })
+      : '';
   const pagesLeftStr = showPagesLeft
     ? localize
       ? remainingInBook
@@ -207,6 +257,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const fontSize = getChromeFontSize(viewSettings, isEink);
   const showStatusInfo = hasTimeInfo || hasBatteryInfo;
 
+  // The text is centered in the marginBottomPx strip, so on phones with rounded
+  // screen corners a small bottom margin drops its ends into the corner arc.
+  // Pull them inward just enough to clear it; the book layout is untouched.
+  const bottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
+  const textBottom = bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2;
+  const cornerClearance = (radius: number) =>
+    isVertical ? 0 : getCornerClearance(radius, textBottom);
+  const inlinePadding = (inset: number, clearance: number, hostOffset = 0) => {
+    const padding = getMarginalInlinePadding(horizontalGap, inset, columnGap, hostOffset);
+    return clearance > 0 ? `max(${padding}, ${clearance.toFixed(1)}px)` : padding;
+  };
+
   return (
     <div
       role='presentation'
@@ -232,8 +294,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               total: total,
             })
           : '',
-        timeLeftStr,
-        pagesLeftStr,
+        ...(showBothRemaining ? [timeAndPagesLeftStr] : [timeLeftStr, pagesLeftStr]),
       ]
         .filter(Boolean)
         .join(', ')}
@@ -252,9 +313,35 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
             }
           : {
-              paddingInlineStart: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
-              paddingInlineEnd: `calc(${horizontalGap / 2}% + ${contentInsets.right / 2}px)`,
-              paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
+              ...(isIPhoneDuo
+                ? {
+                    // Half the page margin past the safe-area inset, matching
+                    // the paginator's gutter (#6307), and clear of a rounded
+                    // corner. Physical sides: the insets are.
+                    paddingLeft: inlinePadding(
+                      contentInsets.left + gridInsets.left,
+                      cornerClearance(cornerRadii.left),
+                      gridInsets.left,
+                    ),
+                    paddingRight: inlinePadding(
+                      contentInsets.right + gridInsets.right,
+                      cornerClearance(cornerRadii.right),
+                      gridInsets.right,
+                    ),
+                  }
+                : {
+                    // The reader never sets dir=rtl on this container, so
+                    // inline start is always the physical left.
+                    paddingInlineStart: inlinePadding(
+                      contentInsets.left,
+                      cornerClearance(cornerRadii.left),
+                    ),
+                    paddingInlineEnd: inlinePadding(
+                      contentInsets.right,
+                      cornerClearance(cornerRadii.right),
+                    ),
+                  }),
+              paddingBottom: bottomPadding ? `${bottomPadding}px` : 0,
             }),
       }}
     >
@@ -289,7 +376,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               !stickyBarActive && 'flex-1 min-w-0',
             )}
           >
-            {viewSettings.showRemainingTime ? (
+            {showBothRemaining ? (
+              <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
+                {timeAndPagesLeftStr}
+              </span>
+            ) : viewSettings.showRemainingTime ? (
               <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
                 {timeLeftStr}
               </span>

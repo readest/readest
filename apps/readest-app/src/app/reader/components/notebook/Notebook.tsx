@@ -15,7 +15,8 @@ import { usePanelResize } from '@/hooks/usePanelResize';
 import { eventDispatcher } from '@/utils/event';
 import { BookNote } from '@/types/book';
 import { getBookDirFromLanguage } from '@/utils/book';
-import { getPanelTopInset } from '@/utils/insets';
+import { getPanelHorizontalInsetStyle, getPanelTopInset } from '@/utils/insets';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { Overlay } from '@/components/Overlay';
 import { saveSysSettings } from '@/helpers/settings';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -35,7 +36,8 @@ const Notebook: React.FC = () => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { updateAppTheme, safeAreaInsets, systemUIVisible, statusBarHeight } = useThemeStore();
+  const { updateAppTheme, safeAreaInsets, systemUIVisible, statusBarHeight, isIPhoneDuo } =
+    useThemeStore();
   const { sideBarBookKey, setSideBarVisible, setSearchBarVisible, clearBooknotesNav } =
     useSidebarStore();
   const {
@@ -154,7 +156,9 @@ const Notebook: React.FC = () => {
     const config = getConfig(sideBarBookKey);
     if (!config?.booknotes) return;
     const booknotes = config.booknotes.map((note) =>
-      note.id === excerpt.id && note.type === 'excerpt' ? { ...note, deletedAt: Date.now() } : note,
+      note.id === excerpt.id && note.type === 'excerpt'
+        ? { ...note, deletedAt: nextBooknoteStamp(note) }
+        : note,
     );
     const updatedConfig = updateBooknotes(sideBarBookKey, booknotes);
     if (updatedConfig) void saveConfig(envConfig, sideBarBookKey, updatedConfig, settings);
@@ -210,6 +214,9 @@ const Notebook: React.FC = () => {
             statusBarHeight,
             safeAreaInsets,
           })}px`,
+          // iPhone Duo's status-bar strip reports as a large left/right inset
+          // (#6307). A side panel is only padded on its screen edge (right).
+          ...getPanelHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo, isMobile, 'right'),
         }}
       >
         <style jsx>{`

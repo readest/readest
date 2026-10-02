@@ -252,6 +252,16 @@ describe('removeEmptyAnnotationPlaceholder', () => {
     expect(booknotes[0]!.deletedAt).toBe(1234);
   });
 
+  // The placeholder may already carry a server stamp ahead of this device's
+  // clock; its tombstone must still be the later change (#6544).
+  it('tombstones after a synced stamp that is ahead of the device clock', () => {
+    const booknotes = [baseNote({ updatedAt: 9000 })];
+
+    removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(booknotes[0]!.deletedAt).toBeGreaterThan(9000);
+  });
+
   it('returns null and leaves booknotes untouched when the record carries note text', () => {
     const saved = baseNote({ note: 'a real note' });
     const booknotes = [saved];

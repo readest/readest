@@ -11,6 +11,7 @@ import {
   isCurrentlyReadingBook,
 } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
+import type { TranslationFunc } from '@/hooks/useTranslation';
 import { stubTranslation as _ } from '@/utils/misc';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
@@ -196,6 +197,26 @@ export const selectDownloadableBooks = (
   );
 };
 
+/**
+ * The Audiobookshelf audiobooks a bulk Download should keep on the device
+ * (#6256): the expanded selection narrowed to the books the per-book
+ * "Download for Offline" action applies to and that aren't offline yet.
+ */
+export const selectAbsOfflineBooks = (
+  ids: string[],
+  items: (Book | BooksGroup)[],
+  books: Book[],
+): Book[] => {
+  const hashes = new Set(expandBookshelfSelection(ids, items));
+  return books.filter(
+    (book) =>
+      hashes.has(book.hash) &&
+      !book.deletedAt &&
+      isAbsOfflineCapable(book) &&
+      !book.absDownloadedAt,
+  );
+};
+
 // Calibre custom column names and values, flattened for searching (#4811).
 const getCalibreColumnsText = (item: Book) =>
   (item.metadata?.calibreColumns ?? [])
@@ -232,7 +253,8 @@ export interface BookTagEdits {
 
 // Returns a new array where only the books whose tags actually change are new
 // objects. Tags merge with the metadata group on its own clock, so a changed
-// book stamps metadataUpdatedAt like a metadata edit does.
+// book stamps metadataUpdatedAt like a metadata edit does, leaving updatedAt
+// (the Date Read sort key) alone (#6414).
 export const applyBookTagEdits = (
   books: Book[],
   selectedHashes: string[],
@@ -245,7 +267,7 @@ export const applyBookTagEdits = (
     const kept = current.filter((tag) => !edits.remove.includes(tag.trim()));
     const added = edits.add.filter((tag) => !kept.some((k) => k.trim() === tag));
     if (kept.length === current.length && added.length === 0) return book;
-    return { ...book, tags: [...kept, ...added], updatedAt: now, metadataUpdatedAt: now };
+    return { ...book, tags: [...kept, ...added], metadataUpdatedAt: now };
   });
 
 const getBookValuesText = (book: Book): string =>
@@ -297,6 +319,15 @@ const getBookReadRatio = (book: Book): number => {
   return current / total;
 };
 
+/** Percent read, or `null` when there's no progress to show. A total of 1
+ * (e.g. a fixed-layout book with one page) reads as finished (100%). */
+export const getProgressPercentage = (book: Book): number | null => {
+  if (!book.progress || !book.progress[1]) return null;
+  if (book.progress[1] === 1) return 100;
+  const percentage = Math.round((book.progress[0] / book.progress[1]) * 100);
+  return Math.max(0, Math.min(100, percentage));
+};
+
 export const getTimeRemainingMinutes = (
   book: Book,
   medianPageDurationSecs?: number,
@@ -343,6 +374,19 @@ export const getDisplayedTimeRemaining = (
   }
   return getTimeRemainingMinutes(book, medianPageDurationSecs);
 };
+
+// A tenth of an hour is still meaningful below 10h (1.6h); above it, a tenth
+// stops mattering once there are dozens of hours left.
+const roundedHours = (totalMinutes: number): number => {
+  const hours = totalMinutes / 60;
+  return hours < 10 ? Math.round(hours * 10) / 10 : Math.round(hours);
+};
+
+/** The library tile's short form: "45m left" under an hour, "1.6h left" / "11h left" above it. */
+export const formatTimeLeft = (totalMinutes: number, _: TranslationFunc): string =>
+  totalMinutes < 60
+    ? _('{{minutes}}m left', { minutes: totalMinutes })
+    : _('{{hours}}h left', { hours: roundedHours(totalMinutes) });
 
 /**
  * Remaining minutes for a shelf item, or `undefined` when its tile can show no

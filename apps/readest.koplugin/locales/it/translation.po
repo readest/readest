@@ -518,6 +518,9 @@ msgstr "Nessuna nuova annotazione trovata"
 msgid "%1 annotations pulled"
 msgstr "%1 annotazioni ricevute"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "La sessione Readest è scaduta. Accedi di nuovo."
+
 msgid "Login"
 msgstr "Accedi"
 

@@ -8,6 +8,7 @@ import { isPencilNativeKey, normalizeDomKeyEvent, resolvePageTurn } from '@/util
 export function useLibraryPagination(scroller: HTMLElement | null, enabled: boolean) {
   const { appService } = useEnv();
   const hardware = useSettingsStore((s) => s.settings.hardwarePageTurner);
+  const volumeKeys = useSettingsStore((s) => !!s.settings.globalViewSettings?.volumeKeysToFlip);
 
   const turnPage = useCallback(
     (direction: number) => {
@@ -79,8 +80,14 @@ export function useLibraryPagination(scroller: HTMLElement | null, enabled: bool
       if (!event.repeat) turnPage(direction);
     };
     const onNativeKey = (event: CustomEvent) => {
-      if (blocked(document.activeElement) || !hardware) return;
-      const action = resolvePageTurn(hardware, { source: 'native', id: event.detail?.keyName });
+      if (blocked(document.activeElement)) return;
+      const keyName = event.detail?.keyName;
+      if (volumeKeys && (keyName === 'VolumeUp' || keyName === 'VolumeDown')) {
+        turnPage(keyName === 'VolumeUp' ? -1 : 1);
+        return;
+      }
+      if (!hardware) return;
+      const action = resolvePageTurn(hardware, { source: 'native', id: keyName });
       if (action === 'pagePrev' || action === 'pageNext') turnPage(action === 'pagePrev' ? -1 : 1);
     };
     const nativeBindings = hardware?.enabled
@@ -93,14 +100,17 @@ export function useLibraryPagination(scroller: HTMLElement | null, enabled: bool
       appService?.isMobileApp && nativeBindings.some((b) => b && !isPencilNativeKey(b.id));
     if (intercept) device.acquirePageTurnerKeyInterception();
     if (appService?.isMobileApp && nativeBindings.length) device.ensureKeyForwarding();
+    const interceptVolume = appService?.isMobileApp && volumeKeys;
+    if (interceptVolume) device.acquireVolumeKeyInterception();
     window.addEventListener('keydown', onKey, true);
     eventDispatcher.on('native-key-down', onNativeKey);
     return () => {
       window.removeEventListener('keydown', onKey, true);
       eventDispatcher.off('native-key-down', onNativeKey);
       if (intercept) device.releasePageTurnerKeyInterception();
+      if (interceptVolume) device.releaseVolumeKeyInterception();
     };
-  }, [enabled, scroller, hardware, appService, turnPage]);
+  }, [enabled, scroller, hardware, volumeKeys, appService, turnPage]);
 
   return turnPage;
 }

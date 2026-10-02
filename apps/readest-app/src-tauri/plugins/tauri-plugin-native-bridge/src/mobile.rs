@@ -427,6 +427,12 @@ impl<R: Runtime> NativeBridge<R> {
             .run_mobile_plugin("refresh_eink_screen", ())
             .map_err(Into::into)
     }
+
+    pub fn is_eink_refresh_supported(&self) -> crate::Result<EinkRefreshSupportedResponse> {
+        self.0
+            .run_mobile_plugin("is_eink_refresh_supported", ())
+            .map_err(Into::into)
+    }
 }
 
 impl<R: Runtime> NativeBridge<R> {
@@ -454,8 +460,13 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
-    pub fn web_browser_cookies(&self, payload: WebBrowserCookiesRequest) -> crate::Result<WebBrowserCookiesResponse> {
-        self.0.run_mobile_plugin("web_browser_cookies", payload).map_err(Into::into)
+    pub fn web_browser_cookies(
+        &self,
+        payload: WebBrowserCookiesRequest,
+    ) -> crate::Result<WebBrowserCookiesResponse> {
+        self.0
+            .run_mobile_plugin("web_browser_cookies", payload)
+            .map_err(Into::into)
     }
 
     /// Push an import status into the open browser's banner.
@@ -479,9 +490,60 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn update_reading_widget(&self, payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+    pub fn update_bookshelf_widget(
+        &self,
+        payload: UpdateBookshelfWidgetRequest,
+    ) -> crate::Result<UpdateBookshelfWidgetResponse> {
+        // iOS resolves without a body, which reads as no failures.
         self.0
-            .run_mobile_plugin("update_reading_widget", payload)
+            .run_mobile_plugin::<Option<UpdateBookshelfWidgetResponse>>(
+                "update_bookshelf_widget",
+                payload,
+            )
+            .map(Option::unwrap_or_default)
+            .map_err(Into::into)
+    }
+
+    pub fn get_bookshelf_widget_instances(
+        &self,
+    ) -> crate::Result<GetBookshelfWidgetInstancesResponse> {
+        self.0
+            .run_mobile_plugin("get_bookshelf_widget_instances", ())
+            .map_err(Into::into)
+    }
+
+    pub fn set_bookshelf_widget_catalog(
+        &self,
+        payload: BookshelfWidgetCatalog,
+    ) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("set_bookshelf_widget_catalog", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn update_reading_widget(
+        &self,
+        payload: UpdateReadingWidgetRequest,
+    ) -> crate::Result<UpdateReadingWidgetResponse> {
+        // iOS resolves without a body, which reads as no failures.
+        self.0
+            .run_mobile_plugin::<Option<UpdateReadingWidgetResponse>>(
+                "update_reading_widget",
+                payload,
+            )
+            .map(Option::unwrap_or_default)
+            .map_err(Into::into)
+    }
+
+    pub fn get_reading_widget_instances(&self) -> crate::Result<GetReadingWidgetInstancesResponse> {
+        self.0
+            .run_mobile_plugin("get_reading_widget_instances", ())
+            .map_err(Into::into)
+    }
+
+    pub fn set_reading_widget_catalog(&self, payload: ReadingWidgetCatalog) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("set_reading_widget_catalog", payload)
             .map_err(Into::into)
     }
 }

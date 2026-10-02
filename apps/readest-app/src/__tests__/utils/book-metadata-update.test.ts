@@ -47,7 +47,7 @@ describe('getBookWithUpdatedMetadata', () => {
     expect(book.metadata?.coverImageUrl).toBe('old-cover-url');
   });
 
-  it('applies the edited cover, title, author, language and a fresh updatedAt', () => {
+  it('applies the edited cover, title, author and language on the metadata clock', () => {
     const book = makeBook();
     const editedMeta: BookMetadata = {
       title: 'New Title',
@@ -62,7 +62,9 @@ describe('getBookWithUpdatedMetadata', () => {
     expect(updated.title).toBe('New Title');
     expect(updated.author).toBe('New Author');
     expect(updated.primaryLanguage).toBe('fr');
-    expect(updated.updatedAt).toBeGreaterThan(book.updatedAt);
+    expect(updated.metadataUpdatedAt).toBeGreaterThan(book.updatedAt);
+    // updatedAt is the Date Read sort key; editing metadata is not reading (#6414).
+    expect(updated.updatedAt).toBe(book.updatedAt);
   });
 
   it('prefers a blob cover URL over the plain cover URL', () => {

@@ -46,6 +46,10 @@ beforeEach(() => {
   useSettingsStore.setState({
     settings: {
       ...DEFAULT_SYSTEM_SETTINGS,
+      // version: real settings always have one; its absence is what
+      // useEnsureSettingsLoaded (BookshelvesDialog) treats as "not hydrated
+      // yet", which would leave BookshelvesEditor never mounting here.
+      version: 1,
       libraryGroupBy: 'none',
       libraryAutoColumns: false,
       libraryColumns: 3,
@@ -232,6 +236,47 @@ describe('bookshelf editor responsive layout', () => {
       );
     });
   }
+  it('offers library values of tags and Calibre columns in the filter value', async () => {
+    const column = (value: string[]) => [
+      { label: 'shelves', name: 'Shelves', datatype: 'text', value },
+    ];
+    useLibraryStore.setState({
+      library: useLibraryStore
+        .getState()
+        .library.slice(0, 2)
+        .map((book, i) => ({
+          ...book,
+          tags: i ? ['Fiction', 'History'] : ['Fiction'],
+          metadata: {
+            title: book.title,
+            author: book.author,
+            language: 'en',
+            calibreColumns: column(i ? ['Wishlist', 'TBR'] : ['TBR']),
+          },
+        })),
+    });
+    const { getByRole, getByLabelText } = render(<BookshelvesDialog />);
+    await act(async () => {
+      await eventDispatcher.dispatch('show-bookshelves');
+    });
+    await userEvent.click(getByRole('button', { name: 'Default' }));
+    await userEvent.click(getByRole('button', { name: 'Add condition' }));
+    const options = () =>
+      Array.from((getByLabelText('Filter value') as HTMLInputElement).list?.options ?? []).map(
+        (option) => option.value,
+      );
+    await userEvent.selectOptions(getByLabelText('Filter field'), 'tags');
+    expect(options()).toEqual(['Fiction', 'History']);
+    await userEvent.selectOptions(getByLabelText('Filter field'), 'calibre:shelves');
+    expect(options()).toEqual(['TBR', 'Wishlist']);
+    await userEvent.fill(getByLabelText('Filter value'), 'Wishlist');
+    const preview = getByRole('region', { name: 'Bookshelf preview' });
+    await waitFor(() =>
+      expect(preview.textContent).toContain('1 displayed · 1 matching · 0 excluded'),
+    );
+    await userEvent.selectOptions(getByLabelText('Filter field'), 'title');
+    expect(options()).toEqual([]);
+  });
   for (const width of [390, 1440]) {
     it(`inherits global grouping and previews an independent choice at ${width}px`, async () => {
       await page.viewport(width, 900);

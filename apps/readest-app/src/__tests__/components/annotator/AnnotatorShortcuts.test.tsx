@@ -127,6 +127,7 @@ vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
+vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
 vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
@@ -310,5 +311,33 @@ describe('Annotator popup shortcuts', () => {
       expect.objectContaining({ type: 'excerpt', text: 'selected text' }),
     ]);
     expect(useNotebookDocumentStore.getState().sessions['book']?.content).toBe('# Existing notes');
+  });
+
+  // The excerpt may carry a synced stamp ahead of this device's clock; copying
+  // over it again must still be the later change (#6544).
+  test('restamps an existing excerpt after its synced stamp', async () => {
+    h.viewSettings.copyToNotebook = true;
+    const ahead = Date.now() + 60_000;
+    h.config.booknotes = [
+      {
+        id: 'ex-1',
+        type: 'excerpt',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        note: '',
+        text: 'old text',
+        createdAt: 1,
+        updatedAt: ahead,
+      },
+    ];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectPopupText('epubcfi(/6/2!/4/2)');
+
+    act(() => {
+      h.actions?.['onCopySelection']?.();
+    });
+
+    const [excerpt] = h.config.booknotes as { id: string; updatedAt: number }[];
+    expect(excerpt!.id).toBe('ex-1');
+    expect(excerpt!.updatedAt).toBeGreaterThan(ahead);
   });
 });

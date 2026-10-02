@@ -518,6 +518,9 @@ msgstr "Nem található új jegyzet"
 msgid "%1 annotations pulled"
 msgstr "%1 jegyzet lekérve"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "A Readest-munkamenet lejárt. Jelentkezz be újra."
+
 msgid "Login"
 msgstr "Bejelentkezés"
 

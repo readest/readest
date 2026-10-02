@@ -518,6 +518,9 @@ msgstr "Geen nieuwe aantekeningen gevonden"
 msgid "%1 annotations pulled"
 msgstr "%1 aantekeningen opgehaald"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Je Readest-sessie is verlopen. Meld je opnieuw aan."
+
 msgid "Login"
 msgstr "Aanmelden"
 

@@ -34,6 +34,7 @@ export interface Renderer extends HTMLElement {
   pageColors?: {
     background: string;
     foreground: string;
+    keepImages: boolean;
   };
   columnCount?: number;
   open: (book: BookDoc) => Promise<void>;
@@ -81,8 +82,8 @@ export interface FoliateView extends HTMLElement {
   goTo: (target: string | number) => void;
   goToFraction: (fraction: number) => void;
   getSectionFractions: () => number[];
-  prev: (distance?: number) => void;
-  next: (distance?: number) => void;
+  prev: (distance?: number) => Promise<void>;
+  next: (distance?: number) => Promise<void>;
   pan: (dx: number, dy: number) => void;
   isOverflowX: () => boolean;
   isOverflowY: () => boolean;

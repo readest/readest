@@ -518,6 +518,9 @@ msgstr "未发现新标注"
 msgid "%1 annotations pulled"
 msgstr "已拉取 %1 条标注"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest 登录已过期，请重新登录。"
+
 msgid "Login"
 msgstr "登录"
 

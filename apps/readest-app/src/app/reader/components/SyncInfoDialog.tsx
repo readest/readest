@@ -8,6 +8,7 @@ import { useCloudSyncStatus, type CloudSyncProviderStatus } from '@/hooks/useClo
 
 interface SyncInfoDialogProps {
   isOpen: boolean;
+  bookKey: string;
   metadata: BookMetadata | null | undefined;
   storedMetaHash?: string;
   /**
@@ -31,13 +32,14 @@ const Row: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value
 
 const SyncInfoDialog: React.FC<SyncInfoDialogProps> = ({
   isOpen,
+  bookKey,
   metadata,
   storedMetaHash,
   nativeLastSyncedAt,
   onClose,
 }) => {
   const _ = useTranslation();
-  const syncStatus = useCloudSyncStatus(nativeLastSyncedAt);
+  const syncStatus = useCloudSyncStatus(nativeLastSyncedAt, bookKey);
   const info = metadata ? getMetadataHashInfo(metadata) : undefined;
   const displayHash = storedMetaHash || info?.metaHash || '';
   const placeholder = _('(none)');

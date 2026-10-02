@@ -144,6 +144,8 @@ describe('services/constants', () => {
       expect(SUPPORTED_BOOK_EXTS).toContain('txt');
       expect(SUPPORTED_BOOK_EXTS).toContain('md');
       expect(SUPPORTED_BOOK_EXTS).toContain('html');
+      expect(SUPPORTED_BOOK_EXTS).toContain('mhtml');
+      expect(SUPPORTED_BOOK_EXTS).toContain('mht');
     });
 
     it('BOOK_ACCEPT_FORMATS is a comma-separated string of dotted extensions', () => {
@@ -443,6 +445,10 @@ describe('services/constants', () => {
     it('has gap percent in a reasonable range', () => {
       expect(DEFAULT_BOOK_LAYOUT.gapPercent).toBeGreaterThanOrEqual(0);
       expect(DEFAULT_BOOK_LAYOUT.gapPercent).toBeLessThanOrEqual(100);
+    });
+
+    it('derives the column gap from the margins by default', () => {
+      expect(DEFAULT_BOOK_LAYOUT.columnGapPx).toBe(0);
     });
 
     it('has boolean layout flags', () => {

@@ -22,13 +22,19 @@ const mocks = vi.hoisted(() => {
   }
   return {
     invoke: vi.fn(),
+    writeFile: vi.fn(),
+    saveDialog: vi.fn(),
+    shareFile: vi.fn(),
+    zipAddError: null as Error | null,
     Channel,
     entries: [] as FakeEntry[],
   };
 });
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke, Channel: mocks.Channel }));
-vi.mock('@tauri-apps/plugin-fs', () => ({ writeFile: vi.fn() }));
+vi.mock('@tauri-apps/plugin-fs', () => ({ writeFile: mocks.writeFile }));
+vi.mock('@tauri-apps/plugin-dialog', () => ({ save: mocks.saveDialog }));
+vi.mock('@choochmeque/tauri-plugin-sharekit-api', () => ({ shareFile: mocks.shareFile }));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
   isWebAppPlatform: () => false,
@@ -38,6 +44,20 @@ vi.mock('@zip.js/zip.js', () => ({
   BlobReader: class {},
   Uint8ArrayReader: class {},
   Uint8ArrayWriter: class {},
+  // Writes one byte per entry into the stream it was given, like zip.js.
+  ZipWriter: class {
+    private writer: WritableStreamDefaultWriter<Uint8Array>;
+    constructor(writable: WritableStream<Uint8Array>) {
+      this.writer = writable.getWriter();
+    }
+    async add() {
+      if (mocks.zipAddError) throw mocks.zipAddError;
+      await this.writer.write(new Uint8Array(1));
+    }
+    async close() {
+      await this.writer.close();
+    }
+  },
   ZipReader: class {
     async getEntries() {
       return mocks.entries;
@@ -46,7 +66,11 @@ vi.mock('@zip.js/zip.js', () => ({
   },
 }));
 
-import { createBackupZipToFile, restoreFromBackupZip } from '@/services/backupService';
+import {
+  createBackupZipToFile,
+  restoreFromBackupZip,
+  saveBackupFile,
+} from '@/services/backupService';
 
 const LIVE_HASH = '1111111111111111111111111111aaaa';
 const NEW_HASH = '2222222222222222222222222222bbbb';
@@ -74,6 +98,7 @@ const entry = (filename: string, content = 'bytes'): FakeEntry => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.entries = [];
+  mocks.zipAddError = null;
 });
 
 describe('createBackupZipToFile on Tauri', () => {
@@ -136,6 +161,97 @@ describe('createBackupZipToFile on Tauri', () => {
       [1, 2, `${LIVE_HASH}/book.epub`],
       [2, 2, `${LIVE_HASH}/cover.png`],
     ]);
+  });
+});
+
+describe('createBackupZipToFile fallback', () => {
+  const appService = {
+    loadLibraryBooks: async () => [],
+    loadSettings: async () => ({ globalReadSettings: {} }) as never,
+    resolveFilePath: async () => '/data/Books',
+    readDirectory: async () => [],
+  } as unknown as AppService;
+
+  // #6375: iOS hands back a picker URL the app may not write to. Both writers
+  // hit EPERM; the streamed fallback's write rejected while nothing drained
+  // the stream, so the zip writer waited forever and the dialog sat at 0%.
+  it('fails instead of hanging when the streamed file write fails', async () => {
+    const denied = new Error('Operation not permitted (os error 1)');
+    mocks.invoke.mockRejectedValue(denied);
+    mocks.writeFile.mockImplementation(async (_path: string, data: unknown) => {
+      if (data instanceof ReadableStream) throw denied;
+    });
+
+    await expect(createBackupZipToFile(appService, 'file:///picked/backup.zip')).rejects.toThrow(
+      'Operation not permitted',
+    );
+  }, 2000);
+  it('ends the file write when building the zip fails', async () => {
+    mocks.invoke.mockRejectedValue(new Error('native writer unavailable'));
+    mocks.zipAddError = new Error('zip failed');
+    let fileClosed = false;
+    // Same read loop as plugin-fs: the file closes only once the stream ends.
+    mocks.writeFile.mockImplementation(async (_path: string, data: unknown) => {
+      if (!(data instanceof ReadableStream)) return;
+      const reader = data.getReader();
+      try {
+        while (!(await reader.read()).done);
+      } finally {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        fileClosed = true;
+      }
+    });
+
+    await expect(createBackupZipToFile(appService, '/picked/backup.zip')).rejects.toThrow(
+      'zip failed',
+    );
+    // The caller may delete the file next (iOS staging), so it must be closed.
+    expect(fileClosed).toBe(true);
+  }, 2000);
+});
+
+describe('saveBackupFile on iOS', () => {
+  const deleteFile = vi.fn(async () => {});
+  const appService = {
+    isIOSApp: true,
+    loadLibraryBooks: async () => [],
+    loadSettings: async () => ({ globalReadSettings: {} }) as never,
+    resolveFilePath: async (path: string, base: string) =>
+      base === 'Temp' ? `/tmp/${path}` : '/data/Books',
+    readDirectory: async () => [],
+    createDir: vi.fn(async () => {}),
+    deleteFile,
+  } as unknown as AppService;
+
+  beforeEach(() => mocks.invoke.mockResolvedValue(undefined));
+
+  it('writes the zip inside the sandbox and hands it to the share sheet', async () => {
+    mocks.shareFile.mockResolvedValue(undefined);
+
+    expect(await saveBackupFile(appService, 'readest-backup.zip')).toBe(true);
+
+    expect(mocks.saveDialog).not.toHaveBeenCalled();
+    const [, args] = mocks.invoke.mock.calls[0] as [string, { dest: string }];
+    expect(args.dest).toBe('/tmp/shared/readest-backup.zip');
+    expect(mocks.shareFile).toHaveBeenCalledWith('/tmp/shared/readest-backup.zip', {
+      mimeType: 'application/zip',
+    });
+    expect(deleteFile).toHaveBeenCalledWith('shared/readest-backup.zip', 'Temp');
+  });
+
+  it('reports a cancelled share as not saved', async () => {
+    mocks.shareFile.mockRejectedValue('Share cancelled');
+
+    expect(await saveBackupFile(appService, 'readest-backup.zip')).toBe(false);
+  });
+
+  it('surfaces a failed share instead of reporting the backup saved', async () => {
+    mocks.shareFile.mockRejectedValue('The operation couldn’t be completed.');
+
+    await expect(saveBackupFile(appService, 'readest-backup.zip')).rejects.toBe(
+      'The operation couldn’t be completed.',
+    );
+    expect(deleteFile).toHaveBeenCalledWith('shared/readest-backup.zip', 'Temp');
   });
 });
 
@@ -253,6 +369,24 @@ describe('restoreFromBackupZip on Tauri', () => {
       `${ORPHAN_HASH}/book.pdf`,
       `${LIVE_HASH}/config.json`,
     ]);
+    expect(importBook).toHaveBeenCalledWith(
+      `/data/Books/${ORPHAN_HASH}/book.pdf`,
+      expect.anything(),
+      { overwrite: true },
+    );
+  });
+
+  it('imports an orphan whose library row is soft-deleted', async () => {
+    const withDeletedOrphan = {
+      ...appService,
+      loadLibraryBooks: async () => [
+        makeBook({ hash: LIVE_HASH }),
+        makeBook({ hash: ORPHAN_HASH, deletedAt: 1 }),
+      ],
+    } as AppService;
+
+    await restoreFromBackupZip(withDeletedOrphan, new Blob());
+
     expect(importBook).toHaveBeenCalledWith(
       `/data/Books/${ORPHAN_HASH}/book.pdf`,
       expect.anything(),

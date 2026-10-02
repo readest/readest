@@ -340,8 +340,8 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         />
       </BoxedList>
 
-      <BoxedList title={_('Font Family')}>
-        <SettingsRow label={_('Default Font')} data-setting-id='settings.font.defaultFont'>
+      <BoxedList title={_('Preferred Font')}>
+        <SettingsRow label={_('Font Category')} data-setting-id='settings.font.defaultFont'>
           <FontDropdown
             options={fontFamilyOptions}
             selected={defaultFont}
@@ -349,7 +349,49 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onGetFontFamily={handleFontFamilyFont}
           />
         </SettingsRow>
-        {(isCJKEnv() || view?.language.isCJK) && (
+        {/* The faces live in one child so the card's divider only separates
+            them from the category above. */}
+        <div>
+          <FontFace
+            family='serif'
+            label={_('Serif Font')}
+            options={[
+              ...customFonts,
+              ...SERIF_FONTS.filter(filterNonFreeFonts),
+              ...CJK_SERIF_FONTS,
+            ]}
+            moreOptions={sysFonts}
+            selected={serifFont}
+            onSelect={setSerifFont}
+            data-setting-id='settings.font.serifFont'
+          />
+          <FontFace
+            family='sans-serif'
+            label={_('Sans-Serif Font')}
+            options={[
+              ...customFonts,
+              ...SANS_SERIF_FONTS.filter(filterNonFreeFonts),
+              ...CJK_SANS_SERIF_FONTS,
+            ]}
+            moreOptions={sysFonts}
+            selected={sansSerifFont}
+            onSelect={setSansSerifFont}
+            data-setting-id='settings.font.sansSerifFont'
+          />
+          <FontFace
+            family='monospace'
+            label={_('Monospace Font')}
+            options={[...customFonts, ...MONOSPACE_FONTS]}
+            moreOptions={sysFonts}
+            selected={monospaceFont}
+            onSelect={setMonospaceFont}
+            data-setting-id='settings.font.monospaceFont'
+          />
+        </div>
+      </BoxedList>
+
+      {(isCJKEnv() || view?.language.isCJK) && (
+        <BoxedList title={_('CJK Font')}>
           <FontFace
             family='serif'
             label={_('CJK Font')}
@@ -358,42 +400,8 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             onSelect={setDefaultCJKFont}
             data-setting-id='settings.font.cjkFont'
           />
-        )}
-      </BoxedList>
-
-      <BoxedList title={_('Font Face')}>
-        <FontFace
-          family='serif'
-          label={_('Serif Font')}
-          options={[...customFonts, ...SERIF_FONTS.filter(filterNonFreeFonts), ...CJK_SERIF_FONTS]}
-          moreOptions={sysFonts}
-          selected={serifFont}
-          onSelect={setSerifFont}
-          data-setting-id='settings.font.serifFont'
-        />
-        <FontFace
-          family='sans-serif'
-          label={_('Sans-Serif Font')}
-          options={[
-            ...customFonts,
-            ...SANS_SERIF_FONTS.filter(filterNonFreeFonts),
-            ...CJK_SANS_SERIF_FONTS,
-          ]}
-          moreOptions={sysFonts}
-          selected={sansSerifFont}
-          onSelect={setSansSerifFont}
-          data-setting-id='settings.font.sansSerifFont'
-        />
-        <FontFace
-          family='monospace'
-          label={_('Monospace Font')}
-          options={[...customFonts, ...MONOSPACE_FONTS]}
-          moreOptions={sysFonts}
-          selected={monospaceFont}
-          onSelect={setMonospaceFont}
-          data-setting-id='settings.font.monospaceFont'
-        />
-      </BoxedList>
+        </BoxedList>
+      )}
 
       <BoxedList title={_('Custom Fonts')} data-setting-id='settings.font.fonts'>
         <NavigationRow title={_('Manage Fonts')} onClick={handleManageCustomFonts} />

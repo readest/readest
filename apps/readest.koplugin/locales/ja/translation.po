@@ -518,6 +518,9 @@ msgstr "新しい注釈は見つかりませんでした"
 msgid "%1 annotations pulled"
 msgstr "%1 件の注釈を取得しました"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest のセッションの有効期限が切れました。再度ログインしてください。"
+
 msgid "Login"
 msgstr "ログイン"
 

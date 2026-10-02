@@ -7,7 +7,7 @@
  * way out to the real page. Popups synthesized from a `data-*` attribute have
  * no location in the book and must not offer one.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { BookDoc } from '@/libs/document';
@@ -113,6 +113,14 @@ vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
   isLinkTargetVisible: hoisted.isLinkTargetVisible,
 }));
 
+// Map every booknote into whatever popup is open, as a fragment path shared
+// by two sections would; which section a note belongs to is then left to the
+// popup's own spine check.
+vi.mock('@/app/reader/utils/footnoteCfi', () => ({
+  getFootnoteLocalCfi: () => 'local-cfi',
+  getFootnoteSelectionCfi: () => null,
+}));
+
 vi.mock('@/components/Overlay', () => ({
   Overlay: () => <div data-testid='overlay' />,
 }));
@@ -121,8 +129,23 @@ vi.mock('@/components/Overlay', () => ({
 // when closed, which FootnotePopup relies on to fill `footnoteRef` ahead of
 // the first render.
 vi.mock('@/components/Popup', () => ({
-  default: ({ isOpen, children }: { isOpen?: boolean; children: ReactNode }) => (
-    <div data-testid='popup' data-open={isOpen ? 'true' : 'false'}>
+  default: ({
+    isOpen,
+    height,
+    trianglePosition,
+    children,
+  }: {
+    isOpen?: boolean;
+    height?: number;
+    trianglePosition?: { point: { y: number } };
+    children: ReactNode;
+  }) => (
+    <div
+      data-testid='popup'
+      data-open={isOpen ? 'true' : 'false'}
+      data-height={height}
+      data-anchor-y={trianglePosition?.point.y}
+    >
       {children}
     </div>
   ),
@@ -244,6 +267,89 @@ describe('FootnotePopup jump to location', () => {
     expect(stylesOf(view)).not.toContain('padding-block-start');
   });
 
+  describe('selection reports (#6395)', () => {
+    const loadPopupDoc = async () => {
+      await renderPopup();
+      const view = await openFootnotePopup();
+      const iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument!;
+      doc.body.innerHTML = '<p>A footnote with a highlight in it.</p>';
+      await act(async () => {
+        view.dispatchEvent(new CustomEvent('load', { detail: { doc, index: 3 } }));
+      });
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      const cleared = () =>
+        dispatch.mock.calls.filter(
+          ([name, detail]) => name === 'footnote-selection' && !(detail as { range?: Range }).range,
+        ).length;
+      return { doc, view, dispatch, cleared };
+    };
+
+    const settle = async () => {
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.restoreAllMocks();
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          observe() {}
+          disconnect() {}
+        },
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    });
+
+    // A tap on a highlight opens the toolbar from its click, and on touch
+    // devices the caret it drops lands after that; the debounced report of it
+    // used to close the toolbar the tap had just opened.
+    it('does not report a clear for a caret when no selection was reported', async () => {
+      const { doc, cleared } = await loadPopupDoc();
+
+      doc.getSelection()!.collapse(doc.body.firstChild!.firstChild!, 3);
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+
+      expect(cleared()).toBe(0);
+    });
+
+    it('reports a clear once a reported selection collapses', async () => {
+      const { doc, dispatch, cleared } = await loadPopupDoc();
+
+      doc.getSelection()!.selectAllChildren(doc.body.firstChild!);
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+      expect(dispatch).toHaveBeenCalledWith(
+        'footnote-selection',
+        expect.objectContaining({ range: expect.anything() }),
+      );
+
+      doc.getSelection()!.removeAllRanges();
+      doc.dispatchEvent(new Event('selectionchange'));
+      await settle();
+
+      expect(cleared()).toBe(1);
+    });
+
+    // A tap elsewhere in the note is how a highlight's toolbar gets dismissed.
+    it('reports a clear for a tap that leaves no selection', async () => {
+      const { doc, cleared } = await loadPopupDoc();
+
+      doc.dispatchEvent(new Event('pointerup'));
+
+      expect(cleared()).toBe(1);
+    });
+  });
+
   it('offers no jump for popups synthesized from a data attribute', async () => {
     await renderPopup();
     const element = document.createElement('span');
@@ -258,5 +364,122 @@ describe('FootnotePopup jump to location', () => {
 
     expect(screen.getByTestId('popup').dataset['open']).toBe('true');
     expect(screen.queryByLabelText('Jump to Location')).toBeNull();
+  });
+
+  // #6390: the soft keyboard the note editor raises fires a window resize on
+  // Android without the window changing width, which closed the popup under
+  // the editor. Only a real width change (rotation, window resize) moves the
+  // anchor out from under the popup.
+  it('stays open through a resize that keeps the window width', async () => {
+    await renderPopup();
+    await openFootnotePopup();
+
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(screen.getByTestId('popup').dataset['open']).toBe('true');
+
+    const width = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { value: width + 100, configurable: true });
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+    expect(screen.getByTestId('popup').dataset['open']).toBe('false');
+  });
+
+  // #6390 review: a range-editor preview is dispatched after an await, so it
+  // can land once the popup shows another section. It must not draw there.
+  it('draws a drag preview only for a note in the section the popup shows', async () => {
+    globalThis.ResizeObserver ??= class {
+      observe() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+    await renderPopup();
+    const anchor = document.createElement('a');
+    anchor.setAttribute('href', HREF);
+    document.body.appendChild(anchor);
+    await act(async () => {
+      hoisted.onLinkClick.current?.(
+        new CustomEvent('link', { detail: { a: anchor, href: HREF }, cancelable: true }),
+      );
+    });
+    const handler = hoisted.handlers.at(-1)!;
+    const view = Object.assign(createPopupView(), {
+      getCFI: () => 'epubcfi(/6/8!/4)',
+      addAnnotation: vi.fn(),
+    });
+    await act(async () => {
+      handler.dispatchEvent(new CustomEvent('before-render', { detail: { view } }));
+      handler.dispatchEvent(
+        new CustomEvent('render', { detail: { view, href: HREF, index: 3, extract: {} } }),
+      );
+      view.dispatchEvent(
+        new CustomEvent('load', {
+          detail: { doc: document.implementation.createHTMLDocument(), index: 3 },
+        }),
+      );
+      view.dispatchEvent(new CustomEvent('relocate', { detail: {} }));
+    });
+    const note = (id: string, cfi: string) => ({
+      id,
+      type: 'annotation',
+      cfi,
+      style: 'highlight',
+      color: 'yellow',
+      updatedAt: 1,
+    });
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-annotation-preview', {
+        key: BOOK_KEY,
+        note: note('elsewhere', 'epubcfi(/6/4!/4/2,/1:0,/1:5)'),
+      });
+    });
+    expect(view.addAnnotation).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-annotation-preview', {
+        key: BOOK_KEY,
+        note: note('here', 'epubcfi(/6/8!/4/2,/1:0,/1:5)'),
+      });
+    });
+    expect(view.addAnnotation).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'here', value: 'local-cfi' }),
+    );
+  });
+
+  // #6390: near a page edge the highlight toolbar has no room on the side the
+  // popup left free, so it stays by the word and the popup opens beyond it.
+  describe('with the highlight toolbar on its side', () => {
+    const block = (value: { dir: string; size: number } | null) =>
+      act(async () => {
+        await eventDispatcher.dispatch('annotation-toolbar-block', { key: BOOK_KEY, block: value });
+      });
+
+    it('opens beyond the toolbar, refitted to the room left', async () => {
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 300 });
+      await renderPopup();
+      await openFootnotePopup();
+      const popup = screen.getByTestId('popup');
+      expect(popup.dataset['anchorY']).toBe('10');
+      expect(popup.dataset['height']).toBe('242');
+
+      await block({ dir: 'down', size: 100 });
+
+      expect(popup.dataset['anchorY']).toBe('110');
+      // 300 tall, anchored at 110 with 10px padding: 180px left, not 242.
+      expect(popup.dataset['height']).toBe('180');
+    });
+
+    it('stays put when the toolbar goes away while it is open', async () => {
+      await renderPopup();
+      await openFootnotePopup();
+      await block({ dir: 'down', size: 100 });
+
+      await block(null);
+
+      expect(screen.getByTestId('popup').dataset['anchorY']).toBe('110');
+    });
   });
 });

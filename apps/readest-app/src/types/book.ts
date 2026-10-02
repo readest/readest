@@ -151,7 +151,7 @@ export interface Book {
   syncedAt?: number | null;
 
   lastUpdated?: number; // deprecated in favor of updatedAt
-  progress?: [number, number]; // Add progress field: [current, total], 1-based page number
+  progress?: [number, number] | null; // Add progress field: [current, total], 1-based page number
   readingStatus?: ReadingStatus;
   readingStatusUpdatedAt?: number; // ms; bumped only when readingStatus changes
   primaryLanguage?: string;
@@ -244,6 +244,9 @@ export interface BookLayout {
   compactMarginRightPx: number;
   compactMarginPx?: number; // deprecated
   gapPercent: number;
+  /* Centre gap of a two-column spread in px; 0 derives it from the margins
+     and gapPercent as before. */
+  columnGapPx: number;
   scrolled: boolean;
   scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;
@@ -291,6 +294,12 @@ export interface BookStyle {
   highlightOpacity: number;
   codeHighlighting: boolean;
   codeLanguage: string;
+  dialogueHighlight: boolean;
+  dialogueHighlightCustomColor: boolean;
+  dialogueHighlightColor: string;
+  dialogueHighlightCustomTextColor: boolean;
+  dialogueHighlightTextColor: string;
+  dialogueHighlightItalic: boolean;
   userStylesheet: string;
   userUIStylesheet: string;
 
@@ -381,6 +390,12 @@ export interface ViewConfig {
   pageTurnStyle: PageTurnStyle;
   isEink: boolean;
   isColorEink: boolean;
+  /**
+   * Number of page turns between automatic deep full refreshes in e-ink mode.
+   * 0 disables it. Manual refresh bindings are unusable on readers with no
+   * spare buttons, so this clears accumulated ghosting on its own.
+   */
+  einkAutoRefreshInterval: number;
 
   paragraphMode: ParagraphModeConfig;
 
@@ -432,6 +447,8 @@ export interface NoteExportConfig {
   includeCoverImage: boolean;
   includeChapterTitles: boolean;
   includeQuotes: boolean;
+  // The sentence around each highlight, read from the book at export time.
+  includeContext: boolean;
   includeNotes: boolean;
   includePageNumber: boolean;
   includeTimestamp: boolean;
@@ -454,6 +471,9 @@ export interface NoteExportConfig {
 export interface AnnotatorConfig {
   enableAnnotationQuickActions: boolean;
   annotationQuickAction: AnnotationToolType | null;
+  // Hand the word back selected, with the toolbar, when an instant dictionary
+  // lookup closes (#6213). Off: closing it returns straight to reading (#6454).
+  keepSelectionAfterLookup: boolean;
   annotationToolbarItems: AnnotationToolType[];
   copyToNotebook: boolean;
   noteExportConfig: NoteExportConfig;
@@ -620,6 +640,13 @@ export interface HardcoverBookLink {
   title: string;
 }
 
+/** The Pagebound book this file syncs to; device-local like `hardcover`. */
+export interface PageboundBookLink {
+  bookId: number;
+  uuid: string;
+  title: string;
+}
+
 export interface BookConfig {
   schemaVersion?: number;
   bookHash?: string;
@@ -640,6 +667,7 @@ export interface BookConfig {
    */
   audiobook?: PairedAudiobook;
   hardcover?: HardcoverBookLink;
+  pagebound?: PageboundBookLink;
   /**
    * The pages of a comic laid out as spreads of their own (wide images), by
    * page path: a device-local cache of measuring them, so a later open skips

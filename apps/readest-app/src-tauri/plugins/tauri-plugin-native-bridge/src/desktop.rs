@@ -426,16 +426,57 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
-    pub fn update_reading_widget(&self, _payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+    /// E-ink panels exist only on the mobile (Android) side. Desktop has no
+    /// e-ink controller, so the deep refresh is never supported here.
+    pub fn is_eink_refresh_supported(&self) -> crate::Result<EinkRefreshSupportedResponse> {
+        Ok(EinkRefreshSupportedResponse { supported: false })
+    }
+
+    pub fn update_bookshelf_widget(
+        &self,
+        _payload: UpdateBookshelfWidgetRequest,
+    ) -> crate::Result<UpdateBookshelfWidgetResponse> {
         // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(UpdateBookshelfWidgetResponse::default())
+    }
+
+    pub fn get_bookshelf_widget_instances(
+        &self,
+    ) -> crate::Result<GetBookshelfWidgetInstancesResponse> {
+        // No home-screen widgets on desktop.
+        Ok(GetBookshelfWidgetInstancesResponse { instances: vec![] })
+    }
+
+    pub fn set_bookshelf_widget_catalog(
+        &self,
+        _payload: BookshelfWidgetCatalog,
+    ) -> crate::Result<()> {
         Ok(())
     }
 
-    /// Snapshot a region of `window`'s webview as PNG bytes for the mesh
-    /// page-curl texture (#555). macOS only so far; Windows
-    /// (`ICoreWebView2::CapturePreview`) and Linux
-    /// (`webkit_web_view_get_snapshot`) reject until implemented, and the
-    /// JS side falls back to the CSS curl.
+    pub fn update_reading_widget(
+        &self,
+        _payload: UpdateReadingWidgetRequest,
+    ) -> crate::Result<UpdateReadingWidgetResponse> {
+        // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(UpdateReadingWidgetResponse::default())
+    }
+
+    pub fn get_reading_widget_instances(&self) -> crate::Result<GetReadingWidgetInstancesResponse> {
+        // No home-screen widgets on desktop.
+        Ok(GetReadingWidgetInstancesResponse { instances: vec![] })
+    }
+
+    pub fn set_reading_widget_catalog(&self, _payload: ReadingWidgetCatalog) -> crate::Result<()> {
+        Ok(())
+    }
+
+    /// Snapshot a region of `window`'s webview as image bytes for the mesh
+    /// page-curl texture (#555): PNG from WKWebView on macOS, JPEG of the
+    /// whole view from the DevTools protocol on Windows (WebView2) and the
+    /// Linux CEF runtime, where the JS side crops the region.
+    /// The Linux WebKitGTK runtime (only the webdriver E2E lane) rejects,
+    /// and the JS side falls back to the renderer's own turns.
     pub fn capture_webview_region(
         &self,
         window: &tauri::WebviewWindow<R>,
@@ -445,7 +486,21 @@ impl<R: Runtime> NativeBridge<R> {
         {
             crate::platform::macos::capture_webview_region(window, payload)
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(windows)]
+        {
+            let _ = payload;
+            crate::platform::windows::capture_webview_region(window)
+        }
+        #[cfg(all(target_os = "linux", feature = "cef"))]
+        {
+            let _ = payload;
+            crate::platform::linux_cef::capture_webview_region(window)
+        }
+        #[cfg(not(any(
+            target_os = "macos",
+            windows,
+            all(target_os = "linux", feature = "cef")
+        )))]
         {
             let _ = (window, payload);
             Err(crate::Error::UnsupportedPlatformError)
@@ -596,10 +651,7 @@ mod tests {
 
     #[test]
     fn windows_secure_item_detects_legacy_password_encoding() {
-        let encoded = "legacy"
-            .encode_utf16()
-            .flat_map(u16::to_le_bytes)
-            .collect();
+        let encoded = "legacy".encode_utf16().flat_map(u16::to_le_bytes).collect();
 
         assert_eq!(decode_windows_secure_item_value(encoded).unwrap(), None);
     }

@@ -169,6 +169,36 @@ describe('ViewMenu sync row (issue #5910)', () => {
     expect(screen.queryByText('Synced via {{provider}}')).toBeNull();
   });
 
+  it('pushes to Hardcover on tap only when it is on the row', () => {
+    render(<ViewMenu bookKey='book-1' />);
+    fireEvent.click(screen.getByText('Synced 2 minutes ago'));
+
+    const events = mockDispatch.mock.calls.map((call) => call[0]);
+    expect(events).not.toContain('hardcover-push-progress');
+    expect(events).not.toContain('hardcover-push-notes');
+
+    cleanup();
+    mockDispatch.mockClear();
+    mockSyncStatus.providers.push({
+      kind: 'hardcover',
+      name: 'Hardcover',
+      lastSyncedAt: 1,
+      syncing: false,
+      failed: false,
+    });
+    render(<ViewMenu bookKey='book-1' />);
+    fireEvent.click(screen.getByText('Synced 2 minutes ago'));
+
+    expect(mockDispatch).toHaveBeenCalledWith('hardcover-push-progress', {
+      bookKey: 'book-1',
+      silent: true,
+    });
+    expect(mockDispatch).toHaveBeenCalledWith('hardcover-push-notes', {
+      bookKey: 'book-1',
+      silent: true,
+    });
+  });
+
   it('names a count when several providers are selected', () => {
     mockSyncStatus = {
       providers: [

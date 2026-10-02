@@ -195,3 +195,181 @@ describe('makeHtmlBook', () => {
     }
   });
 });
+
+// A page saved by Chrome's "Save as… Webpage, Single File": a MIME
+// multipart/related archive, the HTML quoted-printable and every image a
+// base64 part addressed by its original URL (issue #6413).
+describe('makeHtmlBook with an MHTML archive', () => {
+  const BOUNDARY = '----MultipartBoundary--Xy12----';
+
+  // Soft line breaks after every tag exercise the "=\r\n" continuation.
+  const qp = (s: string) =>
+    Array.from(new TextEncoder().encode(s), (b) =>
+      b === 0x3d || b > 0x7e ? `=${b.toString(16).toUpperCase()}` : String.fromCharCode(b),
+    )
+      .join('')
+      .replace(/>/g, '>=\r\n');
+
+  const part = (headers: string[], body: string) =>
+    [`--${BOUNDARY}`, ...headers, '', body, ''].join('\r\n');
+
+  const archive = (html: string) =>
+    [
+      'From: <Saved by Blink>',
+      'Snapshot-Content-Location: https://example.com/wiki/Pamir',
+      'Subject: Pamir',
+      'MIME-Version: 1.0',
+      'Content-Type: multipart/related;',
+      '\ttype="text/html";',
+      `\tboundary="${BOUNDARY}"`,
+      '',
+      '',
+      part(
+        [
+          'Content-Type: text/html',
+          'Content-ID: <frame-1@mhtml.blink>',
+          'Content-Transfer-Encoding: quoted-printable',
+          'Content-Location: https://example.com/wiki/Pamir',
+        ],
+        qp(html),
+      ),
+      part(
+        [
+          'Content-Type: image/gif',
+          'Content-Transfer-Encoding: base64',
+          'Content-Location: https://example.com/img/peak.gif',
+        ],
+        'AAAA\r\nAAAA',
+      ),
+      part(
+        [
+          'Content-Type: image/png',
+          'Content-Transfer-Encoding: base64',
+          'Content-Location: https://example.com/img/lake.png',
+        ],
+        'BBBB',
+      ),
+      part(
+        ['Content-Type: image/jpeg', 'Content-Transfer-Encoding: base64', 'Content-ID: <logo@x>'],
+        'CCCC',
+      ),
+      `--${BOUNDARY}--`,
+      '',
+    ].join('\r\n');
+
+  const MHTML_ARTICLE = ARTICLE.replace(
+    `<figure><img src="${PIXEL}" alt="A peak">`,
+    `<figure><img src="https://example.com/img/peak.gif" srcset="https://example.com/img/peak-2x.gif 2x" alt="A peak">
+     <img src="../img/lake.png" alt="A lake"><img src="cid:logo@x" alt="A logo">
+     <img src="https://example.com/img/missing.gif" alt="Not saved">`,
+  ).replace('<h1>Pamir Mountains</h1>', '<h1>Pamir Mountains</h1><p>Die Berge über dem Tal.</p>');
+
+  const MHTML = archive(page(MHTML_ARTICLE, '<title>Pamir über alles</title>'));
+
+  it('decodes the HTML part and inlines the archived images', async () => {
+    const book = await make(MHTML, 'Pamir.mhtml', '');
+    expect(book.metadata.title).toBe('Pamir über alles');
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.body.textContent).toContain('Die Berge über dem Tal.');
+    expect(doc.body.textContent).toContain('Lorem ipsum');
+    const src = (alt: string) => doc.querySelector(`img[alt="${alt}"]`)?.getAttribute('src');
+    expect(src('A peak')).toBe('data:image/gif;base64,AAAAAAAA');
+    expect(doc.querySelector('img[alt="A peak"]')?.hasAttribute('srcset')).toBe(false);
+    expect(src('A lake')).toBe('data:image/png;base64,BBBB');
+    expect(src('A logo')).toBe('data:image/jpeg;base64,CCCC');
+    expect(src('Not saved')).toBe('https://example.com/img/missing.gif');
+  });
+
+  it('recognizes the archive by its content, whatever the file is named', async () => {
+    // The library stores an imported page under the HTML format's .html name.
+    const book = await make(MHTML, 'Pamir.html');
+    expect(book.metadata.title).toBe('Pamir über alles');
+  });
+
+  it('titles the book after the .mht file when the page has no title', async () => {
+    const book = await make(
+      archive(page(ARTICLE.replace('<h1>Pamir Mountains</h1>', ''), '')),
+      'Saved Page.mht',
+      '',
+    );
+    expect(book.metadata.title).toBe('Saved Page');
+  });
+
+  it('reads a long header block, splits only at delimiter lines, and resolves part URLs against the message', async () => {
+    const html = page(
+      `<article><h1>Archive</h1><!--banner-->${prose()}<p><img src="../archive/pics/a.gif" alt="A"></p>${prose()}</article>`,
+      '<title>Archive</title>',
+    );
+    const book = await make(
+      [
+        `Subject: ${'x'.repeat(10000)}`,
+        'Content-Location: https://example.com/archive/',
+        'Content-Type: multipart/related; boundary="b"',
+        '',
+        '--b',
+        'Content-Type: text/html',
+        'Content-Location: https://example.com/dir/page',
+        '',
+        html,
+        '--b',
+        'Content-Type: image/gif',
+        'Content-Transfer-Encoding: base64',
+        'Content-Location: pics/a.gif',
+        '',
+        'AAAA',
+        '--b--',
+      ].join('\r\n'),
+      'archive.mhtml',
+      '',
+    );
+    expect(book.metadata.title).toBe('Archive');
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.body.textContent).toContain('Lorem ipsum');
+    expect(doc.querySelector('img[alt="A"]')?.getAttribute('src')).toBe(
+      'data:image/gif;base64,AAAA',
+    );
+  });
+
+  it('resolves the page against the message location when the page part has none', async () => {
+    const html = page(
+      `<article><h1>Archive</h1>${prose()}<p><img src="pics/a.gif" alt="A"></p>${prose()}</article>`,
+    );
+    const book = await make(
+      [
+        'Content-Location: https://example.com/archive/',
+        'Content-Type: multipart/related; boundary="b"',
+        '',
+        '--b',
+        'Content-Type: text/html',
+        '',
+        html,
+        '--b',
+        'Content-Type: image/gif',
+        'Content-Transfer-Encoding: base64',
+        'Content-Location: pics/a.gif',
+        '',
+        'AAAA',
+        '--b--',
+      ].join('\r\n'),
+      'archive.mhtml',
+      '',
+    );
+    const doc = await book.sections[0]!.createDocument();
+    expect(doc.querySelector('img[alt="A"]')?.getAttribute('src')).toBe(
+      'data:image/gif;base64,AAAA',
+    );
+  });
+
+  it('rejects an archive without an HTML page instead of rendering the MIME text', async () => {
+    const mhtml = [
+      'Content-Type: multipart/related; boundary="b"',
+      '',
+      '--b',
+      'Content-Type: image/gif',
+      '',
+      'GIF',
+      '--b--',
+    ].join('\r\n');
+    await expect(make(mhtml, 'images.mhtml', '')).rejects.toThrow(/no HTML page/);
+  });
+});

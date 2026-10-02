@@ -298,6 +298,8 @@ export class RemoteFile extends File implements ClosableFile {
   static MAX_CACHE_CHUNK_SIZE = 1024 * 128;
   static MAX_CACHE_ITEMS_SIZE: number = 128;
   static RANGE_SCHEME_ORIGIN = 'http://rangefile.localhost';
+  // Bounded concurrency for multi-chunk fetchRange() reads (see fetchRange).
+  static MAX_PARALLEL_RANGE_FETCHES = 4;
 
   constructor(url: string, name?: string, type = '', lastModified = Date.now(), fetcher = fetch) {
     const basename = url.split('/').pop() || 'remote-file';
@@ -424,11 +426,31 @@ export class RemoteFile extends File implements ClosableFile {
     const MAX_RANGE_LEN = 1024 * 1000;
 
     if (rangeSize > MAX_RANGE_LEN) {
-      const buffers: ArrayBuffer[] = [];
+      // The chunks are independent range requests; issue them with bounded
+      // concurrency instead of one-by-one. On Android every chunk is a
+      // scheme round trip through the WebView network stack, so a multi-MB
+      // read (e.g. a large EPUB's central directory) used to serialize N
+      // fetches behind each other. Each result is written into its
+      // preallocated slot so chunk order is preserved.
+      const starts: number[] = [];
       for (let currentStart = start; currentStart <= end; currentStart += MAX_RANGE_LEN) {
-        const currentEnd = Math.min(currentStart + MAX_RANGE_LEN - 1, end);
-        buffers.push(await this.fetchRangePart(currentStart, currentEnd));
+        starts.push(currentStart);
       }
+      const buffers: ArrayBuffer[] = new Array(starts.length);
+      let next = 0;
+      await Promise.all(
+        Array.from(
+          { length: Math.min(RemoteFile.MAX_PARALLEL_RANGE_FETCHES, starts.length) },
+          async () => {
+            while (next < starts.length) {
+              const index = next++;
+              const currentStart = starts[index]!;
+              const currentEnd = Math.min(currentStart + MAX_RANGE_LEN - 1, end);
+              buffers[index] = await this.fetchRangePart(currentStart, currentEnd);
+            }
+          },
+        ),
+      );
       const totalSize = buffers.reduce((sum, buffer) => sum + buffer.byteLength, 0);
       const combinedBuffer = new Uint8Array(totalSize);
       let offset = 0;

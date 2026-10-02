@@ -9,7 +9,6 @@ import { throttle } from '@/utils/throttle';
 import { getXPointerFromCFI, getCFIFromXPointer, XCFI } from '@/utils/xcfi';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
-import { removeGlobalAnnotationOverlays } from '../utils/globalAnnotations';
 
 const latestChangeAt = (note: BookNote) => Math.max(note.updatedAt, note.deletedAt ?? 0);
 
@@ -178,11 +177,14 @@ export const useNotesSync = (bookKey: string) => {
     [syncNotes],
   );
 
+  // A book's first reading position is saved after its notes load, and that
+  // write keeps the same booknotes array, so re-run once it appears.
+  const hasLocation = !!config?.location;
   useEffect(() => {
-    if (!config?.location || !user) return;
+    if (!hasLocation || !user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config?.booknotes, handleAutoSync]);
+  }, [hasLocation, config?.booknotes, handleAutoSync]);
 
   useEffect(() => {
     const processNewNote = (note: BookNote) => {
@@ -227,10 +229,7 @@ export const useNotesSync = (bookKey: string) => {
           // unless the local note was edited after that deletion.
           const local = oldNotes.find((oldNote) => oldNote.id === note.id);
           if (local?.type === 'annotation' && !local.deletedAt && incomingWins(local, note)) {
-            getViewsById(bookKey.split('-')[0]!).forEach((v) => {
-              removeBookNoteOverlays(v, local);
-              if (local.global) removeGlobalAnnotationOverlays(v, local);
-            });
+            getViewsById(bookKey.split('-')[0]!).forEach((v) => removeBookNoteOverlays(v, local));
             // Stamp the deletion as this device's own change so the next push
             // tombstones the duplicate row under its book hash as well.
             note.updatedAt = Date.now();

@@ -178,8 +178,8 @@ export function formatNumber(
   return localize ? localizeNumber(number, language) : String(number);
 }
 
-/** Remaining logical pages to the next TOC entry, including chapters sharing a spine file. */
-export function getChapterLocationsLeft(
+/** Logical location where the current TOC chapter ends, including chapters sharing a spine file. */
+export function getChapterEndLocation(
   progress: BookProgress | null | undefined,
   toc: TOCItem[] | null | undefined,
 ): number | undefined {
@@ -195,6 +195,5 @@ export function getChapterLocationsLeft(
     .find((item) => !item.location || item.location.current > start);
   // Use the spine fallback until the next chapter's navigation location is baked.
   if (next && !next.location) return undefined;
-  const end = Math.min(next?.location?.current ?? progress.pageinfo.total, progress.pageinfo.total);
-  return Math.max(1, end - progress.pageinfo.current);
+  return Math.min(next?.location?.current ?? progress.pageinfo.total, progress.pageinfo.total);
 }

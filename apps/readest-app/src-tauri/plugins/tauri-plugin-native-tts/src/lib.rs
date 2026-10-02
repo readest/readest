@@ -9,6 +9,8 @@ pub use models::*;
 mod desktop;
 #[cfg(mobile)]
 mod mobile;
+#[cfg(desktop)]
+mod now_playing;
 
 mod commands;
 mod error;
@@ -34,8 +36,11 @@ impl<R: Runtime, T: Manager<R>> crate::NativeTtsExt<R> for T {
 
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
-    Builder::new("native-tts")
-        .invoke_handler(tauri::generate_handler![
+    // register_listener/remove_listener are Rust commands only on desktop; on
+    // mobile they must fall through to the native plugin.
+    macro_rules! handler {
+        ($($extra:path),*) => {
+            tauri::generate_handler![
             commands::init,
             commands::speak,
             commands::stop,
@@ -52,8 +57,18 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::update_carplay_state,
             commands::playout_enqueue,
             commands::playout_control,
-            commands::playout_position,
-        ])
+            commands::playout_position $(, $extra)*]
+        };
+    }
+    let builder = Builder::new("native-tts");
+    #[cfg(desktop)]
+    let builder = builder.invoke_handler(handler!(
+        commands::register_listener,
+        commands::remove_listener
+    ));
+    #[cfg(mobile)]
+    let builder = builder.invoke_handler(handler!());
+    builder
         .setup(|app, api| {
             #[cfg(mobile)]
             let native_tts = mobile::init(app, api)?;

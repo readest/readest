@@ -132,16 +132,29 @@ fn is_within_app_storage(file_path: &Path, roots: &[PathBuf]) -> bool {
     roots.iter().any(|root| file_path.starts_with(root))
 }
 
+/// A custom data location keeps every file beneath a folder named `Readest`,
+/// which the `**/Readest/**/*` fs capability already grants to the fs plugin.
+/// Match a whole path component so `Readest-agent.plist` stays foreign.
+fn is_within_data_dir(file_path: &Path) -> bool {
+    file_path.components().any(|c| c.as_os_str() == "Readest")
+}
+
+/// Refuse `..` before resolving, so neither traversal nor a symlink can carry
+/// a path out of the folder its spelling names.
+fn resolve_request(file_path: &str) -> std::result::Result<PathBuf, Error> {
+    if has_disallowed_components(file_path) {
+        return Err(Error::Forbidden(file_path.to_string()));
+    }
+    Ok(resolve_path(Path::new(file_path))?)
+}
+
 /// Authorize the resolved path against user grants or real application roots.
 /// Callers use the returned path for I/O, never the untrusted spelling.
 pub(crate) fn ensure_path_allowed<R: tauri::Runtime>(
     app: &AppHandle<R>,
     file_path: &str,
 ) -> std::result::Result<PathBuf, Error> {
-    if has_disallowed_components(file_path) {
-        return Err(Error::Forbidden(file_path.to_string()));
-    }
-    let resolved = resolve_path(Path::new(file_path))?;
+    let resolved = resolve_request(file_path)?;
     let scope = app.fs_scope();
     if scope.is_forbidden(&resolved) {
         return Err(Error::Forbidden(file_path.to_string()));
@@ -155,7 +168,10 @@ pub(crate) fn ensure_path_allowed<R: tauri::Runtime>(
     .into_iter()
     .filter_map(|root| root.ok().and_then(|root| resolve_path(&root).ok()))
     .collect();
-    if scope.is_allowed(&resolved) || is_within_app_storage(&resolved, &roots) {
+    if scope.is_allowed(&resolved)
+        || is_within_app_storage(&resolved, &roots)
+        || is_within_data_dir(&resolved)
+    {
         return Ok(resolved);
     }
     Err(Error::Forbidden(file_path.to_string()))
@@ -419,8 +435,55 @@ fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) ->
 
 #[cfg(test)]
 mod tests {
-    use super::{has_disallowed_components, is_within_app_storage, resolve_path};
+    use super::{
+        has_disallowed_components, is_within_app_storage, is_within_data_dir, resolve_path,
+        resolve_request,
+    };
     use std::path::{Path, PathBuf};
+
+    #[test]
+    fn data_dir_authorizes_custom_library_locations() {
+        // Custom data locations always keep their files beneath a `Readest`
+        // folder (#6383): iCloud Drive, Android shared storage, portable Windows.
+        for path in [
+            "/Users/x/Library/Mobile Documents/com~apple~CloudDocs/Resources/Readest/Readest/Books/h/book.epub",
+            "/storage/emulated/0/Books/Readest/Readest/Books/h/book.epub",
+            "/Users/x/Apps/Readest-portable/Readest/Books/h/book.epub",
+            "/Users/x/Readest",
+        ] {
+            assert!(is_within_data_dir(Path::new(path)), "{path}");
+        }
+        for path in [
+            "/Users/x/Library/LaunchAgents/Readest-agent.plist",
+            "/Users/x/Apps/Readest-portable/secrets.txt",
+            "/Users/x/.ssh/id_rsa",
+        ] {
+            assert!(!is_within_data_dir(Path::new(path)), "{path}");
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn data_dir_does_not_authorize_escapes_from_a_readest_folder() {
+        let temp = std::env::temp_dir().join(format!("readest-data-dir-{}", std::process::id()));
+        let data = temp.join("Readest");
+        let secret = temp.join("secret");
+        std::fs::create_dir_all(&data).unwrap();
+        std::fs::create_dir_all(&secret).unwrap();
+        std::fs::write(secret.join("key"), b"secret").unwrap();
+        std::os::unix::fs::symlink(&secret, data.join("escape")).unwrap();
+        let allowed = |path: &Path| {
+            resolve_request(path.to_str().unwrap()).is_ok_and(|p| is_within_data_dir(&p))
+        };
+        // `..` is refused before resolution, existing or not.
+        assert!(!allowed(&data.join("../secret/key")));
+        assert!(!allowed(&data.join("Books/../../secret/key")));
+        // A symlink is judged by where it lands, for reads and new downloads.
+        assert!(!allowed(&data.join("escape/key")));
+        assert!(!allowed(&data.join("escape/new/file.epub")));
+        assert!(allowed(&data.join("Books/new.epub")));
+        std::fs::remove_dir_all(temp).unwrap();
+    }
 
     #[test]
     fn app_storage_does_not_authorize_brand_names_in_foreign_paths() {

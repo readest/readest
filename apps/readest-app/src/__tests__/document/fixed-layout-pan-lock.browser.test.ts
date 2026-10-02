@@ -99,3 +99,65 @@ describe('fixed-layout horizontal pan lock inside page frames', () => {
     expect(iframe.contentDocument!.documentElement.style.touchAction).toBe('');
   });
 });
+
+/**
+ * `touch-action` alone does not hold on iOS (#6407): a swipe that starts while
+ * the page is still coasting from a previous fling is taken over by the native
+ * scroller without consulting `touch-action`, so every quick follow-up swipe
+ * drifts the page sideways again. In vertical scroll flow the lock therefore
+ * takes the horizontal scroll range away altogether: the host stops scrolling
+ * on x and the offset the reader panned to is carried by the page strip.
+ */
+describe('fixed-layout horizontal pan lock in vertical scroll flow', () => {
+  const PAGE_HTML = '<!doctype html><html><body style="margin:0">page</body></html>';
+  const makeBook = (sectionCount: number) => ({
+    dir: 'ltr',
+    rendition: { viewport: { width: 400, height: 600 }, spread: 'none' },
+    sections: Array.from({ length: sectionCount }, () => ({
+      load: async () => ({ src: 'srcdoc', data: PAGE_HTML }),
+      linear: 'yes',
+    })),
+  });
+
+  const mountZoomed = async () => {
+    host = document.createElement('foliate-fxl');
+    host.style.width = '400px';
+    host.style.height = '400px';
+    host.setAttribute('flow', 'scrolled');
+    host.setAttribute('scroll-direction', 'vertical');
+    host.setAttribute('scale-factor', '200');
+    document.body.append(host);
+    (host as unknown as { open(book: unknown): void }).open(makeBook(3));
+    const page = host.shadowRoot!.querySelector<HTMLElement>('.scroll-page')!;
+    const start = performance.now();
+    while (host.scrollWidth <= host.clientWidth) {
+      if (performance.now() - start > 4000) throw new Error('zoomed layout never rendered');
+      await new Promise((r) => setTimeout(r, 30));
+    }
+    host.scrollLeft = 150;
+    return page;
+  };
+
+  it('takes the horizontal scroll range away without moving the page', async () => {
+    const page = await mountZoomed();
+    const left = page.getBoundingClientRect().left;
+
+    host!.toggleAttribute('lock-pan-x', true);
+
+    expect(getComputedStyle(host!).overflowX).toBe('hidden');
+    expect(host!.scrollLeft).toBe(0);
+    expect(page.getBoundingClientRect().left).toBe(left);
+  });
+
+  it('hands the offset back to the scroller when unlocked', async () => {
+    const page = await mountZoomed();
+    const left = page.getBoundingClientRect().left;
+
+    host!.toggleAttribute('lock-pan-x', true);
+    host!.toggleAttribute('lock-pan-x', false);
+
+    expect(getComputedStyle(host!).overflowX).toBe('auto');
+    expect(host!.scrollLeft).toBe(150);
+    expect(page.getBoundingClientRect().left).toBe(left);
+  });
+});

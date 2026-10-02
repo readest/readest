@@ -634,7 +634,9 @@ pub async fn clip_url<R: tauri::Runtime>(
         .title_bar_style(TitleBarStyle::Overlay);
 
     #[cfg(all(not(target_os = "macos"), desktop))]
-    let win_builder = win_builder.decorations(false).shadow(true);
+    let win_builder = win_builder
+        .decorations(false)
+        .shadow(crate::undecorated_shadow_is_symmetric());
 
     // WebView2 shares one browser process across every webview in the app
     // and refuses to create one whose environment options differ from those

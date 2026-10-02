@@ -8,7 +8,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { getBookDirFromLanguage } from '@/utils/book';
-import { getPanelTopInset } from '@/utils/insets';
+import { getPanelHorizontalInsetStyle, getPanelTopInset } from '@/utils/insets';
 import { useEnv } from '@/context/EnvContext';
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
 import { usePanelResize } from '@/hooks/usePanelResize';
@@ -29,7 +29,8 @@ const SideBar = ({}) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { updateAppTheme, safeAreaInsets, systemUIVisible, statusBarHeight } = useThemeStore();
+  const { updateAppTheme, safeAreaInsets, systemUIVisible, statusBarHeight, isIPhoneDuo } =
+    useThemeStore();
   const { sideBarBookKey, setSideBarBookKey, getSearchNavState, setSearchTerm, clearSearch } =
     useSidebarStore();
   const { isSearchBarVisible, setSearchBarVisible } = useSidebarStore();
@@ -207,6 +208,9 @@ const SideBar = ({}) => {
             statusBarHeight,
             safeAreaInsets,
           })}px`,
+          // iPhone Duo's status-bar strip reports as a large left/right inset
+          // (#6307). A side panel is only padded on its screen edge (left).
+          ...getPanelHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo, isMobile, 'left'),
         }}
       >
         <style jsx>{`

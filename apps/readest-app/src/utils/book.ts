@@ -299,6 +299,36 @@ export const pickFresherGroup = <T extends BookGroupFields>(
   };
 };
 
+/**
+ * Move a book into a group, or out of one when both are undefined. Only the
+ * group's own clock is stamped: `updatedAt` is the Date Read sort key and
+ * regrouping is not reading (#6414). A removal MUST be stamped too — an
+ * unstamped ungrouped row loses to a grouped peer by design (#5911).
+ */
+export const setBookGroup = (
+  book: Book,
+  groupId: string | undefined,
+  groupName: string | undefined,
+  now = Date.now(),
+) => {
+  book.groupId = groupId;
+  book.groupName = groupName;
+  book.groupUpdatedAt = now;
+};
+
+/**
+ * The latest local edit on any of a book row's clocks. Group, metadata and
+ * cover edits stamp only their own clock and leave `updatedAt` alone (#6414),
+ * so the sync push has to look at all of them to know the row changed.
+ */
+export const getBookChangedAt = (book: Book): number =>
+  Math.max(
+    book.updatedAt ?? 0,
+    book.groupUpdatedAt ?? 0,
+    book.metadataUpdatedAt ?? 0,
+    book.coverUpdatedAt ?? 0,
+  );
+
 /** True when `resolved` names a different group than `current` does. */
 export const bookGroupDiffers = (current: BookGroupFields, resolved: BookGroupFields): boolean =>
   (current.groupId ?? undefined) !== (resolved.groupId ?? undefined) ||
@@ -313,7 +343,6 @@ export const getBookWithUpdatedMetadata = (
   metadata: BookMetadata,
   tags?: string[],
 ): Book => {
-  const now = Date.now();
   const updatedBook: Book = {
     ...book,
     metadata,
@@ -321,10 +350,10 @@ export const getBookWithUpdatedMetadata = (
     title: formatTitle(metadata.title),
     author: formatAuthors(metadata.author),
     primaryLanguage: getPrimaryLanguage(metadata.language),
-    updatedAt: now,
     // The metadata group merges on its own clock so a page turn elsewhere
-    // (which dominates updatedAt) cannot clobber this edit (issue #5438).
-    metadataUpdatedAt: now,
+    // (which dominates updatedAt) cannot clobber this edit (issue #5438), and
+    // updatedAt stays put so the edit doesn't reorder Date Read (#6414).
+    metadataUpdatedAt: Date.now(),
   };
   const newCoverImageUrl = metadata.coverImageBlobUrl || metadata.coverImageUrl;
   if (newCoverImageUrl) {
@@ -412,7 +441,7 @@ export const getCurrentPage = (book: Book, progress: BookProgress) => {
  * manually-marked-unread books. A book actively being read has `readingStatus`
  * either `undefined` (cleared from 'unread' on first open) or `'reading'`, both
  * of which pass. Shared by the library's recently-read shelf and the
- * home-screen reading widget so the two surfaces stay in sync.
+ * home-screen bookshelf widget so the two surfaces stay in sync.
  */
 export const isCurrentlyReadingBook = (book: Book): boolean =>
   !book.deletedAt &&

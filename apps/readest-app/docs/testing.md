@@ -197,9 +197,10 @@ the same port — `chrome://inspect` in a local Chrome, or
   click it. Driving an import end-to-end needs X11 input (XTEST via python-xlib:
   focus the chooser, `Ctrl+L`, type the path, `Return` to select, `Return` to
   open) — or skip the picker and dispatch the app's own `import-book-files` event.
-- **Passing `--remote-debugging-port` on argv works too**, but `tauri-plugin-cli`
-  parses the same argv for open-with paths and warns on every launch. Prefer the
-  env var.
+- **Passing `--remote-debugging-port` on argv does not work.** The CEF runtime
+  keeps Chromium's remote debugging switched off unless the app asks for it, which
+  it does only for `READEST_CDP_PORT`; Chromium logs "DevTools remote debugging is
+  disallowed by the system admin" for a stray switch.
 
 ## crengine XPointer Oracle (KOReader sync)
 

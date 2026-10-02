@@ -22,7 +22,7 @@ local function unwrap(name, expected_status, ok, res)
         logger.dbg("SupabaseAuthClient:" .. name .. " failure:", res)
         return false, { msg = tostring(res) }
     end
-    return res.status == expected_status, res.body or {}
+    return res.status == expected_status, res.body or {}, res.status
 end
 
 function SupabaseAuthClient:new(o)

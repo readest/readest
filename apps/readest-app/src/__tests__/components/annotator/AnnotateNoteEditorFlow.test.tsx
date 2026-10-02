@@ -13,6 +13,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import { BookNote } from '@/types/book';
+import { NOTE_PREFIX } from '@/types/view';
 
 // Stand in for the two presentation surfaces so the test can assert *where*
 // the editor was handed to, and drive its save/cancel without laying a popup
@@ -66,6 +67,7 @@ const h = vi.hoisted(() => ({
   setSearchBarVisible: vi.fn(),
   deselect: vi.fn(),
   suppressNativeSelectionHandles: vi.fn(),
+  views: [] as { addAnnotation: ReturnType<typeof vi.fn> }[],
   isSideBarVisible: false,
   isTextSelected: { current: true },
 }));
@@ -134,7 +136,7 @@ vi.mock('@/store/bookDataStore', () => {
 vi.mock('@/store/readerStore', () => {
   const state = {
     getView: () => ({ deselect: h.deselect }),
-    getViewsById: () => [],
+    getViewsById: () => h.views,
     getViewSettings: () => h.viewSettings,
   };
   return {
@@ -187,6 +189,7 @@ vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
+vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
 vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
@@ -235,7 +238,20 @@ vi.mock('@/services/transformService', () => ({
   transformContent: ({ content }: { content: string }) => Promise.resolve(content),
 }));
 
-vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/annotator/AnnotationRangeEditor', async () => {
+  const { useState } = await import('react');
+  // Renders the annotation it was mounted for next to the one it is showing:
+  // the real editor latches its target on mount.
+  const RangeEditor = (props: { annotation: { id: string } }) => {
+    const [mountedFor] = useState(props.annotation.id);
+    return (
+      <div data-testid='annotation-range-editor' data-mounted-for={mountedFor}>
+        {props.annotation.id}
+      </div>
+    );
+  };
+  return { default: RangeEditor };
+});
 vi.mock('@/app/reader/components/annotator/SelectionRangeEditor', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({ default: () => null }));
@@ -302,6 +318,7 @@ const liveAnnotations = () => h.config.booknotes.filter((note) => !note.deletedA
 beforeEach(() => {
   h.actions = null;
   h.config.booknotes = [];
+  h.views = [];
   h.viewSettings.copyToNotebook = false;
   // Mirror the real store: write back whatever array it is handed, since the
   // note-text save builds a new array rather than mutating in place.
@@ -360,6 +377,47 @@ describe('Annotate opens the note editor at the selection', () => {
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
   });
 
+  test.each([
+    'onHighlightSelection',
+    'onUnderlineSelection',
+  ])('%s removes the saved note bubble when deleting its highlight (#6540)', async (action) => {
+    h.views = [{ addAnnotation: vi.fn() }, { addAnnotation: vi.fn() }];
+    await annotate();
+    await act(async () => {
+      screen.getByText('stub-save').click();
+    });
+    const annotation = liveAnnotations()[0]!;
+    for (const view of h.views) {
+      expect(view.addAnnotation).toHaveBeenCalledWith(
+        {
+          ...annotation,
+          value: `${NOTE_PREFIX}${annotation.cfi}`,
+        },
+        false,
+      );
+      view.addAnnotation.mockClear();
+    }
+
+    await selectText();
+    act(() => {
+      h.actions?.[action]?.();
+    });
+
+    expect(liveAnnotations()).toHaveLength(0);
+    expect(h.saveConfig).toHaveBeenLastCalledWith({}, 'book-1', h.config, settings);
+    for (const view of h.views) {
+      expect(view.addAnnotation).toHaveBeenCalledWith(
+        expect.objectContaining({ value: `${NOTE_PREFIX}${annotation.cfi}` }),
+        true,
+      );
+      expect(view.addAnnotation).toHaveBeenCalledWith(
+        expect.objectContaining({ cfi: annotation.cfi }),
+        true,
+      );
+      expect(view.addAnnotation).toHaveBeenCalledTimes(2);
+    }
+  });
+
   test('cancelling drops the placeholder highlight it just created (#4791)', async () => {
     await annotate();
     expect(liveAnnotations()).toHaveLength(1);
@@ -392,6 +450,19 @@ describe('Annotate opens the note editor at the selection', () => {
       screen.getByText('stub-edit-note').click();
     });
   };
+
+  // Dropping a footnote-popup selection makes the popup report it cleared a
+  // beat later; that echo must not take the editor down with it (#6395).
+  test('keeps the editor open when the dropped popup selection reports cleared', async () => {
+    await annotate();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', { key: 'book-1' });
+    });
+
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    expect(liveAnnotations()).toHaveLength(1);
+  });
 
   test('drops the selection so the range handles cannot cover the editor (#5815)', async () => {
     await annotate();
@@ -520,5 +591,89 @@ describe('Annotate opens the note editor at the selection', () => {
     });
 
     expect(liveAnnotations()).toHaveLength(1);
+  });
+});
+
+// #6390: a highlight tapped inside the footnote popup opens its range handles,
+// the same as one tapped on the page, so its boundaries can be adjusted there.
+describe('Tapping a highlight in the footnote popup', () => {
+  test('opens the range editor on that highlight', async () => {
+    h.config.booknotes = [
+      {
+        id: 'popup-highlight',
+        type: 'annotation',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        text: 'selected text',
+        style: 'highlight',
+        color: 'yellow',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      } as BookNote,
+    ];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'selected text';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', {
+        key: 'book-1',
+        range,
+        index: 0,
+        cfi: 'epubcfi(/6/2!/4/2)',
+        annotated: true,
+      });
+    });
+
+    expect(screen.getByTestId('annotation-range-editor').textContent).toBe('popup-highlight');
+  });
+
+  // #6390 review: the range editor latches the annotation it edits when it
+  // mounts. Going straight from one popup highlight to another kept it
+  // mounted, so dragging the second one's handles rewrote the first.
+  test('gives the next highlight tapped its own range editor', async () => {
+    const highlight = (id: string, cfi: string) =>
+      ({
+        id,
+        type: 'annotation',
+        cfi,
+        text: 'selected text',
+        style: 'highlight',
+        color: 'yellow',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      }) as BookNote;
+    h.config.booknotes = [
+      highlight('first', 'epubcfi(/6/2!/4/2)'),
+      highlight('second', 'epubcfi(/6/2!/4/4)'),
+    ];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const tap = async (cfi: string) => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = 'selected text';
+      document.body.append(paragraph);
+      const range = document.createRange();
+      range.selectNodeContents(paragraph);
+      await act(async () => {
+        await eventDispatcher.dispatch('footnote-selection', {
+          key: 'book-1',
+          range,
+          index: 0,
+          cfi,
+          annotated: true,
+        });
+      });
+    };
+
+    await tap('epubcfi(/6/2!/4/2)');
+    await tap('epubcfi(/6/2!/4/4)');
+
+    const editor = screen.getByTestId('annotation-range-editor');
+    expect(editor.textContent).toBe('second');
+    expect(editor.dataset['mountedFor']).toBe('second');
   });
 });

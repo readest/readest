@@ -16,7 +16,11 @@ let currentViewSettings: ViewSettings;
 let currentProgress: BookProgress | null;
 let currentBookData: {
   isFixedLayout: boolean;
-  bookDoc?: { metadata?: Record<string, unknown>; toc?: TOCItem[] };
+  bookDoc?: {
+    metadata?: Record<string, unknown>;
+    toc?: TOCItem[];
+    sections?: { location?: { current: number; next: number; total: number } }[];
+  };
 } | null;
 let currentRenderer: { page: number; pages: number };
 let currentSectionFractions: number[] = [];
@@ -24,10 +28,7 @@ let currentTocHrefIndex: Record<string, number> = {};
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string, values?: Record<string, unknown>) =>
-    s
-      .replace('{{count}}', String(values?.['count'] ?? '{{count}}'))
-      .replace('{{number}}', String(values?.['number'] ?? '{{number}}'))
-      .replace('{{time}}', String(values?.['time'] ?? '{{time}}')),
+    s.replace(/{{(\w+)}}/g, (match, name) => String(values?.[name] ?? match)),
 }));
 
 let currentAppService = { isMobile: false, hasSafeAreaInset: false };
@@ -150,6 +151,50 @@ describe('ProgressBar — fixed-layout remaining pages', () => {
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
       'pages left in chapter',
     );
+  });
+});
+
+describe('ProgressBar — remaining time and pages together', () => {
+  it.each([
+    ['in book', true],
+    ['in chapter', false],
+  ])('shows one combined sentence %s', (scope, isFixedLayout) => {
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: true,
+      showRemainingTime: true,
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    const text = container.querySelector('.remaining-info')?.textContent ?? '';
+    expect(text).toMatch(new RegExp(`and 3 pages left ${scope}$`));
+    expect(text.match(/left/g)).toHaveLength(1);
+  });
+});
+
+describe('ProgressBar — localized numerals', () => {
+  afterEach(() => localStorage.removeItem('i18nextLng'));
+
+  it('writes the remaining time in Chinese numerals in vertical Chinese layouts', () => {
+    localStorage.setItem('i18nextLng', 'zh-CN');
+    currentViewSettings = {
+      ...baseSettings,
+      vertical: true,
+      showRemainingTime: true,
+      showRemainingPages: false,
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: true };
+
+    const { container } = renderProgressBar();
+
+    const label = container.querySelector('.progressinfo')?.getAttribute('aria-label') ?? '';
+    expect(label).toMatch(/[〇一二三四五六七八九十百]+m left in book/);
+    expect(label).not.toMatch(/\d+m left/);
   });
 });
 
@@ -521,7 +566,7 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
 
 describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
   const setup = (page: number, href: string) => {
-    currentViewSettings = { ...baseSettings, showRemainingTime: true, showRemainingPages: true };
+    currentViewSettings = { ...baseSettings, showRemainingTime: true, showRemainingPages: false };
     currentProgress = {
       ...makeProgress(page, 98),
       sectionHref: href,
@@ -534,6 +579,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     currentBookData = {
       isFixedLayout: false,
       bookDoc: {
+        sections: [{ location: { current: 0, next: 98, total: 98 } }],
         toc: [0, 32, 64].map((start, i) => ({
           id: i,
           index: 0,
@@ -549,7 +595,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     setup(30, 'body.xhtml#chapter1');
     const { container } = renderProgressBar();
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '2 min left in chapter',
+      '2m left in chapter',
     );
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
       '1 pages left in chapter',
@@ -560,7 +606,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     setup(32, 'body.xhtml#chapter2');
     const { container, rerender } = renderProgressBar();
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '32 min left in chapter',
+      '32m left in chapter',
     );
     setup(30, 'body.xhtml#chapter1');
     rerender(
@@ -572,11 +618,11 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
       />,
     );
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '2 min left in chapter',
+      '2m left in chapter',
     );
   });
 
-  it('does not inflate remaining screen pages when rounded location spans shrink', () => {
+  it('does not move remaining screen pages when only the rounded location changes', () => {
     setup(1, 'body.xhtml#chapter1');
     currentRenderer = { page: 1, pages: 65 };
     currentProgress!.pageinfo.next = 3;
@@ -588,18 +634,26 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
       gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
     };
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '21 pages left in chapter',
+      '20 pages left in chapter',
     );
     currentProgress!.pageinfo = { current: 3, next: 4, total: 98 };
-    currentRenderer.page = 2;
     rerender(<ProgressBar {...props} />);
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
       '20 pages left in chapter',
     );
-    currentProgress!.pageinfo = { current: 30, next: 30, total: 98 };
+    currentRenderer.page = 2;
     rerender(<ProgressBar {...props} />);
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '2 pages left in chapter',
+      '19 pages left in chapter',
+    );
+  });
+
+  it('switches to hours and minutes at an hour or more', () => {
+    setup(30, 'body.xhtml#chapter1');
+    medianPageDurationSecs = 2700;
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      '1h 30m left in chapter',
     );
   });
 
@@ -607,7 +661,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     setup(96, 'body.xhtml#chapter3');
     const { container } = renderProgressBar();
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '2 min left in chapter',
+      '2m left in chapter',
     );
   });
 
@@ -619,7 +673,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     ];
     const { container } = renderProgressBar();
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '2 min left in chapter',
+      '2m left in chapter',
     );
   });
 
@@ -630,7 +684,7 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     medianPageDurationSecs = null;
     const { container } = renderProgressBar();
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '10 min left in chapter',
+      '10m left in chapter',
     );
   });
 
@@ -639,7 +693,99 @@ describe('ProgressBar — TOC chapter remaining time (#6284)', () => {
     currentRenderer = { page: 26, pages: 86 };
     const { container } = renderProgressBar();
     expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
-      '2 min left in chapter',
+      '2m left in chapter',
     );
+  });
+});
+
+describe('ProgressBar — rounded screen corners', () => {
+  const renderWithCorners = (left: number, right: number) =>
+    render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={5}
+        contentInsets={{ top: 0, right: 16, bottom: 0, left: 16 }}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        cornerRadii={{ left, right }}
+      />,
+    );
+  const footerStyle = (container: HTMLElement) =>
+    (container.querySelector<HTMLElement>('.progressinfo') as HTMLElement).style;
+
+  it('pulls the footer ends clear of the corner arc when the bottom margin is small', () => {
+    currentViewSettings = { ...baseSettings, marginBottomPx: 16, headerFooterFontSize: 12 };
+    const style = footerStyle(renderWithCorners(45, 45).container);
+    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 35.7px)');
+    expect(style.paddingInlineEnd).toBe('max(calc(2.5% + 8px), 35.7px)');
+  });
+
+  it('keeps the regular padding when the text sits above the corner arc', () => {
+    // Text bottom = 104 / 2 - 12 / 2 = 46px, above the 45px corner.
+    currentViewSettings = { ...baseSettings, marginBottomPx: 104, headerFooterFontSize: 12 };
+    const style = renderWithCorners(45, 45)
+      .container.querySelector<HTMLElement>('.progressinfo')
+      ?.getAttribute('style');
+    expect(style).not.toContain('max(');
+  });
+
+  it('only clears the side that meets a rounded corner', () => {
+    // Left of two side-by-side books: its right edge sits mid-screen.
+    currentViewSettings = { ...baseSettings, marginBottomPx: 16, headerFooterFontSize: 12 };
+    const style = footerStyle(renderWithCorners(45, 0).container);
+    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 35.7px)');
+    expect(style.paddingInlineEnd).toBe('calc(2.5% + 8px)');
+  });
+});
+
+describe('ProgressBar — pages left on every page turn (#6442)', () => {
+  it('decrements by one on every screen when a screen holds less than one location', () => {
+    currentViewSettings = { ...baseSettings, showRemainingPages: true };
+    currentSectionFractions = [0, 1];
+    currentBookData = {
+      isFixedLayout: false,
+      bookDoc: {
+        sections: [{ location: { current: 0, next: 10, total: 10 } }],
+        toc: [
+          {
+            id: 0,
+            index: 0,
+            href: 'body.xhtml',
+            label: 'Chapter 1',
+            location: { current: 0, next: 10, total: 10 },
+          },
+        ],
+      },
+    };
+    const labels: string[] = [];
+    const { container, rerender } = renderProgressBar();
+    for (let page = 1; page <= 6; page++) {
+      // 16 screens over 10 locations: foliate floors the location, so it
+      // stays put across some page turns.
+      const location = Math.floor((page * 10) / 16);
+      currentProgress = {
+        ...makeProgress(location, 10),
+        sectionHref: 'body.xhtml',
+        section: { current: 0, total: 1 },
+        pageinfo: { current: location, next: location, total: 10 },
+      };
+      currentRenderer = { page, pages: 16 };
+      rerender(
+        <ProgressBar
+          bookKey='book-1'
+          horizontalGap={0}
+          contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+          gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        />,
+      );
+      labels.push(container.querySelector('.progressinfo')?.getAttribute('aria-label') ?? '');
+    }
+    expect(labels.map((l) => l.match(/(\d+) pages left in chapter/)?.[1])).toEqual([
+      '15',
+      '14',
+      '13',
+      '12',
+      '11',
+      '10',
+    ]);
   });
 });

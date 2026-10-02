@@ -26,6 +26,7 @@ import {
   createBookSorter,
   ensureLibraryGroupByType,
   expandBookshelfSelection,
+  selectAbsOfflineBooks,
   selectDownloadableBooks,
   withReadingStatus,
 } from '../utils/libraryUtils';
@@ -777,11 +778,22 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const downloadableBooks = isSelectMode
     ? selectDownloadableBooks(selectedBooks, sortedBookshelfItems, filteredBooks)
     : [];
+  // Audiobookshelf audiobooks have no cloud copy; Download keeps them on the
+  // device instead (#6256), which needs a native filesystem.
+  const absOfflineBooks =
+    isSelectMode && isTauriAppPlatform()
+      ? selectAbsOfflineBooks(selectedBooks, sortedBookshelfItems, filteredBooks)
+      : [];
 
   const downloadSelectedBooks = async () => {
     const books = downloadableBooks;
-    if (books.length === 0) return;
+    if (books.length === 0 && absOfflineBooks.length === 0) return;
     handleSetSelectMode(false);
+    // The library page owns the premium gate (useAbsOfflineDownload).
+    if (absOfflineBooks.length > 0) {
+      eventDispatcher.dispatch('abs-offline-download', { books: absOfflineBooks });
+    }
+    if (books.length === 0) return;
     // One summary up front rather than a toast per book: the Readest Cloud
     // path returns as soon as each book is queued, but a file backend
     // actually fetches them, and either way the user needs immediate feedback
@@ -907,11 +919,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         </button>
       </div>
     ) : undefined;
-  const importAction = !visibleBooks.length ? (
-    <div className='flex justify-center p-6'>
-      <LibraryEmptyState onImport={handleImportBooks} />
-    </div>
-  ) : !importTile ? (
+  const importAction = !importTile ? (
     <div className='flex justify-center px-4 py-4'>
       <LibraryImportButton onImport={handleImportBooks} />
     </div>
@@ -942,7 +950,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           </button>
         </div>
       )}
-      {contentSearch?.query.trim() && appService ? (
+      {!visibleBooks.length ? (
+        <div className='flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto p-6'>
+          <LibraryEmptyState onImport={handleImportBooks} />
+        </div>
+      ) : contentSearch?.query.trim() && appService ? (
         <LibrarySearchResults
           appService={appService}
           books={visibleBooks}
@@ -959,6 +971,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         <div className='min-h-0 flex-1'>
           <BookshelfStream
             pageNavigation={!!settings.globalViewSettings?.isEink}
+            hidePageButtons={settings.hideBookshelfPageButtons}
             navigationBottomInset={
               selectModeActionsHeight ||
               (appService?.hasSafeAreaInset ? (safeAreaInsets?.bottom || 0) * 0.33 : 0)
@@ -998,7 +1011,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           }
           sendNearbyEnabled={isTauriAppPlatform() && isLocalSendEnabled()}
           onSendNearby={sendSelectedNearby}
-          canDownload={downloadableBooks.length > 0}
+          canDownload={downloadableBooks.length + absOfflineBooks.length > 0}
           onOpen={openSelectedBooks}
           onGroup={groupSelectedBooks}
           onTag={tagSelectedBooks}

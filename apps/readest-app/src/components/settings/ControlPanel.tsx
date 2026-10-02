@@ -14,6 +14,7 @@ import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { isTauriAppPlatform } from '@/services/environment';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import {
   BoxedList,
   NavigationRow,
@@ -26,6 +27,7 @@ import PageTurnerSettings from './PageTurnerSettings';
 import AnnotationToolbarCustomizer from './AnnotationToolbarCustomizer';
 import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 import { canShareText } from '@/utils/share';
+import { useEinkRefreshSupported } from '@/hooks/useEinkRefreshSupported';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import KeyboardShortcutsSettings from './KeyboardShortcutsSettings';
 
@@ -60,6 +62,9 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [annotationQuickAction, setAnnotationQuickAction] = useState(
     viewSettings.annotationQuickAction,
   );
+  const [keepSelectionAfterLookup, setKeepSelectionAfterLookup] = useState(
+    viewSettings.keepSelectionAfterLookup,
+  );
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [showToolbarCustomizer, setShowToolbarCustomizer] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -67,6 +72,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [pageTurnStyle, setPageTurnStyle] = useState(viewSettings.pageTurnStyle || 'push');
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
+  const [einkAutoRefreshInterval, setEinkAutoRefreshInterval] = useState(
+    viewSettings.einkAutoRefreshInterval,
+  );
+  // Whether this device exposes a full-refresh mechanism we can drive. The
+  // "Auto Full Refresh" row is only offered when true, so it never appears on
+  // panels (or phones) where the deep refresh silently does nothing.
+  const einkRefreshSupported = useEinkRefreshSupported();
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [swipeBrightnessGesture, setSwipeBrightnessGesture] = useState(
     settings.swipeBrightnessGesture,
@@ -74,6 +86,10 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
   const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [gamepadEnabled, setGamepadEnabled] = useState(settings.gamepadEnabled);
+  const [reverseWheelPaging, setReverseWheelPaging] = useState(settings.reverseWheelPaging);
+  const [hideBookshelfPageButtons, setHideBookshelfPageButtons] = useState(
+    settings.hideBookshelfPageButtons,
+  );
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
@@ -96,6 +112,24 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       : []),
   ];
 
+  const einkAutoRefreshIntervalOptions = [
+    { value: '0', label: _('Off') },
+    { value: '5', label: _('Every 5 pages') },
+    { value: '10', label: _('Every 10 pages') },
+    { value: '15', label: _('Every 15 pages') },
+    { value: '20', label: _('Every 20 pages') },
+  ];
+  // A synced value outside the offered set (written by another/newer client) has
+  // no matching <option>, so the controlled select would resolve selectedIndex -1
+  // and render blank, hiding the active interval. Surface it as an extra option —
+  // shown, never rewritten — so the display still matches what noteEinkPageTurn
+  // actually reads, without coercing or destroying the stored value.
+  const currentInterval = String(einkAutoRefreshInterval);
+  const einkAutoRefreshIntervalChoices = einkAutoRefreshIntervalOptions.some(
+    (opt) => opt.value === currentInterval,
+  )
+    ? einkAutoRefreshIntervalOptions
+    : [...einkAutoRefreshIntervalOptions, { value: currentInterval, label: currentInterval }];
   const handleReset = () => {
     resetToDefaults({
       scrolled: setScrolledMode,
@@ -109,10 +143,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       swapClickArea: setSwapClickArea,
       animated: setAnimated,
       isEink: setIsEink,
+      einkAutoRefreshInterval: setEinkAutoRefreshInterval,
       allowScript: setAllowScript,
       fullscreenClickArea: setFullscreenClickArea,
       disableDoubleClick: setIsDisableDoubleClick,
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
+      keepSelectionAfterLookup: setKeepSelectionAfterLookup,
       copyToNotebook: setCopyToNotebook,
     });
     saveViewSettings(
@@ -123,6 +159,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       false,
       true,
     );
+    if (appService?.hasUpdater) {
+      const { autoCheckUpdates = true, updateChannel = 'stable' } = DEFAULT_SYSTEM_SETTINGS;
+      saveSysSettings(envConfig, 'autoCheckUpdates', autoCheckUpdates);
+      saveSysSettings(envConfig, 'updateChannel', updateChannel);
+      setIsAutoCheckUpdates(autoCheckUpdates);
+      setIsNightlyChannel(updateChannel === 'nightly');
+    }
     pageTurnerResetRef.current();
     // Keyboard/mouse bindings are NOT reset here — they are device-local and
     // have their own "Reset all" inside the Keyboard Shortcuts sub-page.
@@ -269,6 +312,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [isColorEink]);
 
   useEffect(() => {
+    if (einkAutoRefreshInterval === viewSettings.einkAutoRefreshInterval) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'einkAutoRefreshInterval',
+      einkAutoRefreshInterval,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einkAutoRefreshInterval]);
+
+  useEffect(() => {
     if (autoScreenBrightness === settings.autoScreenBrightness) return;
     saveSysSettings(envConfig, 'autoScreenBrightness', autoScreenBrightness);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -300,6 +356,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [gamepadEnabled]);
 
   useEffect(() => {
+    if (reverseWheelPaging === settings.reverseWheelPaging) return;
+    saveSysSettings(envConfig, 'reverseWheelPaging', reverseWheelPaging);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reverseWheelPaging]);
+
+  useEffect(() => {
+    if (hideBookshelfPageButtons === settings.hideBookshelfPageButtons) return;
+    saveSysSettings(envConfig, 'hideBookshelfPageButtons', hideBookshelfPageButtons);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hideBookshelfPageButtons]);
+
+  useEffect(() => {
     if (viewSettings.allowScript === allowScript) return;
     saveViewSettings(envConfig, bookKey, 'allowScript', allowScript, true, false).then(() => {
       recreateViewer(envConfig, bookKey);
@@ -318,6 +386,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enableAnnotationQuickActions]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'keepSelectionAfterLookup',
+      keepSelectionAfterLookup,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keepSelectionAfterLookup]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'copyToNotebook', copyToNotebook, false, false);
@@ -494,6 +574,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             disabled={!enableAnnotationQuickActions}
           />
         </SettingsRow>
+        {annotationQuickAction === 'dictionary' && (
+          <SettingsSwitchRow
+            label={_('Keep Text Selected After Lookup')}
+            checked={keepSelectionAfterLookup}
+            disabled={!enableAnnotationQuickActions}
+            onChange={() => setKeepSelectionAfterLookup(!keepSelectionAfterLookup)}
+            data-setting-id='settings.control.keepSelectionAfterLookup'
+          />
+        )}
         <SettingsSwitchRow
           label={_('Copy to Notebook')}
           checked={copyToNotebook}
@@ -535,12 +624,36 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setIsEink(!isEink)}
           data-setting-id='settings.control.einkMode'
         />
+        {appService?.isAndroidApp && einkRefreshSupported && (
+          <SettingsRow
+            label={_('Auto Full Refresh')}
+            disabled={!isEink}
+            data-setting-id='settings.control.autoFullRefresh'
+          >
+            <SettingsSelect
+              value={String(einkAutoRefreshInterval)}
+              onChange={(e) => setEinkAutoRefreshInterval(Number(e.target.value))}
+              ariaLabel={_('Auto Full Refresh')}
+              disabled={!isEink}
+              options={einkAutoRefreshIntervalChoices}
+            />
+          </SettingsRow>
+        )}
         <SettingsSwitchRow
           label={_('Color E-Ink Mode')}
           checked={isColorEink}
           disabled={!isEink}
           onChange={() => setIsColorEink(!isColorEink)}
           data-setting-id='settings.control.colorEinkMode'
+        />
+        <SettingsSwitchRow
+          label={_('Hide Bookshelf Buttons')}
+          description={_('Previous and Next in the library')}
+          checked={hideBookshelfPageButtons}
+          // The library follows the global E-Ink setting, not this book's.
+          disabled={!settings.globalViewSettings?.isEink}
+          onChange={() => setHideBookshelfPageButtons(!hideBookshelfPageButtons)}
+          data-setting-id='settings.control.hideBookshelfPageButtons'
         />
         {appService?.isMobileApp && (
           <SettingsSwitchRow
@@ -574,6 +687,13 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
             data-setting-id='settings.control.autohideCursor'
           />
         )}
+        <SettingsSwitchRow
+          label={_('Reverse Mouse Wheel')}
+          description={_('Scroll up for the next page')}
+          checked={reverseWheelPaging}
+          onChange={() => setReverseWheelPaging(!reverseWheelPaging)}
+          data-setting-id='settings.control.reverseWheelPaging'
+        />
         <SettingsSwitchRow
           label={_('Gamepad Support')}
           description={_('Navigate with a connected controller')}

@@ -292,6 +292,22 @@
     scale: 1;
   }
 
+  /* WebKit before Safari 17 (iOS <= 16) crashes the page when a color-mix()
+     that takes currentColor wins box-shadow, and the app reloads to the
+     library (#6355). daisyUI 5 puts one in the toggle and range thumb shadows;
+     the themes pin `--depth: 0`, so those layers mix at 0% and never paint.
+     Drop them and keep the range fill layers. */
+  .toggle,
+  .toggle::before {
+    box-shadow: none;
+  }
+
+  .range::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 2rem var(--range-thumb) inset,
+      var(--range-fill-x) var(--range-fill-y) 0 var(--range-fill-spread);
+  }
+
   html[data-page='default'] {
     background: var(--color-base-100);
   }
@@ -394,6 +410,37 @@
     bottom: 0;
     border: 1px solid var(--color-base-300);
     border-radius: 10px;
+    pointer-events: none;
+  }
+
+  /* Frame for Windows 10, where the OS draws no symmetric edge around an
+     undecorated window. Square rather than rounded, because Windows 10 keeps
+     windows square-cornered too.
+
+     The line this stands in for is normally painted by the OS in the window's
+     non-client area, in a colour that comes from the desktop theme and changes
+     with focus. Nothing in the page can read it, so rather than imitate it this
+     is tied to the surface it sits on: a faded `base-content`, the theme's
+     contrast colour for `base-100`, stays visible across every theme without
+     reading as a heavy black frame.
+
+     `WindowOutline` sizes this box from the window rather than the page: a
+     viewport is a whole number of CSS pixels while a window is a whole number of
+     device pixels, so at a fractional scale factor `inset: 0` overshoots the
+     window and its far edges are painted off it.
+
+     Above every layer in the scale, unlike the `z-99` `.window-border` it
+     resembles: that one decorates the page, so overlays belong over it, while
+     this one stands in for the OS's non-client edge, which no page content ever
+     covered. The app-lock screen (`z-200`) paints an opaque surface over the
+     whole window, and a locked Windows 10 window still has to show its edge. */
+  .window-outline {
+    position: fixed;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    z-index: 210;
+    border: 1px solid color-mix(in oklab, var(--color-base-content) 30%, transparent);
     pointer-events: none;
   }
 

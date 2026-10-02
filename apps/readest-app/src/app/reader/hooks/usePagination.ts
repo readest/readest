@@ -14,7 +14,7 @@ import {
   isPencilNativeKey,
   KeyCandidate,
 } from '@/utils/keybinding';
-import { refreshEinkScreen } from '@/utils/bridge';
+import { getCachedEinkRefreshSupported, refreshEinkScreen } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -123,6 +123,71 @@ const snapScrolledDistanceToLines = (
   }
 };
 
+// Page turns since the last deep full refresh, per open view. Keyed by the
+// FoliateView so the count is scoped to the book and dropped when it closes.
+// Drives the automatic e-ink refresh that fires every `einkAutoRefreshInterval`
+// pages — the only ghosting-cleanup path usable on readers without spare buttons.
+const einkPageTurnsSinceRefresh = new WeakMap<FoliateView, number>();
+
+const resetEinkRefreshCounter = (view: FoliateView | null) => {
+  if (view) einkPageTurnsSinceRefresh.set(view, 0);
+};
+
+const noteEinkPageTurn = (
+  view: FoliateView,
+  viewSettings: ViewSettings,
+  navigation: Promise<void>,
+) => {
+  const interval = viewSettings.einkAutoRefreshInterval;
+  if (!viewSettings.isEink || !interval || interval <= 0) return;
+  // Skip only when the startup capability probe authoritatively settled false
+  // (the interval can reach a non-e-ink device via synced per-book config, so
+  // the bridge call there is a guaranteed no-op). `null` (probe not yet run)
+  // keeps going. Deliberately NOT latched on refresh outcomes: { success:false }
+  // also comes back for transient conditions on a fully supported device
+  // (detached window, zero-sized view, one-off vendor exception), so a single
+  // miss must not permanently disable auto-refresh or hide the user's option.
+  if (getCachedEinkRefreshSupported() === false) return;
+  // Counts page turns routed through viewPagination: tap/click zones, wheel,
+  // volume keys, hardware page-turner keys, and the on-screen nav buttons. Not
+  // counted (they call view.next/prev or renderer.next/prev directly, bypassing
+  // this path): PageUp/PageDown and Shift+Arrow selection-extension shortcuts,
+  // the footer prev/next buttons, section jumps, the native swipe the paginator
+  // commits on its own, and the hands-free turners — auto page turn (corner
+  // dwell), TTS page-follow, and auto-scroll's section hop. So auto full
+  // refresh tracks manual turns only; a hands-free session won't trigger it.
+  // Intentionally no start/end boundary skip either: renderer.atEnd / atStart
+  // are section-page based, so on fixed-layout / one-page-per-section books
+  // they read true on nearly every real turn and would starve the counter. A
+  // no-op turn that cannot move just refreshes on schedule with nothing
+  // changed — the lesser cost versus never refreshing.
+  const turns = (einkPageTurnsSinceRefresh.get(view) ?? 0) + 1;
+  if (turns >= interval) {
+    resetEinkRefreshCounter(view);
+    // Fire only after the turn settles: the native hook deep-refreshes whatever
+    // is on the panel right now, so refreshing before view.next/prev commits
+    // would flash the outgoing page while the incoming one lands as an ordinary
+    // update and keeps its ghosting. Both fulfill and reject re-surface the
+    // current frame — a turn that cannot move (atStart/atEnd) should still clear
+    // on schedule rather than silently skip a cycle.
+    // No platform gate here (unlike the manual binding): the interval is set
+    // only on Android but a synced per-book config can carry it elsewhere, and
+    // off-Android the bridge rejects — swallowed here as an intentional no-op.
+    // A resolved { success: false } is only reachable on a supported device whose
+    // vendor hook failed at refresh time, so it's a real 'advertised but not
+    // refreshing' case worth a field log; a rejection (off-Android) stays silent.
+    const refresh = () =>
+      refreshEinkScreen()
+        .then((result) => {
+          if (!result.success) console.debug('auto e-ink full refresh no-op:', result.error);
+        })
+        .catch(() => {});
+    navigation.then(refresh, refresh);
+  } else {
+    einkPageTurnsSinceRefresh.set(view, turns);
+  }
+};
+
 export const viewPagination = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
@@ -161,7 +226,14 @@ export const viewPagination = (
             view.book.rendition?.layout === 'pre-paginated')
             ? distance
             : snapScrolledDistanceToLines(view, distance, forward);
-        return forward ? view.next(snapped) : view.prev(snapped);
+        // In scrolled mode 'pan' and 'page' both advance a full viewport (the
+        // caller's panDistance is ignored here; short pans only exist on the
+        // non-scrolled panning path below, which deliberately does not count).
+        // So every scrolled turn reaching here is one page — counting all of
+        // them keeps "Every N pages" at N viewports.
+        const navigation = forward ? view.next(snapped) : view.prev(snapped);
+        noteEinkPageTurn(view, viewSettings, navigation);
+        return navigation;
       }
     }
   } else if (mode === 'pan' && isPanningView(view, viewSettings)) {
@@ -170,7 +242,9 @@ export const viewPagination = (
     } else if (hasVerticalPanning(view, viewSettings) && (side === 'up' || side === 'down')) {
       return view.pan(0, side === 'up' ? -panDistance : panDistance);
     } else {
-      return side === 'left' || side === 'up' ? view.prev() : view.next();
+      const navigation = side === 'left' || side === 'up' ? view.prev() : view.next();
+      noteEinkPageTurn(view, viewSettings, navigation);
+      return navigation;
     }
   } else {
     switch (mode) {
@@ -182,8 +256,11 @@ export const viewPagination = (
         }
       case 'pan':
       case 'page':
-      default:
-        return side === 'left' || side === 'up' ? view.prev() : view.next();
+      default: {
+        const navigation = side === 'left' || side === 'up' ? view.prev() : view.next();
+        noteEinkPageTurn(view, viewSettings, navigation);
+        return navigation;
+      }
     }
   }
 };
@@ -265,6 +342,15 @@ export const usePagination = (
                 viewSettings.disableClick! ||
                 (screenX >= centerStartX && screenX <= centerEndX)
               ) {
+                // A page-filling image/table leaves nowhere else to tap for
+                // its viewer, so the center opens it (#6424).
+                if (msg.data.media) {
+                  window.postMessage(
+                    { type: 'iframe-open-media', bookKey, ...msg.data.media },
+                    '*',
+                  );
+                  return;
+                }
                 // toggle visibility of the header bar and the footer bar
                 setHoveredBookKey(hoveredBookKey ? null : bookKey);
                 return;
@@ -295,17 +381,22 @@ export const usePagination = (
               viewPagination(viewRef.current, viewSettings, side);
             }
           }
-        } else if (
-          msg.data.type === 'iframe-wheel' &&
-          !viewSettings.scrolled &&
-          !isPanningView(viewRef.current, viewSettings)
-        ) {
+        } else if (msg.data.type === 'iframe-wheel' && !viewSettings.scrolled) {
           // The wheel event is handled by the iframe itself in scrolled mode.
-          const { deltaY, deltaX } = msg.data;
+          // A panning page (fit-width or zoomed PDF) scrolls natively; a
+          // vertical wheel only gets here once it sits at its top or bottom
+          // edge (see useMouseEvent), and then turns the page the way it
+          // scrolls, so reverse paging doesn't apply and sideways only pans.
+          const panning = isPanningView(viewRef.current, viewSettings);
+          const { deltaX } = msg.data;
+          const reverse = !panning && useSettingsStore.getState().settings.reverseWheelPaging;
+          const deltaY = reverse ? -msg.data.deltaY : msg.data.deltaY;
           if (deltaY > 0) {
             viewPagination(viewRef.current, viewSettings, 'down');
           } else if (deltaY < 0) {
             viewPagination(viewRef.current, viewSettings, 'up');
+          } else if (panning) {
+            return;
           } else if (deltaX < 0) {
             viewPagination(viewRef.current, viewSettings, 'left');
           } else if (deltaX > 0) {
@@ -389,8 +480,17 @@ export const usePagination = (
     // E-ink full screen refresh (Android only) — clears ghosting without
     // turning the page. The native bridge no-ops on non-e-ink hardware.
     if (action === 'refresh') {
+      // On a device the capability probe authoritatively ruled out, don't claim
+      // the key at all: refreshEinkScreen would no-op yet still swallow the
+      // button, and the "Refresh Page" row is hidden there, so a stale binding
+      // could no longer be cleared from the UI. Returning false lets the key fall
+      // through to its normal behavior, making the stale binding inert. Unsettled
+      // (null) still claims the chord so a transient probe gap mid-read can't leak
+      // the key.
+      if (getCachedEinkRefreshSupported() === false) return false;
       if (appService?.isAndroidApp) {
         refreshEinkScreen().catch(() => {});
+        resetEinkRefreshCounter(viewRef.current);
       }
       return true;
     }

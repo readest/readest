@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -8,19 +8,25 @@ import { getOSPlatform } from '@/utils/misc';
 
 export const useSafeAreaInsets = () => {
   const { appService } = useEnv();
-  const currentInsets = useRef({ top: 0, right: 0, bottom: 0, left: 0 });
 
-  const { updateSafeAreaInsets } = useThemeStore();
+  const {
+    updateSafeAreaInsets,
+    updateScreenCornerRadius,
+    setIsIPhoneDuo,
+    recordStatusBarHiddenInsets,
+  } = useThemeStore();
 
   const updateInsets = (insets: Insets) => {
-    const { top, right, bottom, left } = currentInsets.current;
+    // Compare with the store: this hook runs in both Providers and useTheme,
+    // and per-instance memory of the last value goes stale between them.
+    const current = useThemeStore.getState().safeAreaInsets;
     if (
-      insets.top !== top ||
-      insets.right !== right ||
-      insets.bottom !== bottom ||
-      insets.left !== left
+      !current ||
+      insets.top !== current.top ||
+      insets.right !== current.right ||
+      insets.bottom !== current.bottom ||
+      insets.left !== current.left
     ) {
-      currentInsets.current = insets;
       updateSafeAreaInsets(insets);
     }
   };
@@ -28,10 +34,7 @@ export const useSafeAreaInsets = () => {
   const onUpdateInsets = useCallback(() => {
     if (!appService) return;
 
-    if (!appService.hasSafeAreaInset) {
-      updateInsets(currentInsets.current);
-      return;
-    }
+    if (!appService.hasSafeAreaInset) return;
 
     const rootStyles = getComputedStyle(document.documentElement);
     const hasCustomProperties = rootStyles.getPropertyValue('--safe-area-inset-top');
@@ -51,7 +54,12 @@ export const useSafeAreaInsets = () => {
             bottom: Math.round(response.bottom),
             left: Math.round(response.left),
           };
+          // iPhone Duo's status strip carries a side inset of its own: keep the
+          // sides seen with the status bar hidden for the reading page.
+          if (response.isIPhoneDuo && response.statusBarHidden) recordStatusBarHiddenInsets(insets);
           updateInsets(insets);
+          updateScreenCornerRadius(Math.round(response.bottomCornerRadius ?? 0));
+          setIsIPhoneDuo(!!response.isIPhoneDuo);
         }
       });
     } else if (hasCustomProperties) {
@@ -103,6 +111,14 @@ export const useSafeAreaInsets = () => {
         })
       : undefined;
 
+    // Folding or unfolding iPhone Duo and entering Split View move its status
+    // strip to another edge without an orientation event (#6307). Only the Duo
+    // refetches on resize, so no other device changes.
+    const handleResize = () => {
+      if (useThemeStore.getState().isIPhoneDuo) onUpdateInsets();
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
       if (window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', onUpdateInsets);
@@ -111,6 +127,7 @@ export const useSafeAreaInsets = () => {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('resize', handleResize);
       void unlistenFocus?.then((unlisten) => unlisten());
     };
   }, [onUpdateInsets]);

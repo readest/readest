@@ -7,7 +7,7 @@
 // tauri CLI published from upstream's `feat/cef` branch and adds what the CEF
 // build needs on top of the normal tauri command line:
 //   - `--features cef` so the CLI bundles the CEF distribution and cargo
-//     compiles the CEF runtime (`cef = ["tauri/cef"]` in src-tauri/Cargo.toml);
+//     compiles the CEF runtime (`cef = ["dep:tauri-runtime-cef"]` in src-tauri/Cargo.toml);
 //   - `--no-default-features` (cargo side) to drop the `wry` runtime, see
 //     src-tauri/Cargo.toml;
 //   - `--config src-tauri/.cargo/cef.toml` (cargo side) to take tauri and the
@@ -31,7 +31,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const CEF_CLI = '@tauri-apps/cli-cef@3.0.0-alpha.26';
+const CEF_CLI = '@tauri-apps/cli-cef@3.0.0-alpha.27';
 // Offline builds (Flatpak) cannot `pnpm dlx`; they point this at an unpacked
 // copy of the CLI package's `tauri.js` instead.
 const localCefCli = process.env['TAURI_CEF_CLI'];

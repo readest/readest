@@ -8,7 +8,7 @@ import {
   useState,
   type Ref,
 } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   DndContext,
   MouseSensor,
@@ -41,6 +41,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { isAbsBookOrphaned, useABSServerStore } from '@/store/absServerStore';
 import { useMedianPageDurationsSecs } from '@/hooks/useMedianPageDurationSecs';
 import { useBookshelfDate } from '@/hooks/useBookshelfDate';
+import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useEnv } from '@/context/EnvContext';
 import { eventDispatcher } from '@/utils/event';
 import { getGlobalBookshelfSort, resolveBookshelfSort } from '@/services/bookshelves/sorting';
@@ -214,12 +215,28 @@ function BookshelfTab({
   );
 }
 
+// Strips the one-shot editBookshelf/t widget-request params (see
+// useOpenLaunchLinks) from the URL - shared by BookshelvesEditor, once it has
+// acted on them, and BookshelvesDialog, when it closes before the editor ever
+// mounted to do so itself - so a dismissed or already-handled request is
+// never misapplied to a later, unrelated open of this dialog.
+const clearWidgetRequestParams = (
+  router: ReturnType<typeof useRouter>,
+  searchParams: ReturnType<typeof useSearchParams>,
+) => {
+  const params = new URLSearchParams(searchParams?.toString());
+  params.delete('editBookshelf');
+  params.delete('t');
+  router.replace(params.size ? `/library?${params}` : '/library');
+};
+
 export interface BookshelvesEditorHandle {
   flush: () => Promise<boolean>;
 }
 export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> }) {
   const _ = useTranslation();
   const { envConfig } = useEnv();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const settings = useSettingsStore((s) => s.settings);
   const viewMode = searchParams?.get('view') || settings.libraryViewMode;
@@ -243,6 +260,21 @@ export function BookshelvesEditor({ ref }: { ref?: Ref<BookshelvesEditorHandle> 
   useEffect(() => {
     localStorage.setItem('lastBookshelfTab', selectedId);
   }, [selectedId]);
+  // The widget configure dialog's Edit button (readest://widget-edit-shelf/{id})
+  // lands here as /library?editBookshelf={id}&t=.... `t` is a per-tap nonce (see
+  // useOpenLaunchLinks) that's always a real dependency change, so a repeat tap -
+  // even for the same shelf, or one that arrives while this editor is already
+  // open - is never missed (this editor otherwise only computes selectedId once,
+  // at mount).
+  const editBookshelfId = searchParams?.get('editBookshelf');
+  const widgetRequestNonce = searchParams?.get('t');
+  useEffect(() => {
+    if (!editBookshelfId) return;
+    // The draft, not the saved shelves: a shelf deleted in this open editor is
+    // still saved until its removal lands, and selecting it would crash.
+    setSelectedId((id) => draft.find((shelf) => shelf.id === editBookshelfId)?.id ?? id);
+    clearWidgetRequestParams(router, searchParams);
+  }, [draft, editBookshelfId, widgetRequestNonce]);
   const tabsRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const tabLabels = draft.map((s) => s.name || _(bookshelfName(s))).join('\0');
@@ -900,16 +932,43 @@ export default function BookshelvesDialog() {
   const _ = useTranslation();
   const [open, setOpen] = useState(false);
   const editor = useRef<BookshelvesEditorHandle>(null);
-  const close = async () => {
-    // The controls stay live while the first save runs, so flush again for anything edited
-    // meanwhile; the second flush is a no-op when nothing changed.
-    if ((await editor.current?.flush()) && (await editor.current?.flush())) setOpen(false);
-  };
+  const router = useRouter();
   useEffect(() => {
     const show = () => setOpen(true);
     eventDispatcher.on('show-bookshelves', show);
     return () => eventDispatcher.off('show-bookshelves', show);
   }, []);
+  // The widget configure dialog's Edit button (readest://widget-edit-shelf/{id})
+  // lands here as /library?editBookshelf={id}&t=.... BookshelvesEditor selects the
+  // shelf itself (it owns selectedId); this just needs to open the dialog -
+  // including reopening it for a repeat tap on the same shelf, which `t` (a
+  // per-tap nonce, see useOpenLaunchLinks) is what signals.
+  const searchParams = useSearchParams();
+  const editBookshelfId = searchParams?.get('editBookshelf');
+  const widgetRequestNonce = searchParams?.get('t');
+  useEffect(() => {
+    if (editBookshelfId) setOpen(true);
+  }, [editBookshelfId, widgetRequestNonce]);
+  const close = async () => {
+    if (!editor.current) {
+      // No editor to flush - e.g. still waiting on settingsHydrated below, so
+      // it never got to consume/clear these itself - clear them here instead,
+      // so a dismissed widget request isn't misapplied the next time this
+      // dialog opens normally.
+      if (editBookshelfId) clearWidgetRequestParams(router, searchParams);
+      setOpen(false);
+      return;
+    }
+    // The controls stay live while the first save runs, so flush again for anything edited
+    // meanwhile; the second flush is a no-op when nothing changed.
+    if ((await editor.current.flush()) && (await editor.current.flush())) setOpen(false);
+  };
+  // BookshelvesEditor snapshots settings once, at mount, so it must not mount
+  // before they've actually loaded - which a widget deep link can't assume,
+  // unlike the normal 'show-bookshelves' trigger (only reachable once the
+  // Library page, and its settings load, already has). Without this, opening
+  // cold shows only built-in shelves and Edit can't find a custom one.
+  const settingsHydrated = useEnsureSettingsLoaded();
   return (
     <Dialog
       isOpen={open}
@@ -918,7 +977,7 @@ export default function BookshelvesDialog() {
       fullScreen
       contentClassName='min-h-0 flex-1 overflow-hidden! sm:px-6!'
     >
-      {open && <BookshelvesEditor ref={editor} />}
+      {open && settingsHydrated && <BookshelvesEditor ref={editor} />}
     </Dialog>
   );
 }

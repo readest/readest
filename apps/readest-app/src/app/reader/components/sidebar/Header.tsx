@@ -42,7 +42,9 @@ const SidebarHeader: React.FC<{
         >
           <MdArrowBackIosNew size={iconSize22} />
         </button>
-        <div className='hidden sm:flex'>
+        {/* ms-1.5 matches the px-1.5 of the header bar's tool scroller, so the
+            toggler does not shift when the sidebar opens over it. */}
+        <div className='hidden sm:ms-1.5 sm:flex'>
           <SidebarToggler bookKey={bookKey} />
         </div>
       </div>

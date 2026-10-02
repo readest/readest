@@ -53,3 +53,5 @@ route. Pre-existing, not from this change.
 
 See [[lookup-surface-flash-suppress-handles-6013]], [[annotator-overlay-z-layers]],
 [[one-tap-highlight-5983]].
+
+**#6454 (2026-09-29): the hand-back is now OPT-IN.** An Android user wanted the clean dismiss back (like #5585), so chrox chose a setting after all: `keepSelectionAfterLookup` (AnnotatorConfig, default **false**). It gates only the restore in `handleDismissPopupShowToolbar`, and the ControlPanel switch appears only when the quick action is Dictionary. MERGED #6460 (22c23b365) UNRELEASED; e2e `setKeepSelectionAfterLookup` helper added; worktree removed; not device-verified.

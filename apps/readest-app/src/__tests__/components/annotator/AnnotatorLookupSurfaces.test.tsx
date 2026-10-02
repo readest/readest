@@ -31,6 +31,7 @@ const h = vi.hoisted(() => ({
     vertical: false,
     enableAnnotationQuickActions: false,
     annotationQuickAction: '' as string,
+    keepSelectionAfterLookup: false,
   },
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(),
@@ -172,6 +173,7 @@ vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
+vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
   useFoliateEvents: (_view: unknown, handlers: Record<string, (event: Event) => void>) => {
@@ -244,23 +246,27 @@ vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
   default: () => <div data-testid='annotation-toolbar' />,
 }));
 // The dismiss button stands in for the popup's close / backdrop tap, so a test
-// can drive the route back out of the lookup.
+// can drive the route back out of the lookup. Each surface reads its text the
+// way the real one does on every render, so rendering one without a word fails
+// the same way (#6419).
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
-  default: ({ onDismiss }: { onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface'>
+  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
+    <div data-testid='dictionary-surface' data-word={word.trim()}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
 }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
-  default: ({ onDismiss }: { onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface'>
+  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
+    <div data-testid='dictionary-surface' data-word={word.trim()}>
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
 }));
 vi.mock('@/app/reader/components/annotator/TranslatorPopup', () => ({
-  default: () => <div data-testid='translator-surface' />,
+  default: ({ text }: { text: string }) => (
+    <div data-testid='translator-surface' data-text={text.trim()} />
+  ),
 }));
 vi.mock('@/app/reader/components/annotator/ProofreadPopup', () => ({
   default: () => <div data-testid='proofread-surface' />,
@@ -409,6 +415,42 @@ test('deselects OCR from either page image without dismissing a text drag', asyn
 });
 
 /**
+ * #6419 — clicking outside the dictionary crashed the reader on Windows.
+ *
+ * The lookup surfaces are fed `selection.text`, but the selection can be
+ * cleared without going through the dismiss that closes them: with the instant
+ * highlight quick action armed, a tap on the page clears it from
+ * `useInstantAnnotation`. The surface then rendered once with no text and
+ * threw on `word.trim()`, taking the whole reader down to the error page.
+ */
+describe('a lookup surface closes when its selection is cleared', () => {
+  test.each([
+    ['onDictionarySelection', 'dictionary-surface'],
+    ['onTranslateSelection', 'translator-surface'],
+    ['onProofreadSelection', 'proofread-surface'],
+  ])('%s closes instead of rendering without text', async (action, testId) => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText();
+
+    act(() => {
+      h.actions?.[action]?.();
+    });
+    expect(screen.getByTestId(testId)).toBeTruthy();
+
+    // What `clearInstantAnnotationState` does on a tap.
+    await act(async () => {
+      h.setSelection?.(() => null);
+    });
+    expect(screen.queryByTestId(testId)).toBeNull();
+
+    // And the next selection gets the toolbar, not the stale lookup.
+    await selectText();
+    expect(screen.queryByTestId(testId)).toBeNull();
+    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+  });
+});
+
+/**
  * #5821 — every PDF word selection on Android opened the translator popup.
  *
  * Fixed-layout books used to wire their own `contextmenu` listener in `onLoad`
@@ -496,6 +538,7 @@ describe('the instant dictionary hands the selection back when it closes', () =>
   beforeEach(() => {
     h.viewSettings.enableAnnotationQuickActions = true;
     h.viewSettings.annotationQuickAction = 'dictionary';
+    h.viewSettings.keepSelectionAfterLookup = true;
   });
 
   test('drops the selection while the lookup is open', async () => {
@@ -567,6 +610,52 @@ describe('the instant dictionary hands the selection back when it closes', () =>
       screen.getByTestId('dictionary-dismiss').click();
     });
 
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+});
+
+/**
+ * #6454 — handing the selection back (#6213) raised the toolbar after every
+ * instant lookup, an extra dismiss for readers who look up word after word.
+ * It is now opt-in: by default closing the lookup goes straight back to reading.
+ */
+describe('the instant dictionary dismisses clean unless told to keep the selection', () => {
+  beforeEach(() => {
+    h.viewSettings.enableAnnotationQuickActions = true;
+    h.viewSettings.annotationQuickAction = 'dictionary';
+    h.viewSettings.keepSelectionAfterLookup = false;
+  });
+
+  test('closing the lookup restores nothing and shows no toolbar', async () => {
+    if (!document.querySelector('#gridcell-book-1')) {
+      const gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'fortune';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+    await act(async () => {
+      h.setSelection?.(() => ({
+        key: 'book-1',
+        text: 'fortune',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        range,
+        index: 0,
+        page: 1,
+      }));
+    });
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+
+    await act(async () => {
+      screen.getByTestId('dictionary-dismiss').click();
+    });
+
+    expect(h.restoreSelectionRange).not.toHaveBeenCalled();
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   });

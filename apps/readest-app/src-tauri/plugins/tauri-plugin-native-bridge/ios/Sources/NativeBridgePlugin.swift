@@ -68,6 +68,7 @@ class SetScreenWakeLockRequestArgs: Decodable {
 
 class SetScreenBrightnessRequestArgs: Decodable {
   let brightness: Float?
+  let persist: Bool?
 }
 
 class CopyUriToPathRequestArgs: Decodable {
@@ -670,7 +671,9 @@ class NativeBridgePlugin: Plugin {
   // leaving the system stuck at the app's level until the user nudges it
   // manually (issue #4885). We remember the value that was there before the
   // first override so we can hand it back whenever the app leaves the
-  // foreground; on return the system value stands and the override is dropped.
+  // foreground; on return the override is re-applied over the fresh system
+  // value. A `persist` write (System Screen Brightness mode) is not an override:
+  // it becomes the system brightness and is never handed back (#6374).
   private var appDesiredBrightness: CGFloat?
   private var systemBrightnessBeforeOverride: CGFloat?
 
@@ -760,10 +763,13 @@ class NativeBridgePlugin: Plugin {
   }
 
   @objc func appDidBecomeActive() {
-    // The system owns brightness across a background trip: drop our override and
-    // keep whatever brightness the system shows now.
-    appDesiredBrightness = nil
-    systemBrightnessBeforeOverride = nil
+    // Re-capture the system value (the user may have changed it in Control
+    // Center) and re-apply the override. Control Center only resigns active and
+    // never fires `visibilitychange`, so JS can't re-apply it here (#6374).
+    if let desired = appDesiredBrightness {
+      systemBrightnessBeforeOverride = UIScreen.main.brightness
+      UIScreen.main.brightness = desired
+    }
     if volumeKeyHandler != nil {
       activateVolumeKeyInterception()
     }
@@ -1058,21 +1064,61 @@ class NativeBridgePlugin: Plugin {
     let darkMode = args.darkMode
 
     DispatchQueue.main.async {
-      UIApplication.shared.setStatusBarHidden(!visible, with: .none)
-
-      let windows = UIApplication.shared.connectedScenes
-        .compactMap { $0 as? UIWindowScene }
-        .flatMap { $0.windows }
-
-      let keyWindow = windows.first(where: { $0.isKeyWindow }) ?? windows.first
-      if let keyWindow = keyWindow {
-        keyWindow.overrideUserInterfaceStyle = darkMode ? .dark : .light
-        keyWindow.layoutIfNeeded()
-      } else {
+      guard let keyWindow = self.appWindow() else {
         logger.error("No key window found")
+        invoke.resolve(["success": false, "error": "No key window found"])
+        return
+      }
+      keyWindow.overrideUserInterfaceStyle = darkMode ? .dark : .light
+      let before = keyWindow.safeAreaInsets
+      // Apps built with the iOS 27 SDK can no longer hide the status bar with
+      // UIApplication.setStatusBarHidden (SDK 26 builds still can), so hide it
+      // through the root view controller. tao's TaoUIViewController implements
+      // prefersStatusBarHidden and setPrefersStatusBarHidden:, which calls
+      // setNeedsStatusBarAppearanceUpdate. Needs
+      // UIViewControllerBasedStatusBarAppearance = YES in Info.plist.
+      let applied = self.setPrefersStatusBarHidden(!visible, on: keyWindow.rootViewController)
+      keyWindow.layoutIfNeeded()
+      // The safe area follows the status bar a moment later (iPhone Duo's side
+      // strip is an 84pt inset on the inner display). Resolve once it has, so
+      // a follow-up get_safe_area_insets reads the insets for the new state.
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        let after = keyWindow.safeAreaInsets
+        logger.log(
+          "set_system_ui_visibility visible=\(visible) insets before=\(NSCoder.string(for: before), privacy: .public) after=\(NSCoder.string(for: after), privacy: .public)"
+        )
+        if applied {
+          invoke.resolve(["success": true])
+        } else {
+          invoke.resolve(["success": false, "error": "Root view controller cannot hide the status bar"])
+        }
       }
     }
-    invoke.resolve(["success": true])
+  }
+
+  /// The window that hosts the webview. It exists even before tao's window has
+  /// a UIWindowScene (a CarPlay-first launch), so prefer it over the scene
+  /// lookup, which is the fallback.
+  private func appWindow() -> UIWindow? {
+    if let window = webView?.window { return window }
+    let windows = UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .flatMap { $0.windows }
+    return windows.first(where: { $0.isKeyWindow }) ?? windows.first
+  }
+
+  /// Returns false when the view controller does not respond to tao's
+  /// `setPrefersStatusBarHidden:`, so the caller can report the failure.
+  private func setPrefersStatusBarHidden(_ hidden: Bool, on viewController: UIViewController?) -> Bool {
+    let selector = NSSelectorFromString("setPrefersStatusBarHidden:")
+    guard let viewController = viewController, viewController.responds(to: selector) else {
+      logger.error("Root view controller cannot hide the status bar: \(String(describing: viewController))")
+      return false
+    }
+    typealias Setter = @convention(c) (AnyObject, Selector, Bool) -> Void
+    let setter = unsafeBitCast(viewController.method(for: selector), to: Setter.self)
+    setter(viewController, selector, hidden)
+    return true
   }
 
   @objc public func get_sys_fonts_list(_ invoke: Invoke) throws {
@@ -1333,6 +1379,10 @@ class NativeBridgePlugin: Plugin {
         // Android's BRIGHTNESS_OVERRIDE_NONE. Restore the pre-override brightness
         // so iOS resumes ambient auto-brightness.
         self.releaseBrightnessControl()
+      } else if args.persist == true {
+        self.appDesiredBrightness = nil
+        self.systemBrightnessBeforeOverride = nil
+        UIScreen.main.brightness = CGFloat(brightness)
       } else {
         if self.systemBrightnessBeforeOverride == nil {
           self.systemBrightnessBeforeOverride = UIScreen.main.brightness
@@ -1441,15 +1491,48 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  // iOS exposes no foldable API and the viewport size cannot identify the
+  // device, so iPhone Duo is recognized by its model identifier.
+  private static let iPhoneDuoModelIdentifiers: Set<String> = ["iPhone19,4"]
+
+  private static let isIPhoneDuo: Bool = {
+    let identifier: String
+    if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] {
+      identifier = simulated
+    } else {
+      var systemInfo = utsname()
+      uname(&systemInfo)
+      identifier = withUnsafePointer(to: &systemInfo.machine) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 1) { String(cString: $0) }
+      }
+    }
+    return iPhoneDuoModelIdentifiers.contains(identifier)
+  }()
+
   @objc public func get_safe_area_insets(_ invoke: Invoke) {
     DispatchQueue.main.async {
-      if let window = UIApplication.shared.windows.first {
+      if let window = self.appWindow() {
         let insets = window.safeAreaInsets
+        // Rounded screen corners are not part of the safe area; report the
+        // bottom radius so the reader footer can keep clear of the curve. The
+        // window's own effective radius is 0, but a window-sized child with a
+        // container-concentric configuration resolves to the display radius.
+        var bottomCornerRadius: CGFloat = 0
+        if #available(iOS 26.0, *) {
+          let probe = UIView(frame: window.bounds)
+          probe.cornerConfiguration = .corners(radius: .containerConcentric())
+          window.addSubview(probe)
+          bottomCornerRadius = probe.effectiveRadius(corner: [.bottomLeft, .bottomRight])
+          probe.removeFromSuperview()
+        }
         invoke.resolve([
           "top": insets.top,
           "left": insets.left,
           "bottom": insets.bottom,
-          "right": insets.right
+          "right": insets.right,
+          "bottomCornerRadius": bottomCornerRadius,
+          "isIPhoneDuo": NativeBridgePlugin.isIPhoneDuo,
+          "statusBarHidden": window.rootViewController?.prefersStatusBarHidden ?? false
         ])
       } else {
         invoke.resolve([
@@ -1993,16 +2076,30 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["success": false])
   }
 
-  @objc public func update_reading_widget(_ invoke: Invoke) {
+  // iOS has no e-ink panel to drive, so the deep refresh is never supported.
+  @objc public func is_eink_refresh_supported(_ invoke: Invoke) {
+    invoke.resolve(["supported": false])
+  }
+
+  @objc public func update_bookshelf_widget(_ invoke: Invoke) {
     guard let args = try? invoke.parseArgs(UpdateReadingWidgetRequestArgs.self) else {
       return invoke.reject("Failed to parse arguments")
     }
+    // The iOS widget shows books only; group tiles are an Android feature.
+    let books = args.items.compactMap { item -> UpdateReadingWidgetBookArgs? in
+      guard item.type == "book", let hash = item.hash, let coverPath = item.coverPath else {
+        return nil
+      }
+      return UpdateReadingWidgetBookArgs(
+        hash: hash, title: item.title ?? "", author: item.author ?? "",
+        percent: item.percent ?? 0, coverPath: coverPath)
+    }
     DispatchQueue.global(qos: .utility).async {
-      for book in args.books {
+      for book in books {
         ReadingWidgetWriter.writeThumbnail(hash: book.hash, sourcePath: book.coverPath)
       }
       let snapshot = ReadingWidgetWriter.Snapshot(
-        books: args.books.map {
+        books: books.map {
           .init(hash: $0.hash, title: $0.title, author: $0.author, percent: $0.percent)
         },
         sectionTitle: args.sectionTitle,
@@ -2011,6 +2108,17 @@ class NativeBridgePlugin: Plugin {
       ReadingWidgetWriter.write(snapshot: snapshot)
       invoke.resolve()
     }
+  }
+
+  // iOS has no per-instance configurable widget yet (one default snapshot,
+  // written above); these two resolve as no-ops so a caller gets a clean
+  // empty result instead of a bridge "unknown command" failure.
+  @objc public func get_bookshelf_widget_instances(_ invoke: Invoke) {
+    invoke.resolve(["instances": [] as [Any]])
+  }
+
+  @objc public func set_bookshelf_widget_catalog(_ invoke: Invoke) {
+    invoke.resolve()
   }
 
   /// Snapshot a region of the webview for the mesh page-curl texture
@@ -2338,8 +2446,18 @@ struct UpdateReadingWidgetBookArgs: Decodable {
   let percent: Int
   let coverPath: String
 }
+// One grid tile from JS: a "book" carries the book fields, a "group" other
+// fields this platform ignores.
+struct UpdateReadingWidgetItemArgs: Decodable {
+  let type: String
+  let hash: String?
+  let title: String?
+  let author: String?
+  let percent: Int?
+  let coverPath: String?
+}
 struct UpdateReadingWidgetRequestArgs: Decodable {
-  let books: [UpdateReadingWidgetBookArgs]
+  let items: [UpdateReadingWidgetItemArgs]
   let sectionTitle: String
   let emptyTitle: String
 }

@@ -237,6 +237,37 @@ jobs:
           echo "Uploading ${plugin_zip} to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
 
+  build-crosspoint-plugin:
+    needs: get-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: create CrossPoint plugin zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=${{ needs.get-release.outputs.release_version }}
+          plugin_zip="Readest-${version}.crosspoint-plugin.zip"
+          cd apps/readest-crosspoint-plugin
+
+          # Stamp the release version (from apps/readest-app/package.json, like
+          # the plugins above) into manifest.json, whose committed value is a dev
+          # placeholder. CrossPoint's plugin store compares it to spot updates.
+          jq --arg version "${version}" '.version = $version' readest/manifest.json > manifest.tmp
+          mv manifest.tmp readest/manifest.json
+
+          # The zip holds the readest/ folder that goes on the SD card as
+          # /.crosspoint/plugins/readest/, with the install guide inside it.
+          cp README.md readest/README.md
+          zip -r "../../${plugin_zip}" readest
+          cd ../..
+
+          echo "Uploading ${plugin_zip} to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
+
   build-browser-extension:
     needs: get-release
     permissions:
@@ -312,9 +343,9 @@ jobs:
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    # The Android build alone runs ~50min on a cold cache, so 60 was not enough
-    # headroom once setup and signing are counted.
-    timeout-minutes: 90
+    # The Android build alone runs ~60min and its step is capped at 90 below;
+    # the job backstop leaves room for setup and signing on top of that.
+    timeout-minutes: ${{ matrix.config.release == 'android' && 110 || 90 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -339,7 +370,7 @@ jobs:
 
       - name: setup Android SDK (for Android build only)
         if: matrix.config.release == 'android'
-        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
         with:
           # The legacy `tools` package (part of the action's default) no longer
           # exists in the SDK repository and makes sdkmanager fail.
@@ -375,7 +406,7 @@ jobs:
         if: matrix.config.release == 'linux'
         run: |
           set -euo pipefail
-          rev=2b8315bd14882471b6567b1ceba84c0c0238f156
+          rev=6beeb209b5514f597a26f48b7a5b9fe4c59b5f12
           marker="$HOME/.cargo/bin/.cargo-tauri-rev"
           if [ -x "$HOME/.cargo/bin/cargo-tauri" ] && [ "$(cat "$marker" 2>/dev/null)" = "$rev" ]; then
             echo "cargo-tauri at $rev already installed"
@@ -448,11 +479,13 @@ jobs:
 
       - name: build and upload Android apks
         if: matrix.config.release == 'android'
+        timeout-minutes: 90
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           cd apps/readest-app/
           rm -rf src-tauri/gen/android
@@ -475,6 +508,15 @@ jobs:
           cp ${apk_path}/app-universal-release.apk $universial_apk
           pnpm tauri android build -t aarch64
           cp ${apk_path}/app-universal-release.apk $arm64_apk
+
+          # Sentry symbolicates Rust panics from these: the APK ships the
+          # library stripped (see gen/android/app/build.gradle.kts), while
+          # `target/` keeps the unstripped copy. Crash reporting must never
+          # fail a build, and forks have no token.
+          if [ -n "$SENTRY_AUTH_TOKEN" ]; then
+            pnpm exec sentry-cli debug-files upload --org readest --project readest \
+              ../../target/*/release/libreadestlib.so || echo "::warning::Sentry debug file upload failed"
+          fi
 
           echo "Uploading $universial_apk to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk --clobber

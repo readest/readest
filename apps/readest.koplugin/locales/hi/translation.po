@@ -518,6 +518,9 @@ msgstr "कोई नया एनोटेशन नहीं मिला"
 msgid "%1 annotations pulled"
 msgstr "%1 एनोटेशन प्राप्त हुए"
 
+msgid "Your Readest session has expired. Please log in again."
+msgstr "आपका Readest सत्र समाप्त हो गया है। कृपया पुनः लॉग इन करें।"
+
 msgid "Login"
 msgstr "लॉग इन"
 

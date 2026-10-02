@@ -23,7 +23,7 @@ PER-WEBVIEW: the module-scoped `coldStartConsumed` flag and the
 `consumedColdStartBookUrl` sessionStorage key. `openBookInNewWindow` defaults to
 **true** (`services/constants.ts`), so every library tap calls
 `showReaderWindow` → a brand-new `WebviewWindow` (`reader-N`) with a fresh JS
-context and empty sessionStorage → `useOpenBookLink` re-reads the stale URL →
+context and empty sessionStorage → `useOpenLaunchLinks` re-reads the stale URL →
 `window.location.pathname` starts with `/reader` → dispatches
 `open-book-in-reader` → `useBooksManager.openBookInReader` does
 `setBookKeys([newKey])`, which REPLACES the clicked book. Quitting "fixes" it
@@ -57,8 +57,8 @@ the launch URL reaches JS ONLY via `getCurrent()`. Tauri does not buffer emits
 either (the native bridge's pending-event queue exists for exactly that).
 
 **Fix 1** (`src/utils/window.ts` `isMainAppWindow()`, gated into the
-`if (!coldStartConsumed ...)` branch of `useOpenBookLink`,
-`useOpenAnnotationLink`, `useOpenShareLink`): only the window labelled `main`
+`if (!coldStartConsumed ...)` branch of `useOpenLaunchLinks`,
+`useOpenShareLink`): only the window labelled `main`
 consumes a cold-start URL. Windows the app spawns itself carry their own intent
 in their URL (`/reader?ids=`, `/library?file=`) and never need it. Live taps
 (`app-incoming-url`) are untouched — those are genuine user actions.
@@ -70,7 +70,7 @@ in their URL (`/reader?ids=`, `/library?file=`) and never need it. Live taps
 - `useOpenWithBooks` already had the same idea as `isFirstWindow()` for the LIVE
   path — precedent, not a new pattern.
 - Unit-testing this needs `vi.resetModules()` (the guard is module state) plus a
-  static `import '@/hooks/useOpenBookLink'` to warm the graph, or the first case
+  static `import '@/hooks/useOpenLaunchLinks'` to warm the graph, or the first case
   times out under parallel load.
 
 Related: [[bug-patterns]]

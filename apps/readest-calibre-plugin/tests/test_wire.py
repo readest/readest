@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import unittest
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -11,6 +12,7 @@ from wire import (  # noqa: E402
     book_file_name,
     build_metadata,
     build_wire_book,
+    calibre_columns,
     cloud_book_hashes,
     cover_file_name,
     index_rows_by_uuid,
@@ -40,7 +42,9 @@ BOOK = {
     'series_index': 2.0,
     'uuid': 'cafebabe-0000-0000-0000-000000000001',
     'isbn': '9781234567897',
-    'custom_columns': {'read_status': 'done'},
+    'custom_columns': [
+        {'label': 'read_status', 'name': 'Read Status', 'datatype': 'text', 'value': 'done'}
+    ],
     'source_hash': SRC,
 }
 
@@ -112,8 +116,64 @@ class BuildMetadataTest(unittest.TestCase):
         self.assertEqual(meta['seriesIndex'], 2.0)
         self.assertEqual(meta['identifier'], 'urn:uuid:cafebabe-0000-0000-0000-000000000001')
         self.assertEqual(meta['isbn'], '9781234567897')
-        self.assertEqual(meta['customColumns'], {'read_status': 'done'})
+        self.assertEqual(
+            meta['calibreColumns'],
+            [{'label': 'read_status', 'name': 'Read Status', 'datatype': 'text', 'value': 'done'}],
+        )
         self.assertEqual(meta['calibreSourceHash'], SRC)
+
+    def test_calibre_columns_match_the_opf_shape(self):
+        # Same records foliate-js parses from the OPF's calibre:user_metadata,
+        # which bookshelf filters, search and book details read.
+        user_metadata = {
+            '#shelves': {
+                'label': 'shelves',
+                'name': 'Shelves',
+                'datatype': 'text',
+                'is_multiple': {'ui_to_list': ','},
+                '#value#': ['TBR', 'Favourites'],
+            },
+            '#read_on': {
+                'label': 'read_on',
+                'name': 'Read On',
+                'datatype': 'datetime',
+                '#value#': datetime(2024, 3, 1, tzinfo=timezone.utc),
+            },
+            '#saga': {
+                'label': 'saga',
+                'name': 'Saga',
+                'datatype': 'series',
+                '#value#': 'Cool Saga',
+                '#extra#': 2.0,
+            },
+            '#score': {'label': 'score', 'name': 'Score', 'datatype': 'rating', '#value#': 0},
+            '#empty': {'label': 'empty', 'name': 'Empty', 'datatype': 'text', '#value#': []},
+            '#unset': {'label': 'unset', 'name': 'Unset', 'datatype': 'text', '#value#': None},
+        }
+        self.assertEqual(
+            calibre_columns(user_metadata),
+            [
+                {
+                    'label': 'shelves',
+                    'name': 'Shelves',
+                    'datatype': 'text',
+                    'value': ['TBR', 'Favourites'],
+                },
+                {
+                    'label': 'read_on',
+                    'name': 'Read On',
+                    'datatype': 'datetime',
+                    'value': '2024-03-01T00:00:00+00:00',
+                },
+                {
+                    'label': 'saga',
+                    'name': 'Saga',
+                    'datatype': 'series',
+                    'value': 'Cool Saga',
+                    'extra': 2.0,
+                },
+            ],
+        )
 
     def test_single_author_is_string(self):
         meta = build_metadata(dict(BOOK, authors=['Solo']))
@@ -123,7 +183,7 @@ class BuildMetadataTest(unittest.TestCase):
         meta = build_metadata({'title': 'T', 'authors': []})
         self.assertNotIn('publisher', meta)
         self.assertNotIn('series', meta)
-        self.assertNotIn('customColumns', meta)
+        self.assertNotIn('calibreColumns', meta)
         self.assertNotIn('isbn', meta)
         self.assertNotIn('calibreSourceHash', meta)
 
