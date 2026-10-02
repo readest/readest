@@ -109,7 +109,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
 
   const handleClickItem = (event: React.MouseEvent | React.KeyboardEvent) => {
     event.preventDefault();
-    if (longPressedRef.current) {
+    if (event.type === 'click' && longPressedRef.current) {
       longPressedRef.current = false;
       return;
     }

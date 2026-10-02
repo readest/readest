@@ -288,6 +288,20 @@ describe('BooknoteItem', () => {
     fireEvent.click(card);
     expect(dispatch).toHaveBeenCalledWith('navigate', expect.anything());
   });
+
+  it('keyboard activation still navigates after a long press that was canceled (#6568)', () => {
+    vi.useFakeTimers();
+    mocks.appService.isIOSApp = true;
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    renderItem(makeItem());
+    const card = screen.getByText('highlighted words').closest('li')!;
+
+    fireEvent.pointerDown(card, { pointerType: 'touch' });
+    act(() => vi.advanceTimersByTime(300));
+    fireEvent.pointerCancel(card, { pointerType: 'touch' });
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(dispatch).toHaveBeenCalledWith('navigate', expect.anything());
+  });
 });
 
 it('keeps the inline draft through a failed save and closes only after retry succeeds (#6123)', async () => {
