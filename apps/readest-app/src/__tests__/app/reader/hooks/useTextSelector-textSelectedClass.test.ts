@@ -100,4 +100,12 @@ describe('text selected class', () => {
     result.current.handleSelectionchange(doc, 0);
     expect(hasClass(doc)).toBe(false);
   });
+
+  test('tolerates a document that has no selection', () => {
+    const { result } = setup();
+    const doc = makeDoc();
+    vi.spyOn(doc, 'getSelection').mockReturnValue(null);
+    expect(() => result.current.handleSelectionchange(doc, 0)).not.toThrow();
+    expect(hasClass(doc)).toBe(false);
+  });
 });
