@@ -7,6 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+let failRender = false;
+
 const pages: {
   getViewport: ReturnType<typeof vi.fn>;
   render: ReturnType<typeof vi.fn>;
@@ -24,7 +26,9 @@ vi.mock('@pdfjs/pdf.min.mjs', () => {
         width: 600 * scale,
         height: 800 * scale,
       })),
-      render: vi.fn(() => ({ promise: Promise.resolve() })),
+      render: vi.fn(() => ({
+        promise: failRender ? Promise.reject(new Error('render failed')) : Promise.resolve(),
+      })),
       cleanup: vi.fn(),
     };
     pages.push(page);
@@ -64,6 +68,7 @@ const canvasSizes: { width: number; height: number; type?: string }[] = [];
 
 beforeEach(() => {
   pages.length = 0;
+  failRender = false;
   canvasSizes.length = 0;
   HTMLCanvasElement.prototype.getContext = vi.fn(
     () => ({}),
@@ -90,6 +95,13 @@ describe('makePDF page thumbnails (#6177)', () => {
   it('releases the page afterwards', async () => {
     const book = await open();
     await book.getPageThumbnail(3, 200);
+    expect(pages.at(-1)!.cleanup).toHaveBeenCalled();
+  });
+
+  it('releases the page when rendering fails', async () => {
+    const book = await open();
+    failRender = true;
+    await expect(book.getPageThumbnail(3, 200)).rejects.toThrow('render failed');
     expect(pages.at(-1)!.cleanup).toHaveBeenCalled();
   });
 });
