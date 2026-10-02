@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MdCheckCircle } from 'react-icons/md';
 import { IoOpenOutline } from 'react-icons/io5';
@@ -42,12 +42,17 @@ export default function LinkDevice() {
   // listen here too, and show the code of the link that opened the page.
   useAppUrlIngress();
   useOpenDeviceLink();
+  // Bumped by each approval and each new code, so an approval still in
+  // flight when another link's code arrives can't mark that code linked.
+  const approval = useRef(0);
   useEffect(() => {
+    approval.current++;
     setCode(queryCode);
     setStatus('idle');
   }, [queryCode]);
 
   const link = async () => {
+    const current = ++approval.current;
     setStatus('linking');
     try {
       await fetchWithAuth(`${getAPIBaseUrl()}/crosspoint/device/approve`, {
@@ -55,9 +60,9 @@ export default function LinkDevice() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_code: code }),
       });
-      setStatus('linked');
+      if (current === approval.current) setStatus('linked');
     } catch {
-      setStatus('failed');
+      if (current === approval.current) setStatus('failed');
     }
   };
 

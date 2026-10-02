@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 let inApp = false;
 let query = 'code=RQGF-WDCF';
@@ -8,6 +8,7 @@ const navigateToLibraryMock = vi.fn();
 const routerBackMock = vi.fn();
 const useAppUrlIngressMock = vi.fn();
 const useOpenDeviceLinkMock = vi.fn();
+const fetchWithAuthMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), back: routerBackMock }),
@@ -16,6 +17,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user }) }));
 vi.mock('@/hooks/useAppUrlIngress', () => ({ useAppUrlIngress: () => useAppUrlIngressMock() }));
 vi.mock('@/hooks/useOpenDeviceLink', () => ({ useOpenDeviceLink: () => useOpenDeviceLinkMock() }));
+vi.mock('@/utils/fetch', () => ({ fetchWithAuth: (...a: unknown[]) => fetchWithAuthMock(...a) }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: {} }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (k: string) => k }));
 vi.mock('@/services/environment', async (orig) => {
@@ -88,6 +90,26 @@ describe('LinkDevice', () => {
     expect((screen.getByLabelText('Code') as HTMLInputElement).value).toBe('RQGF-WDCF');
     query = 'code=BCDF-GHJK';
     rerender(<LinkDevice />);
+    expect((screen.getByLabelText('Code') as HTMLInputElement).value).toBe('BCDF-GHJK');
+  });
+
+  // Approving code A must not mark code B linked when B's link arrives while
+  // A's request is still in flight.
+  it('ignores the result of approving a code that is no longer shown', async () => {
+    inApp = true;
+    user = { email: 'reader@example.com' };
+    let approve!: () => void;
+    fetchWithAuthMock.mockReturnValue(new Promise<void>((resolve) => (approve = resolve)));
+    const { rerender } = render(<LinkDevice />);
+    fireEvent.click(screen.getByText('Link Reader'));
+
+    query = 'code=BCDF-GHJK';
+    rerender(<LinkDevice />);
+    await act(async () => approve());
+
+    expect(
+      screen.queryByText('Your reader is linked. It finishes signing in on its own.'),
+    ).toBeNull();
     expect((screen.getByLabelText('Code') as HTMLInputElement).value).toBe('BCDF-GHJK');
   });
 
