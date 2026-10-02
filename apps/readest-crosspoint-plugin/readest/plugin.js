@@ -3,7 +3,9 @@
 // then gets its own key, never a password. The on-device Readest screen
 // (device.json) uses the key for the library and reading statistics, and with
 // Sync reading progress on, the reader's built-in KOReader Sync uses it to
-// sync progress with Readest, without setting up a sync server.
+// sync progress with Readest, without setting up a sync server. This page is
+// the only place to sign in: the firmware won't let a plugin set KOReader Sync
+// from the reader's own screen, so a sign-in there left progress sync off.
 CrossPoint.registerPlugin(async (container, api) => {
   const API = 'https://web.readest.com/api/crosspoint';
   // The key lives in a dotfile, which the device web server refuses to serve.
@@ -17,19 +19,26 @@ CrossPoint.registerPlugin(async (container, api) => {
     '<p data-status>Checking sign-in…</p>' +
     '<p data-code hidden>Open <a data-link target="_blank" rel="noopener"></a> ' +
     'and approve the code <b data-user-code></b>.</p>' +
-    '<div class="setting-row"><span class="setting-name">Sync reading progress<span data-kosync-note></span></span>' +
+    '<div class="setting-row" data-kosync-row><span class="setting-name">Sync reading progress<span data-kosync-note></span></span>' +
     '<span class="setting-control"><input type="checkbox" name="kosync" checked></span></div>' +
     '<div class="setting-row">' +
     '<button type="button" class="btn-small btn-add" name="signin">Sign in</button> ' +
     '<button type="button" class="btn-small" name="signout">Sign out</button>' +
     '</div>' +
-    '<p style="color:#666">Your Readest library appears on the reader under Plugins → Readest, ' +
-    'which can also sign in with a code for the library and reading statistics. Sign in here ' +
-    'to sync reading progress too: KOReader Sync on the reader then syncs your position with Readest.</p>';
+    '<p style="color:#666">After you sign in, your Readest library appears on the reader under ' +
+    'Plugins → Readest. With Sync reading progress on, KOReader Sync on the reader syncs your ' +
+    'position with Readest.</p>';
 
   const $ = (selector) => container.querySelector(selector);
   const status = (text) => {
     $('[data-status]').textContent = text;
+  };
+  // Offer what applies now: Sign in, with the progress sync choice it applies,
+  // while signed out; Sign out while signed in.
+  const showSignedIn = (signedIn) => {
+    $('[name="signin"]').style.display = signedIn ? 'none' : '';
+    $('[data-kosync-row]').style.display = signedIn ? 'none' : '';
+    $('[name="signout"]').style.display = signedIn ? '' : 'none';
   };
   // btoa() alone throws on characters outside Latin-1.
   const writeJson = (path, value) =>
@@ -70,7 +79,7 @@ CrossPoint.registerPlugin(async (container, api) => {
     const failed = [];
     for (const id of ids) {
       const res = await api.relay('DELETE', `${API}/keys/${id}`, {}, '').catch(() => null);
-      if (res?.status !== 204) failed.push(id);
+      if (res?.status !== 200) failed.push(id);
     }
     return failed;
   };
@@ -137,6 +146,7 @@ CrossPoint.registerPlugin(async (container, api) => {
       revoke: await revokeKeys(replaced),
     });
     status(`Signed in as ${key.username}.`);
+    showSignedIn(true);
   };
 
   const signinButton = $('[name="signin"]');
@@ -169,6 +179,9 @@ CrossPoint.registerPlugin(async (container, api) => {
         // Revoked first: a key left anywhere on the card is then useless.
         const failed = await revokeKeys(replacedKeys());
         await saveAccount(failed.length ? { revoke: failed } : {});
+        // Signed out from here on: a reload shows Sign in even if the cleanup
+        // below fails, so the buttons say so too.
+        showSignedIn(false);
         await writeJson(TOKEN_PATH, {});
         if (syncsWithReadest(await readSettings())) await postSettings(NO_SYNC);
         status(
@@ -189,6 +202,7 @@ CrossPoint.registerPlugin(async (container, api) => {
     account = {};
   }
   status(account.username ? `Signed in as ${account.username}.` : 'Not signed in.');
+  showSignedIn(!!account.username);
   try {
     // Don't take over a KOReader Sync server the user set up without asking
     // (an empty URL with a username means CrossPoint's own sync server).
