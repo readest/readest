@@ -234,6 +234,23 @@ const downloadAbsCover = async (
 };
 
 /**
+ * Download an ABS book's missing cover from its server, unauthenticated, and
+ * set its cover fields in place — only safe on a book not yet in the store.
+ * A no-op (false) for a non-ABS book, one whose server row is absent, or one
+ * whose cover is already on disk.
+ */
+export const fetchAbsBookCover = async (appService: AppService, book: Book): Promise<boolean> => {
+  const parsed = parseAbsFilePath(book.filePath);
+  if (!parsed) return false;
+  const server = findABSServerById(parsed.serverId);
+  if (!server || server.deletedAt) return false;
+  if (await appService.exists(getCoverFilename(book), 'Books')) return false;
+  // Cover downloads never touch token endpoints, so no refresh callback.
+  const client = new ABSClient(server, { onTokensUpdated: () => {} });
+  return downloadAbsCover(appService, client, book, parsed.itemId);
+};
+
+/**
  * Fetch missing covers for ABS books whose server row is present, without
  * requiring authentication — ABS cover endpoints are public. Covers the
  * books-adopted-via-cloud case: a device that received the book rows and the
@@ -243,23 +260,11 @@ const downloadAbsCover = async (
  */
 export const backfillAbsCovers = async (appService: AppService): Promise<void> => {
   const { library } = useLibraryStore.getState();
-  const clients = new Map<string, ABSClient>();
   const replaced = new Map<string, Book>();
   for (const book of library) {
     if (book.deletedAt) continue;
-    const parsed = parseAbsFilePath(book.filePath);
-    if (!parsed) continue;
-    const server = findABSServerById(parsed.serverId);
-    if (!server || server.deletedAt) continue;
-    if (await appService.exists(getCoverFilename(book), 'Books')) continue;
-    let client = clients.get(server.id);
-    if (!client) {
-      // Cover downloads never touch token endpoints, so no refresh callback.
-      client = new ABSClient(server, { onTokensUpdated: () => {} });
-      clients.set(server.id, client);
-    }
     const clone = { ...book };
-    if (await downloadAbsCover(appService, client, clone, parsed.itemId)) {
+    if (await fetchAbsBookCover(appService, clone)) {
       replaced.set(book.hash, clone);
     }
   }
