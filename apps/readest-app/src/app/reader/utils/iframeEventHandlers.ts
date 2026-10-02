@@ -467,6 +467,22 @@ const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
   return null;
 };
 
+// A PDF page document: foliate-js records where the page paints its images.
+type PDFPageDocument = Document & {
+  getImageAt?: (x: number, y: number) => (() => Promise<Blob>) | null;
+};
+
+// The image a right-click lands on, as a loader for its file. A PDF page is a
+// canvas under its text layer, so foliate-js finds its images by position and
+// renders the one asked for on demand.
+export const getContextMenuImage = (event: MouseEvent): (() => Promise<Blob>) | null => {
+  const target = event.target as HTMLElement;
+  const media = detectMediaTarget(target);
+  if (media?.elementType === 'image') return () => fetch(media.src).then((res) => res.blob());
+  const doc = target.ownerDocument as PDFPageDocument;
+  return doc.getImageAt?.(event.clientX, event.clientY) ?? null;
+};
+
 // A full-bleed cover or full-page illustration spans the page-turn zones, so
 // tapping it has to stay a page turn (#6424). foliate publishes the page's
 // content box on the root element; half of it separates such pages from inline
@@ -546,9 +562,12 @@ export const handleClick = (
     // viewer. A media element wrapped in a plain link (e.g. a figure linking to
     // its full-resolution image) should still zoom rather than follow the link
     // (#4757). Footnotes are excluded so footnote links keep their
-    // popup/navigation behavior.
-    const media = !isFixedLayout && !footnote ? detectMediaTarget(element) : null;
-    const pageMedia = media && element && fillsPage(element) ? media : null;
+    // popup/navigation behavior. Fixed-layout pages (comics/manga) keep
+    // tap-to-turn, so their media rides along on the single click like media
+    // filling a reflowable page, and a linked image there stays a link.
+    const media =
+      !footnote && !(isFixedLayout && element?.closest('a')) ? detectMediaTarget(element) : null;
+    const pageMedia = media && element && (isFixedLayout || fillsPage(element)) ? media : null;
     if (
       !media &&
       element?.closest('sup, a, audio, video') &&
@@ -594,11 +613,9 @@ export const handleClick = (
 
     // In reflowable books a single tap on an image/table opens the image gallery
     // / table zoom (#4584) — it is the only gesture that does, since long-press
-    // fired mid-scroll and was removed (#5069). Fixed-layout books
-    // (PDF/comics/manga) keep tap-to-turn, since there the tap is the page-turn
-    // gesture (media is null there). Media filling the page rides along on the
-    // single click instead, so the tap zone picks between turning the page and
-    // opening the viewer.
+    // fired mid-scroll and was removed (#5069). Media filling the page, and any
+    // media in a fixed-layout book, rides along on the single click instead, so
+    // the tap zone picks between turning the page and opening the viewer.
     if (media && !pageMedia) {
       window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
       return;

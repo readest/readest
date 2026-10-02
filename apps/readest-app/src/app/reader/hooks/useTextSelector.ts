@@ -37,6 +37,8 @@ import {
   setNativeDragFrozen,
   toDocPoint,
 } from '../utils/crossDocSelection';
+import { toParentViewportPoint } from '../utils/annotatorUtil';
+import { getContextMenuImage } from '../utils/iframeEventHandlers';
 
 // Instant-highlight quick action: on touch a plain tap and a swipe are both
 // page-turn gestures, so the highlight must not engage on pointer-down or it
@@ -1172,6 +1174,16 @@ export const useTextSelector = (
       event.preventDefault();
       event.stopPropagation();
       return false;
+    }
+    // Images get Readest's own menu: the webview's differs per engine and
+    // offers "Copy image address" for a blob URL nobody can use (#6558).
+    const getImage = getContextMenuImage(event as MouseEvent);
+    if (getImage) {
+      event.preventDefault();
+      const { clientX, clientY } = event as MouseEvent;
+      const doc = (event.target as Node).ownerDocument!;
+      const { x, y } = toParentViewportPoint(doc, clientX, clientY);
+      eventDispatcher.dispatch('image-context-menu', { bookKey, getImage, x, y });
     }
     return;
   };

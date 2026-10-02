@@ -2453,5 +2453,7 @@
   "Code": "Kode",
   "Linking to {{account}}": "Menautkan ke {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Tidak dapat menautkan pembaca. Periksa kode, atau masuk lagi di pembaca.",
-  "Link Reader": "Tautkan pembaca"
+  "Link Reader": "Tautkan pembaca",
+  "Failed to copy the image": "Gagal menyalin gambar",
+  "Copy Image": "Salin Gambar"
 }

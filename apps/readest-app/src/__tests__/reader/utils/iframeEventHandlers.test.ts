@@ -237,15 +237,48 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     expect(media['html']).toBe(table.outerHTML);
   });
 
-  test('fixed-layout: tap on an image still posts iframe-single-click (tap turns page)', async () => {
+  test('fixed-layout: tap on an image keeps tap-to-turn, carrying the image for the center tap', async () => {
     const handlers = await importHandlers();
     const img = document.createElement('img');
     img.src = 'blob:http://localhost/abc';
 
     tap(handlers, true, img);
 
+    const messages = postedMessages();
+    expect(messages.map((m) => m['type'])).not.toContain('iframe-open-media');
+    const click = messages.find((m) => m['type'] === 'iframe-single-click')!;
+    expect(click['media']).toEqual({ elementType: 'image', src: img.src });
+  });
+
+  test('fixed-layout: a manga page drawn as an SVG <image> rides along too (#6563)', async () => {
+    const handlers = await importHandlers();
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    image.setAttributeNS(
+      'http://www.w3.org/1999/xlink',
+      'xlink:href',
+      'blob:http://localhost/page',
+    );
+    svg.appendChild(image);
+
+    tap(handlers, true, image);
+
+    const click = postedMessages().find((m) => m['type'] === 'iframe-single-click')!;
+    expect(click['media']).toEqual({ elementType: 'image', src: 'blob:http://localhost/page' });
+  });
+
+  test('fixed-layout: a linked image stays a link', async () => {
+    const handlers = await importHandlers();
+    const anchor = document.createElement('a');
+    anchor.href = '#page-12';
+    const img = document.createElement('img');
+    img.src = 'blob:http://localhost/abc';
+    anchor.appendChild(img);
+
+    tap(handlers, true, img);
+
     const types = postedMessages().map((m) => m['type']);
-    expect(types).toContain('iframe-single-click');
+    expect(types).not.toContain('iframe-single-click');
     expect(types).not.toContain('iframe-open-media');
   });
 

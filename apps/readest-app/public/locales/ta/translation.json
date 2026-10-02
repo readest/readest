@@ -2517,5 +2517,7 @@
   "Code": "குறியீடு",
   "Linking to {{account}}": "{{account}} உடன் இணைக்கிறது",
   "Could not link the reader. Check the code, or sign in again on the reader.": "ரீடரை இணைக்க முடியவில்லை. குறியீட்டைச் சரிபார்க்கவும், அல்லது ரீடரில் மீண்டும் உள்நுழையவும்.",
-  "Link Reader": "ரீடரை இணை"
+  "Link Reader": "ரீடரை இணை",
+  "Failed to copy the image": "படத்தை நகலெடுக்க முடியவில்லை",
+  "Copy Image": "படத்தை நகலெடு"
 }

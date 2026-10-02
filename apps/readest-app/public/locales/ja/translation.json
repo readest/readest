@@ -2453,5 +2453,7 @@
   "Code": "コード",
   "Linking to {{account}}": "{{account}} にリンク",
   "Could not link the reader. Check the code, or sign in again on the reader.": "リーダーをリンクできませんでした。コードを確認するか、リーダーで再度サインインしてください。",
-  "Link Reader": "リーダーをリンク"
+  "Link Reader": "リーダーをリンク",
+  "Failed to copy the image": "画像のコピーに失敗しました",
+  "Copy Image": "画像をコピー"
 }

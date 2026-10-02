@@ -76,6 +76,17 @@ describe('toParentViewportPoint', () => {
     expect(result).toEqual({ x: 180, y: 250 });
   });
 
+  it('scales the point when the frame is shrunk with a transform, as in fixed layout', () => {
+    // An 844x1200 fixed-layout page drawn at a third of its size.
+    const frame = {
+      clientWidth: 844,
+      getBoundingClientRect: () => ({ left: 100, top: 50, width: 844 / 3, height: 400 }),
+    };
+    const doc = { defaultView: { frameElement: frame } } as unknown as Document;
+
+    expect(toParentViewportPoint(doc, 300, 600)).toEqual({ x: 200, y: 250 });
+  });
+
   it('defaults to {0,0} offset when no frameElement (detached doc)', () => {
     const doc = {
       defaultView: null,

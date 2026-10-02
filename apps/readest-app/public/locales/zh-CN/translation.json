@@ -2453,5 +2453,7 @@
   "Code": "代码",
   "Linking to {{account}}": "关联到 {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "无法关联阅读器。请检查代码，或在阅读器上重新登录。",
-  "Link Reader": "关联阅读器"
+  "Link Reader": "关联阅读器",
+  "Failed to copy the image": "图片复制失败",
+  "Copy Image": "复制图片"
 }

@@ -35,6 +35,26 @@ export function imageExtensionFromMime(mimeType: string): string {
   return base === 'jpeg' ? 'jpg' : base;
 }
 
+/** Re-encode an image as PNG, the one image type every clipboard accepts. */
+export async function imageToPng(image: Blob): Promise<Blob> {
+  if (image.type === 'image/png') return image;
+  const url = URL.createObjectURL(image);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d')!.drawImage(img, 0, 0);
+    return await new Promise((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Failed to encode PNG')))),
+    );
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 /**
  * Pixel size of a JPEG, PNG, GIF, BMP or WebP image, read from its leading
  * bytes. Null when the bytes end before the size, or hold another format.

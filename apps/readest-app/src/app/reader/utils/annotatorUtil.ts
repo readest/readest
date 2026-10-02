@@ -121,8 +121,10 @@ export function getExternalDragHandle(
 
 export function toParentViewportPoint(doc: Document, x: number, y: number): Point {
   const frameElement = doc.defaultView?.frameElement;
-  const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
-  return { x: x + frameRect.left, y: y + frameRect.top };
+  const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0, width: 0 };
+  // Fixed-layout pages are iframes shrunk to fit with a CSS transform.
+  const scale = frameElement?.clientWidth ? frameRect.width / frameElement.clientWidth : 1;
+  return { x: frameRect.left + x * scale, y: frameRect.top + y * scale };
 }
 
 export interface HandlePositions {

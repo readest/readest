@@ -2645,5 +2645,7 @@
   "Code": "Kod",
   "Linking to {{account}}": "Łączenie z {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Nie udało się połączyć czytnika. Sprawdź kod lub zaloguj się ponownie na czytniku.",
-  "Link Reader": "Połącz czytnik"
+  "Link Reader": "Połącz czytnik",
+  "Failed to copy the image": "Nie udało się skopiować obrazu",
+  "Copy Image": "Kopiuj obraz"
 }
