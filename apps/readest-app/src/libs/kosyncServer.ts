@@ -3,7 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Readest as a KOSync server for the CrossPoint plugin (routes under
 // /api/crosspoint). Devices authenticate with per-device keys from the
-// kosync_keys table; the KOSync username is the Readest user id.
+// kosync_keys table. The key alone identifies the device, so the KOSync
+// username (the account email) is only a label and survives an email change.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (value: string) => UUID.test(value);
@@ -19,15 +20,18 @@ export const hashKosyncKey = async (keyMd5: string) =>
 
 // KOSync clients send x-auth-user and x-auth-key (md5 of the password);
 // CrossPoint also sends the same credentials as HTTP Basic.
-const readCredentials = (headers: Headers) => {
-  const user = headers.get('x-auth-user');
+const readKeyMd5 = (headers: Headers) => {
   const keyMd5 = headers.get('x-auth-key');
-  if (user && keyMd5) return { user, keyMd5 };
+  if (keyMd5) return keyMd5;
   const basic = headers.get('authorization')?.match(/^Basic (.+)$/i)?.[1];
   if (!basic) return null;
-  const decoded = atob(basic);
-  const sep = decoded.indexOf(':');
-  return sep > 0 ? { user: decoded.slice(0, sep), keyMd5: md5(decoded.slice(sep + 1)) } : null;
+  try {
+    const decoded = atob(basic);
+    const sep = decoded.indexOf(':');
+    return sep >= 0 ? md5(decoded.slice(sep + 1)) : null;
+  } catch {
+    return null;
+  }
 };
 
 /** The Readest user id a KOSync request authenticates as, or null. */
@@ -35,15 +39,14 @@ export const authenticateKosync = async (
   request: Request,
   supabase: SupabaseClient,
 ): Promise<string | null> => {
-  const credentials = readCredentials(request.headers);
-  if (!credentials || !isUuid(credentials.user)) return null;
+  const keyMd5 = readKeyMd5(request.headers);
+  if (!keyMd5) return null;
   const { data } = await supabase
     .from('kosync_keys')
-    .select('id')
-    .eq('user_id', credentials.user)
-    .eq('key_hash', await hashKosyncKey(credentials.keyMd5))
+    .select('user_id')
+    .eq('key_hash', await hashKosyncKey(keyMd5))
     .limit(1);
-  return data?.length ? credentials.user : null;
+  return (data?.[0]?.user_id as string | undefined) ?? null;
 };
 
 /** A book config's `[current, total]` progress, stored as a JSON string. */

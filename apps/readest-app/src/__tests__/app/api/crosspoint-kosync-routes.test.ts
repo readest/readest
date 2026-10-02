@@ -51,6 +51,7 @@ import { DELETE as keyDELETE } from '@/app/api/crosspoint/keys/[id]/route';
 
 const BASE = 'https://web.readest.com/api/crosspoint';
 const USER = '11111111-2222-4333-8444-555555555555';
+const EMAIL = 'reader@example.com';
 const KEY = 'device-key';
 const md5 = (s: string) => createHash('md5').update(s).digest('hex');
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -59,11 +60,11 @@ const DOC = '32bb20d7452627491831bb64a8d0dd94';
 const XPOINTER = '/body/DocFragment[3]/body/p[12]/text().40';
 
 // KOSync clients send x-auth-user/x-auth-key; CrossPoint adds the same
-// credentials as HTTP Basic.
+// credentials as HTTP Basic. The username is the account email.
 const kosyncHeaders = (auth: 'kosync' | 'basic', key = KEY): Record<string, string> =>
   auth === 'kosync'
-    ? { 'x-auth-user': USER, 'x-auth-key': md5(key) }
-    : { authorization: `Basic ${btoa(`${USER}:${key}`)}` };
+    ? { 'x-auth-user': EMAIL, 'x-auth-key': md5(key) }
+    : { authorization: `Basic ${btoa(`${EMAIL}:${key}`)}` };
 
 const keyRows = (rows: unknown[]) => ({ data: rows, error: null });
 
@@ -71,7 +72,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-10-02T00:00:00.000Z'));
   calls = [];
-  results = { kosync_keys: keyRows([{ id: 'k1' }]) };
+  results = { kosync_keys: keyRows([{ user_id: USER }]) };
   validateUserAndTokenMock.mockReset().mockResolvedValue({});
 });
 
@@ -80,7 +81,7 @@ afterEach(() => {
 });
 
 describe('KOSync-compatible routes for CrossPoint', () => {
-  it('authenticates a device by its sync key, in KOSync headers or HTTP Basic', async () => {
+  it('authenticates a device by its key alone, in KOSync headers or HTTP Basic', async () => {
     for (const auth of ['kosync', 'basic'] as const) {
       calls = [];
       const res = await authGET(
@@ -88,16 +89,13 @@ describe('KOSync-compatible routes for CrossPoint', () => {
       );
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ authorized: 'OK' });
-      expect(calls).toEqual(
-        expect.arrayContaining([
-          ['kosync_keys', 'eq', 'user_id', USER],
-          ['kosync_keys', 'eq', 'key_hash', KEY_HASH],
-        ]),
-      );
+      expect(calls).toContainEqual(['kosync_keys', 'eq', 'key_hash', KEY_HASH]);
+      // The username is only a label, so a changed account email keeps syncing.
+      expect(calls.filter(([table, m]) => table === 'kosync_keys' && m === 'eq')).toHaveLength(1);
     }
   });
 
-  it('rejects unknown keys and malformed usernames', async () => {
+  it('rejects unknown keys and requests without credentials', async () => {
     results['kosync_keys'] = keyRows([]);
     const res = await authGET(
       new Request(`${BASE}/users/auth`, { headers: kosyncHeaders('kosync') }),
@@ -105,12 +103,8 @@ describe('KOSync-compatible routes for CrossPoint', () => {
     expect(res.status).toBe(401);
 
     calls = [];
-    const bad = await authGET(
-      new Request(`${BASE}/users/auth`, {
-        headers: { 'x-auth-user': 'not-a-user-id', 'x-auth-key': md5(KEY) },
-      }),
-    );
-    expect(bad.status).toBe(401);
+    const anonymous = await authGET(new Request(`${BASE}/users/auth`));
+    expect(anonymous.status).toBe(401);
     expect(calls).toEqual([]);
   });
 
@@ -220,14 +214,14 @@ describe('KOSync-compatible routes for CrossPoint', () => {
     const unauthenticated = await keysPOST(new Request(`${BASE}/keys`, { method: 'POST' }));
     expect(unauthenticated.status).toBe(401);
 
-    validateUserAndTokenMock.mockResolvedValue({ user: { id: USER }, token: 'jwt' });
+    validateUserAndTokenMock.mockResolvedValue({ user: { id: USER, email: EMAIL }, token: 'jwt' });
     results['kosync_keys'] = { data: { id: 'key-id' }, error: null };
     const res = await keysPOST(
       new Request(`${BASE}/keys`, { method: 'POST', headers: { authorization: 'Bearer jwt' } }),
     );
     expect(res.status).toBe(200);
     const { id, username, key } = await res.json();
-    expect({ id, username }).toEqual({ id: 'key-id', username: USER });
+    expect({ id, username }).toEqual({ id: 'key-id', username: EMAIL });
     expect(key).toMatch(/^[0-9a-f]{64}$/);
     expect(calls).toContainEqual([
       'kosync_keys',

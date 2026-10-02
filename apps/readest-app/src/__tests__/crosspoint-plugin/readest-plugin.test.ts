@@ -31,7 +31,7 @@ const writtenFiles = (api: PluginApi) =>
 
 const API = 'https://web.readest.com/api';
 const ACCOUNT_FILE = '/.crosspoint/readest-account.json';
-const USER = '11111111-2222-4333-8444-555555555555';
+const EMAIL = 'reader@example.com';
 
 let container: HTMLElement;
 let api: PluginApi;
@@ -94,7 +94,7 @@ const relayToReadest = (signInStatus = 200) =>
           };
     }
     if (method === 'POST' && url === `${API}/crosspoint/keys`) {
-      const key = { id: 'new-key-id', username: USER, key: 'device-key' };
+      const key = { id: 'new-key-id', username: EMAIL, key: 'device-key' };
       return { status: 200, body: JSON.stringify(key), headers: [] };
     }
     if (method === 'DELETE') return { status: 204, body: '', headers: [] };
@@ -145,6 +145,8 @@ describe('Readest CrossPoint plugin', () => {
   it('points the reader’s KOReader Sync at Readest with a new device key', async () => {
     relayToReadest();
     await mount();
+    // KOReader Sync isn't set up on the reader, so progress sync is on by default.
+    expect(field('kosync').checked).toBe(true);
     signIn('reader@example.com', 'secret');
     await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
 
@@ -157,7 +159,7 @@ describe('Readest CrossPoint plugin', () => {
     expect(settingsPosts).toEqual([
       {
         koServerUrl: `${API}/crosspoint`,
-        koUsername: USER,
+        koUsername: EMAIL, // a label: the key alone authenticates
         koPassword: 'device-key',
         koMatchMethod: 1, // Binary: Readest identifies books by partial MD5
         koSyncBehavior: 1, // Smart
@@ -167,6 +169,30 @@ describe('Readest CrossPoint plugin', () => {
       email: 'reader@example.com',
       keyId: 'new-key-id',
     });
+  });
+
+  it('asks before replacing a KOReader Sync server set up on the reader', async () => {
+    relayToReadest();
+    deviceSettings = { koServerUrl: 'https://sync.koreader.rocks', koUsername: 'me' };
+    await mount();
+    expect(field('kosync').checked).toBe(false);
+    expect(container.textContent).toContain('replaces https://sync.koreader.rocks');
+
+    signIn('reader@example.com', 'secret');
+    await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
+    expect(relayCalls('POST')).toHaveLength(1); // no device key minted
+    expect(settingsPosts).toEqual([]);
+    expect(writtenFiles(api)[ACCOUNT_FILE]).toEqual({ email: 'reader@example.com' });
+  });
+
+  it('replaces that server when the user opts in', async () => {
+    relayToReadest();
+    deviceSettings = { koServerUrl: 'https://sync.koreader.rocks', koUsername: 'me' };
+    await mount();
+    field('kosync').checked = true;
+    signIn('reader@example.com', 'secret');
+    await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
+    expect(settingsPosts).toEqual([expect.objectContaining({ koServerUrl: `${API}/crosspoint` })]);
   });
 
   it('revokes the previous device key when signing in again', async () => {

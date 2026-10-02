@@ -19,5 +19,6 @@ export async function POST(request: Request) {
     .single();
   if (error || !data) return NextResponse.json({ error: 'Could not create key' }, { status: 500 });
 
-  return NextResponse.json({ id: data.id, username: user.id, key });
+  // The username is a label for the reader's settings; the key authenticates.
+  return NextResponse.json({ id: data.id, username: user.email ?? user.id, key });
 }

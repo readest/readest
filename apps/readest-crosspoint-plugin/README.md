@@ -34,9 +34,11 @@ Copy the `readest/` folder to the SD card as `/.crosspoint/plugins/readest/`
 2. Go to **Settings**, find the **Readest** card, and sign in with your Readest
    email and password.
 
-Your library then appears on the reader under **Plugins → Readest**, and the
-reader's **KOReader Sync** is set to sync progress with Readest. This replaces
-any KOReader Sync server configured on the reader; **Sign out** clears it again.
+Your library then appears on the reader under **Plugins → Readest**. With
+**Sync reading progress** on, the reader's **KOReader Sync** is set to sync
+progress with Readest. The box starts on unless KOReader Sync is already set up
+with another server; turning it on replaces that server. **Sign out** clears
+KOReader Sync only while it still points at Readest.
 
 The password is stored on the SD card so the reader can renew its sign-in when
 the access token expires. It is kept in a dotfile that the reader's web server
@@ -55,8 +57,10 @@ book's statistics; others appear under their file hash.
 ## Reading progress
 
 Signing in gives the reader its own sync key and points CrossPoint's built-in
-KOReader Sync at Readest (`/api/crosspoint`), with **Document Matching** set to
-**Binary** so books match Readest's partial-MD5 book ids. Sync from the reader
+KOReader Sync at Readest (`/api/crosspoint`), with your email as the username
+and **Document Matching** set to **Binary** so books match Readest's partial-MD5
+book ids. The key alone authenticates the reader, so changing your Readest email
+does not break sync. Sync from the reader
 menu with **Sync Progress**; CrossPoint does not sync progress automatically.
 Readest apps move to the synced position the next time they open the book (the
 furthest position wins).

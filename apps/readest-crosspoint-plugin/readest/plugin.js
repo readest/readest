@@ -26,12 +26,14 @@ CrossPoint.registerPlugin(async (container, api) => {
     '<span class="setting-control"><input type="email" name="email" autocomplete="username"></span></div>' +
     '<div class="setting-row"><span class="setting-name">Password</span>' +
     '<span class="setting-control"><input type="password" name="password" autocomplete="current-password"></span></div>' +
+    '<div class="setting-row"><span class="setting-name">Sync reading progress<span data-kosync-note></span></span>' +
+    '<span class="setting-control"><input type="checkbox" name="kosync" checked></span></div>' +
     '<div class="setting-row">' +
     '<button type="button" class="btn-small btn-add" name="signin">Sign in</button> ' +
     '<button type="button" class="btn-small" name="signout">Sign out</button>' +
     '</div>' +
-    '<p style="color:#666">Your Readest library appears on the reader under Plugins → Readest, and ' +
-    'KOReader Sync on the reader syncs reading progress with Readest, replacing any sync server set there. ' +
+    '<p style="color:#666">Your Readest library appears on the reader under Plugins → Readest. ' +
+    'With Sync reading progress on, KOReader Sync on the reader syncs your position with Readest. ' +
     'The password is stored on the SD card so the reader can renew its sign-in.</p>';
 
   const $ = (selector) => container.querySelector(selector);
@@ -54,9 +56,22 @@ CrossPoint.registerPlugin(async (container, api) => {
     });
     if (!res.ok) throw new Error(`could not update KOReader Sync settings (HTTP ${res.status})`);
   };
+  const readSettings = async () => {
+    const res = await fetch('/api/settings');
+    return res.ok ? await res.json() : [];
+  };
+  const settingValue = (settings, key) => settings.find((s) => s.key === key)?.value;
   // Best-effort: a key that outlives sign-out only reaches reading progress.
   const revokeKey = (keyId) =>
     keyId && api.relay('DELETE', `${KOSYNC_SERVER}/keys/${keyId}`, {}, '').catch(() => {});
+  // Turn Readest progress sync off: revoke this reader's key and clear KOReader
+  // Sync if it still points at Readest, leaving a server the user set up alone.
+  const stopProgressSync = async (settings) => {
+    await revokeKey(account.keyId);
+    if (settingValue(settings, 'koServerUrl') === KOSYNC_SERVER) {
+      await postSettings({ koServerUrl: '', koUsername: '', koPassword: '' });
+    }
+  };
 
   let account = {};
 
@@ -79,18 +94,21 @@ CrossPoint.registerPlugin(async (container, api) => {
       if (res.status !== 200 || !data.access_token) {
         return status(`Sign-in failed: ${data.msg || `HTTP ${res.status}`}`);
       }
-      const keyRes = await api.relay(
-        'POST',
-        `${KOSYNC_SERVER}/keys`,
-        { Authorization: `Bearer ${data.access_token}` },
-        '',
-      );
-      let key = {};
-      try {
-        key = JSON.parse(keyRes.body);
-      } catch {}
-      if (keyRes.status !== 200 || !key.key) {
-        return status(`Sign-in failed: could not set up progress sync (HTTP ${keyRes.status})`);
+      const settings = await readSettings();
+      let key = null;
+      if ($('[name="kosync"]').checked) {
+        const keyRes = await api.relay(
+          'POST',
+          `${KOSYNC_SERVER}/keys`,
+          { Authorization: `Bearer ${data.access_token}` },
+          '',
+        );
+        try {
+          key = JSON.parse(keyRes.body);
+        } catch {}
+        if (keyRes.status !== 200 || !key?.key) {
+          return status(`Sign-in failed: could not set up progress sync (HTTP ${keyRes.status})`);
+        }
       }
       await writeJson(CONFIG_PATH, {
         email: escaped(email),
@@ -100,17 +118,21 @@ CrossPoint.registerPlugin(async (container, api) => {
         apikey: APIKEY,
       });
       await writeJson(TOKEN_PATH, { access_token: data.access_token });
-      await postSettings({
-        koServerUrl: KOSYNC_SERVER,
-        koUsername: key.username,
-        koPassword: key.key,
-        koMatchMethod: 1, // Binary: Readest identifies books by partial MD5
-        koSyncBehavior: 1, // Smart
-      });
+      if (key) {
+        await postSettings({
+          koServerUrl: KOSYNC_SERVER,
+          koUsername: key.username,
+          koPassword: key.key,
+          koMatchMethod: 1, // Binary: Readest identifies books by partial MD5
+          koSyncBehavior: 1, // Smart
+        });
+      } else {
+        await stopProgressSync(settings);
+      }
       const previousKeyId = account.keyId;
-      account = { email, keyId: key.id };
+      account = key ? { email, keyId: key.id } : { email };
       await writeJson(ACCOUNT_PATH, account);
-      await revokeKey(previousKeyId);
+      if (key) await revokeKey(previousKeyId);
       $('[name="password"]').value = '';
       status(`Signed in as ${email}.`);
     } catch (e) {
@@ -120,13 +142,7 @@ CrossPoint.registerPlugin(async (container, api) => {
 
   $('[name="signout"]').onclick = async () => {
     try {
-      await revokeKey(account.keyId);
-      const res = await fetch('/api/settings');
-      const settings = res.ok ? await res.json() : [];
-      // Leave a sync server the user set up after signing in alone.
-      if (settings.find((s) => s.key === 'koServerUrl')?.value === KOSYNC_SERVER) {
-        await postSettings({ koServerUrl: '', koUsername: '', koPassword: '' });
-      }
+      await stopProgressSync(await readSettings());
       account = {};
       for (const path of [CONFIG_PATH, TOKEN_PATH, ACCOUNT_PATH]) await writeJson(path, {});
       status('Signed out.');
@@ -142,4 +158,14 @@ CrossPoint.registerPlugin(async (container, api) => {
   } catch {
     status('Not signed in.');
   }
+  try {
+    // Don't take over a KOReader Sync server the user set up without asking
+    // (an empty URL with a username means CrossPoint's own sync server).
+    const settings = await readSettings();
+    const server = settingValue(settings, 'koServerUrl');
+    if (settingValue(settings, 'koUsername') && server !== KOSYNC_SERVER) {
+      $('[name="kosync"]').checked = false;
+      $('[data-kosync-note]').textContent = ` (replaces ${server || 'the CrossPoint sync server'})`;
+    }
+  } catch {}
 });
