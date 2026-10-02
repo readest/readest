@@ -9,6 +9,7 @@ const routerBackMock = vi.fn();
 const useAppUrlIngressMock = vi.fn();
 const useOpenDeviceLinkMock = vi.fn();
 const fetchWithAuthMock = vi.fn();
+const useThemeMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), back: routerBackMock }),
@@ -18,6 +19,7 @@ vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user }) }));
 vi.mock('@/hooks/useAppUrlIngress', () => ({ useAppUrlIngress: () => useAppUrlIngressMock() }));
 vi.mock('@/hooks/useOpenDeviceLink', () => ({ useOpenDeviceLink: () => useOpenDeviceLinkMock() }));
 vi.mock('@/utils/fetch', () => ({ fetchWithAuth: (...a: unknown[]) => fetchWithAuthMock(...a) }));
+vi.mock('@/hooks/useTheme', () => ({ useTheme: (...a: unknown[]) => useThemeMock(...a) }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: {} }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (k: string) => k }));
 vi.mock('@/services/environment', async (orig) => {
@@ -38,6 +40,7 @@ beforeEach(() => {
   routerBackMock.mockClear();
   useAppUrlIngressMock.mockClear();
   useOpenDeviceLinkMock.mockClear();
+  useThemeMock.mockClear();
 });
 
 afterEach(() => {
@@ -55,6 +58,15 @@ describe('LinkDevice', () => {
       'readest://link?code=RQGF-WDCF',
     );
     expect(screen.getByText('Sign in to continue')).toBeTruthy();
+  });
+
+  // Like the account page it shares a header with: the user's theme mode and
+  // color, painted over the whole page.
+  it('paints the page in the user’s theme', () => {
+    inApp = true;
+    const { container } = render(<LinkDevice />);
+    expect(useThemeMock).toHaveBeenCalledWith({ systemUIVisible: false });
+    expect((container.firstChild as HTMLElement).className).toContain('bg-base-100');
   });
 
   it('signs in within the app', () => {
