@@ -108,11 +108,18 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
+const listeners: EventListener[] = [];
 const listen = () => {
   const { result } = setup(vi.fn());
+  listeners.push(result.current.handleContextmenu);
   document.addEventListener('contextmenu', result.current.handleContextmenu);
-  return () => document.removeEventListener('contextmenu', result.current.handleContextmenu);
 };
+
+afterEach(() => {
+  for (const listener of listeners.splice(0)) {
+    document.removeEventListener('contextmenu', listener);
+  }
+});
 
 describe('useTextSelector image context menu (#6558)', () => {
   test('opens the image menu for an image in a reflowable page', async () => {
@@ -121,7 +128,7 @@ describe('useTextSelector image context menu (#6558)', () => {
       'fetch',
       vi.fn(async () => ({ blob: async () => blob })),
     );
-    const stop = listen();
+    listen();
     document.body.innerHTML = '<p>text <img src="blob:http://localhost/figure"></p>';
     const event = rightClick(document.querySelector('img')!, 30, 40);
     expect(event.defaultPrevented).toBe(true);
@@ -131,11 +138,41 @@ describe('useTextSelector image context menu (#6558)', () => {
     await expect(menu!.getImage()).resolves.toBe(blob);
     expect(fetch).toHaveBeenCalledWith('blob:http://localhost/figure');
     vi.unstubAllGlobals();
-    stop();
+  });
+
+  const svgPage = (inner: string) => {
+    document.body.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">${inner}</svg>`;
+    return document.querySelectorAll('image');
+  };
+  const loadedFrom = async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ blob: async () => new Blob() })),
+    );
+    await imageMenus().at(-1)!.getImage();
+    const url = vi.mocked(fetch).mock.calls[0]![0];
+    vi.unstubAllGlobals();
+    return url;
+  };
+
+  test('takes the SVG <image> under the pointer, not the first one', async () => {
+    listen();
+    const [, second] = svgPage(
+      '<image xlink:href="blob:http://localhost/first"/><image xlink:href="blob:http://localhost/second"/>',
+    );
+    expect(rightClick(second!).defaultPrevented).toBe(true);
+    expect(await loadedFrom()).toBe('blob:http://localhost/second');
+  });
+
+  test('resolves a relative SVG <image> href against its document', async () => {
+    listen();
+    const [image] = svgPage('<image href="images/figure.png"/>');
+    rightClick(image!);
+    expect(await loadedFrom()).toBe(new URL('images/figure.png', document.baseURI).href);
   });
 
   test('asks the PDF page for the image under the pointer', () => {
-    const stop = listen();
+    listen();
     document.body.innerHTML = '<div id="canvas"></div><div class="textLayer"></div>';
     const getImage = vi.fn();
     const getImageAt = vi.fn((x: number, y: number) => (x > 50 && y > 600 ? getImage : null));
@@ -149,23 +186,20 @@ describe('useTextSelector image context menu (#6558)', () => {
     expect(imageMenus()).toEqual([{ bookKey: 'book-1', getImage, x: 100, y: 650 }]);
     expect(getImageAt).toHaveBeenLastCalledWith(100, 650);
     delete (document as { getImageAt?: unknown }).getImageAt;
-    stop();
   });
 
   test('leaves the native menu to text', () => {
-    const stop = listen();
+    listen();
     document.body.innerHTML = '<p>plain text</p>';
     expect(rightClick(document.querySelector('p')!).defaultPrevented).toBe(false);
     expect(imageMenus()).toEqual([]);
-    stop();
   });
 
   test('shows no menu on mobile', () => {
     h.appService = { isAndroidApp: true, isMobile: true };
-    const stop = listen();
+    listen();
     document.body.innerHTML = '<img src="blob:http://localhost/figure">';
     expect(rightClick(document.querySelector('img')!).defaultPrevented).toBe(true);
     expect(imageMenus()).toEqual([]);
-    stop();
   });
 });

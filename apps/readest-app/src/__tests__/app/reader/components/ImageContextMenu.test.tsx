@@ -89,4 +89,31 @@ describe('ImageContextMenu (#6558)', () => {
       message: 'Image saved successfully',
     });
   });
+
+  test('saves an untyped image under the format its bytes show', async () => {
+    // a comic page from a CBZ: the zip loader leaves its blob untyped
+    getImage.mockResolvedValueOnce(new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])]));
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save Image'));
+    });
+    expect(h.saveFile).toHaveBeenCalledWith('image.jpg', expect.any(ArrayBuffer), {
+      mimeType: 'image/jpeg',
+    });
+    expect(h.imageToPng).not.toHaveBeenCalled();
+  });
+
+  test('converts an untyped image of unknown format to a real PNG', async () => {
+    getImage.mockResolvedValueOnce(new Blob(['????']));
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save Image'));
+    });
+    expect(h.imageToPng).toHaveBeenCalled();
+    expect(h.saveFile).toHaveBeenCalledWith('image.png', expect.any(ArrayBuffer), {
+      mimeType: 'image/png',
+    });
+  });
 });

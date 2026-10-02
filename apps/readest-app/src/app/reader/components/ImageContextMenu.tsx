@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { imageExtensionFromMime, imageToPng } from '@/utils/image';
+import { getImageMimeType, imageExtensionFromMime, imageToPng } from '@/utils/image';
 import BookContextMenuPopup from '@/app/library/components/BookContextMenuPopup';
 
 interface ImageMenuProps {
@@ -32,8 +32,16 @@ export const ImageMenu: React.FC<ImageMenuProps> = ({ getImage, position, onClos
 
   const saveImage = async () => {
     try {
-      const blob = await getImage();
-      const mimeType = blob.type || 'image/png';
+      // Some loaders leave images untyped (CBZ pages, for one): name the file
+      // by what its bytes are, and make it a real PNG when they can't tell.
+      let blob = await getImage();
+      let mimeType = blob.type.startsWith('image/')
+        ? blob.type
+        : getImageMimeType(new Uint8Array(await blob.arrayBuffer()));
+      if (!mimeType) {
+        blob = await imageToPng(blob);
+        mimeType = 'image/png';
+      }
       const saved = await appService?.saveFile(
         `image.${imageExtensionFromMime(mimeType)}`,
         await blob.arrayBuffer(),

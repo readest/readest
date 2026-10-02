@@ -455,12 +455,13 @@ const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
   if (target.localName === 'img') {
     return { elementType: 'image', src: (target as HTMLImageElement).src };
   }
-  const svgImage = target.closest('svg')?.querySelector('image');
+  // The <image> under the pointer, else the one an SVG page wraps.
+  const svgImage = target.closest('image') ?? target.closest('svg')?.querySelector('image');
   if (svgImage) {
     const href =
       svgImage.getAttribute('href') ||
       svgImage.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
-    if (href) return { elementType: 'image', src: href };
+    if (href) return { elementType: 'image', src: new URL(href, svgImage.baseURI).href };
   }
   const table = target.localName === 'table' ? target : target.closest('table');
   if (table) return { elementType: 'table', html: (table as HTMLElement).outerHTML };

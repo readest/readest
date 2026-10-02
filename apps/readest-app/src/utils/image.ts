@@ -55,6 +55,17 @@ export async function imageToPng(image: Blob): Promise<Blob> {
   }
 }
 
+/** The MIME type of a JPEG, PNG, GIF, BMP or WebP image, read from its leading bytes. */
+export function getImageMimeType(data: Uint8Array): string | null {
+  const text = (start: number, end: number) => String.fromCharCode(...data.subarray(start, end));
+  if (data[0] === 0xff && data[1] === 0xd8) return 'image/jpeg';
+  if (text(0, 8) === '\x89PNG\r\n\x1a\n') return 'image/png';
+  if (text(0, 4) === 'GIF8') return 'image/gif';
+  if (text(0, 2) === 'BM') return 'image/bmp';
+  if (text(0, 4) === 'RIFF' && text(8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
+
 /**
  * Pixel size of a JPEG, PNG, GIF, BMP or WebP image, read from its leading
  * bytes. Null when the bytes end before the size, or hold another format.
