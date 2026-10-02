@@ -653,6 +653,7 @@ describe('handleWheel on a fit-width PDF page (#6552)', () => {
   beforeEach(() => {
     vi.resetModules();
     host.scrollTop = 0;
+    host.scrollHeight = 1200;
   });
 
   test('a tick the page can still scroll is native scrolling', async () => {
@@ -660,7 +661,24 @@ describe('handleWheel on a fit-width PDF page (#6552)', () => {
   });
 
   test('a tick at the edge the page already sat at is not', async () => {
-    expect(await nativeScrollY(-100)).toBe(false);
+    const { handleWheel } = await importHandlers();
+    const spy = vi.spyOn(window, 'postMessage').mockImplementation(() => {});
+    handleWheel('book-1', wheelEvent(-100));
+    handleWheel('book-1', wheelEvent(-100));
+    expect((spy.mock.calls.at(-1)![0] as { nativeScrollY: boolean }).nativeScrollY).toBe(false);
+    spy.mockRestore();
+  });
+
+  test('the first tick on a tall page is native scrolling even if it already hit the edge', async () => {
+    // No previous tick to compare with: Chromium may have scrolled this one
+    // to the bottom before dispatching it.
+    host.scrollTop = 700;
+    expect(await nativeScrollY(100)).toBe(true);
+  });
+
+  test('the first tick on a page that fits can turn it', async () => {
+    host.scrollHeight = 500;
+    expect(await nativeScrollY(100)).toBe(false);
   });
 
   test('a tick that already scrolled the page to its edge is still native scrolling', async () => {

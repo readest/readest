@@ -408,15 +408,20 @@ const lastWheelScrollTop = new WeakMap<Element, number>();
 // Whether this tick scrolls the page natively: the fixed-layout host scrolls a
 // fit-width or zoomed page within itself. Chromium scrolls a passive wheel
 // before dispatching it, so the host may show this tick's scroll already — a
-// page that moved since the previous tick counts as still scrolling, too.
+// page that moved since the previous tick counts as still scrolling, too, and
+// so does the first tick on a page that can scroll at all.
 const isFixedLayoutScrollingY = (event: WheelEvent) => {
   const doc = event.currentTarget as Document | null;
   const root = doc?.defaultView?.frameElement?.getRootNode();
   const host = root && 'host' in root ? (root.host as HTMLElement) : null;
   if (host?.localName !== 'foliate-fxl') return false;
-  const last = lastWheelScrollTop.get(host) ?? host.scrollTop;
+  const last = lastWheelScrollTop.get(host);
   lastWheelScrollTop.set(host, host.scrollTop);
-  return hasScrollRoomY(host, event.deltaY) || Math.abs(host.scrollTop - last) > 1;
+  const moved =
+    last === undefined
+      ? host.scrollHeight - host.clientHeight > 1
+      : Math.abs(host.scrollTop - last) > 1;
+  return hasScrollRoomY(host, event.deltaY) || moved;
 };
 
 export const handleWheel = (bookKey: string, event: WheelEvent) => {
