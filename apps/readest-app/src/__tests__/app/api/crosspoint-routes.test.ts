@@ -234,11 +234,24 @@ describe('device sign-in', () => {
     results['crosspoint_device_codes.select'] = { data: null, error: boom };
     expect((await poll()).status).toBe(500);
 
-    results['crosspoint_device_codes.delete'] = { data: [{ user_id: USER }], error: null };
+    const approved = {
+      user_code: 'BCDF-GHJK',
+      user_id: USER,
+      username: EMAIL,
+      expires_at: '2026-10-02T00:05:00.000Z',
+    };
+    results['crosspoint_device_codes.delete'] = { data: [approved], error: null };
     results['crosspoint_devices.insert'] = { data: null, error: boom };
+    calls = [];
     const res = await poll();
     expect(res.status).toBe(500);
     expect(await res.json()).not.toHaveProperty('access_token');
+    // The approval goes back, so the reader's next poll can still get a key.
+    expect(calls).toContainEqual([
+      'crosspoint_device_codes',
+      'insert',
+      { device_code_hash: sha256('abc'), ...approved },
+    ]);
   });
 
   it('revokes a device key by its id', async () => {
@@ -374,6 +387,17 @@ describe('library catalog', () => {
     };
     const { items } = await (await list()).json();
     expect(items[0].title).toBe('Wait… What?');
+  });
+
+  it('lists a book without a title under its hash', async () => {
+    // The reader drops catalog rows without a title.
+    results['books.select'] = {
+      data: [{ book_hash: DOC, title: null, author: null }],
+      error: null,
+    };
+    const res = await list();
+    expect(res.status).toBe(200);
+    expect((await res.json()).items[0].title).toBe(DOC);
   });
 
   it('reports database failures', async () => {

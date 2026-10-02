@@ -51,8 +51,9 @@ export async function GET(request: Request) {
   return NextResponse.json({
     items: (data ?? []).map((book) => ({
       id: book.book_hash,
-      // The title also names the downloaded file, which the reader refuses when it contains "..".
-      title: (book.title as string).replace(/\.{2,}/g, '…'),
+      // The reader drops rows without a title, and the title also names the
+      // downloaded file, which the reader refuses when it contains "..".
+      title: String(book.title || book.book_hash).replace(/\.{2,}/g, '…'),
       author: book.author,
       url: `${url.origin}/api/crosspoint/books/${book.book_hash}`,
     })),

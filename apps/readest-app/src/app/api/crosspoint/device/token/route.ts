@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     .eq('device_code_hash', codeHash)
     .not('user_id', 'is', null)
     .gt('expires_at', now)
-    .select('user_id, username');
+    .select('user_code, user_id, username, expires_at');
   if (error) return NextResponse.json({ error: 'server_error' }, { status: 500 });
 
   const approved = claimed?.[0];
@@ -46,7 +46,13 @@ export async function POST(request: Request) {
     .insert({ user_id: approved.user_id, key_hash: await hashDeviceKey(key) })
     .select('id')
     .single();
-  if (insertError || !device) return NextResponse.json({ error: 'server_error' }, { status: 500 });
+  if (insertError || !device) {
+    // Put the approval back, so the reader's next poll can still get a key.
+    await supabase
+      .from('crosspoint_device_codes')
+      .insert({ device_code_hash: codeHash, ...approved });
+    return NextResponse.json({ error: 'server_error' }, { status: 500 });
+  }
 
   // id lets the plugin revoke the key; username labels the reader's KOReader Sync settings.
   return NextResponse.json({
