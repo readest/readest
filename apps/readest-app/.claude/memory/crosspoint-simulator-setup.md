@@ -1,34 +1,47 @@
 ---
 name: crosspoint-simulator-setup
-description: "Where the CrossPoint firmware + desktop simulator live on this Mac, how to build/run, and the two local source patches macOS 15 needs"
-metadata: 
+description: "Where the CrossPoint firmware + desktop simulator + E2E harness live on this Mac, how to build/run/drive them, and every local patch needed on macOS 15 for firmware develop (SD plugins)"
+metadata:
   node_type: memory
   type: project
   originSessionId: 6b8d3a47-abd0-4891-bb93-5e24bcc3b617
-  modified: 2026-09-04T18:00:47.007Z
+  modified: 2026-10-01T19:00:07.484Z
 ---
 
-Set up 2026-09-05. Checkouts side by side under `~/dev/crosspoint/`:
-- `crosspoint-reader/` — firmware, SHALLOW clone (`--depth 1`, master 9d2f234 of 2026-09-04) with `freeink-sdk` submodule initialized. `git fetch --unshallow` if history is needed.
-- `crosspoint-simulator/` — `crosspoint-reader/crosspoint-simulator` (c55f168, 2026-09-02), referenced as `simulator=symlink://../crosspoint-simulator`.
+Checkouts under `~/dev/crosspoint/` (updated 2026-10-02):
+- `crosspoint-reader/` — SHALLOW clone, branch `sim/develop` = origin/develop 664528b (SD plugins merged
+  2026-09-30) + local commit "parse CSS floats with strtod on macOS < 26 hosts" (CssParser
+  `tryParseNumber`: `#if SIMULATOR && __APPLE__` + `if constexpr (is_floating_point)` strtod, `from_chars`
+  in the ELSE branch). The simulator sample's `-D_LIBCPP_DISABLE_AVAILABILITY` only moves the failure:
+  it compiles, then **dyld aborts at launch** (`__from_chars_floating_point` missing before macOS 26).
+- Untracked `crosspoint-reader/sim-shims/` (+ `-Isim-shims` in `platformio.local.ini`): re-exports SDK
+  `Crypto.h`/`Util.h`, fail-closed `WolfsslCrypto.h` + `wolfssl/wolfcrypt/aes.h` for `/api/crypto`.
+- `platformio.local.ini` (gitignored) = simulator `sample-platformio-macos.ini` with
+  `simulator=symlink://../crosspoint-simulator`, pre-script `../crosspoint-simulator/skip_device_content_protection.py`
+  (the sample's `.pio/libdeps/...` path does not exist for symlink deps), `-Isim-shims`,
+  `-DARDUINOJSON_ENABLE_ARDUINO_STRING=1` (WString.h only sets it when included before ArduinoJson).
+- `crosspoint-simulator/` — branch `readest-e2e-fixes` (9dca0e2 on 20e7380): String begin/end, WebServer
+  protected `_currentArgs/_postArgs`, `HalGPIO::getFactoryMac`, `<sys/time.h>` in Arduino.h, and
+  **HTTPClient::begin clears headers**, and (2026-10-02) **SecureHttpClient::sendRequest passes ANY method** (it mapped everything but POST/PUT to GET, so relayed DELETEs silently became GETs) (else a reused session resends the previous Authorization header —
+  device SecureHttpClient::begin clears `_headers`). All upstream-worthy.
+- Firmware branch `sim/pr3424` = sim/develop + PR #3424 (precise KOSync anchors) for interop checks.
+  Deterministic boot: set `lastSleepFromReader:false` in `fs_/.crosspoint/state.json`, then BACK on Home
+  resumes the most recent book. Reader menu "Sync Progress" = 11th item (RIGHT x10) unless a bookmark exists
+  (adds "Bookmarks", shifting it). Vitest console output needs `--silent=false --reporter=verbose`.
+- `e2e/sim.sh <run> '<ms:KEY;...>' '<ms:shot;...>' [timeout]` runs headless, writes 360px PNGs to
+  `crosspoint-reader/qa-artifacts/<run>/`. `e2e/fake-readest.mjs` = protocol double of `/api/crosspoint/*`
+  (device code + `POST /__approve` hook, books, download hop, `/r2/`, sessions, KOSync), logs `requests.jsonl`.
+  Install the plugin on `fs_/.crosspoint/plugins/readest/` with `https://web.readest.com` sed-replaced by
+  `http://127.0.0.1:8787`.
 
-Build/run from `~/dev/crosspoint/crosspoint-reader`:
-```
-pio run -e simulator -t run_simulator      # X4 profile; also simulator_x3, simulator_x4_pro
-```
-PlatformIO 6.1.19 is from Homebrew (`brew install platformio`), native platform 1.2.1. Simulator envs live in the gitignored `platformio.local.ini` (pulled in via `extra_configs`), copied from the simulator's `sample-platformio-macos.ini`. Simulated SD card = `./fs_/` (books in `fs_/books/`, caches in `fs_/.crosspoint/`). Web UI on http://127.0.0.1:8080 while File Transfer is on. Headless QA: `CROSSPOINT_SIM_INPUT_SCRIPT='6000:QUIT' CROSSPOINT_SIM_SCREENSHOTS='5000:./qa-artifacts/home.bmp' .pio/build/simulator/program`.
+**Traps:** shell exports `http_proxy`/`https_proxy`; the proxy swallows loopback, and the simulator shells
+out to host `curl` — run it with `NO_PROXY=127.0.0.1,localhost` (sim.sh does) and use `curl --noproxy '*'`.
+Home menu on develop: resume card, Browse Files, Library, Plugins (only when a plugin is installed), File
+Transfer, Settings; LEFT/RIGHT = Up/Down, BACK on Home = Resume. After a SLEEP from a book the next boot
+resumes INTO the book. Plugin catalog asks for Wi-Fi first (ENTER on "Simulator WiFi (fake)"). The open
+fake network saves no credential, so sleep-time event drain never brings Wi-Fi up; File Transfer → join
+network drains the outbox. Web UI = http://127.0.0.1:8080. Chrome: `ref` clicks on the plugin card's
+buttons did not fire `onclick`; coordinate clicks did.
 
-**Two local patches to tracked firmware files were required on macOS 15.6 / Xcode 17 SDK 26.2 (uncommitted, show in `git diff`):**
-1. `src/activities/home/HomeActivity.h`: replace `struct RecentBook;` forward decl with `#include "RecentBooksStore.h"`. libc++ instantiates `~std::vector<RecentBook>` in the inline ctor and rejects the incomplete type; `-fno-exceptions` does NOT help.
-2. `lib/Epub/Epub/css/CssParser.cpp` `tryParseNumber`: `#if defined(SIMULATOR) && defined(__APPLE__)` + `if constexpr (is_floating_point_v<T>)` strtod fallback, with the `std::from_chars` call in the ELSE branch (an early return alone still instantiates it). Floating-point `std::from_chars` is macOS 26+ only.
-
-**Why:** the simulator lags firmware master and its README says nothing about either; both patches are upstream-worthy (portability), neither touches device builds.
-
-**How to apply:** after `git pull` in the firmware, re-check these two files still carry the patches (or the fix landed upstream) before rebuilding. See [[crosspoint-integration-feasibility-2026-09]] for what the simulator is for.
-
-**State as of 2026-09-05 (paused mid-task):** the firmware checkout is on branch `sim/feat-sd-plugins`
-(PR #3114 + the two mac fixes cherry-picked) and its simulator build is BROKEN pending shims
-(`ContentProtection.h` not found is the first error). `develop` builds and runs. The simulator
-checkout carries an uncommitted `HalStorage::readFileToString` patch. Full TODO lives in
-`apps/readest-app/.claude/plans/2026-09-05-crosspoint-readest-plugin.md`; Readest work goes in the
-worktree `~/dev/readest-feat-crosspoint-plugin` (branch `feat/crosspoint-plugin`).
+**Why/how to apply:** after pulling firmware or simulator, rebuild and expect new HAL/shim gaps (the
+simulator lags firmware); check the CssParser commit still applies. See [[crosspoint-integration-feasibility-2026-09]].
