@@ -8,7 +8,7 @@
  * no location in the book and must not offer one.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, cleanup, render, screen, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { BookDoc } from '@/libs/document';
 import { eventDispatcher } from '@/utils/event';
@@ -200,6 +200,8 @@ const openFootnotePopup = async (href = HREF) => {
 };
 
 describe('FootnotePopup jump to location', () => {
+  afterEach(cleanup);
+
   beforeEach(() => {
     document.body.replaceChildren();
     hoisted.handlers.length = 0;
@@ -388,6 +390,56 @@ describe('FootnotePopup jump to location', () => {
     expect(style.fontFamily).toBe('ImportedReader');
     expect(style.fontSize).toBe('28px');
     expect(style.lineHeight).toBe('42px');
+  });
+
+  it('transfers embedded font rules with stylesheet-relative URLs and removes them on unmount', async () => {
+    const popup = await renderPopup();
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    const sheet = doc.createElement('style');
+    sheet.textContent = `@media screen { @font-face {
+      font-family: "EmbeddedUnit";
+      src: url("../Fonts/reader.woff2") format("woff2");
+      font-weight: 400;
+    } }
+    @media print { @font-face { font-family: "EmbeddedUnit"; font-weight: 900; } }`;
+    doc.head.appendChild(sheet);
+    Object.defineProperty(doc.defaultView!, 'matchMedia', {
+      value: (query: string) => ({ matches: query === 'screen' }),
+    });
+    // jsdom omits src when serializing @font-face. Supply the browser's rule text.
+    const face = (sheet.sheet!.cssRules[0] as CSSMediaRule).cssRules[0]!;
+    Object.defineProperty(face, 'cssText', {
+      value:
+        '@font-face { font-family: "EmbeddedUnit"; src: url("../Fonts/reader.woff2") format("woff2"); font-weight: 400; }',
+    });
+    Object.defineProperty(sheet.sheet!, 'href', {
+      value: 'https://example.test/book/Styles/reader.css',
+    });
+    doc.body.style.fontFamily = 'EmbeddedUnit, serif';
+    const element = doc.createElement('span');
+    doc.body.appendChild(element);
+    const hostFontRules = () =>
+      Array.from(document.styleSheets).flatMap((styleSheet) =>
+        Array.from(styleSheet.cssRules).filter((rule) => rule.type === CSSRule.FONT_FACE_RULE),
+      );
+    const originalRules = hostFontRules();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-popup', {
+        bookKey: BOOK_KEY,
+        element,
+        footnote: 'A note in an EPUB-embedded font',
+      });
+    });
+
+    const popupRules = hostFontRules().filter((rule) => !originalRules.includes(rule));
+    expect(popupRules).toHaveLength(1);
+    expect(document.head.textContent).toContain('https://example.test/book/Fonts/reader.woff2');
+    expect(popupRules[0]!.cssText).toContain('font-weight: 400');
+    popup.unmount();
+    expect(hostFontRules()).toEqual(originalRules);
   });
 
   // #6390: the soft keyboard the note editor raises fires a window resize on

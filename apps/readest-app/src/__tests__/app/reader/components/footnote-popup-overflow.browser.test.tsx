@@ -16,7 +16,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 import '@/styles/globals.css';
 
@@ -175,6 +175,56 @@ describe('footnote popup box (#5999)', () => {
       expect(popup.scrollHeight).toBeLessThanOrEqual(popup.clientHeight);
     } finally {
       document.fonts.delete(font);
+    }
+  });
+
+  test('loads an iframe-only embedded font for a plain-text footnote (#3602)', async () => {
+    const footnote = 'A footnote using an embedded font from the book iframe.';
+    const iframe = document.createElement('iframe');
+    cell.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    const base = doc.createElement('base');
+    base.href = new URL('/reader/book/', location.href).href;
+    const fontStyle = doc.createElement('style');
+    fontStyle.textContent = `
+      @font-face {
+        font-family: EmbeddedFootnoteTest;
+        src: url('../../fonts/InterVariable.woff2') format('woff2');
+      }
+    `;
+    doc.head.append(base, fontStyle);
+    doc.body.style.cssText =
+      'font-family: EmbeddedFootnoteTest; font-size: 28px; line-height: 42px;';
+    const reference = doc.createElement('span');
+    doc.body.appendChild(reference);
+    expect(await doc.fonts.load('28px EmbeddedFootnoteTest', footnote)).not.toHaveLength(0);
+    expect(await document.fonts.load('28px EmbeddedFootnoteTest', footnote)).toHaveLength(0);
+
+    const { unmount } = render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    try {
+      act(() => {
+        h.dispatchFootnote({ bookKey: 'book-1', element: reference, footnote });
+      });
+      await waitFor(() => expect(popupContainer().querySelector('p')).not.toBeNull());
+      const popup = popupContainer();
+      const note = popup.querySelector('p')!;
+      const style = getComputedStyle(note);
+      const hostFonts = await document.fonts.load(
+        `${style.fontSize} ${style.fontFamily}`,
+        footnote,
+      );
+      expect(hostFonts).not.toHaveLength(0);
+      expect(style.fontSize).toBe('28px');
+      expect(style.lineHeight).toBe('42px');
+      await waitFor(() => {
+        expect(popup.scrollWidth).toBeLessThanOrEqual(popup.clientWidth);
+        expect(popup.scrollHeight).toBeLessThanOrEqual(popup.clientHeight);
+      });
+
+      unmount();
+      for (const font of hostFonts) expect(document.fonts.has(font)).toBe(false);
+    } finally {
+      unmount();
     }
   });
 
