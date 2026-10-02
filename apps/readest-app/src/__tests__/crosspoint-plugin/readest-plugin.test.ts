@@ -21,25 +21,31 @@ const fill = (template: string, vars: Record<string, string>) =>
 const decodeBase64Json = (b64: string) =>
   JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))));
 
-const writtenFiles = (api: PluginApi) =>
-  Object.fromEntries(
-    api.writeFile.mock.calls.map(([path, b64]) => [
-      path as string,
-      decodeBase64Json(b64 as string),
-    ]),
-  );
-
-const API = 'https://web.readest.com/api';
+const API = 'https://web.readest.com/api/crosspoint';
+const TOKEN_FILE = deviceJson.token.file;
 const ACCOUNT_FILE = '/.crosspoint/readest-account.json';
 const EMAIL = 'reader@example.com';
+const CODE = {
+  device_code: 'dc',
+  user_code: 'BCDF-GHJK',
+  verification_uri: 'https://web.readest.com/link',
+  verification_uri_complete: 'https://web.readest.com/link?code=BCDF-GHJK',
+  expires_in: 600,
+  interval: 0.001,
+};
+const KEY = { access_token: 'device-key', token_type: 'bearer', id: 'new-key-id', username: EMAIL };
 
 let container: HTMLElement;
 let api: PluginApi;
 // The reader's web API: GET /api/settings reports these, POST /api/settings is recorded.
 let deviceSettings: Record<string, unknown>;
 let settingsPosts: Record<string, unknown>[];
+let settingsPostStatus: number;
+// Relayed requests, file writes and settings posts, in order.
+let log: string[];
 
 const mount = async (account: unknown = null) => {
+  const sink = log;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
@@ -47,8 +53,9 @@ const mount = async (account: unknown = null) => {
         return account ? new Response(JSON.stringify(account)) : new Response('', { status: 404 });
       }
       if (url === '/api/settings' && init?.method === 'POST') {
+        sink.push('settings');
         settingsPosts.push(JSON.parse(String(init.body)));
-        return new Response('Applied');
+        return new Response('Applied', { status: settingsPostStatus });
       }
       if (url === '/api/settings') {
         const items = Object.entries(deviceSettings).map(([key, value]) => ({ key, value }));
@@ -69,46 +76,69 @@ const mount = async (account: unknown = null) => {
 
 const field = (name: string) => container.querySelector(`[name="${name}"]`) as HTMLInputElement;
 const statusText = () => container.querySelector('[data-status]')?.textContent ?? '';
+const relayCalls = (method: string, path = '') =>
+  api.relay.mock.calls.filter(([m, url]) => m === method && String(url).startsWith(API + path));
+// The last content written to each file.
+const files = () =>
+  Object.fromEntries(
+    api.writeFile.mock.calls.map(([path, b64]) => [
+      path as string,
+      decodeBase64Json(b64 as string),
+    ]),
+  );
 
-const signIn = (email: string, password: string) => {
-  field('email').value = email;
-  field('password').value = password;
-  field('signin').click();
+const json = (status: number, body: unknown) => ({
+  status,
+  body: JSON.stringify(body),
+  headers: [],
+});
+
+const PENDING = json(400, { error: 'authorization_pending' });
+
+// Answers relayed requests the way Readest does. By default the code is
+// approved on the second poll and revocations succeed.
+const readest = ({
+  token = (poll: number) => (poll ? json(200, KEY) : PENDING),
+  revokeStatus = 204,
+}: {
+  token?: (poll: number) => unknown;
+  revokeStatus?: number;
+} = {}) => {
+  // Logs into this test's array even if a request outlives the test.
+  const sink = log;
+  let polls = 0;
+  api.relay.mockImplementation(async (method: string, url: string) => {
+    sink.push(`${method} ${url.replace(API, '')}`);
+    if (url === `${API}/device/code`) return json(200, CODE);
+    if (url === `${API}/device/token`) return token(polls++);
+    if (method === 'DELETE') return { status: revokeStatus, body: '', headers: [] };
+    return json(404, {});
+  });
 };
 
-// Answers the plugin's relayed requests the way Readest's servers do.
-const relayToReadest = (signInStatus = 200) =>
-  api.relay.mockImplementation(async (method: string, url: string) => {
-    if (url.endsWith('/token?grant_type=password')) {
-      return signInStatus === 200
-        ? { status: 200, body: JSON.stringify({ access_token: 'jwt' }), headers: [] }
-        : {
-            status: signInStatus,
-            // Readest's Supabase auth error shape.
-            body: JSON.stringify({
-              code: 400,
-              error_code: 'invalid_credentials',
-              msg: 'Invalid login credentials',
-            }),
-            headers: [],
-          };
-    }
-    if (method === 'POST' && url === `${API}/crosspoint/keys`) {
-      const key = { id: 'new-key-id', username: EMAIL, key: 'device-key' };
-      return { status: 200, body: JSON.stringify(key), headers: [] };
-    }
-    if (method === 'DELETE') return { status: 204, body: '', headers: [] };
-    return { status: 404, body: '', headers: [] };
-  });
-
-const relayCalls = (method: string) => api.relay.mock.calls.filter(([m]) => m === method);
+// Clicking Sign in disables it until the whole sign-in has finished.
+const signIn = async (done = `Signed in as ${EMAIL}.`) => {
+  field('signin').click();
+  expect(field('signin').disabled).toBe(true);
+  await vi.waitFor(() => expect(field('signin').disabled).toBe(false));
+  expect(statusText()).toBe(done);
+};
 
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
-  api = { name: 'readest', relay: vi.fn(), writeFile: vi.fn().mockResolvedValue({}) };
+  const sink: string[] = (log = []);
+  api = {
+    name: 'readest',
+    relay: vi.fn(),
+    writeFile: vi.fn(async (path: string) => {
+      sink.push(`write ${path}`);
+      return {};
+    }),
+  };
   deviceSettings = {};
   settingsPosts = [];
+  settingsPostStatus = 200;
 });
 
 afterEach(() => {
@@ -117,152 +147,248 @@ afterEach(() => {
 });
 
 describe('Readest CrossPoint plugin', () => {
-  it('signs in through the device relay and stores credentials the firmware can template', async () => {
-    relayToReadest();
+  it('signs in with a code approved on the Readest web app and stores only the reader’s key', async () => {
+    let approved = false;
+    readest({ token: () => (approved ? json(200, KEY) : PENDING) });
     await mount();
-    const password = 'p"a\\ss é';
-    signIn(' reader@example.com ', password);
-    await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
+    expect(statusText()).toBe('Not signed in.');
+    field('signin').click();
 
-    const [method, url, headers, body] = api.relay.mock.calls[0]!;
-    expect(method).toBe('POST');
-    expect(url).toBe('https://readest.supabase.co/auth/v1/token?grant_type=password');
-    expect(JSON.parse(body)).toEqual({ email: 'reader@example.com', password });
+    await vi.waitFor(() => expect(statusText()).toBe('Waiting for approval…'));
+    const link = container.querySelector('[data-link]') as HTMLAnchorElement;
+    expect(link.href).toBe(CODE.verification_uri_complete);
+    expect(link.textContent).toBe(CODE.verification_uri);
+    expect(container.querySelector('[data-user-code]')?.textContent).toBe('BCDF-GHJK');
 
-    const files = writtenFiles(api);
-    expect(files[deviceJson.token.file]).toEqual({ access_token: 'jwt' });
-    const config = files[deviceJson.config.file];
-    expect(config.api).toBe('https://web.readest.com/api');
-    // The device mints later tokens from the same stored values: rendering its
-    // auth request must reproduce exactly what the browser just sent.
-    const vars = Object.fromEntries(Object.entries(config).map(([k, v]) => [`cfg.${k}`, `${v}`]));
-    const auth = deviceJson.auth.request;
-    expect(fill(auth.url, vars)).toBe(url);
-    expect(fill(auth.headers.apikey, vars)).toBe(headers.apikey);
-    expect(JSON.parse(fill(auth.body, vars))).toEqual({ email: 'reader@example.com', password });
+    approved = true;
+    await vi.waitFor(() => expect(statusText()).toBe(`Signed in as ${EMAIL}.`));
+    expect((container.querySelector('[data-code]') as HTMLElement).hidden).toBe(true);
+    expect(api.relay).toHaveBeenCalledWith(
+      'POST',
+      `${API}/device/token`,
+      { 'Content-Type': 'application/json' },
+      JSON.stringify({ device_code: 'dc' }),
+    );
+    // Nothing account-level reaches the card: only the key and who it belongs to.
+    expect(files()).toEqual({
+      [TOKEN_FILE]: { access_token: 'device-key' },
+      [ACCOUNT_FILE]: { username: EMAIL, keyId: 'new-key-id', revoke: [] },
+    });
   });
 
-  it('points the reader’s KOReader Sync at Readest with a new device key', async () => {
-    relayToReadest();
+  it('points the reader’s KOReader Sync at Readest with the key', async () => {
+    readest();
     await mount();
     // KOReader Sync isn't set up on the reader, so progress sync is on by default.
     expect(field('kosync').checked).toBe(true);
-    signIn('reader@example.com', 'secret');
-    await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
-
-    expect(relayCalls('POST')[1]).toEqual([
-      'POST',
-      `${API}/crosspoint/keys`,
-      { Authorization: 'Bearer jwt' },
-      '',
-    ]);
+    await signIn();
     expect(settingsPosts).toEqual([
       {
-        koServerUrl: `${API}/crosspoint`,
+        koServerUrl: API,
         koUsername: EMAIL, // a label: the key alone authenticates
         koPassword: 'device-key',
         koMatchMethod: 1, // Binary: Readest identifies books by partial MD5
         koSyncBehavior: 1, // Smart
       },
     ]);
-    expect(writtenFiles(api)[ACCOUNT_FILE]).toEqual({
-      email: 'reader@example.com',
-      keyId: 'new-key-id',
-    });
   });
 
   it('asks before replacing a KOReader Sync server set up on the reader', async () => {
-    relayToReadest();
+    readest();
     deviceSettings = { koServerUrl: 'https://sync.koreader.rocks', koUsername: 'me' };
     await mount();
     expect(field('kosync').checked).toBe(false);
     expect(container.textContent).toContain('replaces https://sync.koreader.rocks');
 
-    signIn('reader@example.com', 'secret');
-    await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
-    expect(relayCalls('POST')).toHaveLength(1); // no device key minted
+    await signIn();
     expect(settingsPosts).toEqual([]);
-    expect(writtenFiles(api)[ACCOUNT_FILE]).toEqual({ email: 'reader@example.com' });
+    expect(files()[TOKEN_FILE]).toEqual({ access_token: 'device-key' });
   });
 
   it('replaces that server when the user opts in', async () => {
-    relayToReadest();
+    readest();
     deviceSettings = { koServerUrl: 'https://sync.koreader.rocks', koUsername: 'me' };
     await mount();
     field('kosync').checked = true;
-    signIn('reader@example.com', 'secret');
-    await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
-    expect(settingsPosts).toEqual([expect.objectContaining({ koServerUrl: `${API}/crosspoint` })]);
+    await signIn();
+    expect(settingsPosts).toEqual([expect.objectContaining({ koServerUrl: API })]);
   });
 
-  it('revokes the previous device key when signing in again', async () => {
-    relayToReadest();
-    await mount({ email: 'old@example.com', keyId: 'old-key-id' });
-    signIn('reader@example.com', 'secret');
-    await vi.waitFor(() => expect(statusText()).toContain('Signed in as reader@example.com'));
+  it('turns Readest progress sync off when signing in again with it unchecked', async () => {
+    readest();
+    deviceSettings = { koServerUrl: API, koUsername: EMAIL };
+    await mount({ username: EMAIL, keyId: 'old-key-id' });
+    // Readest is already the reader's sync server, so nothing is "replaced".
+    expect(field('kosync').checked).toBe(true);
+    expect(container.textContent).not.toContain('replaces');
 
-    expect(relayCalls('DELETE')).toEqual([['DELETE', `${API}/crosspoint/keys/old-key-id`, {}, '']]);
+    field('kosync').checked = false;
+    await signIn();
+    expect(settingsPosts).toEqual([{ koServerUrl: '', koUsername: '', koPassword: '' }]);
   });
 
-  it('stores and configures nothing when the sign-in is rejected', async () => {
-    relayToReadest(400);
+  it('revokes the key it replaces only once the new one is in place', async () => {
+    readest();
+    await mount({ username: 'old@example.com', keyId: 'old-key-id' });
+    await signIn();
+    expect(relayCalls('DELETE')).toEqual([['DELETE', `${API}/keys/old-key-id`, {}, '']]);
+    expect(log.indexOf('DELETE /keys/old-key-id')).toBeGreaterThan(log.indexOf('settings'));
+  });
+
+  it('keeps keys it could not revoke and retries them at sign-out', async () => {
+    readest({ revokeStatus: 500 });
+    await mount({ username: EMAIL, keyId: 'old-key-id' });
+    await signIn();
+    expect(files()[ACCOUNT_FILE]).toEqual({
+      username: EMAIL,
+      keyId: 'new-key-id',
+      revoke: ['old-key-id'],
+    });
+
+    readest();
+    field('signout').click();
+    await vi.waitFor(() => expect(statusText()).toBe('Signed out.'));
+    expect(relayCalls('DELETE').slice(1)).toEqual([
+      ['DELETE', `${API}/keys/old-key-id`, {}, ''],
+      ['DELETE', `${API}/keys/new-key-id`, {}, ''],
+    ]);
+    expect(files()[ACCOUNT_FILE]).toEqual({});
+  });
+
+  it('records a new key before handing it out, so a failed setup leaves it revocable', async () => {
+    readest();
+    settingsPostStatus = 500;
+    await mount({ username: EMAIL, keyId: 'old-key-id' });
+    await signIn('Sign-in failed: could not update KOReader Sync settings (HTTP 500)');
+    expect(log.indexOf(`write ${ACCOUNT_FILE}`)).toBeLessThan(log.indexOf(`write ${TOKEN_FILE}`));
+    expect(files()[ACCOUNT_FILE]).toEqual({ revoke: ['old-key-id', 'new-key-id'] });
+    // Neither key is revoked yet: the reader may still be using either.
+    expect(relayCalls('DELETE')).toEqual([]);
+  });
+
+  it('stores nothing when the code expires before it is approved', async () => {
+    readest({ token: () => json(400, { error: 'expired_token' }) });
     await mount();
-    signIn('reader@example.com', 'wrong');
-    await vi.waitFor(() => expect(statusText()).toContain('Invalid login credentials'));
+    await signIn('Sign-in failed: the code expired');
     expect(api.writeFile).not.toHaveBeenCalled();
-    expect(relayCalls('POST')).toHaveLength(1);
     expect(settingsPosts).toEqual([]);
+    expect(field('signin').disabled).toBe(false);
   });
 
-  it('signs out by revoking the device key and clearing Readest’s sync settings', async () => {
-    relayToReadest();
-    deviceSettings = { koServerUrl: `${API}/crosspoint` };
-    await mount({ email: 'reader@example.com', keyId: 'key-id' });
-    expect(statusText()).toContain('Signed in as reader@example.com');
+  it('reports an unreachable Readest', async () => {
+    api.relay.mockResolvedValue({ status: 502, body: 'relay failed', headers: [] });
+    await mount();
+    await signIn('Sign-in failed: Readest is unreachable (HTTP 502)');
+    expect(api.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('ignores a second click while a sign-in is running', async () => {
+    readest({ token: () => PENDING });
+    await mount();
+    field('signin').click();
+    field('signin').click();
+    await vi.waitFor(() => expect(statusText()).toBe('Waiting for approval…'));
+    expect(field('signin').disabled).toBe(true);
+    expect(relayCalls('POST', '/device/code')).toHaveLength(1);
+    field('signout').click(); // stop polling
+  });
+
+  it('stops waiting for approval when the user signs out', async () => {
+    readest({ token: () => PENDING });
+    await mount();
+    field('signin').click();
+    await vi.waitFor(() => expect(relayCalls('POST', '/device/token').length).toBeGreaterThan(0));
 
     field('signout').click();
-    await vi.waitFor(() => expect(statusText()).toContain('Signed out'));
-    expect(relayCalls('DELETE')).toEqual([['DELETE', `${API}/crosspoint/keys/key-id`, {}, '']]);
+    await vi.waitFor(() => expect(statusText()).toBe('Signed out.'));
+    await vi.waitFor(() => expect(field('signin').disabled).toBe(false));
+    const polls = relayCalls('POST', '/device/token').length;
+    await new Promise((r) => setTimeout(r, 20));
+    expect(relayCalls('POST', '/device/token')).toHaveLength(polls);
+    expect(files()[TOKEN_FILE]).toEqual({});
+  });
+
+  it('revokes a key approved after the user signed out', async () => {
+    let approve: (v: unknown) => void = () => {};
+    // The approval lands while the poll is in flight.
+    readest({ token: () => new Promise((r) => (approve = r)) });
+    await mount();
+    field('signin').click();
+    await vi.waitFor(() => expect(relayCalls('POST', '/device/token')).toHaveLength(1));
+    field('signout').click();
+    approve(json(200, KEY));
+
+    await vi.waitFor(() =>
+      expect(relayCalls('DELETE')).toEqual([['DELETE', `${API}/keys/new-key-id`, {}, '']]),
+    );
+    expect(statusText()).toBe('Signed out.');
+    expect(files()[TOKEN_FILE]).toEqual({});
+  });
+
+  it('signs out by revoking the key first, then clearing the card and Readest’s sync settings', async () => {
+    readest();
+    deviceSettings = { koServerUrl: API };
+    await mount({ username: EMAIL, keyId: 'key-id' });
+    expect(statusText()).toBe(`Signed in as ${EMAIL}.`);
+
+    field('signout').click();
+    await vi.waitFor(() => expect(statusText()).toBe('Signed out.'));
+    expect(log).toEqual([
+      'DELETE /keys/key-id',
+      `write ${ACCOUNT_FILE}`,
+      `write ${TOKEN_FILE}`,
+      'settings',
+    ]);
     expect(settingsPosts).toEqual([{ koServerUrl: '', koUsername: '', koPassword: '' }]);
-    const files = writtenFiles(api);
-    expect(files[deviceJson.config.file]).toEqual({});
-    expect(files[deviceJson.token.file]).toEqual({});
-    expect(files[ACCOUNT_FILE]).toEqual({});
+    expect(files()).toEqual({ [ACCOUNT_FILE]: {}, [TOKEN_FILE]: {} });
   });
 
   it('leaves a KOReader Sync server the user set up later alone at sign-out', async () => {
-    relayToReadest();
+    readest();
     deviceSettings = { koServerUrl: 'https://sync.koreader.rocks' };
-    await mount({ email: 'reader@example.com', keyId: 'key-id' });
+    await mount({ username: EMAIL, keyId: 'key-id' });
     field('signout').click();
-    await vi.waitFor(() => expect(statusText()).toContain('Signed out'));
+    await vi.waitFor(() => expect(statusText()).toBe('Signed out.'));
     expect(settingsPosts).toEqual([]);
+  });
+
+  it('signs the reader in on its own screen with the same code flow', () => {
+    // Plugins → Readest shows the code and a QR of the link with the code filled in.
+    const { auth } = deviceJson;
+    expect(auth.type).toBe('device_code');
+    expect(auth.request.url).toBe(`${API}/device/code`);
+    expect(auth.poll.url).toBe(`${API}/device/token`);
+    expect(JSON.parse(fill(auth.poll.body, { device_code: 'dc' }))).toEqual({ device_code: 'dc' });
+    expect(auth.verify_url_path).toBe('verification_uri_complete');
+    // The firmware writes the key where the browser page does.
+    expect(deviceJson.token.path).toBe('access_token');
   });
 
   it('pages the catalog in steps of the page size the firmware displays', () => {
     // The firmware shows `page_size` rows and drops the lookahead row, so the
     // server must step pages by `page_size`, not by {limit} (page_size + 1).
-    const vars = { 'cfg.api': 'https://web.readest.com/api', page: '2', query: 'moby' };
+    const vars = { page: '2', query: 'moby' };
     for (const template of [deviceJson.browse.url, deviceJson.browse.search.url]) {
       const url = new URL(fill(template, vars));
-      expect(url.pathname).toBe('/api/library/books');
+      expect(`${url.origin}${url.pathname}`).toBe(`${API}/books`);
       expect(url.searchParams.get('page')).toBe('2');
       expect(Number(url.searchParams.get('per_page'))).toBe(deviceJson.browse.page_size);
     }
+    expect(deviceJson.browse.headers).toEqual({ Authorization: 'Bearer {token}' });
+    expect(deviceJson.download.url_path).toBe('downloadUrl');
   });
 
-  it('keeps the password and token where the device web server will not serve them', () => {
+  it('keeps the key where the device web server will not serve it', () => {
     // GET /download refuses any path whose file name starts with a dot.
-    for (const path of [deviceJson.config.file, deviceJson.token.file]) {
-      expect(path.split('/').pop()).toMatch(/^\./);
-    }
+    expect(TOKEN_FILE.split('/').pop()).toMatch(/^\./);
   });
 
-  it('reports each reading session to Readest statistics as a page event', () => {
+  it('reports each reading session to Readest', () => {
     const handler = deviceJson.events['reader.session'];
     expect(handler.connect).toBe(true);
-    expect(fill(handler.request.url, { 'cfg.api': 'https://web.readest.com/api' })).toBe(
-      'https://web.readest.com/api/sync',
+    expect(handler.request.url).toBe(`${API}/sessions`);
+    expect(fill(handler.request.headers.Authorization, { token: 'device-key' })).toBe(
+      'Bearer device-key',
     );
     const body = fill(handler.request.body, {
       'event.document': '0123456789abcdef0123456789abcdef',
@@ -270,18 +396,13 @@ describe('Readest CrossPoint plugin', () => {
       'event.duration_seconds': '600',
       'event.start_progress_bp': '5100',
       'event.end_progress_bp': '5230',
-      'event.progress_scale': '10000',
     });
     expect(JSON.parse(body)).toEqual({
-      statPages: [
-        {
-          book_hash: '0123456789abcdef0123456789abcdef',
-          page: 5230,
-          start_time: 1790000000,
-          duration: 600,
-          total_pages: 10000,
-        },
-      ],
+      document: '0123456789abcdef0123456789abcdef',
+      start_time: 1790000000,
+      duration: 600,
+      start_bp: 5100,
+      end_bp: 5230,
     });
   });
 });

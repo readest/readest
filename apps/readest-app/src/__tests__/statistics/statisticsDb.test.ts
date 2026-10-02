@@ -255,4 +255,22 @@ describe('library reading paces', () => {
       expect(paces[hash] ?? null).toBe(await stats.getMedianPageDurationSecs(id));
     expect(paces['slow']).toBe(44.5);
   });
+
+  it('leaves events longer than a page visit out of the pace', async () => {
+    // A CrossPoint session recorded in whole percents before any Readest app
+    // paginated the book: each step spans many pages.
+    const stats = StatisticsDb.from(await freshStatsDb());
+    const id = await stats.upsertBook({ bookMd5: 'percents', title: 'P', authors: '' });
+    const durations = [30, 40, 50, 60, 70, 400, 500, 600];
+    for (let i = 0; i < durations.length; i++) {
+      await stats.insertPageEvent(id, {
+        page: i + 1,
+        startTime: 1000 + i,
+        duration: durations[i]!,
+        totalPages: 100,
+      });
+    }
+    expect(await stats.getMedianPageDurationSecs(id)).toBe(50);
+    expect((await stats.getMedianPageDurationsSecs())['percents']).toBe(50);
+  });
 });

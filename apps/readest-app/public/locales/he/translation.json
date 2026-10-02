@@ -2573,5 +2573,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "הספר לא נמצא ב-BookOrbit. כדי לסנכרן אותו, קשרו אותו תחת \"Unmatched KOReader Books\" ב-BookOrbit.",
   "Download status": "מצב הורדה",
   "Local only": "מקומי בלבד",
-  "Cloud only": "בענן בלבד"
+  "Cloud only": "בענן בלבד",
+  "Link a CrossPoint Reader": "קישור קורא CrossPoint",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "הקורא יקבל את ספריית Readest שלך, סטטיסטיקות הקריאה והתקדמות הקריאה. יש להזין רק קוד שמוצג בקורא שלך.",
+  "Sign in to continue": "יש להתחבר כדי להמשיך",
+  "Your reader is linked. It finishes signing in on its own.": "הקורא שלך מקושר. הוא ישלים את ההתחברות בעצמו.",
+  "Code": "קוד",
+  "Linking to {{account}}": "מקשר אל {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "לא ניתן לקשר את הקורא. יש לבדוק את הקוד או להתחבר מחדש בקורא.",
+  "Link Reader": "קישור הקורא"
 }

@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
-import { authenticateKosync, parseConfigProgress } from '@/libs/kosyncServer';
+import { authenticateDevice, parseConfigProgress } from '@/libs/crosspoint';
 
 // GET /api/crosspoint/syncs/progress/:document — the XPointer Readest last
 // synced for the book (document = partial MD5 = book_hash).
 export async function GET(request: Request, { params }: { params: Promise<{ document: string }> }) {
   const supabase = createSupabaseAdminClient();
-  const userId = await authenticateKosync(request, supabase);
-  if (!userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const userId = await authenticateDevice(request, supabase);
+  if (typeof userId !== 'string') return userId;
 
   const { document } = await params;
   const { data, error } = await supabase

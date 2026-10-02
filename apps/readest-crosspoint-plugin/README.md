@@ -16,9 +16,8 @@ for [CrossPoint](https://github.com/crosspoint-reader/crosspoint-reader) e-reade
 
 - CrossPoint firmware with SD plugin support (the plugin system merged into
   `develop` on 2026-09-30; releases up to 1.6.5 do not include it).
-- A Readest account with an email and password. If you sign in to Readest with
-  Google or Apple, set a password with **Forgot your password?** on the Readest
-  sign-in page.
+- A Readest account. Any sign-in method works, since the reader never sees your
+  password.
 - Books uploaded to Readest Cloud. Only EPUBs are listed, since that is the
   format CrossPoint reads.
 
@@ -29,41 +28,47 @@ Copy the `readest/` folder to the SD card as `/.crosspoint/plugins/readest/`
 
 ## Sign in
 
-1. On the reader, open **File Transfer**, join your Wi-Fi network, and open the
-   address it shows in a browser.
-2. Go to **Settings**, find the **Readest** card, and sign in with your Readest
-   email and password.
+Signing in links the reader to your account with a code you approve on the
+Readest web app. The reader gets its own key, which works only for this plugin
+and is revoked when you sign out; your password is never stored on the reader.
+
+- **With progress sync** (recommended): on the reader, open **File Transfer**,
+  join your Wi-Fi network, and open the address it shows in a browser. Go to
+  **Settings**, find the **Readest** card, and select **Sign in**. Open the link
+  it shows, check that the code matches, and select **Link Reader**.
+- **On the reader alone**: open **Settings → System → Plugins → Readest** and
+  choose to sign in. Scan the QR code with your phone (or open the link it
+  shows) and approve the code. This sets up the library and reading
+  statistics, but not progress sync, which only the web page can configure.
 
 Your library then appears on the reader under **Plugins → Readest**. With
-**Sync reading progress** on, the reader's **KOReader Sync** is set to sync
-progress with Readest. The box starts on unless KOReader Sync is already set up
-with another server; turning it on replaces that server. **Sign out** clears
-KOReader Sync only while it still points at Readest.
-
-The password is stored on the SD card so the reader can renew its sign-in when
-the access token expires. It is kept in a dotfile that the reader's web server
-refuses to serve, but anyone holding the SD card can read it. **Sign out** on
-the same card removes it.
+**Sync reading progress** on, signing in from the web page sets the reader's
+**KOReader Sync** to sync progress with Readest. The box starts on unless
+KOReader Sync is already set up with another server; turning it on replaces
+that server. **Sign out** revokes the reader's key and clears KOReader Sync
+only while it still points at Readest.
 
 ## Reading statistics
 
 Reading sessions are queued on the reader and sent to Readest the next time it
 is online: when File Transfer joins a network, or on the way to sleep if Wi-Fi
-credentials for the last network are saved. Sessions are counted for any EPUB
-you read on the reader. Books matching one in your Readest library (the same
-file, identified by its KOReader-compatible partial MD5) merge with that
-book's statistics; others appear under their file hash.
+credentials for the last network are saved. Each session's time is spread over
+the pages it covered, in the book's Readest page count, so it counts like
+reading in Readest. Until a Readest app has opened the book, sessions are
+counted in steps of 1% of the book. Books matching one in your Readest library
+(the same file, identified by its KOReader-compatible partial MD5) merge with
+that book's statistics; others appear under their file hash.
 
 ## Reading progress
 
-Signing in gives the reader its own sync key and points CrossPoint's built-in
-KOReader Sync at Readest (`/api/crosspoint`), with your email as the username
-and **Document Matching** set to **Binary** so books match Readest's partial-MD5
-book ids. The key alone authenticates the reader, so changing your Readest email
-does not break sync. Sync from the reader
-menu with **Sync Progress**; CrossPoint does not sync progress automatically.
-Readest apps move to the synced position the next time they open the book (the
-furthest position wins).
+Signing in from the web page points CrossPoint's built-in KOReader Sync at
+Readest (`/api/crosspoint`) with the reader's key, your email as the username,
+and **Document Matching** set to **Binary** so books match Readest's
+partial-MD5 book ids. The key alone authenticates the reader, so changing your
+Readest email does not break sync. Sync from the reader menu with **Sync
+Progress**; CrossPoint does not sync progress automatically. Readest apps move
+to the synced position the next time they open the book (the furthest position
+wins).
 
 Positions travel as KOReader XPointers. Readest to CrossPoint lands on the right
 page. CrossPoint to Readest lands one to three lines late on current CrossPoint
@@ -73,7 +78,7 @@ page. CrossPoint to Readest lands one to three lines late on current CrossPoint
 
 Tests live with the app, in
 `apps/readest-app/src/__tests__/crosspoint-plugin/readest-plugin.test.ts`. The
-server side is `GET /api/library/books`
-(`apps/readest-app/src/app/api/library/books/route.ts`) and the KOSync-compatible
-routes in `apps/readest-app/src/app/api/crosspoint/`, whose device keys live in
-the table from `docker/volumes/db/migrations/024_kosync_keys.sql`.
+server side is the routes in `apps/readest-app/src/app/api/crosspoint/` (device
+sign-in, catalog, reading sessions and the KOSync-compatible progress routes)
+and the `/link` page where codes are approved. Reader keys and pending sign-ins
+live in the tables from `docker/volumes/db/migrations/024_crosspoint_devices.sql`.

@@ -2509,5 +2509,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "წიგნი BookOrbit-ში ვერ მოიძებნა. სინქრონიზაციისთვის დააკავშირეთ ის BookOrbit-ის „Unmatched KOReader Books“ განყოფილებაში.",
   "Download status": "ჩამოტვირთვის სტატუსი",
   "Local only": "მხოლოდ ლოკალური",
-  "Cloud only": "მხოლოდ ღრუბელში"
+  "Cloud only": "მხოლოდ ღრუბელში",
+  "Link a CrossPoint Reader": "CrossPoint წამკითხველის დაკავშირება",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "წამკითხველი მიიღებს თქვენს Readest-ის ბიბლიოთეკას, კითხვის სტატისტიკასა და კითხვის პროგრესს. შეიყვანეთ მხოლოდ თქვენს საკუთარ წამკითხველზე ნაჩვენები კოდი.",
+  "Sign in to continue": "გასაგრძელებლად შედით სისტემაში",
+  "Your reader is linked. It finishes signing in on its own.": "წამკითხველი დაკავშირებულია. ის შესვლას თავად დაასრულებს.",
+  "Code": "კოდი",
+  "Linking to {{account}}": "დაკავშირება {{account}}-თან",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "წამკითხველის დაკავშირება ვერ მოხერხდა. შეამოწმეთ კოდი ან ხელახლა შედით წამკითხველზე.",
+  "Link Reader": "წამკითხველის დაკავშირება"
 }

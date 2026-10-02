@@ -2509,5 +2509,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "A könyv nem található a BookOrbitban. A szinkronizáláshoz kapcsold össze a BookOrbit „Unmatched KOReader Books” részében.",
   "Download status": "Letöltési állapot",
   "Local only": "Csak helyi",
-  "Cloud only": "Csak a felhőben"
+  "Cloud only": "Csak a felhőben",
+  "Link a CrossPoint Reader": "CrossPoint olvasó összekapcsolása",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Az olvasó hozzáfér az Ön Readest-könyvtárához, olvasási statisztikáihoz és olvasási előrehaladásához. Csak a saját olvasóján megjelenő kódot adja meg.",
+  "Sign in to continue": "Jelentkezzen be a folytatáshoz",
+  "Your reader is linked. It finishes signing in on its own.": "Az olvasó összekapcsolva. A bejelentkezést magától befejezi.",
+  "Code": "Kód",
+  "Linking to {{account}}": "Összekapcsolás ezzel: {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Nem sikerült összekapcsolni az olvasót. Ellenőrizze a kódot, vagy jelentkezzen be újra az olvasón.",
+  "Link Reader": "Olvasó összekapcsolása"
 }

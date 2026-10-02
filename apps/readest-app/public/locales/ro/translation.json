@@ -2573,5 +2573,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Cartea nu a fost găsită în BookOrbit. Asociaz-o în „Unmatched KOReader Books” din BookOrbit pentru a o sincroniza.",
   "Download status": "Stare descărcare",
   "Local only": "Doar local",
-  "Cloud only": "Doar în cloud"
+  "Cloud only": "Doar în cloud",
+  "Link a CrossPoint Reader": "Conectați un cititor CrossPoint",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Cititorul primește biblioteca dvs. Readest, statisticile de lectură și progresul lecturii. Introduceți doar un cod afișat pe propriul cititor.",
+  "Sign in to continue": "Conectați-vă pentru a continua",
+  "Your reader is linked. It finishes signing in on its own.": "Cititorul este conectat. Va finaliza singur autentificarea.",
+  "Code": "Cod",
+  "Linking to {{account}}": "Se conectează la {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Cititorul nu a putut fi conectat. Verificați codul sau autentificați-vă din nou pe cititor.",
+  "Link Reader": "Conectați cititorul"
 }

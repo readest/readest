@@ -2509,5 +2509,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Kitob BookOrbit'da topilmadi. Sinxronlash uchun uni BookOrbit'dagi \"Unmatched KOReader Books\" bo'limida bog'lang.",
   "Download status": "Yuklab olish holati",
   "Local only": "Faqat mahalliy",
-  "Cloud only": "Faqat bulutda"
+  "Cloud only": "Faqat bulutda",
+  "Link a CrossPoint Reader": "CrossPoint o‘quvchi qurilmasini ulash",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Qurilma Readest kutubxonangiz, o‘qish statistikasi va o‘qish jarayoniga ega bo‘ladi. Faqat o‘z qurilmangizda ko‘rsatilgan kodni kiriting.",
+  "Sign in to continue": "Davom etish uchun tizimga kiring",
+  "Your reader is linked. It finishes signing in on its own.": "Qurilmangiz ulandi. U tizimga kirishni o‘zi yakunlaydi.",
+  "Code": "Kod",
+  "Linking to {{account}}": "{{account}} ga ulanmoqda",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Qurilmani ulab bo‘lmadi. Kodni tekshiring yoki qurilmada qayta tizimga kiring.",
+  "Link Reader": "Qurilmani ulash"
 }

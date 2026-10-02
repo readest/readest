@@ -2445,5 +2445,13 @@
   "Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.": "Không tìm thấy sách trong BookOrbit. Hãy liên kết sách trong mục \"Unmatched KOReader Books\" trên BookOrbit để đồng bộ.",
   "Download status": "Trạng thái tải xuống",
   "Local only": "Chỉ cục bộ",
-  "Cloud only": "Chỉ trên đám mây"
+  "Cloud only": "Chỉ trên đám mây",
+  "Link a CrossPoint Reader": "Liên kết máy đọc CrossPoint",
+  "The reader gets your Readest library, reading statistics and reading progress. Only enter a code shown on your own reader.": "Máy đọc sẽ nhận thư viện Readest, thống kê đọc và tiến độ đọc của bạn. Chỉ nhập mã hiển thị trên máy đọc của chính bạn.",
+  "Sign in to continue": "Đăng nhập để tiếp tục",
+  "Your reader is linked. It finishes signing in on its own.": "Máy đọc của bạn đã được liên kết. Máy sẽ tự hoàn tất việc đăng nhập.",
+  "Code": "Mã",
+  "Linking to {{account}}": "Đang liên kết với {{account}}",
+  "Could not link the reader. Check the code, or sign in again on the reader.": "Không thể liên kết máy đọc. Hãy kiểm tra mã hoặc đăng nhập lại trên máy đọc.",
+  "Link Reader": "Liên kết máy đọc"
 }
