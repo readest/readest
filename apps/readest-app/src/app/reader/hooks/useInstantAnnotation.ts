@@ -5,7 +5,8 @@ import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { toParentViewportPoint } from '../utils/annotatorUtil';
+import { mergeRestyledAnnotation, toParentViewportPoint } from '../utils/annotatorUtil';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { uniqueId } from '@/utils/misc';
 
 interface UseInstantAnnotationProps {
@@ -198,8 +199,8 @@ export const useInstantAnnotation = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Store a finished annotation in the booknotes (updating an existing record
-  // with the same cfi in place, keeping its id) and save. Returns the record
+  // Store a finished annotation in the booknotes (restyling an existing record
+  // with the same cfi in place, keeping its id and note) and save. Returns the record
   // as stored, so callers that keep referring to it (the range editor) hold
   // the persisted identity.
   const persistAnnotation = useCallback(
@@ -213,11 +214,11 @@ export const useInstantAnnotation = ({
 
       let stored: BookNote;
       if (existingIndex !== -1) {
+        const existing = annotations[existingIndex]!;
         stored = {
-          ...annotations[existingIndex]!,
-          ...annotation,
+          ...mergeRestyledAnnotation(existing, annotation),
           page: progress.page,
-          id: annotations[existingIndex]!.id,
+          updatedAt: nextBooknoteStamp(existing),
         };
         annotations[existingIndex] = stored;
       } else {
