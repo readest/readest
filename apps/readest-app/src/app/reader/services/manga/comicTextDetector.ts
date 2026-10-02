@@ -1,4 +1,5 @@
 import type { OcrBoundingBox } from '@/app/reader/services/ocr/types';
+import type { InferenceSession } from 'onnxruntime-web/wasm';
 import {
   fetchVerifiedModelAsset,
   type ModelDownloadProgress,
@@ -77,57 +78,6 @@ export interface ComicDetectorOutputs {
   det: ComicDetectorTensor;
 }
 
-export interface ComicTextDetectorRuntime {
-  env: {
-    wasm: {
-      numThreads?: number;
-      proxy?: boolean;
-      wasmPaths?: string;
-    };
-  };
-  Tensor: new (type: 'float32', data: Float32Array, dimensions: number[]) => unknown;
-  InferenceSession: {
-    create: (
-      model: ArrayBuffer,
-      options: {
-        executionProviders: ['wasm'];
-        executionMode: 'sequential';
-        graphOptimizationLevel: 'all';
-      },
-    ) => Promise<ComicDetectorSession>;
-  };
-}
-
-export interface ComicDetectorSession {
-  run: (feeds: Record<string, unknown>) => Promise<Record<string, ComicDetectorTensor>>;
-  release: () => Promise<void>;
-}
-
-export interface ComicDetectorCanvasContext {
-  drawImage: (
-    source: CanvasImageSource,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-  ) => void;
-  getImageData: (
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-  ) => { data: Uint8ClampedArray };
-}
-
-export interface ComicDetectorCanvas {
-  width: number;
-  height: number;
-  getContext: (
-    type: '2d',
-    options?: { willReadFrequently?: boolean },
-  ) => ComicDetectorCanvasContext | null;
-}
-
 export interface ComicTextDetectorOptions {
   blockConfidence?: number;
   blockIouThreshold?: number;
@@ -136,15 +86,6 @@ export interface ComicTextDetectorOptions {
   maximumBlocks?: number;
   maximumLines?: number;
   onDownloadProgress?: (progress: ModelDownloadProgress) => void;
-}
-
-export interface ComicTextDetectorDependencies {
-  createCanvas: () => ComicDetectorCanvas;
-  loadRuntime: () => Promise<ComicTextDetectorRuntime>;
-  loadModel: (
-    signal?: AbortSignal,
-    onProgress?: (progress: ModelDownloadProgress) => void,
-  ) => Promise<ArrayBuffer>;
 }
 
 interface LetterboxTransform {
@@ -172,18 +113,6 @@ const DEFAULT_LINE_THRESHOLD = 0.3;
 const DEFAULT_MAXIMUM_BLOCKS = 300;
 const DEFAULT_MAXIMUM_LINES = 1_000;
 const MASK_CHANNEL_SIZE = COMIC_TEXT_DETECTOR_INPUT_SIZE * COMIC_TEXT_DETECTOR_INPUT_SIZE;
-
-const defaultCreateCanvas = (): ComicDetectorCanvas => document.createElement('canvas');
-
-const defaultLoadRuntime = async (): Promise<ComicTextDetectorRuntime> =>
-  (await import('onnxruntime-web/wasm')) as unknown as ComicTextDetectorRuntime;
-
-const defaultLoadModel: ComicTextDetectorDependencies['loadModel'] = (signal, onProgress) =>
-  fetchVerifiedModelAsset({
-    ...COMIC_TEXT_DETECTOR_MODEL_ASSET,
-    signal,
-    onProgress,
-  });
 
 const validatePositiveInteger = (name: string, value: number): void => {
   if (!Number.isSafeInteger(value) || value <= 0) {
@@ -789,42 +718,36 @@ const makeImageTensor = (
 };
 
 const getOutput = (
-  outputs: Record<string, ComicDetectorTensor>,
+  outputs: InferenceSession.ReturnType,
   name: keyof ComicDetectorOutputs,
 ): ComicDetectorTensor => {
   const output = outputs[name];
   if (!output) throw new Error(`Comic text detector returned no ${name} output`);
-  return output;
+  if (!(output.data instanceof Float32Array)) {
+    throw new Error(`Comic text detector returned non-float ${name} output`);
+  }
+  return { data: output.data, dims: output.dims };
 };
 
 export class ComicTextDetector {
   readonly #options: ComicTextDetectorOptions;
   readonly #onDownloadProgress?: (progress: ModelDownloadProgress) => void;
-  readonly #createCanvas: () => ComicDetectorCanvas;
-  readonly #loadRuntime: () => Promise<ComicTextDetectorRuntime>;
-  readonly #loadModel: ComicTextDetectorDependencies['loadModel'];
   readonly #abortController = new AbortController();
-  readonly #activeRuns = new Set<Promise<Record<string, ComicDetectorTensor>>>();
-  #runtimePromise: Promise<ComicTextDetectorRuntime> | null = null;
-  #sessionPromise: Promise<ComicDetectorSession> | null = null;
+  readonly #activeRuns = new Set<Promise<InferenceSession.ReturnType>>();
+  #runtimePromise: Promise<typeof import('onnxruntime-web/wasm')> | null = null;
+  #sessionPromise: Promise<InferenceSession> | null = null;
   #terminated = false;
 
-  constructor(
-    options: ComicTextDetectorOptions = {},
-    dependencies: Partial<ComicTextDetectorDependencies> = {},
-  ) {
+  constructor(options: ComicTextDetectorOptions = {}) {
     this.#options = { ...options };
     this.#onDownloadProgress = options.onDownloadProgress;
-    this.#createCanvas = dependencies.createCanvas ?? defaultCreateCanvas;
-    this.#loadRuntime = dependencies.loadRuntime ?? defaultLoadRuntime;
-    this.#loadModel = dependencies.loadModel ?? defaultLoadModel;
   }
 
   async detect(source: CanvasImageSource, page: ComicPageSize): Promise<ComicTextDetectionResult> {
     validatePage(page);
     if (this.#terminated) throw new Error('Comic text detector has been terminated');
     const transform = getLetterboxTransform(page);
-    const canvas = this.#createCanvas();
+    const canvas = document.createElement('canvas');
     canvas.width = COMIC_TEXT_DETECTOR_INPUT_SIZE;
     canvas.height = COMIC_TEXT_DETECTOR_INPUT_SIZE;
     const context = canvas.getContext('2d', { willReadFrequently: true });
@@ -847,7 +770,7 @@ export class ComicTextDetector {
       ),
     });
     this.#activeRuns.add(run);
-    let rawOutputs: Record<string, ComicDetectorTensor>;
+    let rawOutputs: InferenceSession.ReturnType;
     try {
       rawOutputs = await run;
     } catch (error) {
@@ -881,9 +804,9 @@ export class ComicTextDetector {
     }
   }
 
-  #getRuntime(): Promise<ComicTextDetectorRuntime> {
+  #getRuntime(): Promise<typeof import('onnxruntime-web/wasm')> {
     if (this.#runtimePromise) return this.#runtimePromise;
-    const runtimePromise = this.#loadRuntime();
+    const runtimePromise = import('onnxruntime-web/wasm');
     this.#runtimePromise = runtimePromise;
     void runtimePromise.catch(() => {
       if (this.#runtimePromise === runtimePromise && !this.#terminated) this.#runtimePromise = null;
@@ -891,16 +814,17 @@ export class ComicTextDetector {
     return runtimePromise;
   }
 
-  #getSession(runtime: ComicTextDetectorRuntime): Promise<ComicDetectorSession> {
+  #getSession(runtime: typeof import('onnxruntime-web/wasm')): Promise<InferenceSession> {
     if (this.#terminated)
       return Promise.reject(new Error('Comic text detector has been terminated'));
     if (this.#sessionPromise) return this.#sessionPromise;
     runtime.env.wasm.proxy = true;
     runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
-    const sessionPromise = this.#loadModel(
-      this.#abortController.signal,
-      this.#onDownloadProgress,
-    ).then(async (model) => {
+    const sessionPromise = fetchVerifiedModelAsset({
+      ...COMIC_TEXT_DETECTOR_MODEL_ASSET,
+      signal: this.#abortController.signal,
+      onProgress: this.#onDownloadProgress,
+    }).then(async (model) => {
       const session = await runtime.InferenceSession.create(model, {
         executionProviders: ['wasm'],
         executionMode: 'sequential',
@@ -919,10 +843,10 @@ export class ComicTextDetector {
     return sessionPromise;
   }
 
-  async #discardSession(session: ComicDetectorSession): Promise<void> {
+  async #discardSession(session: InferenceSession): Promise<void> {
     const sessionPromise = this.#sessionPromise;
     if (!sessionPromise) return;
-    let activeSession: ComicDetectorSession;
+    let activeSession: InferenceSession;
     try {
       activeSession = await sessionPromise;
     } catch {

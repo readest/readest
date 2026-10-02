@@ -44,9 +44,10 @@ export const decodeMangaText = async (
       for (let i = 0; i + 2 < ids.length; i++) {
         if (ids[i] === ids.at(-2) && ids[i + 1] === ids.at(-1)) banned.add(ids[i + 2]!);
       }
+      const hasBannedTokens = banned.size > 0;
       // Keep only eight candidates, rather than sorting the entire vocabulary.
       for (let token = 0; token < VOCABULARY_SIZE; token++) {
-        if (banned.has(token)) continue;
+        if (hasBannedTokens && banned.has(token)) continue;
         const score = beam.score + logits[offset + token]! - normalizer;
         if (!Number.isFinite(score)) continue;
         if (candidates.length === BEAMS * 2 && score <= candidates.at(-1)!.score) continue;
