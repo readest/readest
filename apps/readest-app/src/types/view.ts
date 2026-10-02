@@ -34,6 +34,7 @@ export interface Renderer extends HTMLElement {
   pageColors?: {
     background: string;
     foreground: string;
+    keepImages: boolean;
   };
   columnCount?: number;
   open: (book: BookDoc) => Promise<void>;

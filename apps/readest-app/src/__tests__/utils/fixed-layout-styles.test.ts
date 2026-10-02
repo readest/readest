@@ -8,7 +8,7 @@ vi.mock('@/utils/misc', async (importOriginal) => {
   };
 });
 
-import { applyFixedlayoutStyles, ThemeCode } from '@/utils/style';
+import { applyFixedlayoutStyles, getPDFPageColors, ThemeCode } from '@/utils/style';
 import { BookFormat, ViewSettings } from '@/types/book';
 import {
   DEFAULT_BOOK_FONT,
@@ -95,7 +95,7 @@ describe('applyFixedlayoutStyles contrast filter', () => {
       makeViewSettings({ contrast: 150, invertImgColorInDark: true }),
       makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' }),
     );
-    expect(css).toContain('filter: invert(100%) contrast(150%)');
+    expect(css).toContain('filter: invert(100%) hue-rotate(180deg) contrast(150%)');
   });
 
   it('treats an undefined contrast as 100% (no filter, backward compatible)', () => {
@@ -148,5 +148,53 @@ describe('applyFixedlayoutStyles unsized SVG page images', () => {
     expect(css).toMatch(
       /svg:not\(\[viewBox\]\):has\(> image:not\(\[width\]\)\)\s*\{\s*overflow: visible;/,
     );
+  });
+});
+
+describe('PDF dark mode (#6548)', () => {
+  const darkTheme = makeThemeCode({ isDarkMode: true, bg: '#222222', fg: '#e0e0e0' });
+
+  it('inverts pages without shifting their hues, so a blue link stays blue', () => {
+    const css = fixedLayoutCss(makeViewSettings({ invertImgColorInDark: true }), darkTheme);
+    expect(css).toContain('filter: invert(100%) hue-rotate(180deg);');
+  });
+
+  it('does not invert a PDF page the renderer already recolored to the theme', () => {
+    const vs = makeViewSettings({ invertImgColorInDark: true, applyThemeToPDF: true });
+    expect(fixedLayoutCss(vs, darkTheme, 'PDF')).not.toContain('invert(');
+    // comics are not recolored by the renderer, so they still invert
+    expect(fixedLayoutCss(vs, darkTheme, 'CBZ')).toContain('invert(100%)');
+  });
+
+  it('does not blend a themed PDF page into the background again', () => {
+    const vs = makeViewSettings({ overrideColor: true, applyThemeToPDF: true });
+    for (const theme of [darkTheme, makeThemeCode()]) {
+      expect(fixedLayoutCss(vs, theme, 'PDF')).not.toContain('mix-blend-mode');
+    }
+    expect(fixedLayoutCss({ ...vs, applyThemeToPDF: false }, darkTheme, 'PDF')).toContain(
+      'mix-blend-mode: overlay',
+    );
+  });
+
+  it('gives the renderer no page colors unless asked to theme the PDF', () => {
+    expect(getPDFPageColors(makeViewSettings({ applyThemeToPDF: false }), darkTheme)).toBe(
+      undefined,
+    );
+  });
+
+  it('keeps embedded photos in their own colors when theming the PDF', () => {
+    const vs = makeViewSettings({ applyThemeToPDF: true, invertImgColorInDark: false });
+    expect(getPDFPageColors(vs, darkTheme)).toEqual({
+      background: '#222222',
+      foreground: '#e0e0e0',
+      keepImages: true,
+    });
+  });
+
+  it('themes embedded images too when inverting images in dark mode', () => {
+    const vs = makeViewSettings({ applyThemeToPDF: true, invertImgColorInDark: true });
+    expect(getPDFPageColors(vs, darkTheme)?.keepImages).toBe(false);
+    // the invert toggle has no effect in light mode
+    expect(getPDFPageColors(vs, makeThemeCode())?.keepImages).toBe(true);
   });
 });
