@@ -2,6 +2,7 @@ import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/servi
 import { eventDispatcher } from '@/utils/event';
 import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
+import { hasScrollRoomY } from './wheelGesture';
 import {
   createTurnGestureIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -402,11 +403,33 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
   );
 };
 
+const lastWheelScrollTop = new WeakMap<Element, number>();
+
+// Whether this tick scrolls the page natively: the fixed-layout host scrolls a
+// fit-width or zoomed page within itself. Chromium scrolls a passive wheel
+// before dispatching it, so the host may show this tick's scroll already — a
+// page that moved since the previous tick counts as still scrolling, too, and
+// so does the first tick on a page that can scroll at all.
+const isFixedLayoutScrollingY = (event: WheelEvent) => {
+  const doc = event.currentTarget as Document | null;
+  const root = doc?.defaultView?.frameElement?.getRootNode();
+  const host = root && 'host' in root ? (root.host as HTMLElement) : null;
+  if (host?.localName !== 'foliate-fxl') return false;
+  const last = lastWheelScrollTop.get(host);
+  lastWheelScrollTop.set(host, host.scrollTop);
+  const moved =
+    last === undefined
+      ? host.scrollHeight - host.clientHeight > 1
+      : Math.abs(host.scrollTop - last) > 1;
+  return hasScrollRoomY(host, event.deltaY) || moved;
+};
+
 export const handleWheel = (bookKey: string, event: WheelEvent) => {
   window.postMessage(
     {
       type: 'iframe-wheel',
       bookKey,
+      nativeScrollY: isFixedLayoutScrollingY(event),
       deltaMode: event.deltaMode,
       deltaX: event.deltaX,
       deltaY: event.deltaY,

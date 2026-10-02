@@ -381,19 +381,22 @@ export const usePagination = (
               viewPagination(viewRef.current, viewSettings, side);
             }
           }
-        } else if (
-          msg.data.type === 'iframe-wheel' &&
-          !viewSettings.scrolled &&
-          !isPanningView(viewRef.current, viewSettings)
-        ) {
+        } else if (msg.data.type === 'iframe-wheel' && !viewSettings.scrolled) {
           // The wheel event is handled by the iframe itself in scrolled mode.
+          // A panning page (fit-width or zoomed PDF) scrolls natively; a
+          // vertical wheel only gets here once it sits at its top or bottom
+          // edge (see useMouseEvent), and then turns the page the way it
+          // scrolls, so reverse paging doesn't apply and sideways only pans.
+          const panning = isPanningView(viewRef.current, viewSettings);
           const { deltaX } = msg.data;
-          const reverse = useSettingsStore.getState().settings.reverseWheelPaging;
+          const reverse = !panning && useSettingsStore.getState().settings.reverseWheelPaging;
           const deltaY = reverse ? -msg.data.deltaY : msg.data.deltaY;
           if (deltaY > 0) {
             viewPagination(viewRef.current, viewSettings, 'down');
           } else if (deltaY < 0) {
             viewPagination(viewRef.current, viewSettings, 'up');
+          } else if (panning) {
+            return;
           } else if (deltaX < 0) {
             viewPagination(viewRef.current, viewSettings, 'left');
           } else if (deltaX > 0) {

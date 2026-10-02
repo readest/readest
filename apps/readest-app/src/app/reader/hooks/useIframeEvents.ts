@@ -53,6 +53,11 @@ export const useMouseEvent = (
             } else if (msg.data.deltaY < 0) {
               eventDispatcher.dispatch('zoom-in', { factor: Math.abs(msg.data.deltaY) / 100 });
             }
+          } else if (msg.data.nativeScrollY) {
+            // The page scrolls within itself (fit-width or zoomed PDF): this
+            // gesture belongs to the scroll, and only a fresh one at the edge
+            // turns the page.
+            wheelDetectorRef.current!.suppress(Date.now());
           } else {
             const flip = wheelDetectorRef.current!.feed({
               deltaX: msg.data.deltaX ?? 0,
