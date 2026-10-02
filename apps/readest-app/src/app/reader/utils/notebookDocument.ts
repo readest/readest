@@ -1,4 +1,5 @@
 import { BookNote } from '@/types/book';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 
 export const NOTEBOOK_ID = 'notebook';
 export const NOTEBOOK_MAX_BYTES = 256 * 1024;
@@ -61,7 +62,7 @@ export const upsertNotebookRecord = (
         ...existing,
         cfi,
         note: content,
-        updatedAt: now,
+        updatedAt: nextBooknoteStamp(existing, now),
         ...(existing.deletedAt != null && { deletedAt: null }),
       }
     : {

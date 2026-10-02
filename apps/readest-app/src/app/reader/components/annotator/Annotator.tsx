@@ -1414,7 +1414,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       text: selection.text,
       page: selection.page,
       createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
+      updatedAt: existing ? nextBooknoteStamp(existing, now) : now,
     };
 
     if (existingIndex !== -1) {
