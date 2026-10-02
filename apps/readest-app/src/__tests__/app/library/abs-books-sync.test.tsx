@@ -96,6 +96,7 @@ const makeAbsBook = (over: Partial<Book> & Pick<Book, 'hash'>): Book => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(fetchAbsBookCover).mockResolvedValue(false);
   syncState.syncedBooks = null;
   useLibraryStore.setState({ library: [], libraryLoaded: false, isSyncing: false });
 });
@@ -141,13 +142,32 @@ describe('ABS audiobooks and the Readest Cloud book channel', () => {
   // Its cover is on the ABS server, never in cloud storage. Like a cloud
   // book's cover, it must be on disk before the book shows, or the shelf
   // fills with placeholder tiles until the next ABS cover backfill.
-  it('fetches a pulled ABS row cover from its server before shelving it', async () => {
+  it('waits for a pulled ABS row cover from its server before shelving it', async () => {
     useLibraryStore.setState({ libraryLoaded: true });
-    let shelvedBeforeCover: boolean | undefined;
-    vi.mocked(fetchAbsBookCover).mockImplementation(async (_appService, book) => {
-      shelvedBeforeCover = useLibraryStore.getState().library.some((b) => b.hash === book.hash);
-      return true;
-    });
+    let finishCover!: (fetched: boolean) => void;
+    const cover = new Promise<boolean>((resolve) => (finishCover = resolve));
+    vi.mocked(fetchAbsBookCover).mockReturnValue(cover);
+    syncState.syncedBooks = [makeAbsBook({ hash: 'abs-1', uploadedAt: null, updatedAt: 3000 })];
+    const isShelved = () => useLibraryStore.getState().library.some((b) => b.hash === 'abs-1');
+
+    renderHook(() => useBooksSync());
+
+    await waitFor(() =>
+      expect(fetchAbsBookCover).toHaveBeenCalledWith(
+        appService,
+        expect.objectContaining({ hash: 'abs-1' }),
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(isShelved()).toBe(false);
+
+    finishCover(true);
+    await waitFor(() => expect(isShelved()).toBe(true));
+  });
+
+  it('still shelves a pulled ABS row when its cover lookup throws', async () => {
+    useLibraryStore.setState({ libraryLoaded: true });
+    vi.mocked(fetchAbsBookCover).mockRejectedValue(new Error('exists failed'));
     syncState.syncedBooks = [makeAbsBook({ hash: 'abs-1', uploadedAt: null, updatedAt: 3000 })];
 
     renderHook(() => useBooksSync());
@@ -155,11 +175,6 @@ describe('ABS audiobooks and the Readest Cloud book channel', () => {
     await waitFor(() =>
       expect(useLibraryStore.getState().library.some((b) => b.hash === 'abs-1')).toBe(true),
     );
-    expect(fetchAbsBookCover).toHaveBeenCalledWith(
-      appService,
-      expect.objectContaining({ hash: 'abs-1' }),
-    );
-    expect(shelvedBeforeCover).toBe(false);
   });
 
   it('drops a filePath-less ABS row instead of stranding the local book', async () => {

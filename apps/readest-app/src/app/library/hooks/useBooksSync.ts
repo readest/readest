@@ -338,8 +338,13 @@ export const useBooksSync = () => {
     const processNewBook = async (newBook: Book) => {
       // An ABS book's cover is not in cloud storage either; fetch it from its
       // Audiobookshelf server so the book is shelved with its cover, not a
-      // placeholder waiting for the next ABS cover backfill.
-      if (appService) await fetchAbsBookCover(appService, newBook);
+      // placeholder waiting for the next ABS cover backfill. Best effort: a
+      // throw here would reject the batch and drop every new book in it.
+      if (appService) {
+        await fetchAbsBookCover(appService, newBook).catch((error) => {
+          console.warn('ABS cover fetch failed; shelving without it:', error);
+        });
+      }
       // A feed book has no cover in cloud storage; its cover is derived from the
       // feed descriptor, so this device regenerates the same image locally.
       newBook.coverImageUrl =
