@@ -12,8 +12,9 @@ import { navigateToLogin } from '@/utils/nav';
 type Status = 'idle' | 'linking' | 'linked' | 'failed';
 
 /**
- * Approves a CrossPoint reader's sign-in. The reader shows a code and a QR of
- * this page with the code filled in, and waits until its owner approves here.
+ * Approves a CrossPoint reader's sign-in. The Readest card on the reader's web
+ * Settings page links to this page with the code filled in, and waits until
+ * its owner approves here.
  */
 export default function LinkDevice() {
   const _ = useTranslation();

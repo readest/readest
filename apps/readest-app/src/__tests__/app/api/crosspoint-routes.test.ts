@@ -260,7 +260,12 @@ describe('device sign-in', () => {
       keyDELETE(new Request(`${BASE}/keys/${keyId}`, { method: 'DELETE' }), {
         params: Promise.resolve({ id: keyId }),
       });
-    expect((await del()).status).toBe(204);
+    // A body, not 204 No Content: CrossPoint's HTTP client reads a reply with
+    // neither Content-Length nor chunking until the connection closes, so a
+    // relayed 204 timed out and the plugin reported the revoke as failed.
+    const res = await del();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ revoked: true });
     expect(calls).toContainEqual(['crosspoint_devices', 'eq', 'id', id]);
     expect((await del('x')).status).toBe(400);
 
