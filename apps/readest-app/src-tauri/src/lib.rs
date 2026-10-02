@@ -371,8 +371,11 @@ fn restore_main_window_state(window: &tauri::WebviewWindow) {
     }
     if let Err(e) = window.restore_state(StateFlags::all()) {
         // The plugin shows the window at the end of a successful restore, so
-        // a failure here leaves the main window invisible.
+        // a failure here leaves the main window invisible for this launch —
+        // surface it at its creation-time size instead. The state file is
+        // untouched, so the next launch retries the restore.
         log::error!("Failed to restore the main window state: {e}");
+        let _ = window.show();
     }
 }
 
