@@ -35,14 +35,14 @@ Signing in links the reader to your account with a code you approve on the
 Readest web app. The reader gets its own key, which works only for this plugin
 and is revoked when you sign out; your password is never stored on the reader.
 
-- **With progress sync** (recommended): on the reader, open **File Transfer**,
-  join your Wi-Fi network, and open the address it shows in a browser. Go to
-  **Settings**, find the **Readest** card, and select **Sign in**. Open the link
-  it shows, check that the code matches, and select **Link Reader**.
-- **On the reader alone**: open **Settings → System → Plugins → Readest** and
-  choose to sign in. Scan the QR code with your phone (or open the link it
-  shows) and approve the code. This sets up the library and reading
-  statistics, but not progress sync, which only the web page can configure.
+On the reader, open **File Transfer**, join your Wi-Fi network, and open the
+address it shows in a browser on your phone or computer. Go to **Settings**,
+find the **Readest** card, and select **Sign in**. Open the link it shows, check
+that the code matches, and select **Link Reader**.
+
+Sign-in happens only on this web page, because CrossPoint lets a plugin set up
+KOReader Sync from there but not from the reader's own screen. Until you sign
+in, **Plugins → Readest** on the reader points you to the web page.
 
 Your library then appears on the reader under **Plugins → Readest**. With
 **Sync reading progress** on, signing in from the web page sets the reader's

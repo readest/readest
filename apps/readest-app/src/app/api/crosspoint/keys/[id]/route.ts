@@ -14,5 +14,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     .delete()
     .eq('id', id);
   if (error) return NextResponse.json({ error: 'Could not revoke key' }, { status: 500 });
-  return new NextResponse(null, { status: 204 });
+  // Not 204: CrossPoint's HTTP client reads a reply without Content-Length or
+  // chunking until the connection closes, so a relayed 204 times out.
+  return NextResponse.json({ revoked: true });
 }

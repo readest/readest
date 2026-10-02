@@ -8,6 +8,7 @@ import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useOpenLaunchLinks } from '@/hooks/useOpenLaunchLinks';
 import { useHomeScreenWidgets } from '@/hooks/useHomeScreenWidgets';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
+import { useOpenDeviceLink } from '@/hooks/useOpenDeviceLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useRestoreLibraryOnRelaunch } from '@/hooks/useRestoreLibraryOnRelaunch';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -27,6 +28,7 @@ export default function Page() {
   useOpenLaunchLinks();
   useHomeScreenWidgets();
   useOpenShareLink();
+  useOpenDeviceLink();
   useClipUrlIngress();
   useRestoreLibraryOnRelaunch();
 

@@ -2,16 +2,6 @@
   "title": "Readest",
   "description": "Your Readest library and reading statistics on CrossPoint.",
   "token": { "file": "/.crosspoint/.readest-token.json", "path": "access_token" },
-  "auth": {
-    "type": "device_code",
-    "request": { "url": "https://web.readest.com/api/crosspoint/device/code" },
-    "poll": {
-      "url": "https://web.readest.com/api/crosspoint/device/token",
-      "headers": { "Content-Type": "application/json" },
-      "body": "{\"device_code\":\"{device_code}\"}"
-    },
-    "verify_url_path": "verification_uri_complete"
-  },
   "browse": {
     "url": "https://web.readest.com/api/crosspoint/books?page={page}&per_page=8",
     "headers": { "Authorization": "Bearer {token}" },

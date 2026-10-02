@@ -99,7 +99,7 @@ const PENDING = json(400, { error: 'authorization_pending' });
 // approved on the second poll and revocations succeed.
 const readest = ({
   token = (poll: number) => (poll ? json(200, KEY) : PENDING),
-  revokeStatus = 204,
+  revokeStatus = 200,
 }: {
   token?: (poll: number) => unknown;
   revokeStatus?: number;
@@ -111,7 +111,7 @@ const readest = ({
     sink.push(`${method} ${url.replace(API, '')}`);
     if (url === `${API}/device/code`) return json(200, CODE);
     if (url === `${API}/device/token`) return token(polls++);
-    if (method === 'DELETE') return { status: revokeStatus, body: '', headers: [] };
+    if (method === 'DELETE') return json(revokeStatus, { revoked: revokeStatus === 200 });
     return json(404, {});
   });
 };
@@ -352,16 +352,64 @@ describe('Readest CrossPoint plugin', () => {
     expect(settingsPosts).toEqual([]);
   });
 
-  it('signs the reader in on its own screen with the same code flow', () => {
-    // Plugins → Readest shows the code and a QR of the link with the code filled in.
-    const { auth } = deviceJson;
-    expect(auth.type).toBe('device_code');
-    expect(auth.request.url).toBe(`${API}/device/code`);
-    expect(auth.poll.url).toBe(`${API}/device/token`);
-    expect(JSON.parse(fill(auth.poll.body, { device_code: 'dc' }))).toEqual({ device_code: 'dc' });
-    expect(auth.verify_url_path).toBe('verification_uri_complete');
-    // The firmware writes the key where the browser page does.
-    expect(deviceJson.token.path).toBe('access_token');
+  // The buttons follow the card's state: Sign in, with the progress sync choice
+  // it applies, while signed out; Sign out while signed in.
+  describe('buttons', () => {
+    const shown = (el: Element | null) => (el as HTMLElement | null)?.style.display !== 'none';
+    const syncRow = () => container.querySelector('[data-kosync-row]');
+
+    it('offers Sign in and the progress sync choice while signed out', async () => {
+      readest();
+      await mount();
+      expect(shown(field('signin'))).toBe(true);
+      expect(shown(syncRow())).toBe(true);
+      expect(shown(field('signout'))).toBe(false);
+    });
+
+    it('offers only Sign out while signed in', async () => {
+      readest();
+      await mount({ username: EMAIL, keyId: 'key-id' });
+      expect(shown(field('signin'))).toBe(false);
+      expect(shown(syncRow())).toBe(false);
+      expect(shown(field('signout'))).toBe(true);
+    });
+
+    it('switches as the user signs in and out', async () => {
+      readest();
+      await mount();
+      await signIn();
+      expect(shown(field('signin'))).toBe(false);
+      expect(shown(field('signout'))).toBe(true);
+
+      field('signout').click();
+      await vi.waitFor(() => expect(statusText()).toBe('Signed out.'));
+      expect(shown(field('signin'))).toBe(true);
+      expect(shown(field('signout'))).toBe(false);
+    });
+
+    // The account file is cleared first, so the card is signed out (a reload
+    // shows Sign in) even when clearing KOReader Sync afterwards fails.
+    it('shows Sign in once the account is cleared, even if later cleanup fails', async () => {
+      readest();
+      deviceSettings = { koServerUrl: API };
+      settingsPostStatus = 500;
+      await mount({ username: EMAIL, keyId: 'key-id' });
+      field('signout').click();
+      await vi.waitFor(() => expect(statusText()).toMatch(/^Error: /));
+      expect(files()[ACCOUNT_FILE]).toEqual({});
+      expect(shown(field('signin'))).toBe(true);
+      expect(shown(field('signout'))).toBe(false);
+    });
+  });
+
+  it('leaves sign-in to the web page, the only one that can set up progress sync', () => {
+    // The firmware refuses plugin writes to KOReader Sync settings, so a
+    // sign-in on the reader's own screen left progress sync silently off.
+    // Without an auth block, Plugins → Readest tells the user to sign in on
+    // the web Settings page instead.
+    expect(deviceJson).not.toHaveProperty('auth');
+    // The reader reads the key where the web page writes it.
+    expect(deviceJson.token).toEqual({ file: TOKEN_FILE, path: 'access_token' });
   });
 
   it('pages the catalog in steps of the page size the firmware displays', () => {

@@ -16,8 +16,9 @@ const newUserCode = () => {
 };
 
 // POST /api/crosspoint/device/code — start a reader sign-in (an OAuth device
-// authorization grant). The reader shows the code and a QR of the link, then
-// polls /device/token while its owner approves the code on the web app.
+// authorization grant). The Readest card on the reader's web Settings page
+// shows the code and the link, then polls /device/token while its owner
+// approves the code on the web app.
 export async function POST(request: Request) {
   const supabase = createSupabaseAdminClient();
   const now = Date.now();
