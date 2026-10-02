@@ -2453,5 +2453,7 @@
   "Code": "รหัส",
   "Linking to {{account}}": "กำลังเชื่อมโยงกับ {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "ไม่สามารถเชื่อมโยงเครื่องอ่านได้ ตรวจสอบรหัส หรือลงชื่อเข้าใช้บนเครื่องอ่านอีกครั้ง",
-  "Link Reader": "เชื่อมโยงเครื่องอ่าน"
+  "Link Reader": "เชื่อมโยงเครื่องอ่าน",
+  "Failed to copy the image": "ไม่สามารถคัดลอกรูปภาพได้",
+  "Copy Image": "คัดลอกรูปภาพ"
 }

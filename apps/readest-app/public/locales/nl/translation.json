@@ -2517,5 +2517,7 @@
   "Code": "Code",
   "Linking to {{account}}": "Koppelen aan {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Kan de e-reader niet koppelen. Controleer de code of log opnieuw in op de e-reader.",
-  "Link Reader": "E-reader koppelen"
+  "Link Reader": "E-reader koppelen",
+  "Failed to copy the image": "Kan de afbeelding niet kopiëren",
+  "Copy Image": "Afbeelding kopiëren"
 }

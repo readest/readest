@@ -2517,5 +2517,7 @@
   "Code": "කේතය",
   "Linking to {{account}}": "{{account}} වෙත සම්බන්ධ කරමින්",
   "Could not link the reader. Check the code, or sign in again on the reader.": "කියවනය සම්බන්ධ කළ නොහැකි විය. කේතය පරීක්ෂා කරන්න, නැතහොත් කියවනයේ නැවත පුරනය වන්න.",
-  "Link Reader": "කියවනය සම්බන්ධ කරන්න"
+  "Link Reader": "කියවනය සම්බන්ධ කරන්න",
+  "Failed to copy the image": "රූපය පිටපත් කිරීමට අසමත් විය",
+  "Copy Image": "රූපය පිටපත් කරන්න"
 }

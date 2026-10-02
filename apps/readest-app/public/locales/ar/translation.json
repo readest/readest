@@ -2773,5 +2773,7 @@
   "Code": "الرمز",
   "Linking to {{account}}": "جارٍ الربط بـ {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "تعذّر ربط القارئ. تحقّق من الرمز أو سجّل الدخول مجددًا على القارئ.",
-  "Link Reader": "ربط القارئ"
+  "Link Reader": "ربط القارئ",
+  "Failed to copy the image": "فشل نسخ الصورة",
+  "Copy Image": "نسخ الصورة"
 }

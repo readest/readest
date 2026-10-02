@@ -2645,5 +2645,7 @@
   "Code": "Код",
   "Linking to {{account}}": "Під'єднання до {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Не вдалося під'єднати пристрій. Перевірте код або увійдіть на пристрої знову.",
-  "Link Reader": "Під'єднати пристрій"
+  "Link Reader": "Під'єднати пристрій",
+  "Failed to copy the image": "Не вдалося скопіювати зображення",
+  "Copy Image": "Копіювати зображення"
 }

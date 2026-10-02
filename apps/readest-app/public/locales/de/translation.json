@@ -2517,5 +2517,7 @@
   "Code": "Code",
   "Linking to {{account}}": "Verknüpfen mit {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Der Reader konnte nicht verknüpft werden. Prüfen Sie den Code oder melden Sie sich auf dem Reader erneut an.",
-  "Link Reader": "Reader verknüpfen"
+  "Link Reader": "Reader verknüpfen",
+  "Failed to copy the image": "Bild konnte nicht kopiert werden",
+  "Copy Image": "Bild kopieren"
 }

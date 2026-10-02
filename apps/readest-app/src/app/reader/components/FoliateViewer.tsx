@@ -111,6 +111,7 @@ import AutoScrollSpeedOverlay from './AutoScrollSpeedOverlay';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
+import ImageContextMenu from './ImageContextMenu';
 import TableViewer from './TableViewer';
 import ExternalLinkConfirm from './ExternalLinkConfirm';
 import { getTTSMiniPlayerClearance } from '../utils/ttsMiniPlayerPosition';
@@ -1207,6 +1208,7 @@ const FoliateViewer: React.FC<{
 
   return (
     <>
+      <ImageContextMenu bookKey={bookKey} />
       {selectedImage && (
         <ImageViewer
           gridInsets={gridInsets}

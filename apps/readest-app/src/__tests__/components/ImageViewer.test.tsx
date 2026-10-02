@@ -415,3 +415,32 @@ describe('ImageViewer', () => {
     }
   });
 });
+
+// #6558: the viewer offers the same right-click menu as an image in the book.
+describe('ImageViewer image context menu', () => {
+  it('right-clicking the image opens Copy Image / Save Image', () => {
+    const { container, getAllByRole } = render(
+      <ImageViewer src='data:image/png;base64,AA==' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    act(() => {
+      container.querySelector('img')!.dispatchEvent(event);
+    });
+    expect(event.defaultPrevented).toBe(true);
+    expect(getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Copy Image',
+      'Save Image',
+    ]);
+  });
+
+  it('dismissing the menu keeps the viewer open', () => {
+    const onClose = vi.fn();
+    const { container, queryByRole } = render(
+      <ImageViewer src='data:image/png;base64,AA==' onClose={onClose} gridInsets={gridInsets} />,
+    );
+    fireEvent.contextMenu(container.querySelector('img')!);
+    fireEvent.click(document.querySelector('.overlay')!);
+    expect(queryByRole('menuitem')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+});
