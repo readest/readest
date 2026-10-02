@@ -2645,5 +2645,7 @@
   "Code": "Код",
   "Linking to {{account}}": "Подключение к {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Не удалось подключить устройство. Проверьте код или войдите на устройстве заново.",
-  "Link Reader": "Подключить устройство"
+  "Link Reader": "Подключить устройство",
+  "Failed to copy the image": "Не удалось скопировать изображение",
+  "Copy Image": "Копировать изображение"
 }

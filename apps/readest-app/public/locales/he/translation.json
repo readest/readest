@@ -2581,5 +2581,7 @@
   "Code": "קוד",
   "Linking to {{account}}": "מקשר אל {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "לא ניתן לקשר את הקורא. יש לבדוק את הקוד או להתחבר מחדש בקורא.",
-  "Link Reader": "קישור הקורא"
+  "Link Reader": "קישור הקורא",
+  "Failed to copy the image": "העתקת התמונה נכשלה",
+  "Copy Image": "העתקת התמונה"
 }

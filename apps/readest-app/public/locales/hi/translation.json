@@ -2517,5 +2517,7 @@
   "Code": "कोड",
   "Linking to {{account}}": "{{account}} से लिंक किया जा रहा है",
   "Could not link the reader. Check the code, or sign in again on the reader.": "रीडर लिंक नहीं हो सका। कोड जाँचें, या रीडर पर फिर से साइन इन करें।",
-  "Link Reader": "रीडर लिंक करें"
+  "Link Reader": "रीडर लिंक करें",
+  "Failed to copy the image": "छवि कॉपी करने में विफल",
+  "Copy Image": "छवि कॉपी करें"
 }

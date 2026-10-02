@@ -2581,5 +2581,7 @@
   "Code": "Código",
   "Linking to {{account}}": "A vincular a {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Não foi possível vincular o leitor. Verifique o código ou inicie sessão novamente no leitor.",
-  "Link Reader": "Vincular leitor"
+  "Link Reader": "Vincular leitor",
+  "Failed to copy the image": "Falha ao copiar a imagem",
+  "Copy Image": "Copiar imagem"
 }

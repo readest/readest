@@ -2453,5 +2453,7 @@
   "Code": "代碼",
   "Linking to {{account}}": "連結至 {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "無法連結閱讀器。請檢查代碼，或在閱讀器上重新登入。",
-  "Link Reader": "連結閱讀器"
+  "Link Reader": "連結閱讀器",
+  "Failed to copy the image": "圖片複製失敗",
+  "Copy Image": "複製圖片"
 }

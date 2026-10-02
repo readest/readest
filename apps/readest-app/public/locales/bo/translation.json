@@ -2453,5 +2453,7 @@
   "Code": "ཨང་རྟགས།",
   "Linking to {{account}}": "{{account}} ལ་མཐུད་བཞིན་པ།",
   "Could not link the reader. Check the code, or sign in again on the reader.": "ཀློག་ཆས་མཐུད་མ་ཐུབ། ཨང་རྟགས་ཞིབ་བཤེར་གནང་བའམ། ཀློག་ཆས་སྟེང་ཡང་བསྐྱར་ནང་འཛུལ་གནང་རོགས།",
-  "Link Reader": "ཀློག་ཆས་མཐུད་པ།"
+  "Link Reader": "ཀློག་ཆས་མཐུད་པ།",
+  "Failed to copy the image": "པར་རིས་འདྲ་བཤུས་བྱས་མ་ཐུབ",
+  "Copy Image": "པར་རིས་འདྲ་བཤུས།"
 }

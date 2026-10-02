@@ -2453,5 +2453,7 @@
   "Code": "코드",
   "Linking to {{account}}": "{{account}}에 연결",
   "Could not link the reader. Check the code, or sign in again on the reader.": "리더를 연결하지 못했습니다. 코드를 확인하거나 리더에서 다시 로그인하세요.",
-  "Link Reader": "리더 연결"
+  "Link Reader": "리더 연결",
+  "Failed to copy the image": "이미지를 복사하지 못했습니다",
+  "Copy Image": "이미지 복사"
 }

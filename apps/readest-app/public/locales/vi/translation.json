@@ -2453,5 +2453,7 @@
   "Code": "Mã",
   "Linking to {{account}}": "Đang liên kết với {{account}}",
   "Could not link the reader. Check the code, or sign in again on the reader.": "Không thể liên kết máy đọc. Hãy kiểm tra mã hoặc đăng nhập lại trên máy đọc.",
-  "Link Reader": "Liên kết máy đọc"
+  "Link Reader": "Liên kết máy đọc",
+  "Failed to copy the image": "Không thể sao chép hình ảnh",
+  "Copy Image": "Sao chép hình ảnh"
 }
