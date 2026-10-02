@@ -237,6 +237,37 @@ jobs:
           echo "Uploading ${plugin_zip} to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
 
+  build-crosspoint-plugin:
+    needs: get-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: create CrossPoint plugin zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=${{ needs.get-release.outputs.release_version }}
+          plugin_zip="Readest-${version}.crosspoint-plugin.zip"
+          cd apps/readest-crosspoint-plugin
+
+          # Stamp the release version (from apps/readest-app/package.json, like
+          # the plugins above) into manifest.json, whose committed value is a dev
+          # placeholder. CrossPoint's plugin store compares it to spot updates.
+          jq --arg version "${version}" '.version = $version' readest/manifest.json > manifest.tmp
+          mv manifest.tmp readest/manifest.json
+
+          # The zip holds the readest/ folder that goes on the SD card as
+          # /.crosspoint/plugins/readest/, with the install guide inside it.
+          cp README.md readest/README.md
+          zip -r "../../${plugin_zip}" readest
+          cd ../..
+
+          echo "Uploading ${plugin_zip} to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
+
   build-browser-extension:
     needs: get-release
     permissions:
