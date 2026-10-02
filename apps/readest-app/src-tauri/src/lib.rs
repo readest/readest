@@ -317,6 +317,68 @@ fn undecorated_shadow_is_symmetric() -> bool {
     true
 }
 
+/// Restores the main window's saved geometry on Windows, after repairing the
+/// window's client area.
+///
+/// The main window is created hidden (`visible(false)`) with undecorated
+/// shadows. While the window stays hidden, tao's `WM_NCCALCSIZE` handler is
+/// never invoked again, so the client area keeps the rect Windows computed at
+/// creation time from the native frame styles — shorter than intended by the
+/// titlebar height. Restoring the saved size on top of that makes tao
+/// compensate with the stale window-to-client offset, and the difference is
+/// baked into the real client area on every launch: the window grows by
+/// roughly one titlebar height per start (#6373).
+///
+/// A single frame re-evaluation (`SWP_FRAMECHANGED`) after creation lets
+/// tao's handler measure the client area correctly; the saved geometry is
+/// then replayed through the plugin's own `restore_state` against the
+/// corrected rect, all while the window is still hidden.
+#[cfg(all(desktop, target_os = "windows"))]
+fn restore_main_window_state(window: &tauri::WebviewWindow) {
+    use tauri_plugin_window_state::{StateFlags, WindowExt};
+
+    if let Ok(hwnd) = window.hwnd() {
+        // Leading `::` because this crate has its own `mod windows`.
+        use ::windows::Win32::Foundation::HWND;
+        use ::windows::Win32::UI::WindowsAndMessaging::{
+            SetWindowPos, SET_WINDOW_POS_FLAGS, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE,
+            SWP_NOSIZE, SWP_NOZORDER,
+        };
+        // SAFETY: `hwnd` is the live top-level window of this webview. The
+        // flags only force a nonclient-area recalculation — no move, no
+        // resize, no z-order change, no activation.
+        unsafe {
+            if let Err(e) = SetWindowPos(
+                HWND(hwnd.0),
+                None,
+                0,
+                0,
+                0,
+                0,
+                SET_WINDOW_POS_FLAGS(
+                    SWP_FRAMECHANGED.0
+                        | SWP_NOMOVE.0
+                        | SWP_NOSIZE.0
+                        | SWP_NOZORDER.0
+                        | SWP_NOACTIVATE.0,
+                ),
+            ) {
+                // Restoring proceeds either way; the saved geometry just comes
+                // back with the pre-fix growth for this launch.
+                log::error!("Failed to re-evaluate the main window frame: {e}");
+            }
+        }
+    }
+    if let Err(e) = window.restore_state(StateFlags::all()) {
+        // The plugin shows the window at the end of a successful restore, so
+        // a failure here leaves the main window invisible for this launch —
+        // surface it at its creation-time size instead. The state file is
+        // untouched, so the next launch retries the restore.
+        log::error!("Failed to restore the main window state: {e}");
+        let _ = window.show();
+    }
+}
+
 // Pure decision for whether the in-app updater should be hidden. Kept
 // dependency-free so it can be unit tested for every platform combination.
 //
@@ -678,8 +740,16 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.plugin(window_state::init());
 
+    // The main window restores its saved geometry manually on Windows (see
+    // `restore_main_window_state`): restoring into the freshly created hidden
+    // window bakes the stale creation-time client area into the saved size,
+    // growing the window on every launch (#6373).
     #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
+    let window_state = tauri_plugin_window_state::Builder::default();
+    #[cfg(all(desktop, windows))]
+    let window_state = window_state.skip_initial_state("main");
+    #[cfg(desktop)]
+    let builder = builder.plugin(window_state.build());
 
     #[cfg(target_os = "macos")]
     let builder = builder.plugin(macos::traffic_light::init());
@@ -926,7 +996,9 @@ pub fn run() {
 
             #[cfg(not(target_os = "macos"))]
             {
-                win_builder.build().unwrap();
+                let _main_window = win_builder.build().unwrap();
+                #[cfg(windows)]
+                restore_main_window_state(&_main_window);
             }
             // let win = win_builder.build().unwrap();
             // win.open_devtools();
