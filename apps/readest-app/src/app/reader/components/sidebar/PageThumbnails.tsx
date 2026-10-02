@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { BookDoc } from '@/libs/document';
@@ -19,6 +19,7 @@ const PageThumbnail: React.FC<{
   const _ = useTranslation();
   const { appService } = useEnv();
   const [url, setUrl] = useState(() => getCachedPageThumbnail(bookHash, page));
+  const reloadedRef = useRef(false);
   const viewport = bookDoc.rendition.viewport;
 
   useEffect(() => {
@@ -54,7 +55,21 @@ const PageThumbnail: React.FC<{
         // rows keep a stable height for the virtualized list.
         style={{ aspectRatio: viewport ? `${viewport.width} / ${viewport.height}` : '3 / 4' }}
       >
-        {url && <img src={url} alt='' draggable={false} className='h-full w-full object-contain' />}
+        {url && (
+          <img
+            src={url}
+            alt=''
+            draggable={false}
+            className='h-full w-full object-contain'
+            // The memory cache revokes the object URLs it evicts. Should the
+            // image need its URL again, fetch the thumbnail once more.
+            onError={() => {
+              if (reloadedRef.current) return;
+              reloadedRef.current = true;
+              setUrl(null);
+            }}
+          />
+        )}
       </div>
       <span
         aria-hidden='true'
