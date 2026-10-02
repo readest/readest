@@ -321,7 +321,7 @@ describe('library catalog', () => {
   const list = (query = '') =>
     booksGET(new Request(`${BASE}/books${query}`, { headers: deviceHeaders() }));
 
-  it("pages the owner's uploaded EPUBs, newest first", async () => {
+  it("pages the owner's uploaded EPUBs, most recently read first", async () => {
     results['books.select'] = {
       data: [{ book_hash: DOC, title: 'Moby-Dick', author: 'Herman Melville' }],
       error: null,
@@ -339,8 +339,9 @@ describe('library catalog', () => {
         ['books', 'eq', 'format', 'EPUB'],
         ['books', 'is', 'deleted_at', null],
         ['books', 'not', 'uploaded_at', 'is', null],
-        // Reading elsewhere doesn't reorder the list while the reader pages through it.
-        ['books', 'order', 'created_at', { ascending: false }],
+        // Opening a book in Readest (or syncing progress from the reader)
+        // bumps updated_at, so the book the user wants next leads the list.
+        ['books', 'order', 'updated_at', { ascending: false }],
         ['books', 'order', 'book_hash'],
         // Page 2 starts right after the 8 books of page 1 and carries one
         // extra row that tells the reader another page exists.

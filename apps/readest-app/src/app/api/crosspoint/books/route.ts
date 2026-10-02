@@ -38,9 +38,11 @@ export async function GET(request: Request) {
     .is('deleted_at', null)
     .not('uploaded_at', 'is', null);
   if (q) query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%`);
-  // Ordered by when books were added, so reading elsewhere doesn't reshuffle pages.
+  // Most recently read first, like Readest's library: opening a book in Readest
+  // (or syncing progress from the reader) bumps updated_at, so the user picks
+  // the book that leads the list without searching for it on the reader.
   const { data, error } = await query
-    .order('created_at', { ascending: false })
+    .order('updated_at', { ascending: false })
     .order('book_hash')
     .range((page - 1) * perPage, page * perPage);
   if (error) {
