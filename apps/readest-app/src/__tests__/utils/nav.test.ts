@@ -238,6 +238,13 @@ describe('navigateBackFromProfile', () => {
 
     expect(router.replace).toHaveBeenCalledWith('/library', undefined);
   });
+
+  test('ignores a backslash redirect that browsers resolve off-site', () => {
+    const router = mockRouter();
+    navigateBackFromProfile(router, '/\\evil.example.com');
+
+    expect(router.replace).toHaveBeenCalledWith('/library', undefined);
+  });
 });
 
 describe('navigateToLibrary', () => {

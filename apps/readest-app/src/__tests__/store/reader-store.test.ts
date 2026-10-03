@@ -483,6 +483,13 @@ describe('areBooksOpen', () => {
     expect(useReaderStore.getState().areBooksOpen(['abc'])).toBe(false);
   });
 
+  test('is false for a book that failed to load, so it is retried', () => {
+    seedViewState('abc-view1', { error: 'Failed to load book.' });
+    useReaderStore.setState({ bookKeys: ['abc-view1'] });
+
+    expect(useReaderStore.getState().areBooksOpen(['abc'])).toBe(false);
+  });
+
   test('is false with nothing open', () => {
     expect(useReaderStore.getState().areBooksOpen([])).toBe(false);
   });
