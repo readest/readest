@@ -777,6 +777,9 @@ describe('KOSync progress', () => {
           ['books', 'eq', 'book_hash', BOOK],
         ]),
       );
+      // Every book with that title is compared: a cut-off list could drop
+      // Readest's own file or a second book that fits.
+      expect(calls.some(([table, method]) => table === 'books' && method === 'limit')).toBe(false);
     });
 
     it("doesn't pull Readest's position back when it links", async () => {

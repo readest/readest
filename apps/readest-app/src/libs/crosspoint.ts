@@ -125,8 +125,7 @@ export const linkCopy = async (
     .eq('user_id', userId)
     .or(`book_hash.eq.${document},source_title.ilike.${pattern},title.ilike.${pattern}`)
     .eq('format', 'EPUB')
-    .is('deleted_at', null)
-    .limit(20);
+    .is('deleted_at', null);
   if (error) return { bookHash: null, error };
   if (!data || data.some((book) => book.book_hash === document)) return NO_LINK;
   let matches = data.filter(
