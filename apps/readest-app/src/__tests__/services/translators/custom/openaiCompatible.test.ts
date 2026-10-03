@@ -98,6 +98,16 @@ describe('createOpenAICompatibleTranslator', () => {
     expect(generateTextMock).toHaveBeenCalledTimes(3);
   });
 
+  // Small local models (e.g. gemma3) put each marker on the same line as its
+  // translation; rejecting that re-sent every paragraph on its own.
+  it('splits a reply whose markers share a line with the translation', async () => {
+    generateTextMock.mockResolvedValue({ text: '[1]Un\n\n[2] Deux' });
+    const t = createOpenAICompatibleTranslator(config);
+    const out = await t.translate(['One', 'Two'], 'en', 'fr');
+    expect(out).toEqual(['Un', 'Deux']);
+    expect(generateTextMock).toHaveBeenCalledTimes(1);
+  });
+
   it('strips reasoning blocks from the reply', async () => {
     generateTextMock.mockResolvedValue({ text: '<think>hmm</think>\nBonjour' });
     const t = createOpenAICompatibleTranslator(config);

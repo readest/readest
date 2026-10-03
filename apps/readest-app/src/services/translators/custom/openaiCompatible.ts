@@ -44,7 +44,8 @@ const stripReasoning = (text: string) => text.replace(/^\s*<think>[\s\S]*?<\/thi
 
 /** Splits a `[1]\n…\n\n[2]\n…` reply; returns null unless it holds exactly blocks 1..n. */
 const splitNumbered = (text: string, n: number): string[] | null => {
-  const parts = text.split(/^[ \t]*\[(\d+)\][ \t]*$/m);
+  // A marker starts a line; some models continue the translation on that line.
+  const parts = text.split(/^[ \t]*\[(\d+)\][ \t]*/m);
   const blocks: string[] = [];
   for (let i = 1; i < parts.length; i += 2) {
     if (Number(parts[i]) !== blocks.length + 1) return null;
