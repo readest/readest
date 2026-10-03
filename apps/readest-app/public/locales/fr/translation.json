@@ -2583,5 +2583,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Impossible d'associer la liseuse. Vérifiez le code ou reconnectez-vous sur la liseuse.",
   "Link Reader": "Associer la liseuse",
   "Failed to copy the image": "Échec de la copie de l'image",
-  "Copy Image": "Copier l'image"
+  "Copy Image": "Copier l'image",
+  "Failed to share the image": "Impossible de partager l’image"
 }

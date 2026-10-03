@@ -11,7 +11,12 @@ interface ImageMenuProps {
   onClose: () => void;
 }
 
-/** Readest's right-click menu for an image: Copy Image and Save Image (#6558). */
+/**
+ * Readest's menu for an image, from a right-click or a long press: Copy Image
+ * and Save Image (#6558). Android's WebView takes a clipboard image write
+ * without error but never puts it on the system clipboard, so Android offers
+ * Share Image in its place (#6574).
+ */
 export const ImageMenu: React.FC<ImageMenuProps> = ({ getImage, position, onClose }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -30,23 +35,34 @@ export const ImageMenu: React.FC<ImageMenuProps> = ({ getImage, position, onClos
       });
   };
 
+  // Some loaders leave images untyped (CBZ pages, for one): name the file by
+  // what its bytes are, and make it a real PNG when they can't tell.
+  const getImageFile = async () => {
+    let blob = await getImage();
+    let mimeType = blob.type.startsWith('image/')
+      ? blob.type
+      : getImageMimeType(new Uint8Array(await blob.arrayBuffer()));
+    if (!mimeType) {
+      blob = await imageToPng(blob);
+      mimeType = 'image/png';
+    }
+    const filename = `image.${imageExtensionFromMime(mimeType)}`;
+    return { filename, bytes: await blob.arrayBuffer(), mimeType };
+  };
+
   const saveImage = async () => {
     try {
-      // Some loaders leave images untyped (CBZ pages, for one): name the file
-      // by what its bytes are, and make it a real PNG when they can't tell.
-      let blob = await getImage();
-      let mimeType = blob.type.startsWith('image/')
-        ? blob.type
-        : getImageMimeType(new Uint8Array(await blob.arrayBuffer()));
-      if (!mimeType) {
-        blob = await imageToPng(blob);
-        mimeType = 'image/png';
+      const { filename, bytes, mimeType } = await getImageFile();
+      // Android saves to the photo gallery, like the image viewer; some builds
+      // (HarmonyOS) refuse the insert, so those save it as a file instead.
+      if (
+        appService?.isAndroidApp &&
+        (await appService.saveImageToGallery(filename, bytes, mimeType))
+      ) {
+        eventDispatcher.dispatch('toast', { type: 'info', message: _('Image saved to gallery') });
+        return;
       }
-      const saved = await appService?.saveFile(
-        `image.${imageExtensionFromMime(mimeType)}`,
-        await blob.arrayBuffer(),
-        { mimeType },
-      );
+      const saved = await appService?.saveFile(filename, bytes, { mimeType });
       eventDispatcher.dispatch('toast', {
         type: saved ? 'info' : 'error',
         message: saved ? _('Image saved successfully') : _('Failed to save the image'),
@@ -57,13 +73,31 @@ export const ImageMenu: React.FC<ImageMenuProps> = ({ getImage, position, onClos
     }
   };
 
+  // The share sheet gives its own feedback.
+  const shareImage = async () => {
+    try {
+      const { filename, bytes, mimeType } = await getImageFile();
+      await appService?.saveFile(filename, bytes, { mimeType, share: true });
+    } catch (error) {
+      console.error('Failed to share image:', error);
+      eventDispatcher.dispatch('toast', { type: 'error', message: _('Failed to share the image') });
+    }
+  };
+
   return (
     <BookContextMenuPopup
       position={position}
-      items={[
-        { text: _('Copy Image'), action: copyImage },
-        { text: _('Save Image'), action: saveImage },
-      ]}
+      items={
+        appService?.isAndroidApp
+          ? [
+              { text: _('Save Image'), action: saveImage },
+              { text: _('Share Image'), action: shareImage },
+            ]
+          : [
+              { text: _('Copy Image'), action: copyImage },
+              { text: _('Save Image'), action: saveImage },
+            ]
+      }
       onClose={onClose}
     />
   );

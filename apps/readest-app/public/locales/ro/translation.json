@@ -2583,5 +2583,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Cititorul nu a putut fi conectat. Verificați codul sau autentificați-vă din nou pe cititor.",
   "Link Reader": "Conectați cititorul",
   "Failed to copy the image": "Copierea imaginii a eșuat",
-  "Copy Image": "Copiază imaginea"
+  "Copy Image": "Copiază imaginea",
+  "Failed to share the image": "Imaginea nu a putut fi partajată"
 }

@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Det gick inte att länka läsplattan. Kontrollera koden eller logga in igen på läsplattan.",
   "Link Reader": "Länka läsplatta",
   "Failed to copy the image": "Det gick inte att kopiera bilden",
-  "Copy Image": "Kopiera bild"
+  "Copy Image": "Kopiera bild",
+  "Failed to share the image": "Det gick inte att dela bilden"
 }

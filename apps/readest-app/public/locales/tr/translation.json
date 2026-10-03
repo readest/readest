@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Okuyucu bağlanamadı. Kodu kontrol edin veya okuyucuda yeniden oturum açın.",
   "Link Reader": "Okuyucuyu bağla",
   "Failed to copy the image": "Görsel kopyalanamadı",
-  "Copy Image": "Görseli Kopyala"
+  "Copy Image": "Görseli Kopyala",
+  "Failed to share the image": "Görsel paylaşılamadı"
 }

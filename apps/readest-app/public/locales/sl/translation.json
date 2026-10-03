@@ -2647,5 +2647,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Bralnika ni bilo mogoče povezati. Preverite kodo ali se znova prijavite na bralniku.",
   "Link Reader": "Poveži bralnik",
   "Failed to copy the image": "Slike ni bilo mogoče kopirati",
-  "Copy Image": "Kopiraj sliko"
+  "Copy Image": "Kopiraj sliko",
+  "Failed to share the image": "Slike ni bilo mogoče deliti"
 }

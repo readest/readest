@@ -2583,5 +2583,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Não foi possível vincular o leitor. Verifique o código ou entre novamente no leitor.",
   "Link Reader": "Vincular leitor",
   "Failed to copy the image": "Falha ao copiar a imagem",
-  "Copy Image": "Copiar imagem"
+  "Copy Image": "Copiar imagem",
+  "Failed to share the image": "Falha ao compartilhar a imagem"
 }

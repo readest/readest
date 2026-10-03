@@ -6,6 +6,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
+import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { setSelectionSuppressed } from '@/utils/bridge';
 import { LINK_TOUCH_HOLD_CLASS, TEXT_SELECTED_CLASS } from '@/utils/style';
 import {
@@ -126,6 +127,11 @@ export const useTextSelector = (
   const instantHoldTarget = useRef<HTMLElement | null>(null);
   const instantHoldStartClient = useRef<Point | null>(null);
   const instantHoldStartWindow = useRef<{ x: number; y: number } | null>(null);
+  // Pending image long press on iOS (#6574): where the touch went down and the
+  // timer that opens the image menu if it stays there.
+  const imageHold = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(
+    null,
+  );
   // Latest pointer position in window coords (from pointermove or, on Android,
   // native touchmove): an auto-turn engagement signal alongside the caret, and
   // the finger position the Android hyphen repair rebuilds from.
@@ -617,12 +623,47 @@ export const useTextSelector = (
     cancelAutoTurn();
   };
 
+  // Opens Readest's image menu for the image at the event's point, if any.
+  const openImageMenu = (
+    event: Pick<MouseEvent, 'target' | 'clientX' | 'clientY'>,
+    isTouch: boolean,
+  ): boolean => {
+    const { clientX, clientY } = event;
+    const doc = (event.target as Node).ownerDocument!;
+    // A long press on text selects it, PDF text over a scanned page included.
+    if (isTouch && isTextAtPoint(doc, clientX, clientY)) return false;
+    const getImage = getContextMenuImage(event);
+    if (!getImage) return false;
+    const { x, y } = toParentViewportPoint(doc, clientX, clientY);
+    eventDispatcher.dispatch('image-context-menu', { bookKey, getImage, x, y });
+    return true;
+  };
+
+  const cancelImageHold = () => {
+    if (imageHold.current) clearTimeout(imageHold.current.timer);
+    imageHold.current = null;
+  };
+
+  // iOS WebKit fires no contextmenu for a long press, so a touch held still on
+  // an image opens the image menu here. A release, a move past the slop or a
+  // pointercancel (WebKit taking the touch to scroll) drops it.
+  const armImageHold = (ev: PointerEvent) => {
+    cancelImageHold();
+    const { target, clientX, clientY } = ev;
+    const timer = setTimeout(() => {
+      imageHold.current = null;
+      openImageMenu({ target, clientX, clientY }, true);
+    }, LONG_HOLD_THRESHOLD);
+    imageHold.current = { timer, x: clientX, y: clientY };
+  };
+
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     beginSelectionDrag();
     lastPointerType.current = ev.pointerType;
     if (appService?.isAndroidApp && ev.pointerType === 'touch') {
       doc.documentElement.classList.add(LINK_TOUCH_HOLD_CLASS);
     }
+    if (appService?.isIOSApp && ev.pointerType === 'touch') armImageHold(ev);
     isPointerDown.current = true;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -675,6 +716,10 @@ export const useTextSelector = (
         DOUBLE_CLICK_DRAG_MOVE_PX
     ) {
       doubleClick.moved = true;
+    }
+    const hold = imageHold.current;
+    if (hold && Math.hypot(ev.clientX - hold.x, ev.clientY - hold.y) > INSTANT_HOLD_MOVE_PX) {
+      cancelImageHold();
     }
     // The listener lives on the book iframe's document, so ev.clientX/Y are in
     // the (very wide, multi-column) iframe viewport. Map to window coordinates
@@ -774,6 +819,7 @@ export const useTextSelector = (
 
   const handlePointerCancel = (doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
+    cancelImageHold();
     doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     mouseDoubleClickRef.current = null;
     clearCrossDoc();
@@ -901,6 +947,7 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
+    cancelImageHold();
     doc.documentElement.classList.remove(LINK_TOUCH_HOLD_CLASS);
     endSelectionDrag();
     const mouseDoubleClick = mouseDoubleClickRef.current;
@@ -1168,24 +1215,18 @@ export const useTextSelector = (
   };
 
   const handleContextmenu = (event: Event) => {
-    if (appService?.isMobile) {
+    const isTouch =
+      !!appService?.isMobile ||
+      lastPointerType.current === 'touch' ||
+      lastPointerType.current === 'pen';
+    // Images get Readest's own menu, from a right-click or, on Android, a long
+    // press (#6574): the webview's differs per engine and offers "Copy image
+    // address" for a blob URL nobody can use (#6558).
+    if (openImageMenu(event as MouseEvent, isTouch)) event.preventDefault();
+    if (isTouch) {
       event.preventDefault();
       event.stopPropagation();
       return false;
-    } else if (lastPointerType.current === 'touch' || lastPointerType.current === 'pen') {
-      event.preventDefault();
-      event.stopPropagation();
-      return false;
-    }
-    // Images get Readest's own menu: the webview's differs per engine and
-    // offers "Copy image address" for a blob URL nobody can use (#6558).
-    const getImage = getContextMenuImage(event as MouseEvent);
-    if (getImage) {
-      event.preventDefault();
-      const { clientX, clientY } = event as MouseEvent;
-      const doc = (event.target as Node).ownerDocument!;
-      const { x, y } = toParentViewportPoint(doc, clientX, clientY);
-      eventDispatcher.dispatch('image-context-menu', { bookKey, getImage, x, y });
     }
     return;
   };

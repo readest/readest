@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "წამკითხველის დაკავშირება ვერ მოხერხდა. შეამოწმეთ კოდი ან ხელახლა შედით წამკითხველზე.",
   "Link Reader": "წამკითხველის დაკავშირება",
   "Failed to copy the image": "სურათის კოპირება ვერ მოხერხდა",
-  "Copy Image": "სურათის კოპირება"
+  "Copy Image": "სურათის კოპირება",
+  "Failed to share the image": "სურათის გაზიარება ვერ მოხერხდა"
 }

@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "রিডার লিঙ্ক করা যায়নি। কোডটি যাচাই করুন, অথবা রিডারে আবার সাইন ইন করুন।",
   "Link Reader": "রিডার লিঙ্ক করুন",
   "Failed to copy the image": "ছবি কপি করা যায়নি",
-  "Copy Image": "ছবি কপি করুন"
+  "Copy Image": "ছবি কপি করুন",
+  "Failed to share the image": "ছবি শেয়ার করা যায়নি"
 }

@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Δεν ήταν δυνατή η σύνδεση της συσκευής ανάγνωσης. Ελέγξτε τον κωδικό ή συνδεθείτε ξανά στη συσκευή ανάγνωσης.",
   "Link Reader": "Σύνδεση συσκευής",
   "Failed to copy the image": "Αποτυχία αντιγραφής της εικόνας",
-  "Copy Image": "Αντιγραφή εικόνας"
+  "Copy Image": "Αντιγραφή εικόνας",
+  "Failed to share the image": "Αποτυχία κοινοποίησης της εικόνας"
 }

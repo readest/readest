@@ -2455,5 +2455,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Tidak dapat menautkan pembaca. Periksa kode, atau masuk lagi di pembaca.",
   "Link Reader": "Tautkan pembaca",
   "Failed to copy the image": "Gagal menyalin gambar",
-  "Copy Image": "Salin Gambar"
+  "Copy Image": "Salin Gambar",
+  "Failed to share the image": "Gagal membagikan gambar"
 }

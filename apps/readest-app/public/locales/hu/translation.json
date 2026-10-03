@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Nem sikerült összekapcsolni az olvasót. Ellenőrizze a kódot, vagy jelentkezzen be újra az olvasón.",
   "Link Reader": "Olvasó összekapcsolása",
   "Failed to copy the image": "Nem sikerült másolni a képet",
-  "Copy Image": "Kép másolása"
+  "Copy Image": "Kép másolása",
+  "Failed to share the image": "Nem sikerült megosztani a képet"
 }

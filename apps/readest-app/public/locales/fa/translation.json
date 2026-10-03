@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "پیوند دادن کتاب‌خوان ممکن نشد. کد را بررسی کنید یا دوباره روی کتاب‌خوان وارد شوید.",
   "Link Reader": "پیوند دادن کتاب‌خوان",
   "Failed to copy the image": "کپی تصویر ناموفق بود",
-  "Copy Image": "کپی تصویر"
+  "Copy Image": "کپی تصویر",
+  "Failed to share the image": "اشتراک‌گذاری تصویر ناموفق بود"
 }

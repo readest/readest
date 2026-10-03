@@ -2519,5 +2519,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Qurilmani ulab bo‘lmadi. Kodni tekshiring yoki qurilmada qayta tizimga kiring.",
   "Link Reader": "Qurilmani ulash",
   "Failed to copy the image": "Rasmni nusxalab bo'lmadi",
-  "Copy Image": "Rasmni nusxalash"
+  "Copy Image": "Rasmni nusxalash",
+  "Failed to share the image": "Rasmni ulashib bo‘lmadi"
 }

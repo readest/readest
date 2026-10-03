@@ -2775,5 +2775,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "تعذّر ربط القارئ. تحقّق من الرمز أو سجّل الدخول مجددًا على القارئ.",
   "Link Reader": "ربط القارئ",
   "Failed to copy the image": "فشل نسخ الصورة",
-  "Copy Image": "نسخ الصورة"
+  "Copy Image": "نسخ الصورة",
+  "Failed to share the image": "تعذّرت مشاركة الصورة"
 }

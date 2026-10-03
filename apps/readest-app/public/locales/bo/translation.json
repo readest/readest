@@ -2455,5 +2455,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "ཀློག་ཆས་མཐུད་མ་ཐུབ། ཨང་རྟགས་ཞིབ་བཤེར་གནང་བའམ། ཀློག་ཆས་སྟེང་ཡང་བསྐྱར་ནང་འཛུལ་གནང་རོགས།",
   "Link Reader": "ཀློག་ཆས་མཐུད་པ།",
   "Failed to copy the image": "པར་རིས་འདྲ་བཤུས་བྱས་མ་ཐུབ",
-  "Copy Image": "པར་རིས་འདྲ་བཤུས།"
+  "Copy Image": "པར་རིས་འདྲ་བཤུས།",
+  "Failed to share the image": "པར་རིས་མཉམ་སྤྱོད་བྱེད་མ་ཐུབ།"
 }

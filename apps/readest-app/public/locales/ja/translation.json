@@ -2455,5 +2455,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "リーダーをリンクできませんでした。コードを確認するか、リーダーで再度サインインしてください。",
   "Link Reader": "リーダーをリンク",
   "Failed to copy the image": "画像のコピーに失敗しました",
-  "Copy Image": "画像をコピー"
+  "Copy Image": "画像をコピー",
+  "Failed to share the image": "画像を共有できませんでした"
 }

@@ -2583,5 +2583,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Impossibile collegare il lettore. Controlla il codice o accedi di nuovo sul lettore.",
   "Link Reader": "Collega lettore",
   "Failed to copy the image": "Impossibile copiare l'immagine",
-  "Copy Image": "Copia immagine"
+  "Copy Image": "Copia immagine",
+  "Failed to share the image": "Impossibile condividere l’immagine"
 }

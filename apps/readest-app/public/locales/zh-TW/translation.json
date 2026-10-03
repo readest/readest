@@ -2455,5 +2455,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "無法連結閱讀器。請檢查代碼，或在閱讀器上重新登入。",
   "Link Reader": "連結閱讀器",
   "Failed to copy the image": "圖片複製失敗",
-  "Copy Image": "複製圖片"
+  "Copy Image": "複製圖片",
+  "Failed to share the image": "分享圖片失敗"
 }

@@ -2647,5 +2647,6 @@
   "Could not link the reader. Check the code, or sign in again on the reader.": "Не удалось подключить устройство. Проверьте код или войдите на устройстве заново.",
   "Link Reader": "Подключить устройство",
   "Failed to copy the image": "Не удалось скопировать изображение",
-  "Copy Image": "Копировать изображение"
+  "Copy Image": "Копировать изображение",
+  "Failed to share the image": "Не удалось поделиться изображением"
 }
