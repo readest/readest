@@ -24,6 +24,7 @@ const state = vi.hoisted(() => ({
   token: null as string | null,
   user: null as { id: string } | null,
   push: vi.fn(),
+  setViewSettings: vi.fn(),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -80,7 +81,7 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => null,
     getViewSettings: () => viewSettings(),
-    setViewSettings: vi.fn(),
+    setViewSettings: state.setViewSettings,
     recreateViewer: vi.fn(),
   }),
 }));
@@ -114,6 +115,20 @@ describe('LangPanel — Enable Translation availability', () => {
 
     expect(getEnableTranslationToggle().disabled).toBe(false);
     expect(screen.queryByText('Not available for this book.')).toBeNull();
+  });
+
+  // The reader's translation hook reacts to a new viewSettings object; an
+  // in-place save left it untranslated until the book was reopened.
+  it('publishes a new viewSettings object when translation is switched on', () => {
+    state.setViewSettings.mockClear();
+    render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+
+    fireEvent.click(getEnableTranslationToggle());
+
+    expect(state.setViewSettings).toHaveBeenCalledWith(
+      'book-1',
+      expect.objectContaining({ translationEnabled: true }),
+    );
   });
 
   it('locks the switch for a PDF, where translation is not available', () => {
@@ -195,9 +210,12 @@ describe('LangPanel — Custom Translators premium gate', () => {
 });
 
 describe('LangPanel — Translated Text style', () => {
+  beforeEach(() => {
+    vi.mocked(saveViewSettings).mockClear();
+  });
+
   afterEach(() => {
     cleanup();
-    vi.mocked(saveViewSettings).mockClear();
   });
 
   it('saves the chosen font, style and size for translated text', () => {

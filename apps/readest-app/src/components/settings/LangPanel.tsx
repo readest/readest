@@ -303,6 +303,9 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         recreateViewer(envConfig, bookKey);
       }
     });
+    // The reader's translation hook watches the viewSettings object, which
+    // saveViewSettings only mutates; hand it a new one, like the toolbar does.
+    setViewSettings(bookKey, { ...viewSettings, translationEnabled });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translationEnabled]);
 
