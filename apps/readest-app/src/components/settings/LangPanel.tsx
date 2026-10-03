@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -41,7 +41,7 @@ import { PiTranslate } from 'react-icons/pi';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { token, user } = useAuth();
   const { envConfig } = useEnv();
   const hasPremium = isCustomTranslatorAllowed(token);

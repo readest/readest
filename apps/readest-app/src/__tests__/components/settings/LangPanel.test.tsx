@@ -192,7 +192,7 @@ describe('LangPanel — Custom Translators premium gate', () => {
     render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
 
     fireEvent.click(getCustomTranslatorsRow());
-    expect(state.push).toHaveBeenCalledWith('/user');
+    expect(state.push).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
     expect(screen.queryByText('Add Translator')).toBeNull();
   });
 
