@@ -1262,6 +1262,7 @@ export const useTextSelector = (
       eventDispatcher.offSync('iframe-single-click', handleSingleClick);
       unsubAfterTurn();
       if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
+      cancelImageHold();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

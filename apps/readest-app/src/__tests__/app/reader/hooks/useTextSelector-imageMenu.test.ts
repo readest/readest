@@ -278,6 +278,15 @@ describe('useTextSelector image long-press menu (#6574)', () => {
       expect(imageMenus()).toEqual([]);
     });
 
+    test('a reader closed mid-hold opens no menu', () => {
+      const { result, unmount } = setup(vi.fn());
+      const img = document.querySelector('img')!;
+      result.current.handlePointerDown(document, 0, touch('pointerdown', img));
+      unmount();
+      vi.advanceTimersByTime(1000);
+      expect(imageMenus()).toEqual([]);
+    });
+
     test('a hold on text opens no menu', () => {
       press(document.querySelector('p')!);
       vi.advanceTimersByTime(1000);

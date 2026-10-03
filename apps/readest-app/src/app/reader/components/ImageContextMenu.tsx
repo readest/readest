@@ -73,13 +73,17 @@ export const ImageMenu: React.FC<ImageMenuProps> = ({ getImage, position, onClos
     }
   };
 
-  // The share sheet gives its own feedback.
+  // The share sheet gives its own feedback, a dismissed one included; false
+  // means the image never reached it.
   const shareImage = async () => {
+    let shared: boolean | undefined = false;
     try {
       const { filename, bytes, mimeType } = await getImageFile();
-      await appService?.saveFile(filename, bytes, { mimeType, share: true });
+      shared = await appService?.saveFile(filename, bytes, { mimeType, share: true });
     } catch (error) {
       console.error('Failed to share image:', error);
+    }
+    if (shared === false) {
       eventDispatcher.dispatch('toast', { type: 'error', message: _('Failed to share the image') });
     }
   };

@@ -20,6 +20,8 @@ vi.mock('@/context/EnvContext', () => ({
     },
   }),
 }));
+// The menu takes over the Android back key, a native call jsdom doesn't have.
+vi.mock('@/utils/bridge', () => ({ interceptKeys: vi.fn() }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
@@ -142,6 +144,20 @@ describe('ImageContextMenu (#6558)', () => {
     expect(h.saveFile).toHaveBeenCalledWith('image.jpg', expect.any(ArrayBuffer), {
       mimeType: 'image/jpeg',
       share: true,
+    });
+  });
+
+  test('reports a share that could not start', async () => {
+    h.isAndroidApp = true;
+    h.saveFile.mockResolvedValueOnce(false);
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Share Image'));
+    });
+    expect(dispatch).toHaveBeenCalledWith('toast', {
+      type: 'error',
+      message: 'Failed to share the image',
     });
   });
 
