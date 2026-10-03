@@ -121,6 +121,8 @@ export class HardcoverClient {
   private proxyEndpoint = '/api/hardcover/graphql';
   private token: string;
   private oauth: TokenSet | null;
+  // The tokens last known to be in the store; stays behind `oauth` until a save succeeds.
+  private persisted: TokenSet | null;
   private refreshInFlight: Promise<void> | null = null;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
@@ -132,7 +134,7 @@ export class HardcoverClient {
     mapStore: HardcoverSyncMapStore,
     private tokenStore?: HardcoverTokenStore,
   ) {
-    this.oauth = settings.oauth ?? null;
+    this.oauth = this.persisted = settings.oauth ?? null;
     this.token = this.toBearer(this.oauth?.accessToken ?? settings.accessToken);
     this.mapStore = mapStore;
   }
@@ -143,6 +145,18 @@ export class HardcoverClient {
     return t.startsWith('Bearer ') ? t : `Bearer ${t}`;
   }
 
+  // The server may have rotated the refresh token, so a failed save is logged and retried on
+  // the next request instead of failing the sync. `persisted` keeps the stale-save guard honest.
+  private async persist() {
+    if (!this.tokenStore || !this.oauth || this.oauth === this.persisted) return;
+    try {
+      await this.tokenStore.save(this.oauth, this.persisted!);
+      this.persisted = this.oauth;
+    } catch (e) {
+      console.error('[Hardcover] failed to persist refreshed tokens', e);
+    }
+  }
+
   // Single-flight so concurrent requests share one refresh (the refresh token may rotate).
   private refreshOAuth(): Promise<void> {
     this.refreshInFlight ??= (async () => {
@@ -151,19 +165,13 @@ export class HardcoverClient {
         // token may rotate, so adopt the stored tokens before spending ours.
         const latest = this.tokenStore?.load();
         if (latest && latest.accessToken !== this.oauth!.accessToken) {
-          this.oauth = latest;
+          this.oauth = this.persisted = latest;
           this.token = this.toBearer(latest.accessToken);
           if (Date.now() < latest.expiresAt) return;
         }
-        const previous = this.oauth!;
-        this.oauth = await refreshHardcoverTokens(previous);
+        this.oauth = await refreshHardcoverTokens(this.oauth!);
         this.token = this.toBearer(this.oauth.accessToken);
-        // The server may have rotated the refresh token, so keep going on a failed save.
-        try {
-          await this.tokenStore?.save(this.oauth, previous);
-        } catch (e) {
-          console.error('[Hardcover] failed to persist refreshed tokens', e);
-        }
+        await this.persist();
       } catch (error) {
         // No refresh token, a 401, or a 400 naming an invalid token means the login is dead. Other
         // 400s (malformed request), 5xx and network errors are not fixed by reconnecting.
@@ -254,6 +262,7 @@ export class HardcoverClient {
     backoffMs = 2000,
   ): Promise<TData> {
     await this.throttleRequest();
+    await this.persist();
     if (this.oauth?.refreshToken && Date.now() >= this.oauth.expiresAt) await this.refreshOAuth();
 
     const send = () =>

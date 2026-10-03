@@ -99,4 +99,15 @@ describe('HardcoverClient OAuth', () => {
     expect(refresh).not.toHaveBeenCalled();
     expect(authHeaders()).toEqual(['Bearer new']);
   });
+
+  it('retries a failed save on the next request, still comparing against the stored tokens', async () => {
+    const save = vi.fn().mockRejectedValueOnce(new Error('disk full')).mockResolvedValue(undefined);
+    const { api } = make(0, save);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await api.request('q', {});
+    await api.request('q', {});
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(save.mock.calls[1]).toEqual([fresh, expect.objectContaining({ accessToken: 'old' })]);
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
 });
