@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 
 // A popup built from a data/alt attribute measures its text synchronously and
@@ -48,6 +48,8 @@ vi.mock('../hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
 // The popup's stylesheet is beside the point here; these tests are about the box.
 vi.mock('@/utils/style', () => ({
+  getBaseFontFamily: () => 'serif',
+  getBaseFontSize: () => 16,
   getStyles: () => '',
   getFootnoteStyles: () => '',
   getThemeCode: () => ({ bg: '#fff', fg: '#000' }),
@@ -156,6 +158,40 @@ describe('footnote popup built from a data/alt attribute', () => {
     });
 
     expect(popupContainer()?.style.height).toBe(`${POPUP_HEIGHT}px`);
+  });
+
+  // The reader font only starts loading in the host document once the note
+  // lays out there, so the first measurement is taken in a fallback face that
+  // wraps the text differently (#3602).
+  test('refits the note once the reader font has loaded', async () => {
+    let fontsLoaded = () => {};
+    const ready = new Promise<void>((resolve) => (fontsLoaded = resolve));
+    // jsdom has no FontFaceSet.
+    Object.defineProperty(document, 'fonts', {
+      value: { status: 'loading', ready },
+      configurable: true,
+    });
+    onTestFinished(() => {
+      delete (document as { fonts?: unknown }).fonts;
+    });
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    act(() => {
+      h.dispatchFootnote({
+        bookKey: 'book-1',
+        element: document.createElement('a'),
+        footnote: 'A footnote long enough to wrap over several lines.',
+      });
+    });
+    expect(popupContainer()?.getAttribute('aria-hidden')).toBe('false');
+    expect(popupContainer()?.style.height).toBe(`${POPUP_HEIGHT}px`);
+
+    vi.spyOn(HTMLParagraphElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 360,
+      height: 90,
+    } as DOMRect);
+    await act(async () => fontsLoaded());
+
+    expect(popupContainer()?.style.height).toBe('92px');
   });
 });
 
