@@ -71,15 +71,13 @@ describe('OneDriveProvider', () => {
     expect(url).toContain('/approot:/Readest/x.json:/content');
   });
 
-  test('ensureDir creates each folder and treats 409 nameAlreadyExists as success', async () => {
-    const calls: string[] = [];
-    const fetchFn = (async (u: string, init?: RequestInit) => {
-      calls.push(`${init?.method} ${u}`);
-      return json({ error: { code: 'nameAlreadyExists' } }, 409);
-    }) as unknown as FetchFn;
+  test('ensureDir makes no Graph calls: path writes create their own parents (#6427)', async () => {
+    // Graph answers 400 invalidRequest to a folder-create POSTed to any
+    // `special/approot` children collection, while PUT `:/content` and
+    // `:/createUploadSession` create missing parents themselves.
+    const fetchFn = vi.fn() as unknown as FetchFn;
     await expect(make(fetchFn).ensureDir(['/Readest', '/Readest/books'])).resolves.toBeUndefined();
-    expect(calls.length).toBe(2);
-    expect(calls[0]).toContain('POST');
+    expect(fetchFn).not.toHaveBeenCalled();
   });
 
   test('deleteDir tolerates a 404', async () => {

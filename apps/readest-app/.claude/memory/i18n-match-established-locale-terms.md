@@ -1,0 +1,54 @@
+---
+name: i18n-match-established-locale-terms
+description: "When translating new i18n strings, reuse the locale file's own established term for a domain noun instead of inventing a synonym"
+metadata: 
+  node_type: memory
+  type: feedback
+  originSessionId: 6981cf12-3457-45a5-8161-d15457b41f63
+  modified: 2026-08-30T16:38:58.863Z
+---
+
+When filling `__STRING_NOT_TRANSLATED__` placeholders, look up how the locale ALREADY
+translates each domain noun and reuse that exact lexeme. Do not translate the English
+word fresh, because a correct-but-different synonym still reads as an inconsistency in
+the UI.
+
+Check before writing, per locale:
+`jq -r '.["Highlights"], .["Notes"], .["Bookmarks"]' public/locales/<l>/translation.json`
+
+Audit after writing (case-fold + stem, because inflection and case legitimately differ;
+an exact substring match over-flags badly - it wrongly flagged French `Surlignages` vs a
+correctly lowercased mid-sentence `surlignages`):
+
+```sh
+hlf=$(printf '%s' "$hl" | tr '[:upper:]' '[:lower:]'); stem=$(printf '%s' "$hlf" | cut -c1-5)
+case "$minef" in *"$stem"*) : ;; *) echo "MISMATCH" ;; esac
+```
+
+**Why:** on PR #5949 I filled 582 strings across 34 locales and invented the "highlights"
+noun in 6 of them (es `subrayados` vs established `Resaltados`; ka `მონიშვნები` vs
+`მარკირებები`; also ar, ms, si, uz). CodeRabbit caught two; the audit above found the
+rest.
+
+**How to apply:** run the audit across ALL locales, not only the ones a reviewer flags.
+Some locale files are internally inconsistent already (bo has Highlight=`འོག་ཐིག`
+underline but Highlights=`གཙོ་གནད།` key-points; zh-TW has Highlight=`劃線` vs
+Highlights=`標記`) - those have no established term, so leave them and ask rather than
+guessing.
+
+**Limit of the rule: it applies to the SAME concept, not to a near-neighbour.** On
+PR #6030 CodeRabbit asked for tr `Lock Horizontal Panning` = "Yatay kaydirmayi
+kilitle" because `Horizontal Scrolling` = "Yatay Kaydirma". Rejected: panning a
+zoomed page and the horizontal-scrolling reading mode are different features
+sitting in the SAME menu (the pan-lock row is even `disabled` in that mode), so
+reusing the term would collide, not harmonize. The audit is what settled it -
+30+ locales already render Panning with a movement word distinct from their
+scrolling word (de Schwenken/Scrollen, fr panoramique/Defilement, es
+movimiento/Desplazamiento, it movimento/Scorrimento, ru peremeshchenie/prokrutka,
+ja idou/scroll, zh pingyi/gundong, sv panorering/rullning), so adopting the
+suggestion would have made Turkish the one outlier. Run the cross-locale audit
+before accepting a single-locale terminology finding: the majority pattern tells
+you whether the reviewer found an inconsistency or the intended distinction.
+
+Related: [[pdf-lock-horizontal-pan-5976]], [[i18n-extract-prunes-keys]],
+[[i18n-label-rename-workflow]], [[notion-sync-pr-5949-review]]

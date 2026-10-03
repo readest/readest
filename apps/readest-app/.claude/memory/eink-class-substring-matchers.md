@@ -49,3 +49,26 @@ Tailwind variant.
 so they are the only place this cascade is testable —
 `src/__tests__/components/eink-base-content-bg.browser.test.tsx` guards it.
 Related: [[eink-highlight-difference-mask-5667]].
+
+## Two more traps (2026-08-30, yearly-subscription store front)
+
+3. **`bg-primary/10` is NOT matched by the `.bg-primary` e-ink rule.** That rule
+   is an exact class selector (`[data-eink='true'] .bg-primary`), not a
+   substring matcher, so an opacity-suffixed tint keeps its brand colour while
+   the plain class inverts — sibling plan badges rendered inconsistently in
+   e-ink. The `bg-base-content` rule is the reverse: it IS `[class*=]`, so
+   `bg-base-content/10` was forced to a **solid** fill, painting base-content
+   text on a base-content ground (invisible pill). Rule of thumb: for any
+   tinted chip, stay on `bg-base-200`/`bg-base-300`, which no e-ink rule
+   touches.
+4. **`btn-primary`, `btn-contrast` and `btn-outline` all collapse to the same
+   solid `base-content` fill in e-ink** (one shared rule, globals.css ~1037).
+   Two sibling CTAs styled with any two of them are indistinguishable on
+   e-ink — exactly the failure CLAUDE.md's "can you still tell which button is
+   the CTA" test exists to catch. To keep a recommended action distinct, pair
+   ONE of those classes with a plain `btn eink-bordered` (which stays an
+   outline); never two solids.
+
+Both were found by rendering the component in a `*.browser.test.tsx` with
+`[data-eink='true']` set on `documentElement` and screenshotting it — the
+class strings look correct in every case.

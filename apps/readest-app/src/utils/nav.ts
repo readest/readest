@@ -1,16 +1,34 @@
 import { redirect, useRouter } from 'next/navigation';
 import { getCurrentWindow, ScrollBarStyle } from '@tauri-apps/api/window';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { getAllWebviewWindows, WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { isPWA, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { AppService } from '@/types/system';
+import { windowNeedsClientOutline } from '@/utils/window';
 
-let readerWindowsCount = 0;
-const createReaderWindow = (appService: AppService, url: string) => {
+// Labels handed out whose windows are not created yet, so two overlapping
+// launches that read the same window list do not pick the same label.
+const pendingLabels = new Set<string>();
+
+// Take the first label no open or pending window holds. A counter of open
+// windows would hand out the label of a window that is still open once an
+// earlier one closes, and Tauri refuses to create a second window with that
+// label (#6363).
+const reserveWindowLabel = async (prefix: string) => {
+  const labels = new Set((await getAllWebviewWindows()).map((w) => w.label));
+  let index = 0;
+  while (labels.has(`${prefix}-${index}`) || pendingLabels.has(`${prefix}-${index}`)) index += 1;
+  const label = `${prefix}-${index}`;
+  pendingLabels.add(label);
+  return label;
+};
+
+const createReaderWindow = async (appService: AppService, url: string) => {
   const currentWindow = getCurrentWindow();
   const label = currentWindow.label;
   const newLabelPrefix = label === 'main' ? 'reader' : label;
-  const win = new WebviewWindow(`${newLabelPrefix}-${readerWindowsCount}`, {
+  const newLabel = await reserveWindowLabel(newLabelPrefix);
+  const win = new WebviewWindow(newLabel, {
     url,
     width: 800,
     height: 600,
@@ -21,7 +39,7 @@ const createReaderWindow = (appService: AppService, url: string) => {
     // Linux stays opaque: a transparent WebKitGTK window turns invisible when
     // its web process is busy (#3682). macOS uses native decorations instead.
     transparent: !appService.isMacOSApp && !appService.isLinuxApp,
-    shadow: appService.isMacOSApp ? undefined : true,
+    shadow: appService.isMacOSApp ? undefined : !windowNeedsClientOutline(appService),
     titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
     // Enum ScrollBarStyle is exported as type by tauri, so it cannot be used directly.
     scrollBarStyle: (appService.osPlatform === 'windows'
@@ -29,14 +47,11 @@ const createReaderWindow = (appService: AppService, url: string) => {
       : 'default') as unknown as ScrollBarStyle,
   });
   win.once('tauri://created', () => {
-    console.log('new window created');
-    readerWindowsCount += 1;
+    pendingLabels.delete(newLabel);
   });
   win.once('tauri://error', (e) => {
+    pendingLabels.delete(newLabel);
     console.error('error creating window', e);
-  });
-  win.once('tauri://destroyed', () => {
-    readerWindowsCount -= 1;
   });
 };
 
@@ -49,14 +64,14 @@ export const showReaderWindow = (
   const params = new URLSearchParams(queryParams || '');
   params.set('ids', ids);
   const url = `/reader?${params.toString()}`;
-  createReaderWindow(appService, url);
+  return createReaderWindow(appService, url);
 };
 
 export const showLibraryWindow = (appService: AppService, filenames: string[]) => {
   const params = new URLSearchParams();
   filenames.forEach((filename) => params.append('file', filename));
   const url = `/library?${params.toString()}`;
-  createReaderWindow(appService, url);
+  return createReaderWindow(appService, url);
 };
 
 // Bring the main library window back when a reader window asks to "go to library".
@@ -83,7 +98,7 @@ export const ensureMainLibraryWindow = async (appService: AppService) => {
     // Linux stays opaque: a transparent WebKitGTK window turns invisible when
     // its web process is busy (#3682). macOS uses native decorations instead.
     transparent: !appService.isMacOSApp && !appService.isLinuxApp,
-    shadow: appService.isMacOSApp ? undefined : true,
+    shadow: appService.isMacOSApp ? undefined : !windowNeedsClientOutline(appService),
     titleBarStyle: appService.isMacOSApp ? 'overlay' : undefined,
     scrollBarStyle: (appService.osPlatform === 'windows'
       ? 'fluentOverlay'

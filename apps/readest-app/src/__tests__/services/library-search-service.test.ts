@@ -251,6 +251,52 @@ describe('searchLibraryBooks', () => {
     expect(result?.result.subitems[0]?.excerpt.post).toContain(' 🙂trail');
   });
 
+  it('matches across soft hyphens in every mode, live and from the index', async () => {
+    const book = makeBook('shy', 'Soft Hyphens');
+    const text = 'the hy\u00ADphen\u00ADation of won\u00ADder\u00ADful words';
+    const cases: Array<[string, Partial<LibrarySearchConfig>, string]> = [
+      ['hyphenation', { mode: 'contains' }, 'hy\u00ADphen\u00ADation'],
+      ['Hyphenation', { mode: 'contains', matchCase: true, matchDiacritics: true }, ''],
+      [
+        'hyphenation',
+        { mode: 'contains', matchCase: true, matchDiacritics: true },
+        'hy\u00ADphen\u00ADation',
+      ],
+      ['wonderful', { mode: 'whole-words' }, 'won\u00ADder\u00ADful'],
+      ['phena', { mode: 'regex' }, 'phen\u00ADa'],
+      ['hyphenation', { mode: 'fuzzy' }, 'hy\u00ADphen\u00ADation'],
+      [
+        'hyphenation wonderful',
+        { mode: 'nearby-words' },
+        `hy\u00ADphen\u00ADation of won\u00ADder\u00ADful`,
+      ],
+    ];
+
+    for (const [query, mode, match] of cases) {
+      const service = makeService(new Map([['shy', makeFile(`# Chapter\n${text}`)]]));
+      // The first search scans the book live; the second is served from search.db.
+      for (const pass of ['live', 'indexed']) {
+        const label = `${pass} ${JSON.stringify(mode)} ${query}`;
+        const events = [];
+        for await (const event of searchLibraryBooks(service, [book], query, {
+          config: { ...config, ...mode },
+        })) {
+          events.push(event);
+        }
+        const result = events.find((event) => event.type === 'result');
+        if (!match) {
+          expect(result, label).toBeUndefined();
+          continue;
+        }
+        expect(result, label).toBeDefined();
+        const { locator, excerpt } = result!.result.subitems[0]!;
+        expect(excerpt.match, label).toBe(match);
+        expect(locator.end - locator.start, label).toBe(match.length);
+      }
+      expect(service.loadBookContent).toHaveBeenCalledOnce();
+    }
+  });
+
   it('builds the search_nodes toc tree during index population', async () => {
     const book = makeBook('tree', 'Tree');
     const md = '# One\n\nalpha needle\n\n## One A\n\nbeta\n\n# Two\n\ngamma\n';

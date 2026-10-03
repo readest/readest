@@ -54,7 +54,19 @@ const mapError = (e: unknown): FileSyncError => {
               : 'UNKNOWN';
     return new FileSyncError(e.message, code, e.status);
   }
-  return new FileSyncError(e instanceof Error ? e.message : String(e), 'UNKNOWN');
+  const message = e instanceof Error ? e.message : String(e);
+  // Tauri serializes transfer errors as strings, including HTTP status codes.
+  const match = /^request failed with status code (\d{3}):/.exec(message);
+  const status = match ? Number(match[1]) : undefined;
+  const code =
+    status === 401 || status === 403
+      ? 'AUTH_FAILED'
+      : status === 404
+        ? 'NOT_FOUND'
+        : status === 409
+          ? 'CONFLICT'
+          : 'UNKNOWN';
+  return new FileSyncError(message, code, status);
 };
 
 const wrap = async <T>(fn: () => Promise<T>): Promise<T> => {
@@ -103,8 +115,7 @@ export const createWebDAVProvider = (settings: WebDAVSettings): FileSyncProvider
         );
         return true;
       } catch (e) {
-        console.warn('WebDAVProvider.uploadStream failed', remotePath, e);
-        return false;
+        throw mapError(e);
       }
     };
     provider.downloadStream = async (remotePath, localPath, onProgress) => {
@@ -113,8 +124,7 @@ export const createWebDAVProvider = (settings: WebDAVSettings): FileSyncProvider
         await tauriDownload(url, localPath, onProgress, authHeaders());
         return true;
       } catch (e) {
-        console.warn('WebDAVProvider.downloadStream failed', remotePath, e);
-        return false;
+        throw mapError(e);
       }
     };
   }

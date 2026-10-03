@@ -166,10 +166,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
                           onKeyDown={handleKeyDown}
-                          className={clsx(
-                            'input input-xs input-bordered w-full',
-                            'bg-base-100 text-base-content',
-                          )}
+                          className={clsx('input input-xs w-full', 'bg-base-100 text-base-content')}
                           // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
                         />
@@ -202,7 +199,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
                 </div>
 
                 {editingId !== conversation.id && (
-                  <div className='flex flex-shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100'>
+                  <div className='flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100'>
                     <button
                       onClick={(e) => handleStartRename(e, conversation)}
                       className='btn btn-ghost btn-xs'

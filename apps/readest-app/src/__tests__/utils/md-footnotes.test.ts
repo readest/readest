@@ -131,6 +131,78 @@ describe('markdown footnotes', () => {
     expect(note.textContent).toContain('Second para.');
   });
 
+  it('keeps an Obsidian tab-indented continuation inside the footnote', async () => {
+    const book = await make(
+      't[^a]\n\n[^a]: First line.\n\tSecond line.\n\nText after the definition.\n',
+    );
+    const doc = await docOf(book);
+    const note = notes(doc)[0]!;
+
+    expect(note.textContent).toContain('First line.');
+    expect(note.textContent).toContain('Second line.');
+    expect(doc.body.querySelector('pre')).toBeNull();
+    expect(doc.body.textContent).toContain('Text after the definition.');
+  });
+
+  it('keeps an Obsidian tab-indented multi-paragraph blockquote inside the footnote', async () => {
+    const book = await make(
+      't[^a]\n\n[^a]: Intro:\n\t> First paragraph.\n\t\n\t> Second paragraph.\n\nText after the definition.\n',
+    );
+    const doc = await docOf(book);
+    const note = notes(doc)[0]!;
+
+    expect(note.querySelectorAll('blockquote p').length).toBe(2);
+    expect(note.textContent).toContain('First paragraph.');
+    expect(note.textContent).toContain('Second paragraph.');
+    expect(doc.body.querySelector('pre')).toBeNull();
+  });
+
+  it('preserves an ordinary tab-indented code block', async () => {
+    const book = await make('Before.\n\n\tconst answer = 42;\n\nAfter.\n');
+    const doc = await docOf(book);
+
+    expect(doc.body.querySelector('pre code')?.textContent).toContain('const answer = 42;');
+  });
+
+  it('expands mixed and repeated tab indentation by tab stops', async () => {
+    const book = await make('t[^a]\n\n[^a]: First.\n  \tSecond.\n\t\tThird.\n');
+    const doc = await docOf(book);
+    const note = notes(doc)[0]!;
+
+    expect(note.textContent).toContain('Second.');
+    expect(note.textContent).toContain('Third.');
+  });
+
+  it('keeps four-space continuations when another tab activates preprocessing', async () => {
+    const book = await make(
+      'Before.\n\n\tconst answer = 42;\n\nt[^a]\n\n[^a]: First.\n    Second.\n',
+    );
+    const doc = await docOf(book);
+
+    expect(notes(doc)[0]!.textContent).toContain('Second.');
+    expect(doc.body.querySelector('pre code')?.textContent).toContain('const answer = 42;');
+  });
+
+  it('preserves tabbed fenced code before a CRLF footnote definition', async () => {
+    const book = await make(
+      '```\r\n[^fake]: literal\r\n\tcontinued\r\n```\r\n\r\nt[^a]\r\n\r\n[^a]: First.\r\n\tSecond.\r\n',
+    );
+    const doc = await docOf(book);
+    const code = doc.body.querySelector('pre code');
+
+    expect(code?.textContent).toContain('[^fake]: literal');
+    expect(code?.textContent).toContain('\tcontinued');
+    expect(notes(doc)).toHaveLength(1);
+    expect(notes(doc)[0]!.textContent).toContain('Second.');
+  });
+
+  it('preserves a source tab in fenced code nested inside a footnote', async () => {
+    const book = await make('t[^a]\n\n[^a]: Example:\n\n    ```text\n    \tcode\n    ```\n');
+    const doc = await docOf(book);
+
+    expect(notes(doc)[0]!.querySelector('pre code')?.textContent).toBe('\tcode\n');
+  });
+
   it('gives a reused reference one note, unique ids and a backlink per reference', async () => {
     const book = await make('a[^a] b[^a]\n\n[^a]: once\n');
     const doc = await docOf(book);

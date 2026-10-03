@@ -1,6 +1,6 @@
 import { useEnv } from '@/context/EnvContext';
 import { useRouter } from 'next/navigation';
-import { useTransitionRouter } from 'next-view-transitions';
+import { useTransitionRouter } from '@/components/ViewTransitions';
 
 export const useAppRouter = () => {
   const { appService } = useEnv();

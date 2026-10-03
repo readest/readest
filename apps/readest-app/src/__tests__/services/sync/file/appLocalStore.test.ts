@@ -256,3 +256,40 @@ describe('createAppLocalStore — a stale filePath must not mask the managed cop
     expect(await makeStore().resolveLocalBookPath(makeBook('h1', { filePath: STALE }))).toBeNull();
   });
 });
+
+describe('sync file handles (#6137)', () => {
+  test.each([
+    'loadBookFile',
+    'loadBookCover',
+  ] as const)('%s closes after reading', async (method) => {
+    const close = vi.fn(async () => {});
+    const bytes = new ArrayBuffer(4);
+    appService.exists = vi.fn(async () => true);
+    appService.openFile = vi.fn(async () =>
+      Object.assign(new File([], 'book'), {
+        arrayBuffer: async () => bytes,
+        close,
+      }),
+    );
+    expect(await makeStore()[method](makeBook('a'))).toEqual({ bytes, size: 4 });
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  test.each([
+    'loadBookFile',
+    'loadBookCover',
+  ] as const)('%s closes when reading fails', async (method) => {
+    const close = vi.fn(async () => {});
+    appService.exists = vi.fn(async () => true);
+    appService.openFile = vi.fn(async () =>
+      Object.assign(new File([], 'book'), {
+        arrayBuffer: async () => {
+          throw new Error('read failed');
+        },
+        close,
+      }),
+    );
+    await expect(makeStore()[method](makeBook('a'))).rejects.toThrow('read failed');
+    expect(close).toHaveBeenCalledOnce();
+  });
+});

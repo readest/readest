@@ -171,7 +171,7 @@ async function htmlToBook(
  * `sanitizeForParsing` strips any `<base>` the page itself shipped, so
  * there is never an author-supplied one to preserve.
  */
-function parsePageDocument(html: string, pageUrl: string): Document {
+export function parsePageDocument(html: string, pageUrl: string): Document {
   const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
   const base = doc.createElement('base');
   base.setAttribute('href', pageUrl);

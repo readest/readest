@@ -20,12 +20,20 @@ md5 = "0.8"
 once_cell = "1.19"
 zip = { version = "6.0", default-features = false, features = ["deflate"] }
 windows = { version = "0.62", features = [
+  "Data_Pdf",
+  "Foundation",
+  "Storage_Streams",
   "Win32_Foundation",
   "Win32_Graphics_Gdi",
   "Win32_Security",
   "Win32_System_Com",
   "Win32_System_LibraryLoader",
+  "Win32_System_Ole",
   "Win32_System_Registry",
+  "Win32_System_WinRT",
+  "Win32_UI_Controls",
+  "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
 ] }
 windows-core = "0.62"

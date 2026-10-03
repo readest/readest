@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { formatKoDatetime } from '@/services/bookorbit/noteMapping';
-import { runBookOrbitNotesPass, type NotesPassDeps } from '@/services/bookorbit/notesPass';
+import {
+  isBookOrbitPassEnabled,
+  runBookOrbitNotesPass,
+  type NotesPassDeps,
+} from '@/services/bookorbit/notesPass';
+import type { BookOrbitSettings } from '@/types/settings';
 import type { BookmarkExchangeResponse, ExchangeResponse } from '@/services/bookorbit/types';
 import type { BookNote } from '@/types/book';
 
@@ -93,6 +98,7 @@ const makeDeps = (overrides: Partial<NotesPassDeps> = {}): NotesPassDeps => ({
   mergeNotes: vi.fn(),
   resolvePosition: async () => ({ cfi: 'epubcfi(/6/10!/4/2/1:0)', verified: true }),
   populateXPointers: vi.fn(async (notes: BookNote[]) => notes),
+  syncNotes: true,
   syncBookStates: false,
   now: () => NOW,
   onUnmatched: vi.fn(),
@@ -289,6 +295,43 @@ describe('runBookOrbitNotesPass', () => {
     expect(withCap.store.setWatermark).toHaveBeenCalledWith(HASH, 'bookmarks', NOW);
   });
 
+  it('match-checks but skips the note exchange when highlight sync is off', async () => {
+    const deps = makeDeps({ syncNotes: false });
+    await runBookOrbitNotesPass(deps);
+    expect(deps.client.matchCheck).toHaveBeenCalledTimes(1);
+    expect(deps.populateXPointers).not.toHaveBeenCalled();
+    expect(deps.client.getVersion).not.toHaveBeenCalled();
+    expect(deps.client.exchangeAnnotations).not.toHaveBeenCalled();
+    expect(deps.client.exchangeBookmarks).not.toHaveBeenCalled();
+  });
+
+  it('reports an unmatched book when highlight sync is off', async () => {
+    const deps = makeDeps({ syncNotes: false });
+    (deps.client.matchCheck as ReturnType<typeof vi.fn>).mockResolvedValue({
+      matches: [],
+      libraryVersion: 'v1',
+    });
+    await runBookOrbitNotesPass(deps);
+    expect(deps.onUnmatched).toHaveBeenCalledTimes(1);
+  });
+
+  it('pushes the reading status when highlight sync is off', async () => {
+    const deps = makeDeps({
+      syncNotes: false,
+      syncBookStates: true,
+      book: {
+        hash: HASH,
+        title: 'A Book',
+        readingStatus: 'finished',
+        readingStatusUpdatedAt: Date.UTC(2026, 7, 4, 6, 0, 0),
+      },
+    });
+    await runBookOrbitNotesPass(deps);
+    expect(deps.client.uploadBookStates).toHaveBeenCalledWith([
+      { hash: HASH, status: 'complete', statusModified: '2026-08-04' },
+    ]);
+  });
+
   it('pushes the mapped reading status when enabled', async () => {
     const deps = makeDeps({
       syncBookStates: true,
@@ -325,5 +368,36 @@ describe('runBookOrbitNotesPass', () => {
     const request = exchangeMock.mock.calls[0]![0][0];
     expect(request.keys[0].dt).toBe('2026-07-30 01:02:03');
     expect(request.keys[0].dt).not.toBe(formatKoDatetime(remoteBorn.createdAt));
+  });
+});
+
+describe('isBookOrbitPassEnabled', () => {
+  const base = {
+    enabled: true,
+    serverUrl: 'https://books.example.com',
+    username: 'alice',
+    userkey: 'key',
+    syncProgress: false,
+    syncNotes: false,
+    syncStats: false,
+    syncBookStates: false,
+  } as BookOrbitSettings;
+
+  it.each([
+    'syncProgress',
+    'syncNotes',
+    'syncStats',
+    'syncBookStates',
+  ] as const)('runs while only %s is on, so an unmatched book still gets listed for linking', (field) => {
+    expect(isBookOrbitPassEnabled({ ...base, [field]: true })).toBe(true);
+  });
+
+  it('does not run when every sync option is off', () => {
+    expect(isBookOrbitPassEnabled(base)).toBe(false);
+  });
+
+  it('does not run while disconnected or disabled', () => {
+    expect(isBookOrbitPassEnabled({ ...base, syncProgress: true, enabled: false })).toBe(false);
+    expect(isBookOrbitPassEnabled({ ...base, syncProgress: true, userkey: '' })).toBe(false);
   });
 });

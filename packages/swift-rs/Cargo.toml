@@ -12,7 +12,12 @@
 [package]
 edition = "2021"
 name = "swift-rs"
-version = "1.0.7"
+# Upstream 1.0.7 + the Readest cross-compile patch in src-rs/build.rs.
+# Labelled 1.0.8 so it satisfies tauri's `swift-rs = "1.0.8"` requirement
+# and every swift-rs dependent unifies on this copy (see the root
+# Cargo.toml [patch.crates-io] note). Library code is 1.0.7; 1.0.8 only
+# adds visionOS build support and extra primitive pointer arg types.
+version = "1.0.8"
 authors = ["The swift-rs contributors"]
 build = "src-rs/test-build.rs"
 exclude = [

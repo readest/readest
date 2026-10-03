@@ -95,7 +95,7 @@ services:
 
   minio:
     container_name: readest-minio
-    image: minio/minio
+    image: quay.io/minio/minio
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -113,7 +113,7 @@ services:
       retries: 5
 
   minio-setup:
-    image: minio/mc
+    image: quay.io/minio/mc
     depends_on:
       minio:
         condition: service_healthy
@@ -146,6 +146,7 @@ services:
       S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       OBJECT_STORAGE_TYPE: ${OBJECT_STORAGE_TYPE:-s3}
+      SELF_HOSTED: ${SELF_HOSTED:-true}
       STORAGE_FIXED_QUOTA: ${STORAGE_FIXED_QUOTA:-1073741824}
       TRANSLATION_FIXED_QUOTA: ${TRANSLATION_FIXED_QUOTA:-50000}
       FONT_BASE_URL: ${FONT_BASE_URL:-}

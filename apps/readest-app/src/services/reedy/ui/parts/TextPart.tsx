@@ -27,7 +27,7 @@ export const UserTextPart = memo(function UserTextPart({ text }: { text: string 
             </a>
           ),
           code: ({ children }) => (
-            <code className='bg-base-300/50 text-base-content rounded px-1.5 py-0.5 font-mono text-sm'>
+            <code className='bg-base-300/50 text-base-content rounded-sm px-1.5 py-0.5 font-mono text-sm'>
               {children}
             </code>
           ),
@@ -70,7 +70,7 @@ export const AssistantTextPart = memo(function AssistantTextPart({ text }: { tex
             // Inline code: no className. Fenced blocks: get a language-x class.
             if (!className) {
               return (
-                <code className='bg-base-300/50 text-base-content rounded px-1.5 py-0.5 font-mono text-sm'>
+                <code className='bg-base-300/50 text-base-content rounded-sm px-1.5 py-0.5 font-mono text-sm'>
                   {children}
                 </code>
               );

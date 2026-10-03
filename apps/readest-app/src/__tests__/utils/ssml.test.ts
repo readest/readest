@@ -35,6 +35,21 @@ describe('parseSSMLLang', () => {
     expect(parseSSMLLang(ssml, 'es')).toBe('es');
   });
 
+  // Word-converted EPUBs carry `<body lang="EN-US">` from the authoring tool
+  // even when the book declares another language on <html>. foliate's getLang
+  // stops at that nearest ancestor, so the SSML says EN-US for a Vietnamese
+  // book. Regional en variants are the same "nobody set this" default as bare
+  // en, so the book's own language wins.
+  it('should use primaryLang when xml:lang is a regional en variant but primaryLang differs', () => {
+    const ssml = ssmlWithLang('EN-US', '<mark name="0"/>Chương 1: Hù Người Sao?');
+    expect(parseSSMLLang(ssml, 'vi')).toBe('vi');
+  });
+
+  it('should keep a regional en variant when the book is English', () => {
+    const ssml = ssmlWithLang('en-GB', '<mark name="0"/>Hello world');
+    expect(parseSSMLLang(ssml, 'en')).toBe('en-GB');
+  });
+
   it('should keep document lang when it matches primaryLang', () => {
     const ssml = ssmlWithLang('fr', '<mark name="0"/>Bonjour');
     expect(parseSSMLLang(ssml, 'fr')).toBe('fr');

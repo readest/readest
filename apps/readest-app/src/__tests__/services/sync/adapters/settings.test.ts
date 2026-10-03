@@ -92,6 +92,35 @@ describe('settingsAdapter', () => {
     expect(fields['kosync.serverUrl']).toBe('https://kosync.example');
   });
 
+  test('pack/unpack round-trips Notion connection fields and drops local sync state', () => {
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        notion: {
+          enabled: true,
+          accessToken: 'notion-token',
+          databaseId: 'notion-database-id',
+          lastSyncedAt: 123,
+          includeChapterHeading: false,
+        },
+      } as Partial<SystemSettings>,
+    };
+
+    const fields = settingsAdapter.pack(record);
+    expect(fields['notion.databaseId']).toBe('notion-database-id');
+    expect(fields['notion.accessToken']).toBe('notion-token');
+    expect(fields['notion.enabled']).toBeUndefined();
+    expect(fields['notion.lastSyncedAt']).toBeUndefined();
+    expect(fields['notion.includeChapterHeading']).toBeUndefined();
+
+    const out = settingsAdapter.unpack(fields);
+    expect(out.patch.notion?.databaseId).toBe('notion-database-id');
+    expect(out.patch.notion?.accessToken).toBe('notion-token');
+    expect(out.patch.notion?.enabled).toBeUndefined();
+    expect(out.patch.notion?.lastSyncedAt).toBeUndefined();
+    expect(out.patch.notion?.includeChapterHeading).toBeUndefined();
+  });
+
   test('pack ∘ unpack round-trips WebDAV connection fields, dropping per-device state', () => {
     const record: SettingsRemoteRecord = {
       name: 'singleton',
@@ -281,6 +310,7 @@ describe('settingsAdapter', () => {
       'bookorbit.customHeaders',
       'readwise.accessToken',
       'hardcover.accessToken',
+      'notion.accessToken',
       'webdav.username',
       'webdav.password',
       's3.accessKeyId',

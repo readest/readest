@@ -607,6 +607,36 @@ describe('proofreadStore', () => {
       expect(updated!.enabled).toBe(false);
     });
 
+    test('toggles enabled state of a library rule', async () => {
+      // Regression: toggleRule used to omit `scope` from the update patch, so
+      // updateRule fell through to the book branch and a library rule (which
+      // lives in globalViewSettings) was never touched — the switch looked
+      // dead in the rules manager.
+      const rule = makeRule({ id: 'g1', scope: 'library', enabled: true });
+      mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [] });
+      mockGlobalViewSettingsHolder.current = emptyViewSettings({ proofreadRules: [rule] });
+
+      await useProofreadStore.getState().toggleRule(envConfig, 'book1', 'g1');
+
+      expect(mockSaveSettings).toHaveBeenCalledTimes(1);
+      const saved = mockSaveSettings.mock.calls[0]![1] as SystemSettings;
+      const updated = saved.globalViewSettings.proofreadRules!.find((r) => r.id === 'g1');
+      expect(updated!.enabled).toBe(false);
+    });
+
+    test('disables a legacy rule that carries no enabled flag', async () => {
+      // The list renders `enabled !== false` as on, so an undefined flag must
+      // toggle to false — `!undefined` would have re-enabled it instead.
+      const rule = makeRule({ id: 'r1' });
+      delete (rule as Partial<ProofreadRule>).enabled;
+      mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [rule] });
+
+      await useProofreadStore.getState().toggleRule(envConfig, 'book1', 'r1');
+
+      const updated = mockViewSettingsMap['book1']!.proofreadRules!.find((r) => r.id === 'r1');
+      expect(updated!.enabled).toBe(false);
+    });
+
     test('throws when rule not found', async () => {
       mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [] });
       mockGlobalViewSettingsHolder.current = emptyViewSettings({ proofreadRules: [] });

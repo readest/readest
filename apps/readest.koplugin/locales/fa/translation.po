@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "دستگاه‌های KOReader و Readest شما را همگام نگه می‌دارد."
 
+msgid "Downloading %1 of %2…"
+msgstr "در حال دانلود %1 از %2…"
+
+msgid "%1 MB downloaded"
+msgstr "%1 مگابایت بارگیری شد"
+
+msgid "No downloads in progress."
+msgstr "هیچ بارگیری در حال انجام نیست."
+
+msgid "Run in background"
+msgstr "اجرا در پس‌زمینه"
+
+msgid "Cancel download"
+msgstr "لغو بارگیری"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "دانلود لغو شد. %1 از %2 دانلود شد."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 از %2 دانلود شد (%3 رد شد)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 از %2 دانلود شد."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "برای فعال‌سازی دانلود ابتدا پوشه خانه را در مدیر فایل تنظیم کنید."
+
+msgid "No books to download."
+msgstr "کتابی برای دانلود وجود ندارد."
+
 msgid "Library view"
 msgstr "نمای کتابخانه"
 
@@ -68,8 +98,14 @@ msgstr "صعودی"
 msgid "Actions"
 msgstr "اقدامات"
 
+msgid "Sync now"
+msgstr "همگام‌سازی اکنون"
+
 msgid "Download all books"
 msgstr "دانلود همه کتاب‌ها"
+
+msgid "Download progress"
+msgstr "پیشرفت بارگیری"
 
 msgid "Rescan library"
 msgstr "اسکن مجدد کتابخانه"
@@ -104,6 +140,12 @@ msgstr "جستجو در کتابخانه"
 msgid "Search title or author"
 msgstr "جستجوی عنوان یا نویسنده"
 
+msgid "Books synced"
+msgstr "کتاب‌ها همگام شدند"
+
+msgid "Books sync failed"
+msgstr "همگام‌سازی کتاب‌ها ناموفق بود"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "برای نمایش کامل کتابخانه افزونه Cover Browser لازم است. به فهرست ساده بازمی‌گردد."
 
@@ -116,18 +158,6 @@ msgstr "این کتاب از Readest دانلود شود؟"
 msgid "Download"
 msgstr "دانلود"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "برای فعال‌سازی دانلود ابتدا پوشه خانه را در مدیر فایل تنظیم کنید."
-
-msgid "Downloading…"
-msgstr "در حال دانلود…"
-
-msgid "Cloud copy unavailable."
-msgstr "نسخه ابری در دسترس نیست."
-
-msgid "Download failed."
-msgstr "دانلود ناموفق بود."
-
 msgid "No cover available on Readest."
 msgstr "جلدی در Readest در دسترس نیست."
 
@@ -137,20 +167,8 @@ msgstr "دانلود جلد ناموفق بود."
 msgid "Could not delete the file."
 msgstr "حذف فایل ممکن نشد."
 
-msgid "No books to download."
-msgstr "کتابی برای دانلود وجود ندارد."
-
-msgid "Downloading %1 of %2…"
-msgstr "در حال دانلود %1 از %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "دانلود لغو شد. %1 از %2 دانلود شد."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "%1 از %2 دانلود شد (%3 رد شد)."
-
-msgid "Downloaded %1 of %2."
-msgstr "%1 از %2 دانلود شد."
+msgid "Download group"
+msgstr "بارگیری گروه"
 
 msgid "Removing from cloud…"
 msgstr "در حال حذف از فضای ابری…"
@@ -287,23 +305,14 @@ msgstr "اکنون ارسال آمار"
 msgid "Pull stats now"
 msgstr "اکنون دریافت آمار"
 
-msgid "Push books now"
-msgstr "اکنون ارسال کتاب‌ها"
-
-msgid "Pull books now"
-msgstr "اکنون دریافت کتاب‌ها"
-
-msgid "Receive via LocalSend"
-msgstr "دریافت از طریق LocalSend"
-
-msgid "Upload current book to Readest"
-msgstr "بارگذاری کتاب فعلی در Readest"
-
 msgid "Push reading progress now"
 msgstr "ارسال پیشرفت مطالعه اکنون"
 
 msgid "Pull reading progress now"
 msgstr "دریافت پیشرفت مطالعه اکنون"
+
+msgid "Upload current book to Readest"
+msgstr "بارگذاری کتاب فعلی در Readest"
 
 msgid "Push annotations now"
 msgstr "ارسال یادداشت‌ها اکنون"
@@ -316,6 +325,9 @@ msgstr "همگام‌سازی کامل تمام یادداشت‌ها"
 
 msgid "Sync info"
 msgstr "اطلاعات همگام‌سازی"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "دریافت از طریق Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "بررسی به‌روزرسانی (v%1)"
@@ -350,26 +362,20 @@ msgstr "اطلاعات همگام‌سازی"
 msgid "Library not initialized"
 msgstr "کتابخانه راه‌اندازی نشده است"
 
-msgid "Books synced"
-msgstr "کتاب‌ها همگام شدند"
-
-msgid "Books sync failed"
-msgstr "همگام‌سازی کتاب‌ها ناموفق بود"
-
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "ابتدا یک پوشهٔ دانلود Readest یا پوشهٔ خانگی KOReader تعیین کنید."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "خطای LocalSend: پورت آزادی یافت نشد."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "خطای Nearby BookDrop: پورت آزادی یافت نشد."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend شروع نشد."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop شروع نشد."
 
-msgid "Starting LocalSend…"
-msgstr "در حال شروع LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "در حال شروع Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend پس از اتصال Wi-Fi شروع می‌شود."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop پس از اتصال Wi-Fi شروع می‌شود."
 
 msgid "… and %1 more"
 msgstr "… و %1 مورد دیگر"
@@ -386,23 +392,23 @@ msgstr "رد کردن"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "در حال دریافت %1 فایل از %2…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: %1 فایل دریافت شد، %2 ناموفق."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: %1 فایل دریافت شد، %2 ناموفق."
 
-msgid "LocalSend transfer cancelled."
-msgstr "انتقال LocalSend لغو شد."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "انتقال Nearby BookDrop لغو شد."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: %1 فایل دریافت شد."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: %1 فایل دریافت شد."
 
-msgid "LocalSend not available on this device"
-msgstr "LocalSend روی این دستگاه در دسترس نیست"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop روی این دستگاه در دسترس نیست"
 
 msgid "Scanning for nearby devices…"
 msgstr "در حال جست‌وجوی دستگاه‌های نزدیک…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "دستگاه نزدیکی یافت نشد. مطمئن شوید LocalSend/Readest روی دستگاه دیگر باز است."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "دستگاه نزدیکی یافت نشد. مطمئن شوید Nearby BookDrop یا LocalSend روی دستگاه دیگر باز است."
 
 msgid "Rescan"
 msgstr "پویش دوباره"
@@ -428,11 +434,11 @@ msgstr "انتقال لغو شد."
 msgid "Send failed: %1"
 msgstr "ارسال ناموفق بود: %1"
 
-msgid "LocalSend error: %1"
-msgstr "خطای LocalSend: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "خطای Nearby BookDrop: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend خاموش"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop خاموش"
 
 msgid "Visible as %1"
 msgstr "نمایان با نام %1"
@@ -511,6 +517,9 @@ msgstr "یادداشت جدیدی یافت نشد"
 
 msgid "%1 annotations pulled"
 msgstr "%1 یادداشت دریافت شد"
+
+msgid "Your Readest session has expired. Please log in again."
+msgstr "نشست Readest شما منقضی شده است. لطفاً دوباره وارد شوید."
 
 msgid "Login"
 msgstr "ورود"

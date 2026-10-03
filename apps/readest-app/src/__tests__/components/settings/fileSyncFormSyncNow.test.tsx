@@ -16,6 +16,11 @@ import { useSettingsStore } from '@/store/settingsStore';
 
 const syncLibrary = vi.fn();
 
+vi.mock('@/components/Dialog', () => ({
+  default: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
+    isOpen ? <div role='dialog'>{children}</div> : null,
+}));
+
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({
     envConfig: { getAppService: async () => ({ loadLibraryBooks: async () => [] }) },
@@ -42,6 +47,7 @@ vi.mock('@/services/sync/file/engine', () => ({
   }),
 }));
 
+import FileSyncReport from '@/components/FileSyncReport';
 import FileSyncForm from '@/components/settings/integrations/FileSyncForm';
 
 const stored = {
@@ -61,7 +67,12 @@ beforeEach(() => {
     settings: { webdav: stored } as unknown as SystemSettings,
   } as never);
   useLibraryStore.setState({ library: [], libraryLoaded: true } as never);
-  useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
+  useFileSyncStore.setState({
+    byKind: {},
+    activeKind: null,
+    lastErrorByKind: {},
+    reportByKind: {},
+  });
 });
 
 afterEach(() => {
@@ -94,4 +105,31 @@ describe('FileSyncForm — Sync now health reporting', () => {
     });
     expect(useFileSyncStore.getState().byKind.webdav?.isSyncing ?? false).toBe(false);
   });
+});
+
+test.each([
+  { failures: 1, indexPushFailed: false },
+  { failures: 0, indexPushFailed: true },
+])('keeps incomplete results visible and does not stamp success: %j', async (failure) => {
+  const persist = vi.fn(async () => {});
+  syncLibrary.mockResolvedValueOnce({
+    booksSynced: 1,
+    totalBooks: 2,
+    failedBooks: [{ hash: 'a', title: 'Failed PDF', phase: 'upload-file', reason: 'HTTP 507' }],
+    ...failure,
+  });
+  render(
+    <>
+      <FileSyncForm kind='webdav' stored={stored} persist={persist} />
+      <FileSyncReport />
+    </>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+  await waitFor(() => expect(useFileSyncStore.getState().byKind.webdav?.isSyncing).toBe(false));
+  expect(persist).not.toHaveBeenCalled();
+  expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeTruthy();
+  expect(screen.getByText(/HTTP 507/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+  expect(screen.queryByText(/HTTP 507/)).toBeNull();
+  expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeTruthy();
 });

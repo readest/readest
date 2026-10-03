@@ -76,6 +76,10 @@ pub struct SenderPayload {
     pub device_model: Option<String>,
     pub device_type: Option<String>,
     pub fingerprint: String,
+    /// True when `fingerprint` came from the sender's TLS client cert; false
+    /// means the spoofable prepare-upload body fingerprint. The webview only
+    /// allows paired auto-accept for cert-verified senders.
+    pub cert_verified: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -198,6 +202,17 @@ mod tests {
         .unwrap();
         assert_eq!(json["fileName"], "b.epub");
         assert_eq!(json["preview"], "aGk=");
+
+        let json = serde_json::to_value(SenderPayload {
+            alias: "Phone".into(),
+            device_model: Some("Android".into()),
+            device_type: Some("mobile".into()),
+            fingerprint: "F".into(),
+            cert_verified: true,
+        })
+        .unwrap();
+        assert_eq!(json["certVerified"], true);
+        assert_eq!(json["fingerprint"], "F");
 
         let json = serde_json::to_value(ReceiveFileDonePayload {
             session_id: "s".into(),

@@ -1,3 +1,4 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -16,24 +17,10 @@ function SyncAuth:needsLogin(settings)
 end
 
 function SyncAuth:tryRefreshToken(settings, path)
-    if settings.refresh_token and settings.expires_at
-        and settings.expires_at < os.time() + settings.expires_in / 2 then
-        local client = self:getSupabaseAuthClient(settings, path)
-        client:refresh_token(settings.refresh_token, function(success, response)
-            if success then
-                settings.access_token = response.access_token
-                settings.refresh_token = response.refresh_token
-                settings.expires_at = response.expires_at
-                settings.expires_in = response.expires_in
-                G_reader_settings:saveSetting("readest_sync", settings)
-            else
-                logger.err("ReadestSync: Token refresh failed:", response or "Unknown error")
-            end
-        end)
-    end
+    self:withFreshToken(settings, path)
 end
 
--- Block-style wrapper around tryRefreshToken: runs the refresh (if needed)
+-- Block-style token refresh: runs the refresh (if needed)
 -- and invokes `callback(ok, err)` after the new token is committed to
 -- settings, OR immediately with ok=true if the token is still fresh.
 --
@@ -56,7 +43,8 @@ function SyncAuth:withFreshToken(settings, path, callback)
         return
     end
 
-    client:refresh_token(settings.refresh_token, function(success, response)
+    local refresh_token = settings.refresh_token
+    client:refresh_token(refresh_token, function(success, response, status)
         if success then
             settings.access_token  = response.access_token
             settings.refresh_token = response.refresh_token
@@ -65,10 +53,40 @@ function SyncAuth:withFreshToken(settings, path, callback)
             G_reader_settings:saveSetting("readest_sync", settings)
             if callback then callback(true) end
         else
-            logger.err("ReadestSync: Token refresh failed:", response or "Unknown error")
+            logger.err("ReadestSync: Token refresh failed:", status, response or "Unknown error")
+            -- The auth server turned the refresh token down (revoked, already
+            -- used, or the session ended). Every later call would fail the
+            -- same way, so drop the dead session and ask for a new login.
+            -- Anything else (offline, timeout, 429, 5xx) is transient: keep
+            -- the session for the next try. Prompt after the callback so the
+            -- caller's own failure message does not cover it.
+            if status == 400 or status == 401 or status == 403 then
+                if callback then callback(false, "session expired") end
+                self:expireSession(settings, path, refresh_token)
+                return
+            end
             if callback then callback(false, response and response.msg or "refresh failed") end
         end
     end)
+end
+
+function SyncAuth:expireSession(settings, path, rejected_token)
+    -- A concurrent refresh may already have saved new tokens, or an earlier
+    -- rejection already expired the session: only drop the token that failed.
+    if settings.refresh_token ~= rejected_token then return end
+    settings.access_token = nil
+    settings.refresh_token = nil
+    settings.expires_at = nil
+    settings.expires_in = nil
+    G_reader_settings:saveSetting("readest_sync", settings)
+
+    UIManager:show(ConfirmBox:new{
+        text = _("Your Readest session has expired. Please log in again."),
+        ok_text = _("Login"),
+        ok_callback = function()
+            self:login(settings, path, _("Log in Readest Account"))
+        end,
+    })
 end
 
 function SyncAuth:getSupabaseAuthClient(settings, path)

@@ -66,7 +66,30 @@
     },
     "linux": {
       "deb": {
-        "section": "text"
+        "section": "text",
+        "depends": [
+          "libgtk-3-0",
+          "libnss3",
+          "libgbm1",
+          "libasound2",
+          "libudev1",
+          "libxkbcommon-x11-0"
+        ]
+      },
+      "rpm": {
+        "depends": [
+          "libgtk-3.so.0()(64bit)",
+          "libnss3.so()(64bit)",
+          "libgbm.so.1()(64bit)",
+          "libasound.so.2()(64bit)",
+          "libudev.so.1()(64bit)",
+          "libxkbcommon-x11.so.0()(64bit)"
+        ]
+      },
+      "appimage": {
+        "files": {
+          "bin/00-no-userns-prompt.hook": "appimage/00-no-userns-prompt.hook"
+        }
       }
     },
     "android": {
@@ -75,7 +98,7 @@
     "iOS": {
       "developmentTeam": "J5W48D69VR",
       "infoPlist": "./Info-ios.plist",
-      "minimumSystemVersion": "15.0"
+      "minimumSystemVersion": "16.4"
     },
     "fileAssociations": [
       {
@@ -228,7 +251,7 @@
     },
     "webview-upgrade": {
       "minUpgradeMajor": 121,
-      "minSupportedMajor": 92
+      "minSupportedMajor": 111
     }
   }
 }

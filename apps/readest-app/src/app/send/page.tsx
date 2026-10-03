@@ -174,7 +174,7 @@ export default function SendPage() {
         <div className='flex gap-2'>
           <input
             type='url'
-            className='input input-bordered eink-bordered flex-1'
+            className='input eink-bordered flex-1'
             placeholder={_('Paste an article URL')}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -190,7 +190,7 @@ export default function SendPage() {
       ) : (
         <section className='card eink-bordered border-base-200 bg-base-100 flex flex-col gap-2 border p-5'>
           <div className='flex items-center gap-2'>
-            <MdExtension className='text-base-content/70 h-5 w-5 flex-shrink-0' />
+            <MdExtension className='text-base-content/70 h-5 w-5 shrink-0' />
             <h2 className='text-sm font-medium'>{_('Send a web article')}</h2>
           </div>
           <p className='text-base-content/70 text-xs leading-relaxed'>
@@ -206,12 +206,12 @@ export default function SendPage() {
           {items.map((item) => (
             <li key={item.id} className='flex items-center gap-3 px-4 py-3'>
               {item.status === 'working' && (
-                <span className='loading loading-spinner loading-sm flex-shrink-0' />
+                <span className='loading loading-spinner loading-sm shrink-0' />
               )}
               {item.status === 'done' && (
-                <MdCheckCircle className='text-success h-5 w-5 flex-shrink-0' />
+                <MdCheckCircle className='text-success h-5 w-5 shrink-0' />
               )}
-              {item.status === 'error' && <MdError className='text-error h-5 w-5 flex-shrink-0' />}
+              {item.status === 'error' && <MdError className='text-error h-5 w-5 shrink-0' />}
               <div className='flex min-w-0 flex-1 flex-col'>
                 <span className='truncate text-sm'>{item.label}</span>
                 <span className='text-base-content/60 text-xs'>

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { EnvProvider } from '@/context/EnvContext';
 import ProofreadPopup from '@/app/reader/components/annotator/ProofreadPopup';
+import { useReaderStore } from '@/store/readerStore';
+import { eventDispatcher } from '@/utils/event';
 
 vi.mock('@/services/environment', async () => {
   const actual = await vi.importActual('@/services/environment');
@@ -29,6 +31,19 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+// A real Range over one text node -- the shape a selection rule needs, since
+// the transformer replays it by splicing inside a single node.
+const singleNodeRange = (text: string, start: number, end: number): Range => {
+  const p = document.createElement('p');
+  const node = document.createTextNode(text);
+  p.appendChild(node);
+  document.body.appendChild(p);
+  const range = document.createRange();
+  range.setStart(node, start);
+  range.setEnd(node, end);
+  return range;
+};
+
 function renderWithProviders(ui: React.ReactNode) {
   return render(<EnvProvider>{ui}</EnvProvider>);
 }
@@ -46,14 +61,7 @@ describe('ProofreadPopup Component', () => {
       text: 'test word',
       cfi: 'epubcfi(/6/2[chapter1]!/4/1:0)',
       index: 0,
-      range: {
-        deleteContents: vi.fn(),
-        insertNode: vi.fn(),
-        startContainer: document.createTextNode('test word here'),
-        endContainer: document.createTextNode('test word here'),
-        startOffset: 5,
-        endOffset: 9,
-      } as unknown as Range,
+      range: singleNodeRange('test word here', 5, 9),
       page: 1,
     },
     position: { point: { x: 100, y: 100 } },
@@ -66,6 +74,9 @@ describe('ProofreadPopup Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Applying a selection rule now edits the text node for real, so every
+    // test needs its own range instead of sharing one across the file.
+    defaultProps.selection.range = singleNodeRange('test word here', 5, 9);
   });
 
   afterEach(() => {
@@ -167,14 +178,7 @@ describe('ProofreadPopup Component', () => {
         ...defaultProps.selection,
         text: 'word',
         cfi: 'epubcfi(/6/4[chap01ref]!/4/2/1:0)',
-        range: {
-          deleteContents: vi.fn(),
-          insertNode: vi.fn(),
-          startContainer: document.createTextNode('test word here'),
-          endContainer: document.createTextNode('test word here'),
-          startOffset: 5,
-          endOffset: 9,
-        } as unknown as Range,
+        range: singleNodeRange('test word here', 5, 9),
       },
     });
 
@@ -332,6 +336,140 @@ describe('ProofreadPopup Component', () => {
 
       fireEvent.click(button);
       expect(mockOnManage).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Section Anchoring', () => {
+    // The transformer matches a selection rule against the spine item href it
+    // is handed on every section load (foliate's `detail.name`). `progress`
+    // carries the TOC href instead, which points at the nearest preceding nav
+    // entry -- the same file only when every spine item has its own TOC entry.
+    // Storing the TOC href left the rule unmatched on reload, so it applied
+    // once (the popup edits the live DOM) and never again (#6148).
+    it('anchors a selection rule to the spine href, not the TOC href', async () => {
+      const restore = useReaderStore.getState();
+      useReaderStore.setState({
+        getProgress: () => ({ sectionHref: 'OEBPS/Text/contents.xhtml' }) as never,
+        getView: () => ({ book: { sections: [{ id: 'OEBPS/Text/ch1.xhtml' }] } }) as never,
+      });
+      try {
+        renderWithProviders(
+          <ProofreadPopup
+            {...defaultProps}
+            selection={{ ...defaultProps.selection, text: 'word', index: 0 }}
+          />,
+        );
+
+        fireEvent.change(screen.getByPlaceholderText('Enter text...'), {
+          target: { value: 'replacement' },
+        });
+        fireEvent.click(screen.getByText('Apply'));
+
+        await waitFor(() => {
+          expect(mockOnConfirm).toHaveBeenCalledWith(
+            expect.objectContaining({
+              scope: 'selection',
+              sectionHref: 'OEBPS/Text/ch1.xhtml',
+            }),
+          );
+        });
+      } finally {
+        useReaderStore.setState(restore);
+      }
+    });
+  });
+
+  describe('Live Document Edit', () => {
+    const rangeOver = (host: HTMLElement, node: Text, start: number, end: number) => {
+      document.body.appendChild(host);
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, end);
+      return range;
+    };
+
+    it('splices the replacement in place and leaves neighbouring markup alone', async () => {
+      const p = document.createElement('p');
+      p.innerHTML = 'Hello <em>brave</em> world';
+      const tail = p.lastChild as Text; // ' world'
+      const range = rangeOver(p, tail, 1, 6);
+      expect(range.toString()).toBe('world');
+
+      renderWithProviders(
+        <ProofreadPopup
+          {...defaultProps}
+          selection={{ ...defaultProps.selection, text: 'world', range }}
+        />,
+      );
+
+      fireEvent.change(screen.getByPlaceholderText('Enter text...'), {
+        target: { value: 'planet' },
+      });
+      fireEvent.click(screen.getByText('Apply'));
+
+      await waitFor(() => {
+        expect(mockOnConfirm).toHaveBeenCalled();
+      });
+      expect(p.innerHTML).toBe('Hello <em>brave</em> planet');
+      // deleteContents() + insertNode() also split the text node in two, which
+      // shifts the text-node indices every later CFI in the section counts on.
+      expect(p.childNodes.length).toBe(3);
+    });
+
+    it('splices the same trimmed text the rule will persist', async () => {
+      // The rule stores the trimmed replacement, so an untrimmed live edit
+      // would show text this session that no later replay reproduces.
+      const p = document.createElement('p');
+      p.innerHTML = 'Hello <em>brave</em> world';
+      const tail = p.lastChild as Text;
+      const range = rangeOver(p, tail, 1, 6);
+
+      renderWithProviders(
+        <ProofreadPopup
+          {...defaultProps}
+          selection={{ ...defaultProps.selection, text: 'world', range }}
+        />,
+      );
+
+      fireEvent.change(screen.getByPlaceholderText('Enter text...'), {
+        target: { value: '  planet  ' },
+      });
+      fireEvent.click(screen.getByText('Apply'));
+
+      await waitFor(() => {
+        expect(mockOnConfirm).toHaveBeenCalledWith(
+          expect.objectContaining({ replacement: 'planet' }),
+        );
+      });
+      expect(p.innerHTML).toBe('Hello <em>brave</em> planet');
+    });
+
+    it('refuses a selection rule the transformer could never replay', async () => {
+      const toast = vi.spyOn(eventDispatcher, 'dispatch');
+      const p = document.createElement('p');
+      p.innerHTML = 'Hello <em>brave</em> world';
+      document.body.appendChild(p);
+      const range = document.createRange();
+      range.setStart(p.firstChild as Text, 0);
+      range.setEnd(p.lastChild as Text, 6);
+
+      renderWithProviders(
+        <ProofreadPopup
+          {...defaultProps}
+          selection={{ ...defaultProps.selection, text: 'Hello brave world', range }}
+        />,
+      );
+
+      fireEvent.change(screen.getByPlaceholderText('Enter text...'), {
+        target: { value: 'hi' },
+      });
+      fireEvent.click(screen.getByText('Apply'));
+
+      await waitFor(() => {
+        expect(toast).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'warning' }));
+      });
+      expect(mockOnConfirm).not.toHaveBeenCalled();
+      expect(p.innerHTML).toBe('Hello <em>brave</em> world');
     });
   });
 });

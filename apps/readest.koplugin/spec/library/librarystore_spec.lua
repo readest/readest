@@ -681,6 +681,26 @@ describe("LibraryStore", function()
             bob:close()
         end)
 
+        it("downloads a group recursively without matching similarly named groups", function()
+            for i, name in ipairs({ "Sci%_Fi", "Sci%_Fi/Nested", "Sci%_Fi2", "SciXXFi/Nested" }) do
+                store:upsertBook(book({ hash = "g" .. i, group_name = name, cloud_present = 1 }))
+            end
+            local rows = store:listCloudOnlyBooks("group_name", "Sci%_Fi")
+            assert.are.equal(2, #rows)
+            assert.are.equal("g1", rows[1].hash)
+            assert.are.equal("g2", rows[2].hash)
+        end)
+
+        it("matches author and series groups exactly", function()
+            store:upsertBook(book({ hash = "a2", author = "Asimov/Other", series = "Series/Other", cloud_present = 1 }))
+            store:upsertBook(book({ hash = "a3", author = "Other", series = "Series", cloud_present = 1 }))
+            assert.are.equal(1, #store:listCloudOnlyBooks("author", "Asimov"))
+            local rows = store:listCloudOnlyBooks("series", "Series")
+            assert.are.equal(1, #rows)
+            assert.are.equal("a3", rows[1].hash)
+            assert.are.equal(0, #store:listCloudOnlyBooks("group_name", "Missing"))
+        end)
+
         it("returns rows carrying the fields downloadBook needs", function()
             local rows = store:listCloudOnlyBooks()
             assert.are.equal("h1", rows[1].hash)

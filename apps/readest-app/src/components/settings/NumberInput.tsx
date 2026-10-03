@@ -81,7 +81,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
             onChange={handleChange}
             onBlur={handleOnBlur}
             className={clsx(
-              'input input-ghost settings-content text-base-content w-16 max-w-xs rounded border-0 bg-transparent pe-3 !outline-none',
+              'input input-ghost settings-content text-base-content w-16 max-w-xs rounded-sm border-0 bg-transparent pe-3 outline-hidden!',
               label && 'py-1 ps-1 text-right',
               disabled && 'input-disabled cursor-not-allowed disabled:bg-transparent',
               inputClassName,
@@ -93,7 +93,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
           tabIndex={disabled ? -1 : 0}
           aria-label={_('Decrease')}
           onClick={decrement}
-          className={`btn btn-circle btn-sm ${currentNumericValue <= min || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
+          className={`btn btn-circle btn-sm ${currentNumericValue <= min || disabled ? 'btn-disabled bg-neutral/5!' : ''}`}
         >
           <FiMinus className='h-4 w-4' />
         </button>
@@ -101,7 +101,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
           tabIndex={disabled ? -1 : 0}
           aria-label={_('Increase')}
           onClick={increment}
-          className={`btn btn-circle btn-sm ${currentNumericValue >= max || disabled ? 'btn-disabled !bg-opacity-5' : ''}`}
+          className={`btn btn-circle btn-sm ${currentNumericValue >= max || disabled ? 'btn-disabled bg-neutral/5!' : ''}`}
         >
           <FiPlus className='h-4 w-4' />
         </button>

@@ -103,7 +103,13 @@ export const Handle: React.FC<HandleProps> = ({
         width={size}
         height={size + stemHeight}
         viewBox={`0 0 ${size} ${size + stemHeight}`}
-        className={clsx(type === 'start' && 'rotate-180')}
+        // NOTE: no `rotate-*` utility here. Tailwind v4 emits those as the
+        // standalone `rotate` property, which COMPOSES with `transform`
+        // instead of being overridden by it (v3 folded it into `transform`
+        // via --tw-rotate). A `rotate-180` alongside this transform added a
+        // half turn to every start handle: 180+180 = 0 horizontally and
+        // 180+270 = 90 vertically, both leaving the start ball on the same
+        // side as the end ball instead of mirroring it.
         style={{
           transform: isVertical
             ? type === 'start'
@@ -168,7 +174,7 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   const isEink = settings.globalViewSettings.isEink;
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
   const { handlePositions, getHandlePositionsFromRange, applyAnnotationRange } =
-    useAnnotationEditor({ bookKey, annotation, getAnnotationText, setSelection });
+    useAnnotationEditor({ bookKey, annotation, selection, getAnnotationText, setSelection });
 
   const handleColorHex = getHighlightColorHex(settings, handleColor) ?? '#FFFF00';
   const draggingRef = useRef<'start' | 'end' | null>(null);
@@ -324,7 +330,14 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
   const showLoupe = appService?.isMobile && !viewSettings?.isEink && !viewSettings?.vertical;
 
   return (
-    <div className='pointer-events-none fixed inset-0 z-50'>
+    // The handle layer sits BELOW the popup/sheet layer. Both used to be z-50
+    // in the same stacking context, so the tie broke on DOM order — and the
+    // range editors are rendered after the popups, which put their handles on
+    // top of the dictionary, the translator and the note editor sheet. z-[44]
+    // keeps them over the book and the paragraph/TTS chrome (z-40) while
+    // leaving the popups (z-50), dialogs (z-50) and the side panels' overlay
+    // (z-[45]) above them.
+    <div className='pointer-events-none fixed inset-0 z-[44]'>
       <Handle
         hidden={activeHandle === 'end' || loupeDragPoint !== null}
         position={currentStart}

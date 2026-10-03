@@ -33,7 +33,20 @@ describe('bookOrbitProgressProvider.selectConfig', () => {
       deviceName: 'My Device',
       checksumMethod: 'binary',
       strategy: 'silent',
+      autoSync: true,
     });
+  });
+
+  it('carries the manual-sync opt-out through to the kosync engine (#6029)', () => {
+    // Settings written before Auto Sync existed have no flag at all; those
+    // users keep the automatic pushes they already had.
+    const legacy = makeSettings({});
+    delete (legacy.bookorbit as Partial<BookOrbitSettings>).autoSync;
+    expect(bookOrbitProgressProvider.selectConfig(legacy)?.autoSync).toBe(true);
+
+    expect(
+      bookOrbitProgressProvider.selectConfig(makeSettings({ autoSync: false }))?.autoSync,
+    ).toBe(false);
   });
 
   it('returns null when disabled, progress sync is off, or credentials are missing', () => {

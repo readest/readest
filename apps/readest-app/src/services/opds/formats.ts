@@ -24,6 +24,28 @@ const INFERENCE_RULES: ReadonlyArray<{ mime: string; href: RegExp; title: RegExp
   { mime: 'application/x-fictionbook+xml', href: /\.fb2(?:[?#]|$)/i, title: /\bfb2\b/i },
 ];
 
+// Audio formats Readest can play. Keyed by the extension we report; the media
+// types are the ones OPDS servers actually emit for each. Audio is streamed by
+// the audiobook player rather than imported, so these stay out of
+// INFERENCE_RULES and are resolved by getAudioFormat alone.
+const AUDIO_RULES: ReadonlyArray<{ ext: string; mimes: string[]; href: RegExp; title: RegExp }> = [
+  // m4b before m4a/mp4: an audiobook container is the more specific reading of
+  // audio/mp4, and a feed naming "M4B" must not be reported as m4a.
+  { ext: 'm4b', mimes: ['audio/mp4', 'audio/x-m4b'], href: /\.m4b(?:[?#]|$)/i, title: /\bm4b\b/i },
+  { ext: 'm4a', mimes: ['audio/m4a', 'audio/x-m4a'], href: /\.m4a(?:[?#]|$)/i, title: /\bm4a\b/i },
+  { ext: 'mp3', mimes: ['audio/mpeg', 'audio/mp3'], href: /\.mp3(?:[?#]|$)/i, title: /\bmp3\b/i },
+  { ext: 'opus', mimes: ['audio/opus'], href: /\.opus(?:[?#]|$)/i, title: /\bopus\b/i },
+  { ext: 'ogg', mimes: ['audio/ogg', 'audio/vorbis'], href: /\.ogg(?:[?#]|$)/i, title: /\bogg\b/i },
+  {
+    ext: 'flac',
+    mimes: ['audio/flac', 'audio/x-flac'],
+    href: /\.flac(?:[?#]|$)/i,
+    title: /\bflac\b/i,
+  },
+  { ext: 'aac', mimes: ['audio/aac'], href: /\.aac(?:[?#]|$)/i, title: /\baac\b/i },
+  { ext: 'wav', mimes: ['audio/wav', 'audio/x-wav'], href: /\.wav(?:[?#]|$)/i, title: /\bwav\b/i },
+];
+
 // Media types that positively identify a document Readest cannot import.
 // `text/html` is deliberately absent -- the download handler opens it in a
 // browser instead, so it stays a usable path.
@@ -90,6 +112,36 @@ export const getEffectiveMediaType = (link: FormatLink): string => {
   if (declared && declared !== 'application/octet-stream') return declared;
   return inferMediaType(link);
 };
+
+/**
+ * The audio format this link serves ('mp3', 'm4b', ...), or '' when it is not
+ * audio.
+ *
+ * Deliberately stricter than the ebook path: audio is only claimed on a
+ * positive signal (a real `audio/*` media type, an audio file extension, or a
+ * format named in the link title). An unidentifiable link stays an ordinary
+ * download rather than being guessed into the player.
+ */
+export const getAudioFormat = (link: FormatLink): string => {
+  const declared = parseMediaType(link.type)?.mediaType?.toLowerCase() ?? '';
+  if (declared && declared !== 'application/octet-stream') {
+    const byMime = AUDIO_RULES.find((rule) => rule.mimes.includes(declared));
+    if (byMime) return byMime.ext;
+    // A server may send an audio type we have no rule for; the container
+    // extension is still the best name we can give it.
+    return declared.startsWith('audio/') ? declared.slice('audio/'.length) : '';
+  }
+
+  const href = link.href ?? '';
+  const title = link.title ?? '';
+  const byHref = AUDIO_RULES.find((rule) => href && rule.href.test(href));
+  if (byHref) return byHref.ext;
+  const byTitle = AUDIO_RULES.find((rule) => title && rule.title.test(title));
+  return byTitle?.ext ?? '';
+};
+
+/** Whether this link points at audio Readest should play rather than import. */
+export const isAudioLink = (link: FormatLink): boolean => getAudioFormat(link) !== '';
 
 /**
  * The file extension this link would import as, or '' when the format cannot

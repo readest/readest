@@ -238,6 +238,35 @@ const decideTableFit = (wrapper: HTMLElement, win: (Window & typeof globalThis) 
     if (wrapper.clientWidth <= 0) return; // not laid out yet
     updateTableFit(wrapper);
     observer.disconnect();
+    remeasureAfterLateLayout(wrapper, win);
   });
   observer.observe(wrapper);
+};
+
+const FONT_POLL_MS = 100;
+const FONT_POLL_MAX_MS = 10_000;
+
+/**
+ * The first measurement can land before a swapped-in web font or a decoded
+ * image has widened the table (#6198): the cells measure in the fallback font,
+ * the wrapper is marked fit, and once the real font arrives the table runs past
+ * the column with overflow visible. Re-measure once the fonts settle and as each
+ * image in the table loads — a bounded handful of checks, not a persistent
+ * observer. `fonts.ready` is never touched: creating that promise crashes
+ * WebContent on iOS <= 16 (#5654), so poll `fonts.status` like foliate does.
+ */
+const remeasureAfterLateLayout = (wrapper: HTMLElement, win: Window & typeof globalThis) => {
+  const fonts = wrapper.ownerDocument.fonts;
+  if (fonts?.status === 'loading') {
+    const deadline = Date.now() + FONT_POLL_MAX_MS;
+    const timer = win.setInterval(() => {
+      if (fonts.status === 'loading' && Date.now() < deadline) return;
+      win.clearInterval(timer);
+      updateTableFit(wrapper);
+    }, FONT_POLL_MS);
+  }
+  for (const img of Array.from(wrapper.querySelectorAll('img'))) {
+    if (img.complete) continue;
+    img.addEventListener('load', () => updateTableFit(wrapper), { once: true });
+  }
 };

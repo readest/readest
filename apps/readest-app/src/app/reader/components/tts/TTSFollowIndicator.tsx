@@ -81,7 +81,7 @@ const TTSFollowIndicator: React.FC<TTSFollowIndicatorProps> = ({
           PILL_BASE,
           'touch-target',
           ACTION_FILL[variant],
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15',
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-base-content/15',
           className,
         )}
       >

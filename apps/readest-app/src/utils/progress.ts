@@ -1,4 +1,5 @@
 import { localizeNumber } from './number';
+import type { BookProgress } from '@/types/book';
 import type { TOCItem } from '@/libs/document';
 
 interface ChapterTickSource {
@@ -68,6 +69,7 @@ export function formatProgress(
 
 export interface ReferencePageItem {
   label?: string;
+  index?: number;
   subitems?: ReferencePageItem[] | null;
 }
 
@@ -104,10 +106,18 @@ export function getReferencePageInfo({
 }): ReferencePageInfo | null {
   if (pageList?.length) {
     const labels = collectLabels(pageList).filter(Boolean);
-    // The last entries may be non-numeric (e.g. a roman-numeral index page),
-    // so the total is the highest numeric label, not the last one.
+    // PDF page lists contain one top-level entry per physical page and retain
+    // its zero-based index. Their labels can restart or switch numbering
+    // systems, so the physical count is authoritative. EPUB page lists are
+    // semantic anchors instead; keep their highest-numeric-label behavior
+    // because they can be sparse and may end in a non-numeric index page.
+    const hasPhysicalPageIndexes = pageList.every((item, index) => item.index === index);
     const numericLabels = labels.filter((label) => /^\d+$/.test(label));
-    const total = numericLabels.length ? Math.max(...numericLabels.map(Number)) : labels.length;
+    const total = hasPhysicalPageIndexes
+      ? pageList.length
+      : numericLabels.length
+        ? Math.max(...numericLabels.map(Number))
+        : labels.length;
     const current = pageItem?.label?.trim() || String(estimatePage(fraction, total));
     return { current, total };
   }
@@ -166,4 +176,24 @@ export function formatNumber(
     return '';
   }
   return localize ? localizeNumber(number, language) : String(number);
+}
+
+/** Logical location where the current TOC chapter ends, including chapters sharing a spine file. */
+export function getChapterEndLocation(
+  progress: BookProgress | null | undefined,
+  toc: TOCItem[] | null | undefined,
+): number | undefined {
+  if (!progress || !toc?.length) return undefined;
+  const flatten = (items: TOCItem[]): TOCItem[] =>
+    items.flatMap((item) => [item, ...flatten(item.subitems ?? [])]);
+  const items = flatten(toc);
+  const index = items.findIndex((item) => item.href === progress.sectionHref);
+  const start = items[index]?.location?.current;
+  if (index < 0 || start === undefined) return undefined;
+  const next = items
+    .slice(index + 1)
+    .find((item) => !item.location || item.location.current > start);
+  // Use the spine fallback until the next chapter's navigation location is baked.
+  if (next && !next.location) return undefined;
+  return Math.min(next?.location?.current ?? progress.pageinfo.total, progress.pageinfo.total);
 }

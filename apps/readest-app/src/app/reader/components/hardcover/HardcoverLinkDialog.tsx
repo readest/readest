@@ -176,7 +176,7 @@ const HardcoverLinkDialog = ({ bookKey, onClose }: HardcoverLinkDialogProps) => 
       title={_('Link Hardcover Book')}
       onClose={onClose}
       boxClassName='sm:h-[80%] sm:min-w-[560px] sm:max-w-[680px]'
-      contentClassName='!px-6 sm:!px-8'
+      contentClassName='px-6! sm:px-8!'
       useOverlayScroll
     >
       <div className='pb-6 pt-2'>
@@ -200,7 +200,7 @@ const HardcoverLinkDialog = ({ bookKey, onClose }: HardcoverLinkDialogProps) => 
             </div>
             <button
               type='button'
-              className='btn btn-ghost btn-sm text-error flex-shrink-0'
+              className='btn btn-ghost btn-sm text-error shrink-0'
               disabled={busy}
               onClick={unlink}
             >
@@ -218,7 +218,7 @@ const HardcoverLinkDialog = ({ bookKey, onClose }: HardcoverLinkDialogProps) => 
         >
           <input
             type='search'
-            className='input input-bordered eink-bordered settings-content h-10 min-w-0 flex-1 focus:outline-none'
+            className='input eink-bordered settings-content h-10 min-w-0 flex-1 focus:outline-hidden'
             placeholder={_('Search Hardcover')}
             aria-label={_('Search Hardcover')}
             spellCheck='false'
@@ -227,7 +227,7 @@ const HardcoverLinkDialog = ({ bookKey, onClose }: HardcoverLinkDialogProps) => 
           />
           <button
             type='submit'
-            className='btn btn-contrast h-10 min-h-10 flex-shrink-0'
+            className='btn btn-contrast h-10 min-h-10 shrink-0'
             disabled={searching || !query.trim()}
           >
             {searching ? (
@@ -267,14 +267,14 @@ const HardcoverLinkDialog = ({ bookKey, onClose }: HardcoverLinkDialogProps) => 
                     type='button'
                     className={clsx(
                       'hover:bg-base-200/60 flex w-full items-center gap-3 px-4 py-3 text-start',
-                      'focus-visible:bg-base-200/60 focus-visible:outline-none',
+                      'focus-visible:bg-base-200/60 focus-visible:outline-hidden',
                       'disabled:cursor-not-allowed disabled:opacity-60',
                     )}
                     aria-pressed={isLinked}
                     disabled={busy}
                     onClick={() => linkTo(candidate)}
                   >
-                    <span className='bg-base-200 text-base-content/55 flex h-14 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-sm'>
+                    <span className='bg-base-200 text-base-content/55 flex h-14 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xs'>
                       {candidate.coverUrl ? (
                         <img
                           src={candidate.coverUrl}
@@ -302,9 +302,7 @@ const HardcoverLinkDialog = ({ bookKey, onClose }: HardcoverLinkDialogProps) => 
                         </span>
                       )}
                     </span>
-                    {isLinked && (
-                      <MdCheck className='h-5 w-5 flex-shrink-0' aria-label={_('Linked')} />
-                    )}
+                    {isLinked && <MdCheck className='h-5 w-5 shrink-0' aria-label={_('Linked')} />}
                   </button>
                 </li>
               );

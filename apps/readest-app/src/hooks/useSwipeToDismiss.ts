@@ -33,15 +33,22 @@ export const useSwipeToDismiss = (
     onDragMove?.(data);
   };
 
-  const handleVerticalDragEnd = (data: { velocity: number; clientY: number }) => {
+  const handleVerticalDragEnd = (data: {
+    velocity: number;
+    clientY: number;
+    canceled: boolean;
+  }) => {
     const panel = panelRef.current;
     const overlay = overlayRef.current;
 
     if (!panel || !overlay) return;
 
+    // A cancelled drag is the system taking the touch away, not the user letting
+    // go: slide the panel back rather than reading a dismissal into it.
     if (
-      data.velocity > VELOCITY_THRESHOLD ||
-      (data.velocity >= 0 && data.clientY >= window.innerHeight * 0.5)
+      !data.canceled &&
+      (data.velocity > VELOCITY_THRESHOLD ||
+        (data.velocity >= 0 && data.clientY >= window.innerHeight * 0.5))
     ) {
       const transitionDuration = 0.15 / Math.max(data.velocity, 0.5);
       panel.style.transition = `transform ${transitionDuration}s ease-out`;
@@ -50,7 +57,7 @@ export const useSwipeToDismiss = (
       overlay.style.opacity = '0';
       setTimeout(() => onDismiss(), 300);
       if (appService?.hasHaptics) {
-        impactFeedback('medium');
+        impactFeedback('light');
       }
     } else {
       panel.style.transition = 'transform 0.3s ease-out';
@@ -58,9 +65,6 @@ export const useSwipeToDismiss = (
       overlay.style.transition = 'opacity 0.3s ease-out';
       overlay.style.opacity = '0.8';
       onDragMove?.({ clientY: 0 });
-      if (appService?.hasHaptics) {
-        impactFeedback('medium');
-      }
     }
   };
 

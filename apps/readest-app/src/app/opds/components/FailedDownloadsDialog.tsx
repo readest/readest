@@ -116,7 +116,7 @@ export function FailedDownloadsDialog({ catalogId, catalogName, onClose }: Props
               {failed.map((entry) => (
                 <li
                   key={entry.entryId}
-                  className='border-base-300 flex items-start justify-between gap-3 rounded border p-3'
+                  className='border-base-300 flex items-start justify-between gap-3 rounded-sm border p-3'
                 >
                   <div className='min-w-0 flex-1'>
                     <p className='truncate text-sm font-medium'>{entry.title}</p>
@@ -127,7 +127,7 @@ export function FailedDownloadsDialog({ catalogId, catalogName, onClose }: Props
                       {dayjs(entry.lastAttemptAt).fromNow()}
                     </p>
                   </div>
-                  <div className='flex flex-shrink-0 flex-col gap-1'>
+                  <div className='flex shrink-0 flex-col gap-1'>
                     <button
                       type='button'
                       onClick={() => retryEntry(entry)}

@@ -148,8 +148,16 @@ export const useProofreadStore = create<ProofreadStoreState>(() => ({
       throw new Error(`Rule not found: ${ruleId}`);
     }
 
+    // `scope` has to ride along: updateRule routes on `updates.scope`, so
+    // dropping it sent library rules down the book branch, where they don't
+    // exist -- the switch wrote nothing and looked dead. And the list reads
+    // `enabled !== false` as on, so an absent flag must flip to false rather
+    // than to `!undefined` (true), which would leave the rule enabled.
     const { updateRule } = useProofreadStore.getState();
-    await updateRule(envConfig, bookKey, ruleId, { enabled: !rule.enabled });
+    await updateRule(envConfig, bookKey, ruleId, {
+      scope: rule.scope,
+      enabled: rule.enabled === false,
+    });
   },
 
   reorderRules: async (envConfig, bookKey, orderedIds) => {

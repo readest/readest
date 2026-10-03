@@ -29,8 +29,8 @@ const FailedImportsDialog: React.FC<FailedImportsDialogProps> = ({ failedImports
       isOpen
       title={_('Failed to import {{count}} books', { count: failedImports.length })}
       onClose={onClose}
-      boxClassName='sm:min-w-[440px] sm:max-w-[460px] sm:!h-auto sm:max-h-[80%]'
-      contentClassName='!my-0 !px-5 !pt-0 !pb-4 !flex-grow-0'
+      boxClassName='sm:min-w-[440px] sm:max-w-[460px] sm:h-auto! sm:max-h-[80%]'
+      contentClassName='my-0! px-5! pt-0! pb-4! grow-0!'
     >
       <div className='flex flex-col gap-3'>
         <div
@@ -39,7 +39,7 @@ const FailedImportsDialog: React.FC<FailedImportsDialogProps> = ({ failedImports
             'bg-error/8 text-base-content border-error/15 border px-3.5 py-2.5',
           )}
         >
-          <MdErrorOutline className='text-error h-5 w-5 flex-shrink-0' aria-hidden='true' />
+          <MdErrorOutline className='text-error h-5 w-5 shrink-0' aria-hidden='true' />
           <p className='text-[0.85em] leading-snug'>{subtitle}</p>
         </div>
 
@@ -52,7 +52,7 @@ const FailedImportsDialog: React.FC<FailedImportsDialogProps> = ({ failedImports
           {failedImports.map((item, index) => (
             <li key={`${item.filename}-${index}`} className='flex items-center gap-2.5 px-3 py-2'>
               <MdInsertDriveFile
-                className='text-base-content/40 h-4 w-4 flex-shrink-0'
+                className='text-base-content/40 h-4 w-4 shrink-0'
                 aria-hidden='true'
               />
               <div className='flex min-w-0 flex-1 flex-col'>

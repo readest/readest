@@ -11,6 +11,7 @@ type Translate = (key: string) => string;
 
 export type WebBrowserLabelKey =
   | 'close'
+  | 'clipPage'
   | 'back'
   | 'forward'
   | 'reload'
@@ -44,6 +45,7 @@ export function getWebBrowserOptions(_: Translate, isEink: boolean): WebBrowserO
     isEink,
     labels: {
       close: _('Close'),
+      clipPage: _('Clip Page'),
       back: _('Back'),
       forward: _('Forward'),
       reload: _('Reload'),

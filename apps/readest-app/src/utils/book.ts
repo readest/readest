@@ -241,6 +241,99 @@ export const getPrimaryLanguage = (lang: string | string[] | undefined) => {
   return 'en';
 };
 
+/** The group-membership fields resolved together by {@link pickFresherGroup}. */
+export interface BookGroupFields {
+  groupId?: string;
+  groupName?: string;
+  groupUpdatedAt?: number | null;
+}
+
+/**
+ * Field-level last-writer-wins for group membership (issue #5911), the client
+ * mirror of `resolveGroupMerge` in `pages/api/sync.ts`. Shared by the native
+ * cloud merge (`useBooksSync`) and the third-party file-sync merge
+ * (`services/sync/file/merge.ts`) so both backends resolve a group the same way.
+ *
+ * Group membership used to ride the row's `updatedAt`, which is stamped by
+ * operations that have nothing to do with grouping — above all
+ * `cloudService.uploadBook`, which bumps it on every UPLOAD. A peer holding a
+ * never-grouped copy of a row could therefore win whole-row LWW and erase the
+ * group, and the emptied row then propagated to every other device.
+ *
+ * Resolution, in order:
+ *   1. Different stamps → the newer stamp wins. This is what makes a real
+ *      grouping edit — including a removal — propagate regardless of who won
+ *      the row (#4942).
+ *   2. Equal stamps, one side grouped and the other not → the GROUPED side
+ *      wins. On a tie an absent group is ambiguous: "never grouped" and
+ *      "ungrouped by a client too old to stamp" are indistinguishable, and the
+ *      legacy fleet is entirely unstamped (0 === 0). Erasing a real group is
+ *      unrecoverable; losing an un-group is not, and the next stamped edit
+ *      resolves it.
+ *   3. Equal stamps and both sides agree about having a group → the row winner,
+ *      preserving the historical behaviour for two genuinely competing groups.
+ */
+export const pickFresherGroup = <T extends BookGroupFields>(
+  local: T,
+  remote: T,
+  remoteRowWins: boolean,
+): BookGroupFields => {
+  const localMs = local.groupUpdatedAt ?? 0;
+  const remoteMs = remote.groupUpdatedAt ?? 0;
+  let winner: T;
+  if (localMs !== remoteMs) {
+    winner = remoteMs > localMs ? remote : local;
+  } else {
+    const localHasGroup = !!local.groupId || !!local.groupName;
+    const remoteHasGroup = !!remote.groupId || !!remote.groupName;
+    if (localHasGroup !== remoteHasGroup) {
+      winner = localHasGroup ? local : remote;
+    } else {
+      winner = remoteRowWins ? remote : local;
+    }
+  }
+  return {
+    groupId: winner.groupId,
+    groupName: winner.groupName,
+    groupUpdatedAt: winner.groupUpdatedAt,
+  };
+};
+
+/**
+ * Move a book into a group, or out of one when both are undefined. Only the
+ * group's own clock is stamped: `updatedAt` is the Date Read sort key and
+ * regrouping is not reading (#6414). A removal MUST be stamped too — an
+ * unstamped ungrouped row loses to a grouped peer by design (#5911).
+ */
+export const setBookGroup = (
+  book: Book,
+  groupId: string | undefined,
+  groupName: string | undefined,
+  now = Date.now(),
+) => {
+  book.groupId = groupId;
+  book.groupName = groupName;
+  book.groupUpdatedAt = now;
+};
+
+/**
+ * The latest local edit on any of a book row's clocks. Group, metadata and
+ * cover edits stamp only their own clock and leave `updatedAt` alone (#6414),
+ * so the sync push has to look at all of them to know the row changed.
+ */
+export const getBookChangedAt = (book: Book): number =>
+  Math.max(
+    book.updatedAt ?? 0,
+    book.groupUpdatedAt ?? 0,
+    book.metadataUpdatedAt ?? 0,
+    book.coverUpdatedAt ?? 0,
+  );
+
+/** True when `resolved` names a different group than `current` does. */
+export const bookGroupDiffers = (current: BookGroupFields, resolved: BookGroupFields): boolean =>
+  (current.groupId ?? undefined) !== (resolved.groupId ?? undefined) ||
+  (current.groupName ?? undefined) !== (resolved.groupName ?? undefined);
+
 // Immutably apply edited metadata to a book, returning a NEW book object.
 // Callers must not mutate the existing book in place: <BookCover> is memoized
 // and compares fields off the book, so an in-place mutation makes the memo's
@@ -250,7 +343,6 @@ export const getBookWithUpdatedMetadata = (
   metadata: BookMetadata,
   tags?: string[],
 ): Book => {
-  const now = Date.now();
   const updatedBook: Book = {
     ...book,
     metadata,
@@ -258,10 +350,10 @@ export const getBookWithUpdatedMetadata = (
     title: formatTitle(metadata.title),
     author: formatAuthors(metadata.author),
     primaryLanguage: getPrimaryLanguage(metadata.language),
-    updatedAt: now,
     // The metadata group merges on its own clock so a page turn elsewhere
-    // (which dominates updatedAt) cannot clobber this edit (issue #5438).
-    metadataUpdatedAt: now,
+    // (which dominates updatedAt) cannot clobber this edit (issue #5438), and
+    // updatedAt stays put so the edit doesn't reorder Date Read (#6414).
+    metadataUpdatedAt: Date.now(),
   };
   const newCoverImageUrl = metadata.coverImageBlobUrl || metadata.coverImageUrl;
   if (newCoverImageUrl) {
@@ -349,7 +441,7 @@ export const getCurrentPage = (book: Book, progress: BookProgress) => {
  * manually-marked-unread books. A book actively being read has `readingStatus`
  * either `undefined` (cleared from 'unread' on first open) or `'reading'`, both
  * of which pass. Shared by the library's recently-read shelf and the
- * home-screen reading widget so the two surfaces stay in sync.
+ * home-screen bookshelf widget so the two surfaces stay in sync.
  */
 export const isCurrentlyReadingBook = (book: Book): boolean =>
   !book.deletedAt &&
@@ -411,7 +503,7 @@ const normalizeIdentifier = (identifier: string) => {
   return identifier;
 };
 
-const getPreferredIdentifier = (identifiers: string[] | Identifier[]) => {
+const getPreferredIdentifier = (identifiers: (string | Identifier)[]) => {
   for (const scheme of ['uuid', 'calibre', 'isbn']) {
     const found = identifiers.find((identifier) =>
       typeof identifier === 'string'
@@ -426,7 +518,7 @@ const getPreferredIdentifier = (identifiers: string[] | Identifier[]) => {
 };
 
 const getIdentifiersList = (
-  identifiers: undefined | string | string[] | Identifier | Identifier[],
+  identifiers: undefined | string | Identifier | (string | Identifier)[],
 ) => {
   if (!identifiers) return [];
   if (Array.isArray(identifiers)) {
@@ -475,4 +567,43 @@ export const getMetadataHashInfo = (
 
 export const getMetadataHash = (metadata: BookMetadata, filename?: string) => {
   return getMetadataHashInfo(metadata, filename)?.metaHash;
+};
+
+// A bare UUID identifies an export, not a book: calibre mints a fresh one on
+// every conversion, so every AO3 / FanFicFare re-download of the same work
+// carries a different `dc:identifier` (issue #5959).
+const VOLATILE_IDENTIFIER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const isVolatileIdentifier = (identifier: string | Identifier) =>
+  VOLATILE_IDENTIFIER.test(
+    typeof identifier === 'string' ? normalizeIdentifier(identifier) : identifier.value,
+  );
+
+/**
+ * Metadata hash computed with volatile identifiers left out, so two exports of
+ * the same book still hash alike. Returns undefined when the metadata carries
+ * no volatile identifier — `getMetadataHash` is already stable for those and
+ * the caller has nothing extra to look up.
+ *
+ * This is a local, import-time key only. Never use it as a sync key:
+ * `getMetadataHash` is a wire format shared with the sync server and with the
+ * KOReader plugin (which caches it as `meta_hash_v1`), so its output has to
+ * stay byte-identical across versions and across the two implementations.
+ */
+export const getStableMetadataHash = (metadata: BookMetadata) => {
+  if (!metadata) return;
+  try {
+    const identifier = metadata.altIdentifier || metadata.identifier;
+    const all = identifier ? (Array.isArray(identifier) ? identifier : [identifier]) : [];
+    const stable = all.filter((id) => !isVolatileIdentifier(id));
+    if (stable.length === all.length) return;
+    const title = getTitleForHash(metadata.title);
+    const authors = getAuthorsList(metadata.author);
+    const identifiers = getIdentifiersList(stable);
+    const hashSource = `${title}|${authors.join(',')}|${identifiers.join(',')}`;
+    return md5(hashSource.normalize('NFC'));
+  } catch (error) {
+    console.error('Error generating stable metadata hash:', error);
+  }
+  return;
 };

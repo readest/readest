@@ -57,7 +57,10 @@ vi.mock('@/hooks/useTrafficLight', () => ({
 }));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (n: number) => n }));
 vi.mock('@/app/reader/hooks/useSpatialNavigation', () => ({ useSpatialNavigation: () => {} }));
-vi.mock('@/utils/insets', () => ({ getHeaderTriggerHeight: () => 0 }));
+vi.mock('@/utils/insets', () => ({
+  getHeaderTriggerHeight: () => 0,
+  getHorizontalInsetStyle: () => ({}),
+}));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
 
 // Child toolbar buttons are stubbed to bare, identifiable markup: this test is
@@ -138,6 +141,17 @@ describe('HeaderBar font button', () => {
     // passes whether or not the button is rendered.
     expect(screen.queryByRole('button', { name: 'Font & Layout' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+  });
+});
+
+describe('HeaderBar mobile toolbar stability', () => {
+  it('reserves room for the bookmark and translation touch halos inside the scroller', () => {
+    setViewport(392, 872);
+    const { container } = renderHeader();
+    const scroller = container.querySelector('.header-tools-start > .no-scrollbar');
+
+    expect(scroller).not.toBeNull();
+    expect(scroller!.classList.contains('px-1.5')).toBe(true);
   });
 });
 

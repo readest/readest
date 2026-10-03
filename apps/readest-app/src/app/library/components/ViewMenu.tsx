@@ -1,10 +1,12 @@
+import { eventDispatcher } from '@/utils/event';
+import { BOOKSHELF_GROUP_LABELS, BOOKSHELF_SORT_LABELS } from '@/services/bookshelves/definitions';
+import { getGlobalBookshelfSort } from '@/services/bookshelves/sorting';
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
-  LibraryCoverFitType,
   LibraryViewModeType,
   LibraryGroupByType,
   LibrarySecondarySortByType,
@@ -21,68 +23,60 @@ interface ViewMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
 
+const SORT_BY_ORDER: LibrarySortByType[] = [
+  LibrarySortByType.Title,
+  LibrarySortByType.Author,
+  LibrarySortByType.Format,
+  LibrarySortByType.Series,
+  LibrarySortByType.Updated,
+  LibrarySortByType.Created,
+  LibrarySortByType.Published,
+  LibrarySortByType.Progress,
+  LibrarySortByType.TimeRemaining,
+];
+
 const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
 
-  const viewMode = settings.libraryViewMode;
-  const coverFit = settings.libraryCoverFit;
+  const viewMode = searchParams?.get('view') || settings.libraryViewMode;
   const autoColumns = settings.libraryAutoColumns;
   const columns = settings.libraryColumns;
   const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
-  const sortBy = settings.librarySortBy;
-  const isAscending = settings.librarySortAscending;
-  const sortByAuto = settings.librarySortByAuto ?? true;
-  // Primary smart default: when auto is on, grouping by Series implies Series as
-  // the primary sort. The stored value is left alone — that way turning auto off
-  // later restores the user's previous explicit pick.
-  const primaryEffective: LibrarySortByType =
-    sortByAuto && groupBy === LibraryGroupByType.Series ? LibrarySortByType.Series : sortBy;
-  const primaryIsImplicit = sortByAuto && primaryEffective !== sortBy;
-  const thenSortBy: LibrarySecondarySortByType = settings.libraryThenSortBy ?? 'none';
-  // Smart default: when grouping by Author and the user hasn't picked an explicit
-  // secondary, Series is implied. Surface this in the menu so the highlighted row
-  // matches the actual sort behavior.
-  const secondaryEffective: LibrarySecondarySortByType =
-    thenSortBy === 'none' && groupBy === LibraryGroupByType.Author
-      ? LibrarySortByType.Series
-      : thenSortBy;
-  const secondaryIsImplicit = thenSortBy === 'none' && secondaryEffective !== 'none';
-  const isThenAscending = settings.libraryThenSortAscending ?? true;
+  const globalSort = getGlobalBookshelfSort(settings, searchParams);
+  const sortBy = globalSort.by;
+  const isAscending = globalSort.ascending;
+  const primaryEffective = globalSort.by;
+  const primaryIsImplicit =
+    !searchParams?.get('sort') &&
+    (settings.librarySortByAuto ?? true) &&
+    globalSort.by !== settings.librarySortBy;
+  const thenSortBy = globalSort.thenBy;
+  const secondaryEffective = globalSort.thenBy;
+  const secondaryIsImplicit =
+    !searchParams?.get('thenSort') &&
+    (!settings.libraryThenSortBy || settings.libraryThenSortBy === 'none') &&
+    globalSort.thenBy !== 'none';
+  const isThenAscending = globalSort.thenAscending;
 
   const viewOptions = [
     { label: _('List'), value: 'list' },
     { label: _('Grid'), value: 'grid' },
   ];
 
-  const coverFitOptions = [
-    { label: _('Crop'), value: 'crop' },
-    { label: _('Fit'), value: 'fit' },
-  ];
+  const groupByOptions = Object.entries(BOOKSHELF_GROUP_LABELS).map(([value, label]) => ({
+    value,
+    label: _(label),
+  }));
 
-  const groupByOptions = [
-    { label: _('Authors'), value: LibraryGroupByType.Author },
-    { label: _('Books'), value: LibraryGroupByType.None },
-    { label: _('Groups'), value: LibraryGroupByType.Group },
-    { label: _('Series'), value: LibraryGroupByType.Series },
-    { label: _('Tags'), value: LibraryGroupByType.Tag },
-    { label: _('Subjects'), value: LibraryGroupByType.Subject },
-  ];
-
-  const sortByOptions = [
-    { label: _('Title'), value: LibrarySortByType.Title },
-    { label: _('Author'), value: LibrarySortByType.Author },
-    { label: _('Format'), value: LibrarySortByType.Format },
-    { label: _('Series'), value: LibrarySortByType.Series },
-    { label: _('Date Read'), value: LibrarySortByType.Updated },
-    { label: _('Date Added'), value: LibrarySortByType.Created },
-    { label: _('Date Published'), value: LibrarySortByType.Published },
-    { label: _('Progress Read'), value: LibrarySortByType.Progress },
-    { label: _('Time Remaining'), value: LibrarySortByType.TimeRemaining },
-  ];
+  // Menu order, deliberately excluding Size: the library has never offered it.
+  const sortByOptions = SORT_BY_ORDER.map((value) => ({
+    value,
+    label: _(BOOKSHELF_SORT_LABELS[value]),
+  }));
 
   const thenSortByOptions: { label: string; value: LibrarySecondarySortByType }[] = [
     { label: _('None'), value: 'none' },
@@ -102,29 +96,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleToggleCropCovers = async (value: LibraryCoverFitType) => {
-    await saveSysSettings(envConfig, 'libraryCoverFit', value);
-
-    const params = new URLSearchParams(window.location.search);
-    params.set('cover', value);
-    navigateToLibrary(router, `${params.toString()}`);
-  };
-
   const handleToggleAutoColumns = async () => {
     const newValue = !settings.libraryAutoColumns;
     await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
-  };
-
-  const handleToggleRecentShelf = async () => {
-    await saveSysSettings(
-      envConfig,
-      'libraryRecentShelfEnabled',
-      !settings.libraryRecentShelfEnabled,
-    );
-  };
-
-  const handleToggleHideCovers = async () => {
-    await saveSysSettings(envConfig, 'libraryHideCovers', !settings.libraryHideCovers);
   };
 
   const handleSetColumns = async (value: number) => {
@@ -143,6 +117,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     }
     // Clear group navigation when changing groupBy mode
     params.delete('group');
+    params.delete('shelf');
     navigateToLibrary(router, `${params.toString()}`);
   };
 
@@ -188,14 +163,25 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   return (
     <Menu
       className='view-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl'
+      style={{ marginRight: appService?.isMobile || window.innerWidth < 640 ? '-40px' : 0 }}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
+      <MenuItem
+        label={_('Bookshelves')}
+        buttonClass='min-h-11'
+        onClick={() => {
+          eventDispatcher.dispatch('show-bookshelves');
+          setIsDropdownOpen?.(false);
+        }}
+        transient
+      />
+      <hr aria-hidden='true' className='border-base-200 my-1' />
       {/* View Mode */}
       {viewOptions.map((option) => (
         <MenuItem
           key={option.value}
           label={option.label}
-          buttonClass='min-h-8 !py-1'
+          buttonClass='min-h-8 py-1!'
           toggled={viewMode === option.value}
           onClick={() => handleSetViewMode(option.value as LibraryViewModeType)}
           transient
@@ -206,19 +192,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem
         label={_('Columns')}
-        buttonClass='min-h-8 !py-1'
+        buttonClass='min-h-8 py-1!'
         labelClass='text-sm sm:text-xs'
         disabled
       />
       <MenuItem
         label={_('Auto')}
-        buttonClass='min-h-10 !py-2'
+        buttonClass='min-h-10 py-2!'
         toggled={autoColumns}
         disabled={viewMode === 'list'}
         siblings={
           <NumberInput
-            className='!h-10 !p-0 !pe-1 !ps-0'
-            inputClassName={`!p-0 text-center text-base sm:text-sm !w-10 !h-6 !pe-0 ${autoColumns ? 'opacity-50' : ''}`}
+            className='h-10! p-0! pe-1! ps-0!'
+            inputClassName={`p-0! text-center text-base sm:text-sm w-10! h-6! pe-0! ${autoColumns ? 'opacity-50' : ''}`}
             label={''}
             value={columns}
             disabled={viewMode === 'list'}
@@ -230,54 +216,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         onClick={() => handleToggleAutoColumns()}
       />
 
-      {/* Book Covers */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Book Covers')}
-        buttonClass='min-h-8 !py-1'
-        labelClass='text-sm sm:text-xs'
-        disabled
-      />
-      {coverFitOptions.map((option) => (
-        <MenuItem
-          key={option.value}
-          label={option.label}
-          buttonClass='min-h-8 !py-1'
-          toggled={coverFit === option.value}
-          onClick={() => handleToggleCropCovers(option.value as LibraryCoverFitType)}
-          transient
-        />
-      ))}
-
-      {/* Hide covers */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Hide covers')}
-        buttonClass='min-h-8 !py-1'
-        toggled={settings.libraryHideCovers}
-        onClick={handleToggleHideCovers}
-        transient
-      />
-
-      {/* Recently read shelf */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Show recently read')}
-        buttonClass='min-h-8 !py-1'
-        toggled={settings.libraryRecentShelfEnabled}
-        onClick={handleToggleRecentShelf}
-        transient
-      />
-
       {/* Group By - Collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('Group by...')} detailsOpen={true} buttonClass='py-[4px]'>
+      <MenuItem label={_('Group by...')} detailsOpen={true} buttonClass='py-1!'>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {groupByOptions.map((option) => (
             <MenuItem
               key={option.value}
               label={option.label}
-              buttonClass='min-h-8 !py-1'
+              buttonClass='min-h-8 py-1!'
               toggled={groupBy === option.value}
               onClick={() => handleSetGroupBy(option.value as LibraryGroupByType)}
               transient
@@ -288,7 +235,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
       {/* Sort By - Collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('Sort by...')} detailsOpen={false} buttonClass='py-[4px]'>
+      <MenuItem label={_('Sort by...')} detailsOpen={false} buttonClass='py-1!'>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {sortByOptions.map((option) => {
             const isImplicit = primaryIsImplicit && option.value === primaryEffective;
@@ -297,7 +244,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
               <MenuItem
                 key={option.value}
                 label={isImplicit ? `${option.label} (${_('Auto')})` : option.label}
-                buttonClass='min-h-8 !py-1'
+                buttonClass='min-h-8 py-1!'
                 toggled={toggled}
                 onClick={() => handleSetSortBy(option.value as LibrarySortByType)}
                 transient
@@ -309,7 +256,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
             <MenuItem
               key={option.value.toString()}
               label={option.label}
-              buttonClass='min-h-8 !py-1'
+              buttonClass='min-h-8 py-1!'
               toggled={isAscending === option.value}
               onClick={() => handleSetSortAscending(option.value)}
               transient
@@ -320,7 +267,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
       {/* Then by - secondary sort, collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('Then by...')} detailsOpen={false} buttonClass='py-[4px]'>
+      <MenuItem label={_('Then by...')} detailsOpen={false} buttonClass='py-1!'>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {thenSortByOptions.map((option) => {
             const isImplicit = secondaryIsImplicit && option.value === secondaryEffective;
@@ -329,7 +276,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
               <MenuItem
                 key={option.value}
                 label={isImplicit ? `${option.label} (${_('Auto')})` : option.label}
-                buttonClass='min-h-8 !py-1'
+                buttonClass='min-h-8 py-1!'
                 toggled={isExplicit || isImplicit}
                 onClick={() => handleSetThenSortBy(option.value)}
                 transient
@@ -343,7 +290,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
                 <MenuItem
                   key={option.value.toString()}
                   label={option.label}
-                  buttonClass='min-h-8 !py-1'
+                  buttonClass='min-h-8 py-1!'
                   toggled={isThenAscending === option.value}
                   onClick={() => handleSetThenSortAscending(option.value)}
                   transient

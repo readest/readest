@@ -8,7 +8,7 @@ import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 
 // The @pdfjs alias in vitest.config.mts resolves to public/vendor/pdfjs,
-// mirroring how foliate-js/pdf.js does `import '@pdfjs/pdf.min.mjs'`.
+// mirroring the runtime that foliate-js/pdf.js loads from `makePDF()`.
 const vendorDir = join(process.cwd(), 'public/vendor');
 
 /** Strip all XML/SSML tags to get plain text content */
@@ -330,10 +330,10 @@ describe('PDF TTS', () => {
 
     beforeAll(async () => {
       // Override workerSrc to an absolute file path so the pdfjs fake-worker
-      // can import it inside jsdom (the module-level code in pdf.js sets it
+      // can import it inside jsdom (makePDF otherwise sets it
       // to a URL path that only works in a real browser).
-      // Import pdf.js first to trigger the @pdfjs side-effect that sets globalThis.pdfjsLib.
-      await import('foliate-js/pdf.js');
+      // Import PDF.js first so the test can point its worker at a local file.
+      await import('@pdfjs/pdf.min.mjs');
       const pdfjsLib = (globalThis as Record<string, unknown>)['pdfjsLib'] as {
         GlobalWorkerOptions: { workerSrc: string };
       };

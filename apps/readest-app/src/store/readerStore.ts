@@ -12,6 +12,7 @@ import {
 import { Insets } from '@/types/misc';
 import { EnvConfigType } from '@/services/environment';
 import { FoliateView } from '@/types/view';
+import { isAbsEbook } from '@/utils/audiobook';
 import { DocumentLoader, TOCItem } from '@/libs/document';
 import {
   isPseStreamFileName,
@@ -30,6 +31,7 @@ import { BookData, useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
 import { clearBookProgress, getBookProgress, setBookProgress } from './readerProgressStore';
 import { uniqueId } from '@/utils/misc';
+import { getWidePages, type WidePagesOptions } from '@/utils/spread';
 
 interface ViewState {
   /* Unique key for each book view */
@@ -147,6 +149,14 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       delete viewStates[key];
       return { viewStates };
     });
+    // A streamed ABS ebook reads through a RemoteFile that authenticates with
+    // a short-lived access token, so its cached BookDoc must not outlive the
+    // last open view: the next open resolves the stream afresh against the
+    // store's current token. Local books keep their cache for instant reopens.
+    const id = key.split('-')[0]!;
+    if (Object.keys(get().viewStates).some((k) => k.split('-')[0] === id)) return;
+    const book = useLibraryStore.getState().getBookByHash(id);
+    if (book && isAbsEbook(book)) useBookDataStore.getState().clearBookData(id);
   },
   getViewState: (key: string) => get().viewStates[key] || null,
   initViewState: async (
@@ -194,11 +204,31 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const isFeed = !!book.url && isFeedBookUrl(book.url);
       let bookDoc = bookData?.bookDoc;
       let file: File | null = bookData?.file ?? null;
+      // Per-book config and the third-party annotation module are pure IO
+      // with no dependency on the document load. Kick them off here so their
+      // round trips overlap with the content fetch / document parsing below
+      // instead of serializing behind them. Every `await configPromise`
+      // resolves to the same object.
+      const configPromise = appService.loadBookConfig(book, settings);
+      // Avoid an unhandled rejection if the open path fails before the
+      // config awaits below are ever reached; the rejection still propagates
+      // at those await sites.
+      configPromise.catch(() => undefined);
+      const annotationImportPromise = import('@/services/annotation');
+      // Avoid an unhandled rejection if the open path throws before the
+      // annotation section below ever awaits this import.
+      annotationImportPromise.catch(() => undefined);
+      // A comic's wide pages are cached in its config: those an open measured,
+      // and those found as streamed pages load.
+      const makeWidePages = (config: BookConfig): WidePagesOptions => ({
+        known: config.widePages,
+        onFound: (ids) => useBookDataStore.getState().setConfig(id, { widePages: ids }),
+      });
       if (!bookDoc || (!isPseStream && !isFeed && !file) || reload) {
         console.log('Loading book', key);
         if (isPseStream) {
           const data = parsePseStreamFileName(book.url!);
-          const doc = await openPseStreamBook(data);
+          const doc = await openPseStreamBook(data, makeWidePages(await configPromise));
           bookDoc = doc.book;
           file = null;
         } else if (isFeed) {
@@ -208,24 +238,32 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           bookDoc = await openFeedBookDoc(fs, book.hash, feedUrl, book.title);
           file = null;
         } else {
-          const content = (await appService.loadBookContent(book)) as BookContent;
+          // resolveNativeBookFilePath only reads `book` (it feeds the Rust
+          // EPUB prefetch), so it can race the content load instead of
+          // queueing behind it.
+          const [content, nativeFilePath] = await Promise.all([
+            appService.loadBookContent(book) as Promise<BookContent>,
+            appService.resolveNativeBookFilePath(book).catch((err: unknown) => {
+              console.warn('resolveNativeBookFilePath failed', err);
+              return null;
+            }),
+          ]);
           file = content.file;
-          let nativeFilePath: string | null = null;
-          try {
-            nativeFilePath = await appService.resolveNativeBookFilePath(book);
-          } catch (err) {
-            console.warn('resolveNativeBookFilePath failed', err);
-          }
+          const config = await configPromise;
           const doc = await new DocumentLoader(file, {
             nativeFilePath: nativeFilePath ?? undefined,
+            widePages: makeWidePages(config),
           }).open();
           bookDoc = doc.book;
+          if (doc.format === 'CBZ') config.widePages = getWidePages(bookDoc.sections);
         }
       }
-      const config = await appService.loadBookConfig(book, settings);
-      // Import annotations from third-party readers on first open
+      const config = await configPromise;
+      // Import annotations from third-party readers on first open. The
+      // module import was already kicked off above; providers still run
+      // here so the merged config lands before the first render.
       if (bookDoc.metadata.identifier) {
-        const { getAnnotationProviders } = await import('@/services/annotation');
+        const { getAnnotationProviders } = await annotationImportPromise;
         for (const provider of getAnnotationProviders()) {
           if (provider.isAvailable(appService)) {
             const merged = await provider.importAnnotations(
@@ -563,6 +601,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     })),
 
   recreateViewer: (envConfig: EnvConfigType, key: string) => {
+    if (!key || get().viewStates[key]?.key !== key) return;
     const id = key.split('-')[0]!;
     // `initViewState` already mints a fresh `viewerKey` when the reload lands,
     // which is what remounts <FoliateViewer>. Minting a second one here

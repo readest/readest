@@ -140,7 +140,7 @@ const WpmEntry: React.FC<WpmEntryProps> = ({ controller, wpm, bgColor }) => {
         enterKeyHint='done'
         aria-label={_('Words per minute')}
         value={draft ?? String(wpm)}
-        className='eink-bordered w-14 rounded-md border border-gray-500/20 bg-gray-500/10 px-1 py-0.5 text-center text-sm font-semibold tabular-nums focus:outline-none'
+        className='eink-bordered w-14 rounded-md border border-gray-500/20 bg-gray-500/10 px-1 py-0.5 text-center text-sm font-semibold tabular-nums focus:outline-hidden'
         onFocus={(e) => e.target.select()}
         onChange={(e) => {
           if (/^\d*$/.test(e.target.value)) setDraft(e.target.value);
@@ -1130,7 +1130,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             aria-valuenow={Math.round(state.progress)}
             aria-valuemin={0}
             aria-valuemax={100}
-            className='relative h-2 cursor-pointer overflow-visible rounded bg-gray-500/30'
+            className='relative h-2 cursor-pointer overflow-visible rounded-sm bg-gray-500/30'
             // touch-action: none keeps mobile browsers from claiming the
             // gesture for scroll/pan, which would fire pointercancel and
             // break the drag-to-seek pointer capture mid-gesture.
@@ -1148,11 +1148,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             title={_('Drag to seek')}
           >
             <div
-              className={`absolute left-0 top-0 h-full rounded ${isProgressBarDragging ? '' : 'transition-[width] duration-100'}`}
+              className={`absolute left-0 top-0 h-full rounded-sm ${isProgressBarDragging ? '' : 'transition-[width] duration-100'}`}
               style={{ width: `${state.progress}%`, backgroundColor: accentColor }}
             />
             <div
-              className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full shadow ${isProgressBarDragging ? '' : 'transition-[left] duration-100'}`}
+              className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-sm ${isProgressBarDragging ? '' : 'transition-[left] duration-100'}`}
               style={{ left: `${state.progress}%`, backgroundColor: accentColor }}
             />
           </div>
@@ -1287,7 +1287,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
               <span className='mr-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
               <select
-                className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
                 value={state.punctuationPauseMs}
                 onChange={(e) => controller.setPunctuationPause(parseInt(e.target.value, 10))}
@@ -1305,7 +1305,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               <span className='mr-0.5 font-medium opacity-50'>{_('Start Delay')}</span>
               <select
                 data-testid='rsvp-start-delay-select'
-                className='cursor-pointer rounded border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
                 value={state.startDelaySeconds}
                 onChange={(e) => controller.setStartDelay(parseInt(e.target.value, 10))}

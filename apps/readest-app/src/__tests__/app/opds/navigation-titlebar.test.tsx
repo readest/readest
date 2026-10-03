@@ -32,6 +32,7 @@ vi.mock('@/store/settingsStore', () => ({
 
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
+  needsPointerWindowControls: () => false,
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({

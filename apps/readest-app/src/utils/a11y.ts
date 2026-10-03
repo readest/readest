@@ -64,9 +64,16 @@ export const handleA11yNavigation = (
     skipLink.setAttribute('tabindex', '0');
     skipLink.setAttribute('aria-hidden', 'false');
     skipLink.setAttribute('aria-label', options?.skipToLastPosLabel ?? '');
+    // position:absolute keeps the link out of flow; left/top:auto leave it at
+    // its static position. `left: 0` resolves against the *initial containing
+    // block* — the iframe viewport, which the paginator expands to hold every
+    // rendered column — so in an RTL book (columns flowing right-to-left) the
+    // box landed past the end of the text. expand() sizes the section from a
+    // Range over the body contents, so that stray 1×1 box stretched the section
+    // to the full iframe width and appended blank pages mid-chapter (#5924).
     Object.assign(skipLink.style, {
       position: 'absolute',
-      left: '0px',
+      left: 'auto',
       top: 'auto',
       width: '1px',
       height: '1px',

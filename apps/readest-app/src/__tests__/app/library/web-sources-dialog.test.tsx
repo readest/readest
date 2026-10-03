@@ -64,9 +64,97 @@ beforeEach(() => {
 });
 
 describe('WebSourcesDialog', () => {
+  it('rejects an invalid URL before opening a browser', async () => {
+    render(<WebSourcesDialog isOpen onClose={vi.fn()} onClip={vi.fn()} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Web URL' }), {
+      target: { value: 'javascript:alert(1)' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Browse' }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Please enter a valid http(s) URL',
+    );
+    expect(openMock).not.toHaveBeenCalled();
+  });
+
+  it('prevents opening another browser while browsing or importing', async () => {
+    let finishImport: () => void = () => {};
+    const onClip = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finishImport = resolve;
+        }),
+    );
+    openMock.mockResolvedValue({
+      page: { url: 'https://example.com', html: '<article>Chapter</article>' },
+    });
+    render(<WebSourcesDialog isOpen onClose={vi.fn()} onClip={onClip} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Web URL' }), {
+      target: { value: 'https://example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Browse' }));
+    await waitFor(() => expect(onClip).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Browse' }));
+    expect(openMock).toHaveBeenCalledOnce();
+    expect(screen.getByRole('textbox', { name: 'Web URL' })).toHaveProperty('disabled', true);
+    finishImport();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Browse' })).toHaveProperty('disabled', false),
+    );
+  });
+
+  it('opens a pasted URL without saving a source and imports the captured page', async () => {
+    const page = {
+      url: 'https://example.com/members/chapter-2',
+      html: '<article>Full chapter</article>',
+    };
+    openMock.mockResolvedValue({ page });
+    const onClip = vi.fn().mockResolvedValue(undefined);
+    const onClose = vi.fn();
+    render(<WebSourcesDialog isOpen onClose={onClose} onClip={onClip} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Web URL' }), {
+      target: { value: 'example.com/members' },
+    });
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Web URL' }), { key: 'Enter' });
+    await waitFor(() => expect(onClip).toHaveBeenCalledWith(page));
+    expect(openMock).toHaveBeenCalledWith('https://example.com/members', expect.anything());
+    expect(saveSettingsMock).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the form open on browser cancellation without importing', async () => {
+    const onClip = vi.fn();
+    const onClose = vi.fn();
+    render(<WebSourcesDialog isOpen onClose={onClose} onClip={onClip} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Web URL' }), {
+      target: { value: 'https://example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Browse' }));
+    await waitFor(() => expect(openMock).toHaveBeenCalledOnce());
+    expect(onClip).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('shows clipping errors and allows another attempt', async () => {
+    openMock.mockResolvedValue({ page: { url: 'https://example.com', html: '<p>Preview</p>' } });
+    const onClip = vi.fn().mockRejectedValue(new Error('Sign in to read this chapter'));
+    const onClose = vi.fn();
+    render(<WebSourcesDialog isOpen onClose={onClose} onClip={onClip} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Web URL' }), {
+      target: { value: 'https://example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Browse' }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Sign in to read this chapter',
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Browse' })).toHaveProperty('disabled', false);
+  });
+
   it('adds a source and persists it through the settings store', async () => {
-    render(<WebSourcesDialog isOpen onClose={() => {}} />);
-    fireEvent.change(screen.getByPlaceholderText('https://calibre.example.com'), {
+    render(<WebSourcesDialog isOpen onClose={() => {}} onClip={vi.fn()} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Web URL' }), {
       target: { value: 'calibre.example.com' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add Source' }));
@@ -77,8 +165,8 @@ describe('WebSourcesDialog', () => {
   });
 
   it('shows an error for an invalid url and does not save', async () => {
-    render(<WebSourcesDialog isOpen onClose={() => {}} />);
-    fireEvent.change(screen.getByPlaceholderText('https://calibre.example.com'), {
+    render(<WebSourcesDialog isOpen onClose={() => {}} onClip={vi.fn()} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Web URL' }), {
       target: { value: 'ftp://nope' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add Source' }));
@@ -92,7 +180,7 @@ describe('WebSourcesDialog', () => {
     };
     openMock.mockResolvedValue({ openBookHash: 'h1' });
     const onClose = vi.fn();
-    render(<WebSourcesDialog isOpen onClose={onClose} />);
+    render(<WebSourcesDialog isOpen onClose={onClose} onClip={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /Calibre/ }));
     await waitFor(() =>
       expect(openMock).toHaveBeenCalledWith('https://calibre.example.com/', expect.anything()),
@@ -105,7 +193,7 @@ describe('WebSourcesDialog', () => {
     settingsState.settings = {
       webSources: [{ id: '1', name: 'Calibre', url: 'https://calibre.example.com/' }],
     };
-    render(<WebSourcesDialog isOpen onClose={() => {}} />);
+    render(<WebSourcesDialog isOpen onClose={() => {}} onClip={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(saveSettingsMock).toHaveBeenCalled());
     expect(settingsState.settings.webSources).toEqual([]);

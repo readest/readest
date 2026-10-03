@@ -23,6 +23,11 @@ const toggleClassName = (isDarkMode: boolean) =>
     !isDarkMode && 'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
   );
 
+// The precondition `applyReplacementSingle` puts on a selection rule: both
+// ends of the CFI must land in the same text node.
+const isSingleTextNodeRange = (range: Range) =>
+  range.startContainer === range.endContainer && range.startContainer?.nodeType === Node.TEXT_NODE;
+
 interface ProofreadPopupProps {
   bookKey: string;
   selection?: TextSelection;
@@ -76,6 +81,9 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
     if (!selection) return;
 
     const range = selection?.range;
+    // The rule persists the trimmed text, so the live edit has to use the same
+    // value or this session shows something the replay will never reproduce.
+    const replacement = replacementText.trim();
 
     if (range) {
       // A regex pattern defines its own boundaries, so the whole-word
@@ -92,17 +100,44 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
       }
 
       if (scope === 'selection') {
-        range.deleteContents();
-        const textNode = document.createTextNode(replacementText);
-        range.insertNode(textNode);
+        // On every later load the rule is replayed by `applyReplacementSingle`,
+        // which resolves the CFI and splices the replacement into ONE text
+        // node -- it can do nothing with a selection that spans elements. So
+        // refuse that selection here instead of creating a rule that only ever
+        // works the one time the popup edits the live DOM.
+        if (!isSingleTextNodeRange(range)) {
+          eventDispatcher.dispatch('toast', {
+            type: 'warning',
+            message: _(
+              'This selection spans formatting or paragraph boundaries. Select a smaller piece of text, or choose another replacement scope.',
+            ),
+            timeout: 5000,
+          });
+          return;
+        }
+        // Splice the text in place rather than deleteContents() + insertNode():
+        // deleting across the selection strips any markup it touches and splits
+        // the node into three, and the transformer's own replay does neither.
+        const textNode = range.startContainer as Text;
+        const text = textNode.textContent ?? '';
+        textNode.textContent =
+          text.slice(0, range.startOffset) + replacement + text.slice(range.endOffset);
       }
+
+      // Anchor to the spine item href, which is what every section load hands
+      // the proofread transformer (foliate's `detail.name`). `progress` carries
+      // the TOC href, which resolves to the nearest preceding nav entry and so
+      // names a different file whenever a spine item has no TOC entry of its
+      // own -- the rule then never matched on reload (#6148).
+      const sectionHref =
+        getView(bookKey)?.book?.sections?.[selection.index]?.id ?? progress?.sectionHref;
 
       const options: CreateProofreadRuleOptions = {
         scope,
         pattern: selection.text,
-        replacement: replacementText.trim(),
+        replacement,
         cfi: selection.cfi,
-        sectionHref: progress?.sectionHref,
+        sectionHref,
         isRegex,
         enabled: true,
         caseSensitive,
@@ -155,7 +190,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
                   onClick={onManage}
                   aria-label={_('Proofread Replacement Rules')}
                   title={_('Proofread Replacement Rules')}
-                  className='shrink-0 rounded p-1 hover:bg-base-200 text-base-content/70 hover:text-base-content transition-colors'
+                  className='shrink-0 rounded-sm p-1 hover:bg-base-200 text-base-content/70 hover:text-base-content transition-colors'
                 >
                   <RiListSettingsLine size={16} />
                 </button>
@@ -175,16 +210,15 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
                 value={replacementText}
                 onChange={handleInputChange}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && replacementText) {
+                  if (e.key === 'Enter') {
                     handleApply();
                   }
                 }}
                 placeholder={_('Enter text...')}
-                className='bg-base-200 text-base-content placeholder:text-base-content/40 border-base-300 focus:border-primary focus:ring-primary eink-bordered w-full flex-1 rounded-md border p-2 text-sm transition-all focus:outline-none focus:ring-1'
+                className='bg-base-200 text-base-content placeholder:text-base-content/40 border-base-300 focus:border-primary focus:ring-primary eink-bordered w-full flex-1 rounded-md border p-2 text-sm transition-all focus:outline-hidden focus:ring-1'
               />
               <button
                 onClick={handleApply}
-                disabled={!replacementText}
                 className='btn btn-sm btn-contrast shrink-0 font-medium px-2'
               >
                 {_('Apply')}

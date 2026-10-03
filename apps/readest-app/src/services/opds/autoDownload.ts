@@ -16,7 +16,12 @@ import {
   pruneKnownEntryIds,
 } from './subscriptionState';
 import { findBookByOPDSSources, upsertOPDSSourceMapping } from './sourceMap';
-import { isRetryEligible, DOWNLOAD_CONCURRENCY, MAX_RETRY_ATTEMPTS } from './types';
+import {
+  isRetryEligible,
+  DOWNLOAD_CONCURRENCY,
+  MAX_RETRY_ATTEMPTS,
+  PERSIST_BATCH_SIZE,
+} from './types';
 import type { PendingItem, SyncResult, OPDSSubscriptionState, FailedEntry } from './types';
 import { runWithConcurrency } from '@/utils/concurrency';
 import { uniqueId } from '@/utils/misc';
@@ -157,13 +162,19 @@ async function downloadAndImport(
 
 /**
  * Sync a single catalog: discover new items, retry failed, download, update state.
+ *
+ * A failure inside the download loop is returned rather than thrown so the
+ * books earlier batches already committed are still reported: their entries
+ * are in knownEntryIds now, so no later sync would rediscover them and the
+ * caller would never get to queue them for cloud upload. The caller rethrows
+ * `error` once it has taken `newBooks`.
  */
 async function syncCatalog(
   catalog: OPDSCatalog,
   appService: AppService,
   books: Book[],
   onBooksImported?: (newBooks: Book[]) => Promise<void>,
-): Promise<{ newBooks: Book[]; state: OPDSSubscriptionState }> {
+): Promise<{ newBooks: Book[]; state: OPDSSubscriptionState; error?: unknown }> {
   const state = await loadSubscriptionState(appService, catalog.id);
 
   // Discovery: find new items from feeds
@@ -205,59 +216,80 @@ async function syncCatalog(
     return { newBooks: [], state };
   }
 
-  // Acquisition: download with bounded concurrency
-  const downloadResults = await runWithConcurrency(allItems, DOWNLOAD_CONCURRENCY, (item) =>
-    downloadAndImport(item, catalog, appService, books),
-  );
-
-  // Process results and update state
+  // Acquisition: download with bounded concurrency, in batches.
+  //
+  // Progress is persisted after every batch rather than once at the end. A
+  // first sync of a large catalog runs for minutes and is a prime target for
+  // Android's low-memory killer; with a single end-of-run write, a kill at
+  // item N discarded all N imports and the next run restarted from zero, so
+  // the sync could never converge however often it was retried. Batching
+  // bounds that loss to one batch and lets successive runs make progress.
   const newBooks: Book[] = [];
-  const newKnownIds: string[] = [];
   const updatedFailedEntries: FailedEntry[] = [
     // Keep non-retry-eligible failures as-is
     ...state.failedEntries.filter((fe) => !isRetryEligible(fe)),
   ];
+  // Attempt counts have to come from the state as it was loaded. Every batch
+  // below reassigns `state.failedEntries`, and that array has already dropped
+  // the retry-eligible originals — looking an entry up there from a later
+  // batch would find nothing, reset its counter to 1, and retry it forever
+  // instead of giving up at MAX_RETRY_ATTEMPTS.
+  const priorAttempts = new Map(state.failedEntries.map((fe) => [fe.entryId, fe.attempts]));
 
-  for (const outcome of downloadResults) {
-    const item = outcome.item;
-    if ('result' in outcome) {
-      newBooks.push(outcome.result);
-      newKnownIds.push(item.entryId);
-    } else {
-      const existingFailed = state.failedEntries.find((fe) => fe.entryId === item.entryId);
-      const attempts = (existingFailed?.attempts ?? 0) + 1;
+  try {
+    for (let offset = 0; offset < allItems.length; offset += PERSIST_BATCH_SIZE) {
+      const batch = allItems.slice(offset, offset + PERSIST_BATCH_SIZE);
+      const downloadResults = await runWithConcurrency(batch, DOWNLOAD_CONCURRENCY, (item) =>
+        downloadAndImport(item, catalog, appService, books),
+      );
 
-      if (attempts >= MAX_RETRY_ATTEMPTS) {
-        newKnownIds.push(item.entryId);
-        console.error(
-          `OPDS sync: permanently skipping "${item.title}" after ${attempts} failed attempts`,
-        );
-      } else {
-        updatedFailedEntries.push({
-          entryId: item.entryId,
-          href: item.acquisitionHref,
-          title: item.title,
-          attempts,
-          lastAttemptAt: Date.now(),
-        });
+      const batchBooks: Book[] = [];
+      const newKnownIds: string[] = [];
+
+      for (const outcome of downloadResults) {
+        const item = outcome.item;
+        if ('result' in outcome) {
+          batchBooks.push(outcome.result);
+          newKnownIds.push(item.entryId);
+        } else {
+          const attempts = (priorAttempts.get(item.entryId) ?? 0) + 1;
+
+          if (attempts >= MAX_RETRY_ATTEMPTS) {
+            newKnownIds.push(item.entryId);
+            console.error(
+              `OPDS sync: permanently skipping "${item.title}" after ${attempts} failed attempts`,
+            );
+          } else {
+            updatedFailedEntries.push({
+              entryId: item.entryId,
+              href: item.acquisitionHref,
+              title: item.title,
+              attempts,
+              lastAttemptAt: Date.now(),
+            });
+          }
+        }
       }
+
+      // Persist the imported books BEFORE recording their entries as known: an
+      // entry in knownEntryIds is never downloaded again, so a kill between the
+      // two writes would otherwise lose the library rows for good while the
+      // marker survives (#5658). In the reverse order a kill merely costs a
+      // redundant re-download — imports are idempotent. A failed persist aborts
+      // the catalog run, leaving this batch's entries unknown for the next sync.
+      if (batchBooks.length > 0) {
+        await onBooksImported?.(batchBooks);
+        newBooks.push(...batchBooks);
+      }
+
+      state.knownEntryIds = pruneKnownEntryIds([...state.knownEntryIds, ...newKnownIds]);
+      state.failedEntries = updatedFailedEntries;
+      state.lastCheckedAt = Date.now();
+      await saveSubscriptionState(appService, state);
     }
+  } catch (error) {
+    return { newBooks, state, error };
   }
-
-  // Persist the imported books BEFORE recording their entries as known: an
-  // entry in knownEntryIds is never downloaded again, so a kill between the
-  // two writes would otherwise lose the library rows for good while the
-  // marker survives (#5658). In the reverse order a kill merely costs a
-  // redundant re-download — imports are idempotent. A failed persist throws
-  // out of the catalog run, leaving the entries unknown for the next sync.
-  if (newBooks.length > 0) {
-    await onBooksImported?.(newBooks);
-  }
-
-  state.knownEntryIds = pruneKnownEntryIds([...state.knownEntryIds, ...newKnownIds]);
-  state.failedEntries = updatedFailedEntries;
-  state.lastCheckedAt = Date.now();
-  await saveSubscriptionState(appService, state);
 
   return { newBooks, state };
 }
@@ -287,8 +319,11 @@ export async function syncSubscribedCatalogs(
 
   for (const catalog of eligible) {
     try {
-      const { newBooks } = await syncCatalog(catalog, appService, books, onBooksImported);
+      const { newBooks, error } = await syncCatalog(catalog, appService, books, onBooksImported);
+      // Take the books committed before the failure, then let the existing
+      // error path run — those batches are already on disk and marked known.
       allNewBooks.push(...newBooks);
+      if (error) throw error;
     } catch (reason) {
       console.error(`OPDS sync: catalog "${catalog.name}" failed:`, reason);
       errors.push({

@@ -49,11 +49,19 @@ export interface TextSelection {
   // Native Android selection handles were suppressed for this selection
   // (Blink hyphen bounds bug, issue #1553) — the app draws its own handles.
   handlesSuppressed?: boolean;
+  // The instant quick action has already run on this selection (#6213): the
+  // dictionary lookup consumed it and handed it back when it closed. Set so the
+  // republishes that follow — a highlight stamping `annotated`, say — are not
+  // read as a fresh selection and answered with the quick action all over again.
+  quickActionHandled?: boolean;
   // Selection made inside the footnote/annotation popup window rather than a
   // main book document. `cfi` (when present) already points into the pristine
   // section document; tools that need a live main-document range or that
   // cannot work without a CFI must be disabled accordingly.
   popup?: boolean;
+  // Maps a range in the popup's document to a CFI in the pristine section, so
+  // a popup highlight can be re-anchored when its range handles move (#6390).
+  getPopupCfi?: (range: Range) => string | undefined;
 }
 
 const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {
@@ -282,6 +290,9 @@ export const getPosition = (
   rect: Rect,
   paddingPx: number,
   isVertical: boolean = false,
+  // A side already taken by another popup at the same spot (#6390): the
+  // footnote popup a tap on a highlighted link opens along with the toolbar.
+  avoidDir: Position['dir'] | null = null,
 ) => {
   const {
     range: target,
@@ -307,7 +318,8 @@ export const getPosition = (
   if (isVertical) {
     const leftSpace = first.left - rect.left;
     const rightSpace = rect.right - first.right;
-    const dir = leftSpace > rightSpace ? 'left' : 'right';
+    const roomier = leftSpace > rightSpace ? 'left' : 'right';
+    const dir = roomier === avoidDir ? (roomier === 'left' ? 'right' : 'left') : roomier;
     const position = {
       point: constrainPointWithinRect(
         {
@@ -370,7 +382,43 @@ export const getPosition = (
   }
   if (!startInView) return end;
   if (!endInView) return start;
+  if (avoidDir === 'down') return start;
+  if (avoidDir === 'up') return end;
   return start.point.y > window.innerHeight - end.point.y ? start : end;
+};
+
+// Whether a popup `sizePx` deep fits beyond the triangle on its side, within
+// the book cell (`rect`) and its padding.
+export const hasRoomFor = (position: Position, rect: Rect, sizePx: number, paddingPx: number) => {
+  const { point, dir } = position;
+  const room =
+    dir === 'up'
+      ? point.y
+      : dir === 'down'
+        ? rect.bottom - rect.top - point.y
+        : dir === 'left'
+          ? point.x
+          : rect.right - rect.left - point.x;
+  return room >= sizePx + paddingPx;
+};
+
+// Where the highlight toolbar goes when the footnote popup has taken
+// `avoidDir` at the same word (#6390): the free side when it lands there with
+// room to spare, otherwise the popup's side (`shared`), where the popup is to
+// open beyond it. `place` anchors the toolbar, avoiding the side it is given.
+export const placeToolbar = (
+  place: (avoidDir: Position['dir'] | null) => Position,
+  avoidDir: Position['dir'] | null,
+  rect: Rect,
+  sizePx: number,
+  paddingPx: number,
+) => {
+  if (!avoidDir) return { position: place(null), shared: false };
+  const free = place(avoidDir);
+  if (free.dir !== avoidDir && hasRoomFor(free, rect, sizePx, paddingPx)) {
+    return { position: free, shared: false };
+  }
+  return { position: free.dir === avoidDir ? free : place(null), shared: true };
 };
 
 // The popup will be positioned based on the triangle position and the direction

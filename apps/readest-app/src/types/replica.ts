@@ -1,3 +1,6 @@
+/** Shared protocol limit for replica uploads. */
+export const MAX_PUSH_BATCH = 100;
+
 /**
  * Branded HLC string. Lexicographic comparison matches temporal order.
  * Format: `${physicalMs:13-hex}-${counter:8-hex}-${deviceId}`

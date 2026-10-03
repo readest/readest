@@ -18,7 +18,7 @@ const UserInfo: React.FC<UserInfoProps> = ({ avatarUrl, userFullName, userEmail,
           across breakpoints. fillContainer drops UserAvatar's inline
           width/height so the child stretches to this wrapper instead of
           fighting it. */}
-      <div className='aspect-square h-16 w-16 flex-shrink-0 md:h-24 md:w-24'>
+      <div className='aspect-square h-16 w-16 shrink-0 md:h-24 md:w-24'>
         {avatarUrl ? (
           <UserAvatar
             url={avatarUrl}
@@ -33,7 +33,7 @@ const UserInfo: React.FC<UserInfoProps> = ({ avatarUrl, userFullName, userEmail,
         )}
       </div>
 
-      <div className='flex-grow text-center md:text-left'>
+      <div className='grow text-center md:text-left'>
         <h2 className='text-base-content text-xl font-bold md:text-2xl'>{userFullName}</h2>
         <p className='text-base-content/60'>{userEmail}</p>
         <div className='mt-3'>

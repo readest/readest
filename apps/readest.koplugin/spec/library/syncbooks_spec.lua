@@ -504,7 +504,7 @@ describe("library.syncbooks", function()
             syncbooks.pullBooks({
                 sync_auth = fake_sync_auth(rows),
                 sync_path = "/tmp",
-                settings  = { user_id = "u1" },
+                settings  = { user_id = "u1", access_token = "token" },
                 store     = store,
             }, function() end)
         end

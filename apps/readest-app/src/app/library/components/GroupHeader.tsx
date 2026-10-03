@@ -9,13 +9,15 @@ import { LibraryGroupByType } from '@/types/settings';
 interface GroupHeaderProps {
   groupBy: LibraryGroupByType;
   groupName: string;
+  /** True when `groupName` is an i18n key (status groups) rather than user text. */
+  localized?: boolean;
 }
 
 /**
  * Header component displayed when viewing books inside a virtual group.
  * Shows the group type, group name, and a back button to return to the main bookshelf.
  */
-const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
+const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName, localized }) => {
   const _ = useTranslation();
   const router = useRouter();
   const iconSize = useResponsiveSize(20);
@@ -32,6 +34,7 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
     // resulting `/library?group=` does commit, and the trailing empty `group=`
     // is stripped cosmetically by the cleanup effect in page.tsx.
     params.set('group', '');
+    params.delete('shelf');
     navigateToLibrary(router, params.toString());
   };
 
@@ -46,6 +49,8 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
         return _('Tag');
       case LibraryGroupByType.Subject:
         return _('Subject');
+      case LibraryGroupByType.Status:
+        return _('Status');
       default:
         return _('Group');
     }
@@ -62,7 +67,9 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
       </button>
       <div className='flex items-center gap-2 overflow-hidden'>
         <span className='text-neutral-content text-sm'>{getGroupTypeLabel()}:</span>
-        <span className='truncate text-base font-medium'>{groupName}</span>
+        <span className='truncate text-base font-medium'>
+          {localized ? _(groupName) : groupName}
+        </span>
       </div>
     </div>
   );

@@ -14,6 +14,8 @@ interface OwnedSession {
 interface SendState {
   active: boolean;
   deviceAlias: string;
+  /** Fingerprint of the target device, so the picker can mark its tile. */
+  deviceFingerprint: string;
   progress: TransferProgress | null;
 }
 
@@ -38,7 +40,7 @@ interface LocalSendStoreActions {
   claimSession: (sessionId: string, alias: string) => void;
   receiveProgress: (progress: TransferProgress) => void;
   receiveEnded: (sessionId: string) => void;
-  startSend: (deviceAlias: string) => void;
+  startSend: (deviceAlias: string, deviceFingerprint: string) => void;
   sendProgress: (progress: TransferProgress) => void;
   sendEnded: () => void;
 }
@@ -84,7 +86,8 @@ export const useLocalSendStore = create<LocalSendStoreState & LocalSendStoreActi
         const { [sessionId]: _removed, ...rest } = state.ownedSessions;
         return { ownedSessions: rest };
       }),
-    startSend: (deviceAlias) => set({ sendState: { active: true, deviceAlias, progress: null } }),
+    startSend: (deviceAlias, deviceFingerprint) =>
+      set({ sendState: { active: true, deviceAlias, deviceFingerprint, progress: null } }),
     sendProgress: (progress) => {
       const sendState = get().sendState;
       if (!sendState) return;

@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React from 'react';
-import { MdCheck } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -34,8 +33,10 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
   const viewSettings = getViewSettings(bookKey);
   const isSettingsGlobal = viewSettings?.isGlobal ?? true;
 
-  const handleToggleGlobal = () => {
-    saveViewSettings(envConfig, bookKey, 'isGlobal', !isSettingsGlobal, true, false);
+  const handleSetGlobal = (global: boolean) => {
+    if (global !== isSettingsGlobal) {
+      saveViewSettings(envConfig, bookKey, 'isGlobal', global, true, false);
+    }
     setIsDropdownOpen?.(false);
   };
 
@@ -61,13 +62,22 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
 
   return (
     <Menu className={clsx('dialog-menu dropdown-content no-triangle z-20 mt-2 shadow-2xl')}>
+      {/* Two exclusive rows rather than one "Global Settings" checkmark: the
+          checkmark named the mode but not the consequence, and the consequence
+          only lived in a `lg:tooltip` + native `title`, neither of which fires
+          on touch — so on phones and tablets nothing in the app ever said that
+          a font change here reaches every book (issue #5932). */}
       <MenuItem
-        label={_('Global Settings')}
-        tooltip={isSettingsGlobal ? _('Apply to All Books') : _('Apply to This Book')}
+        label={_('Apply to All Books')}
         disabled={!bookKey}
-        buttonClass='lg:tooltip'
-        Icon={isSettingsGlobal ? MdCheck : null}
-        onClick={handleToggleGlobal}
+        toggled={isSettingsGlobal}
+        onClick={() => handleSetGlobal(true)}
+      />
+      <MenuItem
+        label={_('Apply to This Book')}
+        disabled={!bookKey}
+        toggled={!isSettingsGlobal}
+        onClick={() => handleSetGlobal(false)}
       />
       <MenuItem label={resetLabel || _('Reset Settings')} onClick={handleResetToDefaults} />
       {activePanel === 'Font' && (

@@ -672,13 +672,81 @@ describe('extractEnToX', () => {
     expect(extractEnToX(enEntry, 'fr').get('dog')).toEqual(['chien']);
   });
 
-  it('appends a roman field in parens when present', () => {
+  it('drops the roman transliteration (the hint is read by a native speaker)', () => {
     const ru = JSON.stringify({
       word: 'dog',
       lang_code: 'en',
       translations: [{ code: 'ru', word: 'собака', roman: 'sobaka' }],
     });
-    expect(extractEnToX(ru, 'ru').get('dog')).toEqual(['собака (sobaka)']);
+    expect(extractEnToX(ru, 'ru').get('dog')).toEqual(['собака']);
+  });
+
+  it('skips translations tagged as a regional variety ("<Variety>-<Language>")', () => {
+    // Wiktionary nests Arabic dialects under the Arabic translation with the
+    // dialect as a tag; the gloss must stay in the standard written language.
+    const ar = JSON.stringify({
+      word: 'cat',
+      lang_code: 'en',
+      translations: [
+        { lang: 'Arabic', code: 'ar', word: 'قِطّ', roman: 'qiṭṭ', tags: ['masculine'] },
+        {
+          lang: 'Arabic',
+          code: 'ar',
+          word: 'بسة',
+          roman: 'bissa',
+          tags: ['Hijazi-Arabic', 'feminine'],
+        },
+        { lang: 'Arabic', code: 'ar', word: 'هِرّ', roman: 'hirr' },
+      ],
+    });
+    expect(extractEnToX(ar, 'ar').get('cat')).toEqual(['قِطّ', 'هِرّ']);
+  });
+
+  it('skips a translation that mixes Latin letters into another script (template artifacts)', () => {
+    // Gender markers, "or", "imperfective:" and inline dialect labels leak into the
+    // word field of some Wiktionary translation templates; a pure-Latin target
+    // (vi, hu) never trips this, only a foreign-script word carrying ASCII letters.
+    const ar = JSON.stringify({
+      word: 'spoke',
+      lang_code: 'en',
+      translations: [
+        { lang: 'Arabic', code: 'ar', word: 'سِلْك m شُعَاع' },
+        { lang: 'Arabic', code: 'ar', word: 'Hijazi Arabic وحش' },
+        { lang: 'Arabic', code: 'ar', word: 'شُعَاع' },
+        { lang: 'Vietnamese', code: 'vi', word: 'học sinh' },
+      ],
+    });
+    expect(extractEnToX(ar, 'ar').get('spoke')).toEqual(['شُعَاع']);
+    expect(extractEnToX(ar, 'vi').get('spoke')).toEqual(['học sinh']);
+  });
+
+  it('drops an all-Latin editorial note once the target is a non-Latin script', () => {
+    // Wiktionary files the odd note where a translation belongs ("not known in
+    // Arabic lands" under honesty's plant sense). It only reads as a gloss in the
+    // wrong script, so it goes once the pack's dominant script is known; a
+    // Latin-script target (vi, hu) is left alone.
+    const lines = [
+      {
+        word: 'honesty',
+        lang_code: 'en',
+        translations: [{ code: 'ar', word: 'not known in Arabic lands' }],
+      },
+      { word: 'cat', lang_code: 'en', translations: [{ code: 'ar', word: 'قِطّ' }] },
+      { word: 'dog', lang_code: 'en', translations: [{ code: 'ar', word: 'كَلْب' }] },
+      { word: 'cat', lang_code: 'en', translations: [{ code: 'vi', word: 'mèo' }] },
+      { word: 'dog', lang_code: 'en', translations: [{ code: 'vi', word: 'chó' }] },
+      {
+        word: 'honesty',
+        lang_code: 'en',
+        translations: [{ code: 'vi', word: 'probably no term' }],
+      },
+    ]
+      .map((o) => JSON.stringify(o))
+      .join('\n');
+    const ar = extractEnToX(lines, 'ar');
+    expect(ar.has('honesty')).toBe(false);
+    expect(ar.get('cat')).toEqual(['قِطّ']);
+    expect(extractEnToX(lines, 'vi').get('honesty')).toEqual(['probably no term']);
   });
 });
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default English copy. Per-locale variants live in sibling values-<lang>/
+  directories; Android picks one based on the device's current system locale,
+  falling back to this file when no match is found.
+-->
+<resources>
+    <string name="widget_label">Bookshelf</string>
+    <string name="widget_description">Showcase a customizable bookshelf</string>
+    <string name="widget_configure_title">Widget settings</string>
+    <!-- Fallbacks for the configure screen and widget until the app has
+         published its translated catalog (see set_bookshelf_widget_catalog). -->
+    <string name="widget_default_shelf">Recently read</string>
+    <string name="widget_rows">Rows</string>
+    <string name="widget_columns">Columns</string>
+    <string name="widget_show_titles">Book Title</string>
+    <string name="widget_edit">Edit</string>
+    <string name="widget_open_app">Open Readest to show this bookshelf</string>
+    <string name="reading_widget_label">Currently Reading</string>
+    <string name="reading_widget_description">Shows the book you\'re reading now</string>
+    <!-- Fallbacks for the reading widget's configure screen until the app has
+         published its translated catalog (see set_reading_widget_catalog). -->
+    <string name="widget_show_header">Show Header</string>
+    <string name="widget_reference_pages">Reference Pages</string>
+    <string name="widget_show_tts_bar">Text to Speech</string>
+    <string name="widget_header_size">Header Size</string>
+    <string name="widget_show_percent">Reading Progress</string>
+    <string name="widget_show_time_left">Remaining Time</string>
+    <string name="widget_show_page_count">Page Number</string>
+    <string name="widget_show_pages_remaining">Remaining Pages</string>
+    <string name="widget_text_size">Font Size</string>
+</resources>

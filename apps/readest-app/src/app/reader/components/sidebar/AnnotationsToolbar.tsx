@@ -15,7 +15,7 @@ import {
 } from '../../utils/annotatorUtil';
 import Dropdown from '@/components/Dropdown';
 
-const FILTER_KINDS: AnnotationFilterKind[] = ['all', 'highlights', 'notes'];
+const FILTER_KINDS: AnnotationFilterKind[] = ['all', 'notes'];
 
 interface AnnotationsFilterPanelProps {
   filterKind: AnnotationFilterKind;
@@ -50,8 +50,7 @@ const AnnotationsFilterPanel: React.FC<AnnotationsFilterPanelProps> = ({
 
   const filterLabels: Record<AnnotationFilterKind, string> = {
     all: _('All'),
-    highlights: _('Highlights'),
-    notes: _('Notes'),
+    notes: _('With notes'),
   };
 
   const showColors = colors.length >= 2;
@@ -176,8 +175,7 @@ interface AnnotationsToolbarProps {
   filterKind: AnnotationFilterKind;
   searchInput: string;
   isSearchVisible: boolean;
-  highlightCount: number;
-  noteCount: number;
+  annotationCount: number;
   matchCount: number;
   isFiltering: boolean;
   colors: HighlightColor[];
@@ -196,8 +194,7 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   filterKind,
   searchInput,
   isSearchVisible,
-  highlightCount,
-  noteCount,
+  annotationCount,
   matchCount,
   isFiltering,
   colors,
@@ -226,16 +223,12 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
     filterKind !== 'all' || excludedColors.length > 0 || excludedStyles.length > 0;
 
   // The search field takes the whole row when it is open, so the summary only
-  // speaks while it is closed: the mix of the book's annotations at rest, and
-  // how much of it survives the filters once any are on.
-  const total = highlightCount + noteCount;
-  const kindLabels = [
-    highlightCount > 0 && _('{{count}} Highlights', { count: highlightCount }),
-    noteCount > 0 && _('{{count}} Notes', { count: noteCount }),
-  ].filter(Boolean);
+  // speaks while it is closed: the book's annotation total at rest, and how
+  // much of it survives the filters once any are on.
+  const total = annotationCount;
   const summary = isFiltering
     ? _('{{matched}} of {{total}}', { matched: matchCount, total })
-    : null;
+    : _('{{count}} Annotations', { count: annotationCount });
 
   return (
     // justify-end, not justify-between: with no annotations yet the filter
@@ -247,7 +240,7 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
           aria-live='polite'
           className='text-base-content/60 flex h-8 min-w-0 flex-1 items-center truncate text-xs tabular-nums'
         >
-          {summary ?? kindLabels.join(' · ')}
+          {summary}
         </div>
       )}
       {isSearchVisible && (
@@ -266,7 +259,7 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
               if (e.key === 'Escape') onCloseSearch();
             }}
             placeholder={_('Search annotations...')}
-            className='w-full min-w-0 bg-transparent p-2 font-sans text-sm font-light focus:outline-none'
+            className='w-full min-w-0 bg-transparent p-2 font-sans text-sm font-light focus:outline-hidden'
           />
           <button
             onClick={onCloseSearch}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- maxResizeWidth/Height: wide/tall enough for a user-configured 5x5 grid
+     (~70dp per cell, Android's home-screen grid heuristic) to have room to
+     be useful. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:minWidth="250dp" android:minHeight="110dp"
+  android:minResizeWidth="40dp" android:minResizeHeight="40dp"
+  android:maxResizeWidth="380dp" android:maxResizeHeight="380dp"
+  android:targetCellWidth="4" android:targetCellHeight="2"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="0" android:widgetCategory="home_screen"
+  android:initialLayout="@layout/widget_bookshelf"
+  android:description="@string/widget_description"
+  android:configure="com.readest.native_bridge.BookshelfWidgetConfigureActivity"
+  android:widgetFeatures="reconfigurable" />

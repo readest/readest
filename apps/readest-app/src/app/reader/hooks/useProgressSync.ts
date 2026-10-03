@@ -17,6 +17,7 @@ import { eventDispatcher } from '@/utils/event';
 import { DEFAULT_BOOK_SEARCH_CONFIG, SYNC_PROGRESS_INTERVAL_SEC } from '@/services/constants';
 import { getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
 import { isMalformedLocationCfi } from '@/utils/cfi';
+import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 // Backoff schedule for the first-pull retry on book open. After these
 // attempts the gate releases unconditionally so the user's progress can
@@ -66,6 +67,7 @@ export const useProgressSync = (bookKey: string) => {
   const hasPulledConfigOnce = useRef(false);
   const pullAttempt = useRef(0);
   const pullInFlight = useRef(false);
+  const pendingResumePull = useRef(false);
   const pullRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearPendingPullRetry = () => {
@@ -102,6 +104,16 @@ export const useProgressSync = (bookKey: string) => {
     await syncConfigs([], bookHash, metaHash, 'pull');
   };
 
+  const runPendingResumePull = () => {
+    // Wait for both the request and its React-delivered result so the old
+    // response cannot close the new pull's gate.
+    if (!pendingResumePull.current || pullInFlight.current || !configPulled.current) return false;
+    configPulled.current = false;
+    clearPendingPullRetry();
+    void pullWithRetry();
+    return true;
+  };
+
   // Drives the pull on book open. A successful pull is signalled by the
   // [syncedConfigs] effect below flipping `configPulled.current` to true and
   // clearing the retry state — so this function just kicks off the next
@@ -113,12 +125,14 @@ export const useProgressSync = (bookKey: string) => {
     if (configPulled.current) return;
     if (pullInFlight.current) return;
     if (pullRetryTimer.current !== null) return;
+    pendingResumePull.current = false;
     pullInFlight.current = true;
     try {
       await pullConfig(bookKey);
     } finally {
       pullInFlight.current = false;
     }
+    if (runPendingResumePull()) return;
     if (configPulled.current) return;
     if (pullAttempt.current >= PULL_RETRY_DELAYS_MS.length) {
       // Best-effort release. The server-side last-writer-wins compare still
@@ -192,6 +206,22 @@ export const useProgressSync = (bookKey: string) => {
     }
   };
 
+  useWindowActiveChanged((isActive) => {
+    if (!user || !progress) return;
+    if (!isActive) {
+      handleAutoSync.flush();
+      return;
+    }
+    // The book stays mounted while Android is backgrounded. Pull again on
+    // resume before a suspended auto-push can send the old local position.
+    handleAutoSync.cancel();
+    pendingResumePull.current = pullInFlight.current;
+    configPulled.current = false;
+    pullAttempt.current = 0;
+    clearPendingPullRetry();
+    void pullWithRetry();
+  });
+
   // Push: flush the pending push + pull when the book is closed or the user
   // taps the manual Sync button.
   useEffect(() => {
@@ -220,7 +250,10 @@ export const useProgressSync = (bookKey: string) => {
   // Clean up any pending retry timer on unmount so it doesn't fire after the
   // reader has been torn down.
   useEffect(() => {
-    return () => clearPendingPullRetry();
+    return () => {
+      pendingResumePull.current = false;
+      clearPendingPullRetry();
+    };
   }, []);
 
   const applyRemoteProgress = async (syncedConfigs: BookConfig[]) => {
@@ -288,14 +321,6 @@ export const useProgressSync = (bookKey: string) => {
         const configCFI = config?.location;
         let remoteCFILocation = exactConfig.location;
         const xpointer = exactConfig.xpointer;
-        // The Readest KOReader plugin pushes `progress` + `xpointer` and never a
-        // `location`, so its [page, total] is CREngine's own pagination. That
-        // doubles as the anchor that corrects CREngine<->foliate DocFragment
-        // drift and as the last-resort target when the XPointer won't convert.
-        // A config that carries a CFI came from Readest, whose [page, total] is
-        // foliate's pagination and whose xpointer was derived from that same
-        // CFI — re-anchoring on it would only move the target off (#5109).
-        const remoteFraction = exactConfig.location ? undefined : getConfigFraction(exactConfig);
         let xpointerUnresolved = false;
         if (xpointer && view && bookData && bookData.bookDoc) {
           const pContents = view.renderer.getContents();
@@ -307,7 +332,6 @@ export const useProgressSync = (bookKey: string) => {
               content?.doc,
               content?.index,
               bookData.bookDoc,
-              remoteFraction,
             );
             if (!remoteCFILocation || CFI.compare(remoteCFILocation, candidateCFI) < 0) {
               remoteCFILocation = candidateCFI;
@@ -324,24 +348,26 @@ export const useProgressSync = (bookKey: string) => {
         // Reading progress applies below. Proofread (find/replace) rules merge
         // separately just after; other config fields remain device-local.
         // TODO: general config sync via a more robust profile-based solution.
-        if (remoteCFILocation && configCFI) {
+        if (remoteCFILocation) {
+          const remoteIsAhead = !configCFI || CFI.compare(configCFI, remoteCFILocation) < 0;
           // While previewing a deep-link target, do NOT yank the view to the
           // remote position — the user came here to look at a specific
           // annotation. The local config still gets updated; the next open
           // resolves to the synced position normally.
-          if (CFI.compare(configCFI, remoteCFILocation) < 0 && view && !isPreviewing()) {
+          if (remoteIsAhead && view && !isPreviewing()) {
             view.goTo(remoteCFILocation);
             announceSynced();
           }
-        } else if (xpointerUnresolved && remoteFraction !== undefined) {
-          // No CFI anywhere and the XPointer didn't resolve: the reported
-          // fraction is all that's left. CREngine and foliate paginate
-          // differently, so it's approximate — only ever move FORWARD with it,
-          // matching the CFI branch, so an imprecise jump can't lose the
-          // reader's place.
-          if (view && !isPreviewing() && localFraction < remoteFraction) {
-            view.goToFraction(remoteFraction);
-            announceSynced();
+        } else if (xpointerUnresolved) {
+          // No CFI anywhere and the XPointer didn't resolve. The koplugin's
+          // [page, total] is CREngine's own pagination, so jumping by it is a
+          // guess that routinely lands in the wrong chapter — worse than not
+          // syncing (#5980). Stay put and say so. #5625's real damage was the
+          // debounced auto-push overwriting the newer remote position with the
+          // local one; that is prevented by the pull continuing below (the
+          // config still merges), not by moving the reader.
+          if (view && !isPreviewing()) {
+            eventDispatcher.dispatch('hint', { bookKey, message: _('Sync failed') });
           }
         }
       }
@@ -418,6 +444,7 @@ export const useProgressSync = (bookKey: string) => {
       applyRemoteProgress(syncedConfigs).catch((error) => {
         console.error('Failed to apply remote progress', error);
       });
+      runPendingResumePull();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncedConfigs]);

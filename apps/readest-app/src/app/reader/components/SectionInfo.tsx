@@ -6,8 +6,14 @@ import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { getHeaderBandGeometry } from '@/utils/insets';
+import { getHeaderBandGeometry, getMarginalInlinePadding } from '@/utils/insets';
 import { getBookDataAttributes } from '@/utils/book';
+import {
+  getChromeChip,
+  getChromeFontSize,
+  getChromeTextColor,
+  isChromeStyled,
+} from '../utils/headerFooterStyle';
 import { useBookDataStore } from '@/store/bookDataStore';
 
 interface SectionInfoProps {
@@ -20,6 +26,10 @@ interface SectionInfoProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  // The spread's Column Gap (px) in effect, 0 when none (getSpreadColumnGap).
+  columnGap?: number;
+  // A fixed-layout page whose top edge is off screen (usePageEdges).
+  hidden?: boolean;
 }
 
 const SectionInfo: React.FC<SectionInfoProps> = ({
@@ -32,11 +42,13 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  columnGap = 0,
+  hidden = false,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { hoveredBookKey, getView, getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const { systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const getBookData = useBookDataStore((s) => s.getBookData);
   const viewSettings = getViewSettings(bookKey)!;
   const bookData = getBookData(bookKey);
@@ -48,6 +60,23 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   // into the notch instead of collapsing it (#5303).
   const band = getHeaderBandGeometry(topInset, viewSettings.marginTopPx);
   const maskHeight = Math.min(topInset, band.bottom);
+
+  // The header band is reserved margin except for a fixed-layout book in
+  // scrolled mode, where FoliateViewer pins scrollTop to 0 and the pages run
+  // underneath it. `auto` never gives the header a chip either way; a color
+  // the reader chose (#5938) paints one in both flow modes.
+  const chip = getChromeChip(viewSettings, 'header', {
+    isEink,
+    isScrolled,
+    isVertical,
+    bandReserved: !isScrolled || !bookData?.isFixedLayout,
+  });
+  const textColor = getChromeTextColor(viewSettings, isEink);
+  const fontSize = getChromeFontSize(viewSettings, isEink);
+  // Once the reader styles the chrome themselves the blend has to stand down:
+  // it inverts their text color, and differencing a child that carries its own
+  // background paints it solid black (#5342).
+  const blended = !!bookData?.isFixedLayout && !isEink && !isChromeStyled(viewSettings);
 
   const handleNotchClick = () => {
     if (eventDispatcher.dispatchSync('iframe-single-click')) return;
@@ -94,18 +123,21 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           // makes the toolbar unclickable.
           !isVertical && band.top < topInset && 'z-10',
           isEink
-            ? 'text-sm font-normal'
-            : bookData?.isFixedLayout
-              ? 'text-white/75 mix-blend-difference text-xs font-light'
-              : 'text-base-content text-xs font-light',
+            ? 'font-normal'
+            : blended
+              ? 'text-white/75 mix-blend-difference font-light'
+              : 'text-base-content font-light',
           isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0',
+          hidden && 'invisible',
         )}
         role='none'
         tabIndex={-1}
         onClick={handleSectionClick}
         {...getBookDataAttributes(bookData?.book?.title, bookData?.book?.metadata)}
-        style={
-          isVertical
+        style={{
+          fontSize: `${fontSize}px`,
+          ...(textColor ? { color: textColor } : {}),
+          ...(isVertical
             ? {
                 top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
                 bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
@@ -116,21 +148,51 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
               }
             : {
                 top: `${band.top}px`,
-                paddingInline: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
+                ...(isIPhoneDuo
+                  ? {
+                      // Per side: a Duo status strip widens only one inset
+                      // (#6307). Half the page margin past the safe-area inset,
+                      // matching the paginator's gutter, or the text's edge
+                      // under a Column Gap.
+                      paddingLeft: getMarginalInlinePadding(
+                        horizontalGap,
+                        contentInsets.left + gridInsets.left,
+                        columnGap,
+                        gridInsets.left,
+                      ),
+                      paddingRight: getMarginalInlinePadding(
+                        horizontalGap,
+                        contentInsets.right + gridInsets.right,
+                        columnGap,
+                        gridInsets.right,
+                      ),
+                    }
+                  : {
+                      paddingInline: getMarginalInlinePadding(
+                        horizontalGap,
+                        contentInsets.left,
+                        columnGap,
+                      ),
+                    }),
                 width: '100%',
                 height: `${band.height}px`,
-              }
-        }
+              }),
+        }}
       >
         <span
           aria-label={section ? _('Section Title') + `: ${section}` : ''}
           className={clsx(
             'text-center',
             isVertical ? '' : 'line-clamp-1',
+            // Shrink-wraps around the title (the span is a flex item), so the
+            // header never becomes the full-width opaque bar of #4157.
+            chip && section && 'section-pill eink-bordered rounded-md px-1.5',
+            chip?.kind === 'theme' && section && 'bg-base-100/85',
             !isVertical &&
               (hoveredBookKey == bookKey || (hoveredBookKey && appService?.isMobile)) &&
               'hidden',
           )}
+          style={chip?.kind === 'custom' && section ? { backgroundColor: chip.color } : undefined}
         >
           {section || ''}
         </span>

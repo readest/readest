@@ -161,6 +161,75 @@ describe('metadata confidence', () => {
   });
 });
 
+/** Chapter rows for a byline fixture — enough to clear MIN_CHAPTER_LINKS. */
+const bylineRows = Array.from(
+  { length: 6 },
+  (_, i) => `<li><a href="/tongren/11542/${i + 1}.html">\u7b2c${i + 1}\u8282</a></li>`,
+).join('\n');
+
+const bylinePage = (byline: string) => `<!DOCTYPE html><html><head>
+<title>\u5c0f\u8bf4\u540d_\u540c\u4eba\u5c0f\u8bf4\u7f51</title>
+</head><body>
+<div class="infos">${byline}</div>
+<ul>${bylineRows}</ul>
+</body></html>`;
+
+const authorOf = (byline: string) =>
+  parseChapterList(bylinePage(byline), 'https://www.trxs.cc/tongren/11542.html')!.author;
+
+describe('byline author fallback', () => {
+  it('does not swallow a following labelled field (trxs.cc shape)', () => {
+    // <span>作者：<a>五月不行</a></span>日期：2026-08-24
+    expect(
+      authorOf(
+        '<div class="date"> <span>\u4f5c\u8005\uff1a' +
+          '<a href="/author/9275/x.html">\u4e94\u6708\u4e0d\u884c</a></span>' +
+          '\u65e5\u671f\uff1a2026-08-24</div>',
+      ),
+    ).toBe('\u4e94\u6708\u4e0d\u884c');
+  });
+
+  it('stops at a following label inside one text node', () => {
+    expect(
+      authorOf('<p>\u4f5c\u8005\uff1a\u4e94\u6708\u4e0d\u884c\u65e5\u671f\uff1a2026-08-24</p>'),
+    ).toBe('\u4e94\u6708\u4e0d\u884c');
+  });
+
+  it('reads a plain inline byline', () => {
+    expect(authorOf('<p>\u4f5c\u8005\uff1a\u5929\u8695\u571f\u8c46</p>')).toBe(
+      '\u5929\u8695\u571f\u8c46',
+    );
+  });
+
+  it('accepts an ASCII colon and the 著者 label', () => {
+    expect(authorOf('<p>\u8457\u8005: \u5929\u8695\u571f\u8c46</p>')).toBe(
+      '\u5929\u8695\u571f\u8c46',
+    );
+  });
+
+  it('stops at whitespace, so trailing text on the line is not part of the name', () => {
+    expect(authorOf('<p>作者：五月不行 (完结) 469章</p>')).toBe('五月不行');
+  });
+
+  it('still prefers real work metadata over the byline', () => {
+    const page = bylinePage('<p>\u4f5c\u8005\uff1a\u5929\u8695\u571f\u8c46</p>').replace(
+      '</head>',
+      '<meta property="og:novel:author" content="Someone Else"/></head>',
+    );
+    const toc = parseChapterList(page, 'https://www.trxs.cc/tongren/11542.html')!;
+    expect(toc.author).toBe('Someone Else');
+    expect(toc.weak.author).toBe(false);
+  });
+
+  it('does not adopt a later field or a chapter title when the byline is empty', () => {
+    expect(authorOf('<span>作者：</span><span>日期：2026-08-24</span>')).toBe('');
+  });
+
+  it('reports no author when the page has no byline', () => {
+    expect(authorOf('<p>\u6700\u65b0\u66f4\u65b0</p>')).toBe('');
+  });
+});
+
 describe('parseWorkMetadata', () => {
   it('reads the work title and byline from a chapter page', () => {
     const meta = parseWorkMetadata(

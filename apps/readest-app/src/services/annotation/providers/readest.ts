@@ -73,7 +73,7 @@ export const buildAnnotationExport = ({
   const annotations: ReadestAnnotationEntry[] = [];
   for (const group of groups) {
     for (const note of group.booknotes) {
-      if (note.deletedAt) continue;
+      if (note.deletedAt || !BOOK_NOTE_TYPES.includes(note.type)) continue;
       const entry: ReadestAnnotationEntry = {
         id: note.id,
         type: note.type,
@@ -214,7 +214,7 @@ interface ResolvedCfi {
  * the fake-CFI scheme foliate-js generates from the spine index (mirrors
  * `view.resolveCFI`).
  */
-const resolveCfi = (bookDoc: BookDoc, cfi: string): ResolvedCfi | null => {
+export const resolveCfi = (bookDoc: BookDoc, cfi: string): ResolvedCfi | null => {
   try {
     if (bookDoc.resolveCFI) return bookDoc.resolveCFI(cfi);
     const parts = CFI.parse(cfi);

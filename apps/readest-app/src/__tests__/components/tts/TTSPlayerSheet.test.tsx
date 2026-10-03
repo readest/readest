@@ -127,6 +127,14 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onGetPlaybackInfo: vi
     .fn()
     .mockReturnValue({ position: 10, duration: 100, measuredFraction: 0.4 }),
+  // Lyric view off by default here: these tests cover the cover player, and
+  // the lyric layout has its own suite.
+  supportsLyrics: false,
+  buffering: false,
+  onGetLyrics: vi.fn().mockResolvedValue(null),
+  onGetActiveIndex: vi.fn().mockReturnValue(-1),
+  onGetLyricPage: vi.fn().mockResolvedValue(null),
+  onPlayFromLyric: vi.fn().mockResolvedValue(undefined),
   downloads: {
     supported: false,
     chapters: [],
@@ -182,6 +190,68 @@ describe('TTSPlayerSheet', () => {
     expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy(); // voice button caption
     // The main view carries no header label (vertical space).
     expect(screen.queryByText('Read Aloud')).toBeNull();
+  });
+
+  test('resolves the chapter label from the ranged TTS section metadata', () => {
+    const props = makeProps();
+    render(
+      <TTSPlayerSheet
+        {...props}
+        activeSectionIndex={3}
+        downloads={{
+          ...props.downloads,
+          chapters: [
+            { key: 'one', label: 'Chapter One', depth: 0, startSection: 0, endSection: 2 },
+            { key: 'two', label: 'Chapter Two', depth: 0, startSection: 2, endSection: 5 },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Chapter Two')).toBeTruthy();
+    expect(screen.queryByText('Chapter 5')).toBeNull();
+  });
+
+  test('falls back to an accurate section label when chapter metadata is missing', () => {
+    const props = makeProps();
+    render(
+      <TTSPlayerSheet
+        {...props}
+        activeSectionIndex={4}
+        downloads={{ ...props.downloads, chapters: [] }}
+      />,
+    );
+
+    expect(screen.getByText('Section 5')).toBeTruthy();
+    expect(screen.queryByText('Chapter 5')).toBeNull();
+  });
+
+  test('ignores malformed chapter ranges and blank labels', () => {
+    const props = makeProps();
+    render(
+      <TTSPlayerSheet
+        {...props}
+        activeSectionIndex={3}
+        downloads={{
+          ...props.downloads,
+          chapters: [
+            { key: 'negative', label: 'Wrong Negative', depth: 0, startSection: -1, endSection: 5 },
+            {
+              key: 'fractional',
+              label: 'Wrong Fractional',
+              depth: 0,
+              startSection: 2.5,
+              endSection: 5,
+            },
+            { key: 'blank', label: '   ', depth: 0, startSection: 2, endSection: 5 },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Section 4')).toBeTruthy();
+    expect(screen.queryByText('Wrong Negative')).toBeNull();
+    expect(screen.queryByText('Wrong Fractional')).toBeNull();
   });
 
   test('degrades without a timeline: no scrubber, estimate text instead', () => {
@@ -249,7 +319,59 @@ describe('TTSPlayerSheet', () => {
     const { container } = render(<TTSPlayerSheet {...makeProps()} />);
     const cover = container.querySelector('img');
     expect(cover).toBeTruthy();
-    expect(cover?.parentElement?.className).toContain('sm:pt-4');
+    // The cover sits inside the artwork/title block, which the main view owns.
+    expect(cover?.parentElement?.parentElement?.className).toContain('sm:pt-4');
+  });
+
+  test('rings the transport button while the engine has no audio out yet', () => {
+    const { container, rerender } = render(<TTSPlayerSheet {...makeProps()} />);
+    const button = screen.getByLabelText('Pause');
+    expect(button.getAttribute('aria-busy')).toBe('false');
+    expect(container.querySelector('svg circle')).toBeNull();
+
+    rerender(<TTSPlayerSheet {...makeProps({ buffering: true })} />);
+    const busy = screen.getByLabelText('Pause');
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    // The glyph stays: a reader must still be able to pause mid-fetch.
+    expect(busy.querySelector('svg circle')).toBeTruthy();
+  });
+
+  test('an aligned engine swaps the cover billing for the lyric sheet', async () => {
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const { container } = render(
+      <TTSPlayerSheet
+        {...makeProps({
+          supportsLyrics: true,
+          onGetLyrics: vi
+            .fn()
+            .mockResolvedValue({ sectionIndex: 0, lines: ['Down the rabbit hole.'] }),
+        })}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Down the rabbit hole.')).toBeTruthy());
+    // The artwork steps aside into a thumbnail so the transcript gets the room.
+    expect(container.querySelector('img')?.className).toContain('h-12');
+  });
+
+  test('a section with nothing to transcribe keeps the cover player', async () => {
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const onGetLyrics = vi.fn().mockResolvedValue(null);
+    const { container } = render(
+      <TTSPlayerSheet {...makeProps({ supportsLyrics: true, onGetLyrics })} />,
+    );
+    await waitFor(() => expect(onGetLyrics).toHaveBeenCalled());
+    await waitFor(() => expect(container.querySelector('img')?.className).toContain('h-32'));
+  });
+
+  test('an engine without sentence alignment never asks for a transcript', async () => {
+    const onGetLyrics = vi.fn().mockResolvedValue({ sectionIndex: 0, lines: ['nope'] });
+    render(<TTSPlayerSheet {...makeProps({ supportsLyrics: false, onGetLyrics })} />);
+    await waitFor(() => expect(screen.getByText('Alice in Wonderland')).toBeTruthy());
+    expect(onGetLyrics).not.toHaveBeenCalled();
   });
 
   test('the speed caption pads and truncates like its sibling captions', () => {

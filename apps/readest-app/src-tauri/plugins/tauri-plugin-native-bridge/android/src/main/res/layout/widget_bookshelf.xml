@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:theme="@style/BookshelfWidgetTheme"
+  android:layout_width="match_parent" android:layout_height="match_parent"
+  android:orientation="vertical" android:background="@drawable/widget_card_bg"
+  android:padding="6dp">
+  <!-- Optional user-configured heading, set via the widget's configure
+       screen. Hidden (GONE) when no heading is set. -->
+  <TextView android:id="@+id/heading"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:visibility="gone"
+    android:textStyle="bold" android:textSize="14sp"
+    android:maxLines="1" android:ellipsize="end"
+    android:textColor="?android:attr/textColorPrimary" />
+  <!-- Up to 5x5 grid of book covers, as 25 pre-declared cells placed via
+       layout_row/layout_column. Each cell has layout_rowWeight/
+       columnWeight="1", so GONE cells drop out of the weight sum entirely -
+       whichever subset is VISIBLE always fills the available space, no
+       scrolling or leftover gaps.
+       Each cell is a flat LinearLayout: flexible spacer, cover, title,
+       flexible spacer - the two equal-weight spacers split any leftover
+       height evenly, giving true symmetric centering.
+       Two cover ImageViews are declared per cell, only one shown at a time
+       based on showTitles: cover_r_c (plain margin) and cover_title_r_c
+       (extra bottom margin reserving room for the title below it). That
+       extra margin is always subtracted from the cover's measurement budget
+       up front, regardless of clamping, so it never yields zero space; the
+       title's matching negative top margin reclaims exactly that reserved
+       chunk as its own guaranteed height. This sizes the title without
+       depending on AppWidgetManager's reported min size, which some
+       launchers (confirmed: Nova) report well below the widget's actual
+       current size. -->
+  <GridLayout android:id="@+id/grid"
+    android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+    android:rowCount="5" android:columnCount="5" android:useDefaultMargins="false">
+      <LinearLayout android:id="@+id/cell_0_0" style="@style/BookshelfWidgetCell"
+        android:layout_row="0" android:layout_column="0">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_0_0" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_0_0" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_0_0" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_0_1" style="@style/BookshelfWidgetCell"
+        android:layout_row="0" android:layout_column="1">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_0_1" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_0_1" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_0_1" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_0_2" style="@style/BookshelfWidgetCell"
+        android:layout_row="0" android:layout_column="2">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_0_2" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_0_2" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_0_2" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_0_3" style="@style/BookshelfWidgetCell"
+        android:layout_row="0" android:layout_column="3">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_0_3" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_0_3" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_0_3" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_0_4" style="@style/BookshelfWidgetCell"
+        android:layout_row="0" android:layout_column="4">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_0_4" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_0_4" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_0_4" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_1_0" style="@style/BookshelfWidgetCell"
+        android:layout_row="1" android:layout_column="0">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_1_0" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_1_0" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_1_0" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_1_1" style="@style/BookshelfWidgetCell"
+        android:layout_row="1" android:layout_column="1">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_1_1" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_1_1" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_1_1" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_1_2" style="@style/BookshelfWidgetCell"
+        android:layout_row="1" android:layout_column="2">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_1_2" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_1_2" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_1_2" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_1_3" style="@style/BookshelfWidgetCell"
+        android:layout_row="1" android:layout_column="3">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_1_3" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_1_3" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_1_3" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_1_4" style="@style/BookshelfWidgetCell"
+        android:layout_row="1" android:layout_column="4">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_1_4" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_1_4" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_1_4" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_2_0" style="@style/BookshelfWidgetCell"
+        android:layout_row="2" android:layout_column="0">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_2_0" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_2_0" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_2_0" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_2_1" style="@style/BookshelfWidgetCell"
+        android:layout_row="2" android:layout_column="1">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_2_1" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_2_1" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_2_1" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_2_2" style="@style/BookshelfWidgetCell"
+        android:layout_row="2" android:layout_column="2">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_2_2" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_2_2" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_2_2" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_2_3" style="@style/BookshelfWidgetCell"
+        android:layout_row="2" android:layout_column="3">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_2_3" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_2_3" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_2_3" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_2_4" style="@style/BookshelfWidgetCell"
+        android:layout_row="2" android:layout_column="4">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_2_4" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_2_4" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_2_4" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_3_0" style="@style/BookshelfWidgetCell"
+        android:layout_row="3" android:layout_column="0">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_3_0" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_3_0" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_3_0" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_3_1" style="@style/BookshelfWidgetCell"
+        android:layout_row="3" android:layout_column="1">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_3_1" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_3_1" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_3_1" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_3_2" style="@style/BookshelfWidgetCell"
+        android:layout_row="3" android:layout_column="2">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_3_2" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_3_2" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_3_2" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_3_3" style="@style/BookshelfWidgetCell"
+        android:layout_row="3" android:layout_column="3">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_3_3" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_3_3" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_3_3" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_3_4" style="@style/BookshelfWidgetCell"
+        android:layout_row="3" android:layout_column="4">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_3_4" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_3_4" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_3_4" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_4_0" style="@style/BookshelfWidgetCell"
+        android:layout_row="4" android:layout_column="0">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_4_0" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_4_0" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_4_0" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_4_1" style="@style/BookshelfWidgetCell"
+        android:layout_row="4" android:layout_column="1">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_4_1" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_4_1" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_4_1" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_4_2" style="@style/BookshelfWidgetCell"
+        android:layout_row="4" android:layout_column="2">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_4_2" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_4_2" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_4_2" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_4_3" style="@style/BookshelfWidgetCell"
+        android:layout_row="4" android:layout_column="3">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_4_3" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_4_3" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_4_3" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+      <LinearLayout android:id="@+id/cell_4_4" style="@style/BookshelfWidgetCell"
+        android:layout_row="4" android:layout_column="4">
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+          <ImageView android:id="@+id/cover_4_4" style="@style/BookshelfWidgetCover" />
+          <ImageView android:id="@+id/cover_title_4_4" style="@style/BookshelfWidgetCoverWithTitle" />
+          <TextView android:id="@+id/title_4_4" style="@style/BookshelfWidgetTitle" />
+          <FrameLayout style="@style/BookshelfWidgetCellSpacer" />
+      </LinearLayout>
+  </GridLayout>
+  <include layout="@layout/widget_tts_bar" />
+  <TextView android:id="@+id/empty"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:gravity="center" android:visibility="gone" android:textSize="12sp"
+    android:textColor="?android:attr/textColorSecondary" />
+</LinearLayout>

@@ -50,6 +50,16 @@ import { findBookByOPDSSources, upsertOPDSSourceMapping } from '@/services/opds/
 import { applyOPDSCover, getOPDSCoverHref, getOPDSImageCacheFilename } from '@/services/opds/cover';
 import { applyOPDSMetadata, getOPDSBookMetadata } from '@/services/opds/metadata';
 import { buildPseStreamFileName } from '@/services/opds/pseStream';
+import { md5 } from '@/utils/md5';
+import { makeOpdsAudioFilePath, opdsAudioIdentity } from '@/services/opds/audiobook';
+import {
+  makeBookOrbitAudioFilePath,
+  matchBookOrbitAudiobook,
+} from '@/services/bookorbit/audiobookId';
+import { autoPairBookOrbitAudiobook, loadEbookChapterIds } from '@/services/bookorbit/autoPair';
+import { BookOrbitClient } from '@/services/bookorbit/client';
+import { pickAudioLinks } from '@/services/opds/audiobook';
+import type { OpdsAudioTrackLink } from '@/services/opds/audiobook';
 import type { Book } from '@/types/book';
 import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
@@ -60,6 +70,7 @@ import { closeOPDSBrowser, stashOPDSReturnTarget } from './utils/opdsClose';
 import { findExistingBookForPublication } from './utils/findExistingBook';
 import Dialog from '@/components/Dialog';
 import { uniqueId } from '@/utils/misc';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -89,7 +100,7 @@ export default function BrowserPage() {
   // already imported (shown as "Open & Read" instead of "Download"), and
   // re-evaluate whenever a download finishes or a book is removed.
   const library = useLibraryStore((s) => s.library);
-  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow, isIPhoneDuo } = useThemeStore();
   const { settings } = useSettingsStore();
   const [viewMode, setViewMode] = useState<ViewMode>('loading');
   const [state, setState] = useState<OPDSState>({
@@ -644,6 +655,37 @@ export default function BrowserPage() {
                 console.warn('OPDS: failed to apply the feed cover:', coverError);
               }
             }
+            // A BookOrbit entry that offers both formats is one book: importing
+            // the ebook is enough to know what the narration is, so pair them
+            // outright rather than sending the user to the wizard (#6224).
+            if (book && publication) {
+              const audioHrefs = pickAudioLinks(publication.links ?? [])
+                .map((link) => resolveURL(link.href ?? '', state.baseURL))
+                .filter(Boolean);
+              const native = matchBookOrbitAudiobook(
+                audioHrefs,
+                settings.bookorbit ?? { serverUrl: '', password: '' },
+              );
+              if (native) {
+                void autoPairBookOrbitAudiobook({
+                  book,
+                  bookId: native.bookId,
+                  loadManifest: (id) =>
+                    new BookOrbitClient(
+                      {
+                        serverUrl: settings.bookorbit!.serverUrl,
+                        username: settings.bookorbit!.username,
+                        password: settings.bookorbit!.password,
+                        customHeaders: settings.bookorbit!.customHeaders,
+                      },
+                      { onTokensUpdated: () => {} },
+                    ).getManifest(id),
+                  loadTocChapterIds: (target) => loadEbookChapterIds(appService, target),
+                  appService,
+                  settings,
+                });
+              }
+            }
             if (book && catalogSourceId) {
               try {
                 await upsertOPDSSourceMapping(appService, {
@@ -703,6 +745,90 @@ export default function BrowserPage() {
       }
     },
     [state.baseURL, catalogId, appService, libraryLoaded, router, _],
+  );
+
+  // Audio entries are played from the catalog, never imported (#6224): the
+  // stub carries the acquisition links as its identity, the way an ABS stub
+  // carries `abs://<serverId>/<itemId>`.
+  const handlePlayAudio = useCallback(
+    async (tracks: OpdsAudioTrackLink[], title: string, author: string) => {
+      if (!appService || !libraryLoaded) return;
+      try {
+        const resolved = tracks.map((track) => ({
+          ...track,
+          href: resolveURL(track.href, state.baseURL),
+        }));
+        // When the catalog being browsed IS the BookOrbit configured for sync,
+        // its audiobook API serves the same book with chapters, byte ranges and
+        // a shared listening position — none of which OPDS can express (#6224).
+        const native = matchBookOrbitAudiobook(
+          resolved.map((track) => track.href),
+          settings.bookorbit ?? { serverUrl: '', password: '' },
+        );
+        const filePath = native
+          ? makeBookOrbitAudioFilePath(native.bookId)
+          : makeOpdsAudioFilePath({ catalogId, title, author, tracks: resolved });
+        const { library, setLibrary } = useLibraryStore.getState();
+        // Hashed over the book's identity, not the whole filePath: that string
+        // also carries the title and author, so a catalog correcting either one
+        // would hash to a new row and strand the listening progress on the old
+        // one. The BookOrbit path is already just `bookorbit://<id>`.
+        const hash = md5(native ? filePath : opdsAudioIdentity(catalogId, resolved));
+        const now = Date.now();
+        const existing = library.find((b) => b.hash === hash);
+        if (!existing) {
+          const stub: Book = {
+            hash,
+            format: native ? 'BOOKORBIT' : 'OPDSAUDIO',
+            filePath,
+            title,
+            author,
+            sourceTitle: title,
+            createdAt: now,
+            updatedAt: now,
+            deletedAt: null,
+          };
+          // An audio stub has no file to extract artwork from, so the entry's
+          // own cover is the only one it will ever have — without it the
+          // player and the media session fall back to a placeholder. Best
+          // effort, exactly like the download path (#5270).
+          if (publicationCoverHref) {
+            try {
+              await applyOPDSCover({
+                appService,
+                book: stub,
+                coverUrl: resolveURL(publicationCoverHref, state.baseURL),
+                username: usernameRef.current || '',
+                password: passwordRef.current || '',
+                customHeaders: customHeadersRef.current,
+              });
+            } catch (coverError) {
+              console.warn('OPDS: failed to apply the feed cover:', coverError);
+            }
+          }
+          const newLibrary = [stub, ...library];
+          setLibrary(newLibrary);
+          await appService.saveLibraryBooks(newLibrary);
+        }
+        router.push(`/player?id=${hash}`);
+      } catch (e) {
+        console.error('Play error:', e);
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to start playback') + `:\n${e instanceof Error ? e.message : e}`,
+        });
+      }
+    },
+    [
+      state.baseURL,
+      catalogId,
+      appService,
+      libraryLoaded,
+      router,
+      publicationCoverHref,
+      settings.bookorbit,
+      _,
+    ],
   );
 
   const handleGenerateCachedImageUrl = useCallback(
@@ -1005,6 +1131,8 @@ export default function BrowserPage() {
         className='relative top-0 z-40 w-full'
         style={{
           paddingTop: `${safeAreaInsets?.top || 0}px`,
+          // Clear iPhone Duo's side status strip (#6307).
+          ...getHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo),
         }}
       >
         <Navigation
@@ -1067,6 +1195,7 @@ export default function BrowserPage() {
             existingBook={existingBookForPublication}
             onDownload={handleDownload}
             onStream={handleStream}
+            onPlayAudio={handlePlayAudio}
             resolveURL={resolveURL}
             onNavigate={handleNavigate}
             onGenerateCachedImageUrl={handleGenerateCachedImageUrl}
@@ -1088,18 +1217,18 @@ export default function BrowserPage() {
         title={_('Add to My Catalogs')}
         onClose={() => setShowAddCatalog(false)}
         boxClassName='sm:max-w-md sm:h-auto'
-        contentClassName='!px-6 !py-4'
+        contentClassName='px-6! py-4!'
       >
         <div className='flex flex-col gap-4 pt-2'>
-          <div className='form-control'>
-            <label className='label'>
-              <span className='label-text font-medium text-sm'>{_('Catalog Name')}</span>
+          <div className='flex flex-col'>
+            <label className='flex select-none items-center justify-between px-1 py-2'>
+              <span className='text-sm font-medium text-sm'>{_('Catalog Name')}</span>
             </label>
             <input
               type='text'
               value={newCatalogName}
               onChange={(e) => setNewCatalogName(e.target.value)}
-              className='input input-bordered eink-bordered w-full'
+              className='input eink-bordered w-full'
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newCatalogName.trim()) {

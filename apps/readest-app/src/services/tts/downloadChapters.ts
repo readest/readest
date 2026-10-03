@@ -37,13 +37,13 @@ const flatten = (
   }
 };
 
-export const deriveDownloadChapters = (
+export const deriveDownloadChapters = async (
   toc: TOCItem[],
-  resolveSection: (href: string) => number | null,
+  resolveSection: (href: string) => number | null | Promise<number | null>,
   sectionCount: number,
   // User-facing label for TOC-less sections; the component injects i18n.
   sectionLabel: (oneBasedIndex: number) => string = (n) => `Section ${n}`,
-): DownloadChapter[] => {
+): Promise<DownloadChapter[]> => {
   const flat: { label: string; href: string; depth: number }[] = [];
   flatten(toc ?? [], 0, flat);
 
@@ -52,7 +52,7 @@ export const deriveDownloadChapters = (
   const seen = new Set<number>();
   const anchors: { key: string; label: string; depth: number; startSection: number }[] = [];
   for (const entry of flat) {
-    const section = resolveSection(entry.href);
+    const section = await resolveSection(entry.href);
     if (section === null || section < 0 || section >= sectionCount) continue;
     if (seen.has(section)) continue;
     seen.add(section);

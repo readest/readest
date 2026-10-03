@@ -26,6 +26,25 @@ export const findRegexMatches = (text: string, regex: RegExp, limit = Infinity):
   return matches;
 };
 
+// Soft hyphens (U+00AD) are invisible line-break hints, and tools like
+// Calibre's Polish EPUB put them inside most words, so search ignores them:
+// match on the text without them, then map spans back with `toSource`.
+// Returns null when the text has none.
+export const stripSoftHyphens = (text: string) => {
+  if (!text.includes('\u00AD')) return null;
+  const offsets: number[] = [];
+  for (let index = 0; index < text.length; index++) {
+    if (text.charCodeAt(index) !== 0xad) offsets.push(index);
+  }
+  return {
+    text: text.replace(/\u00AD/g, ''),
+    toSource: ({ start, end }: TextMatch): TextMatch => ({
+      start: offsets[start]!,
+      end: offsets[end - 1]! + 1,
+    }),
+  };
+};
+
 // Keep only matches whose span starts at a word start and ends at a word end,
 // per Intl.Segmenter word segmentation (dictionary-based for CJK locales).
 export const filterWholeWordMatches = (

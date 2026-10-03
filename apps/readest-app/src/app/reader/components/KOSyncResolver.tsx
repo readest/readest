@@ -42,7 +42,7 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
             'transition-colors duration-150',
             'hover:border-base-300 hover:bg-base-200/60',
             'active:bg-base-200/80',
-            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
           )}
         >
           <div className='flex min-w-0 flex-1 flex-col gap-1'>
@@ -50,7 +50,7 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
                 `as='span'` because this lives inside a button, not as a
                 document heading; opacity override expresses the
                 "secondary on this surface" relationship. */}
-            <SectionTitle as='span' className='!text-base-content/55 !ps-0'>
+            <SectionTitle as='span' className='text-base-content/55! ps-0!'>
               {_('This device')}
             </SectionTitle>
             <span className='line-clamp-2 text-sm font-medium leading-snug'>
@@ -65,14 +65,14 @@ const KOSyncConflictResolver: React.FC<KOSyncConflictResolverProps> = ({
             'btn btn-primary group',
             'h-auto min-h-0 w-full justify-start gap-3',
             'rounded-xl border-0 px-4 py-3.5 text-left font-normal normal-case',
-            'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
           )}
         >
           <div className='flex min-w-0 flex-1 flex-col items-start gap-1'>
             {/* On the primary-color button background the default
                 /65 token would clash; opacity-75 inherits the button's
                 contrast color and dims it uniformly. */}
-            <SectionTitle as='span' className='!ps-0 !text-current opacity-75'>
+            <SectionTitle as='span' className='ps-0! text-current! opacity-75'>
               {remoteDeviceName}
             </SectionTitle>
             <span className='line-clamp-2 text-sm font-medium leading-snug'>

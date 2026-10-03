@@ -1,5 +1,49 @@
 {
   "releases": {
+    "0.12.10": {
+      "date": "2026-09-22",
+      "notes": [
+        "Library: You can now organize books into configurable bookshelves, tag books in bulk",
+        "Audiobooks: You can download Audiobookshelf books for offline listening, stream audiobooks from OPDS catalogs and BookOrbit",
+        "Reading: You can now open HTML files as books, and select, highlight, and look up text in Paragraph Mode",
+        "Sync: Reading progress refreshes when you return to the app, WebDAV sync is more reliable, and Readwise exports now include bookmarks",
+        "TTS: You can now browse and resume your books from Android Auto and pick up recent books from CarPlay",
+        "PDF: Page-turn animations now work on PDFs, comics, and fixed-layout books, and wide comic pages get a spread of their own",
+        "KOReader: Added background sync, group downloads, and more library controls, and highlights you delete stay deleted",
+        "Dictionary: Pronunciations can play automatically on lookup, accented words are easier to find",
+        "More: Backups are much faster and keep the screen awake, and fixed freezes on App launch and in image-heavy chapters"
+      ]
+    },
+    "0.12.8": {
+      "date": "2026-09-08",
+      "notes": [
+        "Reading: Customize the information shown in headers and footers, resize text with zoom shortcuts",
+        "Sync: You can choose whether to use Readest Cloud before signing in, and recover missing covers during sync",
+        "Annotations: You can now import highlights, bookmarks, and reading progress from ReadEra, and sync your notes and highlights to Notion",
+        "Audiobooks: You can now stream ebook-only titles from Audiobookshelf",
+        "Text-to-Speech: use Apple Enhanced and Premium voices on the web, and optionally skip parenthetical readings in Japanese books",
+        "Web Imports: You can now clip signed-in pages and import web novels that require an account, with more reliable text decoding",
+        "Styling: Your library and reader can now use separate theme modes and colors, and e-ink mode is available on every platform",
+        "PDF: You can lock horizontal panning while zoomed, highlights stay visible in dark mode, and PDFs work on older devices",
+        "Dictionary: Dictionary entries can now play embedded audio, jump to parts of speech, and enlarge images",
+        "Sharing: Nearby BookDrop now offers easier pairing, transfer sounds, and more reliable device discovery and reconnection"
+      ]
+    },
+    "0.12.6": {
+      "date": "2026-08-29",
+      "notes": [
+        "Audiobooks: Added Audiobookshelf support for streaming audiobooks and podcasts, and you can now pair an audiobook with its ebook to read along as it plays",
+        "Text-to-Speech: Added a lyric-style view that shows the sentences around the one being read, plus per-book offline voice downloads and steadier pauses between sentences",
+        "Library: You can now browse the web inside Readest to add books, choose which chapters to import from a web novel, hide covers for privacy, and watch download progress right on the shelf",
+        "Sharing: Added Nearby BookDrop to send and receive books between nearby devices over your local network, including KOReader devices",
+        "Reading: Added customizable keyboard and mouse shortcuts, Yomitan dictionary support, a full-screen book cover view, and right-to-left page order for comics and fixed-layout books",
+        "Reading: The Notebook is now a full writing workspace, where your notes save as you type, sync across devices, and link back to the passage they came from",
+        "Footnotes: Footnote popups no longer get cut off, let you select and look up text, and can jump straight to the note's place in the book",
+        "PDF: You can now select text across page boundaries, copy paragraphs without broken line breaks, and see the printed page numbers as reference pages",
+        "Sync: Your book groups and shelves now sync, file sync between devices settles reliably, highlights you delete in KOReader come across, and your progress survives an OPDS re-download",
+        "More: Fixed crashes on launch, garbled AZW3 books, the reading position drifting after rotating the screen, and unreadable highlights on e-ink screens"
+      ]
+    },
     "0.12.1": {
       "date": "2026-08-08",
       "notes": [

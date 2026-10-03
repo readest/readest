@@ -8,6 +8,9 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
+import { convertBlobUrlToDataUrl } from '@/libs/document';
+import ModalPortal from '@/components/ModalPortal';
+import ImageViewer from '@/app/reader/components/ImageViewer';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
@@ -22,8 +25,24 @@ import type {
   DictionaryProvider,
   WebSearchEntry,
 } from '@/services/dictionaries/types';
+import type { Insets } from '@/types/misc';
 
 const isTauri = isTauriAppPlatform();
+const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+/**
+ * The `src` worth blowing up for a tapped entry image. MDX bodies ship an
+ * illustration twice — a hidden full-resolution copy beside the `thumb` that is
+ * actually laid out (OALD9's `<div class="ox-enlarge">`) — and zooming the
+ * 100px thumb is no enlargement at all. Take the largest decoded twin.
+ */
+const fullResolutionSrc = (image: HTMLImageElement | null) => {
+  if (!image) return null;
+  const wrapper = image.closest('a') ?? image.parentElement;
+  const twins = wrapper ? [...wrapper.querySelectorAll('img')] : [];
+  const largest = twins.reduce((a, b) => (b.naturalWidth > a.naturalWidth ? b : a), image);
+  return largest.getAttribute('src');
+};
 
 interface CardState {
   state: 'loading' | 'loaded' | 'empty' | 'unsupported' | 'error';
@@ -54,6 +73,9 @@ export interface DictionaryResultsState {
   noProvidersAtAll: boolean;
   /** Dictionary popup font-size multiplier (#4443); `1` = default sizes. */
   fontScale: number;
+  /** Data URL of the entry image being shown full screen, or `null` (#6018). */
+  zoomedImageSrc: string | null;
+  closeZoomedImage: () => void;
   /** Whether the current word is being fetched/spoken by the TTS engine (#4876). */
   isSpeaking: boolean;
   /** Pronounce the current word via Edge TTS (falling back to platform speech). */
@@ -81,6 +103,9 @@ export function useDictionaryResults({
   const { dictionaries, settings } = useCustomDictionaryStore();
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
   const themeCode = useThemeStore((s) => s.themeCode);
+  // Speak the entry as soon as it renders, for dictionaries that carry their
+  // own recordings (#6265). Providers without bundled audio ignore it.
+  const autoPlayPronunciation = settings.autoPlayPronunciation ?? false;
 
   const computedProviders = getEnabledProviders({
     settings,
@@ -93,6 +118,14 @@ export function useDictionaryResults({
 
   const definitionProviders = useMemo(() => providers.filter((p) => p.kind !== 'web'), [providers]);
   const webSearchProviders = useMemo(() => providers.filter((p) => p.kind === 'web'), [providers]);
+  // Every provider looks the word up concurrently, but they all speak through
+  // one shared <audio> element — arming more than one lets whichever resolves
+  // its bytes last cut off the others, in an order nobody chose. Arm only the
+  // highest-ranked dictionary that can carry recordings (#6265).
+  const autoPlayProviderId = useMemo(
+    () => definitionProviders.find((p) => p.kind === 'mdict')?.id,
+    [definitionProviders],
+  );
   // Web entries live in their own section, so `providerOrder` alone can't lift
   // one above the dictionary cards (#5083). Let the top-most enabled provider
   // decide which section leads. Derived from the full enabled list rather than
@@ -112,7 +145,9 @@ export function useDictionaryResults({
   const [cards, setCards] = useState<Record<string, CardState>>({});
   // Cards the user has manually toggled. The auto-expand reconciliation
   // (≤ 3 results → default expanded) only writes to cards NOT in this set.
-  const [manuallyToggled, setManuallyToggled] = useState<Record<string, boolean>>({});
+  // A ref, not state: a tap can land while an auto-expand pass is still
+  // pending, and that pass must see the tap or it re-expands the card.
+  const manuallyToggled = useRef<Record<string, boolean>>({});
 
   const containerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const setContainerRef = useCallback(
@@ -167,13 +202,13 @@ export function useDictionaryResults({
       if (!old) return prev;
       return { ...prev, [id]: { ...old, expanded: !old.expanded } };
     });
-    setManuallyToggled((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+    manuallyToggled.current[id] = true;
   }, []);
 
   // Reset manual-toggle tracking when the looked-up word changes — the
   // auto-expand decision should re-evaluate against the new result count.
   useEffect(() => {
-    setManuallyToggled({});
+    manuallyToggled.current = {};
   }, [currentWord]);
 
   // Auto-expand decision: when ≤ 3 providers have settled with results,
@@ -189,7 +224,7 @@ export function useDictionaryResults({
       let changed = false;
       const next = { ...prev };
       for (const id of loadedIds) {
-        if (manuallyToggled[id]) continue;
+        if (manuallyToggled.current[id]) continue;
         const c = prev[id];
         if (!c) continue;
         if (c.expanded !== shouldExpand) {
@@ -199,16 +234,55 @@ export function useDictionaryResults({
       }
       return changed ? next : prev;
     });
-  }, [cards, manuallyToggled]);
+  }, [cards]);
 
-  // External-link delegation inside provider-rendered DOM: on Tauri we
-  // route http(s) anchors through `openUrl` because target="_blank" doesn't
-  // work; on web we let the anchor handle it natively.
+  const [zoomedImageSrc, setZoomedImageSrc] = useState<string | null>(null);
+  // Reading the image out of the entry is async, so a second tap (or a close)
+  // while the first is still decoding must win. Only the newest request paints.
+  const zoomRequestRef = useRef(0);
+  const closeZoomedImage = useCallback(() => {
+    zoomRequestRef.current += 1;
+    setZoomedImageSrc(null);
+  }, []);
+
+  // Click delegation inside provider-rendered DOM. MDict entries render in a
+  // shadow root, where `e.target` is retargeted to the host — only the composed
+  // path names the element that was actually clicked.
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
-    if (!isTauri) return;
     if (e.defaultPrevented) return;
-    const anchor = (e.target as Element | null)?.closest?.('a');
-    if (!anchor) return;
+    let image: HTMLImageElement | null = null;
+    let anchor: HTMLAnchorElement | null = null;
+    for (const node of e.nativeEvent.composedPath()) {
+      if (node === e.currentTarget) break;
+      if (!(node instanceof Element)) continue;
+      if (!image && node.tagName === 'IMG') image = node as HTMLImageElement;
+      // Only a real link claims the tap: MDX bodies wrap illustrations in
+      // hrefless anchors (OALD9 uses `<a class="topic no-href">`), which are
+      // markup, not navigation.
+      if (!anchor && node.tagName === 'A' && node.hasAttribute('href')) {
+        anchor = node as HTMLAnchorElement;
+      }
+    }
+
+    // Tap an illustration to blow it up, as in the book itself (#6018). An
+    // image wrapped in a link belongs to the link.
+    const imageSrc = anchor ? null : fullResolutionSrc(image);
+    if (imageSrc) {
+      e.preventDefault();
+      const request = ++zoomRequestRef.current;
+      void convertBlobUrlToDataUrl(imageSrc)
+        .then((src) => {
+          if (zoomRequestRef.current === request) setZoomedImageSrc(src);
+        })
+        .catch((err) => {
+          console.warn('Failed to load dictionary image', imageSrc, err);
+        });
+      return;
+    }
+
+    // External links: on Tauri we route http(s) anchors through `openUrl`
+    // because target="_blank" doesn't work; on web the anchor handles it.
+    if (!isTauri || !anchor) return;
     const rawHref = anchor.getAttribute('href');
     if (!rawHref || !/^https?:\/\//i.test(rawHref)) return;
     e.preventDefault();
@@ -248,13 +322,8 @@ export function useDictionaryResults({
           if (!container) {
             outcome = { ok: false, reason: 'error', message: 'no container' };
           } else {
-            // Try normalized query variants (trimmed, case-folded) then
-            // language-aware lemma candidates in priority order, keeping the
-            // first hit. Case-sensitive formats (mdict) otherwise miss
-            // `Hello` / `world ` style selections whose headword is stored
-            // lowercased, and dictionaries that store only base headwords
-            // (e.g. Oxford Dictionary of English) miss inflected selections
-            // like `ran` / `mice` / `analyses`.
+            // Try case/Unicode variants, lemmas, then accent-folded
+            // fallbacks across providers, keeping the first hit.
             outcome = { ok: false, reason: 'empty' };
             for (const candidate of buildLookupCandidates(currentWord, langCode)) {
               container.replaceChildren();
@@ -266,6 +335,7 @@ export function useDictionaryResults({
                 isDarkMode,
                 bg: themeCode.bg,
                 fg: themeCode.fg,
+                autoPlayPronunciation: autoPlayPronunciation && provider.id === autoPlayProviderId,
               });
               if (controller.signal.aborted) return;
               if (outcome.ok || outcome.reason !== 'empty') break;
@@ -304,6 +374,8 @@ export function useDictionaryResults({
     isDarkMode,
     themeCode.bg,
     themeCode.fg,
+    autoPlayPronunciation,
+    autoPlayProviderId,
   ]);
 
   // Visible cards = providers that are still loading or finished with a
@@ -361,6 +433,8 @@ export function useDictionaryResults({
     onWebSearchClickTauri,
     noProvidersAtAll,
     fontScale: settings.fontScale ?? 1,
+    zoomedImageSrc,
+    closeZoomedImage,
     isSpeaking,
     speakWord,
   };
@@ -455,8 +529,11 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   onWebSearchClickTauri,
   noProvidersAtAll,
   fontScale,
+  zoomedImageSrc,
+  closeZoomedImage,
 }) => {
   const _ = useTranslation();
+  const safeAreaInsets = useThemeStore((s) => s.safeAreaInsets);
 
   // `first:pt-2` keeps the leading section's tighter top padding whichever of
   // the two comes first.
@@ -503,7 +580,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                 {isLoading && (
                   <div
                     data-testid='dict-card-skeleton'
-                    className='bg-base-200/50 h-12 animate-pulse rounded'
+                    className='bg-base-200/50 h-12 animate-pulse rounded-sm'
                   />
                 )}
                 <div
@@ -585,6 +662,15 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
           </>
         )}
       </div>
+      {zoomedImageSrc && (
+        <ModalPortal showOverlay={false}>
+          <ImageViewer
+            gridInsets={safeAreaInsets ?? ZERO_INSETS}
+            src={zoomedImageSrc}
+            onClose={closeZoomedImage}
+          />
+        </ModalPortal>
+      )}
     </div>
   );
 };

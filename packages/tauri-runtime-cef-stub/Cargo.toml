@@ -1,0 +1,15 @@
+# Stand-in for tauri-runtime-cef outside the Linux CEF build.
+#
+# The app's optional `tauri-runtime-cef` dependency (its `cef` feature) must
+# resolve in every build's Cargo.lock, but the real crate only exists on the
+# readest/tauri feat/cef branch, which apps/readest-app/src-tauri/.cargo/cef.toml
+# patches in for Linux. Everywhere else the root Cargo.toml points it here. It is
+# never compiled: only the Linux CEF build enables the `cef` feature.
+[package]
+name = "tauri-runtime-cef"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+devtools = []

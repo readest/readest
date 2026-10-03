@@ -33,6 +33,20 @@ pub struct CopyURIResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct RenderPdfCoverRequest {
+    pub file_path: String,
+    pub max_long_edge: u32,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenderPdfCoverResponse {
+    pub cover_base64: String,
+    pub cover_mime: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SaveImageToGalleryRequest {
     /// Absolute path of the source image file on disk.
     pub src_path: String,
@@ -190,6 +204,9 @@ pub struct IAPFetchProductsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct IAPPurchaseProductRequest {
     pub product_id: String,
+    /// Supabase user id, surfaced by StoreKit as the transaction's
+    /// `appAccountToken` so a purchase can be attributed server-side.
+    pub app_account_token: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -218,6 +235,20 @@ pub struct GetSafeAreaInsetsResponse {
     pub bottom: f64,
     pub left: f64,
     pub right: f64,
+    /// Radius (CSS px) of the rounded bottom screen corners; absent where the
+    /// platform does not report it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bottom_corner_radius: Option<f64>,
+    /// Whether the device is an iPhone Duo (foldable); absent off iOS.
+    #[serde(
+        rename = "isIPhoneDuo",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub is_iphone_duo: Option<bool>,
+    /// iOS: whether the root view controller currently hides the status bar.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status_bar_hidden: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -228,8 +259,15 @@ pub struct GetScreenBrightnessResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SetScreenWakeLockRequest {
+    pub enabled: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SetScreenBrightnessRequest {
     pub brightness: f64, // 0.0 to 1.0
+    pub persist: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -383,6 +421,8 @@ pub struct ClipUrlRequest {
     #[serde(default)]
     pub interactive: Option<bool>,
     #[serde(default)]
+    pub background_capture: Option<bool>,
+    #[serde(default)]
     pub sign_in_hint: Option<String>,
     #[serde(default)]
     pub capture_label: Option<String>,
@@ -406,6 +446,7 @@ pub struct ClipUrlResponse {
 pub struct WebBrowserRequest {
     pub url: String,
     pub download_dir: String,
+    pub capture_script: String,
     #[serde(default)]
     pub background: Option<String>,
     #[serde(default)]
@@ -422,6 +463,14 @@ pub struct WebBrowserResponse {
     /// Set when the user tapped [Open] on an imported book in the chrome.
     #[serde(default)]
     pub open_book_hash: Option<String>,
+    #[serde(default)]
+    pub page: Option<WebBrowserPage>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct WebBrowserPage {
+    pub url: String,
+    pub html: String,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -504,31 +553,205 @@ pub struct RefreshEinkScreenResponse {
     pub error: Option<String>,
 }
 
+/// Capability probe for a deep e-ink full refresh. `supported: false` means no
+/// known vendor mechanism is present on this device (e.g. a non-e-ink Android
+/// phone, or a panel we cannot drive), so the UI should not offer the option.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EinkRefreshSupportedResponse {
+    pub supported: bool,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReadingWidgetBook {
+pub struct BookshelfWidgetBook {
     pub hash: String,
     pub title: String,
     pub author: String,
     pub percent: u8,
+    pub show_progress: bool,
     pub cover_path: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReadingWidgetTts {
+pub struct BookshelfWidgetTts {
     pub active: bool,
     pub playing: bool,
+}
+
+/// Tiles whose thumbnail could not be written, so the caller can retry them.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct UpdateBookshelfWidgetResponse {
+    pub failed: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateBookshelfWidgetRequest {
+    pub app_widget_id: i32,
+    /// The shelf the widget asked for; native shows a placeholder until they match.
+    pub shelf_id: String,
+    /// Grid tiles in display order.
+    pub items: Vec<BookshelfWidgetItem>,
+    pub section_title: String,
+    pub empty_title: String,
+    #[serde(default)]
+    pub tts: Option<BookshelfWidgetTts>,
+}
+
+/// One grid tile: a book, or a group of books (a mosaic of their covers).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum BookshelfWidgetItem {
+    Book(BookshelfWidgetBook),
+    Group(BookshelfWidgetGroupTile),
+}
+
+/// A group tile (e.g. groupBy="series", value="Foundation") with up to 4
+/// member-book cover paths for native to composite into a mosaic.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetGroupTile {
+    pub id: String,
+    pub group_by: String,
+    pub value: String,
+    pub cover_paths: Vec<String>,
+}
+
+/// A placed widget, as chosen in its native configure screen.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetInstance {
+    pub app_widget_id: i32,
+    pub shelf_id: String,
+    pub grid_rows: i32,
+    pub grid_columns: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetBookshelfWidgetInstancesResponse {
+    pub instances: Vec<BookshelfWidgetInstance>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetCatalogShelf {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetCatalogLabels {
+    pub title: String,
+    pub rows: String,
+    pub columns: String,
+    pub show_titles: String,
+    pub show_shelf_name: String,
+    pub header_size: String,
+    pub show_tts_bar: String,
+    pub cancel: String,
+    pub save: String,
+    pub edit: String,
+    pub open_app: String,
+}
+
+/// What the native configure screen offers, translated by the app.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookshelfWidgetCatalog {
+    pub shelves: Vec<BookshelfWidgetCatalogShelf>,
+    pub labels: BookshelfWidgetCatalogLabels,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateReadingWidgetRequest {
-    pub books: Vec<ReadingWidgetBook>,
-    pub section_title: String,
+    pub app_widget_id: i32,
+    /// Empty means "nothing currently reading".
+    #[serde(default)]
+    pub hash: String,
+    #[serde(default)]
+    pub title: String,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default)]
+    pub percent: u8,
+    #[serde(default)]
+    pub cover_path: String,
+    /// The text stats to show in order, already localized by JS.
+    #[serde(default)]
+    pub stats: Vec<String>,
+    #[serde(default)]
+    pub header_text: String,
     pub empty_title: String,
     #[serde(default)]
-    pub tts: Option<ReadingWidgetTts>,
+    pub is_eink: bool,
+    #[serde(default)]
+    pub tts: Option<BookshelfWidgetTts>,
+}
+
+/// The cover, if any, that could not be written, so the caller can retry.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct UpdateReadingWidgetResponse {
+    pub failed: u32,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// One placed widget instance's display toggles.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetInstanceSettings {
+    pub app_widget_id: i32,
+    #[serde(default)]
+    pub show_time_left: bool,
+    #[serde(default = "default_true")]
+    pub show_page_count: bool,
+    #[serde(default)]
+    pub show_pages_remaining: bool,
+    #[serde(default = "default_true")]
+    pub show_header: bool,
+    #[serde(default = "default_true")]
+    pub show_percent: bool,
+    #[serde(default)]
+    pub reference_pages: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetCatalogLabels {
+    pub title: String,
+    pub show_header: String,
+    pub header_size: String,
+    pub show_tts_bar: String,
+    pub reference_pages: String,
+    pub show_percent: String,
+    pub show_time_left: String,
+    pub show_page_count: String,
+    pub show_pages_remaining: String,
+    pub text_size: String,
+    pub cancel: String,
+    pub save: String,
+}
+
+/// What the native configure screen shows, translated by the app.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetCatalog {
+    pub labels: ReadingWidgetCatalogLabels,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetReadingWidgetInstancesResponse {
+    pub instances: Vec<ReadingWidgetInstanceSettings>,
 }
 
 /// Region of the webview to snapshot for the mesh page-curl (#555),
@@ -550,6 +773,21 @@ pub struct CaptureWebviewRegionRequest {
 #[serde(rename_all = "camelCase")]
 pub struct CaptureWebviewRegionResponse {
     pub data: String,
+}
+
+/// Token for the native cover layer put up by `cover_webview_region`
+/// (#6106): the two-column page curl freezes the on-screen pixels of the
+/// incoming column behind it while the column is captured underneath.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CoverWebviewRegionResponse {
+    pub token: u32,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UncoverWebviewRegionRequest {
+    pub token: u32,
 }
 
 /// iCloud ubiquity-container probe result. `documents_path` is the absolute
@@ -578,4 +816,16 @@ pub struct ICloudEnsureDownloadedRequest {
 pub struct ICloudEnsureDownloadedResponse {
     /// "ready" | "notFound" | "timeout"
     pub status: String,
+}
+
+/// Native-only cookie exchange for Android, whose Tauri cookie API is unsupported.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebBrowserCookiesRequest {
+    pub url: String,
+    pub set_cookies: Vec<String>,
+}
+#[derive(Debug, Deserialize)]
+pub struct WebBrowserCookiesResponse {
+    pub cookies: String,
 }

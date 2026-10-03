@@ -3,12 +3,29 @@
  * failed, not just "try again later", and must only blame a missing login
  * when the provider actually needs one.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { TranslationProvider } from '@/services/translators/types';
 
+afterEach(cleanup);
+
 const mockTranslate = vi.fn();
+const mockSaveViewSettings = vi.fn();
+const mockSetSettings = vi.fn();
+let mockViewSettings: { translateSourceLang?: string } = {};
+
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ envConfig: {} }),
+}));
+
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: () => ({ getViewSettings: () => mockViewSettings }),
+}));
+
+vi.mock('@/helpers/settings', () => ({
+  saveViewSettings: (...args: unknown[]) => mockSaveViewSettings(...args),
+}));
 let mockToken: string | null = 'readest-token';
 let mockTranslator: Partial<TranslationProvider> = { name: 'azure', label: 'Azure Translator' };
 // One array per test, not per render: the popup re-derives its provider list
@@ -24,10 +41,16 @@ vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ token: mockToken }),
 }));
 
+// The mock tokens are not JWTs, so stand in for the premium check.
+vi.mock('@/utils/access', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/access')>()),
+  isCustomTranslatorAllowed: (token: string | null) => token === 'premium-token',
+}));
+
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
     settings: { globalReadSettings: { translateTargetLang: 'zh', translationProvider: 'azure' } },
-    setSettings: vi.fn(),
+    setSettings: mockSetSettings,
   }),
 }));
 
@@ -43,7 +66,8 @@ vi.mock('@/hooks/useTranslator', () => ({
 vi.mock('@/services/translators', () => ({
   getTranslators: () => mockTranslators,
   isTranslatorAvailable: () => true,
-  getTranslatorDisplayLabel: (t: TranslationProvider) => t.label,
+  getTranslatorDisplayLabel: (t: TranslationProvider, _hasToken: boolean, hasPremium: boolean) =>
+    t.premiumRequired && !hasPremium ? `${t.label} (Premium)` : t.label,
 }));
 
 vi.mock('@/components/Popup', () => ({
@@ -56,6 +80,7 @@ const renderPopup = async () => {
   );
   return render(
     <TranslatorPopup
+      bookKey='book-1'
       text='cohort'
       position={{ point: { x: 0, y: 0 } }}
       trianglePosition={{ point: { x: 0, y: 0 }, dir: 'up' }}
@@ -108,5 +133,96 @@ describe('TranslatorPopup error reporting', () => {
         'Unable to fetch the translation. Please log in first and try again.',
       ),
     ).toBeTruthy();
+  });
+});
+
+describe('TranslatorPopup translated text', () => {
+  it.each([
+    ['It&#39;ll be alright', "It'll be alright"],
+    ['It&#x27;ll be alright', "It'll be alright"],
+    ['It&apos;ll be &quot;alright&quot; &amp; fine', 'It\'ll be "alright" & fine'],
+    ["It'll be alright", "It'll be alright"],
+    ['Literal &amp;#39;', 'Literal &#39;'],
+    ['&lt;b&gt;alright&lt;/b&gt;', '<b>alright</b>'],
+    ['</textarea><img src=x onerror=alert(1)>', '</textarea><img src=x onerror=alert(1)>'],
+  ])('displays %s as plain text', async (response, expected) => {
+    mockTranslate.mockResolvedValue([response]);
+    await renderPopup();
+
+    const translated = await screen.findByText(expected);
+    expect(translated.textContent).toBe(expected);
+    expect(translated.childElementCount).toBe(0);
+  });
+});
+
+describe('TranslatorPopup source language', () => {
+  beforeEach(() => {
+    mockViewSettings = {};
+    mockSaveViewSettings.mockReset();
+    mockSetSettings.mockReset();
+    mockTranslate.mockResolvedValue(['translation']);
+  });
+
+  it('defaults to Auto Detect when the view has no saved source language', async () => {
+    await renderPopup();
+    expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).value).toBe('AUTO');
+  });
+
+  it('restores the source language when the popup is reopened', async () => {
+    mockViewSettings = { translateSourceLang: 'fr' };
+    const popup = await renderPopup();
+    expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).value).toBe('fr');
+    popup.unmount();
+    await renderPopup();
+    expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).value).toBe('fr');
+  });
+
+  it.each(['fr', 'AUTO'])('saves %s only to the current view', async (language) => {
+    mockViewSettings = { translateSourceLang: 'de' };
+    await renderPopup();
+    fireEvent.change(screen.getAllByRole('combobox')[0]!, { target: { value: language } });
+    expect(mockSaveViewSettings).toHaveBeenCalledWith(
+      {},
+      'book-1',
+      'translateSourceLang',
+      language,
+      true,
+      false,
+    );
+    expect(mockSetSettings).not.toHaveBeenCalled();
+    expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).value).toBe(language);
+  });
+});
+
+describe('TranslatorPopup provider list', () => {
+  beforeEach(() => {
+    mockTranslate.mockReset().mockResolvedValue(['译文']);
+    mockTranslator = { name: 'azure', label: 'Azure Translator' };
+    mockTranslators = [
+      mockTranslator,
+      { name: 'custom:x', label: 'Ollama', premiumRequired: true },
+    ];
+  });
+
+  it('relabels custom translators when the session gains premium', async () => {
+    mockToken = 'readest-token';
+    const { rerender } = await renderPopup();
+    expect(await screen.findByRole('option', { name: 'Ollama (Premium)' })).toBeTruthy();
+
+    mockToken = 'premium-token';
+    const { default: TranslatorPopup } = await import(
+      '@/app/reader/components/annotator/TranslatorPopup'
+    );
+    rerender(
+      <TranslatorPopup
+        bookKey='book-1'
+        text='cohort'
+        position={{ point: { x: 0, y: 0 } }}
+        trianglePosition={{ point: { x: 0, y: 0 }, dir: 'up' }}
+        popupWidth={300}
+        popupHeight={200}
+      />,
+    );
+    expect(await screen.findByRole('option', { name: 'Ollama' })).toBeTruthy();
   });
 });

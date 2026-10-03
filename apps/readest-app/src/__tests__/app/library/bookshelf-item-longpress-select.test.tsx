@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
-import type { Book } from '@/types/book';
+import type { Book, BooksGroup } from '@/types/book';
 
 /**
  * Issue #5596 — long-pressing a book on Android selected it and then
@@ -18,6 +18,7 @@ import type { Book } from '@/types/book';
 
 vi.mock('@tauri-apps/api/menu', () => ({
   Menu: { new: vi.fn(async () => ({ popup: vi.fn(), close: vi.fn() })) },
+  MenuItem: { new: vi.fn(async (options: { text: string }) => ({ ...options, close: vi.fn() })) },
 }));
 
 vi.mock('@tauri-apps/plugin-opener', () => ({
@@ -168,5 +169,50 @@ describe('long-press selection on Android (issue #5596)', () => {
     fireEvent.pointerUp(item, { pointerId: 2, clientX: 50, clientY: 50 });
     act(() => void vi.advanceTimersByTime(500));
     expect(onToggle).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(['added', 'removed'])('selects current group members after a book is %s', (change) => {
+    const secondBook = { ...book, hash: 'hash-2' };
+    const onSelection = vi.fn();
+    const groupCard = (books: Book[]) => {
+      const group: BooksGroup = {
+        id: 'fiction',
+        name: 'Fiction',
+        displayName: 'Fiction',
+        books,
+        updatedAt: 0,
+      };
+      return (
+        <BookshelfItem
+          mode='grid'
+          item={group}
+          coverFit='crop'
+          isSelectMode
+          itemSelected={false}
+          transferProgress={null}
+          setLoading={vi.fn()}
+          toggleSelection={() => onSelection(group.books.map((member) => member.hash))}
+          handleGroupBooks={vi.fn()}
+          handleBookDownload={vi.fn(async () => true)}
+          handleBookUpload={vi.fn(async () => true)}
+          handleBookDelete={vi.fn(async () => true)}
+          handleSetSelectMode={vi.fn()}
+          handleShowDetailsBook={vi.fn()}
+          handleLibraryNavigation={vi.fn()}
+          handleUpdateReadingStatus={vi.fn()}
+          showTimeRemaining={false}
+        />
+      );
+    };
+    const initial = change === 'added' ? [book] : [book, secondBook];
+    const current = change === 'added' ? [book, secondBook] : [book];
+    const { rerender } = render(groupCard(initial));
+    const card = screen.getByRole('button', { name: 'Fiction' });
+    rerender(groupCard(current));
+    expect(screen.getByRole('button', { name: 'Fiction' })).toBe(card);
+
+    fireEvent.click(card);
+
+    expect(onSelection).toHaveBeenCalledExactlyOnceWith(current.map((member) => member.hash));
   });
 });

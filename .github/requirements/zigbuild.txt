@@ -1,0 +1,4 @@
+ziglang==0.16.0 \
+    --hash=sha256:9fcda73f62b851dd72a54b710ad40a209896db14cfb13649e62191243556342b
+cargo-zigbuild==0.23.4 \
+    --hash=sha256:0a149a2a07b9513d422efa9cc23e1add9741f08abe86845fa418eaeb4cca7931

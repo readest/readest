@@ -176,6 +176,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
   #now: () => number;
   #packFs: TTSPackFs | null;
   #ready: Promise<void> | null = null;
+  #compaction: Promise<number> = Promise.resolve(0);
   #pendingTouches = new Map<string, number>();
   #pendingPackTouches = new Map<number, number>();
 
@@ -550,7 +551,16 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
 
   // Merge every fully cached section into one pack file. Returns the number
   // of packs created. Idle-time work: callers debounce it.
-  async compact(): Promise<number> {
+  compact(): Promise<number> {
+    // Downloads, the idle timer, and close() can all request compaction.
+    // Serialize their file writes/transactions so close waits for active work
+    // and a failed overlapping run cannot remove another run's pack file.
+    const pending = this.#compaction.catch(() => 0).then(() => this.#compact());
+    this.#compaction = pending;
+    return pending;
+  }
+
+  async #compact(): Promise<number> {
     if (!this.#packFs) return 0;
     await this.#ensureSchema();
     const completable = await this.#db.select<

@@ -7,6 +7,9 @@ import { IoPricetag } from 'react-icons/io5';
 import { MdArrowDropDown } from 'react-icons/md';
 import { Book } from '@/types/book';
 import { OPDSPublication, REL, SYMBOL, OPDSAcquisitionLink, OPDSStreamLink } from '@/types/opds';
+import { audioMimeType, pickAudioLinks } from '@/services/opds/audiobook';
+import { isAudioLink } from '@/services/opds/formats';
+import type { OpdsAudioTrackLink } from '@/services/opds/audiobook';
 import { getOPDSCoverHref } from '@/services/opds/cover';
 import {
   classifyAcquisitionLink,
@@ -45,6 +48,7 @@ interface PublicationViewProps {
     onProgress?: (progress: { progress: number; total: number }) => void,
   ) => Promise<Book | null | undefined>;
   onStream?: (href: string, count: number, title: string, author: string) => void;
+  onPlayAudio?: (tracks: OpdsAudioTrackLink[], title: string, author: string) => void;
   onGenerateCachedImageUrl: (url: string, cacheVersion?: string) => Promise<string>;
 }
 
@@ -56,6 +60,7 @@ export function PublicationView({
   onNavigate,
   onDownload,
   onStream,
+  onPlayAudio,
   onGenerateCachedImageUrl,
 }: PublicationViewProps) {
   const _ = useTranslation();
@@ -114,7 +119,7 @@ export function PublicationView({
 
   const authorNames = useMemo(() => authors.map((a) => a.name), [authors]);
 
-  const acquisitionLinks = useMemo(() => {
+  const allAcquisitionLinks = useMemo(() => {
     const links: Array<{ rel: string; links: OPDSAcquisitionLink[] }> = [];
     for (const [rel, linkList] of Array.from(linksByRel.entries())) {
       if (rel?.startsWith(REL.ACQ)) {
@@ -124,9 +129,36 @@ export function PublicationView({
     return links;
   }, [linksByRel]);
 
+  // Audio is played, never imported, so it is pulled out before the download
+  // buttons are built. A group that was ALL audio disappears from the download
+  // UI entirely rather than rendering an empty dropdown (#6224).
+  const acquisitionLinks = useMemo(
+    () =>
+      allAcquisitionLinks
+        .map(({ rel, links }) => ({ rel, links: links.filter((link) => !isAudioLink(link)) }))
+        .filter(({ links }) => links.length > 0),
+    [allAcquisitionLinks],
+  );
+
   const streamLinks = useMemo(() => {
     return (linksByRel.get(REL.STREAM) || []) as OPDSStreamLink[];
   }, [linksByRel]);
+
+  // Audio is streamed by the player, so it never belongs in the download
+  // buttons -- an entry with both (an audiobook plus its ebook) keeps the
+  // ebook download and gains a Play action (#6224).
+  const audioTracks = useMemo<OpdsAudioTrackLink[]>(
+    () =>
+      allAcquisitionLinks
+        .flatMap(({ links }) => pickAudioLinks(links))
+        .filter((link): link is OPDSAcquisitionLink & { href: string } => !!link.href)
+        .map((link) => ({
+          href: link.href,
+          mimeType: audioMimeType(link),
+          ...(link.title ? { title: link.title } : {}),
+        })),
+    [allAcquisitionLinks],
+  );
 
   const handleActionButton = async (href: string, type?: string, forceDownload = false) => {
     if (downloadedBook && !forceDownload) {
@@ -191,7 +223,7 @@ export function PublicationView({
       // it opens.
       className={clsx(
         'dropdown-content no-triangle',
-        'border-base-300 eink-bordered !bg-base-200 z-20 mt-2 max-w-[80vw] min-w-max',
+        'border-base-300 eink-bordered bg-base-200! z-20 mt-2 max-w-[80vw] min-w-max',
         'rounded-2xl border shadow-2xl',
       )}
     >
@@ -215,7 +247,7 @@ export function PublicationView({
   // has no shape to split, so its caret rendered as a detached sliver.
   const SOLID_ACTION = 'btn btn-contrast';
   const FLAT_ACTION =
-    'btn eink-bordered border-transparent !bg-base-200 hover:!bg-base-300 text-base-content';
+    'btn eink-bordered border-transparent bg-base-200! hover:bg-base-300! text-base-content';
 
   /**
    * A default action plus, when there is more than one format to choose from, a
@@ -273,7 +305,7 @@ export function PublicationView({
   return (
     <div className='flex w-full flex-col px-6 py-6'>
       <div className='mb-6 flex w-full flex-row items-start gap-6 max-[320px]:flex-col'>
-        <div className='h-44 flex-shrink-0 sm:h-56 md:h-64'>
+        <div className='h-44 shrink-0 sm:h-56 md:h-64'>
           <div className='bg-base-200 relative aspect-[28/41] h-full overflow-hidden rounded-none shadow-lg'>
             <CachedImage
               src={imageUrl}
@@ -321,11 +353,16 @@ export function PublicationView({
             )}
           </div>
 
-          {!downloadedBook && acquisitionLinks.length === 0 && streamLinks.length === 0 && (
-            <p className='text-base-content/60 text-sm'>{_('No downloadable format available')}</p>
-          )}
+          {!downloadedBook &&
+            acquisitionLinks.length === 0 &&
+            streamLinks.length === 0 &&
+            audioTracks.length === 0 && (
+              <p className='text-base-content/60 text-sm'>
+                {_('No downloadable format available')}
+              </p>
+            )}
 
-          {(acquisitionLinks.length > 0 || streamLinks.length > 0) && (
+          {(acquisitionLinks.length > 0 || streamLinks.length > 0 || audioTracks.length > 0) && (
             <div className='flex flex-wrap items-center gap-2'>
               {acquisitionLinks.map(({ rel, links }) => {
                 const validLinks = links.filter((l) => l.href);
@@ -451,6 +488,22 @@ export function PublicationView({
                 }
                 return null;
               })}
+
+              {audioTracks.length > 0 && (
+                <button
+                  type='button'
+                  onClick={() =>
+                    onPlayAudio?.(
+                      audioTracks,
+                      publication.metadata?.title || '',
+                      authorNames.join(' & '),
+                    )
+                  }
+                  className={clsx('btn btn-secondary min-w-20 rounded-3xl')}
+                >
+                  {_('Play')}
+                </button>
+              )}
 
               {/* Rendered only while a download is running. A permanently
                   mounted 48px slot left a dead gap after the actions on every

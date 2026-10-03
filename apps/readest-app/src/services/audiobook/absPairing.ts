@@ -13,6 +13,7 @@ import { findABSServerById, isAbsBookOrphaned } from '@/store/absServerStore';
 import type { ABSLibraryItem } from '@/types/audiobookshelf';
 import type { AudiobookChapter, AudiobookFile, Book, PairedAudiobookAbsSource } from '@/types/book';
 import type { AppService } from '@/types/system';
+import { proxiedMediaUrl } from './mediaProxy';
 import {
   buildAbsMediaUrl,
   isAudiobook,
@@ -127,16 +128,24 @@ export const loadAbsPairingSource = async (
  * The source's tracks as streamable URLs carrying the server's CURRENT
  * access token, read at call time so a token rotated mid-session (by any
  * client) is picked up by the next file load. Null when the server row is
- * gone.
+ * gone. With `proxyBase` (getMediaProxyBase, #6216) each URL is wrapped for
+ * the loopback media proxy, which fetches with the API client's lenient TLS
+ * policy where the media element would reject a self-signed server.
  */
-export const absNarrationTracks = (source: PairedAudiobookAbsSource): NarrationTrack[] | null => {
+export const absNarrationTracks = (
+  source: PairedAudiobookAbsSource,
+  proxyBase?: string | null,
+): NarrationTrack[] | null => {
   const server = findABSServerById(source.serverId);
   if (!server) return null;
-  return source.tracks.map((track) => ({
-    url: buildAbsMediaUrl(server, track.contentUrl),
-    startOffset: track.startOffset,
-    duration: track.duration,
-  }));
+  return source.tracks.map((track) => {
+    const upstream = buildAbsMediaUrl(server, track.contentUrl);
+    return {
+      url: proxyBase ? proxiedMediaUrl(proxyBase, upstream) : upstream,
+      startOffset: track.startOffset,
+      duration: track.duration,
+    };
+  });
 };
 
 /**
@@ -147,8 +156,9 @@ export const absNarrationTracks = (source: PairedAudiobookAbsSource): NarrationT
 export const absPreviewClip = (
   source: PairedAudiobookAbsSource,
   globalSec: number,
+  proxyBase?: string | null,
 ): { url: string; start: number; duration: number } | null => {
-  const tracks = absNarrationTracks(source);
+  const tracks = absNarrationTracks(source, proxyBase);
   if (!tracks?.length) return null;
   const sorted = [...tracks].sort((a, b) => a.startOffset - b.startOffset);
   const track =

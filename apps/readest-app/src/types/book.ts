@@ -17,9 +17,14 @@ export type BookFormat =
   | 'FBZ'
   | 'TXT'
   | 'MD'
+  | 'HTML'
   // Streaming audiobook from an Audiobookshelf server; filePath is abs://<serverId>/<itemId>
-  | 'ABS';
-export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt';
+  | 'ABS'
+  // Streaming audiobook from an OPDS catalog; filePath is opdsaudio://<encoded entry> (#6224)
+  | 'OPDSAUDIO'
+  // Streaming audiobook from BookOrbit's audiobook API; filePath is bookorbit://<bookId> (#6224)
+  | 'BOOKORBIT';
+export type BookNoteType = 'bookmark' | 'annotation' | 'excerpt' | 'notebook';
 export type ReadingStatus = 'unread' | 'reading' | 'finished' | 'abandoned';
 export type HighlightStyle = 'highlight' | 'underline' | 'squiggly';
 // Predefined highlight colors, can be extended with custom hex colors
@@ -49,6 +54,11 @@ export const FIXED_LAYOUT_FORMATS: Set<BookFormat> = new Set(['PDF', 'CBZ']);
 export interface BookLookupIndex {
   byHash: Map<string, Book>;
   byMetaKey: Map<string, Book[]>; // key = `${metaHash}:${format}`
+  // Fallback for books whose metaHash moves with every export of the same file
+  // (calibre re-mints dc:identifier, issue #5959). key =
+  // `${getStableMetadataHash(metadata)}:${format}`, and only books that carry a
+  // volatile identifier appear here.
+  byStableKey: Map<string, Book[]>;
   // Maps normalized absolute source path -> Book for in-place imports.
   // Lets the importer recognize "I already have this exact file" without
   // having to open, parse, and hash it again. Only books with a non-empty
@@ -107,6 +117,14 @@ export interface Book {
   group?: string; // deprecated in favor of groupId and groupName
   groupId?: string;
   groupName?: string;
+  // Field-level LWW timestamp for group membership (groupId + groupName), so an
+  // unrelated row bump cannot clobber a grouping edit. The row's updatedAt is
+  // stamped by things that have nothing to do with groups -- most notably
+  // `cloudService.uploadBook`, which bumps it on every UPLOAD -- so whole-row
+  // LWW let a peer holding a never-grouped copy win and erase the group for the
+  // whole fleet (#5911). Mirrors readingStatusUpdatedAt / coverUpdatedAt /
+  // metadataUpdatedAt.
+  groupUpdatedAt?: number | null;
   tags?: string[];
   coverImageUrl?: string | null;
   // Partial MD5 of the local cover.png. Content-addressed cover-change signal:
@@ -133,7 +151,7 @@ export interface Book {
   syncedAt?: number | null;
 
   lastUpdated?: number; // deprecated in favor of updatedAt
-  progress?: [number, number]; // Add progress field: [current, total], 1-based page number
+  progress?: [number, number] | null; // Add progress field: [current, total], 1-based page number
   readingStatus?: ReadingStatus;
   readingStatusUpdatedAt?: number; // ms; bumped only when readingStatus changes
   primaryLanguage?: string;
@@ -142,14 +160,17 @@ export interface Book {
   // every import, like `format` — not user data, so it needs no LWW timestamp.
   hasNarration?: boolean;
   duration?: number; // total audio length in seconds (ABS audiobooks)
-  // Marks this ABS stub as a podcast show rather than an audiobook. Audiobook
-  // shows remain unmarked (absMediaType undefined) — presence of the field
-  // set to 'podcast' is the only signal.
-  absMediaType?: 'podcast';
+  // Marks this ABS stub as a podcast show or ebook rather than an audiobook.
+  // Audio books remain unmarked (absMediaType undefined).
+  absMediaType?: 'podcast' | 'ebook';
   // Episode count for an ABS podcast show stub. Drives the library grid's
   // episode-count badge and lets reconcileAbsBooks detect a new episode as a
   // change even though title/author/duration are otherwise unchanged.
   episodeCount?: number;
+  // When this device finished downloading an ABS stub's media for offline use
+  // (audio tracks, or an ebook-only item's file). Device-local like
+  // `downloadedAt`: the files exist only here, so it never syncs.
+  absDownloadedAt?: number | null;
 
   metadata?: BookMetadata;
   // Field-level LWW timestamp for the metadata group (title, author, tags,
@@ -223,12 +244,19 @@ export interface BookLayout {
   compactMarginRightPx: number;
   compactMarginPx?: number; // deprecated
   gapPercent: number;
+  /* Centre gap of a two-column spread in px; 0 derives it from the margins
+     and gapPercent as before. */
+  columnGapPx: number;
   scrolled: boolean;
   scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;
+  /* Fixed-layout only: freeze the horizontal pan offset of a zoomed page so it
+     can't drift sideways out of alignment while scrolling (#5976). */
+  lockHorizontalPan: boolean;
   noContinuousScroll: boolean;
   disableClick: boolean;
   disableSwipe: boolean;
+  disablePullDownToBookmark: boolean;
   fullscreenClickArea: boolean;
   swapClickArea: boolean;
   disableDoubleClick: boolean;
@@ -266,6 +294,12 @@ export interface BookStyle {
   highlightOpacity: number;
   codeHighlighting: boolean;
   codeLanguage: string;
+  dialogueHighlight: boolean;
+  dialogueHighlightCustomColor: boolean;
+  dialogueHighlightColor: string;
+  dialogueHighlightCustomTextColor: boolean;
+  dialogueHighlightTextColor: string;
+  dialogueHighlightItalic: boolean;
   userStylesheet: string;
   userUIStylesheet: string;
 
@@ -335,10 +369,33 @@ export interface ViewConfig {
   progressStyle: 'percentage' | 'fraction' | 'reference';
   referencePageCount: number;
 
+  // Styling for the header (section title) and footer (progress readout,
+  // remaining time/pages, clock, battery). See utils/headerFooterStyle.ts
+  // for how these resolve; e-ink ignores both colors.
+  /** Font size in px for the header/footer info text. */
+  headerFooterFontSize: number;
+  /** `''` follows the theme's base-content; otherwise a `#rrggbb`. */
+  headerFooterTextColor: string;
+  /**
+   * `'auto'` keeps the built-in backdrop (the scrolled-mode footer pill and
+   * nothing behind the header), `'none'` removes it everywhere, and a
+   * `#rrggbb` paints a matching chip behind both header and footer in every
+   * flow mode.
+   */
+  headerFooterBackground: string;
+  /** 0-1 alpha applied to a `#rrggbb` headerFooterBackground. */
+  headerFooterBgOpacity: number;
+
   animated: boolean;
   pageTurnStyle: PageTurnStyle;
   isEink: boolean;
   isColorEink: boolean;
+  /**
+   * Number of page turns between automatic deep full refreshes in e-ink mode.
+   * 0 disables it. Manual refresh bindings are unusable on readers with no
+   * spare buttons, so this clears accumulated ghosting on its own.
+   */
+  einkAutoRefreshInterval: number;
 
   paragraphMode: ParagraphModeConfig;
 
@@ -365,15 +422,29 @@ export interface TTSConfig {
   ttsHighlightGranularity: TTSHighlightGranularity;
   ttsMediaMetadata: TTSMediaMetadataMode;
   ttsPlayerStyle: TTSPlayerStyle;
+  ttsSkipInlineAnnotations: boolean;
 }
 
 export interface TranslatorConfig {
+  translateSourceLang?: string;
   translationEnabled: boolean;
   translationProvider: string;
+  /** Prompt library entry for LLM translators; `'default'` or a prompt id. */
+  translationPromptId?: string;
   translateTargetLang: string;
   showTranslateSource: boolean;
   ttsReadAloudText: string;
+  /** Translated text font: '' follows the book, else the reader's serif/sans/mono font. */
+  translationFont: TranslationFont;
+  translationFontStyle: TranslationFontStyle;
+  /** Translated text size relative to the paragraph, in em. */
+  translationFontSize: number;
+  /** Translated text color as a hex string; '' follows the book. */
+  translationColor: string;
 }
+
+export type TranslationFont = '' | 'serif' | 'sans-serif' | 'monospace';
+export type TranslationFontStyle = 'normal' | 'italic' | 'bold' | 'bold-italic';
 
 // Markdown and plain text render the note template; JSON emits the
 // machine-readable file that Readest itself can import back (#5400).
@@ -388,6 +459,8 @@ export interface NoteExportConfig {
   includeCoverImage: boolean;
   includeChapterTitles: boolean;
   includeQuotes: boolean;
+  // The sentence around each highlight, read from the book at export time.
+  includeContext: boolean;
   includeNotes: boolean;
   includePageNumber: boolean;
   includeTimestamp: boolean;
@@ -410,6 +483,9 @@ export interface NoteExportConfig {
 export interface AnnotatorConfig {
   enableAnnotationQuickActions: boolean;
   annotationQuickAction: AnnotationToolType | null;
+  // Hand the word back selected, with the toolbar, when an instant dictionary
+  // lookup closes (#6213). Off: closing it returns straight to reading (#6454).
+  keepSelectionAfterLookup: boolean;
   annotationToolbarItems: AnnotationToolType[];
   copyToNotebook: boolean;
   noteExportConfig: NoteExportConfig;
@@ -576,6 +652,13 @@ export interface HardcoverBookLink {
   title: string;
 }
 
+/** The Pagebound book this file syncs to; device-local like `hardcover`. */
+export interface PageboundBookLink {
+  bookId: number;
+  uuid: string;
+  title: string;
+}
+
 export interface BookConfig {
   schemaVersion?: number;
   bookHash?: string;
@@ -596,6 +679,20 @@ export interface BookConfig {
    */
   audiobook?: PairedAudiobook;
   hardcover?: HardcoverBookLink;
+  pagebound?: PageboundBookLink;
+  /**
+   * The pages of a comic laid out as spreads of their own (wide images), by
+   * page path: a device-local cache of measuring them, so a later open skips
+   * it and a streamed comic keeps what earlier reading found. Neither sync
+   * carries it; both copy an explicit list of fields.
+   */
+  widePages?: string[];
+  /**
+   * Where a zoomed fixed-layout page was panned under the horizontal pan lock,
+   * as a fraction of its horizontal overflow, restored on reopen. Device-local
+   * like widePages: it depends on this screen's zoom and size.
+   */
+  panX?: number;
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
@@ -645,6 +742,23 @@ export interface PairedAudiobookAbsSource {
   }[];
 }
 
+/**
+ * An audiobook streamed from a BookOrbit server. One BookOrbit book owns both
+ * the ebook and the audio, so the pairing needs only that book's id; the
+ * virtual file is `bookorbit://<bookId>` and the tracks map its global
+ * timeline onto the server's assets, exactly as the ABS variant does.
+ */
+export interface PairedAudiobookBookOrbitSource {
+  kind: 'bookorbit';
+  bookId: number;
+  tracks: {
+    index: number;
+    startOffset: number; // global seconds
+    duration: number; // seconds
+    contentUrl: string; // server-relative
+  }[];
+}
+
 export interface PairedAudiobook {
   version: 1;
   title?: string;
@@ -653,7 +767,7 @@ export interface PairedAudiobook {
   chapters: AudiobookChapter[];
   mappings: AudiobookChapterMapping[];
   createdAt: number;
-  source?: PairedAudiobookAbsSource;
+  source?: PairedAudiobookAbsSource | PairedAudiobookBookOrbitSource;
 }
 
 export interface BookDataRecord {
@@ -679,6 +793,14 @@ export interface BooksGroup {
   id: string;
   name: string;
   displayName: string;
+  /**
+   * True when `displayName` is an i18n key rather than user-authored text, so
+   * the rendering component must run it through `_()`. Set for groupings whose
+   * values are enums we own (reading status); never set for series, author,
+   * tag or subject names, which must render verbatim even when one of them
+   * happens to collide with a UI string.
+   */
+  localized?: boolean;
   books: Book[];
 
   updatedAt: number;

@@ -53,6 +53,7 @@ export const SETTINGS_WHITELIST = [
   'dictionarySettings.providerEnabled',
   'dictionarySettings.webSearches',
   'dictionarySettings.fontScale',
+  'dictionarySettings.autoPlayPronunciation',
   // External integrations. Server URL + identifiers sync as plaintext;
   // the credential fields are listed in `encryptedFields` below so the
   // publish/pull middleware wraps them in cipher envelopes.
@@ -69,6 +70,8 @@ export const SETTINGS_WHITELIST = [
   'readwise.baseUrl',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'notion.databaseId',
+  'notion.accessToken',
   // WebDAV connection. serverUrl + rootPath sync as plaintext so a fresh
   // device pre-fills the connect form; username / password are listed in
   // `encryptedFields` below. Per-device bookkeeping (enabled, deviceId,
@@ -118,6 +121,7 @@ export const SETTINGS_DICTIONARY_FIELDS = [
   'dictionarySettings.providerEnabled',
   'dictionarySettings.webSearches',
   'dictionarySettings.fontScale',
+  'dictionarySettings.autoPlayPronunciation',
 ] as const;
 
 /**
@@ -144,6 +148,7 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'bookorbit.customHeaders',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'notion.accessToken',
   'webdav.username',
   'webdav.password',
   's3.accessKeyId',

@@ -48,8 +48,13 @@ export const EnvProvider = ({ children }: { children: ReactNode }) => {
       .catch((err) => {
         console.error('Failed to initialize app service:', err);
       });
+    // Swallow the benign resize notice so it never reaches an error reporter.
+    // Chromium renamed it — it was "ResizeObserver loop limit exceeded" and is
+    // now "ResizeObserver loop completed with undelivered notifications." — so
+    // the old exact match silently stopped catching anything. Both wordings
+    // mean the same thing: observations were deferred to the next frame.
     window.addEventListener('error', (e) => {
-      if (e.message === 'ResizeObserver loop limit exceeded') {
+      if (e.message?.startsWith('ResizeObserver loop')) {
         e.stopImmediatePropagation();
         e.preventDefault();
         return true;

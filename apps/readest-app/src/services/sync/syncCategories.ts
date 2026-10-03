@@ -73,10 +73,13 @@ const toCategory = (id: string): SyncCategory | null => {
   // Legacy `useSync` calls into `pullChanges('configs', ...)` for the
   // book reading-progress data; map the plural to our singular
   // category id.
+  if (id === 'bookshelf') return 'settings';
   if (id === 'configs') return 'progress';
   if (id === 'config') return 'progress';
   if (id === 'books') return 'book';
   if (id === 'notes') return 'note';
+  // Translators and their prompts share one toggle.
+  if (id === 'translation_prompt') return 'custom_translator';
   return null;
 };
 

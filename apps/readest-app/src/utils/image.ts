@@ -35,6 +35,88 @@ export function imageExtensionFromMime(mimeType: string): string {
   return base === 'jpeg' ? 'jpg' : base;
 }
 
+/** Re-encode an image as PNG, the one image type every clipboard accepts. */
+export async function imageToPng(image: Blob): Promise<Blob> {
+  if (image.type === 'image/png') return image;
+  const url = URL.createObjectURL(image);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d')!.drawImage(img, 0, 0);
+    return await new Promise((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Failed to encode PNG')))),
+    );
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** The MIME type of a JPEG, PNG, GIF, BMP or WebP image, read from its leading bytes. */
+export function getImageMimeType(data: Uint8Array): string | null {
+  const text = (start: number, end: number) => String.fromCharCode(...data.subarray(start, end));
+  if (data[0] === 0xff && data[1] === 0xd8) return 'image/jpeg';
+  if (text(0, 8) === '\x89PNG\r\n\x1a\n') return 'image/png';
+  if (text(0, 4) === 'GIF8') return 'image/gif';
+  if (text(0, 2) === 'BM') return 'image/bmp';
+  if (text(0, 4) === 'RIFF' && text(8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
+
+/**
+ * Pixel size of a JPEG, PNG, GIF, BMP or WebP image, read from its leading
+ * bytes. Null when the bytes end before the size, or hold another format.
+ */
+export function getImageSize(data: Uint8Array): { width: number; height: number } | null {
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const text = (start: number, end: number) => String.fromCharCode(...data.subarray(start, end));
+  const size = (width: number, height: number) => ({ width, height });
+  if (data[0] === 0xff && data[1] === 0xd8) {
+    // Skip segment by segment to the start-of-frame marker. C4, C8 and CC
+    // share its range but are not frames; FF FF is fill before a marker.
+    for (let i = 2; i + 9 <= data.length; ) {
+      if (data[i] !== 0xff) return null;
+      const marker = data[i + 1]!;
+      if (marker === 0xff) {
+        i++;
+      } else if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        return size(view.getUint16(i + 7), view.getUint16(i + 5));
+      } else {
+        i += 2 + view.getUint16(i + 2);
+      }
+    }
+    return null;
+  }
+  if (text(0, 8) === '\x89PNG\r\n\x1a\n' && data.length >= 24) {
+    return size(view.getUint32(16), view.getUint32(20));
+  }
+  if (text(0, 4) === 'GIF8' && data.length >= 10) {
+    return size(view.getUint16(6, true), view.getUint16(8, true));
+  }
+  if (text(0, 2) === 'BM' && data.length >= 26) {
+    // A negative height marks rows stored top-down.
+    return size(view.getInt32(18, true), Math.abs(view.getInt32(22, true)));
+  }
+  if (text(0, 4) === 'RIFF' && text(8, 12) === 'WEBP') {
+    const chunk = text(12, 16);
+    if (chunk === 'VP8L' && data.length >= 25) {
+      const bits = view.getUint32(21, true);
+      return size((bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1);
+    }
+    if (data.length < 30) return null;
+    if (chunk === 'VP8 ') {
+      return size(view.getUint16(26, true) & 0x3fff, view.getUint16(28, true) & 0x3fff);
+    }
+    if (chunk === 'VP8X') {
+      return size((view.getUint32(24, true) & 0xffffff) + 1, (view.getUint32(26, true) >>> 8) + 1);
+    }
+  }
+  return null;
+}
+
 // Strictly increasing so two saves in the same millisecond still get distinct
 // names.
 let lastGalleryStamp = 0;

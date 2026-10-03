@@ -26,7 +26,9 @@ type DeviceControlState = {
   volumeKeysInterceptionCount: number;
   backKeyInterceptionCount: number;
   getScreenBrightness: () => Promise<number>; // 0.0 to 1.0
-  setScreenBrightness: (brightness: number) => Promise<void>; // brightness: 0.0 to 1.0
+  // brightness: 0.0 to 1.0. `persist` writes through to the system brightness
+  // (system mode) instead of a reader-only override handed back on background.
+  setScreenBrightness: (brightness: number, persist?: boolean) => Promise<void>;
   lastScreenBrightness: number | null; // 0.0 to 1.0, null once released
   syncScreenBrightness: () => Promise<void>;
   acquireVolumeKeyInterception: () => void;
@@ -136,9 +138,9 @@ export const useDeviceControlStore = create<DeviceControlState>((set, get) => ({
     return res.brightness;
   },
 
-  setScreenBrightness: async (brightness: number) => {
+  setScreenBrightness: async (brightness: number, persist = false) => {
     set({ lastScreenBrightness: brightness >= 0 ? brightness : null });
-    await setScreenBrightness({ brightness });
+    await setScreenBrightness({ brightness, persist });
   },
 
   syncScreenBrightness: async () => {

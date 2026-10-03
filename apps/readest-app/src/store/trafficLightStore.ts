@@ -15,7 +15,7 @@ interface TrafficLightState {
   trafficLightInFullscreen: boolean;
   headerHeight: number;
   initializeTrafficLightStore: (appService: AppService) => void;
-  setTrafficLightVisibility: (visible: boolean, headerHeight?: number) => void;
+  setTrafficLightVisibility: (visible: boolean, headerHeight?: number) => Promise<void>;
   initializeTrafficLightListeners: () => Promise<void>;
   cleanupTrafficLightListeners: () => void;
   unlistenEnterFullScreen?: () => void;

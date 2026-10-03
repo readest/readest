@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
-import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
+import { MdCheckCircle, MdCheckCircleOutline, MdOutlineOfflinePin } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
   LiaCloudDownloadAltSolid,
@@ -21,8 +21,9 @@ import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { isAudiobook } from '@/utils/audiobook';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
-import { formatCompactTime } from '@/utils/time';
+import { splitDuration } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
+import { getBookTags } from '../utils/libraryUtils';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -30,6 +31,7 @@ interface BookItemProps {
   book: Book;
   mode: LibraryViewModeType;
   coverFit: LibraryCoverFitType;
+  skeuomorphicCovers?: boolean;
   isSelectMode: boolean;
   bookSelected: boolean;
   transferProgress: number | null;
@@ -43,6 +45,7 @@ const BookItem: React.FC<BookItemProps> = ({
   book,
   mode,
   coverFit,
+  skeuomorphicCovers,
   isSelectMode,
   bookSelected,
   transferProgress,
@@ -56,6 +59,7 @@ const BookItem: React.FC<BookItemProps> = ({
   const { user } = useAuth();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
+  const showSpine = skeuomorphicCovers ?? settings.librarySkeuomorphicCovers;
   const iconSize15 = useResponsiveSize(15);
 
   const [coverAspect, setCoverAspect] = useState<number | null>(null);
@@ -74,6 +78,8 @@ const BookItem: React.FC<BookItemProps> = ({
     : undefined;
 
   const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
+  // Synced rows may carry untrimmed or duplicate tags; show each tag once.
+  const tags = getBookTags(book);
 
   // One condition drives both the cover overlay and the hiding of the row's
   // transfer buttons, so the cover can never end up showing neither. The
@@ -89,10 +95,20 @@ const BookItem: React.FC<BookItemProps> = ({
   const isPodcastShow = book.absMediaType === 'podcast';
   const absDuration = book.duration ?? 0;
   const absCurrentTime = book.progress?.[0] ?? 0;
+  // Units rather than a bare clock: `formatCompactTime` renders 7h55m and
+  // 7m55s both as "7:55", which reads fine as a live countdown in the mini
+  // player but not on a shelf where a 10-hour book sits beside a 35-second
+  // one. Here there is room to say which is which.
+  const formatLength = (seconds: number): string => {
+    const { hours, minutes, seconds: secs } = splitDuration(seconds);
+    if (hours > 0) return _('{{hours}}h {{minutes}}m', { hours, minutes });
+    if (minutes > 0) return _('{{minutes}}m', { minutes });
+    return _('{{seconds}}s', { seconds: secs });
+  };
   const absTimeLabel =
     absCurrentTime > 0
-      ? `-${formatCompactTime(Math.max(absDuration - absCurrentTime, 0))}`
-      : formatCompactTime(absDuration);
+      ? `-${formatLength(Math.max(absDuration - absCurrentTime, 0))}`
+      : formatLength(absDuration);
   // A podcast show has no total duration or resume position of its own (those
   // live per-episode, a later task), so the row badges its episode count
   // instead of the duration/remaining-time label audiobooks get.
@@ -112,8 +128,8 @@ const BookItem: React.FC<BookItemProps> = ({
     >
       <div
         className={clsx(
-          'bookitem-main relative flex justify-center overflow-hidden rounded',
-          !fitCoverInGrid && 'aspect-[28/41]',
+          'bookitem-main relative flex justify-center overflow-hidden rounded-sm',
+          !fitCoverInGrid && 'aspect-28/41',
           coverFit === 'crop' && 'shadow-md',
           mode === 'grid' && 'items-end',
           mode === 'list' && 'min-w-20 items-center',
@@ -124,11 +140,8 @@ const BookItem: React.FC<BookItemProps> = ({
           mode={mode}
           book={book}
           coverFit={coverFit}
-          showSpine={settings.librarySkeuomorphicCovers}
-          imageClassName={clsx(
-            'shadow-md',
-            settings.librarySkeuomorphicCovers ? 'rounded-none' : 'rounded',
-          )}
+          showSpine={showSpine}
+          imageClassName={clsx('shadow-md', showSpine ? 'rounded-none' : 'rounded-sm')}
           onAspectRatioChange={setCoverAspect}
         />
         {isTransferring && (
@@ -146,7 +159,7 @@ const BookItem: React.FC<BookItemProps> = ({
             {isIndeterminate ? (
               <span className='loading loading-spinner loading-sm text-white eink:text-base-content' />
             ) : (
-              <span className='eink:text-base-content text-sm font-semibold text-white not-eink:drop-shadow-sm'>
+              <span className='eink:text-base-content text-sm font-semibold text-white not-eink:drop-shadow-xs'>
                 {Math.round(transferProgress)}%
               </span>
             )}
@@ -160,7 +173,7 @@ const BookItem: React.FC<BookItemProps> = ({
             {bookSelected ? (
               <MdCheckCircle className='fill-blue-500' />
             ) : (
-              <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
+              <MdCheckCircleOutline className='fill-gray-300 drop-shadow-xs' />
             )}
           </div>
         )}
@@ -176,7 +189,7 @@ const BookItem: React.FC<BookItemProps> = ({
           <h4
             className={clsx(
               'overflow-hidden text-ellipsis font-semibold',
-              mode === 'grid' && 'block whitespace-nowrap text-[0.6em] text-xs',
+              mode === 'grid' && 'block whitespace-nowrap text-xs',
               mode === 'list' && 'line-clamp-1 text-base',
             )}
           >
@@ -206,7 +219,7 @@ const BookItem: React.FC<BookItemProps> = ({
             minHeight: `${iconSize15}px`,
           }}
         >
-          {isAbsBook ? (
+          {isAbsBook && book.readingStatus !== 'finished' ? (
             <div
               className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
               role='status'
@@ -220,6 +233,32 @@ const BookItem: React.FC<BookItemProps> = ({
               <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
             )
           )}
+          {mode === 'list' && tags.length > 0 && (
+            // The tags only take the space left between the progress and the
+            // icons, and clip (fading out) when it runs out. `w-0` zeroes their
+            // min-content contribution, else a long tag list widens the whole
+            // text column and pushes the icons out of the row.
+            <div
+              aria-label={_('Tags')}
+              className={clsx(
+                'me-2 flex w-0 min-w-0 flex-1 items-center gap-1.5 overflow-hidden',
+                // Space from the progress only when it shows something.
+                '[:not(:empty)+&]:ms-1.5',
+                '[mask-image:linear-gradient(to_right,black_calc(100%-12px),transparent)]',
+                'rtl:[mask-image:linear-gradient(to_left,black_calc(100%-12px),transparent)]',
+                'eink:[mask-image:none]',
+              )}
+            >
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className='eink-bordered text-neutral-content/70 border-base-content/15 inline-flex h-3.5 shrink-0 items-center whitespace-nowrap rounded-sm border px-1 text-[10px] leading-none'
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
           <div className='flex shrink-0 items-center justify-center gap-x-2'>
             {!appService?.isMobile && (
               <button
@@ -230,18 +269,27 @@ const BookItem: React.FC<BookItemProps> = ({
                   showBookDetailsModal(book);
                 }}
               >
-                <div className='pt-[2px] sm:pt-[1px]'>
+                <div className='pt-0.5 sm:pt-px'>
                   <LiaInfoCircleSolid size={iconSize15} />
                 </div>
               </button>
             )}
             {(book.hasNarration || isAbsBook) && (
               <div
-                className='pt-[2px] sm:pt-[1px]'
+                className='pt-0.5 sm:pt-px'
                 title={isAbsBook ? _('Audiobook') : _('Includes narration')}
                 aria-label={isAbsBook ? _('Audiobook') : _('Includes narration')}
               >
                 <LiaHeadphonesSolid size={iconSize15} />
+              </div>
+            )}
+            {book.absDownloadedAt && (
+              <div
+                className='pt-0.5 sm:pt-px'
+                title={_('Available Offline')}
+                aria-label={_('Available Offline')}
+              >
+                <MdOutlineOfflinePin size={iconSize15} />
               </div>
             )}
             {isTransferring

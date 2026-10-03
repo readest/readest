@@ -44,6 +44,18 @@ export const isStoragePurchase = (productId: string): boolean => {
   return isPurchaseProduct(productId) && productId.includes('.storage');
 };
 
+/**
+ * Whether Play should consume a one-time product after verifying it.
+ *
+ * Consuming is what lets a SKU be bought again, which storage add-ons need
+ * because they stack. A permanent unlock must NOT be consumed or the buyer can
+ * be charged for it twice; it only needs acknowledging. This is an allowlist
+ * rather than a denylist on purpose: an unrecognised product failing to be
+ * repurchasable is an annoyance caught in testing, while wrongly consuming a
+ * permanent unlock costs a user real money.
+ */
+export const isConsumablePurchase = (productId: string): boolean => isStoragePurchase(productId);
+
 export const parseStorageGB = (productId: string): number => {
   const match = productId.match(/\.([0-9]+)gb/);
   if (match && match[1]) {

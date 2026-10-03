@@ -1,21 +1,29 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSafeAreaInsets } from './useSafeAreaInsets';
-import { themes, applyCustomTheme, Palette } from '@/styles/themes';
+import { applyCustomTheme, Palette, ThemeScope } from '@/styles/themes';
 import { getStatusBarHeight, setSystemUIVisibility } from '@/utils/bridge';
+import { getOverlayerBlendMode } from '@/utils/style';
 import { getOSPlatform } from '@/utils/misc';
-import { parseWebViewVersion } from '@/utils/ua';
+import { isStatusBarHiddenBySystem } from '@/utils/insets';
 
 type UseThemeProps = {
   systemUIVisible?: boolean;
   appThemeColor?: keyof Palette;
+  /**
+   * Which page's theme this route paints (issue #5945). Only the reader owns
+   * its own scope; the library, OPDS, player, auth and user pages all share
+   * the library's so no route paints a third look.
+   */
+  themeScope?: ThemeScope;
 };
 
 export const useTheme = ({
   systemUIVisible = true,
   appThemeColor = 'base-100',
+  themeScope = 'library',
 }: UseThemeProps = {}) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -31,11 +39,18 @@ export const useTheme = ({
     updateAppTheme,
     setStatusBarHeight,
     systemUIAlwaysHidden,
+    isIPhoneDuo,
     setSystemUIAlwaysHidden,
+    setThemeScope,
   } = useThemeStore();
   const { onUpdateInsets } = useSafeAreaInsets();
 
-  const useFallbackColors = useRef(false);
+  // Point the store at this route's scope. `themeColor`/`isDarkMode` below
+  // are the resolved values for whichever scope is active, so the data-theme
+  // effect repaints for free when the user moves between library and reader.
+  useEffect(() => {
+    setThemeScope(themeScope);
+  }, [themeScope, setThemeScope]);
 
   useEffect(() => {
     updateAppTheme(appThemeColor);
@@ -54,14 +69,21 @@ export const useTheme = ({
     (updateInsets = false) => {
       if (!appService?.isMobileApp) return;
 
-      const visible = !!(systemUIVisible && !systemUIAlwaysHidden);
+      // iPhone Duo's rule sets systemUIAlwaysHidden and calls this in one tick,
+      // so read it fresh there; other devices keep the render's value.
+      const state = useThemeStore.getState();
+      const alwaysHidden = state.isIPhoneDuo ? state.systemUIAlwaysHidden : systemUIAlwaysHidden;
+      const visible = !!(systemUIVisible && !alwaysHidden);
       if (visible) {
         showSystemUI();
       } else {
         dismissSystemUI();
       }
       setSystemUIVisibility({ visible, darkMode: isDarkMode }).then(() => {
-        if (updateInsets) {
+        // iPhone Duo's status bar carries a side safe-area inset of its own
+        // (its strip), so re-read the insets for the new state. Other iOS
+        // devices never did, and a re-read would change their top inset.
+        if (updateInsets || useThemeStore.getState().isIPhoneDuo) {
           onUpdateInsets();
         }
       });
@@ -86,8 +108,23 @@ export const useTheme = ({
         handleSystemUIVisibility();
       }
     };
+    // iPhone Duo: a status bar is hidden by the system only in a compact-height
+    // window (its cover display, not the 669pt inner one). innerHeight can still
+    // be stale when the orientation event fires; the resize that follows
+    // re-evaluates, and covers folding between two landscape displays, which
+    // fires no orientation event.
+    const updateDuoStatusBarRule = () => {
+      const hidden = isStatusBarHiddenBySystem(screen.orientation?.type, window.innerHeight);
+      if (hidden === useThemeStore.getState().systemUIAlwaysHidden) return;
+      setSystemUIAlwaysHidden(hidden);
+      handleSystemUIVisibility();
+    };
     const handleOrientationChange = () => {
       if (appService?.isIOSApp && getOSPlatform() === 'ios') {
+        if (isIPhoneDuo) {
+          updateDuoStatusBarRule();
+          return;
+        }
         // FIXME: This is a workaround for iPhone apps where the system UI is not visible in landscape mode
         // when the app is in fullscreen mode until we find a better solution to override the prefersStatusBarHidden
         // in the ViewController. Note that screen.orientation.type is not abailable in iOS before 16.4.
@@ -96,33 +133,27 @@ export const useTheme = ({
         handleSystemUIVisibility();
       }
     };
+    const handleResize = () => {
+      if (isIPhoneDuo && appService?.isIOSApp && getOSPlatform() === 'ios') {
+        updateDuoStatusBarRule();
+      }
+    };
+    handleResize();
     document.addEventListener('visibilitychange', handleVisibilityChange);
     screen.orientation?.addEventListener('change', handleOrientationChange);
+    window.addEventListener('resize', handleResize);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       screen.orientation?.removeEventListener('change', handleOrientationChange);
+      window.removeEventListener('resize', handleResize);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handleSystemUIVisibility]);
-
-  useEffect(() => {
-    if (!appService?.isAndroidApp) return;
-    const webViewVersion = parseWebViewVersion(appService);
-    // OKLCH color model is supported in Chromium 111+
-    useFallbackColors.current = webViewVersion < 111;
-  }, [appService]);
-
-  useEffect(() => {
-    if (!themeColor || !themes.find((t) => t.name === themeColor)) return;
-    if (useFallbackColors.current) {
-      applyCustomTheme(undefined, themeColor, true);
-    }
-  }, [themeColor]);
+  }, [handleSystemUIVisibility, isIPhoneDuo]);
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings?.customThemes ?? [];
     customThemes.forEach((customTheme) => {
-      applyCustomTheme(customTheme, undefined, useFallbackColors.current);
+      applyCustomTheme(customTheme);
     });
     localStorage.setItem('customThemes', JSON.stringify(customThemes));
   }, [settings.globalReadSettings?.customThemes]);
@@ -136,13 +167,17 @@ export const useTheme = ({
       '--overlayer-highlight-opacity',
       isBwEink ? '1.0' : String(highlightOpacity),
     );
+    // The global default assumes a page painted in the theme colors. Books that
+    // keep their own page (PDFs, comics) override it per view in FoliateViewer.
     document.documentElement.style.setProperty(
       '--overlayer-highlight-blend-mode',
-      isBwEink ? 'difference' : isDarkMode ? 'screen' : 'multiply',
+      getOverlayerBlendMode({ isDarkMode, isBwEink: !!isBwEink }),
     );
     document.documentElement.style.setProperty(
       '--bg-texture-blend-mode',
       isDarkMode ? 'lighten' : 'multiply',
     );
   }, [themeColor, isDarkMode, isBwEink, highlightOpacity]);
+
+  return { onUpdateInsets };
 };

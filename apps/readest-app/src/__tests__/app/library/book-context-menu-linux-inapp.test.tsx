@@ -18,6 +18,7 @@ const menuNew = vi.hoisted(() => vi.fn(async () => ({ popup: popupSpy, close: cl
 
 vi.mock('@tauri-apps/api/menu', () => ({
   Menu: { new: menuNew },
+  MenuItem: { new: vi.fn(async (options: { text: string }) => ({ ...options, close: vi.fn() })) },
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({

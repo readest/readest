@@ -19,7 +19,7 @@
 // This test drives a real animated turn and asserts the primary section's
 // getComputedStyle is read at most a small constant number of times across the
 // whole turn (not once per frame).
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 import type { Renderer } from '@/types/view';
@@ -108,6 +108,156 @@ describe('Paginator animated background repaint (browser)', () => {
         /* iframe body may already be torn down */
       }
       paginator.remove();
+    }
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    false,
+    true,
+  ])('only defers off-screen preloads during a held swipe (needed: %s)', async (needed) => {
+    const idx = book.sections!.findIndex((s) => s.linear !== 'no' && s.size > 4000);
+    paginator = createPaginator();
+    paginator.style.width = '400px';
+    paginator.setAttribute('no-preload', '');
+    paginator.open(book);
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: idx });
+    await stabilized;
+    expect(paginator.pages).toBeGreaterThan(3);
+    await paginator.goTo({ index: idx, anchor: needed ? 1 : 1 - 3 / paginator.pages });
+
+    const loaded: number[] = [];
+    paginator.addEventListener('load', ((event: CustomEvent<{ index: number }>) => {
+      loaded.push(event.detail.index);
+    }) as EventListener);
+    const touch = new Touch({ identifier: 1, target: paginator, clientX: 400, clientY: 100 });
+    paginator.dispatchEvent(
+      new TouchEvent('touchstart', { touches: [touch], changedTouches: [touch] }),
+    );
+    paginator.removeAttribute('no-preload');
+    paginator.shadowRoot!.querySelector('[part="container"]')!.dispatchEvent(new Event('scroll'));
+    // The asynchronous iframe can finish loading after the finger goes down.
+    // Its layout and host load handlers must wait even though fetch has finished.
+    await expect
+      .poll(() =>
+        paginator
+          .getContents()
+          .some(
+            (c) =>
+              c.index != null &&
+              c.index > idx &&
+              c.doc.readyState === 'complete' &&
+              c.doc.body?.textContent?.trim(),
+          ),
+      )
+      .toBe(true);
+    try {
+      if (needed) await expect.poll(() => loaded.length).toBeGreaterThan(0);
+      else expect(loaded).toEqual([]);
+    } finally {
+      paginator.dispatchEvent(new TouchEvent('touchcancel', { changedTouches: [touch] }));
+    }
+    await expect.poll(() => loaded.length).toBeGreaterThan(0);
+  });
+
+  it('yields before paginating a directly opened chapter', async () => {
+    const idx = book.sections!.findIndex((s) => s.linear !== 'no' && s.size > 4000);
+    paginator = createPaginator();
+    paginator.setAttribute('no-preload', '');
+    paginator.open(book);
+    let frameBeforePagination: boolean | undefined;
+    paginator.addEventListener('load', ((event: CustomEvent<{ doc: Document }>) => {
+      requestAnimationFrame(() => {
+        frameBeforePagination = !event.detail.doc.documentElement.style.columnWidth;
+      });
+    }) as EventListener);
+    await paginator.goTo({ index: idx });
+    expect(frameBeforePagination).toBe(true);
+    expect(paginator.pages).toBeGreaterThan(1);
+  });
+
+  it('lets the browser draw between preload styles, host handlers, and pagination', async () => {
+    const idx = book.sections!.findIndex((s) => s.linear !== 'no' && s.size > 4000);
+    paginator = createPaginator();
+    paginator.style.width = '400px';
+    paginator.setAttribute('no-preload', '');
+    paginator.open(book);
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: idx });
+    await stabilized;
+    expect(paginator.pages).toBeGreaterThan(3);
+    await paginator.goTo({ index: idx, anchor: 1 - 3 / paginator.pages });
+    paginator.setStyles?.('body { color: rgb(10, 20, 30); }');
+
+    let stylesPainted = false;
+    let frameBeforeLoad: boolean | undefined;
+    const primaryDoc = paginator.getContents().find((c) => c.index === idx)!.doc;
+    const styleObserver = new MutationObserver(() => {
+      requestAnimationFrame(() => {
+        stylesPainted = true;
+      });
+    });
+    let visibleStyleChanges = 0;
+    const primaryObserver = new MutationObserver((records) => {
+      visibleStyleChanges += records.length;
+    });
+    primaryObserver.observe(primaryDoc.head, { childList: true, subtree: true });
+    let uninitializedMeasurements = 0;
+    const measureRange = Range.prototype.getBoundingClientRect;
+    vi.spyOn(Range.prototype, 'getBoundingClientRect').mockImplementation(function (this: Range) {
+      // A freshly constructed View range still belongs to the outer document.
+      // Font-ready callbacks must not measure it before first pagination.
+      if (this.commonAncestorContainer === document) uninitializedMeasurements++;
+      return measureRange.call(this);
+    });
+    let frameBeforePagination: boolean | undefined;
+    paginator.addEventListener('load', ((event: CustomEvent<{ doc: Document; index: number }>) => {
+      if (event.detail.index <= idx) return;
+      frameBeforeLoad = stylesPainted;
+      styleObserver.disconnect();
+      const doc = event.detail.doc;
+      // Host load handlers customize chapter styles. Input and paint must get
+      // a turn before the paginator measures and lays out the entire chapter.
+      requestAnimationFrame(() => {
+        frameBeforePagination = !doc.documentElement.style.columnWidth;
+      });
+    }) as EventListener);
+    const touch = new Touch({ identifier: 1, target: paginator, clientX: 300, clientY: 100 });
+    paginator.dispatchEvent(
+      new TouchEvent('touchstart', { touches: [touch], changedTouches: [touch] }),
+    );
+    paginator.removeAttribute('no-preload');
+    paginator.shadowRoot!.querySelector('[part="container"]')!.dispatchEvent(new Event('scroll'));
+    let adjacentDoc: Document | undefined;
+    await expect
+      .poll(() => {
+        adjacentDoc = paginator
+          .getContents()
+          .find((c) => c.index! > idx && c.doc.body?.textContent?.trim())?.doc;
+        return adjacentDoc?.readyState;
+      })
+      .toBe('complete');
+    styleObserver.observe(adjacentDoc!.head, { childList: true, subtree: true });
+    paginator.dispatchEvent(new TouchEvent('touchcancel', { changedTouches: [touch] }));
+    await expect.poll(() => frameBeforePagination).toBe(true);
+    await expect
+      .poll(() =>
+        paginator
+          .getContents()
+          .some((c) => c.index! > idx && c.doc.documentElement.style.columnWidth),
+      )
+      .toBe(true);
+    expect(frameBeforeLoad).toBe(true);
+    expect(uninitializedMeasurements).toBe(0);
+    primaryObserver.disconnect();
+    expect(visibleStyleChanges).toBe(0);
+    expect(adjacentDoc!.defaultView!.getComputedStyle(adjacentDoc!.body).color).toBe(
+      'rgb(10, 20, 30)',
+    );
+    paginator.setStyles?.('body { color: rgb(30, 20, 10); }');
+    for (const doc of [primaryDoc, adjacentDoc!]) {
+      expect(doc.defaultView!.getComputedStyle(doc.body).color).toBe('rgb(30, 20, 10)');
     }
   });
 

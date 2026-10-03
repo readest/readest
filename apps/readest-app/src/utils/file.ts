@@ -283,6 +283,7 @@ export class NativeFile extends File implements ClosableFile {
 
 export class RemoteFile extends File implements ClosableFile {
   url: string;
+  #fetch: typeof fetch;
   #name: string;
   #lastModified: number;
   #size: number = -1;
@@ -297,11 +298,14 @@ export class RemoteFile extends File implements ClosableFile {
   static MAX_CACHE_CHUNK_SIZE = 1024 * 128;
   static MAX_CACHE_ITEMS_SIZE: number = 128;
   static RANGE_SCHEME_ORIGIN = 'http://rangefile.localhost';
+  // Bounded concurrency for multi-chunk fetchRange() reads (see fetchRange).
+  static MAX_PARALLEL_RANGE_FETCHES = 4;
 
-  constructor(url: string, name?: string, type = '', lastModified = Date.now()) {
+  constructor(url: string, name?: string, type = '', lastModified = Date.now(), fetcher = fetch) {
     const basename = url.split('/').pop() || 'remote-file';
     super([], name || basename, { type, lastModified });
     this.url = url;
+    this.#fetch = fetcher;
     this.#name = name || basename;
     this.#type = type;
     this.#lastModified = lastModified;
@@ -327,6 +331,17 @@ export class RemoteFile extends File implements ClosableFile {
     return file;
   }
 
+  /**
+   * Invoke the fetcher unbound. `this.#fetch(...)` would run the default
+   * `window.fetch` with this File as `this`, which Chromium and WebKit reject
+   * with "Illegal invocation" — the web build and the desktop fast path both
+   * rely on that default.
+   */
+  #call(input: string, init?: RequestInit): Promise<Response> {
+    const fetcher = this.#fetch;
+    return fetcher(input, init);
+  }
+
   override get name() {
     return this.#name;
   }
@@ -344,7 +359,7 @@ export class RemoteFile extends File implements ClosableFile {
   }
 
   async _open_with_head() {
-    const response = await fetch(this.url, { method: 'HEAD' });
+    const response = await this.#call(this.url, { method: 'HEAD' });
     if (!response.ok) {
       throw new Error(`Failed to fetch file size: ${response.status}`);
     }
@@ -354,7 +369,7 @@ export class RemoteFile extends File implements ClosableFile {
   }
 
   async _open_with_range() {
-    const response = await fetch(this.url, { headers: { Range: `bytes=${0}-${1023}` } });
+    const response = await this.#call(this.url, { headers: { Range: `bytes=${0}-${1023}` } });
     if (!response.ok) {
       throw new Error(`Failed to fetch file size: ${response.status}`);
     }
@@ -366,7 +381,7 @@ export class RemoteFile extends File implements ClosableFile {
   async _open_with_query() {
     // No `Range` header — the rangefile handler returns the file size in
     // `X-Total-Size` and the requested bytes as a plain 200 body.
-    const response = await fetch(`${this.url}&start=0&end=0`);
+    const response = await this.#call(`${this.url}&start=0&end=0`);
     if (!response.ok) {
       throw new Error(`Failed to fetch file size: ${response.status}`);
     }
@@ -397,8 +412,8 @@ export class RemoteFile extends File implements ClosableFile {
     end = Math.min(this.size - 1, end);
     // console.log(`Fetching range: ${start}-${end}, size: ${end - start + 1}`);
     const response = this.#queryRange
-      ? await fetch(`${this.url}&start=${start}&end=${end}`)
-      : await fetch(this.url, { headers: { Range: `bytes=${start}-${end}` } });
+      ? await this.#call(`${this.url}&start=${start}&end=${end}`)
+      : await this.#call(this.url, { headers: { Range: `bytes=${start}-${end}` } });
     if (!response.ok) {
       throw new Error(`Failed to fetch range: ${response.status}`);
     }
@@ -411,11 +426,31 @@ export class RemoteFile extends File implements ClosableFile {
     const MAX_RANGE_LEN = 1024 * 1000;
 
     if (rangeSize > MAX_RANGE_LEN) {
-      const buffers: ArrayBuffer[] = [];
+      // The chunks are independent range requests; issue them with bounded
+      // concurrency instead of one-by-one. On Android every chunk is a
+      // scheme round trip through the WebView network stack, so a multi-MB
+      // read (e.g. a large EPUB's central directory) used to serialize N
+      // fetches behind each other. Each result is written into its
+      // preallocated slot so chunk order is preserved.
+      const starts: number[] = [];
       for (let currentStart = start; currentStart <= end; currentStart += MAX_RANGE_LEN) {
-        const currentEnd = Math.min(currentStart + MAX_RANGE_LEN - 1, end);
-        buffers.push(await this.fetchRangePart(currentStart, currentEnd));
+        starts.push(currentStart);
       }
+      const buffers: ArrayBuffer[] = new Array(starts.length);
+      let next = 0;
+      await Promise.all(
+        Array.from(
+          { length: Math.min(RemoteFile.MAX_PARALLEL_RANGE_FETCHES, starts.length) },
+          async () => {
+            while (next < starts.length) {
+              const index = next++;
+              const currentStart = starts[index]!;
+              const currentEnd = Math.min(currentStart + MAX_RANGE_LEN - 1, end);
+              buffers[index] = await this.fetchRangePart(currentStart, currentEnd);
+            }
+          },
+        ),
+      );
       const totalSize = buffers.reduce((sum, buffer) => sum + buffer.byteLength, 0);
       const combinedBuffer = new Uint8Array(totalSize);
       let offset = 0;
@@ -430,7 +465,12 @@ export class RemoteFile extends File implements ClosableFile {
       const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
         const buffer = this.#cache.get(chunkStart)!;
         const bufferSize = buffer.byteLength;
-        return start >= chunkStart && end <= chunkStart + bufferSize;
+        // `end` is inclusive, so the cached chunk's last byte is at
+        // `chunkStart + bufferSize - 1`. Accepting `end === chunkStart +
+        // bufferSize` here would take the cache branch for a range whose last
+        // byte the chunk doesn't hold, and `buffer.slice` clamps rather than
+        // throws — the caller silently gets one byte less than it asked for.
+        return start >= chunkStart && end < chunkStart + bufferSize;
       });
       if (cachedChunkStart !== undefined) {
         this.#updateAccessOrder(cachedChunkStart);

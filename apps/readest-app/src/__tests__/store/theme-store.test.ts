@@ -45,6 +45,11 @@ describe('themeStore', () => {
     useThemeStore.setState({
       themeMode: 'auto',
       themeColor: 'default',
+      themeScope: 'library',
+      readerThemeMode: 'auto',
+      readerThemeColor: 'default',
+      libraryThemeMode: null,
+      libraryThemeColor: null,
       systemIsDarkMode: false,
       ambientIsDarkMode: false,
       isDarkMode: false,
@@ -134,11 +139,11 @@ describe('themeStore', () => {
     });
 
     test('sets data-theme attribute using color and current dark mode', () => {
-      useThemeStore.setState({ isDarkMode: false });
+      useThemeStore.setState({ systemIsDarkMode: false, isDarkMode: false });
       useThemeStore.getState().setThemeColor('sepia');
       expect(document.documentElement.getAttribute('data-theme')).toBe('sepia-light');
 
-      useThemeStore.setState({ isDarkMode: true });
+      useThemeStore.setState({ systemIsDarkMode: true, isDarkMode: true });
       useThemeStore.getState().setThemeColor('ocean');
       expect(document.documentElement.getAttribute('data-theme')).toBe('ocean-dark');
     });
@@ -146,7 +151,7 @@ describe('themeStore', () => {
 
   describe('handleSystemThemeChange', () => {
     test('updates isDarkMode based on systemIsDarkMode when in auto mode', () => {
-      useThemeStore.setState({ themeMode: 'auto' });
+      useThemeStore.setState({ themeMode: 'auto', readerThemeMode: 'auto' });
 
       useThemeStore.getState().handleSystemThemeChange(true);
       let state = useThemeStore.getState();
@@ -160,7 +165,7 @@ describe('themeStore', () => {
     });
 
     test('isDarkMode stays true when themeMode is dark regardless of system theme', () => {
-      useThemeStore.setState({ themeMode: 'dark' });
+      useThemeStore.setState({ themeMode: 'dark', readerThemeMode: 'dark' });
 
       useThemeStore.getState().handleSystemThemeChange(false);
       const state = useThemeStore.getState();
@@ -169,7 +174,7 @@ describe('themeStore', () => {
     });
 
     test('isDarkMode stays false when themeMode is light regardless of system theme', () => {
-      useThemeStore.setState({ themeMode: 'light' });
+      useThemeStore.setState({ themeMode: 'light', readerThemeMode: 'light' });
 
       useThemeStore.getState().handleSystemThemeChange(true);
       const state = useThemeStore.getState();
@@ -199,14 +204,19 @@ describe('themeStore', () => {
       };
       mockGetThemeCode.mockReturnValueOnce(darkThemeCode);
 
-      useThemeStore.setState({ themeMode: 'auto' });
+      useThemeStore.setState({ themeMode: 'auto', readerThemeMode: 'auto' });
       useThemeStore.getState().handleSystemThemeChange(true);
 
       expect(useThemeStore.getState().themeCode).toEqual(darkThemeCode);
     });
 
     test('updates data-theme attribute when system theme changes', () => {
-      useThemeStore.setState({ themeMode: 'auto', themeColor: 'default' });
+      useThemeStore.setState({
+        themeMode: 'auto',
+        themeColor: 'default',
+        readerThemeMode: 'auto',
+        readerThemeColor: 'default',
+      });
       useThemeStore.getState().handleSystemThemeChange(true);
       expect(document.documentElement.getAttribute('data-theme')).toBe('default-dark');
 
@@ -219,9 +229,11 @@ describe('themeStore', () => {
     test('updates isDarkMode from lux when in ambient mode', () => {
       useThemeStore.setState({
         themeMode: 'ambient',
+        readerThemeMode: 'ambient',
         ambientIsDarkMode: false,
         isDarkMode: false,
         themeColor: 'default',
+        readerThemeColor: 'default',
       });
       useThemeStore.getState().handleAmbientLightChange(5);
       expect(useThemeStore.getState().ambientIsDarkMode).toBe(true);
@@ -233,6 +245,7 @@ describe('themeStore', () => {
     test('ignores lux updates when not in ambient mode', () => {
       useThemeStore.setState({
         themeMode: 'light',
+        readerThemeMode: 'light',
         ambientIsDarkMode: false,
         isDarkMode: false,
       });
@@ -244,9 +257,11 @@ describe('themeStore', () => {
     test('holds state inside the hysteresis band after first reading', () => {
       useThemeStore.setState({
         themeMode: 'ambient',
+        readerThemeMode: 'ambient',
         ambientIsDarkMode: true,
         isDarkMode: true,
         themeColor: 'default',
+        readerThemeColor: 'default',
       });
       // First reading establishes dark (low lux)
       useThemeStore.getState().handleAmbientLightChange(5);
@@ -428,7 +443,12 @@ describe('themeStore', () => {
     });
 
     test('native color scheme change updates the theme store in auto mode', () => {
-      useThemeStore.setState({ themeMode: 'auto', systemIsDarkMode: false, isDarkMode: false });
+      useThemeStore.setState({
+        themeMode: 'auto',
+        readerThemeMode: 'auto',
+        systemIsDarkMode: false,
+        isDarkMode: false,
+      });
       initSystemThemeListener(makeAppService({ isIOSApp: true }));
 
       window.onNativeColorSchemeChange!('dark');

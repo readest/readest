@@ -145,7 +145,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     settingId?: string,
   ) => (
     <div className='w-full'>
-      <BoxedList title={_(title)} data-setting-id={settingId} innerClassName='!ps-0'>
+      <BoxedList title={_(title)} data-setting-id={settingId} innerClassName='ps-0!'>
         {/* Single full-width child instead of typical settings rows — the
             textarea owns the whole card surface. Apply button overlays at
             the bottom-trailing corner; visible only when there are unsaved
@@ -154,7 +154,7 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           <textarea
             ref={textareaRef}
             className={clsx(
-              'textarea textarea-ghost h-48 w-full border-0 p-3 text-base !outline-none sm:text-sm',
+              'textarea textarea-ghost h-48 w-full border-0 p-3 text-base outline-hidden! sm:text-sm',
               'placeholder:text-base-content/70',
             )}
             placeholder={_(placeholder)}
@@ -169,9 +169,11 @@ const MiscPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           />
           <button
             className={clsx(
-              'hover:bg-base-300 bg-base-200 absolute bottom-2 end-4 inline-flex h-8 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150',
-              'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
-              saved ? 'hidden' : '',
+              'hover:bg-base-300 bg-base-200 absolute bottom-2 end-4 h-8 items-center rounded-md px-3 text-xs font-medium transition-colors duration-150',
+              'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
+              // Tailwind 4 orders `inline-flex` after `hidden`, so the display
+              // must be exclusive rather than an override.
+              saved ? 'hidden' : 'inline-flex',
               error ? 'pointer-events-none opacity-50' : '',
             )}
             onClick={() => applyStyles(type)}

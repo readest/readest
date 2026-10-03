@@ -79,9 +79,9 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
 
       <form onSubmit={handleSubmit} className='space-y-4'>
         {(search.params || []).map((param) => (
-          <div key={`${param.ns || 'default'}-${param.name}`} className='form-control'>
-            <label className='label'>
-              <span className='label-text font-medium'>
+          <div key={`${param.ns || 'default'}-${param.name}`} className='flex flex-col'>
+            <label className='flex select-none items-center justify-between px-1 py-2'>
+              <span className='text-sm font-medium'>
                 {getParamLabel(param.name)}
                 {param.required && <span className='text-error ml-1'>*</span>}
               </span>
@@ -92,7 +92,7 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
               onChange={(e) => handleInputChange(param.name, e.target.value)}
               required={param.required}
               placeholder={`${_('Enter {{terms}}', { terms: getParamLabel(param.name).toLowerCase() })}`}
-              className='input input-bordered w-full'
+              className='input w-full'
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus={
                 param.name === 'searchTerms' ||

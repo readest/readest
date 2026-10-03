@@ -31,6 +31,38 @@ describe('buildLookupCandidates', () => {
     expect(buildLookupCandidates('   ')).toEqual([]);
   });
 
+  it.each([
+    'rūpa',
+    'café',
+    'niño',
+    'a\u1ab0',
+  ])('folds Latin diacritics in %s after exact forms', (word) => {
+    const candidates = buildLookupCandidates(word, 'fr');
+    const folded = word.normalize('NFD').replace(/\p{M}/gu, '');
+    expect(candidates[0]).toBe(word);
+    expect(candidates).toContain(folded);
+    expect(candidates).toContain(folded.toUpperCase());
+    expect(candidates.indexOf(folded)).toBeGreaterThan(candidates.indexOf(word.toUpperCase()));
+    expect(new Set(candidates).size).toBe(candidates.length);
+  });
+
+  it.each([
+    'café',
+    'cafe\u0301',
+  ])('tries both Unicode compositions of %s before folding', (word) => {
+    const candidates = buildLookupCandidates(word, 'fr');
+    expect(candidates[0]).toBe(word);
+    for (const form of ['NFC', 'NFD'] as const) {
+      expect(candidates).toContain(word.normalize(form));
+      expect(candidates.indexOf(word.normalize(form))).toBeLessThan(candidates.indexOf('cafe'));
+    }
+  });
+
+  it('preserves marks in non-Latin scripts', () => {
+    expect(buildLookupCandidates('が', 'ja')).not.toContain('か');
+    expect(buildLookupCandidates('हिन्दी', 'hi')).not.toContain('हनद');
+  });
+
   describe('lemmatization fallback', () => {
     it('appends lemma candidates after the exact/case variants', () => {
       const candidates = buildLookupCandidates('ran', 'en');

@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Διατηρεί τις συσκευές KOReader και Readest συγχρονισμένες."
 
+msgid "Downloading %1 of %2…"
+msgstr "Γίνεται λήψη %1 από %2…"
+
+msgid "%1 MB downloaded"
+msgstr "Έγινε λήψη %1 MB"
+
+msgid "No downloads in progress."
+msgstr "Δεν υπάρχουν λήψεις σε εξέλιξη."
+
+msgid "Run in background"
+msgstr "Εκτέλεση στο παρασκήνιο"
+
+msgid "Cancel download"
+msgstr "Ακύρωση λήψης"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Η λήψη ακυρώθηκε. Έγινε λήψη %1 από %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Έγινε λήψη %1 από %2 (παραλείφθηκαν %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Έγινε λήψη %1 από %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Πρώτα ορίστε τον αρχικό φάκελο στη διαχείριση αρχείων για να ενεργοποιήσετε τις λήψεις."
+
+msgid "No books to download."
+msgstr "Δεν υπάρχουν βιβλία για λήψη."
+
 msgid "Library view"
 msgstr "Προβολή βιβλιοθήκης"
 
@@ -68,8 +98,14 @@ msgstr "Αύξουσα"
 msgid "Actions"
 msgstr "Ενέργειες"
 
+msgid "Sync now"
+msgstr "Συγχρονισμός τώρα"
+
 msgid "Download all books"
 msgstr "Λήψη όλων των βιβλίων"
+
+msgid "Download progress"
+msgstr "Πρόοδος λήψης"
 
 msgid "Rescan library"
 msgstr "Επανασάρωση βιβλιοθήκης"
@@ -104,6 +140,12 @@ msgstr "Αναζήτηση στη βιβλιοθήκη"
 msgid "Search title or author"
 msgstr "Αναζήτηση τίτλου ή συγγραφέα"
 
+msgid "Books synced"
+msgstr "Τα βιβλία συγχρονίστηκαν"
+
+msgid "Books sync failed"
+msgstr "Αποτυχία συγχρονισμού βιβλίων"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Το πρόσθετο Cover Browser απαιτείται για πλήρη απόδοση βιβλιοθήκης. Επιστροφή σε απλή λίστα."
 
@@ -116,18 +158,6 @@ msgstr "Λήψη αυτού του βιβλίου από το Readest;"
 msgid "Download"
 msgstr "Λήψη"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Πρώτα ορίστε τον αρχικό φάκελο στη διαχείριση αρχείων για να ενεργοποιήσετε τις λήψεις."
-
-msgid "Downloading…"
-msgstr "Γίνεται λήψη…"
-
-msgid "Cloud copy unavailable."
-msgstr "Το αντίγραφο στο cloud δεν είναι διαθέσιμο."
-
-msgid "Download failed."
-msgstr "Η λήψη απέτυχε."
-
 msgid "No cover available on Readest."
 msgstr "Δεν υπάρχει εξώφυλλο διαθέσιμο στο Readest."
 
@@ -137,20 +167,8 @@ msgstr "Αποτυχία λήψης εξωφύλλου."
 msgid "Could not delete the file."
 msgstr "Δεν ήταν δυνατή η διαγραφή του αρχείου."
 
-msgid "No books to download."
-msgstr "Δεν υπάρχουν βιβλία για λήψη."
-
-msgid "Downloading %1 of %2…"
-msgstr "Γίνεται λήψη %1 από %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Η λήψη ακυρώθηκε. Έγινε λήψη %1 από %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Έγινε λήψη %1 από %2 (παραλείφθηκαν %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Έγινε λήψη %1 από %2."
+msgid "Download group"
+msgstr "Λήψη ομάδας"
 
 msgid "Removing from cloud…"
 msgstr "Αφαίρεση από το cloud…"
@@ -287,23 +305,14 @@ msgstr "Αποστολή στατιστικών τώρα"
 msgid "Pull stats now"
 msgstr "Λήψη στατιστικών τώρα"
 
-msgid "Push books now"
-msgstr "Αποστολή βιβλίων τώρα"
-
-msgid "Pull books now"
-msgstr "Λήψη βιβλίων τώρα"
-
-msgid "Receive via LocalSend"
-msgstr "Λήψη μέσω LocalSend"
-
-msgid "Upload current book to Readest"
-msgstr "Μεταφόρτωση τρέχοντος βιβλίου στο Readest"
-
 msgid "Push reading progress now"
 msgstr "Αποστολή προόδου ανάγνωσης τώρα"
 
 msgid "Pull reading progress now"
 msgstr "Λήψη προόδου ανάγνωσης τώρα"
+
+msgid "Upload current book to Readest"
+msgstr "Μεταφόρτωση τρέχοντος βιβλίου στο Readest"
 
 msgid "Push annotations now"
 msgstr "Αποστολή σχολίων τώρα"
@@ -316,6 +325,9 @@ msgstr "Πλήρης συγχρονισμός όλων των σχολίων"
 
 msgid "Sync info"
 msgstr "Πληροφορίες συγχρονισμού"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Λήψη μέσω Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Έλεγχος για ενημέρωση (v%1)"
@@ -350,26 +362,20 @@ msgstr "Πληροφορίες συγχρονισμού"
 msgid "Library not initialized"
 msgstr "Η βιβλιοθήκη δεν αρχικοποιήθηκε"
 
-msgid "Books synced"
-msgstr "Τα βιβλία συγχρονίστηκαν"
-
-msgid "Books sync failed"
-msgstr "Αποτυχία συγχρονισμού βιβλίων"
-
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Ορίστε πρώτα έναν φάκελο λήψεων Readest ή έναν αρχικό φάκελο KOReader."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "Σφάλμα LocalSend: δεν βρέθηκε ελεύθερη θύρα."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Σφάλμα Nearby BookDrop: δεν βρέθηκε ελεύθερη θύρα."
 
-msgid "LocalSend failed to start."
-msgstr "Η εκκίνηση του LocalSend απέτυχε."
+msgid "Nearby BookDrop failed to start."
+msgstr "Η εκκίνηση του Nearby BookDrop απέτυχε."
 
-msgid "Starting LocalSend…"
-msgstr "Εκκίνηση LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Εκκίνηση Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "Το LocalSend θα ξεκινήσει μόλις συνδεθεί το Wi-Fi."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Το Nearby BookDrop θα ξεκινήσει μόλις συνδεθεί το Wi-Fi."
 
 msgid "… and %1 more"
 msgstr "… και %1 ακόμη"
@@ -386,23 +392,23 @@ msgstr "Απόρριψη"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "Λήψη %1 αρχείου(ων) από %2…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: ελήφθησαν %1 αρχείο(α), %2 απέτυχαν."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: ελήφθησαν %1 αρχείο(α), %2 απέτυχαν."
 
-msgid "LocalSend transfer cancelled."
-msgstr "Η μεταφορά LocalSend ακυρώθηκε."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Η μεταφορά Nearby BookDrop ακυρώθηκε."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: ελήφθησαν %1 αρχείο(α)."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: ελήφθησαν %1 αρχείο(α)."
 
-msgid "LocalSend not available on this device"
-msgstr "Το LocalSend δεν είναι διαθέσιμο σε αυτή τη συσκευή"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Το Nearby BookDrop δεν είναι διαθέσιμο σε αυτή τη συσκευή"
 
 msgid "Scanning for nearby devices…"
 msgstr "Αναζήτηση κοντινών συσκευών…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Δεν βρέθηκαν κοντινές συσκευές. Βεβαιωθείτε ότι η άλλη συσκευή έχει ανοιχτό το LocalSend/Readest."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Δεν βρέθηκαν κοντινές συσκευές. Βεβαιωθείτε ότι η άλλη συσκευή έχει ανοιχτό το Nearby BookDrop ή το LocalSend."
 
 msgid "Rescan"
 msgstr "Νέα σάρωση"
@@ -428,11 +434,11 @@ msgstr "Η μεταφορά ακυρώθηκε."
 msgid "Send failed: %1"
 msgstr "Η αποστολή απέτυχε: %1"
 
-msgid "LocalSend error: %1"
-msgstr "Σφάλμα LocalSend: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Σφάλμα Nearby BookDrop: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend ανενεργό"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop ανενεργό"
 
 msgid "Visible as %1"
 msgstr "Ορατό ως %1"
@@ -511,6 +517,9 @@ msgstr "Δεν βρέθηκαν νέα σχόλια"
 
 msgid "%1 annotations pulled"
 msgstr "Ελήφθησαν %1 σχόλια"
+
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Η συνεδρία Readest έληξε. Συνδεθείτε ξανά."
 
 msgid "Login"
 msgstr "Σύνδεση"

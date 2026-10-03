@@ -11,6 +11,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { getBaseUrl, isTauriAppPlatform } from '@/services/environment';
@@ -20,6 +21,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
 import { handleAuthCallback, parseOAuthCallbackUrl } from '@/helpers/auth';
 import { getUserProfilePlan } from '@/utils/access';
+import { getHorizontalInsetStyle } from '@/utils/insets';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
@@ -40,7 +42,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow, isIPhoneDuo } = useThemeStore();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
@@ -51,6 +53,9 @@ export default function AuthPage() {
   const headerRef = useRef<HTMLDivElement>(null);
 
   useTheme({ systemUIVisible: false });
+  // The OAuth return and any deep link land here cold; hydrate before the
+  // Readest Cloud opt-in or handleGoBack's keepLogin write reads the store.
+  const settingsLoaded = useEnsureSettingsLoaded();
 
   const getTauriRedirectTo = (isOAuth: boolean) => {
     // For custom OAuth mode, use a local server to handle the OAuth callback
@@ -228,10 +233,22 @@ export default function AuthPage() {
   };
 
   const handleGoBack = () => {
-    // Keep login false to avoid infinite loop to redirect to the login page
-    settings.keepLogin = false;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
+    // Keep login false to avoid infinite loop to redirect to the login page.
+    // On a cold load the store is still an empty object, so read through to
+    // disk first: persisting that would overwrite the real settings file with
+    // a lone `keepLogin`. Building a new object rather than mutating in place
+    // also keeps the settingsStore subscriber's identity check meaningful.
+    void (async () => {
+      try {
+        const appService = await envConfig.getAppService();
+        const current = settingsLoaded ? settings : await appService.loadSettings();
+        const next = { ...current, keepLogin: false };
+        setSettings(next);
+        await saveSettings(envConfig, next);
+      } catch (error) {
+        console.error('Failed to clear keepLogin:', error);
+      }
+    })();
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
     if (redirectTo) {
       router.push(redirectTo);
@@ -302,6 +319,7 @@ export default function AuthPage() {
         className={clsx('flex h-full w-full flex-col items-center overflow-y-auto')}
         style={{
           paddingTop: `${safeAreaInsets?.top || 0}px`,
+          ...getHorizontalInsetStyle(safeAreaInsets, isIPhoneDuo),
         }}
       >
         <div
@@ -310,7 +328,20 @@ export default function AuthPage() {
             'fixed z-10 flex w-full items-center justify-between py-2 pe-6 ps-4',
             appService?.hasTrafficLight && 'pt-11',
           )}
-          style={{ top: `${safeAreaInsets?.top || 0}px` }}
+          style={{
+            top: `${safeAreaInsets?.top || 0}px`,
+            // Fixed, so it does not inherit the wrapper's inset; keep the
+            // Back button clear of iPhone Duo's side status strip (#6307).
+            // Pin it to the viewport edge: its static position is centred in
+            // the inset-padded wrapper, which puts it half a strip off-centre.
+            ...(isIPhoneDuo
+              ? {
+                  left: 0,
+                  paddingLeft: `${(safeAreaInsets?.left || 0) + 16}px`,
+                  paddingRight: `${(safeAreaInsets?.right || 0) + 24}px`,
+                }
+              : {}),
+          }}
         >
           <button
             aria-label={_('Go Back')}

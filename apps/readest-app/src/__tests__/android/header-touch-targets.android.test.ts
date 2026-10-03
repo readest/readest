@@ -30,6 +30,11 @@ interface ControlTarget {
   hit: [number, number];
 }
 
+interface StartScrollerGeometry {
+  clientWidth: number;
+  scrollWidth: number;
+}
+
 const viewportMetrics = (page: CdpPage) =>
   page.evaluate<{ dpr: number; width: number; height: number }>(
     `return { dpr: window.devicePixelRatio || 1, width: innerWidth, height: innerHeight };`,
@@ -88,6 +93,13 @@ const measureHeaderControls = (page: CdpPage) =>
       .map(measure);
   `);
 
+const measureStartScroller = (page: CdpPage) =>
+  page.evaluate<StartScrollerGeometry | null>(`
+    const scroller = document.querySelector('.header-tools-start > .no-scrollbar');
+    if (!scroller) return null;
+    return { clientWidth: scroller.clientWidth, scrollWidth: scroller.scrollWidth };
+  `);
+
 const env = await detectAndroidEnv();
 if (!env) {
   console.warn('[test:android] no adb device with Readest installed — skipping the Android lane');
@@ -137,5 +149,13 @@ describe.runIf(env)('Android reader header bar touch targets (#5401)', () => {
     const controls = await measureHeaderControls(page);
     const shrunk = controls.filter(({ box, hit }) => hit[0] < box[0] || hit[1] < box[1]);
     expect(shrunk, `controls smaller than their icon: ${JSON.stringify(shrunk)}`).toEqual([]);
+  });
+
+  it('does not let the bookmark and translation controls slide when they fit', async () => {
+    const scroller = await measureStartScroller(page);
+
+    expect(scroller).not.toBeNull();
+    expect(scroller!.clientWidth).toBeGreaterThan(0);
+    expect(scroller!.scrollWidth).toBe(scroller!.clientWidth);
   });
 });

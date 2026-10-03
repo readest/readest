@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "Vaše naprave KOReader in Readest ostajajo sinhronizirane."
 
+msgid "Downloading %1 of %2…"
+msgstr "Prenašanje %1 od %2…"
+
+msgid "%1 MB downloaded"
+msgstr "Preneseno %1 MB"
+
+msgid "No downloads in progress."
+msgstr "Trenutno ni prenosov."
+
+msgid "Run in background"
+msgstr "Izvajaj v ozadju"
+
+msgid "Cancel download"
+msgstr "Prekliči prenos"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Prenos preklican. Prenesenih %1 od %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Prenesenih %1 od %2 (preskočenih %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Prenesenih %1 od %2."
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "Najprej v upravitelju datotek nastavite domačo mapo, da omogočite prenose."
+
+msgid "No books to download."
+msgstr "Ni knjig za prenos."
+
 msgid "Library view"
 msgstr "Pogled knjižnice"
 
@@ -68,8 +98,14 @@ msgstr "Naraščajoče"
 msgid "Actions"
 msgstr "Dejanja"
 
+msgid "Sync now"
+msgstr "Sinhroniziraj zdaj"
+
 msgid "Download all books"
 msgstr "Prenesi vse knjige"
+
+msgid "Download progress"
+msgstr "Napredek prenosa"
 
 msgid "Rescan library"
 msgstr "Znova preglej knjižnico"
@@ -104,6 +140,12 @@ msgstr "Iskanje po knjižnici"
 msgid "Search title or author"
 msgstr "Iskanje naslova ali avtorja"
 
+msgid "Books synced"
+msgstr "Knjige sinhronizirane"
+
+msgid "Books sync failed"
+msgstr "Sinhronizacija knjig ni uspela"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "Vtičnik Cover Browser je potreben za polno upodabljanje knjižnice. Vrnitev na navaden seznam."
 
@@ -116,18 +158,6 @@ msgstr "Prenesi to knjigo iz Readest?"
 msgid "Download"
 msgstr "Prenesi"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "Najprej v upravitelju datotek nastavite domačo mapo, da omogočite prenose."
-
-msgid "Downloading…"
-msgstr "Prenašanje…"
-
-msgid "Cloud copy unavailable."
-msgstr "Kopija v oblaku ni na voljo."
-
-msgid "Download failed."
-msgstr "Prenos ni uspel."
-
 msgid "No cover available on Readest."
 msgstr "Naslovnica ni na voljo v Readest."
 
@@ -137,20 +167,8 @@ msgstr "Prenos naslovnice ni uspel."
 msgid "Could not delete the file."
 msgstr "Datoteke ni bilo mogoče izbrisati."
 
-msgid "No books to download."
-msgstr "Ni knjig za prenos."
-
-msgid "Downloading %1 of %2…"
-msgstr "Prenašanje %1 od %2…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "Prenos preklican. Prenesenih %1 od %2."
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "Prenesenih %1 od %2 (preskočenih %3)."
-
-msgid "Downloaded %1 of %2."
-msgstr "Prenesenih %1 od %2."
+msgid "Download group"
+msgstr "Prenesi skupino"
 
 msgid "Removing from cloud…"
 msgstr "Odstranjevanje iz oblaka…"
@@ -287,23 +305,14 @@ msgstr "Pošlji statistiko zdaj"
 msgid "Pull stats now"
 msgstr "Pridobi statistiko zdaj"
 
-msgid "Push books now"
-msgstr "Pošlji knjige zdaj"
-
-msgid "Pull books now"
-msgstr "Pridobi knjige zdaj"
-
-msgid "Receive via LocalSend"
-msgstr "Prejmi prek LocalSend"
-
-msgid "Upload current book to Readest"
-msgstr "Naloži trenutno knjigo v Readest"
-
 msgid "Push reading progress now"
 msgstr "Pošlji napredek branja zdaj"
 
 msgid "Pull reading progress now"
 msgstr "Pridobi napredek branja zdaj"
+
+msgid "Upload current book to Readest"
+msgstr "Naloži trenutno knjigo v Readest"
 
 msgid "Push annotations now"
 msgstr "Pošlji opombe zdaj"
@@ -316,6 +325,9 @@ msgstr "Polna sinhronizacija vseh opomb"
 
 msgid "Sync info"
 msgstr "Podatki o sinhronizaciji"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "Prejmi prek Nearby BookDrop"
 
 msgid "Check for update (v%1)"
 msgstr "Preveri posodobitve (v%1)"
@@ -350,26 +362,20 @@ msgstr "Podatki o sinhronizaciji"
 msgid "Library not initialized"
 msgstr "Knjižnica ni inicializirana"
 
-msgid "Books synced"
-msgstr "Knjige sinhronizirane"
-
-msgid "Books sync failed"
-msgstr "Sinhronizacija knjig ni uspela"
-
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Najprej nastavite mapo za prenose Readest ali domačo mapo KOReader."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "Napaka LocalSend: prostih vrat ni bilo mogoče najti."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Napaka Nearby BookDrop: prostih vrat ni bilo mogoče najti."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend se ni zagnal."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop se ni zagnal."
 
-msgid "Starting LocalSend…"
-msgstr "Zaganjanje LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Zaganjanje Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend se bo zagnal, ko bo vzpostavljena povezava Wi-Fi."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop se bo zagnal, ko bo vzpostavljena povezava Wi-Fi."
 
 msgid "… and %1 more"
 msgstr "… in še %1"
@@ -386,23 +392,23 @@ msgstr "Zavrni"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "Prejemanje %1 datotek(e) od %2…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: prejeto %1 datotek(e), %2 neuspešnih."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: prejeto %1 datotek(e), %2 neuspešnih."
 
-msgid "LocalSend transfer cancelled."
-msgstr "Prenos LocalSend preklican."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Prenos Nearby BookDrop preklican."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: prejeto %1 datotek(e)."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: prejeto %1 datotek(e)."
 
-msgid "LocalSend not available on this device"
-msgstr "LocalSend ni na voljo na tej napravi"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop ni na voljo na tej napravi"
 
 msgid "Scanning for nearby devices…"
 msgstr "Iskanje naprav v bližini…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Nobene naprave v bližini ni bilo mogoče najti. Prepričajte se, da je na drugi napravi odprt LocalSend/Readest."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Nobene naprave v bližini ni bilo mogoče najti. Prepričajte se, da je na drugi napravi odprt Nearby BookDrop ali LocalSend."
 
 msgid "Rescan"
 msgstr "Znova preglej"
@@ -428,11 +434,11 @@ msgstr "Prenos preklican."
 msgid "Send failed: %1"
 msgstr "Pošiljanje ni uspelo: %1"
 
-msgid "LocalSend error: %1"
-msgstr "Napaka LocalSend: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Napaka Nearby BookDrop: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend izklopljen"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop izklopljen"
 
 msgid "Visible as %1"
 msgstr "Viden kot %1"
@@ -511,6 +517,9 @@ msgstr "Novih opomb ni"
 
 msgid "%1 annotations pulled"
 msgstr "Pridobljenih %1 opomb"
+
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Vaša seja Readest je potekla. Prijavite se znova."
 
 msgid "Login"
 msgstr "Prijava"

@@ -15,6 +15,7 @@ import {
   generateDarkPalette,
 } from '@/styles/themes';
 import { createFontCSS, CustomFont } from '@/styles/fonts';
+import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
@@ -79,6 +80,19 @@ export const getBaseFontFamily = (viewSettings: ViewSettings): string => {
   return viewSettings.defaultFont!.toLowerCase() === 'serif' ? families.serif : families.sansSerif;
 };
 
+/**
+ * The body font size, in CSS px, that the reader applies to the book, for
+ * top-level UI that shows book text outside the iframe.
+ */
+export const getBaseFontSize = (viewSettings: ViewSettings): number => {
+  // scale the font size on-the-fly so that we can sync the same font size on different devices
+  const isMobile = ['ios', 'android'].includes(getOSPlatform());
+  const fontScale = isMobile ? 1.25 : 1;
+  // Only for backward compatibility, new viewSettings.zoomLevel will always be 100 for EPUBs
+  const zoomScale = (viewSettings.zoomLevel || 100) / 100.0;
+  return viewSettings.defaultFontSize! * fontScale * zoomScale;
+};
+
 const getFontStyles = (
   serif: string,
   sansSerif: string,
@@ -117,8 +131,14 @@ const getFontStyles = (
       -webkit-text-size-adjust: none;
       text-size-adjust: none;
     }
-    /* lower specificity than ebook built-in font styles */
-    html {
+    /* Zero specificity (:where) so ANY ebook font-family declaration — even
+       one on the html element itself, at equal (0,0,1) specificity — wins the
+       cascade regardless of injection order. Books like Pandoc-generated
+       EPUBs declare their font on the html element; a plain html rule here
+       ties on specificity and wins only by being appended later, silently
+       overriding the book's embedded font with the app's default font
+       (mobile especially, whose default font is sans-serif). */
+    :where(html) {
       font-family: var(${defaultFontFamily}) ${overrideFont ? '!important' : ''};
     }
     /* higher specificity than ebook built-in font styles */
@@ -150,8 +170,13 @@ const getFontStyles = (
     [style*="font-size: 16px"], [style*="font-size:16px"] {
       font-size: 1rem !important;
     }
-    pre, code, kbd {
-      font-family: var(--monospace);
+    /* The revert pass below deliberately excludes pre/code/kbd, so this is the
+       only rule that applies the app's code font and it has to swap sides with
+       the toggle. Off: zero specificity, so a book's own code font wins. On:
+       above the book, and !important is not enough on its own because
+       specificity still breaks ties between important author declarations. */
+    ${overrideFont ? 'html body :is(pre, code, kbd)' : ':where(pre, code, kbd)'} {
+      font-family: var(--monospace) ${overrideFont ? '!important' : ''};
       font-variant-ligatures: none;
     }
     body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
@@ -229,6 +254,64 @@ const getEinkSelectionStyles = () => {
   `;
 };
 
+// Chromium's default selection colors force near-black text (on blue when
+// focused, on grey when not), unreadable on a dark page — most visibly on the
+// selection a lookup popup holds while it has focus (#6503). Setting only the
+// background keeps each element's own text color, and pdf.js's transparent
+// text layer stays transparent.
+const getDarkSelectionStyles = (primary: string) => `
+    ::selection {
+      background: color-mix(in srgb, ${primary} 40%, transparent);
+    }
+  `;
+
+const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: ThemeCode) => {
+  // Background and text are independent switches; off means the default
+  // (theme primary tint for the background, inherited text). An empty stored
+  // value (e.g. carried over from older configs) also falls back to default.
+  const bgBase = viewSettings.dialogueHighlight
+    ? viewSettings.dialogueHighlightCustomColor && viewSettings.dialogueHighlightColor
+      ? viewSettings.dialogueHighlightColor
+      : themeCode.primary
+    : null;
+  const bgDecl = (percent: number) =>
+    bgBase
+      ? `\n    background-color: color-mix(in srgb, ${bgBase} ${percent}%, transparent) !important;`
+      : '';
+  const text =
+    viewSettings.dialogueHighlightCustomTextColor && viewSettings.dialogueHighlightTextColor
+      ? `\n    color: ${viewSettings.dialogueHighlightTextColor} !important;`
+      : '';
+  return `
+  /* Dialogue lines tinted with the custom color or, by default, the theme's
+     primary color. !important so the tint survives "Override Book Color",
+     which repaints spans/paragraphs with the theme background at the same
+     importance level but lower specificity. */
+  .readest-dialogue {${bgDecl(22)}${text}
+    border-radius: 0.2em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .readest-dialogue-block {${bgDecl(12)}${text}
+    border-radius: 0.3em;
+  }${
+    viewSettings.dialogueHighlightItalic
+      ? `
+  /* Italic runs marked like quoted dialogue; nested marks drop their own
+     tint so overlapping translucent backgrounds don't stack. */
+  :is(i, em) {${bgDecl(22)}${text}
+    border-radius: 0.2em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  :is(i, em) :is(i, em, .readest-dialogue), .readest-dialogue :is(i, em) {
+    background-color: transparent !important;
+  }`
+      : ''
+  }
+`;
+};
+
 const getColorStyles = (
   overrideColor: boolean,
   invertImgColorInDark: boolean,
@@ -250,7 +333,7 @@ const getColorStyles = (
     html, body {
       color: ${fg};
     }
-    ${isEink ? getEinkSelectionStyles() : ''}
+    ${isEink ? getEinkSelectionStyles() : isDarkMode ? getDarkSelectionStyles(primary) : ''}
     html[has-background], body[has-background] {
       --background-set: var(--theme-bg-color);
     }
@@ -368,6 +451,9 @@ const getColorStyles = (
   return colorStyles;
 };
 
+export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
+export const TEXT_SELECTED_CLASS = 'text-selected';
+
 const getPageLayoutStyles = (
   marginTop: number,
   marginRight: number,
@@ -402,6 +488,11 @@ const getPageLayoutStyles = (
     -webkit-touch-callout: none;
     -webkit-user-drag: none;
   }
+  /* Chromium snaps a long press onto any link in reach of the finger, and a
+     link long press starts no selection (#6242); set while a touch is held */
+  html.${LINK_TOUCH_HOLD_CLASS} a[href] {
+    pointer-events: none !important;
+  }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
   }
@@ -420,6 +511,11 @@ const getPageLayoutStyles = (
     position: absolute;
     inset: -10px;
   }
+  /* the enlarged area swallows the text around a link, so a selection dragged
+     next to a footnote marker snaps away (#6566); set while text is selected */
+  html.${TEXT_SELECTED_CLASS} a::before {
+    pointer-events: none;
+  }
 
   .${SCROLL_WRAPPER_CLASS} {
     display: block;
@@ -436,6 +532,15 @@ const getPageLayoutStyles = (
     display: table !important;
     max-width: 100%;
   }
+  /* A scroll container is monolithic in CSS fragmentation, so a scrolling
+     wrapper can't break across columns: taller than the page, it overflows the
+     column and every row past the first page is clipped and unreachable
+     (#6129). Clamp the wrapper — not the table, whose max-height Chromium and
+     WebKit treat as a minimum — to one page so it scrolls vertically in place.
+     A fit wrapper is overflow:visible and its rows paginate normally. */
+  body.paginated-mode .${SCROLL_WRAPPER_CLASS}:not(.${SCROLL_WRAPPER_FIT_CLASS}) {
+    max-height: calc(var(--available-height) * 1px);
+  }
   pre, code {
     white-space: pre-wrap !important;
     scrollbar-width: none;
@@ -443,10 +548,10 @@ const getPageLayoutStyles = (
   math {
     overflow: auto;
     scrollbar-width: none;
+    max-height: calc(var(--available-height) * 1px);
   }
   table, math {
     max-width: calc(var(--available-width) * 1px);
-    max-height: calc(var(--available-height) * 1px);
   }
 
   .epubtype-footnote,
@@ -458,10 +563,6 @@ const getPageLayoutStyles = (
   }
 
   /* Now begins really dirty hacks to fix some badly designed epubs */
-  body {
-    line-height: unset;
-  }
-
   .duokan-footnote-content,
   .duokan-footnote-item {
     display: none;
@@ -580,6 +681,13 @@ const getParagraphLayoutStyles = (
   [align="right"] { text-align: right; }
   [align="center"] { text-align: center; }
   [align="justify"] { text-align: justify; }
+  /* Some badly designed EPUBs put their line-height on body; drop it so the
+     Line Spacing setting below, not an inherited value, spaces the text. It
+     lives in this chunk so Use Book Layout lets the book's body value
+     inherit (#6088). */
+  body {
+    line-height: unset;
+  }
   :is(hgroup, header) p {
       text-align: unset;
       hyphens: unset;
@@ -624,7 +732,12 @@ const getParagraphLayoutStyles = (
   dd.aligned-justify, div.aligned-justify {
     ${!justify && overrideLayout ? 'text-align: initial !important;' : ''};
   }
+  /* An image that is the paragraph's whole content must not take the indent:
+     sized to the column, it would overhang by the indent and paint a strip on
+     the next page (#6198). Linked images (<a><img>, <span><a><img>) included. */
   p:has(> img:only-child), p:has(> span:only-child > img:only-child),
+  p:has(> a:only-child > img:only-child),
+  p:has(> span:only-child > a:only-child > img:only-child),
   p:has(> img:not(.has-text-siblings)),
   p:has(> a:first-child + img:last-child) {
     text-indent: initial !important;
@@ -755,7 +868,23 @@ export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
   `;
 };
 
-const getTranslationStyles = (showSource: boolean) => `
+const getTranslatedTextStyles = (viewSettings: ViewSettings) => {
+  const { translationFont, translationFontStyle, translationFontSize, translationColor } =
+    viewSettings;
+  return [
+    translationFont && `font-family: var(--${translationFont}) !important;`,
+    translationFontStyle?.includes('italic') && 'font-style: italic !important;',
+    translationFontStyle?.includes('bold') && 'font-weight: bold !important;',
+    translationFontSize &&
+      translationFontSize !== 1 &&
+      `font-size: ${translationFontSize}em !important;`,
+    translationColor && `color: ${translationColor} !important;`,
+  ]
+    .filter(Boolean)
+    .join('\n    ');
+};
+
+const getTranslationStyles = (viewSettings: ViewSettings) => `
   .translation-source {
   }
   .translation-target {
@@ -770,7 +899,8 @@ const getTranslationStyles = (showSource: boolean) => `
   }
   .translation-target-block {
     display: block !important;
-    ${showSource ? 'margin: 0.5em 0 !important;' : ''}
+    ${viewSettings.showTranslateSource ? 'margin: 0.5em 0 !important;' : ''}
+    ${getTranslatedTextStyles(viewSettings)}
   }
   .translation-target-toc {
     display: block !important;
@@ -917,18 +1047,13 @@ export const getStyles = (
         viewSettings.hyphenation!,
         viewSettings.vertical!,
       );
-  // scale the font size on-the-fly so that we can sync the same font size on different devices
-  const isMobile = ['ios', 'android'].includes(getOSPlatform());
-  const fontScale = isMobile ? 1.25 : 1;
-  // Only for backward compatibility, new viewSettings.zoomLevel will always be 100 for EPUBs
-  const zoomScale = (viewSettings.zoomLevel || 100) / 100.0;
   const fontStyles = getFontStyles(
     viewSettings.serifFont!,
     viewSettings.sansSerifFont!,
     viewSettings.monospaceFont!,
     viewSettings.defaultFont!,
     viewSettings.defaultCJKFont!,
-    viewSettings.defaultFontSize! * fontScale * zoomScale,
+    getBaseFontSize(viewSettings),
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
@@ -948,9 +1073,12 @@ export const getStyles = (
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
   );
-  const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
+  const translationStyles = getTranslationStyles(viewSettings);
   const warichuStyles = getWarichuStyles();
   const rubyStyles = getRubyStyles(viewSettings);
+  const dialogueStyles = isDialogueHighlightActive(viewSettings)
+    ? getDialogueHighlightStyles(viewSettings, themeCode)
+    : '';
   const userStylesheet = viewSettings.userStylesheet!;
   // The `@namespace` declaration must lead the stylesheet: a `@namespace` rule
   // placed after any style or `@font-face` rule is invalid and silently ignored,
@@ -958,7 +1086,7 @@ export const getStyles = (
   // the footnote aside's border show as a stray horizontal line (#4438). Keep it
   // ahead of the inlined custom `@font-face` rules.
   const epubNamespace = `@namespace epub "http://www.idpf.org/2007/ops";`;
-  return `${epubNamespace}\n${customFontFaces}\n${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
+  return `${epubNamespace}\n${customFontFaces}\n${pageLayoutStyles}\n${paragraphLayoutStyles}\n${fontStyles}\n${colorStyles}\n${dialogueStyles}\n${translationStyles}\n${warichuStyles}\n${rubyStyles}\n${userStylesheet}`;
 };
 
 // Build a CSS chunk of `@font-face` rules for the given user custom
@@ -989,7 +1117,7 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 
   const styleElement = document.createElement('style');
   styleElement.id = styleId;
-  styleElement.textContent = getTranslationStyles(viewSettings.showTranslateSource);
+  styleElement.textContent = getTranslationStyles(viewSettings);
 
   document.head.appendChild(styleElement);
 };
@@ -1208,6 +1336,54 @@ export const transformStylesheet = (
     return match;
   });
 
+  // `@media (orientation: ...)` inside a section is evaluated against the
+  // iframe, and the paginator sizes that iframe to the whole multi-column strip
+  // rather than to a page: a one-page section reports portrait and a two-page
+  // section landscape. The strip width is itself derived from the content, so a
+  // rule that changes the content's height — `column-count: 2` in the IDPF
+  // media-query sample — flips the query, which flips the page count, which
+  // flips the query straight back, and the layout never settles (#6038).
+  // Resolve the feature against the reader's own viewport, the same thing the
+  // vw/vh rewrite below does and for the same reason, so the book gets the
+  // orientation the reader is actually in and the cycle cannot form.
+  // Width and height features are the same trap: a two-page section makes the
+  // strip twice as wide, so the sample's `(max-width: 480px)` block flips on the
+  // page count it is itself deciding. Both rewrites are confined to the prelude,
+  // between `@media` and the `{` that opens its block, so the same literal in a
+  // declaration value or an attribute selector is left as the book wrote it. The
+  // two sentinels below resolve to themselves, so the passes are order-free.
+  const isLandscape = vw > vh;
+  const always = '(min-width: 0px)';
+  const never = '(min-width: 999999px)';
+  // Park quoted values first, the same way the url() pass above does, so an
+  // at-rule quoted inside a declaration is never mistaken for a real prelude.
+  const quoted: string[] = [];
+  css = css.replace(/"[^"\n]*"|'[^'\n]*'/g, (value) => {
+    quoted.push(value);
+    return `READEST_STR_${quoted.length - 1}_PLACEHOLDER`;
+  });
+  css = css.replace(/@media[^{]*/gi, (prelude) =>
+    prelude
+      .replace(/\(\s*orientation\s*:\s*(landscape|portrait)\s*\)/gi, (_, mode: string) =>
+        (mode.toLowerCase() === 'landscape') === isLandscape ? always : never,
+      )
+      .replace(
+        /\(\s*(min|max)-(width|height)\s*:\s*([^)]+?)\s*\)/gi,
+        (feature, bound: string, axis: string, length: string) => {
+          // Only lengths that are already px can be resolved without guessing at
+          // the book's root font size; anything else keeps the authored feature.
+          const px = /^(\d*\.?\d+)(?:px)?$/.exec(length);
+          if (!px) return feature;
+          const viewport = axis.toLowerCase() === 'width' ? vw : vh;
+          const bounds = parseFloat(px[1]!);
+          return (bound.toLowerCase() === 'min' ? viewport >= bounds : viewport <= bounds)
+            ? always
+            : never;
+        },
+      ),
+  );
+  css = css.replace(/READEST_STR_(\d+)_PLACEHOLDER/g, (_, i) => quoted[+i]!);
+
   // replace absolute font sizes with rem units
   // replace vw and vh as they cause problems with layout
   // replace hardcoded colors
@@ -1240,17 +1416,35 @@ export const transformStylesheet = (
     .replace(/([\s;])-ms-user-select\s*:\s*none/gi, '$1-ms-user-select: unset')
     .replace(/([\s;])-o-user-select\s*:\s*none/gi, '$1-o-user-select: unset')
     .replace(/([\s;])user-select\s*:\s*none/gi, '$1user-select: unset')
-    // Park the `var(--x, x)` chunks an earlier pass already produced: their
-    // inner keywords would otherwise be rewritten again into
-    // `var(--var(--serif, serif), serif)`, which is invalid, so the CSS parser
-    // drops the whole declaration and the book loses its fonts (readest#5277).
-    // The placeholders are underscore-wrapped so `\b` never matches inside them.
-    .replace(/var\(\s*--(sans-serif|serif|monospace)\s*,\s*\1\s*\)/gi, 'READEST_GF_$1_PLACEHOLDER')
-    .replace(/(font-family\s*:[^;]*?)\bsans-serif\b/gi, '$1READEST_SS_PLACEHOLDER')
-    .replace(/(font-family\s*:[^;]*?)\bserif\b(?!-)/gi, '$1var(--serif, serif)')
-    .replace(/READEST_SS_PLACEHOLDER/g, 'var(--sans-serif, sans-serif)')
-    .replace(/(font-family\s*:[^;]*?)\bmonospace\b/gi, '$1var(--monospace, monospace)')
-    .replace(/READEST_GF_(sans-serif|serif|monospace)_PLACEHOLDER/gi, 'var(--$1, $1)')
+    // Point the generic families at the user's per-category font choice, so a
+    // book that asks for `serif` gets the configured serif chain (which also
+    // carries the CJK font) instead of the platform default.
+    //
+    // Only a list item that IS the bare keyword may be rewritten. Matching the
+    // word anywhere in the declaration also hit the book's own family names:
+    // `font-family: Source Han Serif CN` became `Source Han var(--serif, serif) CN`,
+    // and since CSS descriptors cannot contain var() the engine dropped the
+    // whole @font-face rule, detaching the book's only reference to its
+    // embedded font (readest#6047).
+    //
+    // Parking the keyword inside the var() fallback also makes this idempotent:
+    // a stylesheet can be handed to this transform more than once, and a second
+    // pass no longer sees a bare generic to rewrite into
+    // `var(--var(--serif, serif), serif)` (readest#5277).
+    .replace(/(font-family\s*:\s*)([^;{}]*)/gi, (_match: string, prefix: string, value: string) => {
+      const important = /\s*!\s*important\s*$/i.exec(value);
+      const families = important ? value.slice(0, important.index) : value;
+      const rewritten = families
+        .split(',')
+        .map((family: string) => {
+          const generic = /^(serif|sans-serif|monospace)$/i.exec(family.trim());
+          if (!generic) return family;
+          const name = generic[1]!.toLowerCase();
+          return family.replace(generic[1]!, `var(--${name}, ${name})`);
+        })
+        .join(',');
+      return prefix + rewritten + (important ? important[0] : '');
+    })
     .replace(/([\s;])font-weight\s*:\s*normal/gi, '$1font-weight: var(--font-weight)')
     .replace(/([\s;])color\s*:\s*black/gi, '$1color: var(--theme-fg-color)')
     .replace(/([\s;])color\s*:\s*#000000/gi, '$1color: var(--theme-fg-color)')
@@ -1283,6 +1477,60 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
 export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
   document.body.classList.remove('scroll-mode', 'paginated-mode');
   document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
+// A prefixed attribute name, e.g. the `epub:type` of `epub:type="chapter"`.
+const PREFIXED_ATTR_REGEX = /^([A-Za-z_][\w.-]*):([A-Za-z_][\w.-]*)$/;
+const EPUB_OPS_NAMESPACE = 'http://www.idpf.org/2007/ops';
+const XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace';
+
+/**
+ * Re-attach the namespaces an XHTML section declared to its prefixed
+ * attributes.
+ *
+ * Sections reach the iframe through `srcdoc` so that browser extensions can
+ * see them, and `srcdoc` is always parsed as HTML. An HTML parser has no
+ * namespaces outside foreign content, so `epub:type="chapter"` lands in the
+ * null namespace under the literal name `epub:type` and every CSS namespace
+ * selector written against it matches nothing: the book's own
+ * `div[epub|type="chapter"]` (which paints the illustration and the page
+ * color of the IDPF media-query sample, #6038) as much as our
+ * `aside[epub|type~="footnote"]`. The original attribute stays in place, and
+ * the twin carries the same qualified name, so `getAttribute('epub:type')`
+ * callers are unaffected either way.
+ */
+export const applyNamespacedAttributes = (document: Document) => {
+  // `xmlns:` declarations survive HTML parsing as ordinary attributes, but only
+  // as attributes: nothing scopes them any more, so a prefix has to be resolved
+  // the way XML would resolve it, from the element's own ancestor chain. A flat
+  // document-order map would carry a nested rebinding past the end of its
+  // subtree and on to later siblings.
+  const lookupNamespace = (element: Element, prefix: string) => {
+    for (let node: Element | null = element; node; node = node.parentElement) {
+      const uri = node.getAttribute(`xmlns:${prefix}`);
+      if (uri) return uri;
+    }
+    return null;
+  };
+  for (const element of document.querySelectorAll('*')) {
+    for (const { name, value } of Array.from(element.attributes)) {
+      const [, prefix, localName] = PREFIXED_ATTR_REGEX.exec(name) ?? [];
+      if (!prefix) continue;
+      // Foliate can hand us a section fragment rather than the source XHTML
+      // document, so the declaration on the original <html> may be gone.
+      // `epub` has one fixed namespace in EPUB, which is enough to restore the
+      // selectors used by the book's stylesheet (including noteref markers).
+      // `xml` is bound by XML itself and is never declared, so `xml:lang`
+      // needs the same treatment for a book's `[xml|lang="en"]` rule to match.
+      const uri =
+        prefix === 'xml'
+          ? XML_NAMESPACE
+          : (lookupNamespace(element, prefix) ?? (prefix === 'epub' ? EPUB_OPS_NAMESPACE : null));
+      if (uri && !element.hasAttributeNS(uri, localName!)) {
+        element.setAttributeNS(uri, name, value);
+      }
+    }
+  }
 };
 
 /**
@@ -1335,6 +1583,7 @@ export const applyImageStyle = (document: Document) => {
       heightAttr && (heightAttr.endsWith('%') || heightAttr.endsWith('vh'))
         ? parseFloat(heightAttr)
         : NaN;
+    const noEnlarge = img.getAttribute('zy-enlarge-src') === 'none';
 
     let inlineWithText = false;
     let keepBaseline = false;
@@ -1357,10 +1606,24 @@ export const applyImageStyle = (document: Document) => {
         keepBaseline = valign === '' || valign === 'baseline';
       }
     }
-    return { img, percentWidth, percentHeight, inlineWithText, keepBaseline };
+    return {
+      img,
+      percentWidth,
+      percentHeight,
+      inlineWithText,
+      keepBaseline,
+      noEnlarge,
+    };
   });
 
-  for (const { img, percentWidth, percentHeight, inlineWithText, keepBaseline } of plans) {
+  for (const {
+    img,
+    percentWidth,
+    percentHeight,
+    inlineWithText,
+    keepBaseline,
+    noEnlarge,
+  } of plans) {
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
       img.removeAttribute('width');
@@ -1372,6 +1635,9 @@ export const applyImageStyle = (document: Document) => {
     if (inlineWithText) {
       img.classList.add('has-text-siblings');
       if (keepBaseline) img.classList.add('has-text-siblings-baseline');
+    }
+    if (noEnlarge) {
+      img.style.setProperty('pointer-events', 'none');
     }
   }
   document.querySelectorAll('hr').forEach((hr) => {
@@ -1419,6 +1685,55 @@ export const keepTextAlignment = (document: Document) => {
   }
 };
 
+/**
+ * Blend mode for the annotation overlay (`--overlayer-highlight-blend-mode`).
+ *
+ * The overlay is an SVG sibling of the content iframe, so it blends against
+ * whatever the page paints behind it — the mode has to follow the *page*
+ * background, not the app theme. `screen` lightens a dark page, but over a
+ * white one it is a no-op on the background and only tints the glyphs, which is
+ * how highlights went missing on PDFs in dark mode (#5790, #5930, #5943). A
+ * pre-paginated page keeps the book's own bitmap unless the reader asked us to
+ * invert it or to re-render it in the theme colors, so a dark theme alone says
+ * nothing about how dark the page is. Blending does not cross the iframe
+ * boundary in WebKit, which is why Apple platforms never showed the bug.
+ */
+export const getOverlayerBlendMode = ({
+  isDarkMode,
+  isBwEink,
+  isFixedLayout = false,
+  invertImgColorInDark = false,
+  applyThemeToPDF = false,
+  format,
+}: {
+  isDarkMode: boolean;
+  isBwEink: boolean;
+  isFixedLayout?: boolean;
+  invertImgColorInDark?: boolean;
+  applyThemeToPDF?: boolean;
+  format?: BookFormat;
+}): 'difference' | 'screen' | 'multiply' => {
+  if (isBwEink) return 'difference';
+  if (!isDarkMode) return 'multiply';
+  const isDarkPage =
+    !isFixedLayout || invertImgColorInDark || (format === 'PDF' && applyThemeToPDF);
+  return isDarkPage ? 'screen' : 'multiply';
+};
+
+/**
+ * The colors the PDF renderer recolors pages to, or undefined to leave pages as
+ * the book has them. Embedded photos keep their own colors unless images are to
+ * be inverted in dark mode too (#6548).
+ */
+export const getPDFPageColors = (viewSettings: ViewSettings, themeCode: ThemeCode) =>
+  viewSettings.applyThemeToPDF
+    ? {
+        background: themeCode.bg,
+        foreground: themeCode.fg,
+        keepImages: !(themeCode.isDarkMode && viewSettings.invertImgColorInDark),
+      }
+    : undefined;
+
 export const applyFixedlayoutStyles = (
   document: Document,
   viewSettings: ViewSettings,
@@ -1439,7 +1754,14 @@ export const applyFixedlayoutStyles = (
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
   const contrast = viewSettings.contrast ?? 100;
   const imgFilters: string[] = [];
-  if (isDarkMode && invertImgColorInDark) imgFilters.push('invert(100%)');
+  // The renderer already recolors a themed PDF page, images included when they
+  // are to be inverted; inverting or blending it again would darken or flip the
+  // theme colors (#6548).
+  const isThemedPDF = format === 'PDF' && viewSettings.applyThemeToPDF;
+  // hue-rotate flips the hues back, so a blue link stays blue
+  if (isDarkMode && invertImgColorInDark && !isThemedPDF) {
+    imgFilters.push('invert(100%) hue-rotate(180deg)');
+  }
   if (contrast !== 100) imgFilters.push(`contrast(${contrast}%)`);
   const imgFilter = imgFilters.length ? `filter: ${imgFilters.join(' ')};` : '';
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
@@ -1474,10 +1796,16 @@ export const applyFixedlayoutStyles = (
     }
     img, canvas {
       ${imgFilter}
-      ${overrideColor ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+      ${overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
     }
     img.singlePage {
       position: relative;
+    }
+    /* An unsized <image> draws at its natural size, which is the page size,
+       but a percentage-height svg in an auto-height block is only 150px tall
+       and would clip it to a strip (#6530). */
+    svg:not([viewBox]):has(> image:not([width])) {
+      overflow: visible;
     }
   `;
   document.head.appendChild(style);

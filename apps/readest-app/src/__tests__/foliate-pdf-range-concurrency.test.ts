@@ -27,8 +27,8 @@ let rangeTransport: {
   onDataRange: (b: number, c: ArrayBuffer) => void;
 };
 
-// Minimal stand-in for the vendored pdf.js build. foliate-js/pdf.js imports it
-// only for the side effect of setting globalThis.pdfjsLib, then reads from
+// Minimal stand-in for the vendored pdf.js build. foliate-js/pdf.js loads it
+// from makePDF() for the side effect of setting globalThis.pdfjsLib, then reads from
 // that global — so the mock installs a controllable fake there.
 vi.mock('@pdfjs/pdf.min.mjs', () => {
   class PDFDataRangeTransport {

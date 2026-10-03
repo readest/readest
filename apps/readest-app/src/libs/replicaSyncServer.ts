@@ -1,10 +1,11 @@
+import { MAX_PUSH_BATCH } from '@/types/replica';
 import { hlcParse } from '@/libs/crdt';
 import { isAllowedKind, validateRow } from '@/libs/replicaSchemas';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { SyncErrorCode } from '@/libs/errors';
 
 export const HLC_SKEW_TOLERANCE_MS = 60_000;
-export const MAX_PUSH_BATCH = 100;
+export { MAX_PUSH_BATCH } from '@/types/replica';
 // Cap the batched-pull cursor list. Today there are 5 kinds; this leaves
 // generous headroom for future replica kinds while keeping the request
 // body bounded so a malicious caller can't burn server time on

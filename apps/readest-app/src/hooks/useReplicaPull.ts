@@ -1,3 +1,7 @@
+import {
+  applyRemoteBookshelfRows,
+  replayBookshelfOperations,
+} from '@/services/bookshelves/persistence';
 import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
@@ -14,6 +18,11 @@ import {
 } from '@/store/customTextureStore';
 import { useCustomOPDSStore, findOPDSCatalogByContentId } from '@/store/customOPDSStore';
 import { useABSServerStore } from '@/store/absServerStore';
+import {
+  useCustomTranslatorStore,
+  findCustomTranslator,
+  findTranslationPrompt,
+} from '@/store/customTranslatorStore';
 import { transferManager } from '@/services/transferManager';
 import { getReplicaSync, subscribeReplicaSyncReady } from '@/services/sync/replicaSync';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
@@ -21,6 +30,10 @@ import { fontAdapter } from '@/services/sync/adapters/font';
 import { textureAdapter } from '@/services/sync/adapters/texture';
 import { opdsCatalogAdapter } from '@/services/sync/adapters/opdsCatalog';
 import { absServerAdapter } from '@/services/sync/adapters/absServer';
+import {
+  customTranslatorAdapter,
+  translationPromptAdapter,
+} from '@/services/sync/adapters/customTranslator';
 import { settingsAdapter, type SettingsRemoteRecord } from '@/services/sync/adapters/settings';
 import {
   applyRemoteSettings,
@@ -47,6 +60,7 @@ import type { CustomFont } from '@/styles/fonts';
 import type { CustomTexture } from '@/styles/textures';
 import type { OPDSCatalog } from '@/types/opds';
 import type { ABSServer } from '@/types/audiobookshelf';
+import type { CustomTranslator, TranslationPrompt } from '@/types/translation';
 import type { Hlc, ReplicaRow } from '@/types/replica';
 import type { SystemSettings } from '@/types/settings';
 
@@ -56,7 +70,10 @@ export type ReplicaKind =
   | 'texture'
   | 'opds_catalog'
   | 'abs_server'
-  | 'settings';
+  | 'custom_translator'
+  | 'translation_prompt'
+  | 'settings'
+  | 'bookshelf';
 
 export interface UseReplicaPullOpts {
   /** Replica kinds this page wants pulled. */
@@ -280,6 +297,30 @@ const absServerPullConfig: ReplicaPullConfig<ABSServer> = {
   softDeleteByContentId: (id) => useABSServerStore.getState().softDeleteByContentId(id),
 };
 
+// Translators and prompts persist together, so both hydrate the same store.
+const hydrateCustomTranslators = (envConfig: EnvConfigType) =>
+  useCustomTranslatorStore.getState().loadCustomTranslators(envConfig);
+
+const customTranslatorPullConfig: ReplicaPullConfig<CustomTranslator> = {
+  kind: 'custom_translator',
+  // metadata-only — no baseDir
+  adapter: customTranslatorAdapter,
+  findByContentId: findCustomTranslator,
+  hydrateLocalStore: hydrateCustomTranslators,
+  applyRemote: (t) => useCustomTranslatorStore.getState().applyRemoteTranslator(t),
+  softDeleteByContentId: (id) => useCustomTranslatorStore.getState().softDeleteTranslator(id),
+};
+
+const translationPromptPullConfig: ReplicaPullConfig<TranslationPrompt> = {
+  kind: 'translation_prompt',
+  // metadata-only — no baseDir
+  adapter: translationPromptAdapter,
+  findByContentId: findTranslationPrompt,
+  hydrateLocalStore: hydrateCustomTranslators,
+  applyRemote: (p) => useCustomTranslatorStore.getState().applyRemotePrompt(p),
+  softDeleteByContentId: (id) => useCustomTranslatorStore.getState().softDeletePrompt(id),
+};
+
 const settingsPullConfig = (envConfig: EnvConfigType): ReplicaPullConfig<SettingsRemoteRecord> => ({
   kind: 'settings',
   // metadata-only — no baseDir
@@ -332,6 +373,16 @@ const runPullForKind = async (
   const ctx = getReplicaSync();
   if (!ctx) return;
   switch (kind) {
+    case 'bookshelf': {
+      await replayBookshelfOperations(envConfig);
+      // Batched rows already passed the category/auth gates and advanced the
+      // cursor, so apply them even if those gates change after the fetch.
+      if (!pullOverride && (!isSyncCategoryEnabled('bookshelf') || !(await getAccessToken())))
+        return;
+      const rows = await (pullOverride ? pullOverride() : ctx.manager.pull('bookshelf', pullOpts));
+      await applyRemoteBookshelfRows(envConfig, rows);
+      return;
+    }
     case 'dictionary':
       await replicaPullAndApply(
         buildReplicaPullDeps(
@@ -387,6 +438,30 @@ const runPullForKind = async (
           service,
           envConfig,
           absServerPullConfig,
+          pullOpts,
+          pullOverride,
+        ),
+      );
+      return;
+    case 'custom_translator':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          customTranslatorPullConfig,
+          pullOpts,
+          pullOverride,
+        ),
+      );
+      return;
+    case 'translation_prompt':
+      await replicaPullAndApply(
+        buildReplicaPullDeps(
+          ctx.manager,
+          service,
+          envConfig,
+          translationPromptPullConfig,
           pullOpts,
           pullOverride,
         ),

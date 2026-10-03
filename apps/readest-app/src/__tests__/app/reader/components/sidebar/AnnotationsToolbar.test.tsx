@@ -39,9 +39,8 @@ const defaultProps = {
   filterKind: 'all' as const,
   searchInput: '',
   isSearchVisible: false,
-  highlightCount: 9,
-  noteCount: 3,
-  matchCount: 12,
+  annotationCount: 9,
+  matchCount: 9,
   isFiltering: false,
   colors: [] as HighlightColor[],
   styles: [] as HighlightStyle[],
@@ -66,15 +65,16 @@ afterEach(() => {
 describe('AnnotationsToolbar', () => {
   it('reports chip selection', () => {
     render(<AnnotationsToolbar {...defaultProps} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Highlights' }));
-    expect(defaultProps.onFilterKindChange).toHaveBeenCalledWith('highlights');
-    fireEvent.click(screen.getByRole('button', { name: 'Notes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'With notes' }));
     expect(defaultProps.onFilterKindChange).toHaveBeenCalledWith('notes');
+    expect(screen.queryByRole('button', { name: 'Clippings' })).toBeNull();
   });
 
   it('marks the active chip with aria-pressed', () => {
     render(<AnnotationsToolbar {...defaultProps} filterKind='notes' />);
-    expect(screen.getByRole('button', { name: 'Notes' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'With notes' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('false');
   });
 
@@ -140,25 +140,18 @@ describe('AnnotationsToolbar', () => {
     );
   });
 
-  it('summarizes the annotation mix', () => {
+  it('summarizes annotations', () => {
     render(<AnnotationsToolbar {...defaultProps} />);
-    expect(screen.getByTestId('annotations-summary').textContent).toBe('9 Highlights · 3 Notes');
-  });
-
-  it('names only the kind that is present', () => {
-    const { rerender } = render(<AnnotationsToolbar {...defaultProps} noteCount={0} />);
-    expect(screen.getByTestId('annotations-summary').textContent).toBe('9 Highlights');
-    rerender(<AnnotationsToolbar {...defaultProps} highlightCount={0} />);
-    expect(screen.getByTestId('annotations-summary').textContent).toBe('3 Notes');
+    expect(screen.getByTestId('annotations-summary').textContent).toBe('9 Annotations');
   });
 
   it('reports matches against the total while filtering', () => {
     render(<AnnotationsToolbar {...defaultProps} isFiltering matchCount={5} />);
-    expect(screen.getByTestId('annotations-summary').textContent).toBe('5 of 12');
+    expect(screen.getByTestId('annotations-summary').textContent).toBe('5 of 9');
   });
 
   it('stays silent when there is nothing to count', () => {
-    render(<AnnotationsToolbar {...defaultProps} highlightCount={0} noteCount={0} />);
+    render(<AnnotationsToolbar {...defaultProps} annotationCount={0} />);
     expect(screen.queryByTestId('annotations-summary')).toBeNull();
   });
 

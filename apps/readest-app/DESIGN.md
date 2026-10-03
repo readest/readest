@@ -140,6 +140,9 @@ be flipped to the logical equivalent.
 
 #### 2.9 Every panel and sub-page starts with title + description (REQUIRED)
 
+Single-sentence descriptions and helper text omit the final period. Keep normal punctuation
+when a description contains multiple sentences.
+
 Every settings panel and every sub-page must open with:
 
 1. **A title** — the panel name. Style: `text-lg font-semibold tracking-tight`. In a
@@ -201,6 +204,8 @@ Border treatment:
 - **View** uses no border or `border-base-200/60` for very soft delineation.
 - **Card** uses `border border-base-200`. In e-ink, `eink-bordered` flips it to 1px
   `border-base-content`.
+- Manage Bookshelves uses the same `border-base-200` boundary for settings boxes, filter
+  fields, labeled groups and the preview panel.
 
 Corner radius:
 
@@ -276,8 +281,16 @@ className="btn btn-ghost"
 className={clsx(
   'rounded-lg px-4 py-2 text-sm font-medium',
   'hover:bg-base-200 transition-colors duration-150',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15',
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-base-content/15',
 )}
+```
+
+For low-emphasis actions inside compact editors, use plain text without a hover background or
+underline. Bookshelf filter actions, Reset and Delete use this treatment. Keep a 44px touch target
+and a visible keyboard-focus outline; use `text-error` for Delete.
+
+```tsx
+className = 'min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2';
 ```
 
 #### 4.5 Pill / Circular ghost
@@ -331,7 +344,7 @@ Anatomy:
     'transition-colors duration-150',
     'hover:border-base-300 hover:bg-base-200/60',
     'active:bg-base-200/80',
-    'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+    'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
   )}
 >
   <span
@@ -418,6 +431,35 @@ subtitle, and the badge + toggle + edit/delete buttons stack as suffixes.
 
 These names come from libadwaita and apply 1:1 to Readest's lists. Use the names in code
 comments and PR descriptions.
+
+#### Two controls in one suffix
+
+When a row carries a swatch (or badge) *and* a select, pass them as **siblings**
+of `<SettingsRow>`, never wrapped together in a `<div>`:
+
+```tsx
+// ✓ Right — both are flex items of the row
+<SettingsRow label={_('Background Color')}>
+  {isCustom && (
+    <div className='ms-auto'>
+      <ColorInput … />
+    </div>
+  )}
+  <SettingsSelect … />
+</SettingsRow>
+```
+
+Two reasons, both of which show up as visible bugs:
+
+- `<SettingsSelect>` sizes itself with `max-w-[60%]`, which resolves against
+  its **containing block**. A shared wrapper shrinks to fit, so 60% of that is
+  a few dozen pixels and every option label truncates ("Auto" → "Au").
+- The row is `justify-between`, so free space lands *in front of* the middle
+  item and the swatch drifts left or right with each label's width. `ms-auto`
+  on the swatch collapses that space, so swatches line up down the list. Use
+  the logical `ms-`, never `ml-`/`mr-` (RTL).
+
+Canonical example: the Text Color / Background Color rows in `LayoutPanel`.
 
 #### Spacing
 
@@ -530,14 +572,16 @@ When a control sits inside a bordered card, it shouldn't carry its own
 border or fill. The card supplies the visual boundary; the control just
 sits on the row.
 
-- **Selects:** drop `select-bordered` and `eink-bordered`. Add
-  `!bg-transparent !bg-none !appearance-none` to suppress daisyui's
-  background chevron and native arrow. Render a real `<MdArrowDropDown>`
+- **Selects:** drop `eink-bordered`. Add
+  `bg-transparent! bg-none!` to suppress daisyui's background chevron (its
+  `.select` already hides the native arrow; never add `appearance-none!`, that
+  would cancel the `appearance: base-select` popup that keeps the options
+  themed instead of OS-drawn, #5587). Render a real `<MdArrowDropDown>`
   icon at the cell's trailing edge for the affordance — see "End-aligned
   values" below.
-- **Inputs:** drop `input-bordered` and `eink-bordered`. Add `!bg-transparent`
-  with `hover:!bg-base-200/60 focus:!bg-base-200/60` so the field still
-  signals interactability. Use `text-end` and `!pe-0` so the value sits
+- **Inputs:** drop `eink-bordered`. Add `bg-transparent!`
+  with `hover:bg-base-200/60! focus:bg-base-200/60!` so the field still
+  signals interactability. Use `text-end` and `pe-0!` so the value sits
   flush against the row's trailing edge.
 - **Toggles:** untouched — they're already chromeless.
 
@@ -564,18 +608,18 @@ with the card's own border and double-stack with adjacent rows.
 
 ```tsx
 <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex max-w-[60%] items-center rounded-md'>
-  <select className='select h-9 min-w-0 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end text-sm focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'>
+  <select className='select h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'>
     {/* options */}
   </select>
   <MdArrowDropDown
     aria-hidden='true'
-    className='text-base-content/55 pointer-events-none h-5 w-5 flex-shrink-0'
+    className='text-base-content/55 pointer-events-none h-5 w-5 shrink-0'
   />
 </div>
 ```
 
 > **Why so many `!` overrides?** daisyui's `.select` and `.input` apply
-> `border-width: 1px` + `border-color` (transparent at rest, `var(--bc)` on
+> `border-width: 1px` + `border-color` (base-content/20 at rest, `var(--color-base-content)` on
 > focus), plus `outline`, `box-shadow`, and `ring` chrome on focus. To make
 > the control truly chromeless inside a boxed list, you need to kill all
 > four properties. Missing any of them — especially `border-0` — leaves a
@@ -590,7 +634,7 @@ hover/focus bg directly on it. Suppress daisyui's own focus chrome the
 same way:
 
 ```tsx
-<input className='input hover:!bg-base-200/60 focus:!bg-base-200/60 h-9 max-w-[60%] rounded-md !border-0 !bg-transparent !pe-0 !ps-2 text-end text-sm focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0' />
+<input className='input hover:bg-base-200/60! focus:bg-base-200/60! h-9 max-w-[60%] rounded-md border-0! bg-transparent! pe-0! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0!' />
 ```
 
 > **Why no ring here when §2.7 says "focus needs a visible ring"?** §2.7 is
@@ -673,6 +717,11 @@ rounded-window page frame (`.window-border`, `z-99` in `globals.css`), then laye
 | `120` | Modal / command palette | `ModalPortal`, `CommandPalette` |
 | `130` | Toast / alert | `Alert` |
 | `200` | Security lock screen | `AppLockScreen` |
+| `210` | Windows 10 client-area window frame | `.window-outline`, `globals.css` |
+
+`210` is the one layer above the overlays rather than between them: it stands in for the
+OS's non-client window edge, which no page content ever covered, so it has to survive the
+lock screen covering the window.
 
 The non-obvious invariant: **`ModalPortal` (120) must stay above `SettingsDialog`
 (110)** so a modal opened _from inside_ Settings (e.g. Add OPDS Catalog) isn't buried.
@@ -716,7 +765,7 @@ prefixes.
 
 - Every focusable element must have a visible focus indicator.
 - Custom buttons:
-  `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15`.
+  `focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-base-content/15`.
 - Inputs: rely on daisyui's input focus ring; inputs with custom styling use
   `focus:ring-2 focus:ring-primary/40`.
 - Don't use `outline-none` without `focus-visible:` replacement.

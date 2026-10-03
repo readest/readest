@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { configureZip } from '@/utils/zip';
-import { downloadNovel, fetchNovelToc, isNovelImportCancelled } from '@/services/novel/novelImport';
+import {
+  decodeHtmlBody,
+  extractChapterHtml,
+  downloadNovel,
+  fetchNovelToc,
+  isNovelImportCancelled,
+} from '@/services/novel/novelImport';
+import { stableIdentifier } from '@/services/send/conversion/convertToEpub';
 import { ConversionError } from '@/services/send/conversion/types';
 import type { NovelToc } from '@/services/novel/chapterList';
 
@@ -96,6 +103,9 @@ describe('downloadNovel', () => {
     const opf = files.get('content.opf')!;
     expect(opf).toContain('<dc:title>My Novel</dc:title>');
     expect(opf).toContain('<dc:creator>Author X</dc:creator>');
+    expect(opf).toContain(
+      `<dc:identifier id="book-id">${stableIdentifier(TOC_URL)}</dc:identifier>`,
+    );
     for (let n = 1; n <= 6; n++) {
       const xhtml = files.get(`OEBPS/chapter${n}.xhtml`)!;
       expect(xhtml).toContain(`<h1>Chapter ${n}: Part ${n}</h1>`);
@@ -106,7 +116,37 @@ describe('downloadNovel', () => {
     expect(ncx).toContain('Chapter 6: Part 6');
   });
 
-  it('strips images from chapter content', async () => {
+  it('uses a selection identity to distinguish volumes from the same chapter list', async () => {
+    const firstChapters = toc().chapters.slice(0, 2);
+    const secondChapters = toc().chapters.slice(2, 4);
+    const firstIdentity = [TOC_URL, ...firstChapters.map((chapter) => chapter.url)].join('\n');
+    const secondIdentity = [TOC_URL, ...secondChapters.map((chapter) => chapter.url)].join('\n');
+
+    const [firstVolume, secondVolume] = await Promise.all([
+      downloadNovel(toc({ chapters: firstChapters }), TOC_URL, {
+        fetchPage: makeFetchPage(),
+        identityKey: firstIdentity,
+      }),
+      downloadNovel(toc({ chapters: secondChapters }), TOC_URL, {
+        fetchPage: makeFetchPage(),
+        identityKey: secondIdentity,
+      }),
+    ]);
+    const [firstFiles, secondFiles] = await Promise.all([
+      unzipEpub(firstVolume.file),
+      unzipEpub(secondVolume.file),
+    ]);
+
+    expect(firstFiles.get('content.opf')).toContain(
+      `<dc:identifier id="book-id">${stableIdentifier(firstIdentity)}</dc:identifier>`,
+    );
+    expect(secondFiles.get('content.opf')).toContain(
+      `<dc:identifier id="book-id">${stableIdentifier(secondIdentity)}</dc:identifier>`,
+    );
+    expect(stableIdentifier(firstIdentity)).not.toBe(stableIdentifier(secondIdentity));
+  });
+
+  it('keeps failed images as placeholders without remote URLs', async () => {
     const page = chapterPage(1).replace(
       '<div id="content">',
       '<div id="content"><img src="https://cdn.example.org/x.jpg"/><figure><img src="/y.png"/></figure>',
@@ -115,7 +155,8 @@ describe('downloadNovel', () => {
       fetchPage: makeFetchPage({ [`${BASE}/novel/7/1`]: page }),
     });
     const files = await unzipEpub(book.file);
-    expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('<img');
+    expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('src="https://cdn.example.org');
+    expect(files.get('OEBPS/chapter1.xhtml')).not.toContain('src="/y.png');
   });
 
   it('keeps going when a chapter fails and inserts a placeholder', async () => {
@@ -350,4 +391,249 @@ describe('transient upstream failures', () => {
       vi.useRealTimers();
     }
   });
+});
+
+/**
+ * GB2312 bytes for 福尔摩斯 — the opening of the title on the page from the
+ * report (https://www.trxs.cc/tongren/11542.html), which serves gb2312 with
+ * no charset on the HTTP response.
+ */
+const GB2312_HOLMES = Uint8Array.from([0xb8, 0xa3, 0xb6, 0xfb, 0xc4, 0xa6, 0xcb, 0xb9]);
+const BIG5_HOLMES = Uint8Array.from([0xba, 0xd6, 0xba, 0xb8, 0xbc, 0xaf, 0xb4, 0xb5]);
+/** GB2312 bytes for 第 and 章, so a fixture chapter row reads "第 N 章". */
+const GB2312_DI = Uint8Array.from([0xb5, 0xda]);
+const GB2312_ZHANG = Uint8Array.from([0xd5, 0xc2]);
+
+const bytesOf = (...parts: (string | Uint8Array)[]): Uint8Array<ArrayBuffer> => {
+  const chunks = parts.map((part) =>
+    typeof part === 'string' ? new TextEncoder().encode(part) : part,
+  );
+  const out = new Uint8Array(chunks.reduce((n, chunk) => n + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return out;
+};
+
+describe('decodeHtmlBody', () => {
+  it('honors a meta http-equiv charset when the response header has none', () => {
+    const body = bytesOf(
+      '<html><head><meta http-equiv="Content-Type" content="text/html; charset=gb2312" />',
+      '<title>',
+      GB2312_HOLMES,
+      '</title></head><body></body></html>',
+    );
+    expect(decodeHtmlBody(body, 'text/html')).toContain('<title>福尔摩斯</title>');
+  });
+
+  it('honors a short meta charset tag', () => {
+    const body = bytesOf('<html><head><meta charset="gbk"><title>', GB2312_HOLMES, '</title>');
+    expect(decodeHtmlBody(body, null)).toContain('福尔摩斯');
+  });
+
+  it('prefers the response header charset over the meta tag', () => {
+    const body = bytesOf('<html><head><meta charset="utf-8"><title>', BIG5_HOLMES, '</title>');
+    expect(decodeHtmlBody(body, 'text/html; charset=big5')).toContain('福爾摩斯');
+  });
+
+  it('leaves a UTF-8 page untouched', () => {
+    const body = bytesOf('<html><head><title>福尔摩斯</title></head></html>');
+    expect(decodeHtmlBody(body, 'text/html; charset=utf-8')).toContain('福尔摩斯');
+  });
+
+  it('strips a UTF-8 BOM and ignores a contradicting declaration', () => {
+    const body = bytesOf(
+      new Uint8Array([0xef, 0xbb, 0xbf]),
+      '<html><head><meta charset="gbk"><title>福尔摩斯</title>',
+    );
+    const html = decodeHtmlBody(body, 'text/html; charset=gbk');
+    expect(html).toContain('福尔摩斯');
+    expect(html.startsWith('<html>')).toBe(true);
+  });
+
+  it('falls back to gb18030 for undeclared bytes that are not valid UTF-8', () => {
+    const body = bytesOf('<html><head><title>', GB2312_HOLMES, '</title></head></html>');
+    expect(decodeHtmlBody(body, 'text/html')).toContain('福尔摩斯');
+  });
+
+  it('falls back to UTF-8 for an unknown charset label', () => {
+    const body = bytesOf('<html><head><meta charset="x-nonsense"><title>福尔摩斯</title>');
+    expect(decodeHtmlBody(body, 'text/html; charset=x-nonsense')).toContain('福尔摩斯');
+  });
+
+  it('accepts a single-quoted charset attribute', () => {
+    const body = bytesOf("<html><head><meta charset='big5'><title>", BIG5_HOLMES, '</title>');
+    expect(decodeHtmlBody(body, 'text/html')).toContain('福爾摩斯');
+  });
+
+  it('ignores a charset declaration inside a comment', () => {
+    const body = bytesOf(
+      '<html><head><!-- <meta charset="gbk"> --><title>福尔摩斯</title></head></html>',
+    );
+    expect(decodeHtmlBody(body, 'text/html')).toContain('<title>福尔摩斯</title>');
+  });
+
+  it('ignores a charset declared past the sniffing window', () => {
+    const body = bytesOf(
+      `<html><head><!--${'p'.repeat(1100)}--><meta charset="gbk"><title>`,
+      GB2312_HOLMES,
+      '</title>',
+    );
+    // Undeclared within the window, so the invalid-UTF-8 fallback still saves it.
+    expect(decodeHtmlBody(body, 'text/html')).toContain('福尔摩斯');
+  });
+});
+
+describe('defaultFetchPage charset handling', () => {
+  it('decodes a gb2312 chapter list served without a header charset', async () => {
+    const listing = Array.from({ length: 6 }, (_, i) => [
+      `<li><a href="/tongren/11542/${i + 1}.html">`,
+      GB2312_DI,
+      ` ${i + 1} `,
+      GB2312_ZHANG,
+      '</a></li>',
+    ]).flat();
+    const page = bytesOf(
+      '<html><head><meta http-equiv="Content-Type" content="text/html; charset=gb2312" /><title>',
+      GB2312_HOLMES,
+      '</title></head><body><ul>',
+      ...listing,
+      '</ul></body></html>',
+    );
+    const tauriFetch = vi.fn(
+      async () => new Response(page, { status: 200, headers: { 'content-type': 'text/html' } }),
+    );
+    vi.doMock('@/services/webBrowser/browserFetch', () => ({ browserFetch: tauriFetch }));
+    try {
+      const parsed = await fetchNovelToc('https://www.trxs.cc/tongren/11542.html');
+      expect(parsed.title).toBe('福尔摩斯');
+      expect(parsed.chapters[0]!.title).toBe('第 1 章');
+    } finally {
+      vi.doUnmock('@/services/webBrowser/browserFetch');
+    }
+  });
+});
+
+it('uses a captured authenticated table of contents without refetching the login URL', async () => {
+  const fetchPage = vi.fn(makeFetchPage());
+  const parsed = await fetchNovelToc(`${BASE}/login`, {
+    page: { html: tocPage, finalUrl: TOC_URL },
+    fetchPage,
+  });
+  expect(parsed.chapters[0]?.url).toBe(`${BASE}/novel/7/1`);
+  expect(fetchPage.mock.calls.map(([url]) => url)).not.toContain(`${BASE}/login`);
+});
+
+it('renders a JavaScript-only chapter using the browser session', async () => {
+  const renderPage = vi.fn(async (url: string) => ({ html: chapterPage(1), finalUrl: url }));
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage: async (url) => ({
+      html: '<html><body><div id="app"></div></body></html>',
+      finalUrl: url,
+    }),
+    renderPage,
+  });
+  expect(renderPage).toHaveBeenCalledTimes(1);
+  expect(book.failures).toBe(0);
+  const files = await unzipEpub(book.file);
+  expect([...files.values()].some((html) => html.includes('Chapter 1 paragraph'))).toBe(true);
+});
+
+it('renders a chapter when the HTTP client cannot pass the site challenge', async () => {
+  const renderPage = vi.fn(async (url: string) => ({ html: chapterPage(1), finalUrl: url }));
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage: async () => {
+      throw new ConversionError('Forbidden', 'fetch_failed');
+    },
+    renderPage,
+  });
+  expect(renderPage).toHaveBeenCalledTimes(1);
+  expect(book.failures).toBe(0);
+});
+
+it('cancels the whole import when a rendered chapter is cancelled', async () => {
+  await expect(
+    downloadNovel(toc(), TOC_URL, {
+      fetchPage: async () => {
+        throw new Error('Login required');
+      },
+      renderPage: async () => {
+        throw new DOMException('Capture cancelled', 'AbortError');
+      },
+    }),
+  ).rejects.toMatchObject({ name: 'AbortError' });
+});
+
+it('bundles chapter illustrations into the EPUB', async () => {
+  const page = chapterPage(1).replace(
+    '<div id="content">',
+    '<div id="content"><img src="data:image/png;base64,aW1hZ2U=" alt="Illustration"/>',
+  );
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage: makeFetchPage({ [`${BASE}/novel/7/1`]: page }),
+  });
+  const files = await unzipEpub(book.file);
+  expect(files.get('OEBPS/chapter1.xhtml')).toMatch(/src="images\/[a-f0-9]+\.png"/);
+  expect([...files.keys()].some((path) => /images\/[a-f0-9]+\.png$/.test(path))).toBe(true);
+});
+
+it('renders signed-in imports even when HTTP would return a long public preview', async () => {
+  const fetchPage = vi.fn(makeFetchPage());
+  const renderPage = vi.fn(async (url: string) => ({
+    html: chapterPage(1).replaceAll('paragraph', 'PRIVATE paragraph'),
+    finalUrl: url,
+  }));
+  const book = await downloadNovel(toc({ chapters: toc().chapters.slice(0, 1) }), TOC_URL, {
+    fetchPage,
+    renderPage,
+    renderChapters: true,
+  });
+  expect(fetchPage).not.toHaveBeenCalled();
+  const files = await unzipEpub(book.file);
+  expect(files.get('OEBPS/chapter1.xhtml')).toContain('PRIVATE paragraph');
+});
+
+it('resolves chapter images against the final website URL instead of the app origin', () => {
+  const page = chapterPage(1).replace(
+    '<div id="content">',
+    '<div id="content"><img src="/private/cover.png"/><img src="../figure.png"/>',
+  );
+  const html = extractChapterHtml(
+    page,
+    'Chapter 1',
+    'https://members.example.org/novel/chapters/1',
+  );
+  expect(html).toContain('src="https://members.example.org/private/cover.png"');
+  expect(html).toContain('src="https://members.example.org/novel/figure.png"');
+});
+
+it.each([
+  false,
+  true,
+])('does not fetch or render private chapter URLs (signed in: %s)', async (renderChapters) => {
+  const fetchPage = vi.fn(makeFetchPage());
+  const renderPage = vi.fn(async (url: string) => ({ html: chapterPage(1), finalUrl: url }));
+  const chapters = [
+    'http://127.0.0.1/private',
+    'http://localhost./private',
+    'http://[::ffff:7f00:1]/private',
+  ].map((url) => ({ title: 'Chapter 1', url }));
+  const book = await downloadNovel(toc({ chapters }), TOC_URL, {
+    fetchPage,
+    renderPage,
+    renderChapters,
+  });
+  expect(book.failures).toBe(chapters.length);
+  expect(fetchPage).not.toHaveBeenCalled();
+  expect(renderPage).not.toHaveBeenCalled();
+});
+
+it('rejects a private table of contents before fetching', async () => {
+  const fetchPage = vi.fn(makeFetchPage());
+  await expect(fetchNovelToc('http://localhost./novel/7/', { fetchPage })).rejects.toThrow(
+    'private',
+  );
+  expect(fetchPage).not.toHaveBeenCalled();
 });

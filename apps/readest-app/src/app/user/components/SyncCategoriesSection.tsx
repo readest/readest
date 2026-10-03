@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import {
   isReadestCloudEnabled,
   getEnabledFileSyncBackends,
@@ -56,6 +57,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
       title: _('Audiobookshelf Servers'),
       description: _('Saved server URLs and (encrypted) credentials'),
     },
+    custom_translator: {
+      title: _('Translators'),
+      description: _('Custom translation providers, prompts, and (encrypted) API keys'),
+    },
     settings: {
       // Dictionary preferences ride this row too, but they're gated by the
       // Dictionaries toggle above, so they're deliberately not listed here.
@@ -79,12 +84,16 @@ export function SyncCategoriesSection() {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
+  const hydrated = useEnsureSettingsLoaded();
   const copy = useCategoryCopy();
   const readestEnabled = isReadestCloudEnabled(settings);
   const backends = getEnabledFileSyncBackends(settings);
   const cloudProviderName = cloudProvidersDisplayName(backends);
 
-  if (!settings) return null;
+  // A refreshed /user renders before the store is hydrated, where every
+  // category reads its default. Showing that would misreport the user's real
+  // choices, and toggling a row would persist the empty object over them.
+  if (!settings || !hydrated) return null;
 
   const enabled = (category: SyncCategory): boolean => {
     const value = settings.syncCategories?.[category];

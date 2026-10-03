@@ -16,8 +16,8 @@ const resolver = (map: Record<string, number>) => (href: string) =>
   href in map ? map[href]! : null;
 
 describe('deriveDownloadChapters', () => {
-  test('one chapter per TOC entry, spanning to the next chapter section', () => {
-    const chapters = deriveDownloadChapters(
+  test('one chapter per TOC entry, spanning to the next chapter section', async () => {
+    const chapters = await deriveDownloadChapters(
       [toc('One', 'a'), toc('Two', 'b'), toc('Three', 'c')],
       resolver({ a: 0, b: 2, c: 4 }),
       6,
@@ -29,8 +29,8 @@ describe('deriveDownloadChapters', () => {
     ]);
   });
 
-  test('flattens nested subitems in reading order', () => {
-    const chapters = deriveDownloadChapters(
+  test('flattens nested subitems in reading order', async () => {
+    const chapters = await deriveDownloadChapters(
       [toc('Part I', 'p1', [toc('Ch 1', 'c1'), toc('Ch 2', 'c2')]), toc('Part II', 'p2')],
       resolver({ p1: 0, c1: 1, c2: 2, p2: 3 }),
       4,
@@ -43,8 +43,8 @@ describe('deriveDownloadChapters', () => {
     ]);
   });
 
-  test('collapses consecutive entries that resolve to the same section', () => {
-    const chapters = deriveDownloadChapters(
+  test('collapses consecutive entries that resolve to the same section', async () => {
+    const chapters = await deriveDownloadChapters(
       [toc('Heading', 'h'), toc('Subheading', 'h#frag'), toc('Next', 'n')],
       resolver({ h: 1, 'h#frag': 1, n: 3 }),
       5,
@@ -55,8 +55,8 @@ describe('deriveDownloadChapters', () => {
     ]);
   });
 
-  test('a chapter that spans several TOC-less sections covers all of them', () => {
-    const chapters = deriveDownloadChapters(
+  test('a chapter that spans several TOC-less sections covers all of them', async () => {
+    const chapters = await deriveDownloadChapters(
       [toc('One', 'a'), toc('Two', 'b')],
       resolver({ a: 0, b: 5 }),
       8,
@@ -65,8 +65,8 @@ describe('deriveDownloadChapters', () => {
     expect(chapters[1]).toMatchObject({ startSection: 5, endSection: 8 });
   });
 
-  test('falls back to one row per section when there is no usable TOC', () => {
-    const chapters = deriveDownloadChapters([], resolver({}), 3);
+  test('falls back to one row per section when there is no usable TOC', async () => {
+    const chapters = await deriveDownloadChapters([], resolver({}), 3);
     expect(chapters).toEqual([
       { key: 'section-0', label: 'Section 1', depth: 0, startSection: 0, endSection: 1 },
       { key: 'section-1', label: 'Section 2', depth: 0, startSection: 1, endSection: 2 },
@@ -74,8 +74,8 @@ describe('deriveDownloadChapters', () => {
     ]);
   });
 
-  test('drops entries whose href does not resolve', () => {
-    const chapters = deriveDownloadChapters(
+  test('drops entries whose href does not resolve', async () => {
+    const chapters = await deriveDownloadChapters(
       [toc('Good', 'a'), toc('Broken', 'x'), toc('Also good', 'c')],
       resolver({ a: 0, c: 2 }),
       4,

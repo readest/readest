@@ -121,13 +121,13 @@ const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({
               onClick={onClick}
               className={clsx(
                 'flex h-9 min-w-[2.75rem] items-center justify-center rounded-full px-3 text-lg transition-colors',
-                'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+                'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
                 // e-ink: mark the active segment with a solid `eink-inverted`
                 // fill (base-content bg, base-100 icon) instead of a border —
                 // a bordered thumb would nest awkwardly inside the track's own
                 // border. The track keeps its `eink-bordered` outline.
                 active
-                  ? 'bg-base-300 text-base-content eink-inverted shadow-sm'
+                  ? 'bg-base-300 text-base-content eink-inverted shadow-xs'
                   : 'text-base-content/60 hover:text-base-content',
               )}
             >

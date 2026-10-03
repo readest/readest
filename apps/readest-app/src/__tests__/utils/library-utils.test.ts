@@ -15,11 +15,12 @@ import {
   getGroupDisplayName,
   expandBookshelfSelection,
   selectDownloadableBooks,
+  selectAbsOfflineBooks,
   buildGroupNameUpdatedAt,
   resolveCurrentShelfBooks,
   withTimeRemainingLast,
 } from '../../app/library/utils/libraryUtils';
-import { Book, BooksGroup } from '../../types/book';
+import { Book, BooksGroup, ReadingStatus } from '../../types/book';
 import { LibraryGroupByType, LibrarySortByType } from '../../types/settings';
 import { BookMetadata } from '@/libs/document';
 
@@ -288,6 +289,142 @@ describe('createBookGroups', () => {
       expect(subjectGroups.find(({ name }) => name === 'History')?.books).toHaveLength(2);
       expect(subjectGroups.find(({ name }) => name === 'Science')?.books).toHaveLength(2);
       expect(subjectGroups.find(({ name }) => name === 'Biography')?.books).toHaveLength(1);
+    });
+
+    it('groups explicitly assigned reading statuses', () => {
+      const unread = createMockBook({ hash: 'unread', readingStatus: 'unread' });
+      const finished = createMockBook({ hash: 'finished', readingStatus: 'finished' });
+      const onHold = createMockBook({ hash: 'on-hold', readingStatus: 'abandoned' });
+
+      const result = createBookGroups([unread, finished, onHold], LibraryGroupByType.Status);
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+
+      expect(groups.map(({ name }) => name)).toEqual(['unread', 'finished', 'abandoned']);
+      expect(groups.map(({ displayName }) => displayName)).toEqual([
+        'Unread',
+        'Finished',
+        'On hold',
+      ]);
+      expect(groups.every(({ books }) => books.length > 0)).toBe(true);
+    });
+
+    // Reading status is an optional annotation, not a lifecycle field: nothing
+    // stamps it at import, and opening a book *clears* 'unread' back to
+    // undefined. Keying the grouping off it alone dropped every never-opened
+    // book out of the shelf entirely (55% of a real 750-book library) and left
+    // "Unread" holding only books someone had manually re-marked (1 of 750).
+    // Status grouping must partition the shelf: every book lands in exactly one
+    // bucket, and nothing is left standalone.
+    it('partitions every book into exactly one status group', () => {
+      const books = [
+        createMockBook({ hash: 'never-opened' }),
+        createMockBook({ hash: 'marked-unread', readingStatus: 'unread' }),
+        createMockBook({ hash: 'in-progress', progress: [10, 100] }),
+        createMockBook({ hash: 'marked-reading', readingStatus: 'reading' }),
+        createMockBook({ hash: 'done', readingStatus: 'finished', progress: [100, 100] }),
+        createMockBook({ hash: 'parked', readingStatus: 'abandoned', progress: [30, 100] }),
+      ];
+
+      const result = createBookGroups(books, LibraryGroupByType.Status);
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      const standalone = result.filter((item): item is Book => 'format' in item);
+
+      expect(standalone).toEqual([]);
+      expect(groups.flatMap(({ books: b }) => b).length).toBe(books.length);
+      expect(
+        Object.fromEntries(
+          groups.map(({ name, books: b }) => [name, b.map(({ hash }) => hash).sort()]),
+        ),
+      ).toEqual({
+        // A never-opened book reads as unread to a user, and the app already
+        // treats 'unread' as "not started" by clearing it on first open.
+        unread: ['marked-unread', 'never-opened'],
+        reading: ['in-progress', 'marked-reading'],
+        finished: ['done'],
+        abandoned: ['parked'],
+      });
+    });
+
+    it('labels every reading status with its shipped translation key', () => {
+      const books = (['unread', 'reading', 'finished', 'abandoned'] as ReadingStatus[]).map(
+        (readingStatus) => createMockBook({ hash: readingStatus, readingStatus }),
+      );
+
+      const groups = createBookGroups(books, LibraryGroupByType.Status).filter(
+        (item): item is BooksGroup => 'books' in item,
+      );
+
+      // Keys that already exist in every public/locales/<lang>/translation.json.
+      expect(groups.map(({ displayName }) => displayName)).toEqual([
+        'Unread',
+        'Reading',
+        'Finished',
+        'On hold',
+      ]);
+    });
+
+    it('flags status groups as localized so the UI translates them', () => {
+      const statusGroups = createBookGroups(
+        [createMockBook({ readingStatus: 'abandoned' })],
+        LibraryGroupByType.Status,
+      ).filter((item): item is BooksGroup => 'books' in item);
+
+      expect(statusGroups.map(({ localized }) => localized)).toEqual([true]);
+    });
+
+    // Opening an 'unread' book clears its status to `undefined` (readerStore),
+    // so the books a user is actually reading carry no explicit status. Without
+    // deriving the bucket they'd all fall out of the grouping as loose items,
+    // which is exactly the shelf #1010 asks for.
+    it('derives the reading group from progress when no status is set', () => {
+      const inProgress = createMockBook({ hash: 'in-progress', progress: [10, 100] });
+      const neverOpened = createMockBook({ hash: 'never-opened' });
+
+      const result = createBookGroups([inProgress, neverOpened], LibraryGroupByType.Status);
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+
+      expect(groups.map(({ name, displayName }) => [name, displayName])).toEqual([
+        ['reading', 'Reading'],
+        // Never opened: no progress to derive from, so it falls to Unread.
+        ['unread', 'Unread'],
+      ]);
+      expect(groups[0]!.books.map(({ hash }) => hash)).toEqual(['in-progress']);
+      expect(groups[1]!.books.map(({ hash }) => hash)).toEqual(['never-opened']);
+    });
+
+    it('lets an explicit status win over derived reading progress', () => {
+      const books = [
+        createMockBook({ hash: 'finished', readingStatus: 'finished', progress: [100, 100] }),
+        createMockBook({ hash: 'on-hold', readingStatus: 'abandoned', progress: [30, 100] }),
+        createMockBook({ hash: 'unread', readingStatus: 'unread', progress: [1, 100] }),
+        // Explicit 'reading' with no progress yet still groups as reading.
+        createMockBook({ hash: 'marked-reading', readingStatus: 'reading' }),
+      ];
+
+      const groups = createBookGroups(books, LibraryGroupByType.Status).filter(
+        (item): item is BooksGroup => 'books' in item,
+      );
+
+      expect(
+        groups.map(({ name, books: grouped }) => [name, grouped.map(({ hash }) => hash)]),
+      ).toEqual([
+        ['finished', ['finished']],
+        ['abandoned', ['on-hold']],
+        ['unread', ['unread']],
+        ['reading', ['marked-reading']],
+      ]);
+    });
+
+    it('leaves user-authored group names unlocalized', () => {
+      const tagGroups = createBookGroups(
+        [createMockBook({ tags: ['Unread'] })],
+        LibraryGroupByType.Tag,
+      ).filter((item): item is BooksGroup => 'books' in item);
+
+      // A tag that collides with a UI string must never be translated.
+      expect(tagGroups.map(({ displayName, localized }) => [displayName, localized])).toEqual([
+        ['Unread', undefined],
+      ]);
     });
   });
 });
@@ -1357,6 +1494,36 @@ describe('selectDownloadableBooks', () => {
   });
 });
 
+describe('selectAbsOfflineBooks', () => {
+  // Bulk Download in select mode keeps Audiobookshelf audiobooks on the
+  // device (#6256), the same action as the per-book "Download for Offline".
+  it('picks ABS audiobooks not yet downloaded for offline', () => {
+    const abs = createMockBook({ hash: 'abs', format: 'ABS' });
+    const offline = createMockBook({ hash: 'offline', format: 'ABS', absDownloadedAt: 100 });
+    const podcast = createMockBook({ hash: 'podcast', format: 'ABS', absMediaType: 'podcast' });
+    const epub = createMockBook({ hash: 'epub', format: 'EPUB', uploadedAt: 100 });
+    const gone = createMockBook({ hash: 'gone', format: 'ABS', deletedAt: 300 });
+    const books = [abs, offline, podcast, epub, gone];
+
+    expect(
+      selectAbsOfflineBooks(
+        books.map((b) => b.hash),
+        books,
+        books,
+      ),
+    ).toEqual([abs]);
+  });
+
+  it('expands a selected group into its ABS audiobooks', () => {
+    const abs = createMockBook({ hash: 'abs', format: 'ABS', groupName: 'Audio' });
+    const items: (Book | BooksGroup)[] = [
+      { id: 'group-audio', name: 'Audio', displayName: 'Audio', books: [abs], updatedAt: 0 },
+    ];
+
+    expect(selectAbsOfflineBooks(['group-audio'], items, [abs])).toEqual([abs]);
+  });
+});
+
 describe('buildGroupNameUpdatedAt', () => {
   it('takes the max updatedAt across books in each direct group', () => {
     const books = [
@@ -1688,5 +1855,49 @@ describe('withTimeRemainingLast', () => {
   it('leaves other sorts untouched', () => {
     const sorter = withTimeRemainingLast<Book>(LibrarySortByType.Title, () => -1);
     expect(sorter(finished, reading)).toBe(-1);
+  });
+});
+
+describe('time remaining uses each book’s measured pace (#6318)', () => {
+  const slow = createMockBook({ hash: 'slow', title: 'Same', progress: [10, 20] });
+  const fast = createMockBook({ hash: 'fast', title: 'Same', progress: [10, 30] });
+  const paces = { slow: 120, fast: 15 };
+
+  it.each([true, false])('matches the displayed minutes, ascending=%s', (ascending) => {
+    const sorter = createBookSorter(
+      LibrarySortByType.TimeRemaining,
+      'en',
+      'none',
+      ascending,
+      true,
+      paces,
+    );
+    expect([slow, fast].sort(sorter).map((b) => b.hash)).toEqual(
+      ascending ? ['fast', 'slow'] : ['slow', 'fast'],
+    );
+  });
+
+  it('uses measured pace for secondary and within-group sorting too', () => {
+    expect(
+      createBookSorter(
+        LibrarySortByType.Title,
+        'en',
+        LibrarySortByType.TimeRemaining,
+        true,
+        true,
+        paces,
+      )(slow, fast),
+    ).toBeGreaterThan(0);
+    expect(
+      createWithinGroupSorter(
+        LibraryGroupByType.Author,
+        LibrarySortByType.Title,
+        'en',
+        true,
+        LibrarySortByType.TimeRemaining,
+        true,
+        paces,
+      )(slow, fast),
+    ).toBeGreaterThan(0);
   });
 });

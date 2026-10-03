@@ -1,5 +1,5 @@
 import { stubTranslation as _ } from '@/utils/misc';
-import { filterPlatformKeys } from '@/utils/shortcutKeys';
+import { filterPlatformKeys, normalizeShortcut } from '@/utils/shortcutKeys';
 
 export type ShortcutEntry = {
   keys: string[];
@@ -16,6 +16,11 @@ const DEFAULT_SHORTCUTS = {
   onToggleSideBar: {
     keys: ['s'],
     description: _('Toggle Sidebar'),
+    section: 'General',
+  },
+  onOpenTableOfContents: {
+    keys: [],
+    description: _('Toggle Table of Contents'),
     section: 'General',
   },
   onToggleNotebook: {
@@ -51,7 +56,7 @@ const DEFAULT_SHORTCUTS = {
   onTTSPlayPause: {
     keys: [' '],
     description: _('Play / Pause TTS'),
-    section: '',
+    section: 'Text to Speech',
   },
   onTTSGoNextSentence: {
     keys: ['ctrl+]', 'cmd+]'],
@@ -176,7 +181,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'General',
   },
   onOpenBooks: {
-    keys: ['ctrl+o'],
+    keys: ['ctrl+o', 'cmd+o'],
     description: _('Open Books'),
     section: 'General',
   },
@@ -221,7 +226,8 @@ const DEFAULT_SHORTCUTS = {
     section: 'Navigation',
   },
   onGoNext: {
-    keys: ['shift+j', 'shift+ArrowRight', 'shift+ArrowDown', 'PageDown'],
+    // 'shift+j' belongs to Toggle Scroll Mode, which claims it first.
+    keys: ['shift+ArrowRight', 'shift+ArrowDown', 'PageDown'],
     description: _('Next Page'),
     section: 'Navigation',
   },
@@ -251,12 +257,14 @@ const DEFAULT_SHORTCUTS = {
     section: 'Navigation',
   },
   onGoHalfPageDown: {
-    keys: ['shift+ArrowDown', 'd'],
+    // 'shift+ArrowDown' belongs to Next Page, which claims it first.
+    keys: ['d'],
     description: _('Scroll Half Page Down'),
     section: 'Navigation',
   },
   onGoHalfPageUp: {
-    keys: ['shift+ArrowUp', 'u'],
+    // 'shift+ArrowUp' belongs to Previous Page, which claims it first.
+    keys: ['u'],
     description: _('Scroll Half Page Up'),
     section: 'Navigation',
   },
@@ -271,12 +279,16 @@ const DEFAULT_SHORTCUTS = {
     section: 'Navigation',
   },
   onGoBack: {
-    keys: ['shift+ArrowLeft', 'shift+h', 'alt+ArrowLeft'],
+    // 'shift+ArrowLeft' belongs to Previous Page and 'alt+ArrowLeft' to
+    // Previous Chapter; both claim them first.
+    keys: ['shift+h'],
     description: _('Go Back'),
     section: 'Navigation',
   },
   onGoForward: {
-    keys: ['shift+ArrowRight', 'shift+l', 'alt+ArrowRight'],
+    // 'shift+ArrowRight' belongs to Next Page and 'alt+ArrowRight' to
+    // Next Chapter; both claim them first.
+    keys: ['shift+l'],
     description: _('Go Forward'),
     section: 'Navigation',
   },
@@ -296,20 +308,22 @@ const DEFAULT_SHORTCUTS = {
     section: 'Zoom',
   },
   onSaveNote: {
-    keys: ['ctrl+Enter'],
+    keys: ['ctrl+Enter', 'cmd+Enter'],
     description: _('Save Note'),
-    section: '',
+    section: 'Notes',
   },
   onEscape: {
     keys: ['Escape'],
     description: _('Close'),
-    section: '',
+    section: 'General',
   },
 };
 
 export type ShortcutConfig = {
   [K in keyof typeof DEFAULT_SHORTCUTS]: ShortcutEntry;
 };
+
+export type ShortcutAction = keyof ShortcutConfig;
 
 export const SHORTCUT_SECTIONS = [
   _('General'),
@@ -318,6 +332,7 @@ export const SHORTCUT_SECTIONS = [
   _('Selection'),
   _('Zoom'),
   _('Window'),
+  _('Notes'),
 ] as const;
 
 type ShortcutDisplayItem = {
@@ -334,9 +349,11 @@ export const getShortcutsForDisplay = (isMac: boolean): ShortcutDisplaySection[]
   const shortcuts = loadShortcuts();
   return SHORTCUT_SECTIONS.map((section) => {
     const itemMap = new Map<string, ShortcutDisplayItem>();
-    for (const entry of Object.values(shortcuts)) {
+    for (const action of Object.keys(shortcuts) as ShortcutAction[]) {
+      const entry = shortcuts[action];
       if (entry.section !== section) continue;
-      const keys = filterPlatformKeys(entry.keys, isMac);
+      const keys = getVisibleShortcutKeys(shortcuts, action, isMac);
+      if (keys.length === 0) continue;
       const existing = itemMap.get(entry.description);
       if (existing) {
         // Merge keys for entries with the same description
@@ -353,29 +370,153 @@ export const getShortcutsForDisplay = (isMac: boolean): ShortcutDisplaySection[]
   });
 };
 
+const cloneShortcuts = (shortcuts: ShortcutConfig): ShortcutConfig =>
+  Object.fromEntries(
+    Object.entries(shortcuts).map(([action, entry]) => [
+      action,
+      { ...entry, keys: [...entry.keys] },
+    ]),
+  ) as ShortcutConfig;
+
+export const getDefaultShortcuts = (): ShortcutConfig => cloneShortcuts(DEFAULT_SHORTCUTS);
+
+const isShortcutAction = (value: string): value is ShortcutAction => value in DEFAULT_SHORTCUTS;
+
+const parseStoredShortcuts = (value: string | null): Record<string, string[]> => {
+  if (!value) return {};
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, string[]] =>
+          Array.isArray(entry[1]) && entry[1].every((key) => typeof key === 'string'),
+      ),
+    );
+  } catch {
+    return {};
+  }
+};
+
 // Load shortcuts from localStorage or fallback to defaults
 export const loadShortcuts = (): ShortcutConfig => {
-  if (typeof localStorage === 'undefined') return DEFAULT_SHORTCUTS;
-  const customShortcuts = JSON.parse(localStorage.getItem('customShortcuts') || '{}');
-  const result = { ...DEFAULT_SHORTCUTS };
+  const result = getDefaultShortcuts();
+  if (typeof localStorage === 'undefined') return result;
+  const customShortcuts = parseStoredShortcuts(localStorage.getItem('customShortcuts'));
   for (const [key, value] of Object.entries(customShortcuts)) {
-    const shortcutKey = key as keyof ShortcutConfig;
-    if (shortcutKey in result) {
+    if (isShortcutAction(key)) {
       // Custom overrides only replace keys, preserving description and section
-      if (Array.isArray(value)) {
-        result[shortcutKey] = { ...result[shortcutKey], keys: value };
-      }
+      result[key] = { ...result[key], keys: [...value] };
     }
   }
   return result;
 };
 
+export const getShortcutConflicts = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  binding: string,
+): ShortcutAction[] => {
+  const normalizedBinding = normalizeShortcut(binding);
+  return (Object.keys(shortcuts) as ShortcutAction[]).filter(
+    (candidate) =>
+      candidate !== action &&
+      shortcuts[candidate].keys.some((key) => normalizeShortcut(key) === normalizedBinding),
+  );
+};
+
+// Default bindings carry both platforms' variants (ctrl+f and cmd+f); only the
+// current platform's are shown. Customized bindings were recorded on this device,
+// so all of them are shown — a recorded Ctrl+K on macOS is a real binding.
+export const getVisibleShortcutKeys = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  isMac: boolean,
+): string[] => {
+  const keys = shortcuts[action].keys;
+  return isShortcutCustomized(shortcuts, action) ? [...keys] : filterPlatformKeys(keys, isMac);
+};
+
+// Edits work on the visible bindings, dropping the other platform's variants.
+// Otherwise removing the last visible binding would surface them through
+// filterPlatformKeys' fallback.
+export const addShortcutBinding = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  binding: string,
+  isMac: boolean,
+  replacing: string | null = null,
+): ShortcutConfig => {
+  const result = cloneShortcuts(shortcuts);
+  const normalizedBinding = normalizeShortcut(binding);
+  for (const candidate of Object.keys(result) as ShortcutAction[]) {
+    if (candidate === action) continue;
+    if (!result[candidate].keys.some((key) => normalizeShortcut(key) === normalizedBinding)) {
+      continue;
+    }
+    result[candidate].keys = getVisibleShortcutKeys(result, candidate, isMac).filter(
+      (key) => normalizeShortcut(key) !== normalizedBinding,
+    );
+  }
+  const keys = getVisibleShortcutKeys(result, action, isMac);
+  const index = replacing ? keys.indexOf(replacing) : -1;
+  if (index >= 0) keys[index] = binding;
+  else keys.push(binding);
+  const normalizedKeys = keys.map(normalizeShortcut);
+  result[action].keys = keys.filter((_, i) => normalizedKeys.indexOf(normalizedKeys[i]!) === i);
+  return result;
+};
+
+export const removeShortcutBinding = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  binding: string,
+  isMac: boolean,
+): ShortcutConfig => {
+  const result = cloneShortcuts(shortcuts);
+  result[action].keys = getVisibleShortcutKeys(result, action, isMac).filter(
+    (key) => key !== binding,
+  );
+  return result;
+};
+
+export const resetShortcutBinding = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+): ShortcutConfig => {
+  const result = cloneShortcuts(shortcuts);
+  const defaultKeys = new Set(DEFAULT_SHORTCUTS[action].keys.map(normalizeShortcut));
+  for (const candidate of Object.keys(result) as ShortcutAction[]) {
+    if (candidate === action) continue;
+    const candidateDefaults = new Set(DEFAULT_SHORTCUTS[candidate].keys.map(normalizeShortcut));
+    result[candidate].keys = result[candidate].keys.filter((key) => {
+      const normalizedKey = normalizeShortcut(key);
+      return !defaultKeys.has(normalizedKey) || candidateDefaults.has(normalizedKey);
+    });
+  }
+  result[action].keys = [...DEFAULT_SHORTCUTS[action].keys];
+  return result;
+};
+
+export const isShortcutCustomized = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+): boolean => {
+  const keys = shortcuts[action].keys;
+  const defaultKeys = DEFAULT_SHORTCUTS[action].keys;
+  return (
+    keys.length !== defaultKeys.length || keys.some((key, index) => key !== defaultKeys[index])
+  );
+};
+
 // Save custom shortcuts to localStorage
 export const saveShortcuts = (shortcuts: ShortcutConfig) => {
-  // Only persist the keys arrays to localStorage
+  if (typeof localStorage === 'undefined') return;
+  // Only persist bindings that differ from the defaults.
   const keysOnly: Record<string, string[]> = {};
-  for (const [key, entry] of Object.entries(shortcuts)) {
-    keysOnly[key] = entry.keys;
+  for (const action of Object.keys(DEFAULT_SHORTCUTS) as ShortcutAction[]) {
+    if (isShortcutCustomized(shortcuts, action)) keysOnly[action] = shortcuts[action].keys;
   }
   localStorage.setItem('customShortcuts', JSON.stringify(keysOnly));
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('shortcutUpdate'));
 };

@@ -143,7 +143,7 @@ const CommandPalette: React.FC = () => {
           <input
             ref={inputRef}
             type='text'
-            className='placeholder:text-base-content/50 h-12 w-full bg-transparent text-base outline-none'
+            className='placeholder:text-base-content/50 h-12 w-full bg-transparent text-base outline-hidden'
             placeholder={_('Search settings and actions...')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}

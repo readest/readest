@@ -60,6 +60,13 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn render_pdf_cover(
+        &self,
+        _payload: RenderPdfCoverRequest,
+    ) -> crate::Result<RenderPdfCoverResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn save_image_to_gallery(
         &self,
         _payload: SaveImageToGalleryRequest,
@@ -159,6 +166,10 @@ impl<R: Runtime> NativeBridge<R> {
     }
 
     pub fn get_safe_area_insets(&self) -> crate::Result<GetSafeAreaInsetsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn set_screen_wake_lock(&self, _payload: SetScreenWakeLockRequest) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
@@ -351,15 +362,17 @@ impl<R: Runtime> NativeBridge<R> {
     //
     // Same keychain backends + fail-loud/fail-soft contract as the sync
     // passphrase above, but each item gets its own keychain entry keyed by
-    // `key` (the item's `user`/account), so many independent secrets (the
-    // Drive token set, future provider tokens) coexist under one service
+    // `key` (the item's `user`/account), so many independent secrets (OAuth
+    // refresh tokens and future provider credentials) coexist under one service
     // without colliding with the passphrase entry (user "default").
 
     pub fn set_secure_item(
         &self,
         payload: SetSecureItemRequest,
     ) -> crate::Result<SecureItemResponse> {
-        match keyring_entry_for(&payload.key).and_then(|e| e.set_password(&payload.value)) {
+        match keyring_entry_for(&payload.key)
+            .and_then(|entry| set_secure_item_value(&entry, &payload.value))
+        {
             Ok(()) => Ok(SecureItemResponse {
                 success: true,
                 error: None,
@@ -375,7 +388,7 @@ impl<R: Runtime> NativeBridge<R> {
         &self,
         payload: GetSecureItemRequest,
     ) -> crate::Result<GetSecureItemResponse> {
-        match keyring_entry_for(&payload.key).and_then(|e| e.get_password()) {
+        match keyring_entry_for(&payload.key).and_then(|entry| get_secure_item_value(&entry)) {
             Ok(value) => Ok(GetSecureItemResponse {
                 value: Some(value),
                 error: None,
@@ -413,16 +426,57 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
-    pub fn update_reading_widget(&self, _payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+    /// E-ink panels exist only on the mobile (Android) side. Desktop has no
+    /// e-ink controller, so the deep refresh is never supported here.
+    pub fn is_eink_refresh_supported(&self) -> crate::Result<EinkRefreshSupportedResponse> {
+        Ok(EinkRefreshSupportedResponse { supported: false })
+    }
+
+    pub fn update_bookshelf_widget(
+        &self,
+        _payload: UpdateBookshelfWidgetRequest,
+    ) -> crate::Result<UpdateBookshelfWidgetResponse> {
         // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(UpdateBookshelfWidgetResponse::default())
+    }
+
+    pub fn get_bookshelf_widget_instances(
+        &self,
+    ) -> crate::Result<GetBookshelfWidgetInstancesResponse> {
+        // No home-screen widgets on desktop.
+        Ok(GetBookshelfWidgetInstancesResponse { instances: vec![] })
+    }
+
+    pub fn set_bookshelf_widget_catalog(
+        &self,
+        _payload: BookshelfWidgetCatalog,
+    ) -> crate::Result<()> {
         Ok(())
     }
 
-    /// Snapshot a region of `window`'s webview as PNG bytes for the mesh
-    /// page-curl texture (#555). macOS only so far; Windows
-    /// (`ICoreWebView2::CapturePreview`) and Linux
-    /// (`webkit_web_view_get_snapshot`) reject until implemented, and the
-    /// JS side falls back to the CSS curl.
+    pub fn update_reading_widget(
+        &self,
+        _payload: UpdateReadingWidgetRequest,
+    ) -> crate::Result<UpdateReadingWidgetResponse> {
+        // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(UpdateReadingWidgetResponse::default())
+    }
+
+    pub fn get_reading_widget_instances(&self) -> crate::Result<GetReadingWidgetInstancesResponse> {
+        // No home-screen widgets on desktop.
+        Ok(GetReadingWidgetInstancesResponse { instances: vec![] })
+    }
+
+    pub fn set_reading_widget_catalog(&self, _payload: ReadingWidgetCatalog) -> crate::Result<()> {
+        Ok(())
+    }
+
+    /// Snapshot a region of `window`'s webview as image bytes for the mesh
+    /// page-curl texture (#555): PNG from WKWebView on macOS, JPEG of the
+    /// whole view from the DevTools protocol on Windows (WebView2) and the
+    /// Linux CEF runtime, where the JS side crops the region.
+    /// The Linux WebKitGTK runtime (only the webdriver E2E lane) rejects,
+    /// and the JS side falls back to the renderer's own turns.
     pub fn capture_webview_region(
         &self,
         window: &tauri::WebviewWindow<R>,
@@ -432,11 +486,41 @@ impl<R: Runtime> NativeBridge<R> {
         {
             crate::platform::macos::capture_webview_region(window, payload)
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(windows)]
+        {
+            let _ = payload;
+            crate::platform::windows::capture_webview_region(window)
+        }
+        #[cfg(all(target_os = "linux", feature = "cef"))]
+        {
+            let _ = payload;
+            crate::platform::linux_cef::capture_webview_region(window)
+        }
+        #[cfg(not(any(
+            target_os = "macos",
+            windows,
+            all(target_os = "linux", feature = "cef")
+        )))]
         {
             let _ = (window, payload);
             Err(crate::Error::UnsupportedPlatformError)
         }
+    }
+
+    /// Native cover for the two-column page curl (#6106): not implemented on
+    /// desktop, where the leaf keeps a paper back.
+    pub fn cover_webview_region(
+        &self,
+        _payload: CaptureWebviewRegionRequest,
+    ) -> crate::Result<CoverWebviewRegionResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn uncover_webview_region(
+        &self,
+        _payload: UncoverWebviewRegionRequest,
+    ) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
     }
 
     /// Probe the iCloud ubiquity container. Non-macOS desktops report
@@ -484,4 +568,101 @@ fn keyring_entry() -> std::result::Result<keyring_core::Entry, keyring_core::Err
 /// with the caller's `key` as the per-item account so each secret is distinct.
 fn keyring_entry_for(key: &str) -> std::result::Result<keyring_core::Entry, keyring_core::Error> {
     keyring_core::Entry::new(KEYRING_SERVICE, key)
+}
+
+// Windows Credential Manager caps generic credential blobs at 2,560 bytes.
+// `set_password` encodes strings as UTF-16, halving the usable space for the
+// opaque ASCII tokens stored here. Tagged UTF-8 keeps the full byte budget;
+// untagged entries remain readable through the legacy password path.
+#[cfg(any(target_os = "windows", test))]
+const WINDOWS_SECURE_ITEM_PREFIX: &[u8] = b"readest:utf8:v1:";
+
+#[cfg(any(target_os = "windows", test))]
+fn encode_windows_secure_item_value(value: &str) -> Vec<u8> {
+    [WINDOWS_SECURE_ITEM_PREFIX, value.as_bytes()].concat()
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn decode_windows_secure_item_value(
+    mut encoded: Vec<u8>,
+) -> std::result::Result<Option<String>, keyring_core::Error> {
+    if !encoded.starts_with(WINDOWS_SECURE_ITEM_PREFIX) {
+        return Ok(None);
+    }
+    encoded.drain(..WINDOWS_SECURE_ITEM_PREFIX.len());
+    String::from_utf8(encoded)
+        .map(Some)
+        .map_err(|err| keyring_core::Error::BadEncoding(err.into_bytes()))
+}
+
+fn set_secure_item_value(
+    entry: &keyring_core::Entry,
+    value: &str,
+) -> std::result::Result<(), keyring_core::Error> {
+    #[cfg(target_os = "windows")]
+    {
+        entry.set_secret(&encode_windows_secure_item_value(value))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        entry.set_password(value)
+    }
+}
+
+fn get_secure_item_value(
+    entry: &keyring_core::Entry,
+) -> std::result::Result<String, keyring_core::Error> {
+    #[cfg(target_os = "windows")]
+    {
+        let encoded = entry.get_secret()?;
+        match decode_windows_secure_item_value(encoded)? {
+            Some(value) => Ok(value),
+            None => entry.get_password(),
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        entry.get_password()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        decode_windows_secure_item_value, encode_windows_secure_item_value,
+        WINDOWS_SECURE_ITEM_PREFIX,
+    };
+
+    #[test]
+    fn windows_secure_item_uses_utf8_without_losing_round_trip_fidelity() {
+        let value = "x".repeat(2_000);
+
+        // The legacy password path doubles ASCII into UTF-16 and exceeds
+        // Credential Manager's 2,560-byte generic-credential limit.
+        assert!(value.encode_utf16().count() * 2 > 2_560);
+
+        let encoded = encode_windows_secure_item_value(&value);
+        assert!(encoded.len() <= 2_560);
+        assert_eq!(
+            decode_windows_secure_item_value(encoded).unwrap(),
+            Some(value)
+        );
+    }
+
+    #[test]
+    fn windows_secure_item_detects_legacy_password_encoding() {
+        let encoded = "legacy".encode_utf16().flat_map(u16::to_le_bytes).collect();
+
+        assert_eq!(decode_windows_secure_item_value(encoded).unwrap(), None);
+    }
+
+    #[test]
+    fn windows_secure_item_rejects_invalid_tagged_utf8() {
+        let encoded = [WINDOWS_SECURE_ITEM_PREFIX, &[0xff]].concat();
+
+        assert!(matches!(
+            decode_windows_secure_item_value(encoded),
+            Err(keyring_core::Error::BadEncoding(_))
+        ));
+    }
 }

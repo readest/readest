@@ -4,7 +4,13 @@ import type { ReceiveRequest, TransferProgress } from '@/services/localsend/type
 
 const request: ReceiveRequest = {
   sessionId: 's1',
-  sender: { alias: 'Phone', deviceModel: null, deviceType: 'mobile', fingerprint: 'F' },
+  sender: {
+    alias: 'Phone',
+    deviceModel: null,
+    deviceType: 'mobile',
+    fingerprint: 'F',
+    certVerified: true,
+  },
   files: [
     { id: 'f1', fileName: 'a.epub', size: 10, fileType: 'application/epub+zip', preview: null },
   ],
@@ -48,8 +54,9 @@ describe('localsendStore', () => {
 
   it('tracks send lifecycle', () => {
     const store = useLocalSendStore.getState();
-    store.startSend('Laptop');
+    store.startSend('Laptop', 'FP-LAPTOP');
     expect(useLocalSendStore.getState().sendState?.deviceAlias).toBe('Laptop');
+    expect(useLocalSendStore.getState().sendState?.deviceFingerprint).toBe('FP-LAPTOP');
     store.sendProgress(progress);
     expect(useLocalSendStore.getState().sendState?.progress?.bytesDone).toBe(5);
     store.sendEnded();

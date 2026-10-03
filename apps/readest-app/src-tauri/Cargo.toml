@@ -6,7 +6,7 @@ authors = ["Bilingify LLC"]
 license = ""
 repository = ""
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.90"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,11 +15,23 @@ name = "readestlib"
 crate-type = ["staticlib", "cdylib", "lib"]
 
 [features]
+default = ["wry"]
+# WebView2 / WKWebView runtime, and on Linux the WebKitGTK one, which is left
+# only for the webdriver test harness (scripts/test-tauri.sh) — every Linux
+# build that ships runs on CEF and turns this off
+# (`--no-default-features --features cef`, see scripts/tauri.mjs).
+wry = ["tauri/wry", "tauri/x11", "tauri/dbus"]
+# Chromium Embedded Framework runtime, the Linux runtime (`pnpm tauri`). On
+# feat/cef the runtime is its own crate, which tauri-build and the tauri CLI
+# detect to build and bundle for CEF. It is only real when .cargo/cef.toml
+# takes it from feat/cef; every other build resolves it to the empty stub in
+# packages/tauri-runtime-cef-stub (see the root Cargo.toml).
+cef = ["dep:tauri-runtime-cef", "dep:zbus", "tauri-plugin-native-bridge/cef"]
 # Internal feature to suppress warnings from old objc crate
 cargo-clippy = []
 # Enable WebDriver plugin for E2E testing (use with `tauri build --debug --features webdriver`)
 webdriver = ["tauri-plugin-webdriver"]
-devtools = ["tauri/devtools"]
+devtools = ["tauri/devtools", "tauri-runtime-cef?/devtools"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -29,11 +41,12 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 semver = "1"
 base64 = "0.22"
+psl = "2" # Validate response cookie domains before updating the browser session.
 minisign-verify = "0.2"
 log = "0.4"
 thiserror = "2"
 walkdir = "2"
-tokio = { version = "1", features = ["fs"] }
+tokio = { version = "1", features = ["fs", "net", "sync", "time"] }
 tokio-util = { version = "0.7", features = ["codec", "rt"] }
 futures-util = "0.3"
 futures = "0.3.31"
@@ -42,11 +55,20 @@ reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "stream",
 ] }
-tauri = { version = "2", features = [ "protocol-asset" ] }
+# `default-features = false` so the Linux CEF build (`pnpm tauri`) can pick
+# the webview runtime: tauri's defaults are spelled out here and `wry` (with
+# its `x11` and `dbus` options, which feat/cef's runtime-less tauri lacks)
+# comes back through this crate's own `default` feature, so every other build
+# is unchanged. See .cargo/cef.toml.
+tauri = { version = "2", default-features = false, features = [
+  "protocol-asset",
+  "compression",
+  "common-controls-v6",
+  "dynamic-acl",
+] }
 tauri-build = "2"
 tauri-plugin-log = "2"
 tauri-plugin-fs = "2"
-tauri-plugin-dialog = "2"
 tauri-plugin-os = "2"
 # `unsafe-headers` lets callers pass fetch-spec "forbidden" headers (Origin,
 # Referer, Cookie, ...) instead of having the plugin silently drop them. Needed
@@ -84,11 +106,16 @@ tauri-plugin-webdriver = { version = "0.2", optional = true }
 # pulls the whole Flutter SDK (552 MB checked out) and blows past MAX_PATH on
 # Windows. The fork's `readest` branch tracks the same upstream rev
 # (ff2995c9523c5fae407f7d444d0986b2c6ae568e); rebase it when bumping.
-localsend = { git = "https://github.com/readest/localsend", rev = "3cae1825670617244ad235ba4295114d53e5fd2b", default-features = false, features = ["discovery"] }
+localsend = { git = "https://github.com/readest/localsend", rev = "1609ca7cd5689e10cc4703e7ce178513e5d95b11", default-features = false, features = ["discovery"] }
 uuid = { version = "1", features = ["v4"] }
 pem = "4"
 anyhow = "1"
 bytes = "1"
+# Loopback media proxy (media_proxy.rs). All three already ship inside reqwest;
+# `server` just turns on hyper's serving half.
+hyper = { version = "1", features = ["http1", "server"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
 tokio-stream = "0.1"
 if-addrs = "0.15"
 
@@ -99,7 +126,7 @@ if-addrs = "0.15"
 # across the JS<->Rust IPC boundary. Pure-Rust crates so they ship to
 # every Tauri target (desktop, iOS, Android) without extra system deps.
 zip = { version = "2", default-features = false, features = ["deflate"] }
-quick-xml = "0.36"
+quick-xml = "0.41"
 md-5 = "0.10"
 # Used by `epub_parser::read_zip_entry` as a fallback when an OPF/manifest
 # href is percent-encoded (e.g. spaces as %20, CJK paths) but the zip stores
@@ -114,6 +141,9 @@ percent-encoding = "2"
 # are disabled to keep the binary lean — we only need decoders for the
 # formats EPUBs actually use (jpeg/png/gif) plus the JPEG encoder.
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
+# Image sizes from header bytes alone, so comic pages are measured without
+# decoding them (comic_parser.rs).
+imagesize = { version = "0.14", default-features = false, features = ["jpeg", "png", "gif", "webp", "bmp", "jxl", "heif"] }
 
 # Native MOBI/AZW/AZW3 import path. Mirrors the EPUB fast-path: parse
 # PalmDB + MobiHeader + EXTH in Rust to extract title/author/publisher/
@@ -122,6 +152,13 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 # (which has to inflate the whole record stream up-front on the iOS
 # WebView). Pure-Rust crate, ships to every Tauri target.
 mobi = "0.8"
+
+# Import-only PDF metadata. `pdf` resolves the trailer/catalog/XMP from an
+# mmap-backed source, so importing does not allocate or transfer the complete
+# PDF. Page-one cover rendering stays in Android's native PdfRenderer.
+pdf = { version = "0.10", default-features = false }
+memmap2 = "0.9"
+flate2 = "1"
 
 # Crash/error reporting. `tauri-plugin-sentry` injects @sentry/browser into
 # every webview and routes browser + Rust panic events through one client.
@@ -137,9 +174,15 @@ mobi = "0.8"
 # never re-exec itself so it aborted in dyld (#5053), and its crash-handler
 # `pthread_create` interposer panics on 32-bit ARM, aborting every armeabi-v7a
 # device (#5070). See `minidump_feature_is_enabled_on_no_target`.
+#
+# `debug-images` attaches the loaded libraries and their build ids to each
+# event. The Android library ships stripped, so its frames carry addresses
+# only, and this is what lets Sentry resolve them against the debug files CI
+# uploads.
 sentry = { version = "0.42", default-features = false, features = [
   "backtrace",
   "contexts",
+  "debug-images",
   "panic",
   "reqwest",
   "rustls",
@@ -158,6 +201,23 @@ objc2 = "0.6"
 objc2-authentication-services = "0.3"
 objc2-foundation = { version = "0.3", features = ["NSError", "NSArray"] }
 
+# Linux uses the XDG desktop portal for dialogs instead of rfd's gtk3 backend.
+# rfd's gtk3 chooser pumps GTK on a private thread, and that thread iterates
+# the default GLib main context that CEF's browser process also runs its X11
+# event source on, so mouse events get dispatched off Chromium's UI thread
+# and mojo aborts the app (SIGTRAP) as soon as the dialog closes. The portal
+# runs out of process over D-Bus; other platforms keep the native chooser.
+[target.'cfg(target_os = "linux")'.dependencies]
+tauri-plugin-dialog = { version = "2", default-features = false, features = ["xdg-portal"] }
+# The CEF runtime, enabled by the `cef` feature above.
+tauri-runtime-cef = { version = "0.1", optional = true }
+# Hands a relaunch to the running instance before CEF starts, see
+# src/linux_single_instance.rs.
+zbus = { version = "5", optional = true }
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+tauri-plugin-dialog = "2"
+
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-cli = "2"
 tauri-plugin-single-instance = "2"
@@ -166,9 +226,16 @@ tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
 
 [target.'cfg(windows)'.dependencies]
-# Resolve the user's default browser from the registry for the cold-browser
-# OAuth-redirect fallback (see src/spawn_fresh_browser.rs).
+# Registry reads for the default-browser lookup in the cold-browser
+# OAuth-redirect fallback (see src/spawn_fresh_browser.rs) and the OS build
+# check behind the Windows 10 shadow workaround (see src/lib.rs).
 winreg = "0.52"
+# Forces a nonclient-area recalculation on the hidden main window before its
+# saved geometry is restored (see restore_main_window_state in src/lib.rs).
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"

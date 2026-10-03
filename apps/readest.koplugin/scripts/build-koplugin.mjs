@@ -116,6 +116,9 @@ function main() {
       `${PLUGIN_NAME}/spec/*`,
       `${PLUGIN_NAME}/.busted`,
       `${PLUGIN_NAME}/native/*`,
+      // Locally built plugin zips land in the plugin dir; without this they
+      // get swept into the new zip (megabytes of stale nested copies).
+      `${PLUGIN_NAME}/*.koplugin.zip`,
     ];
     const binDir = path.join(PLUGIN_DIR, 'bin');
     const bins = fs.existsSync(binDir) ? fs.readdirSync(binDir) : [];

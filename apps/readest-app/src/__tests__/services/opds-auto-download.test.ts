@@ -63,6 +63,7 @@ import { saveSubscriptionState, loadSubscriptionState } from '@/services/opds/su
 import { upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
 import { applyOPDSCover } from '@/services/opds/cover';
 import { downloadFile } from '@/libs/storage';
+import { MAX_RETRY_ATTEMPTS, PERSIST_BATCH_SIZE } from '@/services/opds/types';
 
 const createMockAppService = () =>
   ({
@@ -438,5 +439,128 @@ describe('OPDS auto-download orchestrator', () => {
     for (const call of vi.mocked(saveSubscriptionState).mock.calls) {
       expect((call[1] as OPDSSubscriptionState).knownEntryIds).not.toContain('urn:shelf:1');
     }
+  });
+
+  // Regression (large first sync on memory-constrained devices): a catalog with
+  // many entries must persist progress WHILE downloading, not only after every
+  // item has resolved. Android's low-memory killer terminates the app partway
+  // through a several-hundred-book first sync; if state is written only at the
+  // end, every completed import is discarded and the next run restarts from
+  // zero, so the sync can never converge no matter how often it is retried.
+  it('persists progress incrementally during a large sync', async () => {
+    freshStatePerLoad();
+    const TOTAL = PERSIST_BATCH_SIZE * 3;
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    const pendingItems: PendingItem[] = Array.from({ length: TOTAL }, (_, i) => ({
+      entryId: `urn:shelf:${i}`,
+      title: `Book ${i}`,
+      acquisitionHref: `/dl/${i}.epub`,
+      mimeType: 'application/epub+zip',
+      baseURL: 'https://shelf.example.com/opds',
+    }));
+    vi.mocked(checkFeedForNewItems).mockResolvedValue(pendingItems);
+
+    let completed = 0;
+    const completedAtSave: number[] = [];
+    const knownAtSave: number[] = [];
+    vi.mocked(downloadFile).mockImplementation(async () => {
+      completed += 1;
+      return { 'content-disposition': '' };
+    });
+    vi.mocked(saveSubscriptionState).mockImplementation(async (_appService, state) => {
+      completedAtSave.push(completed);
+      knownAtSave.push(state.knownEntryIds.length);
+    });
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    // On the unbatched implementation there is a single save at item TOTAL, so
+    // a kill at item N loses all N. Bounding the loss means one save per batch,
+    // the first landing as soon as a batch's worth of items has resolved.
+    expect(completedAtSave).toEqual([PERSIST_BATCH_SIZE, PERSIST_BATCH_SIZE * 2, TOTAL]);
+    // Each save has to carry the entries earned so far, not an empty marker.
+    expect(knownAtSave).toEqual([PERSIST_BATCH_SIZE, PERSIST_BATCH_SIZE * 2, TOTAL]);
+  });
+
+  it('still reports books from batches committed before a later batch failed', async () => {
+    // Once a batch is persisted its entries are in knownEntryIds, so no later
+    // sync rediscovers them. Dropping those books with the exception would
+    // mean they are never queued for cloud upload — they are already on disk,
+    // so they have to reach the caller even though the catalog run failed.
+    freshStatePerLoad();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue(
+      Array.from({ length: PERSIST_BATCH_SIZE * 2 }, (_, i) => ({
+        entryId: `urn:shelf:${i}`,
+        title: `Book ${i}`,
+        acquisitionHref: `/dl/${i}.epub`,
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      })),
+    );
+    vi.mocked(saveSubscriptionState).mockResolvedValue(undefined);
+    const onBooksImported = vi
+      .fn<(books: Book[]) => Promise<void>>()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('disk full'));
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, [], onBooksImported);
+
+    expect(result.errors).toHaveLength(1);
+    expect(result.newBooks).toHaveLength(PERSIST_BATCH_SIZE);
+  });
+
+  it('keeps counting retry attempts for an entry in a later persist batch', async () => {
+    // Retry items are appended after the freshly-discovered ones, so on a
+    // large catalog they land past the first batch boundary. The attempt
+    // counter must still come from the state as it was loaded: reading
+    // `state.failedEntries` again after batch 1 has reassigned it would see
+    // an array that no longer holds the retry-eligible originals, reset the
+    // count to 1, and retry the entry forever instead of giving up at
+    // MAX_RETRY_ATTEMPTS.
+    vi.mocked(loadSubscriptionState).mockImplementation(async (_appService, catalogId) => ({
+      catalogId,
+      lastCheckedAt: 0,
+      knownEntryIds: [],
+      failedEntries: [
+        {
+          entryId: 'urn:shelf:doomed',
+          href: '/dl/doomed.epub',
+          title: 'Doomed Book',
+          attempts: MAX_RETRY_ATTEMPTS - 1,
+          lastAttemptAt: 0, // far in the past, retry eligible
+        },
+      ],
+    }));
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    // A full first batch of healthy entries pushes the retry item into the second.
+    vi.mocked(checkFeedForNewItems).mockResolvedValue(
+      Array.from({ length: PERSIST_BATCH_SIZE }, (_, i) => ({
+        entryId: `urn:shelf:${i}`,
+        title: `Book ${i}`,
+        acquisitionHref: `/dl/${i}.epub`,
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      })),
+    );
+    vi.mocked(downloadFile).mockImplementation(async ({ url }) => {
+      if (url?.includes('doomed.epub')) throw new Error('still unreachable');
+      return { 'content-disposition': '' };
+    });
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    const savedState = vi
+      .mocked(saveSubscriptionState)
+      .mock.calls.at(-1)![1] as OPDSSubscriptionState;
+    // Third strike: permanently skipped, not queued for a fourth attempt.
+    expect(savedState.failedEntries.map((fe) => fe.entryId)).not.toContain('urn:shelf:doomed');
+    expect(savedState.knownEntryIds).toContain('urn:shelf:doomed');
   });
 });

@@ -1,8 +1,12 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BooknoteItem from '@/app/reader/components/sidebar/BooknoteItem';
+import { BooknoteTimeProvider } from '@/app/reader/components/sidebar/BooknoteTime';
 import { BookNote } from '@/types/book';
+import { eventDispatcher } from '@/utils/event';
 import { NOTE_PREFIX } from '@/types/view';
 
 // vi.mock factories are hoisted above const initializers, so shared spies MUST
@@ -12,8 +16,11 @@ const mocks = vi.hoisted(() => {
   const state = { booknotes: [] as { note: string; deletedAt?: number | null }[] };
   return {
     state,
+    appService: { isMobile: false, isIOSApp: false },
     setNotebookVisible: vi.fn(),
+    setNotebookActiveTab: vi.fn(),
     setNotebookEditAnnotation: vi.fn(),
+    toast: vi.fn(),
     addAnnotation: vi.fn(),
     saveConfig: vi.fn(),
     // Mirrors the real store: `updateBooknotes` writes back whatever array
@@ -29,12 +36,13 @@ const mocks = vi.hoisted(() => {
 vi.mock('@/store/notebookStore', () => ({
   useNotebookStore: () => ({
     setNotebookVisible: mocks.setNotebookVisible,
+    setNotebookActiveTab: mocks.setNotebookActiveTab,
     setNotebookEditAnnotation: mocks.setNotebookEditAnnotation,
   }),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {} }),
+  useEnv: () => ({ envConfig: {}, appService: mocks.appService }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({
@@ -68,7 +76,7 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
   useResponsiveSize: (size: number) => size,
 }));
 
-vi.mock('dayjs', () => ({ default: () => ({ fromNow: () => 'now' }) }));
+dayjs.extend(relativeTime);
 
 const makeItem = (overrides: Partial<BookNote> = {}): BookNote => ({
   id: 'note-1',
@@ -85,28 +93,72 @@ const makeItem = (overrides: Partial<BookNote> = {}): BookNote => ({
 
 const renderItem = (item: BookNote, inlineNoteEditing?: boolean) =>
   render(
-    <ul>
-      <BooknoteItem bookKey='hash1-primary' item={item} inlineNoteEditing={inlineNoteEditing} />
-    </ul>,
+    <BooknoteTimeProvider>
+      <ul>
+        <BooknoteItem bookKey='hash1-primary' item={item} inlineNoteEditing={inlineNoteEditing} />
+      </ul>
+    </BooknoteTimeProvider>,
   );
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.state.booknotes = [];
+  mocks.appService.isIOSApp = false;
 });
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 describe('BooknoteItem', () => {
+  it('refreshes the relative time every minute without remounting the item', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-20T10:00:00Z'));
+    renderItem(makeItem({ type: 'bookmark', createdAt: Date.now() }));
+
+    expect(screen.getByText('a few seconds ago')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(59_999));
+    expect(screen.getByText('a few seconds ago')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByText('a minute ago')).toBeTruthy();
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getByText('2 minutes ago')).toBeTruthy();
+  });
+
+  it('shares one timer across items, cleans it up, and recalculates on reopening', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-20T10:00:00Z'));
+    const item = makeItem({ type: 'bookmark', createdAt: Date.now() });
+    const secondItem = makeItem({ id: 'note-2', createdAt: Date.now() });
+    const { unmount } = render(
+      <BooknoteTimeProvider>
+        <ul>
+          <BooknoteItem bookKey='hash1-primary' item={item} />
+          <BooknoteItem bookKey='hash1-primary' item={secondItem} />
+        </ul>
+      </BooknoteTimeProvider>,
+    );
+
+    expect(vi.getTimerCount()).toBe(1);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getAllByText('a minute ago')).toHaveLength(2);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+
+    act(() => vi.advanceTimersByTime(4 * 60_000));
+    renderItem(item);
+    expect(screen.getByText('5 minutes ago')).toBeTruthy();
+    expect(vi.getTimerCount()).toBe(1);
+  });
+
   it('never opens the notebook when a noted item is clicked', () => {
     renderItem(makeItem({ note: 'my note' }));
     fireEvent.click(screen.getByText('highlighted words'));
     expect(mocks.setNotebookVisible).not.toHaveBeenCalled();
   });
 
-  it('shows Add Note on a bare highlight and saves a new note inline', () => {
+  it('shows Add Note on a bare highlight and saves a new note inline', async () => {
     const item = makeItem();
     mocks.state.booknotes = [item];
     renderItem(item, true);
@@ -114,7 +166,9 @@ describe('BooknoteItem', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
     const editor = screen.getByRole('textbox');
     fireEvent.change(editor, { target: { value: 'fresh thought' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
     expect(mocks.updateBooknotes).toHaveBeenCalledTimes(1);
     const saved = mocks.state.booknotes[0] as BookNote;
@@ -127,7 +181,7 @@ describe('BooknoteItem', () => {
     );
   });
 
-  it('whitespace-only draft saves an empty note', () => {
+  it('whitespace-only draft saves an empty note', async () => {
     const item = makeItem();
     mocks.state.booknotes = [item];
     renderItem(item, true);
@@ -135,7 +189,9 @@ describe('BooknoteItem', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
     const editor = screen.getByRole('textbox');
     fireEvent.change(editor, { target: { value: '   ' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
     expect(mocks.updateBooknotes).toHaveBeenCalledTimes(1);
     const saved = mocks.state.booknotes[0] as BookNote;
@@ -143,14 +199,16 @@ describe('BooknoteItem', () => {
     expect(mocks.addAnnotation).not.toHaveBeenCalled();
   });
 
-  it('clearing a note inline keeps the highlight and removes the bubble', () => {
+  it('clearing a note inline keeps the highlight and removes the bubble', async () => {
     const item = makeItem({ note: 'old note' });
     mocks.state.booknotes = [item];
     renderItem(item, true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
     const saved = mocks.state.booknotes[0] as BookNote;
     expect(saved.note).toBe('');
@@ -161,15 +219,18 @@ describe('BooknoteItem', () => {
     );
   });
 
-  it('aborts the inline save when the record is gone (deleted by sync)', () => {
+  it('aborts the inline save when the record is gone (deleted by sync)', async () => {
     const item = makeItem({ note: 'old note' });
     mocks.state.booknotes = [];
     renderItem(item, true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'update' } });
-    fireEvent.click(screen.getByText('Save'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save'));
+    });
 
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('update');
     expect(mocks.updateBooknotes).not.toHaveBeenCalled();
     expect(mocks.saveConfig).not.toHaveBeenCalled();
   });
@@ -188,4 +249,88 @@ describe('BooknoteItem', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add Note' })).toBeNull();
   });
+
+  // iOS WebKit applies :hover at touchstart, so every scroll touch would
+  // expand the card under the finger (#6568). Only a tap (focus) expands there.
+  it('reveals the actions on hover except on iOS, where only focus does (#6568)', () => {
+    const actionsClass = () =>
+      screen.getByRole('button', { name: 'Delete' }).closest('.max-h-0')!.className;
+
+    renderItem(makeItem());
+    expect(actionsClass()).toContain('group-hover:max-h-8');
+    expect(actionsClass()).toContain('group-focus-within:max-h-8');
+    cleanup();
+
+    mocks.appService.isIOSApp = true;
+    renderItem(makeItem());
+    expect(actionsClass()).not.toContain('group-hover');
+    expect(actionsClass()).toContain('group-focus-within:max-h-8');
+    expect(screen.getByRole('button', { name: 'Delete' }).className).not.toContain('group-hover');
+  });
+
+  it('long press on iOS focuses the card to reveal actions without navigating (#6568)', () => {
+    vi.useFakeTimers();
+    mocks.appService.isIOSApp = true;
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    renderItem(makeItem());
+    const card = screen.getByText('highlighted words').closest('li')!;
+
+    fireEvent.pointerDown(card, { pointerType: 'touch' });
+    act(() => vi.advanceTimersByTime(300));
+    fireEvent.pointerUp(card, { pointerType: 'touch' });
+    fireEvent.click(card);
+    expect(document.activeElement).toBe(card);
+    expect(dispatch).not.toHaveBeenCalledWith('navigate', expect.anything());
+
+    // A plain tap afterwards still navigates.
+    fireEvent.pointerDown(card, { pointerType: 'touch' });
+    fireEvent.pointerUp(card, { pointerType: 'touch' });
+    fireEvent.click(card);
+    expect(dispatch).toHaveBeenCalledWith('navigate', expect.anything());
+  });
+
+  it('keyboard activation still navigates after a long press that was canceled (#6568)', () => {
+    vi.useFakeTimers();
+    mocks.appService.isIOSApp = true;
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    renderItem(makeItem());
+    const card = screen.getByText('highlighted words').closest('li')!;
+
+    fireEvent.pointerDown(card, { pointerType: 'touch' });
+    act(() => vi.advanceTimersByTime(300));
+    fireEvent.pointerCancel(card, { pointerType: 'touch' });
+    fireEvent.keyDown(card, { key: 'Enter' });
+    expect(dispatch).toHaveBeenCalledWith('navigate', expect.anything());
+  });
+});
+
+it('keeps the inline draft through a failed save and closes only after retry succeeds (#6123)', async () => {
+  const item = makeItem({ note: 'old note' });
+  mocks.state.booknotes = [item];
+  renderItem(item, true);
+  fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'draft to keep' } });
+  let rejectSave!: (error: Error) => void;
+  mocks.saveConfig.mockReturnValueOnce(
+    new Promise<void>((_resolve, reject) => {
+      rejectSave = reject;
+    }),
+  );
+  const toast = vi.spyOn(eventDispatcher, 'dispatch');
+  fireEvent.click(screen.getByText('Save'));
+  expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('draft to keep');
+  fireEvent.click(screen.getByText('Save'));
+  expect(mocks.saveConfig).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    rejectSave(new Error('disk full'));
+  });
+  expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('draft to keep');
+  expect(toast).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'error' }));
+  expect(mocks.state.booknotes[0]?.note).toBe('old note');
+  expect(mocks.addAnnotation).not.toHaveBeenCalled();
+  await act(async () => {
+    fireEvent.click(screen.getByText('Save'));
+  });
+  expect(screen.queryByRole('textbox')).toBeNull();
+  toast.mockRestore();
 });

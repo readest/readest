@@ -177,7 +177,7 @@ const TableViewer: React.FC<TableViewerProps> = ({ gridInsets, html, isDarkMode,
       tabIndex={-1}
       role='button'
       aria-label={_('Table viewer')}
-      className='fixed inset-0 z-50 flex items-center justify-center outline-none'
+      className='fixed inset-0 z-50 flex items-center justify-center outline-hidden'
       onKeyDown={handleKeyDown}
       onWheel={handleWheel}
     >

@@ -37,10 +37,18 @@ import {
  *   translate POST has to go to that host too (see `translateUrl`).
  */
 const PROXY_URL = '/api/azure-translate';
-// Must not exceed the per-user concurrency the proxy allows, or the surplus
-// requests come straight back as 429. Bing translates one text per request, so
-// a page of paragraphs would otherwise fan out unbounded.
-const MAX_CONCURRENT_REQUESTS = 3;
+// Bing translates one text per request, so a page of paragraphs would fan out
+// unbounded without a cap. How wide the cap can be depends on what is in the
+// path: the web proxy budgets concurrency per user and sends the surplus back
+// as 429, while on Tauri the requests go straight to bing.com with no proxy in
+// between. Bing itself does not rate-limit this fan-out (verified against the
+// live endpoint: 12 concurrent translate calls all answered 200), and the
+// endpoint takes seconds per request, so holding the native path at the proxy's
+// budget just serialises a page behind a slow upstream.
+const PROXY_MAX_CONCURRENT_REQUESTS = 3;
+const DIRECT_MAX_CONCURRENT_REQUESTS = 10;
+const maxConcurrentRequests = () =>
+  isTauriAppPlatform() ? DIRECT_MAX_CONCURRENT_REQUESTS : PROXY_MAX_CONCURRENT_REQUESTS;
 // Bing answers `statusCode: 400` above exactly 1000 UTF-16 code units — the
 // cap counts code units, not bytes, so CJK and emoji measure the same as ASCII
 // (verified empirically: 1000 passes, 1001 fails, for all three).
@@ -79,12 +87,12 @@ const requestQueue: Array<() => void> = [];
 
 /**
  * Caps outbound requests across every concurrent `translate()` call — the
- * counter is module-level because the proxy budgets per user, not per call.
+ * counter is module-level because the budget is per user, not per call.
  * A task holds at most one slot at a time (auth is awaited before a translate
  * slot is taken), so this cannot deadlock.
  */
 async function withRequestLimit<T>(task: () => Promise<T>): Promise<T> {
-  if (activeRequests < MAX_CONCURRENT_REQUESTS) {
+  if (activeRequests < maxConcurrentRequests()) {
     activeRequests++;
   } else {
     await new Promise<void>((resolve) => requestQueue.push(resolve));

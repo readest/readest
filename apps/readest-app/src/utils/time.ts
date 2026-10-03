@@ -3,6 +3,11 @@ import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(duration);
+// At module scope, not only inside `initDayjs`: `formatSyncTimeFromNow` below
+// is called from a hook that unit tests mount directly, where the app's startup
+// `initDayjs` never ran. `extend` is idempotent, so `initDayjs` keeps its call
+// for the locale.
+dayjs.extend(relativeTime);
 
 import 'dayjs/locale/en';
 import 'dayjs/locale/zh';
@@ -41,6 +46,10 @@ export const initDayjs = (locale: string) => {
 // time only; the record-derived pull cursor must never be clamped.
 export const clampSyncTimeForDisplay = (time: number): number => Math.min(time, Date.now());
 
+/** The clamped "x minutes ago" used by every "Synced {{time}}" row. */
+export const formatSyncTimeFromNow = (time: number): string =>
+  dayjs(clampSyncTimeForDisplay(time)).fromNow();
+
 // Clock-style playback time for the TTS scrubber: m:ss below one hour,
 // h:mm:ss above. Pass forceHours so both labels of a row share the format
 // chosen by the total's magnitude and the row never re-layouts when the
@@ -69,6 +78,24 @@ export const formatCompactTime = (seconds: number): string => {
     return `${hours}:${String(minutes).padStart(2, '0')}`;
   }
   return `${minutes}:${String(total % 60).padStart(2, '0')}`;
+};
+
+/**
+ * A duration split into parts, for callers that label it with real units.
+ *
+ * `formatCompactTime` renders 7h55m and 7m55s identically as "7:55", which is
+ * the right trade in the mini player's fixed-width countdown but misleading on
+ * the shelf, where books of very different lengths sit next to each other.
+ */
+export const splitDuration = (
+  seconds: number,
+): { hours: number; minutes: number; seconds: number } => {
+  const total = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+  return {
+    hours: Math.floor(total / 3600),
+    minutes: Math.floor((total % 3600) / 60),
+    seconds: total % 60,
+  };
 };
 
 // Countdown label for TTS sleep-timer chips: total minutes : seconds

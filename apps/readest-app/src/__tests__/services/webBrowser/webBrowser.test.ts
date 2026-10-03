@@ -55,6 +55,7 @@ describe('getWebBrowserOptions', () => {
         'added',
         'back',
         'close',
+        'clipPage',
         'copyLink',
         'downloading',
         'failed',

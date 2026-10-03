@@ -3,165 +3,135 @@ package com.readest.native_bridge
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.BitmapShader
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.RectF
-import android.graphics.Shader
-import android.graphics.Typeface
+import android.content.Intent
+import com.readest.native_bridge.WidgetImageUtils.THUMB_HEIGHT
+import com.readest.native_bridge.WidgetImageUtils.THUMB_WIDTH
 import org.json.JSONObject
 import java.io.File
-import kotlin.math.max
+
+data class ReadingWidgetInstanceSettings(
+    val showTimeLeft: Boolean = false,
+    val showPageCount: Boolean = true,
+    val showPagesRemaining: Boolean = false,
+    val showHeader: Boolean = true,
+    val showPercent: Boolean = true,
+    val fontSize: Int = DEFAULT_TEXT_SIZE,
+    val headerSize: Int = DEFAULT_HEADER_SIZE,
+    val showTtsBar: Boolean = true,
+    val referencePages: Boolean = false,
+) {
+    fun toJson(): JSONObject = JSONObject()
+        .put("showTimeLeft", showTimeLeft)
+        .put("showPageCount", showPageCount)
+        .put("showPagesRemaining", showPagesRemaining)
+        .put("showHeader", showHeader)
+        .put("showPercent", showPercent)
+        .put("fontSize", fontSize)
+        .put("headerSize", headerSize)
+        .put("showTtsBar", showTtsBar)
+        .put("referencePages", referencePages)
+
+    companion object {
+        fun fromJson(json: JSONObject): ReadingWidgetInstanceSettings {
+            val defaults = ReadingWidgetInstanceSettings()
+            return ReadingWidgetInstanceSettings(
+                showTimeLeft = json.optBoolean("showTimeLeft", defaults.showTimeLeft),
+                showPageCount = json.optBoolean("showPageCount", defaults.showPageCount),
+                showPagesRemaining = json.optBoolean("showPagesRemaining", defaults.showPagesRemaining),
+                showHeader = json.optBoolean("showHeader", defaults.showHeader),
+                showPercent = json.optBoolean("showPercent", defaults.showPercent),
+                fontSize = json.optInt("fontSize", defaults.fontSize),
+                headerSize = json.optInt("headerSize", defaults.headerSize),
+                showTtsBar = json.optBoolean("showTtsBar", defaults.showTtsBar),
+                referencePages = json.optBoolean("referencePages", defaults.referencePages),
+            )
+        }
+    }
+}
 
 object ReadingWidgetStore {
-    const val PREFS = "reading_widget"
-    const val KEY_SNAPSHOT = "snapshot"
-    private const val THUMB_WIDTH = 240
-    private const val THUMB_HEIGHT = 360
-    private const val CORNER_RADIUS = 18f
+    private const val PREFS = "reading_widget"
+    private const val KEY_SNAPSHOT_PREFIX = "snapshot_"
+    private const val KEY_INSTANCE_SETTINGS_PREFIX = "instanceSettings_"
+    private const val KEY_CATALOG = "catalog"
 
+    // Separate from the bookshelf's dir: it bakes progress into its own "$hash.png".
     fun coversDir(context: Context): File =
-        File(context.filesDir, "widget/covers").apply { mkdirs() }
+        File(context.filesDir, "widget/reading_covers").apply { mkdirs() }
 
-    fun writeThumbnail(context: Context, hash: String, sourcePath: String, percent: Int) {
+    private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun writeStr(context: Context, prefix: String, appWidgetId: Int, value: String) {
+        prefs(context).edit().putString(prefix + appWidgetId, value).apply()
+    }
+
+    /** Plain rounded cover; only one book is shown, so a successful write deletes the other files. */
+    fun writeCover(context: Context, hash: String, sourcePath: String): Boolean {
         val dir = coversDir(context)
         val dst = File(dir, "$hash.png")
         // The hash comes from library records (cloud sync, backup restore)
         // and is used as a file name; never let it escape the covers dir.
-        if (dst.canonicalFile.parentFile != dir.canonicalFile) return
+        if (dst.canonicalFile.parentFile != dir.canonicalFile) return false
+        // Every push (and every widget instance) asks for the same cover, so skip the
+        // re-encode unless the source changed since the PNG was written.
         val src = File(sourcePath)
-        if (!src.exists()) { dst.delete(); return }
-        // Note: skip-if-unchanged removed because the composite depends on the live percent.
-
-        // Bounds pre-pass for memory safety before full decode.
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(sourcePath, bounds)
-        val longEdge = max(bounds.outWidth, bounds.outHeight).coerceAtLeast(1)
-        var sample = 1
-        while (longEdge / sample > THUMB_HEIGHT * 2) sample *= 2
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        val bitmap = BitmapFactory.decodeFile(sourcePath, opts) ?: run { dst.delete(); return }
-
-        // Center-crop to 2:3 portrait aspect (width:height = 2:3).
-        val srcW = bitmap.width
-        val srcH = bitmap.height
-        // A cover that decodes 1px tall (a 1x1 placeholder cover shipped in
-        // some EPUBs, or a wide banner that inSampleSize downsamples to a
-        // single row) makes cropW = srcH * 2 / 3 = 0, and Bitmap.createBitmap
-        // throws "width must be > 0". A 1px-wide cover crops fine but is just
-        // as useless, so reject both: drop any stale thumbnail so the widget
-        // falls back to no cover instead.
-        if (srcW < 2 || srcH < 2) {
-            bitmap.recycle()
-            dst.delete()
-            return
-        }
-        val cropW: Int
-        val cropH: Int
-        if (srcW * 3 > srcH * 2) {
-            // Source is wider than 2:3 — crop the sides.
-            cropH = srcH
-            cropW = srcH * 2 / 3
-        } else {
-            // Source is taller than 2:3 — crop top/bottom.
-            cropW = srcW
-            cropH = srcW * 3 / 2
-        }
-        val cropX = (srcW - cropW) / 2
-        val cropY = (srcH - cropH) / 2
-        val cropped = Bitmap.createBitmap(bitmap, cropX, cropY, cropW, cropH)
-        // createBitmap returns the SAME instance when the crop covers the whole
-        // (immutable) source — i.e. covers already at exactly 2:3. Recycling here
-        // would recycle `cropped` too and crash createScaledBitmap below with
-        // "cannot use a recycled source". Mirror the scaled !== cropped guard.
-        if (cropped !== bitmap) bitmap.recycle()
-
-        // Scale the cropped bitmap to the target size.
-        val scaled = Bitmap.createScaledBitmap(cropped, THUMB_WIDTH, THUMB_HEIGHT, true)
-        if (scaled !== cropped) cropped.recycle()
-
-        // Apply rounded corners by drawing through a BitmapShader onto a transparent canvas.
-        val rounded = Bitmap.createBitmap(THUMB_WIDTH, THUMB_HEIGHT, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(rounded)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.shader = BitmapShader(scaled, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-        canvas.drawRoundRect(
-            RectF(0f, 0f, THUMB_WIDTH.toFloat(), THUMB_HEIGHT.toFloat()),
-            CORNER_RADIUS, CORNER_RADIUS,
-            paint
-        )
+        if (src.exists() && dst.exists() && dst.lastModified() > src.lastModified()) return true
+        val scaled = WidgetImageUtils.decodeCoverCroppedAndScaled(sourcePath, THUMB_WIDTH, THUMB_HEIGHT)
+            ?: run { dst.delete(); return false }
+        val rounded = WidgetImageUtils.applyRoundedCorners(scaled)
         scaled.recycle()
-
-        // Bake progress bar and % badge into the cover bitmap.
-        val w = rounded.width.toFloat()
-        val h = rounded.height.toFloat()
-        val pad = w * 0.05f
-        val pct = percent.coerceIn(0, 100)
-
-        // progress bar along the bottom
-        val barH = w * 0.035f
-        val barTop = h - pad - barH
-        val barLeft = pad
-        val barRight = w - pad
-        val radius = barH / 2f
-        val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66000000 }
-        canvas.drawRoundRect(RectF(barLeft, barTop, barRight, barTop + barH), radius, radius, trackPaint)
-        val fillRight = barLeft + (barRight - barLeft) * (pct / 100f)
-        if (fillRight > barLeft + radius) {
-            val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF6A4BFF.toInt() }
-            canvas.drawRoundRect(RectF(barLeft, barTop, fillRight, barTop + barH), radius, radius, fillPaint)
-        }
-
-        // % badge pill, top-right
-        val text = "$pct%"
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFFFFF.toInt()
-            textSize = w * 0.085f
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        val fm = textPaint.fontMetrics
-        val tw = textPaint.measureText(text)
-        val padX = w * 0.03f
-        val padY = w * 0.02f
-        val pillW = tw + padX * 2f
-        val pillH = (fm.descent - fm.ascent) + padY * 2f
-        val pillRight = w - pad
-        val pillTop = pad
-        val pillLeft = pillRight - pillW
-        val pillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB3000000.toInt() }
-        val pillR = pillH / 2f
-        canvas.drawRoundRect(RectF(pillLeft, pillTop, pillRight, pillTop + pillH), pillR, pillR, pillPaint)
-        canvas.drawText(text, pillLeft + padX, pillTop + padY - fm.ascent, textPaint)
-
-        // Write as PNG so the alpha channel for rounded corners is preserved.
-        dst.outputStream().use { rounded.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val ok = WidgetImageUtils.writeBitmapAtomically(dst, rounded)
         rounded.recycle()
+        if (ok) dir.listFiles()?.forEach { f -> if (f.name != dst.name) f.delete() }
+        return ok
     }
 
-    fun writeSnapshot(context: Context, json: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putString(KEY_SNAPSHOT, json).apply()
-        notifyWidgets(context)
+    fun writeSnapshot(context: Context, appWidgetId: Int, json: String) {
+        writeStr(context, KEY_SNAPSHOT_PREFIX, appWidgetId, json)
+        notifyWidget(context, appWidgetId)
     }
 
-    fun readSnapshot(context: Context): JSONObject {
-        val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(KEY_SNAPSHOT, null) ?: return JSONObject()
+    fun readSnapshot(context: Context, appWidgetId: Int): JSONObject {
+        val raw = prefs(context).getString(KEY_SNAPSHOT_PREFIX + appWidgetId, null)
+            ?: return JSONObject()
         return runCatching { JSONObject(raw) }.getOrDefault(JSONObject())
     }
 
-    private fun notifyWidgets(context: Context) {
-        // Null on builds without app widget support (TV, automotive).
+    fun writeInstanceSettings(context: Context, appWidgetId: Int, settings: ReadingWidgetInstanceSettings) {
+        writeStr(context, KEY_INSTANCE_SETTINGS_PREFIX, appWidgetId, settings.toJson().toString())
+    }
+
+    fun readInstanceSettings(context: Context, appWidgetId: Int): ReadingWidgetInstanceSettings {
+        val raw = prefs(context).getString(KEY_INSTANCE_SETTINGS_PREFIX + appWidgetId, null)
+        val json = raw?.let { runCatching { JSONObject(it) }.getOrNull() }
+        return json?.let(ReadingWidgetInstanceSettings::fromJson) ?: ReadingWidgetInstanceSettings()
+    }
+
+    fun writeCatalog(context: Context, json: String) {
+        prefs(context).edit().putString(KEY_CATALOG, json).apply()
+    }
+
+    fun readCatalog(context: Context): JSONObject {
+        val raw = prefs(context).getString(KEY_CATALOG, null) ?: return JSONObject()
+        return runCatching { JSONObject(raw) }.getOrDefault(JSONObject())
+    }
+
+    /** Called on widget removal. The shared cover self-cleans in writeCover. */
+    fun clear(context: Context, appWidgetId: Int) {
+        prefs(context).edit()
+            .remove(KEY_SNAPSHOT_PREFIX + appWidgetId)
+            .remove(KEY_INSTANCE_SETTINGS_PREFIX + appWidgetId)
+            .apply()
+    }
+
+    /** Redraws just this widget, so N widgets refreshing together don't each redraw all N. */
+    fun notifyWidget(context: Context, appWidgetId: Int) {
         val mgr = AppWidgetManager.getInstance(context) ?: return
         val cls = ReadingWidgetProvider::class.java
-        val ids = mgr.getAppWidgetIds(ComponentName(context, cls))
-        if (ids.isNotEmpty()) {
-            val intent = android.content.Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
-            intent.component = ComponentName(context, cls)
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-            context.sendBroadcast(intent)
-        }
+        if (appWidgetId !in mgr.getAppWidgetIds(ComponentName(context, cls))) return
+        val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+        intent.component = ComponentName(context, cls)
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
+        context.sendBroadcast(intent)
     }
 }

@@ -12,6 +12,8 @@ const h = vi.hoisted(() => ({
   setSideBarBookKeyMock: vi.fn(),
   bookKeys: [] as string[],
   viewStates: {} as Record<string, { inited: boolean; view: object }>,
+  hasProgress: true,
+  progressListeners: new Set<() => void>(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -36,10 +38,19 @@ vi.mock('@/store/readerStore', () => ({
         getView: () => null,
         setPreviewMode: vi.fn(),
         viewStates: h.viewStates,
+        getProgress: () => (h.hasProgress ? {} : null),
       }),
       subscribe: () => () => {},
     },
   ),
+}));
+vi.mock('@/store/readerProgressStore', () => ({
+  useReaderProgressStore: {
+    subscribe: (listener: () => void) => {
+      h.progressListeners.add(listener);
+      return () => h.progressListeners.delete(listener);
+    },
+  },
 }));
 vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({ sideBarBookKey: null, setSideBarBookKey: h.setSideBarBookKeyMock }),
@@ -58,6 +69,8 @@ describe('useBooksManager open-failure handling', () => {
     vi.clearAllMocks();
     h.bookKeys = [];
     h.viewStates = {};
+    h.hasProgress = true;
+    h.progressListeners.clear();
     setPendingTTSAutoplay(null);
   });
 
@@ -99,6 +112,24 @@ describe('useBooksManager open-failure handling', () => {
     });
 
     expect(dispatchSpy).toHaveBeenCalledWith('tts-speak', { bookKey: 'hash1-abc' });
+    dispatchSpy.mockRestore();
+  });
+
+  it('waits for the initial reading position before starting car autoplay', async () => {
+    h.bookKeys = ['hash1-abc'];
+    h.viewStates = { 'hash1-abc': { inited: true, view: {} } };
+    h.hasProgress = false;
+    setPendingTTSAutoplay('hash1');
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+    renderHook(() => useBooksManager());
+
+    expect(dispatchSpy).not.toHaveBeenCalledWith('tts-speak', expect.anything());
+    await act(async () => {
+      h.hasProgress = true;
+      for (const listener of h.progressListeners) listener();
+    });
+    expect(dispatchSpy).toHaveBeenCalledExactlyOnceWith('tts-speak', { bookKey: 'hash1-abc' });
+    expect(h.progressListeners.size).toBe(0);
     dispatchSpy.mockRestore();
   });
 });

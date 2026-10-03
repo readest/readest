@@ -59,7 +59,9 @@
 | **File Association and Open With**         | Quickly open files in Readest in your file browser with one-click.                                                     | ✅         |
 | **Library Management**                     | Organize, sort, and manage your entire ebook library.                                                                  | ✅         |
 | **OPDS/Calibre Integration**               | Integrate OPDS/Calibre to access online libraries and catalogs.                                                        | ✅         |
+| **Web Page Clipping**                      | Open websites, sign in, and clip pages with **From Web Browser**. **From Web Novel** can reuse your browser session to import selected chapters and their images. | ✅         |
 | **Translate with DeepL and Yandex**        | From a single sentence to the entire book—translate instantly.                                                         | ✅         |
+| **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                                        | ✅           |
 | **Text-to-Speech (TTS) Support**           | Enjoy smooth, multilingual narration—even within a single book.                                                        | ✅         |
 | [**Read-Along Narration**][link-readalong] | Play embedded EPUB 3 Media Overlays with timed highlighting, or pair a reflowable EPUB locally with DRM-free MP3, M4A, or M4B narration. [Storyteller][link-storyteller] remains an option for generating phrase-aligned EPUBs. | ✅         |
 | **Sync across Platforms**                  | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         | ✅         |
@@ -76,7 +78,6 @@
 | ------------------------------- | -------------------------------------------------------------------------- | ------------ |
 | **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.       | 🛠           |
 | **Advanced Reading Stats**      | Track reading time, pages read, and more for detailed insights.            | 🛠           |
-| **Audiobook Support**           | Extend functionality to play and manage audiobooks.                        | 🔄           |
 | **Handwriting Annotations**     | Add support for handwriting annotations using a pen on compatible devices. | 🔄           |
 
 Stay tuned for continuous improvements and updates! Contributions and suggestions are always welcome—let's build the ultimate reading experience together. 😊
@@ -202,31 +203,27 @@ To build Readest from the latest commit, see [Getting Started](./CONTRIBUTING.md
 
 - See Issue [readest/readest#358](https://github.com/readest/readest/issues/358) for further details, or head over to our [Discord][link-discord] server and open a support discussion with detailed logs of your environment and the steps you’ve taken.
 
-### 2. AppImage Launches but Only Shows a Taskbar Icon
+### Linux Fails to Launch on Wayland / Niri
 
-On some Arch Linux systems—especially those using Wayland—the Readest AppImage may briefly show an icon in the taskbar and then exit without opening a window.
+Current Linux builds, including Flatpak, use CEF with an X11 window backend.
+Wayland sessions therefore need XWayland. Without a `DISPLAY`, older builds exit
+with `Runtime(CreateWindow)` before opening a window.
 
-You might see logs such as:
+On Niri, install `xwayland-satellite` 0.7 or later using your distribution's package manager
+and restart your Niri session. Niri 25.08 and later can start it on demand and
+set `DISPLAY` for applications. See [Niri's XWayland setup instructions](https://niri-wm.github.io/niri/Xwayland.html).
 
-```
-Could not create default EGL display: EGL_BAD_PARAMETER. Aborting...
-```
+From a terminal in that session, check `printenv DISPLAY`, then launch Readest:
 
-This behavior is usually caused by compatibility issues between the bundled AppImage libraries and the system’s EGL / Wayland environment.
-
-**Workaround 1: Launch with LD_PRELOAD (recommended)**
-
-You can preload the system Wayland client library before launching the AppImage:
-
-```
-LD_PRELOAD=/usr/lib/libwayland-client.so /path/to/Readest.AppImage
+```sh
+flatpak run com.bilingify.readest
 ```
 
-This workaround has been confirmed to resolve the issue on affected systems.
-
-**Workaround 2: Use the Flatpak Version**
-
-If you prefer a more reliable out-of-the-box experience on Arch Linux, consider using the [Flatpak build on Flathub][link-flathub] instead. The Flatpak runtime helps avoid system library mismatches and tends to behave more consistently across different Wayland and X11 setups.
+The Flatpak already requests the X11 socket. If you have customized its sandbox
+permissions, allow that socket as well. Setting `DISPLAY` to an arbitrary value
+does not start XWayland; use the value provided by your session.
+`--ozone-platform=wayland` cannot enable native Wayland support in this runtime,
+and WebKitGTK environment variables do not affect CEF.
 
 ## Contributors
 
@@ -240,7 +237,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 ## Support
 
-If Readest has been useful to you, consider supporting its development at [donate.readest.com](https://donate.readest.com), where you'll find all available donation methods, including GitHub Sponsors, card payments, and crypto. Your contribution helps us fix bugs faster, improve performance, and keep building great features.
+If Readest has been useful to you, consider supporting its development at [donate.readest.com](https://donate.readest.com), where you'll find all available donation methods, including GitHub Sponsors, PayPal, card payments, and crypto. Your contribution helps us fix bugs faster, improve performance, and keep building great features.
 
 ### Sponsors
 
@@ -287,7 +284,7 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
 [badge-hellogithub]: https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=8a5b6ade2aee461a8bd94e59200682a7&claim_uid=eRLUbPOy2qZtDgw&theme=small
 [badge-donate]: https://donate.readest.com/badge.svg
-[badge-deepwiki]: https://deepwiki.com/badge.svg
+[badge-deepwiki]: https://img.shields.io/badge/Ask-DeepWiki-blue
 [badge-reddit]: https://img.shields.io/reddit/subreddit-subscribers/readest?style=flat&logo=reddit&color=F37E41
 [badge-language-coverage]: https://img.shields.io/badge/coverage-53%25%20population%20🌍-green
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc

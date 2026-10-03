@@ -9,9 +9,11 @@ import {
   ViewSettings,
 } from '@/types/book';
 import { uniqueId } from '@/utils/misc';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point, snapRangeToWords } from '@/utils/sel';
+import { expandAllRenderedSections, removeGlobalAnnotationOverlays } from './globalAnnotations';
 
 export const isDefaultHighlightColor = (
   color: HighlightColor,
@@ -119,8 +121,10 @@ export function getExternalDragHandle(
 
 export function toParentViewportPoint(doc: Document, x: number, y: number): Point {
   const frameElement = doc.defaultView?.frameElement;
-  const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
-  return { x: x + frameRect.left, y: y + frameRect.top };
+  const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0, width: 0 };
+  // Fixed-layout pages are iframes shrunk to fit with a CSS transform.
+  const scale = frameElement?.clientWidth ? frameRect.width / frameElement.clientWidth : 1;
+  return { x: frameRect.left + x * scale, y: frameRect.top + y * scale };
 }
 
 export interface HandlePositions {
@@ -251,6 +255,7 @@ export function removeBookNoteOverlays(view: FoliateView | null, note: BookNote)
   if (note.note && note.note.trim().length > 0) {
     view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, true);
   }
+  if (note.global) removeGlobalAnnotationOverlays(view, note);
 }
 
 /**
@@ -279,7 +284,7 @@ export function removeEmptyAnnotationPlaceholder(
   );
   if (index === -1) return null;
   const placeholder = booknotes[index]!;
-  booknotes[index] = { ...placeholder, deletedAt: now };
+  booknotes[index] = { ...placeholder, deletedAt: nextBooknoteStamp(placeholder, now) };
   return placeholder;
 }
 
@@ -439,10 +444,12 @@ export function findAnnotationAtCfi(booknotes: BookNote[], cfi: string): number 
  * an `existing` annotation, preserving the parts a restyle must not lose: the
  * record id, its note text, the selected text, the original creation time, and
  * the `global` flag. Without preserving `note`, recoloring a unified annotation
- * would wipe the note.
+ * would wipe the note. Fields the restyle does not set (sync anchors such as
+ * `xpointer0`/`xpointer1`, which stay valid for the unchanged cfi) carry over.
  */
 export function mergeRestyledAnnotation(existing: BookNote, restyled: BookNote): BookNote {
   return {
+    ...existing,
     ...restyled,
     id: existing.id,
     createdAt: existing.createdAt,
@@ -452,7 +459,7 @@ export function mergeRestyledAnnotation(existing: BookNote, restyled: BookNote):
   };
 }
 
-export type AnnotationFilterKind = 'all' | 'highlights' | 'notes';
+export type AnnotationFilterKind = 'all' | 'notes';
 
 export interface BooknoteFilter {
   kind: AnnotationFilterKind;
@@ -462,24 +469,19 @@ export interface BooknoteFilter {
 }
 
 /**
- * Filter booknotes for the annotations hub and the Notebook search.
+ * Filter source material for the annotations hub.
  *
- * Tombstones are always excluded. `kind` partitions on the note body:
- * a unified annotation is a "note" when `note` is non-empty and a plain
- * "highlight" otherwise (#5398's All/Highlights/Notes chips). An empty or
- * whitespace query matches everything; otherwise the query is matched
- * case-insensitively against the highlighted text and the note body
- * (same semantics the Notebook SearchBar has always used). Excluded
- * colors/styles drop matching notes; a note without the attribute always
- * passes (the same keep rule as filterExportGroups).
+ * Tombstones and non-annotation records are always excluded. All includes
+ * every annotation, while With notes selects annotations carrying a note body.
+ * Query and facet filters compose with that kind filter.
  */
 export function filterBooknotes(notes: BookNote[], filter: BooknoteFilter): BookNote[] {
   const { kind, excludedColors, excludedStyles } = filter;
   const lowercaseQuery = filter.query.trim().toLowerCase();
   return notes.filter((note) => {
     if (note.deletedAt) return false;
+    if (note.type !== 'annotation') return false;
     if (kind === 'notes' && !note.note) return false;
-    if (kind === 'highlights' && note.note) return false;
     if (note.color && excludedColors?.includes(note.color)) return false;
     if (note.style && excludedStyles?.includes(note.style)) return false;
     if (!lowercaseQuery) return true;
@@ -516,26 +518,22 @@ export function collectAnnotationFacets(notes: BookNote[]): AnnotationFacets {
   return { colors, styles };
 }
 
-export interface AnnotationCounts {
-  highlights: number;
-  notes: number;
+export interface AnnotationHubCounts {
+  annotations: number;
 }
 
 /**
- * How many live annotations are plain highlights and how many carry a note
- * body, for the hub toolbar's summary line. Partitions on `note.note`
- * truthiness — the same untrimmed rule filterBooknotes applies — so the
- * summary always agrees with what the Highlights/Notes chips select.
+ * Non-overlapping source-material totals for the annotations hub. Annotations
+ * carrying notes still count once as annotations; the With notes chip is a
+ * subset filter rather than another count bucket.
  */
-export function summarizeAnnotations(notes: BookNote[]): AnnotationCounts {
-  let highlights = 0;
-  let noteCount = 0;
+export function summarizeAnnotationHub(notes: BookNote[]): AnnotationHubCounts {
+  let annotations = 0;
   for (const note of notes) {
     if (note.deletedAt) continue;
-    if (note.note) noteCount += 1;
-    else highlights += 1;
+    if (note.type === 'annotation') annotations += 1;
   }
-  return { highlights, notes: noteCount };
+  return { annotations };
 }
 
 export type NoteBubbleTransition = 'add' | 'remove' | 'none';
@@ -567,5 +565,10 @@ export function applyNoteBubbleTransition(
   if (transition === 'none') return;
   for (const view of views) {
     view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, transition === 'remove');
+    // The copies of a global annotation carry the bubble too: redraw them.
+    if (note.global) {
+      removeGlobalAnnotationOverlays(view, note);
+      expandAllRenderedSections(view, note);
+    }
   }
 }

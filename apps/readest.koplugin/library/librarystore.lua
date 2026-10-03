@@ -456,7 +456,20 @@ end
 -- it's excluded just like listBooks excludes it). Returns full rows so the
 -- caller can hand each straight to syncbooks.downloadBook. Ordered newest
 -- first for a sensible progress sequence; hash ASC tiebreak for determinism.
-function M:listCloudOnlyBooks()
+function M:listCloudOnlyBooks(group_by, group_name)
+    local group_sql = ""
+    local params = { self.user_id }
+    if group_by then
+        if not GROUP_WHITELIST[group_by] or not group_name then return {} end
+        group_sql = " AND " .. group_by .. " = ?"
+        params[#params + 1] = group_name
+        if group_by == "group_name" then
+            -- Literal prefix matching: group names may contain SQL LIKE wildcards.
+            group_sql = " AND (group_name = ? OR substr(group_name, 1, length(?)) = ?)"
+            params[#params + 1] = group_name .. "/"
+            params[#params + 1] = group_name .. "/"
+        end
+    end
     local sql = string.format([[
         SELECT %s FROM books
         WHERE user_id = ?
@@ -464,11 +477,12 @@ function M:listCloudOnlyBooks()
           AND cloud_present = 1
           AND local_present = 0
           AND uploaded_at IS NOT NULL
+          %s
         ORDER BY COALESCE(updated_at, created_at) DESC, hash ASC
-    ]], table.concat(BOOK_COLS, ", "))
+    ]], table.concat(BOOK_COLS, ", "), group_sql)
     local stmt = self.db:prepare(sql)
     stmt:reset()
-    stmt:bind1(1, self.user_id)
+    for i, value in ipairs(params) do stmt:bind1(i, value) end
     local rows = {}
     while true do
         local r = stmt:step()

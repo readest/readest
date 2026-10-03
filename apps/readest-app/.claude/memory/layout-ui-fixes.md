@@ -68,3 +68,17 @@
 ### ContentNavBar.tsx (annotation search results)
 - Floating buttons with drop shadow, not full-width bar (#3386)
 - z-10 z-index
+
+### Settings boxed lists — never wrap groups in `px-4`
+`BoxedList`'s `SectionTitle` already carries its own `ps-4`, and the card's inner
+`divide-y` wrapper carries `ps-4` too (rows add `pe-4`). The canonical panel shape
+(`IntegrationsPanel`, `ControlPanel`, `WordLensPanel`) is: **root has no horizontal
+padding**, cards bleed to the panel edge, and only `SubPageHeader`'s `px-4` +
+`SectionTitle`'s `ps-4` set the 16px text inset — so header, description and group
+titles all line up.
+
+Wrapping the groups in `px-4` double-pads: group titles land at 32px while the
+header stays at 16px, and the whole panel looks inset one step past every other
+panel. That was the Keyboard Shortcuts bug, MERGED #5927 (76e81d604, 2026-08-29), worktree+branch cleared. Fixing it by
+padding the header instead (`ps-4` wrapper around `SubPageHeader`) is the wrong
+lever — it adds a step rather than removing one. Remove the wrapper padding.

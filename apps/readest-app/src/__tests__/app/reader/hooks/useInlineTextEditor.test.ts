@@ -40,19 +40,21 @@ describe('useInlineTextEditor', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('saving exits edit mode and calls onSave with the current draft', () => {
+  it('saving exits edit mode and calls onSave with the current draft', async () => {
     const onSave = vi.fn();
     const { result } = renderHook(() => useInlineTextEditor(onSave));
     act(() => result.current.startEdit('old'));
     act(() => result.current.setDraftText('updated text'));
 
-    act(() => result.current.save());
+    await act(async () => {
+      await result.current.save();
+    });
 
     expect(result.current.inlineEditMode).toBe(false);
     expect(onSave).toHaveBeenCalledWith('updated text');
   });
 
-  it('saving after onSave changes across a rerender calls the latest onSave, not a stale one', () => {
+  it('saving after onSave changes across a rerender calls the latest onSave, not a stale one', async () => {
     const firstOnSave = vi.fn();
     const secondOnSave = vi.fn();
     const { result, rerender } = renderHook(
@@ -62,7 +64,9 @@ describe('useInlineTextEditor', () => {
     act(() => result.current.startEdit('old'));
 
     rerender({ onSave: secondOnSave });
-    act(() => result.current.save());
+    await act(async () => {
+      await result.current.save();
+    });
 
     expect(firstOnSave).not.toHaveBeenCalled();
     expect(secondOnSave).toHaveBeenCalledWith('old');

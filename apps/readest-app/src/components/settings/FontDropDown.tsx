@@ -51,7 +51,7 @@ const FontItem: React.FC<FontItemProps> = ({ index, style, data }) => {
           }
         }}
         aria-label={option.label || option.option}
-        className='flex w-full items-center overflow-hidden !px-0 text-sm'
+        className='flex w-full items-center overflow-hidden px-0! text-sm'
       >
         <span style={{ minWidth: `${iconSize16}px` }}>
           {selected === option.option && (
@@ -135,8 +135,8 @@ const FontDropdown: React.FC<DropdownProps> = ({
         role='listbox'
         tabIndex={0}
         className={clsx(
-          'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute z-[1] mt-4 shadow',
-          'right-[-32px] w-[46vw] !px-0 sm:right-0 sm:w-44',
+          'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute z-[1] mt-4 shadow-sm',
+          'right-[-32px] w-[46vw] px-0! sm:right-0 sm:w-44',
           moreOptions?.length ? '' : 'inline overflow-hidden',
         )}
       >
@@ -156,7 +156,15 @@ const FontDropdown: React.FC<DropdownProps> = ({
         {/* More options with nested dropdown */}
         {moreOptions && moreOptions.length > 0 && (
           <li className='dropdown dropdown-left dropdown-top px-2'>
-            <div className='flex items-center px-0 text-sm'>
+            {/* Focusing the row makes the nested dropdown :focus-within, which
+                is what reveals the sub-list; nothing else opens it. */}
+            <div
+              role='button'
+              tabIndex={0}
+              aria-haspopup='listbox'
+              onClick={(e) => e.currentTarget.focus()}
+              className='flex items-center px-0 text-sm'
+            >
               <span style={{ minWidth: `${iconSize}px` }}>
                 <FiChevronLeft size={iconSize} />
               </span>
@@ -166,8 +174,8 @@ const FontDropdown: React.FC<DropdownProps> = ({
               role='listbox'
               tabIndex={0}
               className={clsx(
-                'dropdown-content bgcolor-base-200 menu rounded-box relative z-[1] shadow',
-                '!mr-4 mb-[-46px] inline w-[46vw] overflow-hidden !px-0 sm:w-[200px]',
+                'dropdown-content bgcolor-base-200 menu rounded-box z-[1] shadow-sm',
+                'mr-4! -bottom-2.5 inline w-[46vw] overflow-hidden px-0! sm:w-[200px]',
               )}
             >
               {/* Virtualized more options */}

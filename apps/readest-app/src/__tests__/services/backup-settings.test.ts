@@ -1,3 +1,4 @@
+import { journalBookshelfOperation } from '@/services/bookshelves/journal';
 import { describe, it, expect } from 'vitest';
 import {
   BACKUP_SETTINGS_BLACKLIST,
@@ -5,6 +6,9 @@ import {
   sanitizeSettingsForBackup,
   mergeRestoredSettings,
 } from '@/services/backupService';
+import { createBookshelf } from '@/services/bookshelves/definitions';
+import { readBookshelves } from '@/services/bookshelves/state';
+import { hlcPack } from '@/libs/crdt';
 import { SystemSettings } from '@/types/settings';
 
 /**
@@ -48,6 +52,17 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
         password: 'opds-pass',
       },
     ],
+    customTranslators: [
+      {
+        id: 'tr-1',
+        type: 'openai-compatible',
+        name: 'My LLM',
+        baseUrl: 'https://api.example.com/v1',
+        apiKey: 'tr-secret',
+        addedAt: 1,
+        updatedAt: 1,
+      },
+    ],
     kosync: {
       enabled: true,
       serverUrl: 'https://kosync.example',
@@ -70,6 +85,13 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
     },
     readwise: { enabled: true, accessToken: 'rw-token', lastSyncedAt: 999 },
     hardcover: { enabled: false, accessToken: 'hc-token', lastSyncedAt: 888 },
+    notion: {
+      enabled: true,
+      accessToken: 'notion-token',
+      databaseId: 'notion-database-id',
+      lastSyncedAt: 777,
+      includeChapterHeading: false,
+    },
     googleDrive: {
       enabled: true,
       accountLabel: 'me@gmail.com',
@@ -96,6 +118,29 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
     ...overrides,
   } as unknown as SystemSettings;
 }
+
+it('exports local shelves independently of the originating device journal', () => {
+  const shelf = createBookshelf('Anonymous backup');
+  const t = hlcPack(100, 0, 'device');
+  const row = {
+    user_id: '',
+    kind: 'bookshelf',
+    replica_id: shelf.id,
+    fields_jsonb: { definition: { v: shelf, t, s: 'device' } },
+    updated_at_ts: t,
+    deleted_at_ts: null,
+    manifest_jsonb: null,
+    reincarnation: null,
+    schema_version: 1,
+    localOnly: true as const,
+  };
+  journalBookshelfOperation(row);
+  const settings = makeSettings({ bookshelves: { rows: { [shelf.id]: row } } });
+  const backup = sanitizeSettingsForBackup(settings);
+  localStorage.clear();
+  expect(readBookshelves(backup).some((s) => s.id === shelf.id)).toBe(true);
+  expect(settings.bookshelves?.rows[shelf.id]?.localOnly).toBe(true);
+});
 
 describe('sanitizeSettingsForBackup - blacklist', () => {
   it('strips device-specific filesystem paths', () => {
@@ -128,6 +173,8 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     expect(out['lastSyncedAtReplicas']).toBeUndefined();
     expect(rec(out['readwise'])['lastSyncedAt']).toBeUndefined();
     expect(rec(out['hardcover'])['lastSyncedAt']).toBeUndefined();
+    expect(rec(out['notion'])['lastSyncedAt']).toBeUndefined();
+    expect(rec(out['notion'])['databaseId']).toBe('notion-database-id');
     expect(rec(out['googleDrive'])['lastSyncedAt']).toBeUndefined();
   });
 
@@ -193,12 +240,15 @@ describe('sanitizeSettingsForBackup - credentials', () => {
     expect(rec(out.kosync)['password']).toBeUndefined();
     expect(rec(out.readwise)['accessToken']).toBeUndefined();
     expect(rec(out.hardcover)['accessToken']).toBeUndefined();
+    expect(rec(out.notion)['accessToken']).toBeUndefined();
     expect(rec(out.aiSettings)['aiGatewayApiKey']).toBeUndefined();
     expect(rec(out.aiSettings)['openrouterApiKey']).toBeUndefined();
     // non-credential aiSettings fields (e.g. base URL) survive
     expect(rec(out.aiSettings)['openrouterBaseUrl']).toBe('https://openrouter.ai/api/v1');
     expect(out.opdsCatalogs[0]!.username).toBeUndefined();
     expect(out.opdsCatalogs[0]!.password).toBeUndefined();
+    expect(out.customTranslators![0]!.apiKey).toBeUndefined();
+    expect(out.customTranslators![0]!.baseUrl).toBe('https://api.example.com/v1');
   });
 
   it('keeps non-credential OPDS catalog fields when stripping credentials', () => {
@@ -212,16 +262,19 @@ describe('sanitizeSettingsForBackup - credentials', () => {
     expect(out.kosync.password).toBe('kpass');
     expect(out.readwise.accessToken).toBe('rw-token');
     expect(out.hardcover.accessToken).toBe('hc-token');
+    expect(out.notion.accessToken).toBe('notion-token');
     expect(rec(out.aiSettings)['aiGatewayApiKey']).toBe('ai-secret-key');
     expect(rec(out.aiSettings)['openrouterApiKey']).toBe('or-secret-key');
     expect(out.opdsCatalogs[0]!.username).toBe('opds-user');
     expect(out.opdsCatalogs[0]!.password).toBe('opds-pass');
+    expect(out.customTranslators![0]!.apiKey).toBe('tr-secret');
   });
 
   it('still strips blacklist fields even when credentials are included', () => {
     const out = rec(sanitizeSettingsForBackup(makeSettings(), { includeCredentials: true }));
     expect(out['localBooksDir']).toBeUndefined();
     expect(out['replicaDeviceId']).toBeUndefined();
+    expect(rec(out['notion'])['lastSyncedAt']).toBeUndefined();
   });
 
   it('every credential path is a string', () => {
@@ -301,5 +354,78 @@ describe('mergeRestoredSettings', () => {
     mergeRestoredSettings(current, backup);
     expect(JSON.stringify(current)).toBe(currentSnapshot);
     expect(JSON.stringify(backup)).toBe(backupSnapshot);
+  });
+
+  // Bookshelves are LWW rows, not a scalar blob: a restore merges them by stamp
+  // and never rolls back a newer local shelf edit.
+  describe('bookshelf rows', () => {
+    const shelfState = (
+      id: string,
+      definition: unknown,
+      at: number,
+    ): SystemSettings['bookshelves'] => {
+      const stamp = hlcPack(at, 0, 'dev-a');
+      return {
+        rows: {
+          [id]: {
+            user_id: '',
+            kind: 'bookshelf',
+            replica_id: id,
+            fields_jsonb: { definition: { v: definition, t: stamp, s: 'dev-a' } },
+            deleted_at_ts: null,
+            updated_at_ts: stamp,
+            reincarnation: null,
+            manifest_jsonb: null,
+            schema_version: 1,
+          },
+        },
+      };
+    };
+    const named = (id: string, name: string, at: number) =>
+      shelfState(id, createBookshelf(name, id), at);
+    const shelfNames = (settings: SystemSettings) =>
+      readBookshelves(settings).map((shelf) => shelf.name);
+    const CUSTOM_ID = '00000000-0000-4000-8000-000000000001';
+
+    it('does not roll back a newer local shelf definition', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 2000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({ bookshelves: named('default', 'Older backup', 1000) }),
+      );
+      expect(shelfNames(mergeRestoredSettings(current, backup))).not.toContain('Older backup');
+      expect(shelfNames(mergeRestoredSettings(current, backup))).toContain('Local edit');
+    });
+
+    it('adopts a newer backup shelf definition', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 1000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({ bookshelves: named('default', 'Newer backup', 2000) }),
+      );
+      expect(shelfNames(mergeRestoredSettings(current, backup))).not.toContain('Local edit');
+      expect(shelfNames(mergeRestoredSettings(current, backup))).toContain('Newer backup');
+    });
+
+    it('adds a shelf that is absent locally', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 1000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({ bookshelves: named(CUSTOM_ID, 'Restored shelf', 1000) }),
+      );
+      const merged = mergeRestoredSettings(current, backup);
+      expect(Object.keys(merged.bookshelves!.rows).sort()).toEqual([CUSTOM_ID, 'default']);
+      expect(shelfNames(merged)).toContain('Restored shelf');
+      expect(shelfNames(merged)).toContain('Local edit');
+    });
+
+    it('drops an invalid backup row without throwing', () => {
+      const current = makeSettings({ bookshelves: named('default', 'Local edit', 1000) });
+      const backup = sanitizeSettingsForBackup(
+        makeSettings({
+          bookshelves: shelfState(CUSTOM_ID, { id: CUSTOM_ID, name: 'Broken' }, 2000),
+        }),
+      );
+      const merged = mergeRestoredSettings(current, backup);
+      expect(Object.keys(merged.bookshelves!.rows)).toEqual(['default']);
+      expect(shelfNames(merged)).toContain('Local edit');
+    });
   });
 });

@@ -73,7 +73,7 @@ const ImportMenuPopup: React.FC<ImportMenuPopupProps> = ({ anchor, onClose, ...m
         style={{ left: position?.left ?? 0, top: position?.top ?? 0 }}
       >
         <ImportMenu
-          menuClassName='no-triangle !mt-0'
+          menuClassName='no-triangle mt-0!'
           setIsDropdownOpen={(open) => !open && onClose()}
           {...menuProps}
         />

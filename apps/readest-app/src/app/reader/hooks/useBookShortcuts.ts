@@ -5,11 +5,19 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useCommandPalette } from '@/components/command-palette';
 import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
-import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
+import { useEnv } from '@/context/EnvContext';
+import { saveViewSettings } from '@/helpers/settings';
+import {
+  DEFAULT_BOOK_FONT,
+  FONT_SIZE_STEP,
+  MAX_FONT_SIZE,
+  MAX_ZOOM_LEVEL,
+  MIN_FONT_SIZE,
+  MIN_ZOOM_LEVEL,
+  ZOOM_STEP,
+} from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
@@ -25,13 +33,15 @@ interface UseBookShortcutsProps {
 }
 
 const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) => {
-  const { getView, getViewState, getViewSettings, setViewSettings } = useReaderStore();
-  const { toggleSideBar, setSideBarBookKey } = useSidebarStore();
-  const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
+  const { getView, getViewState, getViewSettings, setViewSettings, setHoveredBookKey } =
+    useReaderStore();
+  const { toggleSideBar, setSideBarBookKey, setSideBarVisible, setSearchBarVisible } =
+    useSidebarStore();
+  const { settings, setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
+  const { envConfig } = useEnv();
+  const { getBookData, getConfig, setConfig } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
-  const { open: openCommandPalette } = useCommandPalette();
   const lastParagraphToggleRef = useRef(0);
   const viewSettings = getViewSettings(sideBarBookKey ?? '');
   const fontSize = viewSettings?.defaultFontSize ?? 16;
@@ -71,6 +81,37 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const switchSideBar = () => {
     if (sideBarBookKey) setSideBarBookKey(getNextBookKey(sideBarBookKey));
+  };
+
+  const openTableOfContents = (event?: KeyboardEvent | MessageEvent) => {
+    const eventBookKey =
+      event instanceof MessageEvent && typeof event.data?.bookKey === 'string'
+        ? event.data.bookKey
+        : null;
+    const bookKey = eventBookKey || sideBarBookKey;
+    if (!bookKey) return false;
+    const config = getConfig(bookKey);
+    const {
+      isSideBarPinned,
+      isSideBarVisible,
+      sideBarBookKey: visibleBookKey,
+    } = useSidebarStore.getState();
+    const isCurrentTableOfContents =
+      isSideBarVisible && visibleBookKey === bookKey && config?.viewSettings?.sideBarTab === 'toc';
+    if (isCurrentTableOfContents) {
+      if (!isSideBarPinned) setSideBarVisible(false);
+      return true;
+    }
+    if (config?.viewSettings) {
+      setConfig(bookKey, {
+        viewSettings: { ...config.viewSettings, sideBarTab: 'toc' },
+      });
+    }
+    setSideBarBookKey(bookKey);
+    setSearchBarVisible(false);
+    setHoveredBookKey('');
+    setSideBarVisible(true);
+    return true;
   };
 
   // Standard desktop selection shortcuts (#4728). After a selection the reader
@@ -134,11 +175,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch(action === 'next' ? 'paragraph-next' : 'paragraph-prev', {
         bookKey: sideBarBookKey,
       });
-      return;
+      return true;
     }
-    if (moveReadingRuler('up')) return;
-    if (view?.renderer.scrolled && event instanceof MessageEvent) return;
+    if (moveReadingRuler('up')) return true;
+    if (view?.renderer.scrolled && event instanceof MessageEvent) return false;
     viewPagination(view, viewSettings, 'up', 'pan', distance);
+    return true;
   };
 
   const goDown = (event?: KeyboardEvent | MessageEvent) => {
@@ -150,11 +192,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch(action === 'prev' ? 'paragraph-prev' : 'paragraph-next', {
         bookKey: sideBarBookKey,
       });
-      return;
+      return true;
     }
-    if (moveReadingRuler('down')) return;
-    if (view?.renderer.scrolled && event instanceof MessageEvent) return;
+    if (moveReadingRuler('down')) return true;
+    if (view?.renderer.scrolled && event instanceof MessageEvent) return false;
     viewPagination(view, viewSettings, 'down', 'pan', distance);
+    return true;
   };
 
   const goPrevSection = () => {
@@ -228,23 +271,20 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     window.location.reload();
   };
 
-  const toggleFullscreen = async () => {
-    if (isTauriAppPlatform()) {
-      await tauriHandleToggleFullScreen();
-    }
+  const toggleFullscreen = () => {
+    if (!isTauriAppPlatform()) return false;
+    return tauriHandleToggleFullScreen().then(() => true);
   };
 
-  const closeWindow = async () => {
-    if (isTauriAppPlatform()) {
-      await tauriHandleClose();
-    }
+  const closeWindow = () => {
+    if (!isTauriAppPlatform()) return false;
+    return tauriHandleClose().then(() => true);
   };
 
-  const quitApp = async () => {
+  const quitApp = () => {
     // on web platform use browser's default shortcut to close the tab
-    if (isTauriAppPlatform()) {
-      await tauriQuitApp();
-    }
+    if (!isTauriAppPlatform()) return false;
+    return tauriQuitApp().then(() => true);
   };
 
   const showSearchBar = () => {
@@ -265,9 +305,25 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     }
   };
 
+  // Reflowable books scale by text, not by page (issue #5694). The new size is
+  // saved with skipGlobal so zooming one book never resizes the whole library.
+  const applyFontSize = (fontSize: number) => {
+    const viewSettings = sideBarBookKey ? getViewSettings(sideBarBookKey) : null;
+    if (!sideBarBookKey || !viewSettings) return;
+    const clamped = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.round(fontSize)));
+    if (clamped === viewSettings.defaultFontSize) return;
+    saveViewSettings(envConfig, sideBarBookKey, 'defaultFontSize', clamped, true);
+  };
+
+  const isFixedLayout = () => !!getBookData(sideBarBookKey ?? '')?.isFixedLayout;
+
   const zoomInFactor = (factor = 1.0) => {
     if (!sideBarBookKey) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
+    if (!isFixedLayout()) {
+      applyFontSize(viewSettings.defaultFontSize + FONT_SIZE_STEP * factor);
+      return;
+    }
     const zoomLevel = viewSettings!.zoomLevel + ZOOM_STEP * factor;
     applyZoomLevel(Math.min(zoomLevel, MAX_ZOOM_LEVEL));
   };
@@ -275,6 +331,10 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const zoomOutFactor = (factor = 1.0) => {
     if (!sideBarBookKey) return;
     const viewSettings = getViewSettings(sideBarBookKey)!;
+    if (!isFixedLayout()) {
+      applyFontSize(viewSettings.defaultFontSize - FONT_SIZE_STEP * factor);
+      return;
+    }
     const zoomLevel = viewSettings!.zoomLevel - ZOOM_STEP * factor;
     applyZoomLevel(Math.max(zoomLevel, MIN_ZOOM_LEVEL));
   };
@@ -299,16 +359,23 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const resetZoom = () => {
     if (!sideBarBookKey) return;
+    if (!isFixedLayout()) {
+      applyFontSize(
+        settings.globalViewSettings?.defaultFontSize ?? DEFAULT_BOOK_FONT.defaultFontSize,
+      );
+      return;
+    }
     applyZoomLevel(100);
   };
 
   const toggleToolbar = () => {
-    if (!sideBarBookKey) return;
+    if (!sideBarBookKey) return false;
     // Don't intercept Enter when a button is focused (let native click fire)
     const active = document.activeElement;
-    if (active && active.tagName === 'BUTTON') return;
+    if (active && active.tagName === 'BUTTON') return false;
     const { hoveredBookKey, setHoveredBookKey } = useReaderStore.getState();
     setHoveredBookKey(hoveredBookKey === sideBarBookKey ? '' : sideBarBookKey);
+    return true;
   };
 
   const toggleTTS = () => {
@@ -409,6 +476,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onAdjustTextSelection: adjustTextSelection,
       onSwitchSideBar: switchSideBar,
       onToggleSideBar: toggleSideBar,
+      onOpenTableOfContents: openTableOfContents,
       onToggleNotebook: toggleNotebook,
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
@@ -451,8 +519,6 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onZoomIn: zoomIn,
       onZoomOut: zoomOut,
       onResetZoom: resetZoom,
-      onOpenCommandPalette: openCommandPalette,
-      onOpenShortcutsHelp: () => setShortcutsDialogVisible(true),
     },
     [sideBarBookKey, bookKeys],
   );

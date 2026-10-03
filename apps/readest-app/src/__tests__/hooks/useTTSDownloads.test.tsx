@@ -63,6 +63,82 @@ describe('useTTSDownloads', () => {
     useTTSDownloadStore.setState({ items: {} });
   });
 
+  test('awaits asynchronous PDF chapter destinations and skips rejected links', async () => {
+    const controller = makeController(() => new Map());
+    Object.assign(controller.view, {
+      book: { sections: [{}, {}, {}] },
+      resolveNavigation: async (href: string) => {
+        const index = JSON.parse(href) as number;
+        return { index };
+      },
+    });
+    mocks.getBookData.mockReturnValue({
+      bookDoc: {
+        toc: [
+          { label: 'First', href: '0' },
+          { label: 'Broken', href: '' },
+          { label: 'Last', href: '2' },
+        ],
+      },
+    });
+    const getController = () => controller;
+    const { result } = renderHook(() => useTTSDownloads('bookhash', getController, false));
+
+    await waitFor(() =>
+      expect(result.current.chapters.map((c) => [c.label, c.startSection, c.endSection])).toEqual([
+        ['First', 0, 2],
+        ['Last', 2, 3],
+      ]),
+    );
+  });
+
+  test('falls back to section rows when every asynchronous destination fails', async () => {
+    const controller = makeController(() => new Map());
+    Object.assign(controller.view, {
+      resolveNavigation: async () => {
+        throw new Error('Invalid destination');
+      },
+    });
+    mocks.getBookData.mockReturnValue({ bookDoc: { toc: [{ label: 'Broken', href: '' }] } });
+    const { result } = renderHook(() => useTTSDownloads('bookhash', () => controller, false));
+    await waitFor(() =>
+      expect(result.current.chapters[0]).toMatchObject({
+        key: 'section-0',
+        startSection: 0,
+        endSection: 1,
+      }),
+    );
+    await act(async () => {});
+  });
+
+  test('does not publish chapter destinations from a previous book', async () => {
+    const oldController = makeController(() => new Map());
+    const newController = makeController(() => new Map());
+    let finishOld: (value: { index: number }) => void = () => {};
+    Object.assign(oldController.view, {
+      resolveNavigation: () =>
+        new Promise<{ index: number }>((resolve) => {
+          finishOld = resolve;
+        }),
+    });
+    Object.assign(newController.view, { resolveNavigation: async () => ({ index: 0 }) });
+    mocks.getBookData.mockImplementation((key: string) => ({
+      bookDoc: { toc: [{ label: key, href: '0' }] },
+    }));
+    const { result, rerender } = renderHook(
+      ({ key, controller }) => useTTSDownloads(key, () => controller, false),
+      { initialProps: { key: 'old', controller: oldController } },
+    );
+    rerender({ key: 'new', controller: newController });
+    await waitFor(() => expect(result.current.chapters[0]?.label).toBe('new'));
+
+    await act(async () => {
+      finishOld({ index: 0 });
+    });
+
+    expect(result.current.chapters[0]?.label).toBe('new');
+  });
+
   test('uses the stable book hash for persisted rows and every manager operation', async () => {
     const controller = makeController(() => new Map());
     const getController = () => controller;
@@ -85,6 +161,7 @@ describe('useTTSDownloads', () => {
       expect(mocks.attachController).toHaveBeenCalledWith('bookhash', getController),
     );
     expect(result.current.items).toHaveLength(1);
+    await waitFor(() => expect(result.current.chapters).toHaveLength(1));
 
     act(() => result.current.downloadChapter(result.current.chapters[0]!));
     expect(mocks.queueChapter).toHaveBeenCalledWith('bookhash', result.current.chapters[0]);
@@ -116,6 +193,7 @@ describe('useTTSDownloads', () => {
 
     const { result } = renderHook(() => useTTSDownloads('bookhash', getController, true));
     await waitFor(() => expect(controller.getSectionCacheStatuses).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.chapters).toHaveLength(1));
     expect(result.current.statusOf(result.current.chapters[0]!)).toBe('none');
 
     statuses = new Map([[0, { total: 1, recorded: 1, packed: true, pinned: true, active: false }]]);

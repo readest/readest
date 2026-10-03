@@ -16,7 +16,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => {
     this['once'] = mockOnce;
   }) as unknown as { getByLabel: ReturnType<typeof vi.fn> };
   ctor.getByLabel = vi.fn();
-  return { WebviewWindow: ctor };
+  return { WebviewWindow: ctor, getAllWebviewWindows: vi.fn().mockResolvedValue([]) };
 });
 
 vi.mock('@/services/environment', () => ({
@@ -29,7 +29,12 @@ vi.mock('@/services/constants', () => ({
   BOOK_IDS_SEPARATOR: '+',
 }));
 
+vi.mock('@tauri-apps/plugin-os', () => ({
+  version: vi.fn(),
+}));
+
 import { redirect } from 'next/navigation';
+import { version as osVersion } from '@tauri-apps/plugin-os';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { isPWA, isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
@@ -58,6 +63,7 @@ function mockRouter() {
     forward: vi.fn(),
     refresh: vi.fn(),
     prefetch: vi.fn(),
+    bfcacheId: 'test-bfcache-id',
   };
 }
 
@@ -78,6 +84,9 @@ beforeEach(() => {
     label: 'main',
     close: vi.fn(),
   } as unknown as ReturnType<typeof getCurrentWindow>);
+
+  // Reset OS version default (Windows 11 build)
+  vi.mocked(osVersion).mockReturnValue('10.0.22631');
 
   // Reset window.location
   Object.defineProperty(window, 'location', {
@@ -312,10 +321,10 @@ describe('navigateToUpdatePassword', () => {
   });
 });
 
-describe('showReaderWindow', () => {
-  test('creates a new WebviewWindow with correct URL', () => {
+describe('showReaderWindow', async () => {
+  test('creates a new WebviewWindow with correct URL', async () => {
     const appService = makeAppService();
-    showReaderWindow(appService as never, ['book1', 'book2']);
+    await showReaderWindow(appService as never, ['book1', 'book2']);
 
     expect(WebviewWindow).toHaveBeenCalled();
     const constructorCall = vi.mocked(WebviewWindow).mock.calls[0]!;
@@ -324,10 +333,10 @@ describe('showReaderWindow', () => {
     expect(url).toContain('ids=book1%2Bbook2');
   });
 
-  test('preserves the exact CFI and transient highlight in the reader window URL', () => {
+  test('preserves the exact CFI and transient highlight in the reader window URL', async () => {
     const appService = makeAppService();
     const cfi = 'epubcfi(/6/2!/4/2:1)';
-    showReaderWindow(
+    await showReaderWindow(
       appService as never,
       ['book1'],
       `cfi=${encodeURIComponent(cfi)}&highlight=search`,
@@ -340,9 +349,9 @@ describe('showReaderWindow', () => {
     expect(params.get('highlight')).toBe('search');
   });
 
-  test('uses macOS-specific window options', () => {
+  test('uses macOS-specific window options', async () => {
     const appService = makeAppService(true);
-    showReaderWindow(appService as never, ['book1']);
+    await showReaderWindow(appService as never, ['book1']);
 
     const constructorCall = vi.mocked(WebviewWindow).mock.calls[0]!;
     const options = constructorCall[1]!;
@@ -353,9 +362,9 @@ describe('showReaderWindow', () => {
     expect(options.titleBarStyle).toBe('overlay');
   });
 
-  test('uses non-macOS window options', () => {
+  test('uses non-macOS window options', async () => {
     const appService = makeAppService(false);
-    showReaderWindow(appService as never, ['book1']);
+    await showReaderWindow(appService as never, ['book1']);
 
     const constructorCall = vi.mocked(WebviewWindow).mock.calls[0]!;
     const options = constructorCall[1]!;
@@ -364,12 +373,35 @@ describe('showReaderWindow', () => {
     expect(options.transparent).toBe(true);
     expect(options.shadow).toBe(true);
   });
+
+  test('drops the shadow on Windows 10, whose border is asymmetric', async () => {
+    const appService = makeAppService(false);
+    appService['isWindowsApp'] = true;
+    vi.mocked(osVersion).mockReturnValue('10.0.19045');
+
+    await showReaderWindow(appService as never, ['book1']);
+
+    expect(vi.mocked(WebviewWindow).mock.calls[0]![1]!.shadow).toBe(false);
+  });
+
+  test('keeps the shadow on Windows 11 and an unparseable build', async () => {
+    const appService = makeAppService(false);
+    appService['isWindowsApp'] = true;
+
+    vi.mocked(osVersion).mockReturnValue('10.0.22631');
+    await showReaderWindow(appService as never, ['book1']);
+    expect(vi.mocked(WebviewWindow).mock.calls.at(-1)![1]!.shadow).toBe(true);
+
+    vi.mocked(osVersion).mockReturnValue('10.0');
+    await showReaderWindow(appService as never, ['book1']);
+    expect(vi.mocked(WebviewWindow).mock.calls.at(-1)![1]!.shadow).toBe(true);
+  });
 });
 
-describe('showLibraryWindow', () => {
-  test('creates a new WebviewWindow with file params', () => {
+describe('showLibraryWindow', async () => {
+  test('creates a new WebviewWindow with file params', async () => {
     const appService = makeAppService();
-    showLibraryWindow(appService as never, ['file1.epub', 'file2.epub']);
+    await showLibraryWindow(appService as never, ['file1.epub', 'file2.epub']);
 
     expect(WebviewWindow).toHaveBeenCalled();
     const constructorCall = vi.mocked(WebviewWindow).mock.calls[0]!;

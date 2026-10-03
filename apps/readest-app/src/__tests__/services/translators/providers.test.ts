@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
+import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
 
 // Mock environment module
 vi.mock('@/services/environment', () => ({
@@ -34,6 +35,18 @@ vi.mock('@/utils/supabase', () => ({
   },
 }));
 
+vi.mock('@/utils/simplecc', () => ({
+  initSimpleCC: vi.fn(async () => {}),
+  // Stand-in for the real OpenCC conversion; the assertions only need to see
+  // that the Simplified reply was routed through it with the right variant.
+  runSimpleCC: vi.fn((text: string) => text.replace(/只/g, '隻').replace(/过/g, '過')),
+}));
+
+vi.mock('@/utils/access', () => ({
+  getSubscriptionPlan: vi.fn(() => 'free'),
+  getTranslationQuota: vi.fn(() => 1000),
+}));
+
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
@@ -43,6 +56,13 @@ vi.stubGlobal('fetch', mockFetch);
 describe('googleProvider', () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    vi.mocked(tauriFetch).mockReset();
+    // Other suites flip the platform mock to Tauri; google must behave the same
+    // either way, so start each test from the default.
+    vi.mocked(isTauriAppPlatform).mockReturnValue(false);
+    // The provider keeps a module-level concurrency counter, so each test needs
+    // a fresh module.
+    vi.resetModules();
   });
 
   afterEach(() => {
@@ -103,6 +123,65 @@ describe('googleProvider', () => {
     expect(result).toEqual(['Hello']);
   });
 
+  it('caps concurrent requests instead of fanning out over the whole page', async () => {
+    // The endpoint is unofficial and Google throttles it per client bucket. An
+    // unbounded fan-out over a page of paragraphs is what earns the 429 page
+    // ("your computer or network may be sending automated queries"), and the
+    // block outlives the burst by many minutes.
+    let inFlight = 0;
+    let peakInFlight = 0;
+    mockFetch.mockImplementation(async () => {
+      inFlight++;
+      peakInFlight = Math.max(peakInFlight, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight--;
+      return { ok: true, status: 200, json: async () => [[['translated', 'original']]] };
+    });
+
+    const { googleProvider } = await import('@/services/translators/providers/google');
+    const lines = Array.from({ length: 24 }, (_, index) => `line ${index}`);
+    const result = await googleProvider.translate(lines, 'en', 'zh-CN');
+
+    expect(result).toHaveLength(24);
+    expect(result.every((line) => line === 'translated')).toBe(true);
+    expect(peakInFlight).toBeGreaterThan(1);
+    expect(peakInFlight).toBeLessThanOrEqual(4);
+    // Throttling must not drop work.
+    expect(mockFetch).toHaveBeenCalledTimes(24);
+  });
+
+  it('goes through the webview stack even on Tauri, never the Rust HTTP plugin', async () => {
+    // Google refuses the Tauri HTTP plugin's requests: measured on an Android
+    // device, window.fetch answered 200 five times in a row while tauriFetch
+    // answered 429 for the same URL in the same run, and the block on the Rust
+    // client outlived a restart. The endpoint is CORS-open and already in the
+    // app's connect-src CSP, so the webview stack works on every platform.
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [[['你好', 'Hello']]],
+    });
+
+    const { googleProvider } = await import('@/services/translators/providers/google');
+    const result = await googleProvider.translate(['Hello'], 'en', 'zh-CN');
+
+    expect(result).toEqual(['你好']);
+    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(vi.mocked(tauriFetch)).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a rate-limit rather than echoing the source text back', async () => {
+    // A 429 means Google decided the traffic looks automated. Returning the
+    // untranslated line would render as a silently untranslated paragraph.
+    mockFetch.mockResolvedValue({ ok: false, status: 429 });
+
+    const { googleProvider } = await import('@/services/translators/providers/google');
+    await expect(googleProvider.translate(['Hello'], 'en', 'zh-CN')).rejects.toThrow(
+      'Translation failed with status 429',
+    );
+  });
+
   it('has correct provider metadata', async () => {
     const { googleProvider } = await import('@/services/translators/providers/google');
     expect(googleProvider.name).toBe('google');
@@ -149,6 +228,10 @@ describe('yandexProvider', () => {
   beforeEach(() => {
     mockTauriFetch.mockReset();
     mockFetch.mockReset();
+    // The simplecc mocks are module-level, so they survive vi.resetModules()
+    // and would carry call counts across tests.
+    vi.mocked(initSimpleCC).mockClear();
+    vi.mocked(runSimpleCC).mockClear();
     // The provider calls Yandex directly on Tauri and via the same-origin
     // proxy on web — default to the Tauri path in these tests
     vi.mocked(isTauriAppPlatform).mockReturnValue(true);
@@ -158,6 +241,7 @@ describe('yandexProvider', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('returns empty array for empty input', async () => {
@@ -165,6 +249,102 @@ describe('yandexProvider', () => {
     const result = await yandexProvider.translate([], 'en', 'fr');
     expect(result).toEqual([]);
     expect(mockTauriFetch).not.toHaveBeenCalled();
+  });
+
+  it('does not abort completed native requests when the caller cancels later', async () => {
+    mockYandexFlow(() => ({ code: 200, text: ['Bonjour'] }));
+    const caller = new AbortController();
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await yandexProvider.translate(['Hello'], 'en', 'fr', null, false, caller.signal);
+    caller.abort();
+    expect(mockTauriFetch.mock.calls.map(([, init]) => init?.signal?.aborted)).toEqual([
+      false,
+      false,
+    ]);
+  });
+
+  it('clears native deadlines after session and translation bodies finish', async () => {
+    vi.useFakeTimers();
+    // Model the platform timeout with a controllable clock.
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((delay) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), delay);
+      return controller.signal;
+    });
+    mockYandexFlow(() => ({ code: 200, text: ['Bonjour'] }));
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await yandexProvider.translate(['Hello'], 'en', 'fr');
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(mockTauriFetch.mock.calls.map(([, init]) => init?.signal?.aborted)).toEqual([
+      false,
+      false,
+    ]);
+  });
+
+  it('consumes an unsuccessful session response before disposing its deadline', async () => {
+    const response = new Response('Service unavailable', { status: 503 });
+    mockTauriFetch.mockResolvedValueOnce(response);
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).rejects.toThrow(
+      'yandex session request failed with status 503',
+    );
+    expect(response.bodyUsed).toBe(true);
+  });
+
+  it.each([
+    'session',
+    'translation',
+  ])('cleans up cancellation after a failed %s request', async (stage) => {
+    vi.useFakeTimers();
+    const caller = new AbortController();
+    mockTauriFetch.mockImplementation(async (url) => {
+      if (stage === 'translation' && String(url).includes('/sessions')) {
+        return sessionResponse() as unknown as Response;
+      }
+      throw new Error('Connection interrupted');
+    });
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await expect(
+      yandexProvider.translate(['Hello'], 'en', 'fr', null, false, caller.signal),
+    ).rejects.toThrow('Connection interrupted');
+    expect(vi.getTimerCount()).toBe(0);
+    caller.abort();
+    expect(mockTauriFetch.mock.calls.every(([, init]) => !init?.signal?.aborted)).toBe(true);
+  });
+
+  it.each([
+    'caller',
+    'timeout',
+  ])('keeps %s cancellation active while reading the body', async (cause) => {
+    vi.useFakeTimers();
+    const caller = new AbortController();
+    let bodyStarted!: () => void;
+    const readingBody = new Promise<void>((resolve) => {
+      bodyStarted = resolve;
+    });
+    mockTauriFetch.mockImplementation(async (url, init) => {
+      if (String(url).includes('/sessions')) return sessionResponse() as unknown as Response;
+      return {
+        ok: true,
+        status: 200,
+        json: () =>
+          new Promise((_resolve, reject) => {
+            init!.signal!.addEventListener('abort', () => reject(init!.signal!.reason), {
+              once: true,
+            });
+            bodyStarted();
+          }),
+      } as unknown as Response;
+    });
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const result = yandexProvider.translate(['Hello'], 'en', 'fr', null, false, caller.signal);
+    const rejection = expect(result).rejects.toThrow();
+    await readingBody;
+    if (cause === 'caller') caller.abort();
+    else await vi.advanceTimersByTimeAsync(15_000);
+    await rejection;
+    expect(translateCalls()[0]![1]!.signal!.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('translates without a Readest token via the direct yandex API', async () => {
@@ -261,7 +441,7 @@ describe('yandexProvider', () => {
   });
 
   it('throws when the session request fails', async () => {
-    mockTauriFetch.mockResolvedValue({ ok: false, status: 403 } as unknown as Response);
+    mockTauriFetch.mockResolvedValue(new Response('Forbidden', { status: 403 }));
 
     const { yandexProvider } = await import('@/services/translators/providers/yandex');
     await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).rejects.toThrow(
@@ -484,6 +664,32 @@ describe('yandexProvider', () => {
     expect(mockTauriFetch).not.toHaveBeenCalled();
   });
 
+  it('converts the reply to Traditional when the target is zh-Hant', async () => {
+    // Yandex only speaks `zh` (Simplified) -- `normalizeLang` collapses every
+    // zh variant onto it -- so a zh-TW reader silently got Simplified back.
+    // Convert the Simplified reply locally instead of mislabelling it.
+    mockYandexFlow(() => ({ code: 200, lang: 'en-zh', text: ['那只敏捷的狐狸跳过了狗。'] }));
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const result = await yandexProvider.translate(['The quick fox.'], 'en', 'zh-TW');
+
+    expect(initSimpleCC).toHaveBeenCalled();
+    expect(vi.mocked(runSimpleCC).mock.calls[0]![1]).toBe('s2t');
+    expect(result).toEqual(['那隻敏捷的狐狸跳過了狗。']);
+    // The request itself still goes out as plain `zh`.
+    expect(String(translateCalls()[0]![0])).toContain('target_lang=zh');
+  });
+
+  it('leaves a Simplified target untouched', async () => {
+    mockYandexFlow(() => ({ code: 200, lang: 'en-zh', text: ['那只敏捷的狐狸跳过了狗。'] }));
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    const result = await yandexProvider.translate(['The quick fox.'], 'en', 'zh-CN');
+
+    expect(runSimpleCC).not.toHaveBeenCalled();
+    expect(result).toEqual(['那只敏捷的狐狸跳过了狗。']);
+  });
+
   it('limits concurrent chunk requests', async () => {
     let active = 0;
     let peak = 0;
@@ -548,6 +754,83 @@ describe('parseBingAuthParams', () => {
     expect(() => parseBingAuthParams('<html>nothing here</html>', 0)).toThrow(
       'could not parse the translator page',
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DeepL Provider
+// ---------------------------------------------------------------------------
+describe('deeplProvider', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    vi.mocked(isTauriAppPlatform).mockReturnValue(false);
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const ok = (text: string) => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ translations: [{ text }] }),
+  });
+
+  const sentBody = () => JSON.parse(String(mockFetch.mock.calls[0]![1].body));
+
+  it('sends the script subtag in canonical case, not upper-cased', async () => {
+    // The service 500s on `ZH-HANT` and on `ZH-TW`, but answers 200 with real
+    // Traditional Chinese for `ZH-Hant` — verified against the live endpoint.
+    // `normalizeToShortLang` already yields the canonical `zh-Hant`, so only the
+    // primary subtag may be upper-cased; upper-casing the whole code is what
+    // turned every zh-TW/zh-HK/zh-MO translation into a hard failure.
+    mockFetch.mockResolvedValue(ok('那隻敏捷的棕色狐狸。'));
+
+    const { deeplProvider } = await import('@/services/translators/providers/deepl');
+    await deeplProvider.translate(['The quick brown fox.'], 'en', 'zh-TW', 'user-token');
+
+    expect(sentBody().target_lang).toBe('ZH-Hant');
+  });
+
+  it('keeps the simplified target working', async () => {
+    mockFetch.mockResolvedValue(ok('那只敏捷的棕色狐狸。'));
+
+    const { deeplProvider } = await import('@/services/translators/providers/deepl');
+    await deeplProvider.translate(['The quick brown fox.'], 'en', 'zh-CN', 'user-token');
+
+    expect(sentBody().target_lang).toBe('ZH-Hans');
+  });
+
+  it('applies the same casing to a Chinese source language', async () => {
+    // `source_lang: ZH-HANT` 500s just like the target does.
+    mockFetch.mockResolvedValue(ok('The quick brown fox.'));
+
+    const { deeplProvider } = await import('@/services/translators/providers/deepl');
+    await deeplProvider.translate(['那隻敏捷的棕色狐狸。'], 'zh-TW', 'en', 'user-token');
+
+    expect(sentBody().source_lang).toBe('ZH-Hant');
+    expect(sentBody().target_lang).toBe('EN');
+  });
+
+  it('still upper-cases languages that have no script subtag', async () => {
+    mockFetch.mockResolvedValue(ok('Der schnelle braune Fuchs.'));
+
+    const { deeplProvider } = await import('@/services/translators/providers/deepl');
+    await deeplProvider.translate(['The quick brown fox.'], 'en', 'de', 'user-token');
+
+    const body = sentBody();
+    expect(body.source_lang).toBe('EN');
+    expect(body.target_lang).toBe('DE');
+  });
+
+  it('omits source_lang when the source is AUTO', async () => {
+    mockFetch.mockResolvedValue(ok('那只敏捷的棕色狐狸。'));
+
+    const { deeplProvider } = await import('@/services/translators/providers/deepl');
+    await deeplProvider.translate(['The quick brown fox.'], 'AUTO', 'zh-CN', 'user-token');
+
+    expect(sentBody()).not.toHaveProperty('source_lang');
   });
 });
 
@@ -706,6 +989,42 @@ describe('azureProvider', () => {
     const translateCalls = mockFetch.mock.calls.filter((call) =>
       String(call[0]).includes('endpoint=translate'),
     );
+    expect(translateCalls).toHaveLength(24);
+  });
+
+  it('fans out wider than the proxy cap on Tauri, where no proxy is in the path', async () => {
+    // The cap of 3 exists to stay inside the web proxy's per-user budget. On
+    // Tauri the requests go straight to bing.com with no proxy in between, and
+    // bing itself does not rate-limit this fan-out (verified against the live
+    // endpoint: 12 concurrent translate calls all answered 200). Holding the
+    // native path at 3 just serialises a page of paragraphs behind an endpoint
+    // that takes seconds per request.
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    let inFlight = 0;
+    let peakInFlight = 0;
+    vi.mocked(tauriFetch).mockImplementation(async (url: string | Request | URL) => {
+      if (String(url).includes('/translator')) {
+        return { ok: true, status: 200, text: async () => BING_PAGE } as Response;
+      }
+      inFlight++;
+      peakInFlight = Math.max(peakInFlight, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight--;
+      return translationBody('translated') as unknown as Response;
+    });
+
+    const { azureProvider } = await import('@/services/translators/providers/azure');
+    const lines = Array.from({ length: 24 }, (_, index) => `line ${index}`);
+    const result = await azureProvider.translate(lines, 'en', 'fr');
+
+    expect(result).toHaveLength(24);
+    expect(result.every((line) => line === 'translated')).toBe(true);
+    expect(peakInFlight).toBeGreaterThan(3);
+    expect(peakInFlight).toBeLessThanOrEqual(10);
+    // Throttling must still not drop work.
+    const translateCalls = vi
+      .mocked(tauriFetch)
+      .mock.calls.filter((call) => String(call[0]).includes('ttranslatev3'));
     expect(translateCalls).toHaveLength(24);
   });
 
@@ -981,31 +1300,31 @@ describe('provider registry availability handling', () => {
     const yandex = getTranslator('yandex')!;
 
     vi.mocked(isTauriAppPlatform).mockReturnValue(false);
-    expect(isTranslatorAvailable(yandex, false)).toBe(false);
-    expect(isTranslatorAvailable(yandex, true)).toBe(true);
+    expect(isTranslatorAvailable(yandex, false, false)).toBe(false);
+    expect(isTranslatorAvailable(yandex, true, false)).toBe(true);
 
     vi.mocked(isTauriAppPlatform).mockReturnValue(true);
-    expect(isTranslatorAvailable(yandex, false)).toBe(true);
+    expect(isTranslatorAvailable(yandex, false, false)).toBe(true);
   });
 
   it('isTranslatorAvailable returns false for disabled providers', async () => {
     const { isTranslatorAvailable } = await import('@/services/translators/providers');
     const disabled = { name: 'x', label: 'X', disabled: true, translate: async () => [] };
-    expect(isTranslatorAvailable(disabled, true)).toBe(false);
-    expect(isTranslatorAvailable(disabled, false)).toBe(false);
+    expect(isTranslatorAvailable(disabled, true, true)).toBe(false);
+    expect(isTranslatorAvailable(disabled, false, false)).toBe(false);
   });
 
   it('isTranslatorAvailable returns false for authRequired without token', async () => {
     const { isTranslatorAvailable } = await import('@/services/translators/providers');
     const authed = { name: 'x', label: 'X', authRequired: true, translate: async () => [] };
-    expect(isTranslatorAvailable(authed, false)).toBe(false);
-    expect(isTranslatorAvailable(authed, true)).toBe(true);
+    expect(isTranslatorAvailable(authed, false, false)).toBe(false);
+    expect(isTranslatorAvailable(authed, true, false)).toBe(true);
   });
 
   it('isTranslatorAvailable returns false when quota is exceeded', async () => {
     const { isTranslatorAvailable } = await import('@/services/translators/providers');
     const exhausted = { name: 'x', label: 'X', quotaExceeded: true, translate: async () => [] };
-    expect(isTranslatorAvailable(exhausted, true)).toBe(false);
+    expect(isTranslatorAvailable(exhausted, true, false)).toBe(false);
   });
 
   it('getTranslatorDisplayLabel returns the plain label for healthy providers', async () => {
@@ -1013,7 +1332,7 @@ describe('provider registry availability handling', () => {
       '@/services/translators/providers'
     );
     const google = getTranslator('google')!;
-    expect(getTranslatorDisplayLabel(google, true, (s) => s)).toBe('Google Translate');
+    expect(getTranslatorDisplayLabel(google, true, false, (s) => s)).toBe('Google Translate');
   });
 });
 

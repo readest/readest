@@ -20,7 +20,7 @@ vi.mock('@/context/EnvContext', () => ({
 // ZoomControls reaches into the theme store and Tauri window APIs; stub it out.
 vi.mock('@/app/reader/components/ZoomControls', () => ({
   __esModule: true,
-  default: () => null,
+  default: () => <div data-testid='zoom-controls' />,
 }));
 
 afterEach(cleanup);
@@ -258,6 +258,65 @@ describe('ImageViewer', () => {
     });
   });
 
+  // #6154: the close/save/zoom buttons sit over the top-right corner of the
+  // artwork, where they can cover the image itself. They are chrome, so the
+  // tap that already clears the caption and the arrows clears them too.
+  describe('top-right controls', () => {
+    const zoomControls = (container: HTMLElement) =>
+      container.querySelector('[data-testid="zoom-controls"]');
+
+    it('toggles the controls when the image is tapped', () => {
+      const { container } = render(
+        <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+      );
+      const img = container.querySelector('img')!;
+      expect(zoomControls(container)).toBeTruthy();
+
+      fireEvent.click(img);
+      expect(zoomControls(container)).toBeNull();
+
+      fireEvent.click(img);
+      expect(zoomControls(container)).toBeTruthy();
+    });
+
+    // The zoom badge and the arrows hide themselves 2s after a zoom, so their
+    // state no longer matches the chrome's. A single tap must still hide
+    // everything rather than bring the auto-hidden pieces back.
+    it('hides every chrome element with one tap after the zoom badge timed out', () => {
+      vi.useFakeTimers();
+      try {
+        const { container } = render(
+          <ImageViewer
+            src='blob:test-image'
+            caption='A caption'
+            onClose={vi.fn()}
+            onNext={vi.fn()}
+            gridInsets={gridInsets}
+          />,
+        );
+        const img = container.querySelector('img')!;
+
+        act(() => {
+          fireEvent.doubleClick(img);
+        });
+        act(() => {
+          vi.advanceTimersByTime(2000);
+        });
+        expect(container.querySelector('[aria-label="Zoom level"]')).toBeNull();
+
+        act(() => {
+          fireEvent.click(img);
+        });
+        expect(zoomControls(container)).toBeNull();
+        expect(container.querySelector('.image-caption')).toBeNull();
+        expect(container.querySelector('[aria-label="Next Image"]')).toBeNull();
+        expect(container.querySelector('[aria-label="Zoom level"]')).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   // #5232: EPUBs often keep the caption or table description of an
   // illustration in the image's `alt` attribute, which was invisible once the
   // image was opened full screen.
@@ -354,5 +413,34 @@ describe('ImageViewer', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+// #6558: the viewer offers the same right-click menu as an image in the book.
+describe('ImageViewer image context menu', () => {
+  it('right-clicking the image opens Copy Image / Save Image', () => {
+    const { container, getAllByRole } = render(
+      <ImageViewer src='data:image/png;base64,AA==' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    act(() => {
+      container.querySelector('img')!.dispatchEvent(event);
+    });
+    expect(event.defaultPrevented).toBe(true);
+    expect(getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Copy Image',
+      'Save Image',
+    ]);
+  });
+
+  it('dismissing the menu keeps the viewer open', () => {
+    const onClose = vi.fn();
+    const { container, queryByRole } = render(
+      <ImageViewer src='data:image/png;base64,AA==' onClose={onClose} gridInsets={gridInsets} />,
+    );
+    fireEvent.contextMenu(container.querySelector('img')!);
+    fireEvent.click(document.querySelector('.overlay')!);
+    expect(queryByRole('menuitem')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

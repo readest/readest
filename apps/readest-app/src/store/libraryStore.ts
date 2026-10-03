@@ -3,6 +3,7 @@ import { Book, BookGroupType, ReadingStatus } from '@/types/book';
 import { EnvConfigType, isTauriAppPlatform } from '@/services/environment';
 import { BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { md5Fingerprint } from '@/utils/md5';
+import { isMainAppWindow } from '@/utils/window';
 
 interface LibraryState {
   library: Book[]; // might contain deleted books
@@ -11,6 +12,7 @@ interface LibraryState {
   syncProgress: number;
   checkOpenWithBooks: boolean;
   checkLastOpenBooks: boolean;
+  checkPendingLaunchLink: boolean;
   currentBookshelf: Book[];
   selectedBooks: Set<string>; // hashes for books, ids for groups
   groups: Record<string, string>;
@@ -26,6 +28,7 @@ interface LibraryState {
   getBookByHash: (hash: string) => Book | undefined;
   setCheckOpenWithBooks: (check: boolean) => void;
   setCheckLastOpenBooks: (check: boolean) => void;
+  setCheckPendingLaunchLink: (check: boolean) => void;
   setLibrary: (books: Book[]) => void;
   setBookCoverThumbnail: (hash: string, coverHash: string | null, url: string) => void;
   // The third parameter is required (no `?`) so a future caller cannot
@@ -75,6 +78,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   coverThumbnails: new Map(),
   checkOpenWithBooks: isTauriAppPlatform(),
   checkLastOpenBooks: isTauriAppPlatform(),
+  // Holds the Library blank while useOpenLaunchLinks checks for a pending
+  // widget-tap deep link, so it doesn't flash before the reader takes over.
+  // Only the launch window reads a cold-start link, so only it holds the gate.
+  checkPendingLaunchLink: isTauriAppPlatform() && isMainAppWindow(),
 
   setIsSyncing: (syncing: boolean) => set({ isSyncing: syncing }),
   setSyncProgress: (progress: number) => set({ syncProgress: progress }),
@@ -91,6 +98,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   setCheckOpenWithBooks: (check) => set({ checkOpenWithBooks: check }),
   setCheckLastOpenBooks: (check) => set({ checkLastOpenBooks: check }),
+  setCheckPendingLaunchLink: (check) => set({ checkPendingLaunchLink: check }),
   setLibrary: (books) => {
     const coverThumbnails = new Map(get().coverThumbnails);
     const liveCoverHashes = new Map(

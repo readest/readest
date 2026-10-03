@@ -5,7 +5,6 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
 import { useTTSDownloads } from '@/app/reader/hooks/useTTSDownloads';
-import { useBookProgress } from '@/store/readerProgressStore';
 import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import TTSMiniPlayer from './TTSMiniPlayer';
@@ -33,7 +32,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   });
 
   const downloads = useTTSDownloads(bookKey, tts.getController, showPlayerSheet);
-  const activeSectionIndex = useBookProgress(bookKey)?.index ?? null;
+  const activeSectionIndex = tts.ttsSectionIndex;
 
   const viewSettings = getViewSettings(bookKey);
   const isEink = viewSettings?.isEink ?? false;
@@ -106,6 +105,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
+          buffering={!tts.ttsClientsInited || tts.buffering}
           isEink={isEink}
           visible={miniPlayerVisible}
           hasTimeline={hasTimeline}
@@ -144,6 +144,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onSeek={tts.handleSeekTo}
           onSeekPreview={tts.handleSeekPreview}
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
+          supportsLyrics={tts.supportsLyrics}
+          buffering={tts.buffering}
+          onGetLyrics={tts.handleGetLyrics}
+          onGetActiveIndex={tts.handleGetLyricActiveIndex}
+          onGetLyricPage={tts.handleGetLyricPage}
+          onPlayFromLyric={tts.handlePlayFromLyric}
           downloads={downloads}
           activeSectionIndex={activeSectionIndex}
         />

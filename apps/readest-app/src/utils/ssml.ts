@@ -39,7 +39,14 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
     }
   }
   primaryLang = code6392to6391(primaryLang?.toLowerCase() || '') || primaryLang;
-  if (lang === 'en' && primaryLang && !isSameLang(lang, primaryLang)) {
+  // `en` is what we fall back to when nothing declared a language, and it is
+  // also what authoring tools stamp on their own: Word leaves `<body
+  // lang="EN-US">` on every converted EPUB. foliate reads the nearest ancestor
+  // with a lang, so that body beats the book's own `<html lang="vi">` and the
+  // whole book gets read by an English voice. Treat the regional variants the
+  // same way as bare `en` and let the book's declared language win.
+  const isDefaultEnglish = lang.split('-')[0] === 'en';
+  if (isDefaultEnglish && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
   const textWithoutLangTags = ssml.replace(/<lang[^>]*>.*?<\/lang>/gs, '');

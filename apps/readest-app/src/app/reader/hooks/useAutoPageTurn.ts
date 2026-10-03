@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Insets } from '@/types/misc';
 import { useReaderStore } from '@/store/readerStore';
 import { focusCaretWindowPos } from '@/utils/sel';
@@ -21,6 +21,8 @@ export const AUTO_TURN_CORNER_MAX_PX = 50;
 
 export type Corner = 'br' | 'tl';
 export type Point = { x: number; y: number };
+// The armed edge, for the on-screen mark; `turned` once the page has flipped.
+export type TurnHint = { corner: Corner; turned: boolean };
 
 // The subset of useTextSelector's return that drives the shared corner auto-turn,
 // passed to the range editors so their overlay handle drags turn the page too.
@@ -43,24 +45,55 @@ const cornerOf = (x: number, y: number, w: number, h: number): Corner | null => 
   return null;
 };
 
+// Which way a point that has left the page must turn to stay in view, in
+// area-local coordinates: past the trailing (right/bottom) edge goes forward,
+// past the leading (left/top) edge goes back. Shared by the drag machine and
+// the keyboard path so the two can't drift apart.
+const edgeBeyond = (x: number, y: number, w: number, h: number): 'next' | 'prev' | null => {
+  if (x > w || y > h) return 'next';
+  if (x < 0 || y < 0) return 'prev';
+  return null;
+};
+
 // Map a window-coordinate point to the corner of the reading area it sits in,
 // if any. Corners are measured against `area` (the visible text bounds in window
 // coordinates) so they land on the text, not the page margins or a sidebar.
-const cornerAt = (xWin: number, yWin: number, area: DOMRect | null): Corner | null => {
+//
+// `beyond` reads a point that has left the area as the edge it left by, the
+// rule turnForFocusBeyondPage already uses: dragging a selection off the end of
+// the page means turn. Pointer signals only — the caret keeps the strict test.
+//
+// `rtl` mirrors the horizontal axis first. In a right-to-left book (and in
+// vertical-rl, which viewSettings.rtl also covers) the columns run right to
+// left, so the page ENDS at its bottom-left: without the mirror, dragging
+// forward off the left edge asked for view.prev() and the page went backwards.
+const cornerAt = (
+  xWin: number,
+  yWin: number,
+  area: DOMRect | null,
+  beyond = false,
+  rtl = false,
+): Corner | null => {
   if (!area || area.width <= 0 || area.height <= 0) return null;
-  const x = xWin - area.left;
+  const local = xWin - area.left;
+  const x = rtl ? area.width - local : local;
   const y = yWin - area.top;
-  // Ignore a point outside the visible text (e.g. the selection caret jumping
-  // into the next, off-screen column while dragging at the edge).
-  if (x < 0 || x > area.width || y < 0 || y > area.height) return null;
+  if (x < 0 || x > area.width || y < 0 || y > area.height) {
+    // A pointer is always on screen, so an off-screen point is not one: it is a
+    // caret that has jumped into the next, off-screen column. The window bounds
+    // are real screen coordinates, so they are checked unmirrored.
+    if (!beyond || xWin < 0 || xWin > window.innerWidth) return null;
+    if (yWin < 0 || yWin > window.innerHeight) return null;
+    return edgeBeyond(x, y, area.width, area.height) === 'next' ? 'br' : 'tl';
+  }
   return cornerOf(x, y, area.width, area.height);
 };
 
-// The reading frame in window coordinates: the <foliate-view> element's rect
-// (a stable element, so it has a sensible page-sized width — unlike the visible
+// The text area in window coordinates: the <foliate-view> element's rect (a
+// stable element, so it has a sensible page-sized width — unlike the visible
 // text range, whose box spans the whole multi-column iframe), inset by the page
-// content margins so the corner zone lands on the text area, not the margin.
-// Falls back to the reading container (gridcell).
+// content margins so the corner zone lands on the text, not the margin. Falls
+// back to the reading container (gridcell).
 export const getReadingAreaRect = (
   bookKey: string,
   insets: Insets = ZERO_INSETS,
@@ -90,11 +123,7 @@ export const turnForFocusBeyondPage = (
   area: DOMRect | null,
 ): 'next' | 'prev' | null => {
   if (!area || area.width <= 0 || area.height <= 0) return null;
-  const x = point.x - area.left;
-  const y = point.y - area.top;
-  if (x > area.width || y > area.height) return 'next';
-  if (x < 0 || y < 0) return 'prev';
-  return null;
+  return edgeBeyond(point.x - area.left, point.y - area.top, area.width, area.height);
 };
 
 // The page to turn to so a keyboard-extended selection's focus stays visible, or
@@ -120,7 +149,7 @@ export const keyboardTurnDirection = (
 // the correct way). One turn per engagement — a signal must leave the corner and
 // return to turn another page.
 export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_INSETS) => {
-  const { getView } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
 
   const autoTurnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The corner an input signal is currently engaged in. Stays set after a turn
@@ -132,14 +161,17 @@ export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_IN
   // Callers inject it so the caret-or-pointer dual signal of native selection is
   // preserved while a point-only caller (editor/instant) reports its own point.
   const isInCornerRef = useRef<(corner: Corner) => boolean>(() => false);
+  const [turnHint, setTurnHint] = useState<TurnHint | null>(null);
   // Latest point fed through the point-based convenience entry.
   const lastPointRef = useRef<Point | null>(null);
   const afterTurnSubs = useRef<Set<(corner: Corner) => void>>(new Set());
 
   const readingAreaRect = (): DOMRect | null => getReadingAreaRect(bookKey, contentInsets);
 
-  const cornerAtPoint = (point: Point | null): Corner | null =>
-    point ? cornerAt(point.x, point.y, readingAreaRect()) : null;
+  const cornerAtPoint = (point: Point | null, beyond = false): Corner | null =>
+    point
+      ? cornerAt(point.x, point.y, readingAreaRect(), beyond, !!getViewSettings(bookKey)?.rtl)
+      : null;
 
   const clearTimer = () => {
     if (autoTurnTimer.current) {
@@ -155,6 +187,7 @@ export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_IN
       // Skip if a turn is already running or the signal left the corner.
       if (isAutoTurning.current || !isInCornerRef.current(corner)) return;
       isAutoTurning.current = true;
+      setTurnHint({ corner, turned: true });
       const view = getView(bookKey);
       // Logical next()/prev() so RTL books turn the correct way.
       const turning = corner === 'br' ? view?.next() : view?.prev();
@@ -175,10 +208,12 @@ export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_IN
     if (corner) {
       if (engagedCorner.current !== corner) {
         engagedCorner.current = corner;
+        setTurnHint({ corner, turned: false });
         armDwell(corner);
       }
     } else if (engagedCorner.current && !isInCorner(engagedCorner.current)) {
       engagedCorner.current = null;
+      setTurnHint(null);
       clearTimer();
     }
   };
@@ -188,13 +223,17 @@ export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_IN
   // check is "is the latest fed point still in the engaged corner".
   const noteAutoTurnPoint = (point: Point | null) => {
     lastPointRef.current = point;
-    noteCorner(cornerAtPoint(point), (corner) => cornerAtPoint(lastPointRef.current) === corner);
+    noteCorner(
+      cornerAtPoint(point, true),
+      (corner) => cornerAtPoint(lastPointRef.current, true) === corner,
+    );
   };
 
   // Disengage and drop any pending corner page-turn.
   const cancel = () => {
     engagedCorner.current = null;
     lastPointRef.current = null;
+    setTurnHint(null);
     clearTimer();
   };
 
@@ -215,6 +254,7 @@ export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_IN
 
   return {
     isAutoTurning,
+    turnHint,
     readingAreaRect,
     cornerAtPoint,
     noteCorner,

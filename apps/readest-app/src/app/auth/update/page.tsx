@@ -69,7 +69,7 @@ export default function UpdateEmailPage() {
                 placeholder={_('Your new email')}
                 required
                 disabled={loading}
-                className={`w-full rounded-md border bg-transparent px-4 py-2.5 focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${isDarkMode ? 'text-gray-300' : 'text-gray-400'}`}
+                className={`w-full rounded-md border bg-transparent px-4 py-2.5 focus:outline-hidden focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${isDarkMode ? 'text-gray-300' : 'text-gray-400'}`}
               />
             </div>
 

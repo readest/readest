@@ -22,7 +22,19 @@
             android:name="com.readest.native_bridge.LookupChoiceReceiver"
             android:exported="false" />
         <receiver
+            android:name="com.readest.native_bridge.BookshelfWidgetProvider"
+            android:label="@string/widget_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_bookshelf_info" />
+        </receiver>
+        <receiver
             android:name="com.readest.native_bridge.ReadingWidgetProvider"
+            android:label="@string/reading_widget_label"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -31,5 +43,27 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_reading_info" />
         </receiver>
+        <!-- Launched by the launcher/system when the widget is placed (and
+             from "Edit widget"), so it must be exported despite taking no
+             other external callers. It only edits a widget the system has
+             bound to this app. -->
+        <activity
+            android:name="com.readest.native_bridge.BookshelfWidgetConfigureActivity"
+            android:exported="true"
+            android:label="@string/widget_configure_title"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.readest.native_bridge.ReadingWidgetConfigureActivity"
+            android:exported="true"
+            android:label="@string/widget_configure_title"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

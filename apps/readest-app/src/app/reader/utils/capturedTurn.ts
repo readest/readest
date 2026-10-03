@@ -1,4 +1,5 @@
 import { CurlGrab, PageCurlRenderer } from '@/utils/pageCurl';
+import { PagePushRenderer } from '@/utils/pagePush';
 import { PageSlideRenderer, type PageSlideSettleOptions } from '@/utils/pageSlide';
 
 /**
@@ -36,8 +37,13 @@ export interface CapturedTurnHost {
    * like a physical sheet, matching Apple Books.
    */
   getContentRect: () => DOMRect | null;
-  /** Native webview snapshot of `rect`, as compressed image bytes. */
-  capture: (rect: { x: number; y: number; width: number; height: number }) => Promise<ArrayBuffer>;
+  /** Native webview snapshot of `rect`, as compressed image bytes or a decoded bitmap. */
+  capture: (rect: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) => Promise<ArrayBuffer | ImageBitmap>;
   /**
    * Temporarily remove non-interactive chrome from a native pixel capture.
    * Returns a cleanup that restores it after the platform snapshot resolves.
@@ -67,15 +73,39 @@ export interface CapturedTurnHost {
   onCancelled?: (style: CapturedTurnStyle) => void | Promise<void>;
   /** Instant (animation-less) page turn of the live view. */
   navigate: (forward: boolean) => Promise<void>;
+  /**
+   * How many page columns the reader cell shows (1 when unknown). With two,
+   * the curl turns only the outer column, hinged at the spine like a book
+   * leaf, and lands it on the inner column (readest#6106).
+   */
+  getColumnCount?: () => number;
+  /**
+   * Freeze the on-screen pixels of `rect` (viewport CSS px) behind a native
+   * layer that `capture` does not see. The two-column curl uses it to capture
+   * the incoming inner column under the overlay without ever showing it.
+   * Resolves to the function that removes the layer again.
+   */
+  coverRegion?: (rect: CaptureRect) => Promise<() => Promise<void>>;
+  /**
+   * The live element a push turn translates in beside the outgoing capture
+   * (readest#6239): the reader view, already showing the incoming page
+   * underneath the overlay. Resolved per frame, so a replaced view is never
+   * left shifted.
+   */
+  getPushTarget?: () => HTMLElement | null;
 }
 
-export type CapturedTurnStyle = 'curl' | 'slide';
+export type CapturedTurnStyle = 'curl' | 'slide' | 'push';
 
 /** What the overlay draws each frame; PageCurlRenderer and PageSlideRenderer. */
 interface TurnRenderer {
   attach(container: HTMLElement, width: number, height: number, dpr?: number): void;
   setTexture(source: ImageBitmap): void;
   setBackdrop?(source: TexImageSource): void;
+  /** Page columns in the captured bitmap; 2 turns one leaf hinged at the spine. */
+  setColumns?(columns: number): void;
+  /** The incoming inner column shown on the back of a two-column leaf. */
+  setIncoming?(source: TexImageSource | null): void;
   /** Whether an idle GPU surface survived context eviction. */
   isUsable?(): boolean;
   render(progress: number, grab: CurlGrab, rtl: boolean): void;
@@ -133,6 +163,10 @@ interface ActiveTurn {
   forward: boolean;
   /** Renderer-space mirror flag (spine side of the turn), not book direction. */
   rendererRtl: boolean;
+  /** Page columns in the captured bitmap (2 = one leaf hinged at the spine). */
+  columns: number;
+  /** In-flight capture of the incoming column for the leaf's back, if any. */
+  incoming: Promise<void> | null;
   progress: number;
   grabY: number;
   /** Buffered input and identity token, absent for programmatic turns. */
@@ -144,11 +178,19 @@ interface ActiveTurn {
 }
 
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (1 - t) * (1 - t) * 2);
+const waitForPaint = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+// A programmatic two-column turn gives the incoming column this long to
+// arrive before the leaf's back would show; a slow capture must not stall it.
+const INCOMING_WAIT_MS = 120;
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 const RELEASE_SETTLE_CONFIG = {
   // Keep a visible momentum lift without compressing a half-page tail into
   // the ~90ms range, which looks choppy even when every display frame lands.
   slide: { minSpeed: 0.2, maxSpeed: 1, maxPlaybackRate: 2 },
+  push: { minSpeed: 0.2, maxSpeed: 1, maxPlaybackRate: 2 },
   curl: { minSpeed: 0.3, maxSpeed: 1.5, maxPlaybackRate: 1.5 },
 } as const satisfies Record<
   CapturedTurnStyle,
@@ -173,6 +215,13 @@ const sameCaptureRect = (a: CaptureRect, b: CaptureRect) =>
   Math.abs(a.width - b.width) < 0.5 &&
   Math.abs(a.height - b.height) < 0.5;
 
+// No mime: the platforms return different formats (PNG on macOS, JPEG
+// elsewhere) and the decoder sniffs the bytes.
+const decodeCapture = (image: ArrayBuffer | ImageBitmap) =>
+  image instanceof ArrayBuffer ? createImageBitmap(new Blob([image])) : Promise.resolve(image);
+const discardCapture = (image: ArrayBuffer | ImageBitmap | null) => {
+  if (image && !(image instanceof ArrayBuffer)) image.close();
+};
 const currentDpr = () => globalThis.devicePixelRatio || 1;
 
 // A strictly zero-opacity layer can be skipped by mobile compositors. Keep the
@@ -352,6 +401,12 @@ export class CapturedPageTurn {
           return false;
         }
         try {
+          if (active.incoming) {
+            await Promise.race([
+              active.incoming,
+              new Promise<void>((resolve) => setTimeout(resolve, INCOMING_WAIT_MS)),
+            ]);
+          }
           await this.#playTo(active, 1);
           return true;
         } finally {
@@ -689,6 +744,8 @@ export class CapturedPageTurn {
       // (left for LTR books). Backward: the mirror image — it recedes over
       // the outer edge, revealing the previous page.
       rendererRtl: forward ? rtl : !rtl,
+      columns: style === 'curl' && (this.#host.getColumnCount?.() ?? 1) >= 2 ? 2 : 1,
+      incoming: null,
       progress: 0,
       grabY: 0.5,
       dragSession,
@@ -701,6 +758,7 @@ export class CapturedPageTurn {
     // First frame draws the captured page exactly covering the content box,
     // hiding the instant page swap happening underneath.
     try {
+      renderer.setColumns?.(active.columns);
       renderer.render(0, this.#grab(active), active.rendererRtl);
       if (renderer.isUsable?.() === false) {
         throw new Error('Captured page-turn renderer became unavailable before navigation');
@@ -735,6 +793,10 @@ export class CapturedPageTurn {
       }
       await this.#host.navigate(forward);
       if (this.#disposed || this.#active !== active) return null;
+      if (active.columns === 2 && this.#host.coverRegion) {
+        // Runs alongside the turn; a failure simply leaves the paper back.
+        active.incoming = this.#captureIncoming(active, captureRect).catch(() => {});
+      }
       return active;
     } catch (error) {
       if (this.#disposed) return null;
@@ -755,6 +817,62 @@ export class CapturedPageTurn {
 
   #grab(active: ActiveTurn) {
     return { x: active.rendererRtl ? 0 : 1, y: active.grabY };
+  }
+
+  /**
+   * Two-column curl: capture the inner column of the spread the live view has
+   * just turned to, for the back of the leaf, so the landed leaf matches the
+   * live page pixel for pixel when the overlay comes off. The overlay hides
+   * that column behind the old page, so the host first freezes the region's
+   * on-screen pixels natively, the overlay is clipped to the leaf side to
+   * expose the live column to the platform snapshot, and both are restored
+   * in order before the native cover comes down. The turn keeps animating
+   * throughout; the texture is swapped in as soon as it arrives.
+   */
+  async #captureIncoming(active: ActiveTurn, rect: CaptureRect) {
+    const half = rect.width / 2;
+    // The leaf lands on the column opposite its grabbed edge.
+    const inner: CaptureRect = {
+      x: active.rendererRtl ? rect.x + half : rect.x,
+      y: rect.y,
+      width: half,
+      height: rect.height,
+    };
+    const uncover = await this.#host.coverRegion!(inner);
+    let image: ArrayBuffer | ImageBitmap | null = null;
+    try {
+      if (this.#active !== active || this.#host.isCaptureAllowed?.() === false) return;
+      active.overlay.style.clipPath = active.rendererRtl ? 'inset(0 50% 0 0)' : 'inset(0 0 0 50%)';
+      await waitForPaint();
+      if (this.#active !== active) return;
+      const restorePixels = await this.#host.preparePixelCapture?.();
+      try {
+        // A modal can open during any of these awaits, and the platform
+        // snapshot would include its composited pixels. Re-check the gate at
+        // every step, as the outgoing capture does, so a dialog never ends up
+        // on the back of the leaf.
+        if (this.#active !== active || this.#host.isCaptureAllowed?.() === false) return;
+        image = await this.#host.capture(inner);
+      } finally {
+        await restorePixels?.();
+      }
+    } finally {
+      active.overlay.style.clipPath = '';
+      await waitForPaint();
+      await uncover();
+    }
+    if (!image || this.#active !== active || this.#host.isCaptureAllowed?.() === false) {
+      discardCapture(image);
+      return;
+    }
+    const bitmap = await decodeCapture(image);
+    try {
+      if (this.#active !== active || this.#host.isCaptureAllowed?.() === false) return;
+      active.renderer.setIncoming?.(bitmap);
+      active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
+    } finally {
+      bitmap.close();
+    }
   }
 
   #applyDragSession(active: ActiveTurn, session: DragSession) {
@@ -881,7 +999,7 @@ export class CapturedPageTurn {
       await restorePixels?.();
       return null;
     }
-    let image: ArrayBuffer;
+    let image: ArrayBuffer | ImageBitmap;
     try {
       image = await this.#host.capture(rect);
     } finally {
@@ -893,11 +1011,10 @@ export class CapturedPageTurn {
       !isStillValid() ||
       (discardWhenStale && epoch !== this.#captureEpoch)
     ) {
+      discardCapture(image);
       return null;
     }
-    // No mime: the platforms return different formats (PNG on macOS,
-    // JPEG on iOS/Android) and the decoder sniffs the bytes.
-    const bitmap = await createImageBitmap(new Blob([image]));
+    const bitmap = await decodeCapture(image);
     const backdrop = await backdropPromise;
     if (
       this.#disposed ||
@@ -916,7 +1033,9 @@ export class CapturedPageTurn {
     const renderer: TurnRenderer =
       style === 'slide'
         ? new PageSlideRenderer()
-        : new PageCurlRenderer({ preserveDrawingBuffer: false });
+        : style === 'push'
+          ? new PagePushRenderer(() => this.#host.getPushTarget?.() ?? null)
+          : new PageCurlRenderer({ preserveDrawingBuffer: false });
     overlay.setAttribute('aria-hidden', 'true');
     overlay.dataset['capturedTurnPrepared'] = String(preMount);
     Object.assign(overlay.style, {

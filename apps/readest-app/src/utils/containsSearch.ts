@@ -16,6 +16,8 @@ export const foldValue = (
   { matchCase, matchDiacritics }: ContainsSearchOptions,
   locale?: string,
 ): string => {
+  // Soft hyphens are invisible break hints; never let them split a match.
+  value = value.replace(/\u00AD/g, '');
   if (!matchCase) {
     try {
       value = value.toLocaleLowerCase(locale);
@@ -28,7 +30,9 @@ export const foldValue = (
 
 const foldText = (value: string, options: ContainsSearchOptions, locale?: string): FoldedText => {
   const folded = foldValue(value, options, locale);
-  if (folded.length === value.length) return { value: folded };
+  // Equal lengths mean aligned offsets only if nothing was dropped: a removed
+  // soft hyphen can cancel out a fold that lengthens (İ -> i + U+0307).
+  if (folded.length === value.length && !value.includes('\u00AD')) return { value: folded };
 
   const starts: number[] = [];
   const ends: number[] = [];

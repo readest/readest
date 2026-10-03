@@ -62,6 +62,29 @@ export interface CanToggleCloudProviderInputs {
 export const canToggleCloudProvider = (s: CanToggleCloudProviderInputs): boolean =>
   (s.isPremium && s.isConfigured) || s.isEnabled;
 
+export interface CloudProviderBadgeInputs {
+  signedIn: boolean;
+  /** Plan still resolving from the JWT (signed-in only). */
+  planLoading: boolean;
+  /** Cloud sync is usable right now — a plan, the unlock, or a self-hosted deployment. */
+  isPremium: boolean;
+}
+
+/**
+ * Whether a third-party provider row carries the tier chip. Only for users who
+ * cannot use the feature: an entitled user already has it, so the badge is
+ * noise. Suppressed while a signed-in user's plan is still resolving, which
+ * would otherwise flash the chip at a premium user on every open.
+ *
+ * Signed out on a hosted deployment still carries the chip, and the row stays
+ * gated behind {@link canToggleCloudProvider} and the upgrade route — that
+ * cohort is not entitled. What #6093 changed is which input removes the chip:
+ * entitlement, not sign-in. `!user` used to short-circuit it ON, so a
+ * self-hoster who could already open every provider was told it was Premium.
+ */
+export const shouldShowCloudProviderBadge = (s: CloudProviderBadgeInputs): boolean =>
+  !s.isPremium && (!s.signedIn || !s.planLoading);
+
 export const getThirdPartyRowStatus = (_: TranslationFunc, s: ThirdPartyRowInputs): string => {
   if (!s.enabled) return s.configured ? _('Configured') : _('Not connected');
   if (s.paused) return _('Paused — plan required');

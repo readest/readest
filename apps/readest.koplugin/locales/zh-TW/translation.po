@@ -17,6 +17,36 @@ msgstr "Readest"
 msgid "Keeps your KOReader and Readest devices in sync."
 msgstr "讓你的 KOReader 與 Readest 裝置保持同步。"
 
+msgid "Downloading %1 of %2…"
+msgstr "正在下載第 %1 / %2 本…"
+
+msgid "%1 MB downloaded"
+msgstr "已下載 %1 MB"
+
+msgid "No downloads in progress."
+msgstr "沒有正在進行的下載。"
+
+msgid "Run in background"
+msgstr "在背景執行"
+
+msgid "Cancel download"
+msgstr "取消下載"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "下載已取消。已下載 %2 本中的 %1 本。"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "已下載 %2 本中的 %1 本（略過 %3 本）。"
+
+msgid "Downloaded %1 of %2."
+msgstr "已下載 %2 本中的 %1 本。"
+
+msgid "Set Home folder in File Manager first to enable downloads."
+msgstr "請先在檔案管理員中設定主資料夾以啟用下載。"
+
+msgid "No books to download."
+msgstr "沒有可下載的書籍。"
+
 msgid "Library view"
 msgstr "書庫檢視"
 
@@ -68,8 +98,14 @@ msgstr "遞增"
 msgid "Actions"
 msgstr "動作"
 
+msgid "Sync now"
+msgstr "立即同步"
+
 msgid "Download all books"
 msgstr "下載所有書籍"
+
+msgid "Download progress"
+msgstr "下載進度"
 
 msgid "Rescan library"
 msgstr "重新掃描書庫"
@@ -104,6 +140,12 @@ msgstr "搜尋書庫"
 msgid "Search title or author"
 msgstr "搜尋書名或作者"
 
+msgid "Books synced"
+msgstr "書籍已同步"
+
+msgid "Books sync failed"
+msgstr "書籍同步失敗"
+
 msgid "Cover Browser plugin required for full Library rendering. Falling back to plain list."
 msgstr "完整書庫渲染需要 Cover Browser 外掛程式，將回退到簡單清單。"
 
@@ -116,18 +158,6 @@ msgstr "從 Readest 下載這本書？"
 msgid "Download"
 msgstr "下載"
 
-msgid "Set Home folder in File Manager first to enable downloads."
-msgstr "請先在檔案管理員中設定主資料夾以啟用下載。"
-
-msgid "Downloading…"
-msgstr "下載中…"
-
-msgid "Cloud copy unavailable."
-msgstr "雲端副本無法使用。"
-
-msgid "Download failed."
-msgstr "下載失敗。"
-
 msgid "No cover available on Readest."
 msgstr "Readest 上沒有可用的封面。"
 
@@ -137,20 +167,8 @@ msgstr "封面下載失敗。"
 msgid "Could not delete the file."
 msgstr "無法刪除檔案。"
 
-msgid "No books to download."
-msgstr "沒有可下載的書籍。"
-
-msgid "Downloading %1 of %2…"
-msgstr "正在下載第 %1 / %2 本…"
-
-msgid "Download cancelled. %1 of %2 downloaded."
-msgstr "下載已取消。已下載 %2 本中的 %1 本。"
-
-msgid "Downloaded %1 of %2 (skipped %3)."
-msgstr "已下載 %2 本中的 %1 本（略過 %3 本）。"
-
-msgid "Downloaded %1 of %2."
-msgstr "已下載 %2 本中的 %1 本。"
+msgid "Download group"
+msgstr "下載群組"
 
 msgid "Removing from cloud…"
 msgstr "正在從雲端移除…"
@@ -287,23 +305,14 @@ msgstr "立即推送統計"
 msgid "Pull stats now"
 msgstr "立即拉取統計"
 
-msgid "Push books now"
-msgstr "立即推送書籍"
-
-msgid "Pull books now"
-msgstr "立即拉取書籍"
-
-msgid "Receive via LocalSend"
-msgstr "透過 LocalSend 接收"
-
-msgid "Upload current book to Readest"
-msgstr "上傳目前書籍到 Readest"
-
 msgid "Push reading progress now"
 msgstr "立即推送閱讀進度"
 
 msgid "Pull reading progress now"
 msgstr "立即拉取閱讀進度"
+
+msgid "Upload current book to Readest"
+msgstr "上傳目前書籍到 Readest"
 
 msgid "Push annotations now"
 msgstr "立即推送註釋"
@@ -316,6 +325,9 @@ msgstr "完整同步所有註釋"
 
 msgid "Sync info"
 msgstr "同步資訊"
+
+msgid "Receive via Nearby BookDrop"
+msgstr "透過 Nearby BookDrop 接收"
 
 msgid "Check for update (v%1)"
 msgstr "檢查更新（v%1）"
@@ -350,26 +362,20 @@ msgstr "同步資訊"
 msgid "Library not initialized"
 msgstr "書庫未初始化"
 
-msgid "Books synced"
-msgstr "書籍已同步"
-
-msgid "Books sync failed"
-msgstr "書籍同步失敗"
-
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "請先設定 Readest 下載資料夾或 KOReader 主資料夾。"
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend 錯誤：找不到可用的連接埠。"
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop 錯誤：找不到可用的連接埠。"
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend 啟動失敗。"
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop 啟動失敗。"
 
-msgid "Starting LocalSend…"
-msgstr "正在啟動 LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "正在啟動 Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend 將在 Wi-Fi 連線後啟動。"
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop 將在 Wi-Fi 連線後啟動。"
 
 msgid "… and %1 more"
 msgstr "…還有 %1 個"
@@ -386,23 +392,23 @@ msgstr "拒絕"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "正在從 %2 接收 %1 個檔案…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend：已接收 %1 個檔案，%2 個失敗。"
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop：已接收 %1 個檔案，%2 個失敗。"
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend 傳輸已取消。"
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop 傳輸已取消。"
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend：已接收 %1 個檔案。"
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop：已接收 %1 個檔案。"
 
-msgid "LocalSend not available on this device"
-msgstr "此裝置不支援 LocalSend"
+msgid "Nearby BookDrop not available on this device"
+msgstr "此裝置不支援 Nearby BookDrop"
 
 msgid "Scanning for nearby devices…"
 msgstr "正在掃描附近的裝置…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "找不到附近的裝置。請確認對方裝置已開啟 LocalSend/Readest。"
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "找不到附近的裝置。請確認對方裝置已開啟 Nearby BookDrop 或 LocalSend。"
 
 msgid "Rescan"
 msgstr "重新掃描"
@@ -428,11 +434,11 @@ msgstr "傳輸已取消。"
 msgid "Send failed: %1"
 msgstr "傳送失敗：%1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend 錯誤：%1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop 錯誤：%1"
 
-msgid "LocalSend off"
-msgstr "LocalSend 已關閉"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop 已關閉"
 
 msgid "Visible as %1"
 msgstr "顯示為 %1"
@@ -511,6 +517,9 @@ msgstr "未發現新註釋"
 
 msgid "%1 annotations pulled"
 msgstr "已拉取 %1 條註釋"
+
+msgid "Your Readest session has expired. Please log in again."
+msgstr "Readest 登入已過期，請重新登入。"
 
 msgid "Login"
 msgstr "登入"

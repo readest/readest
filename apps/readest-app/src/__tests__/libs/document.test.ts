@@ -95,6 +95,55 @@ describe('DocumentLoader.open', () => {
   }, 15000);
 });
 
+// Issue #5959: some download managers append the duplicate marker after the
+// extension ("notes.md (1)"), and the loader classifies by name. Without
+// tolerating it a Markdown or comic file reaches the zip probe as an unknown
+// binary and fails with "Unsupported or corrupted book file".
+describe('DocumentLoader format probes with a duplicate-download marker', () => {
+  it('still recognizes Markdown', async () => {
+    const file = new File(['# Chapter One\n\nhello'], 'notes.md (1)');
+
+    const { format } = await new DocumentLoader(file).open();
+
+    expect(format).toBe('MD');
+  });
+});
+
+describe('DocumentLoader format probes for HTML', () => {
+  const html = '<!DOCTYPE html><html><head><title>T</title></head><body><p>hi</p></body></html>';
+
+  it('routes .html, .htm and a nameless text/html blob to HTML format', async () => {
+    for (const file of [
+      new File([html], 'page.html'),
+      new File([html], 'PAGE.HTM'),
+      new File([html], '', { type: 'text/html' }),
+      new File([html], 'page.html (1)'),
+    ]) {
+      const { book, format } = await new DocumentLoader(file).open();
+      expect(format).toBe('HTML');
+      expect(book.sections.length).toBe(1);
+    }
+  });
+
+  it('routes .mhtml and .mht web archives to HTML format', async () => {
+    const mhtml = [
+      'MIME-Version: 1.0',
+      'Content-Type: multipart/related; boundary="b"',
+      '',
+      '--b',
+      'Content-Type: text/html',
+      '',
+      html,
+      '--b--',
+    ].join('\r\n');
+    for (const file of [new File([mhtml], 'page.mhtml'), new File([mhtml], 'PAGE.MHT')]) {
+      const { book, format } = await new DocumentLoader(file).open();
+      expect(format).toBe('HTML');
+      expect(book.metadata.title).toBe('T');
+    }
+  });
+});
+
 describe('getDirection', () => {
   afterEach(() => {
     document.body.removeAttribute('style');

@@ -108,7 +108,7 @@ const AutoScrollControl: React.FC<AutoScrollControlProps> = ({
         'transition-[opacity,filter,transform] duration-200 ease-out',
         isVisible
           ? 'pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0'
-          : 'pointer-events-none translate-y-4 scale-90 opacity-0 blur-sm',
+          : 'pointer-events-none translate-y-4 scale-90 opacity-0 blur-xs',
       )}
       style={{
         paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
@@ -128,7 +128,7 @@ const AutoScrollControl: React.FC<AutoScrollControlProps> = ({
           'text-base-content flex items-center gap-1 rounded-full px-3 py-1.5',
           'not-eink:bg-base-300 eink-bordered',
           'not-eink:border-base-content/10 not-eink:border',
-          'shadow-sm backdrop-blur-md',
+          'shadow-xs backdrop-blur-md',
         )}
       >
         <button

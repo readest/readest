@@ -22,8 +22,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const PAGE_W = 612;
 const PAGE_H = 792;
 
-// Minimal stand-in for the vendored pdf.js build. foliate-js/pdf.js imports it
-// for the side effect of setting globalThis.pdfjsLib, then reads from that
+// Minimal stand-in for the vendored pdf.js build. foliate-js/pdf.js loads it
+// from makePDF() for the side effect of setting globalThis.pdfjsLib, then reads from that
 // global — so the mock installs a controllable fake there.
 vi.mock('@pdfjs/pdf.min.mjs', () => {
   class PDFDataRangeTransport {

@@ -61,6 +61,64 @@ describe('reconcileAbsBooks', () => {
     expect(upserts).toEqual([]);
   });
 
+  it('creates a streaming ebook stub when ABS exposes a primary ebook file', () => {
+    const ebookOnly: ABSLibraryItem = {
+      id: 'i3',
+      mediaType: 'book',
+      media: {
+        metadata: { title: 'Streamed EPUB', authorName: 'Author E' },
+        ebookFile: { ino: '123', ebookFormat: 'epub' },
+      },
+    };
+    const { upserts } = reconcileAbsBooks({
+      server,
+      items: [ebookOnly],
+      progress: [],
+      library: [],
+      lastPlayedAtByHash: new Map(),
+      now: 1,
+    });
+    expect(upserts[0]).toMatchObject({
+      format: 'ABS',
+      absMediaType: 'ebook',
+      filePath: makeAbsFilePath('srv1', 'i3'),
+    });
+  });
+
+  it('updates an existing audio book when it becomes ebook-only', () => {
+    const audioBook = reconcileAbsBooks({
+      server,
+      items: [item('i4', 'Converted')],
+      progress: [],
+      library: [],
+      lastPlayedAtByHash: new Map(),
+      now: 1,
+    }).upserts[0]!;
+    const ebookOnly: ABSLibraryItem = {
+      id: 'i4',
+      mediaType: 'book',
+      media: {
+        metadata: { title: 'Converted', authorName: 'Author A' },
+        ebookFile: { ino: '456', ebookFormat: 'epub' },
+      },
+    };
+
+    const { upserts } = reconcileAbsBooks({
+      server,
+      items: [ebookOnly],
+      progress: [],
+      library: [audioBook],
+      lastPlayedAtByHash: new Map(),
+      now: 2,
+    });
+
+    expect(upserts[0]).toMatchObject({
+      absMediaType: 'ebook',
+      metadata: { absMediaType: 'ebook' },
+      duration: undefined,
+    });
+  });
+
   describe('podcast shows', () => {
     it('creates a podcast show stub with absMediaType, undefined duration, and author from metadata.author', () => {
       const { upserts } = reconcileAbsBooks({

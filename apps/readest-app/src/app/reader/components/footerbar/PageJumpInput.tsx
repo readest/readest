@@ -127,7 +127,7 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({ bookKey, showFraction, cl
         title={_('Go to Page')}
         aria-label={_('Go to Page')}
         value={text}
-        className='absolute inset-0 h-full w-full bg-transparent text-center focus:outline-none'
+        className='absolute inset-0 h-full w-full bg-transparent text-center focus:outline-hidden'
         onFocus={() => {
           // Keep the "current / total" text as-is (percentage style swaps to
           // it) and pre-select the page portion for type-over editing.

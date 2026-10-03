@@ -176,7 +176,7 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
                 'h-10 rounded-lg px-4 text-sm font-medium',
                 'text-error hover:bg-error/10',
                 'transition-colors duration-150',
-                'focus-visible:ring-error/40 focus-visible:outline-none focus-visible:ring-2',
+                'focus-visible:ring-error/40 focus-visible:outline-hidden focus-visible:ring-2',
               )}
             >
               {_('Disconnect')}
@@ -193,7 +193,7 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
               id='readwise-token'
               type='password'
               placeholder={_('Paste your Readwise access token')}
-              className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+              className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
               spellCheck='false'
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
@@ -223,7 +223,7 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
                   type='url'
                   inputMode='url'
                   placeholder={READWISE_API_BASE_URL}
-                  className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                  className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                   spellCheck='false'
                   autoCapitalize='off'
                   value={baseUrl}
@@ -248,7 +248,7 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
               className={clsx(
                 'btn btn-primary',
                 'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+                'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
                 isConnecting && 'opacity-60',
               )}
             >

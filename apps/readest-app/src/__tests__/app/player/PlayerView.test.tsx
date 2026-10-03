@@ -22,8 +22,9 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
 }));
 
 const envConfig = { getAppService: vi.fn() };
+const env = { appService: null as { hasWindowBar?: boolean } | null };
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig, appService: null }),
+  useEnv: () => ({ envConfig, appService: env.appService }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({
@@ -313,7 +314,9 @@ describe('PlayerView embedded Episodes subview', () => {
     );
 
     await waitFor(() => expect(screen.getByTestId('scrubber')).toBeTruthy());
-    expect(screen.queryByText('Episode Two')).toBeNull();
+    // The sheet fades out as one piece, so its rows outlive the close by the
+    // length of that transition rather than blanking on the spot.
+    await waitFor(() => expect(screen.queryByText('Episode Two')).toBeNull());
   });
 
   it('switches back to the transport view immediately when re-tapping the already-playing episode', async () => {
@@ -554,5 +557,49 @@ describe('PlayerView picker sheets', () => {
     expect(screen.getByTestId('scrubber')).toBeTruthy();
 
     await waitFor(() => expect(screen.getByText('Episode One')).toBeTruthy());
+  });
+});
+
+// On desktop the window has no OS title bar: WindowButtons binds the drag
+// listeners to the header it is given, so a route that omits it leaves the
+// window unmovable from that page.
+describe('PlayerView desktop window chrome', () => {
+  afterEach(() => {
+    cleanup();
+    env.appService = null;
+  });
+
+  it('renders the window controls so the header can drag the window', () => {
+    env.appService = { hasWindowBar: true };
+
+    const { container } = render(
+      <PlayerView
+        book={book}
+        bookKey='h1'
+        controller={asController(new FakeController(undefined))}
+        onGoBack={vi.fn()}
+        onSelectEpisode={vi.fn()}
+        pendingEpisodeId={null}
+      />,
+    );
+
+    expect(container.querySelector('.window-buttons')).not.toBeNull();
+  });
+
+  it('omits them where the OS draws the title bar', () => {
+    env.appService = { hasWindowBar: false };
+
+    const { container } = render(
+      <PlayerView
+        book={book}
+        bookKey='h1'
+        controller={asController(new FakeController(undefined))}
+        onGoBack={vi.fn()}
+        onSelectEpisode={vi.fn()}
+        pendingEpisodeId={null}
+      />,
+    );
+
+    expect(container.querySelector('.window-buttons')).toBeNull();
   });
 });

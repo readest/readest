@@ -9,7 +9,6 @@ import { throttle } from '@/utils/throttle';
 import { getXPointerFromCFI, getCFIFromXPointer, XCFI } from '@/utils/xcfi';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
-import { removeGlobalAnnotationOverlays } from '../utils/globalAnnotations';
 
 const latestChangeAt = (note: BookNote) => Math.max(note.updatedAt, note.deletedAt ?? 0);
 
@@ -59,7 +58,11 @@ export const useNotesSync = (bookKey: string) => {
               ...note,
               xpointer0: xpResult.pos0 || xpResult.xpointer,
               xpointer1: xpResult.pos1,
-              updatedAt: Date.now(),
+              // Notebook uses a fixed compatibility anchor rather than a
+              // semantic annotation position. Enrich its transport metadata
+              // without manufacturing a newer content revision; otherwise an
+              // older client can repeatedly win LWW with unchanged Markdown.
+              updatedAt: note.type === 'notebook' ? note.updatedAt : Date.now(),
             });
             continue;
           }
@@ -174,11 +177,14 @@ export const useNotesSync = (bookKey: string) => {
     [syncNotes],
   );
 
+  // A book's first reading position is saved after its notes load, and that
+  // write keeps the same booknotes array, so re-run once it appears.
+  const hasLocation = !!config?.location;
   useEffect(() => {
-    if (!config?.location || !user) return;
+    if (!hasLocation || !user) return;
     handleAutoSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config?.booknotes, handleAutoSync]);
+  }, [hasLocation, config?.booknotes, handleAutoSync]);
 
   useEffect(() => {
     const processNewNote = (note: BookNote) => {
@@ -222,16 +228,13 @@ export const useNotesSync = (bookKey: string) => {
           // local copy, which is the one holding the cfi it was drawn with,
           // unless the local note was edited after that deletion.
           const local = oldNotes.find((oldNote) => oldNote.id === note.id);
-          if (local && !local.deletedAt && incomingWins(local, note)) {
-            getViewsById(bookKey.split('-')[0]!).forEach((v) => {
-              removeBookNoteOverlays(v, local);
-              if (local.global) removeGlobalAnnotationOverlays(v, local);
-            });
+          if (local?.type === 'annotation' && !local.deletedAt && incomingWins(local, note)) {
+            getViewsById(bookKey.split('-')[0]!).forEach((v) => removeBookNoteOverlays(v, local));
             // Stamp the deletion as this device's own change so the next push
             // tombstones the duplicate row under its book hash as well.
             note.updatedAt = Date.now();
           }
-        } else if (note.cfi) {
+        } else if (note.type === 'annotation' && note.cfi) {
           const index = getIndexFromCfi(note.cfi);
           if (index === view?.renderer.primaryIndex) {
             view.addAnnotation(note);

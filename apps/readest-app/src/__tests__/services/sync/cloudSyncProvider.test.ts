@@ -19,6 +19,7 @@ import {
   isReadestCloudEnabled,
   isReadestCloudStorageActive,
   resolveCloudSyncGate,
+  setCachedCustomizationPurchased,
   setCachedUserPlan,
   settingsKeyForBackend,
 } from '@/services/sync/cloudSyncProvider';
@@ -293,5 +294,25 @@ describe('icloud backend kind', () => {
     const settings = s({ icloud: { enabled: true, syncBooks: false } } as never);
     expect(applySyncBooksAutoEnable(settings)).toBe(true);
     expect(settings.icloud?.syncBooks).toBe(true);
+  });
+});
+
+// The cache is read synchronously by non-React gates, so a signed-out session
+// must not keep the previous account's entitlement. `useQuotaStats` clears it
+// on logout; this pins the wiring that clear depends on.
+describe('resolveCloudSyncGate — cached customization entitlement', () => {
+  const webdavOn = () => makeSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
+
+  test('passes the cached unlock through to the gate', () => {
+    setCachedCustomizationPurchased(true);
+    resolveCloudSyncGate(webdavOn(), 'free');
+    expect(isCloudSyncAllowed).toHaveBeenCalledWith('free', true);
+  });
+
+  test('passes false once the cache is cleared on sign-out', () => {
+    setCachedCustomizationPurchased(true);
+    setCachedCustomizationPurchased(false);
+    resolveCloudSyncGate(webdavOn(), 'free');
+    expect(isCloudSyncAllowed).toHaveBeenCalledWith('free', false);
   });
 });

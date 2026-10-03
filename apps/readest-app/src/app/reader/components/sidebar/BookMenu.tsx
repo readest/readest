@@ -103,16 +103,22 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     setProofreadRulesVisibility(true);
     setIsDropdownOpen?.(false);
   };
-  const handlePullKOSync = () => {
-    eventDispatcher.dispatch('pull-kosync', { bookKey: sideBarBookKey });
+  // `provider` addresses one sync backend: KOSync and BookOrbit speak the same
+  // protocol through the same hook and would otherwise both answer.
+  const handlePullKOSync = (provider: 'kosync' | 'bookorbit') => () => {
+    eventDispatcher.dispatch('pull-kosync', { bookKey: sideBarBookKey, provider });
     setIsDropdownOpen?.(false);
   };
-  const handlePushKOSync = () => {
-    eventDispatcher.dispatch('push-kosync', { bookKey: sideBarBookKey });
+  const handlePushKOSync = (provider: 'kosync' | 'bookorbit') => () => {
+    eventDispatcher.dispatch('push-kosync', { bookKey: sideBarBookKey, provider });
     setIsDropdownOpen?.(false);
   };
   const handlePushReadwise = () => {
     eventDispatcher.dispatch('readwise-push-all', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const handlePushNotion = () => {
+    eventDispatcher.dispatch('notion-push-all', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
   const handlePushHardcoverNotes = () => {
@@ -130,6 +136,17 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     setIsDropdownOpen?.(false);
   };
   const hardcoverLink = sideBarBookKey ? getConfig(sideBarBookKey)?.hardcover : undefined;
+  const handlePushPageboundProgress = () => {
+    eventDispatcher.dispatch('pagebound-push-progress', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const handleLinkPageboundBook = () => {
+    eventDispatcher.dispatch('pagebound-link-book', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const pageboundLink = sideBarBookKey ? getConfig(sideBarBookKey)?.pagebound : undefined;
+  const pageboundEnabled = !!(settings.pagebound?.enabled && settings.pagebound.refreshToken);
+  const bookOrbitProgressSync = settings.bookorbit.enabled && settings.bookorbit.syncProgress;
   // Routed through Annotator (per-book, long-lived) so that the
   // confirmation dialog isn't unmounted with the dropdown menu.
   const handleClearAnnotations = () => {
@@ -166,7 +183,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
                     alt={book.title}
                     width={56}
                     height={80}
-                    className='aspect-auto max-h-8 max-w-4 rounded-sm shadow-md'
+                    className='aspect-auto max-h-8 max-w-4 rounded-xs shadow-md'
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -185,14 +202,27 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         ) : (
           <MenuItem label={_('Enter Parallel Read')} onClick={handleSetParallel} />
         ))}
-      {(settings.kosync.enabled || settings.readwise.enabled || settings.hardcover.enabled) && (
+      {(settings.kosync.enabled ||
+        bookOrbitProgressSync ||
+        settings.readwise.enabled ||
+        settings.hardcover.enabled ||
+        pageboundEnabled ||
+        (settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId)) && (
         <hr aria-hidden='true' className='border-base-200 my-1' />
       )}
       {settings.kosync.enabled && (
         <MenuItem label={_('KOReader Sync')} detailsOpen={false} buttonClass='py-2'>
           <ul className='flex flex-col ps-1'>
-            <MenuItem label={_('Push Progress')} noIcon onClick={handlePushKOSync} />
-            <MenuItem label={_('Pull Progress')} noIcon onClick={handlePullKOSync} />
+            <MenuItem label={_('Push Progress')} noIcon onClick={handlePushKOSync('kosync')} />
+            <MenuItem label={_('Pull Progress')} noIcon onClick={handlePullKOSync('kosync')} />
+          </ul>
+        </MenuItem>
+      )}
+      {bookOrbitProgressSync && (
+        <MenuItem label={_('BookOrbit Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Progress')} noIcon onClick={handlePushKOSync('bookorbit')} />
+            <MenuItem label={_('Pull Progress')} noIcon onClick={handlePullKOSync('bookorbit')} />
           </ul>
         </MenuItem>
       )}
@@ -200,6 +230,13 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
         <MenuItem label={_('Readwise Sync')} detailsOpen={false} buttonClass='py-2'>
           <ul className='flex flex-col ps-1'>
             <MenuItem label={_('Push Highlights')} noIcon onClick={handlePushReadwise} />
+          </ul>
+        </MenuItem>
+      )}
+      {settings.notion.enabled && settings.notion.accessToken && settings.notion.databaseId && (
+        <MenuItem label={_('Notion Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Notes')} noIcon onClick={handlePushNotion} />
           </ul>
         </MenuItem>
       )}
@@ -213,6 +250,19 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
               description={hardcoverLink?.title}
               noIcon
               onClick={handleLinkHardcoverBook}
+            />
+          </ul>
+        </MenuItem>
+      )}
+      {pageboundEnabled && (
+        <MenuItem label={_('Pagebound Sync')} detailsOpen={false} buttonClass='py-2'>
+          <ul className='flex flex-col ps-1'>
+            <MenuItem label={_('Push Progress')} noIcon onClick={handlePushPageboundProgress} />
+            <MenuItem
+              label={_('Link Book')}
+              description={pageboundLink?.title}
+              noIcon
+              onClick={handleLinkPageboundBook}
             />
           </ul>
         </MenuItem>

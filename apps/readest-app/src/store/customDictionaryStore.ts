@@ -55,6 +55,7 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
   },
   webSearches: [],
   fontScale: 1,
+  autoPlayPronunciation: false,
 };
 
 interface DictionaryStoreState {
@@ -118,6 +119,8 @@ interface DictionaryStoreState {
   setDefaultProviderId(id: string | undefined): void;
   /** Set the dictionary popup font-size multiplier (#4443). */
   setFontScale(scale: number): void;
+  /** Auto-play a looked-up word's bundled pronunciation audio (#6265). */
+  setAutoPlayPronunciation(enabled: boolean): void;
 
   /** Add a custom web search (id is generated). Appended + enabled by default. */
   addWebSearch(name: string, urlTemplate: string): WebSearchEntry;
@@ -445,6 +448,12 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  setAutoPlayPronunciation: (enabled) => {
+    set((state) => ({
+      settings: { ...state.settings, autoPlayPronunciation: enabled },
+    }));
+  },
+
   addWebSearch: (name, urlTemplate) => {
     const trimmedName = name.trim();
     const trimmedUrl = urlTemplate.trim();
@@ -627,6 +636,9 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         defaultProviderId: persistedSettings.defaultProviderId,
         webSearches: persistedSettings.webSearches ?? [],
         fontScale: persistedSettings.fontScale ?? DEFAULT_DICTIONARY_SETTINGS.fontScale,
+        autoPlayPronunciation:
+          persistedSettings.autoPlayPronunciation ??
+          DEFAULT_DICTIONARY_SETTINGS.autoPlayPronunciation,
       };
       set({ dictionaries, settings: settingsMerged });
     } catch (error) {
