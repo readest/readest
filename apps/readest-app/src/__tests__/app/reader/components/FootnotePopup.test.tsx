@@ -442,6 +442,108 @@ describe('FootnotePopup jump to location', () => {
     expect(hostFontRules()).toEqual(originalRules);
   });
 
+  it('shows a plain-text footnote with fallback fonts when an embedded font stalls', async () => {
+    const popup = await renderPopup();
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    const sheet = doc.createElement('style');
+    sheet.textContent = '@font-face { font-family: StalledFont; src: url("stalled.woff2"); }';
+    doc.head.appendChild(sheet);
+    doc.body.style.fontFamily = 'StalledFont, serif';
+    const element = doc.createElement('span');
+    doc.body.appendChild(element);
+    const fontProperty = Object.getOwnPropertyDescriptor(document, 'fonts');
+    let finishLoading = () => {};
+    const fontLoad = new Promise<FontFace[]>((resolve) => {
+      finishLoading = () => resolve([]);
+    });
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { load: vi.fn(() => fontLoad) },
+    });
+    vi.useFakeTimers();
+
+    try {
+      let dispatch: Promise<void>;
+      act(() => {
+        dispatch = eventDispatcher.dispatch('footnote-popup', {
+          bookKey: BOOK_KEY,
+          element,
+          footnote: 'A note that remains readable when the font request stalls',
+        });
+      });
+      expect(screen.getByTestId('popup').dataset['open']).toBe('false');
+      expect(document.head.textContent).toContain(`readest-footnote-${BOOK_KEY}`);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(screen.getByTestId('popup').dataset['open']).toBe('true');
+      const note = document.querySelector<HTMLElement>('.footnote-content > p')!;
+      expect(note.style.fontFamily).toBe('StalledFont, serif');
+      expect(document.head.textContent).not.toContain(`readest-footnote-${BOOK_KEY}`);
+      await act(async () => {
+        finishLoading();
+        await dispatch!;
+      });
+      expect(note.style.fontFamily).toBe('StalledFont, serif');
+    } finally {
+      popup.unmount();
+      finishLoading();
+      vi.useRealTimers();
+      if (fontProperty) Object.defineProperty(document, 'fonts', fontProperty);
+      else Reflect.deleteProperty(document, 'fonts');
+    }
+  });
+
+  it('keeps a pending embedded-font popup dismissed when its wait expires', async () => {
+    const popup = await renderPopup();
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    const sheet = doc.createElement('style');
+    sheet.textContent = '@font-face { font-family: StalledFont; src: url("stalled.woff2"); }';
+    doc.head.appendChild(sheet);
+    doc.body.style.fontFamily = 'StalledFont, serif';
+    const element = doc.createElement('span');
+    doc.body.appendChild(element);
+    const fontProperty = Object.getOwnPropertyDescriptor(document, 'fonts');
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { load: vi.fn(() => new Promise<FontFace[]>(() => {})) },
+    });
+    const width = window.innerWidth;
+    vi.useFakeTimers();
+
+    try {
+      let dispatch: Promise<void>;
+      act(() => {
+        dispatch = eventDispatcher.dispatch('footnote-popup', {
+          bookKey: BOOK_KEY,
+          element,
+          footnote: 'A pending note that the reader dismissed',
+        });
+        Object.defineProperty(window, 'innerWidth', { value: width + 100, configurable: true });
+        window.dispatchEvent(new Event('resize'));
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+        await dispatch!;
+      });
+
+      expect(screen.getByTestId('popup').dataset['open']).toBe('false');
+      expect(document.querySelector('.footnote-content > p')).toBeNull();
+      expect(document.head.textContent).not.toContain(`readest-footnote-${BOOK_KEY}`);
+    } finally {
+      popup.unmount();
+      vi.useRealTimers();
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+      if (fontProperty) Object.defineProperty(document, 'fonts', fontProperty);
+      else Reflect.deleteProperty(document, 'fonts');
+    }
+  });
+
   // #6390: the soft keyboard the note editor raises fires a window resize on
   // Android without the window changing width, which closed the popup under
   // the editor. Only a real width change (rotation, window resize) moves the

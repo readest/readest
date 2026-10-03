@@ -768,12 +768,24 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           .map((family, index) => aliases.get(index) ?? family)
           .join(',');
         if (document.fonts) {
-          // Measure only after the popup's faces have loaded. A dismissed or
+          // Wait briefly for the popup's faces before measuring. A dismissed or
           // replaced popup must not reopen when an old font finishes loading.
-          await document.fonts
-            .load(`${elem.style.fontSize || '16px'} ${elem.style.fontFamily}`, footnote)
-            .catch(() => []);
+          let fontTimer: ReturnType<typeof setTimeout> | undefined;
+          const timedOut = await Promise.race([
+            document.fonts
+              .load(`${elem.style.fontSize || '16px'} ${elem.style.fontFamily}`, footnote)
+              .then(() => false)
+              .catch(() => false),
+            new Promise<boolean>((resolve) => {
+              fontTimer = setTimeout(() => resolve(true), 1000);
+            }),
+          ]);
+          clearTimeout(fontTimer);
           if (footnoteFontsRef.current !== fontStyle) return;
+          if (timedOut) {
+            clearFootnoteFonts();
+            elem.style.fontFamily = families.join(',');
+          }
         }
       }
       elem.style.visibility = 'hidden';
