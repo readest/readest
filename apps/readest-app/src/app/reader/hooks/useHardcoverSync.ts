@@ -10,7 +10,10 @@ import { debounce } from '@/utils/debounce';
 import {
   HardcoverClient,
   HardcoverSyncMapStore,
+  HardcoverAuthError,
   HardcoverUnmatchedError,
+  isHardcoverConnected,
+  createHardcoverTokenStore,
 } from '@/services/hardcover';
 import { BookNote, HardcoverBookLink } from '@/types/book';
 
@@ -48,12 +51,12 @@ export const useHardcoverSync = (bookKey: string) => {
 
   const getClient = useCallback(async () => {
     const { settings } = useSettingsStore.getState();
-    if (!settings.hardcover?.enabled || !settings.hardcover?.accessToken) {
+    if (!settings.hardcover?.enabled || !isHardcoverConnected(settings.hardcover)) {
       return null;
     }
     const appService = await envConfig.getAppService();
     const mapStore = new HardcoverSyncMapStore(appService);
-    return new HardcoverClient(settings.hardcover, mapStore);
+    return new HardcoverClient(settings.hardcover, mapStore, createHardcoverTokenStore(envConfig));
   }, [envConfig]);
 
   // Remember which Hardcover book a sync resolved to (#5846): the book menu
@@ -135,9 +138,10 @@ export const useHardcoverSync = (bookKey: string) => {
         if (!(error instanceof HardcoverUnmatchedError)) failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
-            message: _('Hardcover notes sync failed: {{error}}', {
-              error: message,
-            }),
+            message:
+              error instanceof HardcoverAuthError
+                ? _('Authentication failed. Reconnect in Settings.')
+                : _('Hardcover notes sync failed: {{error}}', { error: message }),
             type: 'error',
           });
         }
@@ -186,9 +190,10 @@ export const useHardcoverSync = (bookKey: string) => {
         if (!(error instanceof HardcoverUnmatchedError)) failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
-            message: _('Hardcover progress sync failed: {{error}}', {
-              error: message,
-            }),
+            message:
+              error instanceof HardcoverAuthError
+                ? _('Authentication failed. Reconnect in Settings.')
+                : _('Hardcover progress sync failed: {{error}}', { error: message }),
             type: 'error',
           });
         }

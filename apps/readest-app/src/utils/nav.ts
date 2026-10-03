@@ -132,6 +132,11 @@ export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {
   router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
 };
 
+export const navigateToHardcoverConnect = (router: ReturnType<typeof useRouter>) => {
+  const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+  router.push(`/hardcover/connect?redirect=${redirect}`);
+};
+
 export const navigateToProfile = (router: ReturnType<typeof useRouter>) => {
   router.push('/user');
 };

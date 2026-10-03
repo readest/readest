@@ -187,15 +187,15 @@ describe('HardcoverClient', () => {
     expect(mockMapStore.flush).toHaveBeenCalled();
   });
 
-  test('should handle rate limiting with retries', async () => {
+  test.each([429, 503])('retries a %i with backoff', async (status) => {
     // request() does NOT call authenticate() so only 2 mock values are needed
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     // First request fails with 429 then succeeds
     fetchMock.mockResolvedValueOnce({
       ok: false,
-      status: 429,
-      statusText: 'Too Many Requests',
+      status,
+      statusText: 'Retry later',
       json: async () => ({}),
     });
     fetchMock.mockResolvedValueOnce({
@@ -215,6 +215,18 @@ describe('HardcoverClient', () => {
 
     expect(result).toEqual({ result: 'ok' });
     vi.useRealTimers();
+  });
+
+  test('includes the error and missing scope from a 403 body', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      json: async () => ({ error: 'insufficient_scope', scope: 'write:library' }),
+    });
+    await expect(clientApi.request('query', {})).rejects.toThrow(
+      'Hardcover API Error: 403 Forbidden: insufficient_scope — scope: write:library',
+    );
   });
 
   test('should produce the expected date formats for journal and progress payloads', async () => {

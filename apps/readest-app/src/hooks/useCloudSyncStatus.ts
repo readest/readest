@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { useHardcoverSyncStore } from '@/store/hardcoverSyncStore';
+import { isHardcoverConnected } from '@/services/hardcover/hardcoverConnection';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatSyncTimeFromNow } from '@/utils/time';
 import {
@@ -108,7 +109,7 @@ export const useCloudSyncStatus = (nativeLastSyncedAt = 0, bookKey?: string): Cl
         syncing: !!fileSyncByKind[kind]?.isSyncing,
         failed: !!fileSyncLastError[kind],
       })),
-      ...(bookKey && settings.hardcover?.enabled && settings.hardcover.accessToken
+      ...(bookKey && settings.hardcover?.enabled && isHardcoverConnected(settings.hardcover)
         ? [
             {
               kind: 'hardcover' as const,

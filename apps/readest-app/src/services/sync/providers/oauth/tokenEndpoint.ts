@@ -115,7 +115,7 @@ interface TokenEndpointResponse {
 }
 
 /** Which token-endpoint call is being made; used only for error labelling. */
-type TokenOperation = 'exchange' | 'refresh';
+type TokenOperation = 'exchange' | 'refresh' | 'device';
 
 /**
  * Best-effort read of the provider's error payload so a thrown error can name
@@ -124,36 +124,54 @@ type TokenOperation = 'exchange' | 'refresh';
  * signal when debugging the live flow. Reading the body can itself fail, so any
  * problem collapses to no detail rather than masking the original HTTP error.
  */
-const readErrorDetail = async (res: Response): Promise<string> => {
+const readErrorBody = async (res: Response): Promise<{ code?: string; detail: string }> => {
   try {
     const body = (await res.json()) as { error?: string; error_description?: string };
     const parts = [body.error, body.error_description].filter(Boolean);
-    return parts.length > 0 ? `: ${parts.join(' — ')}` : '';
+    return { code: body.error, detail: parts.length > 0 ? `: ${parts.join(' — ')}` : '' };
   } catch {
-    return '';
+    return { detail: '' };
   }
 };
+
+/** A non-2xx token-endpoint response; `code` is the OAuth `error` field when present. */
+export class TokenEndpointError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+  ) {
+    super(message);
+  }
+}
 
 /**
  * POST a form body to the token endpoint, parse the JSON, and map it into a
  * {@link TokenSet}. Shared by both operations so the request/parse/error logic
  * lives in exactly one place.
  */
-const requestTokens = async (
-  tokenEndpoint: string,
-  params: URLSearchParams,
-  operation: TokenOperation,
-  fetchFn: FetchFn,
-): Promise<TokenSet> => {
-  const res = await fetchFn(tokenEndpoint, {
+export const postForm = (url: string, params: URLSearchParams, fetchFn: FetchFn) =>
+  fetchFn(url, {
     method: HTTP_POST,
     headers: { [CONTENT_TYPE_HEADER]: FORM_CONTENT_TYPE, [ORIGIN_HEADER]: NO_ORIGIN },
     body: params.toString(),
   });
 
+export const requestTokens = async (
+  tokenEndpoint: string,
+  params: URLSearchParams,
+  operation: TokenOperation,
+  fetchFn: FetchFn,
+): Promise<TokenSet> => {
+  const res = await postForm(tokenEndpoint, params, fetchFn);
+
   if (!res.ok) {
-    const detail = await readErrorDetail(res);
-    throw new Error(`OAuth token ${operation} failed with HTTP ${res.status}${detail}`);
+    const { code, detail } = await readErrorBody(res);
+    throw new TokenEndpointError(
+      `OAuth token ${operation} failed with HTTP ${res.status}${detail}`,
+      res.status,
+      code,
+    );
   }
 
   const data = (await res.json()) as TokenEndpointResponse;

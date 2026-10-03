@@ -1,8 +1,9 @@
 import { Book, BookConfig, BookNote, HardcoverBookLink } from '@/types/book';
 import { getContentMd5 } from '@/utils/misc';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
+import { TokenEndpointError, type TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
+import { platformFetch, refreshHardcoverTokens, sleep } from './hardcoverOAuth';
 import {
   QUERY_GET_USER_ID,
   QUERY_SEARCH_BOOKS,
@@ -16,10 +17,15 @@ import {
   MUTATION_UPDATE_JOURNAL,
 } from './hardcover-graphql';
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Where OAuth tokens live between clients, so a refresh by one is seen by the others. */
+export interface HardcoverTokenStore {
+  load(): TokenSet | undefined;
+  save(tokens: TokenSet): void | Promise<void>;
+}
 
 type HardcoverSettingsLike = {
   accessToken: string;
+  oauth?: TokenSet;
 };
 
 type BookContext = {
@@ -100,21 +106,72 @@ const rowFlags = (row: BookRow) => ({
 /** This book cannot sync to Hardcover (no match, or no page count), not a sync failure. */
 export class HardcoverUnmatchedError extends Error {}
 
+/** The token was refused and could not be renewed; the user must reconnect. */
+export class HardcoverAuthError extends Error {}
+
 export class HardcoverClient {
   private minRequestIntervalMs = 1150;
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
   private proxyEndpoint = '/api/hardcover/graphql';
   private token: string;
+  private oauth: TokenSet | null;
+  private refreshInFlight: Promise<void> | null = null;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
   private lastRequestTime = 0;
   private requestQueue: Promise<void> = Promise.resolve();
 
-  constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
-    // Normalize token: Hardcover expects "Bearer <jwt>"; accept both formats
-    const raw = settings.accessToken.trim();
-    this.token = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
+  constructor(
+    settings: HardcoverSettingsLike,
+    mapStore: HardcoverSyncMapStore,
+    private tokenStore?: HardcoverTokenStore,
+  ) {
+    this.oauth = settings.oauth ?? null;
+    this.token = this.toBearer(this.oauth?.accessToken ?? settings.accessToken);
     this.mapStore = mapStore;
+  }
+
+  // Hardcover expects "Bearer <jwt>"; accept both formats
+  private toBearer(raw: string) {
+    const t = raw.trim();
+    return t.startsWith('Bearer ') ? t : `Bearer ${t}`;
+  }
+
+  // Single-flight so concurrent requests share one refresh (the refresh token may rotate).
+  private refreshOAuth(): Promise<void> {
+    this.refreshInFlight ??= (async () => {
+      try {
+        // Another client (or tab) may have refreshed since this one was built; the refresh
+        // token may rotate, so adopt the stored tokens before spending ours.
+        const latest = this.tokenStore?.load();
+        if (latest && latest.accessToken !== this.oauth!.accessToken) {
+          this.oauth = latest;
+          this.token = this.toBearer(latest.accessToken);
+          if (Date.now() < latest.expiresAt) return;
+        }
+        this.oauth = await refreshHardcoverTokens(this.oauth!);
+        this.token = this.toBearer(this.oauth.accessToken);
+        // The server may have rotated the refresh token, so keep going on a failed save.
+        try {
+          await this.tokenStore?.save(this.oauth);
+        } catch (e) {
+          console.error('[Hardcover] failed to persist refreshed tokens', e);
+        }
+      } catch (error) {
+        // A 401, or a 400 naming an invalid token, means the login is dead. Other 400s
+        // (malformed request), 5xx and network errors are not the user's to fix by reconnecting.
+        if (
+          error instanceof TokenEndpointError &&
+          (error.status === 401 || (error.status === 400 && error.code === 'invalid_token'))
+        ) {
+          throw new HardcoverAuthError(error.message);
+        }
+        throw error;
+      } finally {
+        this.refreshInFlight = null;
+      }
+    })();
+    return this.refreshInFlight;
   }
 
   private get endpoint() {
@@ -191,28 +248,44 @@ export class HardcoverClient {
     backoffMs = 2000,
   ): Promise<TData> {
     await this.throttleRequest();
+    if (this.oauth?.refreshToken && Date.now() >= this.oauth.expiresAt) await this.refreshOAuth();
 
-    const fetchFn = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await fetchFn(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        authorization: this.token,
-      },
-      body: JSON.stringify({ query, variables }),
-    });
+    const send = () =>
+      platformFetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: this.token,
+        },
+        body: JSON.stringify({ query, variables }),
+      });
+    let res = await send();
+    if (res.status === 401 && this.oauth?.refreshToken) {
+      await this.refreshOAuth();
+      res = await send();
+    }
 
+    // 429 and 503 ("temporarily unavailable, safe to retry") back off and retry.
+    if ((res.status === 429 || res.status === 503) && retries > 0) {
+      console.warn(`[Hardcover] ${res.status} Retrying in ${backoffMs}ms...`);
+      await sleep(backoffMs);
+      return this.request(query, variables, retries - 1, backoffMs * 2);
+    }
     if (res.status === 429) {
-      if (retries > 0) {
-        console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${backoffMs}ms...`);
-        await sleep(backoffMs);
-        return this.request(query, variables, retries - 1, backoffMs * 2);
-      }
       throw new Error('Hardcover Rate Limit (429) Exceeded and exhausted retries');
     }
 
+    if (res.status === 401) throw new HardcoverAuthError('Hardcover token was rejected');
+
     if (!res.ok) {
-      throw new Error(`Hardcover API Error: ${res.status} ${res.statusText}`);
+      // e.g. 403 insufficient_scope names the missing scope in the body.
+      const body = await res.json().catch(() => null);
+      const detail = [body?.error, body?.error_description, body?.scope && `scope: ${body.scope}`]
+        .filter(Boolean)
+        .join(' — ');
+      throw new Error(
+        `Hardcover API Error: ${res.status} ${res.statusText}${detail ? `: ${detail}` : ''}`,
+      );
     }
 
     const json = await res.json();
@@ -221,19 +294,6 @@ export class HardcoverClient {
     }
 
     return json.data as TData;
-  }
-
-  async validateToken(): Promise<{ valid: boolean; isNetworkError?: boolean }> {
-    try {
-      await this.authenticate();
-      return { valid: true };
-    } catch (error) {
-      const msg = String(error instanceof Error ? error.message : error);
-      if (/Failed to fetch|NetworkError|network/i.test(msg)) {
-        return { valid: false, isNetworkError: true };
-      }
-      return { valid: false };
-    }
   }
 
   private async authenticate() {
