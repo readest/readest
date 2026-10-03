@@ -92,8 +92,9 @@ export default function HardcoverConnectPage() {
             autoSync: current.hardcover?.autoSync ?? false,
           },
         };
-        setSettings(newSettings);
+        // Persist first so a failed save never leaves unsaved credentials live in memory.
         await saveSettings(envConfig, newSettings);
+        setSettings(newSettings);
       } catch (error) {
         console.error('[Hardcover] failed to save connection', error);
         eventDispatcher.dispatch('toast', { message: _('Connection failed'), type: 'error' });

@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   poll: vi.fn(),
   stash: vi.fn(),
   saveSettings: vi.fn().mockResolvedValue(undefined),
+  setSettings: vi.fn(),
   settings: { hardcover: undefined as undefined | { accessToken: string } },
 }));
 
@@ -33,7 +34,7 @@ vi.mock('@/store/settingsStore', () => {
     get settings() {
       return h.settings;
     },
-    setSettings: vi.fn(),
+    setSettings: h.setSettings,
     saveSettings: h.saveSettings,
   };
   return { useSettingsStore: Object.assign(() => state, { getState: () => state }) };
@@ -94,6 +95,9 @@ describe('Hardcover connect page', () => {
     expect(link.getAttribute('href')).toBe(device.verificationUriComplete);
     await waitFor(() => expect(h.replace).toHaveBeenCalled());
     expect(h.saveSettings).toHaveBeenCalled();
+    expect(h.saveSettings.mock.invocationCallOrder[0]).toBeLessThan(
+      h.setSettings.mock.invocationCallOrder[0]!,
+    );
     expect(h.stash).toHaveBeenCalled();
     expect(h.toasts).toHaveLength(0);
   });
@@ -139,6 +143,7 @@ describe('Hardcover connect page', () => {
     await waitFor(() => expect(h.replace).toHaveBeenCalled());
     const saved = h.saveSettings.mock.calls[0]![1] as { hardcover: { accessToken: string } };
     expect(saved.hardcover.accessToken).toBe('pasted');
+    expect(h.setSettings).not.toHaveBeenCalled();
     expect(h.toasts).toEqual([{ message: 'Connection failed', type: 'error' }]);
   });
 
