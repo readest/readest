@@ -94,8 +94,10 @@ describe('Overlayer.highlight merges rects on the same line (#6578)', () => {
         { left: 101, top: 52, width: 18, height: 30 },
         { left: 70, top: 10, width: 20, height: 40 },
       ]),
-      { vertical: true, radiusPadding: 0 },
+      { vertical: true, radius: 0, radiusPadding: 0 },
     );
     expect(shapes(g)).toHaveLength(2);
+    const column = shapes(g).find((shape) => Number(shape.getAttribute('x')) === 100);
+    expect(Number(column?.getAttribute('height'))).toBeCloseTo(72);
   });
 });
