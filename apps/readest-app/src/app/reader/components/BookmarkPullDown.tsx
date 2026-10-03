@@ -202,6 +202,19 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
         }
         const t = e.touches[0];
         if (!t) return;
+        // Leave swipes from the top screen edge to the system, e.g. Android's
+        // notification shade (#6599). The frame's rect maps the touch into
+        // main-viewport coordinates, rescaled for any zoom on its ancestors.
+        const frame = doc.defaultView?.frameElement;
+        const frameRect = frame?.getBoundingClientRect();
+        const clientHeight = doc.documentElement.clientHeight;
+        const viewportY = frameRect
+          ? frameRect.top + t.clientY * (clientHeight ? frameRect.height / clientHeight : 1)
+          : t.clientY;
+        if (viewportY < BOOKMARK_PULL_TOP_EDGE_PX) {
+          resetGesture();
+          return;
+        }
         if (springRafIdRef.current !== null) {
           // Re-grab mid-spring: keep the pull engaged from the current offset.
           cancelSpring();
@@ -228,16 +241,6 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
         ) {
           return;
         }
-        // Leave swipes from the top screen edge to the system, e.g. Android's
-        // notification shade (#6599). The frame's rect maps the touch into
-        // main-viewport coordinates, rescaled for any zoom on its ancestors.
-        const frame = doc.defaultView?.frameElement;
-        const frameRect = frame?.getBoundingClientRect();
-        const clientHeight = doc.documentElement.clientHeight;
-        const viewportY = frameRect
-          ? frameRect.top + t.clientY * (clientHeight ? frameRect.height / clientHeight : 1)
-          : t.clientY;
-        if (viewportY < BOOKMARK_PULL_TOP_EDGE_PX) return;
         einkRef.current = !!viewSettings.isEink;
         // screenX/screenY, not clientX/clientY: in paginated mode the iframe
         // document is many screens wide, so client coordinates are document

@@ -74,9 +74,13 @@ const touchEvent = (type: string, y: number, x = 200): Event => {
   return event;
 };
 
+// A fresh document per test: the gesture's listeners can't be removed, and
+// stacked registrations would run every handler once per earlier test.
+let doc: Document;
+
 const dispatchTouch = (type: string, y: number, x = 200) => {
   act(() => {
-    document.dispatchEvent(touchEvent(type, y, x));
+    doc.dispatchEvent(touchEvent(type, y, x));
   });
 };
 
@@ -98,12 +102,13 @@ describe('BookmarkPullDown', () => {
     currentOverflowY = false;
     currentScrollLocked = false;
     selectionCollapsed = true;
-    vi.spyOn(document, 'getSelection').mockImplementation(
+    doc = document.implementation.createHTMLDocument();
+    vi.spyOn(doc, 'getSelection').mockImplementation(
       () => ({ isCollapsed: selectionCollapsed }) as Selection,
     );
     slide = document.createElement('div');
     vi.mocked(setLayeredTurnTouchClaimed).mockClear();
-    registerBookmarkPullDoc(BOOK_KEY, document);
+    registerBookmarkPullDoc(BOOK_KEY, doc);
   });
 
   afterEach(() => {
@@ -151,7 +156,7 @@ describe('BookmarkPullDown', () => {
     dispatchTouch('touchstart', 300);
     const move = touchEvent('touchmove', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
     act(() => {
-      document.dispatchEvent(move);
+      doc.dispatchEvent(move);
     });
     dispatchTouch('touchend', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
 
@@ -311,7 +316,7 @@ describe('BookmarkPullDown', () => {
     dispatchTouch('touchstart', 9);
     const move = touchEvent('touchmove', 9 + BOOKMARK_PULL_TRIGGER_PX + 20);
     act(() => {
-      document.dispatchEvent(move);
+      doc.dispatchEvent(move);
     });
     dispatchTouch('touchend', 9 + BOOKMARK_PULL_TRIGGER_PX + 20);
     expect(move.defaultPrevented).toBe(false);
@@ -324,6 +329,23 @@ describe('BookmarkPullDown', () => {
     expect(dispatchSpy).toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
   });
 
+  it('does not re-grab a springing pull from the top screen edge (#6599)', () => {
+    renderComponent();
+
+    dispatchTouch('touchstart', 300);
+    dispatchTouch('touchmove', 350);
+    act(() => flushRaf(0)); // apply the 50px offset
+    dispatchTouch('touchend', 350);
+    act(() => flushRaf(1000)); // spring-back is now in flight
+
+    dispatchTouch('touchstart', 9);
+    const move = touchEvent('touchmove', 9 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    act(() => {
+      doc.dispatchEvent(move);
+    });
+    expect(move.defaultPrevented).toBe(false);
+  });
+
   it('toggles on e-ink without animating the pull (#6599)', () => {
     currentViewSettings = { scrolled: false, vertical: false, isEink: true };
     const { container } = renderComponent();
@@ -332,7 +354,7 @@ describe('BookmarkPullDown', () => {
     dispatchTouch('touchstart', 300);
     const move = touchEvent('touchmove', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
     act(() => {
-      document.dispatchEvent(move);
+      doc.dispatchEvent(move);
     });
     act(() => flushRaf(0));
     // The gesture owns the drag, but nothing slides or draws.
