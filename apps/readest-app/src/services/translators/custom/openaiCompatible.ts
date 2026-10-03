@@ -87,6 +87,11 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
     });
 
   const callModel = async (system: string, prompt: string): Promise<string> => {
+    // Not AbortSignal.timeout: tauriFetch cancels from the signal's abort
+    // listener without handling the result, so a timer that fires after the
+    // reply leaves an unhandled "resource id is invalid" rejection.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
       const [{ generateText }] = await loadSDK();
       const { text } = await generateText({
@@ -95,11 +100,13 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
         prompt,
         temperature: config.temperature,
         maxRetries: 2,
-        abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        abortSignal: controller.signal,
       });
       return stripReasoning(text);
     } catch (err) {
       throw toTranslatorError(err);
+    } finally {
+      clearTimeout(timer);
     }
   };
 

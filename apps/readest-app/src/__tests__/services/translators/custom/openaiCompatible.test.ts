@@ -136,6 +136,32 @@ describe('createOpenAICompatibleTranslator', () => {
     expect(lastCall().prompt).toBe('Two');
   });
 
+  // tauriFetch cancels its request from the signal's abort listener and never
+  // handles that call's rejection, so a timeout firing after the reply
+  // arrived raised "The resource id … is invalid" for every finished request.
+  it('stops the request timeout once the reply arrives', async () => {
+    vi.useFakeTimers();
+    // Fake timers do not drive the native AbortSignal.timeout; model it on them.
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), ms);
+      return controller.signal;
+    });
+    try {
+      generateTextMock.mockResolvedValue({ text: 'Bonjour' });
+      const t = createOpenAICompatibleTranslator(config);
+      const pending = t.translate(['Hello'], 'en', 'fr');
+      await vi.advanceTimersByTimeAsync(100);
+      await pending;
+      const { abortSignal } = generateTextMock.mock.calls[0]![0] as { abortSignal: AbortSignal };
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect(abortSignal.aborted).toBe(false);
+    } finally {
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    }
+  });
+
   it('uses a cache key that changes with the model and the prompt', () => {
     const t = createOpenAICompatibleTranslator(config);
     const other = createOpenAICompatibleTranslator({ ...config, model: 'other' });
