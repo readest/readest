@@ -119,4 +119,22 @@ describe('context dictionary provider', () => {
     expect(outcome.ok).toBe(true);
     expect(container.textContent).toContain('Unauthorized');
   });
+
+  it('does not render an entry for a lookup cancelled while it was pending', async () => {
+    setTranslators([llm('a')]);
+    const controller = new AbortController();
+    mocks.lookupInContext.mockImplementation(async () => {
+      controller.abort();
+      return entry;
+    });
+    const container = document.createElement('div');
+
+    const outcome = await contextProvider.lookup('bank', {
+      signal: controller.signal,
+      container,
+    });
+
+    expect(outcome.ok).toBe(false);
+    expect(container.childElementCount).toBe(0);
+  });
 });

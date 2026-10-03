@@ -627,6 +627,36 @@ describe('DictionarySheet — selection context (#5544)', () => {
   });
 });
 
+describe('DictionarySheet — republished selection (#5544)', () => {
+  it('does not restart lookups when the same selection context arrives as a new object', async () => {
+    let calls = 0;
+    const nav = buildNavProvider('world');
+    providersForNextRender.push({
+      ...nav,
+      lookup: (word, ctx) => {
+        calls++;
+        return nav.lookup(word, ctx);
+      },
+    });
+    const { rerender } = renderSheet({
+      word: 'hello',
+      selection: { before: 'Say', after: 'now.' },
+    });
+    await waitFor(() => screen.getByTestId('nav-link'));
+    expect(calls).toBe(1);
+
+    rerender(
+      <DictionarySheet
+        word='hello'
+        selection={{ before: 'Say', after: 'now.' }}
+        onDismiss={() => {}}
+      />,
+    );
+    await act(async () => {});
+    expect(calls).toBe(1);
+  });
+});
+
 describe('DictionarySheet — web search row', () => {
   it('renders a link with the resolved URL and target="_blank" on the web build', async () => {
     // Real built-in Google web-search provider, via the registry mock.

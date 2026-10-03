@@ -138,9 +138,15 @@ export function useDictionaryResults({
 
   const [historyStack, setHistoryStack] = useState<string[]>([word.trim()]);
   const currentWord = historyStack[historyStack.length - 1] ?? word.trim();
+  // Compared by value: the reader republishes the same selection as a new
+  // object (e.g. after shedding native handles), which must not restart the
+  // lookups and re-send a paid AI request.
+  const selectionKey = selection ? JSON.stringify(selection) : '';
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableSelection = useMemo(() => selection, [selectionKey]);
   // The passage only describes the selected word, not words reached through
   // in-popup links.
-  const currentSelection = historyStack.length === 1 ? selection : undefined;
+  const currentSelection = historyStack.length === 1 ? stableSelection : undefined;
 
   // Reset the history when the host reopens with a new word from outside
   // (selection change in the reader). A double-click selection can carry

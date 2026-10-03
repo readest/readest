@@ -89,6 +89,9 @@ export const contextProvider: DictionaryProvider = {
         },
         ctx.signal,
       );
+      // A cache hit resolves without looking at the signal; once cancelled,
+      // the container belongs to the next lookup.
+      if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
       renderEntry(ctx.container, word, entry);
       return { ok: true, headword: entry.headword || word, sourceLabel: translator.name };
     } catch (err) {
