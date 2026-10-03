@@ -845,14 +845,29 @@ describe('KOSync progress', () => {
       expect(wrote('books')).toBe(false);
     });
 
+    // Libraries often hold the same book twice (an older import, another
+    // edition): the copy goes to the one being read.
+    it('picks the most recently read book when title and author tie', async () => {
+      results['books.select'] = {
+        data: [
+          { ...libraryBook, book_hash: 'f'.repeat(32), updated_at: '2026-02-10T00:00:00.000Z' },
+          { ...libraryBook, updated_at: '2026-10-03T00:00:00.000Z' },
+          { ...libraryBook, book_hash: 'e'.repeat(32), updated_at: '2026-05-01T00:00:00.000Z' },
+        ],
+        error: null,
+      };
+      await put({ metadata });
+      expect(calls).toContainEqual(linkWrite);
+    });
+
     it('keeps a copy it cannot place under its own id', async () => {
       const cases: [string, Record<string, unknown>, unknown[]][] = [
         ['without metadata', {}, [libraryBook]],
         ['with no book of that title', { metadata }, [{ ...libraryBook, source_title: 'Other' }]],
         [
-          'when two books fit',
-          { metadata },
-          [libraryBook, { ...libraryBook, book_hash: 'f'.repeat(32) }],
+          'when titles collide and no author was sent',
+          { metadata: { title: TITLE } },
+          [libraryBook, { ...libraryBook, book_hash: 'f'.repeat(32), author: 'Someone Else' }],
         ],
         // The file is Readest's own: nothing to link.
         ['for Readest’s own file', { metadata }, [libraryBook, { ...libraryBook, book_hash: DOC }]],
