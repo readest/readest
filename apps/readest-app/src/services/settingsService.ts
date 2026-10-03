@@ -160,10 +160,6 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
   settings.aiSettings = {
     ...DEFAULT_AI_SETTINGS,
     ...settings.aiSettings,
-    contextTranslation: {
-      ...DEFAULT_AI_SETTINGS.contextTranslation,
-      ...settings.aiSettings?.contextTranslation,
-    },
   };
 
   settings.localBooksDir = await ctx.fs.getPrefix('Books');
