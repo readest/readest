@@ -213,6 +213,7 @@
     "tailwind-merge": "^3.4.0",
     "tauri-plugin-device-info-api": "^1.0.1",
     "tinycolor2": "^1.6.0",
+    "uqr": "^0.1.3",
     "uuid": "^14.0.0",
     "virtua": "^0.49.1",
     "ws": "^8.18.3",
