@@ -4,6 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSync } from '@/hooks/useSync';
 import { BookConfig, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -273,7 +274,16 @@ export const useProgressSync = (bookKey: string) => {
     // sibling may contribute only its reading FRACTION, forward-only. Picking
     // the first match blindly is what let a stale/cross-file config move the
     // reader backward.
-    const matches = syncedConfigs.filter((c) => c.bookHash === bookHash || c.metaHash === metaHash);
+    // A deleted book's cloud config outlives it (only a purge clears it, so a
+    // re-download of the same file resumes), but importing another copy starts
+    // fresh (mergeBooks skips deleted duplicates). As a sibling it would pull
+    // that copy forward to the deleted one's position on every open.
+    const { getBookByHash } = useLibraryStore.getState();
+    const matches = syncedConfigs.filter(
+      (c) =>
+        c.bookHash === bookHash ||
+        (c.metaHash === metaHash && !(c.bookHash && getBookByHash(c.bookHash)?.deletedAt)),
+    );
     // Base config for the device-agnostic viewSettings merge below (proofread
     // rules, reference page count). Prefer the exact same-file config.
     const syncedConfig = matches.find((c) => c.bookHash === bookHash) ?? matches[0];
