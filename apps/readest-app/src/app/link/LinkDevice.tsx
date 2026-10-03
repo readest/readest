@@ -7,6 +7,7 @@ import { IoOpenOutline } from 'react-icons/io5';
 import { useAuth } from '@/context/AuthContext';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenDeviceLink } from '@/hooks/useOpenDeviceLink';
+import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { useThemeStore } from '@/store/themeStore';
@@ -42,6 +43,9 @@ export default function LinkDevice() {
   // listen here too, and show the code of the link that opened the page.
   useAppUrlIngress();
   useOpenDeviceLink();
+  // The user's theme mode and color, like the account page this page shares
+  // its header with; nothing else applies it when a link opens this page.
+  useTheme({ systemUIVisible: false });
   // Bumped by each approval and each new code, so an approval still in
   // flight when another link's code arrives can't mark that code linked.
   const approval = useRef(0);
@@ -67,7 +71,10 @@ export default function LinkDevice() {
   };
 
   return (
-    <div style={inApp ? { paddingTop: `${safeAreaInsets?.top || 0}px` } : undefined}>
+    <div
+      className='bg-base-100 full-height overflow-y-auto'
+      style={inApp ? { paddingTop: `${safeAreaInsets?.top || 0}px` } : undefined}
+    >
       {inApp && <ProfileHeader onGoBack={goBack} />}
       <div className='mx-auto flex max-w-[480px] flex-col gap-6 px-4 py-16'>
         <header>
