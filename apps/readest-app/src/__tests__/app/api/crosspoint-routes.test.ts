@@ -563,6 +563,12 @@ describe('reading sessions', () => {
   });
 
   it('reports database failures', async () => {
+    // Retried later rather than recorded under a linked copy's own hash.
+    results['crosspoint_documents.select'] = { data: null, error: boom };
+    expect((await session({})).status).toBe(500);
+    expect(wrote('stat_pages')).toBe(false);
+
+    results['crosspoint_documents.select'] = { data: null, error: null };
     results['book_configs.select'] = { data: null, error: boom };
     expect((await session({})).status).toBe(500);
     expect(wrote('stat_pages')).toBe(false);
@@ -816,6 +822,24 @@ describe('KOSync progress', () => {
       };
       await put({ metadata });
       expect(calls).toContainEqual(linkWrite);
+    });
+
+    // Never acknowledged under the copy's own id: the reader retries.
+    it('reports database failures while linking', async () => {
+      results['crosspoint_documents.select'] = { data: null, error: boom };
+      expect((await get()).status).toBe(500);
+      expect((await put({ metadata })).status).toBe(500);
+
+      results['crosspoint_documents.select'] = { data: null, error: null };
+      results['books.select'] = { data: null, error: boom };
+      expect((await put({ metadata })).status).toBe(500);
+
+      results['books.select'] = { data: [libraryBook], error: null };
+      results['crosspoint_documents.upsert'] = { data: null, error: boom };
+      expect((await put({ metadata })).status).toBe(500);
+
+      expect(wrote('book_configs')).toBe(false);
+      expect(wrote('books')).toBe(false);
     });
 
     it('keeps a copy it cannot place under its own id', async () => {

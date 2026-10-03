@@ -71,17 +71,29 @@ export const authenticateDevice = async (
 // "Optimize EPUB" upload rewrites a book, so that copy's id matches no Readest
 // book. Its first progress upload links it to the library book by title and
 // author (sent with KOSync "Send metadata"); later syncs and reading
-// sessions follow the link.
+// sessions follow the link. Both helpers report a database error, like a
+// query, so a route never syncs a linked copy under its own id instead.
 
-/** The library book a rewritten copy was linked to, if any. */
-export const linkedBook = async (supabase: SupabaseClient, userId: string, document: string) => {
-  const { data } = await supabase
+interface Link {
+  bookHash: string | null;
+  error: unknown;
+}
+
+const NO_LINK: Link = { bookHash: null, error: null };
+
+/** The library book a rewritten copy was linked to (null if none). */
+export const linkedBook = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+): Promise<Link> => {
+  const { data, error } = await supabase
     .from('crosspoint_documents')
     .select('book_hash')
     .eq('user_id', userId)
     .eq('document', document)
     .maybeSingle();
-  return (data?.book_hash as string | undefined) ?? null;
+  return { bookHash: (data?.book_hash as string | undefined) ?? null, error };
 };
 
 const normalizeText = (value: unknown) =>
@@ -89,18 +101,18 @@ const normalizeText = (value: unknown) =>
 
 /**
  * Links a copy to the one library EPUB with its title, and the first of its
- * authors when titles collide. Null when the copy is Readest's own file or no
- * single book fits.
+ * authors when titles collide. No book when the copy is Readest's own file or
+ * no single book fits.
  */
 export const linkCopy = async (
   supabase: SupabaseClient,
   userId: string,
   document: string,
   metadata: unknown,
-) => {
+): Promise<Link> => {
   const { title, authors } = (metadata ?? {}) as Record<string, unknown>;
   const wanted = normalizeText(title);
-  if (!wanted) return null;
+  if (!wanted) return NO_LINK;
   // Commas and parentheses are or() syntax, and %, *, \ and " are pattern or
   // quoting characters: each becomes a one-character wildcard. The exact
   // comparison happens below.
@@ -115,7 +127,8 @@ export const linkCopy = async (
     .eq('format', 'EPUB')
     .is('deleted_at', null)
     .limit(20);
-  if (error || !data || data.some((book) => book.book_hash === document)) return null;
+  if (error) return { bookHash: null, error };
+  if (!data || data.some((book) => book.book_hash === document)) return NO_LINK;
   let matches = data.filter(
     (book) => normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted,
   );
@@ -123,7 +136,7 @@ export const linkCopy = async (
   if (matches.length > 1 && author) {
     matches = matches.filter((book) => normalizeText(book.author).includes(author));
   }
-  if (matches.length !== 1) return null;
+  if (matches.length !== 1) return NO_LINK;
   const bookHash = matches[0]!.book_hash as string;
   const { error: linkError } = await supabase
     .from('crosspoint_documents')
@@ -131,8 +144,7 @@ export const linkCopy = async (
       { user_id: userId, document, book_hash: bookHash },
       { onConflict: 'user_id,document', ignoreDuplicates: true },
     );
-  if (linkError) console.warn('crosspoint document link failed for', document, linkError.message);
-  return bookHash;
+  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
 };
 
 /** A book config's `[current, total]` progress, stored as a JSON string. */

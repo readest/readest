@@ -33,8 +33,16 @@ export async function PUT(request: Request) {
 
   // A rewritten copy syncs as the library book it is (or now gets) linked to.
   const linked = await linkedBook(supabase, userId, document);
-  const newLink = linked ? null : await linkCopy(supabase, userId, document, metadata);
-  const bookHash = linked ?? newLink ?? document;
+  if (linked.error)
+    return NextResponse.json({ message: 'Could not save progress' }, { status: 500 });
+  let newLink: string | null = null;
+  if (!linked.bookHash) {
+    const link = await linkCopy(supabase, userId, document, metadata);
+    if (link.error)
+      return NextResponse.json({ message: 'Could not save progress' }, { status: 500 });
+    newLink = link.bookHash;
+  }
+  const bookHash = linked.bookHash ?? newLink ?? document;
 
   const { data: existing, error: readError } = await supabase
     .from('book_configs')

@@ -44,7 +44,9 @@ export async function POST(request: Request) {
   }
 
   // A rewritten copy counts toward the library book it is linked to.
-  const bookHash = (await linkedBook(supabase, userId, document)) ?? document;
+  const link = await linkedBook(supabase, userId, document);
+  if (link.error) return NextResponse.json({ error: 'Could not read the book' }, { status: 500 });
+  const bookHash = link.bookHash ?? document;
 
   // Readest's page count once a Readest app has paginated the book, else whole percents.
   const { data: config, error } = await supabase

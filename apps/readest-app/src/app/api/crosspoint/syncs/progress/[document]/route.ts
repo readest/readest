@@ -11,7 +11,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ docu
   if (typeof userId !== 'string') return userId;
 
   const { document } = await params;
-  const bookHash = (await linkedBook(supabase, userId, document)) ?? document;
+  const link = await linkedBook(supabase, userId, document);
+  if (link.error) return NextResponse.json({ message: 'Could not read progress' }, { status: 500 });
+  const bookHash = link.bookHash ?? document;
   const { data, error } = await supabase
     .from('book_configs')
     .select('xpointer, progress, updated_at')
