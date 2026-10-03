@@ -453,7 +453,7 @@ describe('TTSPlayerSheet', () => {
     expect(screen.getByText('Premium')).toBeTruthy();
     expect(screen.getByText('Download chapters for offline playback')).toBeTruthy();
     fireEvent.click(screen.getByLabelText('Offline Audio'));
-    expect(routerPush).toHaveBeenCalledWith('/user');
+    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
     expect(props.onClose).toHaveBeenCalled();
     // The premium chapters view must not open for a free user.
     expect(screen.queryByText('chapters-view')).toBeNull();

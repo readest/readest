@@ -127,6 +127,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       router.replace(`/player?id=${audiobookHash}`);
       return;
     }
+    // Back from a page opened over the reader, e.g. the account page (#6607):
+    // the books are still open, so show them again instead of loading anew.
+    if (useReaderStore.getState().areBooksOpen(initialIds)) return;
     const initialBookKeys = initialIds.map((id) => `${id}-${uniqueId()}`);
     setBookKeys(initialBookKeys);
     const uniqueIds = new Set<string>();
