@@ -503,6 +503,7 @@ export const useTextSelector = (
   const startInstantAnnotating = (
     doc: Document,
     index: number,
+    pointerId: number,
     target: HTMLElement,
     startPoint: Point,
   ) => {
@@ -517,7 +518,9 @@ export const useTextSelector = (
     // A turn that hides the page the drag started on (a PDF portrait spread
     // shows one page at a time) sends the release to the reader window rather
     // than to any page, so finish the highlight from there too.
-    const releaseOutsidePages = (ev: PointerEvent) => handlePointerUp(doc, index, ev);
+    const releaseOutsidePages = (ev: PointerEvent) => {
+      if (ev.pointerId === pointerId) handlePointerUp(doc, index, ev);
+    };
     window.addEventListener('pointerup', releaseOutsidePages);
     instantGestureCleanup.current = () => {
       unsubscribeTurn();
@@ -580,7 +583,7 @@ export const useTextSelector = (
         handleInstantAnnotationPointerCancel();
         return;
       }
-      startInstantAnnotating(doc, index, target, startClient);
+      startInstantAnnotating(doc, index, ev.pointerId, target, startClient);
       // Preview the word under the finger right away (the feedback the
       // suppressed system long-press selection used to give); a release
       // without a drag commits it and opens the range editor.
@@ -652,7 +655,7 @@ export const useTextSelector = (
       } else {
         // Mouse: a press-drag is an unambiguous highlight intent; engage at once.
         ev.preventDefault();
-        startInstantAnnotating(doc, index, ev.target as HTMLElement, {
+        startInstantAnnotating(doc, index, ev.pointerId, ev.target as HTMLElement, {
           x: ev.clientX,
           y: ev.clientY,
         });
@@ -1243,6 +1246,7 @@ export const useTextSelector = (
     return () => {
       eventDispatcher.offSync('iframe-single-click', handleSingleClick);
       unsubAfterTurn();
+      instantGestureCleanup.current?.();
       if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -92,6 +92,7 @@ const mouseDown = (x: number, y: number) => {
   const target = document.createElement('span');
   return {
     pointerType: 'mouse',
+    pointerId: 1,
     button: 0,
     clientX: x,
     clientY: y,
@@ -101,6 +102,10 @@ const mouseDown = (x: number, y: number) => {
 };
 
 type Handlers = ReturnType<typeof setup>['result'];
+
+// jsdom has no PointerEvent: a MouseEvent carrying the pointer's id.
+const windowPointerUp = (pointerId: number) =>
+  Object.assign(new MouseEvent('pointerup', { clientX: 300, clientY: 500 }), { pointerId });
 // Engage instant highlight (mouse engages immediately), then move the finger to
 // (x, y). The first move is horizontal so the scroll-axis gesture guard lets the
 // highlight proceed.
@@ -212,10 +217,34 @@ describe('useTextSelector instant highlight leaving the start page', () => {
     const { result } = setup();
     engageAndMoveTo(result, 300, 500);
 
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 300, clientY: 500 }));
+    window.dispatchEvent(windowPointerUp(1));
     await vi.advanceTimersByTimeAsync(0);
 
     expect(h.instant.up).toHaveBeenCalledWith(doc, 0, expect.anything());
     expect(result.current.isInstantAnnotating.current).toBe(false);
+  });
+
+  test('a release of another pointer on the reader window leaves the highlight alone', async () => {
+    const { result } = setup();
+    engageAndMoveTo(result, 300, 500);
+
+    window.dispatchEvent(windowPointerUp(2));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(h.instant.up).not.toHaveBeenCalled();
+    expect(result.current.isInstantAnnotating.current).toBe(true);
+  });
+
+  // The reader can unmount mid-gesture (closing the book); the window outlives
+  // it and must not keep the gesture's release listener.
+  test('unmounting mid-gesture drops the window release listener', async () => {
+    const { result, unmount } = setup();
+    engageAndMoveTo(result, 300, 500);
+    unmount();
+
+    window.dispatchEvent(windowPointerUp(1));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(h.instant.up).not.toHaveBeenCalled();
   });
 });

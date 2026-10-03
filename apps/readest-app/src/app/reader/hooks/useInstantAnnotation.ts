@@ -41,10 +41,15 @@ export const useInstantAnnotation = ({
   // held position after an auto page-turn without waiting for the next move.
   const lastEndPointRef = useRef<Point | null>(null);
   const previewAnnotationRef = useRef<BookNote | null>(null);
-  // The range the preview last drew, with its cfi: what a release after a drag
-  // commits (see handleInstantAnnotationPointerUp). The cfi is kept because a
-  // PDF re-renders the page's text layer on a page turn, detaching the range.
-  const previewRangeRef = useRef<{ range: Range; cfi: string } | null>(null);
+  // The range the preview last drew, with its cfi and a copy of what it covered:
+  // what a release after a drag commits (see handleInstantAnnotationPointerUp).
+  // A PDF re-renders the page's text layer on a page turn, which collapses the
+  // live range, so the cfi and the text are taken from these instead.
+  const previewRangeRef = useRef<{
+    range: Range;
+    cfi: string;
+    contents: DocumentFragment;
+  } | null>(null);
   const annotationIdRef = useRef<string>(uniqueId());
   // The word previewed when the still hold engaged: a release without a drag
   // commits exactly this range. Cleared once any drag repaints the preview.
@@ -272,7 +277,7 @@ export const useInstantAnnotation = ({
       const views = getViewsById(bookKey.split('-')[0]!);
       views.forEach((v) => v?.addAnnotation(annotation));
       previewAnnotationRef.current = annotation;
-      previewRangeRef.current = { range: newRange, cfi };
+      previewRangeRef.current = { range: newRange, cfi, contents: newRange.cloneContents() };
 
       const progress = getProgress(bookKey);
       setEditingAnnotation(annotation);
@@ -419,7 +424,11 @@ export const useInstantAnnotation = ({
       // page at all, which dropped the whole highlight. Build the fallback
       // before clearing the anchor (it reads startPosRef).
       const previewed = dragPaintedRef.current ? previewRangeRef.current : null;
-      const newRange = previewed?.range ?? buildRangeFromAnchor(doc, endPoint);
+      let newRange = previewed?.range ?? buildRangeFromAnchor(doc, endPoint);
+      if (previewed?.range.collapsed) {
+        newRange = doc.createRange();
+        newRange.selectNodeContents(previewed.contents);
+      }
 
       startPointRef.current = null;
       startPosRef.current = null;

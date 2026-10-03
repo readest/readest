@@ -70,16 +70,17 @@ const setup = () => {
     captured.selection = s;
   });
   const setEditingAnnotation = vi.fn();
+  const getAnnotationText = vi.fn(async (range: Range) => range.toString());
   const hook = renderHook(() =>
     useInstantAnnotation({
       bookKey: 'book-1',
-      getAnnotationText: vi.fn(async () => 'text'),
+      getAnnotationText,
       setSelection: setSelection as never,
       setEditingAnnotation: setEditingAnnotation as never,
       setExternalDragPoint: vi.fn(),
     }),
   );
-  return { ...hook, captured, setSelection, setEditingAnnotation };
+  return { ...hook, captured, setSelection, setEditingAnnotation, getAnnotationText };
 };
 
 const pointer = (x: number, y: number) =>
@@ -200,7 +201,7 @@ describe('useInstantAnnotation hold-a-word engage and commit', () => {
     const editing = setEditingAnnotation.mock.lastCall?.[0];
     expect(editing?.color).toBeTruthy();
     expect(captured.selection?.annotated).toBe(true);
-    expect(captured.selection?.text).toBe('text');
+    expect(captured.selection?.text).toBe('first');
   });
 
   test('a drag after engage still commits and closes (no editor left open)', async () => {
@@ -271,7 +272,7 @@ describe('useInstantAnnotation over an existing highlight', () => {
 // The release must commit what the preview showed, not re-resolve that point.
 describe('useInstantAnnotation release commits the previewed range', () => {
   test('a release that resolves to the text layer itself keeps the dragged range', async () => {
-    const { result } = setup();
+    const { result, getAnnotationText } = setup();
 
     result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
     result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
@@ -286,16 +287,14 @@ describe('useInstantAnnotation release commits the previewed range', () => {
     );
 
     expect(handled).toBe(true);
-    const committed = h.view.getCFI.mock.lastCall as unknown as [number, Range];
-    expect(committed[1].startContainer).toBe(t1);
-    expect(committed[1].endContainer).toBe(t1);
+    expect(getAnnotationText.mock.lastCall?.[0].toString()).toBe('first page');
   });
 
   // The start page's part survives a release over another page: in a spread
   // or after a corner turn the pointerup lands in a document the start
   // position doesn't belong to, which used to drop the whole highlight.
   test('a release in another page document commits the start page part', async () => {
-    const { result } = setup();
+    const { result, getAnnotationText } = setup();
     const otherPage = document.implementation.createHTMLDocument('page 2');
 
     result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
@@ -307,9 +306,8 @@ describe('useInstantAnnotation release commits the previewed range', () => {
     );
 
     expect(handled).toBe(true);
-    const committed = h.view.getCFI.mock.lastCall as unknown as [number, Range];
-    expect(committed[0]).toBe(0);
-    expect(committed[1].startContainer).toBe(t1);
+    expect(getAnnotationText.mock.lastCall?.[0].toString()).toBe('first page');
+    expect(stores.updateBooknotes).toHaveBeenCalled();
   });
 
   // An end point given as the text's container, past the text node, follows
@@ -373,7 +371,7 @@ describe('useInstantAnnotation drag leaving the start page', () => {
   // A turn re-renders a PDF page's text layer, detaching the start: nothing
   // can be extended from it, and the release commits the cfi the preview had.
   test('a re-rendered start page keeps the preview and commits it', async () => {
-    const { result, setSelection } = setup();
+    const { result, setSelection, getAnnotationText } = setup();
 
     result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
     result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
@@ -388,8 +386,11 @@ describe('useInstantAnnotation drag leaving the start page', () => {
       0,
       pointer(60, 10),
     );
+    // Removing the page's text collapsed the live range: the committed text
+    // comes from what the preview covered.
     expect(handled).toBe(true);
     expect(h.view.getCFI).not.toHaveBeenCalled();
+    expect(getAnnotationText.mock.lastCall?.[0].toString()).toBe('first page');
     expect(stores.updateBooknotes).toHaveBeenCalled();
   });
 });
