@@ -47,8 +47,10 @@ export default function HardcoverConnectPage() {
     stashHardcoverReturnTarget();
     // Back to wherever Connect was pressed (library or a book), like /auth.
     const redirect = new URLSearchParams(window.location.search).get('redirect');
-    if (redirect?.startsWith('/') && !redirect.startsWith('//')) router.replace(redirect);
-    else navigateToLibrary(router, '', undefined, true);
+    // Browsers read a backslash as '/', so '/\host' would leave the app.
+    if (redirect?.startsWith('/') && !redirect.startsWith('//') && !redirect.includes('\\')) {
+      router.replace(redirect);
+    } else navigateToLibrary(router, '', undefined, true);
   };
 
   useEffect(() => {

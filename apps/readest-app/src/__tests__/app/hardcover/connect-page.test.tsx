@@ -106,6 +106,19 @@ describe('Hardcover connect page', () => {
     window.history.pushState({}, '', '/');
   });
 
+  it.each([
+    '//evil.example',
+    '/\\evil.example',
+    'https://evil.example',
+  ])('does not redirect to %s', async (redirect) => {
+    window.history.pushState({}, '', `/hardcover/connect?redirect=${encodeURIComponent(redirect)}`);
+    h.poll.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', expiresAt: 1 });
+    render(<HardcoverConnectPage />);
+    await waitFor(() => expect(h.replace).toHaveBeenCalled());
+    expect(h.replace).not.toHaveBeenCalledWith(redirect);
+    window.history.pushState({}, '', '/');
+  });
+
   it('toasts the reason and returns when access is denied', async () => {
     h.poll.mockRejectedValue(new HardcoverOAuthError('access_denied'));
     render(<HardcoverConnectPage />);
