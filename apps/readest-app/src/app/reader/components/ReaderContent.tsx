@@ -29,6 +29,7 @@ import {
   navigateToLibrary,
 } from '@/utils/nav';
 import { clearDiscordPresence } from '@/utils/discord';
+import { getLockedPanX } from '../utils/lockedPan';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
 import { saveBookMetadataEdit } from '@/services/bookMetadataEdit';
 import { BookDetailModal } from '@/components/metadata';
@@ -71,7 +72,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { bookKeys, dismissBook, getNextBookKey } = useBooksManager();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { saveSettings } = useSettingsStore();
-  const { getConfig, getBookData, saveConfig } = useBookDataStore();
+  const { getConfig, setConfig, getBookData, saveConfig } = useBookDataStore();
   const { getView, setBookKeys, getViewSettings } = useReaderStore();
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
@@ -272,6 +273,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       await clearDiscordPresence(appService);
     }
 
+    // Read before close() tears the pages down: a pan made since the last
+    // page turn hasn't reached the config yet. Primary only, like the location.
+    const panX = getLockedPanX(getView(bookKey), getViewSettings(bookKey));
+    if (viewState?.isPrimary && panX !== undefined) setConfig(bookKey, { panX });
     try {
       getView(bookKey)?.close();
       getView(bookKey)?.remove();

@@ -161,3 +161,73 @@ describe('fixed-layout horizontal pan lock in vertical scroll flow', () => {
     expect(page.getBoundingClientRect().left).toBe(left);
   });
 });
+
+/**
+ * Reopening a book loses the offset the reader panned a zoomed page to under
+ * the lock, so the side margins have to be cropped out again on every open.
+ * The renderer exposes that offset as `panX`, a fraction of the page's
+ * horizontal overflow, which the reader stores with the book and hands back
+ * before the first page renders.
+ */
+describe('fixed-layout pan offset across reopening', () => {
+  const PAGE_HTML = '<!doctype html><html><body style="margin:0">page</body></html>';
+  const makeBook = () => ({
+    dir: 'ltr',
+    rendition: { viewport: { width: 400, height: 600 }, spread: 'none' },
+    sections: Array.from({ length: 3 }, () => ({
+      load: async () => ({ src: 'srcdoc', data: PAGE_HTML }),
+      linear: 'yes',
+    })),
+  });
+  type Renderer = HTMLElement & {
+    open(book: unknown): void;
+    goToSpread(index: number, side: string, reason?: string): Promise<void>;
+    panX: number | null;
+  };
+
+  // 400px wide host, page at 200% of fit-width: 400px of horizontal overflow.
+  const mount = (flow: string, panX?: number) => {
+    const r = document.createElement('foliate-fxl') as Renderer;
+    host = r;
+    r.style.width = '400px';
+    r.style.height = '400px';
+    r.setAttribute('flow', flow);
+    r.setAttribute('scroll-direction', 'vertical');
+    r.setAttribute('zoom', 'fit-width');
+    r.setAttribute('scale-factor', '200');
+    document.body.append(r);
+    r.open(makeBook());
+    r.toggleAttribute('lock-pan-x', true);
+    if (panX !== undefined) r.panX = panX;
+    return r;
+  };
+  const waitFor = async (check: () => boolean) => {
+    const start = performance.now();
+    while (!check()) {
+      if (performance.now() - start > 4000) throw new Error('timed out');
+      await new Promise((r) => setTimeout(r, 30));
+    }
+  };
+
+  it('restores the panned offset of a paginated page', async () => {
+    const r = mount('paginated', 0.25);
+    await r.goToSpread(1, 'center', 'page');
+    expect(r.scrollLeft).toBe(100);
+    expect(r.panX).toBe(0.25);
+  });
+
+  it('restores the locked offset of the vertical scroll strip', async () => {
+    const r = mount('scrolled', 0.75);
+    const page = r.shadowRoot!.querySelector<HTMLElement>('.scroll-page')!;
+    await waitFor(() => page.offsetWidth > r.clientWidth);
+    expect(page.getBoundingClientRect().left - r.getBoundingClientRect().left).toBe(-300);
+    expect(r.panX).toBe(0.75);
+  });
+
+  it('reports no offset when the page does not overflow sideways', async () => {
+    const r = mount('paginated');
+    r.setAttribute('scale-factor', '100');
+    await r.goToSpread(0, 'center', 'page');
+    expect(r.panX).toBeNull();
+  });
+});

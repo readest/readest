@@ -71,6 +71,8 @@ export interface Renderer extends HTMLElement {
   hideLoupe?: () => void;
   destroyLoupe?: () => void;
   pinchZoom?: (ratio: number) => void;
+  // Fixed layout: horizontal pan as a fraction of the page's horizontal overflow.
+  panX?: number | null;
   pinchEnd?: () => void;
   destroy: () => void;
 }
