@@ -860,6 +860,23 @@ describe('KOSync progress', () => {
       expect(calls).toContainEqual(linkWrite);
     });
 
+    it('matches the first author whole, not as part of a longer name', async () => {
+      results['books.select'] = {
+        data: [
+          { ...libraryBook, updated_at: '2026-02-10T00:00:00.000Z' },
+          {
+            ...libraryBook,
+            book_hash: 'f'.repeat(32),
+            author: 'Lewis Carrollton',
+            updated_at: '2026-10-03T00:00:00.000Z',
+          },
+        ],
+        error: null,
+      };
+      await put({ metadata });
+      expect(calls).toContainEqual(linkWrite);
+    });
+
     it('keeps a copy it cannot place under its own id', async () => {
       const cases: [string, Record<string, unknown>, unknown[]][] = [
         ['without metadata', {}, [libraryBook]],

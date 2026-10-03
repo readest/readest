@@ -132,9 +132,13 @@ export const linkCopy = async (
   let matches = data.filter(
     (book) => normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted,
   );
+  // The reader joins every dc:creator with ", "; Readest lists a book's
+  // authors with ", ", " and ", " & " or "、" between them.
   const author = normalizeText(authors).split(', ')[0];
+  const firstAuthor = (book: (typeof matches)[number]) =>
+    normalizeText(book.author).split(/, | and | & |、/)[0];
   if (matches.length > 1) {
-    matches = author ? matches.filter((book) => normalizeText(book.author).includes(author)) : [];
+    matches = author ? matches.filter((book) => firstAuthor(book) === author) : [];
   }
   const recent = (book: (typeof matches)[number]) => Date.parse(String(book.updated_at)) || 0;
   const [book] = matches.sort((a, b) => recent(b) - recent(a));
