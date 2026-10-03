@@ -2672,5 +2672,10 @@
   "Prompts": "Prompty",
   "Check the API key for {{name}}": "Sprawdź klucz API dla {{name}}",
   "Translation Prompt": "Prompt tłumaczenia",
-  "App only": "Tylko w aplikacji"
+  "App only": "Tylko w aplikacji",
+  "Normal": "Normalny",
+  "Italic": "Kursywa",
+  "Bold": "Pogrubienie",
+  "Bold Italic": "Pogrubiona kursywa",
+  "Font Style": "Styl czcionki"
 }

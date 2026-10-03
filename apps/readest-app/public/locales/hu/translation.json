@@ -2544,5 +2544,10 @@
   "Prompts": "Promptok",
   "Check the API key for {{name}}": "Ellenőrizze a(z) {{name}} API-kulcsát",
   "Translation Prompt": "Fordítási prompt",
-  "App only": "Csak az alkalmazásban"
+  "App only": "Csak az alkalmazásban",
+  "Normal": "Normál",
+  "Italic": "Dőlt",
+  "Bold": "Félkövér",
+  "Bold Italic": "Félkövér dőlt",
+  "Font Style": "Betűstílus"
 }

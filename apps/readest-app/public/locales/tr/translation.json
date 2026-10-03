@@ -2544,5 +2544,10 @@
   "Prompts": "İstemler",
   "Check the API key for {{name}}": "{{name}} için API anahtarını kontrol edin",
   "Translation Prompt": "Çeviri İstemi",
-  "App only": "Yalnızca uygulamada"
+  "App only": "Yalnızca uygulamada",
+  "Normal": "Normal",
+  "Italic": "İtalik",
+  "Bold": "Kalın",
+  "Bold Italic": "Kalın italik",
+  "Font Style": "Yazı tipi stili"
 }

@@ -2672,5 +2672,10 @@
   "Prompts": "Промпты",
   "Check the API key for {{name}}": "Проверьте ключ API для {{name}}",
   "Translation Prompt": "Промпт перевода",
-  "App only": "Только в приложении"
+  "App only": "Только в приложении",
+  "Normal": "Обычный",
+  "Italic": "Курсив",
+  "Bold": "Жирный",
+  "Bold Italic": "Жирный курсив",
+  "Font Style": "Стиль шрифта"
 }

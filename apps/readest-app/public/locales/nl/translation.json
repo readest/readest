@@ -2544,5 +2544,10 @@
   "Prompts": "Prompts",
   "Check the API key for {{name}}": "Controleer de API-sleutel voor {{name}}",
   "Translation Prompt": "Vertaalprompt",
-  "App only": "Alleen in de app"
+  "App only": "Alleen in de app",
+  "Normal": "Normaal",
+  "Italic": "Cursief",
+  "Bold": "Vet",
+  "Bold Italic": "Vet cursief",
+  "Font Style": "Letterstijl"
 }

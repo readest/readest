@@ -2544,5 +2544,10 @@
   "Prompts": "ප්‍රොම්ප්ට්",
   "Check the API key for {{name}}": "{{name}} සඳහා API යතුර පරීක්ෂා කරන්න",
   "Translation Prompt": "පරිවර්තන ප්‍රොම්ප්ට්",
-  "App only": "යෙදුමේ පමණි"
+  "App only": "යෙදුමේ පමණි",
+  "Normal": "සාමාන්‍ය",
+  "Italic": "ඇල",
+  "Bold": "තද",
+  "Bold Italic": "තද ඇල",
+  "Font Style": "අකුරු විලාසය"
 }

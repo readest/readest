@@ -2672,5 +2672,10 @@
   "Prompts": "Pozivi",
   "Check the API key for {{name}}": "Preverite ključ API za {{name}}",
   "Translation Prompt": "Poziv za prevajanje",
-  "App only": "Samo v aplikaciji"
+  "App only": "Samo v aplikaciji",
+  "Normal": "Navadno",
+  "Italic": "Ležeče",
+  "Bold": "Krepko",
+  "Bold Italic": "Krepko ležeče",
+  "Font Style": "Slog pisave"
 }

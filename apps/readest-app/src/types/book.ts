@@ -434,7 +434,17 @@ export interface TranslatorConfig {
   translateTargetLang: string;
   showTranslateSource: boolean;
   ttsReadAloudText: string;
+  /** Translated text font: '' follows the book, else the reader's serif/sans/mono font. */
+  translationFont: TranslationFont;
+  translationFontStyle: TranslationFontStyle;
+  /** Translated text size relative to the paragraph, in em. */
+  translationFontSize: number;
+  /** Translated text color as a hex string; '' follows the book. */
+  translationColor: string;
 }
+
+export type TranslationFont = '' | 'serif' | 'sans-serif' | 'monospace';
+export type TranslationFontStyle = 'normal' | 'italic' | 'bold' | 'bold-italic';
 
 // Markdown and plain text render the note template; JSON emits the
 // machine-readable file that Readest itself can import back (#5400).

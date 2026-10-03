@@ -22,7 +22,7 @@ import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
-import { ConvertChineseVariant } from '@/types/book';
+import { ConvertChineseVariant, TranslationFont, TranslationFontStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { getDirFromLanguage } from '@/utils/rtl';
 import { isCJKEnv } from '@/utils/misc';
@@ -36,6 +36,7 @@ import {
 import CustomDictionaries from './CustomDictionaries';
 import CustomTranslators from './CustomTranslators';
 import WordLensPanel from './WordLensPanel';
+import ColorInput from './theme/ColorInput';
 import { PiTranslate } from 'react-icons/pi';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -62,6 +63,18 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const prompts = useCustomTranslatorStore((s) => s.prompts);
   const [showTranslateSource, setShowTranslateSource] = useState(viewSettings.showTranslateSource);
   const [ttsReadAloudText, setTtsReadAloudText] = useState(viewSettings.ttsReadAloudText);
+  const [translationFont, setTranslationFont] = useState<string>(
+    viewSettings.translationFont ?? '',
+  );
+  const [translationFontStyle, setTranslationFontStyle] = useState<string>(
+    viewSettings.translationFontStyle ?? 'normal',
+  );
+  const [translationFontSize, setTranslationFontSize] = useState(
+    viewSettings.translationFontSize ?? 1,
+  );
+  const [translationColor, setTranslationColor] = useState(viewSettings.translationColor ?? '');
+  // The color being dragged in the picker; saved only when the picker closes.
+  const [colorDraft, setColorDraft] = useState<string | null>(null);
   const [replaceQuotationMarks, setReplaceQuotationMarks] = useState(
     viewSettings.replaceQuotationMarks,
   );
@@ -122,6 +135,10 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       translationPromptId: setTranslationPromptId,
       showTranslateSource: setShowTranslateSource,
       ttsReadAloudText: setTtsReadAloudText,
+      translationFont: setTranslationFont,
+      translationFontStyle: setTranslationFontStyle,
+      translationFontSize: setTranslationFontSize,
+      translationColor: setTranslationColor,
       replaceQuotationMarks: setReplaceQuotationMarks,
     });
   };
@@ -213,6 +230,27 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     else navigateToLogin(router);
   };
 
+  const translationFontOptions = [
+    { value: '', label: _('Default') },
+    { value: 'serif', label: _('Serif Font') },
+    { value: 'sans-serif', label: _('Sans-Serif Font') },
+    { value: 'monospace', label: _('Monospace Font') },
+  ];
+
+  const translationFontStyleOptions = [
+    { value: 'normal', label: _('Normal') },
+    { value: 'italic', label: _('Italic') },
+    { value: 'bold', label: _('Bold') },
+    { value: 'bold-italic', label: _('Bold Italic') },
+  ];
+
+  const translationFontSizeOptions = [
+    { value: '0.85', label: _('Small') },
+    { value: '1', label: _('Default') },
+    { value: '1.15', label: _('Large') },
+    { value: '1.3', label: _('Extra Large') },
+  ];
+
   const getCurrentTargetLangOption = () => {
     const value = translateTargetLang;
     const availableOptions = getLangOptions(TRANSLATOR_LANGS);
@@ -288,6 +326,35 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     saveViewSettings(envConfig, bookKey, 'ttsReadAloudText', ttsReadAloudText, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsReadAloudText]);
+
+  useEffect(() => {
+    if (translationFont === (viewSettings.translationFont ?? '')) return;
+    saveViewSettings(envConfig, bookKey, 'translationFont', translationFont as TranslationFont);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationFont]);
+
+  useEffect(() => {
+    if (translationFontStyle === (viewSettings.translationFontStyle ?? 'normal')) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'translationFontStyle',
+      translationFontStyle as TranslationFontStyle,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationFontStyle]);
+
+  useEffect(() => {
+    if (translationFontSize === (viewSettings.translationFontSize ?? 1)) return;
+    saveViewSettings(envConfig, bookKey, 'translationFontSize', translationFontSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationFontSize]);
+
+  useEffect(() => {
+    if (translationColor === (viewSettings.translationColor ?? '')) return;
+    saveViewSettings(envConfig, bookKey, 'translationColor', translationColor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationColor]);
 
   useEffect(() => {
     if (replaceQuotationMarks === viewSettings.replaceQuotationMarks) return;
@@ -463,6 +530,60 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
           onClick={handleOpenCustomTranslators}
           data-setting-id='settings.language.customTranslators'
         />
+      </BoxedList>
+
+      <BoxedList title={_('Translated Text')} data-setting-id='settings.language.translatedText'>
+        <SettingsRow label={_('Font')}>
+          <SettingsSelect
+            value={translationFont}
+            onChange={(e) => setTranslationFont(e.target.value)}
+            ariaLabel={_('Font')}
+            options={translationFontOptions}
+          />
+        </SettingsRow>
+        <SettingsRow label={_('Font Style')}>
+          <SettingsSelect
+            value={translationFontStyle}
+            onChange={(e) => setTranslationFontStyle(e.target.value)}
+            ariaLabel={_('Font Style')}
+            options={translationFontStyleOptions}
+          />
+        </SettingsRow>
+        <SettingsRow label={_('Font Size')}>
+          <SettingsSelect
+            value={String(translationFontSize)}
+            onChange={(e) => setTranslationFontSize(Number(e.target.value) || 1)}
+            ariaLabel={_('Font Size')}
+            options={translationFontSizeOptions}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={_('Text Color')}
+          description={translationColor ? translationColor : _('Default')}
+        >
+          <div className='flex items-center gap-2'>
+            {translationColor && (
+              <button
+                type='button'
+                onClick={() => setTranslationColor('')}
+                className='btn btn-ghost btn-xs eink-bordered shrink-0'
+              >
+                {_('Default')}
+              </button>
+            )}
+            <ColorInput
+              label={_('Text Color')}
+              value={colorDraft ?? (translationColor || '#808080')}
+              onChange={setColorDraft}
+              onCommit={() => {
+                if (colorDraft) setTranslationColor(colorDraft);
+                setColorDraft(null);
+              }}
+              showPickerIcon
+              pickerPosition='right'
+            />
+          </div>
+        </SettingsRow>
       </BoxedList>
 
       {(isCJKEnv() || view?.language.isCJK) && (

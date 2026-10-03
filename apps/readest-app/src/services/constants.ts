@@ -523,6 +523,10 @@ export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
   translateTargetLang: '',
   showTranslateSource: true,
   ttsReadAloudText: 'both',
+  translationFont: '',
+  translationFontStyle: 'normal',
+  translationFontSize: 1,
+  translationColor: '',
 };
 
 export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {

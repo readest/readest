@@ -2480,5 +2480,10 @@
   "Prompts": "提示词",
   "Check the API key for {{name}}": "请检查 {{name}} 的 API 密钥",
   "Translation Prompt": "翻译提示词",
-  "App only": "仅限应用"
+  "App only": "仅限应用",
+  "Normal": "常规",
+  "Italic": "斜体",
+  "Bold": "粗体",
+  "Bold Italic": "粗斜体",
+  "Font Style": "字体样式"
 }

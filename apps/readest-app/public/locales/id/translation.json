@@ -2480,5 +2480,10 @@
   "Prompts": "Prompt",
   "Check the API key for {{name}}": "Periksa kunci API untuk {{name}}",
   "Translation Prompt": "Prompt Terjemahan",
-  "App only": "Hanya di aplikasi"
+  "App only": "Hanya di aplikasi",
+  "Normal": "Normal",
+  "Italic": "Miring",
+  "Bold": "Tebal",
+  "Bold Italic": "Tebal miring",
+  "Font Style": "Gaya font"
 }

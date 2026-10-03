@@ -2608,5 +2608,10 @@
   "Prompts": "הנחיות",
   "Check the API key for {{name}}": "בדקו את מפתח ה-API של {{name}}",
   "Translation Prompt": "הנחיית תרגום",
-  "App only": "באפליקציה בלבד"
+  "App only": "באפליקציה בלבד",
+  "Normal": "רגיל",
+  "Italic": "נטוי",
+  "Bold": "מודגש",
+  "Bold Italic": "מודגש נטוי",
+  "Font Style": "סגנון גופן"
 }

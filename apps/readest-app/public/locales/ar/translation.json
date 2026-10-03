@@ -2800,5 +2800,10 @@
   "Prompts": "المطالبات",
   "Check the API key for {{name}}": "تحقق من مفتاح API الخاص بـ {{name}}",
   "Translation Prompt": "مطالبة الترجمة",
-  "App only": "في التطبيق فقط"
+  "App only": "في التطبيق فقط",
+  "Normal": "عادي",
+  "Italic": "مائل",
+  "Bold": "عريض",
+  "Bold Italic": "عريض مائل",
+  "Font Style": "نمط الخط"
 }

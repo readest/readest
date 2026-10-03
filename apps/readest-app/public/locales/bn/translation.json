@@ -2544,5 +2544,10 @@
   "Prompts": "প্রম্পট",
   "Check the API key for {{name}}": "{{name}}-এর API কী পরীক্ষা করুন",
   "Translation Prompt": "অনুবাদ প্রম্পট",
-  "App only": "শুধু অ্যাপে"
+  "App only": "শুধু অ্যাপে",
+  "Normal": "সাধারণ",
+  "Italic": "ইটালিক",
+  "Bold": "বোল্ড",
+  "Bold Italic": "বোল্ড ইটালিক",
+  "Font Style": "ফন্ট শৈলী"
 }

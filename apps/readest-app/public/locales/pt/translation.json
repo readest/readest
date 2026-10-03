@@ -2608,5 +2608,10 @@
   "Prompts": "Prompts",
   "Check the API key for {{name}}": "Verifique a chave de API de {{name}}",
   "Translation Prompt": "Prompt de tradução",
-  "App only": "Somente no app"
+  "App only": "Somente no app",
+  "Normal": "Normal",
+  "Italic": "Itálico",
+  "Bold": "Negrito",
+  "Bold Italic": "Negrito itálico",
+  "Font Style": "Estilo do tipo de letra"
 }

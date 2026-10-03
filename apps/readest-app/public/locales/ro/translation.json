@@ -2608,5 +2608,10 @@
   "Prompts": "Prompturi",
   "Check the API key for {{name}}": "Verifică cheia API pentru {{name}}",
   "Translation Prompt": "Prompt de traducere",
-  "App only": "Doar în aplicație"
+  "App only": "Doar în aplicație",
+  "Normal": "Normal",
+  "Italic": "Cursiv",
+  "Bold": "Aldin",
+  "Bold Italic": "Aldin cursiv",
+  "Font Style": "Stil font"
 }

@@ -2544,5 +2544,10 @@
   "Prompts": "Prompter",
   "Check the API key for {{name}}": "Kontrollera API-nyckeln för {{name}}",
   "Translation Prompt": "Översättningsprompt",
-  "App only": "Endast i appen"
+  "App only": "Endast i appen",
+  "Normal": "Normal",
+  "Italic": "Kursiv",
+  "Bold": "Fet",
+  "Bold Italic": "Fet kursiv",
+  "Font Style": "Teckenstil"
 }

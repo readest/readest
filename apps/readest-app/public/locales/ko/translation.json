@@ -2480,5 +2480,10 @@
   "Prompts": "프롬프트",
   "Check the API key for {{name}}": "{{name}}의 API 키를 확인하세요",
   "Translation Prompt": "번역 프롬프트",
-  "App only": "앱 전용"
+  "App only": "앱 전용",
+  "Normal": "보통",
+  "Italic": "기울임꼴",
+  "Bold": "굵게",
+  "Bold Italic": "굵은 기울임꼴",
+  "Font Style": "글꼴 스타일"
 }

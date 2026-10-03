@@ -2480,5 +2480,10 @@
   "Prompts": "Lời nhắc",
   "Check the API key for {{name}}": "Kiểm tra khóa API của {{name}}",
   "Translation Prompt": "Lời nhắc dịch",
-  "App only": "Chỉ trên ứng dụng"
+  "App only": "Chỉ trên ứng dụng",
+  "Normal": "Bình thường",
+  "Italic": "Nghiêng",
+  "Bold": "Đậm",
+  "Bold Italic": "Đậm nghiêng",
+  "Font Style": "Kiểu phông chữ"
 }

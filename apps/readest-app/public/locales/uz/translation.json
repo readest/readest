@@ -2544,5 +2544,10 @@
   "Prompts": "Promptlar",
   "Check the API key for {{name}}": "{{name}} uchun API kalitini tekshiring",
   "Translation Prompt": "Tarjima prompti",
-  "App only": "Faqat ilovada"
+  "App only": "Faqat ilovada",
+  "Normal": "Oddiy",
+  "Italic": "Kursiv",
+  "Bold": "Qalin",
+  "Bold Italic": "Qalin kursiv",
+  "Font Style": "Shrift uslubi"
 }

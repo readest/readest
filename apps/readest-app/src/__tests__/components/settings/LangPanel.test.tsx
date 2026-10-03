@@ -14,6 +14,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup, screen, fireEvent } from '@testing-library/react';
 
 import LangPanel from '@/components/settings/LangPanel';
+import { saveViewSettings } from '@/helpers/settings';
 import type { Book, BookFormat, ViewSettings } from '@/types/book';
 
 const state = vi.hoisted(() => ({
@@ -190,5 +191,27 @@ describe('LangPanel — Custom Translators premium gate', () => {
     fireEvent.click(getCustomTranslatorsRow());
     expect(state.push).not.toHaveBeenCalled();
     expect(screen.getByText('Add Translator')).toBeTruthy();
+  });
+});
+
+describe('LangPanel — Translated Text style', () => {
+  afterEach(() => {
+    cleanup();
+    vi.mocked(saveViewSettings).mockClear();
+  });
+
+  it('saves the chosen font, style and size for translated text', () => {
+    render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+    // Settings saved before these keys existed must not be rewritten on open.
+    expect(vi.mocked(saveViewSettings)).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Font'), { target: { value: 'serif' } });
+    fireEvent.change(screen.getByLabelText('Font Style'), { target: { value: 'italic' } });
+    fireEvent.change(screen.getByLabelText('Font Size'), { target: { value: '1.15' } });
+
+    const saved = vi.mocked(saveViewSettings).mock.calls.map(([, , key, value]) => [key, value]);
+    expect(saved).toContainEqual(['translationFont', 'serif']);
+    expect(saved).toContainEqual(['translationFontStyle', 'italic']);
+    expect(saved).toContainEqual(['translationFontSize', 1.15]);
   });
 });

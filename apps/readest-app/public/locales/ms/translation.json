@@ -2480,5 +2480,10 @@
   "Prompts": "Gesaan",
   "Check the API key for {{name}}": "Semak kunci API untuk {{name}}",
   "Translation Prompt": "Gesaan Terjemahan",
-  "App only": "Aplikasi sahaja"
+  "App only": "Aplikasi sahaja",
+  "Normal": "Biasa",
+  "Italic": "Condong",
+  "Bold": "Tebal",
+  "Bold Italic": "Tebal condong",
+  "Font Style": "Gaya fon"
 }

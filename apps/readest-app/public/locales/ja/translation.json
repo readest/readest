@@ -2480,5 +2480,10 @@
   "Prompts": "プロンプト",
   "Check the API key for {{name}}": "{{name}}のAPIキーを確認してください",
   "Translation Prompt": "翻訳プロンプト",
-  "App only": "アプリ限定"
+  "App only": "アプリ限定",
+  "Normal": "標準",
+  "Italic": "斜体",
+  "Bold": "太字",
+  "Bold Italic": "太字斜体",
+  "Font Style": "フォントスタイル"
 }

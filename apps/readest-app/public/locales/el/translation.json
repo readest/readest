@@ -2544,5 +2544,10 @@
   "Prompts": "Προτροπές",
   "Check the API key for {{name}}": "Ελέγξτε το κλειδί API για το {{name}}",
   "Translation Prompt": "Προτροπή μετάφρασης",
-  "App only": "Μόνο στην εφαρμογή"
+  "App only": "Μόνο στην εφαρμογή",
+  "Normal": "Κανονικά",
+  "Italic": "Πλάγια",
+  "Bold": "Έντονα",
+  "Bold Italic": "Έντονα πλάγια",
+  "Font Style": "Στυλ γραμματοσειράς"
 }

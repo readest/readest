@@ -2544,5 +2544,10 @@
   "Prompts": "پرامپت‌ها",
   "Check the API key for {{name}}": "کلید API مربوط به {{name}} را بررسی کنید",
   "Translation Prompt": "پرامپت ترجمه",
-  "App only": "فقط در برنامه"
+  "App only": "فقط در برنامه",
+  "Normal": "عادی",
+  "Italic": "ایتالیک",
+  "Bold": "پررنگ",
+  "Bold Italic": "پررنگ ایتالیک",
+  "Font Style": "سبک قلم"
 }

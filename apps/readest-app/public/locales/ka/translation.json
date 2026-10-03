@@ -2544,5 +2544,10 @@
   "Prompts": "პრომპტები",
   "Check the API key for {{name}}": "შეამოწმეთ API გასაღები: {{name}}",
   "Translation Prompt": "თარგმანის პრომპტი",
-  "App only": "მხოლოდ აპში"
+  "App only": "მხოლოდ აპში",
+  "Normal": "ჩვეულებრივი",
+  "Italic": "დახრილი",
+  "Bold": "მუქი",
+  "Bold Italic": "მუქი დახრილი",
+  "Font Style": "შრიფტის სტილი"
 }

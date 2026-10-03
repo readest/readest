@@ -2480,5 +2480,10 @@
   "Prompts": "พรอมต์",
   "Check the API key for {{name}}": "ตรวจสอบคีย์ API ของ {{name}}",
   "Translation Prompt": "พรอมต์การแปล",
-  "App only": "เฉพาะแอป"
+  "App only": "เฉพาะแอป",
+  "Normal": "ปกติ",
+  "Italic": "ตัวเอียง",
+  "Bold": "ตัวหนา",
+  "Bold Italic": "ตัวหนาเอียง",
+  "Font Style": "ลักษณะแบบอักษร"
 }

@@ -868,7 +868,23 @@ export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
   `;
 };
 
-const getTranslationStyles = (showSource: boolean) => `
+const getTranslatedTextStyles = (viewSettings: ViewSettings) => {
+  const { translationFont, translationFontStyle, translationFontSize, translationColor } =
+    viewSettings;
+  return [
+    translationFont && `font-family: var(--${translationFont}) !important;`,
+    translationFontStyle?.includes('italic') && 'font-style: italic !important;',
+    translationFontStyle?.includes('bold') && 'font-weight: bold !important;',
+    translationFontSize &&
+      translationFontSize !== 1 &&
+      `font-size: ${translationFontSize}em !important;`,
+    translationColor && `color: ${translationColor} !important;`,
+  ]
+    .filter(Boolean)
+    .join('\n    ');
+};
+
+const getTranslationStyles = (viewSettings: ViewSettings) => `
   .translation-source {
   }
   .translation-target {
@@ -883,7 +899,8 @@ const getTranslationStyles = (showSource: boolean) => `
   }
   .translation-target-block {
     display: block !important;
-    ${showSource ? 'margin: 0.5em 0 !important;' : ''}
+    ${viewSettings.showTranslateSource ? 'margin: 0.5em 0 !important;' : ''}
+    ${getTranslatedTextStyles(viewSettings)}
   }
   .translation-target-toc {
     display: block !important;
@@ -1056,7 +1073,7 @@ export const getStyles = (
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
   );
-  const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
+  const translationStyles = getTranslationStyles(viewSettings);
   const warichuStyles = getWarichuStyles();
   const rubyStyles = getRubyStyles(viewSettings);
   const dialogueStyles = isDialogueHighlightActive(viewSettings)
@@ -1100,7 +1117,7 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 
   const styleElement = document.createElement('style');
   styleElement.id = styleId;
-  styleElement.textContent = getTranslationStyles(viewSettings.showTranslateSource);
+  styleElement.textContent = getTranslationStyles(viewSettings);
 
   document.head.appendChild(styleElement);
 };
