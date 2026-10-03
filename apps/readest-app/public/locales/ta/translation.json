@@ -2550,5 +2550,13 @@
   "Bold": "தடிமன்",
   "Bold Italic": "தடித்த சாய்வு",
   "Font Style": "எழுத்துரு பாணி",
-  "Failed to share the image": "படத்தைப் பகிர முடியவில்லை"
+  "Failed to share the image": "படத்தைப் பகிர முடியவில்லை",
+  "Context Dictionary": "சூழல் அகராதி",
+  "Requires Readest Premium.": "Readest Premium தேவை.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "இதைப் பயன்படுத்த தனிப்பயன் மொழிபெயர்ப்பாளர்கள் பகுதியில் OpenAI-இணக்கமான மொழிபெயர்ப்பாளரைச் சேர்க்கவும்.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "தேர்ந்தெடுத்த உரை பத்தியில் பயன்படுத்தப்பட்டுள்ளபடி, உங்கள் மொழிபெயர்ப்பு இலக்கு மொழியில் விளக்குகிறது.",
+  "AI Translator": "AI மொழிபெயர்ப்பாளர்",
+  "Examples": "எடுத்துக்காட்டுகள்",
+  "Synonyms": "ஒத்த சொற்கள்",
+  "Context Dictionary failed: {{message}}": "சூழல் அகராதி தோல்வியடைந்தது: {{message}}"
 }

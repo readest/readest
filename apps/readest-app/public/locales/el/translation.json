@@ -2550,5 +2550,13 @@
   "Bold": "Έντονα",
   "Bold Italic": "Έντονα πλάγια",
   "Font Style": "Στυλ γραμματοσειράς",
-  "Failed to share the image": "Αποτυχία κοινοποίησης της εικόνας"
+  "Failed to share the image": "Αποτυχία κοινοποίησης της εικόνας",
+  "Context Dictionary": "Λεξικό συμφραζομένων",
+  "Requires Readest Premium.": "Απαιτεί Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Προσθέστε έναν μεταφραστή συμβατό με OpenAI στο «Προσαρμοσμένοι μεταφραστές» για να το χρησιμοποιήσετε.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Εξηγεί το επιλεγμένο κείμενο όπως χρησιμοποιείται στο απόσπασμα, στη γλώσσα-στόχο της μετάφρασής σας.",
+  "AI Translator": "Μεταφραστής ΤΝ",
+  "Examples": "Παραδείγματα",
+  "Synonyms": "Συνώνυμα",
+  "Context Dictionary failed: {{message}}": "Σφάλμα λεξικού συμφραζομένων: {{message}}"
 }

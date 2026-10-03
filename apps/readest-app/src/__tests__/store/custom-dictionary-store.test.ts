@@ -705,6 +705,7 @@ describe('customDictionaryStore — loadCustomDictionaries reconciliation', () =
       'builtin:wikipedia',
       'imp-known',
       'builtin:system',
+      'builtin:context',
       'web:builtin:google',
       'web:builtin:urban',
       'web:builtin:merriam-webster',
@@ -891,5 +892,43 @@ describe('customDictionaryStore — autoPlayPronunciation (#6265)', () => {
 
     await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
     expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
+  });
+});
+
+describe('customDictionaryStore — context dictionary (#5544)', () => {
+  type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+  const fakeEnv = {
+    getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+  } as unknown as EnvConfigType;
+  const seedPersisted = (dictionarySettings: Record<string, unknown>) =>
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings,
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+
+  it('appends the context dictionary, disabled, for existing users', async () => {
+    seedPersisted({
+      providerOrder: ['builtin:wiktionary', 'builtin:wikipedia'],
+      providerEnabled: { 'builtin:wiktionary': true, 'builtin:wikipedia': true },
+    });
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    const { settings } = useCustomDictionaryStore.getState();
+    expect(settings.providerOrder).toContain('builtin:context');
+    expect(settings.providerEnabled['builtin:context']).toBe(false);
+  });
+
+  it('keeps the chosen translator across loads and updates it', async () => {
+    seedPersisted({
+      providerOrder: ['builtin:context'],
+      providerEnabled: { 'builtin:context': true },
+      contextTranslatorId: 'llm-1',
+    });
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.contextTranslatorId).toBe('llm-1');
+
+    useCustomDictionaryStore.getState().setContextTranslatorId('llm-2');
+    expect(useCustomDictionaryStore.getState().settings.contextTranslatorId).toBe('llm-2');
   });
 });

@@ -38,9 +38,21 @@ interface PendingBatch {
 // The AI SDK is loaded on first use: it pulls in Node-only modules at import
 // time, and the reader imports this file whether or not an LLM is configured.
 let sdk: Promise<[typeof import('ai'), typeof import('@ai-sdk/openai-compatible')]> | undefined;
-const loadSDK = () => (sdk ??= Promise.all([import('ai'), import('@ai-sdk/openai-compatible')]));
+export const loadSDK = () =>
+  (sdk ??= Promise.all([import('ai'), import('@ai-sdk/openai-compatible')]));
 
-const stripReasoning = (text: string) => text.replace(/^\s*<think>[\s\S]*?<\/think>/, '').trim();
+export const stripReasoning = (text: string) =>
+  text.replace(/^\s*<think>[\s\S]*?<\/think>/, '').trim();
+
+export const createChatModel = async (config: CustomTranslator): Promise<LanguageModel> => {
+  const [, { createOpenAICompatible }] = await loadSDK();
+  return createOpenAICompatible({
+    name: 'custom',
+    baseURL: (config.baseUrl ?? '').replace(/\/+$/, ''),
+    apiKey: config.apiKey || undefined,
+    fetch: getAIFetch(),
+  }).chatModel(config.model ?? '');
+};
 
 /** Splits a `[1]\n…\n\n[2]\n…` reply; returns null unless it holds exactly blocks 1..n. */
 const splitNumbered = (text: string, n: number): string[] | null => {
@@ -66,18 +78,7 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
   const queue: PendingBatch[] = [];
   let inflight = 0;
 
-  const getModel = async () => {
-    if (!model) {
-      const [, { createOpenAICompatible }] = await loadSDK();
-      model = createOpenAICompatible({
-        name: 'custom',
-        baseURL: (config.baseUrl ?? '').replace(/\/+$/, ''),
-        apiKey: config.apiKey || undefined,
-        fetch: getAIFetch(),
-      }).chatModel(config.model ?? '');
-    }
-    return model;
-  };
+  const getModel = async () => (model ??= await createChatModel(config));
 
   const renderSystem = (sourceLang: string, targetLang: string, context?: TranslationContext) =>
     renderPrompt(getPromptTemplate(context?.promptId), {

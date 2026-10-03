@@ -2550,5 +2550,13 @@
   "Bold": "Fett",
   "Bold Italic": "Fett kursiv",
   "Font Style": "Schriftstil",
-  "Failed to share the image": "Bild konnte nicht geteilt werden"
+  "Failed to share the image": "Bild konnte nicht geteilt werden",
+  "Context Dictionary": "Kontextwörterbuch",
+  "Requires Readest Premium.": "Erfordert Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Füge unter „Eigene Übersetzer“ einen OpenAI-kompatiblen Übersetzer hinzu, um es zu nutzen.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Erklärt den markierten Text so, wie er in der Passage verwendet wird, in deiner Übersetzungszielsprache.",
+  "AI Translator": "KI-Übersetzer",
+  "Examples": "Beispiele",
+  "Synonyms": "Synonyme",
+  "Context Dictionary failed: {{message}}": "Kontextwörterbuch fehlgeschlagen: {{message}}"
 }

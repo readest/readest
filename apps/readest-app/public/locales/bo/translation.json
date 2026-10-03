@@ -2486,5 +2486,13 @@
   "Bold": "སྦོམ་ཡིག",
   "Bold Italic": "སྦོམ་ཡིག་གསེག་མ།",
   "Font Style": "ཡིག་གཟུགས་ཀྱི་བཟོ་ལྟ།",
-  "Failed to share the image": "པར་རིས་མཉམ་སྤྱོད་བྱེད་མ་ཐུབ།"
+  "Failed to share the image": "པར་རིས་མཉམ་སྤྱོད་བྱེད་མ་ཐུབ།",
+  "Context Dictionary": "སྐབས་དོན་ཚིག་མཛོད།",
+  "Requires Readest Premium.": "Readest Premium དགོས།",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "བེད་སྤྱོད་བྱེད་པར་ རང་སྒྲིག་སྒྱུར་བཅོས་ཆས། ནང་ OpenAI དང་མཐུན་པའི་སྒྱུར་བཅོས་ཆས་ཤིག་སྣོན་རོགས།",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "བདམས་ཟིན་པའི་ཡི་གེ་དེ་ལེའུ་ཚན་ནང་ཇི་ལྟར་བེད་སྤྱོད་བྱས་པ་ལྟར་ཁྱེད་ཀྱི་སྒྱུར་ཡུལ་སྐད་ཡིག་ཐོག་འགྲེལ་བཤད་བྱེད།",
+  "AI Translator": "AI སྒྱུར་བཅོས་ཆས།",
+  "Examples": "དཔེ་བརྗོད།",
+  "Synonyms": "མིང་གྲངས་མཚུངས་པ།",
+  "Context Dictionary failed: {{message}}": "སྐབས་དོན་ཚིག་མཛོད་ཕམ་སོང་། {{message}}"
 }

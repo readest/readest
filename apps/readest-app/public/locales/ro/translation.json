@@ -2614,5 +2614,13 @@
   "Bold": "Aldin",
   "Bold Italic": "Aldin cursiv",
   "Font Style": "Stil font",
-  "Failed to share the image": "Imaginea nu a putut fi partajată"
+  "Failed to share the image": "Imaginea nu a putut fi partajată",
+  "Context Dictionary": "Dicționar contextual",
+  "Requires Readest Premium.": "Necesită Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Adăugați un traducător compatibil OpenAI în Traducători personalizați pentru a-l folosi.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Explică textul selectat așa cum este folosit în pasaj, în limba țintă a traducerii.",
+  "AI Translator": "Traducător AI",
+  "Examples": "Exemple",
+  "Synonyms": "Sinonime",
+  "Context Dictionary failed: {{message}}": "Dicționarul contextual a eșuat: {{message}}"
 }

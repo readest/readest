@@ -17,11 +17,13 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import type { DictionarySettings } from '@/services/dictionaries/types';
 import { eventDispatcher } from '@/utils/event';
+import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
+import type { CustomTranslator } from '@/types/translation';
 
 // Per-test platform control. `isSystemDictionaryEnabled` (real, from the
 // registry) reads `isSystemDictionarySupported`, so toggling these flips both
 // the row visibility and the lock gate the component now relies on.
-const platform = vi.hoisted(() => ({ supported: false, available: false }));
+const platform = vi.hoisted(() => ({ supported: false, available: false, premium: true }));
 const mocks = vi.hoisted(() => ({
   importDictionaries: vi.fn(),
   selectFiles: vi.fn(),
@@ -41,6 +43,14 @@ vi.mock('@/context/EnvContext', () => ({
     appService: { importDictionaries: mocks.importDictionaries },
     envConfig: {},
   }),
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ token: 'token', user: null }),
+}));
+
+vi.mock('@/utils/access', () => ({
+  isCustomTranslatorAllowed: () => platform.premium,
 }));
 
 vi.mock('@/hooks/useFileSelector', () => ({
@@ -88,6 +98,8 @@ const getToggles = (container: HTMLElement) =>
 beforeEach(() => {
   platform.supported = false;
   platform.available = false;
+  platform.premium = true;
+  useCustomTranslatorStore.setState({ translators: [], loaded: true });
   mocks.importDictionaries.mockReset();
   mocks.selectFiles.mockReset();
 });
@@ -235,5 +247,52 @@ describe('CustomDictionaries — auto-play pronunciation (#6265)', () => {
 
     expect(useCustomDictionaryStore.getState().settings.autoPlayPronunciation).toBe(true);
     expect(saveCustomDictionaries).toHaveBeenCalled();
+  });
+});
+
+describe('CustomDictionaries — context dictionary (#5544)', () => {
+  const llm = (id: string): CustomTranslator => ({
+    id,
+    type: 'openai-compatible',
+    name: `LLM ${id}`,
+    addedAt: 1,
+    updatedAt: 1,
+  });
+  const contextSettings: DictionarySettings = {
+    providerOrder: [BUILTIN_PROVIDER_IDS.context],
+    providerEnabled: { [BUILTIN_PROVIDER_IDS.context]: false },
+    webSearches: [],
+  };
+
+  it('cannot be enabled until an OpenAI-compatible translator exists', () => {
+    seedSettings(contextSettings);
+    const { container } = render(<CustomDictionaries onBack={() => {}} />);
+    expect(screen.getByText('Context Dictionary')).toBeTruthy();
+    expect(screen.queryByText('AI')).toBeNull();
+    expect(getToggles(container)[0]!.disabled).toBe(true);
+    expect(screen.getByText(/Add an OpenAI-compatible translator/)).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'AI Translator' })).toBeNull();
+  });
+
+  it('cannot be enabled without premium', () => {
+    platform.premium = false;
+    useCustomTranslatorStore.setState({ translators: [llm('a')], loaded: true });
+    seedSettings(contextSettings);
+    const { container } = render(<CustomDictionaries onBack={() => {}} />);
+    expect(getToggles(container)[0]!.disabled).toBe(true);
+  });
+
+  it('lets the user pick which translator answers', async () => {
+    useCustomTranslatorStore.setState({ translators: [llm('a'), llm('b')], loaded: true });
+    seedSettings(contextSettings);
+    const { container } = render(<CustomDictionaries onBack={() => {}} />);
+    expect(getToggles(container)[0]!.disabled).toBe(false);
+
+    const select = screen.getByRole('combobox', { name: 'AI Translator' }) as HTMLSelectElement;
+    expect(select.value).toBe('a');
+    await act(async () => {
+      fireEvent.change(select, { target: { value: 'b' } });
+    });
+    expect(useCustomDictionaryStore.getState().settings.contextTranslatorId).toBe('b');
   });
 });

@@ -2486,5 +2486,13 @@
   "Bold": "ตัวหนา",
   "Bold Italic": "ตัวหนาเอียง",
   "Font Style": "ลักษณะแบบอักษร",
-  "Failed to share the image": "แชร์รูปภาพไม่สำเร็จ"
+  "Failed to share the image": "แชร์รูปภาพไม่สำเร็จ",
+  "Context Dictionary": "พจนานุกรมตามบริบท",
+  "Requires Readest Premium.": "ต้องใช้ Readest Premium",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "เพิ่มตัวแปลที่รองรับ OpenAI ในตัวแปลภาษาแบบกำหนดเองเพื่อใช้งาน",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "อธิบายข้อความที่เลือกตามที่ใช้ในข้อความตอนนั้น เป็นภาษาปลายทางของการแปล",
+  "AI Translator": "ตัวแปล AI",
+  "Examples": "ตัวอย่าง",
+  "Synonyms": "คำพ้องความหมาย",
+  "Context Dictionary failed: {{message}}": "พจนานุกรมตามบริบทล้มเหลว: {{message}}"
 }

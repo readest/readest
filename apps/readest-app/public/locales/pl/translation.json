@@ -2678,5 +2678,13 @@
   "Bold": "Pogrubienie",
   "Bold Italic": "Pogrubiona kursywa",
   "Font Style": "Styl czcionki",
-  "Failed to share the image": "Nie udało się udostępnić obrazu"
+  "Failed to share the image": "Nie udało się udostępnić obrazu",
+  "Context Dictionary": "Słownik kontekstowy",
+  "Requires Readest Premium.": "Wymaga Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Aby z niego korzystać, dodaj tłumacza zgodnego z OpenAI w sekcji Własni tłumacze.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Wyjaśnia zaznaczony tekst tak, jak został użyty we fragmencie, w docelowym języku tłumaczenia.",
+  "AI Translator": "Tłumacz AI",
+  "Examples": "Przykłady",
+  "Synonyms": "Synonimy",
+  "Context Dictionary failed: {{message}}": "Błąd słownika kontekstowego: {{message}}"
 }

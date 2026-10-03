@@ -2614,5 +2614,13 @@
   "Bold": "Grassetto",
   "Bold Italic": "Grassetto corsivo",
   "Font Style": "Stile carattere",
-  "Failed to share the image": "Impossibile condividere l’immagine"
+  "Failed to share the image": "Impossibile condividere l’immagine",
+  "Context Dictionary": "Dizionario contestuale",
+  "Requires Readest Premium.": "Richiede Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Aggiungi un traduttore compatibile con OpenAI in Traduttori personalizzati per usarlo.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Spiega il testo selezionato così come è usato nel passaggio, nella tua lingua di destinazione della traduzione.",
+  "AI Translator": "Traduttore IA",
+  "Examples": "Esempi",
+  "Synonyms": "Sinonimi",
+  "Context Dictionary failed: {{message}}": "Errore del dizionario contestuale: {{message}}"
 }

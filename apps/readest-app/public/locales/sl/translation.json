@@ -2678,5 +2678,13 @@
   "Bold": "Krepko",
   "Bold Italic": "Krepko ležeče",
   "Font Style": "Slog pisave",
-  "Failed to share the image": "Slike ni bilo mogoče deliti"
+  "Failed to share the image": "Slike ni bilo mogoče deliti",
+  "Context Dictionary": "Kontekstni slovar",
+  "Requires Readest Premium.": "Zahteva Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Za uporabo dodajte prevajalnik, združljiv z OpenAI, v razdelku Prilagojeni prevajalniki.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Razloži izbrano besedilo, kot je uporabljeno v odlomku, v vašem ciljnem jeziku prevoda.",
+  "AI Translator": "Prevajalnik UI",
+  "Examples": "Primeri",
+  "Synonyms": "Sopomenke",
+  "Context Dictionary failed: {{message}}": "Napaka kontekstnega slovarja: {{message}}"
 }

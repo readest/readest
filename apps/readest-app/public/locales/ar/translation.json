@@ -2806,5 +2806,13 @@
   "Bold": "عريض",
   "Bold Italic": "عريض مائل",
   "Font Style": "نمط الخط",
-  "Failed to share the image": "تعذّرت مشاركة الصورة"
+  "Failed to share the image": "تعذّرت مشاركة الصورة",
+  "Context Dictionary": "قاموس السياق",
+  "Requires Readest Premium.": "يتطلب Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "أضف مترجمًا متوافقًا مع OpenAI في مترجمون مخصصون لاستخدامه.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "يشرح النص المحدد كما ورد في المقطع، بلغة الترجمة المستهدفة لديك.",
+  "AI Translator": "مترجم الذكاء الاصطناعي",
+  "Examples": "أمثلة",
+  "Synonyms": "مرادفات",
+  "Context Dictionary failed: {{message}}": "فشل قاموس السياق: {{message}}"
 }

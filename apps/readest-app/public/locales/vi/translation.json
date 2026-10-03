@@ -2486,5 +2486,13 @@
   "Bold": "Đậm",
   "Bold Italic": "Đậm nghiêng",
   "Font Style": "Kiểu phông chữ",
-  "Failed to share the image": "Không thể chia sẻ hình ảnh"
+  "Failed to share the image": "Không thể chia sẻ hình ảnh",
+  "Context Dictionary": "Từ điển ngữ cảnh",
+  "Requires Readest Premium.": "Yêu cầu Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Thêm một trình dịch tương thích OpenAI trong Trình dịch tùy chỉnh để sử dụng.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Giải thích văn bản được chọn theo cách nó được dùng trong đoạn văn, bằng ngôn ngữ đích dịch của bạn.",
+  "AI Translator": "Trình dịch AI",
+  "Examples": "Ví dụ",
+  "Synonyms": "Từ đồng nghĩa",
+  "Context Dictionary failed: {{message}}": "Từ điển ngữ cảnh gặp lỗi: {{message}}"
 }

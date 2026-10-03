@@ -2550,5 +2550,13 @@
   "Bold": "Vet",
   "Bold Italic": "Vet cursief",
   "Font Style": "Letterstijl",
-  "Failed to share the image": "Afbeelding delen mislukt"
+  "Failed to share the image": "Afbeelding delen mislukt",
+  "Context Dictionary": "Contextwoordenboek",
+  "Requires Readest Premium.": "Vereist Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Voeg een OpenAI-compatibele vertaler toe in Eigen vertalers om dit te gebruiken.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Legt de geselecteerde tekst uit zoals die in de passage wordt gebruikt, in je doeltaal voor vertalingen.",
+  "AI Translator": "AI-vertaler",
+  "Examples": "Voorbeelden",
+  "Synonyms": "Synoniemen",
+  "Context Dictionary failed: {{message}}": "Contextwoordenboek mislukt: {{message}}"
 }

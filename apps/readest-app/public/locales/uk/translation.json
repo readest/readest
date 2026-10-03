@@ -2678,5 +2678,13 @@
   "Bold": "Жирний",
   "Bold Italic": "Жирний курсив",
   "Font Style": "Стиль шрифту",
-  "Failed to share the image": "Не вдалося поділитися зображенням"
+  "Failed to share the image": "Не вдалося поділитися зображенням",
+  "Context Dictionary": "Контекстний словник",
+  "Requires Readest Premium.": "Потрібен Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Додайте OpenAI-сумісний перекладач у розділі «Власні перекладачі», щоб скористатися ним.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Пояснює виділений текст так, як його вжито в уривку, мовою перекладу.",
+  "AI Translator": "ШІ-перекладач",
+  "Examples": "Приклади",
+  "Synonyms": "Синоніми",
+  "Context Dictionary failed: {{message}}": "Помилка контекстного словника: {{message}}"
 }
