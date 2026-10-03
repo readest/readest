@@ -102,8 +102,11 @@ const PromptEditor: React.FC<PromptEditorProps> = ({
       <BoxedList>
         {!readOnly && (
           <div className='flex flex-col gap-2 py-3 pe-4'>
-            <SettingLabel>{_('Name')}</SettingLabel>
+            <SettingLabel as='label' htmlFor='tp-name'>
+              {_('Name')}
+            </SettingLabel>
             <input
+              id='tp-name'
               type='text'
               className='input input-sm eink-bordered w-full'
               value={name}
@@ -113,8 +116,11 @@ const PromptEditor: React.FC<PromptEditorProps> = ({
           </div>
         )}
         <div className='flex flex-col gap-2 py-3 pe-4'>
-          <SettingLabel>{_('Prompt')}</SettingLabel>
+          <SettingLabel as='label' htmlFor='tp-prompt'>
+            {_('Prompt')}
+          </SettingLabel>
           <textarea
+            id='tp-prompt'
             className='textarea eink-bordered h-48 w-full text-base sm:text-sm'
             value={systemPrompt}
             readOnly={readOnly}

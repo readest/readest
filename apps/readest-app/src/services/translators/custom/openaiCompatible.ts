@@ -35,7 +35,8 @@ interface PendingBatch {
   timer?: ReturnType<typeof setTimeout>;
 }
 
-const stripReasoning = (text: string) => text.replace(/^[\s\S]*<\/think>/, '').trim();
+// Only a leading reasoning block: a book may legitimately quote `</think>`.
+const stripReasoning = (text: string) => text.replace(/^\s*<think>[\s\S]*?<\/think>/, '').trim();
 
 /** Splits a `[1]\n…\n\n[2]\n…` reply; returns null unless it holds exactly blocks 1..n. */
 const splitNumbered = (text: string, n: number): string[] | null => {

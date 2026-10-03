@@ -63,6 +63,40 @@ describe('createDeepLTranslator', () => {
     vi.useRealTimers();
   });
 
+  it('stops waiting for a 429 retry when the caller aborts', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValueOnce(
+      new Response('', { status: 429, headers: { 'Retry-After': '120' } }),
+    );
+    const controller = new AbortController();
+    const promise = createDeepLTranslator(config('k')).translate(
+      ['Hello'],
+      'en',
+      'de',
+      null,
+      false,
+      controller.signal,
+    );
+    const settled = expect(promise).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(0);
+    controller.abort();
+    await settled;
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it('caps a long Retry-After at 10 seconds', async () => {
+    vi.useFakeTimers();
+    fetchMock
+      .mockResolvedValueOnce(new Response('', { status: 429, headers: { 'Retry-After': '600' } }))
+      .mockResolvedValueOnce(ok(['Hallo']));
+    const promise = createDeepLTranslator(config('k')).translate(['Hello'], 'en', 'de');
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(await promise).toEqual(['Hallo']);
+    vi.useRealTimers();
+  });
+
   it('maps 403 to UNAUTHORIZED and 456 to a quota error', async () => {
     fetchMock.mockResolvedValueOnce(new Response('', { status: 403 }));
     const t = createDeepLTranslator(config('k'));

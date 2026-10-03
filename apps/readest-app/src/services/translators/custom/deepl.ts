@@ -5,6 +5,7 @@ import { toDeepLLang } from '../providers/deepl';
 import { CUSTOM_TRANSLATOR_PREFIX } from './constants';
 
 const DEFAULT_RETRY_AFTER_SECONDS = 2;
+const MAX_RETRY_AFTER_SECONDS = 10;
 
 /** DeepL API with the user's own key; Free keys end in `:fx`. */
 export const createDeepLTranslator = (config: CustomTranslator): TranslationProvider => {
@@ -41,7 +42,17 @@ export const createDeepLTranslator = (config: CustomTranslator): TranslationProv
       if (response.status === 429) {
         const retryAfter =
           Number(response.headers.get('Retry-After')) || DEFAULT_RETRY_AFTER_SECONDS;
-        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+        await new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(resolve, Math.min(retryAfter, MAX_RETRY_AFTER_SECONDS) * 1000);
+          signal?.addEventListener(
+            'abort',
+            () => {
+              clearTimeout(timer);
+              reject(signal.reason);
+            },
+            { once: true },
+          );
+        });
         response = await send();
       }
       if (response.status === 401 || response.status === 403) {

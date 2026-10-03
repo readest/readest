@@ -34,9 +34,15 @@ interface CustomTranslatorEditorProps {
   onBack: () => void;
 }
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+const Field: React.FC<{ id: string; label: string; children: React.ReactNode }> = ({
+  id,
+  label,
+  children,
+}) => (
   <div className='flex flex-col gap-2 py-3 pe-4'>
-    <SettingLabel>{label}</SettingLabel>
+    <SettingLabel as='label' htmlFor={id}>
+      {label}
+    </SettingLabel>
     {children}
   </div>
 );
@@ -141,8 +147,9 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
             ]}
           />
         </SettingsRow>
-        <Field label={_('Name')}>
+        <Field id='ct-name' label={_('Name')}>
           <input
+            id='ct-name'
             type='text'
             className={inputClass}
             value={draft.name}
@@ -151,8 +158,9 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
           />
         </Field>
         {isLLM && (
-          <Field label={_('Base URL')}>
+          <Field id='ct-base-url' label={_('Base URL')}>
             <input
+              id='ct-base-url'
               type='text'
               className={inputClass}
               value={draft.baseUrl ?? ''}
@@ -167,8 +175,9 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
             </datalist>
           </Field>
         )}
-        <Field label={_('API Key')}>
+        <Field id='ct-api-key' label={_('API Key')}>
           <input
+            id='ct-api-key'
             type='password'
             className={inputClass}
             value={draft.apiKey ?? ''}
@@ -178,9 +187,10 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
           />
         </Field>
         {isLLM && (
-          <Field label={_('Model')}>
+          <Field id='ct-model' label={_('Model')}>
             <div className='flex w-full gap-2'>
               <input
+                id='ct-model'
                 type='text'
                 className={clsx(inputClass, 'flex-1')}
                 value={draft.model ?? ''}
@@ -211,8 +221,9 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
           </Field>
         )}
         {isLLM && (
-          <Field label={_('Temperature')}>
+          <Field id='ct-temperature' label={_('Temperature')}>
             <input
+              id='ct-temperature'
               type='number'
               className={inputClass}
               min={0}

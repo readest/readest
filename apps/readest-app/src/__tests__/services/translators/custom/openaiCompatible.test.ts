@@ -104,6 +104,14 @@ describe('createOpenAICompatibleTranslator', () => {
     expect(await t.translate(['Hello'], 'en', 'fr')).toEqual(['Bonjour']);
   });
 
+  it('keeps a literal </think> that is not a leading reasoning block', async () => {
+    generateTextMock.mockResolvedValue({ text: 'Il a écrit </think> au mur' });
+    const t = createOpenAICompatibleTranslator(config);
+    expect(await t.translate(['He wrote </think> on the wall'], 'en', 'fr')).toEqual([
+      'Il a écrit </think> au mur',
+    ]);
+  });
+
   it('passes empty strings through without calling the model', async () => {
     const t = createOpenAICompatibleTranslator(config);
     expect(await t.translate(['', '  '], 'en', 'fr')).toEqual(['', '  ']);
