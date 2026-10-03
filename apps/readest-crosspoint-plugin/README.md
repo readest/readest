@@ -67,7 +67,9 @@ the pages it covered, in the book's Readest page count, so it counts like
 reading in Readest. Until a Readest app has opened the book, sessions are
 counted in steps of 1% of the book. Books matching one in your Readest library
 (the same file, identified by its KOReader-compatible partial MD5) merge with
-that book's statistics; others appear under their file hash.
+that book's statistics, and so does a copy rewritten by **Optimize EPUB** once
+its first **Sync Progress** has linked it (see Reading progress). Others appear
+under their file hash.
 
 ## Reading progress
 
@@ -83,6 +85,14 @@ wins).
 Positions travel as KOReader XPointers. Readest to CrossPoint lands on the right
 page. CrossPoint to Readest lands one to three lines late on current CrossPoint
 `develop`; CrossPoint PR #3424 makes it exact.
+
+Sign-in also turns on KOReader Sync's **Send metadata**, so each upload carries
+the book's title and authors. A book uploaded with the File Manager's
+**Optimize EPUB** is rewritten, so it no longer matches Readest's copy by
+partial MD5. Its first **Sync Progress** links it to the Readest EPUB with the
+same title (and first author, when titles collide) without moving Readest's
+position back. The next sync brings Readest's position over, and from then on
+it syncs both ways like the original.
 
 ## Development
 

@@ -3,6 +3,8 @@ import { createSupabaseAdminClient } from '@/utils/supabase';
 import {
   authenticateDevice,
   BOOK_HASH,
+  linkCopy,
+  linkedBook,
   parseConfigProgress,
   PERCENT_PAGES,
 } from '@/libs/crosspoint';
@@ -16,7 +18,7 @@ export async function PUT(request: Request) {
   if (typeof userId !== 'string') return userId;
 
   const body = await request.json().catch(() => null);
-  const { document, progress, percentage } = (body ?? {}) as Record<string, unknown>;
+  const { document, progress, percentage, metadata } = (body ?? {}) as Record<string, unknown>;
   if (
     typeof document !== 'string' ||
     !BOOK_HASH.test(document) ||
@@ -29,21 +31,29 @@ export async function PUT(request: Request) {
     return NextResponse.json({ message: 'Invalid progress' }, { status: 400 });
   }
 
+  // A rewritten copy syncs as the library book it is (or now gets) linked to.
+  const linked = await linkedBook(supabase, userId, document);
+  const newLink = linked ? null : await linkCopy(supabase, userId, document, metadata);
+  const bookHash = linked ?? newLink ?? document;
+
   const { data: existing, error: readError } = await supabase
     .from('book_configs')
     .select('xpointer, progress')
     .eq('user_id', userId)
-    .eq('book_hash', document)
+    .eq('book_hash', bookHash)
     .maybeSingle();
   if (readError) return NextResponse.json({ message: 'Could not save progress' }, { status: 500 });
 
   const now = new Date().toISOString();
   const response = NextResponse.json({ document, timestamp: Math.floor(Date.parse(now) / 1000) });
   const stored = parseConfigProgress(existing?.progress);
-  // Without a stored XPointer the reader's sync found nothing to pull, so it
-  // uploads its own position, usually the start of a fresh download. That
-  // must not pull back a position Readest is already past.
-  if (stored && !existing?.xpointer && percentage < stored[0] / stored[1]) return response;
+  // Without a stored XPointer, or under the copy's own id before this link,
+  // the reader's sync found nothing to pull, so it uploads its own position,
+  // usually the start of a fresh download. That must not pull back a position
+  // Readest is already past.
+  if (stored && (newLink || !existing?.xpointer) && percentage < stored[0] / stored[1]) {
+    return response;
+  }
 
   // The percentage in the book's Readest page count, or in whole percents
   // until a Readest app has paginated the book.
@@ -56,12 +66,12 @@ export async function PUT(request: Request) {
         .from('book_configs')
         .update(fields)
         .eq('user_id', userId)
-        .eq('book_hash', document)
+        .eq('book_hash', bookHash)
         .lt('updated_at', now)
     : await supabase
         .from('book_configs')
         .upsert(
-          { user_id: userId, book_hash: document, ...fields },
+          { user_id: userId, book_hash: bookHash, ...fields },
           { onConflict: 'user_id,book_hash', ignoreDuplicates: true },
         );
   if (error) return NextResponse.json({ message: 'Could not save progress' }, { status: 500 });
@@ -72,9 +82,9 @@ export async function PUT(request: Request) {
     .from('books')
     .update({ progress: pages, updated_at: now })
     .eq('user_id', userId)
-    .eq('book_hash', document)
+    .eq('book_hash', bookHash)
     .lt('updated_at', now);
-  if (booksError) console.warn('books.progress update failed for', document, booksError.message);
+  if (booksError) console.warn('books.progress update failed for', bookHash, booksError.message);
 
   return response;
 }

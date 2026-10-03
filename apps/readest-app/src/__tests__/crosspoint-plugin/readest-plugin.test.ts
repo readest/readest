@@ -236,6 +236,9 @@ describe('Readest CrossPoint plugin', () => {
         koPassword: 'device-key',
         koMatchMethod: 1, // Binary: Readest identifies books by partial MD5
         koSyncBehavior: 1, // Smart
+        // Title and authors let Readest place a copy CrossPoint rewrote on
+        // upload ("Optimize EPUB"), whose partial MD5 no longer matches.
+        koSendMetadata: 1,
       },
     ]);
   });

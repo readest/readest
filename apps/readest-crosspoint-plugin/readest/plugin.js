@@ -142,6 +142,9 @@ CrossPoint.registerPlugin(async (container, api) => {
         koPassword: key.access_token,
         koMatchMethod: 1, // Binary: Readest identifies books by partial MD5
         koSyncBehavior: 1, // Smart
+        // Title and authors let Readest place a book CrossPoint rewrote on
+        // upload (Optimize EPUB), whose partial MD5 no longer matches.
+        koSendMetadata: 1,
       });
     } else if (syncsWithReadest(settings)) {
       await postSettings(NO_SYNC);

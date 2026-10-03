@@ -67,6 +67,74 @@ export const authenticateDevice = async (
   return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 };
 
+// A reader's KOSync document id is the partial MD5 of its file. CrossPoint's
+// "Optimize EPUB" upload rewrites a book, so that copy's id matches no Readest
+// book. Its first progress upload links it to the library book by title and
+// author (sent with KOSync "Send metadata"); later syncs and reading
+// sessions follow the link.
+
+/** The library book a rewritten copy was linked to, if any. */
+export const linkedBook = async (supabase: SupabaseClient, userId: string, document: string) => {
+  const { data } = await supabase
+    .from('crosspoint_documents')
+    .select('book_hash')
+    .eq('user_id', userId)
+    .eq('document', document)
+    .maybeSingle();
+  return (data?.book_hash as string | undefined) ?? null;
+};
+
+const normalizeText = (value: unknown) =>
+  typeof value === 'string' ? value.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase() : '';
+
+/**
+ * Links a copy to the one library EPUB with its title, and the first of its
+ * authors when titles collide. Null when the copy is Readest's own file or no
+ * single book fits.
+ */
+export const linkCopy = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+  metadata: unknown,
+) => {
+  const { title, authors } = (metadata ?? {}) as Record<string, unknown>;
+  const wanted = normalizeText(title);
+  if (!wanted) return null;
+  // Commas and parentheses are or() syntax, and %, *, \ and " are pattern or
+  // quoting characters: each becomes a one-character wildcard. The exact
+  // comparison happens below.
+  const pattern = String(title)
+    .trim()
+    .replace(/[,()%*\\"]/g, '_');
+  const { data, error } = await supabase
+    .from('books')
+    .select('book_hash, title, source_title, author')
+    .eq('user_id', userId)
+    .or(`book_hash.eq.${document},source_title.ilike.${pattern},title.ilike.${pattern}`)
+    .eq('format', 'EPUB')
+    .is('deleted_at', null)
+    .limit(20);
+  if (error || !data || data.some((book) => book.book_hash === document)) return null;
+  let matches = data.filter(
+    (book) => normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted,
+  );
+  const author = normalizeText(authors).split(', ')[0];
+  if (matches.length > 1 && author) {
+    matches = matches.filter((book) => normalizeText(book.author).includes(author));
+  }
+  if (matches.length !== 1) return null;
+  const bookHash = matches[0]!.book_hash as string;
+  const { error: linkError } = await supabase
+    .from('crosspoint_documents')
+    .upsert(
+      { user_id: userId, document, book_hash: bookHash },
+      { onConflict: 'user_id,document', ignoreDuplicates: true },
+    );
+  if (linkError) console.warn('crosspoint document link failed for', document, linkError.message);
+  return bookHash;
+};
+
 /** A book config's `[current, total]` progress, stored as a JSON string. */
 export const parseConfigProgress = (value: unknown): [number, number] | null => {
   try {
