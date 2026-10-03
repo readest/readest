@@ -282,6 +282,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     texture: true,
     opds_catalog: true,
     abs_server: true,
+    custom_translator: true,
     settings: true,
   },
 };
@@ -518,6 +519,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {
   translationEnabled: false,
   translationProvider: 'deepl',
+  translationPromptId: 'default',
   translateTargetLang: '',
   showTranslateSource: true,
   ttsReadAloudText: 'both',

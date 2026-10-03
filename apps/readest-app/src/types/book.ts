@@ -429,6 +429,8 @@ export interface TranslatorConfig {
   translateSourceLang?: string;
   translationEnabled: boolean;
   translationProvider: string;
+  /** Prompt library entry for LLM translators; `'default'` or a prompt id. */
+  translationPromptId?: string;
   translateTargetLang: string;
   showTranslateSource: boolean;
   ttsReadAloudText: string;

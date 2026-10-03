@@ -3,6 +3,7 @@ import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { saveViewSettings } from '@/helpers/settings';
 import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -72,10 +73,14 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   // network error), shown under the generic message so a failure can be
   // diagnosed from the popup itself (#5823).
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
+  const book = useBookDataStore((s) => s.getBookData(bookKey)?.book);
   const { translate, translator, translators } = useTranslator({
     provider,
     sourceLang,
     targetLang,
+    promptId: getViewSettings(bookKey)?.translationPromptId,
+    bookTitle: book?.title,
+    bookAuthor: book?.author,
   } as UseTranslatorOptions);
 
   const handleSourceLangChange = (event: React.ChangeEvent<HTMLSelectElement>) => {

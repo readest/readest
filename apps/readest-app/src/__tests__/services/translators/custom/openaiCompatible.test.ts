@@ -1,0 +1,139 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { generateTextMock } = vi.hoisted(() => ({ generateTextMock: vi.fn() }));
+
+vi.mock('ai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ai')>();
+  return { ...actual, generateText: generateTextMock };
+});
+vi.mock('@/services/ai/utils/httpFetch', () => ({ getAIFetch: () => vi.fn() }));
+
+import { createOpenAICompatibleTranslator } from '@/services/translators/custom/openaiCompatible';
+import { renderPrompt, DEFAULT_TRANSLATION_PROMPT } from '@/services/translators/custom/prompts';
+import { ErrorCodes } from '@/services/translators/types';
+import type { CustomTranslator } from '@/types/translation';
+
+const config: CustomTranslator = {
+  id: 'abc',
+  type: 'openai-compatible',
+  name: 'My LLM',
+  baseUrl: 'https://llm.example.com/v1',
+  apiKey: 'sk-test',
+  model: 'gpt-test',
+  addedAt: 1,
+  updatedAt: 1,
+};
+
+type GenerateArgs = { system: string; prompt: string };
+const lastCall = (n = -1): GenerateArgs => generateTextMock.mock.calls.at(n)![0] as GenerateArgs;
+
+const numbered = (texts: string[]) => texts.map((t, i) => `[${i + 1}]\n${t}`).join('\n\n');
+
+describe('renderPrompt', () => {
+  it('substitutes language names and book metadata', () => {
+    const out = renderPrompt('{{sourceLang}}>{{targetLang}} {{bookTitle}} / {{bookAuthor}}', {
+      sourceLang: 'fr',
+      targetLang: 'en',
+      bookTitle: 'Candide',
+      bookAuthor: 'Voltaire',
+    });
+    expect(out).toBe('French>English Candide / Voltaire');
+  });
+
+  it('renders auto-detect and missing metadata as neutral text', () => {
+    const out = renderPrompt('{{sourceLang}}|{{bookTitle}}|', {
+      sourceLang: 'AUTO',
+      targetLang: 'en',
+    });
+    expect(out).toBe('the source language||');
+  });
+});
+
+describe('createOpenAICompatibleTranslator', () => {
+  beforeEach(() => {
+    generateTextMock.mockReset();
+  });
+
+  it('translates a single text with the rendered default prompt', async () => {
+    generateTextMock.mockResolvedValue({ text: 'Bonjour' });
+    const t = createOpenAICompatibleTranslator(config);
+    const out = await t.translate(['Hello'], 'en', 'fr', null, false, undefined, {
+      bookTitle: 'Book',
+    });
+    expect(out).toEqual(['Bonjour']);
+    const args = lastCall();
+    expect(args.system).toContain(
+      renderPrompt(DEFAULT_TRANSLATION_PROMPT, {
+        sourceLang: 'en',
+        targetLang: 'fr',
+        bookTitle: 'Book',
+      }),
+    );
+    expect(args.prompt).toBe('Hello');
+    expect(t.name).toBe('custom:abc');
+    expect(t.label).toBe('My LLM');
+  });
+
+  it('coalesces concurrent calls into one numbered batch and splits the reply', async () => {
+    generateTextMock.mockResolvedValue({ text: numbered(['Un', 'Deux', 'Trois']) });
+    const t = createOpenAICompatibleTranslator(config);
+    const results = await Promise.all([
+      t.translate(['One'], 'en', 'fr'),
+      t.translate(['Two', 'Three'], 'en', 'fr'),
+    ]);
+    expect(results).toEqual([['Un'], ['Deux', 'Trois']]);
+    expect(generateTextMock).toHaveBeenCalledTimes(1);
+    expect(lastCall().prompt).toBe(numbered(['One', 'Two', 'Three']));
+    expect(lastCall().system).toContain('[n]');
+  });
+
+  it('falls back to one request per text when the reply has the wrong block count', async () => {
+    generateTextMock
+      .mockResolvedValueOnce({ text: 'Un et deux' })
+      .mockResolvedValueOnce({ text: 'Un' })
+      .mockResolvedValueOnce({ text: 'Deux' });
+    const t = createOpenAICompatibleTranslator(config);
+    const out = await t.translate(['One', 'Two'], 'en', 'fr');
+    expect(out).toEqual(['Un', 'Deux']);
+    expect(generateTextMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('strips reasoning blocks from the reply', async () => {
+    generateTextMock.mockResolvedValue({ text: '<think>hmm</think>\nBonjour' });
+    const t = createOpenAICompatibleTranslator(config);
+    expect(await t.translate(['Hello'], 'en', 'fr')).toEqual(['Bonjour']);
+  });
+
+  it('passes empty strings through without calling the model', async () => {
+    const t = createOpenAICompatibleTranslator(config);
+    expect(await t.translate(['', '  '], 'en', 'fr')).toEqual(['', '  ']);
+    expect(generateTextMock).not.toHaveBeenCalled();
+  });
+
+  it('maps 401 responses to UNAUTHORIZED', async () => {
+    generateTextMock.mockRejectedValue(Object.assign(new Error('bad key'), { statusCode: 401 }));
+    const t = createOpenAICompatibleTranslator(config);
+    await expect(t.translate(['Hello'], 'en', 'fr')).rejects.toThrow(ErrorCodes.UNAUTHORIZED);
+  });
+
+  it('rejects an aborted caller without failing the rest of the batch', async () => {
+    generateTextMock.mockResolvedValue({ text: 'Deux' });
+    const t = createOpenAICompatibleTranslator(config);
+    const controller = new AbortController();
+    const aborted = t.translate(['One'], 'en', 'fr', null, false, controller.signal);
+    const kept = t.translate(['Two'], 'en', 'fr');
+    controller.abort();
+    await expect(aborted).rejects.toThrow();
+    expect(await kept).toEqual(['Deux']);
+    expect(lastCall().prompt).toBe('Two');
+  });
+
+  it('uses a cache key that changes with the model and the prompt', () => {
+    const t = createOpenAICompatibleTranslator(config);
+    const other = createOpenAICompatibleTranslator({ ...config, model: 'other' });
+    const k1 = t.getCacheKey!('en', 'fr', {});
+    expect(k1.startsWith('custom:abc#')).toBe(true);
+    expect(other.getCacheKey!('en', 'fr', {})).not.toBe(k1);
+    expect(t.getCacheKey!('en', 'fr', { bookTitle: 'X' })).not.toBe(k1);
+  });
+});

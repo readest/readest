@@ -13,6 +13,9 @@ import {
   isTranslatorAvailable,
 } from '@/services/translators';
 import { isTranslationAvailable } from '@/services/translators/utils';
+import { DEFAULT_PROMPT_ID, isCustomTranslatorName } from '@/services/translators/custom';
+import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
+import { getLocale } from '@/utils/misc';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
@@ -28,6 +31,7 @@ import {
   SettingsSwitchRow,
 } from './primitives';
 import CustomDictionaries from './CustomDictionaries';
+import CustomTranslators from './CustomTranslators';
 import WordLensPanel from './WordLensPanel';
 import { PiTranslate } from 'react-icons/pi';
 
@@ -46,6 +50,11 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const [translationEnabled, setTranslationEnabled] = useState(viewSettings.translationEnabled);
   const [translationProvider, setTranslationProvider] = useState(viewSettings.translationProvider);
   const [translateTargetLang, setTranslateTargetLang] = useState(viewSettings.translateTargetLang);
+  const [translationPromptId, setTranslationPromptId] = useState(
+    viewSettings.translationPromptId ?? DEFAULT_PROMPT_ID,
+  );
+  const customTranslators = useCustomTranslatorStore((s) => s.translators);
+  const prompts = useCustomTranslatorStore((s) => s.prompts);
   const [showTranslateSource, setShowTranslateSource] = useState(viewSettings.showTranslateSource);
   const [ttsReadAloudText, setTtsReadAloudText] = useState(viewSettings.ttsReadAloudText);
   const [replaceQuotationMarks, setReplaceQuotationMarks] = useState(
@@ -55,6 +64,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     viewSettings.convertChineseVariant,
   );
   const [showCustomDictionaries, setShowCustomDictionaries] = useState(false);
+  const [showCustomTranslators, setShowCustomTranslators] = useState(false);
   const [showWordLens, setShowWordLens] = useState(false);
 
   // Translation is unavailable for PDFs and for books already in the target
@@ -74,6 +84,10 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   useKeyDownActions({
     enabled: showCustomDictionaries,
     onCancel: () => setShowCustomDictionaries(false),
+  });
+  useKeyDownActions({
+    enabled: showCustomTranslators,
+    onCancel: () => setShowCustomTranslators(false),
   });
   useKeyDownActions({
     enabled: showWordLens,
@@ -100,6 +114,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
       translationEnabled: setTranslationEnabled,
       translationProvider: setTranslationProvider,
       translateTargetLang: setTranslateTargetLang,
+      translationPromptId: setTranslationPromptId,
       showTranslateSource: setShowTranslateSource,
       ttsReadAloudText: setTtsReadAloudText,
       replaceQuotationMarks: setReplaceQuotationMarks,
@@ -159,6 +174,26 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     setTranslationProvider(option);
     saveViewSettings(envConfig, bookKey, 'translationProvider', option, false, false);
     viewSettings.translationProvider = option;
+    setViewSettings(bookKey, { ...viewSettings });
+  };
+
+  // `customTranslators` makes the options re-render when the store hydrates.
+  const isLLMProvider =
+    isCustomTranslatorName(translationProvider) &&
+    customTranslators.some(
+      (t) => `custom:${t.id}` === translationProvider && t.type === 'openai-compatible',
+    );
+
+  const getPromptOptions = () => [
+    { value: DEFAULT_PROMPT_ID, label: _('Default') },
+    ...prompts.filter((p) => !p.deletedAt).map((p) => ({ value: p.id, label: p.name })),
+  ];
+
+  const handleSelectPrompt = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const option = event.target.value;
+    setTranslationPromptId(option);
+    saveViewSettings(envConfig, bookKey, 'translationPromptId', option, false, false);
+    viewSettings.translationPromptId = option;
     setViewSettings(bookKey, { ...viewSettings });
   };
 
@@ -301,6 +336,17 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     );
   }
 
+  if (showCustomTranslators) {
+    return (
+      <div className='w-full'>
+        <CustomTranslators
+          targetLang={translateTargetLang || getLocale()}
+          onBack={() => setShowCustomTranslators(false)}
+        />
+      </div>
+    );
+  }
+
   if (showWordLens) {
     return <WordLensPanel bookKey={bookKey} onBack={() => setShowWordLens(false)} />;
   }
@@ -377,6 +423,16 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             options={getTranslationProviderOptions()}
           />
         </SettingsRow>
+        {isLLMProvider && (
+          <SettingsRow label={_('Prompt')} data-setting-id='settings.language.translationPrompt'>
+            <SettingsSelect
+              value={translationPromptId}
+              onChange={handleSelectPrompt}
+              ariaLabel={_('Prompt')}
+              options={getPromptOptions()}
+            />
+          </SettingsRow>
+        )}
         <SettingsRow label={_('Translate To')} data-setting-id='settings.language.targetLanguage'>
           <SettingsSelect
             value={getCurrentTargetLangOption().value}
@@ -385,6 +441,11 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
             options={getLangOptions(TRANSLATOR_LANGS)}
           />
         </SettingsRow>
+        <NavigationRow
+          title={_('Custom Translators')}
+          onClick={() => setShowCustomTranslators(true)}
+          data-setting-id='settings.language.customTranslators'
+        />
       </BoxedList>
 
       {(isCJKEnv() || view?.language.isCJK) && (
