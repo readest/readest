@@ -25,11 +25,13 @@ const stores = vi.hoisted(() => ({
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(() => ({})),
   booknotes: [] as BookNote[],
+  isFixedLayout: true,
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
     getConfig: () => ({ booknotes: stores.booknotes }),
+    getBookData: () => ({ isFixedLayout: stores.isFixedLayout }),
     saveConfig: stores.saveConfig,
     updateBooknotes: stores.updateBooknotes,
   }),
@@ -86,6 +88,7 @@ const pointer = (x: number, y: number) =>
 beforeEach(() => {
   vi.clearAllMocks();
   stores.booknotes = [];
+  stores.isFixedLayout = true;
   scrolled = false;
   p1 = document.createElement('p');
   p1.textContent = 'first page text here';
@@ -259,5 +262,134 @@ describe('useInstantAnnotation over an existing highlight', () => {
     const saved = (stores.updateBooknotes.mock.lastCall as unknown as [string, BookNote[]])[1];
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({ id: 'old', note: 'keep me', style: 'highlight' });
+  });
+});
+
+// A PDF page's text layer drops its `.selecting` state on pointerup before the
+// release reaches us, so the release point no longer resolves to the text the
+// drag ended on but to the bare layer element at an arbitrary child offset.
+// The release must commit what the preview showed, not re-resolve that point.
+describe('useInstantAnnotation release commits the previewed range', () => {
+  test('a release that resolves to the text layer itself keeps the dragged range', async () => {
+    const { result } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = () => ({
+      offsetNode: p1,
+      offset: 0,
+    });
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      document,
+      0,
+      pointer(60, 10),
+    );
+
+    expect(handled).toBe(true);
+    const committed = h.view.getCFI.mock.lastCall as unknown as [number, Range];
+    expect(committed[1].startContainer).toBe(t1);
+    expect(committed[1].endContainer).toBe(t1);
+  });
+
+  // The start page's part survives a release over another page: in a spread
+  // or after a corner turn the pointerup lands in a document the start
+  // position doesn't belong to, which used to drop the whole highlight.
+  test('a release in another page document commits the start page part', async () => {
+    const { result } = setup();
+    const otherPage = document.implementation.createHTMLDocument('page 2');
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      otherPage,
+      1,
+      pointer(60, 10),
+    );
+
+    expect(handled).toBe(true);
+    const committed = h.view.getCFI.mock.lastCall as unknown as [number, Range];
+    expect(committed[0]).toBe(0);
+    expect(committed[1].startContainer).toBe(t1);
+  });
+
+  // An end point given as the text's container, past the text node, follows
+  // the start: comparing the nodes alone ranks a container before its own
+  // text and flipped (or collapsed) the range.
+  test('an end point on the container after the text does not flip the range', () => {
+    const { result, captured } = setup();
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = (
+      x: number,
+    ) => (x < 40 ? { offsetNode: t1, offset: 2 } : { offsetNode: p1, offset: 1 });
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+
+    expect(captured.selection?.range?.startContainer).toBe(t1);
+    expect(captured.selection?.range?.toString()).toBe('first page text here');
+  });
+});
+
+describe('useInstantAnnotation drag leaving the start page', () => {
+  // The drag keeps reporting to the start page once the pointer is over
+  // another one, and the browser clamps that point back onto this page's text.
+  test('a move outside the page keeps the last preview', () => {
+    const { result, captured } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    const previewed = captured.selection?.range;
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = () => ({
+      offsetNode: t1,
+      offset: 0,
+    });
+    const drawn = result.current.handleInstantAnnotationPointerMove(
+      document,
+      0,
+      pointer(window.innerWidth + 200, 10),
+    );
+
+    expect(drawn).toBe(false);
+    expect(captured.selection?.range).toBe(previewed);
+  });
+
+  // A reflowable section is one document for every page, so a point past its
+  // frame (the corner the dwell turn holds) still extends the range onto the
+  // clamped text.
+  test('a reflowable drag past the frame still extends the preview', () => {
+    stores.isFixedLayout = false;
+    const { result, captured } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    const drawn = result.current.handleInstantAnnotationPointerMove(
+      document,
+      0,
+      pointer(60, window.innerHeight + 50),
+    );
+
+    expect(drawn).toBe(true);
+    expect(captured.selection?.range?.startContainer).toBe(t1);
+  });
+
+  // A turn re-renders a PDF page's text layer, detaching the start: nothing
+  // can be extended from it, and the release commits the cfi the preview had.
+  test('a re-rendered start page keeps the preview and commits it', async () => {
+    const { result, setSelection } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    p1.remove();
+    setSelection.mockClear();
+    h.view.getCFI.mockClear();
+    result.current.reapplyInstantAnnotation();
+
+    expect(setSelection).not.toHaveBeenCalled();
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      document,
+      0,
+      pointer(60, 10),
+    );
+    expect(handled).toBe(true);
+    expect(h.view.getCFI).not.toHaveBeenCalled();
+    expect(stores.updateBooknotes).toHaveBeenCalled();
   });
 });
