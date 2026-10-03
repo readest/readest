@@ -160,12 +160,12 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     if (book && isAbsEbook(book)) useBookDataStore.getState().clearBookData(id);
   },
   getViewState: (key: string) => get().viewStates[key] || null,
-  // Closed books keep their keys but drop their view states.
+  // Closed books keep their keys but drop their view states; failed ones load again.
   areBooksOpen: (ids: string[]) => {
     const { bookKeys, viewStates } = get();
     return (
       bookKeys.length > 0 &&
-      bookKeys.every((key) => viewStates[key]) &&
+      bookKeys.every((key) => viewStates[key] && !viewStates[key].error) &&
       bookKeys.map((key) => key.split('-')[0]).join() === ids.join()
     );
   },

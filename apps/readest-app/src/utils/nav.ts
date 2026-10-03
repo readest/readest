@@ -146,7 +146,8 @@ export const navigateBackFromProfile = (
   redirect: string | null | undefined,
 ) => {
   document.documentElement.setAttribute('data-nav-direction', 'back');
-  if (redirect?.startsWith('/') && !redirect.startsWith('//')) {
+  // Browsers read a backslash as '/', so a redirect like '/\host' leaves the app.
+  if (redirect?.startsWith('/') && !redirect.startsWith('//') && !redirect.includes('\\')) {
     router.replace(redirect);
   } else {
     navigateToLibrary(router);
