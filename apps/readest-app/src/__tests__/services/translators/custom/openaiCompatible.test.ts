@@ -87,6 +87,31 @@ describe('createOpenAICompatibleTranslator', () => {
     expect(lastCall().system).toContain('[n]');
   });
 
+  // Small batches with several in flight show the first paragraphs sooner
+  // while still cutting the request count.
+  it('sends up to 4 paragraphs per request with 4 requests in flight', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    generateTextMock.mockImplementation(async ({ prompt }: GenerateArgs) => {
+      await gate;
+      const count = prompt.match(/^\[\d+\]$/gm)?.length ?? 1;
+      return { text: numbered(Array.from({ length: count }, (_, i) => `T${i + 1}`)) };
+    });
+    const t = createOpenAICompatibleTranslator(config);
+    const texts = Array.from({ length: 16 }, (_, i) => `P${i + 1}`);
+    const pending = Promise.all(texts.map((text) => t.translate([text], 'en', 'fr')));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(generateTextMock).toHaveBeenCalledTimes(4);
+    expect(generateTextMock.mock.calls.map(([args]) => (args as GenerateArgs).prompt)).toEqual([
+      numbered(['P1', 'P2', 'P3', 'P4']),
+      numbered(['P5', 'P6', 'P7', 'P8']),
+      numbered(['P9', 'P10', 'P11', 'P12']),
+      numbered(['P13', 'P14', 'P15', 'P16']),
+    ]);
+    release();
+    await pending;
+  });
+
   it('falls back to one request per text when the reply has the wrong block count', async () => {
     generateTextMock
       .mockResolvedValueOnce({ text: 'Un et deux' })

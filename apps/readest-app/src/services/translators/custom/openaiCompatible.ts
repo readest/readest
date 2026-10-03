@@ -8,9 +8,9 @@ import { renderPrompt } from './prompts';
 import { CUSTOM_TRANSLATOR_PREFIX } from './constants';
 
 const BATCH_DELAY_MS = 50;
-const MAX_BATCH_ITEMS = 8;
+const MAX_BATCH_ITEMS = 4;
 const MAX_BATCH_CHARS = 3000;
-const MAX_INFLIGHT_BATCHES = 2;
+const MAX_INFLIGHT_BATCHES = 4;
 const REQUEST_TIMEOUT_MS = 60_000;
 
 const SINGLE_RULES =
