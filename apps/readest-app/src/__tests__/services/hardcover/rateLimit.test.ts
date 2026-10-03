@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { parseRateLimit, parseRetryAfterMs } from '@/services/hardcover/rateLimit';
+import { parseRateLimit, parseRetryAfterMs, RateLimitGate } from '@/services/hardcover/rateLimit';
 
 describe('hardcover rateLimit parsing', () => {
   test('parseRateLimit reads minute and daily buckets, ignoring malformed input', () => {
@@ -15,5 +15,14 @@ describe('hardcover rateLimit parsing', () => {
     expect(parseRetryAfterMs('3')).toBe(3000);
     expect(parseRetryAfterMs('abc')).toBeNull();
     expect(parseRetryAfterMs(null)).toBeNull();
+  });
+
+  test('batchSize is the remaining quota, defaulting to the free burst limit', () => {
+    const gate = new RateLimitGate();
+    expect(gate.batchSize).toBe(10);
+    gate.update(new Headers({ RateLimit: '"S";r=14;t=5' }));
+    expect(gate.batchSize).toBe(14);
+    gate.update(new Headers({ RateLimit: '"S";r=14;t=5, "daily";r=3;t=900' }));
+    expect(gate.batchSize).toBe(3);
   });
 });

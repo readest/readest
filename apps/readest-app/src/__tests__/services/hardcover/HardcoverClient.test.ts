@@ -176,9 +176,11 @@ describe('HardcoverClient', () => {
           },
         }), // fetchContext (QUERY_GET_EDITION)
     });
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ data: { insert_reading_journal: { id: 999 } } }), // generic inserts
+    fetchMock.mockImplementation(async (_url, init) => {
+      const body = JSON.parse((init as { body: string }).body);
+      const data = { insert_reading_journal: { id: 999 } };
+      const json = Array.isArray(body) ? body.map(() => ({ data })) : { data };
+      return { ok: true, json: () => Promise.resolve(json) };
     });
 
     const results = await client.syncBookNotes(book, config);
@@ -188,7 +190,8 @@ describe('HardcoverClient', () => {
     // note-3: kept (annotation with no note, but no conflicts)
     expect(results.inserted).toBe(2);
     expect(results.skipped).toBe(0);
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    // authenticate, edition lookup, one batched journal write
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(mockMapStore.flush).toHaveBeenCalled();
   });
 
@@ -688,12 +691,13 @@ describe('HardcoverClient', () => {
     });
     fetchMock.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ data: { insert_reading_journal: { id: 999 } } }),
+      json: () => Promise.resolve([{ data: { insert_reading_journal: { id: 999 } } }]),
     });
 
     const result = await client.syncBookNotes(book, config);
     const fetchCalls = fetchMock.mock.calls as FetchMockCall[];
-    const calls = fetchCalls.map((call) => JSON.parse(call[1]?.body ?? '{}'));
+    // Journal writes arrive as an array of operations.
+    const calls = fetchCalls.flatMap((call) => JSON.parse(call[1]?.body ?? '{}'));
 
     expect(result.inserted).toBe(1);
     expect(
@@ -1157,5 +1161,156 @@ describe('HardcoverClient', () => {
     expect(updateReadCall).toBeDefined();
     const variables = updateReadCall?.[1] as { edition_id?: unknown };
     expect(variables.edition_id).toBeNull();
+  });
+});
+
+describe('HardcoverClient journal batching', () => {
+  const book = { hash: 'book-hash', title: 'T', author: 'A' } as unknown as Book;
+  const context = { editionId: 1, pages: 100, bookId: 2, bookPages: 100, userBook: { id: 3 } };
+  type Op = { query: string; variables: Record<string, unknown> };
+  let client: HardcoverClient;
+  let api: HardcoverClientTestApi & { gate: { update: (h: Headers) => void } };
+  let fetchMock: ReturnType<typeof vi.fn>;
+  let mapStore: Record<string, ReturnType<typeof vi.fn>>;
+  let tokenSeq = 0;
+
+  const notes = (n: number, text = (i: number) => `text ${i}`) =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `n${i}`,
+      type: 'annotation',
+      text: text(i),
+    })) as BookNote[];
+  const config = (booknotes: BookNote[]) => ({ booknotes, progress: [1, 100] }) as BookConfig;
+  const staleMapping = (noteId: string) =>
+    mapStore['getMapping']!.mockImplementation(async (_hash: string, id: string) =>
+      id === noteId ? { hardcover_journal_id: 55, payload_hash: 'stale' } : null,
+    );
+
+  // Each request body is an array of operations.
+  const batches = () =>
+    (fetchMock.mock.calls as FetchMockCall[]).map((c) => JSON.parse(c[1]?.body ?? '[]') as Op[]);
+  const response = (json: unknown, init = {}) => ({
+    ok: true,
+    status: 200,
+    headers: new Headers(),
+    json: () => Promise.resolve(json),
+    ...init,
+  });
+  const inserted = (id: number) => ({ data: { insert_reading_journal: { id } } });
+
+  beforeEach(() => {
+    fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    mapStore = {
+      getMapping: vi.fn().mockResolvedValue(null),
+      getMappingByPayloadHash: vi.fn().mockResolvedValue(null),
+      upsertMapping: vi.fn().mockResolvedValue(undefined),
+      flush: vi.fn().mockResolvedValue(undefined),
+    };
+    client = new HardcoverClient(
+      { accessToken: `batch-${tokenSeq++}` },
+      mapStore as unknown as HardcoverSyncMapStore,
+    );
+    api = client as unknown as typeof api;
+    vi.spyOn(api, 'ensureBookInLibrary').mockResolvedValue(context as TestBookContext);
+    // Answers each batch with ids 900+index.
+    fetchMock.mockImplementation(async (_url, init) => {
+      const ops = JSON.parse((init as { body: string }).body) as Op[];
+      return response(ops.map((_, i) => inserted(900 + i)));
+    });
+  });
+
+  test('sends new notes in batches sized to the quota and maps each one', async () => {
+    const result = await client.syncBookNotes(book, config(notes(12)));
+
+    expect(result).toMatchObject({ inserted: 12, updated: 0, skipped: 0 });
+    expect(batches().map((b) => b.length)).toEqual([10, 2]);
+    expect(mapStore['upsertMapping']).toHaveBeenCalledTimes(12);
+    expect(mapStore['upsertMapping']).toHaveBeenCalledWith(
+      'book-hash',
+      'n11',
+      901,
+      expect.any(String),
+    );
+
+    // Never more than the bucket has left: each operation counts as a request.
+    fetchMock.mockClear();
+    api.gate.update(new Headers({ RateLimit: '"Free";r=4;t=30' }));
+    await client.syncBookNotes(book, config(notes(6)));
+    expect(batches().map((b) => b.length)).toEqual([4, 2]);
+  });
+
+  test('mixes inserts and updates in one request', async () => {
+    staleMapping('n0');
+
+    const result = await client.syncBookNotes(book, config(notes(2)));
+
+    expect(result).toMatchObject({ inserted: 1, updated: 1 });
+    const [update, insert] = batches()[0]!;
+    expect(update!.query).toContain('UpdateReadingJournal');
+    expect(update!.variables).toMatchObject({ id: 55 });
+    expect(insert!.query).toContain('InsertReadingJournal');
+    expect(insert!.variables).toMatchObject({ book_id: 2 });
+    expect(mapStore['upsertMapping']).toHaveBeenCalledWith(
+      'book-hash',
+      'n0',
+      55,
+      expect.any(String),
+    );
+  });
+
+  test('inserts identical payloads in one run once', async () => {
+    const result = await client.syncBookNotes(book, config(notes(2, () => 'same')));
+
+    expect(result).toMatchObject({ inserted: 1, skipped: 1 });
+    expect(batches().flat()).toHaveLength(1);
+    expect(mapStore['upsertMapping']).toHaveBeenCalledTimes(2);
+  });
+
+  test('re-inserts a journal deleted on Hardcover', async () => {
+    staleMapping('n0');
+    fetchMock.mockResolvedValueOnce(
+      response([{ errors: [{ message: 'journal not found' }] }, inserted(901)]),
+    );
+
+    const result = await client.syncBookNotes(book, config(notes(2)));
+
+    expect(result).toMatchObject({ inserted: 2, updated: 0 });
+    expect(batches().map((b) => b.length)).toEqual([2, 1]);
+    expect(batches()[1]![0]!.query).toContain('InsertReadingJournal');
+  });
+
+  test('splits retries of deleted journals to the quota left after the first batch', async () => {
+    mapStore['getMapping']!.mockResolvedValue({ hardcover_journal_id: 55, payload_hash: 'stale' });
+    fetchMock.mockResolvedValueOnce(
+      response(
+        Array.from({ length: 10 }, () => ({ errors: [{ message: 'journal not found' }] })),
+        { headers: new Headers({ RateLimit: '"Free";r=3;t=30' }) },
+      ),
+    );
+
+    const result = await client.syncBookNotes(book, config(notes(10)));
+
+    expect(result).toMatchObject({ inserted: 10, updated: 0 });
+    expect(batches().map((b) => b.length)).toEqual([10, 3, 3, 3, 1]);
+  });
+
+  test.each([
+    ['an operation error', [inserted(900), { errors: [{ message: 'boom' }] }], 'boom'],
+    ['an insert without an id', [inserted(900), { data: { insert_reading_journal: {} } }], 'no id'],
+  ])('saves the writes that succeeded before failing on %s', async (_name, results, message) => {
+    fetchMock.mockResolvedValueOnce(response(results));
+
+    await expect(client.syncBookNotes(book, config(notes(2)))).rejects.toThrow(message);
+    expect(mapStore['upsertMapping']).toHaveBeenCalledTimes(1);
+    expect(mapStore['flush']).toHaveBeenCalled();
+  });
+
+  test('fails on an HTTP error or a malformed batch response', async () => {
+    fetchMock.mockResolvedValueOnce(response({}, { ok: false, status: 500, statusText: 'Oops' }));
+    await expect(client.syncBookNotes(book, config(notes(2)))).rejects.toThrow('API Error: 500');
+
+    fetchMock.mockResolvedValueOnce(response({ errors: [{ message: 'nope' }] }));
+    await expect(client.syncBookNotes(book, config(notes(2)))).rejects.toThrow('mismatch');
   });
 });

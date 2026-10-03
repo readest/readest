@@ -96,6 +96,14 @@ const rowFlags = (row: BookRow) => ({
   onShelf: (row.user_books?.length ?? 0) > 0,
 });
 
+// Journal write queued for a batched request; a null journalId means insert.
+type JournalOp = {
+  journalId: number | null;
+  payload: Record<string, unknown>;
+  payloadHash: string;
+  noteIds: string[];
+};
+
 /** This book cannot sync to Hardcover (no match, or no page count), not a sync failure. */
 export class HardcoverUnmatchedError extends Error {}
 
@@ -166,12 +174,7 @@ export class HardcoverClient {
     return `${normalizedCfi}|${text}`;
   }
 
-  private async request<TVariables, TData>(
-    query: string,
-    variables: TVariables,
-    retries = 3,
-    backoffMs = 2000,
-  ): Promise<TData> {
+  private async post(body: unknown, retries = 3, backoffMs = 2000): Promise<unknown> {
     await this.gate.wait();
 
     const fetchFn = isTauriAppPlatform() ? tauriFetch : window.fetch;
@@ -181,7 +184,7 @@ export class HardcoverClient {
         'Content-Type': 'application/json',
         authorization: this.token,
       },
-      body: JSON.stringify({ query, variables }),
+      body: JSON.stringify(body),
     });
 
     this.gate.update(res.headers);
@@ -193,19 +196,32 @@ export class HardcoverClient {
         throw new Error('Hardcover Rate Limit (429) Exceeded and exhausted retries');
       }
       console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${waitMs}ms...`);
-      return this.request(query, variables, retries - 1, backoffMs * 2);
+      return this.post(body, retries - 1, backoffMs * 2);
     }
 
     if (!res.ok) {
       throw new Error(`Hardcover API Error: ${res.status} ${res.statusText}`);
     }
 
-    const json = await res.json();
+    return res.json();
+  }
+
+  private async request<TVariables, TData>(query: string, variables: TVariables): Promise<TData> {
+    const json = (await this.post({ query, variables })) as { data?: TData; errors?: unknown };
     if (json.errors) {
       throw new Error(`GraphQL Errors: ${JSON.stringify(json.errors)}`);
     }
 
     return json.data as TData;
+  }
+
+  /** Several operations in one request; each result carries its own `data` or `errors`. */
+  private async requestBatch<TData>(operations: Array<{ query: string; variables: unknown }>) {
+    const json = await this.post(operations);
+    if (!Array.isArray(json) || json.length !== operations.length) {
+      throw new Error(`Hardcover batch response mismatch: ${JSON.stringify(json)}`);
+    }
+    return json as Array<{ data?: TData; errors?: unknown }>;
   }
 
   async validateToken(): Promise<{ valid: boolean; isNetworkError?: boolean }> {
@@ -612,31 +628,13 @@ export class HardcoverClient {
     };
   }
 
-  private async insertJournal(
-    context: BookContext,
-    payload: Record<string, unknown>,
-  ): Promise<number> {
-    const data = await this.request<
-      Record<string, unknown>,
-      { insert_reading_journal?: { id?: number; errors?: unknown } }
-    >(MUTATION_INSERT_JOURNAL, {
-      book_id: context.bookId,
-      edition_id: context.editionId,
-      ...payload,
-    });
-
-    const id = data.insert_reading_journal?.id;
-    if (!id) {
-      throw new Error('Hardcover insert_reading_journal returned no id');
-    }
-    return id;
-  }
-
-  private async updateJournal(journalId: number, payload: Record<string, unknown>): Promise<void> {
-    await this.request(MUTATION_UPDATE_JOURNAL, {
-      id: journalId,
-      ...payload,
-    });
+  private journalRequest(context: BookContext, op: JournalOp) {
+    return op.journalId === null
+      ? {
+          query: MUTATION_INSERT_JOURNAL,
+          variables: { book_id: context.bookId, edition_id: context.editionId, ...op.payload },
+        }
+      : { query: MUTATION_UPDATE_JOURNAL, variables: { id: op.journalId, ...op.payload } };
   }
 
   private isMissingJournalError(error: unknown): boolean {
@@ -646,6 +644,45 @@ export class HardcoverClient {
       message.includes('does not exist') ||
       message.includes('null value')
     );
+  }
+
+  /** Sends ops in batches sized to the quota, saving each result as it is known; a batch's first failure is thrown after its results are saved. */
+  private async sendJournalOps(
+    context: BookContext,
+    ops: JournalOp[],
+    save: (op: JournalOp, id: number) => Promise<void>,
+  ): Promise<void> {
+    let queue = ops;
+    while (queue.length) {
+      // Re-sized every round: the quota left shrinks as batches (and retries) are sent.
+      const batch = queue.slice(0, this.gate.batchSize);
+      const rest = queue.slice(batch.length);
+      const results = await this.requestBatch<{ insert_reading_journal?: { id?: number } }>(
+        batch.map((op) => this.journalRequest(context, op)),
+      );
+      const retry: JournalOp[] = [];
+      let failure: Error | null = null;
+
+      for (const [i, op] of batch.entries()) {
+        const { data, errors } = results[i]!;
+        if (errors) {
+          const error = new Error(`GraphQL Errors: ${JSON.stringify(errors)}`);
+          // A journal deleted on Hardcover is re-created.
+          if (op.journalId !== null && this.isMissingJournalError(error)) {
+            retry.push({ ...op, journalId: null });
+          } else {
+            failure ??= error;
+          }
+          continue;
+        }
+        const id = op.journalId ?? data?.insert_reading_journal?.id;
+        if (id) await save(op, id);
+        else failure ??= new Error('Hardcover insert_reading_journal returned no id');
+      }
+
+      if (failure) throw failure;
+      queue = [...rest, ...retry];
+    }
   }
 
   async syncBookNotes(
@@ -690,6 +727,10 @@ export class HardcoverClient {
     let updated = 0;
     let skipped = 0;
 
+    // Classify first, then send the journal writes in batches.
+    const pending: JournalOp[] = [];
+    const pendingInserts = new Map<string, JournalOp>();
+
     try {
       for (const note of notes) {
         const payload = this.buildJournalPayload(note, config, context);
@@ -714,9 +755,16 @@ export class HardcoverClient {
             continue;
           }
 
-          const journalId = await this.insertJournal(context, payload);
-          await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
-          inserted += 1;
+          const queued = pendingInserts.get(payloadHash);
+          if (queued) {
+            queued.noteIds.push(note.id);
+            skipped += 1;
+            continue;
+          }
+
+          const op = { journalId: null, payload, payloadHash, noteIds: [note.id] };
+          pending.push(op);
+          pendingInserts.set(payloadHash, op);
           continue;
         }
 
@@ -725,24 +773,23 @@ export class HardcoverClient {
           continue;
         }
 
-        try {
-          await this.updateJournal(existing.hardcover_journal_id, payload);
-          await this.mapStore.upsertMapping(
-            book.hash,
-            note.id,
-            existing.hardcover_journal_id,
-            payloadHash,
-          );
-          updated += 1;
-        } catch (error) {
-          if (!this.isMissingJournalError(error)) {
-            throw error;
-          }
-          const journalId = await this.insertJournal(context, payload);
-          await this.mapStore.upsertMapping(book.hash, note.id, journalId, payloadHash);
-          inserted += 1;
-        }
+        pending.push({
+          journalId: existing.hardcover_journal_id,
+          payload,
+          payloadHash,
+          noteIds: [note.id],
+        });
       }
+
+      const save = async (op: JournalOp, id: number) => {
+        for (const noteId of op.noteIds) {
+          await this.mapStore.upsertMapping(book.hash, noteId, id, op.payloadHash);
+        }
+        if (op.journalId === null) inserted += 1;
+        else updated += 1;
+      };
+
+      await this.sendJournalOps(context, pending, save);
     } finally {
       await this.mapStore.flush();
     }

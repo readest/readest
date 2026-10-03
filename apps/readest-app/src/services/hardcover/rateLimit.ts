@@ -28,14 +28,27 @@ export const parseRetryAfterMs = (header: string | null | undefined) => {
 export const MAX_WAIT_MS = 60_000;
 // The per-minute quota refills at one request per second.
 const REFILL_MS = 1000;
+// A request may carry at most the burst limit's worth of operations; assume the
+// free plan's until a response reports the bucket.
+const DEFAULT_BATCH_SIZE = 10;
 
 /** Delays requests only once the server reports an empty bucket, so the burst budget is usable. */
 export class RateLimitGate {
   private blockedUntil = 0;
+  private remaining = 0; // 0 until a response reports it
   private queue: Promise<void> = Promise.resolve();
 
   blockFor(ms: number) {
     this.blockedUntil = Math.max(this.blockedUntil, Date.now() + ms);
+  }
+
+  /**
+   * Operations that fit in one request: each counts against the bucket, so a
+   * batch larger than the remaining quota would be rejected. An empty bucket
+   * refills while the gate waits, so it doesn't shrink the batch.
+   */
+  get batchSize() {
+    return this.remaining || DEFAULT_BATCH_SIZE;
   }
 
   /** Resolves when a request may be sent; waiters leave a block one at a time. */
@@ -57,10 +70,13 @@ export class RateLimitGate {
     if (blocked) this.blockFor(REFILL_MS);
   }
 
-  /** Records the response's `RateLimit` header, blocking on an empty bucket. */
+  /** Records the response's rate-limit headers, blocking on an empty bucket. */
   update(headers: Headers) {
     const { minute, daily } = parseRateLimit(headers.get('RateLimit'));
     if (daily?.remaining === 0) this.blockFor(daily.resetSec * 1000);
+    if (minute || daily) {
+      this.remaining = Math.min(minute?.remaining ?? Infinity, daily?.remaining ?? Infinity);
+    }
     if (minute?.remaining === 0) this.blockFor(minute.resetSec * 1000);
   }
 }
