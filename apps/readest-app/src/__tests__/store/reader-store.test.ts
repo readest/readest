@@ -455,3 +455,42 @@ describe('clearViewState and the streamed ABS ebook cache', () => {
     expect(useBookDataStore.getState().booksData['abc']).toBeDefined();
   });
 });
+
+describe('areBooksOpen', () => {
+  beforeEach(() => {
+    useReaderStore.setState({ viewStates: {}, bookKeys: [], hoveredBookKey: null });
+  });
+
+  test('is true when the requested books are still open (back from the account page)', () => {
+    seedViewState('abc-view1');
+    seedViewState('def-view2');
+    useReaderStore.setState({ bookKeys: ['abc-view1', 'def-view2'] });
+
+    expect(useReaderStore.getState().areBooksOpen(['abc', 'def'])).toBe(true);
+  });
+
+  test('is false for other books', () => {
+    seedViewState('abc-view1');
+    useReaderStore.setState({ bookKeys: ['abc-view1'] });
+
+    expect(useReaderStore.getState().areBooksOpen(['def'])).toBe(false);
+    expect(useReaderStore.getState().areBooksOpen(['abc', 'def'])).toBe(false);
+  });
+
+  test('is false once the books were closed, though their keys remain', () => {
+    useReaderStore.setState({ bookKeys: ['abc-view1'] });
+
+    expect(useReaderStore.getState().areBooksOpen(['abc'])).toBe(false);
+  });
+
+  test('is false for a book that failed to load, so it is retried', () => {
+    seedViewState('abc-view1', { error: 'Failed to load book.' });
+    useReaderStore.setState({ bookKeys: ['abc-view1'] });
+
+    expect(useReaderStore.getState().areBooksOpen(['abc'])).toBe(false);
+  });
+
+  test('is false with nothing open', () => {
+    expect(useReaderStore.getState().areBooksOpen([])).toBe(false);
+  });
+});

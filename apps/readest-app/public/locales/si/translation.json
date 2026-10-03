@@ -2551,5 +2551,13 @@
   "The code expired. Please try again.": "කේතය කල් ඉකුත් විය. කරුණාකර නැවත උත්සාහ කරන්න.",
   "Scan this QR code": "මෙම QR කේතය ස්කෑන් කරන්න",
   "— or —": "— හෝ —",
-  "Visit {{url}} and enter": "<1>{{url}}</1><2> වෙත ගොස් කේතය ඇතුළත් කරන්න</2>"
+  "Visit {{url}} and enter": "<1>{{url}}</1><2> වෙත ගොස් කේතය ඇතුළත් කරන්න</2>",
+  "Context Dictionary": "සන්දර්භ ශබ්දකෝෂය",
+  "Requires Readest Premium.": "Readest Premium අවශ්‍යයි.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "මෙය භාවිත කිරීමට අභිරුචි පරිවර්තකයන් තුළ OpenAI-අනුකූල පරිවර්තකයක් එක් කරන්න.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "තෝරාගත් පාඨය ඡේදයේ භාවිත වී ඇති ආකාරයට, ඔබගේ පරිවර්තන ඉලක්ක භාෂාවෙන් පැහැදිලි කරයි.",
+  "AI Translator": "AI පරිවර්තකය",
+  "Examples": "උදාහරණ",
+  "Synonyms": "සමානාර්ථ පද",
+  "Context Dictionary failed: {{message}}": "සන්දර්භ ශබ්දකෝෂය අසාර්ථක විය: {{message}}"
 }

@@ -2551,5 +2551,13 @@
   "The code expired. Please try again.": "Ο κωδικός έληξε. Δοκιμάστε ξανά.",
   "Scan this QR code": "Σαρώστε αυτόν τον κωδικό QR",
   "— or —": "— ή —",
-  "Visit {{url}} and enter": "<0>Επισκεφθείτε το </0><1>{{url}}</1><2> και εισαγάγετε τον κωδικό</2>"
+  "Visit {{url}} and enter": "<0>Επισκεφθείτε το </0><1>{{url}}</1><2> και εισαγάγετε τον κωδικό</2>",
+  "Context Dictionary": "Λεξικό συμφραζομένων",
+  "Requires Readest Premium.": "Απαιτεί Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Προσθέστε έναν μεταφραστή συμβατό με OpenAI στο «Προσαρμοσμένοι μεταφραστές» για να το χρησιμοποιήσετε.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Εξηγεί το επιλεγμένο κείμενο όπως χρησιμοποιείται στο απόσπασμα, στη γλώσσα-στόχο της μετάφρασής σας.",
+  "AI Translator": "Μεταφραστής ΤΝ",
+  "Examples": "Παραδείγματα",
+  "Synonyms": "Συνώνυμα",
+  "Context Dictionary failed: {{message}}": "Σφάλμα λεξικού συμφραζομένων: {{message}}"
 }

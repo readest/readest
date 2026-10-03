@@ -2615,5 +2615,13 @@
   "The code expired. Please try again.": "תוקף הקוד פג. נסה שוב.",
   "Scan this QR code": "סרוק את קוד ה-QR הזה",
   "— or —": "— או —",
-  "Visit {{url}} and enter": "<0>בקר ב-</0><1>{{url}}</1><2> והזן את הקוד</2>"
+  "Visit {{url}} and enter": "<0>בקר ב-</0><1>{{url}}</1><2> והזן את הקוד</2>",
+  "Context Dictionary": "מילון הקשר",
+  "Requires Readest Premium.": "נדרש Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "כדי להשתמש בו, הוסיפו מתרגם תואם OpenAI במתרגמים מותאמים אישית.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "מסביר את הטקסט שנבחר כפי שהוא משמש בקטע, בשפת היעד של התרגום שלך.",
+  "AI Translator": "מתרגם בינה מלאכותית",
+  "Examples": "דוגמאות",
+  "Synonyms": "מילים נרדפות",
+  "Context Dictionary failed: {{message}}": "מילון ההקשר נכשל: {{message}}"
 }

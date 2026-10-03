@@ -2551,5 +2551,13 @@
   "The code expired. Please try again.": "Kodun süresi doldu. Lütfen tekrar deneyin.",
   "Scan this QR code": "Bu QR kodunu tarayın",
   "— or —": "— veya —",
-  "Visit {{url}} and enter": "<1>{{url}}</1><2> adresini ziyaret edip kodu girin</2>"
+  "Visit {{url}} and enter": "<1>{{url}}</1><2> adresini ziyaret edip kodu girin</2>",
+  "Context Dictionary": "Bağlam Sözlüğü",
+  "Requires Readest Premium.": "Readest Premium gerektirir.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Kullanmak için Özel Çevirmenler bölümüne OpenAI uyumlu bir çevirmen ekleyin.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Seçilen metni pasajda kullanıldığı anlamıyla, çeviri hedef dilinizde açıklar.",
+  "AI Translator": "Yapay Zekâ Çevirmeni",
+  "Examples": "Örnekler",
+  "Synonyms": "Eş anlamlılar",
+  "Context Dictionary failed: {{message}}": "Bağlam sözlüğü başarısız oldu: {{message}}"
 }

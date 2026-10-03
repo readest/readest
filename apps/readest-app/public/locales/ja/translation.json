@@ -2487,5 +2487,13 @@
   "The code expired. Please try again.": "コードの有効期限が切れました。もう一度お試しください。",
   "Scan this QR code": "このQRコードをスキャン",
   "— or —": "— または —",
-  "Visit {{url}} and enter": "<1>{{url}}</1><2> にアクセスしてコードを入力</2>"
+  "Visit {{url}} and enter": "<1>{{url}}</1><2> にアクセスしてコードを入力</2>",
+  "Context Dictionary": "文脈辞書",
+  "Requires Readest Premium.": "Readest Premium が必要です。",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "使用するには「カスタム翻訳サービス」で OpenAI 互換の翻訳サービスを追加してください。",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "選択したテキストが文中でどのように使われているかを、翻訳先の言語で説明します。",
+  "AI Translator": "AI 翻訳サービス",
+  "Examples": "例文",
+  "Synonyms": "類義語",
+  "Context Dictionary failed: {{message}}": "文脈辞書でエラーが発生しました：{{message}}"
 }

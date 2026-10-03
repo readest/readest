@@ -2551,5 +2551,13 @@
   "The code expired. Please try again.": "A kód lejárt. Próbálja újra.",
   "Scan this QR code": "Olvassa be ezt a QR-kódot",
   "— or —": "— vagy —",
-  "Visit {{url}} and enter": "<0>Látogasson el ide: </0><1>{{url}}</1><2>, és adja meg a kódot</2>"
+  "Visit {{url}} and enter": "<0>Látogasson el ide: </0><1>{{url}}</1><2>, és adja meg a kódot</2>",
+  "Context Dictionary": "Kontextusszótár",
+  "Requires Readest Premium.": "Readest Premium szükséges.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "A használatához adjon hozzá egy OpenAI-kompatibilis fordítót itt: Egyéni fordítók.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "A kijelölt szöveget úgy magyarázza el, ahogyan a szövegrészben szerepel, a fordítás célnyelvén.",
+  "AI Translator": "MI-fordító",
+  "Examples": "Példák",
+  "Synonyms": "Szinonimák",
+  "Context Dictionary failed: {{message}}": "A kontextusszótár hibát jelzett: {{message}}"
 }

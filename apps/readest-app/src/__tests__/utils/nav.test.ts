@@ -42,6 +42,7 @@ import {
   navigateToReader,
   navigateToLogin,
   navigateToProfile,
+  navigateBackFromProfile,
   navigateToLibrary,
   navigateToResetPassword,
   navigateToUpdatePassword,
@@ -199,11 +200,50 @@ describe('navigateToLogin', () => {
 });
 
 describe('navigateToProfile', () => {
-  test('navigates to /user', () => {
+  test('navigates to /user with redirect from current path', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/reader', search: '?ids=book1' },
+      writable: true,
+    });
+
     const router = mockRouter();
     navigateToProfile(router);
 
-    expect(router.push).toHaveBeenCalledWith('/user');
+    expect(router.push).toHaveBeenCalledWith(
+      `/user?redirect=${encodeURIComponent('/reader?ids=book1')}`,
+    );
+    expect(document.documentElement.getAttribute('data-nav-direction')).toBe('forward');
+  });
+});
+
+describe('navigateBackFromProfile', () => {
+  test('returns to the page that opened the profile', () => {
+    const router = mockRouter();
+    navigateBackFromProfile(router, '/reader?ids=book1');
+
+    expect(router.replace).toHaveBeenCalledWith('/reader?ids=book1');
+    expect(document.documentElement.getAttribute('data-nav-direction')).toBe('back');
+  });
+
+  test('falls back to /library without a redirect', () => {
+    const router = mockRouter();
+    navigateBackFromProfile(router, null);
+
+    expect(router.replace).toHaveBeenCalledWith('/library', undefined);
+  });
+
+  test('ignores a redirect that leaves the app', () => {
+    const router = mockRouter();
+    navigateBackFromProfile(router, '//evil.example.com');
+
+    expect(router.replace).toHaveBeenCalledWith('/library', undefined);
+  });
+
+  test('ignores a backslash redirect that browsers resolve off-site', () => {
+    const router = mockRouter();
+    navigateBackFromProfile(router, '/\\evil.example.com');
+
+    expect(router.replace).toHaveBeenCalledWith('/library', undefined);
   });
 });
 

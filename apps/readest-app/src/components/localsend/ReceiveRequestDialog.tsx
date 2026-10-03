@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
@@ -46,7 +46,7 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
   onDecline,
 }) => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { user } = useAuth();
   const { safeAreaInsets } = useThemeStore();
   const [pairDevice, setPairDevice] = useState(false);

@@ -2487,5 +2487,13 @@
   "The code expired. Please try again.": "Mã đã hết hạn. Vui lòng thử lại.",
   "Scan this QR code": "Quét mã QR này",
   "— or —": "— hoặc —",
-  "Visit {{url}} and enter": "<0>Truy cập </0><1>{{url}}</1><2> và nhập mã</2>"
+  "Visit {{url}} and enter": "<0>Truy cập </0><1>{{url}}</1><2> và nhập mã</2>",
+  "Context Dictionary": "Từ điển ngữ cảnh",
+  "Requires Readest Premium.": "Yêu cầu Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Thêm một trình dịch tương thích OpenAI trong Trình dịch tùy chỉnh để sử dụng.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Giải thích văn bản được chọn theo cách nó được dùng trong đoạn văn, bằng ngôn ngữ đích dịch của bạn.",
+  "AI Translator": "Trình dịch AI",
+  "Examples": "Ví dụ",
+  "Synonyms": "Từ đồng nghĩa",
+  "Context Dictionary failed: {{message}}": "Từ điển ngữ cảnh gặp lỗi: {{message}}"
 }

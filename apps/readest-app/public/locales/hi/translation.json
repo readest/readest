@@ -2551,5 +2551,13 @@
   "The code expired. Please try again.": "कोड की समय सीमा समाप्त हो गई। कृपया फिर से प्रयास करें।",
   "Scan this QR code": "इस QR कोड को स्कैन करें",
   "— or —": "— या —",
-  "Visit {{url}} and enter": "<1>{{url}}</1><2> पर जाएँ और कोड दर्ज करें</2>"
+  "Visit {{url}} and enter": "<1>{{url}}</1><2> पर जाएँ और कोड दर्ज करें</2>",
+  "Context Dictionary": "संदर्भ शब्दकोश",
+  "Requires Readest Premium.": "Readest Premium आवश्यक है।",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "इसका उपयोग करने के लिए कस्टम अनुवादक में एक OpenAI-संगत अनुवादक जोड़ें।",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "चुने गए पाठ को अंश में जिस तरह प्रयोग किया गया है, उसे आपकी अनुवाद लक्ष्य भाषा में समझाता है।",
+  "AI Translator": "AI अनुवादक",
+  "Examples": "उदाहरण",
+  "Synonyms": "पर्यायवाची",
+  "Context Dictionary failed: {{message}}": "संदर्भ शब्दकोश विफल: {{message}}"
 }

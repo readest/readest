@@ -2615,5 +2615,13 @@
   "The code expired. Please try again.": "Le code a expiré. Veuillez réessayer.",
   "Scan this QR code": "Scannez ce code QR",
   "— or —": "— ou —",
-  "Visit {{url}} and enter": "<0>Rendez-vous sur </0><1>{{url}}</1><2> et saisissez le code</2>"
+  "Visit {{url}} and enter": "<0>Rendez-vous sur </0><1>{{url}}</1><2> et saisissez le code</2>",
+  "Context Dictionary": "Dictionnaire contextuel",
+  "Requires Readest Premium.": "Nécessite Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Ajoutez un traducteur compatible OpenAI dans Traducteurs personnalisés pour l’utiliser.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Explique le texte sélectionné tel qu’il est employé dans le passage, dans votre langue cible de traduction.",
+  "AI Translator": "Traducteur IA",
+  "Examples": "Exemples",
+  "Synonyms": "Synonymes",
+  "Context Dictionary failed: {{message}}": "Échec du dictionnaire contextuel : {{message}}"
 }

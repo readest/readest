@@ -2487,5 +2487,13 @@
   "The code expired. Please try again.": "代碼已過期，請重試。",
   "Scan this QR code": "掃描此 QR 碼",
   "— or —": "— 或 —",
-  "Visit {{url}} and enter": "<0>前往 </0><1>{{url}}</1><2> 並輸入代碼</2>"
+  "Visit {{url}} and enter": "<0>前往 </0><1>{{url}}</1><2> 並輸入代碼</2>",
+  "Context Dictionary": "語境辭典",
+  "Requires Readest Premium.": "需要 Readest Premium。",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "在「自訂翻譯器」中新增一個相容 OpenAI 的翻譯器即可使用。",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "依選取文字在段落中的用法進行解釋，使用你的翻譯目標語言。",
+  "AI Translator": "AI 翻譯器",
+  "Examples": "例句",
+  "Synonyms": "近義詞",
+  "Context Dictionary failed: {{message}}": "語境辭典發生錯誤：{{message}}"
 }

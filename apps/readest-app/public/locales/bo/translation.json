@@ -2487,5 +2487,13 @@
   "The code expired. Please try again.": "ཀོཌ་ཀྱི་དུས་ཚོད་ཡོལ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་བྱེད་རོགས།",
   "Scan this QR code": "QR ཀོཌ་འདི་ཞིབ་བཤེར་བྱོས།",
   "— or —": "— ཡང་ན་ —",
-  "Visit {{url}} and enter": "<1>{{url}}</1><2> ལ་སླེབས་ནས་ཀོཌ་འཇུག་རོགས།</2>"
+  "Visit {{url}} and enter": "<1>{{url}}</1><2> ལ་སླེབས་ནས་ཀོཌ་འཇུག་རོགས།</2>",
+  "Context Dictionary": "སྐབས་དོན་ཚིག་མཛོད།",
+  "Requires Readest Premium.": "Readest Premium དགོས།",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "བེད་སྤྱོད་བྱེད་པར་ རང་སྒྲིག་སྒྱུར་བཅོས་ཆས། ནང་ OpenAI དང་མཐུན་པའི་སྒྱུར་བཅོས་ཆས་ཤིག་སྣོན་རོགས།",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "བདམས་ཟིན་པའི་ཡི་གེ་དེ་ལེའུ་ཚན་ནང་ཇི་ལྟར་བེད་སྤྱོད་བྱས་པ་ལྟར་ཁྱེད་ཀྱི་སྒྱུར་ཡུལ་སྐད་ཡིག་ཐོག་འགྲེལ་བཤད་བྱེད།",
+  "AI Translator": "AI སྒྱུར་བཅོས་ཆས།",
+  "Examples": "དཔེ་བརྗོད།",
+  "Synonyms": "མིང་གྲངས་མཚུངས་པ།",
+  "Context Dictionary failed: {{message}}": "སྐབས་དོན་ཚིག་མཛོད་ཕམ་སོང་། {{message}}"
 }

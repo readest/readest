@@ -2487,5 +2487,13 @@
   "The code expired. Please try again.": "코드가 만료되었습니다. 다시 시도해 주세요.",
   "Scan this QR code": "이 QR 코드를 스캔하세요",
   "— or —": "— 또는 —",
-  "Visit {{url}} and enter": "<1>{{url}}</1><2>에 접속하여 코드를 입력하세요</2>"
+  "Visit {{url}} and enter": "<1>{{url}}</1><2>에 접속하여 코드를 입력하세요</2>",
+  "Context Dictionary": "문맥 사전",
+  "Requires Readest Premium.": "Readest Premium이 필요합니다.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "사용하려면 사용자 지정 번역기에서 OpenAI 호환 번역기를 추가하세요.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "선택한 텍스트가 문단에서 어떻게 쓰였는지 번역 대상 언어로 설명합니다.",
+  "AI Translator": "AI 번역기",
+  "Examples": "예문",
+  "Synonyms": "유의어",
+  "Context Dictionary failed: {{message}}": "문맥 사전 오류: {{message}}"
 }

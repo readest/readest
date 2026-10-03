@@ -2551,5 +2551,13 @@
   "The code expired. Please try again.": "კოდს ვადა გაუვიდა. გთხოვთ, სცადოთ ხელახლა.",
   "Scan this QR code": "დაასკანერეთ ეს QR კოდი",
   "— or —": "— ან —",
-  "Visit {{url}} and enter": "<0>ეწვიეთ </0><1>{{url}}</1><2> და შეიყვანეთ კოდი</2>"
+  "Visit {{url}} and enter": "<0>ეწვიეთ </0><1>{{url}}</1><2> და შეიყვანეთ კოდი</2>",
+  "Context Dictionary": "კონტექსტური ლექსიკონი",
+  "Requires Readest Premium.": "საჭიროა Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "გამოსაყენებლად დაამატეთ OpenAI-თავსებადი მთარგმნელი განყოფილებაში „მორგებული მთარგმნელები“.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "ხსნის მონიშნულ ტექსტს ისე, როგორც ის პასაჟშია გამოყენებული, თქვენი თარგმანის სამიზნე ენაზე.",
+  "AI Translator": "AI მთარგმნელი",
+  "Examples": "მაგალითები",
+  "Synonyms": "სინონიმები",
+  "Context Dictionary failed: {{message}}": "კონტექსტური ლექსიკონის შეცდომა: {{message}}"
 }

@@ -2679,5 +2679,13 @@
   "The code expired. Please try again.": "Срок действия кода истёк. Попробуйте ещё раз.",
   "Scan this QR code": "Отсканируйте этот QR-код",
   "— or —": "— или —",
-  "Visit {{url}} and enter": "<0>Перейдите на </0><1>{{url}}</1><2> и введите код</2>"
+  "Visit {{url}} and enter": "<0>Перейдите на </0><1>{{url}}</1><2> и введите код</2>",
+  "Context Dictionary": "Контекстный словарь",
+  "Requires Readest Premium.": "Требуется Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Чтобы им пользоваться, добавьте OpenAI-совместимый переводчик в разделе «Собственные переводчики».",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Объясняет выделенный текст так, как он употреблён в отрывке, на языке перевода.",
+  "AI Translator": "ИИ-переводчик",
+  "Examples": "Примеры",
+  "Synonyms": "Синонимы",
+  "Context Dictionary failed: {{message}}": "Ошибка контекстного словаря: {{message}}"
 }

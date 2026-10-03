@@ -2487,5 +2487,13 @@
   "The code expired. Please try again.": "รหัสหมดอายุแล้ว โปรดลองอีกครั้ง",
   "Scan this QR code": "สแกนคิวอาร์โค้ดนี้",
   "— or —": "— หรือ —",
-  "Visit {{url}} and enter": "<0>ไปที่ </0><1>{{url}}</1><2> แล้วป้อนรหัส</2>"
+  "Visit {{url}} and enter": "<0>ไปที่ </0><1>{{url}}</1><2> แล้วป้อนรหัส</2>",
+  "Context Dictionary": "พจนานุกรมตามบริบท",
+  "Requires Readest Premium.": "ต้องใช้ Readest Premium",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "เพิ่มตัวแปลที่รองรับ OpenAI ในตัวแปลภาษาแบบกำหนดเองเพื่อใช้งาน",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "อธิบายข้อความที่เลือกตามที่ใช้ในข้อความตอนนั้น เป็นภาษาปลายทางของการแปล",
+  "AI Translator": "ตัวแปล AI",
+  "Examples": "ตัวอย่าง",
+  "Synonyms": "คำพ้องความหมาย",
+  "Context Dictionary failed: {{message}}": "พจนานุกรมตามบริบทล้มเหลว: {{message}}"
 }

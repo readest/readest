@@ -2487,5 +2487,13 @@
   "The code expired. Please try again.": "Kode telah kedaluwarsa. Silakan coba lagi.",
   "Scan this QR code": "Pindai kode QR ini",
   "— or —": "— atau —",
-  "Visit {{url}} and enter": "<0>Kunjungi </0><1>{{url}}</1><2> dan masukkan kode</2>"
+  "Visit {{url}} and enter": "<0>Kunjungi </0><1>{{url}}</1><2> dan masukkan kode</2>",
+  "Context Dictionary": "Kamus Konteks",
+  "Requires Readest Premium.": "Memerlukan Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Tambahkan penerjemah yang kompatibel dengan OpenAI di Penerjemah Khusus untuk menggunakannya.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Menjelaskan teks yang dipilih sesuai penggunaannya dalam bagian bacaan, dalam bahasa target terjemahan Anda.",
+  "AI Translator": "Penerjemah AI",
+  "Examples": "Contoh",
+  "Synonyms": "Sinonim",
+  "Context Dictionary failed: {{message}}": "Kamus konteks gagal: {{message}}"
 }

@@ -2615,5 +2615,13 @@
   "The code expired. Please try again.": "Codul a expirat. Încercați din nou.",
   "Scan this QR code": "Scanați acest cod QR",
   "— or —": "— sau —",
-  "Visit {{url}} and enter": "<0>Accesați </0><1>{{url}}</1><2> și introduceți codul</2>"
+  "Visit {{url}} and enter": "<0>Accesați </0><1>{{url}}</1><2> și introduceți codul</2>",
+  "Context Dictionary": "Dicționar contextual",
+  "Requires Readest Premium.": "Necesită Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Adăugați un traducător compatibil OpenAI în Traducători personalizați pentru a-l folosi.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Explică textul selectat așa cum este folosit în pasaj, în limba țintă a traducerii.",
+  "AI Translator": "Traducător AI",
+  "Examples": "Exemple",
+  "Synonyms": "Sinonime",
+  "Context Dictionary failed: {{message}}": "Dicționarul contextual a eșuat: {{message}}"
 }
