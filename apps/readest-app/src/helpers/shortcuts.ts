@@ -349,9 +349,10 @@ export const getShortcutsForDisplay = (isMac: boolean): ShortcutDisplaySection[]
   const shortcuts = loadShortcuts();
   return SHORTCUT_SECTIONS.map((section) => {
     const itemMap = new Map<string, ShortcutDisplayItem>();
-    for (const entry of Object.values(shortcuts)) {
+    for (const action of Object.keys(shortcuts) as ShortcutAction[]) {
+      const entry = shortcuts[action];
       if (entry.section !== section) continue;
-      const keys = filterPlatformKeys(entry.keys, isMac);
+      const keys = getVisibleShortcutKeys(shortcuts, action, isMac);
       if (keys.length === 0) continue;
       const existing = itemMap.get(entry.description);
       if (existing) {
@@ -424,25 +425,58 @@ export const getShortcutConflicts = (
   );
 };
 
-export const setShortcutBinding = (
+// Default bindings carry both platforms' variants (ctrl+f and cmd+f); only the
+// current platform's are shown. Customized bindings were recorded on this device,
+// so all of them are shown — a recorded Ctrl+K on macOS is a real binding.
+export const getVisibleShortcutKeys = (
   shortcuts: ShortcutConfig,
   action: ShortcutAction,
-  binding: string | null,
+  isMac: boolean,
+): string[] => {
+  const keys = shortcuts[action].keys;
+  return isShortcutCustomized(shortcuts, action) ? [...keys] : filterPlatformKeys(keys, isMac);
+};
+
+// Edits work on the visible bindings, dropping the other platform's variants.
+// Otherwise removing the last visible binding would surface them through
+// filterPlatformKeys' fallback.
+export const addShortcutBinding = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  binding: string,
+  isMac: boolean,
+  replacing: string | null = null,
 ): ShortcutConfig => {
   const result = cloneShortcuts(shortcuts);
-  if (!binding) {
-    result[action].keys = [];
-    return result;
-  }
-
   const normalizedBinding = normalizeShortcut(binding);
   for (const candidate of Object.keys(result) as ShortcutAction[]) {
     if (candidate === action) continue;
-    result[candidate].keys = result[candidate].keys.filter(
+    if (!result[candidate].keys.some((key) => normalizeShortcut(key) === normalizedBinding)) {
+      continue;
+    }
+    result[candidate].keys = getVisibleShortcutKeys(result, candidate, isMac).filter(
       (key) => normalizeShortcut(key) !== normalizedBinding,
     );
   }
-  result[action].keys = [binding];
+  const keys = getVisibleShortcutKeys(result, action, isMac);
+  const index = replacing ? keys.indexOf(replacing) : -1;
+  if (index >= 0) keys[index] = binding;
+  else keys.push(binding);
+  const normalizedKeys = keys.map(normalizeShortcut);
+  result[action].keys = keys.filter((_, i) => normalizedKeys.indexOf(normalizedKeys[i]!) === i);
+  return result;
+};
+
+export const removeShortcutBinding = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  binding: string,
+  isMac: boolean,
+): ShortcutConfig => {
+  const result = cloneShortcuts(shortcuts);
+  result[action].keys = getVisibleShortcutKeys(result, action, isMac).filter(
+    (key) => key !== binding,
+  );
   return result;
 };
 
