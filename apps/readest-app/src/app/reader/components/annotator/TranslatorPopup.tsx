@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTranslator } from '@/hooks/useTranslator';
 import { TRANSLATOR_LANGS } from '@/services/constants';
+import { isCustomTranslatorAllowed } from '@/utils/access';
 import {
   UseTranslatorOptions,
   getTranslatorDisplayLabel,
@@ -96,7 +97,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
   const handleProviderChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const requestedProvider = event.target.value;
-    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, !!token));
+    const availableTranslators = getTranslators().filter((t) =>
+      isTranslatorAvailable(t, !!token, isCustomTranslatorAllowed(token)),
+    );
     const selectedTranslator =
       availableTranslators.find((t) => t.name === requestedProvider) || availableTranslators[0]!;
     if (selectedTranslator) {
@@ -107,10 +110,11 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
   };
 
   useEffect(() => {
+    const hasPremium = isCustomTranslatorAllowed(token);
     const availableProviders = translators.map((t) => ({
       name: t.name,
-      label: getTranslatorDisplayLabel(t, !!token, _),
-      disabled: !!t.disabled,
+      label: getTranslatorDisplayLabel(t, !!token, hasPremium, _),
+      disabled: !!t.disabled || (!!t.premiumRequired && !hasPremium),
     }));
     setProviders(availableProviders);
     // eslint-disable-next-line react-hooks/exhaustive-deps

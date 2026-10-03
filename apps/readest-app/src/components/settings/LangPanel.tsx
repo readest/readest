@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -16,6 +17,8 @@ import { isTranslationAvailable } from '@/services/translators/utils';
 import { DEFAULT_PROMPT_ID, isCustomTranslatorName } from '@/services/translators/custom';
 import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
 import { getLocale } from '@/utils/misc';
+import { isCustomTranslatorAllowed } from '@/utils/access';
+import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
@@ -37,8 +40,10 @@ import { PiTranslate } from 'react-icons/pi';
 
 const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
-  const { token } = useAuth();
+  const router = useRouter();
+  const { token, user } = useAuth();
   const { envConfig } = useEnv();
+  const hasPremium = isCustomTranslatorAllowed(token);
   const { settings, applyUILanguage, activeSettingsItemId, setActiveSettingsItemId } =
     useSettingsStore();
   const { getView, getViewSettings, setViewSettings, recreateViewer } = useReaderStore();
@@ -152,17 +157,19 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const getTranslationProviderOptions = () => {
     return getTranslators().map((t) => ({
       value: t.name,
-      label: getTranslatorDisplayLabel(t, !!token, _),
+      label: getTranslatorDisplayLabel(t, !!token, hasPremium, _),
       // Providers marked `disabled` (e.g. upstream relay is down) stay in the
       // dropdown so users can see them, but cannot be selected.
-      disabled: !!t.disabled,
+      disabled: !!t.disabled || (!!t.premiumRequired && !hasPremium),
     }));
   };
 
   const getCurrentTranslationProviderOption = () => {
     const value = translationProvider;
     const allProviders = getTranslationProviderOptions();
-    const availableTranslators = getTranslators().filter((t) => isTranslatorAvailable(t, !!token));
+    const availableTranslators = getTranslators().filter((t) =>
+      isTranslatorAvailable(t, !!token, hasPremium),
+    );
     const currentProvider = availableTranslators.find((t) => t.name === value)
       ? value
       : availableTranslators[0]?.name;
@@ -179,6 +186,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
 
   // `customTranslators` makes the options re-render when the store hydrates.
   const isLLMProvider =
+    hasPremium &&
     isCustomTranslatorName(translationProvider) &&
     customTranslators.some(
       (t) => `custom:${t.id}` === translationProvider && t.type === 'openai-compatible',
@@ -195,6 +203,14 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     saveViewSettings(envConfig, bookKey, 'translationPromptId', option, false, false);
     viewSettings.translationPromptId = option;
     setViewSettings(bookKey, { ...viewSettings });
+  };
+
+  // Custom translators are premium: everyone else is routed to the plans page
+  // (or sign-in) instead of the sub-page.
+  const handleOpenCustomTranslators = () => {
+    if (hasPremium) setShowCustomTranslators(true);
+    else if (user) navigateToProfile(router);
+    else navigateToLogin(router);
   };
 
   const getCurrentTargetLangOption = () => {
@@ -443,7 +459,8 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         </SettingsRow>
         <NavigationRow
           title={_('Custom Translators')}
-          onClick={() => setShowCustomTranslators(true)}
+          badge={hasPremium ? undefined : _('Premium')}
+          onClick={handleOpenCustomTranslators}
           data-setting-id='settings.language.customTranslators'
         />
       </BoxedList>

@@ -11,7 +11,7 @@
  * an already-on book stays toggleable so the user can turn it back off.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, cleanup, screen } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent } from '@testing-library/react';
 
 import LangPanel from '@/components/settings/LangPanel';
 import type { Book, BookFormat, ViewSettings } from '@/types/book';
@@ -20,6 +20,9 @@ const state = vi.hoisted(() => ({
   format: 'EPUB' as BookFormat,
   primaryLanguage: 'fr',
   translationEnabled: false,
+  token: null as string | null,
+  user: null as { id: string } | null,
+  push: vi.fn(),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -27,7 +30,11 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 
 vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ token: null }),
+  useAuth: () => ({ token: state.token, user: state.user }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: state.push }),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -58,14 +65,15 @@ const viewSettings = () =>
     convertChineseVariant: 'none',
   }) as unknown as ViewSettings;
 
-vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+vi.mock('@/store/settingsStore', () => {
+  const store = () => ({
     settings: { globalViewSettings: viewSettings() },
     applyUILanguage: vi.fn(),
     activeSettingsItemId: null,
     setActiveSettingsItemId: vi.fn(),
-  }),
-}));
+  });
+  return { useSettingsStore: Object.assign(store, { getState: store }) };
+});
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
@@ -131,5 +139,56 @@ describe('LangPanel — Enable Translation availability', () => {
     render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
 
     expect(getEnableTranslationToggle().disabled).toBe(false);
+  });
+});
+
+const encode = (part: object) => Buffer.from(JSON.stringify(part)).toString('base64url');
+const sessionToken = (claims: object) => `${encode({ alg: 'none' })}.${encode(claims)}.sig`;
+
+const getCustomTranslatorsRow = () =>
+  screen.getByText('Custom Translators').closest('button') as HTMLButtonElement;
+
+// Custom translators are a premium feature: free and signed-out readers see the
+// row with a Premium badge that routes to the upgrade page or sign-in.
+describe('LangPanel — Custom Translators premium gate', () => {
+  beforeEach(() => {
+    state.token = null;
+    state.user = null;
+    state.push.mockReset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('sends a signed-out reader to sign in', () => {
+    render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+
+    expect(getCustomTranslatorsRow().textContent).toContain('Premium');
+    fireEvent.click(getCustomTranslatorsRow());
+    expect(state.push).toHaveBeenCalledWith(expect.stringMatching(/^\/auth\?redirect=/));
+  });
+
+  it('sends a free user to the plans page', () => {
+    state.token = sessionToken({ plan: 'free' });
+    state.user = { id: 'u' };
+
+    render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+
+    fireEvent.click(getCustomTranslatorsRow());
+    expect(state.push).toHaveBeenCalledWith('/user');
+    expect(screen.queryByText('Add Translator')).toBeNull();
+  });
+
+  it('opens the sub-page for a subscriber', () => {
+    state.token = sessionToken({ plan: 'plus' });
+    state.user = { id: 'u' };
+
+    render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
+
+    expect(getCustomTranslatorsRow().textContent).not.toContain('Premium');
+    fireEvent.click(getCustomTranslatorsRow());
+    expect(state.push).not.toHaveBeenCalled();
+    expect(screen.getByText('Add Translator')).toBeTruthy();
   });
 });

@@ -17,6 +17,7 @@ import {
   useCustomTranslatorStore,
 } from '@/store/customTranslatorStore';
 import { isCustomTranslatorName } from '@/services/translators/custom';
+import { isCustomTranslatorAllowed } from '@/utils/access';
 import { useTranslation } from './useTranslation';
 
 export function useTranslator({
@@ -48,14 +49,17 @@ export function useTranslator({
   }, [provider, sourceLang, targetLang]);
 
   useEffect(() => {
-    const availableTranslators = translators.filter((t) => isTranslatorAvailable(t, !!token));
+    const hasPremium = isCustomTranslatorAllowed(token);
+    const availableTranslators = translators.filter((t) =>
+      isTranslatorAvailable(t, !!token, hasPremium),
+    );
     const selectedTranslator =
       availableTranslators.find((t) => t.name === provider) || availableTranslators[0]!;
     const selectedProviderName = selectedTranslator.name as TranslatorName;
     setTransltor(selectedTranslator);
     setSelectedProvider(selectedProviderName);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider, translators]);
+  }, [provider, translators, token]);
 
   const translate = useCallback(
     async (

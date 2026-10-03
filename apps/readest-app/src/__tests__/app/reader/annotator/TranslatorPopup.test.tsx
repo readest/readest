@@ -41,6 +41,12 @@ vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ token: mockToken }),
 }));
 
+// The mock token is not a JWT, so skip decoding it for the premium check.
+vi.mock('@/utils/access', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/access')>()),
+  isCustomTranslatorAllowed: () => false,
+}));
+
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
     settings: { globalReadSettings: { translateTargetLang: 'zh', translationProvider: 'azure' } },

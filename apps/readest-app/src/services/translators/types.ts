@@ -4,6 +4,8 @@ export interface TranslationProvider {
   name: string;
   label: string;
   authRequired?: boolean;
+  /** Needs a premium plan (custom translators). */
+  premiumRequired?: boolean;
   quotaExceeded?: boolean;
   /**
    * The upstream API carries inline HTML through translation, repositioning

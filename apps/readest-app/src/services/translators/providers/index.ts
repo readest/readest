@@ -58,8 +58,10 @@ export const getTranslator = (name: TranslatorName): TranslationProvider | undef
 export const isTranslatorAvailable = (
   translator: TranslationProvider,
   hasToken: boolean,
+  hasPremium: boolean,
 ): boolean => {
   if (translator.disabled) return false;
+  if (translator.premiumRequired && !hasPremium) return false;
   if (translator.quotaExceeded) return false;
   if (translator.authRequired && !hasToken) return false;
   return true;
@@ -75,12 +77,16 @@ export const isTranslatorAvailable = (
 export const getTranslatorDisplayLabel = (
   translator: TranslationProvider,
   hasToken: boolean,
+  hasPremium: boolean,
   _: (key: string) => string,
 ): string => {
   if (translator.disabled) {
     return translator.requiresApp
       ? `${translator.label} (${_('App only')})`
       : `${translator.label}`;
+  }
+  if (translator.premiumRequired && !hasPremium) {
+    return `${translator.label} (${_('Premium')})`;
   }
   if (translator.authRequired && !hasToken) {
     return `${translator.label} (${_('Login Required')})`;
