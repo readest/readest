@@ -2485,5 +2485,6 @@
   "Italic": "ตัวเอียง",
   "Bold": "ตัวหนา",
   "Bold Italic": "ตัวหนาเอียง",
-  "Font Style": "ลักษณะแบบอักษร"
+  "Font Style": "ลักษณะแบบอักษร",
+  "Failed to share the image": "แชร์รูปภาพไม่สำเร็จ"
 }
