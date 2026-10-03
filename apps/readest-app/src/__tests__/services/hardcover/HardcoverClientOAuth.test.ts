@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { HardcoverOAuthError } from '@/services/hardcover/hardcoverOAuth';
 import { TokenEndpointError } from '@/services/sync/providers/oauth/tokenEndpoint';
 import { HardcoverAuthError, HardcoverClient } from '@/services/hardcover/HardcoverClient';
 import type { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
@@ -61,6 +62,7 @@ describe('HardcoverClient OAuth', () => {
     for (const dead of [
       new TokenEndpointError('refresh failed', 400, 'invalid_token'),
       new TokenEndpointError('refresh failed', 401, 'invalid_token'),
+      new HardcoverOAuthError('no_refresh_token'),
     ]) {
       refresh.mockRejectedValueOnce(dead);
       await expect(make(0).api.request('q', {})).rejects.toBeInstanceOf(HardcoverAuthError);

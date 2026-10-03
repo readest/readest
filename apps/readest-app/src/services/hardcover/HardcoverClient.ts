@@ -3,7 +3,12 @@ import { getContentMd5 } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TokenEndpointError, type TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
-import { platformFetch, refreshHardcoverTokens, sleep } from './hardcoverOAuth';
+import {
+  HardcoverOAuthError,
+  platformFetch,
+  refreshHardcoverTokens,
+  sleep,
+} from './hardcoverOAuth';
 import {
   QUERY_GET_USER_ID,
   QUERY_SEARCH_BOOKS,
@@ -158,14 +163,13 @@ export class HardcoverClient {
           console.error('[Hardcover] failed to persist refreshed tokens', e);
         }
       } catch (error) {
-        // A 401, or a 400 naming an invalid token, means the login is dead. Other 400s
-        // (malformed request), 5xx and network errors are not the user's to fix by reconnecting.
-        if (
-          error instanceof TokenEndpointError &&
-          (error.status === 401 || (error.status === 400 && error.code === 'invalid_token'))
-        ) {
-          throw new HardcoverAuthError(error.message);
-        }
+        // No refresh token, a 401, or a 400 naming an invalid token means the login is dead. Other
+        // 400s (malformed request), 5xx and network errors are not fixed by reconnecting.
+        const dead =
+          (error instanceof HardcoverOAuthError && error.code === 'no_refresh_token') ||
+          (error instanceof TokenEndpointError &&
+            (error.status === 401 || (error.status === 400 && error.code === 'invalid_token')));
+        if (dead) throw new HardcoverAuthError(error.message);
         throw error;
       } finally {
         this.refreshInFlight = null;
