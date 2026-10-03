@@ -2550,5 +2550,13 @@
   "Bold": "پررنگ",
   "Bold Italic": "پررنگ ایتالیک",
   "Font Style": "سبک قلم",
-  "Failed to share the image": "اشتراک‌گذاری تصویر ناموفق بود"
+  "Failed to share the image": "اشتراک‌گذاری تصویر ناموفق بود",
+  "Context Dictionary": "فرهنگ بافتاری",
+  "Requires Readest Premium.": "به Readest Premium نیاز دارد.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "برای استفاده، یک مترجم سازگار با OpenAI در «مترجم‌های سفارشی» اضافه کنید.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "متن انتخاب‌شده را همان‌طور که در متن به کار رفته، به زبان مقصد ترجمه‌تان توضیح می‌دهد.",
+  "AI Translator": "مترجم هوش مصنوعی",
+  "Examples": "مثال‌ها",
+  "Synonyms": "مترادف‌ها",
+  "Context Dictionary failed: {{message}}": "فرهنگ بافتاری با خطا مواجه شد: {{message}}"
 }

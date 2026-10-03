@@ -2486,5 +2486,13 @@
   "Bold": "Tebal",
   "Bold Italic": "Tebal miring",
   "Font Style": "Gaya font",
-  "Failed to share the image": "Gagal membagikan gambar"
+  "Failed to share the image": "Gagal membagikan gambar",
+  "Context Dictionary": "Kamus Konteks",
+  "Requires Readest Premium.": "Memerlukan Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Tambahkan penerjemah yang kompatibel dengan OpenAI di Penerjemah Khusus untuk menggunakannya.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Menjelaskan teks yang dipilih sesuai penggunaannya dalam bagian bacaan, dalam bahasa target terjemahan Anda.",
+  "AI Translator": "Penerjemah AI",
+  "Examples": "Contoh",
+  "Synonyms": "Sinonim",
+  "Context Dictionary failed: {{message}}": "Kamus konteks gagal: {{message}}"
 }

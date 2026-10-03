@@ -2486,5 +2486,13 @@
   "Bold": "粗體",
   "Bold Italic": "粗斜體",
   "Font Style": "字型樣式",
-  "Failed to share the image": "分享圖片失敗"
+  "Failed to share the image": "分享圖片失敗",
+  "Context Dictionary": "語境辭典",
+  "Requires Readest Premium.": "需要 Readest Premium。",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "在「自訂翻譯器」中新增一個相容 OpenAI 的翻譯器即可使用。",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "依選取文字在段落中的用法進行解釋，使用你的翻譯目標語言。",
+  "AI Translator": "AI 翻譯器",
+  "Examples": "例句",
+  "Synonyms": "近義詞",
+  "Context Dictionary failed: {{message}}": "語境辭典發生錯誤：{{message}}"
 }

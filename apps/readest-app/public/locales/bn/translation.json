@@ -2550,5 +2550,13 @@
   "Bold": "বোল্ড",
   "Bold Italic": "বোল্ড ইটালিক",
   "Font Style": "ফন্ট শৈলী",
-  "Failed to share the image": "ছবি শেয়ার করা যায়নি"
+  "Failed to share the image": "ছবি শেয়ার করা যায়নি",
+  "Context Dictionary": "প্রসঙ্গ অভিধান",
+  "Requires Readest Premium.": "Readest Premium প্রয়োজন।",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "এটি ব্যবহার করতে কাস্টম অনুবাদক-এ একটি OpenAI-সামঞ্জস্যপূর্ণ অনুবাদক যোগ করুন।",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "নির্বাচিত লেখাটি অনুচ্ছেদে যেভাবে ব্যবহৃত হয়েছে, তা আপনার অনুবাদের লক্ষ্য ভাষায় ব্যাখ্যা করে।",
+  "AI Translator": "AI অনুবাদক",
+  "Examples": "উদাহরণ",
+  "Synonyms": "সমার্থক শব্দ",
+  "Context Dictionary failed: {{message}}": "প্রসঙ্গ অভিধান ব্যর্থ হয়েছে: {{message}}"
 }

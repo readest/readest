@@ -23,6 +23,7 @@ import {
 import type {
   DictionaryLookupOutcome,
   DictionaryProvider,
+  DictionarySelectionContext,
   WebSearchEntry,
 } from '@/services/dictionaries/types';
 import type { Insets } from '@/types/misc';
@@ -54,6 +55,8 @@ interface CardState {
 export interface UseDictionaryResultsArgs {
   word: string;
   lang?: string;
+  /** Where `word` was selected in the book, for the AI context dictionary (#5544). */
+  selection?: DictionarySelectionContext;
 }
 
 export interface DictionaryResultsState {
@@ -98,6 +101,7 @@ export interface DictionaryResultsState {
 export function useDictionaryResults({
   word,
   lang,
+  selection,
 }: UseDictionaryResultsArgs): DictionaryResultsState {
   const { appService } = useEnv();
   const { dictionaries, settings } = useCustomDictionaryStore();
@@ -134,6 +138,9 @@ export function useDictionaryResults({
 
   const [historyStack, setHistoryStack] = useState<string[]>([word.trim()]);
   const currentWord = historyStack[historyStack.length - 1] ?? word.trim();
+  // The passage only describes the selected word, not words reached through
+  // in-popup links.
+  const currentSelection = historyStack.length === 1 ? selection : undefined;
 
   // Reset the history when the host reopens with a new word from outside
   // (selection change in the reader). A double-click selection can carry
@@ -336,6 +343,7 @@ export function useDictionaryResults({
                 bg: themeCode.bg,
                 fg: themeCode.fg,
                 autoPlayPronunciation: autoPlayPronunciation && provider.id === autoPlayProviderId,
+                selection: currentSelection,
               });
               if (controller.signal.aborted) return;
               if (outcome.ok || outcome.reason !== 'empty') break;
@@ -376,6 +384,7 @@ export function useDictionaryResults({
     themeCode.fg,
     autoPlayPronunciation,
     autoPlayProviderId,
+    currentSelection,
   ]);
 
   // Visible cards = providers that are still loading or finished with a

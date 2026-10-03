@@ -2614,5 +2614,13 @@
   "Bold": "מודגש",
   "Bold Italic": "מודגש נטוי",
   "Font Style": "סגנון גופן",
-  "Failed to share the image": "שיתוף התמונה נכשל"
+  "Failed to share the image": "שיתוף התמונה נכשל",
+  "Context Dictionary": "מילון הקשר",
+  "Requires Readest Premium.": "נדרש Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "כדי להשתמש בו, הוסיפו מתרגם תואם OpenAI במתרגמים מותאמים אישית.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "מסביר את הטקסט שנבחר כפי שהוא משמש בקטע, בשפת היעד של התרגום שלך.",
+  "AI Translator": "מתרגם בינה מלאכותית",
+  "Examples": "דוגמאות",
+  "Synonyms": "מילים נרדפות",
+  "Context Dictionary failed: {{message}}": "מילון ההקשר נכשל: {{message}}"
 }

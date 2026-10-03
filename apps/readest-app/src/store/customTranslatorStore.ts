@@ -206,3 +206,12 @@ export const findCustomTranslator = (id: string): CustomTranslator | undefined =
 export const findTranslationPrompt = (id: string): TranslationPrompt | undefined =>
   useCustomTranslatorStore.getState().prompts.find((p) => p.id === id) ??
   useSettingsStore.getState().settings?.translationPrompts?.find((p) => p.id === id);
+
+/** Usable OpenAI-compatible translators, e.g. for the AI context dictionary (#5544). */
+export const getLLMTranslators = (): CustomTranslator[] => {
+  const { loaded, translators } = useCustomTranslatorStore.getState();
+  const list = loaded
+    ? translators
+    : (useSettingsStore.getState().settings?.customTranslators ?? []);
+  return list.filter((t) => t.type === 'openai-compatible' && !t.deletedAt && !t.disabled);
+};

@@ -2550,5 +2550,13 @@
   "Bold": "მუქი",
   "Bold Italic": "მუქი დახრილი",
   "Font Style": "შრიფტის სტილი",
-  "Failed to share the image": "სურათის გაზიარება ვერ მოხერხდა"
+  "Failed to share the image": "სურათის გაზიარება ვერ მოხერხდა",
+  "Context Dictionary": "კონტექსტური ლექსიკონი",
+  "Requires Readest Premium.": "საჭიროა Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "გამოსაყენებლად დაამატეთ OpenAI-თავსებადი მთარგმნელი განყოფილებაში „მორგებული მთარგმნელები“.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "ხსნის მონიშნულ ტექსტს ისე, როგორც ის პასაჟშია გამოყენებული, თქვენი თარგმანის სამიზნე ენაზე.",
+  "AI Translator": "AI მთარგმნელი",
+  "Examples": "მაგალითები",
+  "Synonyms": "სინონიმები",
+  "Context Dictionary failed: {{message}}": "კონტექსტური ლექსიკონის შეცდომა: {{message}}"
 }

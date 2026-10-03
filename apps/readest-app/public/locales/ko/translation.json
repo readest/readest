@@ -2486,5 +2486,13 @@
   "Bold": "굵게",
   "Bold Italic": "굵은 기울임꼴",
   "Font Style": "글꼴 스타일",
-  "Failed to share the image": "이미지를 공유하지 못했습니다"
+  "Failed to share the image": "이미지를 공유하지 못했습니다",
+  "Context Dictionary": "문맥 사전",
+  "Requires Readest Premium.": "Readest Premium이 필요합니다.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "사용하려면 사용자 지정 번역기에서 OpenAI 호환 번역기를 추가하세요.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "선택한 텍스트가 문단에서 어떻게 쓰였는지 번역 대상 언어로 설명합니다.",
+  "AI Translator": "AI 번역기",
+  "Examples": "예문",
+  "Synonyms": "유의어",
+  "Context Dictionary failed: {{message}}": "문맥 사전 오류: {{message}}"
 }

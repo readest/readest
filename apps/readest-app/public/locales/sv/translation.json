@@ -2550,5 +2550,13 @@
   "Bold": "Fet",
   "Bold Italic": "Fet kursiv",
   "Font Style": "Teckenstil",
-  "Failed to share the image": "Det gick inte att dela bilden"
+  "Failed to share the image": "Det gick inte att dela bilden",
+  "Context Dictionary": "Kontextordbok",
+  "Requires Readest Premium.": "Kräver Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Lägg till en OpenAI-kompatibel översättare under Egna översättare för att använda den.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Förklarar den markerade texten så som den används i stycket, på ditt målspråk för översättning.",
+  "AI Translator": "AI-översättare",
+  "Examples": "Exempel",
+  "Synonyms": "Synonymer",
+  "Context Dictionary failed: {{message}}": "Kontextordboken misslyckades: {{message}}"
 }

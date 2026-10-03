@@ -2550,5 +2550,13 @@
   "Bold": "Félkövér",
   "Bold Italic": "Félkövér dőlt",
   "Font Style": "Betűstílus",
-  "Failed to share the image": "Nem sikerült megosztani a képet"
+  "Failed to share the image": "Nem sikerült megosztani a képet",
+  "Context Dictionary": "Kontextusszótár",
+  "Requires Readest Premium.": "Readest Premium szükséges.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "A használatához adjon hozzá egy OpenAI-kompatibilis fordítót itt: Egyéni fordítók.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "A kijelölt szöveget úgy magyarázza el, ahogyan a szövegrészben szerepel, a fordítás célnyelvén.",
+  "AI Translator": "MI-fordító",
+  "Examples": "Példák",
+  "Synonyms": "Szinonimák",
+  "Context Dictionary failed: {{message}}": "A kontextusszótár hibát jelzett: {{message}}"
 }

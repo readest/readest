@@ -19,7 +19,12 @@ import {
 } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-import type { DictionaryProvider, DictionaryLookupOutcome } from '@/services/dictionaries/types';
+import type {
+  DictionaryLookupContext,
+  DictionaryLookupOutcome,
+  DictionaryProvider,
+  DictionarySelectionContext,
+} from '@/services/dictionaries/types';
 import { BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { BaseDir } from '@/types/system';
@@ -309,6 +314,7 @@ const renderSheet = (
   props: Partial<{
     word: string;
     lang: string;
+    selection: DictionarySelectionContext;
     onDismiss: () => void;
     onManage: () => void;
   }> = {},
@@ -317,6 +323,7 @@ const renderSheet = (
     <DictionarySheet
       word={props.word ?? 'hello'}
       lang={props.lang}
+      selection={props.selection}
       onDismiss={props.onDismiss ?? (() => {})}
       onManage={props.onManage}
     />,
@@ -592,6 +599,31 @@ describe('DictionarySheet — in-content navigation', () => {
     fireEvent.click(screen.getByLabelText('Back'));
     await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('hello'));
     expect(screen.queryByLabelText('Back')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — selection context (#5544)', () => {
+  it('hands the selection context to providers for the selected word only', async () => {
+    const seen: Record<string, DictionaryLookupContext['selection']> = {};
+    const nav = buildNavProvider('world');
+    providersForNextRender.push({
+      ...nav,
+      lookup: (word, ctx) => {
+        seen[word] = ctx.selection;
+        return nav.lookup(word, ctx);
+      },
+    });
+    const selection = { before: 'Say', after: 'to everyone.', targetLang: 'fr' };
+    renderSheet({ word: 'hello', selection });
+
+    const navLink = await waitFor(() => screen.getByTestId('nav-link'));
+    expect(seen['hello']).toEqual(selection);
+
+    await act(async () => {
+      fireEvent.click(navLink);
+    });
+    await waitFor(() => expect('world' in seen).toBe(true));
+    expect(seen['world']).toBeUndefined();
   });
 });
 

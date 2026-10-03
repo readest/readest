@@ -2550,5 +2550,13 @@
   "Bold": "बोल्ड",
   "Bold Italic": "बोल्ड इटैलिक",
   "Font Style": "फ़ॉन्ट शैली",
-  "Failed to share the image": "छवि साझा करने में विफल"
+  "Failed to share the image": "छवि साझा करने में विफल",
+  "Context Dictionary": "संदर्भ शब्दकोश",
+  "Requires Readest Premium.": "Readest Premium आवश्यक है।",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "इसका उपयोग करने के लिए कस्टम अनुवादक में एक OpenAI-संगत अनुवादक जोड़ें।",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "चुने गए पाठ को अंश में जिस तरह प्रयोग किया गया है, उसे आपकी अनुवाद लक्ष्य भाषा में समझाता है।",
+  "AI Translator": "AI अनुवादक",
+  "Examples": "उदाहरण",
+  "Synonyms": "पर्यायवाची",
+  "Context Dictionary failed: {{message}}": "संदर्भ शब्दकोश विफल: {{message}}"
 }

@@ -2550,5 +2550,13 @@
   "Bold": "Kalın",
   "Bold Italic": "Kalın italik",
   "Font Style": "Yazı tipi stili",
-  "Failed to share the image": "Görsel paylaşılamadı"
+  "Failed to share the image": "Görsel paylaşılamadı",
+  "Context Dictionary": "Bağlam Sözlüğü",
+  "Requires Readest Premium.": "Readest Premium gerektirir.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Kullanmak için Özel Çevirmenler bölümüne OpenAI uyumlu bir çevirmen ekleyin.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Seçilen metni pasajda kullanıldığı anlamıyla, çeviri hedef dilinizde açıklar.",
+  "AI Translator": "Yapay Zekâ Çevirmeni",
+  "Examples": "Örnekler",
+  "Synonyms": "Eş anlamlılar",
+  "Context Dictionary failed: {{message}}": "Bağlam sözlüğü başarısız oldu: {{message}}"
 }

@@ -2614,5 +2614,13 @@
   "Bold": "Negrito",
   "Bold Italic": "Negrito itálico",
   "Font Style": "Estilo do tipo de letra",
-  "Failed to share the image": "Falha ao partilhar a imagem"
+  "Failed to share the image": "Falha ao partilhar a imagem",
+  "Context Dictionary": "Dicionário contextual",
+  "Requires Readest Premium.": "Requer Readest Premium.",
+  "Add an OpenAI-compatible translator in Custom Translators to use it.": "Adicione um tradutor compatível com OpenAI em Tradutores personalizados para o usar.",
+  "Explains the selected text as it is used in the passage, in your translation target language.": "Explica o texto selecionado tal como é usado na passagem, no seu idioma de destino da tradução.",
+  "AI Translator": "Tradutor de IA",
+  "Examples": "Exemplos",
+  "Synonyms": "Sinónimos",
+  "Context Dictionary failed: {{message}}": "Falha do dicionário contextual: {{message}}"
 }
