@@ -238,4 +238,37 @@ describe('PDF CFI resolution with real document', () => {
     const range = toRange(doc3, parts);
     expect(range).toBeNull();
   });
+
+  // ---------- Range ends between children -----------------------------------
+
+  // readest/readest#6578: a selection dragged past the last line of a page
+  // ends after the text layer's last child, (textLayer, childNodes.length).
+  // The CFI kept only the text layer element, which reads back as its start,
+  // so the saved highlight came back collapsed and painted nothing.
+  it('should keep a range that ends after the last child of the text layer', () => {
+    const textLayer = doc3.querySelector('.textLayer')!;
+    const spans = textLayer.querySelectorAll('span');
+    const startSpan = spans[spans.length - 3]!;
+    const range = doc3.createRange();
+    range.setStart(startSpan.firstChild!, 0);
+    range.setEnd(textLayer, textLayer.childNodes.length);
+
+    const restored = toRange(doc3, parse(fromRange(range)));
+    expect(restored).not.toBeNull();
+    expect(restored!.collapsed).toBe(false);
+    expect(restored!.toString()).toBe(range.toString());
+  });
+
+  it('should keep a range that ends between two children of the text layer', () => {
+    const textLayer = doc3.querySelector('.textLayer')!;
+    const spans = textLayer.querySelectorAll('span');
+    const startSpan = spans[1]!;
+    const endSpan = spans[4]!;
+    const range = doc3.createRange();
+    range.setStart(startSpan.firstChild!, 0);
+    range.setEndAfter(endSpan);
+
+    const restored = toRange(doc3, parse(fromRange(range)));
+    expect(restored!.toString()).toBe(range.toString());
+  });
 });
