@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { HardcoverClient } from '@/services/hardcover/HardcoverClient';
+import { getContentMd5 } from '@/utils/misc';
 import { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
 import type { AppService } from '@/types/system';
 import type { Book, BookConfig, BookNote, HardcoverBookLink } from '@/types/book';
@@ -29,6 +30,8 @@ type TestBookContext = {
 
 type HardcoverClientTestApi = {
   token: string;
+  authenticate: () => Promise<void>;
+  privacySettingId: number;
   extractISBN: (book: Book) => string | null;
   request: <TVariables, TData>(query: string, variables: TVariables) => Promise<TData>;
   fetchBookContext: (
@@ -487,6 +490,17 @@ describe('HardcoverClient', () => {
     expect(payload.entry).toBe(
       "She smiled. 'Are you, Overseer? Still?'\n\n'What do you mean?'\n\n━━━\n\nFollow-up note",
     );
+  });
+
+  test("reads the account's default visibility, private until it is known", async () => {
+    expect(clientApi.privacySettingId).toBe(3);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: { me: [{ id: 1, account_privacy_setting_id: 1 }] } }),
+    });
+    await clientApi.authenticate();
+    expect(clientApi.privacySettingId).toBe(1);
   });
 
   test('should promote an existing user book to currently reading before syncing progress', async () => {
@@ -1344,6 +1358,39 @@ describe('HardcoverClient journal batching', () => {
       expect.stringContaining('InsertReadingJournal'),
       expect.stringContaining('InsertReadingJournal'),
     ]);
+  });
+
+  test('sets visibility on inserts only, so updates keep what Hardcover has', async () => {
+    api.privacySettingId = 1;
+    staleMapping('n0');
+
+    await client.syncBookNotes(book, config(notes(2)));
+
+    const [update, insert] = batches()[0]!;
+    expect(update!.query).not.toContain('privacy_setting_id');
+    expect(update!.variables).not.toHaveProperty('privacy_setting_id');
+    expect(insert!.variables).toMatchObject({ privacy_setting_id: 1 });
+  });
+
+  test('keeps the hash independent of visibility and equal to earlier versions', async () => {
+    const note = { id: 'n0', type: 'annotation', text: 't', updatedAt: 1711737600000 };
+    // The payload as hashed before visibility was configurable.
+    const legacyHash = getContentMd5({
+      event: 'quote',
+      entry: 't',
+      page: 1,
+      possible: 100,
+      percent: 1,
+      action_at: '2024-03-29T18:40:00+00:00',
+      privacy_setting_id: 3,
+    });
+
+    for (const privacy of [1, 2]) {
+      api.privacySettingId = privacy;
+      mapStore['upsertMapping']!.mockClear();
+      await client.syncBookNotes(book, config([note] as BookNote[]));
+      expect(mapStore['upsertMapping']!.mock.calls[0]![3]).toBe(legacyHash);
+    }
   });
 
   test('inserts identical payloads in one run once', async () => {
