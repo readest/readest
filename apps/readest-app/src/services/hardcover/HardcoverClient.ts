@@ -25,7 +25,8 @@ import {
 /** Where OAuth tokens live between clients, so a refresh by one is seen by the others. */
 export interface HardcoverTokenStore {
   load(): TokenSet | undefined;
-  save(tokens: TokenSet): void | Promise<void>;
+  /** `previous` is the session the refresh started from; stale results should be dropped. */
+  save(tokens: TokenSet, previous: TokenSet): void | Promise<void>;
 }
 
 type HardcoverSettingsLike = {
@@ -154,11 +155,12 @@ export class HardcoverClient {
           this.token = this.toBearer(latest.accessToken);
           if (Date.now() < latest.expiresAt) return;
         }
-        this.oauth = await refreshHardcoverTokens(this.oauth!);
+        const previous = this.oauth!;
+        this.oauth = await refreshHardcoverTokens(previous);
         this.token = this.toBearer(this.oauth.accessToken);
         // The server may have rotated the refresh token, so keep going on a failed save.
         try {
-          await this.tokenStore?.save(this.oauth);
+          await this.tokenStore?.save(this.oauth, previous);
         } catch (e) {
           console.error('[Hardcover] failed to persist refreshed tokens', e);
         }

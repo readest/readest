@@ -43,7 +43,10 @@ describe('HardcoverClient OAuth', () => {
     const { api, onRefreshed } = make(0);
     await Promise.all([api.request('q', {}), api.request('q', {})]);
     expect(refresh).toHaveBeenCalledTimes(1);
-    expect(onRefreshed).toHaveBeenCalledWith(fresh);
+    expect(onRefreshed).toHaveBeenCalledWith(
+      fresh,
+      expect.objectContaining({ accessToken: 'old' }),
+    );
     expect(authHeaders()).toEqual(['Bearer new', 'Bearer new']);
   });
 

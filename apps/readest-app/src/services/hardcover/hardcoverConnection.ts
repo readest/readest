@@ -9,11 +9,22 @@ export const isHardcoverConnected = (h?: HardcoverSettings): h is HardcoverSetti
 
 /**
  * Persists refreshed OAuth tokens; re-reads settings so concurrent edits aren't clobbered.
- * Skipped when the session was disconnected meanwhile, so revoked tokens don't come back.
+ * `previous` is what the refresh started from: if the stored tokens differ, the session was
+ * disconnected or replaced meanwhile, and this stale result must not overwrite it.
  */
-export const saveHardcoverTokens = async (envConfig: EnvConfigType, oauth: TokenSet) => {
+export const saveHardcoverTokens = async (
+  envConfig: EnvConfigType,
+  oauth: TokenSet,
+  previous: TokenSet,
+) => {
   const { settings, setSettings, saveSettings } = useSettingsStore.getState();
-  if (!settings.hardcover?.oauth) return;
+  const stored = settings.hardcover?.oauth;
+  if (
+    stored?.accessToken !== previous.accessToken ||
+    stored.refreshToken !== previous.refreshToken
+  ) {
+    return;
+  }
   const newSettings = { ...settings, hardcover: { ...settings.hardcover, oauth } };
   setSettings(newSettings);
   await saveSettings(envConfig, newSettings);
@@ -21,7 +32,7 @@ export const saveHardcoverTokens = async (envConfig: EnvConfigType, oauth: Token
 
 export const createHardcoverTokenStore = (envConfig: EnvConfigType): HardcoverTokenStore => ({
   load: () => useSettingsStore.getState().settings.hardcover?.oauth,
-  save: (tokens) => saveHardcoverTokens(envConfig, tokens),
+  save: (tokens, previous) => saveHardcoverTokens(envConfig, tokens, previous),
 });
 
 /** Reopens Settings → Integrations → Hardcover once the user is back on the page they came from. */
