@@ -17,6 +17,7 @@ interface RasterImage {
 interface MangaTextCropOptions {
   border?: number;
   keepVertical?: boolean;
+  split?: boolean;
   mask?: ComicMask;
   page?: ComicPageSize;
   vertical?: boolean;
@@ -265,7 +266,10 @@ export const makeMangaTextLineCrops = (
     dimensions.height,
   );
   if (!warped) return [];
-  if (vertical && options.keepVertical && warped.height <= warped.width * MAXIMUM_VERTICAL_RATIO) {
+  if (
+    options.split === false ||
+    (vertical && options.keepVertical && warped.height <= warped.width * MAXIMUM_VERTICAL_RATIO)
+  ) {
     const canvas = makeCanvas(source, warped, options.border ?? BORDER);
     return canvas ? [canvas] : [];
   }

@@ -12,7 +12,7 @@ import { ComicTextDetector, type ComicTextDetectionResult } from './comicTextDet
 import { fetchVerifiedModelAsset, type VerifiedModelAsset } from './modelAssets';
 import { makeMangaTextLineCrops, readCanvasRgba } from './mangaTextCrop';
 import { MangaOcrRecognizer, type JapaneseMangaRecognizer } from './mangaOcrRecognizer';
-import type { OcrPage, OcrTextBlock } from '@/services/plugins/ocr';
+import { getOcrLineSeparator, type OcrPage, type OcrTextBlock } from '@/services/plugins/ocr';
 import { adaptTesseractPage, type TesseractPageData } from './tesseractAdapter';
 import { getTesseractLanguageAsset } from './tesseractLanguageAssets';
 import { createOcrCanvas, isHtmlCanvas, isOcrCanvas, type OcrCanvas } from './canvas';
@@ -371,6 +371,7 @@ export class TesseractOcrEngine {
 
     const imageData = readCanvasRgba(prepared.image);
     const blocks: OcrTextBlock[] = [];
+    const wordSeparator = getOcrLineSeparator(this.#textLanguage);
     let recognitionIndex = 0;
     for (const [blockIndex, detectedBlock] of detection.blocks.entries()) {
       const textLines: string[] = [];
@@ -382,6 +383,8 @@ export class TesseractOcrEngine {
         const useJapaneseRecognizer = isJapaneseLanguage(this.#textLanguage);
         const crops = makeMangaTextLineCrops(prepared.image, imageData, line, {
           keepVertical: !useJapaneseRecognizer,
+          // Tesseract accepts whole lines. Splitting can cut through words.
+          split: useJapaneseRecognizer,
           mask: detection.mask,
           page: detection.page,
           vertical: detectedBlock.vertical,
@@ -430,7 +433,7 @@ export class TesseractOcrEngine {
             recognizedChunks.push(result);
           }
           if (!recognizedChunks.length) continue;
-          const text = recognizedChunks.map((chunk) => chunk.text).join('');
+          const text = recognizedChunks.map((chunk) => chunk.text).join(wordSeparator);
           textLines.push(text);
           confidences.push(
             recognizedChunks.reduce((sum, chunk) => sum + chunk.confidence, 0) /
@@ -443,7 +446,7 @@ export class TesseractOcrEngine {
       if (!textLines.length) continue;
       blocks.push({
         id: `manga-block-${blockIndex}`,
-        text: textLines.join(''),
+        text: textLines.join(wordSeparator),
         lines: textLines,
         ...(fontSize === undefined ? {} : { fontSize }),
         confidence: confidences.reduce((sum, value) => sum + value, 0) / confidences.length,

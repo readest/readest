@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+export const getOcrLineSeparator = (language?: string): string =>
+  /^(?:ja|jpn|zh|zho|chi)(?:[-_]|$)/iu.test(language?.trim() ?? '') ? '' : ' ';
+
 export type OcrWritingMode = 'horizontal-tb' | 'vertical-rl' | 'vertical-lr';
 
 export interface OcrBoundingBox {

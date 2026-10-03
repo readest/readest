@@ -1,4 +1,9 @@
-import type { OcrBoundingBox, OcrPage, OcrTextBlock } from '@/services/plugins/ocr';
+import {
+  getOcrLineSeparator,
+  type OcrBoundingBox,
+  type OcrPage,
+  type OcrTextBlock,
+} from '@/services/plugins/ocr';
 
 export const OCR_TEXT_LAYER_SELECTOR = '[data-readest-ocr-layer]';
 const OCR_TEXT_LAYER_STYLE_SELECTOR = '[data-readest-ocr-style]';
@@ -72,7 +77,7 @@ const getFontSize = (
 
 const createTextBlock = (
   doc: Document,
-  page: Pick<OcrPage, 'width' | 'height'>,
+  page: Pick<OcrPage, 'width' | 'height' | 'language'>,
   block: OcrTextBlock,
 ): HTMLSpanElement | null => {
   if (!block.text.trim()) return null;
@@ -109,10 +114,11 @@ const createTextBlock = (
     whiteSpace: 'pre-wrap',
     writingMode: block.writingMode,
   });
-  for (const line of lines) {
+  const wordSeparator = getOcrLineSeparator(page.language);
+  for (const [index, line] of lines.entries()) {
     const lineElement = doc.createElement('span');
     lineElement.setAttribute('data-readest-ocr-line', '');
-    lineElement.append(doc.createTextNode(line));
+    lineElement.append(doc.createTextNode(line + (index < lines.length - 1 ? wordSeparator : '')));
     element.append(lineElement);
   }
   return element;
