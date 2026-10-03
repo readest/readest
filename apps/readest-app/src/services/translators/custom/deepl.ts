@@ -43,15 +43,15 @@ export const createDeepLTranslator = (config: CustomTranslator): TranslationProv
         const retryAfter =
           Number(response.headers.get('Retry-After')) || DEFAULT_RETRY_AFTER_SECONDS;
         await new Promise<void>((resolve, reject) => {
-          const timer = setTimeout(resolve, Math.min(retryAfter, MAX_RETRY_AFTER_SECONDS) * 1000);
-          signal?.addEventListener(
-            'abort',
-            () => {
-              clearTimeout(timer);
-              reject(signal.reason);
-            },
-            { once: true },
-          );
+          const onAbort = () => {
+            clearTimeout(timer);
+            reject(signal?.reason);
+          };
+          const timer = setTimeout(() => {
+            signal?.removeEventListener('abort', onAbort);
+            resolve();
+          }, Math.min(retryAfter, MAX_RETRY_AFTER_SECONDS) * 1000);
+          signal?.addEventListener('abort', onAbort, { once: true });
         });
         response = await send();
       }

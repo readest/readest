@@ -1,5 +1,4 @@
-import { generateText, type LanguageModel } from 'ai';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import type { LanguageModel } from 'ai';
 import { getAIFetch } from '@/services/ai/utils/httpFetch';
 import { getPromptTemplate } from '@/store/customTranslatorStore';
 import { md5Fingerprint } from '@/utils/md5';
@@ -36,6 +35,11 @@ interface PendingBatch {
 }
 
 // Only a leading reasoning block: a book may legitimately quote `</think>`.
+// The AI SDK is loaded on first use: it pulls in Node-only modules at import
+// time, and the reader imports this file whether or not an LLM is configured.
+let sdk: Promise<[typeof import('ai'), typeof import('@ai-sdk/openai-compatible')]> | undefined;
+const loadSDK = () => (sdk ??= Promise.all([import('ai'), import('@ai-sdk/openai-compatible')]));
+
 const stripReasoning = (text: string) => text.replace(/^\s*<think>[\s\S]*?<\/think>/, '').trim();
 
 /** Splits a `[1]\n…\n\n[2]\n…` reply; returns null unless it holds exactly blocks 1..n. */
@@ -61,13 +65,18 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
   const queue: PendingBatch[] = [];
   let inflight = 0;
 
-  const getModel = () =>
-    (model ??= createOpenAICompatible({
-      name: 'custom',
-      baseURL: (config.baseUrl ?? '').replace(/\/+$/, ''),
-      apiKey: config.apiKey || undefined,
-      fetch: getAIFetch(),
-    }).chatModel(config.model ?? ''));
+  const getModel = async () => {
+    if (!model) {
+      const [, { createOpenAICompatible }] = await loadSDK();
+      model = createOpenAICompatible({
+        name: 'custom',
+        baseURL: (config.baseUrl ?? '').replace(/\/+$/, ''),
+        apiKey: config.apiKey || undefined,
+        fetch: getAIFetch(),
+      }).chatModel(config.model ?? '');
+    }
+    return model;
+  };
 
   const renderSystem = (sourceLang: string, targetLang: string, context?: TranslationContext) =>
     renderPrompt(getPromptTemplate(context?.promptId), {
@@ -79,8 +88,9 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
 
   const callModel = async (system: string, prompt: string): Promise<string> => {
     try {
+      const [{ generateText }] = await loadSDK();
       const { text } = await generateText({
-        model: getModel(),
+        model: await getModel(),
         system,
         prompt,
         temperature: config.temperature,
