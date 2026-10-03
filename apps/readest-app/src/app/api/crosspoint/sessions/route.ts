@@ -4,6 +4,7 @@ import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 import {
   authenticateDevice,
   BOOK_HASH,
+  linkedBook,
   parseConfigProgress,
   PERCENT_PAGES,
 } from '@/libs/crosspoint';
@@ -42,12 +43,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ pages: 0 });
   }
 
+  // A rewritten copy counts toward the library book it is linked to.
+  const link = await linkedBook(supabase, userId, document);
+  if (link.error) return NextResponse.json({ error: 'Could not read the book' }, { status: 500 });
+  const bookHash = link.bookHash ?? document;
+
   // Readest's page count once a Readest app has paginated the book, else whole percents.
   const { data: config, error } = await supabase
     .from('book_configs')
     .select('progress')
     .eq('user_id', userId)
-    .eq('book_hash', document)
+    .eq('book_hash', bookHash)
     .maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not read the book' }, { status: 500 });
   const total = parseConfigProgress(config?.progress)?.[1] ?? PERCENT_PAGES;
@@ -67,7 +73,7 @@ export async function POST(request: Request) {
     const to = Math.floor(((i + 1) * duration) / count);
     return {
       user_id: userId,
-      book_hash: document,
+      book_hash: bookHash,
       page: last - count + 1 + i,
       start_time: start_time + from,
       duration: to - from,

@@ -79,6 +79,7 @@ import {
   removeEmptyAnnotationPlaceholder,
 } from '../../utils/annotatorUtil';
 import { buildAnnotationIndex, selectLocationAnnotations } from '../../utils/annotationIndex';
+import { findContentAtPoint } from '../../utils/crossDocSelection';
 import {
   expandAllRenderedSections,
   expandGlobalAnnotation,
@@ -886,18 +887,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // quick action (if one is configured) or the annotation toolbar — like a
   // long-press selection. The iframe posts `iframe-double-click` (gated by the
   // user's double-click setting) with coordinates in the originating section's
-  // viewport; resolve the visible section's doc/index the way the native-touch
-  // bridge does, then select the word under the point.
+  // viewport and in the window; resolve the section under the window point —
+  // in scroll mode that need not be the primary one (#6583) — then select the
+  // word under the point.
   useEffect(() => {
     const handleDoubleClickMessage = (msg: MessageEvent) => {
       const data = msg.data;
       if (!data || data.bookKey !== bookKey || data.type !== 'iframe-double-click') return;
-      const renderer = view?.renderer;
-      const contents = renderer?.getContents?.() ?? [];
-      const content = contents.find((c) => c.index === renderer?.primaryIndex) ?? contents[0];
-      const doc = content?.doc;
-      const index = content?.index;
-      if (!doc || index === undefined) return;
+      const contents = view?.renderer?.getContents?.() ?? [];
+      const content = findContentAtPoint(contents, { x: data.windowX, y: data.windowY });
+      if (!content) return;
+      const { doc, index } = content;
       // A double-click is a deliberate act-on-word gesture, so let the quick
       // action fire without the touch long-press hold gate (matching a mouse
       // selection, which sets this to 0 on pointerdown).

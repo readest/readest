@@ -117,9 +117,10 @@ export const useTextSelector = (
   // element is restored on release (the pointerup target may differ once the
   // finger has moved across nodes).
   const instantAnnotationTarget = useRef<HTMLElement | null>(null);
-  // Unsubscribe for the after-turn re-emit: while instant annotating, a corner
-  // auto-turn rebuilds the preview from the held position onto the new page.
-  const instantReemitUnsub = useRef<(() => void) | null>(null);
+  // Cleanup for the listeners an instant-annotating gesture holds: the
+  // after-turn re-emit (a corner auto-turn rebuilds the preview from the held
+  // position onto the new page) and the release outside every page.
+  const instantGestureCleanup = useRef<(() => void) | null>(null);
   // Pending instant-highlight still-hold (touch/pen). While a hold is in flight
   // these remember the press so the timer can engage at the same spot; the gate
   // is armed in handlePointerDown and dropped by a release or a swipe.
@@ -505,15 +506,32 @@ export const useTextSelector = (
     });
   };
 
-  const startInstantAnnotating = (target: HTMLElement, startPoint: Point) => {
+  const startInstantAnnotating = (
+    doc: Document,
+    index: number,
+    pointerId: number,
+    target: HTMLElement,
+    startPoint: Point,
+  ) => {
     isInstantAnnotating.current = true;
     isInstantAnnotated.current = false;
     annotationStartPoint.current = startPoint;
     instantAnnotationTarget.current = target;
     if (view) view.renderer.scrollLocked = true;
     target.style.userSelect = 'none';
-    instantReemitUnsub.current?.();
-    instantReemitUnsub.current = onAfterTurn(() => reapplyInstantAnnotation());
+    instantGestureCleanup.current?.();
+    const unsubscribeTurn = onAfterTurn(() => reapplyInstantAnnotation());
+    // A turn that hides the page the drag started on (a PDF portrait spread
+    // shows one page at a time) sends the release to the reader window rather
+    // than to any page, so finish the highlight from there too.
+    const releaseOutsidePages = (ev: PointerEvent) => {
+      if (ev.pointerId === pointerId) handlePointerUp(doc, index, ev);
+    };
+    window.addEventListener('pointerup', releaseOutsidePages);
+    instantGestureCleanup.current = () => {
+      unsubscribeTurn();
+      window.removeEventListener('pointerup', releaseOutsidePages);
+    };
   };
 
   const stopInstantAnnotating = () => {
@@ -521,8 +539,8 @@ export const useTextSelector = (
     isInstantAnnotated.current = false;
     annotationStartPoint.current = null;
     if (view) view.renderer.scrollLocked = false;
-    instantReemitUnsub.current?.();
-    instantReemitUnsub.current = null;
+    instantGestureCleanup.current?.();
+    instantGestureCleanup.current = null;
     if (instantAnnotationTarget.current) {
       instantAnnotationTarget.current.style.userSelect = '';
       instantAnnotationTarget.current = null;
@@ -571,7 +589,7 @@ export const useTextSelector = (
         handleInstantAnnotationPointerCancel();
         return;
       }
-      startInstantAnnotating(target, startClient);
+      startInstantAnnotating(doc, index, ev.pointerId, target, startClient);
       // Preview the word under the finger right away (the feedback the
       // suppressed system long-press selection used to give); a release
       // without a drag commits it and opens the range editor.
@@ -678,7 +696,10 @@ export const useTextSelector = (
       } else {
         // Mouse: a press-drag is an unambiguous highlight intent; engage at once.
         ev.preventDefault();
-        startInstantAnnotating(ev.target as HTMLElement, { x: ev.clientX, y: ev.clientY });
+        startInstantAnnotating(doc, index, ev.pointerId, ev.target as HTMLElement, {
+          x: ev.clientX,
+          y: ev.clientY,
+        });
       }
     }
 
@@ -747,7 +768,11 @@ export const useTextSelector = (
         }
       }
       ev.preventDefault();
-      isInstantAnnotated.current = handleInstantAnnotationPointerMove(doc, index, ev);
+      // Sticky once a preview is drawn: a later move that can't resolve (the
+      // pointer has left the start page) must not re-arm the scroll-gesture
+      // check above, which would cancel the highlight mid-drag.
+      isInstantAnnotated.current =
+        handleInstantAnnotationPointerMove(doc, index, ev) || isInstantAnnotated.current;
       // Cross-page instant highlight: feed the finger corner into the same dwell
       // machine native selection uses, so the page turns and the highlight
       // continues across the boundary (the start is DOM-anchored in
@@ -1240,7 +1265,8 @@ export const useTextSelector = (
       if (isTextSelected.current) {
         handleDismissPopup();
         isTextSelected.current = false;
-        view?.deselect();
+        // Look the view up now: the one captured at mount can be undefined (#6583).
+        getView(bookKey)?.deselect();
         return true;
       }
       if (isPopuped.current) {
@@ -1261,6 +1287,7 @@ export const useTextSelector = (
     return () => {
       eventDispatcher.offSync('iframe-single-click', handleSingleClick);
       unsubAfterTurn();
+      instantGestureCleanup.current?.();
       if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);
       cancelImageHold();
     };

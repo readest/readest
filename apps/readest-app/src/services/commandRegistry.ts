@@ -595,6 +595,18 @@ const languagePanelItems = [
     section: 'Translation',
   },
   {
+    id: 'settings.language.translationPrompt',
+    labelKey: _('Translation Prompt'),
+    keywords: ['translation', 'prompt', 'ai', 'llm', 'style'],
+    section: 'Translation',
+  },
+  {
+    id: 'settings.language.customTranslators',
+    labelKey: _('Custom Translators'),
+    keywords: ['translation', 'custom', 'api key', 'openai', 'deepseek', 'ollama', 'deepl', 'llm'],
+    section: 'Translation',
+  },
+  {
     id: 'settings.language.targetLanguage',
     labelKey: _('Translate To'),
     keywords: ['target', 'language', 'translation', 'destination'],

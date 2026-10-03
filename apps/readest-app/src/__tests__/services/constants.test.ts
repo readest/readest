@@ -258,6 +258,7 @@ describe('services/constants', () => {
         texture: true,
         opds_catalog: true,
         abs_server: true,
+        custom_translator: true,
         settings: true,
       });
     });

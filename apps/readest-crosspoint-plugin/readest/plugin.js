@@ -27,7 +27,13 @@ CrossPoint.registerPlugin(async (container, api) => {
     '</div>' +
     '<p style="color:#666">After you sign in, your Readest library appears on the reader under ' +
     'Plugins → Readest. With Sync reading progress on, KOReader Sync on the reader syncs your ' +
-    'position with Readest.</p>';
+    'position with Readest.</p>' +
+    '<div class="setting-row"><span class="setting-name">Version <span data-version></span></span>' +
+    '<span class="setting-control">' +
+    '<button type="button" class="btn-small" name="check">Check for update</button> ' +
+    '<button type="button" class="btn-small btn-add" name="update" style="display:none">Update</button>' +
+    '</span></div>' +
+    '<p data-update hidden></p>';
 
   const $ = (selector) => container.querySelector(selector);
   const status = (text) => {
@@ -136,6 +142,9 @@ CrossPoint.registerPlugin(async (container, api) => {
         koPassword: key.access_token,
         koMatchMethod: 1, // Binary: Readest identifies books by partial MD5
         koSyncBehavior: 1, // Smart
+        // Title and authors let Readest place a book CrossPoint rewrote on
+        // upload (Optimize EPUB), whose partial MD5 no longer matches.
+        koSendMetadata: 1,
       });
     } else if (syncsWithReadest(settings)) {
       await postSettings(NO_SYNC);
@@ -194,6 +203,95 @@ CrossPoint.registerPlugin(async (container, api) => {
       }
     });
   };
+
+  // Updates come from Readest releases, like the KOReader plugin's: latest.json
+  // names the version, and each release carries the plugin zip.
+  const RELEASES = 'https://download.readest.com/releases';
+  // Firmware older than api.dir loads a plugin from /.crosspoint/plugins
+  // before the other roots, so an update written there is the one it runs.
+  const DIR = api.dir ?? `/.crosspoint/plugins/${api.name}`;
+  const checkButton = $('[name="check"]');
+  const updateButton = $('[name="update"]');
+  const updateStatus = (text) => {
+    $('[data-update]').textContent = text;
+    $('[data-update]').hidden = false;
+  };
+  let version = '';
+  let latest = '';
+  const showVersion = (value) => {
+    version = value;
+    $('[data-version]').textContent = value;
+  };
+  const loadJsZip = () =>
+    window.JSZip ??
+    new Promise((resolve, reject) => {
+      // The device serves the JSZip its File Manager page uses.
+      const script = document.createElement('script');
+      script.src = '/js/jszip.min.js';
+      script.onload = () => resolve(window.JSZip);
+      script.onerror = () => reject(new Error('could not load JSZip'));
+      document.head.appendChild(script);
+    });
+
+  checkButton.onclick = async () => {
+    checkButton.disabled = true;
+    updateStatus('Checking for update…');
+    try {
+      const res = await api.relay('GET', `${RELEASES}/latest.json`, {}, '');
+      latest = res.status === 200 ? JSON.parse(res.body).version : '';
+      if (!latest) throw new Error(`HTTP ${res.status}`);
+      const available = latest.localeCompare(version, 'en', { numeric: true }) > 0;
+      updateButton.style.display = available ? '' : 'none';
+      updateStatus(
+        available
+          ? `A new version is available: v${latest} (current: v${version}).`
+          : `You are up to date (v${version}).`,
+      );
+    } catch {
+      updateStatus('Failed to check for update. Please try again later.');
+    } finally {
+      checkButton.disabled = false;
+    }
+  };
+
+  updateButton.onclick = async () => {
+    checkButton.disabled = updateButton.disabled = true;
+    updateStatus('Downloading update…');
+    const zipPath = `${DIR}/update.zip`;
+    try {
+      const res = await api.fetchToSd(
+        `${RELEASES}/v${latest}/Readest-${latest}.crosspoint-plugin.zip`,
+        zipPath,
+        {},
+      );
+      if (res.error)
+        throw new Error(res.error === 'http status' ? `HTTP ${res.status}` : res.error);
+      const data = await (
+        await fetch(`/download?path=${encodeURIComponent(zipPath)}`)
+      ).arrayBuffer();
+      const zip = await (await loadJsZip()).loadAsync(data);
+      // The zip holds the readest/ folder. manifest.json goes last: it records
+      // the installed version, so an update cut short is offered again.
+      const isManifest = (entry) => entry.name.endsWith('/manifest.json');
+      const entries = Object.values(zip.files).filter((entry) => !entry.dir);
+      for (const entry of entries.sort((a, b) => isManifest(a) - isManifest(b))) {
+        const path = `${DIR}/${entry.name.replace(/^[^/]+\//, '')}`;
+        await api.writeFile(path, await entry.async('base64'));
+      }
+      await fetch('/delete', { method: 'POST', body: new URLSearchParams({ path: zipPath }) });
+      showVersion(latest);
+      updateButton.style.display = 'none';
+      updateStatus(`Updated to v${latest}. Reload this page to use it.`);
+    } catch (e) {
+      updateStatus(`Failed to install update: ${e.message}`);
+    } finally {
+      checkButton.disabled = updateButton.disabled = false;
+    }
+  };
+
+  try {
+    showVersion((await (await fetch(api.pluginFile('manifest.json'))).json()).version);
+  } catch {}
 
   try {
     const res = await fetch(`/download?path=${encodeURIComponent(ACCOUNT_PATH)}`);

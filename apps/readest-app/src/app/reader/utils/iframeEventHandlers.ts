@@ -3,6 +3,7 @@ import { eventDispatcher } from '@/utils/event';
 import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
 import { hasScrollRoomY } from './wheelGesture';
+import { toParentViewportPoint } from './annotatorUtil';
 import {
   createTurnGestureIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -524,6 +525,10 @@ export const handleClick = (
       window.postMessage({ type: 'iframe-open-media', bookKey, ...comicPage }, '*');
       return;
     }
+    // In scroll mode several sections are on screen, each in its own iframe;
+    // the window point tells the reader which one was double-clicked (#6583).
+    const doc = (event.target as Node).ownerDocument!;
+    const windowPoint = toParentViewportPoint(doc, event.clientX, event.clientY);
     window.postMessage(
       {
         type: 'iframe-double-click',
@@ -532,6 +537,8 @@ export const handleClick = (
         screenY: event.screenY,
         clientX: event.clientX,
         clientY: event.clientY,
+        windowX: windowPoint.x,
+        windowY: windowPoint.y,
         offsetX: event.offsetX,
         offsetY: event.offsetY,
         ...getKeyStatus(event),
