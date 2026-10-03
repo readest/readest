@@ -3,6 +3,7 @@ import { getContentMd5 } from '@/utils/misc';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
+import { getRateLimitGate, MAX_WAIT_MS, parseRetryAfterMs, RateLimitGate } from './rateLimit';
 import {
   QUERY_GET_USER_ID,
   QUERY_SEARCH_BOOKS,
@@ -15,8 +16,6 @@ import {
   MUTATION_INSERT_JOURNAL,
   MUTATION_UPDATE_JOURNAL,
 } from './hardcover-graphql';
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 type HardcoverSettingsLike = {
   accessToken: string;
@@ -101,20 +100,19 @@ const rowFlags = (row: BookRow) => ({
 export class HardcoverUnmatchedError extends Error {}
 
 export class HardcoverClient {
-  private minRequestIntervalMs = 1150;
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
   private proxyEndpoint = '/api/hardcover/graphql';
   private token: string;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
-  private lastRequestTime = 0;
-  private requestQueue: Promise<void> = Promise.resolve();
+  private gate: RateLimitGate;
 
   constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
     // Normalize token: Hardcover expects "Bearer <jwt>"; accept both formats
     const raw = settings.accessToken.trim();
     this.token = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
     this.mapStore = mapStore;
+    this.gate = getRateLimitGate(this.token);
   }
 
   private get endpoint() {
@@ -168,29 +166,13 @@ export class HardcoverClient {
     return `${normalizedCfi}|${text}`;
   }
 
-  private async throttleRequest() {
-    const queued = this.requestQueue
-      .catch(() => undefined)
-      .then(async () => {
-        const now = Date.now();
-        const elapsed = now - this.lastRequestTime;
-        if (elapsed < this.minRequestIntervalMs) {
-          await sleep(this.minRequestIntervalMs - elapsed);
-        }
-        this.lastRequestTime = Date.now();
-      });
-
-    this.requestQueue = queued;
-    await queued;
-  }
-
   private async request<TVariables, TData>(
     query: string,
     variables: TVariables,
     retries = 3,
     backoffMs = 2000,
   ): Promise<TData> {
-    await this.throttleRequest();
+    await this.gate.wait();
 
     const fetchFn = isTauriAppPlatform() ? tauriFetch : window.fetch;
     const res = await fetchFn(this.endpoint, {
@@ -202,13 +184,16 @@ export class HardcoverClient {
       body: JSON.stringify({ query, variables }),
     });
 
+    this.gate.update(res.headers);
+
     if (res.status === 429) {
-      if (retries > 0) {
-        console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${backoffMs}ms...`);
-        await sleep(backoffMs);
-        return this.request(query, variables, retries - 1, backoffMs * 2);
+      const waitMs = parseRetryAfterMs(res.headers.get('Retry-After')) ?? backoffMs;
+      this.gate.blockFor(waitMs);
+      if (retries <= 0 || waitMs > MAX_WAIT_MS) {
+        throw new Error('Hardcover Rate Limit (429) Exceeded and exhausted retries');
       }
-      throw new Error('Hardcover Rate Limit (429) Exceeded and exhausted retries');
+      console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${waitMs}ms...`);
+      return this.request(query, variables, retries - 1, backoffMs * 2);
     }
 
     if (!res.ok) {

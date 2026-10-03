@@ -7,6 +7,7 @@ type MockFetchResponse = {
   ok: boolean;
   status?: number;
   statusText?: string;
+  headers?: Headers;
   json: () => Promise<unknown>;
 };
 
@@ -27,7 +28,6 @@ type TestBookContext = {
 
 type HardcoverClientTestApi = {
   token: string;
-  minRequestIntervalMs: number;
   extractISBN: (book: Book) => string | null;
   request: <TVariables, TData>(query: string, variables: TVariables) => Promise<TData>;
   fetchBookContext: (
@@ -55,6 +55,7 @@ describe('HardcoverClient', () => {
   let clientApi: HardcoverClientTestApi;
   let fetchMock: MockFetch;
   const mockSettings = { accessToken: 'test-token' };
+  let tokenSeq = 0;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -74,12 +75,16 @@ describe('HardcoverClient', () => {
       status: 200,
       json: () => Promise.resolve({ data: { me: { id: 1 } } }),
     });
-    vi.stubGlobal('fetch', fetchMock);
+    // Real responses always carry headers; mocks may omit them.
+    vi.stubGlobal('fetch', async (...args: unknown[]) => ({
+      headers: new Headers(),
+      ...(await fetchMock(...args)),
+    }));
 
+    // Rate-limit state is shared per token, so isolate tests with a fresh one.
+    mockSettings.accessToken = `test-token-${tokenSeq++}`;
     client = new HardcoverClient(mockSettings, mockMapStore);
     clientApi = client as unknown as HardcoverClientTestApi;
-    // Mocked API responses do not need the production request-rate throttle.
-    clientApi.minRequestIntervalMs = 0;
   });
 
   test('should normalize accessToken correctly', () => {
@@ -187,33 +192,120 @@ describe('HardcoverClient', () => {
     expect(mockMapStore.flush).toHaveBeenCalled();
   });
 
-  test('should handle rate limiting with retries', async () => {
-    // request() does NOT call authenticate() so only 2 mock values are needed
+  test('retries 429s honoring Retry-After, else exponential backoff, and gives up when exhausted', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    // First request fails with 429 then succeeds
-    fetchMock.mockResolvedValueOnce({
+    vi.useFakeTimers();
+    const res429 = (retryAfter?: string) => ({
       ok: false,
       status: 429,
       statusText: 'Too Many Requests',
+      headers: new Headers(retryAfter ? { 'Retry-After': retryAfter } : {}),
       json: async () => ({}),
     });
+    const ok = { ok: true, json: () => Promise.resolve({ data: { result: 'ok' } }) };
+    // Fresh token per run: the gate is shared per token and stays blocked after a 429.
+    const run = () =>
+      (
+        new HardcoverClient(
+          { accessToken: `rl-${tokenSeq++}` },
+          mockMapStore,
+        ) as unknown as HardcoverClientTestApi
+      ).request<object, { result: string }>('query', {});
+
+    // Retry-After: 3 → second attempt not before 3s
+    fetchMock.mockResolvedValueOnce(res429('3')).mockResolvedValueOnce(ok);
+    let p = run();
+    await vi.advanceTimersByTimeAsync(2900);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(200);
+    await expect(p).resolves.toEqual({ result: 'ok' });
+
+    // No header → 2s backoff
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValueOnce(res429()).mockResolvedValueOnce(ok);
+    p = run();
+    await vi.advanceTimersByTimeAsync(1900);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(200);
+    await expect(p).resolves.toEqual({ result: 'ok' });
+
+    // Retry-After beyond the cap (e.g. daily limit) and exhausted retries both throw
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValueOnce(res429('3600'));
+    await expect(run()).rejects.toThrow('Rate Limit (429)');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValue(res429('1'));
+    p = run();
+    const assertion = expect(p).rejects.toThrow('Rate Limit (429)');
+    await vi.runAllTimersAsync();
+    await assertion;
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    vi.useRealTimers();
+  });
+
+  test('sends back-to-back until RateLimit reports an empty bucket, shared across clients', async () => {
+    vi.useFakeTimers();
+    const withLimit = (rateLimit: string) => ({
+      ok: true,
+      headers: new Headers({ RateLimit: rateLimit }),
+      json: () => Promise.resolve({ data: {} }),
+    });
+    const other = new HardcoverClient(
+      mockSettings,
+      mockMapStore,
+    ) as unknown as HardcoverClientTestApi;
+
+    fetchMock.mockResolvedValueOnce(withLimit('"Free";r=5;t=10, "daily";r=100;t=999'));
+    await clientApi.request('q', {});
+    await clientApi.request('q', {});
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValueOnce(withLimit('"Free";r=0;t=4'));
+    await clientApi.request('q', {});
+    const p = other.request('q', {});
+    await vi.advanceTimersByTimeAsync(3900);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(200);
+    await p;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    // An empty daily bucket doesn't discard that response, but blocks later requests
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValueOnce(withLimit('"Free";r=3;t=1, "daily";r=0;t=3600'));
+    await expect(clientApi.request('q', {})).resolves.toEqual({});
+    await expect(other.request('q', {})).rejects.toThrow('rate limit reached');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  test('releases waiters one at a time after a block', async () => {
+    vi.useFakeTimers();
     fetchMock.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ data: { result: 'ok' } }),
+      headers: new Headers({ RateLimit: '"Free";r=0;t=2' }),
+      json: () => Promise.resolve({ data: {} }),
     });
+    await clientApi.request('q', {});
+    fetchMock.mockClear();
 
-    // Speed up sleep for test
-    vi.useFakeTimers();
-    const requestPromise = clientApi.request<{ var: number }, { result: string }>('query', {
-      var: 1,
-    });
-
-    // Wait for the 429 retry
-    await vi.runAllTimersAsync();
-    const result = await requestPromise;
-
-    expect(result).toEqual({ result: 'ok' });
+    const calls = [
+      clientApi.request('q', {}),
+      clientApi.request('q', {}),
+      clientApi.request('q', {}),
+    ];
+    await vi.advanceTimersByTimeAsync(1900);
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1000);
+    await Promise.all(calls);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     vi.useRealTimers();
   });
 
