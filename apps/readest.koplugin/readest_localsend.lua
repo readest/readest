@@ -74,7 +74,7 @@ function LocalSend:init(plugin)
     -- Re-attach after a context switch: the service kept running while the
     -- previous plugin instance (and its poll task) went away.
     if self.available and plugin.settings.localsend_enabled and NetworkMgr:isConnected() then
-        self:startService()
+        self:startService(true)
     end
 end
 
@@ -90,26 +90,29 @@ function LocalSend:downloadDir()
     return dir
 end
 
-function LocalSend:startService()
+-- `automatic` is set when the plugin starts the service on its own (launch,
+-- wake, Wi-Fi connect) rather than on a user action: a failure is logged
+-- instead of shown, so it can't pop up on every launch.
+function LocalSend:startService(automatic)
     if not self.available then return end
     if self.running and self.sock then
         self:schedulePoll()
         return
     end
+    local function fail(text, detail)
+        logger.warn("ReadestLocalSend: " .. text .. (detail and (": " .. tostring(detail)) or ""))
+        if not automatic then
+            UIManager:show(InfoMessage:new{ text = text, timeout = 3 })
+        end
+    end
     local dir = self:downloadDir()
     if not dir then
-        UIManager:show(InfoMessage:new{
-            text = _("Set a Readest download folder or a KOReader home folder first."),
-            timeout = 3,
-        })
+        fail(_("Set a Readest download folder or a KOReader home folder first."))
         return
     end
-    local port = Helper.pickPort()
+    local port, port_err = Helper.pickPort()
     if not port then
-        UIManager:show(InfoMessage:new{
-            text = _("Nearby BookDrop error: could not find a free port."),
-            timeout = 3,
-        })
+        fail(_("Nearby BookDrop error: could not find a free port."), port_err)
         return
     end
     -- Best-effort: on a device with a default-DROP firewall (e.g. Kindle)
@@ -120,13 +123,9 @@ function LocalSend:startService()
     Helper.spawn(self.binpath, port)
     local sock, err = Helper.connect(port, 3)
     if not sock then
-        logger.warn("ReadestLocalSend: connect failed: " .. tostring(err))
         os.execute("pkill -f localsend-helper >/dev/null 2>&1")
         Firewall.close()
-        UIManager:show(InfoMessage:new{
-            text = _("Nearby BookDrop failed to start."),
-            timeout = 3,
-        })
+        fail(_("Nearby BookDrop failed to start."), err)
         return
     end
     self.sock = sock

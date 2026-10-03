@@ -1155,7 +1155,7 @@ function ReadestSync:onResume()
     -- unconditionally so a real suspend/resume cycle always ends up in sync
     -- with the localsend_enabled setting.
     if self.localsend and self.settings.localsend_enabled and NetworkMgr:isConnected() then
-        self.localsend:startService()
+        self.localsend:startService(true)
     end
     if not (self.settings.auto_sync and self.settings.access_token and self.ui.document) then
         return
@@ -1186,7 +1186,7 @@ end
 
 function ReadestSync:onNetworkConnected()
     if self.settings.localsend_enabled then
-        self.localsend:startService()
+        self.localsend:startService(true)
     end
     -- A background pull (open / wake) was skipped while offline, see
     -- willRerunPullWhenOnline. Now that the device is online, run it.
