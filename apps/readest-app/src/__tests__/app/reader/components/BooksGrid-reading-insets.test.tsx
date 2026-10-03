@@ -21,7 +21,12 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: (select: (state: Record<string, unknown>) => unknown) =>
-    select({ hoveredBookKey: null, setGridInsets: h.setGridInsets, viewStates: {} }),
+    select({
+      hoveredBookKey: null,
+      setGridInsets: h.setGridInsets,
+      viewStates: {},
+      getView: () => null,
+    }),
 }));
 vi.mock('@/store/readerProgressStore', () => ({ useBookProgress: () => null }));
 vi.mock('@/store/sidebarStore', () => ({ useSidebarStore: () => null }));

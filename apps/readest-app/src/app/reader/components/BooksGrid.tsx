@@ -15,6 +15,7 @@ import { expectsColumnSpread } from '@/utils/config';
 import { getPageAreaInsets, getReadingScreenInsets, getSpreadColumnGap } from '@/utils/insets';
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
+import { usePageEdges } from '../hooks/usePageEdges';
 import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils/footerBand';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
@@ -156,6 +157,13 @@ const BookCellInner: React.FC<BookCellProps> = ({
   // (margins are unchanged) but update when a margin setting changes — even
   // though saveViewSettings mutates viewSettings in place (#4898).
   const { viewInsets, contentInsets } = useContentInsets(viewSettings, gridInsets);
+  // A fixed-layout page fills the screen in fit-page mode; zoomed in or
+  // scrolled, its header and footer show only at its own top / bottom edge,
+  // not over its content (#6596).
+  const pageEdges = usePageEdges(
+    getView(bookKey)?.renderer,
+    !!bookData?.isFixedLayout && !viewSettings?.vertical,
+  );
 
   // The page content (viewer + its header/footer chrome) that the pull-down
   // bookmark gesture slides as one block.
@@ -261,6 +269,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
             contentInsets={contentInsets}
             gridInsets={gridInsets}
             columnGap={columnGap}
+            hidden={!pageEdges.top}
           />
         )}
         <HintInfo
@@ -296,6 +305,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
             gridInsets={gridInsets}
             columnGap={columnGap}
             cornerRadii={cornerRadii}
+            hidden={!pageEdges.bottom}
           />
         )}
       </div>
