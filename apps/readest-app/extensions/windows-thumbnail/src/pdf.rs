@@ -2,10 +2,11 @@
 //! Windows 10+, so the DLL doesn't have to bundle one.
 use anyhow::{anyhow, Result};
 use std::path::Path;
-use std::sync::Once;
-use windows::core::HSTRING;
+use std::sync::OnceLock;
+use windows::core::{HRESULT, HSTRING};
 use windows::Data::Pdf::{PdfDocument, PdfPageRenderOptions};
 use windows::Storage::Streams::{DataReader, IRandomAccessStream, InMemoryRandomAccessStream};
+use windows::Win32::Foundation::S_OK;
 use windows::Win32::System::Com::CoIncrementMTAUsage;
 use windows::Win32::System::WinRT::CreateRandomAccessStreamOnFile;
 
@@ -24,11 +25,11 @@ pub fn fit_within(page_w: f32, page_h: f32, max_w: u32, max_h: u32) -> (u32, u32
 /// calls preview handlers on an STA thread, and Explorer, whose window hosts the
 /// preview, froze with it.
 fn in_mta<T: Send>(f: impl FnOnce() -> Result<T> + Send) -> Result<T> {
-    static MTA_USAGE: Once = Once::new();
+    static MTA_USAGE: OnceLock<HRESULT> = OnceLock::new();
     // Keep the MTA alive so threads that never initialize COM run in it.
-    MTA_USAGE.call_once(|| unsafe {
-        let _ = CoIncrementMTAUsage();
-    });
+    MTA_USAGE
+        .get_or_init(|| unsafe { CoIncrementMTAUsage() }.map_or_else(|e| e.code(), |_| S_OK))
+        .ok()?;
     std::thread::scope(|s| s.spawn(f).join())
         .unwrap_or_else(|_| Err(anyhow!("PDF thread panicked")))
 }
