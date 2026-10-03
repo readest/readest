@@ -41,6 +41,12 @@ vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ token: mockToken }),
 }));
 
+// The mock tokens are not JWTs, so stand in for the premium check.
+vi.mock('@/utils/access', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/access')>()),
+  isCustomTranslatorAllowed: (token: string | null) => token === 'premium-token',
+}));
+
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
     settings: { globalReadSettings: { translateTargetLang: 'zh', translationProvider: 'azure' } },
@@ -60,7 +66,8 @@ vi.mock('@/hooks/useTranslator', () => ({
 vi.mock('@/services/translators', () => ({
   getTranslators: () => mockTranslators,
   isTranslatorAvailable: () => true,
-  getTranslatorDisplayLabel: (t: TranslationProvider) => t.label,
+  getTranslatorDisplayLabel: (t: TranslationProvider, _hasToken: boolean, hasPremium: boolean) =>
+    t.premiumRequired && !hasPremium ? `${t.label} (Premium)` : t.label,
 }));
 
 vi.mock('@/components/Popup', () => ({
@@ -184,5 +191,38 @@ describe('TranslatorPopup source language', () => {
     );
     expect(mockSetSettings).not.toHaveBeenCalled();
     expect((screen.getAllByRole('combobox')[0] as HTMLSelectElement).value).toBe(language);
+  });
+});
+
+describe('TranslatorPopup provider list', () => {
+  beforeEach(() => {
+    mockTranslate.mockReset().mockResolvedValue(['译文']);
+    mockTranslator = { name: 'azure', label: 'Azure Translator' };
+    mockTranslators = [
+      mockTranslator,
+      { name: 'custom:x', label: 'Ollama', premiumRequired: true },
+    ];
+  });
+
+  it('relabels custom translators when the session gains premium', async () => {
+    mockToken = 'readest-token';
+    const { rerender } = await renderPopup();
+    expect(await screen.findByRole('option', { name: 'Ollama (Premium)' })).toBeTruthy();
+
+    mockToken = 'premium-token';
+    const { default: TranslatorPopup } = await import(
+      '@/app/reader/components/annotator/TranslatorPopup'
+    );
+    rerender(
+      <TranslatorPopup
+        bookKey='book-1'
+        text='cohort'
+        position={{ point: { x: 0, y: 0 } }}
+        trianglePosition={{ point: { x: 0, y: 0 }, dir: 'up' }}
+        popupWidth={300}
+        popupHeight={200}
+      />,
+    );
+    expect(await screen.findByRole('option', { name: 'Ollama' })).toBeTruthy();
   });
 });

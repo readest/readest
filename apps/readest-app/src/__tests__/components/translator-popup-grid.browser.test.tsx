@@ -35,7 +35,8 @@ vi.mock('@/store/readerStore', () => ({
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
 
 vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ token: 'test-token' }),
+  // An unsigned JWT of a free plan: the premium check decodes the token.
+  useAuth: () => ({ token: 'eyJhbGciOiJub25lIn0.eyJwbGFuIjoiZnJlZSJ9.sig' }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({

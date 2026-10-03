@@ -183,6 +183,17 @@ export const isSelfHosted = (): boolean =>
 export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isSelfHosted() || customizationPurchased || PREMIUM_PLANS.includes(plan);
 
+/**
+ * Custom translators (the user's own OpenAI-compatible LLM or DeepL key) are a
+ * premium feature. Requests go straight from the device, so this is a
+ * client-side gate, like the TTS cache. It reads the session token directly so
+ * a reader window never sees a premium user as free while the plan loads.
+ */
+export const isCustomTranslatorAllowed = (token: string | null | undefined): boolean =>
+  token
+    ? isCustomizationAllowed(getUserProfilePlan(token), getCustomizationPurchased(token))
+    : isSelfHosted();
+
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 
 export const getStoragePlanData = (token: string) => {
