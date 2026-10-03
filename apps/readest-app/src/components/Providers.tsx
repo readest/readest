@@ -151,6 +151,12 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
     loadDataTheme();
     if (appService) {
       initSystemThemeListener(appService);
+      // Windows: the main window is created hidden and only mapped once the
+      // themed page is painted (the shell listens for this event) — see
+      // lib.rs. Other platforms ignore it.
+      import('@tauri-apps/api/event')
+        .then(({ emit }) => emit('window-themed').catch(() => {}))
+        .catch(() => {});
       const hadSettingsFilePromise = appService.exists(SETTINGS_FILENAME, 'Settings');
       appService.loadSettings().then(async (settings) => {
         const globalViewSettings = settings.globalViewSettings;
