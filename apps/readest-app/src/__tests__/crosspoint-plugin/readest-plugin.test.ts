@@ -10,8 +10,11 @@ const deviceJson = JSON.parse(read('device.json'));
 
 interface PluginApi {
   name: string;
+  dir?: string;
   relay: ReturnType<typeof vi.fn>;
   writeFile: ReturnType<typeof vi.fn>;
+  fetchToSd: ReturnType<typeof vi.fn>;
+  pluginFile: (file: string) => string;
 }
 
 // The firmware fills device.json templates by plain substitution, no escaping.
@@ -35,6 +38,30 @@ const CODE = {
 };
 const KEY = { access_token: 'device-key', token_type: 'bearer', id: 'new-key-id', username: EMAIL };
 
+// Readest releases, as the release job publishes them: latest.json names the
+// version and each release carries the plugin zip, which holds the readest/
+// folder that goes on the SD card.
+const RELEASES = 'https://download.readest.com/releases';
+const ZIP_BYTES = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+const RELEASE_ZIP: Record<string, string | null> = {
+  'readest/': null,
+  'readest/manifest.json': '{"title":"Readest","version":"0.12.11"}',
+  'readest/plugin.js': 'CrossPoint.registerPlugin(() => {});',
+  'readest/device.json': '{"title":"Readest"}',
+  'readest/README.md': '# Readest plugin for CrossPoint',
+};
+// The JSZip the device web server ships, as far as the update uses it.
+const fakeJsZip = {
+  loadAsync: vi.fn(async (_data: ArrayBuffer) => ({
+    files: Object.fromEntries(
+      Object.entries(RELEASE_ZIP).map(([name, content]) => [
+        name,
+        { name, dir: content === null, async: async () => btoa(content ?? '') },
+      ]),
+    ),
+  })),
+};
+
 let container: HTMLElement;
 let api: PluginApi;
 // The reader's web API: GET /api/settings reports these, POST /api/settings is recorded.
@@ -43,12 +70,24 @@ let settingsPosts: Record<string, unknown>[];
 let settingsPostStatus: number;
 // Relayed requests, file writes and settings posts, in order.
 let log: string[];
+// The version in the installed plugin's manifest.json.
+let installedVersion: string;
 
 const mount = async (account: unknown = null) => {
   const sink = log;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === '/plugin?name=readest&file=manifest.json') {
+        return new Response(JSON.stringify({ title: 'Readest', version: installedVersion }));
+      }
+      if (url.startsWith('/download') && url.endsWith(encodeURIComponent('/update.zip'))) {
+        return new Response(ZIP_BYTES);
+      }
+      if (url === '/delete' && init?.method === 'POST') {
+        sink.push(`delete ${new URLSearchParams(String(init.body)).get('path')}`);
+        return new Response('Deleted');
+      }
       if (url.startsWith('/download')) {
         return account ? new Response(JSON.stringify(account)) : new Response('', { status: 404 });
       }
@@ -75,6 +114,7 @@ const mount = async (account: unknown = null) => {
 };
 
 const field = (name: string) => container.querySelector(`[name="${name}"]`) as HTMLInputElement;
+const shown = (el: Element | null) => (el as HTMLElement | null)?.style.display !== 'none';
 const statusText = () => container.querySelector('[data-status]')?.textContent ?? '';
 const relayCalls = (method: string, path = '') =>
   api.relay.mock.calls.filter(([m, url]) => m === method && String(url).startsWith(API + path));
@@ -135,7 +175,14 @@ beforeEach(() => {
       sink.push(`write ${path}`);
       return {};
     }),
+    fetchToSd: vi.fn(async (url: string, dest: string) => {
+      sink.push(`fetch ${url} -> ${dest}`);
+      return { status: 200, bytes: ZIP_BYTES.length, complete: true };
+    }),
+    pluginFile: (file: string) => `/plugin?name=readest&file=${file}`,
   };
+  installedVersion = '0.12.10';
+  vi.stubGlobal('JSZip', fakeJsZip);
   deviceSettings = {};
   settingsPosts = [];
   settingsPostStatus = 200;
@@ -355,7 +402,6 @@ describe('Readest CrossPoint plugin', () => {
   // The buttons follow the card's state: Sign in, with the progress sync choice
   // it applies, while signed out; Sign out while signed in.
   describe('buttons', () => {
-    const shown = (el: Element | null) => (el as HTMLElement | null)?.style.display !== 'none';
     const syncRow = () => container.querySelector('[data-kosync-row]');
 
     it('offers Sign in and the progress sync choice while signed out', async () => {
@@ -399,6 +445,95 @@ describe('Readest CrossPoint plugin', () => {
       expect(files()[ACCOUNT_FILE]).toEqual({});
       expect(shown(field('signin'))).toBe(true);
       expect(shown(field('signout'))).toBe(false);
+    });
+  });
+
+  describe('updates', () => {
+    const latest = (version: string) =>
+      api.relay.mockImplementation(async (method: string, url: string) => {
+        log.push(`${method} ${url}`);
+        return url === `${RELEASES}/latest.json` ? json(200, { version }) : json(404, {});
+      });
+    const updateText = () => container.querySelector('[data-update]')?.textContent ?? '';
+    const checkForUpdate = async (result: string) => {
+      field('check').click();
+      await vi.waitFor(() => expect(updateText()).toBe(result));
+      expect(field('check').disabled).toBe(false);
+    };
+
+    it('shows the installed version and installs a newer Readest release', async () => {
+      latest('0.12.11');
+      api.dir = '/plugins/readest';
+      await mount();
+      expect(container.querySelector('[data-version]')?.textContent).toBe('0.12.10');
+      expect(shown(field('update'))).toBe(false);
+
+      await checkForUpdate('A new version is available: v0.12.11 (current: v0.12.10).');
+      expect(shown(field('update'))).toBe(true);
+
+      log.length = 0;
+      field('update').click();
+      await vi.waitFor(() =>
+        expect(updateText()).toBe('Updated to v0.12.11. Reload this page to use it.'),
+      );
+      expect(log).toEqual([
+        `fetch ${RELEASES}/v0.12.11/Readest-0.12.11.crosspoint-plugin.zip -> /plugins/readest/update.zip`,
+        'write /plugins/readest/plugin.js',
+        'write /plugins/readest/device.json',
+        'write /plugins/readest/README.md',
+        // Last, so an update cut short still reports the old version.
+        'write /plugins/readest/manifest.json',
+        'delete /plugins/readest/update.zip',
+      ]);
+      expect(fakeJsZip.loadAsync).toHaveBeenCalledWith(ZIP_BYTES.buffer);
+      const written = Object.fromEntries(
+        api.writeFile.mock.calls.map(([path, b64]) => [path, atob(b64 as string)]),
+      );
+      expect(written['/plugins/readest/plugin.js']).toBe(RELEASE_ZIP['readest/plugin.js']);
+      expect(container.querySelector('[data-version]')?.textContent).toBe('0.12.11');
+      expect(shown(field('update'))).toBe(false);
+    });
+
+    // The release job stamps the real version; the committed one is a
+    // placeholder older than any release, so a copy from the repo updates too.
+    it('offers a copy from the repo the latest release', async () => {
+      latest('0.12.11');
+      installedVersion = JSON.parse(read('manifest.json')).version;
+      await mount();
+      await checkForUpdate(`A new version is available: v0.12.11 (current: v${installedVersion}).`);
+      expect(shown(field('update'))).toBe(true);
+    });
+
+    it('compares versions by number', async () => {
+      latest('0.12.9');
+      await mount();
+      await checkForUpdate('You are up to date (v0.12.10).');
+      expect(shown(field('update'))).toBe(false);
+    });
+
+    it('says so when Readest can’t be reached', async () => {
+      api.relay.mockResolvedValue(json(404, {}));
+      await mount();
+      await checkForUpdate('Failed to check for update. Please try again later.');
+      expect(shown(field('update'))).toBe(false);
+    });
+
+    // Firmware older than api.dir loads a plugin from /.crosspoint/plugins
+    // before the other roots, so an update written there is the one it runs.
+    it('keeps the installed plugin when the download fails', async () => {
+      latest('0.12.11');
+      api.fetchToSd.mockResolvedValue({ error: 'http status', status: 404, bytes: 0 });
+      await mount();
+      await checkForUpdate('A new version is available: v0.12.11 (current: v0.12.10).');
+      field('update').click();
+      await vi.waitFor(() => expect(updateText()).toBe('Failed to install update: HTTP 404'));
+      expect(api.fetchToSd).toHaveBeenCalledWith(
+        `${RELEASES}/v0.12.11/Readest-0.12.11.crosspoint-plugin.zip`,
+        '/.crosspoint/plugins/readest/update.zip',
+        {},
+      );
+      expect(api.writeFile).not.toHaveBeenCalled();
+      expect(shown(field('update'))).toBe(true);
     });
   });
 

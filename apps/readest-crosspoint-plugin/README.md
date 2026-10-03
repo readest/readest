@@ -29,6 +29,13 @@ and unzip it. Copy the `readest/` folder to the SD card as
 `/.crosspoint/plugins/readest/` (or `/plugins/readest/`), then restart the
 reader.
 
+## Update
+
+The reader's plugin list shows the installed version under **Readest**, and
+so does the **Readest** card on the web **Settings** page (see Sign in below
+for opening it). On that card, select **Check for update**, then **Update**
+when a newer release is available, and reload the page.
+
 ## Sign in
 
 Signing in links the reader to your account with a code you approve on the
