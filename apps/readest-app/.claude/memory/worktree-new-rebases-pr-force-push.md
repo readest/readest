@@ -49,3 +49,5 @@ decision — leave it to the user. Related: [[worktree-rebase-submodule-drift]],
   (`send-pack: unexpected disconnect`). Push to the SSH URL instead:
   `git push --no-verify git@github.com:<owner>/readest.git <tmp>:<head-branch>`
   (see [[git-push-socks-proxy]]).
+
+**Merge-conflict PRs (#6518, 2026-10-01):** to fix conflicts without a force push, branch from the fork head (`git fetch <fork> <branch>; git checkout -B pr-N-merge FETCH_HEAD`) and `git merge origin/main`, then push to the fork over SSH. Locale conflicts are usually both sides appending keys: do a per-key 3-way JSON merge from index stages `:1:`/`:2:`/`:3:`, then confirm `pnpm i18n:extract` gives no diff. An existing `../readest-pr-N` worktree makes `worktree:new N` die with "refusing to fetch into branch checked out"; reuse it, and if it never finished setup, init the submodules from `.git/modules` by hand (the plugin's Cargo workspace also needs turso, webview-upgrade and packages/tauri).

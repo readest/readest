@@ -225,6 +225,45 @@ test.describe('Annotation', () => {
     await expect(reader.annotationItems.getByText(noteText)).toBeVisible();
   });
 
+  test('keeps the note bubble on restyle and removes it on toolbar delete (#6540)', async ({
+    openBook,
+  }) => {
+    const reader = await openBook();
+    const noteBubbles = reader.foliateView.locator('svg > g:has(line)');
+    const clickHighlight = async () => {
+      // Restyling appends the highlight after its bubble, so target the
+      // highlight explicitly instead of whichever SVG path comes first.
+      await reader.foliateView
+        .locator('svg > g:not(:has(line)) path')
+        .first()
+        .evaluate((node) => {
+          const path = node as SVGPathElement;
+          const box = path.getBBox();
+          const doc = path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
+          if (!doc) throw new Error('highlight overlay has no section document');
+          doc.body.dispatchEvent(
+            new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
+          );
+        });
+    };
+
+    await reader.selectText();
+    await reader.addNote('A note whose bubble must follow its highlight');
+    await expect(reader.noteEditor).toBeHidden();
+    await expect(noteBubbles).toHaveCount(1);
+
+    await clickHighlight();
+    await reader.selectHighlightColor('green');
+    await expect(noteBubbles).toHaveCount(1);
+
+    await clickHighlight();
+    await reader.popupTool('Delete Highlight').click();
+
+    await expect(noteBubbles).toHaveCount(0);
+    await reader.openAnnotationsTab();
+    await expect(reader.annotationItems).toHaveCount(0);
+  });
+
   test('copies a link to the highlight once Copy Link is enabled', async ({
     openBook,
     context,

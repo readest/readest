@@ -84,6 +84,19 @@ describe('updateBooknoteNoteText', () => {
     expect(result!.updatedBooknote.updatedAt).toBe(injectedNow);
   });
 
+  // A record pulled from sync carries the server's clock: a fresh insert is
+  // stamped with server time. On a device whose clock runs behind, `now` lands
+  // before that stamp, and an edit stamped `now` looked older than the very
+  // version it edited — never pushed, then overwritten by the empty server copy
+  // on the next pull (#6544).
+  it('stamps the edit newer than the version it edits when the device clock lags', () => {
+    const booknotes = [makeBooknote({ id: 'note-1', note: '', updatedAt: 9000 })];
+
+    const result = updateBooknoteNoteText(booknotes, 'note-1', 'new text', 5000);
+
+    expect(result!.updatedBooknote.updatedAt).toBeGreaterThan(9000);
+  });
+
   it('returns null when no booknote with the given id exists', () => {
     const booknotes = [makeBooknote({ id: 'note-1' })];
 

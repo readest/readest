@@ -113,8 +113,8 @@ const SidebarContent: React.FC<{
                 },
               )}
             >
-              {targetTab === 'toc' && bookDoc.toc && (
-                <TOCView toc={bookDoc.toc} bookKey={sideBarBookKey} />
+              {targetTab === 'toc' && (bookDoc.toc || bookDoc.getPageThumbnail) && (
+                <TOCView toc={bookDoc.toc ?? []} bookDoc={bookDoc} bookKey={sideBarBookKey} />
               )}
               {targetTab === 'annotations' && (
                 <BooknoteView type='annotation' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />

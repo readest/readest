@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
       unknown
     >,
   },
+  viewSettings: { scrolled: false } as Record<string, unknown>,
 }));
 
 vi.mock('@/utils/bridge', () => ({
@@ -21,7 +22,7 @@ vi.mock('@/context/EnvContext', () => ({
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: Object.assign(
     () => ({
-      getViewSettings: () => ({ scrolled: false }),
+      getViewSettings: () => h.viewSettings,
       getViewState: () => ({ inited: true }),
       hoveredBookKey: null,
       setHoveredBookKey: vi.fn(),
@@ -48,20 +49,20 @@ import type { FoliateView } from '@/types/view';
 
 const BOOK_KEY = 'book-1';
 
-const setup = () => {
+const setup = (layout?: string) => {
   const view = {
     renderer: { scrolled: false },
-    book: { dir: 'ltr' as const, rendition: {} },
+    book: { dir: 'ltr' as const, rendition: { layout } },
     next: vi.fn(),
     prev: vi.fn(),
   };
   const viewRef = { current: view as unknown as FoliateView };
   const { result } = renderHook(() => usePagination(BOOK_KEY, viewRef, { current: null }));
-  const wheel = async (deltaY: number) => {
+  const wheel = async (deltaY: number, deltaX = 0) => {
     await act(async () => {
       await result.current.handlePageFlip(
         new MessageEvent('message', {
-          data: { bookKey: BOOK_KEY, type: 'iframe-wheel', deltaX: 0, deltaY },
+          data: { bookKey: BOOK_KEY, type: 'iframe-wheel', deltaX, deltaY },
         }),
       );
     });
@@ -71,6 +72,7 @@ const setup = () => {
 
 beforeEach(() => {
   h.settingsState.settings = { hardwarePageTurner: undefined, reverseWheelPaging: false };
+  h.viewSettings = { scrolled: false };
 });
 
 afterEach(() => {
@@ -98,6 +100,41 @@ describe('usePagination mouse wheel direction (#6439)', () => {
     const { view, wheel } = setup();
     await wheel(-100);
     expect(view.next).toHaveBeenCalledTimes(1);
+    expect(view.prev).not.toHaveBeenCalled();
+  });
+});
+
+describe('usePagination mouse wheel on a fit-width PDF page (#6552)', () => {
+  beforeEach(() => {
+    h.viewSettings = { scrolled: false, zoomMode: 'fit-width', zoomLevel: 100 };
+  });
+
+  // useMouseEvent only forwards a vertical wheel here once the page can no
+  // longer scroll natively in that direction, i.e. it sits at its edge.
+  test('wheel down at the bottom edge turns to the next page', async () => {
+    const { view, wheel } = setup('pre-paginated');
+    await wheel(100);
+    expect(view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('wheel up at the top edge turns to the previous page', async () => {
+    const { view, wheel } = setup('pre-paginated');
+    await wheel(-100);
+    expect(view.prev).toHaveBeenCalledTimes(1);
+  });
+
+  test('reverse wheel paging does not invert the native scroll direction', async () => {
+    h.settingsState.settings = { hardwarePageTurner: undefined, reverseWheelPaging: true };
+    const { view, wheel } = setup('pre-paginated');
+    await wheel(100);
+    expect(view.next).toHaveBeenCalledTimes(1);
+    expect(view.prev).not.toHaveBeenCalled();
+  });
+
+  test('a horizontal wheel still only pans', async () => {
+    const { view, wheel } = setup('pre-paginated');
+    await wheel(0, 100);
+    expect(view.next).not.toHaveBeenCalled();
     expect(view.prev).not.toHaveBeenCalled();
   });
 });

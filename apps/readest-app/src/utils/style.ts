@@ -80,6 +80,19 @@ export const getBaseFontFamily = (viewSettings: ViewSettings): string => {
   return viewSettings.defaultFont!.toLowerCase() === 'serif' ? families.serif : families.sansSerif;
 };
 
+/**
+ * The body font size, in CSS px, that the reader applies to the book, for
+ * top-level UI that shows book text outside the iframe.
+ */
+export const getBaseFontSize = (viewSettings: ViewSettings): number => {
+  // scale the font size on-the-fly so that we can sync the same font size on different devices
+  const isMobile = ['ios', 'android'].includes(getOSPlatform());
+  const fontScale = isMobile ? 1.25 : 1;
+  // Only for backward compatibility, new viewSettings.zoomLevel will always be 100 for EPUBs
+  const zoomScale = (viewSettings.zoomLevel || 100) / 100.0;
+  return viewSettings.defaultFontSize! * fontScale * zoomScale;
+};
+
 const getFontStyles = (
   serif: string,
   sansSerif: string,
@@ -439,6 +452,7 @@ const getColorStyles = (
 };
 
 export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
+export const TEXT_SELECTED_CLASS = 'text-selected';
 
 const getPageLayoutStyles = (
   marginTop: number,
@@ -496,6 +510,11 @@ const getPageLayoutStyles = (
     content: '';
     position: absolute;
     inset: -10px;
+  }
+  /* the enlarged area swallows the text around a link, so a selection dragged
+     next to a footnote marker snaps away (#6566); set while text is selected */
+  html.${TEXT_SELECTED_CLASS} a::before {
+    pointer-events: none;
   }
 
   .${SCROLL_WRAPPER_CLASS} {
@@ -1011,18 +1030,13 @@ export const getStyles = (
         viewSettings.hyphenation!,
         viewSettings.vertical!,
       );
-  // scale the font size on-the-fly so that we can sync the same font size on different devices
-  const isMobile = ['ios', 'android'].includes(getOSPlatform());
-  const fontScale = isMobile ? 1.25 : 1;
-  // Only for backward compatibility, new viewSettings.zoomLevel will always be 100 for EPUBs
-  const zoomScale = (viewSettings.zoomLevel || 100) / 100.0;
   const fontStyles = getFontStyles(
     viewSettings.serifFont!,
     viewSettings.sansSerifFont!,
     viewSettings.monospaceFont!,
     viewSettings.defaultFont!,
     viewSettings.defaultCJKFont!,
-    viewSettings.defaultFontSize! * fontScale * zoomScale,
+    getBaseFontSize(viewSettings),
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
@@ -1689,6 +1703,20 @@ export const getOverlayerBlendMode = ({
   return isDarkPage ? 'screen' : 'multiply';
 };
 
+/**
+ * The colors the PDF renderer recolors pages to, or undefined to leave pages as
+ * the book has them. Embedded photos keep their own colors unless images are to
+ * be inverted in dark mode too (#6548).
+ */
+export const getPDFPageColors = (viewSettings: ViewSettings, themeCode: ThemeCode) =>
+  viewSettings.applyThemeToPDF
+    ? {
+        background: themeCode.bg,
+        foreground: themeCode.fg,
+        keepImages: !(themeCode.isDarkMode && viewSettings.invertImgColorInDark),
+      }
+    : undefined;
+
 export const applyFixedlayoutStyles = (
   document: Document,
   viewSettings: ViewSettings,
@@ -1709,7 +1737,14 @@ export const applyFixedlayoutStyles = (
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
   const contrast = viewSettings.contrast ?? 100;
   const imgFilters: string[] = [];
-  if (isDarkMode && invertImgColorInDark) imgFilters.push('invert(100%)');
+  // The renderer already recolors a themed PDF page, images included when they
+  // are to be inverted; inverting or blending it again would darken or flip the
+  // theme colors (#6548).
+  const isThemedPDF = format === 'PDF' && viewSettings.applyThemeToPDF;
+  // hue-rotate flips the hues back, so a blue link stays blue
+  if (isDarkMode && invertImgColorInDark && !isThemedPDF) {
+    imgFilters.push('invert(100%) hue-rotate(180deg)');
+  }
   if (contrast !== 100) imgFilters.push(`contrast(${contrast}%)`);
   const imgFilter = imgFilters.length ? `filter: ${imgFilters.join(' ')};` : '';
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
@@ -1744,7 +1779,7 @@ export const applyFixedlayoutStyles = (
     }
     img, canvas {
       ${imgFilter}
-      ${overrideColor ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
+      ${overrideColor && !isThemedPDF ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
     }
     img.singlePage {
       position: relative;

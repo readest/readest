@@ -230,6 +230,12 @@ discord-rich-presence = "1.0.0"
 # OAuth-redirect fallback (see src/spawn_fresh_browser.rs) and the OS build
 # check behind the Windows 10 shadow workaround (see src/lib.rs).
 winreg = "0.52"
+# Forces a nonclient-area recalculation on the hidden main window before its
+# saved geometry is restored (see restore_main_window_state in src/lib.rs).
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 libc = "0.2"

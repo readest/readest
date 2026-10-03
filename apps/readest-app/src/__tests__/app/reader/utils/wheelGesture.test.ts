@@ -1,5 +1,9 @@
 import { describe, test, expect } from 'vitest';
-import { createWheelGestureDetector, WheelSample } from '@/app/reader/utils/wheelGesture';
+import {
+  createWheelGestureDetector,
+  hasScrollRoomY,
+  WheelSample,
+} from '@/app/reader/utils/wheelGesture';
 
 const sample = (over: Partial<WheelSample> & Pick<WheelSample, 'timeStamp'>): WheelSample => ({
   deltaX: 0,
@@ -86,5 +90,36 @@ describe('createWheelGestureDetector', () => {
     detector.reset();
     // After reset the earlier 20px is forgotten, so 20px more is still short.
     expect(detector.feed(sample({ deltaX: 20, timeStamp: 16 }))).toBeNull();
+  });
+});
+
+describe('hasScrollRoomY (#6552)', () => {
+  const box = (scrollTop: number) => ({ scrollTop, clientHeight: 500, scrollHeight: 1200 });
+
+  test('a page scrolled to the top has no room upward but room downward', () => {
+    expect(hasScrollRoomY(box(0), -100)).toBe(false);
+    expect(hasScrollRoomY(box(0), 100)).toBe(true);
+  });
+
+  test('a page scrolled to the bottom has no room downward but room upward', () => {
+    expect(hasScrollRoomY(box(700), 100)).toBe(false);
+    expect(hasScrollRoomY(box(700), -100)).toBe(true);
+  });
+
+  test('a page that fits has no room either way', () => {
+    const fits = { scrollTop: 0, clientHeight: 500, scrollHeight: 500 };
+    expect(hasScrollRoomY(fits, 100)).toBe(false);
+    expect(hasScrollRoomY(fits, -100)).toBe(false);
+  });
+});
+
+describe('detector suppress (#6552)', () => {
+  test('swallows the rest of a gesture the page scrolled natively', () => {
+    const detector = createWheelGestureDetector();
+    detector.suppress(0);
+    expect(detector.feed({ deltaX: 0, deltaY: 120, deltaMode: 0, timeStamp: 50 })).toBeNull();
+    expect(detector.feed({ deltaX: 0, deltaY: 120, deltaMode: 0, timeStamp: 100 })).toBeNull();
+    // A new gesture after the wheel goes idle flips again.
+    expect(detector.feed({ deltaX: 0, deltaY: 120, deltaMode: 0, timeStamp: 400 })).not.toBeNull();
   });
 });

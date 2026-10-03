@@ -24,11 +24,12 @@ vi.mock('@/store/settingsStore', () => ({
 const stores = vi.hoisted(() => ({
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(() => ({})),
+  booknotes: [] as BookNote[],
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
-    getConfig: () => ({ booknotes: [] }),
+    getConfig: () => ({ booknotes: stores.booknotes }),
     saveConfig: stores.saveConfig,
     updateBooknotes: stores.updateBooknotes,
   }),
@@ -44,12 +45,14 @@ vi.mock('@/store/readerStore', () => ({
     getProgress: () => ({ page: 1 }),
   }),
 }));
-vi.mock('@/app/reader/utils/annotatorUtil', () => ({
+vi.mock('@/app/reader/utils/annotatorUtil', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/app/reader/utils/annotatorUtil')>()),
   toParentViewportPoint: (_doc: Document, x: number, y: number) => ({ x, y }),
 }));
 
 import { useInstantAnnotation } from '@/app/reader/hooks/useInstantAnnotation';
 import type { TextSelection } from '@/utils/sel';
+import type { BookNote } from '@/types/book';
 
 let p1: HTMLElement;
 let p2: HTMLElement;
@@ -82,6 +85,7 @@ const pointer = (x: number, y: number) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  stores.booknotes = [];
   scrolled = false;
   p1 = document.createElement('p');
   p1.textContent = 'first page text here';
@@ -226,5 +230,34 @@ describe('useInstantAnnotation hold-a-word engage and commit', () => {
     );
 
     expect(handled).toBe(false);
+  });
+});
+
+// Dragging exactly over an existing highlight resolves to its cfi and updates
+// that record in place: a restyle, which must not wipe the note it carries.
+describe('useInstantAnnotation over an existing highlight', () => {
+  test('a drag over a noted highlight keeps its note', async () => {
+    stores.booknotes = [
+      {
+        id: 'old',
+        type: 'annotation',
+        cfi: 'cfi',
+        style: 'underline',
+        color: 'red',
+        text: 'text',
+        note: 'keep me',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+    const { result } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    await result.current.handleInstantAnnotationPointerUp(document, 0, pointer(60, 10));
+
+    const saved = (stores.updateBooknotes.mock.lastCall as unknown as [string, BookNote[]])[1];
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({ id: 'old', note: 'keep me', style: 'highlight' });
   });
 });

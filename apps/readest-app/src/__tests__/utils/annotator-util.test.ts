@@ -76,6 +76,17 @@ describe('toParentViewportPoint', () => {
     expect(result).toEqual({ x: 180, y: 250 });
   });
 
+  it('scales the point when the frame is shrunk with a transform, as in fixed layout', () => {
+    // An 844x1200 fixed-layout page drawn at a third of its size.
+    const frame = {
+      clientWidth: 844,
+      getBoundingClientRect: () => ({ left: 100, top: 50, width: 844 / 3, height: 400 }),
+    };
+    const doc = { defaultView: { frameElement: frame } } as unknown as Document;
+
+    expect(toParentViewportPoint(doc, 300, 600)).toEqual({ x: 200, y: 250 });
+  });
+
   it('defaults to {0,0} offset when no frameElement (detached doc)', () => {
     const doc = {
       defaultView: null,
@@ -250,6 +261,16 @@ describe('removeEmptyAnnotationPlaceholder', () => {
 
     expect(removed).toBe(placeholder);
     expect(booknotes[0]!.deletedAt).toBe(1234);
+  });
+
+  // The placeholder may already carry a server stamp ahead of this device's
+  // clock; its tombstone must still be the later change (#6544).
+  it('tombstones after a synced stamp that is ahead of the device clock', () => {
+    const booknotes = [baseNote({ updatedAt: 9000 })];
+
+    removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(booknotes[0]!.deletedAt).toBeGreaterThan(9000);
   });
 
   it('returns null and leaves booknotes untouched when the record carries note text', () => {

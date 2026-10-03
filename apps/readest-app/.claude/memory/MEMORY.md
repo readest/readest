@@ -17,10 +17,13 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [Supabase 521/522 outage 2026-08-31](supabase-outage-2026-08-31-compute-and-bloat.md) NOT the auth hook; compute starvation; upgrade FIXED; reclaim + pg_cron retention + Mgmt-API statement_timeout recipes inside
 - [API route auth audit 2026-08](api-route-auth-audit-2026-08.md) PRIVATE; hardcover + opds forward caller creds with NO caller auth; google RTDN fails open; share token comment is false; pages/api NOT audited
 - [Android launch crash: widget 1px cover](widget-thumbnail-degenerate-cover-crash.md) MERGED #5874; fatal every launch; MIUI install needs emulator
+- [Stripe refunds never revoke](stripe-webhook-missing-charge-refunded.md) live endpoint NOT subscribed to charge.refunded; #6436 handler dead; manual repair recipe inside
 - [Stripe checkout 500 storage add-on](stripe-checkout-500-storage-purchase.md) root cause UNCONFIRMED; diagnostics MERGED #5896
+- [Play 0.12.10 shipped the macOS App Store frontend](play-build-stripe-fallback-cn-xiaomi.md) DIST_CHANNEL=appstore baked in: hasIAP=false, all Android purchases went to Stripe; PROVEN from the .so; CAUSE = mac + Play release ran concurrently and shared out/ (AAB Gradle pass re-embedded the mac out/); binary-extract recipe inside
 - [Play sub recorded but plan stayed free](google-sub-row-written-plan-not-applied.md) ROOT = node.readest.com missing STRIPE_SECRET_KEY + millis into timestamp col key ADDED; PR #6342 OPEN; 2 users repaired 2026-09-22
 - [Apple lost storage purchase](apple-iap-lost-storage-purchase-restore-verify.md) 2 buyers credited by hand; #5669 MERGED but UNRELEASED; recipe inside
 - [0.12.1 App Review crash](appstore-review-crash-0121-aswebauth-anchor.md) UNFIXED; `presentationAnchor` nil-window
+- [#6355 iOS 16 toggle/range crash](ios16-color-mix-currentcolor-crash-6355.md) MERGED #6497 (ec556de87) UNRELEASED; color-mix(currentColor) in box-shadow kills WebKit<17; daisyUI 5 toggle+range; upgrade does NOT help; iOS min 16.4 since #5884
 - [iOS <=16 fonts.ready WebContent crash](ios16-fonts-ready-webcontent-crash.md) MERGED #5654 + foliate#71; poll `fonts.status`
 - [Google RTDN verify downgrade](google-rtdn-worker-verify-downgrade-incident.md) googleapis dead on workerd · [Play storage add-ons never consumed](google-iap-consume-storage-purchases.md) MERGED #5545
 - [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` on `external` · [#5084/#5265 "Delete locally" wiped Drive](gdrive-delete-locally-wiped-cloud-5084.md) MERGED #5376
@@ -30,10 +33,13 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [#5147 Drive "Untitled" root files](gdrive-untitled-root-files-5147.md) · [Security advisories 2026-06](security-advisories-web-2026-06.md)
 - [#5118 iOS PDF WebContent OOM](pdf-ios-webcontent-oom-zoom-5118.md) clamp renderDpr · [#5251 blurry desktop](pdf-blurry-desktop-dpr-clamp-5251.md)
 
+- [#6521 iPad PDF exits: huge 1-bit scans](pdf-huge-1bit-image-gpu-oom-6521.md) pdf.js full-size decode killed WebKit GPU; worker hook fix MERGED #6526 + foliate#110 UNRELEASED; WebKit drawImage trap
+
 ## Paginator & Scroll
 - [#5808 rotate walks the page back](resize-anchor-drift-5808.md) MERGED foliate#82 + #5855; Xiaomi VERIFIED
 - [#5179 layered-turn toolbar sync](pr-5179-layered-turn-toolbar-sync.md) MERGED; review defects UNFIXED
 - [#6407 iOS pan lock drifts on momentum swipes](ios-pan-lock-momentum-6407.md) WebKit skips touch-action when a touch catches a coasting scroller; fix = overflow-x hidden + strip translate; MERGED #6475 (211c206df) + foliate#107 UNRELEASED; in-app sim never reproduced
+- [#6484 Webtoon zoom seam](webtoon-zoom-seam-6484.md) AA page edges over scroll bg; 2-device-px overlap + drop clip (size snapping FAILS); foliate#108 + #6491 MERGED (d8d50f243) UNRELEASED; DPR-sweep screenshot recipe
 - Resolved/stable → [Paginator & Scroll Fixes](paginator-scroll-fixes.md)
 
 ## Critical Files (Most Bug-Prone)
@@ -41,6 +47,7 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - `src/hooks/useSafeAreaInsets.ts` · `src/app/reader/components/FoliateViewer.tsx` · `.../annotator/Annotator.tsx`
 
 ## Sync Notes
+- [#6544 note text wiped on reopen, bubble kept](note-edit-clock-skew-sync-wipe-6544.md) server-stamped insert + lagging device clock = edit older than its base, never pushed, pulled back empty; fix = nextBooknoteStamp at every change site + instant-highlight note wipe, MERGED #6551 (e3ab5d0e6) UNRELEASED; skew-repro recipe + Date.now throttle trap
 - [New import invisible on peers](books-sync-inflight-change-dropped.md) useBooksSync dropped in-flight changes; PR #5869; 2nd-device verify pending
 - [#5859 Boox progress reset to page one](progress-loss-android-tauri-plugin-deadlock-5859.md) ROOT = OPDS re-import under a NEW book_hash; PR #5866
 - [Uploads with Books sync off = orphan cloud files](upload-without-books-sync-orphan-files.md) peers list only `books` rows; uploads ignored the Books toggle; PR #6446 MERGED (65e8a3228) UNRELEASED; comp storage = synthetic payments row, never edit plans
@@ -99,6 +106,8 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 
 ## Platform Compat
 - [#6383 custom data location uploads/downloads Forbidden](custom-data-location-transfer-forbidden-6383.md) REGRESSION from #6343 ensure_path_allowed; fix = whole `Readest` component after `..` reject + symlink resolve; MERGED #6478 (b1bf6ddf2) UNRELEASED; backup symlink escape fixed too
+- [#6488 backups dropped reading stats](backup-reading-stats-6488.md) statistics.db is in Data dir, backup walks Books only; fix = root statistics.json + applyRemoteEvents merge; Xiaomi-VERIFIED; MERGED #6490 UNRELEASED
+- [#6375 iOS backup stuck at 0%](ios-backup-share-sheet-6375.md) iOS save-dialog URL unwritable (EPERM) + fallback stream hang; stage + share sheet; MERGED #6486 (dbdc2f0d4) UNRELEASED; iPad verify PENDING; afcclient log-pull recipe
 - [#6291 backup slow + stops on screen sleep](backup-keep-awake-6291.md) keep-awake + Rust write/extract_backup_zip; Android IPC bodies = JSON arrays 3.9 MB/s; backup 177s->3s, restore OOM-kill->5s; Xiaomi+macOS VERIFIED (macOS backup 86s->1.5s); MERGED #6299 (f521de63e); review-hardened (file:// scope, .part+rename, bounded dirs, configs written last); hardening NOT device-verified
 - [Linux is CEF-only](linux-cef-only-runtime-6218.md) MERGED #6218 (95117b03f) UNRELEASED; Flathub CEF since flathub#33; isLinuxCefRuntime DELETED; deb/rpm depends rewritten from verified DT_NEEDED, NOT install-tested; wry survives ONLY for the webkit2gtk-bound webdriver E2E lane
 - [#6144 0.12.8 Linux launch failures](arch-cef-package-launch-crash-6144.md) AppImage panics for ALL (libxkbcommon-x11 unbundled) MERGED #6151 (54f2ba7d6) UNRELEASED; Arch extra CEF pkg SIGSEGV NOT reproducible, needs bt; deb/rpm depends still WebKitGTK
@@ -112,8 +121,19 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - Resolved/stable → [Platform Compat](platform-compat-fixes.md)
 
 ## Reader Features & UI
+- [Calibre plugin columns never filterable](calibre-plugin-custom-columns-filter.md) plugin pushed `customColumns` dict, app reads `calibreColumns`; fix + value picker + Download status field; MERGED #6538 (19a4ffe27) UNRELEASED; users must re-push from calibre
+- [#6532 purge left cloud reading data](purge-cloud-reading-data-6532.md) MERGED #6536 (97ff4e744); configs nulled + notes tombstoned + books.progress null; Delete All Books NOT covered (chrox)
+- [#6527 Hardcover on reader sync row](hardcover-sync-row-6527.md) MERGED b7fe47bab UNRELEASED; tap pushes even w/ Auto Sync off (chrox decision, shelf side effect accepted); per-book status; unmatched != failed
+- [#6511 Pagebound progress sync](pagebound-sync-6511.md) MERGED #6528 (6c3ca474a) UNRELEASED; API verified LIVE; stale JWT never 401s (check get_authed_user); '' fields 500; search sort_by rating_count; Tauri-only (no CORS); in-app + release VERIFIED
+- [iPhone Duo #6312/#6507/#6508](iphone-duo-6307-column-gap.md) all MERGED; Column Gap NOT Duo-gated; header/footer floor on text edge; #6508 VC-based status bar for ALL iOS; web pixel-parity recipe
+- [#6160 imported highlight tap dead](readera-imported-highlight-tap-6160.md) stale null progress in once-registered show-annotation threw on page-less notes; MERGED #6515 (db51eb343) UNRELEASED, Xiaomi-VERIFIED
+- [#6390 toolbar covered footnote popup](footnote-popup-toolbar-overlap-6390.md) toolbar takes the side the popup left, else stacks beyond it; MERGED #6514 (e75a80e62) UNRELEASED; Chrome-only verified; sibling #6504 MERGED #6510
+- [Android keyboard adjustPan vs sheets (#6390)](android-keyboard-adjustpan-sheet-6390.md) window-level pan invisible to JS; vv jumps once; keyboard-riding sheet REVERTED by chrox; native WindowInsetsAnimation is the only exact path
+- [#6380 PDF/comic turns instant on Windows](desktop-capture-webview-cdp-6380.md) capture was macOS-only; CDP captureScreenshot on WebView2 + CEF; MERGED #6506 (6bcd170de) UNRELEASED; no device verify; CDP `clip` flashes the live view (sidebar black strip), no-clip + JS crop fix MERGED #6509 (6e567ef31) UNRELEASED
+- [#6374 iOS system-mode swipe brightness snapped back](ios-system-brightness-sync-6374.md) `persist` write-through + touchstart re-read + native manual re-apply on becomeActive; MERGED #6502 (4eb7b6d7c) UNRELEASED; NOT device-verified
 - [#6433/#6457 media keys + desktop Now Playing](desktop-now-playing-6457.md) #6452 MERGED; native souvlaki session PR #6457 OPEN; WKWebView never Now Playing; souvlaki macOS cover flash fixed; MERGED; forgot Cargo.cef.lock -> main Nix broke, PR #6459
 - [#6406 EPUB open parallel + zip workers](epub-open-parallel-zip-workers-6406.md) MERGED 2cd6915bd; zip.js workers = NO gain on Xiaomi (dropped); open -13..15%; fresh-worktree ACL `SetPermissionNotFound` = copy autogenerated toml
+- [#6360 BookDrop own section](bookdrop-own-section-6360.md) default-on LAN listener leads Integrations as "Local Network"; state-keyed "enabled" section REJECTED (rows jump); MERGED #6499 (d4f331261) UNRELEASED
 - [#6439 reverse wheel + hide e-ink bookshelf buttons](reverse-wheel-hide-bookshelf-buttons-6439.md) MERGED #6448 (b3b928123) UNRELEASED; library settings gate on GLOBAL isEink, ControlPanel viewSettings can be book-scoped
 - [#6389 Settings scroll restore](settings-scroll-restore-6389.md) MERGED 048babd9c; OS `defer` stamps viewport attr on the contents element; StrictMode kills first-run refs; hidden Chrome tab stalls rAF, use headless Playwright
 - [#6334 library tags + Tag Books](library-tags-list-view-6334.md) MERGED 2a9aceba8; NO library-wide tag delete (chrox); list strip needs `w-0`; useKeyDownActions stale-closure fixed
@@ -133,6 +153,8 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [#6018 MDD dict audio/POS/image + `&apos;` name](mdict-audio-pos-image-6018.md) MERGED #6021 (211cb2b67); ALL 3 ANDROID-VERIFIED (OALD9 `house`); iOS audio typeless blob + play() after await; image zoom reuses ModalPortal+ImageViewer, take the hidden ox-enlarge twin; `composedPath()` for shadow retarget
 - [#6265 auto-play dictionary pronunciation](dict-auto-play-pronunciation-6265.md) MERGED #6280 (030cbbed5); ONE provider armed (shared <audio>, else last-to-resolve cuts off the rest); candidates sorted by compareDocumentPosition (array order != DOM order); play() returns bool so a missing recording falls through; .spx registers none; iOS first lookup silent till a manual tap; i18n RULE: REUSE a locale existing equivalent string (32/34 drifted)
 - [#6213 instant dictionary left nothing selected](instant-lookup-restore-selection-6213.md) MERGED #6272 (54e80d28d); #6454 made it OPT-IN (`keepSelectionAfterLookup`, default off) MERGED #6460 (22c23b365); restore range on dismiss (programmatic = no grabbers); trap = handleHighlight republish re-fires the quick action, Android re-arms the latch from taps on our OWN toolbar; Xiaomi-VERIFIED
+- [#6513 Duokan ~slim cover](duokan-slim-cover-6513.md) tall fullscreen pages swap in cover~slim; foliate#109 + #6516 MERGED (b6d95317d) UNRELEASED; no device verify
+- [#6503 dark-mode selected word unreadable](dark-selection-text-6503.md) Chromium default selection = near-black text on programmatic/unfocused selection; background-only dark ::selection; MERGED #6512 (78d9b5fd3) UNRELEASED; Chrome-verified, NOT Android-verified
 - [Lookup surfaces flashed shut on mobile](lookup-surface-flash-suppress-handles-6013.md) MERGED #6022 (7413386ce); REGRESSION from #6013; suppressNativeSelectionHandles republished the selection -> toolbar closed the sheet; fix = early-return while any lookup surface is up
 - [#6449 iPhone footer vs rounded corners](ios-footer-corner-radius-6449.md) #6429 had NO iOS radius; iOS 26 containerConcentric child probe; MERGED #6474 (37edd27c5) UNRELEASED; sim WebView inspector recipe inside
 - [#6423 annotations list jumped on click](booknote-list-jump-on-click-6423.md) MERGED #6468 (e43651097); skip scroll when row fully visible; scroll-idle jump UNFIXED; web highlight-seeding recipe
@@ -225,8 +247,8 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [#5360 Wayland tap kills native menu](wayland-tap-context-menu-5360.md) MERGED #5467
 
 ## Networking & LAN
-- [CrossPoint simulator setup](crosspoint-simulator-setup.md) ~/dev/crosspoint; `pio run -e simulator -t run_simulator`; 2 local patches needed on macOS 15 (HomeActivity.h include, CssParser from_chars)
-- [CrossPoint <-> Readest feasibility 2026-09](crosspoint-integration-feasibility-2026-09.md) progress works via shared KOSync (Binary match); library needs Readest OPDS/plugin PR #3114; stats blocked on PR #3204
+- [CrossPoint simulator setup](crosspoint-simulator-setup.md) ~/dev/crosspoint sim/develop + sim-shims + simulator branch readest-e2e-fixes; e2e/sim.sh + fake-readest.mjs; NO_PROXY trap
+- [CrossPoint <-> Readest plugin](crosspoint-integration-feasibility-2026-09.md) MERGED #6547 (54c089f36) UNRELEASED; device code + per-device key; migration 024 BEFORE web deploy; release zip job; event queue stalls on non-2xx
 - [Nearby BookDrop branding](nearby-bookdrop-branding.md) MERGED #5915; code ids stay `localsend`; ABS row not plural-aware
 - [Nearby BookDrop v2 (AirDrop UI + pairing + sounds)](nearby-bookdrop-v2-pairing-airdrop-sounds.md) PR #6023 MERGED squash 5a3ab1b47 (feat/bookdrop-radar-pairing, rebased onto #6019); verified macOS+Xiaomi; pairing = TLS cert fingerprint, Customization-gated; sounds RECEIVER-ONLY placeholders; Phase 2 relay deferred; pass-4 unicast-reprobe keepalive; pass-5 CodeRabbit review handled (e09ec625e): heartbeat guards, impactFeedback rejection, ListenerFailed teardown+foreground restart (iOS-dormant), fa/nl/pl grammar
 - [LocalSend integration](localsend-integration.md) MERGED #5611; fork `readest/localsend`; commands need 3-place ACL

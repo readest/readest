@@ -104,6 +104,7 @@ import Alert from '@/components/Alert';
 import ModalPortal from '@/components/ModalPortal';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
 import { parseMrexpt } from '@/utils/mrexpt';
+import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import {
   convertMrexptEntriesToBookNotes,
   mergeImportedBookNotes,
@@ -1413,7 +1414,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       text: selection.text,
       page: selection.page,
       createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
+      updatedAt: existing ? nextBooknoteStamp(existing, now) : now,
     };
 
     if (existingIndex !== -1) {
@@ -1530,20 +1531,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       if (existingIndex !== -1) {
         if (!update && !allExist) continue;
         const existing = annotations[existingIndex]!;
-        // Tear down both the original anchor and any global fan-outs that
-        // were drawn for the previous style/color, so the redraw below
-        // doesn't end up overlaying two highlights at the same position.
-        views.forEach((view) => view?.addAnnotation(existing, true));
-        if (existing.global) {
-          views.forEach((view) => removeGlobalAnnotationOverlays(view, existing));
-        }
         if (update) {
+          // Tear down the original highlight and its global fan-outs before
+          // redrawing the new style/color. Keep the note bubble at its anchor.
+          views.forEach((view) => view?.addAnnotation(existing, true));
+          if (existing.global) {
+            views.forEach((view) => removeGlobalAnnotationOverlays(view, existing));
+          }
           // Preserve the note/text/createdAt and the `global` flag of the existing
           // record so a restyle (color/style change) of a unified annotation
           // doesn't wipe its note or silently demote a global highlight. The note
           // bubble overlay (NOTE_PREFIX) isn't torn down above, so it persists; we
           // only redraw the highlight overlay (value = cfi).
-          const merged = mergeRestyledAnnotation(existing, annotation);
+          const merged = {
+            ...mergeRestyledAnnotation(existing, annotation),
+            updatedAt: nextBooknoteStamp(existing),
+          };
           annotations[existingIndex] = merged;
           views.forEach((view) => view?.addAnnotation(merged));
           if (merged.global) {
@@ -1552,7 +1555,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             });
           }
         } else {
-          existing.deletedAt = Date.now();
+          views.forEach((view) => removeBookNoteOverlays(view, existing));
+          existing.deletedAt = nextBooknoteStamp(existing);
           deleted = true;
         }
       } else {
@@ -1615,7 +1619,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     if (idx === -1) return;
     const existing = annotations[idx]!;
     const nextGlobal = !existing.global;
-    annotations[idx] = { ...existing, global: nextGlobal, updatedAt: Date.now() };
+    annotations[idx] = { ...existing, global: nextGlobal, updatedAt: nextBooknoteStamp(existing) };
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
@@ -2411,7 +2415,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     let cleared = 0;
     storedNotes.forEach((note) => {
       if (note.type === 'annotation' && !note.deletedAt) {
-        note.deletedAt = now;
+        note.deletedAt = nextBooknoteStamp(note, now);
         cleared += 1;
         // Drop the rendered overlay so the page reflects the cleared
         // state immediately without waiting for a relocate.
