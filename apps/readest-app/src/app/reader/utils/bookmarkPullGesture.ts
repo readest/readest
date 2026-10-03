@@ -18,6 +18,8 @@ export const BOOKMARK_PULL_ACTIVATION_PX = 18;
 export const BOOKMARK_PULL_TRIGGER_PX = 100;
 export const BOOKMARK_PULL_LINEAR_PX = 120;
 export const BOOKMARK_PULL_DAMPING = 0.35;
+/** Touches starting this close to the viewport top belong to the system (#6599). */
+export const BOOKMARK_PULL_TOP_EDGE_PX = 10;
 
 /**
  * True when movement is downward-dominant past the activation threshold.
@@ -70,16 +72,16 @@ export const pullHintShift = (offset: number, hintHeight: number, pinTop: number
 /**
  * The gesture exists only where a vertical drag has no other meaning and the
  * continuous slide can look right: paginated (not scrolled) books in
- * horizontal writing mode, and never on e-ink (ghosting). Fixed-layout books
- * (PDF/CBZ) qualify too, but only while the page cannot pan vertically —
- * a zoomed or fit-width page scrolls under the finger instead (#5142).
+ * horizontal writing mode. On e-ink it toggles without the slide (ghosting).
+ * Fixed-layout books (PDF/CBZ) qualify too, but only while the page cannot pan
+ * vertically — a zoomed or fit-width page scrolls under the finger instead
+ * (#5142).
  */
 export const canPullBookmark = (mode: {
   scrolled: boolean;
   vertical: boolean;
-  isEink: boolean;
   verticalPanning: boolean;
-}): boolean => !mode.scrolled && !mode.vertical && !mode.isEink && !mode.verticalPanning;
+}): boolean => !mode.scrolled && !mode.vertical && !mode.verticalPanning;
 
 export interface BookmarkPullHandlers {
   onTouchStart: (doc: Document, event: TouchEvent) => void;

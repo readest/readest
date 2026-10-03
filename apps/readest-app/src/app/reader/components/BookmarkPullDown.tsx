@@ -10,6 +10,7 @@ import { setLayeredTurnTouchClaimed } from '@/app/reader/utils/iframeEventHandle
 import { hasVerticalPanning } from '@/app/reader/hooks/usePagination';
 import {
   BOOKMARK_PULL_ACTIVATION_PX,
+  BOOKMARK_PULL_TOP_EDGE_PX,
   canPullBookmark,
   computePullOffset,
   isPastPullThreshold,
@@ -20,7 +21,7 @@ import {
   shouldActivatePull,
   type BookmarkPullHandlers,
 } from '@/app/reader/utils/bookmarkPullGesture';
-import Ribbon from './Ribbon';
+import Ribbon, { RIBBON_WIDTH } from './Ribbon';
 
 const SPRING_MS = 250;
 const RIBBON_BODY_HEIGHT = 44; // matches Ribbon.tsx: safe-area top + header bar height
@@ -63,13 +64,14 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
 
   const bandRef = useRef<HTMLDivElement | null>(null);
   const hintRef = useRef<HTMLDivElement | null>(null);
-  const ribbonBoxRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const polygonRef = useRef<SVGPolygonElement | null>(null);
 
   // Per-gesture state.
   const armedRef = useRef(false);
   const activeRef = useRef(false);
+  // E-ink pulls toggle on release but draw nothing (ghosting, slow refresh).
+  const einkRef = useRef(false);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const baseOffsetRef = useRef(0);
@@ -104,7 +106,7 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
       const polygon = polygonRef.current;
       if (svg && polygon) {
         const rest = restHeightRef.current;
-        const width = ribbonBoxRef.current?.clientWidth || 32;
+        const width = RIBBON_WIDTH;
         // The resting ribbon notches at 22% of its height; freeze that depth
         // in px so the notch doesn't stretch into a spike as the tail grows.
         const notch = Math.round(rest * 0.22);
@@ -221,12 +223,22 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
           !canPullBookmark({
             scrolled: !!viewSettings.scrolled,
             vertical: !!viewSettings.vertical,
-            isEink: !!viewSettings.isEink,
             verticalPanning: hasVerticalPanning(store.getView(bookKey), viewSettings),
           })
         ) {
           return;
         }
+        // Leave swipes from the top screen edge to the system, e.g. Android's
+        // notification shade (#6599). The frame's rect maps the touch into
+        // main-viewport coordinates, rescaled for any zoom on its ancestors.
+        const frame = doc.defaultView?.frameElement;
+        const frameRect = frame?.getBoundingClientRect();
+        const clientHeight = doc.documentElement.clientHeight;
+        const viewportY = frameRect
+          ? frameRect.top + t.clientY * (clientHeight ? frameRect.height / clientHeight : 1)
+          : t.clientY;
+        if (viewportY < BOOKMARK_PULL_TOP_EDGE_PX) return;
+        einkRef.current = !!viewSettings.isEink;
         // screenX/screenY, not clientX/clientY: in paginated mode the iframe
         // document is many screens wide, so client coordinates are document
         // coordinates; screen coordinates match the app viewport.
@@ -279,12 +291,12 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
           pastRef.current = false;
           setPastThreshold(false);
           setRemoveMode(!!store.viewStates[bookKey]?.ribbonVisible);
-          setPulling(true);
+          if (!einkRef.current) setPulling(true);
         }
         e.preventDefault();
         e.stopImmediatePropagation();
         const offset = computePullOffset(dy);
-        scheduleOffset(offset);
+        if (!einkRef.current) scheduleOffset(offset);
         const past = isPastPullThreshold(offset);
         if (past !== pastRef.current) {
           pastRef.current = past;
@@ -359,11 +371,13 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
             </div>
           </div>
           <div
-            ref={ribbonBoxRef}
-            className='bookmark-pull-ribbon absolute right-0 top-0 flex w-8 justify-center sm:w-6'
-            // Mirrors the resting Ribbon: keep clear of the Duo cover
-            // display's top-trailing camera cutout (#6307).
-            style={isIPhoneDuo ? { right: `${safeAreaInsets?.right || 0}px` } : undefined}
+            className='bookmark-pull-ribbon absolute right-0 top-0 flex justify-center'
+            style={{
+              width: `${RIBBON_WIDTH}px`,
+              // Mirrors the resting Ribbon: keep clear of the Duo cover
+              // display's top-trailing camera cutout (#6307).
+              ...(isIPhoneDuo ? { right: `${safeAreaInsets?.right || 0}px` } : {}),
+            }}
           >
             <svg
               ref={svgRef}

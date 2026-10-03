@@ -303,6 +303,47 @@ describe('BookmarkPullDown', () => {
     expect(container.querySelector('.bookmark-pull-band')).toBeNull();
   });
 
+  it('leaves a pull that starts at the top screen edge to the system (#6599)', () => {
+    const { container } = renderComponent();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    // A swipe from the top edge opens the Android notification shade.
+    dispatchTouch('touchstart', 9);
+    const move = touchEvent('touchmove', 9 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    act(() => {
+      document.dispatchEvent(move);
+    });
+    dispatchTouch('touchend', 9 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    expect(move.defaultPrevented).toBe(false);
+    expect(container.querySelector('.bookmark-pull-band')).toBeNull();
+    expect(dispatchSpy).not.toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
+
+    dispatchTouch('touchstart', 10);
+    dispatchTouch('touchmove', 10 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    dispatchTouch('touchend', 10 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    expect(dispatchSpy).toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
+  });
+
+  it('toggles on e-ink without animating the pull (#6599)', () => {
+    currentViewSettings = { scrolled: false, vertical: false, isEink: true };
+    const { container } = renderComponent();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    dispatchTouch('touchstart', 300);
+    const move = touchEvent('touchmove', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    act(() => {
+      document.dispatchEvent(move);
+    });
+    act(() => flushRaf(0));
+    // The gesture owns the drag, but nothing slides or draws.
+    expect(move.defaultPrevented).toBe(true);
+    expect(container.querySelector('.bookmark-pull-band')).toBeNull();
+    expect(slide.style.transform).toBe('');
+
+    dispatchTouch('touchend', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    expect(dispatchSpy).toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
+  });
+
   it('shows remove wording while bookmarked', () => {
     currentRibbonVisible = true;
     const { getByText } = renderComponent();
