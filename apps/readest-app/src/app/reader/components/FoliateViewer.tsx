@@ -74,6 +74,7 @@ import {
   handleTouchCancel,
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
+import { getLockedPanX } from '../utils/lockedPan';
 import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
@@ -145,6 +146,8 @@ const FoliateViewer: React.FC<{
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
   const { registerBrightnessListeners, overlayVisible, overlayLevel } =
@@ -257,6 +260,8 @@ const FoliateViewer: React.FC<{
       detail.range,
       detail.fraction,
     );
+    const panX = getLockedPanX(viewRef.current, getViewSettings(bookKey));
+    if (panX !== undefined && panX !== getConfig(bookKey)?.panX) setConfig(bookKey, { panX });
   }, [bookKey, setProgress, cancelRelocateScheduled]);
 
   const progressRelocateHandler = (event: Event) => {
@@ -830,6 +835,9 @@ const FoliateViewer: React.FC<{
         view.renderer.setAttribute('scale-factor', viewSettings.zoomLevel);
         view.renderer.setAttribute('scroll-gap', getScrollGapAttr(viewSettings.webtoonMode));
         view.renderer.toggleAttribute('lock-pan-x', !!viewSettings.lockHorizontalPan);
+        if (viewSettings.lockHorizontalPan && config.panX !== undefined) {
+          view.renderer.panX = config.panX;
+        }
       } else {
         view.renderer.setAttribute('max-column-count', maxColumnCount);
         view.renderer.setAttribute('max-inline-size', `${maxInlineSize}px`);
