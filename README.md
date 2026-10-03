@@ -284,7 +284,7 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [badge-discord]: https://img.shields.io/discord/1314226120886976544?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=flat-square
 [badge-hellogithub]: https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=8a5b6ade2aee461a8bd94e59200682a7&claim_uid=eRLUbPOy2qZtDgw&theme=small
 [badge-donate]: https://donate.readest.com/badge.svg
-[badge-deepwiki]: https://deepwiki.com/badge.svg
+[badge-deepwiki]: https://img.shields.io/badge/Ask-DeepWiki-blue
 [badge-reddit]: https://img.shields.io/reddit/subreddit-subscribers/readest?style=flat&logo=reddit&color=F37E41
 [badge-language-coverage]: https://img.shields.io/badge/coverage-53%25%20population%20🌍-green
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
