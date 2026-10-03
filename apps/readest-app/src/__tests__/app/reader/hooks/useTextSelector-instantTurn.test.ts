@@ -19,6 +19,11 @@ const h = vi.hoisted(() => ({
   appService: { isAndroidApp: false, isMobile: false },
   osPlatform: 'macos',
   viewSettings: { scrolled: false } as { scrolled: boolean; vertical?: boolean },
+  instant: {
+    move: vi.fn(() => true),
+    cancel: vi.fn(),
+    up: vi.fn(async () => false),
+  },
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -41,9 +46,9 @@ vi.mock('@/app/reader/hooks/useInstantAnnotation', () => ({
   useInstantAnnotation: () => ({
     isInstantAnnotationEnabled: () => true,
     handleInstantAnnotationPointerDown: vi.fn(() => true),
-    handleInstantAnnotationPointerMove: vi.fn(() => true),
-    handleInstantAnnotationPointerCancel: vi.fn(),
-    handleInstantAnnotationPointerUp: vi.fn(async () => false),
+    handleInstantAnnotationPointerMove: h.instant.move,
+    handleInstantAnnotationPointerCancel: h.instant.cancel,
+    handleInstantAnnotationPointerUp: h.instant.up,
     reapplyInstantAnnotation: vi.fn(),
     cancelInstantAnnotation: vi.fn(),
   }),
@@ -73,6 +78,7 @@ const setup = () => {
 };
 
 const doc = {
+  documentElement: document.createElement('html'),
   getSelection: () => null,
   createRange: () => ({
     setStart: () => {},
@@ -86,6 +92,7 @@ const mouseDown = (x: number, y: number) => {
   const target = document.createElement('span');
   return {
     pointerType: 'mouse',
+    pointerId: 1,
     button: 0,
     clientX: x,
     clientY: y,
@@ -95,6 +102,10 @@ const mouseDown = (x: number, y: number) => {
 };
 
 type Handlers = ReturnType<typeof setup>['result'];
+
+// jsdom has no PointerEvent: a MouseEvent carrying the pointer's id.
+const windowPointerUp = (pointerId: number) =>
+  Object.assign(new MouseEvent('pointerup', { clientX: 300, clientY: 500 }), { pointerId });
 // Engage instant highlight (mouse engages immediately), then move the finger to
 // (x, y). The first move is horizontal so the scroll-axis gesture guard lets the
 // highlight proceed.
@@ -123,6 +134,7 @@ beforeEach(() => {
   h.osPlatform = 'macos';
   h.viewSettings = { scrolled: false };
   h.view.renderer.scrollLocked = false;
+  h.instant.move.mockImplementation(() => true);
 });
 
 afterEach(() => {
@@ -174,5 +186,65 @@ describe('useTextSelector cross-page instant highlight (corner auto-turn)', () =
     await advance();
 
     expect(h.view.next).not.toHaveBeenCalled();
+  });
+});
+
+describe('useTextSelector instant highlight leaving the start page', () => {
+  const move = (result: Handlers, x: number, y: number) =>
+    result.current.handlePointerMove(doc, 0, {
+      clientX: x,
+      clientY: y,
+      preventDefault: vi.fn(),
+    } as unknown as PointerEvent);
+
+  // Once the drag has drawn a preview, a move the start page can't resolve
+  // (the pointer is over another page) must not count as a fresh scroll
+  // swipe and cancel the highlight.
+  test('a move off the start page after a preview keeps the highlight going', () => {
+    const { result } = setup();
+    engageAndMoveTo(result, 300, 500);
+    h.instant.move.mockImplementation(() => false);
+    move(result, 350, 150);
+    move(result, 350, 100);
+
+    expect(h.instant.cancel).not.toHaveBeenCalled();
+    expect(result.current.isInstantAnnotating.current).toBe(true);
+  });
+
+  // A turn that hides the start page (a PDF portrait spread) sends the
+  // release to the reader window instead of any page.
+  test('a release on the reader window finishes the highlight', async () => {
+    const { result } = setup();
+    engageAndMoveTo(result, 300, 500);
+
+    window.dispatchEvent(windowPointerUp(1));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(h.instant.up).toHaveBeenCalledWith(doc, 0, expect.anything());
+    expect(result.current.isInstantAnnotating.current).toBe(false);
+  });
+
+  test('a release of another pointer on the reader window leaves the highlight alone', async () => {
+    const { result } = setup();
+    engageAndMoveTo(result, 300, 500);
+
+    window.dispatchEvent(windowPointerUp(2));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(h.instant.up).not.toHaveBeenCalled();
+    expect(result.current.isInstantAnnotating.current).toBe(true);
+  });
+
+  // The reader can unmount mid-gesture (closing the book); the window outlives
+  // it and must not keep the gesture's release listener.
+  test('unmounting mid-gesture drops the window release listener', async () => {
+    const { result, unmount } = setup();
+    engageAndMoveTo(result, 300, 500);
+    unmount();
+
+    window.dispatchEvent(windowPointerUp(1));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(h.instant.up).not.toHaveBeenCalled();
   });
 });
