@@ -4,7 +4,7 @@ import { bundledPluginCatalog, findDictionaryFormatPlugin } from '@/services/plu
 
 describe('bundled plugin catalog', () => {
   test('registers raw and pre-indexed Yomitan contributions at build time', () => {
-    expect(bundledPluginCatalog).toHaveLength(1);
+    expect(bundledPluginCatalog).toHaveLength(2);
     expect(bundledPluginCatalog[0]!.manifest).toMatchObject({
       id: 'readest.yomitan',
       protocolVersion: PLUGIN_PROTOCOL_VERSION,
