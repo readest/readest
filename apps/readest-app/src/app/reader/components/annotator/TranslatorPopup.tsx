@@ -118,7 +118,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
     }));
     setProviders(availableProviders);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [translators]);
+  }, [translators, token]);
 
   useEffect(() => {
     setLoading(true);
