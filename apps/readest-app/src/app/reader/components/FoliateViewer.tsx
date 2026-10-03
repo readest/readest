@@ -260,7 +260,10 @@ const FoliateViewer: React.FC<{
       detail.range,
       detail.fraction,
     );
-    const panX = getLockedPanX(viewRef.current, getViewSettings(bookKey));
+    // Only the primary view keeps its pan, as only it keeps its location.
+    const panX = getViewState(bookKey)?.isPrimary
+      ? getLockedPanX(viewRef.current, getViewSettings(bookKey))
+      : undefined;
     if (panX !== undefined && panX !== getConfig(bookKey)?.panX) setConfig(bookKey, { panX });
   }, [bookKey, setProgress, cancelRelocateScheduled]);
 

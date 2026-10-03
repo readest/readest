@@ -274,9 +274,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     }
 
     // Read before close() tears the pages down: a pan made since the last
-    // page turn hasn't reached the config yet.
+    // page turn hasn't reached the config yet. Primary only, like the location.
     const panX = getLockedPanX(getView(bookKey), getViewSettings(bookKey));
-    if (panX !== undefined) setConfig(bookKey, { panX });
+    if (viewState?.isPrimary && panX !== undefined) setConfig(bookKey, { panX });
     try {
       getView(bookKey)?.close();
       getView(bookKey)?.remove();
