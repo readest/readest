@@ -104,13 +104,37 @@ describe('iframeEventHandlers click gestures', () => {
     vi.advanceTimersByTime(100);
     handleMousedown('book-1', mouseEvent());
     handleMouseup('book-1', mouseEvent());
-    handleClick('book-1', doubleClickDisabled, false, false, mouseEvent());
+    handleClick('book-1', doubleClickDisabled, false, false, mouseEvent({ target: document.body }));
 
     vi.advanceTimersByTime(260);
 
     const types = postedTypes(postSpy);
     expect(types).toContain('iframe-double-click');
     expect(types).not.toContain('iframe-single-click');
+  });
+
+  test('a double-click reports where it landed in the window, not just in its section (#6583)', async () => {
+    const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
+    const doubleClickDisabled = { current: false };
+    // In scroll mode the next chapter's section iframe sits below the current one.
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    frame.getBoundingClientRect = () =>
+      ({ left: 20, top: 300, width: 800, height: 600 }) as DOMRect;
+    const target = frame.contentDocument!.body;
+
+    for (let i = 0; i < 2; i++) {
+      handleMousedown('book-1', mouseEvent({ target }));
+      handleMouseup('book-1', mouseEvent({ target }));
+      handleClick('book-1', doubleClickDisabled, false, false, mouseEvent({ target }));
+      vi.advanceTimersByTime(100);
+    }
+
+    const message = postSpy.mock.calls
+      .map((call: unknown[]) => call[0] as Record<string, unknown>)
+      .find((m: Record<string, unknown>) => m['type'] === 'iframe-double-click');
+    expect(message).toMatchObject({ clientX: 100, clientY: 100, windowX: 120, windowY: 400 });
+    frame.remove();
   });
 
   test('iframe shortcuts are consumed synchronously or fall back to reader events', async () => {

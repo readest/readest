@@ -1199,7 +1199,8 @@ export const useTextSelector = (
       if (isTextSelected.current) {
         handleDismissPopup();
         isTextSelected.current = false;
-        view?.deselect();
+        // Look the view up now: the one captured at mount can be undefined (#6583).
+        getView(bookKey)?.deselect();
         return true;
       }
       if (isPopuped.current) {
