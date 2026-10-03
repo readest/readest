@@ -109,13 +109,16 @@ describe('Hardcover connect page', () => {
   it.each([
     '//evil.example',
     '/\\evil.example',
+    '/\t/evil.example',
+    '/\n/evil.example',
     'https://evil.example',
-  ])('does not redirect to %s', async (redirect) => {
+  ])('falls back to the library instead of redirecting to %j', async (redirect) => {
     window.history.pushState({}, '', `/hardcover/connect?redirect=${encodeURIComponent(redirect)}`);
     h.poll.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', expiresAt: 1 });
     render(<HardcoverConnectPage />);
     await waitFor(() => expect(h.replace).toHaveBeenCalled());
-    expect(h.replace).not.toHaveBeenCalledWith(redirect);
+    expect(h.replace).toHaveBeenCalledTimes(1);
+    expect(h.replace.mock.calls[0]![0]).toMatch(/^\/library/);
     window.history.pushState({}, '', '/');
   });
 
