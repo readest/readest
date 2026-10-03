@@ -1113,12 +1113,8 @@
   "Add one header per line using \"Header-Name: value\".": "\"Header-Name: value\" வடிவமைப்பைப் பயன்படுத்தி ஒவ்வொரு வரியிலும் ஒரு தலைப்பைச் சேர்க்கவும்.",
   "I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.": "இந்த OPDS இணைப்பு வலை பயன்பாட்டில் Readest சேவையகங்கள் வழியாக ப்ராக்ஸி செய்யப்படும் என்பதை நான் புரிந்துகொள்கிறேன். இந்த சான்றுகள் அல்லது தலைப்புகளுடன் Readest-ஐ நம்பவில்லை என்றால், நான் நேட்டிவ் பயன்பாட்டைப் பயன்படுத்த வேண்டும்.",
   "Unable to connect to Hardcover. Please check your network connection.": "Hardcover உடன் இணைக்க முடியவில்லை. உங்கள் நெட்வொர்க் இணைப்பைச் சரிபார்க்கவும்.",
-  "Invalid Hardcover API token": "தவறான Hardcover API டோக்கன்",
   "Disconnected from Hardcover": "Hardcover இலிருந்து துண்டிக்கப்பட்டது",
   "Connect your Hardcover account to sync reading progress and notes.": "வாசிப்பு முன்னேற்றம் மற்றும் குறிப்புகளை ஒத்திசைக்க உங்கள் Hardcover கணக்கை இணைக்கவும்.",
-  "Get your API token from hardcover.app → Settings → API.": "hardcover.app → அமைப்புகள் → API இலிருந்து உங்கள் API டோக்கனைப் பெறவும்.",
-  "API Token": "API டோக்கன்",
-  "Paste your Hardcover API token": "உங்கள் Hardcover API டோக்கனை ஒட்டவும்",
   "Hardcover Sync": "Hardcover ஒத்திசைவு",
   "Push Notes": "குறிப்புகளை அனுப்பு",
   "No annotations or excerpts to sync for this book.": "இந்த புத்தகத்திற்கு ஒத்திசைக்க குறிப்புகள் அல்லது பகுதிகள் இல்லை.",
@@ -2550,5 +2546,10 @@
   "Bold": "தடிமன்",
   "Bold Italic": "தடித்த சாய்வு",
   "Font Style": "எழுத்துரு பாணி",
-  "Failed to share the image": "படத்தைப் பகிர முடியவில்லை"
+  "Failed to share the image": "படத்தைப் பகிர முடியவில்லை",
+  "Hardcover access was denied.": "Hardcover அணுகல் மறுக்கப்பட்டது.",
+  "The code expired. Please try again.": "குறியீடு காலாவதியாகிவிட்டது. மீண்டும் முயற்சிக்கவும்.",
+  "Scan this QR code": "இந்த QR குறியீட்டை ஸ்கேன் செய்யவும்",
+  "— or —": "— அல்லது —",
+  "Visit {{url}} and enter": "<1>{{url}}</1><2> தளத்திற்குச் சென்று குறியீட்டை உள்ளிடவும்</2>"
 }

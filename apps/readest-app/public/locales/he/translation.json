@@ -1127,12 +1127,8 @@
   "Add one header per line using \"Header-Name: value\".": "הוסף כותרת אחת לכל שורה בפורמט \"Header-Name: value\".",
   "I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.": "אני מבין שחיבור OPDS זה יועבר דרך שרתי Readest באפליקציית האינטרנט. אם אינני סומך על Readest עם פרטי ההתחברות או הכותרות האלה, עליי להשתמש באפליקציה המקורית.",
   "Unable to connect to Hardcover. Please check your network connection.": "לא ניתן להתחבר ל-Hardcover. אנא בדוק את חיבור הרשת שלך.",
-  "Invalid Hardcover API token": "טוקן API של Hardcover לא חוקי",
   "Disconnected from Hardcover": "מנותק מ-Hardcover",
   "Connect your Hardcover account to sync reading progress and notes.": "חבר את חשבון ה-Hardcover שלך לסנכרון התקדמות קריאה והערות.",
-  "Get your API token from hardcover.app → Settings → API.": "קבל את טוקן ה-API שלך מ-hardcover.app ← הגדרות ← API.",
-  "API Token": "טוקן API",
-  "Paste your Hardcover API token": "הדבק את טוקן ה-API של Hardcover שלך",
   "Hardcover Sync": "סנכרון Hardcover",
   "Push Notes": "שלח הערות",
   "No annotations or excerpts to sync for this book.": "אין הערות או ציטוטים לסנכרון עבור ספר זה.",
@@ -2614,5 +2610,10 @@
   "Bold": "מודגש",
   "Bold Italic": "מודגש נטוי",
   "Font Style": "סגנון גופן",
-  "Failed to share the image": "שיתוף התמונה נכשל"
+  "Failed to share the image": "שיתוף התמונה נכשל",
+  "Hardcover access was denied.": "הגישה ל-Hardcover נדחתה.",
+  "The code expired. Please try again.": "תוקף הקוד פג. נסה שוב.",
+  "Scan this QR code": "סרוק את קוד ה-QR הזה",
+  "— or —": "— או —",
+  "Visit {{url}} and enter": "<0>בקר ב-</0><1>{{url}}</1><2> והזן את הקוד</2>"
 }

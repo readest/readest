@@ -1099,12 +1099,8 @@
   "Add one header per line using \"Header-Name: value\".": "เพิ่มส่วนหัวหนึ่งรายการต่อบรรทัดโดยใช้ \"Header-Name: value\"",
   "I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.": "ฉันเข้าใจว่าการเชื่อมต่อ OPDS นี้จะถูกส่งผ่านเซิร์ฟเวอร์ Readest บนเว็บแอป หากฉันไม่ไว้วางใจ Readest กับข้อมูลรับรองหรือส่วนหัวเหล่านี้ ฉันควรใช้แอปเนทีฟแทน",
   "Unable to connect to Hardcover. Please check your network connection.": "ไม่สามารถเชื่อมต่อกับ Hardcover ได้ กรุณาตรวจสอบการเชื่อมต่อเครือข่ายของคุณ",
-  "Invalid Hardcover API token": "โทเค็น API ของ Hardcover ไม่ถูกต้อง",
   "Disconnected from Hardcover": "ตัดการเชื่อมต่อจาก Hardcover แล้ว",
   "Connect your Hardcover account to sync reading progress and notes.": "เชื่อมต่อบัญชี Hardcover ของคุณเพื่อซิงค์ความคืบหน้าการอ่านและบันทึก",
-  "Get your API token from hardcover.app → Settings → API.": "รับโทเค็น API ของคุณจาก hardcover.app → การตั้งค่า → API",
-  "API Token": "โทเค็น API",
-  "Paste your Hardcover API token": "วางโทเค็น API ของ Hardcover ของคุณ",
   "Hardcover Sync": "การซิงค์ Hardcover",
   "Push Notes": "ส่งบันทึก",
   "No annotations or excerpts to sync for this book.": "ไม่มีคำอธิบายประกอบหรือข้อความคัดลอกที่จะซิงค์สำหรับหนังสือนี้",
@@ -2486,5 +2482,10 @@
   "Bold": "ตัวหนา",
   "Bold Italic": "ตัวหนาเอียง",
   "Font Style": "ลักษณะแบบอักษร",
-  "Failed to share the image": "แชร์รูปภาพไม่สำเร็จ"
+  "Failed to share the image": "แชร์รูปภาพไม่สำเร็จ",
+  "Hardcover access was denied.": "การเข้าถึง Hardcover ถูกปฏิเสธ",
+  "The code expired. Please try again.": "รหัสหมดอายุแล้ว โปรดลองอีกครั้ง",
+  "Scan this QR code": "สแกนคิวอาร์โค้ดนี้",
+  "— or —": "— หรือ —",
+  "Visit {{url}} and enter": "<0>ไปที่ </0><1>{{url}}</1><2> แล้วป้อนรหัส</2>"
 }

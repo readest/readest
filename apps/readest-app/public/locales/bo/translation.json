@@ -1099,12 +1099,8 @@
   "Add one header per line using \"Header-Name: value\".": "\"Header-Name: value\" བེད་སྤྱོད་བྱས་ནས་ཕྲེང་རེ་རེའི་ནང་མགོ་བརྗེ་གཅིག་སྣོན།",
   "I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.": "OPDS འབྲེལ་མཐུད་འདི་དྲ་རྒྱའི་ཉེར་སྤྱོད་ཐོག་ Readest ཞབས་ཞུ་བ་བརྒྱུད་ནས་བསྐུར་རྒྱུ་ཡིན་པ་ངས་ཧ་གོ། ང་ Readest ལ་ངེས་འཛིན་འམ་མགོ་བརྗེ་འདི་དག་ཡིད་ཆེས་མེད་ན། ང་ས་གནས་ཉེར་སྤྱོད་བེད་སྤྱོད་བྱ་དགོས།",
   "Unable to connect to Hardcover. Please check your network connection.": "Hardcover ལ་འབྲེལ་མཐུད་བྱེད་ཐུབ་མ་སོང་། ཁྱེད་ཀྱི་དྲ་རྒྱའི་འབྲེལ་མཐུད་ལ་ཞིབ་བཤེར་གནང་།",
-  "Invalid Hardcover API token": "Hardcover API ཐོབ་ཐང་མ་ཆིག་སྒྲིལ་མིན།",
   "Disconnected from Hardcover": "Hardcover ནས་འབྲེལ་མཐུད་ཆད་སོང་།",
   "Connect your Hardcover account to sync reading progress and notes.": "ཀློག་འགྲོས་དང་མཆན་ཟླ་སྒྲིག་བྱེད་པར་ཁྱེད་ཀྱི Hardcover ཐོ་ཁུངས་འབྲེལ་མཐུད་བྱོས།",
-  "Get your API token from hardcover.app → Settings → API.": "hardcover.app → སྒྲིག་འགོད → API ནས་ཁྱེད་ཀྱི API ཐོབ་ཐང་ལེན།",
-  "API Token": "API ཐོབ་ཐང་།",
-  "Paste your Hardcover API token": "ཁྱེད་ཀྱི Hardcover API ཐོབ་ཐང་སྦྱར།",
   "Hardcover Sync": "Hardcover ཟླ་སྒྲིག",
   "Push Notes": "མཆན་གཏོང་བ",
   "No annotations or excerpts to sync for this book.": "དེབ་འདིའི་ཆེད་ཟླ་སྒྲིག་བྱེད་པའི་མཆན་ཡང་ན་དྲངས་ཡིག་མེད།",
@@ -2486,5 +2482,10 @@
   "Bold": "སྦོམ་ཡིག",
   "Bold Italic": "སྦོམ་ཡིག་གསེག་མ།",
   "Font Style": "ཡིག་གཟུགས་ཀྱི་བཟོ་ལྟ།",
-  "Failed to share the image": "པར་རིས་མཉམ་སྤྱོད་བྱེད་མ་ཐུབ།"
+  "Failed to share the image": "པར་རིས་མཉམ་སྤྱོད་བྱེད་མ་ཐུབ།",
+  "Hardcover access was denied.": "Hardcover ལ་འཛུལ་སྤྱོད་བཀག་སྡོམ་བྱས་སོ།",
+  "The code expired. Please try again.": "ཀོཌ་ཀྱི་དུས་ཚོད་ཡོལ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་བྱེད་རོགས།",
+  "Scan this QR code": "QR ཀོཌ་འདི་ཞིབ་བཤེར་བྱོས།",
+  "— or —": "— ཡང་ན་ —",
+  "Visit {{url}} and enter": "<1>{{url}}</1><2> ལ་སླེབས་ནས་ཀོཌ་འཇུག་རོགས།</2>"
 }

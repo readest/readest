@@ -1141,12 +1141,8 @@
   "Add one header per line using \"Header-Name: value\".": "Dodajte eno glavo na vrstico v obliki \"Header-Name: value\".",
   "I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.": "Razumem, da bo ta povezava OPDS preusmerjena prek strežnikov Readest v spletni aplikaciji. Če ne zaupam Readest s temi poverilnicami ali glavami, moram uporabiti izvorno aplikacijo.",
   "Unable to connect to Hardcover. Please check your network connection.": "Povezava s Hardcover ni mogoča. Preverite omrežno povezavo.",
-  "Invalid Hardcover API token": "Neveljaven žeton API za Hardcover",
   "Disconnected from Hardcover": "Prekinjeno s Hardcover",
   "Connect your Hardcover account to sync reading progress and notes.": "Povežite svoj račun Hardcover za sinhronizacijo napredka branja in zapiskov.",
-  "Get your API token from hardcover.app → Settings → API.": "Pridobite žeton API na hardcover.app → Nastavitve → API.",
-  "API Token": "Žeton API",
-  "Paste your Hardcover API token": "Prilepite žeton API za Hardcover",
   "Hardcover Sync": "Sinhronizacija Hardcover",
   "Push Notes": "Pošlji zapiske",
   "No annotations or excerpts to sync for this book.": "Za to knjigo ni opomb ali izpiskov za sinhronizacijo.",
@@ -2678,5 +2674,10 @@
   "Bold": "Krepko",
   "Bold Italic": "Krepko ležeče",
   "Font Style": "Slog pisave",
-  "Failed to share the image": "Slike ni bilo mogoče deliti"
+  "Failed to share the image": "Slike ni bilo mogoče deliti",
+  "Hardcover access was denied.": "Dostop do Hardcover je bil zavrnjen.",
+  "The code expired. Please try again.": "Koda je potekla. Poskusite znova.",
+  "Scan this QR code": "Skenirajte to QR-kodo",
+  "— or —": "— ali —",
+  "Visit {{url}} and enter": "<0>Obiščite </0><1>{{url}}</1><2> in vnesite kodo</2>"
 }
