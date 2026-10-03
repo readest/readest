@@ -22,6 +22,7 @@ import '@/styles/globals.css';
 
 const h = vi.hoisted(() => ({
   viewSettings: { vertical: false, rtl: false, scrolled: false },
+  fontFamily: 'serif',
   dispatchFootnote: (() => {}) as (detail: unknown) => void,
   onLinkClick: { current: null as ((event: Event) => void) | null },
   handlers: [] as EventTarget[],
@@ -62,6 +63,8 @@ vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
 }));
 vi.mock('@/app/reader/utils/annotatorUtil', () => ({ drawAnnotationOverlay: () => {} }));
 vi.mock('@/utils/style', () => ({
+  getBaseFontFamily: () => h.fontFamily,
+  getBaseFontSize: () => 16,
   getStyles: () => '',
   getFootnoteStyles: () => '',
   getThemeCode: () => ({ bg: '#fff', fg: '#000' }),
@@ -124,6 +127,7 @@ const openLinkedFootnote = () => {
 
 beforeEach(() => {
   h.viewSettings = { vertical: false, rtl: false, scrolled: false };
+  h.fontFamily = 'serif';
   h.handlers.length = 0;
   h.onLinkClick.current = null;
   // The book cell fills the test frame, with the note reference near its
@@ -144,90 +148,6 @@ afterEach(() => {
 });
 
 describe('footnote popup box (#5999)', () => {
-  test('uses an imported reader font and measures a plain-text note with it (#3602)', async () => {
-    const font = await new FontFace('FootnoteTest', 'url(/fonts/InterVariable.woff2)').load();
-    document.fonts.add(font);
-    const iframe = document.createElement('iframe');
-    cell.appendChild(iframe);
-    const doc = iframe.contentDocument!;
-    doc.fonts.add(font);
-    doc.body.style.cssText = 'font-family: FootnoteTest; font-size: 28px; line-height: 42px;';
-    const reference = doc.createElement('span');
-    doc.body.appendChild(reference);
-
-    try {
-      render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
-      act(() => {
-        h.dispatchFootnote({
-          bookKey: 'book-1',
-          element: reference,
-          footnote: 'A footnote using the book font rather than the app font.',
-        });
-      });
-
-      const popup = popupContainer();
-      const note = popup.querySelector('p')!;
-      const style = getComputedStyle(note);
-      expect(style.fontFamily).toBe('FootnoteTest');
-      expect(style.fontSize).toBe('28px');
-      expect(style.lineHeight).toBe('42px');
-      expect(popup.scrollWidth).toBeLessThanOrEqual(popup.clientWidth);
-      expect(popup.scrollHeight).toBeLessThanOrEqual(popup.clientHeight);
-    } finally {
-      document.fonts.delete(font);
-    }
-  });
-
-  test('loads an iframe-only embedded font for a plain-text footnote (#3602)', async () => {
-    const footnote = 'A footnote using an embedded font from the book iframe.';
-    const iframe = document.createElement('iframe');
-    cell.appendChild(iframe);
-    const doc = iframe.contentDocument!;
-    const base = doc.createElement('base');
-    base.href = new URL('/reader/book/', location.href).href;
-    const fontStyle = doc.createElement('style');
-    fontStyle.textContent = `
-      @font-face {
-        font-family: EmbeddedFootnoteTest;
-        src: url('../../fonts/InterVariable.woff2') format('woff2');
-      }
-    `;
-    doc.head.append(base, fontStyle);
-    doc.body.style.cssText =
-      'font-family: EmbeddedFootnoteTest; font-size: 28px; line-height: 42px;';
-    const reference = doc.createElement('span');
-    doc.body.appendChild(reference);
-    expect(await doc.fonts.load('28px EmbeddedFootnoteTest', footnote)).not.toHaveLength(0);
-    expect(await document.fonts.load('28px EmbeddedFootnoteTest', footnote)).toHaveLength(0);
-
-    const { unmount } = render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
-    try {
-      act(() => {
-        h.dispatchFootnote({ bookKey: 'book-1', element: reference, footnote });
-      });
-      await waitFor(() => expect(popupContainer().querySelector('p')).not.toBeNull());
-      const popup = popupContainer();
-      const note = popup.querySelector('p')!;
-      const style = getComputedStyle(note);
-      const hostFonts = await document.fonts.load(
-        `${style.fontSize} ${style.fontFamily}`,
-        footnote,
-      );
-      expect(hostFonts).not.toHaveLength(0);
-      expect(style.fontSize).toBe('28px');
-      expect(style.lineHeight).toBe('42px');
-      await waitFor(() => {
-        expect(popup.scrollWidth).toBeLessThanOrEqual(popup.clientWidth);
-        expect(popup.scrollHeight).toBeLessThanOrEqual(popup.clientHeight);
-      });
-
-      unmount();
-      for (const font of hostFonts) expect(document.fonts.has(font)).toBe(false);
-    } finally {
-      unmount();
-    }
-  });
-
   test('a short note leaves the popup with no scrollbars of its own', () => {
     render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
     act(() => {
@@ -259,6 +179,41 @@ describe('footnote popup box (#5999)', () => {
     expect(popup.getAttribute('aria-hidden')).toBe('false');
     expect(popup.scrollWidth).toBeLessThanOrEqual(popup.clientWidth);
     expect(popup.scrollHeight).toBeLessThanOrEqual(popup.clientHeight);
+  });
+
+  // A data-attribute note renders in the host document, where the reader font
+  // only starts loading once the note lays out. Measured in the fallback face,
+  // the popup kept the height of lines the loaded font no longer needs (#3602).
+  test('refits a note in the reader font once it has loaded', async () => {
+    const fontFace = document.createElement('style');
+    fontFace.textContent = `@font-face {
+      font-family: FootnoteReaderFont;
+      src: url(/fonts/InterVariable.woff2) format('woff2');
+    }`;
+    document.head.appendChild(fontFace);
+    // Monospace is far wider than Inter, so the two wrap to different heights.
+    h.fontFamily = 'FootnoteReaderFont, monospace';
+    try {
+      render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+      act(() => {
+        h.dispatchFootnote({
+          bookKey: 'book-1',
+          element: anchor,
+          footnote: 'Questa nota usa il carattere del lettore, non quello della app. '.repeat(4),
+        });
+      });
+
+      const popup = popupContainer();
+      expect(popup.getAttribute('aria-hidden')).toBe('false');
+      const note = popup.querySelector('p')!;
+      expect(getComputedStyle(note).fontFamily).toBe('FootnoteReaderFont, monospace');
+      await waitFor(() => expect(document.fonts.check('16px FootnoteReaderFont')).toBe(true));
+      await waitFor(() =>
+        expect(Math.abs(popup.clientHeight - note.getBoundingClientRect().height)).toBeLessThan(1),
+      );
+    } finally {
+      fontFace.remove();
+    }
   });
 
   // Sizing the popup box to the measured content size left the document itself

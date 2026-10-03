@@ -8,7 +8,7 @@
  * no location in the book and must not offer one.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, cleanup, render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { BookDoc } from '@/libs/document';
 import { eventDispatcher } from '@/utils/event';
@@ -68,7 +68,12 @@ vi.mock('@/store/bookDataStore', () => ({
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => ({ goTo: hoisted.goTo }),
-    getViewSettings: () => ({ vertical: false }),
+    getViewSettings: () => ({
+      vertical: false,
+      defaultFontSize: 22,
+      lineHeight: 1.8,
+      fontWeight: 300,
+    }),
   }),
 }));
 
@@ -85,6 +90,8 @@ vi.mock('@/store/customFontStore', () => ({
 }));
 
 vi.mock('@/utils/style', () => ({
+  getBaseFontFamily: () => '"Reader Font", serif',
+  getBaseFontSize: () => 22,
   getFootnoteStyles: () => '',
   getStyles: () => '',
   getThemeCode: () => ({ bg: '#fff', fg: '#000', primary: '#000', palette: {} }),
@@ -200,8 +207,6 @@ const openFootnotePopup = async (href = HREF) => {
 };
 
 describe('FootnotePopup jump to location', () => {
-  afterEach(cleanup);
-
   beforeEach(() => {
     document.body.replaceChildren();
     hoisted.handlers.length = 0;
@@ -368,180 +373,25 @@ describe('FootnotePopup jump to location', () => {
     expect(screen.queryByLabelText('Jump to Location')).toBeNull();
   });
 
-  it('uses the book typography for a plain-text footnote (#3602)', async () => {
+  // #3602: the synthesized note renders in the host document, outside the
+  // book iframe, so it inherited the app UI font instead of the reader's.
+  it('sets a data-attribute note in the reader font', async () => {
     await renderPopup();
-    const iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument!;
-    doc.body.style.cssText = 'font-family: ImportedReader; font-size: 28px; line-height: 42px;';
-    const element = doc.createElement('span');
-    doc.body.appendChild(element);
-
+    const element = document.createElement('span');
+    document.body.appendChild(element);
     await act(async () => {
       await eventDispatcher.dispatch('footnote-popup', {
         bookKey: BOOK_KEY,
         element,
-        footnote: 'A note that should use the selected reader font',
+        footnote: 'A footnote in the reader font',
       });
     });
 
     const note = document.querySelector<HTMLElement>('.footnote-content > p')!;
-    const style = getComputedStyle(note);
-    expect(style.fontFamily).toBe('ImportedReader');
-    expect(style.fontSize).toBe('28px');
-    expect(style.lineHeight).toBe('42px');
-  });
-
-  it('transfers embedded font rules with stylesheet-relative URLs and removes them on unmount', async () => {
-    const popup = await renderPopup();
-    const iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument!;
-    const sheet = doc.createElement('style');
-    sheet.textContent = `@media screen { @font-face {
-      font-family: "EmbeddedUnit";
-      src: url("../Fonts/reader.woff2") format("woff2");
-      font-weight: 400;
-    } }
-    @media print { @font-face { font-family: "EmbeddedUnit"; font-weight: 900; } }`;
-    doc.head.appendChild(sheet);
-    Object.defineProperty(doc.defaultView!, 'matchMedia', {
-      value: (query: string) => ({ matches: query === 'screen' }),
-    });
-    // jsdom omits src when serializing @font-face. Supply the browser's rule text.
-    const face = (sheet.sheet!.cssRules[0] as CSSMediaRule).cssRules[0]!;
-    Object.defineProperty(face, 'cssText', {
-      value:
-        '@font-face { font-family: "EmbeddedUnit"; src: url("../Fonts/reader.woff2") format("woff2"); font-weight: 400; }',
-    });
-    Object.defineProperty(sheet.sheet!, 'href', {
-      value: 'https://example.test/book/Styles/reader.css',
-    });
-    doc.body.style.fontFamily = 'EmbeddedUnit, serif';
-    const element = doc.createElement('span');
-    doc.body.appendChild(element);
-    const hostFontRules = () =>
-      Array.from(document.styleSheets).flatMap((styleSheet) =>
-        Array.from(styleSheet.cssRules).filter((rule) => rule.type === CSSRule.FONT_FACE_RULE),
-      );
-    const originalRules = hostFontRules();
-
-    await act(async () => {
-      await eventDispatcher.dispatch('footnote-popup', {
-        bookKey: BOOK_KEY,
-        element,
-        footnote: 'A note in an EPUB-embedded font',
-      });
-    });
-
-    const popupRules = hostFontRules().filter((rule) => !originalRules.includes(rule));
-    expect(popupRules).toHaveLength(1);
-    expect(document.head.textContent).toContain('https://example.test/book/Fonts/reader.woff2');
-    expect(popupRules[0]!.cssText).toContain('font-weight: 400');
-    popup.unmount();
-    expect(hostFontRules()).toEqual(originalRules);
-  });
-
-  it('shows a plain-text footnote with fallback fonts when an embedded font stalls', async () => {
-    const popup = await renderPopup();
-    const iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument!;
-    const sheet = doc.createElement('style');
-    sheet.textContent = '@font-face { font-family: StalledFont; src: url("stalled.woff2"); }';
-    doc.head.appendChild(sheet);
-    doc.body.style.fontFamily = 'StalledFont, serif';
-    const element = doc.createElement('span');
-    doc.body.appendChild(element);
-    const fontProperty = Object.getOwnPropertyDescriptor(document, 'fonts');
-    let finishLoading = () => {};
-    const fontLoad = new Promise<FontFace[]>((resolve) => {
-      finishLoading = () => resolve([]);
-    });
-    Object.defineProperty(document, 'fonts', {
-      configurable: true,
-      value: { load: vi.fn(() => fontLoad) },
-    });
-    vi.useFakeTimers();
-
-    try {
-      let dispatch: Promise<void>;
-      act(() => {
-        dispatch = eventDispatcher.dispatch('footnote-popup', {
-          bookKey: BOOK_KEY,
-          element,
-          footnote: 'A note that remains readable when the font request stalls',
-        });
-      });
-      expect(screen.getByTestId('popup').dataset['open']).toBe('false');
-      expect(document.head.textContent).toContain(`readest-footnote-${BOOK_KEY}`);
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1000);
-      });
-
-      expect(screen.getByTestId('popup').dataset['open']).toBe('true');
-      const note = document.querySelector<HTMLElement>('.footnote-content > p')!;
-      expect(note.style.fontFamily).toBe('StalledFont, serif');
-      expect(document.head.textContent).not.toContain(`readest-footnote-${BOOK_KEY}`);
-      await act(async () => {
-        finishLoading();
-        await dispatch!;
-      });
-      expect(note.style.fontFamily).toBe('StalledFont, serif');
-    } finally {
-      popup.unmount();
-      finishLoading();
-      vi.useRealTimers();
-      if (fontProperty) Object.defineProperty(document, 'fonts', fontProperty);
-      else Reflect.deleteProperty(document, 'fonts');
-    }
-  });
-
-  it('keeps a pending embedded-font popup dismissed when its wait expires', async () => {
-    const popup = await renderPopup();
-    const iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument!;
-    const sheet = doc.createElement('style');
-    sheet.textContent = '@font-face { font-family: StalledFont; src: url("stalled.woff2"); }';
-    doc.head.appendChild(sheet);
-    doc.body.style.fontFamily = 'StalledFont, serif';
-    const element = doc.createElement('span');
-    doc.body.appendChild(element);
-    const fontProperty = Object.getOwnPropertyDescriptor(document, 'fonts');
-    Object.defineProperty(document, 'fonts', {
-      configurable: true,
-      value: { load: vi.fn(() => new Promise<FontFace[]>(() => {})) },
-    });
-    const width = window.innerWidth;
-    vi.useFakeTimers();
-
-    try {
-      let dispatch: Promise<void>;
-      act(() => {
-        dispatch = eventDispatcher.dispatch('footnote-popup', {
-          bookKey: BOOK_KEY,
-          element,
-          footnote: 'A pending note that the reader dismissed',
-        });
-        Object.defineProperty(window, 'innerWidth', { value: width + 100, configurable: true });
-        window.dispatchEvent(new Event('resize'));
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1000);
-        await dispatch!;
-      });
-
-      expect(screen.getByTestId('popup').dataset['open']).toBe('false');
-      expect(document.querySelector('.footnote-content > p')).toBeNull();
-      expect(document.head.textContent).not.toContain(`readest-footnote-${BOOK_KEY}`);
-    } finally {
-      popup.unmount();
-      vi.useRealTimers();
-      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
-      if (fontProperty) Object.defineProperty(document, 'fonts', fontProperty);
-      else Reflect.deleteProperty(document, 'fonts');
-    }
+    expect(note.style.fontFamily).toBe('"Reader Font", serif');
+    expect(note.style.fontSize).toBe('22px');
+    expect(note.style.lineHeight).toBe('1.8');
+    expect(note.style.fontWeight).toBe('300');
   });
 
   // #6390: the soft keyboard the note editor raises fires a window resize on

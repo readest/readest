@@ -13,7 +13,13 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
+import {
+  getBaseFontFamily,
+  getBaseFontSize,
+  getFootnoteStyles,
+  getStyles,
+  getThemeCode,
+} from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
 import { Insets } from '@/types/misc';
@@ -69,11 +75,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 }) => {
   const footnoteRef = useRef<HTMLDivElement>(null);
   const footnoteViewRef = useRef<FoliateView | null>(null);
-  const footnoteFontsRef = useRef<HTMLStyleElement | null>(null);
-  const clearFootnoteFonts = () => {
-    footnoteFontsRef.current?.remove();
-    footnoteFontsRef.current = null;
-  };
   const trianglePositionRef = useRef<Position | null>(null);
   // The link and footnote-popup handlers are bound once per view, so they read
   // the cell's insets through a ref: iPhone Duo's side strip can change edge
@@ -274,7 +275,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       return null;
     };
     const handleBeforeRender = (e: Event) => {
-      clearFootnoteFonts();
       const detail = (e as CustomEvent).detail;
       const { view: popupView } = detail;
       // Whether the Annotator is showing a text selection reported from this
@@ -617,7 +617,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   };
 
   const closePopup = () => {
-    clearFootnoteFonts();
     const view = footnoteRef.current?.querySelector('foliate-view') as FoliateView;
     view?.close();
     view?.remove();
@@ -642,11 +641,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   };
 
   // Handle custom footnote popup event from iframe event
-  const handleFootnotePopupEvent = async (event: CustomEvent) => {
-    const { element, footnote } = event.detail as { element: Element; footnote: string };
+  const handleFootnotePopupEvent = (event: CustomEvent) => {
+    const { element, footnote } = event.detail;
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    clearFootnoteFonts();
     // This popup shows text synthesized from a data/alt attribute in the host
     // document: there is no book document behind it, so no CFI mapping.
     footnoteViewRef.current = null;
@@ -668,147 +666,41 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const elem = document.createElement('p');
       elem.textContent = footnote;
       elem.setAttribute('style', `padding: 1em; hanging-punctuation: allow-end last;`);
-      // Data/alt footnotes render outside the book iframe. Carry its typography
-      // over before measuring so the popup uses the reader font and fits it.
-      const sourceDoc = element.ownerDocument;
-      const readerStyle = sourceDoc.defaultView?.getComputedStyle(
-        sourceDoc.body ?? sourceDoc.documentElement,
-      );
-      if (readerStyle) {
-        elem.style.fontFamily = readerStyle.fontFamily;
-        elem.style.fontSize = readerStyle.fontSize;
-        elem.style.lineHeight = readerStyle.lineHeight;
-      }
-      // Embedded EPUB faces belong to the book document. Give the popup its
-      // own names so books using the same family cannot overwrite each other.
-      const families =
-        elem.style.fontFamily.match(/(?:[^,"']|"(?:\\.|[^"])*"|'(?:\\.|[^'])*')+/g) ?? [];
-      const familyName = (family: string) =>
-        family
-          .trim()
-          .replace(/^["']|["']$/g, '')
-          .toLowerCase();
-      const aliases = new Map<number, string>();
-      const fontRules: string[] = [];
-      const visitedSheets = new Set<CSSStyleSheet>();
-      const collectRules = (rules: CSSRuleList, baseUrl: string) => {
-        for (const rule of Array.from(rules)) {
-          if (
-            rule.type === CSSRule.MEDIA_RULE &&
-            sourceDoc.defaultView?.matchMedia?.((rule as CSSMediaRule).conditionText).matches ===
-              false
-          )
-            continue;
-          if (
-            rule.type === CSSRule.SUPPORTS_RULE &&
-            sourceDoc.defaultView?.CSS?.supports?.((rule as CSSSupportsRule).conditionText) ===
-              false
-          )
-            continue;
-          if (rule.type === CSSRule.FONT_FACE_RULE) {
-            const sourceFace = rule as CSSFontFaceRule;
-            const index = families.findIndex(
-              (family) =>
-                familyName(family) === familyName(sourceFace.style.getPropertyValue('font-family')),
-            );
-            if (index < 0) continue;
-            const alias = `readest-footnote-${bookKey}-${index}`;
-            aliases.set(index, alias);
-            const css = sourceFace.cssText
-              .replace(
-                /font-family\s*:\s*(?:"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[^;{}]*)(?=;|})/i,
-                () => `font-family: "${alias}"`,
-              )
-              .replace(
-                /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi,
-                (
-                  url,
-                  doubleQuoted: string | undefined,
-                  singleQuoted: string | undefined,
-                  unquoted: string | undefined,
-                ) => {
-                  try {
-                    return `url("${new URL(doubleQuoted ?? singleQuoted ?? unquoted!.trim(), baseUrl).href}")`;
-                  } catch {
-                    return url;
-                  }
-                },
-              );
-            fontRules.push(css);
-          } else if (rule.type === CSSRule.IMPORT_RULE) {
-            const imported = (rule as CSSImportRule).styleSheet;
-            if (imported) collectSheet(imported);
-          } else if ('cssRules' in rule) {
-            collectRules((rule as CSSGroupingRule).cssRules, baseUrl);
-          }
-        }
-      };
-      const collectSheet = (sheet: CSSStyleSheet) => {
-        if (
-          visitedSheets.has(sheet) ||
-          sheet.disabled ||
-          (sheet.media?.mediaText &&
-            sourceDoc.defaultView?.matchMedia?.(sheet.media.mediaText).matches === false)
-        )
-          return;
-        visitedSheets.add(sheet);
-        try {
-          collectRules(sheet.cssRules, sheet.href ?? sourceDoc.baseURI);
-        } catch {
-          // Cross-origin font stylesheets may not expose their rules.
-        }
-      };
-      if (sourceDoc !== document) Array.from(sourceDoc.styleSheets).forEach(collectSheet);
-      if (fontRules.length) {
-        const fontStyle = document.createElement('style');
-        fontStyle.textContent = fontRules.join('\n');
-        document.head.appendChild(fontStyle);
-        footnoteFontsRef.current = fontStyle;
-        elem.style.fontFamily = families
-          .map((family, index) => aliases.get(index) ?? family)
-          .join(',');
-        if (document.fonts) {
-          // Wait briefly for the popup's faces before measuring. A dismissed or
-          // replaced popup must not reopen when an old font finishes loading.
-          let fontTimer: ReturnType<typeof setTimeout> | undefined;
-          const timedOut = await Promise.race([
-            document.fonts
-              .load(`${elem.style.fontSize || '16px'} ${elem.style.fontFamily}`, footnote)
-              .then(() => false)
-              .catch(() => false),
-            new Promise<boolean>((resolve) => {
-              fontTimer = setTimeout(() => resolve(true), 1000);
-            }),
-          ]);
-          clearTimeout(fontTimer);
-          if (footnoteFontsRef.current !== fontStyle) return;
-          if (timedOut) {
-            clearFootnoteFonts();
-            elem.style.fontFamily = families.join(',');
-          }
-        }
-      }
-      elem.style.visibility = 'hidden';
+      // The note sits in the host document, outside the book iframe, so it
+      // takes the reader's typography rather than the app's (#3602).
+      elem.style.fontFamily = getBaseFontFamily(viewSettings);
+      elem.style.fontSize = `${getBaseFontSize(viewSettings)}px`;
+      elem.style.lineHeight = `${viewSettings.lineHeight}`;
+      elem.style.fontWeight = `${viewSettings.fontWeight}`;
       // Measure the text in the room the popup actually gives it — the seed
       // less the container border — so the paragraph wraps identically once
       // mounted (#5999).
-      if (viewSettings.vertical) {
-        elem.style.height = `${seed.height - 2 * popupBorder}px`;
-      } else {
-        elem.style.width = `${seed.width - 2 * popupBorder}px`;
+      const fitToNote = () => {
+        const probe = elem.cloneNode(true) as HTMLElement;
+        probe.style.visibility = 'hidden';
+        if (viewSettings.vertical) {
+          probe.style.height = `${seed.height - 2 * popupBorder}px`;
+        } else {
+          probe.style.width = `${seed.width - 2 * popupBorder}px`;
+        }
+        document.body.appendChild(probe);
+        const popupSize = probe.getBoundingClientRect();
+        probe.remove();
+        if (viewSettings.vertical) {
+          setResponsiveWidth(getResponsivePopupSize(popupSizeForContent(popupSize.width), true));
+        } else {
+          setResponsiveHeight(getResponsivePopupSize(popupSizeForContent(popupSize.height), false));
+        }
+      };
+      fitToNote();
+      // Laying the note out starts loading the reader font in this document,
+      // and the fallback face it was measured in wraps it differently.
+      if (document.fonts?.status === 'loading') {
+        document.fonts.ready.then(() => {
+          if (elem.isConnected) fitToNote();
+        });
       }
-      document.body.appendChild(elem);
-      const popupSize = elem.getBoundingClientRect();
-      if (viewSettings.vertical) {
-        setResponsiveWidth(getResponsivePopupSize(popupSizeForContent(popupSize.width), true));
-      } else {
-        setResponsiveHeight(getResponsivePopupSize(popupSizeForContent(popupSize.height), false));
-      }
-      document.body.removeChild(elem);
 
-      elem.style.width = '';
-      elem.style.height = '';
-      elem.style.visibility = 'visible';
       footnoteRef.current.replaceChildren(elem);
       setPopupBounds(bounds);
       setTrianglePosition(triangPos);
@@ -837,7 +729,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
       eventDispatcher.off('footnote-popup', handleFootnotePopupEvent);
-      clearFootnoteFonts();
       stopTrackingPopupContentSize();
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
