@@ -243,3 +243,23 @@ describe('a file whose only fault is unclosed void tags is repaired as XML (#527
     expect(doc.body.querySelector('p')?.textContent).toBe('Rock & roll');
   });
 });
+
+// A spine item whose file is missing from the zip: `loadText` resolves null,
+// and parsing null threw "null is not an object (evaluating 't.replace')",
+// aborting library full-text search for the whole book.
+describe('createDocument on a spine item missing from the archive', () => {
+  it('returns an empty document instead of throwing', async () => {
+    const sections = await openEpub({
+      'META-INF/container.xml': CONTAINER,
+      'OEBPS/content.opf': opf([
+        { id: 'ch1', href: 'ch1.html' },
+        { id: 'gone', href: 'gone.html' },
+      ]),
+      'OEBPS/ch1.html': wellFormed,
+    });
+    const doc = await sections[1]!.createDocument();
+
+    expect(doc.body).not.toBeNull();
+    expect(doc.body.textContent).toBe('');
+  });
+});
