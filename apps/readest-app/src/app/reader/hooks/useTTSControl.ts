@@ -542,7 +542,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         const showFooter = viewSettings.showFooter;
         const headerScrollOverlap = showHeader ? viewSettings.marginTopPx : 0;
         const footerScrollOverlap = showFooter ? viewSettings.marginBottomPx : 0;
-        const scrollingOverlap = viewSettings.scrollingOverlap;
+        // Overlap only applies to fixed-layout scrolling (see viewPagination).
+        const scrollingOverlap =
+          view.book.rendition?.layout === 'pre-paginated' ? viewSettings.scrollingOverlap : 0;
         const outOfView =
           rangeBottom > end - footerScrollOverlap - scrollingOverlap ||
           rangeTop < start + headerScrollOverlap + scrollingOverlap;
