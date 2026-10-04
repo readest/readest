@@ -369,9 +369,15 @@ fn restore_main_window_state(window: &tauri::WebviewWindow) {
             }
         }
     }
-    if let Err(e) = window.restore_state(StateFlags::all()) {
-        // The plugin shows the window at the end of a successful restore, so
-        // a failure here leaves the main window invisible for this launch —
+    // VISIBLE is excluded: the plugin would otherwise show the window at the
+    // end of the restore — before the webview has painted its first frame,
+    // which flashes the window background on dark hosts. The window is shown
+    // by the frontend's `window-themed` event instead (see the listener in
+    // `run`), with a timeout fallback for the case where that event never
+    // arrives.
+    let restore_flags = StateFlags::all() & !StateFlags::VISIBLE;
+    if let Err(e) = window.restore_state(restore_flags) {
+        // A failed restore leaves the main window invisible for this launch —
         // surface it at its creation-time size instead. The state file is
         // untouched, so the next launch retries the restore.
         log::error!("Failed to restore the main window state: {e}");
@@ -999,6 +1005,43 @@ pub fn run() {
                 let _main_window = win_builder.build().unwrap();
                 #[cfg(windows)]
                 restore_main_window_state(&_main_window);
+                // The window is created hidden and the state-restore show is
+                // suppressed (see restore_main_window_state): the frontend
+                // signals once the theme is applied — WebView2 has painted
+                // the themed page — and only then is the window mapped, so
+                // the user never sees the pre-theme background. The timeout
+                // covers a wedged frontend by surfacing the window at its
+                // fallback background (the pre-fix behavior) instead of
+                // nothing. Non-Windows platforms keep their existing
+                // show-at-restore behavior.
+                #[cfg(windows)]
+                {
+                    use std::sync::atomic::{AtomicBool, Ordering};
+                    use std::sync::Arc;
+                    let theme_shown = Arc::new(AtomicBool::new(false));
+                    if let Some(theme_window) = app.get_webview_window("main") {
+                        {
+                            let theme_shown = Arc::clone(&theme_shown);
+                            let theme_window = theme_window.clone();
+                            std::thread::spawn(move || {
+                                std::thread::sleep(std::time::Duration::from_secs(30));
+                                if !theme_shown.swap(true, Ordering::SeqCst) {
+                                    log::warn!("window-themed event timed out; showing the main window at its fallback background");
+                                    let _ = theme_window.show();
+                                    let _ = theme_window.set_focus();
+                                }
+                            });
+                        }
+                        let theme_shown_for_listen = Arc::clone(&theme_shown);
+                        let theme_window_for_listen = theme_window.clone();
+                        app.listen("window-themed", move |_| {
+                            if !theme_shown_for_listen.swap(true, Ordering::SeqCst) {
+                                let _ = theme_window_for_listen.show();
+                                let _ = theme_window_for_listen.set_focus();
+                            }
+                        });
+                    }
+                }
             }
             // let win = win_builder.build().unwrap();
             // win.open_devtools();
