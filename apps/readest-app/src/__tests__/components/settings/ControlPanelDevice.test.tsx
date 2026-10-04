@@ -91,6 +91,7 @@ vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({
 }));
 
 import ControlPanel from '@/components/settings/ControlPanel';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 
 const gamepadSwitch = () =>
   screen
@@ -131,6 +132,10 @@ const hideButtonsSwitch = () =>
     ?.querySelector('input') as HTMLInputElement | null;
 
 describe('Settings > Behavior > Device > Hide Bookshelf Buttons', () => {
+  it('is on by default', () => {
+    expect(DEFAULT_SYSTEM_SETTINGS.hideBookshelfPageButtons).toBe(true);
+  });
+
   // The library shows its e-ink buttons from the global E-Ink setting, so a
   // book with its own E-Ink value must not gate the switch.
   it('is enabled when the library is in e-ink mode but the book is not', () => {
