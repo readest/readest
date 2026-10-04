@@ -560,6 +560,56 @@ describe('mixed bookshelf stream in Chromium', () => {
       });
     }
   }
+  it('returns to the same place after the library remounts (opening a book and coming back)', async () => {
+    const shelves = (count: number) => [
+      section('reading', 'carousel', 12),
+      section('books', 'list', count),
+      section('more', 'grid', 60),
+    ];
+    const stream = (count = 300) => (
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          sections={shelves(count)}
+          autoColumns
+          fixedColumns={3}
+          renderItem={renderItem}
+          scrollKey='group=a'
+        />
+      </div>
+    );
+    const scrollerOf = (root: HTMLElement) =>
+      root.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+    const firstVisible = (root: HTMLElement) => {
+      const top = scrollerOf(root).getBoundingClientRect().top;
+      return Array.from(root.querySelectorAll<HTMLElement>('[data-book]')).find(
+        (el) => el.getBoundingClientRect().bottom > top,
+      );
+    };
+    const visibleId = (root: HTMLElement) => {
+      const el = firstVisible(root);
+      return el && `${el.dataset['section']}:${el.dataset['book']}`;
+    };
+    const first = render(stream());
+    const scroller = scrollerOf(first.container);
+    await waitFor(() => expect(scroller.scrollHeight).toBeGreaterThan(8000));
+    scroller.scrollTop = 6000;
+    fireEvent.scroll(scroller);
+    await waitFor(() => expect(visibleId(first.container)).toMatch(/^books:\d{2,}$/));
+    // Unmount right away, as when a book is tapped before the scroll settles.
+    const scrollTop = scroller.scrollTop;
+    const book = visibleId(first.container);
+    first.unmount();
+
+    const second = render(stream());
+    await waitFor(() => expect(scrollerOf(second.container).scrollTop).toBe(scrollTop));
+    expect(visibleId(second.container)).toBe(book);
+    second.unmount();
+
+    // Different rows: the saved row sizes no longer apply, so start at the top.
+    const changed = render(stream(250));
+    await waitFor(() => expect(visibleId(changed.container)).toBe('reading:0'));
+    expect(scrollerOf(changed.container).scrollTop).toBe(0);
+  });
   it('keeps very large carousels horizontally virtualized and scrollable', async () => {
     document.documentElement.setAttribute('data-eink', 'true');
     const { container, getByRole } = render(
