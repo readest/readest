@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.os.Build
 import android.view.ContextThemeWrapper
 import android.widget.FrameLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -23,7 +24,7 @@ class ReadingWidgetEinkThemeTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val id = 987_654
         ReadingWidgetStore.writeSnapshot(
-            context, id, """{"hash":"eink-theme","title":"Title","author":"Author","isEink":true}"""
+            context, id, """{"hash":"eink-theme","title":"Title","author":"Author","percent":100,"isEink":true}"""
         )
         // Before Android 12 the ink is resolved in the app process, so only the
         // current system appearance can be checked.
@@ -42,11 +43,19 @@ class ReadingWidgetEinkThemeTest {
                 view.background.setBounds(0, 0, 40, 40)
                 view.background.draw(Canvas(bitmap))
                 val background = brightness(bitmap.getPixel(20, 20))
+                // A full bar, so the fill covers the sampled pixel.
+                bitmap.eraseColor(Color.TRANSPARENT)
+                view.findViewById<ProgressBar>(R.id.reading_progress_bar_eink).progressDrawable.apply {
+                    setBounds(0, 0, 40, 40)
+                    draw(Canvas(bitmap))
+                }
+                val fill = brightness(bitmap.getPixel(20, 20))
                 bitmap.recycle()
                 val text = brightness(view.findViewById<TextView>(R.id.reading_title).currentTextColor)
                 assertTrue(
-                    "night=$night background=$background text=$text",
-                    if (night) text > 200 && background < 128 else text < 55 && background > 128
+                    "night=$night background=$background text=$text fill=$fill",
+                    if (night) text > 200 && fill > 200 && background < 128
+                    else text < 55 && fill < 55 && background > 128
                 )
             }
         } finally {
