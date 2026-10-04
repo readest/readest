@@ -37,3 +37,14 @@ souvlaki found`. RULE: any PR adding/removing crates must regenerate
 `Cargo.cef.lock` too (recipe in [[tauri-fork-bump-workspace-exclude-swift-rs]]:
 swap in, `cargo metadata --config .cargo/cef.toml` from src-tauri, copy back),
 THEN read the new cargoHash from fod-hashes. Fixed in PR #6459.
+
+Sixth hit 2026-10-02 (NEW failure shape: VACUOUS PASS): PR #6573 changed only
+pnpm-lock.yaml, yet `fod-hashes` PASSED with the stale hash. Its log shows
+`copying path '/nix/store/...-readest-pnpm-deps' from 'https://cache.nixos.org'`:
+an FOD's store path = name + declared hash only, and cache.nixos.org already held
+`readest-pnpm-deps` for main's hash (nixpkgs packages readest), so Nix substituted
+the OLD output and never ran the fetcher (PR MERGED 306940369 with the blank-then-got: hash). Dropping the readest cachix does not
+help. RULE: whenever pnpm-lock.yaml changes, set `hash = "";` FIRST, push, read
+`got:` from the failing fod-hashes run, then commit the real hash. The old "no
+need to blank" advice above is WRONG now. Workflow hardening (e.g. a
+`nix build --check` pass on the FOD attrs) NOT done.
