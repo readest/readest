@@ -196,6 +196,30 @@ describe('HardcoverClient', () => {
     expect(mockMapStore.flush).toHaveBeenCalled();
   });
 
+  test('retries a 503 with backoff', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      statusText: 'Retry later',
+      json: async () => ({}),
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: { result: 'ok' } }),
+    });
+
+    vi.useFakeTimers();
+    const requestPromise = clientApi.request<{ var: number }, { result: string }>('query', {
+      var: 1,
+    });
+    await vi.runAllTimersAsync();
+
+    await expect(requestPromise).resolves.toEqual({ result: 'ok' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
   test('retries 429s honoring Retry-After, else exponential backoff, and gives up when exhausted', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.useFakeTimers();
@@ -311,6 +335,18 @@ describe('HardcoverClient', () => {
     await Promise.all(calls);
     expect(fetchMock).toHaveBeenCalledTimes(3);
     vi.useRealTimers();
+  });
+
+  test('includes the error and missing scope from a 403 body', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      json: async () => ({ error: 'insufficient_scope', scope: 'write:library' }),
+    });
+    await expect(clientApi.request('query', {})).rejects.toThrow(
+      'Hardcover API Error: 403 Forbidden: insufficient_scope — scope: write:library',
+    );
   });
 
   test('should produce the expected date formats for journal and progress payloads', async () => {

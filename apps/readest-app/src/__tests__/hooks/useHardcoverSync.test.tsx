@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
   return {
     makeStore,
     UnmatchedError: class extends Error {},
+    AuthError: class extends Error {},
     book,
     // Mutable settings — tests flip `hardcover.autoSync` between renders.
     settings: {
@@ -30,6 +31,7 @@ const h = vi.hoisted(() => {
       } as {
         enabled: boolean;
         accessToken: string;
+        oauth?: { accessToken: string };
         autoSync?: boolean;
         lastSyncedAt: number;
       },
@@ -103,6 +105,10 @@ vi.mock('@/services/hardcover', () => ({
   },
   HardcoverSyncMapStore: class {},
   HardcoverUnmatchedError: h.UnmatchedError,
+  HardcoverAuthError: h.AuthError,
+  isHardcoverConnected: (hc?: { accessToken?: string; oauth?: { accessToken?: string } }) =>
+    !!(hc?.accessToken || hc?.oauth?.accessToken),
+  createHardcoverTokenStore: vi.fn(),
 }));
 
 vi.mock('@/utils/event', () => ({
@@ -402,6 +408,21 @@ describe('useHardcoverSync push health store', () => {
       lastError: null,
     });
   });
+
+  test('an auth failure toasts a reconnect hint instead of the raw error', async () => {
+    h.pushProgressMock.mockRejectedValueOnce(new h.AuthError('Hardcover token was rejected'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.toasts).toEqual([
+      { message: 'Authentication failed. Reconnect in Settings.', type: 'error' },
+    ]);
+  });
 });
 
 describe('useHardcoverSync client sharing', () => {
@@ -422,6 +443,28 @@ describe('useHardcoverSync client sharing', () => {
     expect(h.clientCtorMock).toHaveBeenCalledTimes(1);
 
     h.settings.hardcover.accessToken = 'tok2';
+    await act(async () => {
+      await result.current.pushProgress();
+    });
+    expect(h.clientCtorMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('rebuilds the client when an OAuth login is reconnected', async () => {
+    h.config = noteConfig();
+    h.settings.hardcover = {
+      ...h.settings.hardcover,
+      accessToken: '',
+      oauth: { accessToken: 'a1' },
+    };
+    const { result } = renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      await result.current.pushProgress();
+      await result.current.pushProgress();
+    });
+    expect(h.clientCtorMock).toHaveBeenCalledTimes(1);
+
+    h.settings.hardcover.oauth = { accessToken: 'a2' };
     await act(async () => {
       await result.current.pushProgress();
     });

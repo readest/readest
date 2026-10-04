@@ -1,9 +1,15 @@
 import { Book, BookConfig, BookNote, HardcoverBookLink } from '@/types/book';
 import { getContentMd5 } from '@/utils/misc';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
+import { TokenEndpointError, type TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
 import { getRateLimitGate, MAX_WAIT_MS, parseRetryAfterMs, RateLimitGate } from './rateLimit';
+import {
+  HardcoverOAuthError,
+  platformFetch,
+  refreshHardcoverTokens,
+  sleep,
+} from './hardcoverOAuth';
 import {
   QUERY_GET_USER_ID,
   QUERY_SEARCH_BOOKS,
@@ -17,8 +23,16 @@ import {
   MUTATION_UPDATE_JOURNAL,
 } from './hardcover-graphql';
 
+/** Where OAuth tokens live between clients, so a refresh by one is seen by the others. */
+export interface HardcoverTokenStore {
+  load(): TokenSet | undefined;
+  /** `previous` is the session the refresh started from; stale results should be dropped. */
+  save(tokens: TokenSet, previous: TokenSet): void | Promise<void>;
+}
+
 type HardcoverSettingsLike = {
   accessToken: string;
+  oauth?: TokenSet;
 };
 
 type BookContext = {
@@ -107,20 +121,82 @@ type JournalOp = {
 /** This book cannot sync to Hardcover (no match, or no page count), not a sync failure. */
 export class HardcoverUnmatchedError extends Error {}
 
+/** The token was refused and could not be renewed; the user must reconnect. */
+export class HardcoverAuthError extends Error {}
+
 export class HardcoverClient {
   private directEndpoint = 'https://api.hardcover.app/v1/graphql';
   private proxyEndpoint = '/api/hardcover/graphql';
   private token: string;
+  private oauth: TokenSet | null;
+  // The tokens last known to be in the store; stays behind `oauth` until a save succeeds.
+  private persisted: TokenSet | null;
+  private refreshInFlight: Promise<void> | null = null;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
   private gate: RateLimitGate;
 
-  constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
-    // Normalize token: Hardcover expects "Bearer <jwt>"; accept both formats
-    const raw = settings.accessToken.trim();
-    this.token = raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
+  constructor(
+    settings: HardcoverSettingsLike,
+    mapStore: HardcoverSyncMapStore,
+    private tokenStore?: HardcoverTokenStore,
+  ) {
+    this.oauth = this.persisted = settings.oauth ?? null;
+    this.token = this.toBearer(this.oauth?.accessToken ?? settings.accessToken);
     this.mapStore = mapStore;
     this.gate = getRateLimitGate(this.token);
+  }
+
+  // Hardcover expects "Bearer <jwt>"; accept both formats
+  private toBearer(raw: string) {
+    const t = raw.trim();
+    return t.startsWith('Bearer ') ? t : `Bearer ${t}`;
+  }
+
+  // The server may have rotated the refresh token, so a failed save is logged and retried on
+  // the next request instead of failing the sync. `persisted` keeps the stale-save guard honest.
+  private async persist() {
+    if (!this.tokenStore || !this.oauth || this.oauth === this.persisted) return;
+    try {
+      await this.tokenStore.save(this.oauth, this.persisted!);
+      this.persisted = this.oauth;
+    } catch (e) {
+      console.error('[Hardcover] failed to persist refreshed tokens', e);
+    }
+  }
+
+  // Single-flight so concurrent requests share one refresh (the refresh token may rotate).
+  private refreshOAuth(): Promise<void> {
+    this.refreshInFlight ??= (async () => {
+      try {
+        // Another client (or tab) may have refreshed since this one was built; the refresh
+        // token may rotate, so adopt the stored tokens before spending ours.
+        const latest = this.tokenStore?.load();
+        if (latest && latest.accessToken !== this.oauth!.accessToken) {
+          this.oauth = this.persisted = latest;
+          this.token = this.toBearer(latest.accessToken);
+          if (Date.now() < latest.expiresAt) return;
+        }
+        this.oauth = await refreshHardcoverTokens(this.oauth!);
+        this.token = this.toBearer(this.oauth.accessToken);
+        await this.persist();
+      } catch (error) {
+        // No refresh token, a 401, or a 400 rejecting the grant (Hardcover answers an unknown or
+        // revoked refresh token with `invalid_grant`) means the login is dead. Other 400s
+        // (malformed request), 5xx and network errors are not fixed by reconnecting.
+        const dead =
+          (error instanceof HardcoverOAuthError && error.code === 'no_refresh_token') ||
+          (error instanceof TokenEndpointError &&
+            (error.status === 401 ||
+              (error.status === 400 &&
+                (error.code === 'invalid_grant' || error.code === 'invalid_token'))));
+        if (dead) throw new HardcoverAuthError(error.message);
+        throw error;
+      } finally {
+        this.refreshInFlight = null;
+      }
+    })();
+    return this.refreshInFlight;
   }
 
   private get endpoint() {
@@ -175,19 +251,27 @@ export class HardcoverClient {
   }
 
   private async post(body: unknown, retries = 3, backoffMs = 2000): Promise<unknown> {
-    await this.gate.wait();
+    await this.persist();
+    if (this.oauth?.refreshToken && Date.now() >= this.oauth.expiresAt) await this.refreshOAuth();
 
-    const fetchFn = isTauriAppPlatform() ? tauriFetch : window.fetch;
-    const res = await fetchFn(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        authorization: this.token,
-      },
-      body: JSON.stringify(body),
-    });
-
-    this.gate.update(res.headers);
+    const send = async () => {
+      await this.gate.wait();
+      const res = await platformFetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          authorization: this.token,
+        },
+        body: JSON.stringify(body),
+      });
+      this.gate.update(res.headers);
+      return res;
+    };
+    let res = await send();
+    if (res.status === 401 && this.oauth?.refreshToken) {
+      await this.refreshOAuth();
+      res = await send();
+    }
 
     if (res.status === 429) {
       const waitMs = parseRetryAfterMs(res.headers.get('Retry-After')) ?? backoffMs;
@@ -198,9 +282,28 @@ export class HardcoverClient {
       console.warn(`[Hardcover] 429 Rate Limit hit. Retrying in ${waitMs}ms...`);
       return this.post(body, retries - 1, backoffMs * 2);
     }
+    // 503 ("temporarily unavailable, safe to retry") backs off and retries.
+    if (res.status === 503 && retries > 0) {
+      console.warn(`[Hardcover] 503 Retrying in ${backoffMs}ms...`);
+      await sleep(backoffMs);
+      return this.post(body, retries - 1, backoffMs * 2);
+    }
+
+    if (res.status === 401) throw new HardcoverAuthError('Hardcover token was rejected');
 
     if (!res.ok) {
-      throw new Error(`Hardcover API Error: ${res.status} ${res.statusText}`);
+      // e.g. 403 insufficient_scope names the missing scope in the body.
+      const error = await res.json().catch(() => null);
+      const detail = [
+        error?.error,
+        error?.error_description,
+        error?.scope && `scope: ${error.scope}`,
+      ]
+        .filter(Boolean)
+        .join(' — ');
+      throw new Error(
+        `Hardcover API Error: ${res.status} ${res.statusText}${detail ? `: ${detail}` : ''}`,
+      );
     }
 
     return res.json();
@@ -222,19 +325,6 @@ export class HardcoverClient {
       throw new Error(`Hardcover batch response mismatch: ${JSON.stringify(json)}`);
     }
     return json as Array<{ data?: TData; errors?: unknown }>;
-  }
-
-  async validateToken(): Promise<{ valid: boolean; isNetworkError?: boolean }> {
-    try {
-      await this.authenticate();
-      return { valid: true };
-    } catch (error) {
-      const msg = String(error instanceof Error ? error.message : error);
-      if (/Failed to fetch|NetworkError|network/i.test(msg)) {
-        return { valid: false, isNetworkError: true };
-      }
-      return { valid: false };
-    }
   }
 
   private async authenticate() {

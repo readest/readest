@@ -10,7 +10,10 @@ import { debounce } from '@/utils/debounce';
 import {
   HardcoverClient,
   HardcoverSyncMapStore,
+  HardcoverAuthError,
   HardcoverUnmatchedError,
+  isHardcoverConnected,
+  createHardcoverTokenStore,
 } from '@/services/hardcover';
 import { BookNote, HardcoverBookLink } from '@/types/book';
 
@@ -52,14 +55,16 @@ export const useHardcoverSync = (bookKey: string) => {
 
   const getClient = useCallback(async () => {
     const { settings } = useSettingsStore.getState();
-    const token = settings.hardcover?.accessToken;
-    if (!settings.hardcover?.enabled || !token) {
+    const hardcover = settings.hardcover;
+    if (!hardcover?.enabled || !isHardcoverConnected(hardcover)) {
       return null;
     }
+    const token = hardcover.oauth?.accessToken ?? hardcover.accessToken;
     const appService = await envConfig.getAppService();
     if (clientRef.current?.token !== token) {
       const mapStore = new HardcoverSyncMapStore(appService);
-      clientRef.current = { token, client: new HardcoverClient(settings.hardcover, mapStore) };
+      const tokenStore = createHardcoverTokenStore(envConfig);
+      clientRef.current = { token, client: new HardcoverClient(hardcover, mapStore, tokenStore) };
     }
     return clientRef.current.client;
   }, [envConfig]);
@@ -150,9 +155,10 @@ export const useHardcoverSync = (bookKey: string) => {
           if (!(error instanceof HardcoverUnmatchedError)) failure = message;
           if (!silent) {
             eventDispatcher.dispatch('toast', {
-              message: _('Hardcover notes sync failed: {{error}}', {
-                error: message,
-              }),
+              message:
+                error instanceof HardcoverAuthError
+                  ? _('Authentication failed. Reconnect in Settings.')
+                  : _('Hardcover notes sync failed: {{error}}', { error: message }),
               type: 'error',
             });
           }
@@ -204,9 +210,10 @@ export const useHardcoverSync = (bookKey: string) => {
         if (!(error instanceof HardcoverUnmatchedError)) failure = message;
         if (!silent) {
           eventDispatcher.dispatch('toast', {
-            message: _('Hardcover progress sync failed: {{error}}', {
-              error: message,
-            }),
+            message:
+              error instanceof HardcoverAuthError
+                ? _('Authentication failed. Reconnect in Settings.')
+                : _('Hardcover progress sync failed: {{error}}', { error: message }),
             type: 'error',
           });
         }

@@ -107,6 +107,7 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'bookorbit.password',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'hardcover.oauth',
   'pagebound.refreshToken',
   'pagebound.apiToken',
   'notion.accessToken',
