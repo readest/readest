@@ -487,6 +487,22 @@ describe('reading sessions', () => {
     );
   });
 
+  it('counts a rewritten copy toward the library book it is linked to', async () => {
+    // The copy's first progress sync linked it (see KOSync progress).
+    const BOOK = '0123456789abcdef0123456789abcdef';
+    results['crosspoint_documents.select'] = { data: { book_hash: BOOK }, error: null };
+    results['book_configs.select'] = { data: { progress: '[30,120]' }, error: null };
+    await session({});
+    const [, , rows] = upserted()!;
+    expect(rows.every((r) => r['book_hash'] === BOOK && r['total_pages'] === 120)).toBe(true);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        ['crosspoint_documents', 'eq', 'document', DOC],
+        ['book_configs', 'eq', 'book_hash', BOOK],
+      ]),
+    );
+  });
+
   it('counts whole percents for a book Readest has not paginated', async () => {
     await session({});
     const [, , rows] = upserted()!;
@@ -547,6 +563,12 @@ describe('reading sessions', () => {
   });
 
   it('reports database failures', async () => {
+    // Retried later rather than recorded under a linked copy's own hash.
+    results['crosspoint_documents.select'] = { data: null, error: boom };
+    expect((await session({})).status).toBe(500);
+    expect(wrote('stat_pages')).toBe(false);
+
+    results['crosspoint_documents.select'] = { data: null, error: null };
     results['book_configs.select'] = { data: null, error: boom };
     expect((await session({})).status).toBe(500);
     expect(wrote('stat_pages')).toBe(false);
@@ -701,6 +723,181 @@ describe('KOSync progress', () => {
     results['crosspoint_devices.select'] = { data: [], error: null };
     expect((await put({})).status).toBe(401);
     expect(calls.some(([table]) => table !== 'crosspoint_devices')).toBe(false);
+  });
+
+  // CrossPoint's "Optimize EPUB" upload rewrites a book, so the reader asks
+  // about a document id (the file's partial MD5) that no Readest book has.
+  describe('a rewritten copy of a Readest book', () => {
+    const BOOK = '0123456789abcdef0123456789abcdef';
+    const TITLE = 'Alice, Illustrated (1865)';
+    // The reader joins every dc:creator with ", ".
+    const metadata = {
+      filename: 'Alice.epub',
+      title: TITLE,
+      authors: 'Lewis Carroll, John Tenniel',
+    };
+    // Renamed in Readest; source_title keeps the file's own title.
+    const libraryBook = {
+      book_hash: BOOK,
+      title: 'Alice',
+      source_title: TITLE,
+      author: 'Lewis Carroll and John Tenniel',
+    };
+    const linkWrite = [
+      'crosspoint_documents',
+      'upsert',
+      { user_id: USER, document: DOC, book_hash: BOOK },
+      { onConflict: 'user_id,document', ignoreDuplicates: true },
+    ];
+
+    it('links it to the library book with its title on the first upload', async () => {
+      results['books.select'] = { data: [libraryBook], error: null };
+      results['book_configs.select'] = {
+        data: { xpointer: XPOINTER, progress: '[30,120]' },
+        error: null,
+      };
+      const res = await put({ metadata });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ document: DOC, timestamp: 1790899200 });
+      expect(calls).toEqual(
+        expect.arrayContaining([
+          // Readest's own copy of the file, or EPUBs titled alike. Characters
+          // that are or() syntax become single-character wildcards.
+          [
+            'books',
+            'or',
+            `book_hash.eq.${DOC},source_title.ilike.Alice_ Illustrated _1865_,title.ilike.Alice_ Illustrated _1865_`,
+          ],
+          ['books', 'eq', 'format', 'EPUB'],
+          ['books', 'is', 'deleted_at', null],
+          linkWrite,
+          ['book_configs', 'eq', 'book_hash', BOOK],
+          ['book_configs', 'update', { xpointer: XPOINTER, progress: '[60,120]', updated_at: NOW }],
+          ['books', 'update', { progress: [60, 120], updated_at: NOW }],
+          ['books', 'eq', 'book_hash', BOOK],
+        ]),
+      );
+      // Every book with that title is compared: a cut-off list could drop
+      // Readest's own file or a second book that fits.
+      expect(calls.some(([table, method]) => table === 'books' && method === 'limit')).toBe(false);
+    });
+
+    it("doesn't pull Readest's position back when it links", async () => {
+      // The reader asked under the new id and found nothing, so it uploads
+      // its own position.
+      results['books.select'] = { data: [libraryBook], error: null };
+      results['book_configs.select'] = {
+        data: { xpointer: XPOINTER, progress: '[60,120]' },
+        error: null,
+      };
+      expect((await put({ metadata, percentage: 0.01 })).status).toBe(200);
+      expect(calls).toContainEqual(linkWrite);
+      expect(wrote('book_configs')).toBe(false);
+      expect(wrote('books')).toBe(false);
+    });
+
+    it('syncs a linked copy as the library book', async () => {
+      results['crosspoint_documents.select'] = { data: { book_hash: BOOK }, error: null };
+      results['book_configs.select'] = {
+        data: { xpointer: XPOINTER, progress: '[30,120]', updated_at: '2026-10-01T00:00:00.000Z' },
+        error: null,
+      };
+      const res = await get();
+      expect(await res.json()).toMatchObject({ document: DOC, progress: XPOINTER });
+      expect(calls).toEqual(
+        expect.arrayContaining([
+          ['crosspoint_documents', 'eq', 'user_id', USER],
+          ['crosspoint_documents', 'eq', 'document', DOC],
+          ['book_configs', 'eq', 'book_hash', BOOK],
+        ]),
+      );
+
+      calls = [];
+      await put({ metadata });
+      expect(calls).toContainEqual(['book_configs', 'eq', 'book_hash', BOOK]);
+      expect(calls.some(([table, method]) => table === 'books' && method === 'or')).toBe(false);
+    });
+
+    it('picks the book by its first author when titles collide', async () => {
+      results['books.select'] = {
+        data: [{ ...libraryBook, book_hash: 'f'.repeat(32), author: 'Someone Else' }, libraryBook],
+        error: null,
+      };
+      await put({ metadata });
+      expect(calls).toContainEqual(linkWrite);
+    });
+
+    // Never acknowledged under the copy's own id: the reader retries.
+    it('reports database failures while linking', async () => {
+      results['crosspoint_documents.select'] = { data: null, error: boom };
+      expect((await get()).status).toBe(500);
+      expect((await put({ metadata })).status).toBe(500);
+
+      results['crosspoint_documents.select'] = { data: null, error: null };
+      results['books.select'] = { data: null, error: boom };
+      expect((await put({ metadata })).status).toBe(500);
+
+      results['books.select'] = { data: [libraryBook], error: null };
+      results['crosspoint_documents.upsert'] = { data: null, error: boom };
+      expect((await put({ metadata })).status).toBe(500);
+
+      expect(wrote('book_configs')).toBe(false);
+      expect(wrote('books')).toBe(false);
+    });
+
+    // Libraries often hold the same book twice (an older import, another
+    // edition): the copy goes to the one being read.
+    it('picks the most recently read book when title and author tie', async () => {
+      results['books.select'] = {
+        data: [
+          { ...libraryBook, book_hash: 'f'.repeat(32), updated_at: '2026-02-10T00:00:00.000Z' },
+          { ...libraryBook, updated_at: '2026-10-03T00:00:00.000Z' },
+          { ...libraryBook, book_hash: 'e'.repeat(32), updated_at: '2026-05-01T00:00:00.000Z' },
+        ],
+        error: null,
+      };
+      await put({ metadata });
+      expect(calls).toContainEqual(linkWrite);
+    });
+
+    it('matches the first author whole, not as part of a longer name', async () => {
+      results['books.select'] = {
+        data: [
+          { ...libraryBook, updated_at: '2026-02-10T00:00:00.000Z' },
+          {
+            ...libraryBook,
+            book_hash: 'f'.repeat(32),
+            author: 'Lewis Carrollton',
+            updated_at: '2026-10-03T00:00:00.000Z',
+          },
+        ],
+        error: null,
+      };
+      await put({ metadata });
+      expect(calls).toContainEqual(linkWrite);
+    });
+
+    it('keeps a copy it cannot place under its own id', async () => {
+      const cases: [string, Record<string, unknown>, unknown[]][] = [
+        ['without metadata', {}, [libraryBook]],
+        ['with no book of that title', { metadata }, [{ ...libraryBook, source_title: 'Other' }]],
+        [
+          'when titles collide and no author was sent',
+          { metadata: { title: TITLE } },
+          [libraryBook, { ...libraryBook, book_hash: 'f'.repeat(32), author: 'Someone Else' }],
+        ],
+        // The file is Readest's own: nothing to link.
+        ['for Readest’s own file', { metadata }, [libraryBook, { ...libraryBook, book_hash: DOC }]],
+      ];
+      for (const [, body, books] of cases) {
+        calls = [];
+        results['books.select'] = { data: books, error: null };
+        expect((await put(body)).status).toBe(200);
+        expect(wrote('crosspoint_documents')).toBe(false);
+        expect(calls).toContainEqual(['book_configs', 'eq', 'book_hash', DOC]);
+        expect(calls).not.toContainEqual(['book_configs', 'eq', 'book_hash', BOOK]);
+      }
+    });
   });
 
   it('reports database failures, but a failed library row update never fails a push', async () => {

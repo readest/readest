@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ModalPortal from '@/components/ModalPortal';
 import {
+  addShortcutBinding,
   getDefaultShortcuts,
   getShortcutConflicts,
+  getVisibleShortcutKeys,
   isShortcutCustomized,
   loadShortcuts,
+  removeShortcutBinding,
   resetShortcutBinding,
   saveShortcuts,
-  setShortcutBinding,
   SHORTCUT_SECTIONS,
   ShortcutAction,
   ShortcutConfig,
@@ -16,24 +18,30 @@ import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isMacPlatform } from '@/services/environment';
 import {
-  filterPlatformKeys,
   formatKeyForDisplay,
   getShortcutFromKeyboardEvent,
   getShortcutFromMouseEvent,
 } from '@/utils/shortcutKeys';
-import { MdClose, MdRestartAlt } from 'react-icons/md';
+import { MdAdd, MdClose, MdRestartAlt } from 'react-icons/md';
 import SubPageHeader from './SubPageHeader';
 import { BoxedList, SettingsRow } from './primitives';
 
 const LEARN_TIMEOUT_MS = 15000;
-// Clear / Reset stay out of the way on pointer devices — 50-odd rows each
-// carrying a permanent ✕ reads as clutter. They are always visible where
-// hover doesn't exist: touch widths (<sm) and e-ink.
+// Add / Reset / Remove stay out of the way on pointer devices — 50-odd rows
+// each carrying permanent buttons reads as clutter. They are always visible
+// where hover doesn't exist: touch widths (<sm) and e-ink.
 const ROW_ACTION_CLASS =
   'touch-target hover:bg-base-200/60 focus-visible:bg-base-200/60 flex h-8 min-h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none not-eink:sm:opacity-0 not-eink:sm:group-hover:opacity-100 not-eink:sm:group-focus-within:opacity-100';
+const KEY_REMOVE_CLASS =
+  'hover:bg-base-200/60 focus-visible:bg-base-200/60 flex h-full w-6 shrink-0 items-center justify-center rounded-e-md transition-colors duration-150 focus-visible:outline-none not-eink:sm:hidden not-eink:sm:group-hover/key:flex not-eink:sm:group-focus-within/key:flex';
 
-type PendingReplacement = {
+// `replacing` is the binding being re-recorded; null adds a new one.
+type Recording = {
   action: ShortcutAction;
+  replacing: string | null;
+};
+
+type PendingReplacement = Recording & {
   binding: string;
   conflicts: ShortcutAction[];
 };
@@ -47,7 +55,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
   const isMac = isMacPlatform();
   const [shortcuts, setShortcuts] = useState<ShortcutConfig>(loadShortcuts);
   const shortcutsRef = useRef(shortcuts);
-  const [listening, setListening] = useState<ShortcutAction | null>(null);
+  const [listening, setListening] = useState<Recording | null>(null);
   const [pendingReplacement, setPendingReplacement] = useState<PendingReplacement | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -132,14 +140,14 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
 
   const finishCapture = (binding: string) => {
     if (!listening) return;
-    const action = listening;
+    const { action, replacing } = listening;
     const conflicts = getShortcutConflicts(shortcutsRef.current, action, binding);
     stopListening();
     if (conflicts.length > 0) {
-      setPendingReplacement({ action, binding, conflicts });
+      setPendingReplacement({ action, replacing, binding, conflicts });
       return;
     }
-    persist(setShortcutBinding(shortcutsRef.current, action, binding));
+    persist(addShortcutBinding(shortcutsRef.current, action, binding, isMac, replacing));
   };
 
   useEffect(() => {
@@ -211,13 +219,8 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
 
   const confirmReplacement = () => {
     if (!pendingReplacement) return;
-    persist(
-      setShortcutBinding(
-        shortcutsRef.current,
-        pendingReplacement.action,
-        pendingReplacement.binding,
-      ),
-    );
+    const { action, binding, replacing } = pendingReplacement;
+    persist(addShortcutBinding(shortcutsRef.current, action, binding, isMac, replacing));
     setPendingReplacement(null);
   };
 
@@ -253,9 +256,19 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
             <BoxedList key={section} title={_(section)}>
               {actions.map((action) => {
                 const entry = shortcuts[action];
-                const keys = filterPlatformKeys(entry.keys, isMac);
-                const isListening = listening === action;
-                const bindingLabel = keys.map((key) => formatKeyForDisplay(key, isMac)).join(' / ');
+                const keys = getVisibleShortcutKeys(shortcuts, action, isMac);
+                const isListening = listening?.action === action;
+                const listeningButton = (
+                  <button
+                    type='button'
+                    className='btn btn-contrast btn-sm h-8 min-h-8'
+                    aria-pressed
+                    aria-label={`${_(entry.description)}: ${_('Listening…')}`}
+                    onClick={stopListening}
+                  >
+                    {_('Listening…')}
+                  </button>
+                );
                 return (
                   <SettingsRow
                     key={action}
@@ -263,7 +276,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
                     label={_(entry.description)}
                     data-setting-id={`settings.control.keyboardShortcuts.${action}`}
                   >
-                    <div className='ms-auto flex max-w-[60%] shrink-0 items-center justify-end gap-1'>
+                    <div className='ms-auto flex max-w-[60%] shrink-0 flex-wrap items-center justify-end gap-1'>
                       {isShortcutCustomized(shortcuts, action) && !isListening && (
                         <button
                           type='button'
@@ -277,33 +290,65 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
                           <MdRestartAlt aria-hidden='true' className='h-4 w-4' />
                         </button>
                       )}
-                      {entry.keys.length > 0 && !isListening && (
+                      {keys.length > 0 && !isListening && (
                         <button
                           type='button'
                           className={ROW_ACTION_CLASS}
-                          aria-label={`${_('Clear')}: ${_(entry.description)}`}
-                          title={_('Clear')}
-                          onClick={() =>
-                            persist(setShortcutBinding(shortcutsRef.current, action, null))
-                          }
+                          aria-label={`${_('Add')}: ${_(entry.description)}`}
+                          title={_('Add')}
+                          onClick={() => setListening({ action, replacing: null })}
                         >
-                          <MdClose aria-hidden='true' className='h-4 w-4' />
+                          <MdAdd aria-hidden='true' className='h-4 w-4' />
                         </button>
                       )}
-                      <button
-                        type='button'
-                        className={
-                          isListening
-                            ? 'btn btn-contrast btn-sm h-8 min-h-8'
-                            : 'hover:bg-base-200/60 focus-visible:bg-base-200/60 min-h-8 min-w-0 flex-1 truncate rounded-md px-2 text-end text-[0.8em] transition-colors duration-150 focus-visible:outline-none'
+                      {keys.map((key) => {
+                        if (isListening && listening.replacing === key) {
+                          return <React.Fragment key={key}>{listeningButton}</React.Fragment>;
                         }
-                        aria-pressed={isListening}
-                        aria-label={`${_(entry.description)}: ${isListening ? _('Listening…') : bindingLabel || _('Set key')}`}
-                        title={bindingLabel || _('Set key')}
-                        onClick={() => (isListening ? stopListening() : setListening(action))}
-                      >
-                        {isListening ? _('Listening…') : bindingLabel || _('Set key')}
-                      </button>
+                        const label = formatKeyForDisplay(key, isMac);
+                        return (
+                          <span
+                            key={key}
+                            className='group/key border-base-300 eink-bordered flex h-7 shrink-0 items-center rounded-md border'
+                          >
+                            <button
+                              type='button'
+                              className='hover:bg-base-200/60 focus-visible:bg-base-200/60 h-full rounded-md px-2 text-[0.8em] transition-colors duration-150 focus-visible:outline-none'
+                              aria-label={`${_(entry.description)}: ${label}`}
+                              title={label}
+                              onClick={() => setListening({ action, replacing: key })}
+                            >
+                              {label}
+                            </button>
+                            {!isListening && (
+                              <button
+                                type='button'
+                                className={KEY_REMOVE_CLASS}
+                                aria-label={`${_('Remove')}: ${_(entry.description)} (${label})`}
+                                title={_('Remove')}
+                                onClick={() =>
+                                  persist(
+                                    removeShortcutBinding(shortcutsRef.current, action, key, isMac),
+                                  )
+                                }
+                              >
+                                <MdClose aria-hidden='true' className='h-3.5 w-3.5' />
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })}
+                      {isListening && listening.replacing === null && listeningButton}
+                      {keys.length === 0 && !isListening && (
+                        <button
+                          type='button'
+                          className='hover:bg-base-200/60 focus-visible:bg-base-200/60 min-h-8 rounded-md px-2 text-end text-[0.8em] transition-colors duration-150 focus-visible:outline-none'
+                          aria-label={`${_(entry.description)}: ${_('Set key')}`}
+                          onClick={() => setListening({ action, replacing: null })}
+                        >
+                          {_('Set key')}
+                        </button>
+                      )}
                     </div>
                   </SettingsRow>
                 );

@@ -358,8 +358,9 @@ describe('bookshelf editor', () => {
     const grouping = screen.getByRole('group', { name: 'Grouping' });
     const inherit = within(grouping).getByLabelText('Use global grouping') as HTMLInputElement;
     const groupBy = within(grouping).getByLabelText('Group by') as HTMLSelectElement;
-    expect(inherit.checked).toBe(true);
-    expect(groupBy.disabled).toBe(true);
+    // The first shelf, Recently read, lists books on its own by default.
+    expect(inherit.checked).toBe(false);
+    expect(groupBy.disabled).toBe(false);
     expect(groupBy.value).toBe('none');
     expect(Array.from(groupBy.options, (option) => option.text)).toEqual([
       'Authors',
@@ -370,7 +371,6 @@ describe('bookshelf editor', () => {
       'Subjects',
       'Status',
     ]);
-    fireEvent.click(inherit);
     fireEvent.change(groupBy, { target: { value: 'author' } });
     fireEvent.click(inherit);
     act(() =>

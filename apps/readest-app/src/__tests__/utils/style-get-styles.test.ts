@@ -851,6 +851,53 @@ describe('getTranslationStyles branches (via getStyles)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Translated text style (font, style, size, color)
+// ---------------------------------------------------------------------------
+describe('translated text style (via getStyles)', () => {
+  const theme = makeThemeCode();
+  const block = (css: string) => css.match(/\.translation-target-block\s*\{([^}]*)\}/)?.[1] ?? '';
+
+  it('leaves the translation looking like the book by default', () => {
+    const rules = block(getStyles(makeViewSettings(), theme));
+    expect(rules).not.toMatch(/font-size|color|font-family|font-style|font-weight/);
+  });
+
+  it('applies a configured font, style, size and color', () => {
+    const rules = block(
+      getStyles(
+        makeViewSettings({
+          translationFont: 'serif',
+          translationFontStyle: 'bold-italic',
+          translationFontSize: 0.85,
+          translationColor: '#ff0000',
+        }),
+        theme,
+      ),
+    );
+    expect(rules).toMatch(/font-family:\s*var\(--serif\)\s*!important/);
+    expect(rules).toMatch(/font-style:\s*italic\s*!important/);
+    expect(rules).toMatch(/font-weight:\s*bold\s*!important/);
+    expect(rules).toMatch(/font-size:\s*0\.85em\s*!important/);
+    expect(rules).toMatch(/color:\s*#ff0000\s*!important/);
+  });
+
+  it('applies italic without bold, and bold without italic', () => {
+    const italic = block(getStyles(makeViewSettings({ translationFontStyle: 'italic' }), theme));
+    expect(italic).toMatch(/font-style:\s*italic/);
+    expect(italic).not.toMatch(/font-weight/);
+    const bold = block(getStyles(makeViewSettings({ translationFontStyle: 'bold' }), theme));
+    expect(bold).toMatch(/font-weight:\s*bold/);
+    expect(bold).not.toMatch(/font-style/);
+  });
+
+  it('does not style translated TOC entries', () => {
+    const css = getStyles(makeViewSettings({ translationColor: '#ff0000' }), theme);
+    const toc = css.match(/\.translation-target-toc\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(toc).not.toContain('#ff0000');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getRubyStyles branches (Word Lens gloss <rt> size + color)
 // ---------------------------------------------------------------------------
 describe('getRubyStyles branches (via getStyles)', () => {

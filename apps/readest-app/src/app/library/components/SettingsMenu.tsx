@@ -1,11 +1,11 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { PiUserCircle, PiUserCircleCheck, PiGear } from 'react-icons/pi';
 import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdCloudSync, MdSync, MdSyncProblem, MdOutlineSensors } from 'react-icons/md';
 
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setBackupDialogVisible } from '@/app/library/components/BackupWindow';
@@ -47,7 +47,7 @@ interface SettingsMenuProps {
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdownOpen }) => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { userProfilePlan, quotas } = useQuotaStats(true);

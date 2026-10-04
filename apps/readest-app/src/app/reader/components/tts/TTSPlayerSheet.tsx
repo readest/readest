@@ -16,7 +16,7 @@ import {
   MdSkipPrevious,
 } from 'react-icons/md';
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
-import { useRouter } from 'next/navigation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { TTSVoicesGroup } from '@/services/tts';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
 import { useEnv } from '@/context/EnvContext';
@@ -142,7 +142,7 @@ const TTSPlayerSheet = ({
   activeSectionIndex,
 }: TTSPlayerSheetProps) => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { envConfig } = useEnv();
   const { user } = useAuth();
   const { getViewSettings, setViewSettings } = useReaderStore();

@@ -26,6 +26,7 @@ import {
   createBookSorter,
   ensureLibraryGroupByType,
   expandBookshelfSelection,
+  findSelectedManualGroup,
   selectAbsOfflineBooks,
   selectDownloadableBooks,
   withReadingStatus,
@@ -1029,6 +1030,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             libraryBooks={libraryBooks}
             selectedBooks={selectedBooks}
             parentGroupName={getGroupName(groupId) || ''}
+            renameGroupName={findSelectedManualGroup(selectedBooks, sortedBookshelfItems)?.name}
             onCancel={() => {
               setShowGroupingModal(false);
               setShowSelectModeActions(true);

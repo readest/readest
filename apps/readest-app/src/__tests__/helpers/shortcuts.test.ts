@@ -185,7 +185,8 @@ describe('shortcut customization', () => {
     const listener = vi.fn();
     window.addEventListener('shortcutUpdate', listener);
 
-    const updated = mod.setShortcutBinding(initial, 'onToggleNotebook', 's');
+    const removed = mod.removeShortcutBinding(initial, 'onToggleNotebook', 'n', false);
+    const updated = mod.addShortcutBinding(removed, 'onToggleNotebook', 's', false);
     mod.saveShortcuts(updated);
 
     expect(initial.onToggleSideBar.keys).toEqual(['s']);
@@ -202,6 +203,76 @@ describe('shortcut customization', () => {
     expect(reset.onToggleNotebook.keys).toEqual([]);
 
     window.removeEventListener('shortcutUpdate', listener);
+  });
+
+  it('keeps several bindings per action (#6600)', async () => {
+    const mod = await getModule();
+    const initial = mod.loadShortcuts();
+
+    const added = mod.addShortcutBinding(initial, 'onToggleNotebook', 'shift+n', false);
+    expect(added.onToggleNotebook.keys).toEqual(['n', 'shift+n']);
+
+    const replaced = mod.addShortcutBinding(added, 'onToggleNotebook', 'm', false, 'n');
+    expect(replaced.onToggleNotebook.keys).toEqual(['m', 'shift+n']);
+
+    // Adding a binding the action already has does not duplicate it.
+    expect(
+      mod.addShortcutBinding(replaced, 'onToggleNotebook', 'M', false).onToggleNotebook.keys,
+    ).toEqual(['m', 'shift+n']);
+
+    const removed = mod.removeShortcutBinding(replaced, 'onToggleNotebook', 'm', false);
+    expect(removed.onToggleNotebook.keys).toEqual(['shift+n']);
+
+    mod.saveShortcuts(removed);
+    expect(mod.loadShortcuts().onToggleNotebook.keys).toEqual(['shift+n']);
+  });
+
+  it('only takes the added binding away from other actions', async () => {
+    const mod = await getModule();
+    const initial = mod.loadShortcuts();
+    // Search in Book and Search Selection share Ctrl+F by default.
+    const updated = mod.addShortcutBinding(initial, 'onShowSearchBar', 's', false);
+    expect(updated.onShowSearchBar.keys).toEqual(['ctrl+f', 's']);
+    expect(updated.onSearchSelection.keys).toEqual(['ctrl+f', 'cmd+f']);
+    expect(updated.onToggleSideBar.keys).toEqual([]);
+  });
+
+  it('shows every recorded binding of a customized action on macOS', async () => {
+    const mod = await getModule();
+    const updated = mod.addShortcutBinding(
+      mod.loadShortcuts(),
+      'onOpenCommandPalette',
+      'ctrl+k',
+      true,
+    );
+    expect(updated.onOpenCommandPalette.keys).toEqual(['cmd+shift+p', 'ctrl+k']);
+    expect(mod.getVisibleShortcutKeys(updated, 'onOpenCommandPalette', true)).toEqual([
+      'cmd+shift+p',
+      'ctrl+k',
+    ]);
+    mod.saveShortcuts(updated);
+    const general = mod.getShortcutsForDisplay(true).find((s) => s.section === 'General')!;
+    expect(general.items.find((i) => i.description === 'Open Command Palette')!.keys).toEqual([
+      'cmd+shift+p',
+      'ctrl+k',
+    ]);
+  });
+
+  it('drops the hidden platform variants of an edited action', async () => {
+    const mod = await getModule();
+    const initial = mod.loadShortcuts();
+    // On Windows/Linux only Ctrl+F is shown; removing it must not surface cmd+f,
+    // which the display falls back to (and labels "Ctrl+F") when nothing else is left.
+    expect(
+      mod.removeShortcutBinding(initial, 'onShowSearchBar', 'ctrl+f', false).onShowSearchBar.keys,
+    ).toEqual([]);
+    expect(
+      mod.removeShortcutBinding(initial, 'onShowSearchBar', 'cmd+f', true).onShowSearchBar.keys,
+    ).toEqual([]);
+    // The same holds for an action that loses its binding to another one.
+    expect(
+      mod.addShortcutBinding(initial, 'onToggleNotebook', 'ctrl+f', false).onShowSearchBar.keys,
+    ).toEqual([]);
   });
 });
 

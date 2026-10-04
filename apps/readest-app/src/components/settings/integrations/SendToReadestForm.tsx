@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { MdContentCopy, MdRefresh, MdCheck, MdClose, MdAdd } from 'react-icons/md';
 import { RiSendPlaneLine } from 'react-icons/ri';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/context/AuthContext';
 import { fetchWithAuth } from '@/utils/fetch';
@@ -40,7 +40,7 @@ function suffixOf(address: string): string {
 
 const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { user } = useAuth();
   const apiBase = getAPIBaseUrl();
 

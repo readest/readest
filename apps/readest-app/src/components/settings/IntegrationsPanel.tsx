@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { MdChevronRight } from 'react-icons/md';
 import {
   RiBookOpenLine,
@@ -21,6 +20,7 @@ import {
   RiAppleLine,
   RiHeadphoneLine,
 } from 'react-icons/ri';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -112,7 +112,7 @@ type SubPage =
  */
 const IntegrationsPanel: React.FC = () => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();

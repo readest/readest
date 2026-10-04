@@ -78,6 +78,8 @@ const toCategory = (id: string): SyncCategory | null => {
   if (id === 'config') return 'progress';
   if (id === 'books') return 'book';
   if (id === 'notes') return 'note';
+  // Translators and their prompts share one toggle.
+  if (id === 'translation_prompt') return 'custom_translator';
   return null;
 };
 

@@ -80,6 +80,19 @@ export const getBaseFontFamily = (viewSettings: ViewSettings): string => {
   return viewSettings.defaultFont!.toLowerCase() === 'serif' ? families.serif : families.sansSerif;
 };
 
+/**
+ * The body font size, in CSS px, that the reader applies to the book, for
+ * top-level UI that shows book text outside the iframe.
+ */
+export const getBaseFontSize = (viewSettings: ViewSettings): number => {
+  // scale the font size on-the-fly so that we can sync the same font size on different devices
+  const isMobile = ['ios', 'android'].includes(getOSPlatform());
+  const fontScale = isMobile ? 1.25 : 1;
+  // Only for backward compatibility, new viewSettings.zoomLevel will always be 100 for EPUBs
+  const zoomScale = (viewSettings.zoomLevel || 100) / 100.0;
+  return viewSettings.defaultFontSize! * fontScale * zoomScale;
+};
+
 const getFontStyles = (
   serif: string,
   sansSerif: string,
@@ -855,7 +868,23 @@ export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
   `;
 };
 
-const getTranslationStyles = (showSource: boolean) => `
+const getTranslatedTextStyles = (viewSettings: ViewSettings) => {
+  const { translationFont, translationFontStyle, translationFontSize, translationColor } =
+    viewSettings;
+  return [
+    translationFont && `font-family: var(--${translationFont}) !important;`,
+    translationFontStyle?.includes('italic') && 'font-style: italic !important;',
+    translationFontStyle?.includes('bold') && 'font-weight: bold !important;',
+    translationFontSize &&
+      translationFontSize !== 1 &&
+      `font-size: ${translationFontSize}em !important;`,
+    translationColor && `color: ${translationColor} !important;`,
+  ]
+    .filter(Boolean)
+    .join('\n    ');
+};
+
+const getTranslationStyles = (viewSettings: ViewSettings) => `
   .translation-source {
   }
   .translation-target {
@@ -870,7 +899,8 @@ const getTranslationStyles = (showSource: boolean) => `
   }
   .translation-target-block {
     display: block !important;
-    ${showSource ? 'margin: 0.5em 0 !important;' : ''}
+    ${viewSettings.showTranslateSource ? 'margin: 0.5em 0 !important;' : ''}
+    ${getTranslatedTextStyles(viewSettings)}
   }
   .translation-target-toc {
     display: block !important;
@@ -1017,18 +1047,13 @@ export const getStyles = (
         viewSettings.hyphenation!,
         viewSettings.vertical!,
       );
-  // scale the font size on-the-fly so that we can sync the same font size on different devices
-  const isMobile = ['ios', 'android'].includes(getOSPlatform());
-  const fontScale = isMobile ? 1.25 : 1;
-  // Only for backward compatibility, new viewSettings.zoomLevel will always be 100 for EPUBs
-  const zoomScale = (viewSettings.zoomLevel || 100) / 100.0;
   const fontStyles = getFontStyles(
     viewSettings.serifFont!,
     viewSettings.sansSerifFont!,
     viewSettings.monospaceFont!,
     viewSettings.defaultFont!,
     viewSettings.defaultCJKFont!,
-    viewSettings.defaultFontSize! * fontScale * zoomScale,
+    getBaseFontSize(viewSettings),
     viewSettings.minimumFontSize!,
     viewSettings.fontWeight!,
     viewSettings.overrideFont!,
@@ -1048,7 +1073,7 @@ export const getStyles = (
     viewSettings.backgroundTextureId,
     viewSettings.isEink,
   );
-  const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
+  const translationStyles = getTranslationStyles(viewSettings);
   const warichuStyles = getWarichuStyles();
   const rubyStyles = getRubyStyles(viewSettings);
   const dialogueStyles = isDialogueHighlightActive(viewSettings)
@@ -1092,7 +1117,7 @@ export const applyTranslationStyle = (viewSettings: ViewSettings) => {
 
   const styleElement = document.createElement('style');
   styleElement.id = styleId;
-  styleElement.textContent = getTranslationStyles(viewSettings.showTranslateSource);
+  styleElement.textContent = getTranslationStyles(viewSettings);
 
   document.head.appendChild(styleElement);
 };

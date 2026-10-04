@@ -38,8 +38,20 @@ vi.mock('@/components/settings/primitives', () => ({
 }));
 
 import KeyboardShortcutsSettings from '@/components/settings/KeyboardShortcutsSettings';
-import { getDefaultShortcuts, saveShortcuts, setShortcutBinding } from '@/helpers/shortcuts';
+import { addShortcutBinding, getDefaultShortcuts, saveShortcuts } from '@/helpers/shortcuts';
 
+const saveCommandPaletteCtrlK = () =>
+  saveShortcuts(
+    addShortcutBinding(
+      getDefaultShortcuts(),
+      'onOpenCommandPalette',
+      'ctrl+k',
+      false,
+      'ctrl+shift+p',
+    ),
+  );
+
+// Buttons are found by aria-label: role queries take ~1s each on this 60-row page.
 describe('KeyboardShortcutsSettings', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -51,16 +63,16 @@ describe('KeyboardShortcutsSettings', () => {
   });
 
   test('keeps later edits based on shortcuts reset outside the page', () => {
-    saveShortcuts(setShortcutBinding(getDefaultShortcuts(), 'onOpenCommandPalette', 'ctrl+k'));
+    saveCommandPaletteCtrlK();
     render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'Open Command Palette: Ctrl+K' })).toBeTruthy();
+    expect(screen.getByLabelText('Open Command Palette: Ctrl+K')).toBeTruthy();
 
     act(() => saveShortcuts(getDefaultShortcuts()));
 
-    expect(screen.getByRole('button', { name: 'Open Command Palette: Ctrl+Shift+P' })).toBeTruthy();
+    expect(screen.getByLabelText('Open Command Palette: Ctrl+Shift+P')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Books: Ctrl+O' }));
+    fireEvent.click(screen.getByLabelText('Open Books: Ctrl+O'));
     fireEvent.keyDown(window, { key: '9', ctrlKey: true, shiftKey: true });
 
     expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
@@ -72,7 +84,7 @@ describe('KeyboardShortcutsSettings', () => {
     'customShortcuts',
     null,
   ])('keeps later edits based on a cross-tab storage update with key %s', (key) => {
-    saveShortcuts(setShortcutBinding(getDefaultShortcuts(), 'onOpenCommandPalette', 'ctrl+k'));
+    saveCommandPaletteCtrlK();
     render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
     const oldValue = localStorage.getItem('customShortcuts');
 
@@ -89,9 +101,9 @@ describe('KeyboardShortcutsSettings', () => {
       );
     });
 
-    expect(screen.getByRole('button', { name: 'Open Command Palette: Ctrl+Shift+P' })).toBeTruthy();
+    expect(screen.getByLabelText('Open Command Palette: Ctrl+Shift+P')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Books: Ctrl+O' }));
+    fireEvent.click(screen.getByLabelText('Open Books: Ctrl+O'));
     fireEvent.keyDown(window, { key: '9', ctrlKey: true, shiftKey: true });
 
     expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
@@ -102,7 +114,7 @@ describe('KeyboardShortcutsSettings', () => {
   test('renders the replacement dialog inside an open daisyui modal', () => {
     render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Books: Ctrl+O' }));
+    fireEvent.click(screen.getByLabelText('Open Books: Ctrl+O'));
     fireEvent.keyDown(window, { key: 'n' });
 
     // `hidden: true` because jsdom applies the UA `dialog:not([open])
@@ -118,5 +130,49 @@ describe('KeyboardShortcutsSettings', () => {
     expect(dialog.classList.contains('modal-box')).toBe(true);
     // Nothing is written until the user confirms.
     expect(localStorage.getItem('customShortcuts')).toBeNull();
+
+    fireEvent.click(screen.getByText('Replace'));
+    // The re-recorded binding takes the place of the one that was clicked.
+    expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
+      onToggleNotebook: [],
+      onOpenBooks: ['n'],
+    });
+  });
+
+  test('adds, replaces, and removes individual bindings of one action (#6600)', () => {
+    render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByLabelText('Add: Toggle Notebook'));
+    expect(screen.getByLabelText('Toggle Notebook: Listening…')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'N', shiftKey: true });
+
+    expect(screen.getByLabelText('Toggle Notebook: N')).toBeTruthy();
+    expect(screen.getByLabelText('Toggle Notebook: Shift+N')).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
+      onToggleNotebook: ['n', 'shift+N'],
+    });
+
+    fireEvent.click(screen.getByLabelText('Toggle Notebook: N'));
+    fireEvent.keyDown(window, { key: 'm' });
+    expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
+      onToggleNotebook: ['m', 'shift+N'],
+    });
+
+    fireEvent.click(screen.getByLabelText('Remove: Toggle Notebook (Shift+N)'));
+    expect(screen.queryByLabelText('Toggle Notebook: Shift+N')).toBeNull();
+    expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
+      onToggleNotebook: ['m'],
+    });
+  });
+
+  test('records the first binding of an unbound action', () => {
+    render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByLabelText('Toggle Table of Contents: Set key'));
+    fireEvent.keyDown(window, { key: 'c' });
+
+    expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
+      onOpenTableOfContents: ['c'],
+    });
   });
 });

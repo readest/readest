@@ -13,7 +13,13 @@ import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getFootnoteStyles, getStyles, getThemeCode } from '@/utils/style';
+import {
+  getBaseFontFamily,
+  getBaseFontSize,
+  getFootnoteStyles,
+  getStyles,
+  getThemeCode,
+} from '@/utils/style';
 import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
 import { Insets } from '@/types/misc';
@@ -660,27 +666,41 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const elem = document.createElement('p');
       elem.textContent = footnote;
       elem.setAttribute('style', `padding: 1em; hanging-punctuation: allow-end last;`);
-      elem.style.visibility = 'hidden';
+      // The note sits in the host document, outside the book iframe, so it
+      // takes the reader's typography rather than the app's (#3602).
+      elem.style.fontFamily = getBaseFontFamily(viewSettings);
+      elem.style.fontSize = `${getBaseFontSize(viewSettings)}px`;
+      elem.style.lineHeight = `${viewSettings.lineHeight}`;
+      elem.style.fontWeight = `${viewSettings.fontWeight}`;
       // Measure the text in the room the popup actually gives it — the seed
       // less the container border — so the paragraph wraps identically once
       // mounted (#5999).
-      if (viewSettings.vertical) {
-        elem.style.height = `${seed.height - 2 * popupBorder}px`;
-      } else {
-        elem.style.width = `${seed.width - 2 * popupBorder}px`;
+      const fitToNote = () => {
+        const probe = elem.cloneNode(true) as HTMLElement;
+        probe.style.visibility = 'hidden';
+        if (viewSettings.vertical) {
+          probe.style.height = `${seed.height - 2 * popupBorder}px`;
+        } else {
+          probe.style.width = `${seed.width - 2 * popupBorder}px`;
+        }
+        document.body.appendChild(probe);
+        const popupSize = probe.getBoundingClientRect();
+        probe.remove();
+        if (viewSettings.vertical) {
+          setResponsiveWidth(getResponsivePopupSize(popupSizeForContent(popupSize.width), true));
+        } else {
+          setResponsiveHeight(getResponsivePopupSize(popupSizeForContent(popupSize.height), false));
+        }
+      };
+      fitToNote();
+      // Laying the note out starts loading the reader font in this document,
+      // and the fallback face it was measured in wraps it differently.
+      if (document.fonts?.status === 'loading') {
+        document.fonts.ready.then(() => {
+          if (elem.isConnected) fitToNote();
+        });
       }
-      document.body.appendChild(elem);
-      const popupSize = elem.getBoundingClientRect();
-      if (viewSettings.vertical) {
-        setResponsiveWidth(getResponsivePopupSize(popupSizeForContent(popupSize.width), true));
-      } else {
-        setResponsiveHeight(getResponsivePopupSize(popupSizeForContent(popupSize.height), false));
-      }
-      document.body.removeChild(elem);
 
-      elem.style.width = '';
-      elem.style.height = '';
-      elem.style.visibility = 'visible';
       footnoteRef.current.replaceChildren(elem);
       setPopupBounds(bounds);
       setTrianglePosition(triangPos);

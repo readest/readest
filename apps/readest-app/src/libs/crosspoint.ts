@@ -67,6 +67,92 @@ export const authenticateDevice = async (
   return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 };
 
+// A reader's KOSync document id is the partial MD5 of its file. CrossPoint's
+// "Optimize EPUB" upload rewrites a book, so that copy's id matches no Readest
+// book. Its first progress upload links it to the library book by title and
+// author (sent with KOSync "Send metadata"); later syncs and reading
+// sessions follow the link. Both helpers report a database error, like a
+// query, so a route never syncs a linked copy under its own id instead.
+
+interface Link {
+  bookHash: string | null;
+  error: unknown;
+}
+
+const NO_LINK: Link = { bookHash: null, error: null };
+
+/** The library book a rewritten copy was linked to (null if none). */
+export const linkedBook = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+): Promise<Link> => {
+  const { data, error } = await supabase
+    .from('crosspoint_documents')
+    .select('book_hash')
+    .eq('user_id', userId)
+    .eq('document', document)
+    .maybeSingle();
+  return { bookHash: (data?.book_hash as string | undefined) ?? null, error };
+};
+
+const normalizeText = (value: unknown) =>
+  typeof value === 'string' ? value.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase() : '';
+
+/**
+ * Links a copy to the library EPUB with its title. When titles collide, the
+ * book must also share the copy's first author, and of several such books
+ * (the same book imported twice, another edition) the most recently read one
+ * wins. No book when the copy is Readest's own file or none fits.
+ */
+export const linkCopy = async (
+  supabase: SupabaseClient,
+  userId: string,
+  document: string,
+  metadata: unknown,
+): Promise<Link> => {
+  const { title, authors } = (metadata ?? {}) as Record<string, unknown>;
+  const wanted = normalizeText(title);
+  if (!wanted) return NO_LINK;
+  // Commas and parentheses are or() syntax, and %, *, \ and " are pattern or
+  // quoting characters: each becomes a one-character wildcard. The exact
+  // comparison happens below.
+  const pattern = String(title)
+    .trim()
+    .replace(/[,()%*\\"]/g, '_');
+  const { data, error } = await supabase
+    .from('books')
+    .select('book_hash, title, source_title, author, updated_at')
+    .eq('user_id', userId)
+    .or(`book_hash.eq.${document},source_title.ilike.${pattern},title.ilike.${pattern}`)
+    .eq('format', 'EPUB')
+    .is('deleted_at', null);
+  if (error) return { bookHash: null, error };
+  if (!data || data.some((book) => book.book_hash === document)) return NO_LINK;
+  let matches = data.filter(
+    (book) => normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted,
+  );
+  // The reader joins every dc:creator with ", "; Readest lists a book's
+  // authors with ", ", " and ", " & " or "、" between them.
+  const author = normalizeText(authors).split(', ')[0];
+  const firstAuthor = (book: (typeof matches)[number]) =>
+    normalizeText(book.author).split(/, | and | & |、/)[0];
+  if (matches.length > 1) {
+    matches = author ? matches.filter((book) => firstAuthor(book) === author) : [];
+  }
+  const recent = (book: (typeof matches)[number]) => Date.parse(String(book.updated_at)) || 0;
+  const [book] = matches.sort((a, b) => recent(b) - recent(a));
+  if (!book) return NO_LINK;
+  const bookHash = book.book_hash as string;
+  const { error: linkError } = await supabase
+    .from('crosspoint_documents')
+    .upsert(
+      { user_id: userId, document, book_hash: bookHash },
+      { onConflict: 'user_id,document', ignoreDuplicates: true },
+    );
+  return linkError ? { bookHash: null, error: linkError } : { bookHash, error: null };
+};
+
 /** A book config's `[current, total]` progress, stored as a JSON string. */
 export const parseConfigProgress = (value: unknown): [number, number] | null => {
   try {

@@ -45,6 +45,8 @@ interface ProgressBarProps {
   columnGap?: number;
   // Rounded screen corners this footer's ends run into.
   cornerRadii?: BottomCornerRadii;
+  // A fixed-layout page whose bottom edge is off screen (usePageEdges).
+  hidden?: boolean;
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -54,6 +56,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   gridInsets,
   columnGap = 0,
   cornerRadii = NO_CORNERS,
+  hidden = false,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -286,6 +289,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           ? 'text-white/75 mix-blend-difference'
           : 'text-base-content',
         isVertical ? 'writing-vertical-rl' : 'w-full',
+        hidden && 'invisible',
       )}
       aria-label={[
         progress

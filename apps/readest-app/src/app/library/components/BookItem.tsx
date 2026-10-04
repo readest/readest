@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MdCheckCircle, MdCheckCircleOutline, MdOutlineOfflinePin } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
@@ -62,10 +62,17 @@ const BookItem: React.FC<BookItemProps> = ({
   const showSpine = skeuomorphicCovers ?? settings.librarySkeuomorphicCovers;
   const iconSize15 = useResponsiveSize(15);
 
+  // Reset during render, not in an effect: a cached cover reports its size
+  // before a mount effect runs, and the effect would then drop it, leaving the
+  // fit cover in a full-height cell with the spine and selection wash spilling
+  // past the image (a carousel remounts covers as they scroll back into view).
   const [coverAspect, setCoverAspect] = useState<number | null>(null);
-  useEffect(() => {
+  const coverKey = `${book.hash}|${book.metadata?.coverImageUrl}|${book.coverImageUrl}`;
+  const [prevCoverKey, setPrevCoverKey] = useState(coverKey);
+  if (coverKey !== prevCoverKey) {
+    setPrevCoverKey(coverKey);
     setCoverAspect(null);
-  }, [book.hash, book.metadata?.coverImageUrl, book.coverImageUrl]);
+  }
 
   const CELL_ASPECT_RATIO = 28 / 41;
   const fitCoverInGrid = mode === 'grid' && coverFit === 'fit' && coverAspect !== null;
