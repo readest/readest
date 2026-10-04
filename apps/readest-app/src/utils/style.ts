@@ -868,6 +868,60 @@ export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
   `;
 };
 
+const parseComputedRgb = (value: string) => {
+  const m = value.match(/^rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)$/);
+  if (!m) return null;
+  const [r, g, b] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  return {
+    r,
+    g,
+    b,
+    a: m[4] === undefined ? 1 : Number(m[4]),
+    brightness: 0.299 * r + 0.587 * g + 0.114 * b,
+  };
+};
+
+/**
+ * Lift dictionary text colors that would vanish on the dark popup (#6618).
+ *
+ * Dictionaries are authored for a light page and set dark text colors in bundled CSS, embedded
+ * `<style>`, inline styles or `<font color>`; reading computed colors covers all of them. A dark
+ * color gets its perceived brightness mirrored (Y -> 255 - Y) by an equal shift on every channel,
+ * which keeps its hue and the order of the dictionary's text shades. Text on a light box the
+ * dictionary paints itself is left as authored.
+ */
+export const liftDarkTextColors = (root: Element) => {
+  // The surface behind `root` is the popup's, found past a shadow root's host.
+  const parentOf = (el: Element) => {
+    const rootNode = el.getRootNode();
+    return el.parentElement ?? (rootNode instanceof ShadowRoot ? rootNode.host : null);
+  };
+  let outerOnLight = false;
+  for (let el = parentOf(root); el; el = parentOf(el)) {
+    const bg = parseComputedRgb(getComputedStyle(el).backgroundColor);
+    if (bg && bg.a > 0.5) {
+      outerOnLight = bg.brightness >= 128;
+      break;
+    }
+  }
+  const onLightBox = new Map<Element, boolean>();
+  const lifts: [HTMLElement, string][] = [];
+  for (const el of [root, ...root.querySelectorAll('*')]) {
+    const style = getComputedStyle(el);
+    const bg = parseComputedRgb(style.backgroundColor);
+    const parentOnLight = el === root ? outerOnLight : !!onLightBox.get(el.parentElement!);
+    const onLight = bg && bg.a > 0.5 ? bg.brightness >= 128 : parentOnLight;
+    onLightBox.set(el, onLight);
+    const fg = parseComputedRgb(style.color);
+    if (!fg || onLight || fg.brightness >= 128) continue;
+    const shift = Math.round(255 - 2 * fg.brightness);
+    const [r, g, b] = [fg.r, fg.g, fg.b].map((c) => Math.min(255, c + shift));
+    lifts.push([el as HTMLElement, `rgba(${r}, ${g}, ${b}, ${fg.a})`]);
+  }
+  // Write after reading so the loop doesn't force a style recalc per element.
+  for (const [el, color] of lifts) el.style.setProperty('color', color, 'important');
+};
+
 const getTranslatedTextStyles = (viewSettings: ViewSettings) => {
   const { translationFont, translationFontStyle, translationFontSize, translationColor } =
     viewSettings;

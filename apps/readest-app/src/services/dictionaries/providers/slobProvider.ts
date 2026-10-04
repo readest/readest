@@ -12,6 +12,7 @@
  * the dictionary's own templates). They are not user-visible headwords and
  * are filtered before binary search hits them.
  */
+import { liftDarkTextColors } from '@/utils/style';
 import type { DictionaryProvider, ImportedDictionary } from '../types';
 import type { DictionaryFileOpener } from './starDictProvider';
 import { SlobReader } from '../slobReader';
@@ -127,6 +128,7 @@ export const createSlobProvider = ({
         if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
         const outcome = renderEntry(ctx.container, ref.key, blob.contentType, blob.data);
         if (!outcome.ok) return outcome;
+        if (ctx.isDarkMode) liftDarkTextColors(ctx.container);
         return {
           ok: true,
           headword: ref.key,

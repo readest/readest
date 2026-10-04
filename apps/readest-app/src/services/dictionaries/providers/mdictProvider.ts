@@ -19,7 +19,7 @@
 import { eventDispatcher } from '@/utils/event';
 import { SILENCE_DATA } from '@/services/tts/TTSData';
 import { stubTranslation as _ } from '@/utils/misc';
-import { getDictStyles } from '@/utils/style';
+import { getDictStyles, liftDarkTextColors } from '@/utils/style';
 import type { DictionaryProvider, ImportedDictionary } from '../types';
 import type { DictionaryFileOpener } from './starDictProvider';
 
@@ -767,6 +767,8 @@ export const createMdictProvider = ({
           shadow.appendChild(style);
         }
         shadow.appendChild(body);
+        // The dict's colors are authored for a light page (#6618).
+        if (ctx.isDarkMode) liftDarkTextColors(body);
 
         // Hide our auto-prepended headword when the dict's own rendering
         // already ships one with the same text. Many dicts put a large
