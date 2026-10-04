@@ -1132,7 +1132,6 @@
   "Keep existing source identifier": "Διατήρηση υπάρχοντος αναγνωριστικού πηγής",
   "Toggle Toolbar": "Εναλλαγή γραμμής εργαλείων",
   "Split Hyphens": "Διαχωρισμός παύλων",
-  "Apply Theme Colors to PDF": "Εφαρμογή χρωμάτων θέματος σε PDF",
   "Name": "Όνομα",
   "Remove": "Αφαίρεση",
   "Edit OPDS Catalog": "Επεξεργασία καταλόγου OPDS",
@@ -2558,5 +2557,6 @@
   "AI Translator": "Μεταφραστής ΤΝ",
   "Examples": "Παραδείγματα",
   "Synonyms": "Συνώνυμα",
-  "Context Dictionary failed: {{message}}": "Σφάλμα λεξικού συμφραζομένων: {{message}}"
+  "Context Dictionary failed: {{message}}": "Σφάλμα λεξικού συμφραζομένων: {{message}}",
+  "Apply Theme Colors": "Εφαρμογή χρωμάτων θέματος"
 }

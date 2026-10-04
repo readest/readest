@@ -1132,7 +1132,6 @@
   "Keep existing source identifier": "حفظ شناسه منبع موجود",
   "Toggle Toolbar": "تغییر نوار ابزار",
   "Split Hyphens": "تقسیم خط‌تیره‌ها",
-  "Apply Theme Colors to PDF": "اعمال رنگ‌های پوسته روی PDF",
   "Name": "نام",
   "Remove": "حذف",
   "Edit OPDS Catalog": "ویرایش کاتالوگ OPDS",
@@ -2558,5 +2557,6 @@
   "AI Translator": "مترجم هوش مصنوعی",
   "Examples": "مثال‌ها",
   "Synonyms": "مترادف‌ها",
-  "Context Dictionary failed: {{message}}": "فرهنگ بافتاری با خطا مواجه شد: {{message}}"
+  "Context Dictionary failed: {{message}}": "فرهنگ بافتاری با خطا مواجه شد: {{message}}",
+  "Apply Theme Colors": "اعمال رنگ‌های پوسته"
 }

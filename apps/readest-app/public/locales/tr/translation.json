@@ -1132,7 +1132,6 @@
   "Keep existing source identifier": "Mevcut kaynak tanımlayıcısını koru",
   "Toggle Toolbar": "Araç Çubuğunu Aç/Kapat",
   "Split Hyphens": "Tireleri Böl",
-  "Apply Theme Colors to PDF": "Tema Renklerini PDF'ye Uygula",
   "Name": "Ad",
   "Remove": "Kaldır",
   "Edit OPDS Catalog": "OPDS Kataloğunu Düzenle",
@@ -2558,5 +2557,6 @@
   "AI Translator": "Yapay Zekâ Çevirmeni",
   "Examples": "Örnekler",
   "Synonyms": "Eş anlamlılar",
-  "Context Dictionary failed: {{message}}": "Bağlam sözlüğü başarısız oldu: {{message}}"
+  "Context Dictionary failed: {{message}}": "Bağlam sözlüğü başarısız oldu: {{message}}",
+  "Apply Theme Colors": "Tema Renklerini Uygula"
 }

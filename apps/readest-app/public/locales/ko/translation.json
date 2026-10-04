@@ -1118,7 +1118,6 @@
   "Keep existing source identifier": "기존 소스 식별자 유지",
   "Toggle Toolbar": "도구 모음 전환",
   "Split Hyphens": "하이픈 분리",
-  "Apply Theme Colors to PDF": "PDF에 테마 색상 적용",
   "Name": "이름",
   "Remove": "삭제",
   "Edit OPDS Catalog": "OPDS 카탈로그 편집",
@@ -2494,5 +2493,6 @@
   "AI Translator": "AI 번역기",
   "Examples": "예문",
   "Synonyms": "유의어",
-  "Context Dictionary failed: {{message}}": "문맥 사전 오류: {{message}}"
+  "Context Dictionary failed: {{message}}": "문맥 사전 오류: {{message}}",
+  "Apply Theme Colors": "테마 색상 적용"
 }
