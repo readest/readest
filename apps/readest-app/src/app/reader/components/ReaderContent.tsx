@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { flushPendingLibrarySave, useBookDataStore } from '@/store/bookDataStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -21,7 +21,6 @@ import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
 import { uniqueId } from '@/utils/misc';
-import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
 import { transitionAway } from '@/utils/viewTransition';
 import {
@@ -267,6 +266,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       // the reading position costs the user more than deferring a Notion push
       // (the push is idempotent and resumes on the next sync).
       await saveConfig(envConfig, bookKey, config, settings);
+      // saveConfig defers the library.json write by up to 30s, and closing the
+      // last window quits the app on Windows/Linux before it lands: the shelf
+      // then shows the old progress on the next launch (#6623).
+      await flushPendingLibrarySave();
       await Promise.race([
         eventDispatcher.dispatch('flush-notion-sync', { bookKey }),
         new Promise<void>((resolve) => setTimeout(resolve, NOTION_FLUSH_TIMEOUT_MS)),
@@ -359,10 +362,20 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   };
 
   // Also wired directly to beforeunload/quit-app/window-close, which pass an
-  // event object: only a literal `true` keeps TTS alive.
-  const handleCloseBooks = throttle(async (keepTTSAlive?: unknown) => {
-    await runNotebookTransition(bookKeys, () => closeBooks(keepTTSAlive === true));
-  }, 200);
+  // event object: only a literal `true` keeps TTS alive. Returns the close so
+  // the window-close and quit paths can await it before the app exits; a
+  // trigger that arrives mid-close joins the one already running.
+  const closingBooksRef = useRef<Promise<void> | null>(null);
+  const handleCloseBooks = (keepTTSAlive?: unknown) => {
+    closingBooksRef.current ??= runNotebookTransition(bookKeys, () =>
+      closeBooks(keepTTSAlive === true),
+    )
+      .then(() => {})
+      .finally(() => {
+        closingBooksRef.current = null;
+      });
+    return closingBooksRef.current;
+  };
 
   const handleCloseBooksToLibrary = async () => {
     // SPA navigation in the main window (or on web) keeps the webview alive:
