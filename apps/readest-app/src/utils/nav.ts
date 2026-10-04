@@ -132,6 +132,11 @@ export const navigateToLogin = (router: ReturnType<typeof useRouter>) => {
   router.push(`/auth?redirect=${encodeURIComponent(currentPath)}`);
 };
 
+export const navigateToHardcoverConnect = (router: ReturnType<typeof useRouter>) => {
+  const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+  router.push(`/hardcover/connect?redirect=${redirect}`);
+};
+
 // Remember the opener so leaving the profile returns to it, e.g. the book
 // being read when Plans was opened from the reader settings (#6607). The
 // direction picks the slide of the route view transition (useAppRouter).

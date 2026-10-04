@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
   return {
     makeStore,
     UnmatchedError: class extends Error {},
+    AuthError: class extends Error {},
     book,
     // Mutable settings — tests flip `hardcover.autoSync` between renders.
     settings: {
@@ -99,6 +100,9 @@ vi.mock('@/services/hardcover', () => ({
   },
   HardcoverSyncMapStore: class {},
   HardcoverUnmatchedError: h.UnmatchedError,
+  HardcoverAuthError: h.AuthError,
+  isHardcoverConnected: (hc?: { accessToken?: string }) => !!hc?.accessToken,
+  createHardcoverTokenStore: vi.fn(),
 }));
 
 vi.mock('@/utils/event', () => ({
@@ -396,5 +400,20 @@ describe('useHardcoverSync push health store', () => {
       pending: 0,
       lastError: null,
     });
+  });
+
+  test('an auth failure toasts a reconnect hint instead of the raw error', async () => {
+    h.pushProgressMock.mockRejectedValueOnce(new h.AuthError('Hardcover token was rejected'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.toasts).toEqual([
+      { message: 'Authentication failed. Reconnect in Settings.', type: 'error' },
+    ]);
   });
 });

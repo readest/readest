@@ -145,7 +145,10 @@ export interface ReadwiseSettings {
 
 export interface HardcoverSettings {
   enabled: boolean;
+  /** Pasted API token; empty when signed in with OAuth. */
   accessToken: string;
+  /** Device-local OAuth session; not synced (short-lived, refresh token rotates). */
+  oauth?: { accessToken: string; refreshToken?: string; expiresAt: number };
   lastSyncedAt: number;
   // When true, progress + notes are pushed to Hardcover automatically as the
   // user reads (debounced) instead of only via the reader menu. Default OFF;
