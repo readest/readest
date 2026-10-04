@@ -3,6 +3,7 @@ query GetUserId {
   me {
     id
     username
+    account_privacy_setting_id
   }
 }
 `;
@@ -203,15 +204,13 @@ mutation UpdateReadingJournal(
   $action_at: date,
   $page: Int!,
   $possible: Int!,
-  $percent: Float!,
-  $privacy_setting_id: Int!
+  $percent: Float!
 ) {
   update_reading_journal(
     id: $id
     object: {
       event: $event
       entry: $entry
-      privacy_setting_id: $privacy_setting_id
       tags: { category: "", spoiler: false, tag: "" }
       action_at: $action_at
       metadata: {

@@ -110,6 +110,8 @@ const rowFlags = (row: BookRow) => ({
   onShelf: (row.user_books?.length ?? 0) > 0,
 });
 
+type UserRow = { id: number; account_privacy_setting_id?: number | null };
+
 // Journal write queued for a batched request; a null journalId means insert.
 type JournalOp = {
   journalId: number | null;
@@ -134,6 +136,9 @@ export class HardcoverClient {
   private refreshInFlight: Promise<void> | null = null;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
+  // Visibility for new journal entries: the account's default, private until it is known.
+  // Updates leave it alone so a visibility changed on Hardcover sticks.
+  private privacySettingId = 3;
   private gate: RateLimitGate;
 
   constructor(
@@ -329,15 +334,16 @@ export class HardcoverClient {
 
   private async authenticate() {
     if (this.userId) return;
-    const data = await this.request<
-      Record<string, never>,
-      { me: { id: number } | Array<{ id: number }> }
-    >(QUERY_GET_USER_ID, {});
+    const data = await this.request<Record<string, never>, { me: UserRow | UserRow[] }>(
+      QUERY_GET_USER_ID,
+      {},
+    );
     const me = Array.isArray(data.me) ? data.me[0] : data.me;
     if (!me?.id) {
       throw new Error('Invalid Hardcover token: user ID not found');
     }
     this.userId = me.id;
+    this.privacySettingId = me.account_privacy_setting_id ?? this.privacySettingId;
   }
 
   private normalizeIdentifier(identifier: string): string {
@@ -714,7 +720,6 @@ export class HardcoverClient {
       possible: totalPages || Math.max(boundedPage, 1),
       percent,
       action_at: this.formatDate(new Date(note.updatedAt || note.createdAt || Date.now())),
-      privacy_setting_id: 3,
     };
   }
 
@@ -722,7 +727,12 @@ export class HardcoverClient {
     return op.journalId === null
       ? {
           query: MUTATION_INSERT_JOURNAL,
-          variables: { book_id: context.bookId, edition_id: context.editionId, ...op.payload },
+          variables: {
+            book_id: context.bookId,
+            edition_id: context.editionId,
+            privacy_setting_id: this.privacySettingId,
+            ...op.payload,
+          },
         }
       : { query: MUTATION_UPDATE_JOURNAL, variables: { id: op.journalId, ...op.payload } };
   }
@@ -833,7 +843,9 @@ export class HardcoverClient {
           continue;
         }
 
-        const payloadHash = getContentMd5(payload);
+        // Visibility isn't hashed, so changing it doesn't rewrite entries; the fixed 3
+        // keeps hashes saved before it was configurable valid.
+        const payloadHash = getContentMd5({ ...payload, privacy_setting_id: 3 });
         const existing = await this.mapStore.getMapping(book.hash, note.id);
 
         if (!existing) {
