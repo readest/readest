@@ -19,7 +19,7 @@
 import { eventDispatcher } from '@/utils/event';
 import { SILENCE_DATA } from '@/services/tts/TTSData';
 import { stubTranslation as _ } from '@/utils/misc';
-import { darkenDictStyles, getDictStyles } from '@/utils/style';
+import { getDictStyles, liftDarkTextColors } from '@/utils/style';
 import type { DictionaryProvider, ImportedDictionary } from '../types';
 import type { DictionaryFileOpener } from './starDictProvider';
 
@@ -759,14 +759,7 @@ export const createMdictProvider = ({
         // MDD-resident stylesheets the MDX referenced via `<link>`.
         // Cascade order matches authoring order.
         const dictStyles = getDictStyles(ctx.bg ?? '', ctx.fg ?? '', !!ctx.isDarkMode);
-        // The dictionary's own CSS is authored for a light page; in dark mode its near-gray text
-        // colors are lifted so examples and labels stay readable (#6618).
-        const themed = (css: string) => (ctx.isDarkMode ? darkenDictStyles(css) : css);
-        const allStylesheets = [
-          dictStyles,
-          ...looseStylesheets.map(themed),
-          ...mddStylesheets.map(themed),
-        ];
+        const allStylesheets = [dictStyles, ...looseStylesheets, ...mddStylesheets];
         for (const cssText of allStylesheets) {
           if (!cssText) continue;
           const style = document.createElement('style');
@@ -774,6 +767,8 @@ export const createMdictProvider = ({
           shadow.appendChild(style);
         }
         shadow.appendChild(body);
+        // The dict's colors are authored for a light page (#6618).
+        if (ctx.isDarkMode) liftDarkTextColors(body);
 
         // Hide our auto-prepended headword when the dict's own rendering
         // already ships one with the same text. Many dicts put a large
