@@ -985,6 +985,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         // WebKit when a search was cleared.
         <div className='min-h-0 flex-1'>
           <BookshelfStream
+            scrollKey={searchParams?.toString() ?? ''}
             pageNavigation={!!settings.globalViewSettings?.isEink}
             hidePageButtons={settings.hideBookshelfPageButtons}
             navigationBottomInset={

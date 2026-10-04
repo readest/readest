@@ -560,6 +560,51 @@ describe('mixed bookshelf stream in Chromium', () => {
       });
     }
   }
+  it('returns to the same place after the library remounts (opening a book and coming back)', async () => {
+    const shelves = () => [
+      section('reading', 'carousel', 12),
+      section('books', 'list', 300),
+      section('more', 'grid', 60),
+    ];
+    const stream = () => (
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          sections={shelves()}
+          autoColumns
+          fixedColumns={3}
+          renderItem={renderItem}
+          scrollKey='group=a'
+        />
+      </div>
+    );
+    const scrollerOf = (root: HTMLElement) =>
+      root.querySelector<HTMLElement>('[data-virtuoso-scroller]')!;
+    const firstVisible = (root: HTMLElement) => {
+      const top = scrollerOf(root).getBoundingClientRect().top;
+      return Array.from(root.querySelectorAll<HTMLElement>('[data-book]')).find(
+        (el) => el.getBoundingClientRect().bottom > top,
+      );
+    };
+    const visibleId = (root: HTMLElement) => {
+      const el = firstVisible(root);
+      return el && `${el.dataset['section']}:${el.dataset['book']}`;
+    };
+    const first = render(stream());
+    const scroller = scrollerOf(first.container);
+    await waitFor(() => expect(scroller.scrollHeight).toBeGreaterThan(8000));
+    scroller.scrollTop = 6000;
+    fireEvent.scroll(scroller);
+    await waitFor(() => expect(visibleId(first.container)).toMatch(/^books:\d{2,}$/));
+    // Let Virtuoso settle and report the end of the scroll.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const scrollTop = scroller.scrollTop;
+    const book = visibleId(first.container);
+    first.unmount();
+
+    const second = render(stream());
+    await waitFor(() => expect(scrollerOf(second.container).scrollTop).toBe(scrollTop));
+    expect(visibleId(second.container)).toBe(book);
+  });
   it('keeps very large carousels horizontally virtualized and scrollable', async () => {
     document.documentElement.setAttribute('data-eink', 'true');
     const { container, getByRole } = render(
