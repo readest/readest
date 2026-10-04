@@ -155,7 +155,19 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       // themed page is painted (the shell listens for this event) — see
       // lib.rs. Other platforms ignore it.
       import('@tauri-apps/api/event')
-        .then(({ emit }) => emit('window-themed').catch(() => {}))
+        .then(({ emit }) => {
+          // Emit only after the themed frame has actually been painted
+          // (two rAFs = one full render). Hidden windows never fire rAF,
+          // so race a short fallback timer — beyond it, the page is
+          // painted anyway and emitting immediately is the pre-existing
+          // verified behavior.
+          const painted = new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          });
+          Promise.race([painted, new Promise<void>((r) => setTimeout(r, 100))]).then(() =>
+            emit('window-themed').catch(() => {}),
+          );
+        })
         .catch(() => {});
       const hadSettingsFilePromise = appService.exists(SETTINGS_FILENAME, 'Settings');
       appService.loadSettings().then(async (settings) => {
