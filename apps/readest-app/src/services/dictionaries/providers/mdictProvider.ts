@@ -19,7 +19,7 @@
 import { eventDispatcher } from '@/utils/event';
 import { SILENCE_DATA } from '@/services/tts/TTSData';
 import { stubTranslation as _ } from '@/utils/misc';
-import { getDictStyles } from '@/utils/style';
+import { darkenDictStyles, getDictStyles } from '@/utils/style';
 import type { DictionaryProvider, ImportedDictionary } from '../types';
 import type { DictionaryFileOpener } from './starDictProvider';
 
@@ -759,7 +759,14 @@ export const createMdictProvider = ({
         // MDD-resident stylesheets the MDX referenced via `<link>`.
         // Cascade order matches authoring order.
         const dictStyles = getDictStyles(ctx.bg ?? '', ctx.fg ?? '', !!ctx.isDarkMode);
-        const allStylesheets = [dictStyles, ...looseStylesheets, ...mddStylesheets];
+        // The dictionary's own CSS is authored for a light page; in dark mode its near-gray text
+        // colors are lifted so examples and labels stay readable (#6618).
+        const themed = (css: string) => (ctx.isDarkMode ? darkenDictStyles(css) : css);
+        const allStylesheets = [
+          dictStyles,
+          ...looseStylesheets.map(themed),
+          ...mddStylesheets.map(themed),
+        ];
         for (const cssText of allStylesheets) {
           if (!cssText) continue;
           const style = document.createElement('style');

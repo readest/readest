@@ -847,9 +847,78 @@ export const getFootnoteStyles = () => `
  * The seam exists so app-wide rules can be added in one place without
  * touching the provider code. Currently it ships:
  */
+/** Parse the CSS colors we rewrite: #rgb, #rrggbb, rgb() and a few named grays. */
+const parseCssColor = (value: string): [number, number, number] | null => {
+  const v = value.trim().toLowerCase();
+  const named: Record<string, [number, number, number]> = {
+    black: [0, 0, 0],
+    gray: [128, 128, 128],
+    grey: [128, 128, 128],
+    darkgray: [169, 169, 169],
+    darkgrey: [169, 169, 169],
+    dimgray: [105, 105, 105],
+    dimgrey: [105, 105, 105],
+  };
+  if (v in named) return named[v]!;
+  const hex = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/);
+  if (hex) {
+    const h = hex[1]!;
+    const expand =
+      h.length === 3
+        ? h
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : h;
+    return [
+      parseInt(expand.slice(0, 2), 16),
+      parseInt(expand.slice(2, 4), 16),
+      parseInt(expand.slice(4, 6), 16),
+    ];
+  }
+  const rgb = v.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+  if (rgb?.[1] != null && rgb[2] != null && rgb[3] != null) {
+    return [parseInt(rgb[1], 10), parseInt(rgb[2], 10), parseInt(rgb[3], 10)];
+  }
+  return null;
+};
+
+const colorLuminance = ([r, g, b]: readonly [number, number, number]): number =>
+  (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+/**
+ * Rewrite a dictionary stylesheet's text colors for dark mode (#6618).
+ *
+ * Dictionaries are authored against a light page, so secondary text — examples, labels — is often
+ * a dark gray that vanishes on the dark popup. Only dark NEAR-GRAYSCALE colors are lifted: a
+ * coloured accent (a part-of-speech red) keeps its hue, and only `color` declarations are touched,
+ * so backgrounds and borders are untouched.
+ */
+export const darkenDictStyles = (css: string): string =>
+  css.replace(
+    /(^|[;{\s])(color\s*:\s*)([^;}]+)/gim,
+    (match, lead: string, property: string, rawValue: string) => {
+      const value = rawValue.trim();
+      const important = /\s*!important$/i.test(value);
+      const rgb = parseCssColor(value.replace(/\s*!important$/i, ''));
+      if (!rgb) return match;
+      const [r, g, b] = rgb;
+      const nearGrayscale = Math.max(r, g, b) - Math.min(r, g, b) <= 24;
+      if (!nearGrayscale || colorLuminance(rgb) > 0.5) return match;
+      const lift = (channel: number) => Math.round(channel + (255 - channel) * 0.75);
+      const lifted = [lift(r), lift(g), lift(b)]
+        .map((channel) => channel.toString(16).padStart(2, '0'))
+        .join('');
+      return `${lead}${property}#${lifted}${important ? ' !important' : ''}`;
+    },
+  );
+
 export const getDictStyles = (bg: string, fg: string, isDarkMode: boolean) => {
-  void fg;
+  // The host paints the theme foreground so text without an authored color is readable in the
+  // shadow root; authored near-gray colors are lifted by `darkenDictStyles` (#6618).
+  const hostColor = isDarkMode && fg ? `:host { color: ${fg}; }` : '';
   return `
+    ${hostColor}
     a:empty {
       background-color: transparent;
       mix-blend-mode: multiply;
