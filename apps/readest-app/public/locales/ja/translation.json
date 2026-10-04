@@ -1118,7 +1118,6 @@
   "Keep existing source identifier": "既存のソース識別子を保持",
   "Toggle Toolbar": "ツールバーの表示切替",
   "Split Hyphens": "ハイフンで分割",
-  "Apply Theme Colors to PDF": "テーマカラーをPDFに適用",
   "Name": "名前",
   "Remove": "削除",
   "Edit OPDS Catalog": "OPDSカタログを編集",
@@ -2494,5 +2493,6 @@
   "AI Translator": "AI 翻訳サービス",
   "Examples": "例文",
   "Synonyms": "類義語",
-  "Context Dictionary failed: {{message}}": "文脈辞書でエラーが発生しました：{{message}}"
+  "Context Dictionary failed: {{message}}": "文脈辞書でエラーが発生しました：{{message}}",
+  "Apply Theme Colors": "テーマカラーを適用"
 }

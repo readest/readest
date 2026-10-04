@@ -206,7 +206,10 @@ export const viewPagination = (
     // shrinks when they're shown. Subtracting their heights again here would
     // double-count and make consecutive views overlap.
     const { size } = renderer;
-    const scrollingOverlap = viewSettings.scrollingOverlap;
+    const isFixedLayout = view.book.rendition?.layout === 'pre-paginated';
+    // Overlap is a fixed-layout (PDF) setting: reflowable turns snap to whole
+    // lines below, which already keeps the cut line on the next view.
+    const scrollingOverlap = isFixedLayout ? viewSettings.scrollingOverlap : 0;
     const distance = size - scrollingOverlap;
     switch (mode) {
       case 'section':
@@ -222,8 +225,7 @@ export const viewPagination = (
         // Snap so the view's bottom edge lands between lines (not for vertical flow).
         const snapped =
           viewSettings.vertical ||
-          (viewSettings.scrolledDirection === 'horizontal' &&
-            view.book.rendition?.layout === 'pre-paginated')
+          (viewSettings.scrolledDirection === 'horizontal' && isFixedLayout)
             ? distance
             : snapScrolledDistanceToLines(view, distance, forward);
         // In scrolled mode 'pan' and 'page' both advance a full viewport (the

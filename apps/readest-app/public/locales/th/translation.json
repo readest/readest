@@ -1118,7 +1118,6 @@
   "Keep existing source identifier": "เก็บตัวระบุแหล่งที่มาที่มีอยู่",
   "Toggle Toolbar": "สลับแถบเครื่องมือ",
   "Split Hyphens": "แยกยัติภังค์",
-  "Apply Theme Colors to PDF": "ใช้สีธีมกับ PDF",
   "Name": "ชื่อ",
   "Remove": "ลบ",
   "Edit OPDS Catalog": "แก้ไขแคตตาล็อก OPDS",
@@ -2494,5 +2493,6 @@
   "AI Translator": "ตัวแปล AI",
   "Examples": "ตัวอย่าง",
   "Synonyms": "คำพ้องความหมาย",
-  "Context Dictionary failed: {{message}}": "พจนานุกรมตามบริบทล้มเหลว: {{message}}"
+  "Context Dictionary failed: {{message}}": "พจนานุกรมตามบริบทล้มเหลว: {{message}}",
+  "Apply Theme Colors": "ใช้สีธีม"
 }

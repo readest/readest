@@ -965,7 +965,6 @@
   "Paragraph Mode": "აბზაცის რეჟიმი",
   "Speed Reading Mode": "სწრაფი კითხვის რეჟიმი",
   "Sign in to Sync": "შედით სინქრონიზაციისთვის",
-  "Apply Theme Colors to PDF": "თემის ფერების გამოყენება PDF-ზე",
   "Invert Image In Dark Mode": "სურათის ინვერსია ბნელ რეჟიმში",
   "Share Image": "სურათის გაზიარება",
   "Save Image": "სურათის შენახვა",
@@ -2558,5 +2557,6 @@
   "AI Translator": "AI მთარგმნელი",
   "Examples": "მაგალითები",
   "Synonyms": "სინონიმები",
-  "Context Dictionary failed: {{message}}": "კონტექსტური ლექსიკონის შეცდომა: {{message}}"
+  "Context Dictionary failed: {{message}}": "კონტექსტური ლექსიკონის შეცდომა: {{message}}",
+  "Apply Theme Colors": "თემის ფერების გამოყენება"
 }
