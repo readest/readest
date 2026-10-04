@@ -40,7 +40,7 @@ const props = {
   handleBookDownload: vi.fn(),
   showBookDetailsModal: vi.fn(),
   showTimeRemaining: false,
-  showSeriesIndex: true,
+  seriesIndex: 12.5,
 };
 
 describe('series index badge placement (#6347)', () => {

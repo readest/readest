@@ -20,7 +20,7 @@ import { navigateToLogin } from '@/utils/nav';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { isAudiobook } from '@/utils/audiobook';
-import { formatAuthors, formatDescription, formatSeries, getSeriesIndex } from '@/utils/book';
+import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import { splitDuration } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
 import { getBookTags } from '../utils/libraryUtils';
@@ -39,8 +39,8 @@ interface BookItemProps {
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
   showTimeRemaining: boolean;
-  /** Inside a series group, where the breadcrumb already names the series. */
-  showSeriesIndex?: boolean;
+  /** Badged on the cover inside a series group, where the breadcrumb names the series. */
+  seriesIndex?: number;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -55,7 +55,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookDownload,
   showBookDetailsModal,
   showTimeRemaining,
-  showSeriesIndex,
+  seriesIndex,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -88,8 +88,6 @@ const BookItem: React.FC<BookItemProps> = ({
     : undefined;
 
   const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
-  const seriesIndex =
-    showSeriesIndex && mode === 'grid' ? getSeriesIndex(book.metadata?.seriesIndex) : undefined;
   // Synced rows may carry untrimmed or duplicate tags; show each tag once.
   const tags = getBookTags(book);
 

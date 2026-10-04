@@ -43,35 +43,17 @@ const props = {
 afterEach(cleanup);
 
 describe('series index badge on library grid covers (#6347)', () => {
-  it('badges the cover with the series index inside a series group', () => {
-    const { container } = render(<BookItem {...props} book={book} mode='grid' showSeriesIndex />);
+  it('badges the cover with the series index', () => {
+    const { container } = render(<BookItem {...props} book={book} mode='grid' seriesIndex={2} />);
     const badge = screen.getByText('#2');
     expect(container.querySelector('.bookitem-main')!.contains(badge)).toBe(true);
     // The breadcrumb already names the series, so the card adds no series row.
     expect(screen.queryByText('The Expanse #2')).toBeNull();
   });
 
-  it('shows no badge outside a series group', () => {
+  it('shows no badge without a series index', () => {
     render(<BookItem {...props} book={book} mode='grid' />);
     expect(screen.queryByText('#2')).toBeNull();
     expect(screen.queryByText('The Expanse #2')).toBeNull();
-  });
-
-  it.each([undefined, 0, Number.NaN])('shows no badge for series index %j', (seriesIndex) => {
-    render(
-      <BookItem
-        {...props}
-        book={{ ...book, metadata: { ...book.metadata!, seriesIndex } }}
-        mode='grid'
-        showSeriesIndex
-      />,
-    );
-    expect(screen.queryByText(/^#/)).toBeNull();
-  });
-
-  it('keeps the list row series text instead of a badge', () => {
-    render(<BookItem {...props} book={book} mode='list' showSeriesIndex />);
-    expect(screen.getByText('The Expanse #2')).toBeTruthy();
-    expect(screen.queryByText('#2')).toBeNull();
   });
 });
