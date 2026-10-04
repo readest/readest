@@ -49,9 +49,11 @@ export const transitionAway = async (
   });
   // A skipped animation is fine; a failed `leave` still surfaces below.
   void transition.ready.catch(() => {});
+  // Handled up front: `finished` also rejects when `leave` does.
+  const finished = transition.finished.catch(() => {});
   try {
     await transition.updateCallbackDone;
-    await transition.finished.catch(() => {});
+    await finished;
   } finally {
     root.removeAttribute('data-nav-direction');
   }

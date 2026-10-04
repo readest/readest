@@ -116,6 +116,29 @@ describe('mixed bookshelf stream in Chromium', () => {
     // The pull-to-refresh rubber band translates every `.transform-wrapper`.
     expect(button.closest('.transform-wrapper')).not.toBeNull();
   });
+  it('holds the import action back for new rows and keeps it for recomputed ones', async () => {
+    const stream = (sections: ShelfSection[]) => (
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          sections={sections}
+          autoColumns={false}
+          fixedColumns={3}
+          importAction={<button type='button'>Import Books</button>}
+          renderItem={renderItem}
+        />
+      </div>
+    );
+    const { rerender } = render(stream([section('books', 'carousel', 3)]));
+    const locator = page.getByRole('button', { name: 'Import Books' });
+    await expect.element(locator).toBeInTheDocument();
+    // Same rows, new identity (a store update recomputing the shelves).
+    rerender(stream([section('books', 'carousel', 3)]));
+    await expect.element(locator).toBeInTheDocument();
+    // Another shelf: the action waits for its rows, then returns.
+    rerender(stream([section('other', 'grid', 6)]));
+    await expect.element(locator).toBeInTheDocument();
+    expect(document.querySelector('[data-section="other"]')).not.toBeNull();
+  });
   it('shows the library page controls only in e-ink mode', () => {
     const { queryByRole } = render(
       <div style={{ width: 900, height: 600 }}>

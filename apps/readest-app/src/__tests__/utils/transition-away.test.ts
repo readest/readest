@@ -49,6 +49,30 @@ describe('transitionAway', () => {
     expect(Date.now() - start).toBeLessThan(1000);
   });
 
+  it('surfaces a failed leave without an unhandled finished rejection', async () => {
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    doc.startViewTransition = (update) => {
+      const updateCallbackDone = update();
+      // Like the engine: a separate `finished` that rejects when the update fails.
+      const finished = updateCallbackDone.then(() => undefined);
+      return { updateCallbackDone, ready: Promise.resolve(), finished };
+    };
+    await expect(
+      transitionAway(
+        async () => {
+          throw new Error('close failed');
+        },
+        () => true,
+        'back',
+      ),
+    ).rejects.toThrow('close failed');
+    await new Promise((r) => setTimeout(r, 0));
+    process.off('unhandledRejection', unhandled);
+    expect(unhandled).not.toHaveBeenCalled();
+    expect(document.documentElement.hasAttribute('data-nav-direction')).toBe(false);
+  });
+
   it('just leaves when the engine has no view transitions', async () => {
     const leave = vi.fn(async () => {});
     await transitionAway(leave, () => true, 'back');

@@ -303,10 +303,10 @@ export default function BookshelfStream({
   );
   // Virtuoso mounts its footer before it has measured the viewport and placed
   // any row, which flashed the import action at the top of the page on every
-  // library load. Hold it back until the first rows are on screen (or there
-  // are none to wait for).
-  const [rowsRendered, setRowsRendered] = useState(false);
-  const showAction = rowsRendered || rows.length === 0;
+  // library load. Hold it back until these rows are on screen (or there are
+  // none to wait for); a shelf switch swaps the rows without a remount.
+  const [renderedRows, setRenderedRows] = useState<StreamRow[] | null>(null);
+  const showAction = renderedRows === rows || rows.length === 0;
   const context = useMemo(
     () => ({ height: footerHeight, action: showAction ? importAction : undefined, scale }),
     [footerHeight, importAction, showAction, scale],
@@ -329,7 +329,7 @@ export default function BookshelfStream({
             components={COMPONENTS}
             scrollerRef={handleScrollerRef}
             itemsRendered={(items) => {
-              if (items.length > 0) setRowsRendered(true);
+              if (items.length > 0) setRenderedRows(rows);
             }}
             atTopStateChange={setStart}
             atBottomStateChange={setEnd}
