@@ -3,7 +3,6 @@ query GetUserId {
   me {
     id
     username
-    account_privacy_setting_id
   }
 }
 `;

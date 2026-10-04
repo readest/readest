@@ -96,8 +96,6 @@ const rowFlags = (row: BookRow) => ({
   onShelf: (row.user_books?.length ?? 0) > 0,
 });
 
-type UserRow = { id: number; account_privacy_setting_id?: number | null };
-
 // Journal write queued for a batched request; a null journalId means insert.
 type JournalOp = {
   journalId: number | null;
@@ -115,8 +113,6 @@ export class HardcoverClient {
   private token: string;
   private mapStore: HardcoverSyncMapStore;
   private userId: number | null = null;
-  // Visibility for synced journal entries: the account's default, private until it is known.
-  private privacySettingId = 3;
   private gate: RateLimitGate;
 
   constructor(settings: HardcoverSettingsLike, mapStore: HardcoverSyncMapStore) {
@@ -243,16 +239,15 @@ export class HardcoverClient {
 
   private async authenticate() {
     if (this.userId) return;
-    const data = await this.request<Record<string, never>, { me: UserRow | UserRow[] }>(
-      QUERY_GET_USER_ID,
-      {},
-    );
+    const data = await this.request<
+      Record<string, never>,
+      { me: { id: number } | Array<{ id: number }> }
+    >(QUERY_GET_USER_ID, {});
     const me = Array.isArray(data.me) ? data.me[0] : data.me;
     if (!me?.id) {
       throw new Error('Invalid Hardcover token: user ID not found');
     }
     this.userId = me.id;
-    this.privacySettingId = me.account_privacy_setting_id ?? this.privacySettingId;
   }
 
   private normalizeIdentifier(identifier: string): string {
@@ -629,7 +624,7 @@ export class HardcoverClient {
       possible: totalPages || Math.max(boundedPage, 1),
       percent,
       action_at: this.formatDate(new Date(note.updatedAt || note.createdAt || Date.now())),
-      privacy_setting_id: this.privacySettingId,
+      privacy_setting_id: 3,
     };
   }
 

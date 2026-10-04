@@ -38,7 +38,7 @@ type HardcoverClientTestApi = {
     note: BookNote,
     config: BookConfig,
     context: TestBookContext,
-  ) => { action_at: string; entry: string; event: string; privacy_setting_id: number };
+  ) => { action_at: string; entry: string; event: string };
   ensureBookInLibrary: (
     book: Book,
     link?: HardcoverBookLink | null,
@@ -450,22 +450,6 @@ describe('HardcoverClient', () => {
     expect(payload.entry).toBe(
       "She smiled. 'Are you, Overseer? Still?'\n\n'What do you mean?'\n\n━━━\n\nFollow-up note",
     );
-  });
-
-  test("uses the account's default visibility for journal entries, private until it is known", async () => {
-    const note = { id: 'n1', type: 'annotation', text: 'Quote', updatedAt: 1 } as BookNote;
-    const context = { editionId: 1, pages: 100, bookId: 2, bookPages: 100, userBook: null };
-    const privacy = () =>
-      clientApi.buildJournalPayload(note, {} as BookConfig, context).privacy_setting_id;
-
-    expect(privacy()).toBe(3);
-
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ data: { me: [{ id: 1, account_privacy_setting_id: 1 }] } }),
-    });
-    await client.validateToken();
-    expect(privacy()).toBe(1);
   });
 
   test('should promote an existing user book to currently reading before syncing progress', async () => {
