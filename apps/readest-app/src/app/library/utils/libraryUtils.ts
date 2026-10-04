@@ -175,6 +175,32 @@ export const expandBookshelfSelection = (ids: string[], items: (Book | BooksGrou
 };
 
 /**
+ * The manual group a selection stands for, if any. Selecting a group tile
+ * selects its books (nested folders included), never the group's id, so the
+ * group is the rendered folder tile whose books are exactly the selection.
+ * Folder tiles are keyed by `md5Fingerprint(name)`; series/author/tag tiles
+ * namespace their keys, so they never match.
+ */
+export const findSelectedManualGroup = (
+  ids: string[],
+  items: (Book | BooksGroup)[],
+): BooksGroup | undefined => {
+  const selected = new Set(ids);
+  return items.find((item): item is BooksGroup => {
+    if (!('books' in item) || item.id !== md5Fingerprint(item.name)) return false;
+    const books = item.books.filter((book) => !book.deletedAt);
+    return (
+      books.length === selected.size &&
+      books.every(
+        (book) =>
+          selected.has(book.hash) &&
+          (book.groupName === item.name || !!book.groupName?.startsWith(`${item.name}/`)),
+      )
+    );
+  });
+};
+
+/**
  * The books a bulk Download should actually fetch (#5244): the selection
  * expanded through {@link expandBookshelfSelection}, narrowed to the books that
  * live in the cloud but not on this device. The predicate matches the per-book

@@ -75,10 +75,15 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       onImageError?.();
     };
 
-    useEffect(() => {
+    // Reset during render, not in an effect: a cached cover can report `load`
+    // before a mount effect runs, and the effect would then hide the spine for
+    // good (a carousel remounts covers as they scroll back into view).
+    const [prevCoverImageUrl, setPrevCoverImageUrl] = useState(coverImageUrl);
+    if (coverImageUrl !== prevCoverImageUrl) {
+      setPrevCoverImageUrl(coverImageUrl);
       setImageLoaded(false);
       setImageError(false);
-    }, [coverImageUrl]);
+    }
 
     useEffect(() => {
       setFailedThumbnailUrl(null);

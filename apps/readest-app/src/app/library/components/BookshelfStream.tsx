@@ -244,7 +244,10 @@ const StreamItem = ({
   </div>
 );
 const StreamFooter = ({ context }: { context?: StreamContext }) => (
-  <div style={{ paddingBottom: context?.height || 34 }}>{context?.action}</div>
+  <div style={{ paddingBottom: context?.height || 34 }}>
+    {/* Rides the pull-to-refresh rubber band with the shelf rows. */}
+    {context?.action && <div className='transform-wrapper'>{context.action}</div>}
+  </div>
 );
 const COMPONENTS: Components<StreamRow, StreamContext> = {
   Item: StreamItem,
@@ -298,9 +301,15 @@ export default function BookshelfStream({
     () => buildBookshelfRows(sections, columns, includeImport),
     [sections, columns, includeImport],
   );
+  // Virtuoso mounts its footer before it has measured the viewport and placed
+  // any row, which flashed the import action at the top of the page on every
+  // library load. Hold it back until these rows are on screen (or there are
+  // none to wait for); a shelf switch swaps the rows without a remount.
+  const [renderedRows, setRenderedRows] = useState<StreamRow[] | null>(null);
+  const showAction = renderedRows === rows || rows.length === 0;
   const context = useMemo(
-    () => ({ height: footerHeight, action: importAction, scale }),
-    [footerHeight, importAction, scale],
+    () => ({ height: footerHeight, action: showAction ? importAction : undefined, scale }),
+    [footerHeight, importAction, showAction, scale],
   );
   return (
     <LibraryPageDurationsContext.Provider value={pageDurations || {}}>
@@ -319,6 +328,9 @@ export default function BookshelfStream({
             context={context}
             components={COMPONENTS}
             scrollerRef={handleScrollerRef}
+            itemsRendered={(items) => {
+              if (items.length > 0) setRenderedRows(rows);
+            }}
             atTopStateChange={setStart}
             atBottomStateChange={setEnd}
             atTopThreshold={1}

@@ -23,6 +23,7 @@ import { splitLibraryOpenIds } from '@/utils/audiobook';
 import { uniqueId } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
+import { transitionAway } from '@/utils/viewTransition';
 import {
   closeReaderWindowOrGoToLibrary,
   ensureMainLibraryWindow,
@@ -63,6 +64,11 @@ import NotebookTransitionAlert from './notebook/NotebookTransitionAlert';
  * so an unbounded flush would leave the window unclosable on a dead network.
  */
 const NOTION_FLUSH_TIMEOUT_MS = 3000;
+
+// The library has mounted. Its shelf rows can't be awaited: the virtual list
+// measures before placing rows, and nothing is measured while the transition
+// holds the old page on screen. The app may also serve the library at `/`.
+const libraryArrived = () => !!document.querySelector('.bookshelf');
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const _ = useTranslation();
@@ -301,6 +307,14 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     navigateToLibrary(router, '', undefined, true);
   };
 
+  // Closing tears the book down before the library mounts, which flashed a
+  // blank reader and an empty shelf. Capture the open book first so the
+  // library slides in over it once its shelves are drawn.
+  const leaveToLibrary = (leave: () => Promise<void>) =>
+    appService?.supportsViewTransitionsAPI
+      ? transitionAway(leave, libraryArrived, 'back')
+      : leave();
+
   const saveSettingsAndGoToLibrary = () => {
     saveSettings(envConfig, settings);
     navigateBackToLibrary();
@@ -336,8 +350,11 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const handleCloseReaderToLibrary = async (event: CustomEvent): Promise<void> => {
     const onClose = (event.detail as { onClose?: () => void } | undefined)?.onClose;
     await runNotebookTransition(bookKeys, async () => {
-      await closeBooks(true);
-      onClose?.();
+      const close = async () => {
+        await closeBooks(true);
+        onClose?.();
+      };
+      await (onClose ? leaveToLibrary(close) : close());
     });
   };
 
@@ -352,19 +369,17 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     // TTS may continue headless. Non-main Tauri windows close their webview
     // below, but their per-window TTS dies with the window either way.
     await runNotebookTransition(bookKeys, async () => {
-      await closeBooks(true);
-      if (isTauriAppPlatform()) {
-        const currentWindow = getCurrentWindow();
-        if (currentWindow.label === 'main') {
-          navigateBackToLibrary();
-        } else {
-          if (appService) {
-            await ensureMainLibraryWindow(appService);
-          }
-          await currentWindow.close();
+      if (isTauriAppPlatform() && getCurrentWindow().label !== 'main') {
+        await closeBooks(true);
+        if (appService) {
+          await ensureMainLibraryWindow(appService);
         }
+        await getCurrentWindow().close();
       } else {
-        navigateBackToLibrary();
+        await leaveToLibrary(async () => {
+          await closeBooks(true);
+          navigateBackToLibrary();
+        });
       }
     });
   };
@@ -373,13 +388,25 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     // Header X / pane close: an SPA-side close on web and the main window.
     // The Tauri reader-window branches below destroy their webview, which
     // takes the per-window TTS with it either way.
-    await runNotebookTransition([bookKey], async () => {
+    const closeBook = async () => {
       await saveConfigAndCloseBook(bookKey, true);
       if (sideBarBookKey === bookKey) {
         setSideBarBookKey(getNextBookKey(sideBarBookKey));
       }
       dismissBook(bookKey);
-      if (bookKeys.filter((key) => key !== bookKey).length == 0) {
+    };
+    await runNotebookTransition([bookKey], async () => {
+      const isLastBook = bookKeys.every((key) => key === bookKey);
+      // Without windows, closing the last book always returns to the library.
+      if (isLastBook && !appService?.hasWindow) {
+        await leaveToLibrary(async () => {
+          await closeBook();
+          saveSettingsAndGoToLibrary();
+        });
+        return;
+      }
+      await closeBook();
+      if (isLastBook) {
         const openWithFiles = (await parseOpenWithFiles(appService)) || [];
         if (appService?.hasWindow) {
           if (openWithFiles.length > 0) {
