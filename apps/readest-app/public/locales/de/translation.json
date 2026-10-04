@@ -1132,7 +1132,6 @@
   "Keep existing source identifier": "Vorhandene Quellkennung beibehalten",
   "Toggle Toolbar": "Symbolleiste umschalten",
   "Split Hyphens": "Bindestriche trennen",
-  "Apply Theme Colors to PDF": "Designfarben auf PDF anwenden",
   "Name": "Name",
   "Remove": "Entfernen",
   "Edit OPDS Catalog": "OPDS-Katalog bearbeiten",
@@ -2558,5 +2557,10 @@
   "AI Translator": "KI-Übersetzer",
   "Examples": "Beispiele",
   "Synonyms": "Synonyme",
-  "Context Dictionary failed: {{message}}": "Kontextwörterbuch fehlgeschlagen: {{message}}"
+  "Context Dictionary failed: {{message}}": "Kontextwörterbuch fehlgeschlagen: {{message}}",
+  "Apply Theme Colors": "Designfarben anwenden",
+  "Set Repeat Start (A)": "Wiederholungsstart setzen (A)",
+  "Set Repeat End (B)": "Wiederholungsende setzen (B)",
+  "Clear A-B Repeat": "A-B-Wiederholung löschen",
+  "Pause After Each Sentence": "Nach jedem Satz pausieren"
 }

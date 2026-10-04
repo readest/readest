@@ -1146,7 +1146,6 @@
   "Keep existing source identifier": "Mantener el identificador de origen existente",
   "Toggle Toolbar": "Alternar barra de herramientas",
   "Split Hyphens": "Dividir guiones",
-  "Apply Theme Colors to PDF": "Aplicar colores del tema al PDF",
   "Name": "Nombre",
   "Remove": "Eliminar",
   "Edit OPDS Catalog": "Editar catálogo OPDS",
@@ -2622,5 +2621,10 @@
   "AI Translator": "Traductor de IA",
   "Examples": "Ejemplos",
   "Synonyms": "Sinónimos",
-  "Context Dictionary failed: {{message}}": "Error del diccionario contextual: {{message}}"
+  "Context Dictionary failed: {{message}}": "Error del diccionario contextual: {{message}}",
+  "Apply Theme Colors": "Aplicar colores del tema",
+  "Set Repeat Start (A)": "Establecer inicio de repetición (A)",
+  "Set Repeat End (B)": "Establecer fin de repetición (B)",
+  "Clear A-B Repeat": "Quitar repetición A-B",
+  "Pause After Each Sentence": "Pausar después de cada frase"
 }

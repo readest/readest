@@ -1133,7 +1133,6 @@
   "Keep existing source identifier": "保留现有来源标识符",
   "Toggle Toolbar": "切换工具栏",
   "Split Hyphens": "拆分连字符",
-  "Apply Theme Colors to PDF": "将主题颜色应用于 PDF",
   "Name": "名称",
   "Remove": "移除",
   "Edit OPDS Catalog": "编辑 OPDS 目录",
@@ -2494,5 +2493,10 @@
   "AI Translator": "AI 翻译器",
   "Examples": "例句",
   "Synonyms": "近义词",
-  "Context Dictionary failed: {{message}}": "语境词典出错：{{message}}"
+  "Context Dictionary failed: {{message}}": "语境词典出错：{{message}}",
+  "Apply Theme Colors": "应用主题颜色",
+  "Set Repeat Start (A)": "设置复读起点 (A)",
+  "Set Repeat End (B)": "设置复读终点 (B)",
+  "Clear A-B Repeat": "清除 A-B 复读",
+  "Pause After Each Sentence": "每句后暂停"
 }

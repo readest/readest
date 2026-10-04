@@ -1132,7 +1132,6 @@
   "Reveal in File Explorer": "Megjelenítés a Fájlkezelőben",
   "Reveal in Folder": "Megjelenítés a mappában",
   "Split Hyphens": "Kötőjelek felosztása",
-  "Apply Theme Colors to PDF": "Téma színeinek alkalmazása PDF-re",
   "Name": "Név",
   "Remove": "Eltávolítás",
   "Edit OPDS Catalog": "OPDS katalógus szerkesztése",
@@ -2558,5 +2557,10 @@
   "AI Translator": "MI-fordító",
   "Examples": "Példák",
   "Synonyms": "Szinonimák",
-  "Context Dictionary failed: {{message}}": "A kontextusszótár hibát jelzett: {{message}}"
+  "Context Dictionary failed: {{message}}": "A kontextusszótár hibát jelzett: {{message}}",
+  "Apply Theme Colors": "Téma színeinek alkalmazása",
+  "Set Repeat Start (A)": "Ismétlés kezdetének beállítása (A)",
+  "Set Repeat End (B)": "Ismétlés végének beállítása (B)",
+  "Clear A-B Repeat": "A-B ismétlés törlése",
+  "Pause After Each Sentence": "Szünet minden mondat után"
 }

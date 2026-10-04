@@ -1160,7 +1160,6 @@
   "Keep existing source identifier": "Ohrani obstoječi identifikator vira",
   "Toggle Toolbar": "Preklopi orodno vrstico",
   "Split Hyphens": "Razdeli vezaje",
-  "Apply Theme Colors to PDF": "Uporabi barve teme za PDF",
   "Name": "Ime",
   "Remove": "Odstrani",
   "Edit OPDS Catalog": "Uredi katalog OPDS",
@@ -2686,5 +2685,10 @@
   "AI Translator": "Prevajalnik UI",
   "Examples": "Primeri",
   "Synonyms": "Sopomenke",
-  "Context Dictionary failed: {{message}}": "Napaka kontekstnega slovarja: {{message}}"
+  "Context Dictionary failed: {{message}}": "Napaka kontekstnega slovarja: {{message}}",
+  "Apply Theme Colors": "Uporabi barve teme",
+  "Set Repeat Start (A)": "Nastavi začetek ponavljanja (A)",
+  "Set Repeat End (B)": "Nastavi konec ponavljanja (B)",
+  "Clear A-B Repeat": "Počisti ponavljanje A-B",
+  "Pause After Each Sentence": "Premor po vsakem stavku"
 }

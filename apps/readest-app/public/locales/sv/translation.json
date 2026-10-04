@@ -1132,7 +1132,6 @@
   "Keep existing source identifier": "Behåll befintlig källidentifierare",
   "Toggle Toolbar": "Visa/dölj verktygsfältet",
   "Split Hyphens": "Dela bindestreck",
-  "Apply Theme Colors to PDF": "Tillämpa temafärger på PDF",
   "Name": "Namn",
   "Remove": "Ta bort",
   "Edit OPDS Catalog": "Redigera OPDS-katalog",
@@ -2558,5 +2557,10 @@
   "AI Translator": "AI-översättare",
   "Examples": "Exempel",
   "Synonyms": "Synonymer",
-  "Context Dictionary failed: {{message}}": "Kontextordboken misslyckades: {{message}}"
+  "Context Dictionary failed: {{message}}": "Kontextordboken misslyckades: {{message}}",
+  "Apply Theme Colors": "Tillämpa temafärger",
+  "Set Repeat Start (A)": "Ange upprepningsstart (A)",
+  "Set Repeat End (B)": "Ange upprepningsslut (B)",
+  "Clear A-B Repeat": "Rensa A-B-upprepning",
+  "Pause After Each Sentence": "Pausa efter varje mening"
 }

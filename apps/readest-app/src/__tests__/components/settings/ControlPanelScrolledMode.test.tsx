@@ -141,6 +141,19 @@ describe('Settings > Behavior > Scroll', () => {
 
     expect(scrolledModeSwitch()?.disabled).toBe(false);
   });
+
+  // Reflowable scrolled turns snap to whole lines, which overrides any overlap,
+  // so the setting only exists for fixed-layout books.
+  it('shows Overlap Pixels only for a fixed-layout book', () => {
+    currentIsFixedLayout = true;
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    expect(screen.queryByText('Overlap Pixels')).not.toBeNull();
+    cleanup();
+
+    currentIsFixedLayout = false;
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+    expect(screen.queryByText('Overlap Pixels')).toBeNull();
+  });
 });
 
 describe('Scrolled Mode and the page-turn attributes', () => {

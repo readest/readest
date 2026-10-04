@@ -1146,7 +1146,6 @@
   "Keep existing source identifier": "שמור על מזהה המקור הקיים",
   "Toggle Toolbar": "הצג/הסתר סרגל כלים",
   "Split Hyphens": "פיצול מקפים",
-  "Apply Theme Colors to PDF": "החל צבעי ערכת נושא על PDF",
   "Name": "שם",
   "Remove": "הסר",
   "Edit OPDS Catalog": "עריכת קטלוג OPDS",
@@ -2622,5 +2621,10 @@
   "AI Translator": "מתרגם בינה מלאכותית",
   "Examples": "דוגמאות",
   "Synonyms": "מילים נרדפות",
-  "Context Dictionary failed: {{message}}": "מילון ההקשר נכשל: {{message}}"
+  "Context Dictionary failed: {{message}}": "מילון ההקשר נכשל: {{message}}",
+  "Apply Theme Colors": "החל צבעי ערכת נושא",
+  "Set Repeat Start (A)": "הגדר תחילת חזרה (A)",
+  "Set Repeat End (B)": "הגדר סוף חזרה (B)",
+  "Clear A-B Repeat": "נקה חזרת A-B",
+  "Pause After Each Sentence": "השהה אחרי כל משפט"
 }

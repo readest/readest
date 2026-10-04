@@ -21,6 +21,8 @@ const PAGE_LOOKUP_DEBOUNCE_MS = 150;
 type TTSLyricsViewProps = {
   lines: string[];
   activeIndex: number;
+  // Lines inside the A-B repeat span.
+  loopRange: { start: number; end: number } | null;
   buffering: boolean;
   isEink: boolean;
   onGetLyricPage: (index: number) => Promise<PageInfo | null>;
@@ -35,6 +37,7 @@ type TTSLyricsViewProps = {
 const TTSLyricsView = ({
   lines,
   activeIndex,
+  loopRange,
   buffering,
   isEink,
   onGetLyricPage,
@@ -238,6 +241,7 @@ const TTSLyricsView = ({
               data-lyric-line
               aria-current={index === activeIndex ? 'true' : undefined}
               className={clsx(
+                'relative',
                 // The gutters are permanent so the seek row's page label and
                 // play button never land on the text, and so raising the row
                 // reflows nothing (which would invalidate the measured centres).
@@ -255,6 +259,17 @@ const TTSLyricsView = ({
               )}
             >
               {line || ' '}
+              {loopRange && index >= loopRange.start && index <= loopRange.end && (
+                // A rule down the start gutter, lettered where the span begins
+                // and ends.
+                <span
+                  aria-hidden
+                  className='border-base-content/40 text-base-content/60 absolute inset-y-1 start-6 flex w-4 flex-col items-center justify-between border-s-2 ps-1 text-[10px] font-semibold leading-none'
+                >
+                  <span>{index === loopRange.start ? 'A' : ''}</span>
+                  <span>{index === loopRange.end ? 'B' : ''}</span>
+                </span>
+              )}
             </div>
           ))}
         </div>

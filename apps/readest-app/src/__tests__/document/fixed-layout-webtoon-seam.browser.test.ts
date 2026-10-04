@@ -96,10 +96,14 @@ describe('fixed-layout Webtoon Mode seams (readest#6484)', () => {
     '211',
   ])('leaves no line between vertically scrolled pages at scale-factor %s', async (scaleFactor) => {
     const loaded = await openStrip(scaleFactor, false);
-    const pages = renderer!.shadowRoot!.querySelectorAll<HTMLElement>('.scroll-page');
     const hostRect = renderer!.getBoundingClientRect();
     for (const boundary of [1, 2]) {
-      const top = pages[boundary]!.getBoundingClientRect().top;
+      // Only the pages near the viewport are mounted, so find the boundary
+      // from the page before it, which is on screen.
+      const before = renderer!.shadowRoot!.querySelector(
+        `.scroll-page[data-index="${boundary - 1}"]`,
+      );
+      const top = before!.getBoundingClientRect().bottom;
       renderer!.scrollTop += top - hostRect.top - hostRect.height / 2;
       await waitFor(() => loaded.has(boundary - 1) && loaded.has(boundary));
       await nextFrames();

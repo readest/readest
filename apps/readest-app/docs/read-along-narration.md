@@ -139,6 +139,10 @@ Two behaviours worth knowing:
   ebook chapter only when the target audio chapter is narrated by a different
   mapped chapter; a sub-chapter inside the current one is a seek within its
   text span.
+- **Sentence-by-sentence and A-B repeat step by par.** Both modes stop or
+  loop at mark boundaries, and a recording's marks are whatever the publisher
+  timed, so word-level SMIL pauses after every word. Paired audiobooks, whose
+  marks are whole chapters, hide both controls.
 - **Unnarrated sections are skipped.** Publishers routinely leave front matter,
   indexes and notes out of the recording. Playback steps over those sections
   rather than stalling on silence; starting Read Aloud in unnarrated front

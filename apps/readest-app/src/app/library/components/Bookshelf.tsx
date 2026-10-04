@@ -26,6 +26,7 @@ import {
   createBookSorter,
   ensureLibraryGroupByType,
   expandBookshelfSelection,
+  findSelectedManualGroup,
   selectAbsOfflineBooks,
   selectDownloadableBooks,
   withReadingStatus,
@@ -176,6 +177,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     settings.libraryGroupBy,
   );
   const groupBy = getActiveBookshelfGroupBy(settings, searchParams);
+  // Inside a series the breadcrumb names it, so each cover only needs its number.
+  const showSeriesIndex = !!groupId && !queryTerm && groupBy === LibraryGroupByType.Series;
   const activeShelf = definitions.find((s) => s.id === activeShelfId);
   const showTimeRemaining = queryTerm
     ? globalSort.by === 'timeRemaining' || globalSort.thenBy === 'timeRemaining'
@@ -877,6 +880,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         showTimeRemaining={
           shelf.sort.by === 'timeRemaining' || shelf.sort.thenBy === 'timeRemaining'
         }
+        showSeriesIndex={showSeriesIndex}
       />
     ),
     [
@@ -892,6 +896,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       handleLibraryNavigation,
       handleUpdateReadingStatus,
       transferProgress,
+      showSeriesIndex,
     ],
   );
   const lastShelf = sections.at(-1)?.definition;
@@ -1029,6 +1034,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             libraryBooks={libraryBooks}
             selectedBooks={selectedBooks}
             parentGroupName={getGroupName(groupId) || ''}
+            renameGroupName={findSelectedManualGroup(selectedBooks, sortedBookshelfItems)?.name}
             onCancel={() => {
               setShowGroupingModal(false);
               setShowSelectModeActions(true);

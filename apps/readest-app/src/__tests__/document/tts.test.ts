@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { textWalker } from 'foliate-js/text-walker.js';
-import { TTS } from 'foliate-js/tts.js';
+import { TTS, getSentences } from 'foliate-js/tts.js';
 import { createTTSNodeFilter } from '@/services/tts/nodeFilter';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 
@@ -519,5 +519,40 @@ describe('TTS', () => {
       expect(ssml).toBeTruthy();
       expect(ssml).toContain('<mark');
     });
+  });
+});
+
+describe('sentence segmentation', () => {
+  const sentencesOf = (text: string) => {
+    const doc = createHTMLDoc(`<p>${text}</p>`, { lang: 'en' });
+    return [...getSentences(doc, textWalker, ttsNodeFilter, 'sentence')].map(({ range }) =>
+      range.toString().trim(),
+    );
+  };
+
+  it('ends a sentence after a short word, capitalised or not', () => {
+    expect(
+      sentencesOf(
+        'Into the world of The Hobbit. Tolkien chose not to. I did it. Then he went to Paris. It rained.',
+      ),
+    ).toEqual([
+      'Into the world of The Hobbit.',
+      'Tolkien chose not to.',
+      'I did it.',
+      'Then he went to Paris.',
+      'It rained.',
+    ]);
+  });
+
+  it('keeps abbreviations and initials inside the sentence', () => {
+    expect(
+      sentencesOf(
+        'Mr. Baggins met Dr. Smith on St. James St. today. J. R. R. Tolkien wrote it, e.g. this one. The end.',
+      ),
+    ).toEqual([
+      'Mr. Baggins met Dr. Smith on St. James St. today.',
+      'J. R. R. Tolkien wrote it, e.g. this one.',
+      'The end.',
+    ]);
   });
 });

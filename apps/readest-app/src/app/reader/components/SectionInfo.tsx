@@ -28,7 +28,7 @@ interface SectionInfoProps {
   gridInsets: Insets;
   // The spread's Column Gap (px) in effect, 0 when none (getSpreadColumnGap).
   columnGap?: number;
-  // A fixed-layout page whose top edge is off screen (usePageEdges).
+  // A fixed-layout page that runs past the viewport (usePageOverflow).
   hidden?: boolean;
 }
 

@@ -1,28 +1,24 @@
 import { useEffect, useState } from 'react';
 import type { Renderer } from '@/types/view';
-import { getPageEdges } from '../utils/pageEdges';
+import { isPageOverflowing } from '../utils/pageOverflow';
 
-const ALL_EDGES = { top: true, bottom: true };
-
-// Tracks whether a fixed-layout page's top / bottom edge is at the viewport's
-// (see getPageEdges), so the header / footer show only there (#6596).
-export const usePageEdges = (renderer: Renderer | undefined, enabled: boolean) => {
-  const [edges, setEdges] = useState(ALL_EDGES);
+// Tracks whether a fixed-layout page runs past the viewport (see
+// isPageOverflowing), so its header and footer hide only then (#6596).
+export const usePageOverflow = (renderer: Renderer | undefined, enabled: boolean) => {
+  const [overflowing, setOverflowing] = useState(false);
 
   useEffect(() => {
     if (!renderer || !enabled) return;
     let frame = 0;
     const update = () => {
       frame = 0;
-      const next = getPageEdges(renderer);
-      setEdges((prev) => (prev.top === next.top && prev.bottom === next.bottom ? prev : next));
+      setOverflowing(isPageOverflowing(renderer));
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
-    // Scrolling pans the page; a zoom, page turn or resize lays it out again,
+    // A zoom, page turn, flow change or resize lays the page out again,
     // restyling the page boxes in the renderer's shadow root.
-    renderer.addEventListener('scroll', schedule, { passive: true });
     const mutationObserver = new MutationObserver(schedule);
     if (renderer.shadowRoot) {
       mutationObserver.observe(renderer.shadowRoot, {
@@ -37,11 +33,10 @@ export const usePageEdges = (renderer: Renderer | undefined, enabled: boolean) =
     schedule();
     return () => {
       cancelAnimationFrame(frame);
-      renderer.removeEventListener('scroll', schedule);
       mutationObserver.disconnect();
       resizeObserver.disconnect();
     };
   }, [renderer, enabled]);
 
-  return enabled ? edges : ALL_EDGES;
+  return enabled && overflowing;
 };

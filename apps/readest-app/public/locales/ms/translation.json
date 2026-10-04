@@ -1118,7 +1118,6 @@
   "Keep existing source identifier": "Kekalkan pengecam sumber sedia ada",
   "Toggle Toolbar": "Togol Bar Alat",
   "Split Hyphens": "Pisahkan Sempang",
-  "Apply Theme Colors to PDF": "Gunakan Warna Tema pada PDF",
   "Name": "Nama",
   "Remove": "Alih keluar",
   "Edit OPDS Catalog": "Edit Katalog OPDS",
@@ -2494,5 +2493,10 @@
   "AI Translator": "Penterjemah AI",
   "Examples": "Contoh",
   "Synonyms": "Sinonim",
-  "Context Dictionary failed: {{message}}": "Kamus konteks gagal: {{message}}"
+  "Context Dictionary failed: {{message}}": "Kamus konteks gagal: {{message}}",
+  "Apply Theme Colors": "Gunakan Warna Tema",
+  "Set Repeat Start (A)": "Tetapkan mula ulangan (A)",
+  "Set Repeat End (B)": "Tetapkan akhir ulangan (B)",
+  "Clear A-B Repeat": "Kosongkan ulangan A-B",
+  "Pause After Each Sentence": "Jeda selepas setiap ayat"
 }

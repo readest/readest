@@ -1132,7 +1132,6 @@
   "Keep existing source identifier": "Bestaande bronidentificatie behouden",
   "Toggle Toolbar": "Werkbalk in-/uitschakelen",
   "Split Hyphens": "Afbreekstreepjes splitsen",
-  "Apply Theme Colors to PDF": "Themakleuren toepassen op PDF",
   "Name": "Naam",
   "Remove": "Verwijderen",
   "Edit OPDS Catalog": "OPDS-catalogus bewerken",
@@ -2558,5 +2557,10 @@
   "AI Translator": "AI-vertaler",
   "Examples": "Voorbeelden",
   "Synonyms": "Synoniemen",
-  "Context Dictionary failed: {{message}}": "Contextwoordenboek mislukt: {{message}}"
+  "Context Dictionary failed: {{message}}": "Contextwoordenboek mislukt: {{message}}",
+  "Apply Theme Colors": "Themakleuren toepassen",
+  "Set Repeat Start (A)": "Herhalingsbegin instellen (A)",
+  "Set Repeat End (B)": "Herhalingseinde instellen (B)",
+  "Clear A-B Repeat": "A-B-herhaling wissen",
+  "Pause After Each Sentence": "Pauzeren na elke zin"
 }

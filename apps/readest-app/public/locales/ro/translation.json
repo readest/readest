@@ -1146,7 +1146,6 @@
   "Keep existing source identifier": "Păstrați identificatorul sursă existent",
   "Toggle Toolbar": "Comutare bară de instrumente",
   "Split Hyphens": "Desparte cratimele",
-  "Apply Theme Colors to PDF": "Aplică culorile temei la PDF",
   "Name": "Nume",
   "Remove": "Elimină",
   "Edit OPDS Catalog": "Editare catalog OPDS",
@@ -2622,5 +2621,10 @@
   "AI Translator": "Traducător AI",
   "Examples": "Exemple",
   "Synonyms": "Sinonime",
-  "Context Dictionary failed: {{message}}": "Dicționarul contextual a eșuat: {{message}}"
+  "Context Dictionary failed: {{message}}": "Dicționarul contextual a eșuat: {{message}}",
+  "Apply Theme Colors": "Aplică culorile temei",
+  "Set Repeat Start (A)": "Setează începutul repetării (A)",
+  "Set Repeat End (B)": "Setează sfârșitul repetării (B)",
+  "Clear A-B Repeat": "Șterge repetarea A-B",
+  "Pause After Each Sentence": "Pauză după fiecare propoziție"
 }

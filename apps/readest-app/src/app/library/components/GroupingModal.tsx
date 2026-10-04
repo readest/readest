@@ -19,6 +19,8 @@ interface GroupingModalProps {
   libraryBooks: Book[];
   selectedBooks: string[];
   parentGroupName: string;
+  /** Full path of the one group the selection stands for, if any. */
+  renameGroupName?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -27,6 +29,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   libraryBooks,
   selectedBooks,
   parentGroupName,
+  renameGroupName,
   onCancel,
   onConfirm,
 }) => {
@@ -73,10 +76,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
       .map((hash) => libraryBooks.find((book) => book.hash === hash)?.groupId)
       .some((group) => group && group !== BOOK_UNGROUPED_NAME);
 
-  const canRenameGroup = selectedBooks.length === 1 && selectedBooks.every((id) => !isMd5(id));
-  const currentGroupForRename = canRenameGroup
-    ? allGroups.find((group) => group.id === selectedBooks[0])
-    : null;
+  const canRenameGroup = !!renameGroupName;
 
   const generateNextUntitledGroupName = () => {
     const baseName = _('Untitled Group');
@@ -111,10 +111,10 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
   };
 
   const handleRenameGroup = () => {
-    if (!currentGroupForRename) return;
+    if (!renameGroupName) return;
 
-    setEditGroupName(currentGroupForRename.name);
-    setOriginalGroupName(currentGroupForRename.name);
+    setEditGroupName(renameGroupName);
+    setOriginalGroupName(renameGroupName);
     setShowInput(true);
     setIsRenaming(true);
   };
@@ -159,9 +159,9 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
         appService?.saveLibraryBooks(libraryBooks);
 
         refreshGroups();
-        setShowInput(false);
-        setIsRenaming(false);
-        setOriginalGroupName(null);
+        // A rename is complete on its own. Left open, Confirm would move the
+        // whole selected subtree into one group and flatten its nested groups.
+        onConfirm();
       } else {
         // Creating new group
         if (currentPath && !groupName.startsWith(currentPath + '/')) {

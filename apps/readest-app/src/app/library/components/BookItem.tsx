@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MdCheckCircle, MdCheckCircleOutline, MdOutlineOfflinePin } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
@@ -39,6 +39,8 @@ interface BookItemProps {
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
   showTimeRemaining: boolean;
+  /** Badged on the cover inside a series group, where the breadcrumb names the series. */
+  seriesIndex?: number;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -53,6 +55,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookDownload,
   showBookDetailsModal,
   showTimeRemaining,
+  seriesIndex,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -62,10 +65,17 @@ const BookItem: React.FC<BookItemProps> = ({
   const showSpine = skeuomorphicCovers ?? settings.librarySkeuomorphicCovers;
   const iconSize15 = useResponsiveSize(15);
 
+  // Reset during render, not in an effect: a cached cover reports its size
+  // before a mount effect runs, and the effect would then drop it, leaving the
+  // fit cover in a full-height cell with the spine and selection wash spilling
+  // past the image (a carousel remounts covers as they scroll back into view).
   const [coverAspect, setCoverAspect] = useState<number | null>(null);
-  useEffect(() => {
+  const coverKey = `${book.hash}|${book.metadata?.coverImageUrl}|${book.coverImageUrl}`;
+  const [prevCoverKey, setPrevCoverKey] = useState(coverKey);
+  if (coverKey !== prevCoverKey) {
+    setPrevCoverKey(coverKey);
     setCoverAspect(null);
-  }, [book.hash, book.metadata?.coverImageUrl, book.coverImageUrl]);
+  }
 
   const CELL_ASPECT_RATIO = 28 / 41;
   const fitCoverInGrid = mode === 'grid' && coverFit === 'fit' && coverAspect !== null;
@@ -164,6 +174,11 @@ const BookItem: React.FC<BookItemProps> = ({
               </span>
             )}
           </div>
+        )}
+        {seriesIndex !== undefined && (
+          <span className='eink-bordered bg-base-100/90 text-base-content absolute end-1 top-1 rounded-sm px-1 text-[10px] font-semibold leading-4 shadow-sm'>
+            #{seriesIndex}
+          </span>
         )}
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
