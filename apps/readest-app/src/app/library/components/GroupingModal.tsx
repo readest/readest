@@ -159,9 +159,9 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
         appService?.saveLibraryBooks(libraryBooks);
 
         refreshGroups();
-        setShowInput(false);
-        setIsRenaming(false);
-        setOriginalGroupName(null);
+        // A rename is complete on its own. Left open, Confirm would move the
+        // whole selected subtree into one group and flatten its nested groups.
+        onConfirm();
       } else {
         // Creating new group
         if (currentPath && !groupName.startsWith(currentPath + '/')) {
