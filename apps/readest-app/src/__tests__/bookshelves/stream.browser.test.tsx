@@ -97,6 +97,25 @@ describe('mixed bookshelf stream in Chromium', () => {
     }
   });
 
+  it('shows the import action after the shelves and moves it with the overscroll', async () => {
+    const { container } = render(
+      <div style={{ width: 900, height: 600 }}>
+        <BookshelfStream
+          sections={[section('books', 'carousel', 3)]}
+          autoColumns={false}
+          fixedColumns={3}
+          importAction={<button type='button'>Import Books</button>}
+          renderItem={renderItem}
+        />
+      </div>,
+    );
+    const locator = page.getByRole('button', { name: 'Import Books' });
+    await expect.element(locator).toBeInTheDocument();
+    const button = locator.element();
+    expect(container.querySelector('[data-book]')).not.toBeNull();
+    // The pull-to-refresh rubber band translates every `.transform-wrapper`.
+    expect(button.closest('.transform-wrapper')).not.toBeNull();
+  });
   it('shows the library page controls only in e-ink mode', () => {
     const { queryByRole } = render(
       <div style={{ width: 900, height: 600 }}>
