@@ -20,7 +20,7 @@ import { navigateToLogin } from '@/utils/nav';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { isAudiobook } from '@/utils/audiobook';
-import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
+import { formatAuthors, formatDescription, formatSeries, getSeriesIndex } from '@/utils/book';
 import { splitDuration } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
 import { getBookTags } from '../utils/libraryUtils';
@@ -39,6 +39,8 @@ interface BookItemProps {
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
   showTimeRemaining: boolean;
+  /** Inside a series group, where the breadcrumb already names the series. */
+  showSeriesIndex?: boolean;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -53,6 +55,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookDownload,
   showBookDetailsModal,
   showTimeRemaining,
+  showSeriesIndex,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -85,6 +88,8 @@ const BookItem: React.FC<BookItemProps> = ({
     : undefined;
 
   const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
+  const seriesIndex =
+    showSeriesIndex && mode === 'grid' ? getSeriesIndex(book.metadata?.seriesIndex) : undefined;
   // Synced rows may carry untrimmed or duplicate tags; show each tag once.
   const tags = getBookTags(book);
 
@@ -172,6 +177,11 @@ const BookItem: React.FC<BookItemProps> = ({
             )}
           </div>
         )}
+        {seriesIndex !== undefined && (
+          <span className='eink-bordered bg-base-100/90 text-base-content absolute end-1 top-1 rounded-sm px-1 text-[10px] font-semibold leading-4 shadow-sm'>
+            #{seriesIndex}
+          </span>
+        )}
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
@@ -208,15 +218,8 @@ const BookItem: React.FC<BookItemProps> = ({
             </p>
           )}
         </div>
-        {seriesText && (
-          <p
-            className={clsx(
-              'text-neutral-content line-clamp-1',
-              mode === 'grid' ? 'text-xs' : 'text-sm',
-            )}
-          >
-            {seriesText}
-          </p>
+        {mode === 'list' && seriesText && (
+          <p className='text-neutral-content line-clamp-1 text-sm'>{seriesText}</p>
         )}
         {mode === 'list' && (
           <h4 className='text-neutral-content line-clamp-1 text-sm'>

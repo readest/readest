@@ -42,37 +42,36 @@ const props = {
 
 afterEach(cleanup);
 
-describe('book series in the library (#6347)', () => {
-  it.each([
-    'grid',
-    'list',
-  ] as const)('shows the series and number with title and progress in %s view', (mode) => {
-    render(<BookItem {...props} book={book} mode={mode} />);
-    const title = screen.getByRole('heading', { name: book.title });
-    const series = screen.getByText('The Expanse #2');
-    const progress = screen.getByRole('status', { name: '50%' });
-    expect(title.compareDocumentPosition(series) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      series.compareDocumentPosition(progress) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+describe('series index badge on library grid covers (#6347)', () => {
+  it('badges the cover with the series index inside a series group', () => {
+    const { container } = render(<BookItem {...props} book={book} mode='grid' showSeriesIndex />);
+    const badge = screen.getByText('#2');
+    expect(container.querySelector('.bookitem-main')!.contains(badge)).toBe(true);
+    // The breadcrumb already names the series, so the card adds no series row.
+    expect(screen.queryByText('The Expanse #2')).toBeNull();
   });
 
-  it('shows a series name without a number in grid view', () => {
+  it('shows no badge outside a series group', () => {
+    render(<BookItem {...props} book={book} mode='grid' />);
+    expect(screen.queryByText('#2')).toBeNull();
+    expect(screen.queryByText('The Expanse #2')).toBeNull();
+  });
+
+  it.each([undefined, 0, Number.NaN])('shows no badge for series index %j', (seriesIndex) => {
     render(
       <BookItem
         {...props}
-        book={{ ...book, metadata: { ...book.metadata!, seriesIndex: undefined } }}
+        book={{ ...book, metadata: { ...book.metadata!, seriesIndex } }}
         mode='grid'
+        showSeriesIndex
       />,
     );
-    expect(screen.getByText('The Expanse')).toBeTruthy();
+    expect(screen.queryByText(/^#/)).toBeNull();
   });
 
-  it.each([undefined, '', '   '])('omits an empty series row for series %j', (series) => {
-    const metadata = series === undefined ? undefined : { ...book.metadata!, series };
-    const { container } = render(<BookItem {...props} book={{ ...book, metadata }} mode='grid' />);
-    expect(screen.getByRole('heading', { name: book.title })).toBeTruthy();
-    expect(screen.getByRole('status', { name: '50%' })).toBeTruthy();
-    expect(container.querySelector('p')).toBeNull();
+  it('keeps the list row series text instead of a badge', () => {
+    render(<BookItem {...props} book={book} mode='list' showSeriesIndex />);
+    expect(screen.getByText('The Expanse #2')).toBeTruthy();
+    expect(screen.queryByText('#2')).toBeNull();
   });
 });
