@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 0906336d-a343-45b8-9f91-f732358c57da
-  modified: 2026-09-18T15:26:18.253Z
+  modified: 2026-10-04T19:10:45.967Z
 ---
 
 Verifying a change in the real macOS app with computer-use: `pnpm tauri dev`
@@ -45,6 +45,10 @@ Traps hit on the way:
   readest-<removed worktree>/…` means cached build-script output points at a
   deleted worktree. `grep -rl "<dead worktree>" target/debug/build | sed 's|/[^/]*$||' |
   sort -u | xargs rm -rf`.
+- **Drag-from-Finder tests**: the drop target comes to the front mid-drag, so
+  dragging "back" onto the Finder window releases onto Readest and IMPORTS the
+  file. Put the file in a scratch folder and expect the import (or cancel with
+  Escape while the button is held).
 - Reader UI: single click on a cover **selects**, double-click **opens**. The
   close-book "X" (top right of the reader header) is what returns to the library;
   `cmd+[` just turns pages, and the sidebar cover opens the image viewer.
