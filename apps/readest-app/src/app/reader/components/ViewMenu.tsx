@@ -485,7 +485,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               Icon={rtlSpread ? MdCheck : undefined}
               onClick={() => setRtlSpread(!rtlSpread)}
             />
-            <MenuItem label={_('Webtoon Mode')} toggled={webtoonMode} onClick={toggleWebtoonMode} />
             <MenuItem
               label={_('Lock Horizontal Panning')}
               toggled={lockHorizontalPan}
@@ -516,22 +515,35 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         disabled={!isScrolledMode}
       />
 
+      {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
+        <MenuItem
+          label={_('Apply Theme Colors')}
+          Icon={applyThemeToPDF ? MdCheck : undefined}
+          onClick={() => setApplyThemeToPDF(!applyThemeToPDF)}
+        />
+      )}
+      <MenuItem
+        label={_('Invert Image In Dark Mode')}
+        disabled={!isDarkMode}
+        Icon={invertImgColorInDark ? MdCheck : undefined}
+        onClick={() => setInvertImgColorInDark(!invertImgColorInDark)}
+      />
+
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
-      <MenuItem
-        label={_('Paragraph Mode')}
-        shortcut='Shift+P'
-        Icon={isParagraphMode ? MdCheck : undefined}
-        onClick={toggleParagraphMode}
-        disabled={bookData.isFixedLayout}
-      />
-
-      <MenuItem
-        label={_('Speed Reading Mode')}
-        shortcut='Shift+V'
-        onClick={handleStartRSVP}
-        disabled={bookData.isFixedLayout}
-      />
+      {bookData.isFixedLayout ? (
+        <MenuItem label={_('Webtoon Mode')} toggled={webtoonMode} onClick={toggleWebtoonMode} />
+      ) : (
+        <>
+          <MenuItem
+            label={_('Paragraph Mode')}
+            shortcut='Shift+P'
+            Icon={isParagraphMode ? MdCheck : undefined}
+            onClick={toggleParagraphMode}
+          />
+          <MenuItem label={_('Speed Reading Mode')} shortcut='Shift+V' onClick={handleStartRSVP} />
+        </>
+      )}
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
@@ -595,20 +607,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         onClick={cycleThemeMode}
       />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
-      {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
-        <MenuItem
-          label={_('Apply Theme Colors to PDF')}
-          Icon={applyThemeToPDF ? MdCheck : undefined}
-          onClick={() => setApplyThemeToPDF(!applyThemeToPDF)}
-        />
-      )}
-      <MenuItem
-        label={_('Invert Image In Dark Mode')}
-        disabled={!isDarkMode}
-        Icon={invertImgColorInDark ? MdCheck : undefined}
-        onClick={() => setInvertImgColorInDark(!invertImgColorInDark)}
-      />
-
       <hr aria-hidden='true' className='border-base-300 my-1' />
 
       <MenuItem label={_('Share Book')} Icon={IoShareOutline} onClick={handleShare} />

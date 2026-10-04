@@ -15,7 +15,7 @@ import { expectsColumnSpread } from '@/utils/config';
 import { getPageAreaInsets, getReadingScreenInsets, getSpreadColumnGap } from '@/utils/insets';
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
-import { usePageEdges } from '../hooks/usePageEdges';
+import { usePageOverflow } from '../hooks/usePageOverflow';
 import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils/footerBand';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
@@ -158,9 +158,9 @@ const BookCellInner: React.FC<BookCellProps> = ({
   // though saveViewSettings mutates viewSettings in place (#4898).
   const { viewInsets, contentInsets } = useContentInsets(viewSettings, gridInsets);
   // A fixed-layout page fills the screen in fit-page mode; zoomed in or
-  // scrolled, its header and footer show only at its own top / bottom edge,
-  // not over its content (#6596).
-  const pageEdges = usePageEdges(
+  // scrolled, its header and footer would cover its content, so they hide
+  // (#6596).
+  const pageOverflowing = usePageOverflow(
     getView(bookKey)?.renderer,
     !!bookData?.isFixedLayout && !viewSettings?.vertical,
   );
@@ -269,7 +269,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
             contentInsets={contentInsets}
             gridInsets={gridInsets}
             columnGap={columnGap}
-            hidden={!pageEdges.top}
+            hidden={pageOverflowing}
           />
         )}
         <HintInfo
@@ -305,7 +305,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
             gridInsets={gridInsets}
             columnGap={columnGap}
             cornerRadii={cornerRadii}
-            hidden={!pageEdges.bottom}
+            hidden={pageOverflowing}
           />
         )}
       </div>

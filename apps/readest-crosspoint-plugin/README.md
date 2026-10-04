@@ -90,8 +90,9 @@ Sign-in also turns on KOReader Sync's **Send metadata**, so each upload carries
 the book's title and authors. A book uploaded with the File Manager's
 **Optimize EPUB** is rewritten, so it no longer matches Readest's copy by
 partial MD5. Its first **Sync Progress** links it to the Readest EPUB with the
-same title (and first author, when titles collide) without moving Readest's
-position back. The next sync brings Readest's position over, and from then on
+same title without moving Readest's position back. When titles collide, the
+book must also share the first author, and of several such books (the same
+book imported twice, or another edition) the most recently read one wins. The next sync brings Readest's position over, and from then on
 it syncs both ways like the original.
 
 ## Development

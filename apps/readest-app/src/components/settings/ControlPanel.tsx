@@ -476,16 +476,18 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setNoContinuousScroll(!noContinuousScroll)}
           data-setting-id='settings.control.scroll.noContinuousScroll'
         />
-        <NumberInput
-          label={_('Overlap Pixels')}
-          value={scrollingOverlap}
-          onChange={setScrollingOverlap}
-          disabled={!viewSettings.scrolled}
-          min={0}
-          max={200}
-          step={10}
-          data-setting-id='settings.control.overlapPixels'
-        />
+        {bookData?.isFixedLayout && (
+          <NumberInput
+            label={_('Overlap Pixels')}
+            value={scrollingOverlap}
+            onChange={setScrollingOverlap}
+            disabled={!viewSettings.scrolled}
+            min={0}
+            max={200}
+            step={10}
+            data-setting-id='settings.control.overlapPixels'
+          />
+        )}
         <SettingsSwitchRow
           label={_('Hide Scrollbar')}
           checked={hideScrollbar}

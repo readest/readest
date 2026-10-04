@@ -1156,7 +1156,6 @@
   "Keep existing source identifier": "Зберегти наявний ідентифікатор джерела",
   "Toggle Toolbar": "Перемкнути панель інструментів",
   "Split Hyphens": "Розділити дефіси",
-  "Apply Theme Colors to PDF": "Застосувати кольори теми до PDF",
   "Name": "Ім'я",
   "Remove": "Видалити",
   "Edit OPDS Catalog": "Редагувати каталог OPDS",
@@ -2687,5 +2686,6 @@
   "AI Translator": "ШІ-перекладач",
   "Examples": "Приклади",
   "Synonyms": "Синоніми",
-  "Context Dictionary failed: {{message}}": "Помилка контекстного словника: {{message}}"
+  "Context Dictionary failed: {{message}}": "Помилка контекстного словника: {{message}}",
+  "Apply Theme Colors": "Застосувати кольори теми"
 }

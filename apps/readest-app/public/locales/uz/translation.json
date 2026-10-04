@@ -693,7 +693,6 @@
   "Paragraph Mode": "Xatboshi rejimi",
   "Speed Reading Mode": "Tezkor oʻqish rejimi",
   "Sign in to Sync": "Sinxronlash uchun kirish",
-  "Apply Theme Colors to PDF": "Mavzu ranglarini PDF-ga qoʻllash",
   "Invert Image In Dark Mode": "Qorongʻi rejimda rasmni teskari qilish",
   "Failed to auto-save book cover for lock screen: {{error}}": "Quflash ekrani uchun kitob muqovasini avtomatik saqlab boʻlmadi: {{error}}",
   "No annotations or excerpts to sync for this book.": "Ushbu kitob uchun sinxronlashga izohlar yoki parchalar yoʻq.",
@@ -2559,5 +2558,6 @@
   "AI Translator": "SI tarjimon",
   "Examples": "Misollar",
   "Synonyms": "Sinonimlar",
-  "Context Dictionary failed: {{message}}": "Kontekst lugʻatida xatolik: {{message}}"
+  "Context Dictionary failed: {{message}}": "Kontekst lugʻatida xatolik: {{message}}",
+  "Apply Theme Colors": "Mavzu ranglarini qoʻllash"
 }

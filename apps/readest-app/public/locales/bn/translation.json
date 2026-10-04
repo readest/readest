@@ -1128,7 +1128,6 @@
   "Keep existing source identifier": "বিদ্যমান উৎস শনাক্তকারী রাখুন",
   "Toggle Toolbar": "টুলবার টগল করুন",
   "Split Hyphens": "হাইফেন বিভক্ত করুন",
-  "Apply Theme Colors to PDF": "PDF-এ থিম রং প্রয়োগ করুন",
   "Name": "নাম",
   "Remove": "সরান",
   "Edit OPDS Catalog": "OPDS ক্যাটালগ সম্পাদনা",
@@ -2559,5 +2558,6 @@
   "AI Translator": "AI অনুবাদক",
   "Examples": "উদাহরণ",
   "Synonyms": "সমার্থক শব্দ",
-  "Context Dictionary failed: {{message}}": "প্রসঙ্গ অভিধান ব্যর্থ হয়েছে: {{message}}"
+  "Context Dictionary failed: {{message}}": "প্রসঙ্গ অভিধান ব্যর্থ হয়েছে: {{message}}",
+  "Apply Theme Colors": "থিম রং প্রয়োগ করুন"
 }

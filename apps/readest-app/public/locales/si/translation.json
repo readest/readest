@@ -1128,7 +1128,6 @@
   "Keep existing source identifier": "පවතින මූලාශ්‍ර හඳුනාගැනීම තබාගන්න",
   "Toggle Toolbar": "මෙවලම් තීරුව ටොගල් කරන්න",
   "Split Hyphens": "හයිෆන් බෙදන්න",
-  "Apply Theme Colors to PDF": "PDF වෙත තේමා වර්ණ යොදන්න",
   "Name": "නම",
   "Remove": "ඉවත් කරන්න",
   "Edit OPDS Catalog": "OPDS නාමාවලිය සංස්කරණය",
@@ -2559,5 +2558,6 @@
   "AI Translator": "AI පරිවර්තකය",
   "Examples": "උදාහරණ",
   "Synonyms": "සමානාර්ථ පද",
-  "Context Dictionary failed: {{message}}": "සන්දර්භ ශබ්දකෝෂය අසාර්ථක විය: {{message}}"
+  "Context Dictionary failed: {{message}}": "සන්දර්භ ශබ්දකෝෂය අසාර්ථක විය: {{message}}",
+  "Apply Theme Colors": "තේමා වර්ණ යොදන්න"
 }

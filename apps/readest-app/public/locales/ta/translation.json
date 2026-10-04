@@ -1128,7 +1128,6 @@
   "Keep existing source identifier": "ஏற்கனவே உள்ள மூல அடையாளங்காட்டியை வைத்திருக்கவும்",
   "Toggle Toolbar": "கருவிப்பட்டியை நிலைமாற்று",
   "Split Hyphens": "ஹைபன்களைப் பிரி",
-  "Apply Theme Colors to PDF": "PDF-க்கு தீம் நிறங்களைப் பயன்படுத்து",
   "Name": "பெயர்",
   "Remove": "நீக்கு",
   "Edit OPDS Catalog": "OPDS பட்டியலைத் திருத்து",
@@ -2559,5 +2558,6 @@
   "AI Translator": "AI மொழிபெயர்ப்பாளர்",
   "Examples": "எடுத்துக்காட்டுகள்",
   "Synonyms": "ஒத்த சொற்கள்",
-  "Context Dictionary failed: {{message}}": "சூழல் அகராதி தோல்வியடைந்தது: {{message}}"
+  "Context Dictionary failed: {{message}}": "சூழல் அகராதி தோல்வியடைந்தது: {{message}}",
+  "Apply Theme Colors": "தீம் நிறங்களைப் பயன்படுத்து"
 }

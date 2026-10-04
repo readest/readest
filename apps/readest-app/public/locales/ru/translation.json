@@ -1156,7 +1156,6 @@
   "Keep existing source identifier": "Сохранить существующий идентификатор источника",
   "Toggle Toolbar": "Переключить панель инструментов",
   "Split Hyphens": "Разделить дефисы",
-  "Apply Theme Colors to PDF": "Применить цвета темы к PDF",
   "Name": "Имя",
   "Remove": "Удалить",
   "Edit OPDS Catalog": "Редактировать каталог OPDS",
@@ -2687,5 +2686,6 @@
   "AI Translator": "ИИ-переводчик",
   "Examples": "Примеры",
   "Synonyms": "Синонимы",
-  "Context Dictionary failed: {{message}}": "Ошибка контекстного словаря: {{message}}"
+  "Context Dictionary failed: {{message}}": "Ошибка контекстного словаря: {{message}}",
+  "Apply Theme Colors": "Применить цвета темы"
 }

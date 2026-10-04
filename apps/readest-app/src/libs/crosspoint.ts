@@ -100,9 +100,10 @@ const normalizeText = (value: unknown) =>
   typeof value === 'string' ? value.normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase() : '';
 
 /**
- * Links a copy to the one library EPUB with its title, and the first of its
- * authors when titles collide. No book when the copy is Readest's own file or
- * no single book fits.
+ * Links a copy to the library EPUB with its title. When titles collide, the
+ * book must also share the copy's first author, and of several such books
+ * (the same book imported twice, another edition) the most recently read one
+ * wins. No book when the copy is Readest's own file or none fits.
  */
 export const linkCopy = async (
   supabase: SupabaseClient,
@@ -121,7 +122,7 @@ export const linkCopy = async (
     .replace(/[,()%*\\"]/g, '_');
   const { data, error } = await supabase
     .from('books')
-    .select('book_hash, title, source_title, author')
+    .select('book_hash, title, source_title, author, updated_at')
     .eq('user_id', userId)
     .or(`book_hash.eq.${document},source_title.ilike.${pattern},title.ilike.${pattern}`)
     .eq('format', 'EPUB')
@@ -131,12 +132,18 @@ export const linkCopy = async (
   let matches = data.filter(
     (book) => normalizeText(book.source_title) === wanted || normalizeText(book.title) === wanted,
   );
+  // The reader joins every dc:creator with ", "; Readest lists a book's
+  // authors with ", ", " and ", " & " or "、" between them.
   const author = normalizeText(authors).split(', ')[0];
-  if (matches.length > 1 && author) {
-    matches = matches.filter((book) => normalizeText(book.author).includes(author));
+  const firstAuthor = (book: (typeof matches)[number]) =>
+    normalizeText(book.author).split(/, | and | & |、/)[0];
+  if (matches.length > 1) {
+    matches = author ? matches.filter((book) => firstAuthor(book) === author) : [];
   }
-  if (matches.length !== 1) return NO_LINK;
-  const bookHash = matches[0]!.book_hash as string;
+  const recent = (book: (typeof matches)[number]) => Date.parse(String(book.updated_at)) || 0;
+  const [book] = matches.sort((a, b) => recent(b) - recent(a));
+  if (!book) return NO_LINK;
+  const bookHash = book.book_hash as string;
   const { error: linkError } = await supabase
     .from('crosspoint_documents')
     .upsert(

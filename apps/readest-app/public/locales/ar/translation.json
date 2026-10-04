@@ -1184,7 +1184,6 @@
   "Keep existing source identifier": "الإبقاء على معرف المصدر الحالي",
   "Toggle Toolbar": "تبديل شريط الأدوات",
   "Split Hyphens": "تقسيم الواصلات",
-  "Apply Theme Colors to PDF": "تطبيق ألوان السمة على PDF",
   "Name": "الاسم",
   "Remove": "إزالة",
   "Edit OPDS Catalog": "تعديل كتالوج OPDS",
@@ -2815,5 +2814,6 @@
   "AI Translator": "مترجم الذكاء الاصطناعي",
   "Examples": "أمثلة",
   "Synonyms": "مرادفات",
-  "Context Dictionary failed: {{message}}": "فشل قاموس السياق: {{message}}"
+  "Context Dictionary failed: {{message}}": "فشل قاموس السياق: {{message}}",
+  "Apply Theme Colors": "تطبيق ألوان السمة"
 }

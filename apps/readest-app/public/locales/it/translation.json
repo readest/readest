@@ -1142,7 +1142,6 @@
   "Keep existing source identifier": "Mantieni l'identificatore sorgente esistente",
   "Toggle Toolbar": "Mostra/nascondi barra degli strumenti",
   "Split Hyphens": "Dividi trattini",
-  "Apply Theme Colors to PDF": "Applica colori tema al PDF",
   "Name": "Nome",
   "Remove": "Rimuovi",
   "Edit OPDS Catalog": "Modifica catalogo OPDS",
@@ -2623,5 +2622,6 @@
   "AI Translator": "Traduttore IA",
   "Examples": "Esempi",
   "Synonyms": "Sinonimi",
-  "Context Dictionary failed: {{message}}": "Errore del dizionario contestuale: {{message}}"
+  "Context Dictionary failed: {{message}}": "Errore del dizionario contestuale: {{message}}",
+  "Apply Theme Colors": "Applica colori tema"
 }
