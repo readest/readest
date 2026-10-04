@@ -142,7 +142,7 @@ describe('bookshelf editor responsive layout', () => {
     expect(visibleSpines()).toHaveLength(0);
     await userEvent.click(toggle);
     await waitFor(() => expect(visibleSpines('.book-item .book-spine')).toHaveLength(3));
-    await userEvent.click(getByLabelText('Use global grouping'));
+    // Recently read, the first shelf, groups on its own by default.
     await userEvent.selectOptions(getByLabelText('Group by'), 'author');
     await waitFor(() => expect(visibleSpines('.group-item .book-spine')).toHaveLength(3));
     await userEvent.click(toggle);
@@ -293,13 +293,12 @@ describe('bookshelf editor responsive layout', () => {
       expect(grouping.getBoundingClientRect().width).toBe(sorting.getBoundingClientRect().width);
       const inherit = getByLabelText('Use global grouping') as HTMLInputElement;
       const choice = getByLabelText('Group by') as HTMLSelectElement;
-      expect(inherit.checked).toBe(true);
-      expect(choice.disabled).toBe(true);
+      // Recently read, the first shelf, lists books on its own by default.
+      expect(inherit.checked).toBe(false);
+      expect(choice.disabled).toBe(false);
       expect(choice.value).toBe('none');
       const preview = getByRole('region', { name: 'Bookshelf preview' });
       await waitFor(() => expect(preview.querySelector('.book-item')).toBeTruthy());
-      await userEvent.click(inherit);
-      expect(choice.disabled).toBe(false);
       await userEvent.selectOptions(choice, 'author');
       await waitFor(() => expect(preview.querySelectorAll('.group-item')).toHaveLength(1));
       expect(preview.querySelector('.group-item')?.textContent).toContain('Author');
