@@ -2558,5 +2558,9 @@
   "Examples": "Παραδείγματα",
   "Synonyms": "Συνώνυμα",
   "Context Dictionary failed: {{message}}": "Σφάλμα λεξικού συμφραζομένων: {{message}}",
-  "Apply Theme Colors": "Εφαρμογή χρωμάτων θέματος"
+  "Apply Theme Colors": "Εφαρμογή χρωμάτων θέματος",
+  "Set Repeat Start (A)": "Ορισμός αρχής επανάληψης (A)",
+  "Set Repeat End (B)": "Ορισμός τέλους επανάληψης (B)",
+  "Clear A-B Repeat": "Διαγραφή επανάληψης A-B",
+  "Pause After Each Sentence": "Παύση μετά από κάθε πρόταση"
 }

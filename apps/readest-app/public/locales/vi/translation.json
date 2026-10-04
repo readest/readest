@@ -2494,5 +2494,9 @@
   "Examples": "Ví dụ",
   "Synonyms": "Từ đồng nghĩa",
   "Context Dictionary failed: {{message}}": "Từ điển ngữ cảnh gặp lỗi: {{message}}",
-  "Apply Theme Colors": "Áp dụng màu chủ đề"
+  "Apply Theme Colors": "Áp dụng màu chủ đề",
+  "Set Repeat Start (A)": "Đặt điểm bắt đầu lặp (A)",
+  "Set Repeat End (B)": "Đặt điểm kết thúc lặp (B)",
+  "Clear A-B Repeat": "Xóa lặp A-B",
+  "Pause After Each Sentence": "Tạm dừng sau mỗi câu"
 }

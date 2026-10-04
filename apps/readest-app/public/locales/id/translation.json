@@ -2494,5 +2494,9 @@
   "Examples": "Contoh",
   "Synonyms": "Sinonim",
   "Context Dictionary failed: {{message}}": "Kamus konteks gagal: {{message}}",
-  "Apply Theme Colors": "Terapkan Warna Tema"
+  "Apply Theme Colors": "Terapkan Warna Tema",
+  "Set Repeat Start (A)": "Atur awal pengulangan (A)",
+  "Set Repeat End (B)": "Atur akhir pengulangan (B)",
+  "Clear A-B Repeat": "Hapus pengulangan A-B",
+  "Pause After Each Sentence": "Jeda setelah setiap kalimat"
 }

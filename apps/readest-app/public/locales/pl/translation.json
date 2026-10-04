@@ -2686,5 +2686,9 @@
   "Examples": "Przykłady",
   "Synonyms": "Synonimy",
   "Context Dictionary failed: {{message}}": "Błąd słownika kontekstowego: {{message}}",
-  "Apply Theme Colors": "Zastosuj kolory motywu"
+  "Apply Theme Colors": "Zastosuj kolory motywu",
+  "Set Repeat Start (A)": "Ustaw początek powtarzania (A)",
+  "Set Repeat End (B)": "Ustaw koniec powtarzania (B)",
+  "Clear A-B Repeat": "Wyczyść powtarzanie A-B",
+  "Pause After Each Sentence": "Pauza po każdym zdaniu"
 }

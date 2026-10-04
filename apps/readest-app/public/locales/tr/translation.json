@@ -2558,5 +2558,9 @@
   "Examples": "Örnekler",
   "Synonyms": "Eş anlamlılar",
   "Context Dictionary failed: {{message}}": "Bağlam sözlüğü başarısız oldu: {{message}}",
-  "Apply Theme Colors": "Tema Renklerini Uygula"
+  "Apply Theme Colors": "Tema Renklerini Uygula",
+  "Set Repeat Start (A)": "Tekrar başlangıcını ayarla (A)",
+  "Set Repeat End (B)": "Tekrar bitişini ayarla (B)",
+  "Clear A-B Repeat": "A-B tekrarını temizle",
+  "Pause After Each Sentence": "Her cümleden sonra duraklat"
 }

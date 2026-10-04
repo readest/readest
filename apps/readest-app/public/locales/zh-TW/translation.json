@@ -2494,5 +2494,9 @@
   "Examples": "例句",
   "Synonyms": "近義詞",
   "Context Dictionary failed: {{message}}": "語境辭典發生錯誤：{{message}}",
-  "Apply Theme Colors": "套用主題顏色"
+  "Apply Theme Colors": "套用主題顏色",
+  "Set Repeat Start (A)": "設定複讀起點 (A)",
+  "Set Repeat End (B)": "設定複讀終點 (B)",
+  "Clear A-B Repeat": "清除 A-B 複讀",
+  "Pause After Each Sentence": "每句後暫停"
 }

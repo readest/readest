@@ -2558,5 +2558,9 @@
   "Examples": "მაგალითები",
   "Synonyms": "სინონიმები",
   "Context Dictionary failed: {{message}}": "კონტექსტური ლექსიკონის შეცდომა: {{message}}",
-  "Apply Theme Colors": "თემის ფერების გამოყენება"
+  "Apply Theme Colors": "თემის ფერების გამოყენება",
+  "Set Repeat Start (A)": "გამეორების დასაწყისის დაყენება (A)",
+  "Set Repeat End (B)": "გამეორების დასასრულის დაყენება (B)",
+  "Clear A-B Repeat": "A-B გამეორების გასუფთავება",
+  "Pause After Each Sentence": "პაუზა ყოველი წინადადების შემდეგ"
 }

@@ -2622,5 +2622,9 @@
   "Examples": "Exemple",
   "Synonyms": "Sinonime",
   "Context Dictionary failed: {{message}}": "Dicționarul contextual a eșuat: {{message}}",
-  "Apply Theme Colors": "Aplică culorile temei"
+  "Apply Theme Colors": "Aplică culorile temei",
+  "Set Repeat Start (A)": "Setează începutul repetării (A)",
+  "Set Repeat End (B)": "Setează sfârșitul repetării (B)",
+  "Clear A-B Repeat": "Șterge repetarea A-B",
+  "Pause After Each Sentence": "Pauză după fiecare propoziție"
 }

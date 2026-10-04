@@ -423,6 +423,8 @@ export interface TTSConfig {
   ttsMediaMetadata: TTSMediaMetadataMode;
   ttsPlayerStyle: TTSPlayerStyle;
   ttsSkipInlineAnnotations: boolean;
+  // Sentence-by-sentence Read Aloud: pause after every sentence (#5233).
+  ttsPauseAfterSentence: boolean;
 }
 
 export interface TranslatorConfig {

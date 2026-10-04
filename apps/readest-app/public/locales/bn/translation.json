@@ -2558,5 +2558,9 @@
   "Examples": "উদাহরণ",
   "Synonyms": "সমার্থক শব্দ",
   "Context Dictionary failed: {{message}}": "প্রসঙ্গ অভিধান ব্যর্থ হয়েছে: {{message}}",
-  "Apply Theme Colors": "থিম রং প্রয়োগ করুন"
+  "Apply Theme Colors": "থিম রং প্রয়োগ করুন",
+  "Set Repeat Start (A)": "পুনরাবৃত্তির শুরু সেট করুন (A)",
+  "Set Repeat End (B)": "পুনরাবৃত্তির শেষ সেট করুন (B)",
+  "Clear A-B Repeat": "A-B পুনরাবৃত্তি মুছুন",
+  "Pause After Each Sentence": "প্রতিটি বাক্যের পরে বিরতি"
 }
