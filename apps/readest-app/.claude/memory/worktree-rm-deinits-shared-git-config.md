@@ -60,3 +60,5 @@ config is deinit'd the same way — re-init once at the end, not per removal.
 
 Related: [[worktree-submodule-origin-is-local-gitdir]], [[worktree-rebase-submodule-drift]],
 [[worktree-shared-target-stale-plugin-cache]], [[feedback_use_worktree]].
+
+**Safer removal (2026-10-04, still deinits as of this date):** for a clean, merged worktree skip `worktree:rm`: `rm -rf <worktree>` then `git worktree prune` and `git branch -D` the branches. `git submodule status` before/after diffed identical; the worktree's submodule gitdirs live under `.git/worktrees/<name>/` and get pruned with it.
