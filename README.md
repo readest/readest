@@ -44,37 +44,35 @@
 
 ## Features
 
-<div align="left">✅ Implemented</div>
 
-| **Feature**                                | **Description**                                                                                                        | **Status** |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **Multi-Format Support**                   | Support EPUB, PDF, MOBI, KF8 (AZW3), FB2, CBZ, TXT, MD (Markdown)                                                                      | ✅         |
-| **Scroll/Page View Modes**                 | Switch between scrolling or paginated reading modes.                                                                   | ✅         |
-| **Full-Text Search**                       | Search inside a book or across the current library shelf to find relevant sections.                                    | ✅         |
-| **Annotations and Highlighting**           | Add highlights, bookmarks, and notes to enhance your reading experience and use instant mode for quicker interactions. | ✅         |
-| **Dictionary/Wikipedia Lookup**            | Look up words with built-in sources or import local packs, including Yomitan ZIP/RDICT, from Settings → Custom Dictionaries. | ✅         |
-| **[Parallel Read][link-parallel-read]**    | Read two books or documents simultaneously in a split-screen view.                                                     | ✅         |
-| **Customize Font and Layout**              | Adjust font, layout, theme mode, and theme colors for a personalized experience.                                       | ✅         |
-| **Code Syntax Highlighting**               | Read software manuals with rich coloring of code examples.                                                             | ✅         |
-| **File Association and Open With**         | Quickly open files in Readest in your file browser with one-click.                                                     | ✅         |
-| **Library Management**                     | Organize, sort, and manage your entire ebook library.                                                                  | ✅         |
-| **OPDS/Calibre Integration**               | Integrate OPDS/Calibre to access online libraries and catalogs.                                                        | ✅         |
-| **Web Page Clipping**                      | Open websites, sign in, and clip pages with **From Web Browser**. **From Web Novel** can reuse your browser session to import selected chapters and their images. | ✅         |
-| **Translate with DeepL and Yandex**        | From a single sentence to the entire book—translate instantly.                                                         | ✅         |
-| **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                                        | ✅           |
-| **Text-to-Speech (TTS) Support**           | Enjoy smooth, multilingual narration—even within a single book.                                                        | ✅         |
-| [**Read-Along Narration**][link-readalong] | Play embedded EPUB 3 Media Overlays with timed highlighting, or pair a reflowable EPUB locally with DRM-free MP3, M4A, or M4B narration. [Storyteller][link-storyteller] remains an option for generating phrase-aligned EPUBs. | ✅         |
-| **Sync across Platforms**                  | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         | ✅         |
-| [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices.                             | ✅         |
-| **Accessibility**                          | Provides full keyboard navigation and support for screen readers such as VoiceOver, TalkBack, NVDA, and Orca.         | ✅         |
-| **Visual & Focus Aids**                    | Reading ruler, paragraph-by-paragraph reading mode, and speed reading features.                                        | ✅         |
+| **Feature**                                | **Description**                                                                                                        |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **Multi-Format Support**                   | Support EPUB, PDF, MOBI, KF8 (AZW3), FB2, CBZ, TXT, HTML, MD (Markdown)                                                                      |
+| **Scroll/Page View Modes**                 | Switch between scrolling or paginated reading modes.                                                                   |
+| **Full-Text Search**                       | Search inside a book or across the current library shelf to find relevant sections.                                    |
+| **Annotations and Highlighting**           | Add highlights, bookmarks, and notes to enhance your reading experience and use instant mode for quicker interactions. |
+| **Dictionary/Wikipedia Lookup**            | Look up words with built-in sources or import local packs, including Yomitan ZIP/RDICT, from Settings → Custom Dictionaries. |
+| **[Parallel Read][link-parallel-read]**    | Read two books or documents simultaneously in a split-screen view.                                                     |
+| **Customize Font and Layout**              | Adjust font, layout, theme mode, and theme colors for a personalized experience.                                       |
+| **Code Syntax Highlighting**               | Read software manuals with rich coloring of code examples.                                                             |
+| **File Association and Open With**         | Quickly open files in Readest in your file browser with one-click.                                                     |
+| **Library Management**                     | Organize, sort, and manage your entire ebook library.                                                                  |
+| **OPDS/Calibre Integration**               | Integrate OPDS/Calibre to access online libraries and catalogs.                                                        |
+| **Web Page Clipping**                      | Open websites, sign in, and clip pages with **From Web Browser**. **From Web Novel** can reuse your browser session to import selected chapters and their images. |
+| **Translate with DeepL and Yandex**        | From a single sentence to the entire book—translate instantly.                                                         |
+| **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                                        |
+| **Text-to-Speech (TTS) Support**           | Enjoy smooth, multilingual narration—even within a single book.                                                        |
+| [**Read-Along Narration**][link-readalong] | Play embedded EPUB 3 Media Overlays with timed highlighting, or pair a reflowable EPUB locally with DRM-free MP3, M4A, or M4B narration. [Storyteller][link-storyteller] remains an option for generating phrase-aligned EPUBs. |
+| **Sync across Platforms**                  | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         |
+| [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices.                             |
+| **Accessibility**                          | Provides full keyboard navigation and support for screen readers such as VoiceOver, TalkBack, NVDA, and Orca.         |
+| **Visual & Focus Aids**                    | Reading ruler, paragraph-by-paragraph reading mode, and speed reading features.                                        |
 
 ## Planned Features
 
-<div align="left">🛠 Building</div>
-<div align="left">🔄 Planned</div>
+<div align="right">🛠 Building  |  🔄 Planned</div>
 
-| **Feature**                     | **Description**                                                            | **Priority** |
+| **Feature**                     | **Description**                                                            | |
 | ------------------------------- | -------------------------------------------------------------------------- | ------------ |
 | **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.       | 🛠           |
 | **Advanced Reading Stats**      | Track reading time, pages read, and more for detailed insights.            | 🛠           |
