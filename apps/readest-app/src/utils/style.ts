@@ -891,12 +891,25 @@ const parseComputedRgb = (value: string) => {
  * dictionary paints itself is left as authored.
  */
 export const liftDarkTextColors = (root: Element) => {
+  // The surface behind `root` is the popup's, found past a shadow root's host.
+  const parentOf = (el: Element) => {
+    const rootNode = el.getRootNode();
+    return el.parentElement ?? (rootNode instanceof ShadowRoot ? rootNode.host : null);
+  };
+  let outerOnLight = false;
+  for (let el = parentOf(root); el; el = parentOf(el)) {
+    const bg = parseComputedRgb(getComputedStyle(el).backgroundColor);
+    if (bg && bg.a > 0.5) {
+      outerOnLight = bg.brightness >= 128;
+      break;
+    }
+  }
   const onLightBox = new Map<Element, boolean>();
   const lifts: [HTMLElement, string][] = [];
   for (const el of [root, ...root.querySelectorAll('*')]) {
     const style = getComputedStyle(el);
     const bg = parseComputedRgb(style.backgroundColor);
-    const parentOnLight = !!el.parentElement && !!onLightBox.get(el.parentElement);
+    const parentOnLight = el === root ? outerOnLight : !!onLightBox.get(el.parentElement!);
     const onLight = bg && bg.a > 0.5 ? bg.brightness >= 128 : parentOnLight;
     onLightBox.set(el, onLight);
     const fg = parseComputedRgb(style.color);

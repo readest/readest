@@ -64,4 +64,11 @@ describe('liftDarkTextColors', () => {
     expect(colorOf(body, '#plain')).toBe('rgb(220, 220, 220)');
     expect(colorOf(body, '#boxed')).toBe('rgb(51, 51, 51)');
   });
+
+  it('reads the popup background outside the shadow root', () => {
+    const body = mount('<p class="def">def</p>', '.def { color: #000; }');
+    host.style.backgroundColor = 'rgb(250, 250, 250)';
+    liftDarkTextColors(body);
+    expect(colorOf(body, '.def')).toBe('rgb(0, 0, 0)');
+  });
 });
