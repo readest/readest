@@ -703,10 +703,9 @@ fn resolve_cover_path(
             return Some(resolve_relative(opf_path, &item.href));
         }
         let path = resolve_relative(opf_path, id);
-        if manifest
-            .iter()
-            .any(|(_, item)| resolve_relative(opf_path, &item.href) == path)
-        {
+        if manifest.iter().any(|(_, item)| {
+            item.media_type.starts_with("image/") && resolve_relative(opf_path, &item.href) == path
+        }) {
             return Some(path);
         }
     }
@@ -1084,6 +1083,28 @@ mod tests {
         )
         .unwrap();
         assert_eq!(p, "OEBPS/images/pic_1.jpg");
+    }
+
+    #[test]
+    fn cover_resolution_ignores_meta_cover_href_to_non_image() {
+        // An href naming the XHTML cover page must not win over the image.
+        let mut manifest = Vec::new();
+        for (id, href, media_type) in [
+            ("cover", "cover.xhtml", "application/xhtml+xml"),
+            ("img", "images/cover.jpg", "image/jpeg"),
+        ] {
+            manifest.push((
+                id.into(),
+                ManifestItem {
+                    href: href.into(),
+                    media_type: media_type.into(),
+                    properties: String::new(),
+                },
+            ));
+        }
+        let p = resolve_cover_path(&manifest, &Some("cover.xhtml".into()), "OEBPS/content.opf")
+            .unwrap();
+        assert_eq!(p, "OEBPS/images/cover.jpg");
     }
 
     #[test]
