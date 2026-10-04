@@ -39,6 +39,8 @@ interface BookItemProps {
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
   showTimeRemaining: boolean;
+  /** Badged on the cover inside a series group, where the breadcrumb names the series. */
+  seriesIndex?: number;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -53,6 +55,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookDownload,
   showBookDetailsModal,
   showTimeRemaining,
+  seriesIndex,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -171,6 +174,11 @@ const BookItem: React.FC<BookItemProps> = ({
               </span>
             )}
           </div>
+        )}
+        {seriesIndex !== undefined && (
+          <span className='eink-bordered bg-base-100/90 text-base-content absolute end-1 top-1 rounded-sm px-1 text-[10px] font-semibold leading-4 shadow-sm'>
+            #{seriesIndex}
+          </span>
         )}
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
