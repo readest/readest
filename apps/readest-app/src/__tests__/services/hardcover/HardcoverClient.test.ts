@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { HardcoverClient } from '@/services/hardcover/HardcoverClient';
-import type { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
+import { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
+import type { AppService } from '@/types/system';
 import type { Book, BookConfig, BookNote, HardcoverBookLink } from '@/types/book';
 
 type MockFetchResponse = {
@@ -1206,6 +1207,7 @@ describe('HardcoverClient journal batching', () => {
       getMappingByPayloadHash: vi.fn().mockResolvedValue(null),
       upsertMapping: vi.fn().mockResolvedValue(undefined),
       flush: vi.fn().mockResolvedValue(undefined),
+      loadForBook: vi.fn().mockResolvedValue(undefined),
     };
     client = new HardcoverClient(
       { accessToken: `batch-${tokenSeq++}` },
@@ -1257,6 +1259,55 @@ describe('HardcoverClient journal batching', () => {
       55,
       expect.any(String),
     );
+  });
+
+  test('re-inserts every note after another store clears the mappings (re-link, #5846)', async () => {
+    // In-memory hardcover_note_mappings table shared by every store, like the real database.
+    const rows = new Map<string, unknown[]>();
+    const db = {
+      select: async (_sql: string, [hash]: unknown[]) =>
+        [...rows.values()]
+          .filter((r) => r[0] === hash)
+          .map(([book_hash, note_id, hardcover_journal_id, payload_hash, synced_at]) => ({
+            book_hash,
+            note_id,
+            hardcover_journal_id,
+            payload_hash,
+            synced_at,
+          })),
+      execute: async (sql: string, params: unknown[]) => {
+        if (sql.includes('DELETE')) rows.clear();
+        else if (sql.includes('INSERT')) rows.set(String(params[1]), params);
+        return {};
+      },
+      close: async () => {},
+    };
+    const appService = { openDatabase: async () => db } as unknown as AppService;
+    const linkedClient = new HardcoverClient(
+      { accessToken: `batch-${tokenSeq++}` },
+      new HardcoverSyncMapStore(appService),
+    );
+    vi.spyOn(
+      linkedClient as unknown as HardcoverClientTestApi,
+      'ensureBookInLibrary',
+    ).mockResolvedValue(context as TestBookContext);
+
+    await linkedClient.syncBookNotes(book, config(notes(2)));
+    // The link dialog clears the old book's mappings through its own store.
+    await new HardcoverSyncMapStore(appService).clearForBook(book.hash);
+    fetchMock.mockClear();
+
+    const result = await linkedClient.syncBookNotes(book, config(notes(2)));
+
+    expect(result).toMatchObject({ inserted: 2, updated: 0, skipped: 0 });
+    expect(
+      batches()
+        .flat()
+        .map((op) => op.query),
+    ).toEqual([
+      expect.stringContaining('InsertReadingJournal'),
+      expect.stringContaining('InsertReadingJournal'),
+    ]);
   });
 
   test('inserts identical payloads in one run once', async () => {

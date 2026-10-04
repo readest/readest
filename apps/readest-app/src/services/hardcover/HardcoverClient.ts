@@ -727,6 +727,10 @@ export class HardcoverClient {
     let updated = 0;
     let skipped = 0;
 
+    // The client (and this store) outlives a sync, and re-linking the book clears the mappings
+    // through another store, so read them fresh instead of trusting the in-memory copy.
+    await this.mapStore.loadForBook(book.hash);
+
     // Classify first, then send the journal writes in batches.
     const pending: JournalOp[] = [];
     const pendingInserts = new Map<string, JournalOp>();
