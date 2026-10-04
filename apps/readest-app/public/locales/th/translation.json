@@ -2494,5 +2494,9 @@
   "Examples": "ตัวอย่าง",
   "Synonyms": "คำพ้องความหมาย",
   "Context Dictionary failed: {{message}}": "พจนานุกรมตามบริบทล้มเหลว: {{message}}",
-  "Apply Theme Colors": "ใช้สีธีม"
+  "Apply Theme Colors": "ใช้สีธีม",
+  "Set Repeat Start (A)": "ตั้งจุดเริ่มเล่นซ้ำ (A)",
+  "Set Repeat End (B)": "ตั้งจุดสิ้นสุดเล่นซ้ำ (B)",
+  "Clear A-B Repeat": "ล้างการเล่นซ้ำ A-B",
+  "Pause After Each Sentence": "หยุดชั่วคราวหลังแต่ละประโยค"
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSSMLMarks, parseSSMLLang } from '@/utils/ssml';
+import { parseSSMLMarks, parseSSMLLang, truncateSSMLAfterMark } from '@/utils/ssml';
 
 // SSML with xml:lang on speak element (typical output from TTS with lang)
 const ssmlWithLang = (lang: string, body: string) =>
@@ -205,5 +205,39 @@ describe('parseSSMLMarks', () => {
       expect(plainText).toContain('Important');
       expect(plainText).toContain('text');
     });
+  });
+});
+
+describe('truncateSSMLAfterMark', () => {
+  const speak = (body: string) =>
+    `<speak xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en">${body}</speak>`;
+
+  it('keeps only the named sentence', () => {
+    const ssml = speak('<mark name="0"/>One. <mark name="1"/>Two. <mark name="2"/>Three.');
+    const { marks } = parseSSMLMarks(truncateSSMLAfterMark(ssml, '0'));
+    expect(marks.map((m) => m.text)).toEqual(['One. ']);
+  });
+
+  it('cuts inside nested elements and keeps the document well formed', () => {
+    const ssml = speak(
+      '<mark name="0"/>One <lang xml:lang="fr">deux. <mark name="1"/>trois</lang> four.',
+    );
+    const out = truncateSSMLAfterMark(ssml, '0');
+    const { marks } = parseSSMLMarks(out);
+    expect(marks.map((m) => m.text.trim())).toEqual(['One', 'deux.']);
+    expect(out).toContain('</lang>');
+    expect(out).not.toContain('four');
+  });
+
+  it('keeps a skipped leading mark together with the sentence after it', () => {
+    // The first mark is punctuation only, so parseSSMLMarks starts at mark 1.
+    const ssml = speak('<mark name="0"/>*** <mark name="1"/>Two. <mark name="2"/>Three.');
+    const { marks } = parseSSMLMarks(truncateSSMLAfterMark(ssml, '1'));
+    expect(marks.map((m) => m.text)).toEqual(['Two. ']);
+  });
+
+  it('returns the input when the mark is the last one', () => {
+    const ssml = speak('<mark name="0"/>One. <mark name="1"/>Two.');
+    expect(parseSSMLMarks(truncateSSMLAfterMark(ssml, '1')).marks).toHaveLength(2);
   });
 });

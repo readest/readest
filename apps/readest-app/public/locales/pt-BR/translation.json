@@ -2622,5 +2622,9 @@
   "Examples": "Exemplos",
   "Synonyms": "Sinônimos",
   "Context Dictionary failed: {{message}}": "Falha no dicionário contextual: {{message}}",
-  "Apply Theme Colors": "Aplicar cores do tema"
+  "Apply Theme Colors": "Aplicar cores do tema",
+  "Set Repeat Start (A)": "Definir início da repetição (A)",
+  "Set Repeat End (B)": "Definir fim da repetição (B)",
+  "Clear A-B Repeat": "Limpar repetição A-B",
+  "Pause After Each Sentence": "Pausar após cada frase"
 }

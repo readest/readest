@@ -2494,5 +2494,9 @@
   "Examples": "དཔེ་བརྗོད།",
   "Synonyms": "མིང་གྲངས་མཚུངས་པ།",
   "Context Dictionary failed: {{message}}": "སྐབས་དོན་ཚིག་མཛོད་ཕམ་སོང་། {{message}}",
-  "Apply Theme Colors": "བརྗོད་དོན་ཚོས་གཞི་སྤྱོད་པ"
+  "Apply Theme Colors": "བརྗོད་དོན་ཚོས་གཞི་སྤྱོད་པ",
+  "Set Repeat Start (A)": "བསྐྱར་ཟློས་འགོ་འཛུགས་གཏན་འཁེལ། (A)",
+  "Set Repeat End (B)": "བསྐྱར་ཟློས་མཇུག་གཏན་འཁེལ། (B)",
+  "Clear A-B Repeat": "A-B བསྐྱར་ཟློས་གསལ་བ།",
+  "Pause After Each Sentence": "ཚིག་གྲུབ་རེ་རེའི་རྗེས་སུ་མཚམས་འཇོག"
 }

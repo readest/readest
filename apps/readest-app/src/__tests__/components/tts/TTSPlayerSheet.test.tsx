@@ -62,6 +62,11 @@ vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({ getBookData }),
 }));
 
+const saveViewSettings = vi.fn();
+vi.mock('@/helpers/settings', () => ({
+  saveViewSettings: (...args: unknown[]) => saveViewSettings(...args),
+}));
+
 vi.mock('@/store/readerProgressStore', () => ({
   useBookProgress: () => ({ sectionLabel: 'Chapter 5' }),
 }));
@@ -117,6 +122,9 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onTogglePlay: vi.fn(),
   onBackward: vi.fn(),
   onForward: vi.fn(),
+  loopState: 'off' as 'off' | 'a' | 'ab',
+  onToggleLoop: vi.fn(),
+  onGetLyricLoopRange: vi.fn().mockReturnValue(null),
   onSetRate: vi.fn(),
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
@@ -164,6 +172,7 @@ describe('TTSPlayerSheet', () => {
     // by one test leaks into the next.
     delete viewSettings['ttsVoice'];
     delete viewSettings['ttsUseNarration'];
+    delete viewSettings['ttsPauseAfterSentence'];
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: null },
     });
@@ -279,6 +288,38 @@ describe('TTSPlayerSheet', () => {
     expect(props.onForward).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByLabelText('Next Paragraph'));
     expect(props.onForward).toHaveBeenCalledWith(false);
+  });
+
+  test('toggles sentence-by-sentence as a non-style view setting', () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    const toggle = screen.getByLabelText('Pause After Each Sentence');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(toggle);
+    expect(saveViewSettings).toHaveBeenCalledWith(
+      envConfig,
+      'b1',
+      'ttsPauseAfterSentence',
+      true,
+      false,
+      false,
+    );
+  });
+
+  test('the A-B button names its next step and toggles the loop', () => {
+    const props = makeProps();
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Set Repeat Start (A)'));
+    expect(props.onToggleLoop).toHaveBeenCalledTimes(1);
+    rerender(<TTSPlayerSheet {...props} loopState='a' />);
+    expect(screen.getByLabelText('Set Repeat End (B)')).toBeTruthy();
+    rerender(<TTSPlayerSheet {...props} loopState='ab' />);
+    expect(screen.getByLabelText('Clear A-B Repeat')).toBeTruthy();
+  });
+
+  test('a paired audiobook has no sentence modes', () => {
+    render(<TTSPlayerSheet {...makeProps({ audioTransport: true })} />);
+    expect(screen.queryByLabelText('Pause After Each Sentence')).toBeNull();
+    expect(screen.queryByLabelText('Set Repeat Start (A)')).toBeNull();
   });
 
   test('a paired audiobook gets seek and chapter transport with the same step semantics', () => {

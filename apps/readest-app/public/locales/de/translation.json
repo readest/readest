@@ -2558,5 +2558,9 @@
   "Examples": "Beispiele",
   "Synonyms": "Synonyme",
   "Context Dictionary failed: {{message}}": "Kontextwörterbuch fehlgeschlagen: {{message}}",
-  "Apply Theme Colors": "Designfarben anwenden"
+  "Apply Theme Colors": "Designfarben anwenden",
+  "Set Repeat Start (A)": "Wiederholungsstart setzen (A)",
+  "Set Repeat End (B)": "Wiederholungsende setzen (B)",
+  "Clear A-B Repeat": "A-B-Wiederholung löschen",
+  "Pause After Each Sentence": "Nach jedem Satz pausieren"
 }

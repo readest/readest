@@ -2558,5 +2558,9 @@
   "Examples": "எடுத்துக்காட்டுகள்",
   "Synonyms": "ஒத்த சொற்கள்",
   "Context Dictionary failed: {{message}}": "சூழல் அகராதி தோல்வியடைந்தது: {{message}}",
-  "Apply Theme Colors": "தீம் நிறங்களைப் பயன்படுத்து"
+  "Apply Theme Colors": "தீம் நிறங்களைப் பயன்படுத்து",
+  "Set Repeat Start (A)": "மீண்டும் இயக்கத் தொடக்கத்தை அமை (A)",
+  "Set Repeat End (B)": "மீண்டும் இயக்க முடிவை அமை (B)",
+  "Clear A-B Repeat": "A-B மீண்டும் இயக்கத்தை அழி",
+  "Pause After Each Sentence": "ஒவ்வொரு வாக்கியத்திற்கும் பின் இடைநிறுத்து"
 }

@@ -2558,5 +2558,9 @@
   "Examples": "Exempel",
   "Synonyms": "Synonymer",
   "Context Dictionary failed: {{message}}": "Kontextordboken misslyckades: {{message}}",
-  "Apply Theme Colors": "Tillämpa temafärger"
+  "Apply Theme Colors": "Tillämpa temafärger",
+  "Set Repeat Start (A)": "Ange upprepningsstart (A)",
+  "Set Repeat End (B)": "Ange upprepningsslut (B)",
+  "Clear A-B Repeat": "Rensa A-B-upprepning",
+  "Pause After Each Sentence": "Pausa efter varje mening"
 }

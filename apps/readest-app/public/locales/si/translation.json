@@ -2558,5 +2558,9 @@
   "Examples": "උදාහරණ",
   "Synonyms": "සමානාර්ථ පද",
   "Context Dictionary failed: {{message}}": "සන්දර්භ ශබ්දකෝෂය අසාර්ථක විය: {{message}}",
-  "Apply Theme Colors": "තේමා වර්ණ යොදන්න"
+  "Apply Theme Colors": "තේමා වර්ණ යොදන්න",
+  "Set Repeat Start (A)": "පුනරාවර්තන ආරම්භය සකසන්න (A)",
+  "Set Repeat End (B)": "පුනරාවර්තන අවසානය සකසන්න (B)",
+  "Clear A-B Repeat": "A-B පුනරාවර්තනය ඉවත් කරන්න",
+  "Pause After Each Sentence": "සෑම වාක්‍යයකටම පසු විරාම කරන්න"
 }

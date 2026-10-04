@@ -4,7 +4,8 @@ import type { PageInfo, PairedAudiobook } from '@/types/book';
 import { SectionItem } from '@/libs/document';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { transformTTSSectionDocument } from './transformDoc';
-import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
+import { filterSSMLWithLang, parseSSMLMarks, truncateSSMLAfterMark } from '@/utils/ssml';
+import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import {
   TTSGranularity,
@@ -84,12 +85,20 @@ type TTSState =
   | 'setrate-paused'
   | 'setvoice-paused';
 
+// A sentence position for A-B repeat. A CFI rather than a Range: the section's
+// document is replaced on re-attach and section changes.
+type TTSLoopPoint = { sectionIndex: number; cfi: string };
+export type TTSLoopState = 'off' | 'a' | 'ab';
+
 const HIGHLIGHT_KEY = 'tts-highlight';
 // Scrubber-drag preview overlay. A separate key from the playback highlight:
 // while a drag previews a location, playback keeps repainting the spoken
 // word/sentence under HIGHLIGHT_KEY, and sharing a key would erase the
 // preview on every word boundary.
 const SEEK_PREVIEW_KEY = 'tts-seek-preview';
+// The A-B repeat span, tinted under the spoken highlight.
+const LOOP_KEY = 'tts-loop';
+const LOOP_TINT_OPACITY = '0.12';
 
 // Hook-supplied callbacks rebound on view attach: the constructor-captured
 // closures belong to whichever reader hook created the controller and die
@@ -107,6 +116,12 @@ export interface TTSViewBindings {
 // no natural pause here otherwise -- the transition is as fast as the async
 // stop/init overhead allows, which reads as no pause at all.
 export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
+
+const drawLoopTint = (rects: DOMRectList, options: Record<string, unknown>) => {
+  const g = Overlayer.highlight(rects, options);
+  g.style.opacity = LOOP_TINT_OPACITY;
+  return g;
+};
 
 export class TTSController extends EventTarget {
   // PlaybackSource tag: the media bridge and the session manager consume this
@@ -126,6 +141,12 @@ export class TTSController extends EventTarget {
   // "stop at end of chapter" sleep-timer mode. Gates only the loop's own
   // continuation (see forward()'s isAutoAdvance), never user navigation.
   stopAtChapterEnd: boolean = false;
+  // Sentence-by-sentence mode (#5233): park on the next sentence after each
+  // one instead of reading on. Like A-B repeat it steps by sentence mark, so a
+  // paired audiobook (whose marks are chapters) ignores both.
+  pauseAfterSentence: boolean = false;
+  #loopA: TTSLoopPoint | null = null;
+  #loopB: TTSLoopPoint | null = null;
   #paragraphGapSec: number = DEFAULT_PARAGRAPH_GAP_SEC;
   #nossmlCnt: number = 0;
   // Consecutive native-TTS utterances that ended in a terminal 'error' without
@@ -1546,6 +1567,9 @@ export class TTSController extends EventTarget {
         }
 
         const { plainText, marks } = parseSSMLMarks(ssml);
+        // A step mode speaks one sentence per utterance, so the engine stops
+        // exactly where the sentence does.
+        const stepped = !oneTime && this.#stepsBySentence();
         if (!oneTime) {
           if (!plainText || marks.length === 0) {
             resolve();
@@ -1558,9 +1582,18 @@ export class TTSController extends EventTarget {
         // Only the native client surfaces an offline engine failure as a
         // terminal 'error' code (Edge/Web throw, which the catch below handles).
         const canSkipOnError = this.ttsClient === this.ttsNativeClient;
-        const iter = await this.ttsClient.speak(ssml, signal);
+        const iter = await this.ttsClient.speak(
+          stepped ? truncateSSMLAfterMark(ssml, marks[0]!.name) : ssml,
+          signal,
+        );
         let lastCode;
-        for await (const { code } of iter) {
+        // A step mode switched on mid-paragraph still has to stop where the
+        // sentence now sounding ends: on its 'end' (engines that speak mark by
+        // mark), or else at the next sentence's boundary.
+        let sentenceMark: string | undefined;
+        let sentenceRange: Range | undefined;
+        let stepAfter: { range?: Range; advance: boolean } | null = null;
+        for await (const { code, mark } of iter) {
           // Anything the iterator yields means the client is done waiting:
           // 'boundary' is the first audible chunk, 'end'/'error' resolve the
           // wait the other way.
@@ -1570,14 +1603,33 @@ export class TTSController extends EventTarget {
             return;
           }
           lastCode = code;
+          if (oneTime || this.state !== 'playing') continue;
+          if (code === 'end') {
+            const range = this.#getTts()?.getLastRange();
+            if (this.#stopsAfter(range)) {
+              stepAfter = { range, advance: true };
+              break;
+            }
+          } else if (code === 'boundary' && mark !== sentenceMark) {
+            if (sentenceMark !== undefined && this.#stopsAfter(sentenceRange)) {
+              stepAfter = { range: sentenceRange, advance: false };
+              break;
+            }
+            sentenceMark = mark;
+            sentenceRange = this.#getTts()?.getLastRange();
+          }
         }
 
-        if (lastCode === 'end' && this.state === 'playing' && !oneTime) {
+        if (stepAfter) {
+          this.#consecutiveSpeakErrors = 0;
+          resolve();
+          await this.#afterSentence(stepAfter.range, stepAfter.advance, signal);
+        } else if (lastCode === 'end' && this.state === 'playing' && !oneTime) {
           this.#consecutiveSpeakErrors = 0;
           resolve();
           await this.#delayParagraphGap(signal);
           if (signal.aborted) return;
-          await this.forward(false, true);
+          await this.forward(stepped, true);
         } else if (
           lastCode === 'error' &&
           canSkipOnError &&
@@ -1635,6 +1687,135 @@ export class TTSController extends EventTarget {
     });
 
     await this.#currentSpeakPromise.catch((e) => this.error(e));
+  }
+
+  #stepsBySentence(): boolean {
+    return (this.pauseAfterSentence || this.#loopB !== null) && !this.usesAudioTransport();
+  }
+
+  // Whether playback must not simply read on past this sentence.
+  #stopsAfter(range: Range | undefined): boolean {
+    if (this.usesAudioTransport()) return false;
+    return this.pauseAfterSentence || (!!range && this.#isLoopEnd(range));
+  }
+
+  // What follows a sentence once a step mode is on: back to A after B,
+  // otherwise the next sentence, parked on in sentence-by-sentence mode.
+  // `advance` is false when the cursor is already on the next sentence (a mode
+  // switched on mid-paragraph is caught at that sentence's boundary).
+  async #afterSentence(range: Range | undefined, advance: boolean, signal: AbortSignal) {
+    const pause = this.pauseAfterSentence;
+    if (pause) {
+      await this.stop();
+      this.state = 'forward-paused';
+    } else {
+      await this.#delayParagraphGap(signal);
+      if (signal.aborted) return;
+    }
+    if (range && this.#isLoopEnd(range)) {
+      await this.#goToLoopStart(!pause);
+    } else if (advance) {
+      await this.forward(true, true);
+    } else {
+      this.reapplyCurrentHighlight();
+    }
+  }
+
+  get loopState(): TTSLoopState {
+    return this.#loopB ? 'ab' : this.#loopA ? 'a' : 'off';
+  }
+
+  // A-B repeat: the first call marks the sentence being read as A, the second
+  // marks B and loops A..B from then on, the third clears the loop. Marking B
+  // before A swaps the two; marking the same sentence twice repeats it.
+  toggleLoopPoint(): TTSLoopState {
+    if (this.#loopB) {
+      this.#loopA = this.#loopB = null;
+      this.drawLoopRange();
+      return 'off';
+    }
+    const range = this.#getTts()?.getLastRange();
+    const cfi = range && this.#cfiOf(range);
+    if (!cfi) return this.loopState;
+    const point = { sectionIndex: this.#ttsSectionIndex, cfi };
+    if (!this.#loopA) {
+      this.#loopA = point;
+    } else if (CFI.compare(cfi, this.#loopA.cfi) < 0) {
+      this.#loopB = this.#loopA;
+      this.#loopA = point;
+    } else {
+      this.#loopB = point;
+    }
+    this.drawLoopRange();
+    return this.loopState;
+  }
+
+  // Tint the A-B span (just A while B is unset) in every live view, so the
+  // repeated passage stays visible between the sentences being spoken. Views
+  // are re-rendered on navigation, so the reader redraws it on relocate.
+  drawLoopRange() {
+    if (!this.#attached) return;
+    const start = this.#loopA;
+    const end = this.#loopB ?? start;
+    const contents = this.view.renderer.getContents() as {
+      doc?: Document;
+      index?: number;
+      overlayer?: Overlayer;
+    }[];
+    for (const { doc, index, overlayer } of contents) {
+      overlayer?.remove(LOOP_KEY);
+      if (!start || !end || !doc || index === undefined) continue;
+      if (index < start.sectionIndex || index > end.sectionIndex) continue;
+      try {
+        const range = doc.createRange();
+        range.selectNodeContents(doc.body);
+        const a = index === start.sectionIndex && this.view.resolveCFI(start.cfi).anchor(doc);
+        if (a) range.setStart(a.startContainer, a.startOffset);
+        const b = index === end.sectionIndex && this.view.resolveCFI(end.cfi).anchor(doc);
+        if (b) range.setEnd(b.endContainer, b.endOffset);
+        overlayer?.add(LOOP_KEY, range, drawLoopTint, { color: this.options.color });
+      } catch {}
+    }
+  }
+
+  // Lines of the current lyric sheet inside the A-B span, or null when the
+  // span does not reach this section. A span from or to another section
+  // covers this one up to its edge.
+  getLyricLoopRange(): { start: number; end: number } | null {
+    const timeline = this.#sectionTimeline;
+    const section = this.#ttsSectionIndex;
+    const start = this.#loopA;
+    const end = this.#loopB ?? start;
+    if (!timeline || !timeline.length || this.#timelineSectionIndex !== section) return null;
+    if (!start || !end || section < start.sectionIndex || section > end.sectionIndex) return null;
+    const lineOf = (cfi: string) => {
+      const range = this.view.resolveCFI(cfi).anchor(this.#ttsDoc!);
+      return range ? timeline.indexOfRange(range) : -1;
+    };
+    const first = start.sectionIndex < section ? 0 : lineOf(start.cfi);
+    const last = end.sectionIndex > section ? timeline.length - 1 : lineOf(end.cfi);
+    return first >= 0 && last >= 0 ? { start: first, end: last } : null;
+  }
+
+  #cfiOf(range: Range): string | null {
+    try {
+      return this.view.getCFI(this.#ttsSectionIndex, range) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  #isLoopEnd(range: Range): boolean {
+    const end = this.#loopB;
+    return !!end && end.sectionIndex === this.#ttsSectionIndex && this.#cfiOf(range) === end.cfi;
+  }
+
+  async #goToLoopStart(isPlaying: boolean) {
+    const { sectionIndex, cfi } = this.#loopA!;
+    if (sectionIndex !== this.#ttsSectionIndex) await this.#initTTSForSection(sectionIndex);
+    const range = this.view.resolveCFI(cfi).anchor(this.#ttsDoc!);
+    await this.#handleNavigationWithSSML(this.#getTts()?.from(range), isPlaying);
+    if (!isPlaying) this.reapplyCurrentHighlight();
   }
 
   async speak(ssml: string | Promise<string>, oneTime = false, oneTimeCallback?: () => void) {

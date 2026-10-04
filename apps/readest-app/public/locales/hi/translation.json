@@ -2558,5 +2558,9 @@
   "Examples": "उदाहरण",
   "Synonyms": "पर्यायवाची",
   "Context Dictionary failed: {{message}}": "संदर्भ शब्दकोश विफल: {{message}}",
-  "Apply Theme Colors": "थीम रंग लागू करें"
+  "Apply Theme Colors": "थीम रंग लागू करें",
+  "Set Repeat Start (A)": "दोहराव की शुरुआत सेट करें (A)",
+  "Set Repeat End (B)": "दोहराव का अंत सेट करें (B)",
+  "Clear A-B Repeat": "A-B दोहराव हटाएँ",
+  "Pause After Each Sentence": "हर वाक्य के बाद रोकें"
 }

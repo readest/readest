@@ -2686,5 +2686,9 @@
   "Examples": "Primeri",
   "Synonyms": "Sopomenke",
   "Context Dictionary failed: {{message}}": "Napaka kontekstnega slovarja: {{message}}",
-  "Apply Theme Colors": "Uporabi barve teme"
+  "Apply Theme Colors": "Uporabi barve teme",
+  "Set Repeat Start (A)": "Nastavi začetek ponavljanja (A)",
+  "Set Repeat End (B)": "Nastavi konec ponavljanja (B)",
+  "Clear A-B Repeat": "Počisti ponavljanje A-B",
+  "Pause After Each Sentence": "Premor po vsakem stavku"
 }
