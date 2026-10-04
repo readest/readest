@@ -1,7 +1,15 @@
 import clsx from 'clsx';
 import { LibraryPageDurationsContext } from '@/hooks/useMedianPageDurationSecs';
 import { HideBookCoversContext } from '@/components/BookCover';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   Virtuoso,
   type Components,
@@ -44,7 +52,12 @@ interface StreamProps {
   scrollKey?: string;
 }
 // Module-scoped so the position outlives the library page while the reader is open.
-const savedScrollStates = new Map<string, StateSnapshot>();
+// Virtuoso's measured sizes are per row index, so a snapshot is kept with the
+// rows that produced it and only restored onto the same rows.
+const savedScrollStates = new Map<string, { rowKeys: string; state: StateSnapshot }>();
+// Seeds the first render after a remount, so the grid starts with the column
+// count (and rows) it had when the snapshot was taken.
+let lastStreamWidth = 0;
 type StreamRow = {
   key: string;
   section: ShelfSection;
@@ -282,17 +295,7 @@ export default function BookshelfStream({
   const _ = useTranslation();
   const root = useRef<HTMLDivElement>(null);
   const virtuoso = useRef<VirtuosoHandle>(null);
-  const [restoreState] = useState(() =>
-    scrollKey === undefined ? undefined : savedScrollStates.get(scrollKey),
-  );
-  const saveScrollState = useCallback(
-    (scrolling: boolean) => {
-      if (scrolling || scrollKey === undefined) return;
-      virtuoso.current?.getState((state) => savedScrollStates.set(scrollKey, state));
-    },
-    [scrollKey],
-  );
-  const [width, setWidth] = useState(0);
+  const [width, setWidth] = useState(lastStreamWidth);
   const [height, setHeight] = useState(0);
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
   const handleScrollerRef = useCallback(
@@ -309,6 +312,7 @@ export default function BookshelfStream({
     const element = root.current;
     if (!element) return;
     const measure = () => {
+      lastStreamWidth = element.clientWidth;
       setWidth(element.clientWidth);
       setHeight(element.clientHeight);
     };
@@ -322,6 +326,25 @@ export default function BookshelfStream({
   const rows = useMemo(
     () => buildBookshelfRows(sections, columns, includeImport),
     [sections, columns, includeImport],
+  );
+  const rowKeys = useMemo(() => rows.map((row) => row.key).join('\n'), [rows]);
+  const [restoreState] = useState(() => {
+    const saved = scrollKey === undefined ? undefined : savedScrollStates.get(scrollKey);
+    return saved?.rowKeys === rowKeys ? saved.state : undefined;
+  });
+  const latest = useRef({ scrollKey, rowKeys });
+  useLayoutEffect(() => {
+    latest.current = { scrollKey, rowKeys };
+  });
+  // Save on unmount (opening a book leaves the library), even mid-scroll. A
+  // layout cleanup runs before Virtuoso's own handle is torn down.
+  useLayoutEffect(
+    () => () => {
+      const { scrollKey, rowKeys } = latest.current;
+      if (scrollKey === undefined) return;
+      virtuoso.current?.getState((state) => savedScrollStates.set(scrollKey, { rowKeys, state }));
+    },
+    [],
   );
   // Virtuoso mounts its footer before it has measured the viewport and placed
   // any row, which flashed the import action at the top of the page on every
@@ -345,7 +368,6 @@ export default function BookshelfStream({
           <Virtuoso
             ref={virtuoso}
             restoreStateFrom={restoreState}
-            isScrolling={saveScrollState}
             style={scale !== 1 ? { overflowX: 'hidden' } : undefined}
             data={rows}
             overscan={pageNavigation ? Math.max(400, height) : 400}

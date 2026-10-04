@@ -561,15 +561,15 @@ describe('mixed bookshelf stream in Chromium', () => {
     }
   }
   it('returns to the same place after the library remounts (opening a book and coming back)', async () => {
-    const shelves = () => [
+    const shelves = (count: number) => [
       section('reading', 'carousel', 12),
-      section('books', 'list', 300),
+      section('books', 'list', count),
       section('more', 'grid', 60),
     ];
-    const stream = () => (
+    const stream = (count = 300) => (
       <div style={{ width: 900, height: 600 }}>
         <BookshelfStream
-          sections={shelves()}
+          sections={shelves(count)}
           autoColumns
           fixedColumns={3}
           renderItem={renderItem}
@@ -595,8 +595,7 @@ describe('mixed bookshelf stream in Chromium', () => {
     scroller.scrollTop = 6000;
     fireEvent.scroll(scroller);
     await waitFor(() => expect(visibleId(first.container)).toMatch(/^books:\d{2,}$/));
-    // Let Virtuoso settle and report the end of the scroll.
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    // Unmount right away, as when a book is tapped before the scroll settles.
     const scrollTop = scroller.scrollTop;
     const book = visibleId(first.container);
     first.unmount();
@@ -604,6 +603,12 @@ describe('mixed bookshelf stream in Chromium', () => {
     const second = render(stream());
     await waitFor(() => expect(scrollerOf(second.container).scrollTop).toBe(scrollTop));
     expect(visibleId(second.container)).toBe(book);
+    second.unmount();
+
+    // Different rows: the saved row sizes no longer apply, so start at the top.
+    const changed = render(stream(250));
+    await waitFor(() => expect(visibleId(changed.container)).toBe('reading:0'));
+    expect(scrollerOf(changed.container).scrollTop).toBe(0);
   });
   it('keeps very large carousels horizontally virtualized and scrollable', async () => {
     document.documentElement.setAttribute('data-eink', 'true');
