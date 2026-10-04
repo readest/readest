@@ -41,6 +41,7 @@ import {
   fetchWithAuth,
   probeAuth,
   needsProxy,
+  needsNativeImageFetch,
   probeFilename,
 } from './utils/opdsReq';
 import { getPublicationDetailHref, parsePublicationDocument } from './utils/opdsPublication';
@@ -837,7 +838,12 @@ export default function BrowserPage() {
       const username = usernameRef.current || '';
       const password = passwordRef.current || '';
       const customHeaders = customHeadersRef.current;
-      if (!username && !password && Object.keys(customHeaders).length === 0) {
+      if (
+        !username &&
+        !password &&
+        Object.keys(customHeaders).length === 0 &&
+        !needsNativeImageFetch(url)
+      ) {
         return needsProxy(url) ? getProxiedURL(url, '', true) : url;
       }
 

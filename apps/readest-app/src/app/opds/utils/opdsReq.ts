@@ -47,6 +47,18 @@ export const needsProxy = (url: string): boolean => {
 };
 
 /**
+ * On iOS/macOS the webview serves the app from the secure `tauri://localhost`
+ * origin, so a plain-http cover in an <img> is mixed content. WebKit's Local
+ * Network Access rules only let it through when the host is an address WebKit
+ * classifies as local (e.g. 192.168.x.x); a Tailscale 100.x address or any
+ * hostname is blocked before a request is ever sent (#6637). Such images are
+ * downloaded natively into the cache instead.
+ */
+export const needsNativeImageFetch = (url: string): boolean => {
+  return isTauriAppPlatform() && url.startsWith('http:');
+};
+
+/**
  * tauri-plugin-http appends the webview origin (`tauri://localhost`, or
  * `http://tauri.localhost` on Android/Windows) as the Origin header of every
  * request unless the caller sets one. A native client has no business
