@@ -13,7 +13,12 @@ vi.mock('@/services/hardcover/hardcoverOAuth', async (importOriginal) => ({
 type Api = { minRequestIntervalMs: number; request: (q: string, v: object) => Promise<unknown> };
 
 const res = (status: number) =>
-  ({ ok: status < 400, status, json: async () => ({ data: { ok: true } }) }) as Response;
+  ({
+    ok: status < 400,
+    status,
+    headers: new Headers(),
+    json: async () => ({ data: { ok: true } }),
+  }) as Response;
 
 describe('HardcoverClient OAuth', () => {
   const fresh = { accessToken: 'new', refreshToken: 'rt', expiresAt: Date.now() + 3_600_000 };
