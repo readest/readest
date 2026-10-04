@@ -63,6 +63,8 @@ describe('HardcoverClient OAuth', () => {
 
   it('throws HardcoverAuthError when refresh is refused or the retry is still 401', async () => {
     for (const dead of [
+      // What Hardcover's token endpoint returns for an unknown or revoked refresh token.
+      new TokenEndpointError('refresh failed', 400, 'invalid_grant'),
       new TokenEndpointError('refresh failed', 400, 'invalid_token'),
       new TokenEndpointError('refresh failed', 401, 'invalid_token'),
       new HardcoverOAuthError('no_refresh_token'),

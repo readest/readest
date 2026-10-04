@@ -173,12 +173,15 @@ export class HardcoverClient {
         this.token = this.toBearer(this.oauth.accessToken);
         await this.persist();
       } catch (error) {
-        // No refresh token, a 401, or a 400 naming an invalid token means the login is dead. Other
-        // 400s (malformed request), 5xx and network errors are not fixed by reconnecting.
+        // No refresh token, a 401, or a 400 rejecting the grant (Hardcover answers an unknown or
+        // revoked refresh token with `invalid_grant`) means the login is dead. Other 400s
+        // (malformed request), 5xx and network errors are not fixed by reconnecting.
         const dead =
           (error instanceof HardcoverOAuthError && error.code === 'no_refresh_token') ||
           (error instanceof TokenEndpointError &&
-            (error.status === 401 || (error.status === 400 && error.code === 'invalid_token')));
+            (error.status === 401 ||
+              (error.status === 400 &&
+                (error.code === 'invalid_grant' || error.code === 'invalid_token'))));
         if (dead) throw new HardcoverAuthError(error.message);
         throw error;
       } finally {
