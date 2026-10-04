@@ -39,7 +39,9 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: mocks.env, appService: mocks.appService }),
 }));
 vi.mock('@/app/library/components/LibrarySearchResults', () => ({
-  default: () => <div data-testid='content-search-results' />,
+  default: ({ books }: { books: Book[] }) => (
+    <div data-testid='content-search-results' data-books={books.map((b) => b.hash).join(',')} />
+  ),
 }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => mocks.translate }));
@@ -591,6 +593,31 @@ describe('library bookshelf integration', () => {
     mocks.params = new URLSearchParams({ groupBy: 'author', group: author.id, shelf: 'default' });
     rerender(<Bookshelf {...props} isSelectMode={false} libraryBooks={seriesBooks} />);
     expect(flags().every((flag) => flag === 'false')).toBe(true);
+  });
+  it('searches book contents only within the opened group', () => {
+    mocks.appService = {};
+    const grouped = books.map((book, index) => ({
+      ...book,
+      groupName: index < 3 ? 'Philosophy' : index < 5 ? 'Philosophy/Ethics' : 'Fiction',
+    }));
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, libraryGroupBy: 'group' },
+    });
+    useLibraryStore.setState({ library: grouped, groups: { philosophy: 'Philosophy' } });
+    mocks.params = new URLSearchParams('q=Book&search=text&group=philosophy&shelf=default');
+    render(
+      <Bookshelf
+        {...props}
+        isSelectMode={false}
+        libraryBooks={grouped}
+        contentSearch={{
+          query: 'Book',
+          config: { scope: 'book', mode: 'contains', matchCase: false, matchDiacritics: false },
+        }}
+      />,
+    );
+    const searched = screen.getByTestId('content-search-results').dataset['books']!.split(',');
+    expect(searched.sort()).toEqual(['0', '1', '2', '3', '4']);
   });
   it('keeps an opened group while a search matches nothing', () => {
     window.history.replaceState(null, '', '/library?q=nope&group=g&shelf=default');
