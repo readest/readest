@@ -45,7 +45,7 @@ interface ProgressBarProps {
   columnGap?: number;
   // Rounded screen corners this footer's ends run into.
   cornerRadii?: BottomCornerRadii;
-  // A fixed-layout page whose bottom edge is off screen (usePageEdges).
+  // A fixed-layout page that runs past the viewport (usePageOverflow).
   hidden?: boolean;
 }
 
