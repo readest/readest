@@ -1,6 +1,6 @@
 import type { BookNote } from '@/types/book';
-import type { IdentityResolver, PositionResolver } from './annotationExchange';
-import { bookOrbitKey, bookOrbitNoteId, formatKoDatetime } from './noteMapping';
+import type { ChapterResolver, IdentityResolver, PositionResolver } from './annotationExchange';
+import { bookOrbitKey, bookOrbitNoteId, formatKoDatetime, normalizeKoChapter } from './noteMapping';
 import type {
   BookmarkAckApplied,
   BookmarkAckBook,
@@ -19,10 +19,16 @@ const MAX_CHANGES_PER_REQUEST = 50;
 const liveBookmarks = (notes: BookNote[]): BookNote[] =>
   notes.filter((note) => note.type === 'bookmark' && !note.deletedAt && note.xpointer0);
 
+/**
+ * BookOrbit titles a synced dogear by its note, else its chapter, else a page
+ * label, so the chapter has to travel with the change to avoid a text snippet
+ * becoming the title.
+ */
 export const buildBookmarkExchangeBook = (
   hash: string,
   notes: BookNote[],
   identityOf: IdentityResolver,
+  chapterForNote: ChapterResolver,
   watermark: number,
   maxChanges = MAX_CHANGES_PER_REQUEST,
 ): BuiltBookmarkExchange => {
@@ -43,6 +49,8 @@ export const buildBookmarkExchangeBook = (
       if (note.page != null) bookmark.pageno = note.page;
       const label = note.note || note.text;
       if (label) bookmark.note = label;
+      const chapter = normalizeKoChapter(chapterForNote(note));
+      if (chapter) bookmark.chapter = chapter;
       return bookmark;
     });
   return { request: { hash, keys, keysComplete: true, changes }, keyToNote };

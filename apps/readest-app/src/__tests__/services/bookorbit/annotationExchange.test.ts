@@ -31,6 +31,8 @@ const makeNote = (overrides: Partial<BookNote>): BookNote => ({
 
 const identityOf = (note: BookNote) => formatKoDatetime(note.createdAt);
 
+const noChapter = () => null;
+
 const emptyResult = (overrides: Partial<ExchangeBookResult> = {}): ExchangeBookResult => ({
   hash: HASH,
   bookId: 1,
@@ -51,6 +53,7 @@ describe('buildAnnotationExchangeBook', () => {
       HASH,
       [live, tombstoned, bookmark, noPointer],
       identityOf,
+      noChapter,
       Date.UTC(2026, 7, 2),
     );
 
@@ -75,12 +78,30 @@ describe('buildAnnotationExchangeBook', () => {
       HASH,
       [old, fresh, edited],
       identityOf,
+      noChapter,
       Date.UTC(2026, 7, 2),
     );
     expect(request.changes.map((c) => c.datetime)).toEqual([identityOf(fresh), identityOf(edited)]);
 
-    const capped = buildAnnotationExchangeBook(HASH, [old, fresh, edited], identityOf, 0, 1);
+    const capped = buildAnnotationExchangeBook(
+      HASH,
+      [old, fresh, edited],
+      identityOf,
+      noChapter,
+      0,
+      1,
+    );
     expect(capped.request.changes).toHaveLength(1);
+  });
+
+  it('stamps the chapter the resolver reports for each pushed annotation', () => {
+    const live = makeNote({ id: 'live' });
+    const { request } = buildAnnotationExchangeBook(HASH, [live], identityOf, () => 'Chapter 2', 0);
+    expect(request.changes).toEqual([expect.objectContaining({ chapter: 'Chapter 2' })]);
+
+    // Nothing resolved: the field stays off the wire rather than going as "".
+    const none = buildAnnotationExchangeBook(HASH, [live], identityOf, noChapter, 0);
+    expect(none.request.changes[0]!.chapter).toBeUndefined();
   });
 });
 

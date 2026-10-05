@@ -23,6 +23,8 @@ const makeBookmark = (overrides: Partial<BookNote>): BookNote => ({
 
 const identityOf = (note: BookNote) => formatKoDatetime(note.createdAt);
 
+const noChapter = () => null;
+
 const emptyResult = (
   overrides: Partial<BookmarkExchangeBookResult> = {},
 ): BookmarkExchangeBookResult => ({
@@ -43,6 +45,7 @@ describe('buildBookmarkExchangeBook', () => {
       HASH,
       [live, annotation, tombstoned],
       identityOf,
+      noChapter,
       0,
     );
 
@@ -67,10 +70,25 @@ describe('buildBookmarkExchangeBook', () => {
       HASH,
       [old, fresh],
       identityOf,
+      noChapter,
       Date.UTC(2026, 7, 2),
     );
     expect(request.changes).toHaveLength(1);
     expect(request.changes[0]!.datetime).toBe(identityOf(fresh));
+  });
+
+  it('stamps the chapter so BookOrbit titles the dogear by chapter, not snippet', () => {
+    const live = makeBookmark({ id: 'live', note: '' });
+    const { request } = buildBookmarkExchangeBook(HASH, [live], identityOf, () => 'Chapter 4', 0);
+    expect(request.changes[0]).toEqual({
+      datetime: identityOf(live),
+      pos: live.xpointer0,
+      note: 'page text',
+      chapter: 'Chapter 4',
+    });
+
+    const none = buildBookmarkExchangeBook(HASH, [live], identityOf, noChapter, 0);
+    expect(none.request.changes[0]!.chapter).toBeUndefined();
   });
 });
 
