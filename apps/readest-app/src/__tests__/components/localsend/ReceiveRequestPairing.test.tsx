@@ -63,15 +63,14 @@ describe('ReceiveRequestDialog pairing opt-in', () => {
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
   });
 
-  it('keeps the locked box at full opacity rather than marking it disabled', () => {
+  it('offers the opt-in to a free user, with no Premium lock (paywall removed)', () => {
     renderDialog();
-    expect(screen.getByText('Premium')).toBeTruthy();
+    expect(screen.queryByText('Premium')).toBeNull();
     const box = document.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
     expect(box).not.toBeNull();
-    // `disabled` is what triggers daisyUI's opacity:.2 washout.
+    // Never disabled: the row itself is the control, and daisyUI washes a
+    // `disabled` box out to opacity .2.
     expect(box!.disabled).toBe(false);
-    expect(box!.checked).toBe(false);
-    expect(box!.className).toContain('border-base-content/45');
   });
 
   it('passes the book count to the title so i18next can pluralise it', () => {

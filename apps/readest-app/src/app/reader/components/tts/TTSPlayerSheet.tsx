@@ -17,7 +17,6 @@ import {
 } from 'react-icons/md';
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { TbArrowBarToRight } from 'react-icons/tb';
-import { useAppRouter } from '@/hooks/useAppRouter';
 import { TTSVoicesGroup } from '@/services/tts';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
 import type { TTSLoopState } from '@/services/tts/TTSController';
@@ -147,23 +146,11 @@ const TTSPlayerSheet = ({
   activeSectionIndex,
 }: TTSPlayerSheetProps) => {
   const _ = useTranslation();
-  const router = useAppRouter();
   const { envConfig } = useEnv();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
-
-  // Offline audio (pre-downloading Read Aloud audio per chapter) is ungated for
-  // fork builds: `isTTSCacheAllowed` returns true for every plan, so no badge
-  // ever renders. The gating plumbing is kept so the download UI behaves.
-  const { userProfilePlan, customizationPurchased } = useQuotaStats();
-  const isDownloadPremium = isTTSCacheAllowed(userProfilePlan ?? 'free', customizationPurchased);
-  // Only badge users who can't use it yet: signed out (known at once), or a
-  // resolved plan without the feature. Suppress it while a signed-in user's
-  // plan is still loading so it never flashes at an entitled user.
-  const premiumBadge =
-    !user || (userProfilePlan !== undefined && !isDownloadPremium) ? _('Premium') : undefined;
 
   // A book can carry a coverImageUrl that no longer resolves (cover never
   // extracted, file pruned). A broken <img> still occupies its h-32 box, so

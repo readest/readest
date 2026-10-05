@@ -291,20 +291,21 @@ describe('icloud backend kind', () => {
 
 // The cache is read synchronously by non-React gates, so a signed-out session
 // must not keep the previous account's entitlement. `useQuotaStats` clears it
-// on logout; this pins the wiring that clear depends on.
+// on logout. Fork builds never consult the gate in `resolveCloudSyncGate`, so
+// these pin the fact that the entitlement cannot leak into `paused` at all.
 describe('resolveCloudSyncGate — cached customization entitlement', () => {
   const webdavOn = () => makeSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
 
-  test('passes the cached unlock through to the gate', () => {
+  test('never consults the gate, whatever the cached unlock says', () => {
     setCachedCustomizationPurchased(true);
-    resolveCloudSyncGate(webdavOn(), 'free');
-    expect(isCloudSyncAllowed).toHaveBeenCalledWith('free', true);
+    expect(resolveCloudSyncGate(webdavOn(), 'free').paused).toBe(false);
+    expect(isCloudSyncAllowed).not.toHaveBeenCalled();
   });
 
-  test('passes false once the cache is cleared on sign-out', () => {
+  test('stays unpaused once the cache is cleared on sign-out', () => {
     setCachedCustomizationPurchased(true);
     setCachedCustomizationPurchased(false);
-    resolveCloudSyncGate(webdavOn(), 'free');
-    expect(isCloudSyncAllowed).toHaveBeenCalledWith('free', false);
+    expect(resolveCloudSyncGate(webdavOn(), 'free').paused).toBe(false);
+    expect(isCloudSyncAllowed).not.toHaveBeenCalled();
   });
 });

@@ -74,8 +74,9 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
 
   const load = useCallback(async () => {
     try {
-      // Resolve the user's plan first — free users get the upgrade card and
-      // we skip the address / senders calls entirely (they'd 403 anyway).
+      // Resolve the user's plan first. On fork builds email-in is ungated, so
+      // this check always passes; the `setUserPlan`/`setCustomizationPurchased`
+      // calls below still drive the surrounding UI copy.
       const token = await getAccessToken();
       const plan: UserPlan = token ? getUserProfilePlan(token) : 'free';
       const purchasedCustomization = token ? getCustomizationPurchased(token) : false;

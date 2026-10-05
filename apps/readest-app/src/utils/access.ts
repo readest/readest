@@ -32,14 +32,9 @@ export const getUserProfilePlan = (token: string): UserPlan => {
 };
 
 /**
- * Plans that include the "Send to Readest via email" feature: Plus,
- * Pro, and Lifetime (`purchase`). Free users see an upgrade card on
- * the client and get a 403 from the server endpoints that allocate /
- * rotate the address, plus a bounce from the inbound email Worker.
- *
- * Other Send channels (in-app `/send` page, mobile share-sheet, browser
- * extension) stay open to free users — the gate is the personal email
- * inbox only.
+ * Plans that include the "Send to Readest via email" feature. Ungated for fork
+ * builds: every plan (including `free`) is entitled, and the server endpoints
+ * no longer reject free users.
  */
 export const EMAIL_IN_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
@@ -47,10 +42,8 @@ export const isEmailInPlan = (plan: UserPlan, customizationPurchased: boolean): 
   isCustomizationAllowed(plan, customizationPurchased);
 
 /**
- * Plans that include third-party cloud sync (WebDAV / Google Drive): any paid
- * plan — Plus, Pro, and Lifetime (`purchase`). Free users see an upgrade prompt
- * in Settings and the reader's auto-sync stays off, so syncing to a personal
- * cloud is a premium feature.
+ * Plans that include third-party cloud sync (WebDAV / Google Drive / S3 / iCloud).
+ * Ungated for fork builds.
  */
 export const CLOUD_SYNC_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
@@ -77,10 +70,7 @@ export const isCloudSyncAllowed = (plan: UserPlan, customizationPurchased: boole
   !CLOUD_SYNC_REQUIRES_PREMIUM || isCloudSyncInPlan(plan, customizationPurchased);
 
 /**
- * Plans that include the offline TTS audio cache — pre-downloading a book's
- * Read Aloud audio per chapter so it plays without a network: any paid plan
- * (Plus, Pro, and Lifetime `purchase`). Free users see the download row with a
- * Premium badge and an upgrade route instead of the per-chapter controls.
+ * Plans that include the offline TTS audio cache. Ungated for fork builds.
  */
 export const TTS_CACHE_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
@@ -101,10 +91,8 @@ export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased: boolea
 
 /**
  * Offline Audiobookshelf downloads — storing an ABS audiobook's tracks or an
- * ebook-only item's file on the device so it plays and reads without a
- * network — are a premium feature ({@link isCustomizationAllowed}). Free users
- * see the action with a Premium badge and an upgrade route; streaming stays
- * free. Client-side gate, like the TTS cache.
+ * ebook-only item's file on the device so it plays and reads without a network.
+ * Ungated for fork builds.
  */
 export const isAbsOfflineInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isCustomizationAllowed(plan, customizationPurchased);
@@ -120,11 +108,7 @@ export const isAbsOfflineAllowed = (plan: UserPlan, customizationPurchased: bool
 
 /**
  * Plans that include Nearby BookDrop device pairing — trusted devices whose
- * drops skip the per-transfer confirmation dialog: any paid plan (Plus, Pro,
- * and Lifetime `purchase`). Free users see the pairing affordance with a
- * Premium badge and an upgrade route; plain confirm-every-time transfers stay
- * free. This gate is client-side only (LAN transfers have no server in the
- * path), matching the TTS-cache gate's trust level.
+ * drops skip the per-transfer confirmation dialog. Ungated for fork builds.
  */
 export const NEARBY_PAIRING_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
@@ -155,11 +139,8 @@ export const getCustomizationPurchased = (token: string): boolean => {
 
 /**
  * Plans that carry the premium feature set without a separate purchase.
- *
- * `purchase` is deliberately absent. {@link getUserProfilePlan} reports it for
- * anyone holding ANY one-time purchase, which is how a storage add-on
- * presents, so including it would hand every premium feature to a buyer who
- * only wanted more space.
+ * Unused by the fork's gates (see {@link isCustomizationAllowed}), but kept
+ * exported because upstream modules and tests still reference it.
  */
 export const PREMIUM_PLANS: readonly UserPlan[] = ['plus', 'pro'];
 
@@ -177,17 +158,20 @@ export const isSelfHosted = (): boolean =>
   (process.env['SELF_HOSTED'] || process.env['NEXT_PUBLIC_SELF_HOSTED']) === 'true';
 
 /**
- * The single gate for premium features: a self-hosted deployment, a paid
- * subscription, or the Full Customization unlock bought outright.
+ * The single gate for premium features. Fork builds remove the paywall
+ * entirely: this always returns true, which in turn opens every feature gate
+ * that delegates here (email-in, cloud sync, TTS cache, offline ABS, Nearby
+ * pairing, custom translators). Kept as a function so the call sites and their
+ * two-argument signatures stay identical to upstream.
  */
-export const isCustomizationAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
-  true;
+export const isCustomizationAllowed = (
+  _plan: UserPlan,
+  _customizationPurchased: boolean,
+): boolean => true;
 
 /**
- * Custom translators (the user's own OpenAI-compatible LLM or DeepL key) are a
- * premium feature. Requests go straight from the device, so this is a
- * client-side gate, like the TTS cache. It reads the session token directly so
- * a reader window never sees a premium user as free while the plan loads.
+ * Custom translators (the user's own OpenAI-compatible LLM or DeepL key).
+ * Ungated for fork builds. Kept as a function so call sites are unchanged.
  */
 export const isCustomTranslatorAllowed = (_token: string | null | undefined): boolean => true;
 

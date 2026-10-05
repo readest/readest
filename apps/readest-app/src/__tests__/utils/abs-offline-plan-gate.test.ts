@@ -7,28 +7,25 @@ import {
 } from '@/utils/access';
 
 describe('isAbsOfflineInPlan', () => {
-  test('any paid plan can download Audiobookshelf books for offline use', () => {
+  test('every plan includes offline Audiobookshelf downloads', () => {
+    expect(isAbsOfflineInPlan('free', false)).toBe(true);
     expect(isAbsOfflineInPlan('plus', false)).toBe(true);
     expect(isAbsOfflineInPlan('pro', false)).toBe(true);
-    // A storage-only buyer reports `purchase` without being entitled.
-    expect(isAbsOfflineInPlan('purchase', false)).toBe(false);
-  });
-
-  test('free plan cannot', () => {
-    expect(isAbsOfflineInPlan('free', false)).toBe(false);
+    expect(isAbsOfflineInPlan('purchase', false)).toBe(true);
   });
 });
 
-describe('isAbsOfflineAllowed (premium paywall)', () => {
-  test('offline Audiobookshelf downloads require a paid plan', () => {
-    expect(ABS_OFFLINE_REQUIRES_PREMIUM).toBe(true);
-    expect(isAbsOfflineAllowed('free', false)).toBe(false);
+describe('isAbsOfflineAllowed (premium paywall removed)', () => {
+  test('offline Audiobookshelf downloads are available to every plan', () => {
+    expect(ABS_OFFLINE_REQUIRES_PREMIUM).toBe(false);
+    expect(isAbsOfflineAllowed('free', false)).toBe(true);
     expect(isAbsOfflineAllowed('plus', false)).toBe(true);
     expect(isAbsOfflineAllowed('pro', false)).toBe(true);
-    expect(isAbsOfflineAllowed('purchase', false)).toBe(false);
+    expect(isAbsOfflineAllowed('purchase', false)).toBe(true);
   });
 
-  test('entitles a free user who bought Full Customization', () => {
+  test('the customization unlock is irrelevant once the paywall is off', () => {
     expect(isAbsOfflineAllowed('free', true)).toBe(true);
+    expect(isAbsOfflineAllowed('purchase', true)).toBe(true);
   });
 });
