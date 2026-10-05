@@ -1,9 +1,8 @@
 name: Upload Release Assets to R2
 
 on:
-  # Disabled for fork — upstream R2 upload
-  workflow_dispatch:
-
+  # Disabled for fork — upstream R2 upload. Manual dispatch only, behind the
+  # tag input below.
   workflow_dispatch:
     inputs:
       tag:
