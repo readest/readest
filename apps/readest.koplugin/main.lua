@@ -552,6 +552,13 @@ function ReadestSync:addToMainMenu(menu_items)
         text = _("Readest"),
         sub_item_table = {
             {
+                text = _("Auto sync"),
+                checked_func = function() return self.settings.auto_sync end,
+                callback = function()
+                    self:onReadestSyncToggleAutoSync()
+                end,
+            },
+            {
                 text_func = function()
                     return SyncAuth:needsLogin(self.settings) and _("Log in Readest Account")
                         or T(_("Log out as %1"), self.settings.user_name or "")
@@ -566,13 +573,6 @@ function ReadestSync:addToMainMenu(menu_items)
                             SyncAuth:logout(self.settings, self.path, menu)
                         end
                     end
-                end,
-            },
-            {
-                text = _("Auto sync"),
-                checked_func = function() return self.settings.auto_sync end,
-                callback = function()
-                    self:onReadestSyncToggleAutoSync()
                 end,
                 separator = true,
             },
