@@ -21,8 +21,10 @@ const liveBookmarks = (notes: BookNote[]): BookNote[] =>
 
 /**
  * BookOrbit titles a synced dogear by its note, else its chapter, else a page
- * label, so the chapter has to travel with the change to avoid a text snippet
- * becoming the title.
+ * label, so the chapter has to travel with the change. The local `text` is the
+ * page context Readest shows in the notes panel — or the title the server sent
+ * down — not the user's note, so it must not go as the wire note: that would
+ * keep a snippet ahead of the chapter for the title.
  */
 export const buildBookmarkExchangeBook = (
   hash: string,
@@ -47,8 +49,7 @@ export const buildBookmarkExchangeBook = (
     .map((note): KoBookmark => {
       const bookmark: KoBookmark = { datetime: identityOf(note), pos: note.xpointer0! };
       if (note.page != null) bookmark.pageno = note.page;
-      const label = note.note || note.text;
-      if (label) bookmark.note = label;
+      if (note.note) bookmark.note = note.note;
       const chapter = normalizeKoChapter(chapterForNote(note));
       if (chapter) bookmark.chapter = chapter;
       return bookmark;

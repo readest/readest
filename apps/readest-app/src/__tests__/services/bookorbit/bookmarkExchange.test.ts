@@ -53,9 +53,9 @@ describe('buildBookmarkExchangeBook', () => {
     expect(request.keys).toEqual([
       { k: bookOrbitKey(identityOf(live), live.xpointer0!), dt: identityOf(live) },
     ]);
-    expect(request.changes).toEqual([
-      { datetime: identityOf(live), pos: live.xpointer0, note: 'page text' },
-    ]);
+    // `text` is the local page-context label, not the user's note, so it is
+    // not echoed as the wire note that would become the dogear's title.
+    expect(request.changes).toEqual([{ datetime: identityOf(live), pos: live.xpointer0 }]);
     expect(keyToNote.get(request.keys[0]!.k)).toBe(live);
   });
 
@@ -77,18 +77,37 @@ describe('buildBookmarkExchangeBook', () => {
     expect(request.changes[0]!.datetime).toBe(identityOf(fresh));
   });
 
-  it('stamps the chapter so BookOrbit titles the dogear by chapter, not snippet', () => {
-    const live = makeBookmark({ id: 'live', note: '' });
+  it('sends the chapter instead of the local page snippet as the dogear title', () => {
+    // A Readest bookmark always carries a page-context label in `text` and an
+    // empty `note` (BookmarkToggler), and BookOrbit derives a dogear title from
+    // note, else chapter, else a page label — so echoing `text` as the note
+    // would keep the chapter from ever titling the dogear.
+    const live = makeBookmark({ id: 'live', note: '', text: 'page text' });
     const { request } = buildBookmarkExchangeBook(HASH, [live], identityOf, () => 'Chapter 4', 0);
     expect(request.changes[0]).toEqual({
       datetime: identityOf(live),
       pos: live.xpointer0,
-      note: 'page text',
       chapter: 'Chapter 4',
     });
 
+    // No chapter resolved: the server falls back to its own page label rather
+    // than a snippet, and no empty chapter is sent.
     const none = buildBookmarkExchangeBook(HASH, [live], identityOf, noChapter, 0);
-    expect(none.request.changes[0]!.chapter).toBeUndefined();
+    expect(none.request.changes[0]).toEqual({
+      datetime: identityOf(live),
+      pos: live.xpointer0,
+    });
+  });
+
+  it('still sends a user-authored note, which is what should title the dogear', () => {
+    const noted = makeBookmark({ id: 'noted', note: 'Remember this', text: 'page text' });
+    const { request } = buildBookmarkExchangeBook(HASH, [noted], identityOf, () => 'Chapter 4', 0);
+    expect(request.changes[0]).toEqual({
+      datetime: identityOf(noted),
+      pos: noted.xpointer0,
+      note: 'Remember this',
+      chapter: 'Chapter 4',
+    });
   });
 });
 
