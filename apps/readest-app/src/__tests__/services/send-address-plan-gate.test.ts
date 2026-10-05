@@ -117,16 +117,18 @@ describe('/api/send/address — plan gate (removed)', () => {
     expect(supabaseTouched).toHaveBeenCalled();
   });
 
-  test.each<UserPlan>(['free', 'plus', 'pro', 'purchase'])(
-    'lets %s users through the gate',
-    async (plan) => {
-      getUserProfilePlanMock.mockReturnValue(plan);
-      const res = makeRes();
-      await addressHandler(makeReq('GET'), res as unknown as NextApiResponse);
-      expect(supabaseTouched).toHaveBeenCalled();
-      expect(res._status).not.toBe(403);
-    },
-  );
+  test.each<UserPlan>([
+    'free',
+    'plus',
+    'pro',
+    'purchase',
+  ])('lets %s users through the gate', async (plan) => {
+    getUserProfilePlanMock.mockReturnValue(plan);
+    const res = makeRes();
+    await addressHandler(makeReq('GET'), res as unknown as NextApiResponse);
+    expect(supabaseTouched).toHaveBeenCalled();
+    expect(res._status).not.toBe(403);
+  });
 });
 
 describe('/api/send/senders — plan gate (removed)', () => {
@@ -150,14 +152,16 @@ describe('/api/send/senders — plan gate (removed)', () => {
     expect(supabaseTouched).toHaveBeenCalled();
   });
 
-  test.each<UserPlan>(['free', 'plus', 'pro', 'purchase'])(
-    'lets %s users through the gate',
-    async (plan) => {
-      getUserProfilePlanMock.mockReturnValue(plan);
-      const res = makeRes();
-      await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
-      expect(supabaseTouched).toHaveBeenCalled();
-      expect(res._status).not.toBe(403);
-    },
-  );
+  test.each<UserPlan>([
+    'free',
+    'plus',
+    'pro',
+    'purchase',
+  ])('lets %s users through the gate', async (plan) => {
+    getUserProfilePlanMock.mockReturnValue(plan);
+    const res = makeRes();
+    await sendersHandler(makeReq('GET'), res as unknown as NextApiResponse);
+    expect(supabaseTouched).toHaveBeenCalled();
+    expect(res._status).not.toBe(403);
+  });
 });
