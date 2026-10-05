@@ -12,11 +12,6 @@ pub fn set_webview_info(engine: String, version: String) {
     let _ = WEBVIEW_INFO.set((engine, version));
 }
 
-/// The recorded WebView `(engine, version)`, if the app has reported it yet.
-pub fn webview_info() -> Option<&'static (String, String)> {
-    WEBVIEW_INFO.get()
-}
-
 /// Parse the WebView engine and major version from a User-Agent string. Chromium
 /// WebViews (Android System WebView, Windows WebView2, Linux Chrome) carry a
 /// `Chrome/<v>` token; WebKit ones (iOS/macOS WKWebView, Linux WebKitGTK) carry
