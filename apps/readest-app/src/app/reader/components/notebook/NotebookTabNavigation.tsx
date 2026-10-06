@@ -1,27 +1,40 @@
 import clsx from 'clsx';
 import React from 'react';
 import { PiNotePencil, PiRobot } from 'react-icons/pi';
+import { RiPencilLine } from 'react-icons/ri';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { NotebookTab } from '@/store/notebookStore';
 
 interface NotebookTabNavigationProps {
+  bookKey: string;
   activeTab: NotebookTab;
   onTabChange: (tab: NotebookTab) => void;
 }
 
 const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
+  bookKey,
   activeTab,
   onTabChange,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
+  const { getConfig } = useBookDataStore();
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
+  const hasInk = Object.keys(getConfig(bookKey)?.handwriting?.pages ?? {}).length > 0;
 
-  const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai'] : [];
+  // AI and ink are additive tabs: AI needs its setting on, and the ink tab only
+  // earns its place once the book actually has handwriting — an always-empty
+  // third tab is just noise. With neither, the bar renders nothing at all,
+  // which is the original design (a lone tab would be a pointless footer).
+  const tabs: NotebookTab[] = [];
+  if (aiEnabled) tabs.push('ai');
+  if (hasInk) tabs.push('handwriting');
+  if (aiEnabled || hasInk) tabs.unshift('notes');
 
   if (tabs.length === 0) return null;
 
@@ -29,6 +42,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
     switch (tab) {
       case 'notes':
         return _('Notes');
+      case 'handwriting':
+        return _('Handwriting');
       case 'ai':
         return _('AI');
       default:
@@ -40,6 +55,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
     switch (tab) {
       case 'notes':
         return <PiNotePencil className='mx-auto' size={20} />;
+      case 'handwriting':
+        return <RiPencilLine className='mx-auto' size={20} />;
       case 'ai':
         return <PiRobot className='mx-auto' size={20} />;
       default:

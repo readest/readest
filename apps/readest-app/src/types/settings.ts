@@ -76,6 +76,10 @@ export interface ReadSettings {
   defaultHighlightLabels: Partial<Record<HighlightColor, string>>;
   customTtsHighlightColors: string[];
   customThemes: CustomTheme[];
+
+  /** Ink color and pen width for the handwriting tool, remembered per install. */
+  handwritingColor: string;
+  handwritingWidth: number;
 }
 
 export interface KOSyncSettings {

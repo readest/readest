@@ -8,6 +8,7 @@ import {
   HighlightColor,
   HighlightStyle,
 } from '@/types/book';
+import { parseHandwriting, type HandwritingDoc } from '@/services/handwriting/model';
 
 /** Magic marker so an import can tell our own file from any other JSON. */
 export const READEST_ANNOTATION_FORMAT = 'readest-annotations';
@@ -51,6 +52,12 @@ export interface ReadestAnnotationExport {
   progress?: [number, number];
   location?: string;
   annotations: ReadestAnnotationEntry[];
+  /**
+   * Page-keyed ink, carried verbatim so it round-trips losslessly. Ink is not
+   * a booknote (it has no CFI and no text), so it rides alongside
+   * `annotations` instead of being flattened into it.
+   */
+  handwriting?: HandwritingDoc;
 }
 
 export interface BuildAnnotationExportParams {
@@ -60,6 +67,8 @@ export interface BuildAnnotationExportParams {
   progress?: [number, number];
   location?: string;
   exportedAt: number;
+  /** Page-keyed ink to carry alongside the booknotes. */
+  handwriting?: HandwritingDoc;
 }
 
 /** Serialize the (already filtered) booknote groups into the export envelope. */
@@ -69,6 +78,7 @@ export const buildAnnotationExport = ({
   progress,
   location,
   exportedAt,
+  handwriting,
 }: BuildAnnotationExportParams): ReadestAnnotationExport => {
   const annotations: ReadestAnnotationEntry[] = [];
   for (const group of groups) {
@@ -101,6 +111,9 @@ export const buildAnnotationExport = ({
   };
   if (progress) payload.progress = progress;
   if (location) payload.location = location;
+  if (handwriting && Object.keys(handwriting.pages).length > 0) {
+    payload.handwriting = handwriting;
+  }
   return payload;
 };
 
@@ -183,6 +196,13 @@ export const parseAnnotationExport = (json: string): ReadestAnnotationExport | n
     result.progress = [progress[0] as number, progress[1] as number];
   }
   if (location) result.location = location;
+  // Ink is optional (v1 files have none) and validated by the shared
+  // handwriting parser, which already drops malformed strokes. A null result
+  // means a newer ink schema — leave it out rather than lose data on re-export.
+  const handwriting = parseHandwriting(parsed['handwriting']);
+  if (handwriting && Object.keys(handwriting.pages).length > 0) {
+    result.handwriting = handwriting;
+  }
   return result;
 };
 

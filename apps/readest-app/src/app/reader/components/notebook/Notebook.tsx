@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useNotebookStore } from '@/store/notebookStore';
+import { useNotebookStore, type NotebookTab } from '@/store/notebookStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
@@ -28,6 +28,7 @@ import AIAssistant from './AIAssistant';
 import NotebookHeader from './Header';
 import NotebookEditor from './NotebookEditor';
 import NotebookTabNavigation from './NotebookTabNavigation';
+import HandwritingView from './HandwritingView';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -126,7 +127,7 @@ const Notebook: React.FC = () => {
     });
   };
 
-  const handleTabChange = (tab: 'notes' | 'ai') => {
+  const handleTabChange = (tab: NotebookTab) => {
     setNotebookActiveTab(tab);
     saveSysSettings(envConfig, 'globalReadSettings', {
       ...settings.globalReadSettings,
@@ -267,6 +268,10 @@ const Notebook: React.FC = () => {
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
+        ) : notebookActiveTab === 'handwriting' ? (
+          <div className='flex min-h-0 flex-1 flex-col'>
+            <HandwritingView bookKey={sideBarBookKey} />
+          </div>
         ) : (
           <NotebookEditor
             bookKey={sideBarBookKey}
@@ -279,7 +284,11 @@ const Notebook: React.FC = () => {
           className='shrink-0'
           style={{ paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px` }}
         >
-          <NotebookTabNavigation activeTab={notebookActiveTab} onTabChange={handleTabChange} />
+          <NotebookTabNavigation
+            bookKey={sideBarBookKey}
+            activeTab={notebookActiveTab}
+            onTabChange={handleTabChange}
+          />
         </div>
       </div>
     </>
