@@ -885,6 +885,17 @@ describe('languageTransformer', () => {
       makeCtx({ content: html, primaryLanguage: 'en' }),
     );
     expect(result).toBe(html);
+    expect(detectLanguage).toHaveBeenCalled();
+  });
+
+  test('does not read the content when it carries no CJK characters', async () => {
+    detectLanguage.mockReturnValue('zh');
+    const html = '<html lang="en"><head></head><body><p>An English sentence.</p></body></html>';
+    const result = await languageTransformer.transform(
+      makeCtx({ content: html, primaryLanguage: 'en' }),
+    );
+    expect(result).toBe(html);
+    expect(detectLanguage).not.toHaveBeenCalled();
   });
 
   test('leaves a book whose lang is already CJK alone', async () => {
