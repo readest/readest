@@ -20,13 +20,13 @@ vi.mock('@/utils/lang', async (importOriginal) => {
   return {
     detectLanguage: vi.fn(() => 'en'),
     getLanguageInfo: vi.fn(() => ({ direction: 'ltr' })),
-    isSameLang: vi.fn(() => true),
     isValidLang: vi.fn(() => true),
     normalizedLangCode: (lang?: string | null) => (lang ? lang.split('-')[0]!.toLowerCase() : ''),
-    // These two decide whether the section's own text gets read, so stubbing them
-    // would test the stub rather than the gate.
+    // These decide which language a section ends up tagged with, so stubbing them
+    // would test the stub rather than the transformer.
     isCJKLang: original.isCJKLang,
     isCJKStr: original.isCJKStr,
+    isSameLang: original.isSameLang,
   };
 });
 
@@ -806,19 +806,15 @@ describe('sanitizerTransformer', () => {
 
 describe('languageTransformer', () => {
   let languageTransformer: typeof import('@/services/transformers/language').languageTransformer;
-  let isSameLang: ReturnType<typeof vi.fn>;
   let isValidLang: ReturnType<typeof vi.fn>;
   let detectLanguage: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     const langMod = await import('@/utils/lang');
-    isSameLang = langMod.isSameLang as ReturnType<typeof vi.fn>;
     isValidLang = langMod.isValidLang as ReturnType<typeof vi.fn>;
     detectLanguage = langMod.detectLanguage as ReturnType<typeof vi.fn>;
-    isSameLang.mockClear();
     isValidLang.mockClear();
     detectLanguage.mockClear();
-    isSameLang.mockReturnValue(true);
     isValidLang.mockReturnValue(true);
     detectLanguage.mockReturnValue('en');
     ({ languageTransformer } = await import('@/services/transformers/language'));
@@ -830,7 +826,6 @@ describe('languageTransformer', () => {
 
   test('does not modify html tag when language is valid and matches primary', async () => {
     isValidLang.mockReturnValue(true);
-    isSameLang.mockReturnValue(true);
     const html = '<html lang="en" xml:lang="en"><head></head><body>Hello</body></html>';
     const result = await languageTransformer.transform(
       makeCtx({ content: html, primaryLanguage: 'en' }),
@@ -859,6 +854,27 @@ describe('languageTransformer', () => {
     expect(result).toContain('lang="zh"');
     expect(result).not.toContain('en-US');
     expect(result).not.toContain('dir=');
+  });
+
+  test('treats a region-tagged placeholder the same as a bare one', async () => {
+    detectLanguage.mockReturnValue('zh');
+    const html =
+      '<html lang="en-US" xml:lang="en-US"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
+    const result = await languageTransformer.transform(
+      makeCtx({ content: html, primaryLanguage: 'en-US' }),
+    );
+    expect(result).toContain('lang="zh"');
+    expect(result).not.toContain('en-US');
+  });
+
+  test('keeps a primary language that is not the placeholder', async () => {
+    detectLanguage.mockReturnValue('zh');
+    const html =
+      '<html lang="de" xml:lang="de"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
+    const result = await languageTransformer.transform(
+      makeCtx({ content: html, primaryLanguage: 'de' }),
+    );
+    expect(result).toBe(html);
   });
 
   test('leaves an English book with CJK fragments alone when the content is not CJK', async () => {

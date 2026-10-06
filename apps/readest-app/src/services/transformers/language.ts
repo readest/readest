@@ -31,8 +31,11 @@ export const languageTransformer: Transformer = {
       const contentIsCJK =
         !isCJKLang(docLang) && isCJKStr(mainContent) && isCJKLang(detectLanguage(mainContent));
       if (!isValidLang(docLang) || !isSameLang(docLang, primaryLanguage) || contentIsCJK) {
+        // The placeholder is `en` whatever region it carries, and the comparison above
+        // already treats it that way; testing the literal here would let `en-US` through
+        // as a real language.
         const lang =
-          isValidLang(primaryLanguage) && primaryLanguage !== 'en'
+          isValidLang(primaryLanguage) && !isSameLang(primaryLanguage, 'en')
             ? primaryLanguage
             : detectLanguage(mainContent);
         const languageInfo = getLanguageInfo(lang || '');
@@ -47,7 +50,7 @@ export const languageTransformer: Transformer = {
       }
     } else {
       const lang =
-        isValidLang(primaryLanguage) && primaryLanguage !== 'en'
+        isValidLang(primaryLanguage) && !isSameLang(primaryLanguage, 'en')
           ? primaryLanguage
           : detectLanguage(result.replace(/<[^>]+>/g, ' '));
       const languageInfo = getLanguageInfo(lang || '');
