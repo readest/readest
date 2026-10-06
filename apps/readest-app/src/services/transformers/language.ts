@@ -1,4 +1,11 @@
-import { detectLanguage, getLanguageInfo, isSameLang, isValidLang } from '@/utils/lang';
+import {
+  detectLanguage,
+  getLanguageInfo,
+  isCJKLang,
+  isCJKStr,
+  isSameLang,
+  isValidLang,
+} from '@/utils/lang';
 import type { Transformer } from './types';
 
 export const languageTransformer: Transformer = {
@@ -15,8 +22,15 @@ export const languageTransformer: Transformer = {
       const xmlLangMatch = attrs.match(xmlLangRegex);
       const langMatch = attrs.match(langRegex);
       const docLang = langMatch?.[1] || xmlLangMatch?.[1];
-      if (!isValidLang(docLang) || !isSameLang(docLang, primaryLanguage)) {
-        const mainContent = result.replace(/<[^>]+>/g, ' ');
+      const mainContent = result.replace(/<[^>]+>/g, ' ');
+      // Conversion tools routinely stamp a placeholder `en` on both `dc:language` and
+      // the root tag. Those two then confirm each other here, and the section's own
+      // text never gets read — even though a placeholder `primaryLanguage` already
+      // sends us to `detectLanguage` below. A CJK-dominant section under a non-CJK
+      // declaration is the same placeholder, so it should not be taken at its word.
+      const contentIsCJK =
+        !isCJKLang(docLang) && isCJKStr(mainContent) && isCJKLang(detectLanguage(mainContent));
+      if (!isValidLang(docLang) || !isSameLang(docLang, primaryLanguage) || contentIsCJK) {
         const lang =
           isValidLang(primaryLanguage) && primaryLanguage !== 'en'
             ? primaryLanguage

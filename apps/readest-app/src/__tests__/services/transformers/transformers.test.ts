@@ -15,13 +15,20 @@ vi.mock('@/utils/simplecc', () => ({
   runSimpleCC: vi.fn((text: string, _variant: string) => text),
 }));
 
-vi.mock('@/utils/lang', () => ({
-  detectLanguage: vi.fn(() => 'en'),
-  getLanguageInfo: vi.fn(() => ({ direction: 'ltr' })),
-  isSameLang: vi.fn(() => true),
-  isValidLang: vi.fn(() => true),
-  normalizedLangCode: (lang?: string | null) => (lang ? lang.split('-')[0]!.toLowerCase() : ''),
-}));
+vi.mock('@/utils/lang', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/utils/lang')>();
+  return {
+    detectLanguage: vi.fn(() => 'en'),
+    getLanguageInfo: vi.fn(() => ({ direction: 'ltr' })),
+    isSameLang: vi.fn(() => true),
+    isValidLang: vi.fn(() => true),
+    normalizedLangCode: (lang?: string | null) => (lang ? lang.split('-')[0]!.toLowerCase() : ''),
+    // These two decide whether the section's own text gets read, so stubbing them
+    // would test the stub rather than the gate.
+    isCJKLang: original.isCJKLang,
+    isCJKStr: original.isCJKStr,
+  };
+});
 
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: {
@@ -801,13 +808,19 @@ describe('languageTransformer', () => {
   let languageTransformer: typeof import('@/services/transformers/language').languageTransformer;
   let isSameLang: ReturnType<typeof vi.fn>;
   let isValidLang: ReturnType<typeof vi.fn>;
+  let detectLanguage: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     const langMod = await import('@/utils/lang');
     isSameLang = langMod.isSameLang as ReturnType<typeof vi.fn>;
     isValidLang = langMod.isValidLang as ReturnType<typeof vi.fn>;
+    detectLanguage = langMod.detectLanguage as ReturnType<typeof vi.fn>;
     isSameLang.mockClear();
     isValidLang.mockClear();
+    detectLanguage.mockClear();
+    isSameLang.mockReturnValue(true);
+    isValidLang.mockReturnValue(true);
+    detectLanguage.mockReturnValue('en');
     ({ languageTransformer } = await import('@/services/transformers/language'));
   });
 
@@ -834,6 +847,38 @@ describe('languageTransformer', () => {
     // When isValidLang(primaryLanguage) is false, detectLanguage is called, returning 'en'
     expect(result).toContain('lang="en"');
     expect(result).toContain('xml:lang="en"');
+  });
+
+  test('re-reads the content when a non-CJK lang is paired with a non-CJK primary', async () => {
+    detectLanguage.mockReturnValue('zh');
+    const html =
+      '<html lang="en-US" xml:lang="en-US"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
+    const result = await languageTransformer.transform(
+      makeCtx({ content: html, primaryLanguage: 'en' }),
+    );
+    expect(result).toContain('lang="zh"');
+    expect(result).not.toContain('en-US');
+    expect(result).not.toContain('dir=');
+  });
+
+  test('leaves an English book with CJK fragments alone when the content is not CJK', async () => {
+    detectLanguage.mockReturnValue('en');
+    const html =
+      '<html lang="en"><head></head><body><p>Mostly English with a 中文 word or two.</p></body></html>';
+    const result = await languageTransformer.transform(
+      makeCtx({ content: html, primaryLanguage: 'en' }),
+    );
+    expect(result).toBe(html);
+  });
+
+  test('leaves a book whose lang is already CJK alone', async () => {
+    const html =
+      '<html lang="zh-CN" xml:lang="zh-CN"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
+    const result = await languageTransformer.transform(
+      makeCtx({ content: html, primaryLanguage: 'zh' }),
+    );
+    expect(result).toBe(html);
+    expect(detectLanguage).not.toHaveBeenCalled();
   });
 });
 
