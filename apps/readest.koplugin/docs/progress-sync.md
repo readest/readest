@@ -1,58 +1,108 @@
-# Progress sync failure audit
+# Reading progress sync
 
-This audit traces the KOReader plugin's reader triggers, authentication, HTTP
-transport, config payloads, server timestamp merge, and position application.
-The reported iPhone/KOReader sequence was not reproduced on physical devices.
-The following failures are demonstrated by regression tests.
+The KOReader plugin synchronizes reading positions with Readest. Sync requires
+a signed-in session and a document that can be identified in the library.
+Automatic sync also requires the auto-sync setting to be enabled.
 
-| Scenario with networking available | Previous behavior | Fix |
-| --- | --- | --- |
-| Token expires before manual push/pull or automatic sync | Reader starts refresh but immediately uses the old token, or gives up creating a client | Capture the payload and wait for refresh before dispatch |
-| Open/wake starts config, notes, stats, and library requests together | Several requests rotate the same refresh token; a rejection can end the session | Share one refresh and fan out its result |
-| Access token is rejected before its locally recorded expiry | Progress/stats pulls log out, disabling all subsequent automatic sync | Refresh and retry once; only rejected refresh tokens expire the session |
-| Old request is rejected after another request refreshed successfully | Another needless rotation, or logout from the old request | Retry with the already refreshed token |
-| Refresh result arrives after logout or a new login | Old tokens can resurrect/overwrite a session | Ignore results belonging to a changed session |
-| Refresh callback never arrives | Waiting operations have no completion or recovery | Bound refresh, release waiters, permit subsequent attempts |
-| DNS/TLS stalls without Turbo | Token refresh blocks reader input, even though sync RPCs already use workers | Refresh in the bounded background worker too |
-| Turbo drops a callback, or returns it after a deadline | Suspended request has no terminal callback | Shared HTTP deadline and exactly-once completion |
-| Spore throws an HTTP response table during refresh | Status is lost; revoked sessions are treated as transient failures forever | Preserve response status/body |
-| KOReader clock is behind the server, or several pushes share a second | HTTP 200 may return the older server-winning position; UI reports success | Persist an observed monotonic config clock; retry a rejected position once with a newer timestamp |
-| An old push's clock conflict returns after a newer push | Blind conflict retry could overwrite the new position | Retry only the latest push for that book |
-| Final page update arrives within the 30-second debounce | Page is discarded with no later push | Schedule the remaining debounce interval |
-| Close happens within the debounce | Close-time progress is discarded | Closing bypasses debounce and captures the payload immediately |
-| Clock moves backward while KOReader stays open | Auto push/resume can remain debounced until the clock catches up | Reset the push debounce; allow resume with a backward clock |
-| Automatic push suffers a transient failure | No retry until another page turn | One delayed retry; remember failed progress for reconnect |
-| Manual pull requests an earlier position | Only forward movement is allowed, despite reporting success | Explicit pulls allow backward movement; automatic pulls remain forward-only |
-| Pull arrives after the user continues reading or closes the book | Late response can jump the user away from their new position | Ignore obsolete automatic responses and responses for a closed document |
-| Push completes after another book is opened | Completion metadata can be written to the next book | Capture the original book settings |
-| PDF metadata hash differs locally from the library's stamped hash | Push/pull can operate under different book identities | Resolve the library's identity before building a progress push |
-| Saved position is empty, malformed, or outside the local page range | Pull can silently do nothing, throw, or falsely report synchronization | Validate positions, tolerate invalid XPointers, and report unusable manual-pull positions |
+## Automatic and manual sync
 
-## Failures a network connection cannot resolve
+Page turns schedule an automatic push after five seconds of inactivity.
+Automatic pushes are limited by a 30-second debounce; a pending update is
+scheduled for the remaining interval. Closing a book bypasses the debounce and
+captures its final position immediately. Continuous page turning can postpone
+the inactivity timer, so closing the book is an important sync trigger.
 
-- Revoked sessions and invalid credentials need a new login. Transient refresh
-  failures preserve the session; actual refresh-token rejection shows a login
-  prompt. Rotated tokens are flushed to disk to survive an unclean exit.
-- DNS, TLS, HTTP timeouts, rate limits, API outages and database errors can occur
-  with Wi-Fi connected. Deadlines release requests, read RPCs retry transient
-  timeouts once, and automatic progress pushes retry once. Writes are not
-  indiscriminately replayed after ambiguous transport errors.
-- A document without a checksum cannot be identified. Documents with different
-  metadata hashes may not match across devices. Different editions or changed
-  document structure can have unresolvable XPointers; the plugin does not guess
-  EPUB positions from page counts generated by another rendering engine.
-- A remote EPUB position with no usable XPointer cannot be converted from an
-  iPhone CFI by KOReader. The plugin reports this on a manual pull. Repairing CFI
-  generation/conversion requires a reproducible document and client logs.
-- Auto sync must be enabled and a session must exist. If reading continuously
-  postpones the five-second page-turn timer, close-time push still captures the
-  final position. A process killed before an asynchronous push finishes cannot
-  guarantee cloud delivery.
-- The iPhone client also applies progress forward-only. Pushing an earlier page
-  does not force an already open iPhone reader to move backward. Cross-file
-  sibling copies are reconciled differently there; matching metadata does not
-  guarantee identical document structure.
+Automatic pulls move reading progress forward only. Responses are ignored if
+the reader has continued reading since the request or the document has closed.
+An explicit manual pull can move to an earlier position. If the saved position
+cannot be used in the current document, the plugin reports that limitation
+instead of reporting successful synchronization.
 
-Unit tests simulate server responses, concurrent operations, scheduling, and
-worker completion. Actual TLS, fork cleanup, sleep/wake, and two-device position
-conversion still need a KOReader/iPhone device check with the affected book.
+Pushes retain the identity and settings of the book they were created for.
+Opening another book while a push is running does not redirect its completion
+metadata to the new book.
+
+## Authentication and request handling
+
+Sync operations wait for an expired access token to refresh before sending
+requests. Concurrent operations share one refresh. If a request rejects an
+access token, the plugin refreshes and retries once, or uses a token already
+refreshed by another request. Refresh results from an old session are ignored
+after logout or a new login.
+
+Transient refresh failures preserve the session. Rejected refresh tokens
+require a new login. Refreshed tokens are flushed to disk so they survive an
+unclean exit.
+
+HTTP requests and token refreshes have deadlines. Without Turbo, refreshes use
+a background worker to avoid blocking reader input. A request completes at
+most once, even when its callback arrives after the deadline.
+
+Read RPCs retry transient timeouts once. Automatic progress pushes have one
+delayed retry, and failed progress is retained for reconnect. Writes are not
+indiscriminately replayed after ambiguous transport errors. Wi-Fi connectivity
+alone does not guarantee success: DNS, TLS, rate limits, service outages, and
+database errors can still prevent synchronization.
+
+## Position identity and conflict handling
+
+Progress pushes resolve the library's book identity before constructing the
+payload, including when a local PDF metadata hash differs from the library's
+stamped hash. Documents without a checksum cannot be identified for sync.
+
+The server merges configuration using timestamps. The plugin persists an
+observed monotonic configuration clock to handle local clock skew and pushes
+within the same second. If the server retains an older position because of a
+timestamp conflict, the latest push for that book can retry once with a newer
+timestamp. An older push cannot use a conflict retry to overwrite a newer one.
+Moving the local clock backward also resets the push debounce and allows
+resume sync to proceed.
+
+Saved positions are validated before application. Empty or malformed positions,
+invalid EPUB XPointers, and PDF positions outside the local page range cannot
+be applied reliably.
+
+## Cross-device limitations
+
+Use the same book file on both devices when diagnosing position mismatches.
+Different metadata hashes can prevent identity matching. Different editions or
+document structures can make positions incompatible even when metadata matches.
+
+KOReader needs a usable EPUB XPointer. It cannot apply a remote iPhone CFI
+without a usable XPointer, and the plugin does not infer EPUB positions from
+page counts produced by another rendering engine. Investigating conversion
+problems requires the affected document and client logs.
+
+The iPhone client also applies progress forward-only. Pushing an earlier
+position from KOReader does not force an already open iPhone reader backward.
+Sibling copies of a book can also be reconciled differently across clients.
+
+Close-time pushes are asynchronous. A process killed before a push finishes
+cannot guarantee delivery to the cloud.
+
+## Testing
+
+From the repository root, run:
+
+```bash
+pnpm test:lua
+pnpm lint:lua
+```
+
+See [the test harness documentation](../spec/README.md) for LuaJIT, busted, and
+SQLite dependencies. Unit tests simulate server responses, concurrent
+operations, scheduling, and worker completion.
+
+Device validation should cover:
+
+- Reading on KOReader, closing the book, and opening the same file in Readest.
+- Reading in Readest, then opening or resuming the same book in KOReader.
+- Manually pulling an earlier position and checking automatic forward-only pulls.
+- Disconnecting and reconnecting while progress is pending.
+- Syncing after token expiry and after device sleep/wake.
+- Closing one book and opening another while requests are in flight.
+
+Actual TLS behavior, worker process cleanup, sleep/wake, and cross-device
+position conversion require an emulator or physical-device check. Passing unit
+tests alone does not establish that an affected KOReader/iPhone sequence works
+on devices.
