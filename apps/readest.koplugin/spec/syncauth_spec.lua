@@ -252,7 +252,7 @@ describe("SyncAuth:withFreshToken rejected refresh", function()
         assert.are.equal(0, #shown)
     end)
 
-    it("keeps tokens a concurrent refresh saved before a stale rejection lands", function()
+    it("shares a successful refresh instead of rotating its token concurrently", function()
         local settings = staleSettings()
         local pending = {}
         SyncAuth.getSupabaseAuthClient = function()
@@ -265,7 +265,7 @@ describe("SyncAuth:withFreshToken rejected refresh", function()
             access_token = "new-access", refresh_token = "new-refresh",
             expires_at = os.time() + 3600, expires_in = 3600,
         })
-        pending[2](false, { msg = "Invalid Refresh Token: Already Used" }, 400)
+        assert.are.equal(1, #pending)
 
         assert.are.equal("new-refresh", settings.refresh_token)
         assert.are.equal("new-access", settings.access_token)
@@ -283,5 +283,126 @@ describe("SyncAuth:withFreshToken rejected refresh", function()
         assert.are.equal("connection refused", got_err)
         assert.are.equal("revoked-refresh", settings.refresh_token)
         assert.are.equal(0, #shown)
+    end)
+end)
+
+describe("SyncAuth refresh coordination", function()
+    local original_auth, original_sync, pending, requests, settings
+    before_each(function()
+        require("spec.koreader_stubs").reset()
+        original_auth, original_sync = SyncAuth.getSupabaseAuthClient, SyncAuth.getReadestSyncClient
+        pending, requests = {}, {}
+        settings = { access_token = "old", refresh_token = "refresh", expires_at = os.time() - 1, expires_in = 3600 }
+        SyncAuth.getSupabaseAuthClient = function()
+            return { refresh_token = function(_, token, cb) pending[#pending + 1] = cb end }
+        end
+        SyncAuth.getReadestSyncClient = function(_, s)
+            local token = s.access_token
+            return { pullChanges = function(_, args, cb)
+                requests[#requests + 1] = { token = token, callback = cb }
+            end }
+        end
+    end)
+    after_each(function()
+        SyncAuth.getSupabaseAuthClient, SyncAuth.getReadestSyncClient = original_auth, original_sync
+    end)
+    local function refreshed()
+        pending[1](true, { access_token = "new", refresh_token = "rotated", expires_at = os.time() + 3600, expires_in = 3600 })
+    end
+    it("waits for one refresh before dispatching simultaneous reader requests", function()
+        local client = SyncAuth:getAuthenticatedClient(settings, "/plugin")
+        client:pullChanges({}, function() end)
+        client:pullChanges({}, function() end)
+        assert.are.equal(1, #pending)
+        assert.are.equal(0, #requests)
+        refreshed()
+        assert.are.equal(2, #requests)
+        assert.are.equal("new", requests[1].token)
+        assert.are.equal("new", requests[2].token)
+    end)
+    it("refreshes and retries an unexpectedly rejected fresh access token", function()
+        settings.expires_at = os.time() + 3600
+        local result
+        SyncAuth:getAuthenticatedClient(settings, "/plugin"):pullChanges({}, function(ok) result = ok end)
+        requests[1].callback(false, { error = "Not authenticated" }, 403)
+        assert.are.equal(1, #pending)
+        refreshed()
+        requests[2].callback(true, { configs = {} }, 200)
+        assert.is_true(result)
+        assert.are.equal("new", requests[2].token)
+    end)
+    it("retries a stale rejection with tokens another request already refreshed", function()
+        settings.expires_at = os.time() + 3600
+        local client = SyncAuth:getAuthenticatedClient(settings, "/plugin")
+        client:pullChanges({}, function() end)
+        client:pullChanges({}, function() end)
+        requests[1].callback(false, {}, 401)
+        refreshed()
+        requests[2].callback(false, {}, 401)
+        assert.are.equal(1, #pending)
+        assert.are.equal(4, #requests)
+        assert.are.equal("new", requests[4].token)
+    end)
+    it("releases waiters on timeout and allows another refresh", function()
+        local count = 0
+        SyncAuth:withFreshToken(settings, "/plugin", function(ok) assert.is_false(ok); count = count + 1 end)
+        SyncAuth:withFreshToken(settings, "/plugin", function(ok) assert.is_false(ok); count = count + 1 end)
+        UIManager:drain()
+        assert.are.equal(2, count)
+        SyncAuth:withFreshToken(settings, "/plugin", function() end)
+        assert.are.equal(2, #pending)
+        refreshed()
+        assert.are.equal("old", settings.access_token)
+        pending[2](false, { msg = "temporary" }, 500)
+    end)
+    it("does not restore a session changed while refresh was in flight", function()
+        local result
+        SyncAuth:withFreshToken(settings, "/plugin", function(ok) result = ok end)
+        settings.refresh_token, settings.access_token = nil, nil
+        refreshed()
+        assert.is_false(result)
+        assert.is_nil(settings.access_token)
+    end)
+    it("refreshes tokens whose expiry metadata is missing", function()
+        settings.expires_at = nil
+        SyncAuth:withFreshToken(settings, "/plugin", function() end)
+        assert.are.equal(1, #pending)
+        refreshed()
+    end)
+end)
+
+describe("SupabaseAuthClient refresh transport", function()
+    it("preserves HTTP rejection details when Spore throws a response table", function()
+        local client = newAuthClient(function()
+            error({ status = 401, body = { msg = "Refresh token revoked" } })
+        end)
+        local status, response
+        client:refresh_token("old", function(ok, body, code)
+            assert.is_false(ok)
+            status, response = code, body
+        end)
+        assert.are.equal(401, status)
+        assert.are.equal("Refresh token revoked", response.msg)
+    end)
+    it("uses a bounded background worker for refresh when Turbo is unavailable", function()
+        local syncclient = require("readest_syncclient")
+        local original_worker, original_spawn = syncclient._dispatchInSubprocess, ffiutil.runInSubProcess
+        local result
+        ffiutil.runInSubProcess = function() end
+        syncclient._dispatchInSubprocess = function(worker, name, args, timeouts, cb)
+            assert.are.equal("refresh_token", name)
+            assert.are.equal("old", args.refresh_token)
+            assert.are.same({3, 7}, timeouts)
+            cb(true, { status = 200, body = { access_token = "new" } })
+        end
+        local ok, err = pcall(function()
+            newAuthClient(function() error("should run in worker") end):refresh_token("old", function(success, body)
+                assert.is_true(success)
+                result = body.access_token
+            end)
+            assert.are.equal("new", result)
+        end)
+        syncclient._dispatchInSubprocess, ffiutil.runInSubProcess = original_worker, original_spawn
+        assert.is_true(ok, err)
     end)
 end)

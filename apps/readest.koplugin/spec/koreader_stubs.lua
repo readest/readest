@@ -43,6 +43,7 @@ M.UIManager = {
     close = function(self, widget)
         table.insert(self._closed, widget)
     end,
+    setDirty = function() end,
     nextTick = function(self, fn)
         table.insert(self._scheduled, { delay = 0, fn = fn })
     end,

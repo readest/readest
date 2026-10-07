@@ -10,6 +10,7 @@ local T = require("ffi/util").template
 local _ = require("readest_i18n")
 
 local SyncAuth = {}
+local refreshes = setmetatable({}, { __mode = "k" })
 
 function SyncAuth:needsLogin(settings)
     return not settings.access_token or not settings.expires_at
@@ -29,14 +30,21 @@ end
 -- settings — racy. New library API calls (pullBooks, getDownloadUrl) MUST go
 -- through this wrapper so the request body never carries a stale Bearer
 -- header.
-function SyncAuth:withFreshToken(settings, path, callback)
-    -- Token still has > 50% TTL remaining: nothing to do.
-    if not settings.refresh_token or not settings.expires_at
-        or settings.expires_at >= os.time() + (settings.expires_in or 0) / 2 then
+function SyncAuth:withFreshToken(settings, path, callback, force)
+    local pending = refreshes[settings]
+    if pending then
+        if callback then table.insert(pending.callbacks, callback) end
+        return
+    end
+    if not force and settings.access_token and settings.expires_at
+            and settings.expires_at >= os.time() + math.max(60, (settings.expires_in or 0) / 2) then
         if callback then callback(true) end
         return
     end
-
+    if not settings.refresh_token then
+        if callback then callback(false, "session expired") end
+        return
+    end
     local client = self:getSupabaseAuthClient(settings, path)
     if not client then
         if callback then callback(false, "no auth client") end
@@ -44,30 +52,76 @@ function SyncAuth:withFreshToken(settings, path, callback)
     end
 
     local refresh_token = settings.refresh_token
-    client:refresh_token(refresh_token, function(success, response, status)
-        if success then
-            settings.access_token  = response.access_token
+    pending = { callbacks = callback and { callback } or {} }
+    refreshes[settings] = pending
+    local function finish(success, response, status)
+        if refreshes[settings] ~= pending then return end
+        refreshes[settings] = nil
+        UIManager:unschedule(pending.timeout)
+        local err
+        if settings.refresh_token ~= refresh_token then
+            -- Logout/login happened while the request was in flight.
+            success = false
+            err = "session changed"
+        elseif success and type(response) == "table" and response.access_token
+                and response.refresh_token and (response.expires_at or response.expires_in) then
+            settings.access_token = response.access_token
             settings.refresh_token = response.refresh_token
-            settings.expires_at    = response.expires_at
-            settings.expires_in    = response.expires_in
-            G_reader_settings:saveSetting("readest_sync", settings)
-            if callback then callback(true) end
+            settings.expires_in = response.expires_in
+            settings.expires_at = response.expires_at or (os.time() + response.expires_in)
+            local saved, save_err = pcall(function()
+                G_reader_settings:saveSetting("readest_sync", settings)
+                G_reader_settings:flush() -- rotating refresh tokens must survive an unclean exit
+            end)
+            if not saved then logger.err("ReadestSync: could not persist refreshed session:", save_err) end
         else
-            logger.err("ReadestSync: Token refresh failed:", status, response or "Unknown error")
-            -- The auth server turned the refresh token down (revoked, already
-            -- used, or the session ended). Every later call would fail the
-            -- same way, so drop the dead session and ask for a new login.
-            -- Anything else (offline, timeout, 429, 5xx) is transient: keep
-            -- the session for the next try. Prompt after the callback so the
-            -- caller's own failure message does not cover it.
+            success = false
+            err = type(response) == "table" and response.msg or "refresh failed"
+            logger.err("ReadestSync: Token refresh failed:", status, err)
             if status == 400 or status == 401 or status == 403 then
-                if callback then callback(false, "session expired") end
+                err = "session expired"
                 self:expireSession(settings, path, refresh_token)
-                return
             end
-            if callback then callback(false, response and response.msg or "refresh failed") end
         end
-    end)
+        for _, cb in ipairs(pending.callbacks) do
+            local ok, callback_err = pcall(cb, success, err)
+            if not ok then logger.err("ReadestSync: refresh callback failed:", callback_err) end
+        end
+    end
+    pending.timeout = function() finish(false, { msg = "refresh timeout" }) end
+    UIManager:scheduleIn(20, pending.timeout)
+    local ok, err = pcall(function() client:refresh_token(refresh_token, finish) end)
+    if not ok then finish(false, { msg = tostring(err) }) end
+end
+
+-- Capture RPC payloads immediately (including close-time progress), but send
+-- them only after token refresh completes. A rejected access token gets one
+-- refresh/retry; only a rejected refresh token expires the whole session.
+function SyncAuth:getAuthenticatedClient(settings, path)
+    return setmetatable({}, { __index = function(_, method)
+        return function(_, args, callback)
+            local function dispatch(retried)
+                local client = self:getReadestSyncClient(settings, path)
+                if not client then callback(false, { error = "No valid access token" }); return end
+                local token = settings.access_token
+                client[method](client, args, function(ok, body, status)
+                    if not ok and not retried and (status == 401 or status == 403) then
+                        if settings.access_token and settings.access_token ~= token then dispatch(true); return end
+                        self:withFreshToken(settings, path, function(fresh, err)
+                            if fresh then dispatch(true)
+                            else callback(false, { error = err }) end
+                        end, true)
+                    else
+                        callback(ok, body, status)
+                    end
+                end)
+            end
+            self:withFreshToken(settings, path, function(ok, err)
+                if ok then dispatch(false)
+                else callback(false, { error = err }) end
+            end)
+        end
+    end })
 end
 
 function SyncAuth:expireSession(settings, path, rejected_token)
@@ -189,7 +243,7 @@ function SyncAuth:doLogin(settings, path, email, password, menu)
         settings.user_name = response.user.user_metadata.user_name or email
         settings.access_token = response.access_token
         settings.refresh_token = response.refresh_token
-        settings.expires_at = response.expires_at
+        settings.expires_at = response.expires_at or (response.expires_in and os.time() + response.expires_in)
         settings.expires_in = response.expires_in
         G_reader_settings:saveSetting("readest_sync", settings)
 

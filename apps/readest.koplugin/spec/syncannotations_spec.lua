@@ -17,13 +17,8 @@ package.preload["ui/widget/infomessage"] = function()
     return { new = function() return {} end }
 end
 package.preload["ui/network/manager"] = function() return {} end
-package.preload["ui/uimanager"] = function()
-    return {
-        show = function() end,
-        setDirty = function() end,
-        nextTick = function(_, fn) fn() end,
-    }
-end
+package.preload["ui/uimanager"] = function() return require("spec.koreader_stubs").UIManager end
+
 package.preload["ffi/util"] = function()
     return { template = function(s) return s end }
 end

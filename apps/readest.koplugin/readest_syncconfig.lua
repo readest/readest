@@ -7,6 +7,8 @@ local sha2 = require("ffi/sha2")
 local _ = require("readest_i18n")
 
 local SyncConfig = {}
+local serverTime = require("readest_synctime")
+local push_sequences = setmetatable({}, { __mode = "k" })
 
 -- Readest md5s the NFC-normalized hash source (book.ts getMetadataHashInfo);
 -- utf8proc ships with KOReader but not with the spec harness, so fall back
@@ -161,7 +163,8 @@ function SyncConfig:getCurrentBookConfig(ui)
         metaHash = meta_hash,
         progress = "",
         xpointer = "",
-        updatedAt = os.time() * 1000,
+        updatedAt = math.max(os.time() * 1000,
+            ((ui.doc_settings:readSetting("readest_sync") or {}).config_clock or 0) + 1),
     }
 
     local current_page = ui:getCurrentPage()
@@ -175,46 +178,58 @@ function SyncConfig:getCurrentBookConfig(ui)
     return config
 end
 
--- Jump to the remote reading position if it's ahead of the local one.
+-- Automatic pulls only advance; an explicit pull also allows going backward.
 -- Paged documents compare page numbers, reflowable ones compare xpointers,
 -- trimming the remote xpointer until it resolves in the local document.
 -- Skip positions that can't be parsed or resolved (e.g. a different copy
 -- of the book) instead of erroring.
-function SyncConfig:applyBookConfig(ui, config)
+function SyncConfig:applyBookConfig(ui, config, interactive)
     logger.dbg("ReadestSync: Applying book config:", config)
     local xpointer = config.xpointer
     local progress = config.progress
     local has_pages = ui.document.info.has_pages
-    local progress_pattern = "^%[(%d+),(%d+)%]$"
-    if has_pages and progress then
+    local progress_pattern = "^%[%s*(%d+)%s*,%s*(%d+)%s*%]$"
+    if has_pages and type(progress) == "table" then
+        progress = string.format("[%s,%s]", tostring(progress[1]), tostring(progress[2]))
+    end
+    if has_pages and type(progress) == "string" then
         local page, _total_pages = progress:match(progress_pattern)
         local current_page = ui:getCurrentPage()
         local new_page = tonumber(page)
-        if new_page and new_page > current_page then
+        if not new_page or new_page < 1 or new_page > ui.document:getPageCount() then return false end
+        if new_page ~= current_page and (interactive or new_page > current_page) then
             ui.link:addCurrentLocationToStack()
             ui:handleEvent(Event:new("GotoPage", new_page))
             self:showSyncedMessage()
+            return true
         end
     end
-    if not has_pages and xpointer then
+    if not has_pages and type(xpointer) == "string" and xpointer ~= "" then
         local last_xpointer = ui.rolling:getLastProgress()
         local working_xpointer = xpointer
-        local cmp_result = ui.document:compareXPointers(last_xpointer, working_xpointer)
+        local function compare(pointer)
+            local ok, result = pcall(ui.document.compareXPointers, ui.document, last_xpointer, pointer)
+            return ok and result or nil
+        end
+        local cmp_result = compare(working_xpointer)
         while cmp_result == nil and working_xpointer do
             local last_slash_pos = working_xpointer:match("^.*()/")
             if last_slash_pos and last_slash_pos > 1 then
                 working_xpointer = working_xpointer:sub(1, last_slash_pos - 1)
-                cmp_result = ui.document:compareXPointers(last_xpointer, working_xpointer)
+                cmp_result = compare(working_xpointer)
             else
                 break
             end
         end
-        if cmp_result and cmp_result > 0 then
+        if cmp_result and cmp_result ~= 0 and (interactive or cmp_result > 0) then
             ui.link:addCurrentLocationToStack()
             ui:handleEvent(Event:new("GotoXPointer", working_xpointer))
             self:showSyncedMessage()
+            return true
         end
+        return cmp_result ~= nil
     end
+    return has_pages and type(progress) == "string" and progress:match(progress_pattern) ~= nil
 end
 
 function SyncConfig:showSyncedMessage()
@@ -224,7 +239,7 @@ function SyncConfig:showSyncedMessage()
     })
 end
 
-function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp)
+function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp, done)
     local config = self:getCurrentBookConfig(ui)
     if not config then return last_sync_timestamp end
 
@@ -235,35 +250,66 @@ function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp)
         })
     end
 
+    local doc_settings = ui.doc_settings
+    push_sequences[doc_settings] = (push_sequences[doc_settings] or 0) + 1
+    local sequence = push_sequences[doc_settings]
+    local state = doc_settings:readSetting("readest_sync") or {}
+    state.config_clock = config.updatedAt
+    doc_settings:saveSetting("readest_sync", state)
     local payload = {
         books = {},
         notes = {},
         configs = { config },
     }
 
-    client:pushChanges(
-        payload,
-        function(success, _response)
-            if interactive then
-                if success then
-                    UIManager:show(InfoMessage:new{
-                        text = _("Reading progress pushed successfully"),
-                        timeout = 2,
-                    })
-                else
-                    UIManager:show(InfoMessage:new{
-                        text = _("Failed to push reading progress"),
-                        timeout = 2,
-                    })
-                end
+    local retried = false
+    local receive
+    receive = function(success, response)
+        -- HTTP 200 can contain the server's winning record instead of ours.
+        -- Observe that clock and retry once so slow/device-adjusted clocks
+        -- cannot leave a manual or automatic push permanently ineffective.
+        local authoritative = type(response) == "table" and response.configs
+            and response.configs[1]
+        local stamp = authoritative and serverTime(authoritative.updated_at)
+        if stamp then
+            local state = doc_settings:readSetting("readest_sync") or {}
+            state.config_clock = math.max(state.config_clock or 0, stamp)
+            doc_settings:saveSetting("readest_sync", state)
+        end
+        local same_position = authoritative and (
+            (config.xpointer ~= "" and authoritative.xpointer == config.xpointer)
+            or (config.xpointer == "" and type(authoritative.progress) == "string"
+                and authoritative.progress:gsub("%s", "") == string.format("[%d,%d]", config.progress[1], config.progress[2])))
+        if success and stamp and stamp >= config.updatedAt and not same_position then
+            if not retried and push_sequences[doc_settings] == sequence then
+                retried = true
+                config.updatedAt = stamp + 1
+                client:pushChanges(payload, receive)
+                return
             end
-            if success and ui.doc_settings then
-                local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
-                doc_readest_sync.last_synced_at_config = os.time()
-                ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
+            success = false
+        end
+        if interactive then
+            if success then
+                UIManager:show(InfoMessage:new{
+                    text = _("Reading progress pushed successfully"),
+                    timeout = 2,
+                })
+            else
+                UIManager:show(InfoMessage:new{
+                    text = _("Failed to push reading progress"),
+                    timeout = 2,
+                })
             end
         end
-    )
+        if success and doc_settings then
+            local doc_readest_sync = doc_settings:readSetting("readest_sync") or {}
+            doc_readest_sync.last_synced_at_config = os.time()
+            doc_settings:saveSetting("readest_sync", doc_readest_sync)
+        end
+        if done then done(success) end
+    end
+    client:pushChanges(payload, receive)
 
     if not interactive then
         return os.time()
@@ -273,6 +319,7 @@ end
 
 function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive, logout_fn)
     local document = ui.document
+    local page = ui.getCurrentPage and ui:getCurrentPage()
     if interactive then
         UIManager:show(InfoMessage:new{
             text = _("Pulling reading progress..."),
@@ -318,17 +365,22 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
             if ui.doc_settings then
                 local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
                 doc_readest_sync.last_synced_at_config = os.time()
+                local latest = type(response) == "table" and response.configs and response.configs[1]
+                local stamp = latest and serverTime(latest.updated_at)
+                if stamp then doc_readest_sync.config_clock = math.max(doc_readest_sync.config_clock or 0, stamp) end
                 ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
             end
 
-            local data = response.configs
+            local data = type(response) == "table" and response.configs
             if data and #data > 0 then
                 local config = data[1]
                 if config then
-                    self:applyBookConfig(ui, config)
+                    if not interactive and ui.getCurrentPage and ui:getCurrentPage() ~= page then return end
+                    local applied = self:applyBookConfig(ui, config, interactive)
                     if interactive then
                         UIManager:show(InfoMessage:new{
-                            text = _("Reading progress synchronized"),
+                            text = applied and _("Reading progress synchronized")
+                                or _("Saved reading position cannot be used with this copy of the book"),
                             timeout = 2,
                         })
                     end

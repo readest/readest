@@ -182,3 +182,82 @@ describe("SyncConfig delayed responses", function()
         assert.is_nil(ui._values.readest_sync)
     end)
 end)
+
+describe("SyncConfig progress conflicts", function()
+    local ui, events, page
+    before_each(function()
+        require("spec.koreader_stubs").reset()
+        ui = fakeUI({ checksum = "book", readest_sync = { meta_hash_v1 = "meta" } })
+        events, page = {}, 50
+        ui.document = { info = { has_pages = true }, getPageCount = function() return 100 end }
+        ui.getCurrentPage = function() return page end
+        ui.link = { addCurrentLocationToStack = function() end }
+        ui.handleEvent = function(_, event) events[#events + 1] = event end
+    end)
+    it("allows an explicit pull to go backward while automatic pulls only advance", function()
+        SyncConfig:applyBookConfig(ui, { progress = "[ 20, 100 ]" }, false)
+        assert.are.equal(0, #events)
+        assert.is_true(SyncConfig:applyBookConfig(ui, { progress = "[ 20, 100 ]" }, true))
+        assert.are.equal(1, #events)
+    end)
+    it("allows backward explicit EPUB pulls and catches invalid XPointers", function()
+        ui.document.info.has_pages = false
+        ui.rolling = { getLastProgress = function() return "/body/current" end }
+        ui.document.compareXPointers = function(_, _, pointer)
+            if pointer == "/invalid" then error("invalid pointer") end
+            return -1
+        end
+        SyncConfig:applyBookConfig(ui, { xpointer = "/body/earlier" }, false)
+        assert.are.equal(0, #events)
+        assert.is_true(SyncConfig:applyBookConfig(ui, { xpointer = "/body/earlier" }, true))
+        assert.are.equal(1, #events)
+        assert.is_false(SyncConfig:applyBookConfig(ui, { xpointer = "/invalid" }, true))
+    end)
+    it("rejects out-of-range positions and missing reflowable xpointers", function()
+        assert.is_false(SyncConfig:applyBookConfig(ui, { progress = "[200,100]" }, true))
+        ui.document.info.has_pages = false
+        assert.is_false(SyncConfig:applyBookConfig(ui, { xpointer = "" }, true))
+        assert.are.equal(0, #events)
+    end)
+    it("does not apply an automatic response after the user turns a page", function()
+        local pending
+        SyncConfig:pull(ui, {}, { pullChanges = function(_, _, cb) pending = cb end }, "book", "meta", false)
+        page = 51
+        pending(true, { configs = { { progress = "[80,100]" } } })
+        assert.are.equal(0, #events)
+    end)
+    it("retries a server-winning push with an observed clock newer than the server", function()
+        local count, result = 0, nil
+        local future = (os.time() + 3600) * 1000
+        local client = { pushChanges = function(_, payload, cb)
+            count = count + 1
+            if count == 1 then
+                cb(true, { configs = { { updated_at = future, progress = "[20,100]" } } })
+            else
+                assert.are.equal(future + 1, payload.configs[1].updatedAt)
+                cb(true, { configs = { { updated_at = future + 1, progress = "[50,100]" } } })
+            end
+        end }
+        SyncConfig:push(ui, {}, client, true, 0, function(ok) result = ok end)
+        assert.are.equal(2, count)
+        assert.is_true(result)
+        assert.is_true(SyncConfig:getCurrentBookConfig(ui).updatedAt > future + 1)
+    end)
+    it("does not retry an older in-flight position over a newer push", function()
+        local callbacks, count = {}, 0
+        local client = { pushChanges = function(_, _, cb) count = count + 1; callbacks[count] = cb end }
+        SyncConfig:push(ui, {}, client, false, 0)
+        page = 60
+        SyncConfig:push(ui, {}, client, false, 0)
+        callbacks[1](true, { configs = { { updated_at = (os.time() + 3600) * 1000, progress = "[70,100]" } } })
+        assert.are.equal(2, count)
+    end)
+    it("writes a completed push to its original book after the UI changes books", function()
+        local pending, settings = nil, ui.doc_settings
+        SyncConfig:push(ui, {}, { pushChanges = function(_, _, cb) pending = cb end }, false, 0)
+        ui.doc_settings = fakeUI().doc_settings
+        pending(true, {})
+        assert.truthy(settings:readSetting("readest_sync").last_synced_at_config)
+        assert.is_nil(ui.doc_settings:readSetting("readest_sync"))
+    end)
+end)
