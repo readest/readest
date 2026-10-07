@@ -28,6 +28,8 @@ interface SectionInfoProps {
   gridInsets: Insets;
   // The spread's Column Gap (px) in effect, 0 when none (getSpreadColumnGap).
   columnGap?: number;
+  // A fixed-layout page that runs past the viewport (usePageOverflow).
+  hidden?: boolean;
 }
 
 const SectionInfo: React.FC<SectionInfoProps> = ({
@@ -41,6 +43,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   contentInsets,
   gridInsets,
   columnGap = 0,
+  hidden = false,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -125,6 +128,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
               ? 'text-white/75 mix-blend-difference font-light'
               : 'text-base-content font-light',
           isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0',
+          hidden && 'invisible',
         )}
         role='none'
         tabIndex={-1}

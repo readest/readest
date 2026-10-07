@@ -16,12 +16,13 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 import '@/styles/globals.css';
 
 const h = vi.hoisted(() => ({
   viewSettings: { vertical: false, rtl: false, scrolled: false },
+  fontFamily: 'serif',
   dispatchFootnote: (() => {}) as (detail: unknown) => void,
   onLinkClick: { current: null as ((event: Event) => void) | null },
   handlers: [] as EventTarget[],
@@ -62,6 +63,8 @@ vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
 }));
 vi.mock('@/app/reader/utils/annotatorUtil', () => ({ drawAnnotationOverlay: () => {} }));
 vi.mock('@/utils/style', () => ({
+  getBaseFontFamily: () => h.fontFamily,
+  getBaseFontSize: () => 16,
   getStyles: () => '',
   getFootnoteStyles: () => '',
   getThemeCode: () => ({ bg: '#fff', fg: '#000' }),
@@ -124,6 +127,7 @@ const openLinkedFootnote = () => {
 
 beforeEach(() => {
   h.viewSettings = { vertical: false, rtl: false, scrolled: false };
+  h.fontFamily = 'serif';
   h.handlers.length = 0;
   h.onLinkClick.current = null;
   // The book cell fills the test frame, with the note reference near its
@@ -175,6 +179,41 @@ describe('footnote popup box (#5999)', () => {
     expect(popup.getAttribute('aria-hidden')).toBe('false');
     expect(popup.scrollWidth).toBeLessThanOrEqual(popup.clientWidth);
     expect(popup.scrollHeight).toBeLessThanOrEqual(popup.clientHeight);
+  });
+
+  // A data-attribute note renders in the host document, where the reader font
+  // only starts loading once the note lays out. Measured in the fallback face,
+  // the popup kept the height of lines the loaded font no longer needs (#3602).
+  test('refits a note in the reader font once it has loaded', async () => {
+    const fontFace = document.createElement('style');
+    fontFace.textContent = `@font-face {
+      font-family: FootnoteReaderFont;
+      src: url(/fonts/InterVariable.woff2) format('woff2');
+    }`;
+    document.head.appendChild(fontFace);
+    // Monospace is far wider than Inter, so the two wrap to different heights.
+    h.fontFamily = 'FootnoteReaderFont, monospace';
+    try {
+      render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+      act(() => {
+        h.dispatchFootnote({
+          bookKey: 'book-1',
+          element: anchor,
+          footnote: 'Questa nota usa il carattere del lettore, non quello della app. '.repeat(4),
+        });
+      });
+
+      const popup = popupContainer();
+      expect(popup.getAttribute('aria-hidden')).toBe('false');
+      const note = popup.querySelector('p')!;
+      expect(getComputedStyle(note).fontFamily).toBe('FootnoteReaderFont, monospace');
+      await waitFor(() => expect(document.fonts.check('16px FootnoteReaderFont')).toBe(true));
+      await waitFor(() =>
+        expect(Math.abs(popup.clientHeight - note.getBoundingClientRect().height)).toBeLessThan(1),
+      );
+    } finally {
+      fontFace.remove();
+    }
   });
 
   // Sizing the popup box to the measured content size left the document itself

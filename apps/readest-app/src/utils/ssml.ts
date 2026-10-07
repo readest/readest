@@ -121,6 +121,24 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
   return { plainText, marks };
 };
 
+// Cut an utterance down to the sentence at `markName`: everything from the
+// next <mark> on is dropped, so the engine ends where that sentence ends.
+export const truncateSSMLAfterMark = (ssml: string, markName: string): string => {
+  const doc = new DOMParser().parseFromString(ssml, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) return ssml;
+  const marks = Array.from(doc.getElementsByTagName('mark'));
+  const index = marks.findIndex((mark) => mark.getAttribute('name') === markName);
+  const cut = index >= 0 ? marks[index + 1] : undefined;
+  if (!cut) return ssml;
+  let node: Node = cut;
+  while (node.parentNode && node !== doc.documentElement) {
+    while (node.nextSibling) node.parentNode.removeChild(node.nextSibling);
+    node = node.parentNode;
+  }
+  cut.remove();
+  return new XMLSerializer().serializeToString(doc);
+};
+
 export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
   let left = 0;
   let right = marks.length - 1;

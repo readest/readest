@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { flushPendingLibrarySave, useBookDataStore } from '@/store/bookDataStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -21,15 +21,17 @@ import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
 import { uniqueId } from '@/utils/misc';
-import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
+import { transitionAway } from '@/utils/viewTransition';
 import {
   closeReaderWindowOrGoToLibrary,
   ensureMainLibraryWindow,
   navigateToLibrary,
 } from '@/utils/nav';
 import { clearDiscordPresence } from '@/utils/discord';
+import { getLockedPanX } from '../utils/lockedPan';
 import { BOOK_IDS_SEPARATOR } from '@/services/constants';
+import { saveBookMetadataEdit } from '@/services/bookMetadataEdit';
 import { BookDetailModal } from '@/components/metadata';
 import ShareBookDialog from '@/app/library/components/ShareBookDialog';
 import { useAuth } from '@/context/AuthContext';
@@ -62,6 +64,11 @@ import NotebookTransitionAlert from './notebook/NotebookTransitionAlert';
  */
 const NOTION_FLUSH_TIMEOUT_MS = 3000;
 
+// The library has mounted. Its shelf rows can't be awaited: the virtual list
+// measures before placing rows, and nothing is measured while the transition
+// holds the old page on screen. The app may also serve the library at `/`.
+const libraryArrived = () => !!document.querySelector('.bookshelf');
+
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -70,7 +77,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { bookKeys, dismissBook, getNextBookKey } = useBooksManager();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
   const { saveSettings } = useSettingsStore();
-  const { getConfig, getBookData, saveConfig } = useBookDataStore();
+  const { getConfig, setConfig, getBookData, saveConfig } = useBookDataStore();
   const { getView, setBookKeys, getViewSettings } = useReaderStore();
   const { initViewState, getViewState, clearViewState } = useReaderStore();
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
@@ -125,6 +132,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       router.replace(`/player?id=${audiobookHash}`);
       return;
     }
+    // Back from a page opened over the reader, e.g. the account page (#6607):
+    // the books are still open, so show them again instead of loading anew.
+    if (useReaderStore.getState().areBooksOpen(initialIds)) return;
     const initialBookKeys = initialIds.map((id) => `${id}-${uniqueId()}`);
     setBookKeys(initialBookKeys);
     const uniqueIds = new Set<string>();
@@ -256,6 +266,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       // the reading position costs the user more than deferring a Notion push
       // (the push is idempotent and resumes on the next sync).
       await saveConfig(envConfig, bookKey, config, settings);
+      // saveConfig defers the library.json write by up to 30s, and closing the
+      // last window quits the app on Windows/Linux before it lands: the shelf
+      // then shows the old progress on the next launch (#6623).
+      await flushPendingLibrarySave();
       await Promise.race([
         eventDispatcher.dispatch('flush-notion-sync', { bookKey }),
         new Promise<void>((resolve) => setTimeout(resolve, NOTION_FLUSH_TIMEOUT_MS)),
@@ -271,6 +285,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       await clearDiscordPresence(appService);
     }
 
+    // Read before close() tears the pages down: a pan made since the last
+    // page turn hasn't reached the config yet. Primary only, like the location.
+    const panX = getLockedPanX(getView(bookKey), getViewSettings(bookKey));
+    if (viewState?.isPrimary && panX !== undefined) setConfig(bookKey, { panX });
     try {
       getView(bookKey)?.close();
       getView(bookKey)?.remove();
@@ -291,6 +309,14 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const navigateBackToLibrary = () => {
     navigateToLibrary(router, '', undefined, true);
   };
+
+  // Closing tears the book down before the library mounts, which flashed a
+  // blank reader and an empty shelf. Capture the open book first so the
+  // library slides in over it once its shelves are drawn.
+  const leaveToLibrary = (leave: () => Promise<void>) =>
+    appService?.supportsViewTransitionsAPI
+      ? transitionAway(leave, libraryArrived, 'back')
+      : leave();
 
   const saveSettingsAndGoToLibrary = () => {
     saveSettings(envConfig, settings);
@@ -327,35 +353,46 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const handleCloseReaderToLibrary = async (event: CustomEvent): Promise<void> => {
     const onClose = (event.detail as { onClose?: () => void } | undefined)?.onClose;
     await runNotebookTransition(bookKeys, async () => {
-      await closeBooks(true);
-      onClose?.();
+      const close = async () => {
+        await closeBooks(true);
+        onClose?.();
+      };
+      await (onClose ? leaveToLibrary(close) : close());
     });
   };
 
   // Also wired directly to beforeunload/quit-app/window-close, which pass an
-  // event object: only a literal `true` keeps TTS alive.
-  const handleCloseBooks = throttle(async (keepTTSAlive?: unknown) => {
-    await runNotebookTransition(bookKeys, () => closeBooks(keepTTSAlive === true));
-  }, 200);
+  // event object: only a literal `true` keeps TTS alive. Returns the close so
+  // the window-close and quit paths can await it before the app exits; a
+  // trigger that arrives mid-close joins the one already running.
+  const closingBooksRef = useRef<Promise<void> | null>(null);
+  const handleCloseBooks = (keepTTSAlive?: unknown) => {
+    closingBooksRef.current ??= runNotebookTransition(bookKeys, () =>
+      closeBooks(keepTTSAlive === true),
+    )
+      .then(() => {})
+      .finally(() => {
+        closingBooksRef.current = null;
+      });
+    return closingBooksRef.current;
+  };
 
   const handleCloseBooksToLibrary = async () => {
     // SPA navigation in the main window (or on web) keeps the webview alive:
     // TTS may continue headless. Non-main Tauri windows close their webview
     // below, but their per-window TTS dies with the window either way.
     await runNotebookTransition(bookKeys, async () => {
-      await closeBooks(true);
-      if (isTauriAppPlatform()) {
-        const currentWindow = getCurrentWindow();
-        if (currentWindow.label === 'main') {
-          navigateBackToLibrary();
-        } else {
-          if (appService) {
-            await ensureMainLibraryWindow(appService);
-          }
-          await currentWindow.close();
+      if (isTauriAppPlatform() && getCurrentWindow().label !== 'main') {
+        await closeBooks(true);
+        if (appService) {
+          await ensureMainLibraryWindow(appService);
         }
+        await getCurrentWindow().close();
       } else {
-        navigateBackToLibrary();
+        await leaveToLibrary(async () => {
+          await closeBooks(true);
+          navigateBackToLibrary();
+        });
       }
     });
   };
@@ -364,13 +401,25 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     // Header X / pane close: an SPA-side close on web and the main window.
     // The Tauri reader-window branches below destroy their webview, which
     // takes the per-window TTS with it either way.
-    await runNotebookTransition([bookKey], async () => {
+    const closeBook = async () => {
       await saveConfigAndCloseBook(bookKey, true);
       if (sideBarBookKey === bookKey) {
         setSideBarBookKey(getNextBookKey(sideBarBookKey));
       }
       dismissBook(bookKey);
-      if (bookKeys.filter((key) => key !== bookKey).length == 0) {
+    };
+    await runNotebookTransition([bookKey], async () => {
+      const isLastBook = bookKeys.every((key) => key === bookKey);
+      // Without windows, closing the last book always returns to the library.
+      if (isLastBook && !appService?.hasWindow) {
+        await leaveToLibrary(async () => {
+          await closeBook();
+          saveSettingsAndGoToLibrary();
+        });
+        return;
+      }
+      await closeBook();
+      if (isLastBook) {
         const openWithFiles = (await parseOpenWithFiles(appService)) || [];
         if (appService?.hasWindow) {
           if (openWithFiles.length > 0) {
@@ -441,6 +490,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           isOpen={!!showDetailsBook}
           book={showDetailsBook}
           onClose={() => setShowDetailsBook(null)}
+          handleBookMetadataUpdate={(book, metadata, tags) =>
+            saveBookMetadataEdit(envConfig, book, metadata, tags, !!user)
+          }
         />
       )}
       <ShareBookDialog

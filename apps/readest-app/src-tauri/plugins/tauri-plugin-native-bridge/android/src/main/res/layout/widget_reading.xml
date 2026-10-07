@@ -41,7 +41,7 @@
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:max="100" android:progress="0" />
-      <!-- E-Ink mode: black fill, shown instead of the bar above. -->
+      <!-- E-Ink mode: full-contrast fill, shown instead of the bar above. -->
       <ProgressBar android:id="@+id/reading_progress_bar_eink"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent" android:layout_height="6dp"

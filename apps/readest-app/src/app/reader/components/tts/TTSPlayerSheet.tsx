@@ -16,9 +16,12 @@ import {
   MdSkipPrevious,
 } from 'react-icons/md';
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
-import { useRouter } from 'next/navigation';
+import { TbArrowBarToRight } from 'react-icons/tb';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { TTSVoicesGroup } from '@/services/tts';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
+import type { TTSLoopState } from '@/services/tts/TTSController';
+import { saveViewSettings } from '@/helpers/settings';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -86,6 +89,9 @@ type TTSPlayerSheetProps = {
   onTogglePlay: () => void;
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
+  loopState: TTSLoopState;
+  onToggleLoop: () => void;
+  onGetLyricLoopRange: () => { start: number; end: number } | null;
   onSetRate: (rate: number) => void;
   onGetVoices: (lang: string) => Promise<TTSVoicesGroup[]>;
   onSetVoice: (voice: string, lang: string) => void;
@@ -124,6 +130,9 @@ const TTSPlayerSheet = ({
   onTogglePlay,
   onBackward,
   onForward,
+  loopState,
+  onToggleLoop,
+  onGetLyricLoopRange,
   onSetRate,
   onGetVoices,
   onSetVoice,
@@ -142,7 +151,7 @@ const TTSPlayerSheet = ({
   activeSectionIndex,
 }: TTSPlayerSheetProps) => {
   const _ = useTranslation();
-  const router = useRouter();
+  const router = useAppRouter();
   const { envConfig } = useEnv();
   const { user } = useAuth();
   const { getViewSettings, setViewSettings } = useReaderStore();
@@ -196,6 +205,7 @@ const TTSPlayerSheet = ({
     return chapterLabel || _('Section {{index}}', { index: activeSectionIndex + 1 });
   }, [_, activeSectionIndex, downloads.chapters, progress?.sectionLabel]);
   const isEink = viewSettings?.isEink ?? false;
+  const pauseAfterSentence = viewSettings?.ttsPauseAfterSentence ?? false;
   const coverImage = book?.coverImageUrl && !coverFailed ? book.coverImageUrl : null;
 
   const lyrics = useTTSLyrics({
@@ -208,6 +218,12 @@ const TTSPlayerSheet = ({
   // frame after opening; `unavailable` only pulls it back for the sections that
   // genuinely have no sheet to show (empty, or too long to render).
   const showLyrics = supportsLyrics && !lyrics.unavailable;
+  // Re-read when the loop changes or the sheet moves to another section.
+  const loopRange = useMemo(
+    () => (loopState === 'off' ? null : onGetLyricLoopRange()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [loopState, lyrics.lines],
+  );
 
   // Books with recorded narration expose it as a voice; while it is playing
   // there is nothing to pre-download, since the audio ships with the book.
@@ -324,6 +340,17 @@ const TTSPlayerSheet = ({
   const prevSmallLabel = audioTransport ? _('Back 15 Seconds') : _('Previous Sentence');
   const nextSmallLabel = audioTransport ? _('Forward 30 Seconds') : _('Next Sentence');
   const nextLargeLabel = audioTransport ? _('Next Chapter') : _('Next Paragraph');
+  const loopLabel =
+    loopState === 'off'
+      ? _('Set Repeat Start (A)')
+      : loopState === 'a'
+        ? _('Set Repeat End (B)')
+        : _('Clear A-B Repeat');
+  const modeButtonClass = (active: boolean) =>
+    clsx(
+      'flex h-9 min-w-9 items-center justify-center rounded-full px-1.5',
+      active ? 'bg-base-300 eink-bordered' : 'text-base-content/60',
+    );
 
   const header =
     view === 'main' ? (
@@ -429,6 +456,7 @@ const TTSPlayerSheet = ({
             <TTSLyricsView
               lines={lyrics.lines}
               activeIndex={lyrics.activeIndex}
+              loopRange={loopRange}
               buffering={buffering}
               isEink={isEink}
               onGetLyricPage={onGetLyricPage}
@@ -450,71 +478,113 @@ const TTSPlayerSheet = ({
               </span>
             )
           )}
-          <div dir='ltr' className='flex items-center justify-center gap-1'>
-            <button
-              type='button'
-              className='rounded-full p-2'
-              title={prevLargeLabel}
-              aria-label={prevLargeLabel}
-              onClick={() => onBackward(false)}
-            >
-              {audioTransport ? (
-                <MdSkipPrevious size={iconSize24} />
-              ) : (
-                <MdKeyboardDoubleArrowLeft size={iconSize24} />
-              )}
-            </button>
-            <button
-              type='button'
-              className='rounded-full p-2'
-              title={prevSmallLabel}
-              aria-label={prevSmallLabel}
-              onClick={() => onBackward(true)}
-            >
-              {audioTransport ? (
-                <RiReplay15Line size={iconSize24} />
-              ) : (
-                <MdKeyboardArrowLeft size={iconSize28} />
-              )}
-            </button>
-            <button
-              type='button'
-              className='btn btn-primary btn-circle relative mx-2 h-14 min-h-14 w-14'
-              aria-label={isPlaying ? _('Pause') : _('Play')}
-              aria-busy={buffering}
-              onClick={onTogglePlay}
-            >
-              {isPlaying ? <MdOutlinePause size={iconSize32} /> : <MdPlayArrow size={iconSize32} />}
-              {/* Inside the button's edge, so it reads against the fill rather
+          <div dir='ltr' className='flex w-full items-center justify-between'>
+            {/* Sentence-by-sentence and A-B repeat step by sentence, which a
+                paired audiobook does not have. */}
+            {!audioTransport && (
+              <button
+                type='button'
+                className={modeButtonClass(pauseAfterSentence)}
+                title={_('Pause After Each Sentence')}
+                aria-label={_('Pause After Each Sentence')}
+                aria-pressed={pauseAfterSentence}
+                onClick={() =>
+                  saveViewSettings(
+                    envConfig,
+                    bookKey,
+                    'ttsPauseAfterSentence',
+                    !pauseAfterSentence,
+                    false,
+                    false,
+                  )
+                }
+              >
+                <TbArrowBarToRight size={iconSize18} />
+              </button>
+            )}
+            <div className='flex flex-1 items-center justify-center gap-1'>
+              <button
+                type='button'
+                className='rounded-full p-2'
+                title={prevLargeLabel}
+                aria-label={prevLargeLabel}
+                onClick={() => onBackward(false)}
+              >
+                {audioTransport ? (
+                  <MdSkipPrevious size={iconSize24} />
+                ) : (
+                  <MdKeyboardDoubleArrowLeft size={iconSize24} />
+                )}
+              </button>
+              <button
+                type='button'
+                className='rounded-full p-2'
+                title={prevSmallLabel}
+                aria-label={prevSmallLabel}
+                onClick={() => onBackward(true)}
+              >
+                {audioTransport ? (
+                  <RiReplay15Line size={iconSize24} />
+                ) : (
+                  <MdKeyboardArrowLeft size={iconSize28} />
+                )}
+              </button>
+              <button
+                type='button'
+                className='btn btn-primary btn-circle relative mx-2 h-14 min-h-14 w-14'
+                aria-label={isPlaying ? _('Pause') : _('Play')}
+                aria-busy={buffering}
+                onClick={onTogglePlay}
+              >
+                {isPlaying ? (
+                  <MdOutlinePause size={iconSize32} />
+                ) : (
+                  <MdPlayArrow size={iconSize32} />
+                )}
+                {/* Inside the button's edge, so it reads against the fill rather
                   than against whatever the sheet puts behind it. */}
-              {buffering && <BufferingRing size={50} isEink={isEink} />}
-            </button>
-            <button
-              type='button'
-              className='rounded-full p-2'
-              title={nextSmallLabel}
-              aria-label={nextSmallLabel}
-              onClick={() => onForward(true)}
-            >
-              {audioTransport ? (
-                <RiForward30Line size={iconSize24} />
-              ) : (
-                <MdKeyboardArrowRight size={iconSize28} />
-              )}
-            </button>
-            <button
-              type='button'
-              className='rounded-full p-2'
-              title={nextLargeLabel}
-              aria-label={nextLargeLabel}
-              onClick={() => onForward(false)}
-            >
-              {audioTransport ? (
-                <MdSkipNext size={iconSize24} />
-              ) : (
-                <MdKeyboardDoubleArrowRight size={iconSize24} />
-              )}
-            </button>
+                {buffering && <BufferingRing size={50} isEink={isEink} />}
+              </button>
+              <button
+                type='button'
+                className='rounded-full p-2'
+                title={nextSmallLabel}
+                aria-label={nextSmallLabel}
+                onClick={() => onForward(true)}
+              >
+                {audioTransport ? (
+                  <RiForward30Line size={iconSize24} />
+                ) : (
+                  <MdKeyboardArrowRight size={iconSize28} />
+                )}
+              </button>
+              <button
+                type='button'
+                className='rounded-full p-2'
+                title={nextLargeLabel}
+                aria-label={nextLargeLabel}
+                onClick={() => onForward(false)}
+              >
+                {audioTransport ? (
+                  <MdSkipNext size={iconSize24} />
+                ) : (
+                  <MdKeyboardDoubleArrowRight size={iconSize24} />
+                )}
+              </button>
+            </div>
+            {!audioTransport && (
+              <button
+                type='button'
+                className={modeButtonClass(loopState !== 'off')}
+                title={loopLabel}
+                aria-label={loopLabel}
+                onClick={onToggleLoop}
+              >
+                <span className='text-sm font-semibold'>
+                  A-<span className={clsx(loopState === 'a' && 'opacity-40')}>B</span>
+                </span>
+              </button>
+            )}
           </div>
           <div className='flex w-full gap-2'>
             <button

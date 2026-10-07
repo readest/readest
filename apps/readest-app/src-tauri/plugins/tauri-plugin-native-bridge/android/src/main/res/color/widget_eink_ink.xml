@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- E-Ink mode's full-contrast ink: black on the light card, white on the night one. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:color="?android:attr/colorForeground" />
+</selector>

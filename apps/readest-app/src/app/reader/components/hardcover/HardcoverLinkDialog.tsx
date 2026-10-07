@@ -10,7 +10,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 import {
   HardcoverClient,
   HardcoverSyncMapStore,
+  isHardcoverConnected,
   pickAutoMatch,
+  createHardcoverTokenStore,
   type HardcoverBookCandidate,
 } from '@/services/hardcover';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -65,9 +67,14 @@ const HardcoverLinkDialog = ({ bookKey, onClose }: HardcoverLinkDialogProps) => 
   const getServices = async () => {
     if (servicesRef.current) return servicesRef.current;
     const hardcover = settings.hardcover;
-    if (!hardcover?.accessToken) throw new Error(_('Configure Hardcover in Settings first.'));
+    if (!isHardcoverConnected(hardcover)) {
+      throw new Error(_('Configure Hardcover in Settings first.'));
+    }
     const mapStore = new HardcoverSyncMapStore(await envConfig.getAppService());
-    servicesRef.current = { client: new HardcoverClient(hardcover, mapStore), mapStore };
+    servicesRef.current = {
+      client: new HardcoverClient(hardcover, mapStore, createHardcoverTokenStore(envConfig)),
+      mapStore,
+    };
     return servicesRef.current;
   };
 

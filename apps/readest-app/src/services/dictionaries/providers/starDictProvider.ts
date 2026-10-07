@@ -19,6 +19,7 @@
  * flagged `unsupported` at import time and filtered out before this
  * provider is instantiated.
  */
+import { liftDarkTextColors } from '@/utils/style';
 import type { DictionaryProvider, ImportedDictionary } from '../types';
 import type { BaseDir } from '@/types/system';
 import { StarDictReader, type StarDictEntry } from '../stardictReader';
@@ -182,6 +183,7 @@ export const createStarDictProvider = ({
         if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
         if (!bytes.length) return { ok: false, reason: 'empty' };
         renderEntry(ctx.container, entry.word, bytes, seq, false);
+        if (ctx.isDarkMode) liftDarkTextColors(ctx.container);
         return { ok: true, headword: entry.word, sourceLabel: r.ifo['bookname'] || dict.name };
       } catch (err) {
         return {

@@ -57,6 +57,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
       title: _('Audiobookshelf Servers'),
       description: _('Saved server URLs and (encrypted) credentials'),
     },
+    custom_translator: {
+      title: _('Translators'),
+      description: _('Custom translation providers, prompts, and (encrypted) API keys'),
+    },
     settings: {
       // Dictionary preferences ride this row too, but they're gated by the
       // Dictionaries toggle above, so they're deliberately not listed here.

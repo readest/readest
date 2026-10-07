@@ -15,8 +15,9 @@ const h = vi.hoisted(() => ({
     getCFI: vi.fn(() => 'cfi'),
     renderer: { containerPosition: 100, scrollLocked: false },
   },
-  appService: { isAndroidApp: false, isMobile: false },
+  appService: { isAndroidApp: false, isMobile: false } as Record<string, boolean>,
   osPlatform: 'macos',
+  textAtPoint: false,
   viewSettings: { scrolled: false } as { scrolled: boolean; vertical?: boolean },
   dispatch: vi.fn(),
 }));
@@ -57,6 +58,11 @@ vi.mock('@/app/reader/hooks/useInstantAnnotation', () => ({
 vi.mock('@/utils/misc', async (importActual) => {
   const actual = await importActual<typeof import('@/utils/misc')>();
   return { ...actual, getOSPlatform: () => h.osPlatform };
+});
+
+vi.mock('@/app/reader/utils/crossDocSelection', async (importActual) => {
+  const actual = await importActual<typeof import('@/app/reader/utils/crossDocSelection')>();
+  return { ...actual, isTextAtPoint: () => h.textAtPoint };
 });
 
 import { useTextSelector } from '@/app/reader/hooks/useTextSelector';
@@ -100,6 +106,7 @@ const imageMenus = () =>
 beforeEach(() => {
   vi.clearAllMocks();
   h.appService = { isAndroidApp: false, isMobile: false };
+  h.textAtPoint = false;
 });
 
 afterEach(() => {
@@ -194,12 +201,96 @@ describe('useTextSelector image context menu (#6558)', () => {
     expect(rightClick(document.querySelector('p')!).defaultPrevented).toBe(false);
     expect(imageMenus()).toEqual([]);
   });
+});
 
-  test('shows no menu on mobile', () => {
+// readest/readest#6574: on iOS and Android a long press on an image opens the
+// same menu. Android's WebView reports the long press as a contextmenu event,
+// iOS WebKit fires none, so a touch held still on an image opens it there.
+describe('useTextSelector image long-press menu (#6574)', () => {
+  test('opens the image menu from an Android long press', () => {
     h.appService = { isAndroidApp: true, isMobile: true };
     listen();
     document.body.innerHTML = '<img src="blob:http://localhost/figure">';
-    expect(rightClick(document.querySelector('img')!).defaultPrevented).toBe(true);
+    expect(rightClick(document.querySelector('img')!, 30, 40).defaultPrevented).toBe(true);
+    expect(imageMenus()).toMatchObject([{ bookKey: 'book-1', x: 30, y: 40 }]);
+  });
+
+  test('keeps a long press on text for selection', () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    listen();
+    document.body.innerHTML = '<p>plain text</p>';
+    expect(rightClick(document.querySelector('p')!).defaultPrevented).toBe(true);
     expect(imageMenus()).toEqual([]);
+  });
+
+  test('keeps a long press on PDF text for selection, even over an image', () => {
+    h.appService = { isAndroidApp: true, isMobile: true };
+    listen();
+    document.body.innerHTML = '<div class="textLayer"><span>scanned words</span></div>';
+    Object.assign(document, { getImageAt: () => vi.fn() });
+    const textLayer = document.querySelector('.textLayer')!;
+    h.textAtPoint = true;
+    rightClick(document.querySelector('span')!);
+    expect(imageMenus()).toEqual([]);
+    h.textAtPoint = false;
+    rightClick(textLayer);
+    expect(imageMenus()).toHaveLength(1);
+    delete (document as { getImageAt?: unknown }).getImageAt;
+  });
+
+  describe('iOS', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      h.appService = { isIOSApp: true, isMobile: true };
+      document.body.innerHTML = '<p>text</p><img src="blob:http://localhost/figure">';
+    });
+    afterEach(() => vi.useRealTimers());
+
+    const touch = (type: string, target: Element, x = 30, y = 40) =>
+      ({
+        type,
+        target,
+        pointerType: 'touch',
+        clientX: x,
+        clientY: y,
+        button: 0,
+      }) as unknown as PointerEvent;
+    const press = (target: Element) => {
+      const { result } = setup(vi.fn());
+      result.current.handlePointerDown(document, 0, touch('pointerdown', target));
+      return result.current;
+    };
+
+    test('opens the image menu once a touch has held still on an image', () => {
+      press(document.querySelector('img')!);
+      vi.advanceTimersByTime(499);
+      expect(imageMenus()).toEqual([]);
+      vi.advanceTimersByTime(1);
+      expect(imageMenus()).toMatchObject([{ bookKey: 'book-1', x: 30, y: 40 }]);
+    });
+
+    test('a tap, a scroll or a swipe opens no menu', () => {
+      const img = document.querySelector('img')!;
+      press(img).handlePointerUp(document, 0, touch('pointerup', img));
+      press(img).handlePointerCancel(document, 0, touch('pointercancel', img));
+      press(img).handlePointerMove(document, 0, touch('pointermove', img, 30, 52));
+      vi.advanceTimersByTime(1000);
+      expect(imageMenus()).toEqual([]);
+    });
+
+    test('a reader closed mid-hold opens no menu', () => {
+      const { result, unmount } = setup(vi.fn());
+      const img = document.querySelector('img')!;
+      result.current.handlePointerDown(document, 0, touch('pointerdown', img));
+      unmount();
+      vi.advanceTimersByTime(1000);
+      expect(imageMenus()).toEqual([]);
+    });
+
+    test('a hold on text opens no menu', () => {
+      press(document.querySelector('p')!);
+      vi.advanceTimersByTime(1000);
+      expect(imageMenus()).toEqual([]);
+    });
   });
 });

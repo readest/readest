@@ -24,11 +24,19 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import {
+  ensureCustomTranslatorsLoaded,
+  getLLMTranslators,
+  useCustomTranslatorStore,
+} from '@/store/customTranslatorStore';
+import { isCustomTranslatorAllowed } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
 import { evictProvider, isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
+import { getContextTranslator } from '@/services/dictionaries/providers/contextProvider';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import {
   clearRememberedLookupApp,
@@ -64,7 +72,7 @@ interface ProviderRow {
   id: string;
   label: string;
   kind: 'builtin' | 'stardict' | 'mdict' | 'dict' | 'slob' | 'bgl' | 'plugin' | 'web';
-  badge: string;
+  badge?: string;
   imported?: ImportedDictionary;
   /** Set on `kind: 'web'` rows. The shape distinguishes deletable custom
    *  entries (when `builtinWeb` is false) from immutable built-ins. */
@@ -109,6 +117,7 @@ const builtinWebLabel = (id: string, _: (key: string) => string): string => {
 const builtinLabel = (id: string, _: (key: string) => string): string => {
   if (id === BUILTIN_PROVIDER_IDS.wiktionary) return _('Wiktionary');
   if (id === BUILTIN_PROVIDER_IDS.wikipedia) return _('Wikipedia');
+  if (id === BUILTIN_PROVIDER_IDS.context) return _('Context Dictionary');
   if (id === BUILTIN_PROVIDER_IDS.systemDictionary) return _('System Dictionary');
   return id;
 };
@@ -197,7 +206,7 @@ const SortableRow: React.FC<SortableRowProps> = ({
       {/* End-aligned type badge. Sits just before the toggle so all
           badges form a uniform column regardless of name length, instead
           of trailing the truncated name at a ragged x position. */}
-      <span className='badge badge-sm badge-ghost shrink-0'>{row.badge}</span>
+      {row.badge && <span className='badge badge-sm badge-ghost shrink-0'>{row.badge}</span>}
 
       <input
         type='checkbox'
@@ -266,6 +275,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     setEnabled,
     setFontScale,
     setAutoPlayPronunciation,
+    setContextTranslatorId,
     addWebSearch,
     updateWebSearch,
     removeWebSearch,
@@ -276,8 +286,18 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
 
   useEffect(() => {
     void loadCustomDictionaries(envConfig).catch(() => {});
+    ensureCustomTranslatorsLoaded(envConfig);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The context dictionary asks one of the user's OpenAI-compatible custom
+  // translators (#5544), which are a premium feature. Subscribing to the
+  // translators re-renders the row when one is added or removed.
+  const { token } = useAuth();
+  useCustomTranslatorStore((s) => s.translators);
+  const hasPremium = isCustomTranslatorAllowed(token);
+  const llmTranslators = getLLMTranslators();
+  const contextTranslator = hasPremium ? getContextTranslator() : undefined;
 
   const { selectFiles } = useFileSelector(appService, _);
   const [importing, setImporting] = useState(false);
@@ -302,6 +322,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   }, [appService]);
   const handleFontScaleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFontScale(Number(e.target.value));
+    await saveCustomDictionaries(envConfig);
+  };
+
+  const handleContextTranslatorChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setContextTranslatorId(event.target.value);
     await saveCustomDictionaries(envConfig);
   };
 
@@ -429,6 +454,20 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           reason: disabled
             ? _('System dictionary integration is coming soon on this platform.')
             : undefined,
+        });
+        continue;
+      }
+      if (id === BUILTIN_PROVIDER_IDS.context) {
+        rows.push({
+          id,
+          label: builtinLabel(id, _),
+          kind: 'builtin',
+          disabled: !contextTranslator,
+          reason: !hasPremium
+            ? _('Requires Readest Premium.')
+            : !contextTranslator
+              ? _('Add an OpenAI-compatible translator in Custom Translators to use it.')
+              : undefined,
         });
         continue;
       }
@@ -822,6 +861,25 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           </DndContext>
         </div>
       </div>
+
+      {contextTranslator && (
+        <BoxedList
+          className='mt-4'
+          title={_('Context Dictionary')}
+          description={_(
+            'Explains the selected text as it is used in the passage, in your translation target language.',
+          )}
+        >
+          <SettingsRow label={_('AI Translator')}>
+            <SettingsSelect
+              value={contextTranslator.id}
+              onChange={handleContextTranslatorChange}
+              options={llmTranslators.map((t) => ({ value: t.id, label: t.name }))}
+              ariaLabel={_('AI Translator')}
+            />
+          </SettingsRow>
+        </BoxedList>
+      )}
 
       <BoxedList
         className='mt-4'

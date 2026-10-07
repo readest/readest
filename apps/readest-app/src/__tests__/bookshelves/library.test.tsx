@@ -39,7 +39,9 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: mocks.env, appService: mocks.appService }),
 }));
 vi.mock('@/app/library/components/LibrarySearchResults', () => ({
-  default: () => <div data-testid='content-search-results' />,
+  default: ({ books }: { books: Book[] }) => (
+    <div data-testid='content-search-results' data-books={books.map((b) => b.hash).join(',')} />
+  ),
 }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => mocks.translate }));
@@ -68,6 +70,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     skeuomorphicCovers,
     isSelectMode,
     handleLibraryNavigation,
+    showSeriesIndex,
   }: {
     item: Book | BooksGroup;
     toggleSelection: (id: string) => void;
@@ -76,6 +79,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     skeuomorphicCovers: boolean;
     isSelectMode: boolean;
     handleLibraryNavigation: (group: string) => void;
+    showSeriesIndex?: boolean;
   }) => {
     // Keep the mode-entry callback here to verify selection reads the live
     // store even when a child retains an older callback. The real card also
@@ -92,6 +96,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
       <button
         data-cover-fit={coverFit}
         data-skeuomorphic-covers={skeuomorphicCovers}
+        data-show-series-index={showSeriesIndex}
         aria-pressed={itemSelected}
         onClick={onClick}
       >
@@ -550,6 +555,69 @@ describe('library bookshelf integration', () => {
     rerender(<Bookshelf {...props} isSelectAll={false} isSelectNone />);
     rerender(<Bookshelf {...props} isSelectAll />);
     await waitFor(() => expect(useLibraryStore.getState().selectedBooks.size).toBe(20));
+  });
+  it('badges series indexes only on books inside an opened series group (#6347)', () => {
+    const seriesBooks = books.map((book, index) => ({
+      ...book,
+      metadata: {
+        title: book.title,
+        author: 'Writer',
+        language: 'en',
+        series: 'Saga',
+        seriesIndex: index + 1,
+      },
+    }));
+    useLibraryStore.setState({ library: seriesBooks });
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, libraryGroupBy: 'series' },
+    });
+    const group = createBookGroups(seriesBooks, LibraryGroupByType.Series).find(
+      (item): item is BooksGroup => 'books' in item,
+    )!;
+    const flags = () =>
+      Array.from(screen.getByTestId('default').querySelectorAll('button')).map(
+        (b) => b.dataset['showSeriesIndex'],
+      );
+    const { rerender } = render(
+      <Bookshelf {...props} isSelectMode={false} libraryBooks={seriesBooks} />,
+    );
+    expect(flags()).toEqual(['false']);
+    mocks.params = new URLSearchParams({ group: group.id, shelf: 'default' });
+    rerender(<Bookshelf {...props} isSelectMode={false} libraryBooks={seriesBooks} />);
+    expect(flags()).toHaveLength(20);
+    expect(flags().every((flag) => flag === 'true')).toBe(true);
+    // An author group names the author, not the series, so its covers stay plain.
+    const author = createBookGroups(seriesBooks, LibraryGroupByType.Author).find(
+      (item): item is BooksGroup => 'books' in item,
+    )!;
+    mocks.params = new URLSearchParams({ groupBy: 'author', group: author.id, shelf: 'default' });
+    rerender(<Bookshelf {...props} isSelectMode={false} libraryBooks={seriesBooks} />);
+    expect(flags().every((flag) => flag === 'false')).toBe(true);
+  });
+  it('searches book contents only within the opened group', () => {
+    mocks.appService = {};
+    const grouped = books.map((book, index) => ({
+      ...book,
+      groupName: index < 3 ? 'Philosophy' : index < 5 ? 'Philosophy/Ethics' : 'Fiction',
+    }));
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, libraryGroupBy: 'group' },
+    });
+    useLibraryStore.setState({ library: grouped, groups: { philosophy: 'Philosophy' } });
+    mocks.params = new URLSearchParams('q=Book&search=text&group=philosophy&shelf=default');
+    render(
+      <Bookshelf
+        {...props}
+        isSelectMode={false}
+        libraryBooks={grouped}
+        contentSearch={{
+          query: 'Book',
+          config: { scope: 'book', mode: 'contains', matchCase: false, matchDiacritics: false },
+        }}
+      />,
+    );
+    const searched = screen.getByTestId('content-search-results').dataset['books']!.split(',');
+    expect(searched.sort()).toEqual(['0', '1', '2', '3', '4']);
   });
   it('keeps an opened group while a search matches nothing', () => {
     window.history.replaceState(null, '', '/library?q=nope&group=g&shelf=default');

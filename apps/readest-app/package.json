@@ -1,6 +1,6 @@
 {
   "name": "@readest/readest-app",
-  "version": "0.12.10",
+  "version": "0.12.12",
   "private": true,
   "type": "module",
   "scripts": {
@@ -223,6 +223,7 @@
     "tesseract.js": "7.0.0",
     "tesseract.js-core": "7.0.0",
     "tinycolor2": "^1.6.0",
+    "uqr": "^0.1.3",
     "uuid": "^14.0.0",
     "virtua": "^0.49.1",
     "ws": "^8.18.3",

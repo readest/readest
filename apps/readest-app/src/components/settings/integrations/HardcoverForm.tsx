@@ -1,13 +1,16 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
-import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
+import { navigateToHardcoverConnect } from '@/utils/nav';
+import { isHardcoverConnected } from '@/services/hardcover';
+import { revokeHardcoverTokens } from '@/services/hardcover/hardcoverOAuth';
 import SubPageHeader from '../SubPageHeader';
-import { SectionTitle, SettingLabel } from '../primitives';
 import { Toggle } from '@/components/primitives/toggle';
+import { SettingLabel } from '../primitives';
 
 interface HardcoverFormProps {
   onBack: () => void;
@@ -15,57 +18,22 @@ interface HardcoverFormProps {
 
 const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
   const _ = useTranslation();
+  const router = useRouter();
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
 
-  const [accessToken, setAccessToken] = useState('');
-  const [isConnecting, setIsConnecting] = useState(false);
-
-  const isConfigured = !!settings.hardcover?.accessToken;
-
-  const handleConnect = async () => {
-    setIsConnecting(true);
-    try {
-      const appService = await envConfig.getAppService();
-      const mapStore = new HardcoverSyncMapStore(appService);
-      const client = new HardcoverClient({ accessToken }, mapStore);
-      const { valid, isNetworkError } = await client.validateToken();
-      if (valid) {
-        const newSettings = {
-          ...settings,
-          hardcover: {
-            enabled: true,
-            accessToken,
-            lastSyncedAt: settings.hardcover?.lastSyncedAt ?? 0,
-            autoSync: settings.hardcover?.autoSync ?? false,
-          },
-        };
-        setSettings(newSettings);
-        await saveSettings(envConfig, newSettings);
-      } else if (isNetworkError) {
-        eventDispatcher.dispatch('toast', {
-          message: _('Unable to connect to Hardcover. Please check your network connection.'),
-          type: 'error',
-        });
-      } else {
-        eventDispatcher.dispatch('toast', {
-          message: _('Invalid Hardcover API token'),
-          type: 'error',
-        });
-      }
-    } finally {
-      setIsConnecting(false);
-      setAccessToken('');
-    }
-  };
+  const isConfigured = isHardcoverConnected(settings.hardcover);
 
   const handleDisconnect = async () => {
+    const oauth = settings.hardcover?.oauth;
     const newSettings = {
       ...settings,
       hardcover: { enabled: false, accessToken: '', lastSyncedAt: 0 },
     };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
+    // Not awaited: signing out must not wait on the network.
+    if (oauth) void revokeHardcoverTokens(oauth);
     eventDispatcher.dispatch('toast', { message: _('Disconnected from Hardcover'), type: 'info' });
   };
 
@@ -92,9 +60,7 @@ const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
 
   const description: string = isConfigured
     ? _('Connected to Hardcover. Last synced {{time}}.', { time: lastSyncedLabel })
-    : _('Connect your Hardcover account to sync reading progress and notes.') +
-      ' ' +
-      _('Get your API token from hardcover.app → Settings → API.');
+    : _('Connect your Hardcover account to sync reading progress and notes.');
 
   return (
     <div className='w-full'>
@@ -143,41 +109,18 @@ const HardcoverForm: React.FC<HardcoverFormProps> = ({ onBack }) => {
           </div>
         </div>
       ) : (
-        <div className='space-y-5'>
-          <div className='space-y-1.5'>
-            <SectionTitle as='label' htmlFor='hardcover-token' className='block'>
-              {_('API Token')}
-            </SectionTitle>
-            <input
-              id='hardcover-token'
-              type='password'
-              placeholder={_('Paste your Hardcover API token')}
-              className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
-              spellCheck='false'
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-            />
-          </div>
-
-          <div className='flex justify-end'>
-            <button
-              type='button'
-              onClick={handleConnect}
-              disabled={isConnecting || !accessToken}
-              className={clsx(
-                'btn btn-primary',
-                'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
-                isConnecting && 'opacity-60',
-              )}
-            >
-              {isConnecting ? (
-                <span className='loading loading-spinner loading-sm' />
-              ) : (
-                _('Connect')
-              )}
-            </button>
-          </div>
+        <div className='flex justify-center'>
+          <button
+            type='button'
+            onClick={() => navigateToHardcoverConnect(router)}
+            className={clsx(
+              'btn btn-primary',
+              'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
+              'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
+            )}
+          >
+            {_('Connect')}
+          </button>
         </div>
       )}
     </div>

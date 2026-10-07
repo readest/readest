@@ -70,6 +70,22 @@
   </supports>
 
   <releases>
+    <release version="0.12.12" date="2026-10-05">
+      <description>
+        <ul>
+          <li>Text-to-Speech: You can now listen sentence by sentence and loop a passage with A-B repeat, control playback from your desktop's Now Playing controls</li>
+          <li>Reading: Added dialogue highlighting for quoted speech, a Column Gap setting for two-page spreads</li>
+          <li>Sync: Added a Readest plugin for CrossPoint e-readers for reading progress sync</li>
+          <li>Sync: You can now sync reading progress to Pagebound, sign in to Hardcover more easily, and note edits are no longer overwritten by older synced copies</li>
+          <li>PDF: PDFs now blend smoothly with your reading theme with smart image inversion, show page thumbnails in the table of contents</li>
+          <li>PDF: Highlighting and text selection on scanned PDFs is smoother and more accurate, and very large scanned pages no longer crash the reader on iOS</li>
+          <li>Translation: You can now add your own translation providers with a reusable prompt library, look up words with an AI context dictionary</li>
+          <li>Annotations: A global note now appears on every occurrence of its text, exports can include the sentence around each highlight</li>
+          <li>Android: Added home screen widgets for your current book and bookshelf, automatic e-ink full refresh every few page turns</li>
+          <li>More: Images now have a long-press and right-click menu to copy or save them, Windows shows PDF thumbnails in Explorer</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.12.10" date="2026-09-22">
       <description>
         <ul>
@@ -205,22 +221,6 @@
           <li>Dictionary: Word variations now resolve to their base forms, with more reliable system dictionary lookups on Android and iOS</li>
           <li>Annotations: Customize the highlight toolbar, share selected text to other apps, and highlights now render correctly over bulleted lists</li>
           <li>Platform: Added an opt-in nightly update channel for early access to new features, plus faster, smoother reading and many platform fixes</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.11.4" date="2026-06-03">
-      <description>
-        <ul>
-          <li>Library: You can now send a book file directly from the bookshelf selection popup</li>
-          <li>Reading: Wide tables now scroll sideways, and oversized images or code blocks scroll in place instead of accidentally turning the page</li>
-          <li>Reading: Fixed page backgrounds, textures, and full-page cover images that didn't display correctly in paginated and scrolled modes</li>
-          <li>Reading: Fixed bright table and note backgrounds that didn't match the page in dark mode</li>
-          <li>Reading: Fixed the reading ruler drifting while scrolling and a stray line at the bottom of the page</li>
-          <li>Fonts: Fixed custom fonts disappearing after re-importing, and they now apply correctly inside books</li>
-          <li>PDF: Fixed scanned PDFs not displaying in installed app builds</li>
-          <li>Annotations: The annotation list now scrolls back to your nearest highlight, and exporting to Readwise works again on desktop</li>
-          <li>Android: Fixed a freeze when long-pressing images, plus issues with copying text and opening books directly from other apps</li>
-          <li>Fixes: Kept the book menu order stable, synced KOReader book covers, and fixed a Windows launch crash</li>
         </ul>
       </description>
     </release>

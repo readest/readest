@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { captureScrollModeAnchor, restoreScrollModeAnchor } from 'foliate-js/fixed-layout.js';
+import {
+  captureScrollModeAnchor,
+  findScrollPageRange,
+  layoutScrollPages,
+  restoreScrollModeAnchor,
+} from 'foliate-js/fixed-layout.js';
 
 // The helpers are 1-D interval math along the scroll axis: vertical mode feeds
 // offsetTop/offsetHeight, horizontal mode (readest#4995) feeds
@@ -67,5 +72,30 @@ describe('fixed-layout scroll mode anchor preservation', () => {
     );
 
     expect(anchor).toEqual({ index: 1, fraction: 0.25, scrollPos: 368 });
+  });
+});
+
+describe('fixed-layout scroll mode page layout', () => {
+  it('lays pages out like a flex column with a gap around each page', () => {
+    expect(layoutScrollPages({ sizes: [100, 200, 100], gap: 4, overlap: 0 })).toEqual({
+      starts: [4, 112, 320],
+      sizes: [100, 200, 100],
+      total: 424,
+    });
+  });
+
+  it('pulls each page after the first onto the previous one by the overlap', () => {
+    const { starts, total } = layoutScrollPages({ sizes: [100, 100], gap: 0, overlap: 1 });
+    expect(starts).toEqual([0, 99]);
+    expect(total).toBe(199);
+  });
+
+  it('finds the pages overlapping a span of the strip', () => {
+    const layout = layoutScrollPages({ sizes: [100, 100, 100, 100], gap: 4, overlap: 0 });
+    // pages sit at [4,104) [112,212) [220,320) [328,428)
+    expect(findScrollPageRange(layout, 150, 330)).toEqual([1, 4]);
+    expect(findScrollPageRange(layout, 106, 110)).toEqual([1, 1]);
+    expect(findScrollPageRange(layout, -500, 0)).toEqual([0, 0]);
+    expect(findScrollPageRange(layout, 1000, 2000)).toEqual([4, 4]);
   });
 });

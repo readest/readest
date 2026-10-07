@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.12.12": {
+      "date": "2026-10-05",
+      "notes": [
+        "Text-to-Speech: You can now listen sentence by sentence and loop a passage with A-B repeat, control playback from your desktop's Now Playing controls",
+        "Reading: Added dialogue highlighting for quoted speech, a Column Gap setting for two-page spreads",
+        "Sync: Added a Readest plugin for CrossPoint e-readers for reading progress sync",
+        "Sync: You can now sync reading progress to Pagebound, sign in to Hardcover more easily, and note edits are no longer overwritten by older synced copies",
+        "PDF: PDFs now blend smoothly with your reading theme with smart image inversion, show page thumbnails in the table of contents",
+        "PDF: Highlighting and text selection on scanned PDFs is smoother and more accurate, and very large scanned pages no longer crash the reader on iOS",
+        "Translation: You can now add your own translation providers with a reusable prompt library, look up words with an AI context dictionary",
+        "Annotations: A global note now appears on every occurrence of its text, exports can include the sentence around each highlight",
+        "Android: Added home screen widgets for your current book and bookshelf, automatic e-ink full refresh every few page turns",
+        "More: Images now have a long-press and right-click menu to copy or save them, Windows shows PDF thumbnails in Explorer"
+      ]
+    },
     "0.12.10": {
       "date": "2026-09-22",
       "notes": [

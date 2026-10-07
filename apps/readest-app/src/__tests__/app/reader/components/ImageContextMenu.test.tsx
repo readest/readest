@@ -6,12 +6,22 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 
 const h = vi.hoisted(() => ({
   saveFile: vi.fn(async () => true),
+  saveImageToGallery: vi.fn(async () => true),
+  isAndroidApp: false,
   imageToPng: vi.fn(async () => new Blob(['png'], { type: 'image/png' })),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ appService: { saveFile: h.saveFile } }),
+  useEnv: () => ({
+    appService: {
+      saveFile: h.saveFile,
+      saveImageToGallery: h.saveImageToGallery,
+      isAndroidApp: h.isAndroidApp,
+    },
+  }),
 }));
+// The menu takes over the Android back key, a native call jsdom doesn't have.
+vi.mock('@/utils/bridge', () => ({ interceptKeys: vi.fn() }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
@@ -39,6 +49,7 @@ let dispatch: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  h.isAndroidApp = false;
   dispatch = vi.spyOn(eventDispatcher, 'dispatch');
   vi.stubGlobal('ClipboardItem', FakeClipboardItem);
   Object.defineProperty(navigator, 'clipboard', { value: { write }, configurable: true });
@@ -114,6 +125,73 @@ describe('ImageContextMenu (#6558)', () => {
     expect(h.imageToPng).toHaveBeenCalled();
     expect(h.saveFile).toHaveBeenCalledWith('image.png', expect.any(ArrayBuffer), {
       mimeType: 'image/png',
+    });
+  });
+
+  // #6574: Android's WebView takes a clipboard image write without error but
+  // never puts it on the system clipboard, so Android offers Share instead.
+  test('offers Save Image and Share Image on Android', async () => {
+    h.isAndroidApp = true;
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Save Image',
+      'Share Image',
+    ]);
+    await act(async () => {
+      fireEvent.click(screen.getByText('Share Image'));
+    });
+    expect(h.saveFile).toHaveBeenCalledWith('image.jpg', expect.any(ArrayBuffer), {
+      mimeType: 'image/jpeg',
+      share: true,
+    });
+  });
+
+  test('reports a share that could not start', async () => {
+    h.isAndroidApp = true;
+    h.saveFile.mockResolvedValueOnce(false);
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Share Image'));
+    });
+    expect(dispatch).toHaveBeenCalledWith('toast', {
+      type: 'error',
+      message: 'Failed to share the image',
+    });
+  });
+
+  // The long-press menu saves to the photo gallery on Android, like the image
+  // viewer's save button.
+  test('saves to the gallery on Android', async () => {
+    h.isAndroidApp = true;
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save Image'));
+    });
+    expect(h.saveImageToGallery).toHaveBeenCalledWith(
+      'image.jpg',
+      expect.any(ArrayBuffer),
+      'image/jpeg',
+    );
+    expect(h.saveFile).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith('toast', {
+      type: 'info',
+      message: 'Image saved to gallery',
+    });
+  });
+
+  test('saves as a file when the Android gallery refuses the image', async () => {
+    h.isAndroidApp = true;
+    h.saveImageToGallery.mockResolvedValueOnce(false);
+    render(<ImageContextMenu bookKey='book-1' />);
+    await openMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByText('Save Image'));
+    });
+    expect(h.saveFile).toHaveBeenCalledWith('image.jpg', expect.any(ArrayBuffer), {
+      mimeType: 'image/jpeg',
     });
   });
 });

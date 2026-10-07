@@ -17,7 +17,7 @@ import {
   TTSVoicesGroup,
 } from '@/services/tts';
 import { DEFAULT_SENTENCE_GAP_SEC } from '@/services/tts/EdgeTTSClient';
-import { DEFAULT_PARAGRAPH_GAP_SEC } from '@/services/tts/TTSController';
+import { DEFAULT_PARAGRAPH_GAP_SEC, TTSLoopState } from '@/services/tts/TTSController';
 import { scaleGapForRate } from '@/services/tts/gap';
 import { eventDispatcher } from '@/utils/event';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
@@ -99,6 +99,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // voice (a book's own narrator is a voice), so they are state rather than a
   // render-time probe: switching voices has to redraw the player.
   const [supportsLyrics, setSupportsLyrics] = useState(false);
+  const [loopState, setLoopState] = useState<TTSLoopState>('off');
   const syncClientCapabilities = useCallback(() => {
     const controller = ttsControllerRef.current;
     setAudioTransport(controller?.usesAudioTransport() ?? false);
@@ -542,7 +543,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         const showFooter = viewSettings.showFooter;
         const headerScrollOverlap = showHeader ? viewSettings.marginTopPx : 0;
         const footerScrollOverlap = showFooter ? viewSettings.marginBottomPx : 0;
-        const scrollingOverlap = viewSettings.scrollingOverlap;
+        // Overlap only applies to fixed-layout scrolling (see viewPagination).
+        const scrollingOverlap =
+          view.book.rendition?.layout === 'pre-paginated' ? viewSettings.scrollingOverlap : 0;
         const outOfView =
           rangeBottom > end - footerScrollOverlap - scrollingOverlap ||
           rangeTop < start + headerScrollOverlap + scrollingOverlap;
@@ -655,6 +658,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   useEffect(() => {
     const ttsController = ttsControllerRef.current;
     if (!ttsController) return;
+    // A page turn can render a section afresh, without the A-B tint.
+    ttsController.drawLoopRange();
 
     const viewSettings = getViewSettings(bookKey);
     const ttsLocation = viewSettings?.ttsLocation;
@@ -828,6 +833,16 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       ttsControllerRef.current.setHighlightGranularity(viewSettings.ttsHighlightGranularity);
     }
   }, [viewSettings?.ttsHighlightGranularity]);
+
+  // Keyed on the controller too, so a new or adopted session picks it up.
+  useEffect(() => {
+    if (!ttsController) return;
+    ttsController.pauseAfterSentence = viewSettings?.ttsPauseAfterSentence ?? false;
+  }, [ttsController, viewSettings?.ttsPauseAfterSentence]);
+
+  useEffect(() => {
+    setLoopState(ttsController?.loopState ?? 'off');
+  }, [ttsController]);
 
   useEffect(() => {
     ttsControllerRef.current?.setSkipInlineAnnotations(
@@ -1184,6 +1199,16 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     }
   }, []);
 
+  const handleGetLyricLoopRange = useCallback(
+    () => ttsControllerRef.current?.getLyricLoopRange() ?? null,
+    [],
+  );
+
+  const handleToggleLoop = useCallback(() => {
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) setLoopState(ttsController.toggleLoopPoint());
+  }, []);
+
   const handlePause = useCallback(async () => {
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
@@ -1336,6 +1361,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleTogglePlay,
     handleBackward,
     handleForward,
+    handleToggleLoop,
+    handleGetLyricLoopRange,
+    loopState,
     handlePause,
     handleSetRate,
     handleSetVoice,

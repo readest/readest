@@ -26,20 +26,17 @@ import { clearLibrarySearchHistory, loadLibrarySearchHistory } from './utils/sea
 import type { LibrarySearchTarget } from '@/types/book';
 import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
-import { getBookWithUpdatedMetadata, listFormater } from '@/utils/book';
+import { listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
+import { saveBookMetadataEdit } from '@/services/bookMetadataEdit';
 import { eventDispatcher } from '@/utils/event';
 import { transferManager } from '@/services/transferManager';
 import { purgeCloudBookData } from '@/services/purgeCloudBookData';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
-import {
-  getInitializedAppService,
-  isTauriAppPlatform,
-  isWebAppPlatform,
-} from '@/services/environment';
+import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -241,11 +238,21 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const isTransferQueueOpen = useTransferStore((state) => state.isTransferQueueOpen);
 
   // Library page pulls user replicas (dictionaries, custom fonts,
-  // background textures, OPDS catalogs, Audiobookshelf servers, bundled
-  // settings). Deferred 10s; module-scoped dedup means a later navigation
-  // to the reader won't re-pull the same kind.
+  // background textures, OPDS catalogs, Audiobookshelf servers, custom
+  // translators + prompts, bundled settings). Deferred 10s; module-scoped
+  // dedup means a later navigation to the reader won't re-pull the same kind.
   useReplicaPull({
-    kinds: ['dictionary', 'font', 'texture', 'opds_catalog', 'abs_server', 'settings', 'bookshelf'],
+    kinds: [
+      'dictionary',
+      'font',
+      'texture',
+      'opds_catalog',
+      'abs_server',
+      'custom_translator',
+      'translation_prompt',
+      'settings',
+      'bookshelf',
+    ],
   });
   // Hydrate the custom-font store from persisted settings so the Font
   // panel sees imported fonts even when opened straight from the
@@ -1283,61 +1290,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
   }, []);
 
-  const handleUpdateMetadata = async (book: Book, metadata: BookMetadata, tags: string[]) => {
-    // Build a NEW book object instead of mutating `book` in place. <BookCover>
-    // is memoized and compares fields off the book, so mutating the existing
-    // object (which React holds as the previous snapshot) makes the comparator
-    // see no change and the library cover only refreshes after a full reload.
-    const updatedBook = getBookWithUpdatedMetadata(book, metadata, tags);
-    if (metadata.coverImageBlobUrl || metadata.coverImageUrl || metadata.coverImageFile) {
-      try {
-        await appService?.updateCoverImage(
-          updatedBook,
-          metadata.coverImageBlobUrl || metadata.coverImageUrl,
-          metadata.coverImageFile,
-        );
-        // Cover-change sync (issue #4544): recompute the cover's content hash.
-        // If it actually changed, bump coverHash + coverUpdatedAt so peers
-        // re-download it (the book row already syncs via metadataUpdatedAt).
-        // computeCoverHash returns null for a '_blank' deletion — we skip the
-        // bump there (cover deletion is intentionally not synced; peers keep
-        // their cover until a new one is set).
-        const newCoverHash = (await appService?.computeCoverHash(updatedBook)) ?? null;
-        if (newCoverHash && newCoverHash !== book.coverHash) {
-          // For a book already in the cloud, re-upload the cover FIRST and only
-          // advertise the new version if it succeeded — otherwise peers would
-          // try to fetch a cover that isn't there. A not-yet-uploaded book
-          // carries the new cover on its first full upload, so the bump is safe.
-          let coverUploaded = true;
-          if (user && updatedBook.uploadedAt) {
-            try {
-              await appService?.uploadBookCover(updatedBook);
-            } catch (uploadError) {
-              console.warn('Failed to upload updated cover:', uploadError);
-              coverUploaded = false;
-            }
-          }
-          if (coverUploaded) {
-            updatedBook.coverHash = newCoverHash;
-            updatedBook.coverUpdatedAt = Date.now();
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to update cover image:', error);
-      }
-    }
-    if (isWebAppPlatform()) {
-      // Clear HTTP cover image URL if cover is updated with a local file
-      if (metadata.coverImageBlobUrl) {
-        metadata.coverImageUrl = undefined;
-      }
-    } else {
-      metadata.coverImageUrl = undefined;
-    }
-    metadata.coverImageBlobUrl = undefined;
-    metadata.coverImageFile = undefined;
-    await updateBook(envConfig, updatedBook);
-  };
+  const handleUpdateMetadata = (book: Book, metadata: BookMetadata, tags: string[]) =>
+    saveBookMetadataEdit(envConfig, book, metadata, tags, !!user);
 
   const handleMetadataValueClick = (type: 'tag' | 'subject', value: string) => {
     const groupBy = type === 'tag' ? LibraryGroupByType.Tag : LibraryGroupByType.Subject;

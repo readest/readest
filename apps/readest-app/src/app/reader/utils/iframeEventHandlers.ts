@@ -3,6 +3,7 @@ import { eventDispatcher } from '@/utils/event';
 import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
 import { hasScrollRoomY } from './wheelGesture';
+import { toParentViewportPoint } from './annotatorUtil';
 import {
   createTurnGestureIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -473,10 +474,12 @@ type PDFPageDocument = Document & {
   getImageAt?: (x: number, y: number) => (() => Promise<Blob>) | null;
 };
 
-// The image a right-click lands on, as a loader for its file. A PDF page is a
-// canvas under its text layer, so foliate-js finds its images by position and
-// renders the one asked for on demand.
-export const getContextMenuImage = (event: MouseEvent): (() => Promise<Blob>) | null => {
+// The image a right-click or long press lands on, as a loader for its file. A
+// PDF page is a canvas under its text layer, so foliate-js finds its images by
+// position and renders the one asked for on demand.
+export const getContextMenuImage = (
+  event: Pick<MouseEvent, 'target' | 'clientX' | 'clientY'>,
+): (() => Promise<Blob>) | null => {
   const target = event.target as HTMLElement;
   const media = detectMediaTarget(target);
   if (media?.elementType === 'image') return () => fetch(media.src).then((res) => res.blob());
@@ -522,6 +525,10 @@ export const handleClick = (
       window.postMessage({ type: 'iframe-open-media', bookKey, ...comicPage }, '*');
       return;
     }
+    // In scroll mode several sections are on screen, each in its own iframe;
+    // the window point tells the reader which one was double-clicked (#6583).
+    const doc = (event.target as Node).ownerDocument!;
+    const windowPoint = toParentViewportPoint(doc, event.clientX, event.clientY);
     window.postMessage(
       {
         type: 'iframe-double-click',
@@ -530,6 +537,8 @@ export const handleClick = (
         screenY: event.screenY,
         clientX: event.clientX,
         clientY: event.clientY,
+        windowX: windowPoint.x,
+        windowY: windowPoint.y,
         offsetX: event.offsetX,
         offsetY: event.offsetY,
         ...getKeyStatus(event),

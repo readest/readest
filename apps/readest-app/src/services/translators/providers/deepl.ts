@@ -19,7 +19,7 @@ const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
  * keeps the casing it came with. Languages without a script subtag ('en' -> 'EN',
  * and 'AUTO' -> 'AUTO') are unaffected.
  */
-const toDeepLLang = (lang: string): string => {
+export const toDeepLLang = (lang: string): string => {
   const [primary, ...rest] = normalizeToShortLang(lang).split('-');
   return [primary!.toUpperCase(), ...rest].join('-');
 };

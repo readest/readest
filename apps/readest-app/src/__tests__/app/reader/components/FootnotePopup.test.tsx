@@ -68,7 +68,12 @@ vi.mock('@/store/bookDataStore', () => ({
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => ({ goTo: hoisted.goTo }),
-    getViewSettings: () => ({ vertical: false }),
+    getViewSettings: () => ({
+      vertical: false,
+      defaultFontSize: 22,
+      lineHeight: 1.8,
+      fontWeight: 300,
+    }),
   }),
 }));
 
@@ -85,6 +90,8 @@ vi.mock('@/store/customFontStore', () => ({
 }));
 
 vi.mock('@/utils/style', () => ({
+  getBaseFontFamily: () => '"Reader Font", serif',
+  getBaseFontSize: () => 22,
   getFootnoteStyles: () => '',
   getStyles: () => '',
   getThemeCode: () => ({ bg: '#fff', fg: '#000', primary: '#000', palette: {} }),
@@ -364,6 +371,27 @@ describe('FootnotePopup jump to location', () => {
 
     expect(screen.getByTestId('popup').dataset['open']).toBe('true');
     expect(screen.queryByLabelText('Jump to Location')).toBeNull();
+  });
+
+  // #3602: the synthesized note renders in the host document, outside the
+  // book iframe, so it inherited the app UI font instead of the reader's.
+  it('sets a data-attribute note in the reader font', async () => {
+    await renderPopup();
+    const element = document.createElement('span');
+    document.body.appendChild(element);
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-popup', {
+        bookKey: BOOK_KEY,
+        element,
+        footnote: 'A footnote in the reader font',
+      });
+    });
+
+    const note = document.querySelector<HTMLElement>('.footnote-content > p')!;
+    expect(note.style.fontFamily).toBe('"Reader Font", serif');
+    expect(note.style.fontSize).toBe('22px');
+    expect(note.style.lineHeight).toBe('1.8');
+    expect(note.style.fontWeight).toBe('300');
   });
 
   // #6390: the soft keyboard the note editor raises fires a window resize on

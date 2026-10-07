@@ -163,3 +163,19 @@ describe('dictionary registry', () => {
     ]);
   });
 });
+
+describe('dictionary registry — context dictionary (#5544)', () => {
+  it('returns the context provider when it is enabled', () => {
+    const providers = getEnabledProviders({
+      settings: {
+        providerOrder: [BUILTIN_PROVIDER_IDS.context, BUILTIN_PROVIDER_IDS.wiktionary],
+        providerEnabled: { [BUILTIN_PROVIDER_IDS.context]: true },
+      },
+      dictionaries: [],
+    });
+    expect(providers.map((p) => p.id)).toEqual([
+      BUILTIN_PROVIDER_IDS.context,
+      BUILTIN_PROVIDER_IDS.wiktionary,
+    ]);
+  });
+});

@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
   return {
     makeStore,
     UnmatchedError: class extends Error {},
+    AuthError: class extends Error {},
     book,
     // Mutable settings — tests flip `hardcover.autoSync` between renders.
     settings: {
@@ -30,6 +31,7 @@ const h = vi.hoisted(() => {
       } as {
         enabled: boolean;
         accessToken: string;
+        oauth?: { accessToken: string };
         autoSync?: boolean;
         lastSyncedAt: number;
       },
@@ -47,6 +49,7 @@ const h = vi.hoisted(() => {
     saveSettingsMock: vi.fn(async () => {}),
     setConfigMock: vi.fn(),
     saveConfigMock: vi.fn(async () => {}),
+    clientCtorMock: vi.fn(),
     pushProgressMock: vi.fn(async () => ({ bookId: 202, title: 'Resolved Title' })),
     syncBookNotesMock: vi.fn(async () => ({
       inserted: 1,
@@ -90,6 +93,9 @@ vi.mock('@/store/readerProgressStore', () => ({
 
 vi.mock('@/services/hardcover', () => ({
   HardcoverClient: class {
+    constructor() {
+      h.clientCtorMock();
+    }
     pushProgress() {
       return h.pushProgressMock();
     }
@@ -99,6 +105,10 @@ vi.mock('@/services/hardcover', () => ({
   },
   HardcoverSyncMapStore: class {},
   HardcoverUnmatchedError: h.UnmatchedError,
+  HardcoverAuthError: h.AuthError,
+  isHardcoverConnected: (hc?: { accessToken?: string; oauth?: { accessToken?: string } }) =>
+    !!(hc?.accessToken || hc?.oauth?.accessToken),
+  createHardcoverTokenStore: vi.fn(),
 }));
 
 vi.mock('@/utils/event', () => ({
@@ -143,6 +153,7 @@ beforeEach(() => {
   h.settings.hardcover = { enabled: true, accessToken: 'tok', autoSync: false, lastSyncedAt: 0 };
   h.config = { progress: [5, 100], booknotes: [], hardcover: undefined };
   h.state.progress = { location: 'cfi-loc' };
+  h.clientCtorMock.mockClear();
   h.pushProgressMock.mockClear();
   h.syncBookNotesMock.mockClear();
   h.setSettingsMock.mockClear();
@@ -396,5 +407,87 @@ describe('useHardcoverSync push health store', () => {
       pending: 0,
       lastError: null,
     });
+  });
+
+  test('an auth failure toasts a reconnect hint instead of the raw error', async () => {
+    h.pushProgressMock.mockRejectedValueOnce(new h.AuthError('Hardcover token was rejected'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.toasts).toEqual([
+      { message: 'Authentication failed. Reconnect in Settings.', type: 'error' },
+    ]);
+  });
+});
+
+describe('useHardcoverSync client sharing', () => {
+  const noteConfig = () => ({
+    progress: [5, 100] as [number, number],
+    booknotes: [{ type: 'annotation' }],
+    hardcover: undefined,
+  });
+
+  test('shares one client across pushes and rebuilds it when the token changes', async () => {
+    h.config = noteConfig();
+    const { result } = renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      await result.current.pushProgress();
+      await result.current.pushNotes();
+    });
+    expect(h.clientCtorMock).toHaveBeenCalledTimes(1);
+
+    h.settings.hardcover.accessToken = 'tok2';
+    await act(async () => {
+      await result.current.pushProgress();
+    });
+    expect(h.clientCtorMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('rebuilds the client when an OAuth login is reconnected', async () => {
+    h.config = noteConfig();
+    h.settings.hardcover = {
+      ...h.settings.hardcover,
+      accessToken: '',
+      oauth: { accessToken: 'a1' },
+    };
+    const { result } = renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      await result.current.pushProgress();
+      await result.current.pushProgress();
+    });
+    expect(h.clientCtorMock).toHaveBeenCalledTimes(1);
+
+    h.settings.hardcover.oauth = { accessToken: 'a2' };
+    await act(async () => {
+      await result.current.pushProgress();
+    });
+    expect(h.clientCtorMock).toHaveBeenCalledTimes(2);
+  });
+
+  test('runs overlapping notes pushes one at a time', async () => {
+    h.config = noteConfig();
+    let active = 0;
+    let maxActive = 0;
+    h.syncBookNotesMock.mockImplementation(async () => {
+      maxActive = Math.max(maxActive, ++active);
+      await Promise.resolve();
+      await Promise.resolve();
+      active--;
+      return { inserted: 0, updated: 0, skipped: 1, link: h.resolvedLink };
+    });
+    const { result } = renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      await Promise.all([result.current.pushNotes(), result.current.pushNotes()]);
+    });
+    expect(h.syncBookNotesMock).toHaveBeenCalledTimes(2);
+    expect(maxActive).toBe(1);
   });
 });

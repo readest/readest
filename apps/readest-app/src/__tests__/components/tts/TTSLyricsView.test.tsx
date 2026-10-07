@@ -91,6 +91,7 @@ const dragTo = (index: number) => {
 const defaults = {
   lines,
   activeIndex: 0,
+  loopRange: null as { start: number; end: number } | null,
   buffering: false,
   isEink: false,
   onGetLyricPage: vi.fn().mockResolvedValue({ current: 6, next: 7, total: 30 }),
@@ -111,6 +112,14 @@ afterEach(() => {
 });
 
 describe('TTSLyricsView', () => {
+  test('marks the A-B span from its first to its last line', () => {
+    renderView({ loopRange: { start: 1, end: 2 } });
+    const lineOf = (text: string) => screen.getByText(text).closest('[data-lyric-line]')!;
+    expect(lineOf('First sentence.').textContent).toBe('First sentence.');
+    expect(lineOf('Second sentence.').textContent).toBe('Second sentence.A');
+    expect(lineOf('Third sentence.').textContent).toBe('Third sentence.B');
+  });
+
   test('renders every sentence and marks the spoken one', () => {
     renderView({ activeIndex: 2 });
     for (const line of lines) expect(screen.getByText(line)).toBeTruthy();
