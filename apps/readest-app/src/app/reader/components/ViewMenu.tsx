@@ -537,7 +537,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         <>
           <MenuItem
             label={_('Recognize Text')}
-            Icon={viewState?.ocrEnabled ? MdCheck : undefined}
+            toggled={!!viewState?.ocrEnabled}
             onClick={toggleOcr}
           />
           <label className='hover:bg-base-300 text-base-content flex items-center justify-between rounded-md px-3 py-2'>

@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import FoliateViewer from '@/app/reader/components/FoliateViewer';
 import { useFoliateEvents } from '@/app/reader/hooks/useFoliateEvents';
+import { useOcrSession } from '@/app/reader/hooks/useOcrSession';
+import { eventDispatcher } from '@/utils/event';
 
 const { processOcrDocument, setProgress, readerState, view, bookData } = vi.hoisted(() => {
   const processOcrDocument = vi.fn().mockResolvedValue(null);
@@ -65,7 +67,7 @@ vi.mock('@/types/view', () => ({
 vi.mock('@/services/constants', () => ({ BOOK_IDS_SEPARATOR: ',' }));
 vi.mock('@/services/transformService', () => ({ transformContent: vi.fn() }));
 vi.mock('@/app/reader/hooks/useOcrSession', () => ({
-  useOcrSession: () => processOcrDocument,
+  useOcrSession: vi.fn(() => processOcrDocument),
 }));
 vi.mock('@/utils/style', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/style')>()),
@@ -136,6 +138,29 @@ describe('reader relocation progress', () => {
     cleanup();
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it('reports each current-page OCR failure once and keeps background failures silent', async () => {
+    readerState.viewStates = { [props.bookKey]: { ocrEnabled: true } };
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    render(<FoliateViewer {...props} />);
+    await act(async () => vi.advanceTimersByTimeAsync(200));
+    dispatch.mockClear();
+    const onError = vi.mocked(useOcrSession).mock.lastCall?.[0].onError;
+    const error = new Error('recognition failed');
+    act(() => {
+      onError?.(error, 0);
+      onError?.(error, 0);
+      onError?.(error, 1);
+    });
+    expect(dispatch.mock.calls.filter(([type]) => type === 'toast')).toHaveLength(1);
+    view.renderer.getContents.mockReturnValue([{ doc: document, index: 1 }]);
+    act(() => {
+      onError?.(error, 1);
+      onError?.(error, 1);
+    });
+    expect(dispatch.mock.calls.filter(([type]) => type === 'toast')).toHaveLength(2);
   });
 
   it('ignores a late relocation without progress after the view closes', () => {

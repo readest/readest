@@ -363,6 +363,24 @@ test('dismisses OCR selection from the reader margin, but keeps popup interactio
   expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   expect(turnPage).not.toHaveBeenCalled();
   margin.removeEventListener('click', turnPage);
+
+  await selectText(true);
+  await act(async () => {
+    h.setSelection?.((prev) => (prev ? { ...prev, popup: false } : prev));
+  });
+  h.deselect.mockClear();
+  const control = document.createElement('button');
+  const icon = document.createElement('span');
+  control.append(icon);
+  margin.append(control);
+  const openMenu = vi.fn();
+  control.addEventListener('click', openMenu);
+  fireEvent.pointerDown(icon);
+  fireEvent.click(icon);
+  expect(h.deselect).toHaveBeenCalledOnce();
+  expect(openMenu).toHaveBeenCalledOnce();
+  await waitFor(() => expect(screen.queryByTestId('annotation-toolbar')).toBeNull());
+  control.remove();
 });
 
 test('deselects OCR from either page image without dismissing a text drag', async () => {

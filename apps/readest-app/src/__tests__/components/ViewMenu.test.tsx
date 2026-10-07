@@ -123,6 +123,7 @@ describe('ViewMenu right-to-left pages toggle', () => {
     mockBookData.bookDoc.rendition = { layout: 'pre-paginated' };
     currentViewSettings.writingMode = 'auto';
     currentViewSettings.vertical = false;
+    mockViewState.ocrEnabled = false;
   });
 
   afterEach(() => {
@@ -184,12 +185,17 @@ describe('ViewMenu right-to-left pages toggle', () => {
   it('closes the menu when toggling text recognition', () => {
     const setIsDropdownOpen = vi.fn();
 
-    render(<ViewMenu bookKey='book-1' setIsDropdownOpen={setIsDropdownOpen} />);
+    const { rerender } = render(
+      <ViewMenu bookKey='book-1' setIsDropdownOpen={setIsDropdownOpen} />,
+    );
 
-    fireEvent.click(screen.getByText('Recognize Text'));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Recognize Text - OFF' }));
 
     expect(mockSetOcrEnabled).toHaveBeenCalledWith('book-1', true);
     expect(setIsDropdownOpen).toHaveBeenCalledWith(false);
+    mockViewState.ocrEnabled = true;
+    rerender(<ViewMenu bookKey='book-1' setIsDropdownOpen={setIsDropdownOpen} />);
+    expect(screen.getByRole('menuitem', { name: 'Recognize Text - ON' })).toBeTruthy();
   });
 });
 

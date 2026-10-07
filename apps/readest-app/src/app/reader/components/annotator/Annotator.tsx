@@ -560,8 +560,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       startedInOcr = false;
       const target = event.target as Node;
       if (draggedFromOcr || isOcrNode(target) || containerRef.current?.contains(target)) return;
-      event.preventDefault();
-      event.stopPropagation();
+      const hostControl =
+        event.currentTarget === document &&
+        target instanceof Element &&
+        target.closest(
+          '.header-bar, .footer-bar, button, a, input, select, textarea, [role="button"], [role="menuitem"], [role="slider"]',
+        );
+      if (!hostControl) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       isTextSelected.current = false;
       handleDismissPopup();
       view?.deselect();
