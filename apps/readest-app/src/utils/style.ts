@@ -453,6 +453,8 @@ const getColorStyles = (
 
 export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
 export const TEXT_SELECTED_CLASS = 'text-selected';
+export const LINK_HIT_AREA_CLASS = 'link-hit-area';
+export const MAX_ENLARGED_LINKS = 1000;
 
 const getPageLayoutStyles = (
   marginTop: number,
@@ -502,11 +504,11 @@ const getPageLayoutStyles = (
   figure > div:has(img) {
     height: auto !important;
   }
-  /* enlarge the clickable area of links */
-  a {
+  /* enlarge the clickable area of links, in documents opted in by applyLinkHitArea */
+  html.${LINK_HIT_AREA_CLASS} a {
     position: relative !important;
   }
-  a::before {
+  html.${LINK_HIT_AREA_CLASS} a::before {
     content: '';
     position: absolute;
     inset: -10px;
@@ -1700,6 +1702,16 @@ export const applyImageStyle = (document: Document) => {
       hr.classList.add('background-img');
     }
   });
+};
+
+// The enlarged link hit area positions every link and its ::before box, and
+// paginated layout slows down with each positioned box: a Strong's dictionary
+// section went from 1.3s to 10s to lay out, and a 20 MB concordance with 273k
+// links never finished. Opt a document in only when it has few enough links.
+export const applyLinkHitArea = (document: Document) => {
+  if (document.links.length <= MAX_ENLARGED_LINKS) {
+    document.documentElement.classList.add(LINK_HIT_AREA_CLASS);
+  }
 };
 
 export const keepTextAlignment = (document: Document) => {

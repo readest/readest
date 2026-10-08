@@ -28,6 +28,9 @@ import {
   applyImageStyle,
   applyNamespacedAttributes,
   keepTextAlignment,
+  applyLinkHitArea,
+  LINK_HIT_AREA_CLASS,
+  MAX_ENLARGED_LINKS,
 } from '@/utils/style';
 import {
   DEFAULT_BOOK_FONT,
@@ -606,6 +609,26 @@ describe('applyImageStyle', () => {
 // ---------------------------------------------------------------------------
 // keepTextAlignment
 // ---------------------------------------------------------------------------
+describe('applyLinkHitArea', () => {
+  const links = (n: number) => '<a href="#x">1</a>'.repeat(n);
+
+  beforeEach(() => {
+    document.documentElement.classList.remove(LINK_HIT_AREA_CLASS);
+  });
+
+  it('opts a document with up to MAX_ENLARGED_LINKS links in', () => {
+    document.body.innerHTML = links(MAX_ENLARGED_LINKS);
+    applyLinkHitArea(document);
+    expect(document.documentElement.classList.contains(LINK_HIT_AREA_CLASS)).toBe(true);
+  });
+
+  it('leaves a document with more links than MAX_ENLARGED_LINKS out', () => {
+    document.body.innerHTML = links(MAX_ENLARGED_LINKS + 1);
+    applyLinkHitArea(document);
+    expect(document.documentElement.classList.contains(LINK_HIT_AREA_CLASS)).toBe(false);
+  });
+});
+
 describe('keepTextAlignment', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
