@@ -97,6 +97,45 @@ describe('showTransientHighlight', () => {
     expect(overlayer.add.mock.calls[0]?.[1].toString()).toBe('Note in a cell.');
   });
 
+  // Books converted from MOBI mark every link target with an empty <p> straight
+  // under <body>; widening to the parent painted the whole multi-megabyte
+  // section and froze the reader.
+  it('highlights the next block instead of the whole body for an empty top-level marker', async () => {
+    const doc = document.implementation.createHTMLDocument();
+    doc.body.innerHTML =
+      '<p>Previous entry.</p><p><span id="filepos1"></span></p><h3>rapha</h3><p>Definition.</p>';
+    const overlayer = { add: vi.fn(), remove: vi.fn() };
+
+    await showTransientHighlight(
+      {
+        resolveNavigation: vi.fn(() => ({
+          index: 0,
+          anchor: () => doc.getElementById('filepos1'),
+        })),
+        renderer: { getContents: () => [{ index: 0, doc, overlayer }] },
+      } as never,
+      'text.html#filepos1',
+    );
+
+    expect(overlayer.add.mock.calls[0]?.[1].toString()).toBe('rapha');
+  });
+
+  it('does nothing for an empty top-level marker with no text after it', async () => {
+    const doc = document.implementation.createHTMLDocument();
+    doc.body.innerHTML = '<p>Previous entry.</p><p><span id="end"></span></p>';
+    const overlayer = { add: vi.fn(), remove: vi.fn() };
+
+    await showTransientHighlight(
+      {
+        resolveNavigation: vi.fn(() => ({ index: 0, anchor: () => doc.getElementById('end') })),
+        renderer: { getContents: () => [{ index: 0, doc, overlayer }] },
+      } as never,
+      'text.html#end',
+    );
+
+    expect(overlayer.add).not.toHaveBeenCalled();
+  });
+
   it('does nothing for section-only hrefs with no anchor element', async () => {
     const doc = document.implementation.createHTMLDocument();
     const overlayer = { add: vi.fn(), remove: vi.fn() };
