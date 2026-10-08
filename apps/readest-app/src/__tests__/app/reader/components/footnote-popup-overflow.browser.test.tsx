@@ -63,6 +63,7 @@ vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
 }));
 vi.mock('@/app/reader/utils/annotatorUtil', () => ({ drawAnnotationOverlay: () => {} }));
 vi.mock('@/utils/style', () => ({
+  applyLinkHitArea: () => {},
   getBaseFontFamily: () => h.fontFamily,
   getBaseFontSize: () => 16,
   getStyles: () => '',
