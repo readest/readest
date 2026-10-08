@@ -38,6 +38,65 @@ const highlight = vi.fn();
 const ttsNodeFilter = createTTSNodeFilter();
 
 describe('TTS', () => {
+  describe('flat document', () => {
+    // A single-file book, or a chunk of one (foliate-js section-chunks.js,
+    // which keeps a hidden placeholder for every other top-level element):
+    // thousands of blocks directly under <body>.
+    it('walks each block from where it starts, not from the top of the body', () => {
+      const blocks = 200;
+      const doc = createHTMLDoc(
+        Array.from({ length: blocks }, (_, i) => `<p>Sentence ${i}. Another one.</p>`).join(''),
+      );
+      let calls = 0;
+      const countingFilter = (node: Node) => {
+        calls++;
+        return ttsNodeFilter(node);
+      };
+      const sentences = [...getSentences(doc, textWalker, countingFilter, 'sentence')];
+      expect(sentences).toHaveLength(blocks * 2);
+      expect(sentences[blocks]!.range.toString()).toBe(`Sentence ${blocks / 2}. `);
+      // walking every block from the top visits blocks²/2 nodes
+      expect(calls).toBeLessThan(blocks * 20);
+    });
+
+    it('creates no range for each empty block it passes', () => {
+      // Every live range of a document is updated on each of its mutations,
+      // so a range per placeholder slows every later edit, such as inserting
+      // the SSML marks of each block.
+      const placeholders = (n: number) => '<p data-foliate-chunk="1"></p>'.repeat(n);
+      const doc = createHTMLDoc(
+        `${placeholders(1000)}<p>First block.</p><p>Second block.</p>${placeholders(1000)}`,
+      );
+      const createRange = vi.spyOn(doc, 'createRange');
+      const sentences = [...getSentences(doc, textWalker, ttsNodeFilter, 'sentence')];
+      expect(sentences.map((s) => s.range.toString())).toEqual(['First block.', 'Second block.']);
+      expect(createRange.mock.calls.length).toBeLessThan(10);
+    });
+
+    it('marks a copy that is not part of the section document', () => {
+      // A document updates every one of its live ranges on each mutation, and
+      // the read-aloud timeline keeps a range per sentence of the section:
+      // inserting the SSML marks of each block into nodes of the section's own
+      // document paid for all of them, once per mark.
+      const doc = createHTMLDoc('<p>First sentence. Second sentence.</p><p>Third one.</p>');
+      const owners = new Set<Document | null>();
+      const insertNode = Range.prototype.insertNode;
+      const spy = vi.spyOn(Range.prototype, 'insertNode').mockImplementation(function (
+        this: Range,
+        node: Node,
+      ) {
+        owners.add(this.startContainer.ownerDocument);
+        return insertNode.call(this, node);
+      });
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'sentence');
+      const ssml = tts.start();
+      spy.mockRestore();
+      expect(stripTags(ssml!)).toContain('First sentence.');
+      expect(owners.size).toBeGreaterThan(0);
+      expect(owners.has(doc)).toBe(false);
+    });
+  });
+
   describe('plain HTML document', () => {
     it('should init and generate SSML for a plain HTML doc without doctype or lang', () => {
       const doc = createPlainHTMLDoc(`<html><head></head><body><p>Hello world</p></body></html>`);

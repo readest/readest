@@ -25,17 +25,17 @@ const makeSection = (id: string, body: string) => {
   };
 };
 
-const makeBook = () => {
-  const big = Array.from({ length: PARAGRAPHS }, (_, i) => `<p id="p${i}">${i}. ${FILLER}</p>`);
-  return {
+const makeBook = (
+  big = Array.from({ length: PARAGRAPHS }, (_, i) => `<p id="p${i}">${i}. ${FILLER}</p>`),
+) =>
+  ({
     dir: 'ltr',
     sections: [
       makeSection('a.html', '<p id="a0">Before</p>'),
       makeSection('big.html', big.join('\n')),
       makeSection('c.html', '<p id="c0">After</p>'),
     ],
-  } as unknown as BookDoc;
-};
+  }) as unknown as BookDoc;
 
 const waitFor = (el: HTMLElement, type: string, timeout = 15000) =>
   new Promise<Event>((resolve, reject) => {
@@ -52,7 +52,7 @@ const waitFor = (el: HTMLElement, type: string, timeout = 15000) =>
 
 describe('Paginator chunked section (browser)', () => {
   let paginator: Renderer;
-  let relocations: { index: number; fraction: number }[];
+  let relocations: { index: number; fraction: number; range: Range }[];
 
   beforeAll(async () => {
     await import('foliate-js/paginator.js');
@@ -63,16 +63,16 @@ describe('Paginator chunked section (browser)', () => {
     paginator?.remove();
   });
 
-  const open = () => {
+  const open = (book = makeBook()) => {
     paginator = document.createElement('foliate-paginator') as Renderer;
     Object.assign(paginator.style, { width: '800px', height: '600px', display: 'block' });
     document.body.append(paginator);
     relocations = [];
     paginator.addEventListener('relocate', (e) => {
-      const { index, fraction } = (e as CustomEvent).detail;
-      relocations.push({ index, fraction });
+      const { index, fraction, range } = (e as CustomEvent).detail;
+      relocations.push({ index, fraction, range });
     });
-    paginator.open(makeBook());
+    paginator.open(book);
   };
 
   it('lands on an anchor deep in a chunked section and reports the spine index', async () => {
@@ -113,15 +113,55 @@ describe('Paginator chunked section (browser)', () => {
   it('pages forward across a chunk boundary within the same section', async () => {
     open();
     const stabilized = waitFor(paginator, 'stabilized');
-    // the last paragraph of the first chunk
-    await paginator.goTo({ index: 1, anchor: 0.2 });
+    // near the end of the first of five chunks
+    await paginator.goTo({ index: 1, anchor: 0.199 });
     await stabilized;
     const start = relocations.at(-1)!;
     expect(start.index).toBe(1);
 
-    for (let i = 0; i < 40; i++) await paginator.next();
+    const startDoc = start.range.startContainer.ownerDocument;
+    for (let i = 0; i < 40; i++) {
+      await paginator.next();
+      if (relocations.at(-1)!.range.startContainer.ownerDocument !== startDoc) break;
+    }
     const end = relocations.at(-1)!;
     expect(end.index).toBe(1);
     expect(end.fraction).toBeGreaterThan(start.fraction);
+    expect(end.range.startContainer.ownerDocument).not.toBe(startDoc);
+
+    // Right past the boundary both chunks are rendered; consumers that look up
+    // "the section's document" by spine index must get the one on screen
+    const contents = paginator.getContents();
+    expect(contents.filter((c) => c.index === 1).length).toBeGreaterThan(1);
+    const primary = contents.find((c) => c.index === paginator.primaryIndex);
+    expect(primary!.doc).toBe(end.range.startContainer.ownerDocument);
+  });
+
+  it('turns pages without measuring the placeholders of a flat section', async () => {
+    // A concordance-like section: tens of thousands of short top-level
+    // entries, so every chunk holds a few hundred of them and tens of
+    // thousands of placeholders.
+    const refs = Array.from({ length: 30 }, (_, j) => `<a href="#e${j}">${j}:1</a>`).join(' ');
+    const entries = Array.from({ length: 40000 }, (_, i) => `<p id="e${i}">w${i}: ${refs}</p>`);
+    open(makeBook(entries));
+    const stabilized = waitFor(paginator, 'stabilized');
+    await paginator.goTo({ index: 1, anchor: 0.5 });
+    await stabilized;
+
+    let measured = 0;
+    const restores = paginator.getContents().map(({ doc }) => {
+      const proto = (doc.defaultView as unknown as typeof window).Element.prototype;
+      const orig = proto.getBoundingClientRect;
+      proto.getBoundingClientRect = function (this: Element) {
+        if (this.hasAttribute(CHUNK_ATTRIBUTE)) measured++;
+        return orig.call(this);
+      };
+      return () => (proto.getBoundingClientRect = orig);
+    });
+    for (let i = 0; i < 5; i++) await paginator.next();
+    restores.forEach((restore) => restore());
+
+    expect(relocations.at(-1)!.index).toBe(1);
+    expect(measured).toBe(0);
   });
 });
