@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatSeries, getBookDataAttributes } from '@/utils/book';
+import { formatSeries, getBookDataAttributes, markBookDeleted } from '@/utils/book';
+import type { Book } from '@/types/book';
 
 describe('formatSeries', () => {
   it('returns an empty string when there is no series name', () => {
@@ -143,5 +144,41 @@ describe('getBookDataAttributes (#5776)', () => {
         'data-book-series-index': undefined,
       },
     );
+  });
+});
+
+describe('markBookDeleted', () => {
+  const makeBook = (over: Partial<Book> = {}): Book =>
+    ({
+      hash: 'hash-1',
+      format: 'EPUB',
+      title: 'Book',
+      updatedAt: 100,
+      progress: [3, 10],
+      downloadedAt: 50,
+      coverDownloadedAt: 50,
+      ...over,
+    }) as Book;
+
+  it('stamps the delete on updatedAt so the whole-row sync merge keeps the tombstone', () => {
+    // The cloud merge is last-write-wins on `updatedAt`. A delete used to leave
+    // it alone, so the row's own older page-turn progress won the merge, the
+    // tombstone was cleared, and the book (with its progress) came back — the
+    // purge looked like it did nothing (#6663).
+    const book = makeBook();
+    markBookDeleted(book, 200, true);
+    expect(book.deletedAt).toBe(200);
+    expect(book.fileSyncDeletionRequestedAt).toBe(200);
+    expect(book.downloadedAt).toBeNull();
+    expect(book.coverDownloadedAt).toBeNull();
+    expect(book.updatedAt).toBe(200);
+    expect(book.progress).toBeNull();
+  });
+
+  it('keeps the reading progress on a plain delete', () => {
+    const book = makeBook();
+    markBookDeleted(book, 200, false);
+    expect(book.deletedAt).toBe(200);
+    expect(book.progress).toEqual([3, 10]);
   });
 });
