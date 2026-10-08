@@ -2,7 +2,13 @@ import type { BookshelfState } from './bookshelf';
 import { CustomTheme } from '@/styles/themes';
 import { CustomFont } from '@/styles/fonts';
 import { CustomTexture } from '@/styles/textures';
-import { HighlightColor, HighlightStyle, UserHighlightColor, ViewSettings } from './book';
+import {
+  CharacterTag,
+  HighlightColor,
+  HighlightStyle,
+  UserHighlightColor,
+  ViewSettings,
+} from './book';
 import { OPDSCatalog } from './opds';
 import { WebSource } from './webSource';
 import { ABSServer } from './audiobookshelf';
@@ -441,6 +447,13 @@ export interface SystemSettings {
    * {@link autoImportFolders}.
    */
   autoImportFlattenFolders?: string[];
+  /**
+   * App-wide character tags (e.g. "villain", "protagonist"), shared across
+   * every book so the same tag can be reused to categorize characters in
+   * different books. Tags are not linked to a specific book's characters
+   * beyond the `tagIds` each BookCharacter stores.
+   */
+  characterTags?: CharacterTag[];
 
   keepLogin: boolean;
   alwaysOnTop: boolean;

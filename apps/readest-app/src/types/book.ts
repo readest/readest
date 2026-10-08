@@ -646,6 +646,55 @@ export interface PageboundBookLink {
   uuid: string;
   title: string;
 }
+export type CharacterBlockType = 'image' | 'text' | 'quote';
+
+/**
+ * One element of a character sheet: a gallery image, a paragraph (optionally
+ * with an embedded bold heading on its first line), or a quote captured from
+ * the book text.
+ */
+export interface CharacterBlock {
+  id: string;
+  type: CharacterBlockType;
+  /**
+   * Paragraph content (type 'text') or the quoted line itself (type 'quote').
+   */
+  text?: string;
+  /** Bold lead-in shown before `text`, e.g. "Backstory" (type 'text' only). */
+  heading?: string;
+  /** Downscaled data URL (type 'image'). Empty while the slot is still unfilled. */
+  src?: string;
+  /** CFI the quote was selected from, so it can be re-located (type 'quote'). */
+  sourceCfi?: string;
+}
+
+/**
+ * A character the reader registered by selecting its name in the text. Every
+ * occurrence of `name` (or one of `aliases`) gets a dot in the margin; tapping
+ * it opens the character sheet made of `blocks`.
+ */
+export interface BookCharacter {
+  id: string;
+  name: string;
+  aliases?: string[];
+  /** Downscaled circular profile photo (data URL), separate from gallery `blocks`. */
+  avatarSrc?: string;
+  /** Margin-dot / highlight color for this character, e.g. '#f97316'. */
+  color?: string;
+  /** IDs into the app-wide character tag list (see characterTagsStore). */
+  tagIds?: string[];
+  blocks: CharacterBlock[];
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
+}
+
+/** An app-wide tag (not tied to any one book) used to categorize characters. */
+export interface CharacterTag {
+  id: string;
+  name: string;
+  color?: string;
+}
 
 export interface BookConfig {
   schemaVersion?: number;
@@ -655,6 +704,7 @@ export interface BookConfig {
   location?: string; // CFI of the current location
   xpointer?: string; // XPointer of the current location (for Koreader interoperability)
   booknotes?: BookNote[];
+  characters?: BookCharacter[];
   rsvpPosition?: { cfi: string; wordText: string };
   searchConfig?: Partial<BookSearchConfig>;
   viewSettings?: Partial<ViewSettings>;

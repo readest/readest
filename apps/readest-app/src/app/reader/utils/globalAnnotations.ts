@@ -69,7 +69,7 @@ const collapseInlineFurigana = (s: string): string => {
  * base text in other places. False negatives are silently dropped; we
  * never inject a highlight on a string we didn't actually match.
  */
-function* findTextRanges(doc: Document, text: string): Generator<Range> {
+export function* findTextRanges(doc: Document, text: string): Generator<Range> {
   if (!text) return;
   const root = doc.body ?? doc.documentElement;
   if (!root) return;
@@ -150,7 +150,7 @@ function* findTextRanges(doc: Document, text: string): Generator<Range> {
  * paint frame). Callers should treat undefined as "skip, try again on
  * the next render pass".
  */
-function getLiveSection(
+export function getLiveSection(
   view: FoliateView,
   index: number,
 ): { overlayer: OverlayerLike; doc: Document } | undefined {
@@ -169,7 +169,7 @@ function getLiveSection(
  * stay loose-typed because the foliate-js package ships plain JS and we
  * don't want a hard dependency on its internals beyond these two methods.
  */
-interface OverlayerLike {
+export interface OverlayerLike {
   add: (value: string, range: Range, draw: unknown, opts?: unknown) => void;
   remove: (value: string) => void;
 }

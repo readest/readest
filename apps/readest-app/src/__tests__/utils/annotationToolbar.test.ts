@@ -17,11 +17,13 @@ describe('annotationToolbar helpers', () => {
     expect(ALL_ANNOTATION_TOOL_TYPES).toEqual(annotationToolButtons.map((b) => b.type));
   });
 
-  test('default toolbar is the eight non-share tools in canonical order', () => {
+  test('default toolbar is the ten non-share tools in canonical order', () => {
     expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).toEqual([
       'copy',
       'highlight',
       'annotate',
+      'character',
+      'character-quote',
       'search',
       'dictionary',
       'translate',
@@ -60,6 +62,8 @@ describe('annotationToolbar helpers', () => {
       'copylink',
       'highlight',
       'annotate',
+      'character',
+      'character-quote',
       'search',
       'dictionary',
       'translate',
