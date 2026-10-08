@@ -57,6 +57,7 @@ vi.mock('@/app/reader/utils/annotatorUtil', () => ({
   getHighlightColorLabel: (color: string) => color,
 }));
 vi.mock('@/utils/style', () => ({
+  applyLinkHitArea: () => {},
   getBaseFontFamily: () => 'serif',
   getBaseFontSize: () => 16,
   getStyles: () => '',

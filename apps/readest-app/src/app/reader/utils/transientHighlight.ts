@@ -50,8 +50,20 @@ const getTextPosition = (root: Element, offset: number) => {
 // Footnote ids often sit on an empty inline marker (<a id="fn1"/>); the
 // enclosing block is what the reader needs to see highlighted.
 const getBlockRange = (doc: Document, el: Element) => {
-  let root = el.closest(SENTENCE_CONTAINER) ?? el;
-  if (!root.textContent?.trim() && root.parentElement) root = root.parentElement;
+  let root: Element | null = el.closest(SENTENCE_CONTAINER) ?? el;
+  if (!root.textContent?.trim()) {
+    const parent = root.parentElement;
+    if (parent && parent !== doc.body) {
+      root = parent;
+    } else {
+      // Never widen to the whole section: books converted from MOBI mark each
+      // target with an empty <p> right under <body>, and painting the body of a
+      // multi-megabyte section froze the reader. Take the block that follows.
+      do root = root.nextElementSibling;
+      while (root && !root.textContent?.trim());
+    }
+  }
+  if (!root) return null;
   const range = doc.createRange();
   range.selectNodeContents(root);
   return range;
@@ -67,7 +79,8 @@ const getTargetHighlight = async (view: TransientHighlightView, target: string) 
     const resolved = anchor(doc);
     if (!resolved || typeof resolved === 'number') return null;
     if (!('startContainer' in resolved)) {
-      return { overlayer, range: getBlockRange(doc, resolved) };
+      const range = getBlockRange(doc, resolved);
+      return range ? { overlayer, range } : null;
     }
     const range = resolved;
     const bounds = getSentenceBounds(range);
