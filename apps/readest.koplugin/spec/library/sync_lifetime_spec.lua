@@ -15,7 +15,7 @@ describe("library sync request lifetime", function()
         }
         opts = {settings = settings, store = store, sync_auth = {
             withFreshToken = function(_, _, _, cb) cb(true) end,
-            getReadestSyncClient = function() return client end,
+            getAuthenticatedClient = function() return client end,
         }}
     end)
     after_each(function() store:close() end)
@@ -70,5 +70,17 @@ describe("library sync request lifetime", function()
         assert.same({false, "sync cancelled"}, reply)
         assert.is_nil(pending_pull)
         assert.is_false(reconciled)
+    end)
+    it("guards token-retry dispatches with the sync context", function()
+        local guard
+        local get_client = opts.sync_auth.getAuthenticatedClient
+        opts.sync_auth.getAuthenticatedClient = function(self, s, path, can_dispatch)
+            guard = can_dispatch
+            return get_client(self, s, path)
+        end
+        pull()
+        assert.is_true(guard())
+        settings.user_id = "bob"
+        assert.is_false(guard())
     end)
 end)

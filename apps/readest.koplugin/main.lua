@@ -13,6 +13,7 @@ local SyncAuth = require("readest_syncauth")
 local SyncConfig = require("readest_syncconfig")
 local SyncAnnotations = require("readest_syncannotations")
 local SyncStats = require("readest_syncstats")
+local SyncError = require("readest_syncerror")
 local SelfUpdate = require("readest_selfupdate")
 
 local ReadestSync = WidgetContainer:new{
@@ -519,8 +520,7 @@ function ReadestSync:_uploadBookRow(store, file, hash, format)
             if status == 403 and msg and msg:find("quota", 1, true) then
                 text = _("Storage quota exceeded.")
             else
-                text = _("Upload failed.")
-                    .. " (" .. tostring(msg or status) .. ")"
+                text = SyncError.withDetail(_("Upload failed."), msg, status)
             end
             UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
             return
@@ -706,6 +706,10 @@ end
 -- ── Sync helpers (thin wrappers around modules) ────────────────────
 
 function ReadestSync:ensureClient(interactive)
+    if self.settings.auth_required then
+        if interactive then SyncAuth:showLoginPrompt(self.settings, self.path) end
+        return nil
+    end
     if not self.settings.access_token or not self.settings.user_id then
         if interactive then
             UIManager:show(InfoMessage:new{
@@ -822,7 +826,6 @@ function ReadestSync:pushBookConfig(interactive, closing, retrying)
     local client = self:ensureClient(interactive)
     if not client then return end
 
-    self:getBookIdentifiers() -- resolve the library-stamped metadata hash before building the payload
     local document = self.ui.document
     self.last_sync_timestamp = SyncConfig:push(
         self.ui, self.settings, client, interactive, self.last_sync_timestamp,
@@ -837,7 +840,8 @@ function ReadestSync:pushBookConfig(interactive, closing, retrying)
                 end
                 UIManager:scheduleIn(15, self.delayed_push_task)
             end
-        end
+        end,
+        self:getLibraryStore()
     )
 end
 
@@ -852,10 +856,7 @@ function ReadestSync:pullBookConfig(interactive)
     local client = self:ensureClient(interactive)
     if not client then return end
 
-    SyncConfig:pull(
-        self.ui, self.settings, client, book_hash, meta_hash, interactive,
-        nil
-    )
+    SyncConfig:pull(self.ui, self.settings, client, book_hash, meta_hash, interactive)
 end
 
 -- ── Reading statistics sync ────────────────────────────────────────
@@ -883,8 +884,7 @@ function ReadestSync:pullBookStats(interactive)
         logger.dbg("ReadestStats pullBookStats: no client (not signed in / offline); skipping")
         return
     end
-    SyncStats:pull(self.settings, client, interactive,
-        nil, self.ui)
+    SyncStats:pull(self.settings, client, interactive, self.ui)
 end
 
 -- ── Annotation sync ────────────────────────────────────────────────
@@ -1059,8 +1059,8 @@ function ReadestSync:syncBooksLibrary(mode, interactive)
             UIManager:show(InfoMessage:new{
                 text = success
                     and _("Books synced")
-                    or _("Books sync failed"),
-                timeout = 2,
+                    or SyncError.withDetail(_("Books sync failed"), msg, status),
+                timeout = success and 2 or 5,
             })
         end
         -- If the Library widget is open, refresh it so newly-pulled rows show
@@ -1093,13 +1093,14 @@ function ReadestSync:pushOpenBook(interactive)
         sync_auth = SyncAuth,
         sync_path = self.path,
         settings  = self.settings,
-    }, function(success, _msg, status)
+    }, function(success, msg, status)
         logger.info("ReadestSync pushOpenBook done: success=" .. tostring(success)
-            .. " status=" .. tostring(status))
+            .. " status=" .. tostring(status) .. " msg=" .. tostring(msg))
         if interactive then
             UIManager:show(InfoMessage:new{
-                text = success and _("Books synced") or _("Books sync failed"),
-                timeout = 2,
+                text = success and _("Books synced")
+                    or SyncError.withDetail(_("Books sync failed"), msg, status),
+                timeout = success and 2 or 5,
             })
         end
     end)

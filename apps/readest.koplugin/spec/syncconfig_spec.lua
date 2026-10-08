@@ -226,22 +226,146 @@ describe("SyncConfig progress conflicts", function()
         pending(true, { configs = { { progress = "[80,100]" } } })
         assert.are.equal(0, #events)
     end)
-    it("retries a server-winning push with an observed clock newer than the server", function()
-        local count, result = 0, nil
-        local future = (os.time() + 3600) * 1000
+    local function useReflowable()
+        ui.document.info.has_pages = false
+        local pointer = "/body/current"
+        ui.rolling = { getLastProgress = function() return pointer end }
+        ui.document.compareXPointers = function(_, a, b)
+            if a == b or (a == "/body/current" and b == "/body/current-equivalent") then return 0 end
+            return 1
+        end
+        return function(value) pointer = value end
+    end
+    local function pullResponse(interactive)
+        local pending
+        SyncConfig:pull(ui, {}, { pullChanges = function(_, _, cb) pending = cb end }, "book", "meta", interactive)
+        return function() pending(true, { configs = { { xpointer = "/body/remote" } } }) end
+    end
+    it("applies automatic EPUB pulls after reflow changes the page number", function()
+        useReflowable()
+        local receive = pullResponse(false)
+        page = 42 -- rotation or a font change, with the logical position unchanged
+        receive()
+        assert.are.equal(1, #events)
+        assert.are.equal("GotoXPointer", events[1].name)
+    end)
+    it("drops automatic EPUB pulls after navigation even within the same page", function()
+        local setPointer = useReflowable()
+        local receive = pullResponse(false)
+        setPointer("/body/later") -- scrolling need not change the page number
+        receive()
+        assert.are.equal(0, #events)
+    end)
+    it("accepts equivalent logical positions after an EPUB layout change", function()
+        local setPointer = useReflowable()
+        local receive = pullResponse(false)
+        page = 60
+        setPointer("/body/current-equivalent")
+        receive()
+        assert.are.equal(1, #events)
+    end)
+    it("allows a pull during initial reflow before the first XPointer is established", function()
+        local setPointer = useReflowable()
+        setPointer(nil)
+        local receive = pullResponse(false)
+        page = 42
+        setPointer("/body/current")
+        receive()
+        assert.are.equal(1, #events)
+    end)
+    it("honors an explicit pull even if the user navigates during the request", function()
+        local setPointer = useReflowable()
+        local receive = pullResponse(true)
+        setPointer("/body/later")
+        receive()
+        assert.are.equal(1, #events)
+    end)
+    it("suppresses pull and push failure toasts when authentication owns the prompt", function()
+        local stubs = require("spec.koreader_stubs")
+        local rejected = { error = "authentication required", auth_required = true }
+        local client = {
+            pullChanges = function(_, _, cb) cb(false, rejected, 401) end,
+            pushChanges = function(_, _, cb) cb(false, rejected, 401) end,
+        }
+        local done
+        SyncConfig:pull(ui, {}, client, "book", "meta", true)
+        assert.are.equal(1, #stubs.UIManager._shown) -- pulling notice only
+        SyncConfig:push(ui, {}, client, true, 0, function(ok) done = ok end)
+        assert.are.equal(2, #stubs.UIManager._shown) -- pushing notice only
+        assert.is_false(done)
+    end)
+    it("respects a competing device's winning position without scheduling a retry", function()
+        for _, remote_offset in ipairs({ 0, 1, 3600000 }) do
+            local count, result = 0, nil
+            local client = { pushChanges = function(_, payload, cb)
+                count = count + 1
+                cb(true, { configs = { { updated_at = payload.configs[1].updatedAt + remote_offset,
+                    progress = "[80,100]" } } })
+            end }
+            SyncConfig:push(ui, {}, client, true, 0, function(ok) result = ok end)
+            assert.are.equal(1, count)
+            assert.is_true(result)
+            assert.is_true(SyncConfig:getCurrentBookConfig(ui).updatedAt < (os.time() + 1) * 1000)
+        end
+    end)
+    it("does not force a re-push for cosmetically different EPUB xpointers", function()
+        local count = 0
+        ui.document.info.has_pages = false
+        ui.rolling = { getLastProgress = function() return "/body/p[1]/text().0" end }
         local client = { pushChanges = function(_, payload, cb)
             count = count + 1
-            if count == 1 then
-                cb(true, { configs = { { updated_at = future, progress = "[20,100]" } } })
-            else
-                assert.are.equal(future + 1, payload.configs[1].updatedAt)
-                cb(true, { configs = { { updated_at = future + 1, progress = "[50,100]" } } })
-            end
+            cb(true, { configs = { { updated_at = payload.configs[1].updatedAt,
+                xpointer = "/body/p/text().0" } } })
         end }
-        SyncConfig:push(ui, {}, client, true, 0, function(ok) result = ok end)
-        assert.are.equal(2, count)
-        assert.is_true(result)
-        assert.is_true(SyncConfig:getCurrentBookConfig(ui).updatedAt > future + 1)
+        SyncConfig:push(ui, {}, client, false, 0)
+        assert.are.equal(1, count)
+    end)
+    it("does not inherit a future server clock on pull", function()
+        local future = (os.time() + 31536000) * 1000
+        local client = { pullChanges = function(_, _, cb)
+            cb(true, { configs = { { updated_at = future, progress = "[50,100]" } } })
+        end }
+        SyncConfig:pull(ui, {}, client, "book", "meta", false)
+        assert.is_nil(ui._values.readest_sync.config_clock)
+        assert.are.equal(os.time() * 1000, SyncConfig:getCurrentBookConfig(ui).updatedAt)
+    end)
+    it("discards persisted future clocks and recovers after a device clock correction", function()
+        ui._values.readest_sync.config_clock = (os.time() + 31536000) * 1000
+        local stamps = {}
+        local client = { pushChanges = function(_, payload, cb)
+            stamps[#stamps + 1] = payload.configs[1].updatedAt
+            cb(true, {})
+        end }
+        local original_time, now = os.time, os.time()
+        os.time = function() return now end
+        local ok, err = pcall(function()
+            SyncConfig:push(ui, {}, client, false, 0)
+            assert.are.equal(now * 1000, stamps[1])
+            SyncConfig:push(ui, {}, client, false, 0)
+            assert.are.equal(stamps[1] + 1, stamps[2])
+            now = now - 3600
+            SyncConfig:push(ui, {}, client, false, 0)
+            assert.are.equal(now * 1000, stamps[3])
+            assert.are.equal(stamps[3], ui._values.readest_sync.config_clock)
+        end)
+        os.time = original_time
+        assert.is_true(ok, err)
+    end)
+    it("bounds the same-second clock instead of letting rapid pushes drift indefinitely", function()
+        ui._values.readest_sync.config_clock = os.time() * 1000 + 1000
+        assert.are.equal(os.time() * 1000, SyncConfig:getCurrentBookConfig(ui).updatedAt)
+    end)
+    it("builds the payload with the library hash without pre-staging identifiers", function()
+        ui._values.readest_sync.meta_hash_v1 = "old-local"
+        local store = fakeStore({ book = { meta_hash = "cloud-stamped" } })
+        local config = SyncConfig:getCurrentBookConfig(ui, store)
+        assert.are.equal("cloud-stamped", config.metaHash)
+        ui._values.readest_sync.meta_hash_v1 = "old-local-again"
+        SyncConfig:push(ui, {}, { pushChanges = function(_, payload, cb)
+            assert.are.equal("cloud-stamped", payload.configs[1].metaHash)
+            cb(true, {})
+        end }, false, 0, nil, store)
+        assert.are.equal("cloud-stamped", ui._values.readest_sync.meta_hash_v1)
     end)
     it("does not retry an older in-flight position over a newer push", function()
         local callbacks, count = {}, 0

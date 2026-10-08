@@ -490,7 +490,7 @@ describe("library.syncbooks", function()
         local function fake_sync_auth(rows)
             return {
                 withFreshToken = function(_self, _settings, _path, cb) cb(true) end,
-                getReadestSyncClient = function()
+                getAuthenticatedClient = function()
                     return {
                         pullBooks = function(_self2, _params, cb)
                             cb(true, { books = rows }, 200)

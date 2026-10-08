@@ -4,6 +4,7 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local sha2 = require("ffi/sha2")
+local SyncError = require("readest_syncerror")
 local T = require("ffi/util").template
 local _ = require("readest_i18n")
 
@@ -301,8 +302,8 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
 
     client:pushChanges(
         payload,
-        function(success, _response)
-            if interactive then
+        function(success, response, status)
+            if interactive and not (type(response) == "table" and response.auth_required) then
                 if success then
                     UIManager:show(InfoMessage:new{
                         text = T(_("%1 annotations pushed successfully"), #annotations),
@@ -310,8 +311,8 @@ function SyncAnnotations:push(ui, settings, client, interactive, full_sync)
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = _("Failed to push annotations"),
-                        timeout = 2,
+                        text = SyncError.withDetail(_("Failed to push annotations"), response, status),
+                        timeout = 5,
                     })
                 end
             end
@@ -376,18 +377,11 @@ function SyncAnnotations:pull(ui, settings, client, book_hash, meta_hash, dialog
         function(success, response, status)
             if ui.document ~= document then return end -- book closed while the request was running
             if not success then
-                -- Treat HTTP 401/403 as auth failure regardless of body shape
-                -- so a future server tweak to the error string doesn't
-                -- silently turn relogin into "Failed to pull annotations"
-                -- noise (codex round 1 finding 15).
-                local is_auth_fail = status == 401 or status == 403
-                    or (response and response.error == "Not authenticated")
+                if type(response) == "table" and response.auth_required then return end -- auth wrapper owns the prompt
                 if interactive then
                     UIManager:show(InfoMessage:new{
-                        text = is_auth_fail
-                            and _("Authentication failed, please login again")
-                            or _("Failed to pull annotations"),
-                        timeout = 2,
+                        text = SyncError.withDetail(_("Failed to pull annotations"), response, status),
+                        timeout = 5,
                     })
                 end
                 return

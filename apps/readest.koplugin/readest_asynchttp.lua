@@ -10,7 +10,7 @@ return { call = function(args, req)
     local function finish(res)
         if completed then return end
         completed = true
-        UIManager:unschedule(timeout)
+        if timeout then UIManager:unschedule(timeout) end
         result = res or { code = 0, headers = { ["content-type"] = "application/json" },
             body = '{"error":"Empty HTTP response"}' }
         result.status = result.code
@@ -38,7 +38,7 @@ return { call = function(args, req)
         }, finish)
     end)
     if not ok then
-        UIManager:unschedule(timeout)
+        if timeout then UIManager:unschedule(timeout) end
         completed = true
         error(err)
     end

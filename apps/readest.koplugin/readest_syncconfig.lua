@@ -4,10 +4,10 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
 local sha2 = require("ffi/sha2")
+local SyncError = require("readest_syncerror")
 local _ = require("readest_i18n")
 
 local SyncConfig = {}
-local serverTime = require("readest_synctime")
 local push_sequences = setmetatable({}, { __mode = "k" })
 
 -- Readest md5s the NFC-normalized hash source (book.ts getMetadataHashInfo);
@@ -147,9 +147,9 @@ end
 -- Build the sync payload for the open book: its hashes, current page and
 -- page count, plus the xpointer for reflowable documents. Returns nil if
 -- the book can't be identified.
-function SyncConfig:getCurrentBookConfig(ui)
+function SyncConfig:getCurrentBookConfig(ui, store)
     local book_hash = self:getDocumentIdentifier(ui)
-    local meta_hash = self:getMetaHash(ui)
+    local meta_hash = self:getMetaHash(ui, store)
     if not book_hash or not meta_hash then
         UIManager:show(InfoMessage:new{
             text = _("Cannot identify the current book"),
@@ -158,13 +158,17 @@ function SyncConfig:getCurrentBookConfig(ui)
         return nil
     end
 
+    local now = os.time() * 1000
+    local clock = (ui.doc_settings:readSetting("readest_sync") or {}).config_clock
+    -- Order local pushes within the same second, but discard clocks carried
+    -- forward from a future server record or a corrected device clock.
+    if type(clock) ~= "number" or clock < now or clock >= now + 1000 then clock = now - 1 end
     local config = {
         bookHash = book_hash,
         metaHash = meta_hash,
         progress = "",
         xpointer = "",
-        updatedAt = math.max(os.time() * 1000,
-            ((ui.doc_settings:readSetting("readest_sync") or {}).config_clock or 0) + 1),
+        updatedAt = clock + 1,
     }
 
     local current_page = ui:getCurrentPage()
@@ -239,8 +243,8 @@ function SyncConfig:showSyncedMessage()
     })
 end
 
-function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp, done)
-    local config = self:getCurrentBookConfig(ui)
+function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp, done, store)
+    local config = self:getCurrentBookConfig(ui, store)
     if not config then return last_sync_timestamp end
 
     if interactive then
@@ -262,34 +266,12 @@ function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp,
         configs = { config },
     }
 
-    local retried = false
-    local receive
-    receive = function(success, response)
-        -- HTTP 200 can contain the server's winning record instead of ours.
-        -- Observe that clock and retry once so slow/device-adjusted clocks
-        -- cannot leave a manual or automatic push permanently ineffective.
-        local authoritative = type(response) == "table" and response.configs
-            and response.configs[1]
-        local stamp = authoritative and serverTime(authoritative.updated_at)
-        if stamp then
-            local state = doc_settings:readSetting("readest_sync") or {}
-            state.config_clock = math.max(state.config_clock or 0, stamp)
-            doc_settings:saveSetting("readest_sync", state)
-        end
-        local same_position = authoritative and (
-            (config.xpointer ~= "" and authoritative.xpointer == config.xpointer)
-            or (config.xpointer == "" and type(authoritative.progress) == "string"
-                and authoritative.progress:gsub("%s", "") == string.format("[%d,%d]", config.progress[1], config.progress[2])))
-        if success and stamp and stamp >= config.updatedAt and not same_position then
-            if not retried and push_sequences[doc_settings] == sequence then
-                retried = true
-                config.updatedAt = stamp + 1
-                client:pushChanges(payload, receive)
-                return
-            end
-            success = false
-        end
-        if interactive then
+    local function receive(success, response, status)
+        -- Only the latest push may update completion state or request a retry
+        -- through `done`. A successful merge may keep another device's newer
+        -- position; its timestamp alone cannot prove clock skew, so respect it.
+        if push_sequences[doc_settings] ~= sequence then return end
+        if interactive and not (type(response) == "table" and response.auth_required) then
             if success then
                 UIManager:show(InfoMessage:new{
                     text = _("Reading progress pushed successfully"),
@@ -297,8 +279,8 @@ function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp,
                 })
             else
                 UIManager:show(InfoMessage:new{
-                    text = _("Failed to push reading progress"),
-                    timeout = 2,
+                    text = SyncError.withDetail(_("Failed to push reading progress"), response, status),
+                    timeout = 5,
                 })
             end
         end
@@ -317,9 +299,22 @@ function SyncConfig:push(ui, settings, client, interactive, last_sync_timestamp,
     return last_sync_timestamp
 end
 
-function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive, logout_fn)
+function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive)
     local document = ui.document
-    local page = ui.getCurrentPage and ui:getCurrentPage()
+    -- ReaderRolling keeps its logical XPointer during rerendering. Page
+    -- numbers change with the layout and cannot detect EPUB navigation.
+    local has_pages = document.info and document.info.has_pages
+    local position = has_pages and ui.getCurrentPage and ui:getCurrentPage()
+        or (ui.rolling and ui.rolling:getLastProgress())
+    local function moved()
+        if not position or position == "" then return false end -- initial layout has no position yet
+        if has_pages then return ui:getCurrentPage() ~= position end
+        local current = ui.rolling and ui.rolling:getLastProgress()
+        if current == position then return false end
+        if not current then return true end
+        local ok, cmp = pcall(document.compareXPointers, document, position, current)
+        return not ok or cmp ~= 0
+    end
     if interactive then
         UIManager:show(InfoMessage:new{
             text = _("Pulling reading progress..."),
@@ -337,26 +332,11 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
         function(success, response, status)
             if ui.document ~= document then return end -- book closed while the request was running
             if not success then
-                -- Auth failure: server returns HTTP 403 with body
-                -- {error="Not authenticated"} per apps/readest-app/src/pages/api/sync.ts:31.
-                -- Check the status code primarily so future endpoints with
-                -- different body shapes still trigger relogin (codex finding).
-                local is_auth_fail = status == 401 or status == 403
-                    or (response and response.error == "Not authenticated")
-                if is_auth_fail then
-                    if interactive then
-                        UIManager:show(InfoMessage:new{
-                            text = _("Authentication failed, please login again"),
-                            timeout = 2,
-                        })
-                    end
-                    if logout_fn then logout_fn() end
-                    return
-                end
+                if type(response) == "table" and response.auth_required then return end -- auth wrapper owns the prompt
                 if interactive then
                     UIManager:show(InfoMessage:new{
-                        text = _("Failed to pull reading progress"),
-                        timeout = 2,
+                        text = SyncError.withDetail(_("Failed to pull reading progress"), response, status),
+                        timeout = 5,
                     })
                 end
                 return
@@ -365,9 +345,6 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
             if ui.doc_settings then
                 local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
                 doc_readest_sync.last_synced_at_config = os.time()
-                local latest = type(response) == "table" and response.configs and response.configs[1]
-                local stamp = latest and serverTime(latest.updated_at)
-                if stamp then doc_readest_sync.config_clock = math.max(doc_readest_sync.config_clock or 0, stamp) end
                 ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
             end
 
@@ -375,7 +352,7 @@ function SyncConfig:pull(ui, settings, client, book_hash, meta_hash, interactive
             if data and #data > 0 then
                 local config = data[1]
                 if config then
-                    if not interactive and ui.getCurrentPage and ui:getCurrentPage() ~= page then return end
+                    if not interactive and moved() then return end
                     local applied = self:applyBookConfig(ui, config, interactive)
                     if interactive then
                         UIManager:show(InfoMessage:new{

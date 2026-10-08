@@ -227,11 +227,8 @@ function M.pushBook(book_row, opts, cb)
             if cb then cb(false, "auth refresh failed") end
             return
         end
-        local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
-        if not client then
-            if cb then cb(false, "no sync client") end
-            return
-        end
+        -- Retries one rejected token; a session that stays rejected pauses sync.
+        local client = SyncAuth:getAuthenticatedClient(opts.settings, opts.sync_path)
         local payload = {
             books   = { row_to_wire(book_row) },
             notes   = {},
@@ -297,11 +294,8 @@ function M.pushChangedBooks(opts, cb)
             if cb then cb(false, "auth refresh failed") end
             return
         end
-        local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
-        if not client then
-            if cb then cb(false, "no sync client") end
-            return
-        end
+        local client = SyncAuth:getAuthenticatedClient(opts.settings, opts.sync_path,
+            function() return syncContextValid(opts, user_id) end)
 
         local books_wire = {}
         local max_ts = since
@@ -420,15 +414,8 @@ function M.pullBooks(opts, cb)
             return
         end
 
-        local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
-        if not client then
-            logger.warn("ReadestLibrary getReadestSyncClient returned nil; settings={"
-                .. "access_token=" .. tostring(opts.settings.access_token and "<set>" or "<nil>")
-                .. ", expires_at=" .. tostring(opts.settings.expires_at)
-                .. ", now=" .. tostring(os.time()) .. "}")
-            if cb then cb(false, "no sync client (not authenticated?)") end
-            return
-        end
+        local client = SyncAuth:getAuthenticatedClient(opts.settings, opts.sync_path,
+            function() return syncContextValid(opts, user_id) end)
 
         local since = opts.store:getLastPulledAt() or 0
         logger.info("ReadestLibrary client:pullBooks dispatching with since=" .. tostring(since))
@@ -442,7 +429,7 @@ function M.pullBooks(opts, cb)
                 .. " body_type=" .. type(body)
                 .. " rows=" .. tostring(body and body.books and #body.books or "n/a"))
             if not success then
-                if status == 401 or status == 403
+                if (type(body) == "table" and body.auth_required) or status == 401 or status == 403
                     or (body and body.error == "Not authenticated") then
                     if cb then cb(false, "auth", status) end
                 else
@@ -569,12 +556,8 @@ function M.downloadBook(book, opts, cb)
             finish(false, "auth refresh failed")
             return
         end
-        local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
-        if not client then
-            logger.warn("ReadestLibrary downloadBook: getReadestSyncClient returned nil")
-            finish(false, "no sync client")
-            return
-        end
+        local client = SyncAuth:getAuthenticatedClient(opts.settings, opts.sync_path,
+            function() return not cancelled end)
         logger.info("ReadestLibrary downloadBook: dispatching getDownloadUrl…")
         client:getDownloadUrl({ fileKey = file_key }, function(success, body, status)
             logger.info("ReadestLibrary downloadBook: getDownloadUrl responded"
@@ -685,11 +668,7 @@ function M.downloadCover(book, opts, cb)
             if cb then cb(false, "auth refresh failed") end
             return
         end
-        local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
-        if not client then
-            if cb then cb(false, "no sync client") end
-            return
-        end
+        local client = SyncAuth:getAuthenticatedClient(opts.settings, opts.sync_path)
         client:getDownloadUrl({ fileKey = file_key }, function(success, body, status)
             if status == 404 then
                 if cb then cb(false, "no-cover", 404) end
@@ -924,11 +903,7 @@ function M.uploadBook(book, opts, cb)
             if cb then cb(false, "auth refresh failed") end
             return
         end
-        local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
-        if not client then
-            if cb then cb(false, "no sync client") end
-            return
-        end
+        local client = SyncAuth:getAuthenticatedClient(opts.settings, opts.sync_path)
 
         -- Step 1: book file presigned URL
         logger.info("ReadestLibrary uploadBook: requesting URL for "
@@ -1087,11 +1062,7 @@ function M.deleteCloudFiles(book, opts, cb)
             if cb then cb(false, "auth refresh failed") end
             return
         end
-        local client = SyncAuth:getReadestSyncClient(opts.settings, opts.sync_path)
-        if not client then
-            if cb then cb(false, "no sync client") end
-            return
-        end
+        local client = SyncAuth:getAuthenticatedClient(opts.settings, opts.sync_path)
         logger.info("ReadestLibrary deleteCloudFiles: hash=" .. book.hash)
         client:listFiles({ bookHash = book.hash }, function(success, body, status)
             if not success then

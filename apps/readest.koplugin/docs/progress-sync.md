@@ -14,6 +14,9 @@ the inactivity timer, so closing the book is an important sync trigger.
 
 Automatic pulls move reading progress forward only. Responses are ignored if
 the reader has continued reading since the request or the document has closed.
+EPUB pulls compare the logical XPointer, so reflow, rotation, or font changes
+do not discard a response merely because the rendered page number changed.
+Fixed-page documents still compare page numbers.
 An explicit manual pull can move to an earlier position. If the saved position
 cannot be used in the current document, the plugin reports that limitation
 instead of reporting successful synchronization.
@@ -24,8 +27,9 @@ metadata to the new book.
 
 ## Authentication and request handling
 
-Sync operations wait for an expired access token to refresh before sending
-requests. Concurrent operations share one refresh. If a request rejects an
+Progress, annotation, statistics and library sync all go through the same
+authenticated client. Sync operations wait for an expired access token to
+refresh before sending requests. Concurrent operations share one refresh. If a request rejects an
 access token, the plugin refreshes and retries once, or uses a token already
 refreshed by another request. Refresh results from an old session are ignored
 after logout or a new login.
@@ -34,9 +38,26 @@ Transient refresh failures preserve the session. Rejected refresh tokens
 require a new login. Refreshed tokens are flushed to disk so they survive an
 unclean exit.
 
-HTTP requests and token refreshes have deadlines. Without Turbo, refreshes use
-a background worker to avoid blocking reader input. A request completes at
-most once, even when its callback arrives after the deadline.
+If authentication still fails after one refresh/retry, the plugin pauses sync,
+removes the rejected access token, and prompts once to log in again. It keeps
+the refresh token without using it again until login; the pause persists across
+restarts. A successful login clears the pause. Other 403 errors, such as quota
+or permission denials, do not refresh tokens or pause the session.
+
+Rejected tokens are cleared before failure callbacks run. The login prompt is
+shown after those callbacks, and sync operations suppress redundant auth-failure
+toasts so concurrent failures cannot cover the prompt.
+
+HTTP requests have deadlines. Token refreshes release waiting sync operations
+after 20 seconds, but keep the in-flight request so a late successful token
+rotation is still saved. Another refresh cannot start for that session until
+the request finishes or reaches its 150-second hard limit, after which the
+request is ended (the background worker is terminated without Turbo) and the
+next sync starts a new refresh. A rotation lost to that limit requires a new
+login. Each waiting sync operation completes at most once.
+
+Token expiry is tracked on the device clock (`expires_in` from the response),
+so a device clock that is wrong does not force a refresh on every sync.
 
 Read RPCs retry transient timeouts once. Automatic progress pushes have one
 delayed retry, and failed progress is retained for reconnect. Writes are not
@@ -50,13 +71,19 @@ Progress pushes resolve the library's book identity before constructing the
 payload, including when a local PDF metadata hash differs from the library's
 stamped hash. Documents without a checksum cannot be identified for sync.
 
-The server merges configuration using timestamps. The plugin persists an
-observed monotonic configuration clock to handle local clock skew and pushes
-within the same second. If the server retains an older position because of a
-timestamp conflict, the latest push for that book can retry once with a newer
-timestamp. An older push cannot use a conflict retry to overwrite a newer one.
+The server merges configuration using timestamps. The plugin orders local
+pushes within the same second, with at most one second of clock advancement.
+It discards persisted clocks beyond that bound and does not adopt timestamps
+from remote records. When the server keeps another device's position, the
+plugin respects that merge without re-pushing at a fabricated newer timestamp.
+Only the latest push for a book updates completion state or schedules retries.
 Moving the local clock backward also resets the push debounce and allows
 resume sync to proceed.
+
+Device clocks still affect last-writer-wins. A future-dated record already on
+the server can continue to win until its timestamp is corrected or wall time
+catches up; recovering such records reliably requires server clock validation
+or version-based conflict handling.
 
 Saved positions are validated before application. Empty or malformed positions,
 invalid EPUB XPointers, and PDF positions outside the local page range cannot
@@ -79,6 +106,19 @@ Sibling copies of a book can also be reconciled differently across clients.
 
 Close-time pushes are asynchronous. A process killed before a push finishes
 cannot guarantee delivery to the cloud.
+
+## Diagnosing failures
+
+Manual sync failure messages add a short, translated reason on a second line,
+such as a timeout, an unreachable network, an authentication failure, or a
+server outage. They never show code locations, HTTP codes, or raw server
+errors. Automatic sync shows no message.
+
+Every failed request is logged to `crash.log` with technical detail:
+`ReadestSyncClient:<rpc> failed: <detail>` for requests that were sent, or
+`ReadestSync: <rpc> failed: <detail>` for failures decided before sending (a
+missing token or a failed `token refresh`). Details include the HTTP status,
+the server message and Spore's error, but never request headers or tokens.
 
 ## Testing
 

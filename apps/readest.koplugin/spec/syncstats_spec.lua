@@ -273,7 +273,7 @@ describe("readest_syncstats", function()
         end }
         local ui = { statistics = { id_curr_book = 1 } }
 
-        SyncStats:pull({ stats_pull_cursor = 0 }, client, false, nil, ui)
+        SyncStats:pull({ stats_pull_cursor = 0 }, client, false, ui)
 
         local conn2 = SQ3.open(statsDbPath())
         local live = conn2:rowexec("SELECT COUNT(*) FROM book WHERE id = 1;")
@@ -400,7 +400,8 @@ describe("readest_syncstats", function()
         local n = 0
         local client = { pushChanges = function(_, _payload, cb)
             n = n + 1
-            cb(n ~= 2) -- second chunk fails (e.g. socket timeout)
+            if n == 2 then cb(false, { error = "timeout" }) -- second chunk fails
+            else cb(true) end
         end }
 
         -- Patch show/new on the instances the module captured (whichever spec
@@ -417,7 +418,7 @@ describe("readest_syncstats", function()
 
         InfoMessage.new, UIManager.show = orig_new, orig_show
         assert.are.equal(500, settings.stats_push_cursor) -- first chunk's progress kept
-        assert.are.same({ "Failed to push reading statistics" }, shown)
+        assert.are.same({ "Failed to push reading statistics\nThe connection timed out. Please try again." }, shown)
 
         -- the retry picks up after the last successful chunk
         local retry_calls = {}
@@ -473,6 +474,20 @@ describe("readest_syncstats", function()
         InfoMessage.new, UIManager.show = orig_new, orig_show
         assert.are.equal("Reading statistics are up to date", shown)
     end)
+    it("leaves statistics pending and suppresses toasts when auth owns the login prompt", function()
+        seedPageEvents({100})
+        local settings = { stats_push_cursor = 0, stats_pull_cursor = 50 }
+        local rejected = { error = "authentication required", auth_required = true }
+        local client = {
+            pushChanges = function(_, _, cb) cb(false, rejected, 401) end,
+            pullChanges = function(_, _, cb) cb(false, rejected, 401) end,
+        }
+        SyncStats:push(settings, client, true)
+        SyncStats:pull(settings, client, true)
+        assert.are.equal(0, settings.stats_push_cursor)
+        assert.are.equal(50, settings.stats_pull_cursor)
+        assert.are.equal(0, #stubs.UIManager._shown)
+    end)
 
     -- Spore's validate() (common/Spore/Request.lua) asserts every param passed
     -- to a method is in required_params ∪ optional_params ("X is not expected"),
@@ -507,7 +522,7 @@ describe("readest_syncstats", function()
         }
         local client = { pullChanges = function(_, _params, cb) cb(true, response, 200) end }
 
-        SyncStats:pull(settings, client, false, function() end)
+        SyncStats:pull(settings, client, false)
 
         assert.are.equal(4242, settings.stats_pull_cursor) -- newest updated_at_ms
     end)
@@ -538,7 +553,7 @@ describe("readest_syncstats", function()
             cb(true, pageResponse(params.since, sizes[#sinces] or 0), 200)
         end }
 
-        SyncStats:pull(settings, client, false, function() end)
+        SyncStats:pull(settings, client, false)
         drainScheduled()
 
         assert.are.equal(3, #sinces)
@@ -568,7 +583,7 @@ describe("readest_syncstats", function()
             end
         end }
 
-        SyncStats:pull(settings, client, false, function() end)
+        SyncStats:pull(settings, client, false)
         drainScheduled()
 
         assert.are.equal(2, calls)
@@ -579,7 +594,7 @@ describe("readest_syncstats", function()
             table.insert(sinces, params.since)
             cb(true, pageResponse(params.since, #sinces == 1 and 1000 or 3), 200)
         end
-        SyncStats:pull(settings, client, false, function() end)
+        SyncStats:pull(settings, client, false)
         drainScheduled()
 
         assert.are.same({ 1000, 2000 }, sinces) -- resumed, not restarted
