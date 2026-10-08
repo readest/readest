@@ -111,8 +111,11 @@ cannot guarantee delivery to the cloud.
 
 Manual sync failure messages add a short, translated reason on a second line,
 such as a timeout, an unreachable network, an authentication failure, or a
-server outage. They never show code locations, HTTP codes, or raw server
-errors. Automatic sync shows no message.
+server outage. They never show code locations, HTTP codes, internal error
+codes, or the text of 5xx server errors. Other readable messages that match no
+known reason, such as a 4xx server message ("Permission denied") or an
+unrecognized transport error, are shown as received. Automatic sync shows no
+message.
 
 Every failed request is logged to `crash.log` with technical detail:
 `ReadestSyncClient:<rpc> failed: <detail>` for requests that were sent, or

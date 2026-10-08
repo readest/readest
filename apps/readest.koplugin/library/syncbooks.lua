@@ -334,7 +334,8 @@ end
 --   "pull" — pullBooks only (existing fetch)
 --   "both" — pull then push (closes #4138)
 -- cb is invoked once after the LAST step completes; intermediate failures
--- are logged but do not abort (pull failure shouldn't prevent push).
+-- are logged but do not abort (pull failure shouldn't prevent push). In
+-- "both" mode a failure reports the first failed step's msg and status.
 --
 -- before_push (optional): callback invoked AFTER pull and BEFORE push in
 -- "both" / "push" modes. Callers use this to bump updated_at on the open
@@ -360,14 +361,17 @@ function M.syncBooks(opts, mode, cb, before_push)
                 return
             end
             if before_push then before_push() end
-            M.pushChangedBooks(opts, function(push_ok, push_msg)
-                if cb then
-                    cb(pull_ok and push_ok,
-                       string.format("pull=%s/%s push=%s/%s",
-                           tostring(pull_ok), tostring(pull_msg),
-                           tostring(push_ok), tostring(push_msg)),
-                       pull_status)
-                end
+            M.pushChangedBooks(opts, function(push_ok, push_msg, push_status)
+                local summary = string.format("pull=%s/%s push=%s/%s",
+                    tostring(pull_ok), tostring(pull_msg),
+                    tostring(push_ok), tostring(push_msg))
+                if not cb then return end
+                if pull_ok and push_ok then cb(true, summary); return end
+                -- Callers turn msg into a user-facing reason, so report the
+                -- first failed step alone and keep the summary in the log.
+                require("logger").warn("ReadestLibrary syncBooks failed: " .. summary)
+                if not pull_ok then cb(false, pull_msg, pull_status)
+                else cb(false, push_msg, push_status) end
             end)
         end)
     end
@@ -429,8 +433,9 @@ function M.pullBooks(opts, cb)
                 .. " body_type=" .. type(body)
                 .. " rows=" .. tostring(body and body.books and #body.books or "n/a"))
             if not success then
-                if (type(body) == "table" and body.auth_required) or status == 401 or status == 403
-                    or (body and body.error == "Not authenticated") then
+                -- The auth wrapper flags rejected sessions; a generic 403 is a
+                -- quota or permission denial and keeps its own message.
+                if type(body) == "table" and body.auth_required then
                     if cb then cb(false, "auth", status) end
                 else
                     if cb then cb(false, body and body.error or "pull failed", status) end

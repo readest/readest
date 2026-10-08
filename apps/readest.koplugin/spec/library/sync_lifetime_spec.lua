@@ -83,4 +83,23 @@ describe("library sync request lifetime", function()
         settings.user_id = "bob"
         assert.is_false(guard())
     end)
+    it("keeps the server message for a 403 that is not an auth failure", function()
+        syncbooks.pullBooks(opts, completed)
+        pending_pull(false, {error = "Permission denied"}, 403)
+        assert.same({false, "Permission denied"}, reply)
+    end)
+    it("reports a flagged session rejection as an auth failure", function()
+        syncbooks.pullBooks(opts, completed)
+        pending_pull(false, {error = "authentication required", auth_required = true}, 401)
+        assert.same({false, "auth"}, reply)
+    end)
+    it("ends silently when the auth wrapper cleared the token before the callback", function()
+        -- requireLogin drops the access token before callbacks run, so the
+        -- library toast is skipped and only the login prompt is shown.
+        pull()
+        settings.access_token = nil
+        pending_pull(false, {error = "authentication required", auth_required = true}, 401)
+        assert.same({false, "sync cancelled"}, reply)
+        assert.are.equal(0, pushes)
+    end)
 end)
