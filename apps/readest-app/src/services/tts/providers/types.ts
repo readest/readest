@@ -77,6 +77,10 @@ export interface SpeechProvider {
   pickDefaultVoice?(voices: TTSVoice[]): string | undefined;
   // Last-resort voice when nothing matched and no voice was ever selected.
   readonly fallbackVoiceId?: string;
+  // Never voice a sentence with a voice of another language: when a language
+  // has no voice, the client asks for '' and the provider skips the sentence.
+  // Off by default (Edge falls back to a multilingual or last-used voice).
+  readonly sameLanguageVoicesOnly?: boolean;
   // Whether synthesized audio may be persisted. Some services forbid
   // storing their output; CachingProvider bypasses the store when false.
   readonly cacheable?: boolean;

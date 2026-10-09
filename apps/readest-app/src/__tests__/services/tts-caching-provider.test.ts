@@ -46,6 +46,12 @@ describe('CachingProvider', () => {
     provider = new CachingProvider(inner, store);
   });
 
+  test('mirrors the inner provider voice-language policy', () => {
+    expect(provider.sameLanguageVoicesOnly).toBeUndefined();
+    const strict = new CachingProvider(makeInner({ sameLanguageVoicesOnly: true }), store);
+    expect(strict.sameLanguageVoicesOnly).toBe(true);
+  });
+
   test('mirrors the inner provider identity', () => {
     expect(provider.id).toBe('fake');
     expect(provider.label).toBe('Fake');

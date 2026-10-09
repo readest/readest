@@ -213,6 +213,35 @@ describe('voices', () => {
   });
 });
 
+describe('book language', () => {
+  test('a remembered Readest choice yields to Edge for a language it has no voice for', async () => {
+    vi.mocked(TTSUtils.getPreferredClient).mockReturnValue('readest-tts');
+    await controller.init();
+    expect(controller.ttsClient).toBe(readest());
+    await controller.setLang('de');
+    expect(controller.ttsClient.name).toBe('edge-tts');
+    // The choice itself is kept for books Readest Voice can read.
+    expect(TTSUtils.setPreferredClient).not.toHaveBeenCalled();
+  });
+
+  test('keeps Readest Voice for a language it can voice', async () => {
+    vi.mocked(TTSUtils.getPreferredClient).mockReturnValue('readest-tts');
+    await controller.init();
+    await controller.setLang('en-GB');
+    expect(controller.ttsClient).toBe(readest());
+  });
+
+  test('the picker hides an empty Readest group', async () => {
+    await controller.init();
+    vi.mocked(readest().getVoices).mockResolvedValue([
+      { id: 'readest-tts', name: 'Readest Voice', voices: [], disabled: true },
+    ]);
+    const groups = await controller.getVoices('de');
+    expect(groups.map((g) => g.id)).not.toContain('readest-tts');
+    expect(h.warmup).not.toHaveBeenCalled();
+  });
+});
+
 describe('setVoice', () => {
   test("the engine-default voice ('') never selects Readest Voice", async () => {
     await controller.init();

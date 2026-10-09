@@ -29,7 +29,7 @@ import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDow
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { startAudioKeepAlive, stopAudioKeepAlive } from './WebAudioPlayer';
-import { isValidLang } from '@/utils/lang';
+import { isSameLang, isValidLang } from '@/utils/lang';
 import { normalizeLyricText } from '@/utils/ttsLyrics';
 import {
   computeWordOffsets,
@@ -1996,6 +1996,15 @@ export class TTSController extends EventTarget {
 
   async setLang(lang: string) {
     this.ttsLang = lang;
+    // Readest Voice is a remembered choice, never a default: for a book in a
+    // language it has no voice for, the default engine reads instead, and the
+    // choice stays remembered for books it can read.
+    if (
+      this.ttsClient === this.ttsReadestClient &&
+      !this.ttsReadestVoices.some((voice) => isSameLang(voice.lang, lang))
+    ) {
+      this.ttsClient = this.ttsEdgeClient.initialized ? this.ttsEdgeClient : this.ttsWebClient;
+    }
     this.setPrimaryLang(lang);
   }
 
@@ -2023,7 +2032,7 @@ export class TTSController extends EventTarget {
     // Unavailable (free plan, kill switch) hides the group entirely: no dead
     // premium entry in the picker.
     const ttsReadestVoices = this.ttsReadestClient.initialized
-      ? await this.ttsReadestClient.getVoices(lang)
+      ? (await this.ttsReadestClient.getVoices(lang)).filter((group) => group.voices.length > 0)
       : [];
     // The picker is open: boot a GPU worker so the first window is warm.
     if (ttsReadestVoices.some((group) => group.voices.length > 0)) {

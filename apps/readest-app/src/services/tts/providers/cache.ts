@@ -87,6 +87,10 @@ export class CachingProvider implements SpeechProvider {
     return this.#inner.fallbackVoiceId;
   }
 
+  get sameLanguageVoicesOnly(): boolean | undefined {
+    return this.#inner.sameLanguageVoicesOnly;
+  }
+
   init(): Promise<boolean> {
     return this.#inner.init();
   }

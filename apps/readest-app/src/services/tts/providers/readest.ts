@@ -91,6 +91,9 @@ export class ReadestVoiceProvider implements SpeechProvider {
   readonly id = 'readest-tts';
   readonly label = 'Readest Voice';
   readonly cacheable = true;
+  // A sentence in a language without a Readest voice is skipped, never read
+  // with a wrong-language voice.
+  readonly sameLanguageVoicesOnly = true;
 
   readonly #events: EventTarget | undefined;
   #voices: Promise<TTSVoice[]> | null = null;

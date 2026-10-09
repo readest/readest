@@ -134,6 +134,23 @@ describe('BufferedTTSClient with a windowed provider', () => {
     });
   });
 
+  describe('voice language', () => {
+    test('a provider that only voices its own languages gets no voice for others', async () => {
+      const client = await start(makeProvider({ sameLanguageVoicesOnly: true }));
+      await client.setVoice('v1'); // it has been reading English
+      expect(await client.getVoiceIdFromLang('en')).toBe('v1');
+      // No voice: the provider skips the sentence instead of reading German
+      // with an English voice.
+      expect(await client.getVoiceIdFromLang('de')).toBe('');
+    });
+
+    test('other providers still fall back to a voice of another language', async () => {
+      const client = await start(makeProvider());
+      await client.setVoice('v1');
+      expect(await client.getVoiceIdFromLang('de')).toBe('v1');
+    });
+  });
+
   describe('aborts', () => {
     test('an aborted synthesis is not reported as a failed attempt', async () => {
       const warn = vi.mocked(console.warn);

@@ -215,6 +215,7 @@ export class BufferedTTSClient implements TTSClient {
 
     const availableVoices = (await this.getVoices(lang))[0]?.voices || [];
     const picked = this.provider.pickDefaultVoice?.(availableVoices);
+    if (this.provider.sameLanguageVoicesOnly) return picked || availableVoices[0]?.id || '';
     return (
       picked ||
       availableVoices[0]?.id ||
