@@ -177,6 +177,8 @@ export class BufferedTTSClient implements TTSClient {
       } catch (err) {
         if (err instanceof SpeechSynthesisPermanentError) throw err;
         if (err instanceof SpeechSynthesisFatalError) throw err;
+        // Stopped on purpose (stop, seek, voice change): not a failure.
+        if (signal.aborted) return undefined;
         lastError = err;
         console.warn(`TTS synthesis attempt ${attempt}/${maxAttempts} failed`, err);
         if (attempt < maxAttempts && !signal.aborted) {

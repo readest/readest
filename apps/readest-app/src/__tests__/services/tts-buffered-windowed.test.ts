@@ -134,6 +134,29 @@ describe('BufferedTTSClient with a windowed provider', () => {
     });
   });
 
+  describe('aborts', () => {
+    test('an aborted synthesis is not reported as a failed attempt', async () => {
+      const warn = vi.mocked(console.warn);
+      warn.mockClear();
+      const synthesize = vi.fn(
+        (_req: SpeechSynthesisRequest, signal: AbortSignal) =>
+          new Promise<SpeechSynthesisResult>((_, reject) =>
+            signal.addEventListener('abort', () =>
+              reject(new DOMException('Aborted', 'AbortError')),
+            ),
+          ),
+      );
+      const client = await start(makeProvider({ synthesize }));
+      const controller = new AbortController();
+      const { done } = speak(client, controller.signal);
+      await flush();
+      controller.abort();
+      await done;
+      expect(synthesize).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls.some(([m]) => String(m).includes('synthesis attempt'))).toBe(false);
+    });
+  });
+
   describe('listen prefetch', () => {
     const prefetchCalls = (provider: SpeechProvider) =>
       vi.mocked(provider.prefetch!).mock.calls.map(([reqs, lane, , options]) => ({
