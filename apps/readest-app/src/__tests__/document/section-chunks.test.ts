@@ -73,6 +73,52 @@ describe('splitSection', () => {
     }
   });
 
+  it('keeps CFIs of elements and loose text with text outside the chunk dropped', () => {
+    // Loose text between top-level elements, and between a wrapper's children
+    const loose = Array.from({ length: 300 }, (_, i) => `loose ${i} <p id="q${i}">para ${i}</p>`);
+    const inner = Array.from({ length: 300 }, (_, i) => `text ${i} <p id="r${i}">row ${i}</p>`);
+    const html = `<!DOCTYPE html><html><head></head><body>${loose.join('')}<div>${inner.join('')}</div> tail</body></html>`;
+    const full = parse(html);
+    const split = splitSection(html, 6);
+    const docs = chunksOf(split);
+    const owner = (id: string) =>
+      docs.find((d) => {
+        const el = d.getElementById(id);
+        return el && !el.hasAttribute(CHUNK_ATTRIBUTE);
+      })!;
+    const ids = [
+      ...Array.from({ length: 300 }, (_, i) => `q${i}`),
+      ...Array.from({ length: 300 }, (_, i) => `r${i}`),
+    ];
+    let textDroppedBefore = 0;
+    for (const id of ids) {
+      const doc = owner(id);
+      // the loose text before this element went to the previous chunk
+      if (doc.getElementById(id)!.previousSibling?.nodeType !== Node.TEXT_NODE) textDroppedBefore++;
+      for (const pick of [
+        (d: Document) => d.getElementById(id)!.firstChild!, // text inside the element
+        (d: Document) => d.getElementById(id)!.previousSibling!, // loose text before it
+      ]) {
+        const fullNode = pick(full);
+        const chunkNode = pick(doc);
+        if (chunkNode?.nodeType !== Node.TEXT_NODE) continue; // that text lives in another chunk
+        const range = (d: Document, node: Node) => {
+          const r = d.createRange();
+          r.setStart(node, 1);
+          r.setEnd(node, 3);
+          return r;
+        };
+        const cfi = CFI.fromRange(range(full, fullNode));
+        expect(CFI.fromRange(range(doc, chunkNode)), id).toBe(cfi);
+        expect(CFI.toRange(doc, CFI.parse(cfi)).toString(), id).toBe(
+          range(full, fullNode).toString(),
+        );
+      }
+    }
+    // chunk boundaries fell right after loose text, at both levels
+    expect(textDroppedBefore).toBeGreaterThanOrEqual(4);
+  });
+
   describe('locate', () => {
     const html = section(200);
     const full = parse(html);
