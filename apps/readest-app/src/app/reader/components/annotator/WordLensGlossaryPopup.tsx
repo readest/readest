@@ -35,6 +35,7 @@ const WordLensGlossaryPopup: React.FC<WordLensGlossaryPopupProps> = ({
   const { envConfig } = useEnv();
   const [definition, setDefinition] = useState('');
   const [scope, setScope] = useState<WordLensGlossaryScope>('global');
+  const [saveError, setSaveError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   useAutoFocus<HTMLInputElement>({ ref: inputRef });
 
@@ -51,9 +52,14 @@ const WordLensGlossaryPopup: React.FC<WordLensGlossaryPopupProps> = ({
     if (scope === 'series' && !series) return;
     const draft = { definition: trimmed, scope };
     if (onSave?.(draft) === false) return;
-    void saveWordLensGlossaryEntry(envConfig, bookKey, { term, ...draft }).then((saved) => {
-      if (saved) onSaved?.();
-    });
+    void saveWordLensGlossaryEntry(envConfig, bookKey, { term, ...draft })
+      .then((saved) => {
+        if (saved) onSaved?.();
+        else setSaveError(_('Could not save the entry.'));
+      })
+      .catch(() => {
+        setSaveError(_('Could not save the entry.'));
+      });
   };
 
   return (
@@ -70,7 +76,10 @@ const WordLensGlossaryPopup: React.FC<WordLensGlossaryPopupProps> = ({
           ref={inputRef}
           type='text'
           value={definition}
-          onChange={(event) => setDefinition(event.target.value)}
+          onChange={(event) => {
+            setDefinition(event.target.value);
+            setSaveError('');
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') handleSave();
           }}
@@ -79,20 +88,23 @@ const WordLensGlossaryPopup: React.FC<WordLensGlossaryPopupProps> = ({
           className='bg-base-200 text-base-content placeholder:text-base-content/40 border-base-300 focus:border-primary focus:ring-primary eink-bordered w-full rounded-md border p-2 text-sm font-normal transition-all focus:outline-hidden focus:ring-1'
         />
       </label>
-      <div className='flex items-center justify-between gap-2'>
-        <label
-          htmlFor='wordlens-glossary-scope'
-          className='text-xs font-medium text-base-content/80'
-        >
-          {_('Scope')}
-        </label>
+      <label className='flex items-center justify-between gap-2'>
+        <span className='text-xs font-medium text-base-content/80'>{_('Scope')}</span>
         <Select
           className='max-w-[70%]'
           value={scope}
-          onChange={(event) => setScope(event.target.value as WordLensGlossaryScope)}
+          onChange={(event) => {
+            setScope(event.target.value as WordLensGlossaryScope);
+            setSaveError('');
+          }}
           options={scopeOptions}
         />
-      </div>
+      </label>
+      {saveError && (
+        <p className='text-error text-xs' role='alert'>
+          {saveError}
+        </p>
+      )}
       <div className='mt-auto flex justify-end gap-2'>
         <button type='button' onClick={onCancel} className='btn btn-ghost btn-sm'>
           {_('Cancel')}

@@ -130,6 +130,12 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
     if (editingId === id) resetGlossaryForm();
   };
 
+  useEffect(() => {
+    if (glossaryScope === 'book' && !bookData?.book) {
+      setGlossaryScope('global');
+    }
+  }, [glossaryScope, bookData?.book]);
+
   // Fetch the manifest once on mount to filter the hint-language selector and
   // resolve the data-pack row. If it fails, the selector falls back to the full
   // TRANSLATED_LANGS list (see availableTargets below).
@@ -478,7 +484,6 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
             onChange={(event) => setGlossaryTerm(event.target.value)}
             placeholder={_('Term')}
             aria-label={_('Term')}
-            disabled={!!editingId}
             className='input input-sm input-bordered w-full'
           />
           <input
@@ -498,7 +503,9 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
               className='select select-sm select-bordered max-w-[60%]'
             >
               <option value='global'>{_('Global')}</option>
-              <option value='book'>{_('This book')}</option>
+              <option value='book' disabled={!bookData?.book}>
+                {_('This book')}
+              </option>
               <option value='series' disabled={!seriesName}>
                 {_('This series')}
               </option>

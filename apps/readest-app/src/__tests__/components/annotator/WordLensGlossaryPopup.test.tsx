@@ -82,4 +82,32 @@ describe('WordLensGlossaryPopup', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(saveMock).not.toHaveBeenCalled();
   });
+
+  it('keeps the editor open and shows an error when save returns false', async () => {
+    saveMock.mockResolvedValueOnce(false);
+    const { onSaved } = renderPopup();
+    fireEvent.change(screen.getByLabelText('Definition'), {
+      target: { value: 'a secret society' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Could not save the entry.')).toBeTruthy();
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Definition')).toHaveProperty('value', 'a secret society');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+  });
+
+  it('keeps the editor open and shows an error when save rejects', async () => {
+    saveMock.mockRejectedValueOnce(new Error('disk full'));
+    const { onSaved } = renderPopup();
+    fireEvent.change(screen.getByLabelText('Definition'), {
+      target: { value: 'a secret society' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Could not save the entry.')).toBeTruthy();
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Definition')).toHaveProperty('value', 'a secret society');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+  });
 });
