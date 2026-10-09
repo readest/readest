@@ -10,7 +10,13 @@
 import { md5 } from 'js-md5';
 import type { TTSWordBoundary } from '@/libs/edgeTTS';
 import type { TTSVoice } from '../types';
-import type { SpeechProvider, SpeechSynthesisRequest, SpeechSynthesisResult } from './types';
+import type {
+  PrefetchOptions,
+  SpeechProvider,
+  SpeechSynthesisRequest,
+  SpeechSynthesisResult,
+  TTSLane,
+} from './types';
 
 export interface TTSCacheEntry {
   audio: ArrayBuffer;
@@ -91,6 +97,46 @@ export class CachingProvider implements SpeechProvider {
 
   pickDefaultVoice(voices: TTSVoice[]): string | undefined {
     return this.#inner.pickDefaultVoice?.(voices);
+  }
+
+  prefetch(
+    reqs: SpeechSynthesisRequest[],
+    lane: TTSLane,
+    signal: AbortSignal,
+    options?: PrefetchOptions,
+  ): void {
+    if (!this.#inner.prefetch) return;
+    if (this.#inner.cacheable === false) {
+      this.#inner.prefetch(reqs, lane, signal, options);
+      return;
+    }
+    void this.#prefetchUncached(reqs, lane, signal, options);
+  }
+
+  async #prefetchUncached(
+    reqs: SpeechSynthesisRequest[],
+    lane: TTSLane,
+    signal: AbortSignal,
+    options?: PrefetchOptions,
+  ): Promise<void> {
+    const uncached: SpeechSynthesisRequest[] = [];
+    for (const req of reqs) {
+      const key = computeTTSCacheKey(this.#inner.id, req);
+      if (this.#inflight.has(key)) continue;
+      try {
+        if (await this.#store.get(key)) continue;
+      } catch {
+        // Unreadable store: treat as uncached.
+      }
+      uncached.push(req);
+    }
+    if (signal.aborted || uncached.length === 0) return;
+    this.#inner.prefetch?.(uncached, lane, signal, options);
+    // Persist every sentence as it arrives, even one playback never asks for
+    // (stop, seek): it was synthesized and paid for, so keep it.
+    for (const req of uncached) {
+      this.synthesize(req, signal).catch(() => {});
+    }
   }
 
   async synthesize(

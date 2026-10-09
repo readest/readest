@@ -41,6 +41,26 @@ export class SpeechSynthesisPermanentError extends Error {
   }
 }
 
+// A failure that ends the whole session (or download): retrying or skipping
+// cannot help, e.g. the daily synthesis quota is used up. The buffered client
+// stops at once instead of retrying or skipping ahead.
+export class SpeechSynthesisFatalError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = 'SpeechSynthesisFatalError';
+  }
+}
+
+// Who a prefetch serves: live listening or a chapter download. Windowed
+// providers admit and size the two differently.
+export type TTSLane = 'listen' | 'download';
+
+export interface PrefetchOptions {
+  // Listen lane only: preloads of upcoming paragraphs. They fill windows after
+  // the requests the current paragraph is waiting on.
+  background?: boolean;
+}
+
 export interface SpeechProvider {
   // Stable identifier: persisted voice/client preferences and cache
   // namespaces key off it, so renaming one is a migration.
@@ -63,4 +83,13 @@ export interface SpeechProvider {
   // Release provider resources (network handles, cache databases) when the
   // owning client shuts down.
   shutdown?(): Promise<void>;
+  // Window hint for providers that synthesize several sentences per request:
+  // these requests will be synthesized soon, in this order. Aborting `signal`
+  // withdraws them. Providers that synthesize per request omit it.
+  prefetch?(
+    reqs: SpeechSynthesisRequest[],
+    lane: TTSLane,
+    signal: AbortSignal,
+    options?: PrefetchOptions,
+  ): void;
 }

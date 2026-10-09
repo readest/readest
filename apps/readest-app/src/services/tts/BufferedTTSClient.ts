@@ -15,12 +15,14 @@ import { timeStretch } from './timeStretch';
 import { gapAfterSentence } from './gap';
 import {
   calibrateVoiceRate,
+  estimateSentenceSeconds,
   recordMeasuredDuration,
   recordProvisionalDuration,
 } from './ttsDuration';
 import { CachingProvider } from './providers/cache';
 import {
   SpeechProvider,
+  SpeechSynthesisFatalError,
   SpeechSynthesisPermanentError,
   SpeechSynthesisRequest,
 } from './providers/types';
@@ -54,6 +56,15 @@ const TICKS_PER_SECOND = 10_000_000;
 // whose heading is uncached still plays: the heading skips, the cached body
 // resets the count. A wholly-uncached run stops instead of racing to the end.
 const MAX_CONSECUTIVE_SKIPS = 3;
+
+// Windowed providers (SpeechProvider.prefetch) are told about upcoming marks so
+// they can synthesize several per request. The lookahead stays small because
+// the player already buffers up to a minute ahead: whatever is synthesized but
+// never heard (stop, seek) is paid for.
+const PREFETCH_AHEAD_MARKS = 8;
+const PREFETCH_AHEAD_SEC = 30;
+// Preloads of upcoming paragraphs ask a windowed provider for this many marks.
+const PRELOAD_MARKS = 2;
 
 interface ChunkMeta {
   mark: TTSMark;
@@ -165,6 +176,7 @@ export class BufferedTTSClient implements TTSClient {
         return { data: audio, boundaries };
       } catch (err) {
         if (err instanceof SpeechSynthesisPermanentError) throw err;
+        if (err instanceof SpeechSynthesisFatalError) throw err;
         lastError = err;
         console.warn(`TTS synthesis attempt ${attempt}/${maxAttempts} failed`, err);
         if (attempt < maxAttempts && !signal.aborted) {
@@ -302,7 +314,45 @@ export class BufferedTTSClient implements TTSClient {
     }
   }
 
+  // Requests for marks, voices resolved exactly as playback does.
+  async #requestsFor(marks: TTSMark[]): Promise<SpeechSynthesisRequest[]> {
+    const reqs: SpeechSynthesisRequest[] = [];
+    for (const mark of marks) {
+      const voice = await this.getVoiceIdFromLang(mark.language);
+      reqs.push({ lang: mark.language, text: mark.text, voice, pitch: this.#pitch });
+    }
+    return reqs;
+  }
+
+  // Tell a windowed provider which marks come next: the current one plus up to
+  // PREFETCH_AHEAD_MARKS / PREFETCH_AHEAD_SEC of estimated audio.
+  async #prefetchAhead(marks: TTSMark[], from: number, signal: AbortSignal) {
+    if (!this.provider.prefetch) return;
+    const ahead: TTSMark[] = [];
+    let seconds = 0;
+    for (let i = from; i < marks.length && ahead.length < PREFETCH_AHEAD_MARKS; i++) {
+      const mark = marks[i]!;
+      const voice = await this.getVoiceIdFromLang(mark.language);
+      seconds += estimateSentenceSeconds(mark.text, mark.language, voice);
+      if (ahead.length > 0 && seconds > PREFETCH_AHEAD_SEC) break;
+      ahead.push(mark);
+    }
+    if (signal.aborted) return;
+    this.provider.prefetch(await this.#requestsFor(ahead), 'listen', signal);
+  }
+
   async *#preload(marks: TTSMark[], signal: AbortSignal) {
+    // A windowed provider bills per synthesized sentence and the controller
+    // preloads several paragraphs ahead: only hint the first marks of each,
+    // at background priority, and let the scheduler's lookahead do the rest.
+    if (this.provider.prefetch) {
+      const reqs = await this.#requestsFor(marks.slice(0, PRELOAD_MARKS));
+      if (reqs.length && !signal.aborted) {
+        this.provider.prefetch(reqs, 'listen', signal, { background: true });
+      }
+      yield { code: 'end', message: 'Preload finished' } as TTSMessageEvent;
+      return;
+    }
     // Fetch the first couple of marks immediately and the rest in the
     // background; the provider's in-flight dedup keeps this from racing
     // duplicate requests against the playback scheduler.
@@ -358,8 +408,9 @@ export class BufferedTTSClient implements TTSClient {
   ): Promise<void> {
     const rate = this.#rate;
     try {
-      for (const mark of marks) {
+      for (const [index, mark] of marks.entries()) {
         if (signal.aborted || this.#activeGeneration !== generation) return;
+        await this.#prefetchAhead(marks, index, signal);
         // Voices resolve per mark: mixed-language sections speak (and record
         // durations under) the voice actually used for each sentence.
         const voiceId = await this.getVoiceIdFromLang(mark.language);
@@ -376,6 +427,11 @@ export class BufferedTTSClient implements TTSClient {
         try {
           audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
         } catch (error) {
+          if (error instanceof SpeechSynthesisFatalError) {
+            // Nothing later can succeed either (e.g. the daily quota is used up).
+            queue.push({ kind: 'error', message: error.message });
+            return;
+          }
           if (error instanceof SpeechSynthesisPermanentError) {
             // Genuinely unsynthesizable sentence (server returned no audio):
             // skip it and keep going — a few bad sentences must not stop a
@@ -666,6 +722,9 @@ export class BufferedTTSClient implements TTSClient {
       );
       if (!result) return false;
     } catch (err) {
+      // A fatal failure (quota) ends the whole download, not just this
+      // sentence: let it reach the downloader.
+      if (err instanceof SpeechSynthesisFatalError) throw err;
       // Offline / permanent failure: leave the ordinal unrecorded so the
       // section stays incomplete and can be retried later.
       console.warn(

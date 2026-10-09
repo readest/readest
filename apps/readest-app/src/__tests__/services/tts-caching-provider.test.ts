@@ -161,3 +161,103 @@ describe('CachingProvider', () => {
     expect(provider.fallbackVoiceId).toBe('v-fallback');
   });
 });
+
+describe('CachingProvider.prefetch', () => {
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  // An inner provider whose synthesize resolves only when the test delivers,
+  // like a windowed provider waiting on a streamed frame.
+  const windowed = () => {
+    const pending = new Map<string, (r: SpeechSynthesisResult) => void>();
+    const inner = makeInner({
+      prefetch: vi.fn(),
+      synthesize: vi
+        .fn()
+        .mockImplementation(
+          (r: { text: string }) =>
+            new Promise<SpeechSynthesisResult>((resolve) => pending.set(r.text, resolve)),
+        ),
+    });
+    const deliver = (text: string) =>
+      pending.get(text)!({ audio: new ArrayBuffer(4), boundaries: BOUNDARIES });
+    return { inner, deliver };
+  };
+
+  test('forwards only uncached requests, in order, with lane and options', async () => {
+    const { inner, deliver } = windowed();
+    const store = new MemoryStore();
+    const provider = new CachingProvider(inner, store);
+    const cached = provider.synthesize(req('b'), signal());
+    await flush();
+    deliver('b');
+    await cached;
+    const s = signal();
+    provider.prefetch([req('a'), req('b'), req('c')], 'listen', s, { background: true });
+    await flush();
+    expect(inner.prefetch).toHaveBeenCalledWith([req('a'), req('c')], 'listen', s, {
+      background: true,
+    });
+  });
+
+  test('persists a delivered sentence without a later synthesize call', async () => {
+    const { inner, deliver } = windowed();
+    const store = new MemoryStore();
+    const provider = new CachingProvider(inner, store);
+    provider.prefetch([req('a')], 'download', signal());
+    await flush();
+    deliver('a');
+    await flush();
+    expect(store.put).toHaveBeenCalledTimes(1);
+  });
+
+  test('a later synthesize joins the prefetch (inner synthesizes once)', async () => {
+    const { inner, deliver } = windowed();
+    const provider = new CachingProvider(inner, new MemoryStore());
+    provider.prefetch([req('a')], 'listen', signal());
+    await flush();
+    const joined = provider.synthesize(req('a'), signal());
+    deliver('a');
+    expect((await joined).audio.byteLength).toBe(4);
+    expect(inner.synthesize).toHaveBeenCalledTimes(1);
+  });
+
+  test('skips requests already in flight', async () => {
+    const { inner } = windowed();
+    const provider = new CachingProvider(inner, new MemoryStore());
+    void provider.synthesize(req('a'), signal());
+    provider.prefetch([req('a'), req('b')], 'listen', signal());
+    await flush();
+    expect(vi.mocked(inner.prefetch!).mock.calls[0]![0]).toEqual([req('b')]);
+  });
+
+  test('cacheable: false forwards everything and starts no synthesis', async () => {
+    const { inner } = windowed();
+    Object.assign(inner, { cacheable: false });
+    const provider = new CachingProvider(inner, new MemoryStore());
+    provider.prefetch([req('a')], 'listen', signal());
+    await flush();
+    expect(inner.prefetch).toHaveBeenCalledWith([req('a')], 'listen', expect.anything(), undefined);
+    expect(inner.synthesize).not.toHaveBeenCalled();
+  });
+
+  test('is a no-op for providers without prefetch', async () => {
+    const inner = makeInner();
+    const store = new MemoryStore();
+    new CachingProvider(inner, store).prefetch([req('a')], 'listen', signal());
+    await flush();
+    expect(store.get).not.toHaveBeenCalled();
+    expect(inner.synthesize).not.toHaveBeenCalled();
+  });
+
+  test('swallows failures of the detached synthesis', async () => {
+    const inner = makeInner({
+      prefetch: vi.fn(),
+      synthesize: vi.fn().mockRejectedValue(new SpeechSynthesisPermanentError('no audio')),
+    });
+    const provider = new CachingProvider(inner, new MemoryStore());
+    provider.prefetch([req('a')], 'listen', signal());
+    await flush();
+    await flush();
+    expect(inner.synthesize).toHaveBeenCalledTimes(1);
+  });
+});
