@@ -216,4 +216,26 @@ describe('BufferedTTSClient with a windowed provider', () => {
       expect(provider.synthesize).toHaveBeenCalled();
     });
   });
+  describe('downloads', () => {
+    test('prefetchSentences hands a section to the provider on the download lane', async () => {
+      const prefetch = vi.fn();
+      const client = await start(makeProvider({ prefetch }));
+      const signal = new AbortController().signal;
+      await client.prefetchSentences(
+        [
+          { lang: 'en', text: 'A.' },
+          { lang: 'en', text: 'B.' },
+        ],
+        signal,
+      );
+      expect(prefetch).toHaveBeenCalledWith(
+        [
+          { lang: 'en', text: 'A.', voice: 'v1', pitch: 1 },
+          { lang: 'en', text: 'B.', voice: 'v1', pitch: 1 },
+        ],
+        'download',
+        signal,
+      );
+    });
+  });
 });
