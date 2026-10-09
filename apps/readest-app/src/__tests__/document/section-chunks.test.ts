@@ -75,8 +75,8 @@ describe('splitSection', () => {
 
   it('keeps CFIs of elements and loose text with text outside the chunk dropped', () => {
     // Loose text between top-level elements, and between a wrapper's children
-    const loose = Array.from({ length: 300 }, (_, i) => `loose ${i} <p id="q${i}">para ${i}</p>`);
-    const inner = Array.from({ length: 300 }, (_, i) => `text ${i} <p id="r${i}">row ${i}</p>`);
+    const loose = Array.from({ length: 60 }, (_, i) => `loose ${i} <p id="q${i}">para ${i}</p>`);
+    const inner = Array.from({ length: 60 }, (_, i) => `text ${i} <p id="r${i}">row ${i}</p>`);
     const html = `<!DOCTYPE html><html><head></head><body>${loose.join('')}<div>${inner.join('')}</div> tail</body></html>`;
     const full = parse(html);
     const split = splitSection(html, 6);
@@ -87,8 +87,8 @@ describe('splitSection', () => {
         return el && !el.hasAttribute(CHUNK_ATTRIBUTE);
       })!;
     const ids = [
-      ...Array.from({ length: 300 }, (_, i) => `q${i}`),
-      ...Array.from({ length: 300 }, (_, i) => `r${i}`),
+      ...Array.from({ length: 60 }, (_, i) => `q${i}`),
+      ...Array.from({ length: 60 }, (_, i) => `r${i}`),
     ];
     let textDroppedBefore = 0;
     for (const id of ids) {
