@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as CFI from 'foliate-js/epubcfi.js';
-import { CHUNK_ATTRIBUTE, adjacentChunkElement, splitSection } from 'foliate-js/section-chunks.js';
+import { CHUNK_ATTRIBUTE, adjacentChunkAnchor, splitSection } from 'foliate-js/section-chunks.js';
 
 // A section like a single-file book: many top-level blocks, some nested markup,
 // and loose text between the blocks.
@@ -109,7 +109,7 @@ describe('splitSection', () => {
 
     it('maps a fraction of the section to a fraction of its chunk', () => {
       expect(split.locate(() => 0)).toEqual({ chunk: 0, anchor: 0 });
-      expect(split.locate(() => 0.6)).toEqual({ chunk: 2, anchor: expect.closeTo(0.4) });
+      expect(split.locate(() => 0.6)).toEqual({ chunk: 2, anchor: expect.closeTo(0.4, 1) });
     });
 
     it('falls back to the first chunk when the anchor resolves nowhere', () => {
@@ -120,27 +120,156 @@ describe('splitSection', () => {
   });
 });
 
-describe('adjacentChunkElement', () => {
+describe('adjacentChunkAnchor', () => {
   const html = section(200);
   const split = splitSection(html, 4);
   const docs = chunksOf(split);
   const firstOf = (k: number) => split.chunkOf.indexOf(k);
   const lastOf = (k: number) => split.chunkOf.lastIndexOf(k);
+  const at = (anchor: ((doc: Document) => Range) | null, doc: Document) => {
+    const range = anchor!(doc);
+    expect(range.collapsed).toBe(true);
+    return range.startContainer;
+  };
 
   it('points at the first element of the next chunk', () => {
-    expect(adjacentChunkElement(docs[0]!, 1)).toBe(firstOf(1));
-    expect(adjacentChunkElement(docs[2]!, 1)).toBe(firstOf(3));
+    expect(at(adjacentChunkAnchor(docs[0]!, 1), docs[1]!)).toBe(docs[1]!.body.children[firstOf(1)]);
+    expect(at(adjacentChunkAnchor(docs[2]!, 1), docs[3]!)).toBe(docs[3]!.body.children[firstOf(3)]);
   });
 
   it('points at the last element of the previous chunk', () => {
-    expect(adjacentChunkElement(docs[1]!, -1)).toBe(lastOf(0));
-    expect(adjacentChunkElement(docs[3]!, -1)).toBe(lastOf(2));
+    expect(at(adjacentChunkAnchor(docs[1]!, -1), docs[0]!)).toBe(docs[0]!.body.children[lastOf(0)]);
+    expect(at(adjacentChunkAnchor(docs[3]!, -1), docs[2]!)).toBe(docs[2]!.body.children[lastOf(2)]);
   });
 
-  it('is -1 at either end of the section and outside chunks', () => {
-    expect(adjacentChunkElement(docs[0]!, -1)).toBe(-1);
-    expect(adjacentChunkElement(docs[3]!, 1)).toBe(-1);
-    expect(adjacentChunkElement(parse(html), 1)).toBe(-1);
-    expect(adjacentChunkElement(parse(html), -1)).toBe(-1);
+  it('is null at either end of the section and outside chunks', () => {
+    expect(adjacentChunkAnchor(docs[0]!, -1)).toBeNull();
+    expect(adjacentChunkAnchor(docs[3]!, 1)).toBeNull();
+    expect(adjacentChunkAnchor(parse(html), 1)).toBeNull();
+    expect(adjacentChunkAnchor(parse(html), -1)).toBeNull();
+  });
+});
+
+// Converters often wrap the whole body in one element, or in a few: the
+// chunks are cut between the children of a wrapper bigger than a chunk.
+const wrapped = (wrappers: number, blocks: number) => {
+  const divs = Array.from({ length: wrappers }, (_, w) => {
+    const ps = Array.from(
+      { length: blocks },
+      (_, i) => `<p id="w${w}p${i}">Text ${w}.${i} of <b id="w${w}b${i}">block</b></p>\n`,
+    ).join('');
+    return `<div id="w${w}" class="part">${ps}</div>`;
+  }).join('\n');
+  return `<!DOCTYPE html><html lang="en"><head><title>T</title></head><body>${divs}</body></html>`;
+};
+const own = (el: Element) =>
+  Array.from(el.children).filter((c) => !c.hasAttribute(CHUNK_ATTRIBUTE));
+
+describe('splitSection with wrappers', () => {
+  it('cuts wrappers bigger than a chunk between their children, leaving no chunk empty', () => {
+    const html = wrapped(5, 300);
+    const split = splitSection(html, 20);
+    const docs = chunksOf(split);
+    for (const [k, d] of docs.entries()) {
+      expect(split.isEmpty(k)).toBe(false);
+      // every wrapper keeps its index; one holding this chunk's children is a
+      // copy with the same attributes and every child in place
+      expect(d.body.children).toHaveLength(5);
+      const copies = own(d.body);
+      expect(copies.length).toBeGreaterThan(0);
+      for (const copy of copies) {
+        expect(copy.className).toBe('part');
+        expect(copy.children).toHaveLength(300);
+      }
+      const ps = copies.flatMap(own);
+      expect(ps.length).toBeGreaterThan(40);
+      expect(ps.length).toBeLessThan(110);
+    }
+    // each paragraph is in full in exactly one chunk
+    const full = parse(html);
+    for (const id of ['w0p0', 'w2p150', 'w4p299']) {
+      const owners = docs.filter((d) => {
+        const el = d.getElementById(id);
+        return el && !el.hasAttribute(CHUNK_ATTRIBUTE);
+      });
+      expect(owners).toHaveLength(1);
+      expect(owners[0]!.getElementById(id)!.outerHTML).toBe(full.getElementById(id)!.outerHTML);
+    }
+  });
+
+  it('gives a range inside a wrapper the same CFI as in the full section', () => {
+    const html = wrapped(2, 600);
+    const full = parse(html);
+    const split = splitSection(html, 8);
+    const docs = chunksOf(split);
+    for (const id of ['w0b17', 'w1b301', 'w1b599']) {
+      const fullRange = full.createRange();
+      fullRange.selectNodeContents(full.getElementById(id)!);
+      const cfi = CFI.fromRange(fullRange);
+      const { chunk } = split.locate((doc: Document) => doc.getElementById(id));
+      const chunkDoc = docs[chunk]!;
+      expect(chunkDoc.getElementById(id)!.hasAttribute(CHUNK_ATTRIBUTE)).toBe(false);
+      const chunkRange = chunkDoc.createRange();
+      chunkRange.selectNodeContents(chunkDoc.getElementById(id)!);
+      expect(CFI.fromRange(chunkRange)).toBe(cfi);
+      expect(split.locate((doc: Document) => CFI.toRange(doc, CFI.parse(cfi)))).toEqual({ chunk });
+    }
+    // a wrapper's own id goes to its first chunk
+    expect(split.locate((doc: Document) => doc.getElementById('w1'))).toEqual({
+      chunk: split.locate((doc: Document) => doc.getElementById('w1p0')).chunk,
+    });
+  });
+
+  it('reads on from a chunk into the next one inside the same wrapper', () => {
+    const split = splitSection(wrapped(1, 600), 4);
+    const docs = chunksOf(split);
+    const [first] = own(own(docs[1]!.body)[0]!);
+    expect(adjacentChunkAnchor(docs[0]!, 1)!(docs[1]!).startContainer).toBe(first);
+    expect(adjacentChunkAnchor(docs[1]!, -1)!(docs[0]!).startContainer).toBe(
+      own(own(docs[0]!.body)[0]!).at(-1),
+    );
+  });
+
+  it('reads on past nodes the reader injects into a rendered chunk', () => {
+    // Readers add their own nodes to a rendered document (a skip link at the
+    // top of the body), marked cfi-inert since they are not the book's.
+    for (const html of [section(200), wrapped(1, 600)]) {
+      const split = splitSection(html, 4);
+      const docs = chunksOf(split);
+      for (const d of docs) {
+        const skip = d.createElement('div');
+        skip.setAttribute('cfi-inert', '');
+        d.body.prepend(skip);
+      }
+      const anchor = adjacentChunkAnchor(docs[0]!, 1)!;
+      expect(split.locate(anchor)).toEqual({ chunk: 1 });
+      const first = (el: Element) =>
+        Array.from(el.children).find((c) => !c.matches(`[${CHUNK_ATTRIBUTE}], [cfi-inert]`))!;
+      const top = first(docs[1]!.body);
+      expect(anchor(docs[1]!).startContainer).toBe(top.localName === 'div' ? first(top) : top);
+    }
+  });
+
+  it('leaves a wrapper inside a wrapper whole, and the chunks it covers empty', () => {
+    const inner = wrapped(1, 600).match(/<body>(.*)<\/body>/s)![1];
+    const html = `<!DOCTYPE html><html><head></head><body><div id="outer">${inner}</div><p id="end">End</p></body></html>`;
+    const split = splitSection(html, 4);
+    expect([0, 1, 2, 3].map((k) => split.isEmpty(k))).toEqual([false, true, true, false]);
+    // a position in an empty chunk lies in the wrapper of the chunk before it
+    const { chunk, anchor } = split.locate(0.5);
+    expect(chunk).toBe(0);
+    expect(split.fraction(chunk, anchor!)).toBeCloseTo(0.5);
+    expect(split.locate((doc: Document) => doc.getElementById('end'))).toEqual({ chunk: 3 });
+  });
+
+  it('maps fractions of the section to chunks and back', () => {
+    const split = splitSection(wrapped(3, 200), 6);
+    for (const f of [0, 0.1, 0.33, 0.5, 0.9, 0.999]) {
+      const { chunk, anchor } = split.locate(f);
+      expect(split.isEmpty(chunk)).toBe(false);
+      expect(anchor).toBeGreaterThanOrEqual(0);
+      expect(anchor).toBeLessThan(1);
+      expect(split.fraction(chunk, anchor!)).toBeCloseTo(f);
+    }
   });
 });
