@@ -1730,7 +1730,7 @@ export const keepTextAlignment = (document: Document) => {
   // instead of O(N) recalcs.
   const win = document.defaultView ?? window;
   // A chunk of a huge section (foliate-js section-chunks.js) holds a hidden
-  // placeholder for every top-level element outside it; never read those.
+  // placeholder for every element outside it; never read those.
   const els = document.querySelectorAll(':is(div, p, blockquote, dd):not([data-foliate-chunk])');
   const alignClasses = new Array<string | null>(els.length);
   // Read pass: collect computed text-align for every element. The browser
