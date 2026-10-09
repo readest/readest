@@ -1,7 +1,7 @@
 // RunPod Serverless client for the Readest Voice worker: one job per window
 // of sentences, read back incrementally from /stream. Every detail of the
 // /stream envelope lives in streamJob so a correction is one edit (the local
-// emulator in readest-tts-server mirrors it; verify against real RunPod
+// emulator in the readest-voice worker repo mirrors it; verify against real RunPod
 // before deploy).
 
 export interface RunPodConfig {
