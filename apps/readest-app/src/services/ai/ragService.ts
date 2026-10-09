@@ -25,8 +25,6 @@ export interface BookDocType {
   metadata?: { title?: string | { [key: string]: string }; author?: string | { name?: string } };
 }
 
-const indexingStates = new Map<string, IndexingState>();
-
 export async function isBookIndexed(bookHash: string): Promise<boolean> {
   const indexed = await aiStore.isIndexed(bookHash);
   aiLogger.rag.isIndexed(bookHash, indexed);
@@ -86,15 +84,6 @@ export async function indexBook(
     return current;
   });
 
-  const state: IndexingState = {
-    bookHash,
-    status: 'indexing',
-    progress: 0,
-    chunksProcessed: 0,
-    totalChunks: 0,
-  };
-  indexingStates.set(bookHash, state);
-
   try {
     onProgress?.({ current: 0, total: 1, phase: 'chunking' });
     aiLogger.rag.indexProgress('chunking', 0, sections.length);
@@ -121,11 +110,8 @@ export async function indexBook(
     }
 
     aiLogger.chunker.complete(bookHash, allChunks.length);
-    state.totalChunks = allChunks.length;
 
     if (allChunks.length === 0) {
-      state.status = 'complete';
-      state.progress = 100;
       aiLogger.rag.indexComplete(bookHash, 0, Date.now() - startTime);
       return;
     }
@@ -153,8 +139,6 @@ export async function indexBook(
 
       for (let i = 0; i < allChunks.length; i++) {
         allChunks[i]!.embedding = embeddings[i];
-        state.chunksProcessed = i + 1;
-        state.progress = Math.round(((i + 1) / allChunks.length) * 100);
       }
       onProgress?.({ current: allChunks.length, total: allChunks.length, phase: 'embedding' });
       aiLogger.embedding.complete(embeddings.length, allChunks.length, embeddings[0]?.length || 0);
@@ -184,12 +168,8 @@ export async function indexBook(
     await aiStore.saveMeta(meta);
 
     onProgress?.({ current: 2, total: 2, phase: 'indexing' });
-    state.status = 'complete';
-    state.progress = 100;
     aiLogger.rag.indexComplete(bookHash, allChunks.length, Date.now() - startTime);
   } catch (error) {
-    state.status = 'error';
-    state.error = (error as Error).message;
     aiLogger.rag.indexError(bookHash, (error as Error).message);
     throw error;
   }
@@ -230,15 +210,4 @@ export async function hybridSearch(
 export async function clearBookIndex(bookHash: string): Promise<void> {
   aiLogger.store.clear(bookHash);
   await aiStore.clearBook(bookHash);
-  indexingStates.delete(bookHash);
-}
-
-// internal type for indexing state tracking
-interface IndexingState {
-  bookHash: string;
-  status: 'idle' | 'indexing' | 'complete' | 'error';
-  progress: number;
-  chunksProcessed: number;
-  totalChunks: number;
-  error?: string;
 }
