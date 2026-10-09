@@ -189,7 +189,7 @@
     "marked": "^15.0.12",
     "marked-footnote": "^1.4.0",
     "marked-katex-extension": "^5.1.10",
-    "music-metadata": "^11.14.0",
+    "music-metadata": "12.1.0",
     "nanoid": "^5.1.6",
     "next": "16.3.8",
     "nunjucks": "^3.2.4",
