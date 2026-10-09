@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   parseAuthors,
   createBookGroups,
@@ -979,6 +979,27 @@ describe('createBookSorter', () => {
     expect(books.sort(sorter).map((book) => book.title)).toEqual(
       ascending ? expected : expected.reverse(),
     );
+  });
+
+  it('sorts titles with a cached collator rather than per-comparison localeCompare', () => {
+    // localeCompare with an options object builds a fresh collator on every call,
+    // which made large-library title sorts ~20x slower in V8.
+    const localeCompare = vi.spyOn(String.prototype, 'localeCompare');
+    const books = [22, 1, 12, 3].map((index) => createMockBook({ title: `Volume ${index}` }));
+    const groups = [12, 3].map((index) => ({
+      id: `${index}`,
+      name: `Volume ${index}`,
+      displayName: `Volume ${index}`,
+      books: [books[0]!],
+      updatedAt: 0,
+    }));
+
+    books.sort(createBookSorter(LibrarySortByType.Title, 'en'));
+    groups.sort(createGroupSorter(LibrarySortByType.Title, 'en'));
+
+    expect(localeCompare).not.toHaveBeenCalled();
+    expect(groups.map((group) => group.name)).toEqual(['Volume 3', 'Volume 12']);
+    localeCompare.mockRestore();
   });
 
   it('retains locale-specific alphabetic order alongside numeric title sorting', () => {
