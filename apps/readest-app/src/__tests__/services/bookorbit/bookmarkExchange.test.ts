@@ -109,6 +109,27 @@ describe('buildBookmarkExchangeBook', () => {
       chapter: 'Chapter 4',
     });
   });
+
+  it('echoes the server title of a pulled dogear so the re-push does not rename it', () => {
+    // A pulled dogear keeps the server title in `text` and is re-pushed on the
+    // next pass (createdAt is the pull time); the server treats a differing
+    // derived title as a device edit, so sending only the chapter would
+    // replace a title authored on another device.
+    const pos = '/body/DocFragment[4]/body/p[1]/text().0';
+    const pulled = makeBookmark({
+      id: bookOrbitNoteId(HASH, 'bookmark', pos),
+      xpointer0: pos,
+      text: 'Remember this',
+    });
+    const { request } = buildBookmarkExchangeBook(HASH, [pulled], identityOf, () => 'Ch 4', 0);
+    expect(request.changes[0]!.note).toBe('Remember this');
+  });
+
+  it('caps the wire note at the 500-character DTO limit', () => {
+    const noted = makeBookmark({ id: 'long', note: 'x'.repeat(600) });
+    const { request } = buildBookmarkExchangeBook(HASH, [noted], identityOf, noChapter, 0);
+    expect(request.changes[0]!.note).toHaveLength(500);
+  });
 });
 
 describe('applyBookmarkResult', () => {
