@@ -856,25 +856,32 @@ describe('languageTransformer', () => {
     expect(result).not.toContain('dir=');
   });
 
-  test('treats a region-tagged placeholder the same as a bare one', async () => {
+  test('detects the language of a CJK section only once', async () => {
     detectLanguage.mockReturnValue('zh');
-    const html =
-      '<html lang="en-US" xml:lang="en-US"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
-    const result = await languageTransformer.transform(
-      makeCtx({ content: html, primaryLanguage: 'en-US' }),
-    );
-    expect(result).toContain('lang="zh"');
-    expect(result).not.toContain('en-US');
+    const html = '<html lang="en"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
+    await languageTransformer.transform(makeCtx({ content: html, primaryLanguage: 'en' }));
+    expect(detectLanguage).toHaveBeenCalledTimes(1);
   });
 
   test('keeps a primary language that is not the placeholder', async () => {
     detectLanguage.mockReturnValue('zh');
     const html =
-      '<html lang="de" xml:lang="de"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
+      '<html lang="de-DE" xml:lang="de-DE"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';
     const result = await languageTransformer.transform(
       makeCtx({ content: html, primaryLanguage: 'de' }),
     );
     expect(result).toBe(html);
+    expect(detectLanguage).not.toHaveBeenCalled();
+  });
+
+  test('only reads the text that detection samples', async () => {
+    detectLanguage.mockReturnValue('zh');
+    const html = `<html lang="en"><head></head><body><p>${'An English sentence. '.repeat(100)}</p><p>中文</p></body></html>`;
+    const result = await languageTransformer.transform(
+      makeCtx({ content: html, primaryLanguage: 'en' }),
+    );
+    expect(result).toBe(html);
+    expect(detectLanguage).not.toHaveBeenCalled();
   });
 
   test('leaves an English book with CJK fragments alone when the content is not CJK', async () => {
