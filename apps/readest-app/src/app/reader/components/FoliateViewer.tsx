@@ -103,6 +103,9 @@ import { setCoverSpread } from '@/utils/spread';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
+import { useOcrSession } from '../hooks/useOcrSession';
+import { useOcrProgress } from '../hooks/useOcrProgress';
+import { prioritizeCurrentDocument } from '../utils/ocrDocumentPriority';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
@@ -145,6 +148,10 @@ const FoliateViewer: React.FC<{
   const getProgress = useReaderStore((s) => s.getProgress);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
+  const ocrEnabled = useReaderStore((s) => s.viewStates[bookKey]?.ocrEnabled ?? false);
+  const ocrEnabledRef = useRef(ocrEnabled);
+  ocrEnabledRef.current = ocrEnabled;
+  const ocrLanguage = useReaderStore((s) => s.viewStates[bookKey]?.ocrLanguage ?? '');
   const getParallels = useParallelViewStore((s) => s.getParallels);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getConfig = useBookDataStore((s) => s.getConfig);
@@ -154,6 +161,7 @@ const FoliateViewer: React.FC<{
   const { registerBrightnessListeners, overlayVisible, overlayLevel } =
     useBrightnessGesture(bookKey);
   const bookData = getBookData(bookKey);
+  const bookFormat = bookData?.book?.format;
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
   // PDF theme colors reach the canvas through CanvasRenderingContext2D.filter,
@@ -170,12 +178,52 @@ const FoliateViewer: React.FC<{
   const [navigating, setNavigating] = useState(false);
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ocrProgress = useOcrProgress(ocrEnabled, ocrLanguage);
+  const ocrErrorPageRef = useRef<number | null>(null);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
+  const getOnDeviceTextDocuments = useCallback(() => {
+    const renderer = viewRef.current?.renderer;
+    if (!renderer) return [];
+    return prioritizeCurrentDocument(renderer);
+  }, []);
 
   const autoScroll = useAutoScroll(bookKey, viewRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
+  const processOcrDocument = useOcrSession({
+    enabled: (bookFormat === 'CBZ' || bookFormat === 'PDF') && ocrEnabled,
+    language: ocrLanguage || bookDoc.metadata.language,
+    mangaFallback: bookFormat === 'CBZ' || (bookFormat === 'PDF' && bookDoc.dir === 'rtl'),
+    mangaMode: bookFormat === 'CBZ',
+    getDocuments: getOnDeviceTextDocuments,
+    onProgress: ocrProgress.onProgress,
+    onError: (error, pageIndex) => {
+      console.error(`Failed to recognize text on page ${pageIndex}`, error);
+      if (
+        ocrErrorPageRef.current === pageIndex ||
+        (pageIndex >= 0 && getOnDeviceTextDocuments()[0]?.index !== pageIndex)
+      ) {
+        return;
+      }
+      ocrErrorPageRef.current = pageIndex;
+      ocrProgress.dismiss();
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        placement: 'top',
+        message:
+          pageIndex >= 0
+            ? _('Text recognition failed on page {{page}}', { page: pageIndex + 1 })
+            : _('Text recognition failed'),
+        timeout: 5000,
+      });
+    },
+    onPageRecognized: ocrProgress.onPageRecognized,
+  });
+
+  useEffect(() => {
+    ocrErrorPageRef.current = null;
+  }, [ocrEnabled, ocrLanguage]);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {
@@ -246,6 +294,12 @@ const FoliateViewer: React.FC<{
     pendingRelocateRef.current = null;
     if (!event) return;
     const detail = event.detail;
+    if (ocrEnabledRef.current) {
+      const current = getOnDeviceTextDocuments()[0];
+      if (current?.doc && typeof current.index === 'number') {
+        void processOcrDocument(current.doc, current.index);
+      }
+    }
     const atEnd = viewRef.current?.renderer.atEnd || false;
     const { current, next, total } = detail.location as PageInfo;
     const currentPage = atEnd && total > 0 ? total - 1 : current;
@@ -266,7 +320,7 @@ const FoliateViewer: React.FC<{
       ? getLockedPanX(viewRef.current, getViewSettings(bookKey))
       : undefined;
     if (panX !== undefined && panX !== getConfig(bookKey)?.panX) setConfig(bookKey, { panX });
-  }, [bookKey, setProgress, cancelRelocateScheduled]);
+  }, [bookKey, getOnDeviceTextDocuments, processOcrDocument, setProgress, cancelRelocateScheduled]);
 
   const progressRelocateHandler = (event: Event) => {
     // Foliate can emit a late relocation after close() clears its progress
@@ -422,6 +476,9 @@ const FoliateViewer: React.FC<{
       if (bookDoc.rendition?.layout === 'pre-paginated') {
         const pageSettings = getPageViewSettings(viewSettings);
         applyFixedlayoutStyles(detail.doc, pageSettings, undefined, bookData.book?.format);
+        if (bookData.book?.format === 'CBZ') {
+          void processOcrDocument(detail.doc, detail.index);
+        }
         if (bookData.book?.format === 'PDF' && renderer) {
           renderer.pageColors = getPDFPageColors(pageSettings, getThemeCode());
         }
@@ -521,6 +578,12 @@ const FoliateViewer: React.FC<{
         registerBookmarkPullDoc(bookKey, detail.doc);
       }
     }
+  };
+
+  const pdfPageRenderedHandler = (event: Event) => {
+    if (bookFormat !== 'PDF') return;
+    const { doc, index } = (event as CustomEvent<{ doc?: Document; index?: number }>).detail;
+    if (doc && typeof index === 'number') void processOcrDocument(doc, index);
   };
 
   const evalInlineScripts = (doc: Document) => {
@@ -721,6 +784,7 @@ const FoliateViewer: React.FC<{
     onStabilized: stabilizedHandler,
     onRelocate: progressRelocateHandler,
     onRendererRelocate: docRelocateHandler,
+    onRendererCreateOverlayer: pdfPageRenderedHandler,
     onNavigateStart: navigateStartHandler,
     onNavigateEnd: navigateEndHandler,
   });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ocrPageSchema, ocrRequestPayloadSchema, type OcrPage } from './ocr';
 
 export const PLUGIN_PROTOCOL_VERSION = 1 as const;
 export const MAX_PLUGIN_RESOURCE_BYTES = 4 * 1_024 * 1_024;
@@ -31,9 +32,15 @@ export const pluginManifestSchema = z.strictObject({
   protocolVersion: z.literal(PLUGIN_PROTOCOL_VERSION),
   pluginVersion: z.string().min(1).max(64),
   builtAt: z.iso.datetime().optional(),
-  contributions: z.strictObject({
-    dictionaryFormats: z.array(dictionaryFormatContributionSchema).min(1).max(16),
-  }),
+  contributions: z
+    .strictObject({
+      dictionaryFormats: z.array(dictionaryFormatContributionSchema).max(16).default([]),
+      ocr: z.literal(true).optional(),
+    })
+    .refine(
+      (value) => value.dictionaryFormats.length > 0 || value.ocr === true,
+      'A plugin must declare a contribution',
+    ),
 });
 
 export type PluginManifest = z.infer<typeof pluginManifestSchema>;
@@ -115,6 +122,11 @@ export const pluginRequestSchema = z.discriminatedUnion('operation', [
   verifyIndexRequestSchema,
   lookupRequestSchema,
   readResourceRequestSchema,
+  z.strictObject({
+    ...requestEnvelope,
+    operation: z.literal('recognize'),
+    payload: ocrRequestPayloadSchema,
+  }),
 ]);
 
 export type PluginRequest = z.infer<typeof pluginRequestSchema>;
@@ -363,6 +375,7 @@ const readResourceResultSchema = z.strictObject({
 });
 
 export interface PluginResultByOperation {
+  recognize: OcrPage;
   probe: z.infer<typeof probeResultSchema>;
   inspect: z.infer<typeof inspectResultSchema>;
   buildIndex: z.infer<typeof buildIndexResultSchema>;
@@ -379,6 +392,9 @@ export const parsePluginOperationResult = <T extends PluginOperation>(
 ): PluginResult<T> => {
   let result: PluginResultByOperation[PluginOperation];
   switch (operation) {
+    case 'recognize':
+      result = ocrPageSchema.parse(value);
+      break;
     case 'probe':
       result = probeResultSchema.parse(value);
       break;
