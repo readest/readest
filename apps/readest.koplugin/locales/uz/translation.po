@@ -338,9 +338,6 @@ msgstr "Yangilanishni tekshirish"
 msgid "Please login first"
 msgstr "Iltimos, avval tizimga kiring"
 
-msgid "Please configure Readest settings first"
-msgstr "Iltimos, avval Readest sozlamalarini sozlang"
-
 msgid "(none)"
 msgstr "(yoʻq)"
 
@@ -506,9 +503,6 @@ msgstr "Toʻliq sinxronlash: barcha izohlar olinmoqda..."
 msgid "Pulling annotations..."
 msgstr "Izohlar olinmoqda..."
 
-msgid "Authentication failed, please login again"
-msgstr "Autentifikatsiya muvaffaqiyatsiz tugadi, qayta tizimga kiring"
-
 msgid "Failed to pull annotations"
 msgstr "Izohlarni olib boʻlmadi"
 
@@ -520,6 +514,9 @@ msgstr "%1 ta izoh olindi"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Readest sessiyangiz muddati tugadi. Qayta tizimga kiring."
+
+msgid "Authentication failed, please login again"
+msgstr "Autentifikatsiya muvaffaqiyatsiz tugadi, qayta tizimga kiring"
 
 msgid "Login"
 msgstr "Kirish"
@@ -566,8 +563,65 @@ msgstr "Oʻqish jarayonini olib boʻlmadi"
 msgid "Reading progress synchronized"
 msgstr "Oʻqish jarayoni sinxronlandi"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Saqlangan o'qish joyini kitobning ushbu nusxasi bilan ishlatib bo'lmaydi"
+
 msgid "No saved reading progress found for this book"
 msgstr "Ushbu kitob uchun saqlangan oʻqish jarayoni topilmadi"
+
+msgid "Sync was cancelled."
+msgstr "Sinxronlash bekor qilindi."
+
+msgid "The connection timed out. Please try again."
+msgstr "Ulanish vaqti tugadi. Qaytadan urinib ko'ring."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Tarmoqqa ulanib bo'lmayapti. Internet aloqasini tekshiring."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Server topilmadi. Internet aloqasini tekshiring."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Server ulanishni rad etdi. Keyinroq qaytadan urinib ko'ring."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Ulanish uzildi. Qaytadan urinib ko'ring."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Server bilan xavfsiz ulanish o'rnatib bo'lmadi."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Autentifikatsiya muvaffaqiyatsiz tugadi. Qaytadan kiring."
+
+msgid "The account changed during sync."
+msgstr "Sinxronlash vaqtida hisob o'zgardi."
+
+msgid "The file was not found in the cloud."
+msgstr "Fayl bulutda topilmadi."
+
+msgid "The local file is missing."
+msgstr "Mahalliy fayl mavjud emas."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Ichki xatolik yuz berdi. Qaytadan urinib ko'ring."
+
+msgid "Access denied."
+msgstr "Kirish rad etildi."
+
+msgid "Not found on the server."
+msgstr "Serverda topilmadi."
+
+msgid "The file is too large."
+msgstr "Fayl juda katta."
+
+msgid "Too many requests. Please try again later."
+msgstr "So'rovlar juda ko'p. Keyinroq qaytadan urinib ko'ring."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Server vaqtincha mavjud emas. Keyinroq qaytadan urinib ko'ring."
+
+msgid "The request failed. Please try again."
+msgstr "So'rov bajarilmadi. Qaytadan urinib ko'ring."
 
 msgid "Reading statistics are up to date"
 msgstr "Oʻqish statistikasi eng songgi holatda"

@@ -338,9 +338,6 @@ msgstr "التحقق من التحديث"
 msgid "Please login first"
 msgstr "يرجى تسجيل الدخول أولاً"
 
-msgid "Please configure Readest settings first"
-msgstr "يرجى تكوين إعدادات Readest أولاً"
-
 msgid "(none)"
 msgstr "(لا شيء)"
 
@@ -506,9 +503,6 @@ msgstr "مزامنة كاملة: جلب جميع الملاحظات…"
 msgid "Pulling annotations..."
 msgstr "جارٍ جلب الملاحظات…"
 
-msgid "Authentication failed, please login again"
-msgstr "فشل المصادقة، يرجى تسجيل الدخول مرة أخرى"
-
 msgid "Failed to pull annotations"
 msgstr "فشل جلب الملاحظات"
 
@@ -520,6 +514,9 @@ msgstr "تم جلب %1 ملاحظات"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "انتهت صلاحية جلسة Readest. يرجى تسجيل الدخول مرة أخرى."
+
+msgid "Authentication failed, please login again"
+msgstr "فشل المصادقة، يرجى تسجيل الدخول مرة أخرى"
 
 msgid "Login"
 msgstr "تسجيل الدخول"
@@ -566,8 +563,65 @@ msgstr "فشل جلب تقدم القراءة"
 msgid "Reading progress synchronized"
 msgstr "تمت مزامنة تقدم القراءة"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "لا يمكن استخدام موضع القراءة المحفوظ مع هذه النسخة من الكتاب"
+
 msgid "No saved reading progress found for this book"
 msgstr "لم يتم العثور على تقدم قراءة محفوظ لهذا الكتاب"
+
+msgid "Sync was cancelled."
+msgstr "تم إلغاء المزامنة."
+
+msgid "The connection timed out. Please try again."
+msgstr "انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "تعذّر الوصول إلى الشبكة. يرجى التحقق من الاتصال بالإنترنت."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "تعذّر العثور على الخادم. يرجى التحقق من الاتصال بالإنترنت."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "رفض الخادم الاتصال. يرجى المحاولة لاحقًا."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "انقطع الاتصال. يرجى المحاولة مرة أخرى."
+
+msgid "A secure connection to the server could not be established."
+msgstr "تعذّر إنشاء اتصال آمن بالخادم."
+
+msgid "Authentication failed. Please log in again."
+msgstr "فشلت المصادقة. يرجى تسجيل الدخول مرة أخرى."
+
+msgid "The account changed during sync."
+msgstr "تغيّر الحساب أثناء المزامنة."
+
+msgid "The file was not found in the cloud."
+msgstr "لم يتم العثور على الملف في السحابة."
+
+msgid "The local file is missing."
+msgstr "الملف المحلي مفقود."
+
+msgid "An internal error occurred. Please try again."
+msgstr "حدث خطأ داخلي. يرجى المحاولة مرة أخرى."
+
+msgid "Access denied."
+msgstr "تم رفض الوصول."
+
+msgid "Not found on the server."
+msgstr "غير موجود على الخادم."
+
+msgid "The file is too large."
+msgstr "الملف كبير جدًا."
+
+msgid "Too many requests. Please try again later."
+msgstr "طلبات كثيرة جدًا. يرجى المحاولة لاحقًا."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "الخادم غير متاح مؤقتًا. يرجى المحاولة لاحقًا."
+
+msgid "The request failed. Please try again."
+msgstr "فشل الطلب. يرجى المحاولة مرة أخرى."
 
 msgid "Reading statistics are up to date"
 msgstr "إحصائيات القراءة محدّثة"

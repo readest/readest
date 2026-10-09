@@ -338,9 +338,6 @@ msgstr "检查更新"
 msgid "Please login first"
 msgstr "请先登录"
 
-msgid "Please configure Readest settings first"
-msgstr "请先配置 Readest 设置"
-
 msgid "(none)"
 msgstr "（无）"
 
@@ -506,9 +503,6 @@ msgstr "完整同步：正在拉取所有标注..."
 msgid "Pulling annotations..."
 msgstr "正在拉取标注..."
 
-msgid "Authentication failed, please login again"
-msgstr "认证失败，请重新登录"
-
 msgid "Failed to pull annotations"
 msgstr "拉取标注失败"
 
@@ -520,6 +514,9 @@ msgstr "已拉取 %1 条标注"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Readest 登录已过期，请重新登录。"
+
+msgid "Authentication failed, please login again"
+msgstr "认证失败，请重新登录"
 
 msgid "Login"
 msgstr "登录"
@@ -566,8 +563,65 @@ msgstr "拉取阅读进度失败"
 msgid "Reading progress synchronized"
 msgstr "阅读进度已同步"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "保存的阅读位置无法用于此书籍副本"
+
 msgid "No saved reading progress found for this book"
 msgstr "未找到此书籍的已保存阅读进度"
+
+msgid "Sync was cancelled."
+msgstr "同步已取消。"
+
+msgid "The connection timed out. Please try again."
+msgstr "连接超时，请重试。"
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "网络不可达，请检查网络连接。"
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "找不到服务器，请检查网络连接。"
+
+msgid "The server refused the connection. Please try again later."
+msgstr "服务器拒绝了连接，请稍后再试。"
+
+msgid "The connection was interrupted. Please try again."
+msgstr "连接已中断，请重试。"
+
+msgid "A secure connection to the server could not be established."
+msgstr "无法与服务器建立安全连接。"
+
+msgid "Authentication failed. Please log in again."
+msgstr "认证失败，请重新登录。"
+
+msgid "The account changed during sync."
+msgstr "同步期间账户已更改。"
+
+msgid "The file was not found in the cloud."
+msgstr "云端未找到该文件。"
+
+msgid "The local file is missing."
+msgstr "本地文件丢失。"
+
+msgid "An internal error occurred. Please try again."
+msgstr "发生内部错误，请重试。"
+
+msgid "Access denied."
+msgstr "访问被拒绝。"
+
+msgid "Not found on the server."
+msgstr "服务器上未找到。"
+
+msgid "The file is too large."
+msgstr "文件过大。"
+
+msgid "Too many requests. Please try again later."
+msgstr "请求过于频繁，请稍后再试。"
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "服务器暂时不可用，请稍后再试。"
+
+msgid "The request failed. Please try again."
+msgstr "请求失败，请重试。"
 
 msgid "Reading statistics are up to date"
 msgstr "阅读统计已是最新"
