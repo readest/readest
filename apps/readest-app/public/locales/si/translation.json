@@ -2563,5 +2563,7 @@
   "Set Repeat Start (A)": "පුනරාවර්තන ආරම්භය සකසන්න (A)",
   "Set Repeat End (B)": "පුනරාවර්තන අවසානය සකසන්න (B)",
   "Clear A-B Repeat": "A-B පුනරාවර්තනය ඉවත් කරන්න",
-  "Pause After Each Sentence": "සෑම වාක්‍යයකටම පසු විරාම කරන්න"
+  "Pause After Each Sentence": "සෑම වාක්‍යයකටම පසු විරාම කරන්න",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "දෛනික TTS සීමාවට ළඟා විය. ඔබේ සැලැස්ම උසස් කරන්න හෝ හෙට නැවත උත්සාහ කරන්න.",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "Premium කටහඬ ආරම්භ කිරීම. අක්‍රිය වීමෙන් පසු පළමු ධාවනයට මිනිත්තුවක් දක්වා ගත විය හැකිය."
 }

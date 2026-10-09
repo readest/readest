@@ -2563,5 +2563,7 @@
   "Set Repeat Start (A)": "Ange upprepningsstart (A)",
   "Set Repeat End (B)": "Ange upprepningsslut (B)",
   "Clear A-B Repeat": "Rensa A-B-upprepning",
-  "Pause After Each Sentence": "Pausa efter varje mening"
+  "Pause After Each Sentence": "Pausa efter varje mening",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Daglig TTS-gräns nådd. Uppgradera din plan eller försök igen imorgon.",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "Startar premiumröst. Den första uppspelningen efter inaktivitet kan ta upp till en minut."
 }

@@ -2499,5 +2499,7 @@
   "Set Repeat Start (A)": "བསྐྱར་ཟློས་འགོ་འཛུགས་གཏན་འཁེལ། (A)",
   "Set Repeat End (B)": "བསྐྱར་ཟློས་མཇུག་གཏན་འཁེལ། (B)",
   "Clear A-B Repeat": "A-B བསྐྱར་ཟློས་གསལ་བ།",
-  "Pause After Each Sentence": "ཚིག་གྲུབ་རེ་རེའི་རྗེས་སུ་མཚམས་འཇོག"
+  "Pause After Each Sentence": "ཚིག་གྲུབ་རེ་རེའི་རྗེས་སུ་མཚམས་འཇོག",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "ཉིན་རེའི་TTS ཚད་མར་སླེབས་སོང་། ཁྱོད་ཀྱི་འཇོག་ཐབས་མར་སྤར་གྱིས་ཡང་ན་སང་ཉིན་ཚོད་ལྟ་བྱོས།",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "མཐོ་རིམ་གཏམ་བརྗོད་འགོ་འཛུགས་བྱེད་བཞིན་ཡོད། མི་ལས་འགར་སང་ཉིན་ཐེངས་དང་པོའི་ལེན་ལུགས་ལ་སྐར་མ་གཅིག་ཙམ་དགོས་ཐུབ།"
 }

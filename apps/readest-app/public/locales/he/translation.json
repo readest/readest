@@ -2627,5 +2627,7 @@
   "Set Repeat Start (A)": "הגדר תחילת חזרה (A)",
   "Set Repeat End (B)": "הגדר סוף חזרה (B)",
   "Clear A-B Repeat": "נקה חזרת A-B",
-  "Pause After Each Sentence": "השהה אחרי כל משפט"
+  "Pause After Each Sentence": "השהה אחרי כל משפט",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "הגעת למגבלת ה-TTS היומית. שדרג את התוכנית שלך או נסה שוב מחר.",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "מפעיל קול פרימיום. ההפעלה הראשונה לאחר חוסר פעילות עשויה לקחת עד דקה."
 }

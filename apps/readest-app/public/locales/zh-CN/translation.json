@@ -2499,5 +2499,7 @@
   "Set Repeat Start (A)": "设置复读起点 (A)",
   "Set Repeat End (B)": "设置复读终点 (B)",
   "Clear A-B Repeat": "清除 A-B 复读",
-  "Pause After Each Sentence": "每句后暂停"
+  "Pause After Each Sentence": "每句后暂停",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "已达到每日 TTS 限额。请升级您的计划或明天再试。",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "正在启动高级语音。空闲后首次播放可能需要最多一分钟。"
 }

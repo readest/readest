@@ -2499,5 +2499,7 @@
   "Set Repeat Start (A)": "Tetapkan mula ulangan (A)",
   "Set Repeat End (B)": "Tetapkan akhir ulangan (B)",
   "Clear A-B Repeat": "Kosongkan ulangan A-B",
-  "Pause After Each Sentence": "Jeda selepas setiap ayat"
+  "Pause After Each Sentence": "Jeda selepas setiap ayat",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Had TTS harian dicapai. Naik taraf pelan anda atau cuba lagi esok.",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "Memulakan suara premium. Main balik pertama selepas tidak aktif boleh mengambil masa sehingga satu minit."
 }

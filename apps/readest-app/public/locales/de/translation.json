@@ -2563,5 +2563,7 @@
   "Set Repeat Start (A)": "Wiederholungsstart setzen (A)",
   "Set Repeat End (B)": "Wiederholungsende setzen (B)",
   "Clear A-B Repeat": "A-B-Wiederholung löschen",
-  "Pause After Each Sentence": "Nach jedem Satz pausieren"
+  "Pause After Each Sentence": "Nach jedem Satz pausieren",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Tägliches TTS-Limit erreicht. Upgraden Sie Ihren Plan oder versuchen Sie es morgen erneut.",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "Premium-Stimme wird gestartet. Die erste Wiedergabe nach einer Pause kann bis zu einer Minute dauern."
 }

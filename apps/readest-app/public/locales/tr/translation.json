@@ -2563,5 +2563,7 @@
   "Set Repeat Start (A)": "Tekrar başlangıcını ayarla (A)",
   "Set Repeat End (B)": "Tekrar bitişini ayarla (B)",
   "Clear A-B Repeat": "A-B tekrarını temizle",
-  "Pause After Each Sentence": "Her cümleden sonra duraklat"
+  "Pause After Each Sentence": "Her cümleden sonra duraklat",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Günlük TTS limitine ulaşıldı. Planınızı yükseltin veya yarın tekrar deneyin.",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "Premium ses başlatılıyor. Boşta kaldıktan sonraki ilk oynatma bir dakikaya kadar sürebilir."
 }

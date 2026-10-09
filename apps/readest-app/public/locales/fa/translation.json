@@ -2563,5 +2563,7 @@
   "Set Repeat Start (A)": "تنظیم شروع تکرار (A)",
   "Set Repeat End (B)": "تنظیم پایان تکرار (B)",
   "Clear A-B Repeat": "پاک کردن تکرار A-B",
-  "Pause After Each Sentence": "توقف پس از هر جمله"
+  "Pause After Each Sentence": "توقف پس از هر جمله",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "محدودیت روزانه TTS به پایان رسید. پلن خود را ارتقا دهید یا فردا دوباره امتحان کنید.",
+  "Starting premium voice. The first playback after idle can take up to a minute.": "در حال راه‌اندازی صدای پریمیوم. اولین پخش پس از بی‌کاری ممکن است تا یک دقیقه طول بکشد."
 }
