@@ -175,6 +175,16 @@ describe('markBookDeleted', () => {
     expect(book.progress).toBeNull();
   });
 
+  it('never lowers a future-dated updatedAt, so the tombstone still outranks the cloud row', () => {
+    // A peer with a fast clock can leave `updatedAt` ahead of this device's
+    // now. Lowering it would let that cloud row win the merge (ties go to the
+    // cloud), clearing `deletedAt` again.
+    const book = makeBook({ updatedAt: 500 });
+    markBookDeleted(book, 200, false);
+    expect(book.deletedAt).toBe(200);
+    expect(book.updatedAt).toBeGreaterThan(500);
+  });
+
   it('keeps the reading progress on a plain delete', () => {
     const book = makeBook();
     markBookDeleted(book, 200, false);

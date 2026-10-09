@@ -337,7 +337,9 @@ export const markBookDeleted = (book: Book, deletedAt: number, purge: boolean) =
   book.fileSyncDeletionRequestedAt = deletedAt;
   book.downloadedAt = null;
   book.coverDownloadedAt = null;
-  book.updatedAt = deletedAt;
+  // Strictly above any future-dated stamp a fast-clocked peer left on the row:
+  // lowering it would hand the merge back to the cloud row (ties go to it).
+  book.updatedAt = Math.max(deletedAt, (book.updatedAt ?? 0) + 1);
   // null (not undefined, which JSON drops) clears it in the cloud too (#6532).
   if (purge) book.progress = null;
 };
