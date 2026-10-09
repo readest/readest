@@ -241,6 +241,40 @@ describe('paragraph mode', () => {
     });
   });
 
+  it('moves across the chunks of a section rendered in chunks', async () => {
+    // foliate-js renders a huge section as chunk documents that share its
+    // spine index; each holds hidden placeholders for the other chunks.
+    const firstChunk = createDoc('<p>End of chunk one</p><p data-foliate-chunk="1"></p>');
+    const secondChunk = createDoc(
+      '<p data-foliate-chunk="0"></p><p>Start of chunk two</p><p>More of chunk two</p>',
+    );
+    const chunks = [firstChunk, secondChunk];
+    let primary = 0;
+    const { view, renderer } = createMockView(chunks, 0);
+    renderer.getContents.mockImplementation(() => [
+      { doc: chunks[primary]!, index: 0 },
+      { doc: chunks[1 - primary]!, index: 0 },
+    ]);
+    renderer.nextSection.mockImplementation(async () => {
+      primary = 1;
+    });
+    const viewRef = { current: view } as React.RefObject<FoliateView | null>;
+
+    render(<HookHarness view={viewRef} />);
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('End of chunk one');
+    });
+
+    await act(async () => {
+      await hookApi?.goToNextParagraph();
+    });
+
+    await waitFor(() => {
+      expect(hookApi?.paragraphState.currentRange?.toString()).toContain('Start of chunk two');
+    });
+    expect(renderer.nextSection).toHaveBeenCalledTimes(1);
+  });
+
   it('resumes without scrolling the underlying view so repeated enter/exit cannot rewind (#4717)', async () => {
     const doc = createDoc('<p>Para A</p><p>Para B</p><p>Para C</p>');
     const { view, renderer } = createMockView([doc], 0);

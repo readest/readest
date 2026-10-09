@@ -3,6 +3,7 @@ local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local ButtonDialog = require("ui/widget/buttondialog")
 local syncbooks = require("library.syncbooks")
+local SyncError = require("readest_syncerror")
 local _ = require("readest_i18n")
 local T = require("ffi/util").template
 
@@ -63,6 +64,7 @@ local function finish(job)
         text = T(_("Download cancelled. %1 of %2 downloaded."), job.done, #job.books)
     elseif job.failed > 0 then
         text = T(_("Downloaded %1 of %2 (skipped %3)."), job.done, #job.books, job.failed)
+        if job.last_error then text = text .. "\n" .. job.last_error end
     else
         text = T(_("Downloaded %1 of %2."), job.done, #job.books)
     end
@@ -97,7 +99,7 @@ local function next_book(job)
             job.bytes = bytes
             update()
         end,
-    }, function(success, path)
+    }, function(success, path, status)
         job.cancel_transfer = nil
         if success then
             -- Account switching can close the Library's original connection.
@@ -118,6 +120,7 @@ local function next_book(job)
             if job.opts.on_book then job.opts.on_book() end
         elseif not job.cancelled then
             job.failed = job.failed + 1
+            job.last_error = SyncError.reason(path, status)
         end
         job.index = job.index + 1
         -- Even immediate authentication failures yield between queued books.

@@ -8,7 +8,13 @@ vi.mock('@/utils/misc', async (importOriginal) => {
   };
 });
 
-import { getStyles, LINK_TOUCH_HOLD_CLASS, TEXT_SELECTED_CLASS, ThemeCode } from '@/utils/style';
+import {
+  LINK_HIT_AREA_CLASS,
+  getStyles,
+  LINK_TOUCH_HOLD_CLASS,
+  TEXT_SELECTED_CLASS,
+  ThemeCode,
+} from '@/utils/style';
 import { CustomFont } from '@/styles/fonts';
 import { ViewSettings } from '@/types/book';
 import {
@@ -1078,6 +1084,20 @@ describe('link hit area during a text selection (#6566)', () => {
     expect(css).toMatch(
       new RegExp(`html\\.${TEXT_SELECTED_CLASS} a::before\\s*\\{\\s*pointer-events: none;`),
     );
+  });
+});
+
+describe('link hit area in link-dense sections', () => {
+  it('enlarges link hit areas only in documents opted in with LINK_HIT_AREA_CLASS', () => {
+    // Positioning every link and its ::before box made a 20 MB concordance
+    // section with 273k links take minutes to lay out, so the enlarged area is
+    // opt-in per document instead of on by default.
+    const css = getStyles(makeViewSettings(), makeThemeCode());
+    expect(css).toMatch(
+      new RegExp(`html\\.${LINK_HIT_AREA_CLASS} a\\s*\\{\\s*position: relative !important;`),
+    );
+    expect(css).toMatch(new RegExp(`html\\.${LINK_HIT_AREA_CLASS} a::before\\s*\\{`));
+    expect(css).not.toMatch(/(^|\n)\s*a\s*\{\s*position: relative !important;/);
   });
 });
 

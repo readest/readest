@@ -689,8 +689,11 @@
     position: relative;
   }
 
+  /* An inset outline, not a border: a border narrows the bookshelf, and its
+     width-based column count then drops (8 to 6 at 1280px) mid-drag. */
   .drag-over {
-    border: 2px dashed #4a90e2 !important;
+    outline: 2px dashed #4a90e2 !important;
+    outline-offset: -2px;
     background-color: rgba(74, 144, 226, 0.1) !important;
     transition: all 0.2s ease-in-out;
   }

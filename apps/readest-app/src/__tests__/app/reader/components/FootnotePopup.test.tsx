@@ -22,6 +22,7 @@ const hoisted = vi.hoisted(() => ({
   goTo: vi.fn(),
   showTransientHighlight: vi.fn(),
   isLinkTargetVisible: vi.fn(),
+  applyLinkHitArea: vi.fn(),
 }));
 
 vi.mock('foliate-js/footnotes.js', () => {
@@ -90,6 +91,7 @@ vi.mock('@/store/customFontStore', () => ({
 }));
 
 vi.mock('@/utils/style', () => ({
+  applyLinkHitArea: hoisted.applyLinkHitArea,
   getBaseFontFamily: () => '"Reader Font", serif',
   getBaseFontSize: () => 22,
   getFootnoteStyles: () => '',
@@ -205,6 +207,41 @@ const openFootnotePopup = async (href = HREF) => {
   });
   return view;
 };
+
+describe('FootnotePopup link hit area', () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+    hoisted.handlers.length = 0;
+    hoisted.onLinkClick.current = null;
+    hoisted.applyLinkHitArea.mockReset();
+  });
+
+  it('opts the popup document in to the enlarged link hit area', async () => {
+    await renderPopup();
+    const anchor = document.createElement('a');
+    anchor.setAttribute('href', HREF);
+    document.body.appendChild(anchor);
+    await act(async () => {
+      hoisted.onLinkClick.current?.(
+        new CustomEvent('link', { detail: { a: anchor, href: HREF }, cancelable: true }),
+      );
+    });
+    const view = createPopupView();
+    const doc = document.implementation.createHTMLDocument();
+    Object.assign((view as unknown as { renderer: object }).renderer, {
+      getContents: () => [{ doc, index: 3 }],
+    });
+    await act(async () => {
+      hoisted.handlers
+        .at(-1)!
+        .dispatchEvent(
+          new CustomEvent('render', { detail: { view, href: HREF, index: 3, extract: null } }),
+        );
+    });
+
+    expect(hoisted.applyLinkHitArea).toHaveBeenCalledWith(doc);
+  });
+});
 
 describe('FootnotePopup jump to location', () => {
   beforeEach(() => {

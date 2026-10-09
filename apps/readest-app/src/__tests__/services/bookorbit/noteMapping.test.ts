@@ -9,6 +9,7 @@ import {
   formatKoDate,
   formatKoDatetime,
   koColorForNote,
+  normalizeKoChapter,
   noteToKoAnnotation,
   parseKoDatetime,
   readingStatusToBookOrbit,
@@ -95,6 +96,33 @@ describe('noteToKoAnnotation', () => {
       '2026-08-01 12:31:05',
     );
     expect(noteToKoAnnotation({ ...baseNote, xpointer0: undefined }, 'x')).toBeNull();
+  });
+
+  it('stamps the resolved chapter label on the wire annotation', () => {
+    expect(noteToKoAnnotation(baseNote, '2026-08-01 12:30:05', 'Chapter 3: Home')?.chapter).toBe(
+      'Chapter 3: Home',
+    );
+  });
+});
+
+describe('normalizeKoChapter', () => {
+  it('drops an absent or empty label instead of sending a blank chapter', () => {
+    // BookOrbit stores what it receives and lists chapters by `IS NOT NULL`,
+    // so "" would show up as a blank chapter in the annotations hub.
+    expect(normalizeKoChapter(null)).toBeUndefined();
+    expect(normalizeKoChapter(undefined)).toBeUndefined();
+    expect(normalizeKoChapter('')).toBeUndefined();
+  });
+
+  it('truncates past the 500-character DTO limit', () => {
+    // The validation pipe rejects the whole exchange request for that book
+    // when a field is out of range, and the watermark only advances after a
+    // clean pass — so an over-long TOC label would retry forever.
+    const label = 'x'.repeat(600);
+    const chapter = normalizeKoChapter(label);
+    expect(chapter).toHaveLength(500);
+    expect(chapter).toBe('x'.repeat(500));
+    expect(normalizeKoChapter('Chapter 1')).toBe('Chapter 1');
   });
 });
 

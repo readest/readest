@@ -1334,6 +1334,115 @@ describe('TTSController', () => {
     });
   });
 
+  // A section too big to lay out whole is rendered in chunks (foliate-js
+  // section-chunks.js); Read Aloud reads the rendered chunk.
+  describe('chunked sections', () => {
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+    const chunkDoc = (own: number) =>
+      new DOMParser().parseFromString(
+        `<html><body>${[0, 1, 2]
+          .map((k) => (k === own ? `<p>Chunk ${k}.</p>` : `<p data-foliate-chunk="${k}"></p>`))
+          .join('')}</body></html>`,
+        'text/html',
+      );
+
+    let docs: Document[];
+    let goTo: ReturnType<typeof vi.fn>;
+    let sectionChanges: number[];
+
+    // The view shows chunk `current` of section 0; going to an element of
+    // another chunk renders that chunk instead.
+    const showChunk = (current: number) => {
+      const renderer = mockView.renderer as unknown as Record<string, unknown>;
+      renderer['getContents'] = vi
+        .fn()
+        .mockReturnValue([
+          { doc: docs[current], index: 0, overlayer: { remove: vi.fn(), add: vi.fn() } },
+        ]);
+    };
+
+    const arriveAtChunkEnd = async (chunk: number) => {
+      docs = [0, 1, 2].map(chunkDoc);
+      showChunk(chunk);
+      goTo = vi.fn(async ({ anchor }: { anchor: (doc: Document) => Range }) => {
+        const owner = docs.findIndex(
+          (doc) => !(anchor(doc).startContainer as Element).hasAttribute('data-foliate-chunk'),
+        );
+        showChunk(owner);
+      });
+      (mockView.renderer as unknown as Record<string, unknown>)['goTo'] = goTo;
+      await controller.init();
+      await controller.initViewTTS(0);
+      sectionChanges = [];
+      controller.addEventListener('tts-section-change', (event) => {
+        sectionChanges.push((event as CustomEvent<{ sectionIndex: number }>).detail.sectionIndex);
+      });
+      const tts = mockView.tts as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      tts['next'] = vi.fn().mockReturnValue(undefined);
+      tts['nextMark'] = vi.fn().mockReturnValue(undefined);
+      controller.state = 'playing';
+      speakingControllers.push(controller);
+    };
+
+    const sectionOpened = (index: number) => {
+      const { sections } = mockView.book as unknown as {
+        sections: { createDocument: ReturnType<typeof vi.fn> }[];
+      };
+      return sections[index]!.createDocument.mock.calls.length > 0;
+    };
+
+    test('reads on into the next chunk of the section', async () => {
+      await arriveAtChunkEnd(0);
+
+      await controller.forward(false, true);
+      await flush();
+
+      expect(goTo).toHaveBeenCalledWith(expect.objectContaining({ index: 0 }));
+      const [{ anchor }] = goTo.mock.calls[0]!;
+      expect(anchor(docs[1]!).startContainer.textContent).toBe('Chunk 1.');
+      expect(controller.getSectionIndex()).toBe(0);
+      expect(sectionChanges).toEqual([]);
+      expect(sectionOpened(1)).toBe(false);
+      const { TTS } = await import('foliate-js/tts.js');
+      expect(vi.mocked(TTS).mock.calls.at(-1)![0]).toBe(docs[1]);
+      expect(controller.state).toBe('playing');
+    });
+
+    test('stop at end of chapter does not stop between chunks', async () => {
+      await arriveAtChunkEnd(1);
+      controller.stopAtChapterEnd = true;
+
+      await controller.forward(false, true);
+      await flush();
+
+      expect(controller.getSectionIndex()).toBe(0);
+      expect(controller.state).toBe('playing');
+    });
+
+    test('leaves the section after its last chunk', async () => {
+      await arriveAtChunkEnd(2);
+
+      await controller.forward(false, true);
+      await flush();
+
+      expect(goTo).not.toHaveBeenCalled();
+      expect(controller.getSectionIndex()).toBe(1);
+    });
+
+    test('reads back into the previous chunk', async () => {
+      await arriveAtChunkEnd(2);
+      const tts = mockView.tts as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      tts['prev'] = vi.fn().mockReturnValue(undefined);
+
+      await controller.backward();
+      await flush();
+
+      const [{ anchor }] = goTo.mock.calls[0]!;
+      expect(anchor(docs[1]!).startContainer.textContent).toBe('Chunk 1.');
+      expect(controller.getSectionIndex()).toBe(0);
+    });
+  });
+
   describe('sentence stepping (#5233)', () => {
     type Mocked = Record<string, ReturnType<typeof vi.fn>>;
     const flush = () => new Promise((resolve) => setTimeout(resolve, 0));

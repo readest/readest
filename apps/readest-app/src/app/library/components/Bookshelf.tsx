@@ -27,6 +27,7 @@ import {
   ensureLibraryGroupByType,
   expandBookshelfSelection,
   findSelectedManualGroup,
+  resolveCurrentShelfBooks,
   selectAbsOfflineBooks,
   selectDownloadableBooks,
   withReadingStatus,
@@ -286,6 +287,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       ),
     [visibleBooks, definitions, uiLanguage, pageDurations, rawMatches, ownership],
   );
+  // Searching book contents inside an opened group stays inside that group,
+  // read from the same shelf the group was opened from.
+  const contentSearchBooks = useMemo(() => {
+    if (!groupId) return visibleBooks;
+    const shelfBooks = unscopedGroup
+      ? visibleBooks
+      : (results.find((r) => r.definition.id === activeShelfId)?.books ?? []);
+    return resolveCurrentShelfBooks(shelfBooks, groupBy, groupId, manualGroupName);
+  }, [visibleBooks, results, groupId, unscopedGroup, activeShelfId, groupBy, manualGroupName]);
   const sections = useMemo<ShelfSection[]>(() => {
     // Search is a flat view of every eligible library book, independent of all shelves.
     if (queryTerm)
@@ -962,7 +972,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       ) : contentSearch?.query.trim() && appService ? (
         <LibrarySearchResults
           appService={appService}
-          books={visibleBooks}
+          books={contentSearchBooks}
           query={contentSearch.query.trim()}
           config={contentSearch.config}
           onSelectResult={openSearchResult}
@@ -975,6 +985,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         // WebKit when a search was cleared.
         <div className='min-h-0 flex-1'>
           <BookshelfStream
+            scrollKey={searchParams?.toString() ?? ''}
             pageNavigation={!!settings.globalViewSettings?.isEink}
             hidePageButtons={settings.hideBookshelfPageButtons}
             navigationBottomInset={

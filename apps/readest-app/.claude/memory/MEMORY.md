@@ -96,6 +96,7 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [Force a Tauri command to fail on device](android-fault-injection-window-ipc-hook.md) hook `window.ipc.postMessage` (writable); `__TAURI_INTERNALS__.invoke` + the fetch transport do NOT work on Android; Xiaomi Play-build install traps
 - [macOS deep-link test recipe](macos-deeplink-test-recipe.md) `open -a /Applications/Readest.app` (hundreds of stale `readest:` registrations); osascript window title = open book; #6378 closed, `book/<hash>` is the format
 - [computer-use can't see `tauri dev`](computer-use-tauri-dev-binary-no-bundle-id.md) bare binary = NULL bundle id = hidden from screenshots; wrap it in a throwaway .app; single-instance + port 3000 + `http_proxy` traps; localstorage.sqlite3 path for testing DEFAULTS
+- [Prove dev-app code is live before verifying](tauri-dev-verify-code-is-live.md) window started with dev server down kept OLD code after Cmd+R; console marker + relaunch; paste console cmds via clipboard
 - [Next 16 dev lock + Chrome verify traps](next16-dev-lock-and-chrome-verify.md) ONE `next dev` per checkout (`.next/dev/lock`); Tauri-mode `pnpm dev` on 3000 blanks in Chrome; sandboxed curl can't reach loopback; check the lock owner before `pnpm dev-web`
 - [Android e2e "timeout GET /json/list" = launch deadlock](android-page-load-plugin-store-deadlock.md) REAL app freeze; page-load main thread vs plugin store lock in run_mobile_plugin; fork #3 MERGED (382ea858b), #6240 repointed, e2e green
 - [Ad-hoc visual checks need theme tokens](adhoc-visual-check-daisyui-theme-tokens.md) a scratch browser test gets daisyUI defaults (`--depth: 1`) = phantom input hairlines; inject `themeVariables`
@@ -129,6 +130,8 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - Resolved/stable → [Platform Compat](platform-compat-fixes.md)
 
 ## Reader Features & UI
+- [#6637 iOS OPDS http covers blocked over Tailscale](opds-http-cover-mixed-content-6637.md) WebKit mixed-content: LNA exempts only "local" hosts (hostnames always public); native cover fetch MERGED #6639 (9221305a1) UNRELEASED
+- [EPUB meta-cover href picked wrong cover](epub-meta-cover-href.md) Rust HashMap random pick + foliate XHTML cover; MERGED #6635 + foliate#123 UNRELEASED; foliate image/* guard follow-up NOT done
 - [Reading widget E-ink black-on-dark](reading-widget-eink-dark-mode.md) #6518 forced Color.BLACK on a night-mode card; theme-attr ink via setColorStateList (API 31+); MERGED #6628 (d1a7a0435) UNRELEASED; Xiaomi VERIFIED both modes
 - [#5233 sentence-by-sentence + A-B repeat](tts-sentence-step-ab-repeat-5233.md) PR #6627 OPEN, foliate#122 MERGED + pinned (3e8d6fd); cross-chapter loop + native unverified
 - [#6618 dictionary text unreadable in dark mode](dict-dark-mode-text-colors-6618.md) computed-color brightness mirror for MDict/StarDict/BGL/slob; MERGED #6622 (d519216ca) UNRELEASED; screenshot branch on fork

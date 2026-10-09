@@ -74,6 +74,33 @@ describe('opdsReq', () => {
     });
   });
 
+  describe('needsNativeImageFetch (#6637)', () => {
+    let needsNativeImageFetch: typeof import('@/app/opds/utils/opdsReq').needsNativeImageFetch;
+    let isTauriAppPlatform: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      const envModule = await import('@/services/environment');
+      isTauriAppPlatform = envModule.isTauriAppPlatform as ReturnType<typeof vi.fn>;
+      needsNativeImageFetch = (await import('@/app/opds/utils/opdsReq')).needsNativeImageFetch;
+    });
+
+    it('fetches plain-http images natively on Tauri, where the webview blocks them as mixed content', () => {
+      isTauriAppPlatform.mockReturnValue(true);
+      expect(needsNativeImageFetch('http://100.101.102.103:8088/cover/a.jpg')).toBe(true);
+      expect(needsNativeImageFetch('http://nas.tailnet.ts.net:8088/cover/a.jpg')).toBe(true);
+    });
+
+    it('leaves https images to the webview on Tauri', () => {
+      isTauriAppPlatform.mockReturnValue(true);
+      expect(needsNativeImageFetch('https://opds.example.com/cover/a.jpg')).toBe(false);
+    });
+
+    it('never applies on the web, where images go through the proxy', () => {
+      isTauriAppPlatform.mockReturnValue(false);
+      expect(needsNativeImageFetch('http://100.101.102.103:8088/cover/a.jpg')).toBe(false);
+    });
+  });
+
   describe('getProxiedURL', () => {
     it('should generate proxy URL for image requests without auth', () => {
       const imageUrl = 'http://my-opds-server.local/covers/book.jpg';
