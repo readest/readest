@@ -194,29 +194,41 @@ describe("SyncConfig progress conflicts", function()
         ui.link = { addCurrentLocationToStack = function() end }
         ui.handleEvent = function(_, event) events[#events + 1] = event end
     end)
-    it("allows an explicit pull to go backward while automatic pulls only advance", function()
-        SyncConfig:applyBookConfig(ui, { progress = "[ 20, 100 ]" }, false)
+    it("moves a paged document backward only on an explicit pull", function()
+        assert.is_true(SyncConfig:applyBookConfig(ui, { progress = "[ 20, 100 ]" }, false))
         assert.are.equal(0, #events)
         assert.is_true(SyncConfig:applyBookConfig(ui, { progress = "[ 20, 100 ]" }, true))
         assert.are.equal(1, #events)
     end)
-    it("allows backward explicit EPUB pulls and catches invalid XPointers", function()
+    it("moves an EPUB backward only on an explicit pull and catches invalid XPointers", function()
         ui.document.info.has_pages = false
         ui.rolling = { getLastProgress = function() return "/body/current" end }
         ui.document.compareXPointers = function(_, _, pointer)
             if pointer == "/invalid" then error("invalid pointer") end
             return -1
         end
-        SyncConfig:applyBookConfig(ui, { xpointer = "/body/earlier" }, false)
+        assert.is_true(SyncConfig:applyBookConfig(ui, { xpointer = "/body/earlier" }, false))
         assert.are.equal(0, #events)
         assert.is_true(SyncConfig:applyBookConfig(ui, { xpointer = "/body/earlier" }, true))
         assert.are.equal(1, #events)
         assert.is_false(SyncConfig:applyBookConfig(ui, { xpointer = "/invalid" }, true))
     end)
-    it("rejects out-of-range positions and missing reflowable xpointers", function()
-        assert.is_false(SyncConfig:applyBookConfig(ui, { progress = "[200,100]" }, true))
+    it("does not jump back to a parent node when an explicit pull trims the XPointer", function()
         ui.document.info.has_pages = false
-        assert.is_false(SyncConfig:applyBookConfig(ui, { xpointer = "" }, true))
+        ui.rolling = { getLastProgress = function() return "/body/DocFragment[5]/body/p[30]" end }
+        -- Only the chapter resolves; crengine orders a parent before its children.
+        ui.document.compareXPointers = function(_, _, pointer)
+            if pointer ~= "/body/DocFragment[5]" then return nil end
+            return -1
+        end
+        assert.is_true(SyncConfig:applyBookConfig(ui,
+            { xpointer = "/body/DocFragment[5]/body/p[99]/text().4" }, true))
+        assert.are.equal(0, #events)
+    end)
+    it("rejects out-of-range positions and missing reflowable xpointers", function()
+        assert.is_false(SyncConfig:applyBookConfig(ui, { progress = "[200,100]" }))
+        ui.document.info.has_pages = false
+        assert.is_false(SyncConfig:applyBookConfig(ui, { xpointer = "" }))
         assert.are.equal(0, #events)
     end)
     it("does not apply an automatic response after the user turns a page", function()
@@ -273,7 +285,7 @@ describe("SyncConfig progress conflicts", function()
         receive()
         assert.are.equal(1, #events)
     end)
-    it("honors an explicit pull even if the user navigates during the request", function()
+    it("honors a forward explicit pull even if the user navigates during the request", function()
         local setPointer = useReflowable()
         local receive = pullResponse(true)
         setPointer("/body/later")

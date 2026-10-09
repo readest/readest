@@ -182,7 +182,9 @@ function SyncConfig:getCurrentBookConfig(ui, store)
     return config
 end
 
--- Automatic pulls only advance; an explicit pull also allows going backward.
+-- Automatic pulls only advance; an explicit pull may also go backward, but
+-- only to an exact position: a trimmed xpointer resolves to a parent node,
+-- which orders before the local position and would jump to a chapter start.
 -- Paged documents compare page numbers, reflowable ones compare xpointers,
 -- trimming the remote xpointer until it resolves in the local document.
 -- Skip positions that can't be parsed or resolved (e.g. a different copy
@@ -225,7 +227,8 @@ function SyncConfig:applyBookConfig(ui, config, interactive)
                 break
             end
         end
-        if cmp_result and cmp_result ~= 0 and (interactive or cmp_result > 0) then
+        if cmp_result and (cmp_result > 0
+                or (interactive and cmp_result < 0 and working_xpointer == xpointer)) then
             ui.link:addCurrentLocationToStack()
             ui:handleEvent(Event:new("GotoXPointer", working_xpointer))
             self:showSyncedMessage()

@@ -17,9 +17,12 @@ the reader has continued reading since the request or the document has closed.
 EPUB pulls compare the logical XPointer, so reflow, rotation, or font changes
 do not discard a response merely because the rendered page number changed.
 Fixed-page documents still compare page numbers.
-An explicit manual pull can move to an earlier position. If the saved position
-cannot be used in the current document, the plugin reports that limitation
-instead of reporting successful synchronization.
+An explicit manual pull can also move to an earlier position, but only to an
+exact one: a page number, or an EPUB XPointer that resolves without trimming.
+A trimmed XPointer only resolves to a parent node such as the chapter start,
+so it never moves the reader backward. If the saved position cannot be used
+in the current document, the plugin reports that limitation instead of
+reporting successful synchronization.
 
 Pushes retain the identity and settings of the book they were created for.
 Opening another book while a push is running does not redirect its completion
