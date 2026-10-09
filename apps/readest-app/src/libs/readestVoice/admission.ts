@@ -1,3 +1,4 @@
+import type { TTSLane } from '@/services/tts/providers/types';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
 // Per-user in-flight windows for Readest Voice (migration 026_tts_inflight):
@@ -5,7 +6,7 @@ import { createSupabaseAdminClient } from '@/utils/supabase';
 // like the usage counters: a store outage admits the window, and the RunPod
 // max-workers cap plus the account spend limit stay the hard ceiling.
 
-export type TTSLane = 'listen' | 'download';
+export type { TTSLane };
 
 // Matches the route's window deadline: a slot never outlives its request.
 export const SLOT_TTL_SECONDS = 180;
