@@ -1729,7 +1729,9 @@ export const keepTextAlignment = (document: Document) => {
   // Two-phase read-then-write keeps the loop O(N) elements + 1 recalc
   // instead of O(N) recalcs.
   const win = document.defaultView ?? window;
-  const els = document.querySelectorAll('div, p, blockquote, dd');
+  // A chunk of a huge section (foliate-js section-chunks.js) holds a hidden
+  // placeholder for every element outside it; never read those.
+  const els = document.querySelectorAll(':is(div, p, blockquote, dd):not([data-foliate-chunk])');
   const alignClasses = new Array<string | null>(els.length);
   // Read pass: collect computed text-align for every element. The browser
   // computes style once for the whole document on the first call, then
