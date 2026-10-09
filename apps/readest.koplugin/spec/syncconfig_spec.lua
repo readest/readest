@@ -225,6 +225,19 @@ describe("SyncConfig progress conflicts", function()
             { xpointer = "/body/DocFragment[5]/body/p[99]/text().4" }, true))
         assert.are.equal(0, #events)
     end)
+    it("reports a position whose chapter is missing instead of falling back to /body", function()
+        ui.document.info.has_pages = false
+        ui.rolling = { getLastProgress = function() return "/body/DocFragment[7]/body/p[80]" end }
+        -- The document root resolves in any book, so it locates nothing.
+        ui.document.compareXPointers = function(_, _, pointer)
+            if pointer ~= "/body" then return nil end
+            return -1
+        end
+        local xpointer = "/body/DocFragment[999]/body/div/p[5]/text().0"
+        assert.is_false(SyncConfig:applyBookConfig(ui, { xpointer = xpointer }, true))
+        assert.is_false(SyncConfig:applyBookConfig(ui, { xpointer = xpointer }, false))
+        assert.are.equal(0, #events)
+    end)
     it("rejects out-of-range positions and missing reflowable xpointers", function()
         assert.is_false(SyncConfig:applyBookConfig(ui, { progress = "[200,100]" }))
         ui.document.info.has_pages = false

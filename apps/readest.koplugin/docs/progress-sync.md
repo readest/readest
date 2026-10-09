@@ -20,9 +20,11 @@ Fixed-page documents still compare page numbers.
 An explicit manual pull can also move to an earlier position, but only to an
 exact one: a page number, or an EPUB XPointer that resolves without trimming.
 A trimmed XPointer only resolves to a parent node such as the chapter start,
-so it never moves the reader backward. If the saved position cannot be used
-in the current document, the plugin reports that limitation instead of
-reporting successful synchronization.
+so it never moves the reader backward. Trimming stops above `/body`, which
+resolves in any book, so a position whose chapter is missing counts as
+unusable. If the saved position cannot be used in the current document, the
+plugin reports that limitation instead of reporting successful
+synchronization.
 
 Pushes retain the identity and settings of the book they were created for.
 Opening another book while a push is running does not redirect its completion

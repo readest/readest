@@ -220,7 +220,9 @@ function SyncConfig:applyBookConfig(ui, config, interactive)
         local cmp_result = compare(working_xpointer)
         while cmp_result == nil and working_xpointer do
             local last_slash_pos = working_xpointer:match("^.*()/")
-            if last_slash_pos and last_slash_pos > 1 then
+            -- Stop above /body: the document root resolves in any book.
+            if last_slash_pos and last_slash_pos > 1
+                    and working_xpointer:sub(1, last_slash_pos - 1) ~= "/body" then
                 working_xpointer = working_xpointer:sub(1, last_slash_pos - 1)
                 cmp_result = compare(working_xpointer)
             else
