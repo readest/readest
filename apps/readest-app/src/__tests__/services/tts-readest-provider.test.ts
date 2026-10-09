@@ -1,0 +1,382 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const m = vi.hoisted(() => ({
+  fetchWithAuth: vi.fn(),
+  getAccessToken: vi.fn(),
+  getSubscriptionPlan: vi.fn(),
+}));
+
+vi.mock('@/utils/fetch', () => ({ fetchWithAuth: m.fetchWithAuth }));
+vi.mock('@/services/environment', async (orig) => ({
+  ...(await orig<typeof import('@/services/environment')>()),
+  getAPIBaseUrl: () => 'https://web.test/api',
+}));
+vi.mock('@/utils/access', async (orig) => ({
+  ...(await orig<typeof import('@/utils/access')>()),
+  getAccessToken: m.getAccessToken,
+  getSubscriptionPlan: m.getSubscriptionPlan,
+}));
+
+import { ReadestVoiceProvider } from '@/services/tts/providers/readest';
+import {
+  SpeechSynthesisFatalError,
+  SpeechSynthesisPermanentError,
+  type SpeechSynthesisRequest,
+} from '@/services/tts/providers/types';
+
+const VOICES = [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }];
+const B = [{ offset: 0, duration: 5_000_000, text: 'Hello' }];
+const AUDIO_B64 = btoa('mp3!');
+
+const req = (text: string, lang = 'en-US'): SpeechSynthesisRequest => ({
+  lang,
+  text,
+  voice: 'kokoro:af_heart',
+  pitch: 1,
+});
+const reqs = (n: number, prefix = 'S') =>
+  Array.from({ length: n }, (_, i) => req(`${prefix}${i}.`));
+
+const flush = async (times = 3) => {
+  for (let i = 0; i < times; i++) await new Promise((r) => setTimeout(r, 0));
+};
+
+interface WindowCall {
+  body: { lane: string; lang: string; segments: { id: string; text: string; voice: string }[] };
+  signal: AbortSignal;
+  // Push NDJSON lines into the response body; end closes it.
+  send: (line: unknown) => void;
+  end: () => void;
+  // Answer every segment with audio, then done.
+  completeAll: () => void;
+}
+
+// fetchWithAuth stand-in: GET voices answers at once; each window POST returns
+// a streamed NDJSON body the test drives through the recorded WindowCall.
+const installFetch = () => {
+  const windows: WindowCall[] = [];
+  m.fetchWithAuth.mockImplementation(async (url: string, init: RequestInit) => {
+    if (!init.method || init.method === 'GET') return Response.json({ voices: VOICES });
+    const body = JSON.parse(init.body as string);
+    if (body.warmup) return Response.json({ ok: true });
+    let controller!: ReadableStreamDefaultController<Uint8Array>;
+    const stream = new ReadableStream<Uint8Array>({ start: (c) => void (controller = c) });
+    const encoder = new TextEncoder();
+    const call: WindowCall = {
+      body,
+      signal: init.signal as AbortSignal,
+      send: (line) => controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`)),
+      end: () => controller.close(),
+      completeAll: () => {
+        for (const s of body.segments) call.send({ id: s.id, audio: AUDIO_B64, boundaries: B });
+        call.send({ done: true, charged: 1 });
+        call.end();
+      },
+    };
+    call.signal?.addEventListener('abort', () =>
+      controller.error(new DOMException('Aborted', 'AbortError')),
+    );
+    expect(url).toBe('https://web.test/api/tts/readest/stream');
+    windows.push(call);
+    return new Response(stream);
+  });
+  return windows;
+};
+
+const texts = (call: WindowCall) => call.body.segments.map((s) => s.text);
+
+let windows: WindowCall[];
+let events: EventTarget;
+let provider: ReadestVoiceProvider;
+
+beforeEach(() => {
+  for (const fn of Object.values(m)) fn.mockReset();
+  m.getAccessToken.mockResolvedValue('tok');
+  m.getSubscriptionPlan.mockReturnValue('plus');
+  windows = installFetch();
+  events = new EventTarget();
+  provider = new ReadestVoiceProvider(events);
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+describe('voices and init', () => {
+  it('makes no request without a token or without a TTS plan', async () => {
+    m.getAccessToken.mockResolvedValue(null);
+    expect(await provider.getAllVoices()).toEqual([]);
+    expect(await provider.init()).toBe(false);
+    m.getAccessToken.mockResolvedValue('tok');
+    m.getSubscriptionPlan.mockReturnValue('purchase');
+    const other = new ReadestVoiceProvider(events);
+    expect(await other.getAllVoices()).toEqual([]);
+    expect(await other.init()).toBe(false);
+    expect(m.fetchWithAuth).not.toHaveBeenCalled();
+  });
+
+  it('fetches the plan voices once for getAllVoices + init', async () => {
+    expect(await provider.getAllVoices()).toEqual(VOICES);
+    expect(await provider.init()).toBe(true);
+    expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
+    expect(m.fetchWithAuth).toHaveBeenCalledWith('https://web.test/api/tts/readest', {
+      method: 'GET',
+    });
+  });
+
+  it('treats a failing voices request (kill switch, lapsed plan) as unavailable', async () => {
+    m.fetchWithAuth.mockRejectedValueOnce(new Error('NOT_CONFIGURED'));
+    expect(await provider.getAllVoices()).toEqual([]);
+    expect(await provider.init()).toBe(false);
+  });
+
+  it('fires the warmup at most once', async () => {
+    provider.warmup();
+    provider.warmup();
+    await flush();
+    const posts = m.fetchWithAuth.mock.calls.filter(([, init]) => init.method === 'POST');
+    expect(posts).toHaveLength(1);
+    expect(JSON.parse(posts[0]![1].body)).toEqual({ warmup: true });
+  });
+});
+
+describe('listen windows', () => {
+  it('grows windows 1 -> 4 -> 8 and keeps one listen window in flight', async () => {
+    const signal = new AbortController().signal;
+    provider.prefetch(reqs(21), 'listen', signal);
+    await flush();
+    expect(windows).toHaveLength(1);
+    expect(texts(windows[0]!)).toEqual(['S0.']);
+    provider.prefetch(reqs(21), 'listen', signal); // duplicates are ignored
+    await flush();
+    expect(windows).toHaveLength(1);
+    for (const expected of [4, 8, 8]) {
+      windows.at(-1)!.completeAll();
+      await flush();
+      expect(texts(windows.at(-1)!)).toHaveLength(expected);
+    }
+    expect(windows.map((w) => w.body.lane)).toEqual(['listen', 'listen', 'listen', 'listen']);
+  });
+
+  it('resolves each sentence as its line arrives, before the stream ends', async () => {
+    const signal = new AbortController().signal;
+    provider.prefetch(reqs(1), 'listen', signal);
+    const result = provider.synthesize(req('S0.'), signal);
+    await flush();
+    windows[0]!.send({ id: windows[0]!.body.segments[0]!.id, audio: AUDIO_B64, boundaries: B });
+    const { audio, boundaries } = await result;
+    expect(new TextDecoder().decode(audio)).toBe('mp3!');
+    expect(boundaries).toEqual(B);
+  });
+
+  it('synthesize without a prefetch issues a one-sentence window', async () => {
+    const result = provider.synthesize(req('Alone.'), new AbortController().signal);
+    await flush();
+    expect(texts(windows[0]!)).toEqual(['Alone.']);
+    windows[0]!.completeAll();
+    await expect(result).resolves.toBeTruthy();
+  });
+
+  it('maps an error line to a permanent failure for that sentence only', async () => {
+    const signal = new AbortController().signal;
+    const a = provider.synthesize(req('A.'), signal);
+    await flush();
+    windows[0]!.completeAll();
+    await a;
+    provider.prefetch([req('B.'), req('C.')], 'listen', signal);
+    const b = provider.synthesize(req('B.'), signal);
+    const c = provider.synthesize(req('C.'), signal);
+    await flush();
+    const [sb, sc] = windows[1]!.body.segments;
+    windows[1]!.send({ id: sb!.id, error: 'synthesis failed' });
+    windows[1]!.send({ id: sc!.id, audio: AUDIO_B64, boundaries: B });
+    windows[1]!.send({ done: true, charged: 2 });
+    windows[1]!.end();
+    await expect(b).rejects.toBeInstanceOf(SpeechSynthesisPermanentError);
+    await expect(c).resolves.toBeTruthy();
+  });
+
+  it('fails unanswered sentences transiently when the window ends early', async () => {
+    const result = provider.synthesize(req('A.'), new AbortController().signal);
+    await flush();
+    windows[0]!.send({ done: true, charged: 0, error: 'UPSTREAM_FAILED' });
+    windows[0]!.end();
+    const error = await result.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(SpeechSynthesisPermanentError);
+    expect(error).not.toBeInstanceOf(SpeechSynthesisFatalError);
+  });
+
+  it('never mixes languages in one window', async () => {
+    const signal = new AbortController().signal;
+    provider.synthesize(req('First.'), signal).catch(() => {});
+    await flush();
+    provider.prefetch([req('A.'), req('Bonjour.', 'fr-FR'), req('C.')], 'listen', signal);
+    windows[0]!.completeAll();
+    await flush();
+    expect(texts(windows[1]!)).toEqual(['A.']);
+    expect(windows[1]!.body.lang).toBe('en-US');
+  });
+
+  it('fills windows with foreground requests before background preloads', async () => {
+    const signal = new AbortController().signal;
+    provider.synthesize(req('First.'), signal).catch(() => {});
+    await flush();
+    provider.prefetch([req('P0.'), req('P1.')], 'listen', new AbortController().signal, {
+      background: true,
+    });
+    provider.prefetch([req('F0.'), req('F1.')], 'listen', signal);
+    windows[0]!.completeAll();
+    await flush();
+    expect(texts(windows[1]!)).toEqual(['F0.', 'F1.', 'P0.', 'P1.']);
+  });
+});
+
+describe('cancellation', () => {
+  it('a stop/seek withdraws queued sentences, aborts the window, and restarts at size 1', async () => {
+    const first = new AbortController();
+    provider.prefetch(reqs(10), 'listen', first.signal);
+    const s0 = provider.synthesize(req('S0.'), first.signal);
+    await flush();
+    windows[0]!.completeAll();
+    await s0;
+    await flush();
+    expect(texts(windows[1]!)).toHaveLength(4);
+    const queued = provider.synthesize(req('S9.'), first.signal);
+    first.abort();
+    await expect(queued).rejects.toMatchObject({ name: 'AbortError' });
+    expect(windows[1]!.signal.aborted).toBe(true);
+
+    const second = new AbortController();
+    provider.prefetch(reqs(3, 'T'), 'listen', second.signal);
+    await flush();
+    expect(texts(windows[2]!)).toEqual(['T0.']);
+  });
+
+  it('keeps a window running while another caller still wants its sentences', async () => {
+    const a = new AbortController();
+    const b = new AbortController();
+    provider.prefetch([req('X.')], 'listen', a.signal);
+    const wanted = provider.synthesize(req('X.'), b.signal);
+    await flush();
+    a.abort();
+    expect(windows[0]!.signal.aborted).toBe(false);
+    windows[0]!.completeAll();
+    await expect(wanted).resolves.toBeTruthy();
+  });
+
+  it('a foreground request preempts a window of background preloads', async () => {
+    provider.prefetch(reqs(2, 'P'), 'listen', new AbortController().signal, { background: true });
+    await flush();
+    expect(texts(windows[0]!)).toEqual(['P0.']);
+    const now = provider.synthesize(req('Now.'), new AbortController().signal);
+    await flush();
+    expect(windows[0]!.signal.aborted).toBe(true);
+    expect(texts(windows[1]!)).toEqual(['Now.']);
+    windows[1]!.completeAll();
+    await now;
+    await flush();
+    // The preempted preload is queued again.
+    expect(texts(windows[2]!)).toEqual(['P0.', 'P1.']);
+  });
+});
+
+describe('errors', () => {
+  it('a quota rejection is fatal for everything, fires one event, and stops requesting', async () => {
+    const quota = vi.fn();
+    events.addEventListener('tts-quota-exceeded', quota);
+    m.fetchWithAuth.mockImplementation(async (_url: string, init: RequestInit) => {
+      if (init.method === 'POST') throw new Error('DAILY_QUOTA_EXCEEDED');
+      return Response.json({ voices: VOICES });
+    });
+    const signal = new AbortController().signal;
+    provider.prefetch(reqs(3), 'listen', signal);
+    const results = [0, 1, 2].map((i) => provider.synthesize(req(`S${i}.`), signal));
+    for (const r of results) await expect(r).rejects.toBeInstanceOf(SpeechSynthesisFatalError);
+    await expect(provider.synthesize(req('Later.'), signal)).rejects.toBeInstanceOf(
+      SpeechSynthesisFatalError,
+    );
+    expect(quota).toHaveBeenCalledTimes(1);
+    expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
+    expect(await provider.init()).toBe(true); // a new session may have fresh quota
+    await flush();
+    provider.synthesize(req('Tomorrow.'), signal).catch(() => {});
+    await flush();
+    expect(m.fetchWithAuth.mock.calls.filter(([, i]) => i.method === 'POST')).toHaveLength(2);
+  });
+
+  it.each([
+    'UNKNOWN_VOICE',
+    'VOICE_TIER_REQUIRED',
+    'INVALID_INPUT',
+  ])('maps %s to a permanent failure for the window', async (code) => {
+    m.fetchWithAuth.mockRejectedValueOnce(new Error(code));
+    const result = provider.synthesize(req('A.'), new AbortController().signal);
+    await expect(result).rejects.toBeInstanceOf(SpeechSynthesisPermanentError);
+  });
+
+  it('rejects an empty voice permanently without a request', async () => {
+    const result = provider.synthesize({ ...req('A.'), voice: '' }, new AbortController().signal);
+    await expect(result).rejects.toBeInstanceOf(SpeechSynthesisPermanentError);
+    expect(m.fetchWithAuth).not.toHaveBeenCalled();
+  });
+});
+
+describe('download lane', () => {
+  it('uses windows of up to 64 sentences', async () => {
+    provider.prefetch(reqs(70), 'download', new AbortController().signal);
+    await flush();
+    expect(windows[0]!.body.lane).toBe('download');
+    expect(texts(windows[0]!)).toHaveLength(64);
+    windows[0]!.completeAll();
+    await flush();
+    expect(texts(windows[1]!)).toHaveLength(6);
+  });
+
+  it('runs alongside a listen window', async () => {
+    provider.prefetch(reqs(2, 'D'), 'download', new AbortController().signal);
+    provider.prefetch(reqs(1, 'L'), 'listen', new AbortController().signal);
+    await flush();
+    expect(windows.map((w) => w.body.lane).sort()).toEqual(['download', 'listen']);
+  });
+
+  it('waits and retries the same window after BUSY', async () => {
+    vi.useFakeTimers();
+    m.fetchWithAuth.mockRejectedValueOnce(new Error('BUSY'));
+    provider.prefetch(reqs(2, 'D'), 'download', new AbortController().signal);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(texts(windows[0]!)).toEqual(['D0.', 'D1.']);
+  });
+});
+
+describe('slow start', () => {
+  it('tells the user once when the first audio takes over 5 s', async () => {
+    vi.useFakeTimers();
+    const slow = vi.fn();
+    events.addEventListener('tts-readest-slow-start', slow);
+    const signal = new AbortController().signal;
+    provider.synthesize(req('A.'), signal).catch(() => {});
+    await vi.advanceTimersByTimeAsync(5001);
+    expect(slow).toHaveBeenCalledTimes(1);
+    windows[0]!.completeAll();
+    await vi.advanceTimersByTimeAsync(0);
+    provider.synthesize(req('B.'), signal).catch(() => {});
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(slow).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays quiet when audio arrives in time', async () => {
+    vi.useFakeTimers();
+    const slow = vi.fn();
+    events.addEventListener('tts-readest-slow-start', slow);
+    provider.synthesize(req('A.'), new AbortController().signal).catch(() => {});
+    await vi.advanceTimersByTimeAsync(0);
+    windows[0]!.completeAll();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(slow).not.toHaveBeenCalled();
+  });
+});
