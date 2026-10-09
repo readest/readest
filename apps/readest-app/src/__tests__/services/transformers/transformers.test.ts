@@ -856,6 +856,18 @@ describe('languageTransformer', () => {
     expect(result).not.toContain('dir=');
   });
 
+  // Books imported before the primary language was normalized kept the raw tag.
+  test.each([
+    'en-US',
+    'EN',
+    'eng',
+  ])('treats a stored %s primary as the placeholder', async (primaryLanguage) => {
+    detectLanguage.mockReturnValue('zh');
+    const html = `<html lang="${primaryLanguage}"><head></head><body><p>这是一段普通的中文正文。</p></body></html>`;
+    const result = await languageTransformer.transform(makeCtx({ content: html, primaryLanguage }));
+    expect(result).toContain('lang="zh"');
+  });
+
   test('detects the language of a CJK section only once', async () => {
     detectLanguage.mockReturnValue('zh');
     const html = '<html lang="en"><head></head><body><p>这是一段普通的中文正文。</p></body></html>';

@@ -5,6 +5,7 @@ import {
   isCJKStr,
   isSameLang,
   isValidLang,
+  normalizedLangCode,
 } from '@/utils/lang';
 import type { Transformer } from './types';
 
@@ -28,7 +29,10 @@ export const languageTransformer: Transformer = {
 
   transform: async (ctx) => {
     const primaryLanguage = ctx.primaryLanguage;
-    const hasPrimary = isValidLang(primaryLanguage) && primaryLanguage !== 'en';
+    // `en` is the placeholder; books imported before the primary language was normalized
+    // may still carry it as `en-US` or `eng`.
+    const hasPrimary =
+      isValidLang(primaryLanguage) && !['en', 'eng'].includes(normalizedLangCode(primaryLanguage));
     let result = ctx.content;
     const attrsMatch = result.match(/<html\b([^>]*)>/i);
     if (attrsMatch) {
