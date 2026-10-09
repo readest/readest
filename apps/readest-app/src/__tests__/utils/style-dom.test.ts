@@ -28,6 +28,9 @@ import {
   applyImageStyle,
   applyNamespacedAttributes,
   keepTextAlignment,
+  applyLinkHitArea,
+  LINK_HIT_AREA_CLASS,
+  MAX_ENLARGED_LINKS,
 } from '@/utils/style';
 import {
   DEFAULT_BOOK_FONT,
@@ -603,6 +606,26 @@ describe('applyImageStyle', () => {
   });
 });
 
+describe('applyLinkHitArea', () => {
+  const links = (n: number) => '<a href="#x">1</a>'.repeat(n);
+
+  beforeEach(() => {
+    document.documentElement.classList.remove(LINK_HIT_AREA_CLASS);
+  });
+
+  it('opts a document with up to MAX_ENLARGED_LINKS links in', () => {
+    document.body.innerHTML = links(MAX_ENLARGED_LINKS);
+    applyLinkHitArea(document);
+    expect(document.documentElement.classList.contains(LINK_HIT_AREA_CLASS)).toBe(true);
+  });
+
+  it('leaves a document with more links than MAX_ENLARGED_LINKS out', () => {
+    document.body.innerHTML = links(MAX_ENLARGED_LINKS + 1);
+    applyLinkHitArea(document);
+    expect(document.documentElement.classList.contains(LINK_HIT_AREA_CLASS)).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // keepTextAlignment
 // ---------------------------------------------------------------------------
@@ -659,6 +682,24 @@ describe('keepTextAlignment', () => {
     expect(document.querySelector('p')!.classList.contains('aligned-center')).toBe(true);
     expect(document.querySelector('div')!.classList.contains('aligned-right')).toBe(true);
     expect(document.querySelector('blockquote')!.classList.contains('aligned-justify')).toBe(true);
+  });
+
+  it('skips the hidden placeholders of a chunked section', () => {
+    // A chunk of a huge section keeps one empty placeholder per top-level
+    // element outside it (foliate-js section-chunks.js): tens of thousands
+    // of them in a single-file book, none of which is ever shown.
+    document.body.innerHTML = `
+      <p data-foliate-chunk="0"></p>
+      <p style="text-align: center;">centered</p>
+      <div data-foliate-chunk="2"></div>
+    `;
+    const spy = vi.spyOn(window, 'getComputedStyle');
+    keepTextAlignment(document);
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+    expect(document.querySelector('p:not([data-foliate-chunk])')!.classList).toContain(
+      'aligned-center',
+    );
   });
 });
 

@@ -1,15 +1,14 @@
+// @vitest-environment node
+import { readFile } from 'node:fs/promises';
 import { parseBlob } from 'music-metadata';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildAudiobookChapters, parseAudiobookFile } from '@/services/audiobook/metadata';
-import { readMp4Chapters } from '@/services/audiobook/mp4Chapters';
 
 vi.mock('music-metadata', () => ({ parseBlob: vi.fn() }));
-vi.mock('@/services/audiobook/mp4Chapters', () => ({ readMp4Chapters: vi.fn() }));
 
 beforeEach(() => {
   vi.mocked(parseBlob).mockReset();
-  vi.mocked(readMp4Chapters).mockReset().mockResolvedValue([]);
 });
 
 const audioWithoutChapters = (duration: number) => ({
@@ -125,12 +124,18 @@ describe('parseAudiobookFile', () => {
     });
   });
 
-  it('uses the MP4 chapter reader when music-metadata returns no chapters', async () => {
-    vi.mocked(parseBlob).mockResolvedValue(audioWithoutChapters(90));
-    vi.mocked(readMp4Chapters).mockResolvedValue([
-      { title: 'Opening Credits', start: 0, timeScale: 1_000 },
-      { title: 'Chapter 1', start: 30_000, timeScale: 1_000 },
-    ]);
+  it('uses the chapter list returned by music-metadata', async () => {
+    const metadata = audioWithoutChapters(90);
+    vi.mocked(parseBlob).mockResolvedValue({
+      ...metadata,
+      format: {
+        ...metadata.format,
+        chapters: [
+          { title: 'Opening Credits', start: 0, timeScale: 1_000 },
+          { title: 'Chapter 1', start: 30_000, timeScale: 1_000 },
+        ],
+      },
+    });
     const file = new File(['audio'], 'book.m4b');
 
     await expect(parseAudiobookFile(file, 'audio-0')).resolves.toMatchObject({
@@ -139,16 +144,22 @@ describe('parseAudiobookFile', () => {
         { label: 'Chapter 1', start: 30, end: 90 },
       ],
     });
-    expect(readMp4Chapters).toHaveBeenCalledWith(file);
+    expect(parseBlob).toHaveBeenCalledWith(file, {
+      duration: true,
+      includeChapters: true,
+      skipCovers: true,
+    });
   });
 
   it('keeps the embedded title when every MP4 chapter is rejected', async () => {
-    vi.mocked(parseBlob).mockResolvedValue(audioWithoutChapters(90));
-    // A trailing marker sample at the very end of the audio yields no usable
-    // chapter, so the single full-file chapter must still carry the title.
-    vi.mocked(readMp4Chapters).mockResolvedValue([
-      { title: 'End Credits', start: 90_000, timeScale: 1_000 },
-    ]);
+    const metadata = audioWithoutChapters(90);
+    vi.mocked(parseBlob).mockResolvedValue({
+      ...metadata,
+      format: {
+        ...metadata.format,
+        chapters: [{ title: 'End Credits', start: 90_000, timeScale: 1_000 }],
+      },
+    });
 
     await expect(
       parseAudiobookFile(new File(['audio'], 'My Audiobook.m4b'), 'audio-0'),
@@ -157,15 +168,15 @@ describe('parseAudiobookFile', () => {
     });
   });
 
-  it('keeps the single full-file chapter when the MP4 chapter fallback fails', async () => {
+  it('keeps a full-file chapter without reading the source again when no chapters are returned', async () => {
     vi.mocked(parseBlob).mockResolvedValue(audioWithoutChapters(90));
-    vi.mocked(readMp4Chapters).mockRejectedValue(new RangeError('Offset is outside the bounds'));
+    const file = new File([new Uint8Array(64)], 'book.m4b');
+    const slice = vi.spyOn(file, 'slice');
 
-    await expect(
-      parseAudiobookFile(new File(['audio'], 'book.m4b'), 'audio-0'),
-    ).resolves.toMatchObject({
+    await expect(parseAudiobookFile(file, 'audio-0')).resolves.toMatchObject({
       chapters: [{ label: 'The Book', start: 0, end: 90 }],
     });
+    expect(slice).not.toHaveBeenCalled();
   });
 
   it('rejects audio whose duration cannot be determined', async () => {
@@ -184,4 +195,26 @@ describe('parseAudiobookFile', () => {
       'Could not determine the duration of broken.m4b',
     );
   });
+});
+
+// Real AAC excerpts exercise the actual parser without mocking its chapter output.
+describe('parseAudiobookFile chapter integration', () => {
+  for (const fixture of ['chapters-leading.m4b', 'chapters-trailing.m4b', 'chapters-nero.m4b']) {
+    it(`imports ${fixture} through music-metadata`, async () => {
+      // Delegate to the actual parser so the fixture determines the chapter output.
+      const actual = await vi.importActual<typeof import('music-metadata')>('music-metadata');
+      vi.mocked(parseBlob).mockImplementation(actual.parseBlob);
+      const bytes = await readFile(
+        new URL(`../fixtures/data/audiobook/${fixture}`, import.meta.url),
+      );
+      const file = new File([new Uint8Array(bytes)], fixture, { type: 'audio/mp4' });
+      const metadata = await parseAudiobookFile(file, 'audiobook');
+      expect(metadata.duration).toBeCloseTo(10, 1);
+      expect(metadata.chapters.map(({ label, start, end }) => ({ label, start, end }))).toEqual([
+        { label: 'Opening Credits', start: 0, end: 3 },
+        { label: 'Chapter 1', start: 3, end: 7 },
+        { label: 'Chapter 2', start: 7, end: metadata.duration },
+      ]);
+    });
+  }
 });

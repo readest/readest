@@ -73,6 +73,7 @@ vi.mock('@/store/customFontStore', () => ({
   useCustomFontStore: () => ({ getLoadedFonts: () => [] }),
 }));
 vi.mock('@/utils/style', () => ({
+  applyLinkHitArea: () => {},
   getFootnoteStyles: () => '',
   getStyles: () => '',
   getThemeCode: () => ({ bg: '#fff', fg: '#000', primary: '#000', palette: {} }),

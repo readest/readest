@@ -7,6 +7,7 @@ import { transformTTSSectionDocument } from './transformDoc';
 import { filterSSMLWithLang, parseSSMLMarks, truncateSSMLAfterMark } from '@/utils/ssml';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
+import { adjacentChunkAnchor } from 'foliate-js/section-chunks.js';
 import {
   TTSGranularity,
   TTSHighlightGranularity,
@@ -1379,7 +1380,26 @@ export class TTSController extends EventTarget {
     await this.#resumeAt(located, range, isPlaying);
   }
 
+  // A section too big to lay out whole is rendered in chunks (foliate-js
+  // section-chunks.js), and the document read aloud is the rendered chunk,
+  // which ends where the next chunk begins.
+  #adjacentChunkAnchor(direction: 1 | -1): ((doc: Document) => Range) | null {
+    return this.#ttsDoc ? adjacentChunkAnchor(this.#ttsDoc, direction) : null;
+  }
+
+  // Read on into the neighboring chunk of the section. The view goes there
+  // even when the user has paged away: a chunk's text exists only once it is
+  // rendered.
+  async #initTTSForAdjacentChunk(direction: 1 | -1): Promise<boolean> {
+    const anchor = this.#adjacentChunkAnchor(direction);
+    if (!anchor) return false;
+    const index = this.#ttsSectionIndex;
+    await this.view.renderer.goTo({ index, anchor });
+    return await this.#initTTSForSection(index);
+  }
+
   async #initTTSForNextSection(): Promise<boolean> {
+    if (await this.#initTTSForAdjacentChunk(1)) return true;
     const nextIndex = this.#ttsSectionIndex + 1;
     const sections = this.view.book.sections;
 
@@ -1391,6 +1411,7 @@ export class TTSController extends EventTarget {
   }
 
   async #initTTSForPrevSection(): Promise<boolean> {
+    if (await this.#initTTSForAdjacentChunk(-1)) return true;
     const prevIndex = this.#ttsSectionIndex - 1;
 
     if (prevIndex < 0) {
@@ -1543,7 +1564,7 @@ export class TTSController extends EventTarget {
           // FIXME: in case we are at the end of the book, need a better way to handle this
           if (this.#nossmlCnt < 10 && this.state === 'playing' && !oneTime) {
             resolve();
-            if (this.stopAtChapterEnd) {
+            if (this.stopAtChapterEnd && !this.#adjacentChunkAnchor(1)) {
               // This branch means the section has nothing (more) to say, so
               // the advance below would cross a chapter boundary on its own -
               // exactly what the mode exists to stop. Reached when Play is
@@ -1948,7 +1969,8 @@ export class TTSController extends EventTarget {
         : undefined
       : tts?.next(!isPlaying);
     if (!ssml) {
-      if (isAutoAdvance && isPlaying && this.stopAtChapterEnd) {
+      // the end of a chunk is not the end of the chapter
+      if (isAutoAdvance && isPlaying && this.stopAtChapterEnd && !this.#adjacentChunkAnchor(1)) {
         return await this.#stopAtChapterBoundary();
       }
       await this.#handleNavigationWithoutSSML(() => this.#initTTSForNextSection(), isPlaying);

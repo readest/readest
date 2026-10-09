@@ -14,6 +14,7 @@ import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
+  applyLinkHitArea,
   getBaseFontFamily,
   getBaseFontSize,
   getFootnoteStyles,
@@ -452,6 +453,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const detail = (e as CustomEvent).detail;
       // console.log('render footnote', detail);
       const { view, href, index, extract } = detail;
+      const popupDoc = (view as FoliateView).renderer.getContents?.()[0]?.doc;
+      if (popupDoc) applyLinkHitArea(popupDoc);
       footnoteHrefRef.current = href;
       setSourceHref(getJumpHref(href));
       resetPopupAnnotationState({ index: index ?? -1, extract: extract ?? null });

@@ -453,6 +453,8 @@ const getColorStyles = (
 
 export const LINK_TOUCH_HOLD_CLASS = 'link-touch-hold';
 export const TEXT_SELECTED_CLASS = 'text-selected';
+export const LINK_HIT_AREA_CLASS = 'link-hit-area';
+export const MAX_ENLARGED_LINKS = 1000;
 
 const getPageLayoutStyles = (
   marginTop: number,
@@ -502,11 +504,11 @@ const getPageLayoutStyles = (
   figure > div:has(img) {
     height: auto !important;
   }
-  /* enlarge the clickable area of links */
-  a {
+  /* enlarge the clickable area of links, in documents opted in by applyLinkHitArea */
+  html.${LINK_HIT_AREA_CLASS} a {
     position: relative !important;
   }
-  a::before {
+  html.${LINK_HIT_AREA_CLASS} a::before {
     content: '';
     position: absolute;
     inset: -10px;
@@ -1702,6 +1704,16 @@ export const applyImageStyle = (document: Document) => {
   });
 };
 
+// The enlarged link hit area positions every link and its ::before box, and
+// paginated layout slows down with each positioned box: a Strong's dictionary
+// section went from 1.3s to 10s to lay out, and a 20 MB concordance with 273k
+// links never finished. Opt a document in only when it has few enough links.
+export const applyLinkHitArea = (document: Document) => {
+  if (document.links.length <= MAX_ENLARGED_LINKS) {
+    document.documentElement.classList.add(LINK_HIT_AREA_CLASS);
+  }
+};
+
 export const keepTextAlignment = (document: Document) => {
   // Why two-phase: the previous version read getComputedStyle and wrote
   // classList.add inside the same forEach pass. classList.add invalidates
@@ -1717,7 +1729,9 @@ export const keepTextAlignment = (document: Document) => {
   // Two-phase read-then-write keeps the loop O(N) elements + 1 recalc
   // instead of O(N) recalcs.
   const win = document.defaultView ?? window;
-  const els = document.querySelectorAll('div, p, blockquote, dd');
+  // A chunk of a huge section (foliate-js section-chunks.js) holds a hidden
+  // placeholder for every element outside it; never read those.
+  const els = document.querySelectorAll(':is(div, p, blockquote, dd):not([data-foliate-chunk])');
   const alignClasses = new Array<string | null>(els.length);
   // Read pass: collect computed text-align for every element. The browser
   // computes style once for the whole document on the first call, then
