@@ -450,7 +450,7 @@ const compareBookByKey = (
     case LibrarySortByType.Title: {
       const aTitle = formatTitle(a.title);
       const bTitle = formatTitle(b.title);
-      return aTitle.localeCompare(bTitle, uiLanguage || navigator.language);
+      return aTitle.localeCompare(bTitle, uiLanguage || navigator.language, { numeric: true });
     }
     case LibrarySortByType.Author: {
       const aAuthors = formatAuthors(a.author, a?.primaryLanguage || 'en', true);
@@ -982,10 +982,15 @@ export const compareSortValues = (
   aValue: number | string,
   bValue: number | string,
   uiLanguage: string,
+  sortBy?: LibrarySortByType,
 ): number => {
   // String comparison for text-based sorts
   if (typeof aValue === 'string' && typeof bValue === 'string') {
-    return aValue.localeCompare(bValue, uiLanguage || navigator.language);
+    return aValue.localeCompare(
+      bValue,
+      uiLanguage || navigator.language,
+      sortBy === LibrarySortByType.Title ? { numeric: true } : undefined,
+    );
   }
 
   // Numeric comparison for date-based sorts
@@ -1005,17 +1010,7 @@ export const createGroupSorter =
     const aValue = getGroupSortValue(a, sortBy, groupBy);
     const bValue = getGroupSortValue(b, sortBy, groupBy);
 
-    // String comparison for text-based sorts
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return aValue.localeCompare(bValue, uiLanguage || navigator.language);
-    }
-
-    // Numeric comparison for date-based sorts
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return aValue - bValue;
-    }
-
-    return 0;
+    return compareSortValues(aValue, bValue, uiLanguage, sortBy);
   };
 
 export type BookContextMenuItemId =

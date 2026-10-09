@@ -5,6 +5,7 @@ import {
   createWithinGroupSorter,
   createGroupSorter,
   getGroupSortValue,
+  compareSortValues,
   createBookSorter,
   ensureLibrarySortByType,
   ensureLibrarySecondarySortByType,
@@ -789,6 +790,15 @@ describe('getGroupSortValue', () => {
   });
 });
 
+describe('compareSortValues', () => {
+  it('preserves locale defaults when sorting by keys other than title', () => {
+    for (const sortBy of [undefined, LibrarySortByType.Author, LibrarySortByType.Series]) {
+      expect(compareSortValues('Volume 3', 'Volume 12', 'en', sortBy)).toBeGreaterThan(0);
+      expect(compareSortValues('Volume 3', 'Volume 12', 'en-u-kn-true', sortBy)).toBeLessThan(0);
+    }
+  });
+});
+
 describe('createGroupSorter', () => {
   const createMockGroup = (overrides: Partial<BooksGroup> = {}): BooksGroup => ({
     id: 'test-group',
@@ -942,6 +952,45 @@ describe('createGroupSorter', () => {
 });
 
 describe('createBookSorter', () => {
+  it.each([true, false])('sorts numbered titles naturally (ascending: %s)', (ascending) => {
+    const books = [22, 1, 12, 3].map((index) => createMockBook({ title: `Volume ${index}` }));
+    const expected = ['Volume 1', 'Volume 3', 'Volume 12', 'Volume 22'];
+    const sorter = createBookSorter(LibrarySortByType.Title, 'en', 'none', ascending);
+
+    expect(books.sort(sorter).map((book) => book.title)).toEqual(
+      ascending ? expected : expected.reverse(),
+    );
+  });
+
+  it.each([
+    true,
+    false,
+  ])('sorts a secondary title naturally in its own direction (%s)', (ascending) => {
+    const books = [12, 3, 22, 1].map((index) => createMockBook({ title: `Volume ${index}` }));
+    const expected = ['Volume 1', 'Volume 3', 'Volume 12', 'Volume 22'];
+    const sorter = createBookSorter(
+      LibrarySortByType.Author,
+      'en',
+      LibrarySortByType.Title,
+      !ascending,
+      ascending,
+    );
+
+    expect(books.sort(sorter).map((book) => book.title)).toEqual(
+      ascending ? expected : expected.reverse(),
+    );
+  });
+
+  it('retains locale-specific alphabetic order alongside numeric title sorting', () => {
+    const books = ['Öga 1', 'Äventyr 1', 'År 12', 'År 3', 'Zebra 1'].map((title) =>
+      createMockBook({ title }),
+    );
+
+    expect(
+      books.sort(createBookSorter(LibrarySortByType.Title, 'sv')).map((book) => book.title),
+    ).toEqual(['Zebra 1', 'År 3', 'År 12', 'Äventyr 1', 'Öga 1']);
+  });
+
   it('should sort by title alphabetically', () => {
     const books = [
       createMockBook({ title: 'Zebra' }),
