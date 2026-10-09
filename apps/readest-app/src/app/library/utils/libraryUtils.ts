@@ -439,6 +439,19 @@ export const withTimeRemainingLast =
     return compare(a, b);
   };
 
+// localeCompare with an options object builds a new collator on every call, which
+// is ~20x slower in V8, so title sorts reuse one numeric collator per locale.
+const numericCollators = new Map<string, Intl.Collator>();
+const compareTitles = (a: string, b: string, uiLanguage: string): number => {
+  const locale = uiLanguage || navigator.language;
+  let collator = numericCollators.get(locale);
+  if (!collator) {
+    collator = new Intl.Collator(locale, { numeric: true });
+    numericCollators.set(locale, collator);
+  }
+  return collator.compare(a, b);
+};
+
 const compareBookByKey = (
   a: Book,
   b: Book,
@@ -450,7 +463,7 @@ const compareBookByKey = (
     case LibrarySortByType.Title: {
       const aTitle = formatTitle(a.title);
       const bTitle = formatTitle(b.title);
-      return aTitle.localeCompare(bTitle, uiLanguage || navigator.language);
+      return compareTitles(aTitle, bTitle, uiLanguage);
     }
     case LibrarySortByType.Author: {
       const aAuthors = formatAuthors(a.author, a?.primaryLanguage || 'en', true);
@@ -982,10 +995,13 @@ export const compareSortValues = (
   aValue: number | string,
   bValue: number | string,
   uiLanguage: string,
+  sortBy?: LibrarySortByType,
 ): number => {
   // String comparison for text-based sorts
   if (typeof aValue === 'string' && typeof bValue === 'string') {
-    return aValue.localeCompare(bValue, uiLanguage || navigator.language);
+    return sortBy === LibrarySortByType.Title
+      ? compareTitles(aValue, bValue, uiLanguage)
+      : aValue.localeCompare(bValue, uiLanguage || navigator.language);
   }
 
   // Numeric comparison for date-based sorts
@@ -1005,17 +1021,7 @@ export const createGroupSorter =
     const aValue = getGroupSortValue(a, sortBy, groupBy);
     const bValue = getGroupSortValue(b, sortBy, groupBy);
 
-    // String comparison for text-based sorts
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return aValue.localeCompare(bValue, uiLanguage || navigator.language);
-    }
-
-    // Numeric comparison for date-based sorts
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return aValue - bValue;
-    }
-
-    return 0;
+    return compareSortValues(aValue, bValue, uiLanguage, sortBy);
   };
 
 export type BookContextMenuItemId =

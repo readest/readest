@@ -171,11 +171,11 @@ export const presentBookshelf = (
       if (isAGroup && !isBGroup) {
         const groupValue = getGroupSortValue(a, sortBy, groupBy);
         const bookValue = getBookSortValue(b, sortBy);
-        return compareSortValues(groupValue, bookValue, uiLanguage) * sortOrderMultiplier;
+        return compareSortValues(groupValue, bookValue, uiLanguage, sortBy) * sortOrderMultiplier;
       } else if (!isAGroup && isBGroup) {
         const bookValue = getBookSortValue(a, sortBy);
         const groupValue = getGroupSortValue(b, sortBy, groupBy);
-        return compareSortValues(bookValue, groupValue, uiLanguage) * sortOrderMultiplier;
+        return compareSortValues(bookValue, groupValue, uiLanguage, sortBy) * sortOrderMultiplier;
       }
       return 0;
     }),
