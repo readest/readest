@@ -1,7 +1,11 @@
 import { jwtDecode } from 'jwt-decode';
 import { supabase } from '@/utils/supabase';
 import { UserPlan } from '@/types/quota';
-import { DEFAULT_DAILY_TRANSLATION_QUOTA, DEFAULT_STORAGE_QUOTA } from '@/services/constants';
+import {
+  DEFAULT_DAILY_TRANSLATION_QUOTA,
+  DEFAULT_DAILY_TTS_QUOTA,
+  DEFAULT_STORAGE_QUOTA,
+} from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
 import { getDailyUsage } from '@/services/translators/utils';
 import { getRuntimeConfig } from '@/services/runtimeConfig';
@@ -221,6 +225,21 @@ export const getTranslationQuota = (plan: UserPlan): number => {
   return (
     fixedQuota || DEFAULT_DAILY_TRANSLATION_QUOTA[plan] || DEFAULT_DAILY_TRANSLATION_QUOTA['free']
   );
+};
+
+/**
+ * Plans that include the self-hosted premium TTS engine ("Readest Voice"):
+ * Plus and Pro subscriptions only. Unlike EMAIL_IN_PLANS / CLOUD_SYNC_PLANS
+ * this deliberately excludes `purchase` (lifetime): synthesis has a recurring
+ * per-character GPU cost that a one-time purchase does not fund.
+ */
+export const TTS_PLANS: readonly UserPlan[] = ['plus', 'pro'];
+
+export const isTTSInPlan = (plan: UserPlan): boolean => TTS_PLANS.includes(plan);
+
+export const getTTSQuota = (plan: UserPlan): number => {
+  const fixedQuota = parseInt(process.env['TTS_FIXED_QUOTA'] ?? '0');
+  return fixedQuota || DEFAULT_DAILY_TTS_QUOTA[plan] || 0;
 };
 
 export const getTranslationPlanData = (token: string) => {
