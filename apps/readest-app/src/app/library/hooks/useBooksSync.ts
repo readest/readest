@@ -207,10 +207,10 @@ export const useBooksSync = () => {
     if (!syncedBooks?.length) return;
 
     // A cloud row for a demo book can only be a stale one pushed before #5049.
-    // Merging it back would write over the local demo row — and, because a
-    // delete doesn't bump `updatedAt`, the not-deleted cloud row wins the LWW
-    // tie and clears `deletedAt`, resurrecting a book the user just deleted
-    // (coverless, since its cover was never uploaded either).
+    // Merging it back would write over the local demo row — and, for a demo
+    // book deleted before deletes stamped `updatedAt` (#6663), the not-deleted
+    // cloud row wins the LWW tie and clears `deletedAt`, resurrecting a book
+    // the user deleted (coverless, since its cover was never uploaded either).
     const demoHashes = new Set(
       useLibraryStore
         .getState()
