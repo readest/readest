@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdArrowBack, MdChevronRight, MdSettings, MdVolumeUp } from 'react-icons/md';
+import { MdAdd, MdArrowBack, MdChevronRight, MdSettings, MdVolumeUp } from 'react-icons/md';
 import clsx from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -461,6 +461,8 @@ interface DictionaryResultsHeaderProps {
   canGoBack: boolean;
   goBack: () => void;
   onManage?: () => void;
+  /** Opens the custom Word Lens glossary editor for the current headword. */
+  onAddToWordLens?: () => void;
   /** Pronounce the current word (#4876); omit to hide the speaker button. */
   onSpeak?: () => void;
   /** Whether pronunciation is in progress, for the active button state. */
@@ -473,6 +475,7 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   canGoBack,
   goBack,
   onManage,
+  onAddToWordLens,
   onSpeak,
   speaking,
 }) => {
@@ -513,7 +516,18 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           {currentWord}
         </span>
       </div>
-      <div className='flex h-8 w-8 items-center justify-center'>
+      <div className='flex h-8 min-w-8 shrink-0 items-center justify-end'>
+        {onAddToWordLens ? (
+          <button
+            type='button'
+            aria-label={_('Add to Word Lens')}
+            title={_('Add to Word Lens')}
+            onClick={onAddToWordLens}
+            className='btn btn-ghost btn-square btn-xs text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60'
+          >
+            <MdAdd size={18} />
+          </button>
+        ) : null}
         {onManage ? (
           <button
             type='button'

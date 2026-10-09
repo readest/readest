@@ -493,6 +493,20 @@ export interface AnnotatorConfig {
   noteExportConfig: NoteExportConfig;
 }
 
+export type WordLensGlossaryScope = 'global' | 'book' | 'series';
+
+/** A user-authored Word Lens hint. The stored definition is never shortened. */
+export interface WordLensGlossaryEntry {
+  id: string;
+  term: string;
+  definition: string;
+  scope: WordLensGlossaryScope;
+  /** `Book.hash` when `scope` is `book`. Not the open-view bookKey. */
+  bookHash?: string;
+  /** `book.metadata.series`, trimmed, when `scope` is `series`. */
+  series?: string;
+}
+
 export interface WordLensConfig {
   wordLensEnabled: boolean;
   /** Difficulty slider, 1 (fewest hints) .. 5 (most hints). */
@@ -503,6 +517,11 @@ export interface WordLensConfig {
   wordLensGlossFontSize: number;
   /** Gloss (<rt>) color as a hex string; '' = default (muted, theme-adaptive). */
   wordLensGlossColor: string;
+  /**
+   * Custom glossary. Global and series entries live on `globalViewSettings`.
+   * Book entries live on that book's view settings and stay on this device.
+   */
+  wordLensGlossary?: WordLensGlossaryEntry[];
 }
 
 export interface ScreenConfig {

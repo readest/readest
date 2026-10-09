@@ -40,6 +40,9 @@ export const SETTINGS_WHITELIST = [
   // other arrays here. Book- and selection-scope rules already ride along the
   // book config sync; only these global rules were stranded on one device.
   'globalViewSettings.proofreadRules',
+  // Global and series Word Lens glossary entries. Book-scoped entries stay on
+  // the book config (backed up, not progress-synced). Whole-field LWW.
+  'globalViewSettings.wordLensGlossary',
   'globalReadSettings.customThemes',
   'globalReadSettings.customHighlightColors',
   'globalReadSettings.userHighlightColors',
