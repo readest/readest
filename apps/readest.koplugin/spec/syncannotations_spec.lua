@@ -17,13 +17,8 @@ package.preload["ui/widget/infomessage"] = function()
     return { new = function() return {} end }
 end
 package.preload["ui/network/manager"] = function() return {} end
-package.preload["ui/uimanager"] = function()
-    return {
-        show = function() end,
-        setDirty = function() end,
-        nextTick = function(_, fn) fn() end,
-    }
-end
+package.preload["ui/uimanager"] = function() return require("spec.koreader_stubs").UIManager end
+
 package.preload["ffi/util"] = function()
     return { template = function(s) return s end }
 end
@@ -64,6 +59,16 @@ describe("readest_syncannotations", function()
         ui.document = nil
         response(true, {notes = {{id = "keep", deleted_at = "2026-09-20"}}})
         assert.are.equal(1, #ui.annotation.annotations)
+    end)
+    it("suppresses annotation failure toasts when auth owns the login prompt", function()
+        local stubs = require("spec.koreader_stubs")
+        stubs.reset()
+        local ui = { document = { info = { has_pages = false } } }
+        local client = { pullChanges = function(_, _, cb)
+            cb(false, { error = "authentication required", auth_required = true }, 401)
+        end }
+        SyncAnnotations:pull(ui, {}, client, "book", "meta", nil, true)
+        assert.are.equal(1, #stubs.UIManager._shown) -- pulling notice only
     end)
 
     describe("removeDeletedAnnotations", function()

@@ -2,6 +2,7 @@ local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local SQ3 = require("lua-ljsqlite3/init")
+local SyncError = require("readest_syncerror")
 local logger = require("logger")
 local _ = require("readest_i18n")
 
@@ -235,8 +236,11 @@ function SyncStats:push(settings, client, interactive)
                 else
                     logger.dbg("ReadestStats push: failed, cursor kept at "
                         .. tostring(settings.stats_push_cursor) .. "; body=" .. tostring(body))
-                    if interactive then
-                        UIManager:show(InfoMessage:new{ text = _("Failed to push reading statistics"), timeout = 2 })
+                    if interactive and not (type(body) == "table" and body.auth_required) then
+                        UIManager:show(InfoMessage:new{
+                            text = SyncError.withDetail(_("Failed to push reading statistics"), body, status),
+                            timeout = 5,
+                        })
                     end
                 end
             end)
@@ -254,7 +258,7 @@ end
 -- applyRemote transaction bounded on the device.
 local PULL_PAGE = 1000
 
-function SyncStats:pull(settings, client, interactive, logout_fn, ui)
+function SyncStats:pull(settings, client, interactive, ui)
     logger.dbg("ReadestStats pull: since=" .. tostring(settings.stats_pull_cursor or 0)
         .. " interactive=" .. tostring(interactive))
     local total_pages = 0
@@ -267,13 +271,14 @@ function SyncStats:pull(settings, client, interactive, logout_fn, ui)
                 logger.dbg("ReadestStats pull: response success=" .. tostring(success)
                     .. " status=" .. tostring(status))
                 if not success then
-                    if status == 401 or status == 403 then
-                        if logout_fn then logout_fn() end
-                    end
+                    if type(response) == "table" and response.auth_required then return end -- auth wrapper owns the prompt
                     -- Pages already applied stay applied and the cursor stays
                     -- at the last successful page, so a retry resumes there.
                     if interactive then
-                        UIManager:show(InfoMessage:new{ text = _("Failed to pull reading statistics"), timeout = 2 })
+                        UIManager:show(InfoMessage:new{
+                            text = SyncError.withDetail(_("Failed to pull reading statistics"), response, status),
+                            timeout = 5,
+                        })
                     end
                     return
                 end

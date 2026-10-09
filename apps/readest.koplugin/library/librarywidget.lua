@@ -11,6 +11,7 @@
 local Device       = require("device")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage  = require("ui/widget/infomessage")
+local SyncError = require("readest_syncerror")
 local InputDialog  = require("ui/widget/inputdialog")
 local Menu         = require("ui/widget/menu")
 local NetworkMgr   = require("ui/network/manager")
@@ -516,8 +517,9 @@ local function runCloudSync(opts, store, interactive)
             .. " elapsed=" .. elapsed_ms(t_sync) .. "ms")
         if interactive then
             UIManager:show(InfoMessage:new{
-                text = success and _("Books synced") or _("Books sync failed"),
-                timeout = 2,
+                text = success and _("Books synced")
+                    or SyncError.withDetail(_("Books sync failed"), msg, status),
+                timeout = success and 2 or 5,
             })
         end
         M.refresh()
@@ -883,12 +885,12 @@ local function downloadCoverOnly(row, opts, after_cb)
         sync_path  = opts.sync_path,
         settings   = opts.settings,
         covers_dir = DataStorage:getSettingsDir() .. "/readest_covers",
-    }, function(success, _path_or_err, status)
+    }, function(success, path_or_err, status)
         if not success then
             local msg = (status == 404)
                 and _("No cover available on Readest.")
-                or _("Cover download failed.")
-            UIManager:show(InfoMessage:new{ text = msg, timeout = 3 })
+                or SyncError.withDetail(_("Cover download failed."), path_or_err, status)
+            UIManager:show(InfoMessage:new{ text = msg, timeout = 5 })
             if after_cb then after_cb(false) end
             return
         end
@@ -990,13 +992,12 @@ function M.handleHold(item, opts)
             sync_auth = opts.sync_auth,
             sync_path = opts.sync_path,
             settings  = opts.settings,
-        }, function(success, _msg, status)
+        }, function(success, msg, status)
             UIManager:close(progress)
             if not success then
                 UIManager:show(InfoMessage:new{
-                    text = _("Cloud removal failed.")
-                        .. " (status=" .. tostring(status) .. ")",
-                    timeout = 3,
+                    text = SyncError.withDetail(_("Cloud removal failed."), msg, status),
+                    timeout = 5,
                 })
                 if after_cb then after_cb(false) end
                 return
@@ -1121,8 +1122,7 @@ function M.handleHold(item, opts)
                     if status == 403 and msg and msg:find("quota", 1, true) then
                         text = _("Storage quota exceeded.")
                     else
-                        text = _("Upload failed.")
-                            .. " (" .. tostring(msg or status) .. ")"
+                        text = SyncError.withDetail(_("Upload failed."), msg, status)
                     end
                     UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
                     return

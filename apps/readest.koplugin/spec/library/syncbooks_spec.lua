@@ -442,6 +442,30 @@ describe("library.syncbooks", function()
             end)
         end)
 
+        it("reports the failed pull's message and status in 'both' mode", function()
+            with_stubs(function(calls)
+                syncbooks.pullBooks = function(_opts, cb)
+                    table.insert(calls, "pull")
+                    cb(false, "Permission denied", 403)
+                end
+                local result
+                syncbooks.syncBooks({}, "both", function(...) result = { ... } end)
+                assert.are.same({ "pull", "push" }, calls)
+                assert.are.same({ false, "Permission denied", 403 }, result)
+            end)
+        end)
+
+        it("reports the failed push's message and status in 'both' mode", function()
+            with_stubs(function()
+                syncbooks.pushChangedBooks = function(_opts, cb)
+                    cb(false, "Too many requests", 429)
+                end
+                local result
+                syncbooks.syncBooks({}, "both", function(...) result = { ... } end)
+                assert.are.same({ false, "Too many requests", 429 }, result)
+            end)
+        end)
+
         it("tolerates a missing before_push callback", function()
             with_stubs(function(calls)
                 -- No before_push passed; orchestration should still work.
@@ -490,7 +514,7 @@ describe("library.syncbooks", function()
         local function fake_sync_auth(rows)
             return {
                 withFreshToken = function(_self, _settings, _path, cb) cb(true) end,
-                getReadestSyncClient = function()
+                getAuthenticatedClient = function()
                     return {
                         pullBooks = function(_self2, _params, cb)
                             cb(true, { books = rows }, 200)

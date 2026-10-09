@@ -338,9 +338,6 @@ msgstr "ตรวจสอบการอัปเดต"
 msgid "Please login first"
 msgstr "โปรดเข้าสู่ระบบก่อน"
 
-msgid "Please configure Readest settings first"
-msgstr "โปรดกำหนดค่า Readest ก่อน"
-
 msgid "(none)"
 msgstr "(ไม่มี)"
 
@@ -506,9 +503,6 @@ msgstr "ซิงค์เต็มรูปแบบ: กำลังดึง�
 msgid "Pulling annotations..."
 msgstr "กำลังดึงคำอธิบาย…"
 
-msgid "Authentication failed, please login again"
-msgstr "การยืนยันตัวตนล้มเหลว โปรดเข้าสู่ระบบอีกครั้ง"
-
 msgid "Failed to pull annotations"
 msgstr "ดึงคำอธิบายไม่สำเร็จ"
 
@@ -520,6 +514,9 @@ msgstr "ดึงคำอธิบาย %1 รายการ"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "เซสชัน Readest ของคุณหมดอายุแล้ว โปรดเข้าสู่ระบบอีกครั้ง"
+
+msgid "Authentication failed, please login again"
+msgstr "การยืนยันตัวตนล้มเหลว โปรดเข้าสู่ระบบอีกครั้ง"
 
 msgid "Login"
 msgstr "เข้าสู่ระบบ"
@@ -566,8 +563,65 @@ msgstr "ดึงความคืบหน้าการอ่านไม่
 msgid "Reading progress synchronized"
 msgstr "ซิงค์ความคืบหน้าการอ่านแล้ว"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "ไม่สามารถใช้ตำแหน่งการอ่านที่บันทึกไว้กับสำเนาหนังสือนี้ได้"
+
 msgid "No saved reading progress found for this book"
 msgstr "ไม่พบความคืบหน้าการอ่านที่บันทึกไว้สำหรับหนังสือเล่มนี้"
+
+msgid "Sync was cancelled."
+msgstr "ยกเลิกการซิงค์แล้ว"
+
+msgid "The connection timed out. Please try again."
+msgstr "การเชื่อมต่อหมดเวลา โปรดลองอีกครั้ง"
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "ไม่สามารถเข้าถึงเครือข่ายได้ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต"
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "ไม่พบเซิร์ฟเวอร์ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต"
+
+msgid "The server refused the connection. Please try again later."
+msgstr "เซิร์ฟเวอร์ปฏิเสธการเชื่อมต่อ โปรดลองอีกครั้งในภายหลัง"
+
+msgid "The connection was interrupted. Please try again."
+msgstr "การเชื่อมต่อถูกขัดจังหวะ โปรดลองอีกครั้ง"
+
+msgid "A secure connection to the server could not be established."
+msgstr "ไม่สามารถสร้างการเชื่อมต่อที่ปลอดภัยกับเซิร์ฟเวอร์ได้"
+
+msgid "Authentication failed. Please log in again."
+msgstr "การยืนยันตัวตนล้มเหลว โปรดเข้าสู่ระบบอีกครั้ง"
+
+msgid "The account changed during sync."
+msgstr "บัญชีเปลี่ยนไประหว่างการซิงค์"
+
+msgid "The file was not found in the cloud."
+msgstr "ไม่พบไฟล์บนคลาวด์"
+
+msgid "The local file is missing."
+msgstr "ไม่พบไฟล์ในเครื่อง"
+
+msgid "An internal error occurred. Please try again."
+msgstr "เกิดข้อผิดพลาดภายใน โปรดลองอีกครั้ง"
+
+msgid "Access denied."
+msgstr "การเข้าถึงถูกปฏิเสธ"
+
+msgid "Not found on the server."
+msgstr "ไม่พบบนเซิร์ฟเวอร์"
+
+msgid "The file is too large."
+msgstr "ไฟล์มีขนาดใหญ่เกินไป"
+
+msgid "Too many requests. Please try again later."
+msgstr "มีคำขอมากเกินไป โปรดลองอีกครั้งในภายหลัง"
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "เซิร์ฟเวอร์ไม่พร้อมใช้งานชั่วคราว โปรดลองอีกครั้งในภายหลัง"
+
+msgid "The request failed. Please try again."
+msgstr "คำขอล้มเหลว โปรดลองอีกครั้ง"
 
 msgid "Reading statistics are up to date"
 msgstr "สถิติการอ่านเป็นปัจจุบันแล้ว"
