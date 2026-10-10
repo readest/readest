@@ -347,6 +347,41 @@ pub(crate) async fn refresh_eink_screen<R: Runtime>(
     app.native_bridge().refresh_eink_screen()
 }
 
+/// Handwriting: capability probe backing `services/handwriting/capabilities.ts`.
+/// Always resolves (never a hard error) so a non-BOOX or non-mobile platform
+/// just gets `{ isBoox: false, rawDrawing: false }` and falls back to the
+/// generic pointer backend.
+#[command]
+pub(crate) async fn query_pen_capabilities<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<QueryPenCapabilitiesResponse> {
+    Ok(app
+        .native_bridge()
+        .query_pen_capabilities()
+        .unwrap_or_default())
+}
+
+#[command]
+pub(crate) async fn start_raw_drawing<R: Runtime>(
+    app: AppHandle<R>,
+    payload: StartRawDrawingRequest,
+) -> Result<()> {
+    app.native_bridge().start_raw_drawing(payload)
+}
+
+#[command]
+pub(crate) async fn stop_raw_drawing<R: Runtime>(app: AppHandle<R>) -> Result<()> {
+    app.native_bridge().stop_raw_drawing()
+}
+
+#[command]
+pub(crate) async fn set_raw_drawing_enabled<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetRawDrawingEnabledRequest,
+) -> Result<()> {
+    app.native_bridge().set_raw_drawing_enabled(payload)
+}
+
 #[command]
 pub(crate) async fn is_eink_refresh_supported<R: Runtime>(
     app: AppHandle<R>,

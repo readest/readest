@@ -33,6 +33,7 @@ android {
     }
 
     flavorDimensions += "store"
+    flavorDimensions += "pen"
     productFlavors {
         create("foss") {
             dimension = "store"
@@ -40,10 +41,35 @@ android {
         create("googleplay") {
             dimension = "store"
         }
+        // Handwriting (issue #3673): default flavor, no vendor SDK, no extra
+        // Maven repository. Ships in every normal Readest build.
+        create("genericPen") {
+            dimension = "pen"
+        }
+        // Opt-in flavor for BOOX low-latency raw drawing. Pulls the BOOX
+        // Maven repository and the onyxsdk-pen artifact below — see
+        // android/README-pen.md for why this can't be the default and how
+        // to build it. Only android/src/booxPen/** is compiled in; nothing
+        // else in the app depends on this flavor existing.
+        create("booxPen") {
+            dimension = "pen"
+        }
     }
 }
 
+repositories {
+    // Only reached when the booxPen flavor is actually built (Gradle only
+    // resolves dependencies for the flavors it's asked to build), so a
+    // normal genericPen build never talks to this host.
+    maven { url = uri("https://repo.boox.com/repository/maven-public/") }
+}
+
 dependencies {
+    // See android/README-pen.md: Onyx distributes onyxsdk-pen under Apache
+    // 2.0 from their own Maven host, not Maven Central, and its transitive
+    // dependencies haven't been audited for this repo. Gated behind the
+    // booxPen flavor so default/FOSS builds never fetch it.
+    "booxPenImplementation"("com.onyx.android.sdk:onyxsdk-pen:1.4.11")
     "googleplayImplementation"("com.android.billingclient:billing:9.1.0")
     "googleplayImplementation"("com.google.android.gms:play-services-base:18.5.0")
     "googleplayImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")

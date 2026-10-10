@@ -20,7 +20,7 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => h.bookData }),
+  useBookDataStore: () => ({ getBookData: () => h.bookData, getConfig: () => undefined }),
 }));
 
 vi.mock('@/store/readerStore', () => ({

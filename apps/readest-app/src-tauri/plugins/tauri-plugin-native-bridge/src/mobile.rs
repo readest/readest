@@ -433,6 +433,30 @@ impl<R: Runtime> NativeBridge<R> {
             .run_mobile_plugin("is_eink_refresh_supported", ())
             .map_err(Into::into)
     }
+
+    pub fn query_pen_capabilities(&self) -> crate::Result<QueryPenCapabilitiesResponse> {
+        self.0
+            .run_mobile_plugin("query_pen_capabilities", ())
+            .map_err(Into::into)
+    }
+
+    pub fn start_raw_drawing(&self, payload: StartRawDrawingRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("start_raw_drawing", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn stop_raw_drawing(&self) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("stop_raw_drawing", ())
+            .map_err(Into::into)
+    }
+
+    pub fn set_raw_drawing_enabled(&self, payload: SetRawDrawingEnabledRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("set_raw_drawing_enabled", payload)
+            .map_err(Into::into)
+    }
 }
 
 impl<R: Runtime> NativeBridge<R> {

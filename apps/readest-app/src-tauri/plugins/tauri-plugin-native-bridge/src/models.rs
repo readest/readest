@@ -562,6 +562,39 @@ pub struct EinkRefreshSupportedResponse {
     pub supported: bool,
 }
 
+/// `isBoox` is a device-identity check (always available); `rawDrawing` is
+/// true only when this build was compiled against the BOOX Pen SDK (the
+/// `booxPen` Gradle flavor) and the SDK reports it can drive raw drawing on
+/// this device/firmware. JS treats `rawDrawing: false` as "use the generic
+/// pointer backend", regardless of why.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QueryPenCapabilitiesResponse {
+    pub is_boox: bool,
+    pub raw_drawing: bool,
+}
+
+/// Begins BOOX raw-drawing mode over the given view region (CSS px of the
+/// webview viewport). `strokeColor` is an authoring hint for the SDK's own
+/// low-latency preview layer only — the persistent stroke color used by the
+/// Readest canvas is decided in JS.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StartRawDrawingRequest {
+    pub left: f64,
+    pub top: f64,
+    pub width: f64,
+    pub height: f64,
+    pub stroke_width: f64,
+    pub stroke_color: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetRawDrawingEnabledRequest {
+    pub enabled: bool,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BookshelfWidgetBook {

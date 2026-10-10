@@ -121,6 +121,7 @@ import {
   convertAnnotationExportToBookNotes,
   parseAnnotationExport,
 } from '@/services/annotation/providers/readest';
+import { mergeImportedHandwriting } from '@/services/handwriting/persistence';
 import {
   extractReadEraLibrary,
   findReadEraDocByFileMd5,
@@ -2298,7 +2299,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       });
       return;
     }
-    if (payload.annotations.length === 0) {
+    // Ink is not an annotation, so a file carrying only handwriting is still
+    // worth importing — bail only when the envelope holds neither.
+    const hasHandwriting =
+      !!payload.handwriting && Object.keys(payload.handwriting.pages).length > 0;
+    if (payload.annotations.length === 0 && !hasHandwriting) {
       eventDispatcher.dispatch('toast', {
         type: 'info',
         message: _('No annotations found in the file.'),
@@ -2328,6 +2333,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         conversion.notes,
       );
       let updatedConfig = updateBooknotes(bookKey, merged);
+      // Ink merges per page alongside the notes, so an import never wipes
+      // handwriting the reader already made on pages the file omits.
+      const mergedHandwriting = payload.handwriting
+        ? mergeImportedHandwriting(config.handwriting, payload.handwriting)
+        : null;
+      if (updatedConfig && mergedHandwriting) {
+        updatedConfig = { ...updatedConfig, handwriting: mergedHandwriting };
+        eventDispatcher.dispatch('handwriting', { action: 'reload' });
+      }
       // Only adopt the exported reading position when this book has none of
       // its own, so importing into a book you are midway through never moves
       // you. A freshly re-downloaded copy does pick its position back up.
@@ -2358,6 +2372,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           ? _('Imported {{count}} annotations', { count: imported })
           : _('No new annotations to import'),
       ];
+      if (mergedHandwriting) {
+        parts.push(
+          _('Imported handwriting on {{count}} pages', {
+            count: Object.keys(mergedHandwriting.pages).length,
+          }),
+        );
+      }
       if (conversion.reanchored > 0) {
         parts.push(_('{{count}} relocated', { count: conversion.reanchored }));
       }
@@ -2554,6 +2575,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           Icon,
           onClick: handleAnnotate,
           disabled: popupSelectionNoCfi,
+        };
+      case 'handwriting':
+        return {
+          tooltipText: _(label),
+          Icon,
+          onClick: () => {
+            eventDispatcher.dispatch('handwriting', { action: 'enable' });
+            handleDismissPopupAndSelection();
+          },
         };
       case 'search':
         return { tooltipText: _(label), Icon, onClick: handleSearch };

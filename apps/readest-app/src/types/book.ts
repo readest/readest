@@ -1,3 +1,4 @@
+import type { HandwritingDoc } from '@/services/handwriting/model';
 import { BookMetadata } from '@/libs/document';
 import { TTSHighlightOptions } from '@/services/tts/types';
 import { TTSHighlightGranularity } from '@/services/tts/types';
@@ -690,11 +691,17 @@ export interface BookConfig {
    */
   widePages?: string[];
   /**
+  /**
    * Where a zoomed fixed-layout page was panned under the horizontal pan lock,
    * as a fraction of its horizontal overflow, restored on reopen. Device-local
    * like widePages: it depends on this screen's zoom and size.
    */
   panX?: number;
+  /**
+   * Handwritten ink (see services/handwriting/model.ts), keyed by page.
+   * Device-local for now: useProgressSync strips it before pushing configs.
+   */
+  handwriting?: HandwritingDoc;
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
