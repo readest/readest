@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useMemo, useRef } from 'react';
 import { MdEdit, MdDelete, MdContentCopy } from 'react-icons/md';
+import { PiPencilLine } from 'react-icons/pi';
 
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, HighlightColor } from '@/types/book';
@@ -304,7 +305,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
                 } as React.CSSProperties
               }
             >
-              {text || ''}
+              {item.type === 'ink' && (
+                <PiPencilLine className='me-1 inline align-[-0.125em]' aria-hidden='true' />
+              )}
+              {text || (item.type === 'ink' ? _('Drawing') : '')}
             </span>
           </div>
         </div>

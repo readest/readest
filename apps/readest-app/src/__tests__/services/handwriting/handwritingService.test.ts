@@ -58,7 +58,7 @@ describe('HandwritingService page scoping', () => {
     // dangling live state via a render before the page turn.
     service.setPage('pdf:2');
     expect(service.strokesForRender()).toEqual([]);
-    expect(editor.toDocument().pages).toEqual({});
+    expect(editor.pageKeys()).toEqual([]);
   });
 
   it('hit-tests a screen point against the ink on the page', () => {
@@ -91,10 +91,11 @@ describe('HandwritingService text anchoring', () => {
         ([x, y]): InkPoint => [(x - box.left) / box.height, (y - box.top) / box.height],
       ),
     })),
-    place: (stroke: InkStroke) =>
+    place: (stroke: InkStroke) => [
       stroke.points.map(
         ([x, y]): InkPoint => [box.left + x * box.height, box.top + y * box.height],
       ),
+    ],
   });
 
   const draw = (service: HandwritingService, points: InkPoint[]) =>

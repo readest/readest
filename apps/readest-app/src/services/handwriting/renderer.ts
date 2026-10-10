@@ -6,21 +6,25 @@ const MIN_SCALE = 0.25;
 const pressureScale = (p: number | undefined) => MIN_SCALE + (1 - MIN_SCALE) * (p ?? 1);
 
 /**
- * Redraws `strokes` onto a canvas whose page occupies `rect`. Independent of
- * any input backend; safe to call from requestAnimationFrame.
+ * Redraws `strokes` onto a canvas whose page occupies `rect`; pass
+ * `clear: false` to draw another layer over what is there. Independent of any
+ * input backend; safe to call from requestAnimationFrame.
  */
 export const renderStrokes = (
   ctx: CanvasRenderingContext2D,
   strokes: readonly InkStroke[],
   rect: PageRect,
+  clear = true,
 ) => {
   const canvas = ctx.canvas as HTMLCanvasElement | undefined;
-  ctx.clearRect(
-    0,
-    0,
-    canvas?.width ?? rect.left + rect.width,
-    canvas?.height ?? rect.top + rect.height,
-  );
+  if (clear) {
+    ctx.clearRect(
+      0,
+      0,
+      canvas?.width ?? rect.left + rect.width,
+      canvas?.height ?? rect.top + rect.height,
+    );
+  }
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 

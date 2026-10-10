@@ -47,7 +47,7 @@ describe('handwriting pen options', () => {
 
     service.setOptions({ color: '#c2410c', widthFraction: 0.008 });
     // setOptions repaints; committed strokes keep their original pen.
-    expect(editor.toDocument().pages).toEqual({});
+    expect(editor.pageKeys()).toEqual([]);
   });
 
   it('leaves already-committed strokes untouched when the pen changes', () => {

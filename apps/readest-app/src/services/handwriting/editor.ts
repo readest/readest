@@ -1,4 +1,4 @@
-import { HANDWRITING_VERSION, type HandwritingDoc, type InkPoint, type InkStroke } from './model';
+import type { InkPage, InkPoint, InkStroke } from './model';
 
 interface PageState {
   strokes: InkStroke[];
@@ -43,16 +43,18 @@ const segments = (pts: ArrayLike<InkPoint>): Seg[] => {
   return out;
 };
 
-/** Where a stroke is drawn now: its points, or null when it isn't shown. */
-export type PlaceStroke = (stroke: InkStroke) => InkPoint[] | null;
+/** Where a stroke is drawn now, as polylines; null when it isn't shown. */
+export type PlaceStroke = (stroke: InkStroke) => InkPoint[][] | null;
 
-const asStored: PlaceStroke = (stroke) => stroke.points;
+const asStored: PlaceStroke = (stroke) => [stroke.points];
 
 /** Whether a path (eraser sweep or tap) comes within `radius` of the placed stroke. */
-const touches = (stroke: InkStroke, points: InkPoint[], pathSegs: Seg[], radius: number) => {
+const touches = (stroke: InkStroke, placed: InkPoint[][], pathSegs: Seg[], radius: number) => {
   const reach = radius + stroke.width / 2;
-  const strokeSegs = segments(points);
-  return pathSegs.some((e) => strokeSegs.some((s) => segDist(e, s) <= reach));
+  return placed.some((points) => {
+    const strokeSegs = segments(points);
+    return pathSegs.some((e) => strokeSegs.some((s) => segDist(e, s) <= reach));
+  });
 };
 
 /**
@@ -64,8 +66,8 @@ export class HandwritingEditor {
   private pages = new Map<string, PageState>();
   private listeners = new Set<() => void>();
 
-  constructor(doc?: HandwritingDoc) {
-    for (const [key, page] of Object.entries(doc?.pages ?? {})) {
+  constructor(pages?: Record<string, InkPage>) {
+    for (const [key, page] of Object.entries(pages ?? {})) {
       this.pages.set(key, { strokes: page.strokes, undo: [], redo: [], updatedAt: page.updatedAt });
     }
   }
@@ -139,16 +141,6 @@ export class HandwritingEditor {
     state.strokes = next;
     state.updatedAt = Date.now();
     this.notify();
-  }
-
-  toDocument(): HandwritingDoc {
-    const doc: HandwritingDoc = { version: HANDWRITING_VERSION, pages: {} };
-    for (const [key, state] of this.pages) {
-      if (state.strokes.length) {
-        doc.pages[key] = { strokes: [...state.strokes], updatedAt: state.updatedAt };
-      }
-    }
-    return doc;
   }
 
   private commit(page: string, strokes: InkStroke[]) {

@@ -5,6 +5,7 @@ import {
   collectAnnotationFacets,
   decideNoteBubbleTransition,
   filterBooknotes,
+  summarizeAnnotationHub,
 } from '@/app/reader/utils/annotatorUtil';
 import { BookNote } from '@/types/book';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
@@ -196,5 +197,25 @@ describe('applyNoteBubbleTransition', () => {
     const view = makeView();
     applyNoteBubbleTransition([view], note, 'none');
     expect(view.addAnnotation).not.toHaveBeenCalled();
+  });
+});
+
+describe('handwriting in the annotations hub', () => {
+  const ink = makeNote({
+    type: 'ink',
+    text: 'the Queen of Hearts',
+    style: undefined,
+    color: undefined,
+    ink: [{ id: 's', color: '#000', width: 0.004, points: [[0, 0]] }],
+  });
+
+  it('lists ink annotations and finds them by the text they mark', () => {
+    expect(filterBooknotes([ink], { kind: 'all', query: '' })).toEqual([ink]);
+    expect(filterBooknotes([ink], { kind: 'all', query: 'queen' })).toEqual([ink]);
+    expect(filterBooknotes([ink], { kind: 'notes', query: '' })).toEqual([]);
+  });
+
+  it('counts ink annotations', () => {
+    expect(summarizeAnnotationHub([ink, makeNote()]).annotations).toBe(2);
   });
 });

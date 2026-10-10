@@ -153,17 +153,10 @@ describe('HandwritingEditor', () => {
     expect(ed.strokes('2').map((x) => x.id)).toEqual(['b']);
   });
 
-  it('exports and reloads a persisted document', () => {
-    const ed = new HandwritingEditor();
-    ed.addStroke(
-      '1',
-      s('a', [
-        [0, 0],
-        [1, 1],
-      ]),
-    );
-    const reloaded = new HandwritingEditor(ed.toDocument());
-    expect(reloaded.strokes('1').map((x) => x.id)).toEqual(['a']);
+  it('starts from stored pages', () => {
+    const ed = new HandwritingEditor({ '1': { strokes: [s('a', [[0, 0]])], updatedAt: 5 } });
+    expect(ed.strokes('1').map((x) => x.id)).toEqual(['a']);
+    expect(ed.pageKeys()).toEqual(['1']);
   });
 
   it('notifies listeners once per change', () => {
@@ -205,11 +198,12 @@ describe('HandwritingEditor', () => {
       ]),
       anchor: 'epubcfi(/6/4!/4/2,/1:0,/1:1)',
     });
-    const place = () =>
+    const place = () => [
       [
         [0.2, 0.5],
         [0.8, 0.5],
-      ] as [number, number][];
+      ] as [number, number][],
+    ];
     expect(ed.hits('sec:1', [0.5, 0.5], 0.01, place)).toBe(true);
     expect(ed.hits('sec:1', [0.5, 0.5], 0.01, () => null)).toBe(false);
     ed.erase(

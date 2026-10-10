@@ -18,24 +18,23 @@ interface HandwritingOverlayProps {
  */
 const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridInsets }) => {
   const hw = useHandwriting(bookKey);
-  const { available, enabled, setEnabled, reload, hitTest } = hw;
+  const { visible, editable, enabled, setEnabled, hitTest } = hw;
 
   useEffect(() => {
     const onHandwritingEvent = (event: CustomEvent) => {
       const { action, bookKey: target } = event.detail as { action: string; bookKey: string };
       if (target !== bookKey) return;
       if (action === 'toggle') setEnabled((enabled) => !enabled);
-      if (action === 'reload') reload();
     };
     eventDispatcher.on('handwriting', onHandwritingEvent);
     return () => {
       eventDispatcher.off('handwriting', onHandwritingEvent);
     };
-  }, [bookKey, setEnabled, reload]);
+  }, [bookKey, setEnabled]);
 
   // A tap on existing ink opens it for editing instead of turning the page.
   useEffect(() => {
-    if (!available || enabled) return;
+    if (!editable || enabled) return;
     const onTap = (event: CustomEvent) => {
       const {
         bookKey: target,
@@ -55,16 +54,15 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
     return () => {
       eventDispatcher.offSync('iframe-single-click', onTap);
     };
-  }, [bookKey, available, enabled, hitTest, setEnabled]);
+  }, [bookKey, editable, enabled, hitTest, setEnabled]);
 
-  if (!available) return null;
+  if (!visible) return null;
 
   return (
     <>
       <HandwritingCanvas
-        strokes={hw.strokes}
+        layers={hw.layers}
         cellRect={hw.cellRect}
-        pageRect={hw.pageRect}
         interactive={hw.enabled}
         overlayRef={hw.containerRef}
         attach={hw.attach}

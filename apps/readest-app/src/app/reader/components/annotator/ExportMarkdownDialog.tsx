@@ -75,10 +75,9 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getBookData, getConfig } = useBookDataStore();
+  const { getBookData } = useBookDataStore();
   const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
-  const handwriting = getConfig(bookKey)?.handwriting;
 
   const defaultTemplate = `{% if coverImageUrl %}![cover|300]({{ coverImageUrl }})
 
@@ -140,8 +139,6 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 
   const isJson = exportConfig.exportFormat === 'json';
   const isPlainText = exportConfig.exportFormat === 'text';
-  // JSON carries handwriting, so a book with only ink still has something to export.
-  const hasInkToExport = isJson && Object.keys(handwriting?.pages ?? {}).length > 0;
 
   const [showSource, setShowSource] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -292,7 +289,6 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
           progress,
           location,
           exportedAt: Date.now(),
-          handwriting,
         }),
         null,
         2,
@@ -453,7 +449,6 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     location,
     coverImageUrl,
     contexts,
-    handwriting,
     _,
   ]);
 
@@ -1048,7 +1043,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
               <button
                 onClick={(e) => handleExport(e, true)}
                 className='btn btn-ghost btn-sm'
-                disabled={(filteredNotesCount === 0 && !hasInkToExport) || isLoadingContext}
+                disabled={filteredNotesCount === 0 || isLoadingContext}
               >
                 {_('Share')}
               </button>
@@ -1056,7 +1051,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             <button
               onClick={(e) => handleExport(e, !canSaveAndShare)}
               className='btn btn-primary btn-sm'
-              disabled={(filteredNotesCount === 0 && !hasInkToExport) || isLoadingContext}
+              disabled={filteredNotesCount === 0 || isLoadingContext}
             >
               {canSaveAndShare ? _('Save') : _('Export')}
             </button>

@@ -8,11 +8,19 @@ import { useEnv } from '@/context/EnvContext';
 import { saveSysSettings } from '@/helpers/settings';
 import { HandwritingEditor } from '@/services/handwriting/editor';
 import { HandwritingService } from '@/services/handwriting/handwritingService';
-import { loadHandwritingEditor, withHandwriting } from '@/services/handwriting/persistence';
+import { loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';
 import { fixedPageKey, sectionPageKey } from '@/services/handwriting/pageKey';
 import { createInkAnchoring } from '../utils/inkAnchoring';
 import type { PageRect } from '@/services/handwriting/coords';
+import type { InkStroke } from '@/services/handwriting/model';
 import type { FoliateView } from '@/types/view';
+import type { BookNote } from '@/types/book';
+
+/** Strokes normalized to one rect; the canvas draws each layer against its rect. */
+export interface InkLayer {
+  strokes: InkStroke[];
+  rect: PageRect;
+}
 
 const EMPTY_RECT: PageRect = { left: 0, top: 0, width: 0, height: 0 };
 const SAVE_DELAY_MS = 1000;
@@ -23,6 +31,25 @@ const toRect = (r: DOMRect): PageRect => ({
   width: r.width,
   height: r.height,
 });
+
+/** The text an ink annotation marks, for its sidebar entry. */
+const describeInk = (view: FoliateView, cfi: string): string => {
+  try {
+    const { index, anchor } = view.resolveCFI(cfi);
+    const doc = view.renderer.getContents().find((c) => c.index === index)?.doc;
+    if (!doc || !cfi.includes('!')) return '';
+    return anchor(doc).toString().replace(/\s+/g, ' ').trim().slice(0, 200);
+  } catch {
+    return '';
+  }
+};
+
+/** What identifies the book's ink notes, to tell outside edits from our own. */
+const inkSignature = (notes: BookNote[] | undefined) =>
+  (notes ?? [])
+    .filter((n) => n.type === 'ink')
+    .map((n) => `${n.id}:${n.updatedAt}:${n.deletedAt ?? ''}`)
+    .join();
 
 const sameRect = (a: PageRect, b: PageRect) =>
   a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height;
@@ -39,8 +66,14 @@ const pageFrames = (view: FoliateView | null): Element[] =>
  * the page itself, so zoom, pan, rotation and window size never move it
  * relative to the page content.
  */
-const measureFixedPage = (view: FoliateView | null): PageRect | null => {
-  const rects = pageFrames(view).map((frame) => frame.getBoundingClientRect());
+const measureFixedPage = (view: FoliateView | null, index?: number): PageRect | null => {
+  const contents = (view?.renderer.getContents() ?? []).filter(
+    (c) => index === undefined || c.index === index,
+  );
+  const rects = contents.flatMap(({ doc }) => {
+    const frame = doc?.defaultView?.frameElement;
+    return frame ? [frame.getBoundingClientRect()] : [];
+  });
   if (rects.length === 0) return null;
   const left = Math.min(...rects.map((r) => r.left));
   const top = Math.min(...rects.map((r) => r.top));
@@ -56,28 +89,29 @@ export function useHandwriting(bookKey: string) {
   const { envConfig } = useEnv();
   const progress = useBookProgress(bookKey);
   const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
-  // Ink is drawn per page; a scrolled view has no page to pin it to.
+  // Ink shows in scrolled mode too, but is drawn and edited on pages only.
   const scrolled = !!getViewSettings(bookKey)?.scrolled;
   const { handwritingColor: penColor, handwritingWidth: penWidth } = settings.globalReadSettings;
 
   const editorRef = useRef<HandwritingEditor | null>(null);
-  // Ink from a newer schema can't be read, so it must never be overwritten.
-  const readOnlyRef = useRef(false);
+  // The ink notes as this hook last wrote or read them.
+  const inkSignatureRef = useRef('');
   const serviceRef = useRef<HandwritingService | null>(null);
   const [cellEl, setCellEl] = useState<HTMLDivElement | null>(null);
   const [cellRect, setCellRect] = useState<PageRect>(EMPTY_RECT);
   const [pageRect, setPageRect] = useState<PageRect>(EMPTY_RECT);
   const [editorVersion, setEditorVersion] = useState(0);
   const [, forceRender] = useState(0);
+  // Bumped when content moves without a page change (scroll, pinch preview).
+  const [layoutTick, setLayoutTick] = useState(0);
   const [enabled, setEnabled] = useState(false);
   const [erasing, setErasing] = useState(false);
 
   const loadEditor = useCallback(() => {
-    const config = getConfig(bookKey);
-    const loaded = config ? loadHandwritingEditor(config) : new HandwritingEditor();
-    readOnlyRef.current = !loaded;
-    editorRef.current = loaded ?? new HandwritingEditor();
-  }, [bookKey, getConfig]);
+    const booknotes = getConfig(bookKey)?.booknotes;
+    inkSignatureRef.current = inkSignature(booknotes);
+    editorRef.current = loadInkEditor(booknotes ?? [], isFixedLayout);
+  }, [bookKey, getConfig, isFixedLayout]);
 
   if (!editorRef.current) loadEditor();
 
@@ -92,21 +126,25 @@ export function useHandwriting(bookKey: string) {
         ? fixedPageKey(sectionIndex)
         : sectionPageKey(sectionIndex);
 
-  const available = !scrolled && !readOnlyRef.current && !!pageKey;
+  const visible = !!pageKey;
+  const editable = visible && !scrolled;
   useEffect(() => {
-    if (!available) setEnabled(false);
-  }, [available]);
+    if (!editable) setEnabled(false);
+  }, [editable]);
 
-  /**
-   * Re-read the ink store from BookConfig. An import merges a new document
-   * into the config, and the editor created above holds the pre-import one —
-   * without this the canvas keeps drawing strokes that are no longer saved.
-   */
+  /** Re-read the ink from the booknotes after they changed elsewhere. */
   const reload = useCallback(() => {
     loadEditor();
     serviceRef.current?.setEditor(editorRef.current!);
     setEditorVersion((n) => n + 1);
   }, [loadEditor]);
+
+  // An ink annotation deleted from the sidebar, or ink pulled by sync,
+  // changes the notes without this hook; pick it up.
+  const booknotes = getConfig(bookKey)?.booknotes;
+  useEffect(() => {
+    if (inkSignature(booknotes) !== inkSignatureRef.current) reload();
+  }, [booknotes, reload]);
 
   // Write to the store on every committed edit, and to disk shortly after, so
   // ink survives the app being killed before the next page turn.
@@ -120,8 +158,14 @@ export function useHandwriting(bookKey: string) {
     };
     const unsubscribe = editor.subscribe(() => {
       const config = getConfig(bookKey);
-      if (!config || readOnlyRef.current) return;
-      setConfig(bookKey, withHandwriting(config, editor));
+      const view = getView(bookKey);
+      if (!config || !view) return;
+      const booknotes = withInkNotes(config.booknotes ?? [], editor, {
+        cfiOf: (index) => view.getCFI(index),
+        describe: (cfi) => describeInk(view, cfi),
+      });
+      inkSignatureRef.current = inkSignature(booknotes);
+      setConfig(bookKey, { booknotes });
       if (timer) clearTimeout(timer);
       timer = setTimeout(save, SAVE_DELAY_MS);
     });
@@ -132,35 +176,83 @@ export function useHandwriting(bookKey: string) {
         save();
       }
     };
-  }, [editorVersion, bookKey, envConfig, getConfig, setConfig, saveConfig]);
+  }, [editorVersion, bookKey, envConfig, getConfig, getView, setConfig, saveConfig]);
 
   const measure = useCallback(() => {
     if (!cellEl) return;
     const cell = toRect(cellEl.getBoundingClientRect());
-    const page = (isFixedLayout && measureFixedPage(getView(bookKey))) || cell;
+    // A scroll strip shows many pages; the current one is the editable page.
+    const page =
+      (isFixedLayout && measureFixedPage(getView(bookKey), scrolled ? sectionIndex : undefined)) ||
+      cell;
     setCellRect((prev) => (sameRect(prev, cell) ? prev : cell));
     setPageRect((prev) => (sameRect(prev, page) ? prev : page));
-  }, [cellEl, isFixedLayout, getView, bookKey]);
+  }, [cellEl, isFixedLayout, getView, bookKey, scrolled, sectionIndex]);
 
-  // Re-measure on layout changes: window/cell resize, a page turn, and for
-  // fixed layout the page frames resizing (zoom) or the renderer panning.
+  // Re-measure on layout changes: window/cell resize, a page turn, scrolling,
+  // fixed-layout frames resizing (zoom), and the live transform a pinch
+  // applies before the zoom commits, so ink tracks the page frame by frame.
   useEffect(() => {
     if (!cellEl) return;
+    let frameRequest = 0;
+    const update = () => {
+      if (frameRequest) return;
+      frameRequest = requestAnimationFrame(() => {
+        frameRequest = 0;
+        measure();
+        setLayoutTick((n) => n + 1);
+      });
+    };
     measure();
-    const raf = requestAnimationFrame(measure);
-    const ro = new ResizeObserver(measure);
+    update();
+    const ro = new ResizeObserver(update);
     ro.observe(cellEl);
-    const renderer = isFixedLayout ? getView(bookKey)?.renderer : null;
-    if (renderer) {
-      for (const frame of pageFrames(getView(bookKey))) ro.observe(frame);
-      renderer.addEventListener('scroll', measure);
+    const renderer = getView(bookKey)?.renderer;
+    for (const frame of isFixedLayout ? pageFrames(getView(bookKey)) : []) ro.observe(frame);
+    renderer?.addEventListener('scroll', update);
+    const mo = new MutationObserver(update);
+    if (renderer?.shadowRoot) {
+      mo.observe(renderer.shadowRoot, {
+        attributes: true,
+        attributeFilter: ['style'],
+        subtree: true,
+      });
     }
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(frameRequest);
       ro.disconnect();
-      renderer?.removeEventListener('scroll', measure);
+      mo.disconnect();
+      renderer?.removeEventListener('scroll', update);
     };
   }, [cellEl, measure, isFixedLayout, getView, bookKey, location, sectionIndex]);
+
+  /**
+   * In scrolled mode every loaded page or section on screen shows its ink,
+   * placed from its own frame or text; read-only, as editing needs a page.
+   */
+  const scrolledLayers = (): InkLayer[] => {
+    const view = getView(bookKey);
+    const editor = editorRef.current;
+    if (!view || !editor || !cellRect.width) return [];
+    return view.renderer.getContents().flatMap(({ doc, index }): InkLayer[] => {
+      if (index === undefined) return [];
+      if (isFixedLayout) {
+        const frame = doc?.defaultView?.frameElement;
+        const strokes = editor.strokes(fixedPageKey(index));
+        if (!frame || !strokes.length) return [];
+        return [{ strokes: [...strokes], rect: toRect(frame.getBoundingClientRect()) }];
+      }
+      const strokes = editor.strokes(sectionPageKey(index));
+      const anchoring = strokes.length ? createInkAnchoring(view, index, cellRect) : null;
+      if (!anchoring) return [];
+      const placed = strokes.flatMap((stroke) =>
+        stroke.anchor
+          ? (anchoring.place(stroke) ?? []).map((points) => ({ ...stroke, points }))
+          : [],
+      );
+      return [{ strokes: placed, rect: cellRect }];
+    });
+  };
 
   useEffect(() => {
     if (!serviceRef.current) {
@@ -185,7 +277,7 @@ export function useHandwriting(bookKey: string) {
     serviceRef.current?.setAnchoring(
       view && pageRect.width ? createInkAnchoring(view, sectionIndex, pageRect) : null,
     );
-  }, [isFixedLayout, sectionIndex, location, pageRect, getView, bookKey]);
+  }, [isFixedLayout, sectionIndex, location, pageRect, layoutTick, getView, bookKey]);
 
   // Pen choice is a device-wide setting, so a change here retargets the live
   // session without disturbing the ink already committed.
@@ -233,8 +325,12 @@ export function useHandwriting(bookKey: string) {
     [envConfig, settings.globalReadSettings],
   );
 
+  const layers: InkLayer[] = scrolled
+    ? scrolledLayers()
+    : [{ strokes: serviceRef.current?.strokesForRender() ?? [], rect: pageRect }];
+
   return {
-    strokes: serviceRef.current?.strokesForRender() ?? [],
+    layers,
     // Committed strokes only: the live one isn't restyleable or clearable yet.
     hasInk: serviceRef.current?.hasInk() ?? false,
     cellRect,
@@ -243,7 +339,8 @@ export function useHandwriting(bookKey: string) {
     attach,
     detach,
     hitTest,
-    available,
+    visible,
+    editable,
     enabled,
     setEnabled,
     reload,

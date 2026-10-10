@@ -141,11 +141,14 @@ export const useNotesSync = (bookKey: string) => {
     if (!config?.location || !book || !user) return {};
 
     const bookNotes = config.booknotes ?? [];
+    // Readest Cloud has no field for handwriting strokes; an ink annotation
+    // would arrive on other devices empty, so it travels by file sync only.
     const newNotes = bookNotes.filter(
       (note) =>
-        !note.xpointer0 ||
-        lastSyncedAtNotes < note.updatedAt ||
-        lastSyncedAtNotes < (note.deletedAt ?? 0),
+        note.type !== 'ink' &&
+        (!note.xpointer0 ||
+          lastSyncedAtNotes < note.updatedAt ||
+          lastSyncedAtNotes < (note.deletedAt ?? 0)),
     );
     newNotes.forEach((note) => {
       note.bookHash = book.hash;

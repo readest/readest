@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { resolveNotebookTab, useNotebookStore, type NotebookTab } from '@/store/notebookStore';
+import { useNotebookStore } from '@/store/notebookStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
@@ -28,7 +28,6 @@ import AIAssistant from './AIAssistant';
 import NotebookHeader from './Header';
 import NotebookEditor from './NotebookEditor';
 import NotebookTabNavigation from './NotebookTabNavigation';
-import HandwritingView from './HandwritingView';
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -127,7 +126,7 @@ const Notebook: React.FC = () => {
     });
   };
 
-  const handleTabChange = (tab: NotebookTab) => {
+  const handleTabChange = (tab: 'notes' | 'ai') => {
     setNotebookActiveTab(tab);
     saveSysSettings(envConfig, 'globalReadSettings', {
       ...settings.globalReadSettings,
@@ -176,10 +175,6 @@ const Notebook: React.FC = () => {
 
   if (!sideBarBookKey) return null;
   const bookData = getBookData(sideBarBookKey);
-  const activeTab = resolveNotebookTab(
-    notebookActiveTab,
-    Object.keys(getConfig(sideBarBookKey)?.handwriting?.pages ?? {}).length > 0,
-  );
   const excerptNotes = (getConfig(sideBarBookKey)?.booknotes ?? [])
     .filter((note) => note.type === 'excerpt' && note.text && !note.deletedAt)
     .sort((a, b) => a.createdAt - b.createdAt);
@@ -268,13 +263,9 @@ const Notebook: React.FC = () => {
             handleTogglePin={handleTogglePin}
           />
         </div>
-        {activeTab === 'ai' ? (
+        {notebookActiveTab === 'ai' ? (
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
-          </div>
-        ) : activeTab === 'handwriting' ? (
-          <div className='flex min-h-0 flex-1 flex-col'>
-            <HandwritingView bookKey={sideBarBookKey} />
           </div>
         ) : (
           <NotebookEditor
@@ -288,11 +279,7 @@ const Notebook: React.FC = () => {
           className='shrink-0'
           style={{ paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px` }}
         >
-          <NotebookTabNavigation
-            bookKey={sideBarBookKey}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          />
+          <NotebookTabNavigation activeTab={notebookActiveTab} onTabChange={handleTabChange} />
         </div>
       </div>
     </>

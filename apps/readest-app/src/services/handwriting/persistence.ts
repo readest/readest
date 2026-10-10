@@ -1,47 +1,101 @@
-import type { BookConfig } from '@/types/book';
+import * as CFI from 'foliate-js/epubcfi.js';
+import { md5 } from '@/utils/md5';
+import type { BookNote } from '@/types/book';
 import { HandwritingEditor } from './editor';
-import { HANDWRITING_VERSION, parseHandwriting, type HandwritingDoc } from './model';
+import type { InkPage, InkStroke } from './model';
+import { fixedPageKey, parsePageKey, sectionPageKey } from './pageKey';
 
 /**
- * Handwriting lives on BookConfig (device-local, like the paired audiobook)
- * and is written by the normal saveConfig path. Returns null when the stored
- * ink comes from a newer schema, so the caller can disable editing instead of
- * overwriting data this version cannot read.
+ * Handwriting is stored as `ink` booknotes, so each drawing is an annotation
+ * like any other: listed in the sidebar, navigable, deletable, synced. A
+ * reflowable book gets one note per anchor (the content a drawing marks); a
+ * fixed-layout book one note per page. The editor works on page keys in
+ * memory; these convert between the two.
  */
-export const loadHandwritingEditor = (config: BookConfig): HandwritingEditor | null => {
-  const doc = parseHandwriting(config.handwriting);
-  return doc ? new HandwritingEditor(doc) : null;
-};
 
-export const withHandwriting = (config: BookConfig, editor: HandwritingEditor): BookConfig => {
-  const doc = editor.toDocument();
-  // Once a book has had ink, always write the field: the store merges
-  // partials, so a missing field would keep the cleared ink alive.
-  return Object.keys(doc.pages).length || config.handwriting
-    ? { ...config, handwriting: doc }
-    : config;
-};
+export const inkNoteId = (cfi: string) => `ink-${md5(cfi).slice(0, 16)}`;
 
-/**
- * Merge imported ink into a book's own, per page.
- *
- * Pages are independent (a page key means a specific PDF page or EPUB
- * section), so importing into a book you have already written on must not
- * discard that work. A page the import knows replaces the local one only when
- * the imported copy is newer; pages the file doesn't mention are untouched.
- * Returns null when nothing would change, so callers can skip the save.
- */
-export const mergeImportedHandwriting = (
-  existing: HandwritingDoc | undefined,
-  incoming: HandwritingDoc,
-): HandwritingDoc | null => {
-  const pages = { ...(existing?.pages ?? {}) };
-  let changed = false;
-  for (const [key, page] of Object.entries(incoming.pages)) {
-    const prev = pages[key];
-    if (prev && prev.updatedAt >= page.updatedAt) continue;
-    pages[key] = page;
-    changed = true;
+/** The spine index a CFI points into. */
+const sectionOf = (cfi: string): number | null => {
+  try {
+    const parts = CFI.parse(cfi);
+    const index = CFI.fake.toIndex((parts.parent ?? parts).shift());
+    return Number.isInteger(index) && index >= 0 ? index : null;
+  } catch {
+    return null;
   }
-  return changed ? { version: HANDWRITING_VERSION, pages } : null;
+};
+
+export const loadInkEditor = (notes: BookNote[], fixedLayout: boolean): HandwritingEditor => {
+  const pages: Record<string, InkPage> = {};
+  for (const note of notes) {
+    if (note.type !== 'ink' || note.deletedAt || !note.ink?.length) continue;
+    const index = sectionOf(note.cfi);
+    if (index === null) continue;
+    const key = fixedLayout ? fixedPageKey(index) : sectionPageKey(index);
+    const page = (pages[key] ??= { strokes: [], updatedAt: note.updatedAt });
+    page.strokes.push(...note.ink);
+    page.updatedAt = Math.max(page.updatedAt, note.updatedAt);
+  }
+  return new HandwritingEditor(pages);
+};
+
+export interface InkNoteContext {
+  /** The CFI of a section, for page-level (fixed layout or unanchored) ink. */
+  cfiOf: (sectionIndex: number) => string;
+  /** The text a drawing marks, shown in the sidebar. */
+  describe: (cfi: string) => string;
+  now?: number;
+}
+
+/**
+ * The booknotes with the editor's ink written in: one `ink` note per anchor
+ * or page, kept as is when its ink didn't change, and tombstoned once its
+ * ink is gone so the deletion syncs.
+ */
+export const withInkNotes = (
+  notes: BookNote[],
+  editor: HandwritingEditor,
+  { cfiOf, describe, now = Date.now() }: InkNoteContext,
+): BookNote[] => {
+  const groups = new Map<string, { strokes: InkStroke[]; page?: number }>();
+  for (const key of editor.pageKeys()) {
+    const parsed = parsePageKey(key);
+    if (!parsed) continue;
+    for (const stroke of editor.strokes(key)) {
+      const pinned = parsed.kind === 'section' && stroke.anchor;
+      const cfi = pinned ? stroke.anchor! : cfiOf(parsed.index);
+      const group = groups.get(cfi) ?? { strokes: [] };
+      if (parsed.kind === 'page') group.page = parsed.index + 1;
+      group.strokes.push(stroke);
+      groups.set(cfi, group);
+    }
+  }
+
+  const previous = new Map(notes.filter((n) => n.type === 'ink').map((n) => [n.id, n]));
+  const result = notes.filter((n) => n.type !== 'ink');
+  for (const [cfi, { strokes, page }] of groups) {
+    const id = inkNoteId(cfi);
+    const prev = previous.get(id);
+    previous.delete(id);
+    if (prev && !prev.deletedAt && JSON.stringify(prev.ink) === JSON.stringify(strokes)) {
+      result.push(prev);
+      continue;
+    }
+    result.push({
+      id,
+      type: 'ink',
+      cfi,
+      ...(page ? { page } : {}),
+      text: prev?.text || describe(cfi),
+      note: prev?.note ?? '',
+      ink: strokes,
+      createdAt: prev && !prev.deletedAt ? prev.createdAt : now,
+      updatedAt: now,
+    });
+  }
+  for (const gone of previous.values()) {
+    result.push(gone.deletedAt ? gone : { ...gone, ink: [], deletedAt: now, updatedAt: now });
+  }
+  return result;
 };

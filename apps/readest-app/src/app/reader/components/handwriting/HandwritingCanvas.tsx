@@ -1,15 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 
 import { renderStrokes } from '@/services/handwriting/renderer';
-import type { InkStroke } from '@/services/handwriting/model';
 import type { PageRect } from '@/services/handwriting/coords';
+import type { InkLayer } from '../../hooks/useHandwriting';
 
 interface HandwritingCanvasProps {
-  strokes: InkStroke[];
+  /** Ink to draw, each layer normalized to its own rect in viewport coordinates. */
+  layers: InkLayer[];
   /** The overlay's own bounds; the canvas covers it. */
   cellRect: PageRect;
-  /** The page the ink is normalized to, in the same viewport coordinates. */
-  pageRect: PageRect;
   interactive: boolean;
   overlayRef: (el: HTMLDivElement | null) => void;
   attach: (el: HTMLElement | null) => void;
@@ -23,9 +22,8 @@ interface HandwritingCanvasProps {
  * changes only, never on its own timers.
  */
 const HandwritingCanvas: React.FC<HandwritingCanvasProps> = ({
-  strokes,
+  layers,
   cellRect,
-  pageRect,
   interactive,
   overlayRef,
   attach,
@@ -41,13 +39,21 @@ const HandwritingCanvas: React.FC<HandwritingCanvasProps> = ({
     canvas.width = Math.max(1, Math.round(cellRect.width * dpr));
     canvas.height = Math.max(1, Math.round(cellRect.height * dpr));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    renderStrokes(ctx, strokes, {
-      left: pageRect.left - cellRect.left,
-      top: pageRect.top - cellRect.top,
-      width: pageRect.width,
-      height: pageRect.height,
-    });
-  }, [strokes, cellRect, pageRect, dpr]);
+    ctx.clearRect(0, 0, cellRect.width, cellRect.height);
+    for (const { strokes, rect } of layers) {
+      renderStrokes(
+        ctx,
+        strokes,
+        {
+          left: rect.left - cellRect.left,
+          top: rect.top - cellRect.top,
+          width: rect.width,
+          height: rect.height,
+        },
+        false,
+      );
+    }
+  }, [layers, cellRect, dpr]);
 
   useEffect(() => {
     if (!interactive) return;

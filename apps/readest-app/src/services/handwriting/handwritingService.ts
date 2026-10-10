@@ -94,10 +94,9 @@ export class HandwritingService {
 
   /** Strokes to render right now, including the in-progress live stroke. */
   strokesForRender(): InkStroke[] {
-    const committed = this.editor.strokes(this.page).flatMap((stroke) => {
-      const points = this.place(stroke);
-      return points ? [{ ...stroke, points }] : [];
-    });
+    const committed = this.editor
+      .strokes(this.page)
+      .flatMap((stroke) => (this.place(stroke) ?? []).map((points) => ({ ...stroke, points })));
     if (this.live.length === 0) return [...committed];
     if (this.liveErase) return [...committed];
     return [
@@ -169,8 +168,8 @@ export class HandwritingService {
   }
 
   /** Where a stored stroke is drawn now, page-normalized; null when hidden. */
-  private place = (stroke: InkStroke): InkPoint[] | null =>
-    stroke.anchor ? (this.anchoring?.place(stroke) ?? null) : stroke.points;
+  private place = (stroke: InkStroke): InkPoint[][] | null =>
+    stroke.anchor ? (this.anchoring?.place(stroke) ?? null) : [stroke.points];
 
   /** Retarget the session at a new page (page turn / section change). */
   setPage(page: string) {
