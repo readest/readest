@@ -37,9 +37,6 @@ const LISTEN_WINDOW_SEC = 20;
 const DOWNLOAD_WINDOW_SENTENCES = 64;
 const DOWNLOAD_WINDOW_CHARS = 12000;
 const BUSY_RETRY_MS = 5000;
-// Cold starts are accepted but never silent: a first window slower than this
-// tells the user the premium voice is starting.
-const SLOW_START_MS = 5000;
 // Route codes that will fail again for the same sentences.
 const PERMANENT_CODES = new Set(['UNKNOWN_VOICE', 'VOICE_TIER_REQUIRED', 'INVALID_INPUT']);
 
@@ -102,7 +99,6 @@ export class ReadestVoiceProvider implements SpeechProvider {
   #voices: Promise<TTSVoice[]> | null = null;
   #quotaExhausted = false;
   #warmupFired = false;
-  #slowStartNotified = false;
   readonly #entries = new Map<string, Entry>();
   readonly #lanes: Record<TTSLane, Lane> = {
     listen: newLane('listen'),
@@ -110,7 +106,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
   };
   readonly #watched = new WeakSet<AbortSignal>();
 
-  // `events` receives tts-quota-exceeded and tts-readest-slow-start.
+  // `events` receives tts-quota-exceeded.
   constructor(events?: EventTarget) {
     this.#events = events;
   }
@@ -361,16 +357,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
     const controller = new AbortController();
     lane.inflight = { entries, controller };
     const byId = new Map(entries.map((entry, i) => [`s${i}`, entry]));
-    let gotFrame = false;
     let busy = false;
-    const slowTimer =
-      lane.name === 'listen' && !this.#slowStartNotified
-        ? setTimeout(() => {
-            if (gotFrame || controller.signal.aborted || this.#slowStartNotified) return;
-            this.#slowStartNotified = true;
-            this.#events?.dispatchEvent(new CustomEvent('tts-readest-slow-start'));
-          }, SLOW_START_MS)
-        : null;
     try {
       // fetchWithAuth throws on non-OK responses with the route's flat error
       // code as the message (DAILY_QUOTA_EXCEEDED, BUSY, ...).
@@ -394,7 +381,6 @@ export class ReadestVoiceProvider implements SpeechProvider {
         }
         const entry = typeof line.id === 'string' ? byId.get(line.id) : undefined;
         if (!entry || entry.settled) continue;
-        gotFrame = true;
         if (typeof line.audio === 'string') {
           entry.settled = true;
           entry.resolve({
@@ -430,7 +416,6 @@ export class ReadestVoiceProvider implements SpeechProvider {
         }
       }
     } finally {
-      if (slowTimer) clearTimeout(slowTimer);
       lane.inflight = null;
       if (busy) {
         lane.retryTimer = setTimeout(() => {

@@ -2500,6 +2500,5 @@
   "Set Repeat End (B)": "リピート終了点を設定 (B)",
   "Clear A-B Repeat": "A-B リピートを解除",
   "Pause After Each Sentence": "文ごとに一時停止",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "1日のTTS制限に達しました。プランをアップグレードするか、明日再試行してください。",
-  "Starting premium voice. The first playback after idle can take up to a minute.": "プレミアム音声を起動中です。アイドル後の初回再生には最大1分かかる場合があります。"
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "1日のTTS制限に達しました。プランをアップグレードするか、明日再試行してください。"
 }

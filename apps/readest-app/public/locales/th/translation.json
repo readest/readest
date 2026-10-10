@@ -2500,6 +2500,5 @@
   "Set Repeat End (B)": "ตั้งจุดสิ้นสุดเล่นซ้ำ (B)",
   "Clear A-B Repeat": "ล้างการเล่นซ้ำ A-B",
   "Pause After Each Sentence": "หยุดชั่วคราวหลังแต่ละประโยค",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "ถึงขีดจำกัด TTS รายวันแล้ว อัพเกรดแผนของคุณหรือลองใหม่อีกครั้งในวันพรุ่งนี้",
-  "Starting premium voice. The first playback after idle can take up to a minute.": "กำลังเริ่มต้นเสียงพรีเมียม การเล่นครั้งแรกหลังจากไม่มีการใช้งานอาจใช้เวลาสูงสุดหนึ่งนาที"
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "ถึงขีดจำกัด TTS รายวันแล้ว อัพเกรดแผนของคุณหรือลองใหม่อีกครั้งในวันพรุ่งนี้"
 }

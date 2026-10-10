@@ -1262,7 +1262,7 @@ describe('useTTSControl gap control (handleSetSentenceGap / handleSupportsGapCon
   });
 });
 
-describe('useTTSControl quota and slow-start toasts', () => {
+describe('useTTSControl quota toast', () => {
   beforeEach(() => {
     ttsControllerInstances.length = 0;
     pendingInitResolvers.length = 0;
@@ -1300,21 +1300,6 @@ describe('useTTSControl quota and slow-start toasts', () => {
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
     (call![1] as () => void)();
     expect(dispatchSpy).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'error' }));
-    dispatchSpy.mockRestore();
-  });
-
-  it('shows an info toast on tts-readest-slow-start', async () => {
-    await startSession();
-    const controller = ttsControllerInstances[0] as {
-      addEventListener: ReturnType<typeof vi.fn>;
-    };
-    const call = controller.addEventListener.mock.calls.find(
-      (args: unknown[]) => args[0] === 'tts-readest-slow-start',
-    );
-    expect(call).toBeDefined();
-    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
-    (call![1] as () => void)();
-    expect(dispatchSpy).toHaveBeenCalledWith('toast', expect.objectContaining({ type: 'info' }));
     dispatchSpy.mockRestore();
   });
 });

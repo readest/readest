@@ -2500,6 +2500,5 @@
   "Set Repeat End (B)": "반복 끝 지점 설정 (B)",
   "Clear A-B Repeat": "A-B 반복 해제",
   "Pause After Each Sentence": "문장마다 일시 정지",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "일일 TTS 한도에 도달했습니다. 플랜을 업그레이드하거나 내일 다시 시도하세요.",
-  "Starting premium voice. The first playback after idle can take up to a minute.": "프리미엄 음성을 시작하는 중입니다. 유휴 후 첫 번째 재생은 최대 1분이 걸릴 수 있습니다."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "일일 TTS 한도에 도달했습니다. 플랜을 업그레이드하거나 내일 다시 시도하세요."
 }

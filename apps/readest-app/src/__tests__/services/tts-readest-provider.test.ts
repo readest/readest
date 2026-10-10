@@ -392,31 +392,3 @@ describe('download lane', () => {
     expect(texts(windows[0]!)).toEqual(['D0.', 'D1.']);
   });
 });
-
-describe('slow start', () => {
-  it('tells the user once when the first audio takes over 5 s', async () => {
-    vi.useFakeTimers();
-    const slow = vi.fn();
-    events.addEventListener('tts-readest-slow-start', slow);
-    const signal = new AbortController().signal;
-    provider.synthesize(req('A.'), signal).catch(() => {});
-    await vi.advanceTimersByTimeAsync(5001);
-    expect(slow).toHaveBeenCalledTimes(1);
-    windows[0]!.completeAll();
-    await vi.advanceTimersByTimeAsync(0);
-    provider.synthesize(req('B.'), signal).catch(() => {});
-    await vi.advanceTimersByTimeAsync(10_000);
-    expect(slow).toHaveBeenCalledTimes(1);
-  });
-
-  it('stays quiet when audio arrives in time', async () => {
-    vi.useFakeTimers();
-    const slow = vi.fn();
-    events.addEventListener('tts-readest-slow-start', slow);
-    provider.synthesize(req('A.'), new AbortController().signal).catch(() => {});
-    await vi.advanceTimersByTimeAsync(0);
-    windows[0]!.completeAll();
-    await vi.advanceTimersByTimeAsync(10_000);
-    expect(slow).not.toHaveBeenCalled();
-  });
-});
