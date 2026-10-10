@@ -59,6 +59,9 @@ export interface PrefetchOptions {
   // Listen lane only: preloads of upcoming paragraphs. They fill windows after
   // the requests the current paragraph is waiting on.
   background?: boolean;
+  // Called once per request when its audio arrives (or is already cached), so
+  // the client can count it as buffered before playback asks for it.
+  onDelivered?: (req: SpeechSynthesisRequest, result: SpeechSynthesisResult) => void;
 }
 
 export interface SpeechProvider {
@@ -71,7 +74,13 @@ export interface SpeechProvider {
   // (its voices render disabled in the picker).
   init(): Promise<boolean>;
   getAllVoices(): Promise<TTSVoice[]>;
-  synthesize(req: SpeechSynthesisRequest, signal: AbortSignal): Promise<SpeechSynthesisResult>;
+  // `options.background`: a cache fill for a background prefetch; nobody is
+  // listening for it yet, so a windowed provider keeps it at preload priority.
+  synthesize(
+    req: SpeechSynthesisRequest,
+    signal: AbortSignal,
+    options?: PrefetchOptions,
+  ): Promise<SpeechSynthesisResult>;
   // Engine-specific default-voice policy for a language's candidate list
   // (already filtered and sorted); return undefined to accept the first.
   pickDefaultVoice?(voices: TTSVoice[]): string | undefined;

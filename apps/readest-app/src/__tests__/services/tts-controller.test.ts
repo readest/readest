@@ -1900,6 +1900,33 @@ describe('TTSController', () => {
       );
     });
 
+    test('preloads the next paragraphs one after another, in reading order', async () => {
+      // A windowed provider queues preloads in the order they reach it: the
+      // paragraph read next must not land behind a later one.
+      mockView.tts = {
+        next: vi
+          .fn()
+          .mockReturnValueOnce('<speak>one</speak>')
+          .mockReturnValueOnce('<speak>two</speak>')
+          .mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      const order: string[] = [];
+      vi.mocked(controller.ttsClient.speak).mockImplementation((ssml: string) => {
+        const name = ssml.includes('one') ? 'one' : 'two';
+        order.push(`start ${name}`);
+        return (async function* () {
+          await new Promise((r) => setTimeout(r, name === 'one' ? 20 : 0));
+          order.push(`end ${name}`);
+        })();
+      });
+
+      await controller.preloadNextSSML(2);
+
+      expect(order).toEqual(['start one', 'end one', 'start two', 'end two']);
+    });
+
     test('calls tts.next() and tts.prev() synchronously without async gaps between them', async () => {
       // This test verifies the fix for a race condition where async gaps between
       // tts.next() calls in preloadNextSSML allowed #speak() to interleave and

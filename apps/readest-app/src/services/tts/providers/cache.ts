@@ -124,31 +124,43 @@ export class CachingProvider implements SpeechProvider {
     options?: PrefetchOptions,
   ): Promise<void> {
     const uncached: SpeechSynthesisRequest[] = [];
+    const toFill: SpeechSynthesisRequest[] = [];
     for (const req of reqs) {
       const key = computeTTSCacheKey(this.#inner.id, req);
-      if (this.#inflight.has(key)) continue;
+      // Already being filled: still forwarded, so the provider can raise a
+      // preload's priority once its paragraph starts.
+      if (this.#inflight.has(key)) {
+        uncached.push(req);
+        continue;
+      }
       try {
-        if (await this.#store.get(key)) continue;
+        const cached = await this.#store.get(key);
+        if (cached) {
+          options?.onDelivered?.(req, { audio: cached.audio, boundaries: cached.boundaries });
+          continue;
+        }
       } catch {
         // Unreadable store: treat as uncached.
       }
       uncached.push(req);
+      toFill.push(req);
     }
     if (signal.aborted || uncached.length === 0) return;
     this.#inner.prefetch?.(uncached, lane, signal, options);
     // Persist every sentence as it arrives, even one playback never asks for
     // (stop, seek): it was synthesized and paid for, so keep it.
-    for (const req of uncached) {
-      this.synthesize(req, signal).catch(() => {});
+    for (const req of toFill) {
+      this.synthesize(req, signal, options).catch(() => {});
     }
   }
 
   async synthesize(
     req: SpeechSynthesisRequest,
     signal: AbortSignal,
+    options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
     if (this.#inner.cacheable === false) {
-      return this.#inner.synthesize(req, signal);
+      return this.#inner.synthesize(req, signal, options);
     }
     const key = computeTTSCacheKey(this.#inner.id, req);
     const pending = this.#inflight.get(key);
@@ -156,7 +168,7 @@ export class CachingProvider implements SpeechProvider {
       // Joiners get their own buffer: decodeAudioData detaches its input.
       return pending.then((result) => ({ ...result, audio: result.audio.slice(0) }));
     }
-    const promise = this.#getOrSynthesize(key, req, signal);
+    const promise = this.#getOrSynthesize(key, req, signal, options);
     this.#inflight.set(key, promise);
     try {
       return await promise;
@@ -170,6 +182,7 @@ export class CachingProvider implements SpeechProvider {
     key: string,
     req: SpeechSynthesisRequest,
     signal: AbortSignal,
+    options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
     try {
       const cached = await this.#store.get(key);
@@ -179,7 +192,7 @@ export class CachingProvider implements SpeechProvider {
     } catch (err) {
       console.warn('TTS cache read failed; synthesizing instead', err);
     }
-    const result = await this.#inner.synthesize(req, signal);
+    const result = await this.#inner.synthesize(req, signal, options);
     try {
       await this.#store.put(
         key,

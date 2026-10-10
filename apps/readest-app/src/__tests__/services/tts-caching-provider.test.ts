@@ -216,6 +216,32 @@ describe('CachingProvider.prefetch', () => {
     expect(store.put).toHaveBeenCalledTimes(1);
   });
 
+  test('fills the cache of a background prefetch without making it foreground', async () => {
+    const { inner } = windowed();
+    const provider = new CachingProvider(inner, new MemoryStore());
+    const s = signal();
+    provider.prefetch([req('a')], 'listen', s, { background: true });
+    await flush();
+    expect(inner.synthesize).toHaveBeenCalledWith(req('a'), s, { background: true });
+  });
+
+  test('reports cached sentences to onDelivered instead of forwarding them', async () => {
+    const { inner, deliver } = windowed();
+    const provider = new CachingProvider(inner, new MemoryStore());
+    const cached = provider.synthesize(req('b'), signal());
+    await flush();
+    deliver('b');
+    await cached;
+    const onDelivered = vi.fn();
+    provider.prefetch([req('b')], 'listen', signal(), { onDelivered });
+    await flush();
+    expect(onDelivered).toHaveBeenCalledWith(
+      req('b'),
+      expect.objectContaining({ boundaries: BOUNDARIES }),
+    );
+    expect(inner.prefetch).not.toHaveBeenCalled();
+  });
+
   test('a later synthesize joins the prefetch (inner synthesizes once)', async () => {
     const { inner, deliver } = windowed();
     const provider = new CachingProvider(inner, new MemoryStore());
@@ -227,13 +253,16 @@ describe('CachingProvider.prefetch', () => {
     expect(inner.synthesize).toHaveBeenCalledTimes(1);
   });
 
-  test('skips requests already in flight', async () => {
+  test('still forwards requests already in flight, without a second synthesis', async () => {
+    // A preload's cache fill may already be running when its paragraph starts:
+    // the foreground prefetch must reach the provider so it can raise its priority.
     const { inner } = windowed();
     const provider = new CachingProvider(inner, new MemoryStore());
     void provider.synthesize(req('a'), signal());
     provider.prefetch([req('a'), req('b')], 'listen', signal());
     await flush();
-    expect(vi.mocked(inner.prefetch!).mock.calls[0]![0]).toEqual([req('b')]);
+    expect(vi.mocked(inner.prefetch!).mock.calls[0]![0]).toEqual([req('a'), req('b')]);
+    expect(vi.mocked(inner.synthesize).mock.calls.map(([r]) => r.text)).toEqual(['a', 'b']);
   });
 
   test('cacheable: false forwards everything and starts no synthesis', async () => {

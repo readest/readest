@@ -25,6 +25,7 @@ import {
   SpeechSynthesisFatalError,
   SpeechSynthesisPermanentError,
   SpeechSynthesisRequest,
+  SpeechSynthesisResult,
 } from './providers/types';
 import { TTSAudioBuffer, WebAudioPlayer, WebAudioPlayerEvent } from './WebAudioPlayer';
 
@@ -58,19 +59,13 @@ const TICKS_PER_SECOND = 10_000_000;
 const MAX_CONSECUTIVE_SKIPS = 3;
 
 // Windowed providers (SpeechProvider.prefetch) are told about upcoming marks so
-// they can synthesize several per request. The lookahead stays small because
-// the player already buffers up to a minute ahead: whatever is synthesized but
-// never heard (stop, seek) is paid for.
-const PREFETCH_AHEAD_MARKS = 8;
-const PREFETCH_AHEAD_SEC = 30;
-// Beyond that horizon a mark is still asked for when the audio queued ahead of
-// it would play out before the provider could deliver it: windows run one at a
-// time, so everything up to the mark is synthesized first. Short sentences
-// followed by a long one need this. Conservative figures for a GPU worker
-// (request overhead, synthesis seconds per audio second); faster engines just
-// prefetch slightly early.
-const SYNTH_LEAD_SEC = 3;
-const SYNTH_REALTIME_FACTOR = 0.5;
+// they can synthesize several per request, minutes ahead: a GPU worker is
+// slower than playback for a long sentence, and unheard audio after a stop or
+// seek costs little next to an audible stall. The lookahead covers the current
+// paragraph; preloads give each upcoming paragraph its first minute.
+const PREFETCH_AHEAD_MARKS = 32;
+const PREFETCH_AHEAD_SEC = 180;
+const PRELOAD_AHEAD_SEC = 60;
 
 interface ChunkMeta {
   mark: TTSMark;
@@ -333,41 +328,48 @@ export class BufferedTTSClient implements TTSClient {
     return reqs;
   }
 
-  // The marks from `from` that a windowed provider should be synthesizing now:
-  // through the last one that is due (see SYNTH_LEAD_SEC) or that ends within
-  // `horizonSec` of estimated audio, at most PREFETCH_AHEAD_MARKS.
+  // The marks from `from` within `horizonSec` of estimated audio (at least the
+  // first, at most PREFETCH_AHEAD_MARKS).
   async #marksAhead(marks: TTSMark[], from: number, horizonSec: number): Promise<TTSMark[]> {
-    let last = from;
-    let before = 0;
-    const end = Math.min(marks.length, from + PREFETCH_AHEAD_MARKS);
-    for (let i = from; i < end; i++) {
+    const ahead: TTSMark[] = [];
+    let seconds = 0;
+    for (let i = from; i < marks.length && ahead.length < PREFETCH_AHEAD_MARKS; i++) {
       const mark = marks[i]!;
       const voice = await this.getVoiceIdFromLang(mark.language);
-      const seconds = estimateSentenceSeconds(mark.text, mark.language, voice);
-      const due = before < SYNTH_LEAD_SEC + SYNTH_REALTIME_FACTOR * (before + seconds);
-      if (due || before + seconds <= horizonSec) last = i;
-      before += seconds;
+      seconds += estimateSentenceSeconds(mark.text, mark.language, voice);
+      if (ahead.length > 0 && seconds > horizonSec) break;
+      ahead.push(mark);
     }
-    return marks.slice(from, last + 1);
+    return ahead;
   }
+
+  // A prefetched sentence counts as buffered once its audio exists, as an Edge
+  // preload does once synthesized.
+  #onPrefetchDelivered = (req: SpeechSynthesisRequest, result: SpeechSynthesisResult) => {
+    if (req.voice) this.#recordDurations(req.voice, req.text, result.boundaries);
+  };
 
   // Tell a windowed provider which marks come next.
   async #prefetchAhead(marks: TTSMark[], from: number, signal: AbortSignal) {
     if (!this.provider.prefetch) return;
     const ahead = await this.#marksAhead(marks, from, PREFETCH_AHEAD_SEC);
     if (signal.aborted) return;
-    this.provider.prefetch(await this.#requestsFor(ahead), 'listen', signal);
+    this.provider.prefetch(await this.#requestsFor(ahead), 'listen', signal, {
+      onDelivered: this.#onPrefetchDelivered,
+    });
   }
 
   async *#preload(marks: TTSMark[], signal: AbortSignal) {
-    // A windowed provider bills per synthesized sentence and the controller
-    // preloads several paragraphs ahead: only hint the opening marks each needs
-    // to start on time (the lookahead cannot see past the current paragraph),
-    // at background priority, and let the scheduler's lookahead do the rest.
+    // The lookahead cannot see past the current paragraph: hint each upcoming
+    // paragraph's first minute at background priority, and let the scheduler's
+    // lookahead do the rest once the paragraph starts.
     if (this.provider.prefetch) {
-      const reqs = await this.#requestsFor(await this.#marksAhead(marks, 0, 0));
+      const reqs = await this.#requestsFor(await this.#marksAhead(marks, 0, PRELOAD_AHEAD_SEC));
       if (reqs.length && !signal.aborted) {
-        this.provider.prefetch(reqs, 'listen', signal, { background: true });
+        this.provider.prefetch(reqs, 'listen', signal, {
+          background: true,
+          onDelivered: this.#onPrefetchDelivered,
+        });
       }
       yield { code: 'end', message: 'Preload finished' } as TTSMessageEvent;
       return;

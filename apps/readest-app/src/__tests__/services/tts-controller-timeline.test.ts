@@ -196,6 +196,17 @@ describe('TTSController section timeline', () => {
     expect(info!.measuredFraction).toBeGreaterThan(0);
   });
 
+  test('getPlaybackInfo follows a voice the client resolved after the timeline was built', async () => {
+    // A client whose voices load asynchronously reports no voice until its
+    // first sentence plays; durations are recorded under the resolved one.
+    vi.mocked(controller.ttsClient.getVoiceId).mockReturnValue('');
+    await controller.ensureTimeline();
+    recordMeasuredDuration('late-voice', S0, 4);
+    recordMeasuredDuration('late-voice', S1, 6);
+    vi.mocked(controller.ttsClient.getVoiceId).mockReturnValue('late-voice');
+    expect(controller.getPlaybackInfo()!.measuredFraction).toBeGreaterThan(0);
+  });
+
   test('getPlaybackInfo is null before the timeline is built (reserved-slot state)', () => {
     expect(controller.getPlaybackInfo()).toBeNull();
   });

@@ -160,6 +160,21 @@ describe('listen windows', () => {
     expect(windows.map((w) => w.body.lane)).toEqual(['listen', 'listen', 'listen', 'listen']);
   });
 
+  it('caps a listen window at about 20 s of estimated audio', async () => {
+    // 150 Latin chars is about 10 s at the default estimate: two fit, three do
+    // not. A due sentence waits behind the window in flight, so it stays short.
+    const signal = new AbortController().signal;
+    const long = Array.from({ length: 8 }, (_, i) => req(`${i}`.padEnd(150, 'a')));
+    provider.prefetch(long, 'listen', signal);
+    await flush();
+    expect(texts(windows[0]!)).toHaveLength(1);
+    for (const expected of [2, 2]) {
+      windows.at(-1)!.completeAll();
+      await flush();
+      expect(texts(windows.at(-1)!)).toHaveLength(expected);
+    }
+  });
+
   it('resolves each sentence as its line arrives, before the stream ends', async () => {
     const signal = new AbortController().signal;
     provider.prefetch(reqs(1), 'listen', signal);
@@ -218,6 +233,31 @@ describe('listen windows', () => {
     await flush();
     expect(texts(windows[1]!)).toEqual(['A.']);
     expect(windows[1]!.body.lang).toBe('en-US');
+  });
+
+  it('a background synthesize (cache fill) leaves a preload in the background', async () => {
+    const signal = new AbortController().signal;
+    provider.synthesize(req('First.'), signal).catch(() => {});
+    await flush();
+    const preload = new AbortController().signal;
+    provider.prefetch([req('P0.'), req('P1.')], 'listen', preload, { background: true });
+    provider.synthesize(req('P0.'), preload, { background: true }).catch(() => {});
+    provider.prefetch([req('F0.')], 'listen', signal);
+    windows[0]!.completeAll();
+    await flush();
+    expect(texts(windows[1]!)).toEqual(['F0.', 'P0.', 'P1.']);
+  });
+
+  it('reports each prefetched sentence to onDelivered as it arrives', async () => {
+    const onDelivered = vi.fn();
+    provider.prefetch([req('A.'), req('B.')], 'listen', new AbortController().signal, {
+      onDelivered,
+    });
+    await flush();
+    windows[0]!.completeAll();
+    await flush();
+    expect(onDelivered).toHaveBeenCalledWith(req('A.'), expect.objectContaining({ boundaries: B }));
+    expect(onDelivered).toHaveBeenCalledTimes(1);
   });
 
   it('fills windows with foreground requests before background preloads', async () => {

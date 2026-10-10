@@ -3,6 +3,7 @@ import { getAPIBaseUrl } from '@/services/environment';
 import { getAccessToken, getSubscriptionPlan, isTTSInPlan } from '@/utils/access';
 import { fetchWithAuth } from '@/utils/fetch';
 import { readNDJSON } from '@/utils/ndjson';
+import { estimateSentenceSeconds } from '../ttsDuration';
 import type { TTSVoice } from '../types';
 import {
   type PrefetchOptions,
@@ -19,9 +20,10 @@ import {
 // per window, one NDJSON line back per sentence), one window in flight per
 // lane:
 // - listen: windows grow 1 -> 4 -> 8 sentences so the first audio after play,
-//   seek or a voice change waits for one sentence only. Requests the current
-//   paragraph is waiting on fill a window before background preloads of later
-//   paragraphs, never mixing languages.
+//   seek or a voice change waits for one sentence only, and hold at most about
+//   20 s of estimated audio: a sentence that falls due waits behind the window
+//   in flight. Requests the current paragraph is waiting on fill a window
+//   before background preloads of later paragraphs, never mixing languages.
 // - download: chapter downloads, up to 64 sentences per window.
 // A sentence stays requested while any caller that asked for it is still
 // interested; once every such signal is aborted it is withdrawn, and a window
@@ -31,6 +33,7 @@ export const DAILY_QUOTA_EXCEEDED = 'DAILY_QUOTA_EXCEEDED';
 
 const LISTEN_WINDOW_SIZES = [1, 4, 8];
 const LISTEN_WINDOW_CHARS = 2000;
+const LISTEN_WINDOW_SEC = 20;
 const DOWNLOAD_WINDOW_SENTENCES = 64;
 const DOWNLOAD_WINDOW_CHARS = 12000;
 const BUSY_RETRY_MS = 5000;
@@ -137,7 +140,11 @@ export class ReadestVoiceProvider implements SpeechProvider {
     }).catch(() => {});
   }
 
-  synthesize(req: SpeechSynthesisRequest, signal: AbortSignal): Promise<SpeechSynthesisResult> {
+  synthesize(
+    req: SpeechSynthesisRequest,
+    signal: AbortSignal,
+    options?: PrefetchOptions,
+  ): Promise<SpeechSynthesisResult> {
     if (this.#quotaExhausted) {
       return Promise.reject(new SpeechSynthesisFatalError(DAILY_QUOTA_EXCEEDED));
     }
@@ -149,12 +156,13 @@ export class ReadestVoiceProvider implements SpeechProvider {
       );
     }
     if (signal.aborted) return Promise.reject(abortError());
+    const background = !!options?.background;
     let entry = this.#entries.get(entryKey(req));
     if (entry) {
       this.#want(entry, signal);
-      entry.background = false;
+      if (!background) entry.background = false;
     } else {
-      entry = this.#enqueue(req, this.#lanes.listen, signal, false, true);
+      entry = this.#enqueue(req, this.#lanes.listen, signal, background, !background);
     }
     this.#pumpAll();
     const consumed = entry;
@@ -179,15 +187,21 @@ export class ReadestVoiceProvider implements SpeechProvider {
   ): void {
     if (this.#quotaExhausted || signal.aborted) return;
     const background = lane === 'listen' && !!options?.background;
+    const onDelivered = options?.onDelivered;
     for (const req of reqs) {
       if (!req.voice) continue;
-      const existing = this.#entries.get(entryKey(req));
-      if (existing) {
-        this.#want(existing, signal);
-        if (!background) existing.background = false;
-        continue;
+      let entry = this.#entries.get(entryKey(req));
+      if (entry) {
+        this.#want(entry, signal);
+        if (!background) entry.background = false;
+      } else {
+        entry = this.#enqueue(req, this.#lanes[lane], signal, background, false);
       }
-      this.#enqueue(req, this.#lanes[lane], signal, background, false);
+      if (onDelivered)
+        entry.promise.then(
+          (result) => onDelivered(req, result),
+          () => {},
+        );
     }
     this.#pumpAll();
   }
@@ -323,13 +337,18 @@ export class ReadestVoiceProvider implements SpeechProvider {
     const maxChars = listen ? LISTEN_WINDOW_CHARS : DOWNLOAD_WINDOW_CHARS;
     const picked: Entry[] = [];
     let chars = 0;
+    let seconds = 0;
     for (const entry of ordered) {
       if (picked.length >= maxSentences) break;
       // One language per window (the route takes a single lang).
       if (picked.length && entry.req.lang !== picked[0]!.req.lang) break;
       if (picked.length && chars + entry.req.text.length > maxChars) break;
+      const { text, lang, voice } = entry.req;
+      const entrySeconds = listen ? estimateSentenceSeconds(text, lang, voice ?? '') : 0;
+      if (picked.length && seconds + entrySeconds > LISTEN_WINDOW_SEC) break;
       picked.push(entry);
-      chars += entry.req.text.length;
+      chars += text.length;
+      seconds += entrySeconds;
     }
     lane.queue = lane.queue.filter((e) => !picked.includes(e));
     if (listen && picked.length) {

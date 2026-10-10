@@ -1211,6 +1211,10 @@ export class TTSController extends EventTarget {
     if (!this.ttsClient.getCapabilities().mediaClock) return null;
     const timeline = this.#sectionTimeline;
     if (!timeline || this.#timelineSectionIndex !== this.#ttsSectionIndex) return null;
+    // A client whose voices load asynchronously resolves its voice only when
+    // the first sentence plays, after the timeline was built: measured
+    // durations are keyed by that voice. A no-op once they match.
+    timeline.setVoice(this.ttsClient.getVoiceId());
     const duration = timeline.getDuration();
     if (!Number.isFinite(duration) || duration <= 0) return null;
     let index = this.#currentSentenceIndex;
@@ -1524,7 +1528,11 @@ export class TTSController extends EventTarget {
       if (!ssml) break;
       ssmls.push(ssml);
     }
-    await Promise.all(ssmls.map((ssml) => this.preloadSSML(ssml, new AbortController().signal)));
+    // In reading order, one after another: a windowed provider queues preloads
+    // as they arrive, so the paragraph read next must reach it first.
+    for (const ssml of ssmls) {
+      await this.preloadSSML(ssml, new AbortController().signal);
+    }
   }
 
   async #preprocessSSML(ssml?: string) {
