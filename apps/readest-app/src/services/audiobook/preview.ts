@@ -2,6 +2,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 
 import type { AppService, BaseDir } from '@/types/system';
 import { NativeNarrationPlayer } from '@/services/tts/mediaOverlay/NativeNarrationPlayer';
+import { mediaCrossOrigin } from './AudiobookClock';
 
 const PREVIEW_SECONDS = 15;
 
@@ -82,6 +83,7 @@ export class AudiobookPreviewPlayer {
           url = URL.createObjectURL(file);
           this.#objectUrl = url;
         }
+        audio.crossOrigin = mediaCrossOrigin(url);
         audio.src = url;
         audio.currentTime = clip.start;
         this.#endedListener = () => void this.stop();

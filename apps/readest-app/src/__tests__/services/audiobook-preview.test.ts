@@ -19,6 +19,7 @@ class FakeAudio {
   static instances: FakeAudio[] = [];
   static playImplementations: Array<() => Promise<void>> = [];
   src = '';
+  crossOrigin: string | null = null;
   currentTime = 0;
   play = vi.fn(() => FakeAudio.playImplementations.shift()?.() ?? Promise.resolve());
   pause = vi.fn();
@@ -70,6 +71,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('AudiobookPreviewPlayer', () => {
@@ -181,5 +183,19 @@ describe('AudiobookPreviewPlayer', () => {
     await player.stop();
 
     expect(tauriMocks.unregister).toHaveBeenCalledOnce();
+  });
+
+  it('requests an Audiobookshelf clip with CORS on the web app', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
+    const player = new AudiobookPreviewPlayer(makeAppService(), vi.fn());
+
+    await player.toggle({
+      id: 'abs:0',
+      url: 'https://abs.example/api/items/1/file/2?token=t',
+      start: 0,
+      end: 15,
+    });
+
+    expect(FakeAudio.instances[0]!.crossOrigin).toBe('anonymous');
   });
 });
