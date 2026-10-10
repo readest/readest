@@ -12,6 +12,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { isWebAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
+import { canPairAudiobook } from '@/utils/audiobook';
 import { FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
@@ -38,10 +39,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const { parallelViews, setParallel, unsetParallel } = useParallelViewStore();
   const viewSettings = getViewSettings(sideBarBookKey!);
   const bookData = sideBarBookKey ? getBookData(sideBarBookKey) : null;
-  const canPairAudiobook =
-    bookData?.book?.format === 'EPUB' &&
-    bookData.bookDoc?.rendition?.layout !== 'pre-paginated' &&
-    !!bookData.bookDoc?.toc?.length;
+  const showPairAudiobook = canPairAudiobook(bookData);
 
   const [isSortedTOC, setIsSortedTOC] = React.useState(viewSettings?.sortedTOC || false);
 
@@ -269,7 +267,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Proofread')} onClick={showProofreadRulesWindow} />
-      {canPairAudiobook && (
+      {showPairAudiobook && (
         <MenuItem
           label={
             getConfig(sideBarBookKey!)?.audiobook ? _('Manage Audiobook') : _('Pair Audiobook')
