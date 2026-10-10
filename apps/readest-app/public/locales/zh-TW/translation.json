@@ -2499,5 +2499,20 @@
   "Set Repeat Start (A)": "設定複讀起點 (A)",
   "Set Repeat End (B)": "設定複讀終點 (B)",
   "Clear A-B Repeat": "清除 A-B 複讀",
-  "Pause After Each Sentence": "每句後暫停"
+  "Pause After Each Sentence": "每句後暫停",
+  "Quote Card": "書摘卡片",
+  "Create a quote card image from the selection": "將選取文字產生書摘卡片圖片",
+  "Paper": "紙張",
+  "Night": "夜間",
+  "Reader Theme": "閱讀主題",
+  "The quote was shortened to fit the card.": "引文已縮短以符合卡片。",
+  "Classic": "經典",
+  "Centered": "置中",
+  "Serif": "襯線",
+  "Sans": "無襯線",
+  "Shape": "形狀",
+  "Book Info": "書籍資訊",
+  "QR Code": "QR 碼",
+  "Links to this passage in Readest": "連結到 Readest 中的這段文字",
+  "via {{app}}": "來自 {{app}}"
 }

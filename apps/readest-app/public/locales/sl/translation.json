@@ -2691,5 +2691,20 @@
   "Set Repeat Start (A)": "Nastavi začetek ponavljanja (A)",
   "Set Repeat End (B)": "Nastavi konec ponavljanja (B)",
   "Clear A-B Repeat": "Počisti ponavljanje A-B",
-  "Pause After Each Sentence": "Premor po vsakem stavku"
+  "Pause After Each Sentence": "Premor po vsakem stavku",
+  "Quote Card": "Kartica citata",
+  "Create a quote card image from the selection": "Ustvari sliko kartice citata iz izbora",
+  "Paper": "Papir",
+  "Night": "Noč",
+  "Reader Theme": "Tema branja",
+  "The quote was shortened to fit the card.": "Citat je bil skrajšan, da se prilega kartici.",
+  "Classic": "Klasično",
+  "Centered": "Sredinsko",
+  "Serif": "Serifna",
+  "Sans": "Neserifna",
+  "Shape": "Oblika",
+  "Book Info": "Podatki o knjigi",
+  "QR Code": "Koda QR",
+  "Links to this passage in Readest": "Povezava do tega odlomka v Readest",
+  "via {{app}}": "prek {{app}}"
 }

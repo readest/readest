@@ -2627,5 +2627,20 @@
   "Set Repeat Start (A)": "הגדר תחילת חזרה (A)",
   "Set Repeat End (B)": "הגדר סוף חזרה (B)",
   "Clear A-B Repeat": "נקה חזרת A-B",
-  "Pause After Each Sentence": "השהה אחרי כל משפט"
+  "Pause After Each Sentence": "השהה אחרי כל משפט",
+  "Quote Card": "כרטיס ציטוט",
+  "Create a quote card image from the selection": "יצירת תמונת כרטיס ציטוט מהבחירה",
+  "Paper": "נייר",
+  "Night": "לילה",
+  "Reader Theme": "ערכת קריאה",
+  "The quote was shortened to fit the card.": "הציטוט קוצר כדי להתאים לכרטיס.",
+  "Classic": "קלאסי",
+  "Centered": "ממורכז",
+  "Serif": "סריף",
+  "Sans": "ללא סריף",
+  "Shape": "צורה",
+  "Book Info": "פרטי הספר",
+  "QR Code": "קוד QR",
+  "Links to this passage in Readest": "קישור לקטע הזה ב-Readest",
+  "via {{app}}": "דרך {{app}}"
 }

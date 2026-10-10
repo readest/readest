@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "გამეორების დასაწყისის დაყენება (A)",
   "Set Repeat End (B)": "გამეორების დასასრულის დაყენება (B)",
   "Clear A-B Repeat": "A-B გამეორების გასუფთავება",
-  "Pause After Each Sentence": "პაუზა ყოველი წინადადების შემდეგ"
+  "Pause After Each Sentence": "პაუზა ყოველი წინადადების შემდეგ",
+  "Quote Card": "ციტატის ბარათი",
+  "Create a quote card image from the selection": "მონიშნულიდან ციტატის ბარათის სურათის შექმნა",
+  "Paper": "ქაღალდი",
+  "Night": "ღამე",
+  "Reader Theme": "კითხვის თემა",
+  "The quote was shortened to fit the card.": "ციტატა შემოკლდა, რომ ბარათზე დაეტიოს.",
+  "Classic": "კლასიკური",
+  "Centered": "ცენტრში",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "ფორმა",
+  "Book Info": "წიგნის ინფორმაცია",
+  "QR Code": "QR კოდი",
+  "Links to this passage in Readest": "ბმული ამ მონაკვეთზე Readest-ში",
+  "via {{app}}": "{{app}}-ის მეშვეობით"
 }

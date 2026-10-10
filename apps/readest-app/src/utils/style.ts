@@ -81,6 +81,20 @@ export const getBaseFontFamily = (viewSettings: ViewSettings): string => {
 };
 
 /**
+ * Both body font chains from the user's font settings, for top-level UI that
+ * offers a serif / sans-serif choice (the quote card).
+ */
+export const getFontFamilies = (viewSettings: ViewSettings) => {
+  const families = buildFontFamilyLists(
+    viewSettings.serifFont!,
+    viewSettings.sansSerifFont!,
+    viewSettings.monospaceFont!,
+    viewSettings.defaultCJKFont!,
+  );
+  return { serif: families.serif, sans: families.sansSerif };
+};
+
+/**
  * The body font size, in CSS px, that the reader applies to the book, for
  * top-level UI that shows book text outside the iframe.
  */

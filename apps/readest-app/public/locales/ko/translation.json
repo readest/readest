@@ -2499,5 +2499,20 @@
   "Set Repeat Start (A)": "반복 시작 지점 설정 (A)",
   "Set Repeat End (B)": "반복 끝 지점 설정 (B)",
   "Clear A-B Repeat": "A-B 반복 해제",
-  "Pause After Each Sentence": "문장마다 일시 정지"
+  "Pause After Each Sentence": "문장마다 일시 정지",
+  "Quote Card": "인용 카드",
+  "Create a quote card image from the selection": "선택한 텍스트로 인용 카드 이미지 만들기",
+  "Paper": "종이",
+  "Night": "나이트",
+  "Reader Theme": "읽기 테마",
+  "The quote was shortened to fit the card.": "인용문이 카드에 맞게 줄여졌습니다.",
+  "Classic": "클래식",
+  "Centered": "가운데",
+  "Serif": "세리프",
+  "Sans": "산세리프",
+  "Shape": "모양",
+  "Book Info": "책 정보",
+  "QR Code": "QR 코드",
+  "Links to this passage in Readest": "Readest에서 이 구절로 연결됩니다",
+  "via {{app}}": "{{app}}에서"
 }

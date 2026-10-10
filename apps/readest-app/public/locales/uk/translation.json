@@ -2691,5 +2691,20 @@
   "Set Repeat Start (A)": "Встановити початок повтору (A)",
   "Set Repeat End (B)": "Встановити кінець повтору (B)",
   "Clear A-B Repeat": "Скинути повтор A-B",
-  "Pause After Each Sentence": "Пауза після кожного речення"
+  "Pause After Each Sentence": "Пауза після кожного речення",
+  "Quote Card": "Картка цитати",
+  "Create a quote card image from the selection": "Створити зображення картки цитати з виділеного",
+  "Paper": "Папір",
+  "Night": "Ніч",
+  "Reader Theme": "Тема читання",
+  "The quote was shortened to fit the card.": "Цитату скорочено, щоб вона вмістилася на картці.",
+  "Classic": "Класичний",
+  "Centered": "По центру",
+  "Serif": "Із засічками",
+  "Sans": "Без засічок",
+  "Shape": "Форма",
+  "Book Info": "Інформація про книгу",
+  "QR Code": "QR-код",
+  "Links to this passage in Readest": "Посилання на цей уривок у Readest",
+  "via {{app}}": "через {{app}}"
 }

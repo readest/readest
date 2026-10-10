@@ -2499,5 +2499,20 @@
   "Set Repeat Start (A)": "བསྐྱར་ཟློས་འགོ་འཛུགས་གཏན་འཁེལ། (A)",
   "Set Repeat End (B)": "བསྐྱར་ཟློས་མཇུག་གཏན་འཁེལ། (B)",
   "Clear A-B Repeat": "A-B བསྐྱར་ཟློས་གསལ་བ།",
-  "Pause After Each Sentence": "ཚིག་གྲུབ་རེ་རེའི་རྗེས་སུ་མཚམས་འཇོག"
+  "Pause After Each Sentence": "ཚིག་གྲུབ་རེ་རེའི་རྗེས་སུ་མཚམས་འཇོག",
+  "Quote Card": "ལུང་འདྲེན་ཤོག་བྱང་།",
+  "Create a quote card image from the selection": "བདམས་པའི་ཡིག་ཆ་ནས་ལུང་འདྲེན་ཤོག་བྱང་གི་པར་རིས་བཟོ་བ།",
+  "Paper": "ཤོག་བུ།",
+  "Night": "མཚན་མོ།",
+  "Reader Theme": "ཀློག་པའི་བརྗོད་གཞི།",
+  "The quote was shortened to fit the card.": "ལུང་འདྲེན་དེ་ཤོག་བྱང་ནང་ཤོང་ཆེད་ཐུང་དུ་བཏང་ཡོད།",
+  "Classic": "སྔར་སྲོལ།",
+  "Centered": "དཀྱིལ་སྙོམས།",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "དབྱིབས།",
+  "Book Info": "དཔེ་དེབ་ཀྱི་ཆ་འཕྲིན།",
+  "QR Code": "QR ཨང་རྟགས།",
+  "Links to this passage in Readest": "Readest ནང་གི་ཚིག་ཚན་འདིར་སྦྲེལ་མཐུད།",
+  "via {{app}}": "{{app}} བརྒྱུད་"
 }
