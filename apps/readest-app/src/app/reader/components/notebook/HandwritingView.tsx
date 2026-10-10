@@ -24,7 +24,7 @@ interface InkPageRow {
   label: string;
   strokeCount: number;
   updatedAt: number;
-  /** Foliate navigation target: a section index, or a CFI for reflowable text. */
+  /** Foliate navigation target: a section index, or the CFI of the inked text. */
   target: string | number;
 }
 
@@ -47,25 +47,24 @@ const HandwritingView: React.FC<HandwritingViewProps> = ({ bookKey }) => {
 
   const rows = useMemo<InkPageRow[]>(() => {
     if (!doc) return [];
-    const rows: (InkPageRow & { order: string | number })[] = [];
+    const rows: (InkPageRow & { index: number })[] = [];
     for (const [key, page] of Object.entries(doc.pages)) {
       const parsed = parsePageKey(key);
       if (!parsed || page.strokes.length === 0) continue;
       const common = { key, strokeCount: page.strokes.length, updatedAt: page.updatedAt };
       if (parsed.kind === 'page') {
         const label = _('Page {{page}}', { page: parsed.index + 1 });
-        rows.push({ ...common, label, target: parsed.index, order: parsed.index });
+        rows.push({ ...common, label, target: parsed.index, index: parsed.index });
       } else {
-        const label = findTocItemBS(toc ?? [], parsed.cfi)?.label || _('Untitled');
-        rows.push({ ...common, label, target: parsed.cfi, order: parsed.cfi });
+        // Reflowable ink is bound to text: label the row by the chapter of its
+        // earliest anchor and jump straight to that text.
+        const anchors = page.strokes.flatMap((stroke) => (stroke.anchor ? [stroke.anchor] : []));
+        const first = anchors.sort(CFI.compare)[0];
+        const label = (first && findTocItemBS(toc ?? [], first)?.label) || _('Untitled');
+        rows.push({ ...common, label, target: first ?? parsed.index, index: parsed.index });
       }
     }
-    // A book's keys are all page indexes or all CFIs, never a mix.
-    return rows.sort((a, b) =>
-      typeof a.order === 'number' && typeof b.order === 'number'
-        ? a.order - b.order
-        : CFI.compare(String(a.order), String(b.order)),
-    );
+    return rows.sort((a, b) => a.index - b.index);
   }, [doc, toc, _]);
 
   const totalStrokes = rows.reduce((sum, row) => sum + row.strokeCount, 0);

@@ -111,32 +111,37 @@ describe('HandwritingView navigation', () => {
     expect(h.goTo).toHaveBeenCalledWith(4);
   });
 
-  it('navigates to the CFI a reflowable page was anchored at', () => {
+  const pinned = (anchor: string) => ({
+    strokes: [{ id: anchor, color: '#000', width: 0.004, anchor, points: [[0, 1]] }],
+    updatedAt: 1,
+  });
+
+  it('jumps to the text reflowable ink is bound to', () => {
     h.stored = h.config = {
-      handwriting: { version: 1, pages: { 'cfi:epubcfi(/6/6!/4/2/8/1:0)': page(1) } },
+      handwriting: { version: 1, pages: { 'sec:2': pinned('epubcfi(/6/6!/4/2/8,/1:0,/1:1)') } },
     } as unknown as BookConfig;
     renderView();
 
     fireEvent.click(screen.getByRole('button', { name: /Go to handwriting on/ }));
-    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/6!/4/2/8/1:0)');
+    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/6!/4/2/8,/1:0,/1:1)');
   });
 
-  it('labels a reflowable row by its chapter title', () => {
+  it('labels a reflowable row by the chapter of its text', () => {
     h.stored = h.config = {
-      handwriting: { version: 1, pages: { 'cfi:epubcfi(/6/6!/4/2/8/1:0)': page(1) } },
+      handwriting: { version: 1, pages: { 'sec:2': pinned('epubcfi(/6/6!/4/2/8,/1:0,/1:1)') } },
     } as unknown as BookConfig;
     renderView();
 
     expect(screen.getByText('Chapter Two')).toBeTruthy();
   });
 
-  it('orders reflowable rows in reading order', () => {
+  it('orders reflowable rows by section', () => {
     h.stored = h.config = {
       handwriting: {
         version: 1,
         pages: {
-          'cfi:epubcfi(/6/6!/4/2/8/1:0)': page(1),
-          'cfi:epubcfi(/6/4!/4/2/2/1:0)': page(1),
+          'sec:2': pinned('epubcfi(/6/6!/4/2/8,/1:0,/1:1)'),
+          'sec:1': pinned('epubcfi(/6/4!/4/2/2,/1:0,/1:1)'),
         },
       },
     } as unknown as BookConfig;
@@ -144,7 +149,7 @@ describe('HandwritingView navigation', () => {
 
     const labels = screen.getAllByRole('button', { name: /Go to handwriting on/ });
     fireEvent.click(labels[0]!);
-    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/4!/4/2/2/1:0)');
+    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/4!/4/2/2,/1:0,/1:1)');
   });
 
   it('orders fixed-layout rows by page number', () => {

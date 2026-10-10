@@ -1,43 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
-import { fixedPageKey, parsePageKey, reflowPageKeys } from '@/services/handwriting/pageKey';
+import { fixedPageKey, parsePageKey, sectionPageKey } from '@/services/handwriting/pageKey';
 
-const CHAPTER = 'epubcfi(/6/8!/4/2/10,/1:0,/1:350)';
-const START = 'epubcfi(/6/8!/4/2/10/1:0)';
-
-describe('fixedPageKey', () => {
+describe('page keys', () => {
   it('keys a fixed-layout page by its section index, not the location counter', () => {
     // PDF sections are 1000 units and a location is 1500, so pages 0 and 1
     // share location 0. The section index keeps them apart.
     expect(fixedPageKey(0)).not.toBe(fixedPageKey(1));
     expect(parsePageKey(fixedPageKey(41))).toEqual({ kind: 'page', index: 41 });
   });
-});
 
-const anchor = (location: string) => reflowPageKeys(location, [])[0]!;
-
-describe('reflowPageKeys', () => {
-  it('anchors a blank page at the start of its visible range', () => {
-    const [key, ...others] = reflowPageKeys(CHAPTER, []);
-    expect(parsePageKey(key!)).toEqual({ kind: 'cfi', cfi: START });
-    expect(others).toEqual([]);
+  it('keys reflowable ink by section; strokes carry their own text anchors', () => {
+    expect(parsePageKey(sectionPageKey(3))).toEqual({ kind: 'section', index: 3 });
   });
 
-  it('reuses an existing anchor that falls inside the visible range', () => {
-    // Ink drawn under another layout anchored a little further in; it still
-    // belongs on whichever page now shows that text.
-    const existing = anchor('epubcfi(/6/8!/4/2/10,/1:120,/1:400)');
-    expect(reflowPageKeys(CHAPTER, [existing])).toEqual([existing]);
-  });
-
-  it('shows every anchor that a smaller font brought onto one page', () => {
-    const first = anchor('epubcfi(/6/8!/4/2/10,/1:0,/1:150)');
-    const second = anchor('epubcfi(/6/8!/4/2/10,/1:151,/1:300)');
-    expect(reflowPageKeys(CHAPTER, [second, first])).toEqual([first, second]);
-  });
-
-  it('ignores anchors on other pages', () => {
-    const elsewhere = anchor('epubcfi(/6/8!/4/2/12,/1:0,/1:200)');
-    expect(reflowPageKeys(CHAPTER, [elsewhere])).not.toContain(elsewhere);
+  it('rejects unknown keys', () => {
+    expect(parsePageKey('cfi:epubcfi(/6/4!/4)')).toBeNull();
   });
 });

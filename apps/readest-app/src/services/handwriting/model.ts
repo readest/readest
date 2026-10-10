@@ -32,6 +32,11 @@ export interface InkStroke {
   color: string;
   /** Pen width as a fraction of the page width. */
   width: number;
+  /**
+   * CFI range of the text or element a reflowable stroke is bound to. When
+   * set, `points` are offsets from that content's box (see anchor.ts).
+   */
+  anchor?: string;
   points: InkPoint[];
 }
 
@@ -113,7 +118,7 @@ const parsePoint = (raw: unknown): InkPoint | null => {
 
 const parseStroke = (raw: unknown): InkStroke | null => {
   if (!raw || typeof raw !== 'object') return null;
-  const { id, color, width, points } = raw as Record<string, unknown>;
+  const { id, color, width, anchor, points } = raw as Record<string, unknown>;
   if (typeof id !== 'string' || typeof color !== 'string' || !isNum(width)) return null;
   if (!Array.isArray(points)) return null;
   const parsed: InkPoint[] = [];
@@ -122,7 +127,9 @@ const parseStroke = (raw: unknown): InkStroke | null => {
     if (!pt) return null;
     parsed.push(pt);
   }
-  return { id, color, width, points: parsed };
+  return typeof anchor === 'string'
+    ? { id, color, width, anchor, points: parsed }
+    : { id, color, width, points: parsed };
 };
 
 /**

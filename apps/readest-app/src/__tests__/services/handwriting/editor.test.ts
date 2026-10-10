@@ -181,8 +181,7 @@ describe('HandwritingEditor', () => {
     expect(n).toBe(2);
   });
 
-  it('erases across every anchor shown on the page, undone as one step', () => {
-    // After a reflow one page can show ink anchored to two keys.
+  it('finds a stroke under a tap', () => {
     const ed = new HandwritingEditor();
     ed.addStroke(
       'a',
@@ -191,60 +190,47 @@ describe('HandwritingEditor', () => {
         [0.9, 0.5],
       ]),
     );
-    ed.addStroke(
-      'b',
-      s('2', [
-        [0.1, 0.6],
-        [0.9, 0.6],
+    expect(ed.hits('a', [0.5, 0.505], 0.01)).toBe(true);
+    expect(ed.hits('a', [0.5, 0.6], 0.01)).toBe(false);
+  });
+
+  it('erases and hit-tests strokes where they are placed now', () => {
+    // A text-anchored stroke is stored as offsets from its anchor; `place`
+    // maps it onto the current page, and only that placement counts.
+    const ed = new HandwritingEditor();
+    ed.addStroke('sec:1', {
+      ...s('pinned', [
+        [0, 0],
+        [1, 0],
       ]),
-    );
+      anchor: 'epubcfi(/6/4!/4/2,/1:0,/1:1)',
+    });
+    const place = () =>
+      [
+        [0.2, 0.5],
+        [0.8, 0.5],
+      ] as [number, number][];
+    expect(ed.hits('sec:1', [0.5, 0.5], 0.01, place)).toBe(true);
+    expect(ed.hits('sec:1', [0.5, 0.5], 0.01, () => null)).toBe(false);
     ed.erase(
-      'a',
+      'sec:1',
       [
         [0.5, 0.4],
-        [0.5, 0.7],
+        [0.5, 0.6],
       ],
       0.01,
-      ['b'],
+      () => null,
     );
-    expect(ed.strokes('a')).toEqual([]);
-    expect(ed.strokes('b')).toEqual([]);
-    ed.undo('a');
-    expect(ed.strokes('a').map((x) => x.id)).toEqual(['1']);
-    expect(ed.strokes('b').map((x) => x.id)).toEqual(['2']);
-    ed.redo('a');
-    expect(ed.strokes('b')).toEqual([]);
-  });
-
-  it('clears every anchor shown on the page, undone as one step', () => {
-    const ed = new HandwritingEditor();
-    ed.addStroke('a', s('1', [[0.1, 0.1]]));
-    ed.addStroke('b', s('2', [[0.2, 0.2]]));
-    ed.clear('a', ['b']);
-    expect(ed.pageKeys()).toEqual([]);
-    ed.undo('a');
-    expect(ed.pageKeys().sort()).toEqual(['a', 'b']);
-  });
-
-  it('finds a stroke under a tap, across the anchors shown on the page', () => {
-    const ed = new HandwritingEditor();
-    ed.addStroke(
-      'a',
-      s('1', [
-        [0.1, 0.5],
-        [0.9, 0.5],
-      ]),
+    expect(ed.strokes('sec:1')).toHaveLength(1);
+    ed.erase(
+      'sec:1',
+      [
+        [0.5, 0.4],
+        [0.5, 0.6],
+      ],
+      0.01,
+      place,
     );
-    ed.addStroke(
-      'b',
-      s('2', [
-        [0.1, 0.8],
-        [0.9, 0.8],
-      ]),
-    );
-    expect(ed.hits(['a'], [0.5, 0.505], 0.01)).toBe(true);
-    expect(ed.hits(['a'], [0.5, 0.8], 0.01)).toBe(false);
-    expect(ed.hits(['a', 'b'], [0.5, 0.8], 0.01)).toBe(true);
-    expect(ed.hits(['a', 'b'], [0.5, 0.65], 0.01)).toBe(false);
+    expect(ed.strokes('sec:1')).toHaveLength(0);
   });
 });

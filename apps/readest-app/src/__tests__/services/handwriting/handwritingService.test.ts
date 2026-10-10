@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 import { HandwritingEditor } from '@/services/handwriting/editor';
 import { HandwritingService } from '@/services/handwriting/handwritingService';
+import type { InkPoint, InkStroke } from '@/services/handwriting/model';
 
 const rect = { left: 0, top: 0, width: 400, height: 800 };
 
@@ -60,17 +61,6 @@ describe('HandwritingService page scoping', () => {
     expect(editor.toDocument().pages).toEqual({});
   });
 
-  it('renders ink from every anchor on the page and draws into the first', () => {
-    const editor = new HandwritingEditor();
-    editor.addStroke('b', { id: 'b1', color: '#000', width: 0.004, points: [[0.5, 0.5]] });
-    const service = new HandwritingService(editor, 'a', rect);
-    service.setPage('a', ['b']);
-    expect(service.strokesForRender().map((x) => x.id)).toEqual(['b1']);
-    expect(service.hasInk()).toBe(true);
-    service.clear();
-    expect(editor.strokes('b')).toEqual([]);
-  });
-
   it('hit-tests a screen point against the ink on the page', () => {
     const editor = new HandwritingEditor();
     editor.addStroke('a', {
@@ -88,5 +78,87 @@ describe('HandwritingService page scoping', () => {
     expect(service.hitTest(200, 600)).toBe(false);
     // Outside the page never hits.
     expect(service.hitTest(-50, 400)).toBe(false);
+  });
+});
+
+describe('HandwritingService text anchoring', () => {
+  const ANCHOR = 'epubcfi(/6/4!/4/2/1,/0,/1)';
+  // A fake layout: the anchor's box sits at (0.1, 0.2) of the page, 0.05 tall.
+  const fakeAnchoring = (box = { left: 0.1, top: 0.2, height: 0.05 }) => ({
+    pin: vi.fn((points: InkPoint[], reuse?: string) => ({
+      anchor: reuse ?? ANCHOR,
+      points: points.map(
+        ([x, y]): InkPoint => [(x - box.left) / box.height, (y - box.top) / box.height],
+      ),
+    })),
+    place: (stroke: InkStroke) =>
+      stroke.points.map(
+        ([x, y]): InkPoint => [box.left + x * box.height, box.top + y * box.height],
+      ),
+  });
+
+  const draw = (service: HandwritingService, points: InkPoint[]) =>
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      points,
+      'end',
+      false,
+    );
+
+  it('pins a finished stroke to the text under it', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', rect);
+    service.setAnchoring(fakeAnchoring());
+    draw(service, [
+      [0.1, 0.25],
+      [0.2, 0.25],
+    ]);
+    const [stroke] = editor.strokes('sec:1');
+    expect(stroke!.anchor).toBe(ANCHOR);
+    expect(stroke!.points[0]![0]).toBeCloseTo(0);
+    expect(stroke!.points[0]![1]).toBeCloseTo(1);
+  });
+
+  it('renders pinned ink where its text is now', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', rect);
+    service.setAnchoring(fakeAnchoring());
+    draw(service, [
+      [0.1, 0.25],
+      [0.2, 0.25],
+    ]);
+    // A larger font moved the anchor and doubled its height.
+    service.setAnchoring(fakeAnchoring({ left: 0.3, top: 0.6, height: 0.1 }));
+    const [placed] = service.strokesForRender();
+    expect(placed!.points[0]![0]).toBeCloseTo(0.3);
+    expect(placed!.points[0]![1]).toBeCloseTo(0.7);
+    expect(placed!.points[1]![0]).toBeCloseTo(0.5);
+  });
+
+  it('hides pinned ink whose text is not laid out', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', rect);
+    service.setAnchoring({ ...fakeAnchoring(), place: () => null });
+    draw(service, [[0.1, 0.25]]);
+    expect(service.strokesForRender()).toEqual([]);
+    expect(service.hasInk()).toBe(false);
+  });
+
+  it('keeps a handwritten word together by sharing the previous stroke anchor', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', rect);
+    const anchoring = fakeAnchoring();
+    service.setAnchoring(anchoring);
+    draw(service, [
+      [0.5, 0.5],
+      [0.52, 0.5],
+    ]);
+    draw(service, [
+      [0.53, 0.5],
+      [0.55, 0.51],
+    ]);
+    expect(anchoring.pin.mock.calls[1]![1]).toBe(ANCHOR);
+    // A stroke far away starts its own anchor.
+    draw(service, [[0.1, 0.9]]);
+    expect(anchoring.pin.mock.calls[2]![1]).toBeUndefined();
   });
 });

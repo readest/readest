@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -9,7 +9,8 @@ import { saveSysSettings } from '@/helpers/settings';
 import { HandwritingEditor } from '@/services/handwriting/editor';
 import { HandwritingService } from '@/services/handwriting/handwritingService';
 import { loadHandwritingEditor, withHandwriting } from '@/services/handwriting/persistence';
-import { fixedPageKey, reflowPageKeys } from '@/services/handwriting/pageKey';
+import { fixedPageKey, sectionPageKey } from '@/services/handwriting/pageKey';
+import { createInkAnchoring } from '../utils/inkAnchoring';
 import type { PageRect } from '@/services/handwriting/coords';
 import type { FoliateView } from '@/types/view';
 
@@ -82,13 +83,14 @@ export function useHandwriting(bookKey: string) {
 
   const location = progress?.location;
   const sectionIndex = progress?.section?.current;
-  // The first key takes new strokes; the rest are other anchors on this page.
-  const pageKeys = useMemo(() => {
-    if (isFixedLayout) return [fixedPageKey(sectionIndex ?? 0)];
-    return location ? reflowPageKeys(location, editorRef.current!.pageKeys()) : [''];
-    // editorVersion: a reload brings in anchors the old editor didn't have.
-  }, [isFixedLayout, sectionIndex, location, editorVersion]);
-  const [pageKey = '', ...alsoKeys] = pageKeys;
+  // Fixed layout pins ink to the page; reflowable ink is kept per section and
+  // each stroke is bound to the text or element under it.
+  const pageKey =
+    sectionIndex === undefined
+      ? ''
+      : isFixedLayout
+        ? fixedPageKey(sectionIndex)
+        : sectionPageKey(sectionIndex);
 
   const available = !scrolled && !readOnlyRef.current && !!pageKey;
   useEffect(() => {
@@ -168,12 +170,22 @@ export function useHandwriting(bookKey: string) {
       });
       serviceRef.current.onNeedsRender(() => forceRender((n) => n + 1));
     } else {
+      serviceRef.current.setPage(pageKey);
       serviceRef.current.updateRect(pageRect);
     }
-    serviceRef.current.setPage(pageKey, alsoKeys);
     // Pen options are applied by their own effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageKeys, pageRect]);
+  }, [pageKey, pageRect]);
+
+  // Re-resolve text anchors whenever the layout may have moved them: a page
+  // turn, a relayout (font, margins, spacing) or a resize.
+  useEffect(() => {
+    if (isFixedLayout || sectionIndex === undefined) return;
+    const view = getView(bookKey);
+    serviceRef.current?.setAnchoring(
+      view && pageRect.width ? createInkAnchoring(view, sectionIndex, pageRect) : null,
+    );
+  }, [isFixedLayout, sectionIndex, location, pageRect, getView, bookKey]);
 
   // Pen choice is a device-wide setting, so a change here retargets the live
   // session without disturbing the ink already committed.

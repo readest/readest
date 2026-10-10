@@ -8,6 +8,7 @@ import {
   type InkStroke,
 } from './model';
 import { screenToPage, type PageRect } from './coords';
+import type { InkAnchoring } from './anchor';
 import { PointerHandwritingBackend } from './pointerBackend';
 import { BooxHandwritingBackend, queryPenCapabilities } from './booxBackend';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -35,6 +36,24 @@ const ERASER_WIDTH_RATIO = 3;
 /** How close (CSS px) a tap must land to a stroke to count as on it. */
 const HIT_SLOP_PX = 12;
 
+/**
+ * Strokes written in one burst, close together, share an anchor so a
+ * handwritten word or note stays in one piece when its text reflows.
+ */
+const BURST_MS = 4000;
+const BURST_GAP = 0.05;
+
+type Bounds = [number, number, number, number];
+
+const boundsOf = (points: InkPoint[]): Bounds => {
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+};
+
+const boundsGap = (a: Bounds, b: Bounds) =>
+  Math.max(0, a[0] - b[2], b[0] - a[2], a[1] - b[3], b[1] - a[3]);
+
 let strokeCounter = 0;
 const nextStrokeId = () => `s${Date.now().toString(36)}${(strokeCounter++).toString(36)}`;
 
@@ -47,8 +66,9 @@ const nextStrokeId = () => `s${Date.now().toString(36)}${(strokeCounter++).toStr
 export class HandwritingService {
   private editor: HandwritingEditor;
   private page: string;
-  /** Other anchors shown on this page after a reflow; render, erase and clear only. */
-  private also: string[] = [];
+  /** Binds reflowable strokes to their text; null for fixed layout. */
+  private anchoring: InkAnchoring | null = null;
+  private lastPin: { anchor: string; at: number; bounds: Bounds } | null = null;
   private options: HandwritingOptions;
   private backend: PenBackend | null = null;
   private pointer = new PointerHandwritingBackend();
@@ -74,7 +94,10 @@ export class HandwritingService {
 
   /** Strokes to render right now, including the in-progress live stroke. */
   strokesForRender(): InkStroke[] {
-    const committed = [this.page, ...this.also].flatMap((key) => this.editor.strokes(key));
+    const committed = this.editor.strokes(this.page).flatMap((stroke) => {
+      const points = this.place(stroke);
+      return points ? [{ ...stroke, points }] : [];
+    });
     if (this.live.length === 0) return [...committed];
     if (this.liveErase) return [...committed];
     return [
@@ -139,14 +162,19 @@ export class HandwritingService {
     this.onRender?.();
   }
 
+  /** Swap in the anchoring for the current layout and repaint. */
+  setAnchoring(anchoring: InkAnchoring | null) {
+    this.anchoring = anchoring;
+    this.onRender?.();
+  }
+
+  /** Where a stored stroke is drawn now, page-normalized; null when hidden. */
+  private place = (stroke: InkStroke): InkPoint[] | null =>
+    stroke.anchor ? (this.anchoring?.place(stroke) ?? null) : stroke.points;
+
   /** Retarget the session at a new page (page turn / section change). */
-  setPage(page: string, also: string[] = []) {
-    if (page === this.page && also.join() === this.also.join()) return;
-    this.also = also;
-    if (page === this.page) {
-      this.onRender?.();
-      return;
-    }
+  setPage(page: string) {
+    if (page === this.page) return;
     this.page = page;
     // An in-progress stroke belongs to the page it started on; drop it rather
     // than committing it to the page the reader just turned to.
@@ -200,27 +228,43 @@ export class HandwritingService {
   }
 
   clear() {
-    this.editor.clear(this.page, this.also);
+    this.editor.clear(this.page);
     this.onRender?.();
   }
 
   /** Whether the current page has any committed ink. */
+  /** Whether the page shows any committed ink. */
   hasInk() {
-    return [this.page, ...this.also].some((key) => this.editor.strokes(key).length > 0);
+    return this.editor.strokes(this.page).some((stroke) => this.place(stroke));
   }
 
   /** Whether a screen point (CSS px) lands on ink shown on this page. */
   hitTest(x: number, y: number): boolean {
     const p = screenToPage({ x, y }, this.rect);
     if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) return false;
-    return this.editor.hits([this.page, ...this.also], [p.x, p.y], HIT_SLOP_PX / this.rect.width);
+    return this.editor.hits(this.page, [p.x, p.y], HIT_SLOP_PX / this.rect.width, this.place);
+  }
+
+  /** Bind a finished stroke to the content under it, reusing the burst's anchor. */
+  private pin(points: InkPoint[]) {
+    if (!this.anchoring) return null;
+    const bounds = boundsOf(points);
+    const now = Date.now();
+    const last = this.lastPin;
+    const reuse =
+      last && now - last.at < BURST_MS && boundsGap(bounds, last.bounds) < BURST_GAP
+        ? last.anchor
+        : undefined;
+    const pinned = this.anchoring.pin(points, reuse);
+    if (pinned) this.lastPin = { anchor: pinned.anchor, at: now, bounds };
+    return pinned;
   }
 
   private onBatch(points: InkPoint[], kind: 'move' | 'end', erase: boolean) {
     if (erase || this.liveErase) {
       const path = this.eraseTail ? [this.eraseTail, ...points] : points;
       if (path.length) {
-        this.editor.erase(this.page, path, this.options.eraseRadiusFraction, this.also);
+        this.editor.erase(this.page, path, this.options.eraseRadiusFraction, this.place);
       }
       this.eraseTail = kind === 'end' ? null : (path[path.length - 1] ?? null);
       this.live = [];
@@ -228,12 +272,13 @@ export class HandwritingService {
       return;
     }
     this.live.push(...points);
-    if (kind === 'end') {
+    if (kind === 'end' && this.live.length) {
+      const points = simplifyPoints(this.live);
       this.editor.addStroke(this.page, {
         id: nextStrokeId(),
         color: this.options.color,
         width: this.options.widthFraction,
-        points: simplifyPoints(this.live),
+        ...(this.pin(points) ?? { points }),
       });
       this.live = [];
     }
