@@ -29,6 +29,10 @@ describe('HtmlAudioClock', () => {
     expect(await load('web', 'https://abs.example/api/items/1/file/2?token=t')).toBe('anonymous');
   });
 
+  it('matches the scheme of a track URL case-insensitively', async () => {
+    expect(await load('web', 'HTTPS://abs.example/api/items/1/file/2?token=t')).toBe('anonymous');
+  });
+
   it('leaves same-origin and blob URLs alone on the web app', async () => {
     expect(await load('web', `${location.origin}/audio/1.mp3`)).toBeNull();
     expect(await load('web', 'blob:track-1')).toBeNull();

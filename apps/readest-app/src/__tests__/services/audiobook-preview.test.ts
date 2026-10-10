@@ -198,4 +198,18 @@ describe('AudiobookPreviewPlayer', () => {
 
     expect(FakeAudio.instances[0]!.crossOrigin).toBe('anonymous');
   });
+
+  it('requests a clip whose URL has an uppercase scheme with CORS on the web app', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
+    const player = new AudiobookPreviewPlayer(makeAppService(), vi.fn());
+
+    await player.toggle({
+      id: 'abs:0',
+      url: 'HTTPS://abs.example/api/items/1/file/2?token=t',
+      start: 0,
+      end: 15,
+    });
+
+    expect(FakeAudio.instances[0]!.crossOrigin).toBe('anonymous');
+  });
 });

@@ -25,12 +25,11 @@ export interface AudiobookClock {
  * @/services/environment here pulls the app-service graph into the TTS
  * controller's unit tests (MediaOverlayClient precedent).
  */
-export const mediaCrossOrigin = (url: string): 'anonymous' | null =>
-  process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'web' &&
-  /^https?:/.test(url) &&
-  new URL(url).origin !== globalThis.location.origin
-    ? 'anonymous'
-    : null;
+export const mediaCrossOrigin = (url: string): 'anonymous' | null => {
+  if (process.env['NEXT_PUBLIC_APP_PLATFORM'] !== 'web') return null;
+  const { protocol, origin } = new URL(url, globalThis.location.href);
+  return /^https?:$/.test(protocol) && origin !== globalThis.location.origin ? 'anonymous' : null;
+};
 
 export class HtmlAudioClock implements AudiobookClock {
   #audio: HTMLAudioElement;
