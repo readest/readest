@@ -1,6 +1,6 @@
 import type { BookNote } from '@/types/book';
-import type { IdentityResolver, PositionResolver } from './annotationExchange';
-import { bookOrbitKey, bookOrbitNoteId, formatKoDatetime } from './noteMapping';
+import type { ChapterResolver, IdentityResolver, PositionResolver } from './annotationExchange';
+import { bookOrbitKey, bookOrbitNoteId, formatKoDatetime, normalizeKoChapter } from './noteMapping';
 import type {
   BookmarkAckApplied,
   BookmarkAckBook,
@@ -15,14 +15,26 @@ export interface BuiltBookmarkExchange {
 }
 
 const MAX_CHANGES_PER_REQUEST = 50;
+/** BookOrbit validates the bookmark `note` with @MaxLength(500). */
+const MAX_NOTE_LENGTH = 500;
 
 const liveBookmarks = (notes: BookNote[]): BookNote[] =>
   notes.filter((note) => note.type === 'bookmark' && !note.deletedAt && note.xpointer0);
 
+/**
+ * BookOrbit titles a synced dogear by its note, else its chapter, else a page
+ * label, so the chapter has to travel with the change. The local `text` is the
+ * page context Readest shows in the notes panel — or the title the server sent
+ * down — not the user's note, so it must not go as the wire note: that would
+ * keep a snippet ahead of the chapter for the title. A pulled dogear is the
+ * exception: it is re-pushed after the pull, and the server treats a differing
+ * derived title as a device edit, so its server title is echoed back.
+ */
 export const buildBookmarkExchangeBook = (
   hash: string,
   notes: BookNote[],
   identityOf: IdentityResolver,
+  chapterForNote: ChapterResolver,
   watermark: number,
   maxChanges = MAX_CHANGES_PER_REQUEST,
 ): BuiltBookmarkExchange => {
@@ -41,8 +53,11 @@ export const buildBookmarkExchangeBook = (
     .map((note): KoBookmark => {
       const bookmark: KoBookmark = { datetime: identityOf(note), pos: note.xpointer0! };
       if (note.page != null) bookmark.pageno = note.page;
-      const label = note.note || note.text;
-      if (label) bookmark.note = label;
+      const pulled = note.id === bookOrbitNoteId(hash, 'bookmark', note.xpointer0!);
+      const label = pulled ? note.note || note.text : note.note;
+      if (label) bookmark.note = label.slice(0, MAX_NOTE_LENGTH);
+      const chapter = normalizeKoChapter(chapterForNote(note));
+      if (chapter) bookmark.chapter = chapter;
       return bookmark;
     });
   return { request: { hash, keys, keysComplete: true, changes }, keyToNote };

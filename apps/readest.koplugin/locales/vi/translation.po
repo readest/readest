@@ -338,9 +338,6 @@ msgstr "Kiểm tra cập nhật"
 msgid "Please login first"
 msgstr "Vui lòng đăng nhập trước"
 
-msgid "Please configure Readest settings first"
-msgstr "Vui lòng cấu hình cài đặt Readest trước"
-
 msgid "(none)"
 msgstr "(không có)"
 
@@ -506,9 +503,6 @@ msgstr "Đồng bộ đầy đủ: đang lấy tất cả ghi chú…"
 msgid "Pulling annotations..."
 msgstr "Đang lấy ghi chú…"
 
-msgid "Authentication failed, please login again"
-msgstr "Xác thực thất bại, vui lòng đăng nhập lại"
-
 msgid "Failed to pull annotations"
 msgstr "Không thể lấy ghi chú"
 
@@ -520,6 +514,9 @@ msgstr "Đã lấy %1 ghi chú"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Phiên Readest của bạn đã hết hạn. Vui lòng đăng nhập lại."
+
+msgid "Authentication failed, please login again"
+msgstr "Xác thực thất bại, vui lòng đăng nhập lại"
 
 msgid "Login"
 msgstr "Đăng nhập"
@@ -566,8 +563,65 @@ msgstr "Không thể lấy tiến trình đọc"
 msgid "Reading progress synchronized"
 msgstr "Tiến trình đọc đã đồng bộ"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Không thể dùng vị trí đọc đã lưu với bản sao sách này"
+
 msgid "No saved reading progress found for this book"
 msgstr "Không tìm thấy tiến trình đọc đã lưu cho sách này"
+
+msgid "Sync was cancelled."
+msgstr "Đã hủy đồng bộ."
+
+msgid "The connection timed out. Please try again."
+msgstr "Kết nối đã hết thời gian chờ. Vui lòng thử lại."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Không thể truy cập mạng. Vui lòng kiểm tra kết nối internet."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Không tìm thấy máy chủ. Vui lòng kiểm tra kết nối internet."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Máy chủ đã từ chối kết nối. Vui lòng thử lại sau."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Kết nối bị gián đoạn. Vui lòng thử lại."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Không thể thiết lập kết nối bảo mật với máy chủ."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Xác thực thất bại. Vui lòng đăng nhập lại."
+
+msgid "The account changed during sync."
+msgstr "Tài khoản đã thay đổi trong khi đồng bộ."
+
+msgid "The file was not found in the cloud."
+msgstr "Không tìm thấy tệp trên đám mây."
+
+msgid "The local file is missing."
+msgstr "Thiếu tệp cục bộ."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Đã xảy ra lỗi nội bộ. Vui lòng thử lại."
+
+msgid "Access denied."
+msgstr "Truy cập bị từ chối."
+
+msgid "Not found on the server."
+msgstr "Không tìm thấy trên máy chủ."
+
+msgid "The file is too large."
+msgstr "Tệp quá lớn."
+
+msgid "Too many requests. Please try again later."
+msgstr "Quá nhiều yêu cầu. Vui lòng thử lại sau."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Máy chủ tạm thời không khả dụng. Vui lòng thử lại sau."
+
+msgid "The request failed. Please try again."
+msgstr "Yêu cầu thất bại. Vui lòng thử lại."
 
 msgid "Reading statistics are up to date"
 msgstr "Thống kê đọc đã được cập nhật"

@@ -43,6 +43,7 @@ M.UIManager = {
     close = function(self, widget)
         table.insert(self._closed, widget)
     end,
+    setDirty = function() end,
     nextTick = function(self, fn)
         table.insert(self._scheduled, { delay = 0, fn = fn })
     end,
@@ -60,14 +61,19 @@ M.UIManager = {
 
 -- Drain the scheduled queue, running each task once. Tasks that schedule
 -- further work (uploadCurrentBook hashes on nextTick, then continues) are
--- picked up on the next drain pass.
-function M.UIManager:drain()
-    local pending = self._scheduled
+-- picked up on the next drain pass. With `max_delay`, later tasks stay queued.
+function M.UIManager:drain(max_delay)
+    local pending, ran = self._scheduled, 0
     self._scheduled = {}
     for _, task in ipairs(pending) do
-        task.fn()
+        if max_delay and task.delay > max_delay then
+            table.insert(self._scheduled, task)
+        else
+            task.fn()
+            ran = ran + 1
+        end
     end
-    return #pending
+    return ran
 end
 
 -- `util.partialMD5` is swapped per-spec; default returns a deterministic hash.

@@ -338,9 +338,6 @@ msgstr "檢查更新"
 msgid "Please login first"
 msgstr "請先登入"
 
-msgid "Please configure Readest settings first"
-msgstr "請先設定 Readest"
-
 msgid "(none)"
 msgstr "（無）"
 
@@ -506,9 +503,6 @@ msgstr "完整同步：正在拉取所有註釋…"
 msgid "Pulling annotations..."
 msgstr "正在拉取註釋…"
 
-msgid "Authentication failed, please login again"
-msgstr "驗證失敗，請重新登入"
-
 msgid "Failed to pull annotations"
 msgstr "拉取註釋失敗"
 
@@ -520,6 +514,9 @@ msgstr "已拉取 %1 條註釋"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Readest 登入已過期，請重新登入。"
+
+msgid "Authentication failed, please login again"
+msgstr "驗證失敗，請重新登入"
 
 msgid "Login"
 msgstr "登入"
@@ -566,8 +563,65 @@ msgstr "拉取閱讀進度失敗"
 msgid "Reading progress synchronized"
 msgstr "閱讀進度已同步"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "儲存的閱讀位置無法用於此書籍副本"
+
 msgid "No saved reading progress found for this book"
 msgstr "找不到此書籍的閱讀進度"
+
+msgid "Sync was cancelled."
+msgstr "同步已取消。"
+
+msgid "The connection timed out. Please try again."
+msgstr "連線逾時，請重試。"
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "無法連上網路，請檢查網路連線。"
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "找不到伺服器，請檢查網路連線。"
+
+msgid "The server refused the connection. Please try again later."
+msgstr "伺服器拒絕了連線，請稍後再試。"
+
+msgid "The connection was interrupted. Please try again."
+msgstr "連線已中斷，請重試。"
+
+msgid "A secure connection to the server could not be established."
+msgstr "無法與伺服器建立安全連線。"
+
+msgid "Authentication failed. Please log in again."
+msgstr "驗證失敗，請重新登入。"
+
+msgid "The account changed during sync."
+msgstr "同步期間帳號已變更。"
+
+msgid "The file was not found in the cloud."
+msgstr "雲端找不到該檔案。"
+
+msgid "The local file is missing."
+msgstr "本機檔案遺失。"
+
+msgid "An internal error occurred. Please try again."
+msgstr "發生內部錯誤，請重試。"
+
+msgid "Access denied."
+msgstr "存取遭拒。"
+
+msgid "Not found on the server."
+msgstr "伺服器上找不到。"
+
+msgid "The file is too large."
+msgstr "檔案過大。"
+
+msgid "Too many requests. Please try again later."
+msgstr "請求過於頻繁，請稍後再試。"
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "伺服器暫時無法使用，請稍後再試。"
+
+msgid "The request failed. Please try again."
+msgstr "請求失敗，請重試。"
 
 msgid "Reading statistics are up to date"
 msgstr "閱讀統計已是最新"
