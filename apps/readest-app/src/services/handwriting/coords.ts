@@ -25,8 +25,3 @@ export const screenToPage = (p: Point2D, rect: PageRect, opts?: { clamp?: boolea
   }
   return { x, y };
 };
-
-export const pageToScreen = (p: Point2D, rect: PageRect): Point2D => ({
-  x: rect.left + p.x * rect.width,
-  y: rect.top + p.y * rect.height,
-});

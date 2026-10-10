@@ -748,10 +748,8 @@ export async function icloudEnsureDownloaded(
   });
 }
 
-// Handwriting (issue #3673): BOOX raw-drawing bridge. Every function here is
-// a thin pass-through to the native-bridge plugin; callers should go through
-// services/handwriting/booxBackend.ts rather than calling these directly, so
-// capability fallback stays in one place.
+// Handwriting (issue #3673): BOOX raw drawing. Go through
+// services/handwriting/booxBackend.ts rather than calling these directly.
 
 export interface QueryPenCapabilitiesResponse {
   isBoox: boolean;
@@ -775,10 +773,6 @@ export async function startRawDrawing(request: StartRawDrawingRequest): Promise<
   await invoke('plugin:native-bridge|start_raw_drawing', { payload: request });
 }
 
-export async function setRawDrawingEnabled(enabled: boolean): Promise<void> {
-  await invoke('plugin:native-bridge|set_raw_drawing_enabled', { payload: { enabled } });
-}
-
 export async function stopRawDrawing(): Promise<void> {
   await invoke('plugin:native-bridge|stop_raw_drawing');
 }
@@ -787,5 +781,5 @@ export type PenEventKind = 'DRAW_MOVE' | 'DRAW_END' | 'ERASE_MOVE' | 'ERASE_END'
 
 export interface PenStrokeBatch {
   kind: PenEventKind;
-  points: { x: number; y: number; pressure: number; t: number }[];
+  points: { x: number; y: number; pressure: number }[];
 }

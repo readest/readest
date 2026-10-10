@@ -56,7 +56,6 @@ permissions = [
   "allow-query-pen-capabilities",
   "allow-start-raw-drawing",
   "allow-stop-raw-drawing",
-  "allow-set-raw-drawing-enabled",
   "allow-update-reading-widget",
   "allow-get-reading-widget-instances",
   "allow-set-reading-widget-catalog",

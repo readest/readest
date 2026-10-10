@@ -102,7 +102,6 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::query_pen_capabilities,
             commands::start_raw_drawing,
             commands::stop_raw_drawing,
-            commands::set_raw_drawing_enabled,
             commands::update_reading_widget,
             commands::get_reading_widget_instances,
             commands::set_reading_widget_catalog,

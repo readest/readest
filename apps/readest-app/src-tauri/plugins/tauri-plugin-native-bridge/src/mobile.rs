@@ -451,12 +451,6 @@ impl<R: Runtime> NativeBridge<R> {
             .run_mobile_plugin("stop_raw_drawing", ())
             .map_err(Into::into)
     }
-
-    pub fn set_raw_drawing_enabled(&self, payload: SetRawDrawingEnabledRequest) -> crate::Result<()> {
-        self.0
-            .run_mobile_plugin("set_raw_drawing_enabled", payload)
-            .map_err(Into::into)
-    }
 }
 
 impl<R: Runtime> NativeBridge<R> {

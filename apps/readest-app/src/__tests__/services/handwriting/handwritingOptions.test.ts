@@ -5,8 +5,8 @@ import {
   DEFAULT_HANDWRITING_WIDTH,
   HANDWRITING_COLORS,
   HANDWRITING_WIDTHS,
-  HandwritingService,
-} from '@/services/handwriting/handwritingService';
+} from '@/services/handwriting/model';
+import { HandwritingService } from '@/services/handwriting/handwritingService';
 import { HandwritingEditor } from '@/services/handwriting/editor';
 
 const rect = { left: 0, top: 0, width: 400, height: 800 };

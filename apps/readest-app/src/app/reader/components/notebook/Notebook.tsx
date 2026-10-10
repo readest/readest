@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useNotebookStore, type NotebookTab } from '@/store/notebookStore';
+import { resolveNotebookTab, useNotebookStore, type NotebookTab } from '@/store/notebookStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
@@ -176,6 +176,10 @@ const Notebook: React.FC = () => {
 
   if (!sideBarBookKey) return null;
   const bookData = getBookData(sideBarBookKey);
+  const activeTab = resolveNotebookTab(
+    notebookActiveTab,
+    Object.keys(getConfig(sideBarBookKey)?.handwriting?.pages ?? {}).length > 0,
+  );
   const excerptNotes = (getConfig(sideBarBookKey)?.booknotes ?? [])
     .filter((note) => note.type === 'excerpt' && note.text && !note.deletedAt)
     .sort((a, b) => a.createdAt - b.createdAt);
@@ -264,11 +268,11 @@ const Notebook: React.FC = () => {
             handleTogglePin={handleTogglePin}
           />
         </div>
-        {notebookActiveTab === 'ai' ? (
+        {activeTab === 'ai' ? (
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
-        ) : notebookActiveTab === 'handwriting' ? (
+        ) : activeTab === 'handwriting' ? (
           <div className='flex min-h-0 flex-1 flex-col'>
             <HandwritingView bookKey={sideBarBookKey} />
           </div>
@@ -286,7 +290,7 @@ const Notebook: React.FC = () => {
         >
           <NotebookTabNavigation
             bookKey={sideBarBookKey}
-            activeTab={notebookActiveTab}
+            activeTab={activeTab}
             onTabChange={handleTabChange}
           />
         </div>

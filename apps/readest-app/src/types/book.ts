@@ -691,7 +691,6 @@ export interface BookConfig {
    */
   widePages?: string[];
   /**
-  /**
    * Where a zoomed fixed-layout page was panned under the horizontal pan lock,
    * as a fraction of its horizontal overflow, restored on reopen. Device-local
    * like widePages: it depends on this screen's zoom and size.

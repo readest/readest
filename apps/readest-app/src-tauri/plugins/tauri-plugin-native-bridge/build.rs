@@ -57,7 +57,6 @@ const COMMANDS: &[&str] = &[
     "query_pen_capabilities",
     "start_raw_drawing",
     "stop_raw_drawing",
-    "set_raw_drawing_enabled",
     "update_reading_widget",
     "get_reading_widget_instances",
     "set_reading_widget_catalog",

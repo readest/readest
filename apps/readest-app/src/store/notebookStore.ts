@@ -4,6 +4,10 @@ import { TextSelection } from '@/utils/sel';
 
 export type NotebookTab = 'notes' | 'handwriting' | 'ai';
 
+/** The ink tab only exists for a book with ink; fall back to Notes otherwise. */
+export const resolveNotebookTab = (tab: NotebookTab, hasInk: boolean): NotebookTab =>
+  tab === 'handwriting' && !hasInk ? 'notes' : tab;
+
 interface NotebookState {
   notebookWidth: string;
   isNotebookVisible: boolean;

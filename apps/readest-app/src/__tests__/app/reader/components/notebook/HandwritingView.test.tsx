@@ -28,8 +28,14 @@ vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({ settings: { globalReadSettings: {} } }),
 }));
 
+const TOC = [
+  { id: 1, label: 'Chapter One', href: 'ch01.html', cfi: 'epubcfi(/6/4!/4/2)' },
+  { id: 2, label: 'Chapter Two', href: 'ch02.html', cfi: 'epubcfi(/6/6!/4/2)' },
+];
+
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
+    getBookData: () => ({ bookDoc: { toc: TOC } }),
     getConfig: () => h.config,
     setConfig: (_key: string, partial: Partial<BookConfig>) => {
       h.setConfig(_key, partial);
@@ -85,7 +91,7 @@ describe('HandwritingView navigation', () => {
     h.stored = h.config = {
       handwriting: {
         version: 1,
-        pages: { 'pdf:0': page(2), 'pdf:2': page(5) },
+        pages: { 'page:0': page(2), 'page:2': page(5) },
       },
     } as unknown as BookConfig;
     renderView();
@@ -96,56 +102,62 @@ describe('HandwritingView navigation', () => {
 
   it('jumps to the page when a row is clicked', () => {
     h.stored = h.config = {
-      handwriting: { version: 1, pages: { 'pdf:4': page(1) } },
+      handwriting: { version: 1, pages: { 'page:4': page(1) } },
     } as unknown as BookConfig;
     renderView();
 
     fireEvent.click(screen.getAllByRole('button', { name: /Go to handwriting on/ })[0]!);
 
-    // A PDF page is its own spine item, so the stored page index is the target.
     expect(h.goTo).toHaveBeenCalledWith(4);
   });
 
-  it('navigates to an EPUB section href, fragment included', () => {
+  it('navigates to the CFI a reflowable page was anchored at', () => {
     h.stored = h.config = {
-      handwriting: {
-        version: 1,
-        pages: { 'epub:OEBPS/ch03.html#idm45692648148096': page(1) },
-      },
+      handwriting: { version: 1, pages: { 'cfi:epubcfi(/6/6!/4/2/8/1:0)': page(1) } },
     } as unknown as BookConfig;
     renderView();
 
     fireEvent.click(screen.getByRole('button', { name: /Go to handwriting on/ }));
-
-    // The fragment is kept so the jump lands where the ink actually is, even
-    // though the row's label shows only the file part.
-    expect(h.goTo).toHaveBeenCalledWith('OEBPS/ch03.html#idm45692648148096');
+    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/6!/4/2/8/1:0)');
   });
 
-  it('labels an EPUB row by its file, not the raw fragment id', () => {
+  it('labels a reflowable row by its chapter title', () => {
+    h.stored = h.config = {
+      handwriting: { version: 1, pages: { 'cfi:epubcfi(/6/6!/4/2/8/1:0)': page(1) } },
+    } as unknown as BookConfig;
+    renderView();
+
+    expect(screen.getByText('Chapter Two')).toBeTruthy();
+  });
+
+  it('orders reflowable rows in reading order', () => {
     h.stored = h.config = {
       handwriting: {
         version: 1,
-        pages: { 'epub:OEBPS/ch03.html#idm45692648148096': page(1) },
+        pages: {
+          'cfi:epubcfi(/6/6!/4/2/8/1:0)': page(1),
+          'cfi:epubcfi(/6/4!/4/2/2/1:0)': page(1),
+        },
       },
     } as unknown as BookConfig;
     renderView();
 
-    expect(screen.getByText('OEBPS/ch03.html')).toBeTruthy();
-    expect(screen.queryByText(/idm45692648148096/)).toBeNull();
+    const labels = screen.getAllByRole('button', { name: /Go to handwriting on/ });
+    fireEvent.click(labels[0]!);
+    expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/4!/4/2/2/1:0)');
   });
 
-  it('orders PDF rows by page number', () => {
+  it('orders fixed-layout rows by page number', () => {
     h.stored = h.config = {
       handwriting: {
         version: 1,
-        pages: { 'pdf:10': page(1), 'pdf:2': page(1), 'pdf:7': page(1) },
+        pages: { 'page:10': page(1), 'page:2': page(1), 'page:7': page(1) },
       },
     } as unknown as BookConfig;
     renderView();
 
     // Ordering is asserted through the navigation targets, which are not
-    // translated: pdf:2 -> 2, pdf:7 -> 7, pdf:10 -> 10.
+    // translated: page:2 -> 2, page:7 -> 7, page:10 -> 10.
     const labels = screen.getAllByRole('button', { name: /Go to handwriting on/ });
     expect(labels).toHaveLength(3);
     fireEvent.click(labels[0]!);
@@ -156,7 +168,7 @@ describe('HandwritingView navigation', () => {
 
   it('does nothing when the view is not open', () => {
     h.stored = h.config = {
-      handwriting: { version: 1, pages: { 'pdf:0': page(1) } },
+      handwriting: { version: 1, pages: { 'page:0': page(1) } },
     } as unknown as BookConfig;
     vi.doMock('@/store/readerStore', () => ({ useReaderStore: () => ({ getView: () => null }) }));
     renderView();
@@ -168,18 +180,18 @@ describe('HandwritingView navigation', () => {
 
   it('clears one page without touching the others', () => {
     h.stored = h.config = {
-      handwriting: { version: 1, pages: { 'pdf:0': page(1), 'pdf:1': page(2) } },
+      handwriting: { version: 1, pages: { 'page:0': page(1), 'page:1': page(2) } },
     } as unknown as BookConfig;
     renderView();
 
     fireEvent.click(screen.getAllByRole('button', { name: /Clear handwriting on/ })[0]!);
 
-    expect(Object.keys(h.stored?.handwriting?.pages ?? {})).toEqual(['pdf:1']);
+    expect(Object.keys(h.stored?.handwriting?.pages ?? {})).toEqual(['page:1']);
   });
 
   it('clears every page at once', () => {
     h.stored = h.config = {
-      handwriting: { version: 1, pages: { 'pdf:0': page(3), 'epub:a.xhtml': page(4) } },
+      handwriting: { version: 1, pages: { 'page:0': page(3), 'page:5': page(4) } },
     } as unknown as BookConfig;
     renderView();
 

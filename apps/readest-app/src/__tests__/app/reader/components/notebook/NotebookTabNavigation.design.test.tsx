@@ -20,7 +20,7 @@ vi.mock('@/store/settingsStore', () => ({
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
     getConfig: () =>
-      h.hasInk ? { handwriting: { version: 1, pages: { 'pdf:0': {} } } } : undefined,
+      h.hasInk ? { handwriting: { version: 1, pages: { 'page:0': {} } } } : undefined,
   }),
 }));
 

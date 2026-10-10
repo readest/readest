@@ -16,7 +16,6 @@ import {
 } from '@/types/book';
 import { buildAnnotationExport } from '@/services/annotation/providers/readest';
 import { getAnnotationContexts } from '@/services/annotation/context';
-import { simplifyHandwriting } from '@/services/handwriting/model';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
 import {
@@ -79,12 +78,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   const { getBookData, getConfig } = useBookDataStore();
   const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
-  // Simplify on the way out: the stored ink keeps every sample (so erasing and
-  // restyling stay exact), but an export only needs the shape of the stroke.
-  const handwriting = useMemo(() => {
-    const doc = getConfig(bookKey)?.handwriting;
-    return doc ? simplifyHandwriting(doc) : undefined;
-  }, [getConfig, bookKey]);
+  const handwriting = getConfig(bookKey)?.handwriting;
 
   const defaultTemplate = `{% if coverImageUrl %}![cover|300]({{ coverImageUrl }})
 
@@ -146,6 +140,8 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 
   const isJson = exportConfig.exportFormat === 'json';
   const isPlainText = exportConfig.exportFormat === 'text';
+  // JSON carries handwriting, so a book with only ink still has something to export.
+  const hasInkToExport = isJson && Object.keys(handwriting?.pages ?? {}).length > 0;
 
   const [showSource, setShowSource] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -457,6 +453,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     location,
     coverImageUrl,
     contexts,
+    handwriting,
     _,
   ]);
 
@@ -1051,7 +1048,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
               <button
                 onClick={(e) => handleExport(e, true)}
                 className='btn btn-ghost btn-sm'
-                disabled={filteredNotesCount === 0 || isLoadingContext}
+                disabled={(filteredNotesCount === 0 && !hasInkToExport) || isLoadingContext}
               >
                 {_('Share')}
               </button>
@@ -1059,7 +1056,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
             <button
               onClick={(e) => handleExport(e, !canSaveAndShare)}
               className='btn btn-primary btn-sm'
-              disabled={filteredNotesCount === 0 || isLoadingContext}
+              disabled={(filteredNotesCount === 0 && !hasInkToExport) || isLoadingContext}
             >
               {canSaveAndShare ? _('Save') : _('Export')}
             </button>

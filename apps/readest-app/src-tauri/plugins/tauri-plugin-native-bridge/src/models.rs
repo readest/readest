@@ -574,10 +574,9 @@ pub struct QueryPenCapabilitiesResponse {
     pub raw_drawing: bool,
 }
 
-/// Begins BOOX raw-drawing mode over the given view region (CSS px of the
-/// webview viewport). `strokeColor` is an authoring hint for the SDK's own
-/// low-latency preview layer only — the persistent stroke color used by the
-/// Readest canvas is decided in JS.
+/// Starts (or restarts) BOOX raw drawing over a region of the webview, in CSS
+/// px. Width and color style the SDK's low-latency preview only; the stored
+/// stroke is drawn by the web canvas.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartRawDrawingRequest {
@@ -587,12 +586,6 @@ pub struct StartRawDrawingRequest {
     pub height: f64,
     pub stroke_width: f64,
     pub stroke_color: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SetRawDrawingEnabledRequest {
-    pub enabled: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

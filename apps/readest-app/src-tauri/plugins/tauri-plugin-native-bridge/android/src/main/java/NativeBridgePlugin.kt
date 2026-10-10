@@ -2272,11 +2272,9 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
     }
 
-    // Handwriting (issue #3673). penController isolates every BOOX-specific
-    // type behind PenInputController — see PenInputController.kt. Points are
-    // forwarded to JS as batches (the SDK already batches per callback; see
-    // doc/Onyx-Pen-SDK.md), never one IPC event per raw point.
-    private val penController: PenInputController by lazy { PenInputControllerFactory.create(activity) }
+    // Handwriting (issue #3673). Vendor stylus SDKs stay behind
+    // PenInputController; see PenInputController.kt.
+    private val penController: PenInputController by lazy { PenInputControllerFactory.create() }
 
     @Command
     fun query_pen_capabilities(invoke: Invoke) {
@@ -2293,31 +2291,34 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         var width: Double = 0.0
         var height: Double = 0.0
         var strokeWidth: Double = 1.0
-        var strokeColor: String? = null
+        var strokeColor: String = "#000000"
     }
 
+    /** Region and stroke width arrive in CSS px; the pen SDK works in view px. */
     @Command
     fun start_raw_drawing(invoke: Invoke) {
         val args = invoke.parseArgs(StartRawDrawingArgs::class.java)
+        val webView = webViewRef ?: return invoke.reject("WebView not ready")
+        val density = webView.resources.displayMetrics.density
+        val color = try {
+            android.graphics.Color.parseColor(args.strokeColor)
+        } catch (_: IllegalArgumentException) {
+            android.graphics.Color.BLACK
+        }
         activity.runOnUiThread {
             penController.start(
-                PenRegion(args.left.toFloat(), args.top.toFloat(), args.width.toFloat(), args.height.toFloat()),
-                args.strokeWidth.toFloat(),
-            ) { points, kind -> emitPenBatch(points, kind) }
+                webView,
+                PenRegion(
+                    (args.left * density).toFloat(),
+                    (args.top * density).toFloat(),
+                    (args.width * density).toFloat(),
+                    (args.height * density).toFloat(),
+                ),
+                (args.strokeWidth * density).toFloat(),
+                color,
+            ) { points, kind -> emitPenBatch(points, kind, density) }
             invoke.resolve()
         }
-    }
-
-    @InvokeArg
-    class SetRawDrawingEnabledArgs {
-        var enabled: Boolean = true
-    }
-
-    @Command
-    fun set_raw_drawing_enabled(invoke: Invoke) {
-        val args = invoke.parseArgs(SetRawDrawingEnabledArgs::class.java)
-        penController.setEnabled(args.enabled)
-        invoke.resolve()
     }
 
     @Command
@@ -2328,14 +2329,13 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
     }
 
-    private fun emitPenBatch(points: List<PenPoint>, kind: PenEventKind) {
+    private fun emitPenBatch(points: List<PenPoint>, kind: PenEventKind, density: Float) {
         val arr = JSArray()
         for (p in points) {
             val o = JSObject()
-            o.put("x", p.x)
-            o.put("y", p.y)
+            o.put("x", p.x / density)
+            o.put("y", p.y / density)
             o.put("pressure", p.pressure)
-            o.put("t", p.timestamp)
             arr.put(o)
         }
         val payload = JSObject()

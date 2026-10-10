@@ -3,7 +3,6 @@ import {
   HANDWRITING_VERSION,
   emptyHandwriting,
   parseHandwriting,
-  serializeHandwriting,
   type InkStroke,
 } from '@/services/handwriting/model';
 
@@ -18,10 +17,10 @@ const stroke = (id: string): InkStroke => ({
 });
 
 describe('handwriting model', () => {
-  it('round-trips through serialize/parse', () => {
+  it('round-trips through JSON', () => {
     const doc = emptyHandwriting();
     doc.pages['3'] = { strokes: [stroke('a'), stroke('b')], updatedAt: 10 };
-    expect(parseHandwriting(serializeHandwriting(doc))).toEqual(doc);
+    expect(parseHandwriting(JSON.stringify(doc))).toEqual(doc);
   });
 
   it('stamps the current schema version', () => {

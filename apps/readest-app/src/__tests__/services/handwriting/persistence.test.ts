@@ -47,6 +47,17 @@ describe('handwriting persistence', () => {
     expect(withHandwriting(base, loadHandwritingEditor(base)!).handwriting).toBeUndefined();
   });
 
+  it('writes an empty document when the last inked page is cleared', () => {
+    // The store merges partials ({ ...config, ...partial }), so dropping the
+    // field would keep the old ink alive and bring it back on reopen.
+    const ed = loadHandwritingEditor(base)!;
+    ed.addStroke('0', { id: 'a', color: '#000', width: 0.004, points: [[0.1, 0.1]] });
+    const inked = withHandwriting(base, ed);
+    ed.clear('0');
+    const cleared = { ...inked, ...withHandwriting(inked, ed) };
+    expect(cleared.handwriting?.pages).toEqual({});
+  });
+
   it('refuses to load ink written by a newer schema so it is never overwritten', () => {
     const future = { ...base, handwriting: { version: HANDWRITING_VERSION + 1, pages: {} } };
     expect(loadHandwritingEditor(future)).toBeNull();

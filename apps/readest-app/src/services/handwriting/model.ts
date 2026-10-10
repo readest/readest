@@ -6,6 +6,24 @@
 
 export const HANDWRITING_VERSION = 1;
 
+export const DEFAULT_HANDWRITING_COLOR = '#1a1a1a';
+export const DEFAULT_HANDWRITING_WIDTH = 0.004;
+
+/** Ink colors offered in the toolbar, in swatch order. */
+export const HANDWRITING_COLORS = [
+  DEFAULT_HANDWRITING_COLOR,
+  '#1f6feb',
+  '#c2410c',
+  '#15803d',
+  '#9333ea',
+] as const;
+
+/**
+ * Pen widths as a fraction of page width. The stored value is normalized, so
+ * the same setting reads the same relative thickness on any page size.
+ */
+export const HANDWRITING_WIDTHS = [0.002, DEFAULT_HANDWRITING_WIDTH, 0.008, 0.014] as const;
+
 /** [x, y] or [x, y, pressure]; x/y in 0..1 of the page, pressure in 0..1. */
 export type InkPoint = [number, number] | [number, number, number];
 
@@ -23,8 +41,7 @@ export interface InkPage {
 }
 
 /**
- * All handwriting of one book. `pages` is keyed by the page key chosen by the
- * reader (PDF page index, or section + page for reflowable books).
+ * All handwriting of one book, keyed by page (see pageKey.ts).
  */
 export interface HandwritingDoc {
   version: number;
@@ -48,15 +65,14 @@ const segDistSq = (p: InkPoint, a: InkPoint, b: InkPoint) => {
 /**
  * Ramer–Douglas–Peucker simplification, one stroke at a time.
  *
- * Ink stores every coalesced pointer sample, so a page of handwriting runs to
- * tens of thousands of points. Dropping points that sit within `tolerance`
- * (in normalized page units) of the line through their neighbours shrinks the
- * export substantially without any visible change at reading zoom — the points
- * removed are ones the pen path already passed within a fraction of a pixel of.
- * Endpoints always survive, and pressure is kept on the retained samples so
- * width variation survives too.
+ * Applied as each stroke is committed: pointer input delivers every coalesced
+ * sample, so a page of handwriting would otherwise run to tens of thousands of
+ * points. Dropping points within `tolerance` (normalized page units; 0.001 is
+ * about a pixel on a 1000px page) of the line through their neighbours shrinks
+ * the stored ink without a visible change. Endpoints always survive, and
+ * pressure is kept on the retained samples.
  */
-const simplifyStroke = (points: InkPoint[], tolerance: number) => {
+export const simplifyPoints = (points: InkPoint[], tolerance = 0.001): InkPoint[] => {
   if (points.length < 3) return points;
   const tol2 = tolerance * tolerance;
   const keep = new Uint8Array(points.length);
@@ -84,28 +100,6 @@ const simplifyStroke = (points: InkPoint[], tolerance: number) => {
   for (let i = 0; i < points.length; i++) if (keep[i]) out.push(points[i]!);
   return out;
 };
-
-/**
- * Simplify every stroke in a document, for export. `tolerance` is in
- * normalized page units, so 0.001 is roughly a pixel on a 1000px page.
- * Returns the input unchanged when there is nothing to gain.
- */
-export const simplifyHandwriting = (doc: HandwritingDoc, tolerance = 0.001): HandwritingDoc => {
-  let changed = false;
-  const pages: Record<string, InkPage> = {};
-  for (const [key, page] of Object.entries(doc.pages)) {
-    const strokes = page.strokes.map((stroke) => {
-      const points = simplifyStroke(stroke.points, tolerance);
-      if (points.length === stroke.points.length) return stroke;
-      changed = true;
-      return { ...stroke, points };
-    });
-    pages[key] = { strokes, updatedAt: page.updatedAt };
-  }
-  return changed ? { version: HANDWRITING_VERSION, pages } : doc;
-};
-
-export const serializeHandwriting = (doc: HandwritingDoc): string => JSON.stringify(doc);
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 

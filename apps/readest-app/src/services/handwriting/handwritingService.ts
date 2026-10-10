@@ -1,18 +1,23 @@
-import { detectPenCapabilities, type PenCapabilities } from './capabilities';
+import { detectPenBackend, type PenBackend } from './capabilities';
 import { HandwritingEditor } from './editor';
-import type { InkPoint, InkStroke } from './model';
-import { screenToPage, pageToScreen, type PageRect } from './coords';
+import {
+  DEFAULT_HANDWRITING_COLOR,
+  DEFAULT_HANDWRITING_WIDTH,
+  simplifyPoints,
+  type InkPoint,
+  type InkStroke,
+} from './model';
+import { screenToPage, type PageRect } from './coords';
 import { PointerHandwritingBackend } from './pointerBackend';
 import { BooxHandwritingBackend, queryPenCapabilities } from './booxBackend';
+import { isTauriAppPlatform } from '@/services/environment';
+import { getOSPlatform } from '@/utils/misc';
 
 export interface HandwritingOptions {
   color: string;
   widthFraction: number; // pen width as a fraction of page width
   eraseRadiusFraction: number;
 }
-
-export const DEFAULT_HANDWRITING_COLOR = '#1a1a1a';
-export const DEFAULT_HANDWRITING_WIDTH = 0.004;
 
 const DEFAULT_OPTIONS: HandwritingOptions = {
   color: DEFAULT_HANDWRITING_COLOR,
@@ -27,27 +32,12 @@ const DEFAULT_OPTIONS: HandwritingOptions = {
  */
 const ERASER_WIDTH_RATIO = 3;
 
-/** Ink colors offered in the toolbar, in swatch order. */
-export const HANDWRITING_COLORS = [
-  DEFAULT_HANDWRITING_COLOR,
-  '#1f6feb',
-  '#c2410c',
-  '#15803d',
-  '#9333ea',
-] as const;
-
-/**
- * Pen widths as a fraction of page width. The stored value is normalized, so
- * the same setting reads the same relative thickness on any page size.
- */
-export const HANDWRITING_WIDTHS = [0.002, DEFAULT_HANDWRITING_WIDTH, 0.008, 0.014] as const;
-
 let strokeCounter = 0;
 const nextStrokeId = () => `s${Date.now().toString(36)}${(strokeCounter++).toString(36)}`;
 
 /**
  * Owns one page's live drawing session: picks BOOX raw drawing or the
- * generic pointer backend per detectPenCapabilities, and turns whichever
+ * generic pointer backend per detectPenBackend, and turns whichever
  * backend's point batches into InkStroke edits on the given editor. React
  * components never talk to a backend directly.
  */
@@ -55,11 +45,13 @@ export class HandwritingService {
   private editor: HandwritingEditor;
   private page: string;
   private options: HandwritingOptions;
-  private caps: PenCapabilities | null = null;
+  private backend: PenBackend | null = null;
   private pointer = new PointerHandwritingBackend();
   private boox = new BooxHandwritingBackend();
   private live: InkPoint[] = [];
   private liveErase = false;
+  /** Last eraser sample, so consecutive batches erase along a connected path. */
+  private eraseTail: InkPoint | null = null;
   private rect: PageRect;
   private onRender: (() => void) | null = null;
 
@@ -97,6 +89,7 @@ export class HandwritingService {
 
   updateRect(rect: PageRect) {
     this.rect = rect;
+    this.restartBoox();
   }
 
   /**
@@ -113,14 +106,21 @@ export class HandwritingService {
     this.options = {
       ...this.options,
       ...options,
-      eraseRadiusFraction: Math.max(width * ERASER_WIDTH_RATIO, this.options.eraseRadiusFraction),
+      eraseRadiusFraction: Math.max(
+        width * ERASER_WIDTH_RATIO,
+        DEFAULT_OPTIONS.eraseRadiusFraction,
+      ),
     };
-    if (this.caps?.backend === 'boox') {
-      void this.boox
-        .updatePen(this.options.widthFraction * this.rect.width, this.options.color)
-        .catch((err) => console.warn('Failed to update pen settings:', err));
-    }
+    this.restartBoox();
     this.onRender?.();
+  }
+
+  /** The BOOX pen takes its region and pen at start time only. */
+  private restartBoox() {
+    if (this.backend !== 'boox') return;
+    void this.boox
+      .update(this.rect, this.options.widthFraction * this.rect.width, this.options.color)
+      .catch((err) => console.warn('Failed to update BOOX pen:', err));
   }
 
   /**
@@ -145,9 +145,9 @@ export class HandwritingService {
   }
 
   async attach(el: HTMLElement) {
-    this.caps = await detectPenCapabilities({
+    this.backend = await detectPenBackend({
       queryNative:
-        typeof window !== 'undefined' && 'ipc' in window ? () => queryPenCapabilities() : null,
+        isTauriAppPlatform() && getOSPlatform() === 'android' ? () => queryPenCapabilities() : null,
       hasPointerEvents: typeof window !== 'undefined' && 'PointerEvent' in window,
     });
 
@@ -156,7 +156,7 @@ export class HandwritingService {
       return [p.x, p.y];
     };
 
-    if (this.caps.backend === 'boox') {
+    if (this.backend === 'boox') {
       this.boox.onBatch((points, kind, erase) => this.onBatch(points, kind, erase));
       await this.boox.start(
         this.rect,
@@ -164,7 +164,7 @@ export class HandwritingService {
         this.options.widthFraction * this.rect.width,
         this.options.color,
       );
-    } else if (this.caps.backend === 'pointer') {
+    } else if (this.backend === 'pointer') {
       this.pointer.onBatch((points, kind, erase) => this.onBatch(points, kind, erase));
       this.pointer.attach(el, toPage);
     }
@@ -172,7 +172,7 @@ export class HandwritingService {
 
   async detach() {
     this.pointer.detach();
-    if (this.caps?.backend === 'boox') await this.boox.stop();
+    if (this.backend === 'boox') await this.boox.stop();
   }
 
   setEraseMode(erase: boolean) {
@@ -199,24 +199,12 @@ export class HandwritingService {
     return this.editor.strokes(this.page).length > 0;
   }
 
-  /** Repaint the current page's ink in the active pen. */
-  restylePage() {
-    const changed = this.editor.restylePage(this.page, {
-      color: this.options.color,
-      width: this.options.widthFraction,
-    });
-    if (changed) this.onRender?.();
-    return changed;
-  }
-
-  screenPointToPixels(x: number, y: number) {
-    return pageToScreen(screenToPage({ x, y }, this.rect), this.rect);
-  }
-
   private onBatch(points: InkPoint[], kind: 'move' | 'end', erase: boolean) {
     if (erase || this.liveErase) {
-      this.editor.erase(this.page, points, this.options.eraseRadiusFraction);
-      if (kind === 'end') this.live = [];
+      const path = this.eraseTail ? [this.eraseTail, ...points] : points;
+      if (path.length) this.editor.erase(this.page, path, this.options.eraseRadiusFraction);
+      this.eraseTail = kind === 'end' ? null : (path[path.length - 1] ?? null);
+      this.live = [];
       this.onRender?.();
       return;
     }
@@ -226,7 +214,7 @@ export class HandwritingService {
         id: nextStrokeId(),
         color: this.options.color,
         width: this.options.widthFraction,
-        points: this.live,
+        points: simplifyPoints(this.live),
       });
       this.live = [];
     }

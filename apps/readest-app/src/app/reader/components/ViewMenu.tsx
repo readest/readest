@@ -101,6 +101,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
   const toggleWebtoonMode = () => setWebtoonMode(!webtoonMode);
   const toggleLockHorizontalPan = () => setLockHorizontalPan(!lockHorizontalPan);
+  const toggleHandwriting = () => {
+    eventDispatcher.dispatch('handwriting', { action: 'toggle', bookKey });
+    setIsDropdownOpen?.(false);
+  };
   const toggleParagraphMode = () => {
     setParagraphMode(!isParagraphMode);
     eventDispatcher.dispatch('toggle-paragraph-mode', { bookKey });
@@ -544,6 +548,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
           <MenuItem label={_('Speed Reading Mode')} shortcut='Shift+V' onClick={handleStartRSVP} />
         </>
       )}
+      <MenuItem
+        label={_('Handwriting Mode')}
+        onClick={toggleHandwriting}
+        disabled={isScrolledMode}
+      />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />
 

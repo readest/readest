@@ -375,14 +375,6 @@ pub(crate) async fn stop_raw_drawing<R: Runtime>(app: AppHandle<R>) -> Result<()
 }
 
 #[command]
-pub(crate) async fn set_raw_drawing_enabled<R: Runtime>(
-    app: AppHandle<R>,
-    payload: SetRawDrawingEnabledRequest,
-) -> Result<()> {
-    app.native_bridge().set_raw_drawing_enabled(payload)
-}
-
-#[command]
 pub(crate) async fn is_eink_refresh_supported<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<EinkRefreshSupportedResponse> {

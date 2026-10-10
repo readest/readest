@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 
+import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import { useHandwriting } from '../../hooks/useHandwriting';
 import HandwritingCanvas from './HandwritingCanvas';
@@ -7,76 +8,64 @@ import HandwritingToolbar from './HandwritingToolbar';
 
 interface HandwritingOverlayProps {
   bookKey: string;
+  gridInsets: Insets;
 }
 
 /**
- * Drop-in overlay for one open book: owns the toggle, the canvas, and the
- * toolbar. Degrades gracefully everywhere handwriting input isn't available
- * — HandwritingService/detectPenCapabilities resolve to the 'none' backend
- * and the canvas simply never receives strokes to draw.
+ * Ink layer for one open book. Always paints the current page's ink; takes
+ * pen input and shows its toolbar only while handwriting mode is on (toggled
+ * from the View menu).
  */
-const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey: _bookKey }) => {
-  const {
-    strokes,
-    hasInk,
-    rect,
-    containerRef,
-    attach,
-    detach,
-    enabled,
-    setEnabled,
-    reload,
-    erasing,
-    setErasing,
-    undo,
-    redo,
-    clear,
-    penColor,
-    penWidth,
-    selectPenColor,
-    selectPenWidth,
-    restylePage,
-  } = useHandwriting(_bookKey);
+const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridInsets }) => {
+  const hw = useHandwriting(bookKey);
+  const { setEnabled, reload } = hw;
 
   useEffect(() => {
     const onHandwritingEvent = (event: CustomEvent) => {
-      const { action } = event.detail as { action?: string };
-      if (action === 'enable') setEnabled(true);
+      const { action, bookKey: target } = event.detail as { action: string; bookKey: string };
+      if (target !== bookKey) return;
+      if (action === 'toggle') setEnabled((enabled) => !enabled);
       if (action === 'reload') reload();
     };
     eventDispatcher.on('handwriting', onHandwritingEvent);
     return () => {
       eventDispatcher.off('handwriting', onHandwritingEvent);
     };
-  }, [setEnabled, reload]);
+  }, [bookKey, setEnabled, reload]);
+
+  if (!hw.available) return null;
 
   return (
     <>
       <HandwritingCanvas
-        strokes={strokes}
-        rect={rect}
-        interactive={enabled}
-        overlayRef={containerRef}
-        attach={attach}
-        detach={detach}
+        strokes={hw.strokes}
+        cellRect={hw.cellRect}
+        pageRect={hw.pageRect}
+        interactive={hw.enabled}
+        overlayRef={hw.containerRef}
+        attach={hw.attach}
+        detach={hw.detach}
       />
-      <div className='bg-base-100/90 eink-bordered absolute right-4 top-4 z-10 rounded-md p-1'>
-        <HandwritingToolbar
-          enabled={enabled}
-          onToggle={() => setEnabled(!enabled)}
-          erasing={erasing}
-          onToggleErase={() => setErasing(!erasing)}
-          onUndo={undo}
-          onRedo={redo}
-          onClear={clear}
-          penColor={penColor}
-          penWidth={penWidth}
-          onSelectColor={selectPenColor}
-          onSelectWidth={selectPenWidth}
-          onRestyle={restylePage}
-          hasInk={hasInk}
-        />
-      </div>
+      {hw.enabled && (
+        <div
+          className='absolute inset-x-0 z-10 flex justify-center px-2'
+          style={{ top: gridInsets.top + 8 }}
+        >
+          <HandwritingToolbar
+            onExit={() => setEnabled(false)}
+            erasing={hw.erasing}
+            onToggleErase={() => hw.setErasing(!hw.erasing)}
+            onUndo={hw.undo}
+            onRedo={hw.redo}
+            onClear={hw.clear}
+            hasInk={hw.hasInk}
+            penColor={hw.penColor}
+            penWidth={hw.penWidth}
+            onSelectColor={hw.selectPenColor}
+            onSelectWidth={hw.selectPenWidth}
+          />
+        </div>
+      )}
     </>
   );
 };

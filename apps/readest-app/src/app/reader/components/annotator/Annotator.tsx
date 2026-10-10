@@ -2273,8 +2273,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         ? mergeImportedHandwriting(config.handwriting, payload.handwriting)
         : null;
       if (updatedConfig && mergedHandwriting) {
+        // The store must hold the merged ink before the live editor re-reads it.
+        setConfig(bookKey, { handwriting: mergedHandwriting });
         updatedConfig = { ...updatedConfig, handwriting: mergedHandwriting };
-        eventDispatcher.dispatch('handwriting', { action: 'reload' });
+        eventDispatcher.dispatch('handwriting', { action: 'reload', bookKey });
       }
       // Only adopt the exported reading position when this book has none of
       // its own, so importing into a book you are midway through never moves
@@ -2509,15 +2511,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           Icon,
           onClick: handleAnnotate,
           disabled: popupSelectionNoCfi,
-        };
-      case 'handwriting':
-        return {
-          tooltipText: _(label),
-          Icon,
-          onClick: () => {
-            eventDispatcher.dispatch('handwriting', { action: 'enable' });
-            handleDismissPopupAndSelection();
-          },
         };
       case 'search':
         return { tooltipText: _(label), Icon, onClick: handleSearch };

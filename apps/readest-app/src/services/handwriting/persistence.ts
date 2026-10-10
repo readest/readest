@@ -15,8 +15,11 @@ export const loadHandwritingEditor = (config: BookConfig): HandwritingEditor | n
 
 export const withHandwriting = (config: BookConfig, editor: HandwritingEditor): BookConfig => {
   const doc = editor.toDocument();
-  const { handwriting: _previous, ...rest } = config;
-  return Object.keys(doc.pages).length ? { ...rest, handwriting: doc } : rest;
+  // Once a book has had ink, always write the field: the store merges
+  // partials, so a missing field would keep the cleared ink alive.
+  return Object.keys(doc.pages).length || config.handwriting
+    ? { ...config, handwriting: doc }
+    : config;
 };
 
 /**

@@ -3,7 +3,6 @@ export type AnnotationToolType =
   | 'copylink'
   | 'highlight'
   | 'annotate'
-  | 'handwriting'
   | 'search'
   | 'dictionary'
   | 'translate'
