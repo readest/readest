@@ -11,6 +11,7 @@ import { HandwritingService } from '@/services/handwriting/handwritingService';
 import { loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';
 import { fixedPageKey, sectionPageKey } from '@/services/handwriting/pageKey';
 import { createInkAnchoring } from '../utils/inkAnchoring';
+import { boundsOf } from '@/services/handwriting/anchor';
 import type { PageRect } from '@/services/handwriting/coords';
 import type { InkStroke } from '@/services/handwriting/model';
 import type { FoliateView } from '@/types/view';
@@ -66,11 +67,8 @@ const pageFrames = (view: FoliateView | null): Element[] =>
  * the page itself, so zoom, pan, rotation and window size never move it
  * relative to the page content.
  */
-const measureFixedPage = (view: FoliateView | null, index?: number): PageRect | null => {
-  const contents = (view?.renderer.getContents() ?? []).filter(
-    (c) => index === undefined || c.index === index,
-  );
-  const rects = contents.flatMap(({ doc }) => {
+const measureFixedPage = (view: FoliateView | null): PageRect | null => {
+  const rects = (view?.renderer.getContents() ?? []).flatMap(({ doc }) => {
     const frame = doc?.defaultView?.frameElement;
     return frame ? [frame.getBoundingClientRect()] : [];
   });
@@ -89,7 +87,7 @@ export function useHandwriting(bookKey: string) {
   const { envConfig } = useEnv();
   const progress = useBookProgress(bookKey);
   const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
-  // Ink shows in scrolled mode too, but is drawn and edited on pages only.
+  // Scrolled views show several pages at once; strokes are routed per page.
   const scrolled = !!getViewSettings(bookKey)?.scrolled;
   const { handwritingColor: penColor, handwritingWidth: penWidth } = settings.globalReadSettings;
 
@@ -127,7 +125,7 @@ export function useHandwriting(bookKey: string) {
         : sectionPageKey(sectionIndex);
 
   const visible = !!pageKey;
-  const editable = visible && !scrolled;
+  const editable = visible;
   useEffect(() => {
     if (!editable) setEnabled(false);
   }, [editable]);
@@ -186,10 +184,9 @@ export function useHandwriting(bookKey: string) {
   const measure = useCallback(() => {
     if (!cellEl) return;
     const cell = toRect(cellEl.getBoundingClientRect());
-    // A scroll strip shows many pages; the current one is the editable page.
-    const page =
-      (isFixedLayout && measureFixedPage(getView(bookKey), scrolled ? sectionIndex : undefined)) ||
-      cell;
+    // A scrolled view shows many pages: input spans the whole view and each
+    // stroke is routed to the page it is drawn over.
+    const page = (isFixedLayout && !scrolled && measureFixedPage(getView(bookKey))) || cell;
     setCellRect((prev) => (sameRect(prev, cell) ? prev : cell));
     setPageRect((prev) => (sameRect(prev, page) ? prev : page));
   }, [cellEl, isFixedLayout, getView, bookKey, scrolled, sectionIndex]);
@@ -233,7 +230,7 @@ export function useHandwriting(bookKey: string) {
 
   /**
    * In scrolled mode every loaded page or section on screen shows its ink,
-   * placed from its own frame or text; read-only, as editing needs a page.
+   * placed from its own frame or text.
    */
   const scrolledLayers = (): InkLayer[] => {
     const view = getView(bookKey);
@@ -301,15 +298,55 @@ export function useHandwriting(bookKey: string) {
     [],
   );
 
-  /** Turn the page from drawing mode, by its on-screen side. */
+  /** Turn the page (or scroll a screen) from drawing mode, by its on-screen side. */
   const turnPage = useCallback(
     (side: 'left' | 'right') => {
       const view = getView(bookKey);
-      if (side === 'left') view?.goLeft();
+      if (scrolled) void (side === 'left' ? view?.prev() : view?.next());
+      else if (side === 'left') view?.goLeft();
       else view?.goRight();
     },
-    [getView, bookKey],
+    [getView, bookKey, scrolled],
   );
+
+  // Scrolled views show several sections or pages at once: send each stroke
+  // to the one it is drawn over, pinned to that section's text or page.
+  useEffect(() => {
+    const service = serviceRef.current;
+    if (!service) return;
+    if (!scrolled) {
+      service.setRouter(null);
+      return;
+    }
+    service.setRouter((points) => {
+      const view = getView(bookKey);
+      if (!view || !points.length || !cellRect.width) return null;
+      const box = boundsOf(points);
+      const [cx, cy] = [box.left + box.width / 2, box.top + box.height / 2];
+      let best: { index: number; rect: PageRect } | null = null;
+      let bestDistance = Infinity;
+      for (const { doc, index } of view.renderer.getContents()) {
+        const frame = doc?.defaultView?.frameElement;
+        if (!frame || index === undefined) continue;
+        const rect = toRect(frame.getBoundingClientRect());
+        const dx = Math.max(rect.left - cx, 0, cx - (rect.left + rect.width));
+        const dy = Math.max(rect.top - cy, 0, cy - (rect.top + rect.height));
+        const distance = Math.hypot(dx, dy);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = { index, rect };
+        }
+      }
+      if (!best) return null;
+      return isFixedLayout
+        ? { page: fixedPageKey(best.index), rect: best.rect, anchoring: null }
+        : {
+            page: sectionPageKey(best.index),
+            rect: cellRect,
+            anchoring: createInkAnchoring(view, best.index, cellRect),
+          };
+    });
+  }, [scrolled, isFixedLayout, cellRect, getView, bookKey]);
 
   const detach = useCallback(async () => {
     await serviceRef.current?.detach();
@@ -341,7 +378,7 @@ export function useHandwriting(bookKey: string) {
   );
 
   const layers: InkLayer[] = scrolled
-    ? scrolledLayers()
+    ? [...scrolledLayers(), { strokes: serviceRef.current?.liveStrokes() ?? [], rect: pageRect }]
     : [{ strokes: serviceRef.current?.strokesForRender() ?? [], rect: pageRect }];
 
   return {

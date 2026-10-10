@@ -9,6 +9,14 @@ import {
 } from './model';
 import { screenToPage, type PageRect } from './coords';
 import type { InkAnchoring } from './anchor';
+
+/** Where a stroke drawn over a scrolled view belongs. */
+export interface InkTarget {
+  page: string;
+  /** The rect the page's ink is normalized to. */
+  rect: PageRect;
+  anchoring: InkAnchoring | null;
+}
 import { PointerHandwritingBackend } from './pointerBackend';
 import { BooxHandwritingBackend, queryPenCapabilities } from './booxBackend';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -69,6 +77,8 @@ export class HandwritingService {
   /** Binds reflowable strokes to their text; null for fixed layout. */
   private anchoring: InkAnchoring | null = null;
   private lastPin: { anchor: string; at: number; bounds: Bounds } | null = null;
+  /** Scrolled views show many pages: routes each stroke to the one it is over. */
+  private router: ((windowPoints: InkPoint[]) => InkTarget | null) | null = null;
   /** The drawing session new strokes belong to: one ink annotation each. */
   private session: string | undefined;
   private options: HandwritingOptions;
@@ -92,6 +102,23 @@ export class HandwritingService {
     this.page = page;
     this.rect = rect;
     this.options = { ...DEFAULT_OPTIONS, ...options };
+  }
+
+  /** The in-progress stroke alone, for views that render committed ink per page. */
+  liveStrokes(): InkStroke[] {
+    if (this.live.length === 0 || this.liveErase) return [];
+    return [
+      {
+        id: '__live__',
+        color: this.options.color,
+        width: this.options.widthFraction,
+        points: this.live,
+      },
+    ];
+  }
+
+  setRouter(router: ((windowPoints: InkPoint[]) => InkTarget | null) | null) {
+    this.router = router;
   }
 
   /** Strokes to render right now, including the in-progress live stroke. */
@@ -175,8 +202,38 @@ export class HandwritingService {
   }
 
   /** Where a stored stroke is drawn now, page-normalized; null when hidden. */
-  private place = (stroke: InkStroke): InkPoint[][] | null =>
-    stroke.anchor ? (this.anchoring?.place(stroke) ?? null) : [stroke.points];
+  private placeWith =
+    (anchoring: InkAnchoring | null) =>
+    (stroke: InkStroke): InkPoint[][] | null =>
+      stroke.anchor ? (anchoring?.place(stroke) ?? null) : [stroke.points];
+
+  private place = (stroke: InkStroke) => this.placeWith(this.anchoring)(stroke);
+
+  /**
+   * Where points (normalized to this session's rect) belong: the page the
+   * router picks, re-normalized to it, or the current page.
+   */
+  private targetOf(points: InkPoint[]) {
+    const here = { page: this.page, points, anchoring: this.anchoring, scale: 1 };
+    if (!this.router) return here;
+    const { left, top, width, height } = this.rect;
+    const inWindow = points.map(([x, y, p]): InkPoint => {
+      const w: InkPoint = [left + x * width, top + y * height];
+      return p === undefined ? w : [w[0], w[1], p];
+    });
+    const target = this.router(inWindow);
+    if (!target) return here;
+    const r = target.rect;
+    return {
+      page: target.page,
+      anchoring: target.anchoring,
+      scale: width / r.width,
+      points: inWindow.map(([x, y, p]): InkPoint => {
+        const n: InkPoint = [(x - r.left) / r.width, (y - r.top) / r.height];
+        return p === undefined ? n : [n[0], n[1], p];
+      }),
+    };
+  }
 
   /** Retarget the session at a new page (page turn / section change). */
   setPage(page: string) {
@@ -252,8 +309,8 @@ export class HandwritingService {
   }
 
   /** Bind a finished stroke to the content under it, reusing the burst's anchor. */
-  private pin(points: InkPoint[]) {
-    if (!this.anchoring) return null;
+  private pin(points: InkPoint[], anchoring: InkAnchoring | null) {
+    if (!anchoring) return null;
     const bounds = boundsOf(points);
     const now = Date.now();
     const last = this.lastPin;
@@ -261,7 +318,7 @@ export class HandwritingService {
       last && now - last.at < BURST_MS && boundsGap(bounds, last.bounds) < BURST_GAP
         ? last.anchor
         : undefined;
-    const pinned = this.anchoring.pin(points, reuse);
+    const pinned = anchoring.pin(points, reuse);
     if (pinned) this.lastPin = { anchor: pinned.anchor, at: now, bounds };
     return pinned;
   }
@@ -270,7 +327,13 @@ export class HandwritingService {
     if (erase || this.liveErase) {
       const path = this.eraseTail ? [this.eraseTail, ...points] : points;
       if (path.length) {
-        this.editor.erase(this.page, path, this.options.eraseRadiusFraction, this.place);
+        const target = this.targetOf(path);
+        this.editor.erase(
+          target.page,
+          target.points,
+          this.options.eraseRadiusFraction * target.scale,
+          this.placeWith(target.anchoring),
+        );
       }
       this.eraseTail = kind === 'end' ? null : (path[path.length - 1] ?? null);
       this.live = [];
@@ -279,13 +342,15 @@ export class HandwritingService {
     }
     this.live.push(...points);
     if (kind === 'end' && this.live.length) {
-      const points = simplifyPoints(this.live);
-      this.editor.addStroke(this.page, {
+      const target = this.targetOf(simplifyPoints(this.live));
+      // Undo and redo follow the page last drawn on.
+      this.page = target.page;
+      this.editor.addStroke(target.page, {
         id: nextStrokeId(),
         color: this.options.color,
-        width: this.options.widthFraction,
+        width: this.options.widthFraction * target.scale,
         ...(this.session ? { session: this.session } : {}),
-        ...(this.pin(points) ?? { points }),
+        ...(this.pin(target.points, target.anchoring) ?? { points: target.points }),
       });
       this.live = [];
     }

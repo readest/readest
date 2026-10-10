@@ -33,11 +33,11 @@ describe('HandwritingToggler', () => {
     expect(h.dispatch).toHaveBeenCalledWith('handwriting', { action: 'toggle', bookKey: 'book-1' });
   });
 
-  it('is unavailable in scrolled mode', () => {
+  it('works in scrolled mode too', () => {
     h.scrolled = true;
     render(<HandwritingToggler bookKey='book-1' />);
     fireEvent.click(screen.getByRole('button', { name: 'Draw' }));
-    expect(h.dispatch).not.toHaveBeenCalled();
+    expect(h.dispatch).toHaveBeenCalledWith('handwriting', { action: 'toggle', bookKey: 'book-1' });
   });
 });
 

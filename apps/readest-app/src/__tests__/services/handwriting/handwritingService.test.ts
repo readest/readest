@@ -178,4 +178,47 @@ describe('HandwritingService text anchoring', () => {
     ]);
     expect(editor.strokes('page:1').map((s) => s.session)).toEqual(['ink-a', 'ink-b']);
   });
+
+  it('routes a stroke in a scrolled view to the page it is drawn over', () => {
+    // Two PDF pages stacked in a scroll: the second starts 800px down.
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'page:1', rect);
+    const second = { left: 0, top: 800, width: 400, height: 800 };
+    service.setRouter((points) =>
+      points[0]![1] >= 800 ? { page: 'page:2', rect: second, anchoring: null } : null,
+    );
+    // Drawn at 1000px down in the 400x800 view's coordinates (y 1.25).
+    draw(service, [
+      [0.25, 1.25],
+      [0.5, 1.25],
+    ]);
+    expect(editor.strokes('page:1')).toEqual([]);
+    const [stroke] = editor.strokes('page:2');
+    expect(stroke!.points[0]![0]).toBeCloseTo(0.25);
+    expect(stroke!.points[0]![1]).toBeCloseTo(0.25);
+    // Undo follows the page last drawn on.
+    service.undo();
+    expect(editor.strokes('page:2')).toEqual([]);
+  });
+
+  it('pins a routed stroke with that section anchoring', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', rect);
+    service.setRouter(() => ({ page: 'sec:2', rect, anchoring: fakeAnchoring() }));
+    draw(service, [
+      [0.1, 0.25],
+      [0.2, 0.25],
+    ]);
+    expect(editor.strokes('sec:2')[0]!.anchor).toBe(ANCHOR);
+  });
+
+  it('shows the live stroke on its own while scrolled pages render their ink', () => {
+    const service = new HandwritingService(new HandwritingEditor(), 'sec:1', rect);
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [[0.1, 0.1]],
+      'move',
+      false,
+    );
+    expect(service.liveStrokes()).toHaveLength(1);
+  });
 });
