@@ -341,6 +341,46 @@ describe('importBook metaHash deduplication', () => {
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
   });
 
+  // library/page.tsx reuses one lookup index across an import batch, so the
+  // tombstone appended on a re-key must also take over the retired hash in
+  // byHash: an in-session re-import of the old file then resurrects it as its
+  // own book, matching what a fresh session (index rebuilt from library.json)
+  // already did.
+  it('registers the tombstone in the lookup index so an in-session re-import resurrects it', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const liveBook = makeBook({ hash: 'old-hash-123', metaHash });
+    const books: Book[] = [liveBook];
+    const lookupIndex = buildBookLookupIndex(books);
+
+    // Import the updated build: re-keys the row and leaves a tombstone.
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+    await service.importBook(
+      new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+      { lookupIndex },
+    );
+    expect(liveBook.hash).toBe('new-hash-456');
+    const tombstone = lookupIndex.byHash.get('old-hash-123');
+    expect(tombstone?.deletedAt).toBeTruthy();
+
+    // Re-import the retired build in the SAME session: byHash must resolve to
+    // the tombstone, and the live row must survive beside it.
+    mockPartialMD5.mockResolvedValue('old-hash-123');
+    setupMockBookDoc();
+    const result = await service.importBook(
+      new File(['old content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+      { lookupIndex },
+    );
+
+    expect(result).toBe(tombstone);
+    expect(tombstone!.deletedAt).toBeNull();
+    expect(liveBook.deletedAt).toBeNull();
+    expect(liveBook.hash).toBe('new-hash-456');
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
+  });
+
   it('should not match metaHash for deleted books', async () => {
     const metaHash = getMetadataHash(TEST_METADATA);
 

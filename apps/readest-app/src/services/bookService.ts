@@ -932,6 +932,12 @@ export async function importBook(
       retiredTombstone.deletedAt = now;
       retiredTombstone.updatedAt = now;
       books.push(retiredTombstone);
+      // Resolve the retired hash to the tombstone for the rest of the session
+      // (library/page.tsx reuses one index across a batch): a later import of
+      // that hash must resurrect the tombstone, not refresh the re-keyed row.
+      if (lookupIndex) {
+        lookupIndex.byHash.set(retiredTombstone.hash, retiredTombstone);
+      }
     }
 
     // The target config and its paired audio are durable. Duplicate and old
