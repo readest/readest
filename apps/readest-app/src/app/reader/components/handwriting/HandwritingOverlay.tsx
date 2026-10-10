@@ -13,12 +13,12 @@ interface HandwritingOverlayProps {
 
 /**
  * Ink layer for one open book. Always paints the current page's ink; takes
- * pen input and shows its toolbar only while handwriting mode is on (toggled
- * from the View menu).
+ * pen input and shows its toolbar only while handwriting mode is on, entered
+ * from the View menu or by tapping existing ink.
  */
 const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridInsets }) => {
   const hw = useHandwriting(bookKey);
-  const { setEnabled, reload } = hw;
+  const { available, enabled, setEnabled, reload, hitTest } = hw;
 
   useEffect(() => {
     const onHandwritingEvent = (event: CustomEvent) => {
@@ -33,7 +33,31 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
     };
   }, [bookKey, setEnabled, reload]);
 
-  if (!hw.available) return null;
+  // A tap on existing ink opens it for editing instead of turning the page.
+  useEffect(() => {
+    if (!available || enabled) return;
+    const onTap = (event: CustomEvent) => {
+      const {
+        bookKey: target,
+        windowX,
+        windowY,
+      } = (event.detail ?? {}) as {
+        bookKey?: string;
+        windowX?: number;
+        windowY?: number;
+      };
+      if (target !== bookKey || windowX === undefined || windowY === undefined) return false;
+      if (!hitTest(windowX, windowY)) return false;
+      setEnabled(true);
+      return true;
+    };
+    eventDispatcher.onSync('iframe-single-click', onTap);
+    return () => {
+      eventDispatcher.offSync('iframe-single-click', onTap);
+    };
+  }, [bookKey, available, enabled, hitTest, setEnabled]);
+
+  if (!available) return null;
 
   return (
     <>

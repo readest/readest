@@ -180,4 +180,71 @@ describe('HandwritingEditor', () => {
     ed.undo('1');
     expect(n).toBe(2);
   });
+
+  it('erases across every anchor shown on the page, undone as one step', () => {
+    // After a reflow one page can show ink anchored to two keys.
+    const ed = new HandwritingEditor();
+    ed.addStroke(
+      'a',
+      s('1', [
+        [0.1, 0.5],
+        [0.9, 0.5],
+      ]),
+    );
+    ed.addStroke(
+      'b',
+      s('2', [
+        [0.1, 0.6],
+        [0.9, 0.6],
+      ]),
+    );
+    ed.erase(
+      'a',
+      [
+        [0.5, 0.4],
+        [0.5, 0.7],
+      ],
+      0.01,
+      ['b'],
+    );
+    expect(ed.strokes('a')).toEqual([]);
+    expect(ed.strokes('b')).toEqual([]);
+    ed.undo('a');
+    expect(ed.strokes('a').map((x) => x.id)).toEqual(['1']);
+    expect(ed.strokes('b').map((x) => x.id)).toEqual(['2']);
+    ed.redo('a');
+    expect(ed.strokes('b')).toEqual([]);
+  });
+
+  it('clears every anchor shown on the page, undone as one step', () => {
+    const ed = new HandwritingEditor();
+    ed.addStroke('a', s('1', [[0.1, 0.1]]));
+    ed.addStroke('b', s('2', [[0.2, 0.2]]));
+    ed.clear('a', ['b']);
+    expect(ed.pageKeys()).toEqual([]);
+    ed.undo('a');
+    expect(ed.pageKeys().sort()).toEqual(['a', 'b']);
+  });
+
+  it('finds a stroke under a tap, across the anchors shown on the page', () => {
+    const ed = new HandwritingEditor();
+    ed.addStroke(
+      'a',
+      s('1', [
+        [0.1, 0.5],
+        [0.9, 0.5],
+      ]),
+    );
+    ed.addStroke(
+      'b',
+      s('2', [
+        [0.1, 0.8],
+        [0.9, 0.8],
+      ]),
+    );
+    expect(ed.hits(['a'], [0.5, 0.505], 0.01)).toBe(true);
+    expect(ed.hits(['a'], [0.5, 0.8], 0.01)).toBe(false);
+    expect(ed.hits(['a', 'b'], [0.5, 0.8], 0.01)).toBe(true);
+    expect(ed.hits(['a', 'b'], [0.5, 0.65], 0.01)).toBe(false);
+  });
 });

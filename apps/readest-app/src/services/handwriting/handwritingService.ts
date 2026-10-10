@@ -32,6 +32,9 @@ const DEFAULT_OPTIONS: HandwritingOptions = {
  */
 const ERASER_WIDTH_RATIO = 3;
 
+/** How close (CSS px) a tap must land to a stroke to count as on it. */
+const HIT_SLOP_PX = 12;
+
 let strokeCounter = 0;
 const nextStrokeId = () => `s${Date.now().toString(36)}${(strokeCounter++).toString(36)}`;
 
@@ -44,6 +47,8 @@ const nextStrokeId = () => `s${Date.now().toString(36)}${(strokeCounter++).toStr
 export class HandwritingService {
   private editor: HandwritingEditor;
   private page: string;
+  /** Other anchors shown on this page after a reflow; render, erase and clear only. */
+  private also: string[] = [];
   private options: HandwritingOptions;
   private backend: PenBackend | null = null;
   private pointer = new PointerHandwritingBackend();
@@ -69,7 +74,7 @@ export class HandwritingService {
 
   /** Strokes to render right now, including the in-progress live stroke. */
   strokesForRender(): InkStroke[] {
-    const committed = this.editor.strokes(this.page);
+    const committed = [this.page, ...this.also].flatMap((key) => this.editor.strokes(key));
     if (this.live.length === 0) return [...committed];
     if (this.liveErase) return [...committed];
     return [
@@ -135,8 +140,13 @@ export class HandwritingService {
   }
 
   /** Retarget the session at a new page (page turn / section change). */
-  setPage(page: string) {
-    if (page === this.page) return;
+  setPage(page: string, also: string[] = []) {
+    if (page === this.page && also.join() === this.also.join()) return;
+    this.also = also;
+    if (page === this.page) {
+      this.onRender?.();
+      return;
+    }
     this.page = page;
     // An in-progress stroke belongs to the page it started on; drop it rather
     // than committing it to the page the reader just turned to.
@@ -190,19 +200,28 @@ export class HandwritingService {
   }
 
   clear() {
-    this.editor.clear(this.page);
+    this.editor.clear(this.page, this.also);
     this.onRender?.();
   }
 
   /** Whether the current page has any committed ink. */
   hasInk() {
-    return this.editor.strokes(this.page).length > 0;
+    return [this.page, ...this.also].some((key) => this.editor.strokes(key).length > 0);
+  }
+
+  /** Whether a screen point (CSS px) lands on ink shown on this page. */
+  hitTest(x: number, y: number): boolean {
+    const p = screenToPage({ x, y }, this.rect);
+    if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) return false;
+    return this.editor.hits([this.page, ...this.also], [p.x, p.y], HIT_SLOP_PX / this.rect.width);
   }
 
   private onBatch(points: InkPoint[], kind: 'move' | 'end', erase: boolean) {
     if (erase || this.liveErase) {
       const path = this.eraseTail ? [this.eraseTail, ...points] : points;
-      if (path.length) this.editor.erase(this.page, path, this.options.eraseRadiusFraction);
+      if (path.length) {
+        this.editor.erase(this.page, path, this.options.eraseRadiusFraction, this.also);
+      }
       this.eraseTail = kind === 'end' ? null : (path[path.length - 1] ?? null);
       this.live = [];
       this.onRender?.();

@@ -9,7 +9,7 @@ import { saveSysSettings } from '@/helpers/settings';
 import { HandwritingEditor } from '@/services/handwriting/editor';
 import { HandwritingService } from '@/services/handwriting/handwritingService';
 import { loadHandwritingEditor, withHandwriting } from '@/services/handwriting/persistence';
-import { fixedPageKey, reflowPageKey } from '@/services/handwriting/pageKey';
+import { fixedPageKey, reflowPageKeys } from '@/services/handwriting/pageKey';
 import type { PageRect } from '@/services/handwriting/coords';
 import type { FoliateView } from '@/types/view';
 
@@ -82,11 +82,13 @@ export function useHandwriting(bookKey: string) {
 
   const location = progress?.location;
   const sectionIndex = progress?.section?.current;
-  const pageKey = useMemo(() => {
-    if (isFixedLayout) return fixedPageKey(sectionIndex ?? 0);
-    return location ? reflowPageKey(location, editorRef.current!.pageKeys()) : '';
+  // The first key takes new strokes; the rest are other anchors on this page.
+  const pageKeys = useMemo(() => {
+    if (isFixedLayout) return [fixedPageKey(sectionIndex ?? 0)];
+    return location ? reflowPageKeys(location, editorRef.current!.pageKeys()) : [''];
     // editorVersion: a reload brings in anchors the old editor didn't have.
   }, [isFixedLayout, sectionIndex, location, editorVersion]);
+  const [pageKey = '', ...alsoKeys] = pageKeys;
 
   const available = !scrolled && !readOnlyRef.current && !!pageKey;
   useEffect(() => {
@@ -166,12 +168,12 @@ export function useHandwriting(bookKey: string) {
       });
       serviceRef.current.onNeedsRender(() => forceRender((n) => n + 1));
     } else {
-      serviceRef.current.setPage(pageKey);
       serviceRef.current.updateRect(pageRect);
     }
+    serviceRef.current.setPage(pageKey, alsoKeys);
     // Pen options are applied by their own effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageKey, pageRect]);
+  }, [pageKeys, pageRect]);
 
   // Pen choice is a device-wide setting, so a change here retargets the live
   // session without disturbing the ink already committed.
@@ -183,6 +185,12 @@ export function useHandwriting(bookKey: string) {
     if (!el || !serviceRef.current) return;
     await serviceRef.current.attach(el);
   }, []);
+
+  /** Whether a window point (CSS px) lands on ink shown on this page. */
+  const hitTest = useCallback(
+    (x: number, y: number) => serviceRef.current?.hitTest(x, y) ?? false,
+    [],
+  );
 
   const detach = useCallback(async () => {
     await serviceRef.current?.detach();
@@ -222,6 +230,7 @@ export function useHandwriting(bookKey: string) {
     containerRef: setCellEl,
     attach,
     detach,
+    hitTest,
     available,
     enabled,
     setEnabled,

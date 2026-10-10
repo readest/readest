@@ -2,10 +2,11 @@ import { HANDWRITING_VERSION, type HandwritingDoc, type InkPoint, type InkStroke
 
 interface PageState {
   strokes: InkStroke[];
-  undo: InkStroke[][];
-  redo: InkStroke[][];
   updatedAt: number;
 }
+
+/** Page keys with the stroke lists one edit replaced. */
+type Snapshot = [string, InkStroke[]][];
 
 type Seg = [number, number, number, number];
 
@@ -43,18 +44,27 @@ const segments = (pts: ArrayLike<InkPoint>): Seg[] => {
   return out;
 };
 
+/** Whether a path (eraser sweep or tap) comes within `radius` of the stroke. */
+const touches = (stroke: InkStroke, pathSegs: Seg[], radius: number) => {
+  const reach = radius + stroke.width / 2;
+  const strokeSegs = segments(stroke.points);
+  return pathSegs.some((e) => strokeSegs.some((s) => segDist(e, s) <= reach));
+};
+
 /**
- * Pure in-memory ink store with per-page undo/redo. Every mutation snapshots
- * the page's stroke list, so add, erase and clear all undo the same way.
- * Strokes are treated as immutable.
+ * Pure in-memory ink store with undo/redo. History is kept per page the edits
+ * were made from, and one step can span the other anchors shown on that page
+ * (`also`), so an erase across them undoes as one gesture. Strokes are
+ * treated as immutable.
  */
 export class HandwritingEditor {
   private pages = new Map<string, PageState>();
+  private history = new Map<string, { undo: Snapshot[]; redo: Snapshot[] }>();
   private listeners = new Set<() => void>();
 
   constructor(doc?: HandwritingDoc) {
     for (const [key, page] of Object.entries(doc?.pages ?? {})) {
-      this.pages.set(key, { strokes: page.strokes, undo: [], redo: [], updatedAt: page.updatedAt });
+      this.pages.set(key, { strokes: page.strokes, updatedAt: page.updatedAt });
     }
   }
 
@@ -67,14 +77,6 @@ export class HandwritingEditor {
     return [...this.pages].filter(([, state]) => state.strokes.length).map(([key]) => key);
   }
 
-  canUndo(page: string) {
-    return (this.pages.get(page)?.undo.length ?? 0) > 0;
-  }
-
-  canRedo(page: string) {
-    return (this.pages.get(page)?.redo.length ?? 0) > 0;
-  }
-
   subscribe(fn: () => void): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
@@ -82,45 +84,50 @@ export class HandwritingEditor {
 
   addStroke(page: string, stroke: InkStroke) {
     if (stroke.points.length === 0) return;
-    this.commit(page, [...this.strokes(page), stroke]);
+    this.commit(page, [[page, [...this.strokes(page), stroke]]]);
   }
 
   /** Removes every stroke touched by the eraser path; returns how many. */
-  erase(page: string, path: ArrayLike<InkPoint> | [number, number][], radius: number): number {
+  erase(
+    page: string,
+    path: ArrayLike<InkPoint> | [number, number][],
+    radius: number,
+    also: string[] = [],
+  ): number {
     const eraserSegs = segments(path as InkPoint[]);
     if (eraserSegs.length === 0) return 0;
-    const kept = this.strokes(page).filter((stroke) => {
-      const reach = radius + stroke.width / 2;
-      const strokeSegs = segments(stroke.points);
-      return !eraserSegs.some((e) => strokeSegs.some((s) => segDist(e, s) <= reach));
-    });
-    const removed = this.strokes(page).length - kept.length;
-    if (removed > 0) this.commit(page, kept);
+    let removed = 0;
+    const changes: Snapshot = [];
+    for (const key of [page, ...also]) {
+      const current = this.strokes(key);
+      const kept = current.filter((stroke) => !touches(stroke, eraserSegs, radius));
+      if (kept.length === current.length) continue;
+      removed += current.length - kept.length;
+      changes.push([key, kept]);
+    }
+    if (changes.length) this.commit(page, changes);
     return removed;
   }
 
-  clear(page: string) {
-    if (this.strokes(page).length > 0) this.commit(page, []);
+  /** Whether any stroke on these pages lies within `radius` of the point. */
+  hits(pages: string[], point: InkPoint, radius: number): boolean {
+    const tap = segments([point]);
+    return pages.some((page) => this.strokes(page).some((stroke) => touches(stroke, tap, radius)));
+  }
+
+  clear(page: string, also: string[] = []) {
+    const changes: Snapshot = [page, ...also]
+      .filter((key) => this.strokes(key).length > 0)
+      .map((key) => [key, []]);
+    if (changes.length) this.commit(page, changes);
   }
 
   undo(page: string) {
-    const state = this.pages.get(page);
-    const prev = state?.undo.pop();
-    if (!state || !prev) return;
-    state.redo.push(state.strokes);
-    state.strokes = prev;
-    state.updatedAt = Date.now();
-    this.notify();
+    this.step(page, 'undo', 'redo');
   }
 
   redo(page: string) {
-    const state = this.pages.get(page);
-    const next = state?.redo.pop();
-    if (!state || !next) return;
-    state.undo.push(state.strokes);
-    state.strokes = next;
-    state.updatedAt = Date.now();
-    this.notify();
+    this.step(page, 'redo', 'undo');
   }
 
   toDocument(): HandwritingDoc {
@@ -133,14 +140,29 @@ export class HandwritingEditor {
     return doc;
   }
 
-  private commit(page: string, strokes: InkStroke[]) {
-    const state = this.pages.get(page) ?? { strokes: [], undo: [], redo: [], updatedAt: 0 };
-    state.undo.push(state.strokes);
-    state.redo = [];
-    state.strokes = strokes;
-    state.updatedAt = Date.now();
-    this.pages.set(page, state);
+  private commit(page: string, changes: Snapshot) {
+    const history = this.history.get(page) ?? { undo: [], redo: [] };
+    history.undo.push(this.apply(changes));
+    history.redo = [];
+    this.history.set(page, history);
     this.notify();
+  }
+
+  private step(page: string, from: 'undo' | 'redo', to: 'undo' | 'redo') {
+    const history = this.history.get(page);
+    const snapshot = history?.[from].pop();
+    if (!history || !snapshot) return;
+    history[to].push(this.apply(snapshot));
+    this.notify();
+  }
+
+  /** Writes new stroke lists and returns the ones they replaced. */
+  private apply(changes: Snapshot): Snapshot {
+    return changes.map(([key, strokes]) => {
+      const previous = [...this.strokes(key)];
+      this.pages.set(key, { strokes, updatedAt: Date.now() });
+      return [key, previous];
+    });
   }
 
   private notify() {

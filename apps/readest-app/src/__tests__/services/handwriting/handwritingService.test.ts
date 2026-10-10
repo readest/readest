@@ -59,4 +59,34 @@ describe('HandwritingService page scoping', () => {
     expect(service.strokesForRender()).toEqual([]);
     expect(editor.toDocument().pages).toEqual({});
   });
+
+  it('renders ink from every anchor on the page and draws into the first', () => {
+    const editor = new HandwritingEditor();
+    editor.addStroke('b', { id: 'b1', color: '#000', width: 0.004, points: [[0.5, 0.5]] });
+    const service = new HandwritingService(editor, 'a', rect);
+    service.setPage('a', ['b']);
+    expect(service.strokesForRender().map((x) => x.id)).toEqual(['b1']);
+    expect(service.hasInk()).toBe(true);
+    service.clear();
+    expect(editor.strokes('b')).toEqual([]);
+  });
+
+  it('hit-tests a screen point against the ink on the page', () => {
+    const editor = new HandwritingEditor();
+    editor.addStroke('a', {
+      id: 'a1',
+      color: '#000',
+      width: 0.004,
+      points: [
+        [0.1, 0.5],
+        [0.9, 0.5],
+      ],
+    });
+    const service = new HandwritingService(editor, 'a', rect);
+    // rect is 400x800 at the origin: y 0.5 of the page is 400px.
+    expect(service.hitTest(200, 405)).toBe(true);
+    expect(service.hitTest(200, 600)).toBe(false);
+    // Outside the page never hits.
+    expect(service.hitTest(-50, 400)).toBe(false);
+  });
 });
