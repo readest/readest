@@ -42,6 +42,30 @@ describe('useMiniPlayerAutoHide', () => {
     expect(result.current).toBe(false);
   });
 
+  it('keeps the full player up while buffering, then hides 5s after audio starts', () => {
+    // A cold GPU worker can take far longer than 5s for the first sentence: the
+    // spinning play button must stay in sight until something is heard.
+    let buffering = true;
+    const { result, rerender } = renderHook(() =>
+      useMiniPlayerAutoHide(BOOK, 'full', true, buffering),
+    );
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(result.current).toBe(true);
+
+    buffering = false;
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(4999);
+    });
+    expect(result.current).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current).toBe(false);
+  });
+
   it('keeps the full player up for as long as the toolbar is shown', () => {
     setHovered(BOOK);
     const { result } = renderHook(() => useMiniPlayerAutoHide(BOOK, 'full', true));
