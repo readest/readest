@@ -180,7 +180,18 @@ describe('quota and admission', () => {
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
     expect(m.startJob).not.toHaveBeenCalled();
-    expect(m.acquireSlot).not.toHaveBeenCalled();
+    // The slot was taken alongside the quota check: give it back.
+    expect(m.releaseSlot).toHaveBeenCalledWith('user-1', 'listen', expect.any(String));
+  });
+
+  it('checks the quota and takes the slot at the same time', async () => {
+    let resolveUsage!: (used: number) => void;
+    m.getCurrentUsage.mockReturnValue(new Promise<number>((r) => (resolveUsage = r)));
+    const pending = POST(post(listen(seg('s0'))));
+    await flush();
+    expect(m.acquireSlot).toHaveBeenCalled();
+    resolveUsage(0);
+    await lines(await pending);
   });
 
   it('429s BUSY with Retry-After when a download window is already in flight', async () => {
@@ -192,22 +203,30 @@ describe('quota and admission', () => {
     expect(m.startJob).not.toHaveBeenCalled();
   });
 
-  it('cancels the superseded listen job before starting the new one', async () => {
+  it('cancels the superseded listen job without waiting on it', async () => {
     m.acquireSlot.mockResolvedValue({ acquired: true, previousJobId: 'old-job' });
+    m.cancelJob.mockReturnValue(new Promise(() => {}));
     const res = await POST(post(listen(seg('s0'))));
     await lines(res);
     expect(m.cancelJob).toHaveBeenCalledWith(CFG, 'old-job');
-    expect(m.cancelJob.mock.invocationCallOrder[0]).toBeLessThan(
-      m.startJob.mock.invocationCallOrder[0]!,
-    );
+    expect(m.startJob).toHaveBeenCalled();
   });
 
-  it('cancels its own job when it lost the slot race', async () => {
+  it('streams without waiting for the job id to be recorded on the slot', async () => {
+    m.setSlotJob.mockReturnValue(new Promise(() => {}));
+    const res = await POST(post(listen(seg('s0'))));
+    expect(await lines(res)).toEqual([
+      { id: 's0', audio: 'AAA', boundaries: B },
+      { done: true, charged: 'Hello world.'.length },
+    ]);
+  });
+
+  it('cancels its own job when it turns out to have lost the slot race', async () => {
     m.setSlotJob.mockResolvedValue(false);
+    m.streamJob.mockImplementation(fakeStream([], true));
     const res = await POST(post(listen(seg('s0'))));
     expect(await lines(res)).toEqual([{ done: true, charged: 0 }]);
     expect(m.cancelJob).toHaveBeenCalledWith(CFG, 'job-1');
-    expect(m.streamJob).not.toHaveBeenCalled();
   });
 
   it('502s and frees the slot when the job cannot start', async () => {

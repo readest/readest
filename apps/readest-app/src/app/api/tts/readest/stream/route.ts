@@ -101,18 +101,25 @@ export async function POST(request: NextRequest) {
     if (!isVoiceInPlan(voice, plan)) return errorResponse('VOICE_TIER_REQUIRED', 403);
   }
 
-  // Check before starting; charge only what is delivered (below).
+  // Every round trip before the job starts is heard as delay, so the quota
+  // check and the slot run together. Check before starting; charge only what
+  // is delivered (below).
   const windowChars = segments.reduce((sum, s) => sum + s.text.length, 0);
-  const used = await UsageStatsManager.getCurrentUsage(user.id, USAGE_TYPES.TTS_CHARS, 'daily');
-  if (used + windowChars > getTTSQuota(plan)) return errorResponse('DAILY_QUOTA_EXCEEDED', 429);
-
   const token = crypto.randomUUID();
-  const slot = await acquireSlot(user.id, lane, token);
+  const [used, slot] = await Promise.all([
+    UsageStatsManager.getCurrentUsage(user.id, USAGE_TYPES.TTS_CHARS, 'daily'),
+    acquireSlot(user.id, lane, token),
+  ]);
+  if (used + windowChars > getTTSQuota(plan)) {
+    if (slot.acquired) runAfterResponse(releaseSlot(user.id, lane, token));
+    return errorResponse('DAILY_QUOTA_EXCEEDED', 429);
+  }
   if (!slot.acquired) {
     return errorResponse('BUSY', 429, { 'Retry-After': String(BUSY_RETRY_AFTER_SEC) });
   }
-  // A new listen window supersedes the user's previous one (seek, voice change).
-  if (slot.previousJobId) await cancelJob(config, slot.previousJobId);
+  // A new listen window supersedes the user's previous one (seek, voice
+  // change). Best effort, so the new job does not wait on it.
+  if (slot.previousJobId) runAfterResponse(cancelJob(config, slot.previousJobId));
 
   let jobId: string;
   try {
@@ -123,17 +130,16 @@ export async function POST(request: NextRequest) {
     return errorResponse('UPSTREAM_FAILED', 502);
   }
   const headers = { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store' };
-  if (!(await setSlotJob(user.id, lane, token, jobId))) {
-    // Another window from this user took the slot while we were starting.
-    await cancelJob(config, jobId);
-    return new Response(ndjsonLine({ done: true, charged: 0 }), { headers });
-  }
+  // Recorded while the job already streams; resolves false when another
+  // window from this user took the slot meanwhile (handled in the stream).
+  const slotRecorded = setSlotJob(user.id, lane, token, jobId);
 
   const textLength = new Map(segments.map((s) => [s.id, s.text.length]));
   const upstream = new AbortController();
   let delivered = 0;
   let settled = false;
   let clientGone = false;
+  let lostSlot = false;
 
   // Charge once, free the slot once, whatever ends the window.
   const settle = async (cancel: boolean) => {
@@ -176,6 +182,11 @@ export async function POST(request: NextRequest) {
         controller.close();
       };
       const deadline = setTimeout(() => upstream.abort(), WINDOW_DEADLINE_MS);
+      void slotRecorded.then((recorded) => {
+        if (recorded) return;
+        lostSlot = true;
+        upstream.abort();
+      });
       try {
         for await (const event of streamJob(config, jobId, upstream.signal)) {
           if ('status' in event) {
@@ -206,6 +217,11 @@ export async function POST(request: NextRequest) {
         await finish('UPSTREAM_FAILED', true);
       } catch (error) {
         if (clientGone) return;
+        if (lostSlot) {
+          // Superseded by another window of this user: end quietly.
+          await finish(undefined, true);
+          return;
+        }
         console.error(`Readest Voice stream failed (job: ${jobId}):`, error);
         await finish('UPSTREAM_FAILED', true);
       } finally {

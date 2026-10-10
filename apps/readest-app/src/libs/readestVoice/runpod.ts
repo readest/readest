@@ -16,7 +16,7 @@ export type StreamEvent = { output: unknown } | { status: TerminalStatus; error?
 const DEFAULT_RUNPOD_API_BASE = 'https://api.runpod.ai/v2';
 const TERMINAL: readonly string[] = ['COMPLETED', 'FAILED', 'CANCELLED', 'TIMED_OUT'];
 // /stream long-polls; after an empty reply, wait briefly before asking again.
-const EMPTY_POLL_DELAY_MS = 250;
+const EMPTY_POLL_DELAY_MS = 100;
 
 // Unset key or endpoint is the kill switch: the routes answer 503.
 // RUNPOD_API_BASE points the routes at the local emulator in development.
