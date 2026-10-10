@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "পুনরাবৃত্তির শুরু সেট করুন (A)",
   "Set Repeat End (B)": "পুনরাবৃত্তির শেষ সেট করুন (B)",
   "Clear A-B Repeat": "A-B পুনরাবৃত্তি মুছুন",
-  "Pause After Each Sentence": "প্রতিটি বাক্যের পরে বিরতি"
+  "Pause After Each Sentence": "প্রতিটি বাক্যের পরে বিরতি",
+  "Quote Card": "উদ্ধৃতি কার্ড",
+  "Create a quote card image from the selection": "নির্বাচন থেকে উদ্ধৃতি কার্ডের ছবি তৈরি করুন",
+  "Paper": "কাগজ",
+  "Night": "রাত",
+  "Reader Theme": "পড়ার থিম",
+  "The quote was shortened to fit the card.": "কার্ডে আঁটাতে উদ্ধৃতিটি ছোট করা হয়েছে।",
+  "Classic": "ক্লাসিক",
+  "Centered": "কেন্দ্রিত",
+  "Serif": "সেরিফ",
+  "Sans": "স্যান্স",
+  "Shape": "আকৃতি",
+  "Book Info": "বইয়ের তথ্য",
+  "QR Code": "QR কোড",
+  "Links to this passage in Readest": "Readest-এ এই অংশের লিংক",
+  "via {{app}}": "{{app}}-এর মাধ্যমে"
 }

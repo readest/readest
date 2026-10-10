@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "පුනරාවර්තන ආරම්භය සකසන්න (A)",
   "Set Repeat End (B)": "පුනරාවර්තන අවසානය සකසන්න (B)",
   "Clear A-B Repeat": "A-B පුනරාවර්තනය ඉවත් කරන්න",
-  "Pause After Each Sentence": "සෑම වාක්‍යයකටම පසු විරාම කරන්න"
+  "Pause After Each Sentence": "සෑම වාක්‍යයකටම පසු විරාම කරන්න",
+  "Quote Card": "උපුටා දැක්වීම් කාඩ්පත",
+  "Create a quote card image from the selection": "තේරීමෙන් උපුටා දැක්වීම් කාඩ්පත් රූපයක් සාදන්න",
+  "Paper": "කඩදාසි",
+  "Night": "රාත්‍රී",
+  "Reader Theme": "කියවීමේ තේමාව",
+  "The quote was shortened to fit the card.": "කාඩ්පතට ගැළපෙන සේ උපුටා දැක්වීම කෙටි කරන ලදී.",
+  "Classic": "සම්භාව්‍ය",
+  "Centered": "මැදට",
+  "Serif": "සෙරිෆ්",
+  "Sans": "සෑන්ස්",
+  "Shape": "හැඩය",
+  "Book Info": "පොතේ තොරතුරු",
+  "QR Code": "QR කේතය",
+  "Links to this passage in Readest": "Readest හි මෙම කොටසට සබැඳිය",
+  "via {{app}}": "{{app}} හරහා"
 }

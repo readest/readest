@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "تنظیم شروع تکرار (A)",
   "Set Repeat End (B)": "تنظیم پایان تکرار (B)",
   "Clear A-B Repeat": "پاک کردن تکرار A-B",
-  "Pause After Each Sentence": "توقف پس از هر جمله"
+  "Pause After Each Sentence": "توقف پس از هر جمله",
+  "Quote Card": "کارت نقل‌قول",
+  "Create a quote card image from the selection": "ساخت تصویر کارت نقل‌قول از متن انتخاب‌شده",
+  "Paper": "کاغذی",
+  "Night": "شب",
+  "Reader Theme": "پوستهٔ خواندن",
+  "The quote was shortened to fit the card.": "نقل‌قول برای جا شدن در کارت کوتاه شد.",
+  "Classic": "کلاسیک",
+  "Centered": "وسط‌چین",
+  "Serif": "سریف",
+  "Sans": "بدون سریف",
+  "Shape": "شکل",
+  "Book Info": "اطلاعات کتاب",
+  "QR Code": "کد QR",
+  "Links to this passage in Readest": "پیوند به این بخش در Readest",
+  "via {{app}}": "از طریق {{app}}"
 }

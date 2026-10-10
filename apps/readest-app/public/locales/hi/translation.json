@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "दोहराव की शुरुआत सेट करें (A)",
   "Set Repeat End (B)": "दोहराव का अंत सेट करें (B)",
   "Clear A-B Repeat": "A-B दोहराव हटाएँ",
-  "Pause After Each Sentence": "हर वाक्य के बाद रोकें"
+  "Pause After Each Sentence": "हर वाक्य के बाद रोकें",
+  "Quote Card": "उद्धरण कार्ड",
+  "Create a quote card image from the selection": "चयन से उद्धरण कार्ड छवि बनाएँ",
+  "Paper": "कागज़",
+  "Night": "रात",
+  "Reader Theme": "पठन थीम",
+  "The quote was shortened to fit the card.": "उद्धरण को कार्ड में फ़िट करने के लिए छोटा किया गया।",
+  "Classic": "क्लासिक",
+  "Centered": "केंद्रित",
+  "Serif": "सेरिफ़",
+  "Sans": "सैंस",
+  "Shape": "आकार",
+  "Book Info": "पुस्तक जानकारी",
+  "QR Code": "QR कोड",
+  "Links to this passage in Readest": "Readest में इस अंश का लिंक",
+  "via {{app}}": "{{app}} के ज़रिए"
 }
