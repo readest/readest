@@ -2,9 +2,10 @@ import React, { useEffect } from 'react';
 
 import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
+import { useReaderStore } from '@/store/readerStore';
 import { useHandwriting } from '../../hooks/useHandwriting';
 import HandwritingCanvas from './HandwritingCanvas';
-import HandwritingToolbar from './HandwritingToolbar';
+import { HandwritingDock, HandwritingTopBar } from './HandwritingBars';
 
 interface HandwritingOverlayProps {
   bookKey: string;
@@ -12,13 +13,21 @@ interface HandwritingOverlayProps {
 }
 
 /**
- * Ink layer for one open book. Always paints the current page's ink; takes
- * pen input and shows its toolbar only while handwriting mode is on, entered
- * from the View menu or by tapping existing ink.
+ * Ink layer for one open book. Always paints the page's ink; while drawing
+ * (started from the header's pen button, or by tapping existing ink) it takes
+ * pen input and swaps the reader's header and footer for its own bars.
  */
 const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridInsets }) => {
   const hw = useHandwriting(bookKey);
   const { visible, editable, enabled, setEnabled, hitTest } = hw;
+  const { setHoveredBookKey } = useReaderStore();
+
+  // Drawing is started from the header, which leaves the reader's header and
+  // footer up; the drawing bars take their place, and the canvas takes the
+  // tap that would hide them.
+  useEffect(() => {
+    if (enabled) setHoveredBookKey(null);
+  }, [enabled, setHoveredBookKey]);
 
   useEffect(() => {
     const onHandwritingEvent = (event: CustomEvent) => {
@@ -69,24 +78,22 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
         detach={hw.detach}
       />
       {hw.enabled && (
-        <div
-          className='absolute inset-x-0 z-10 flex justify-center px-2'
-          style={{ top: gridInsets.top + 8 }}
-        >
-          <HandwritingToolbar
-            onExit={() => setEnabled(false)}
+        <>
+          <HandwritingTopBar onDone={() => setEnabled(false)} top={gridInsets.top} />
+          <HandwritingDock
+            bottom={gridInsets.bottom}
             erasing={hw.erasing}
             onToggleErase={() => hw.setErasing(!hw.erasing)}
             onUndo={hw.undo}
             onRedo={hw.redo}
-            onClear={hw.clear}
-            hasInk={hw.hasInk}
+            onTurnLeft={() => hw.turnPage('left')}
+            onTurnRight={() => hw.turnPage('right')}
             penColor={hw.penColor}
             penWidth={hw.penWidth}
             onSelectColor={hw.selectPenColor}
             onSelectWidth={hw.selectPenWidth}
           />
-        </div>
+        </>
       )}
     </>
   );

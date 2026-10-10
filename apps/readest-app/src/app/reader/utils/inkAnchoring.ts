@@ -282,7 +282,8 @@ export const createInkAnchoring = (
       if (lineHeight) {
         const flat = classifyShape(bounds, lineHeight, true) === 'flow';
         const path = flat ? densify(ink, lineHeight / 2) : ink;
-        const covered = flat ? markedText(path) : enclosedContent(ink);
+        // A short mark encloses nothing; it still marks the text it sits on.
+        const covered = flat ? markedText(path) : (enclosedContent(ink) ?? markedText(path));
         const lines = covered ? linesOf(covered) : [];
         if (covered && lines.length) {
           const anchor = cfiOf(covered);

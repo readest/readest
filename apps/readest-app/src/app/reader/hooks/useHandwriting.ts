@@ -132,6 +132,11 @@ export function useHandwriting(bookKey: string) {
     if (!editable) setEnabled(false);
   }, [editable]);
 
+  // Each visit to drawing mode is one drawing session: one ink annotation.
+  useEffect(() => {
+    if (enabled) serviceRef.current?.setSession(`ink-${Date.now().toString(36)}`);
+  }, [enabled]);
+
   /** Re-read the ink from the booknotes after they changed elsewhere. */
   const reload = useCallback(() => {
     loadEditor();
@@ -296,6 +301,16 @@ export function useHandwriting(bookKey: string) {
     [],
   );
 
+  /** Turn the page from drawing mode, by its on-screen side. */
+  const turnPage = useCallback(
+    (side: 'left' | 'right') => {
+      const view = getView(bookKey);
+      if (side === 'left') view?.goLeft();
+      else view?.goRight();
+    },
+    [getView, bookKey],
+  );
+
   const detach = useCallback(async () => {
     await serviceRef.current?.detach();
   }, []);
@@ -331,14 +346,13 @@ export function useHandwriting(bookKey: string) {
 
   return {
     layers,
-    // Committed strokes only: the live one isn't restyleable or clearable yet.
-    hasInk: serviceRef.current?.hasInk() ?? false,
     cellRect,
     pageRect,
     containerRef: setCellEl,
     attach,
     detach,
     hitTest,
+    turnPage,
     visible,
     editable,
     enabled,
@@ -352,6 +366,5 @@ export function useHandwriting(bookKey: string) {
     selectPenWidth,
     undo: () => serviceRef.current?.undo(),
     redo: () => serviceRef.current?.redo(),
-    clear: () => serviceRef.current?.clear(),
   };
 }

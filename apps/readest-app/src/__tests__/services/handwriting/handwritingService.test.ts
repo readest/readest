@@ -162,4 +162,20 @@ describe('HandwritingService text anchoring', () => {
     draw(service, [[0.1, 0.9]]);
     expect(anchoring.pin.mock.calls[2]![1]).toBeUndefined();
   });
+
+  it('stamps new strokes with the current drawing session', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'page:1', rect);
+    service.setSession('ink-a');
+    draw(service, [
+      [0.1, 0.1],
+      [0.2, 0.2],
+    ]);
+    service.setSession('ink-b');
+    draw(service, [
+      [0.5, 0.5],
+      [0.6, 0.6],
+    ]);
+    expect(editor.strokes('page:1').map((s) => s.session)).toEqual(['ink-a', 'ink-b']);
+  });
 });

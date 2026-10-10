@@ -202,19 +202,18 @@ describe('ViewMenu layout', () => {
     expect(screen.getByText('Speed Reading Mode')).toBeTruthy();
   });
 
-  it('groups the image colour toggles after Auto Scroll and the reading modes above sync', () => {
+  it('groups the image colour toggles after Auto Scroll and Webtoon Mode on its own above sync', () => {
     render(<ViewMenu bookKey='book-1' />);
     const seq = menuSequence();
     const autoScroll = seq.indexOf('Auto Scroll');
-    expect(seq.slice(autoScroll, autoScroll + 7)).toEqual([
+    expect(seq.slice(autoScroll, autoScroll + 6)).toEqual([
       'Auto Scroll',
       'Apply Theme Colors',
       'Invert Image In Dark Mode',
       'hr',
       'Webtoon Mode',
-      'Handwriting Mode',
       'hr',
     ]);
-    expect(seq[autoScroll + 7]).toBe('Sign in to Sync');
+    expect(seq[autoScroll + 6]).toBe('Sign in to Sync');
   });
 });

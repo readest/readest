@@ -39,6 +39,10 @@ export interface InkStroke {
   anchor?: string;
   /** How a pinned stroke morphs on relayout (see anchor.ts); rigid when absent. */
   shape?: InkShape;
+  /** Fixed layout: the page (section index) the stroke is drawn on. */
+  page?: number;
+  /** In memory only: the drawing session (ink annotation id) it belongs to. */
+  session?: string;
   points: InkPoint[];
 }
 

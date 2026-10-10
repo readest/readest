@@ -69,6 +69,8 @@ export class HandwritingService {
   /** Binds reflowable strokes to their text; null for fixed layout. */
   private anchoring: InkAnchoring | null = null;
   private lastPin: { anchor: string; at: number; bounds: Bounds } | null = null;
+  /** The drawing session new strokes belong to: one ink annotation each. */
+  private session: string | undefined;
   private options: HandwritingOptions;
   private backend: PenBackend | null = null;
   private pointer = new PointerHandwritingBackend();
@@ -159,6 +161,11 @@ export class HandwritingService {
     this.editor = editor;
     this.live = [];
     this.onRender?.();
+  }
+
+  /** Start a drawing session: strokes drawn from now on form one annotation. */
+  setSession(session: string) {
+    this.session = session;
   }
 
   /** Swap in the anchoring for the current layout and repaint. */
@@ -277,6 +284,7 @@ export class HandwritingService {
         id: nextStrokeId(),
         color: this.options.color,
         width: this.options.widthFraction,
+        ...(this.session ? { session: this.session } : {}),
         ...(this.pin(points) ?? { points }),
       });
       this.live = [];

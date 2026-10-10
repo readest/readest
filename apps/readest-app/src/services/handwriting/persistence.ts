@@ -1,19 +1,16 @@
 import * as CFI from 'foliate-js/epubcfi.js';
-import { md5 } from '@/utils/md5';
 import type { BookNote } from '@/types/book';
 import { HandwritingEditor } from './editor';
 import type { InkPage, InkStroke } from './model';
 import { fixedPageKey, parsePageKey, sectionPageKey } from './pageKey';
 
 /**
- * Handwriting is stored as `ink` booknotes, so each drawing is an annotation
- * like any other: listed in the sidebar, navigable, deletable, synced. A
- * reflowable book gets one note per anchor (the content a drawing marks); a
- * fixed-layout book one note per page. The editor works on page keys in
- * memory; these convert between the two.
+ * Handwriting is stored as `ink` booknotes: everything drawn in one session
+ * of drawing mode is one annotation, listed in the sidebar like any other.
+ * Each stroke keeps its own place: its text anchor in a reflowable book, its
+ * page in a fixed-layout one. The editor works on page keys in memory; these
+ * convert between the two.
  */
-
-export const inkNoteId = (cfi: string) => `ink-${md5(cfi).slice(0, 16)}`;
 
 /** The spine index a CFI points into. */
 const sectionOf = (cfi: string): number | null => {
@@ -30,12 +27,16 @@ export const loadInkEditor = (notes: BookNote[], fixedLayout: boolean): Handwrit
   const pages: Record<string, InkPage> = {};
   for (const note of notes) {
     if (note.type !== 'ink' || note.deletedAt || !note.ink?.length) continue;
-    const index = sectionOf(note.cfi);
-    if (index === null) continue;
-    const key = fixedLayout ? fixedPageKey(index) : sectionPageKey(index);
-    const page = (pages[key] ??= { strokes: [], updatedAt: note.updatedAt });
-    page.strokes.push(...note.ink);
-    page.updatedAt = Math.max(page.updatedAt, note.updatedAt);
+    for (const stroke of note.ink) {
+      const index = fixedLayout
+        ? (stroke.page ?? sectionOf(note.cfi))
+        : sectionOf(stroke.anchor ?? note.cfi);
+      if (index === null) continue;
+      const key = fixedLayout ? fixedPageKey(index) : sectionPageKey(index);
+      const page = (pages[key] ??= { strokes: [], updatedAt: note.updatedAt });
+      page.strokes.push({ ...stroke, session: note.id });
+      page.updatedAt = Math.max(page.updatedAt, note.updatedAt);
+    }
   }
   return new HandwritingEditor(pages);
 };
@@ -49,33 +50,35 @@ export interface InkNoteContext {
 }
 
 /**
- * The booknotes with the editor's ink written in: one `ink` note per anchor
- * or page, kept as is when its ink didn't change, and tombstoned once its
- * ink is gone so the deletion syncs.
+ * The booknotes with the editor's ink written in: one `ink` note per drawing
+ * session, placed at its first stroke, kept as is when its ink didn't change,
+ * and tombstoned once its ink is gone so the deletion syncs.
  */
 export const withInkNotes = (
   notes: BookNote[],
   editor: HandwritingEditor,
   { cfiOf, describe, now = Date.now() }: InkNoteContext,
 ): BookNote[] => {
-  const groups = new Map<string, { strokes: InkStroke[]; page?: number }>();
+  const sessions = new Map<string, { strokes: InkStroke[]; cfi: string; page?: number }>();
   for (const key of editor.pageKeys()) {
     const parsed = parsePageKey(key);
     if (!parsed) continue;
-    for (const stroke of editor.strokes(key)) {
-      const pinned = parsed.kind === 'section' && stroke.anchor;
-      const cfi = pinned ? stroke.anchor! : cfiOf(parsed.index);
-      const group = groups.get(cfi) ?? { strokes: [] };
-      if (parsed.kind === 'page') group.page = parsed.index + 1;
-      group.strokes.push(stroke);
-      groups.set(cfi, group);
+    const fixed = parsed.kind === 'page';
+    for (const { session, page: _page, ...stroke } of editor.strokes(key)) {
+      const id = session ?? `ink-${stroke.id}`;
+      let group = sessions.get(id);
+      if (!group) {
+        const cfi = !fixed && stroke.anchor ? stroke.anchor : cfiOf(parsed.index);
+        group = { strokes: [], cfi, ...(fixed ? { page: parsed.index + 1 } : {}) };
+        sessions.set(id, group);
+      }
+      group.strokes.push(fixed ? { ...stroke, page: parsed.index } : stroke);
     }
   }
 
   const previous = new Map(notes.filter((n) => n.type === 'ink').map((n) => [n.id, n]));
   const result = notes.filter((n) => n.type !== 'ink');
-  for (const [cfi, { strokes, page }] of groups) {
-    const id = inkNoteId(cfi);
+  for (const [id, { strokes, cfi, page }] of sessions) {
     const prev = previous.get(id);
     previous.delete(id);
     if (prev && !prev.deletedAt && JSON.stringify(prev.ink) === JSON.stringify(strokes)) {
@@ -87,7 +90,7 @@ export const withInkNotes = (
       type: 'ink',
       cfi,
       ...(page ? { page } : {}),
-      text: prev?.text || describe(cfi),
+      text: (prev?.cfi === cfi && prev.text) || describe(cfi),
       note: prev?.note ?? '',
       ink: strokes,
       createdAt: prev && !prev.deletedAt ? prev.createdAt : now,
