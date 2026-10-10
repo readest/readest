@@ -307,6 +307,40 @@ describe('importBook metaHash deduplication', () => {
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
   });
 
+  // Equal-metaHash regime (a fixed identifier, e.g. calibre): the live row and
+  // the tombstone share one metaHash, so the resurrection must not feed
+  // mergeBooks a duplicate — the newer version has to survive beside the
+  // restored one instead of being retired with its directory.
+  it('re-importing the retired file coexists with the live row even on equal metaHash', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const liveBook = makeBook({ hash: 'new-hash-456', metaHash });
+    const tombstone = makeBook({
+      hash: 'old-hash-123',
+      metaHash,
+      deletedAt: Date.now() - 5000,
+    });
+    const books: Book[] = [liveBook, tombstone];
+    const lookupIndex = buildBookLookupIndex(books);
+
+    mockPartialMD5.mockResolvedValue('old-hash-123');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+
+    const result = await service.importBook(
+      new File(['old content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+      { lookupIndex },
+    );
+
+    expect(result).toBe(tombstone);
+    expect(tombstone.deletedAt).toBeNull();
+    expect(liveBook.deletedAt).toBeNull();
+    expect(liveBook.hash).toBe('new-hash-456');
+    expect(fs.removeDir).not.toHaveBeenCalled();
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
+  });
+
   it('should not match metaHash for deleted books', async () => {
     const metaHash = getMetadataHash(TEST_METADATA);
 

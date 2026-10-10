@@ -505,7 +505,9 @@ export async function importBook(
   let rollbackBook: Book | undefined;
   let rollbackSnapshot: Book | undefined;
   // Set on a metaHash re-key: a deletedAt row carrying the hash the row is
-  // leaving behind. Pushed only past the rollback point below.
+  // leaving behind. deletedAt/updatedAt are stamped when the row is appended
+  // past the rollback point below, so the deletion carries the commit's clock
+  // — a peer touching the book mid-import must still lose LWW to it.
   let retiredTombstone: Book | undefined;
   const rememberBookState = (book: Book) => {
     if (rollbackBook) return;
@@ -639,8 +641,12 @@ export async function importBook(
       : books.find((b) => b.hash === hash);
     let metaHashMatch = false;
     let oldBookDir: string | undefined;
+    // The hash hit a tombstone row: this import un-deletes a retired version,
+    // which must coexist with the live row instead of deduping against it.
+    let resurrectedFromTombstone = false;
     if (existingBook) {
       rememberBookState(existingBook);
+      resurrectedFromTombstone = !!existingBook.deletedAt;
       if (!transient) {
         existingBook.deletedAt = null;
         existingBook.fileSyncDeletionRequestedAt = null;
@@ -679,7 +685,11 @@ export async function importBook(
           existingBook.updatedAt = Date.now();
         }
       }
-      if (existingBook) {
+      // A resurrected row skips aggregation: with an unchanged metaHash the
+      // live row shares its identity, and mergeBooks would retire that newer
+      // version as a "duplicate" — restoring a retired version must coexist
+      // with it, not replace it.
+      if (existingBook && !resurrectedFromTombstone) {
         mergeResult = await mergeBooks(fs, books, existingBook, lookupIndex);
         bestConfigData = mergeResult?.configData;
       }
@@ -726,8 +736,7 @@ export async function importBook(
       // is live again.
       const retiredHash = existingBook.hash;
       if (retiredHash && retiredHash !== hash) {
-        const now = Date.now();
-        retiredTombstone = { ...existingBook, hash: retiredHash, deletedAt: now, updatedAt: now };
+        retiredTombstone = { ...existingBook, hash: retiredHash };
       }
       existingBook.hash = hash;
       existingBook.format = book.format;
@@ -919,6 +928,9 @@ export async function importBook(
     rollbackBook = undefined;
     rollbackSnapshot = undefined;
     if (retiredTombstone) {
+      const now = Date.now();
+      retiredTombstone.deletedAt = now;
+      retiredTombstone.updatedAt = now;
       books.push(retiredTombstone);
     }
 
