@@ -1,8 +1,14 @@
-import type { ConvertChineseVariant, ViewSettings } from '@/types/book';
+import type { ConvertChineseVariant, ViewSettings, WordLensGlossaryEntry } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { ProgressHandler } from '@/utils/transfer';
+import {
+  collectCustomOccurrences,
+  mergeGlossOccurrences,
+  selectGlossaryEntries,
+} from '@/services/wordlens/customGlossary';
 import { canTokenizeSource, getRankCutoff } from '@/services/wordlens/difficulty';
 import { loadGlossIndex } from '@/services/wordlens/glossPacks';
+import type { GlossIndex } from '@/services/wordlens/glossIndex';
 import { planGlosses } from '@/services/wordlens/planner';
 import { buildSectionTextModel, applyGlosses, clearGlosses } from '@/app/reader/utils/wordlensRuby';
 import { cutZh, isJiebaReady, initJieba } from '@/utils/jieba';
@@ -43,6 +49,14 @@ interface RefreshContext {
    */
   allowDownload?: boolean;
   onProgress?: ProgressHandler;
+  /** `Book.hash` for book-scoped glossary entries. */
+  bookHash?: string;
+  /** `book.metadata.series` for series-scoped glossary entries. */
+  series?: string | null;
+  /** Global and series entries (`settings.globalViewSettings.wordLensGlossary`). */
+  globalGlossary?: WordLensGlossaryEntry[];
+  /** Book-scoped entries from this book's view settings. */
+  bookGlossary?: WordLensGlossaryEntry[];
 }
 
 // Per-document generation counter. Dragging the difficulty slider fires the
@@ -67,36 +81,54 @@ export const refreshSectionGlosses = async (
     refreshGen.set(doc, myGen);
     clearGlosses(doc);
     if (!viewSettings.wordLensEnabled) return;
+    const applicable = selectGlossaryEntries(
+      ctx.globalGlossary,
+      ctx.bookGlossary,
+      ctx.bookHash ?? '',
+      ctx.series,
+    );
     const source = toWordLensSource(ctx.bookLang);
-    if (!source || !canTokenizeSource(source)) return;
+    const tokenizable = !!source && canTokenizeSource(source);
     const hintTag = viewSettings.wordLensHintLang || ctx.appLang;
     const hint = hintTag.toLowerCase().split('-')[0] || '';
     // Same-language packs (e.g. en-en monolingual) are allowed; availability is
     // decided by the manifest — loadGlossIndex returns null when no pack exists.
-    if (!hint) return;
-    const index = await loadGlossIndex(ctx.appService, source, hint, {
-      onProgress: ctx.onProgress,
-      allowDownload: ctx.allowDownload,
-    });
-    if (refreshGen.get(doc) !== myGen) return; // a newer refresh superseded us
-    if (!index) return;
-    if (source === 'zh' && !isJiebaReady()) {
-      void initJieba();
-      return;
+    // Custom entries do not need a pack or a tokenizable source language.
+    if (!tokenizable && applicable.length === 0) return;
+    if (tokenizable && !hint && applicable.length === 0) return;
+
+    let index: GlossIndex | null = null;
+    if (tokenizable && hint && source) {
+      index = await loadGlossIndex(ctx.appService, source, hint, {
+        onProgress: ctx.onProgress,
+        allowDownload: ctx.allowDownload,
+      });
+      if (refreshGen.get(doc) !== myGen) return; // a newer refresh superseded us
     }
-    const zhVariant = glossChineseVariant(hintTag);
+    if (!index && applicable.length === 0) return;
+    if (index && source === 'zh' && !isJiebaReady()) {
+      void initJieba();
+      if (applicable.length === 0) return;
+      index = null;
+    }
+    const zhVariant = index ? glossChineseVariant(hintTag) : null;
     if (zhVariant) {
       await initSimpleCC();
       if (refreshGen.get(doc) !== myGen) return;
     }
     const model = buildSectionTextModel(doc);
-    const occ = planGlosses(model.text, index, {
-      sourceLang: source,
-      rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
-      cutZh: source === 'zh' ? cutZh : undefined,
-      monolingual: hint === source, // en-en: gloss is a build-formatted definition
-    });
-    if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
+    const packOcc =
+      index && source
+        ? planGlosses(model.text, index, {
+            sourceLang: source,
+            rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
+            cutZh: source === 'zh' ? cutZh : undefined,
+            monolingual: hint === source, // en-en: gloss is a build-formatted definition
+          })
+        : [];
+    if (zhVariant) for (const o of packOcc) o.gloss = runSimpleCC(o.gloss, zhVariant);
+    const customOcc = collectCustomOccurrences(model.text, applicable);
+    const occ = mergeGlossOccurrences(packOcc, customOcc);
     if (occ.length) applyGlosses(doc, model, occ);
   } catch (err) {
     console.warn('[wordlens] refresh failed', err);

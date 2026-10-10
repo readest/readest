@@ -56,6 +56,7 @@ import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable'
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { refreshSectionGlosses } from '@/app/reader/utils/wordlensSection';
+import { WORD_LENS_GLOSSARY_CHANGED } from '@/services/wordlens/customGlossary';
 import { getBookDirFromLanguage, getBookDirFromWritingMode } from '@/utils/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { useUICSS } from '@/hooks/useUICSS';
@@ -550,6 +551,7 @@ const FoliateViewer: React.FC<{
     // by the empty-deps `stabilizedHandler`) so toggling Auto-download mid-session
     // takes effect on the next section refresh.
     const liveSettings = useSettingsStore.getState().settings;
+    const book = getBookData(bookKey)?.book;
     const allowDownload =
       (liveSettings.globalReadSettings.wordLensAutoDownload ?? true) && !isMetered();
     return {
@@ -557,6 +559,10 @@ const FoliateViewer: React.FC<{
       bookLang,
       appLang: getLocale(),
       allowDownload,
+      bookHash: book?.hash || bookKey.split('-')[0] || '',
+      series: book?.metadata?.series,
+      globalGlossary: liveSettings.globalViewSettings?.wordLensGlossary,
+      bookGlossary: getViewSettings(bookKey)?.wordLensGlossary,
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
         wordLensToastShownRef.current = true;
@@ -1079,6 +1085,24 @@ const FoliateViewer: React.FC<{
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.wordLensEnabled, viewSettings?.wordLensLevel, viewSettings?.wordLensHintLang]);
+
+  useEffect(() => {
+    const onGlossaryChanged = (event: CustomEvent) => {
+      const target = (event.detail as { bookKey?: string } | undefined)?.bookKey;
+      if (target && target !== bookKey) return;
+      const contents = viewRef.current?.renderer?.getContents?.() || [];
+      const vs = getViewSettings(bookKey);
+      if (!vs || !appService) return;
+      if (bookDoc.rendition?.layout === 'pre-paginated') return;
+      const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+      for (const { doc } of contents) {
+        if (doc) void refreshSectionGlosses(doc, vs, buildWordLensCtx(bookLang));
+      }
+    };
+    eventDispatcher.on(WORD_LENS_GLOSSARY_CHANGED, onGlossaryChanged);
+    return () => eventDispatcher.off(WORD_LENS_GLOSSARY_CHANGED, onGlossaryChanged);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey, appService, bookDoc.rendition?.layout]);
 
   useEffect(() => {
     const mountCustomFonts = async () => {

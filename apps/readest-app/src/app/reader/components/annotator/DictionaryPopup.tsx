@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import Popup from '@/components/Popup';
 import { Position } from '@/utils/sel';
@@ -9,10 +9,14 @@ import {
   DictionaryResultsHeader,
   DictionaryResultsBody,
 } from './DictionaryResultsView';
+import WordLensGlossaryPopup from './WordLensGlossaryPopup';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
 
 interface DictionaryPopupProps {
   word: string;
+  bookKey?: string;
+  /** `book.metadata.series`, used as the series-scope identifier. */
+  seriesName?: string;
   lang?: string;
   selection?: DictionarySelectionContext;
   position: Position;
@@ -30,6 +34,8 @@ interface DictionaryPopupProps {
 
 const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   word,
+  bookKey,
+  seriesName,
   lang,
   selection,
   position,
@@ -39,7 +45,9 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   onDismiss,
   onManage,
 }) => {
+  const [draftTerm, setDraftTerm] = useState<string | null>(null);
   const state = useDictionaryResults({ word, lang, selection });
+
   return (
     <Popup
       width={popupWidth}
@@ -54,15 +62,28 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
       <div className='flex h-full flex-col overflow-hidden rounded-lg pt-4'>
         <DictionaryResultsHeader
           headerClassName='-mt-2'
-          currentWord={state.currentWord}
-          canGoBack={state.canGoBack}
+          currentWord={draftTerm ?? state.currentWord}
+          canGoBack={state.canGoBack && !draftTerm}
           goBack={state.goBack}
-          onManage={onManage}
-          onSpeak={state.speakWord}
+          onManage={draftTerm ? undefined : onManage}
+          onAddToWordLens={
+            bookKey && !draftTerm ? () => setDraftTerm(state.currentWord) : undefined
+          }
+          onSpeak={draftTerm ? undefined : state.speakWord}
           speaking={state.isSpeaking}
         />
         <div className='min-h-0 flex-1'>
-          <DictionaryResultsBody {...state} />
+          {draftTerm && bookKey ? (
+            <WordLensGlossaryPopup
+              bookKey={bookKey}
+              term={draftTerm}
+              seriesName={seriesName}
+              onCancel={() => setDraftTerm(null)}
+              onSaved={() => setDraftTerm(null)}
+            />
+          ) : (
+            <DictionaryResultsBody {...state} />
+          )}
         </div>
       </div>
     </Popup>

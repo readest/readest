@@ -571,6 +571,7 @@ export const DEFAULT_WORD_LENS_CONFIG: WordLensConfig = {
   wordLensHintLang: '',
   wordLensGlossFontSize: 0.5,
   wordLensGlossColor: '',
+  wordLensGlossary: [],
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {

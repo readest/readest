@@ -389,6 +389,7 @@ describe('SETTINGS_WHITELIST', () => {
 
   test('syncs library-scope proofread rules (issue #4700 — PC rules not reaching mobile)', () => {
     expect(SETTINGS_WHITELIST).toContain('globalViewSettings.proofreadRules');
+    expect(SETTINGS_WHITELIST).toContain('globalViewSettings.wordLensGlossary');
   });
 
   test('syncs WebDAV connection + credentials (issue #4810 — credentials not synced)', () => {
@@ -452,6 +453,28 @@ describe('settingsAdapter proofread rules', () => {
     const out = settingsAdapter.unpackRow(row, '');
     expect(out).not.toBeNull();
     expect(out!.patch.globalViewSettings?.proofreadRules).toEqual(proofreadRules);
+  });
+
+  test('pack ∘ unpack round-trips globalViewSettings.wordLensGlossary', () => {
+    const wordLensGlossary = [
+      {
+        id: 'g1',
+        term: 'Dark Brotherhood',
+        definition: 'a guild of assassins',
+        scope: 'series',
+        series: 'The Elder Scrolls',
+      },
+    ];
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        globalViewSettings: { wordLensGlossary },
+      } as unknown as Partial<SystemSettings>,
+    };
+    const fields = settingsAdapter.pack(record);
+    expect(fields['globalViewSettings.wordLensGlossary']).toEqual(wordLensGlossary);
+    const out = settingsAdapter.unpack(fields);
+    expect(out.patch.globalViewSettings?.wordLensGlossary).toEqual(wordLensGlossary);
   });
 });
 
