@@ -63,8 +63,14 @@ const MAX_CONSECUTIVE_SKIPS = 3;
 // never heard (stop, seek) is paid for.
 const PREFETCH_AHEAD_MARKS = 8;
 const PREFETCH_AHEAD_SEC = 30;
-// Preloads of upcoming paragraphs ask a windowed provider for this many marks.
-const PRELOAD_MARKS = 2;
+// Beyond that horizon a mark is still asked for when the audio queued ahead of
+// it would play out before the provider could deliver it: windows run one at a
+// time, so everything up to the mark is synthesized first. Short sentences
+// followed by a long one need this. Conservative figures for a GPU worker
+// (request overhead, synthesis seconds per audio second); faster engines just
+// prefetch slightly early.
+const SYNTH_LEAD_SEC = 3;
+const SYNTH_REALTIME_FACTOR = 0.5;
 
 interface ChunkMeta {
   mark: TTSMark;
@@ -327,29 +333,39 @@ export class BufferedTTSClient implements TTSClient {
     return reqs;
   }
 
-  // Tell a windowed provider which marks come next: the current one plus up to
-  // PREFETCH_AHEAD_MARKS / PREFETCH_AHEAD_SEC of estimated audio.
-  async #prefetchAhead(marks: TTSMark[], from: number, signal: AbortSignal) {
-    if (!this.provider.prefetch) return;
-    const ahead: TTSMark[] = [];
-    let seconds = 0;
-    for (let i = from; i < marks.length && ahead.length < PREFETCH_AHEAD_MARKS; i++) {
+  // The marks from `from` that a windowed provider should be synthesizing now:
+  // through the last one that is due (see SYNTH_LEAD_SEC) or that ends within
+  // `horizonSec` of estimated audio, at most PREFETCH_AHEAD_MARKS.
+  async #marksAhead(marks: TTSMark[], from: number, horizonSec: number): Promise<TTSMark[]> {
+    let last = from;
+    let before = 0;
+    const end = Math.min(marks.length, from + PREFETCH_AHEAD_MARKS);
+    for (let i = from; i < end; i++) {
       const mark = marks[i]!;
       const voice = await this.getVoiceIdFromLang(mark.language);
-      seconds += estimateSentenceSeconds(mark.text, mark.language, voice);
-      if (ahead.length > 0 && seconds > PREFETCH_AHEAD_SEC) break;
-      ahead.push(mark);
+      const seconds = estimateSentenceSeconds(mark.text, mark.language, voice);
+      const due = before < SYNTH_LEAD_SEC + SYNTH_REALTIME_FACTOR * (before + seconds);
+      if (due || before + seconds <= horizonSec) last = i;
+      before += seconds;
     }
+    return marks.slice(from, last + 1);
+  }
+
+  // Tell a windowed provider which marks come next.
+  async #prefetchAhead(marks: TTSMark[], from: number, signal: AbortSignal) {
+    if (!this.provider.prefetch) return;
+    const ahead = await this.#marksAhead(marks, from, PREFETCH_AHEAD_SEC);
     if (signal.aborted) return;
     this.provider.prefetch(await this.#requestsFor(ahead), 'listen', signal);
   }
 
   async *#preload(marks: TTSMark[], signal: AbortSignal) {
     // A windowed provider bills per synthesized sentence and the controller
-    // preloads several paragraphs ahead: only hint the first marks of each,
+    // preloads several paragraphs ahead: only hint the opening marks each needs
+    // to start on time (the lookahead cannot see past the current paragraph),
     // at background priority, and let the scheduler's lookahead do the rest.
     if (this.provider.prefetch) {
-      const reqs = await this.#requestsFor(marks.slice(0, PRELOAD_MARKS));
+      const reqs = await this.#requestsFor(await this.#marksAhead(marks, 0, 0));
       if (reqs.length && !signal.aborted) {
         this.provider.prefetch(reqs, 'listen', signal, { background: true });
       }

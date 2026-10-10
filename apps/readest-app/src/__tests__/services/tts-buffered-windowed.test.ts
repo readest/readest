@@ -219,12 +219,41 @@ describe('BufferedTTSClient with a windowed provider', () => {
     });
 
     test('caps the lookahead at about 30 seconds of estimated audio', async () => {
-      // 200 Latin chars is about 13 s at the default estimate: two fit, three do not.
-      parsedMarks = Array.from({ length: 4 }, (_, i) => ({
+      // 100 Latin chars is about 6.5 s at the default estimate: four fit, five do not.
+      parsedMarks = Array.from({ length: 6 }, (_, i) => ({
         name: String(i),
-        text: `${i}`.padEnd(200, 'a'),
+        text: `${i}`.padEnd(100, 'a'),
         language: 'en',
       }));
+      const provider = makeProvider({ prefetch: vi.fn() });
+      const client = await start(provider);
+      speak(client, new AbortController().signal);
+      await flush();
+      expect(prefetchCalls(provider)[0]!.texts).toHaveLength(4);
+    });
+
+    // At the default estimate (15 Latin chars/s) 30 chars is about 2 s and 300
+    // about 20 s.
+    const marksOf = (...lengths: number[]) =>
+      lengths.map((length, i) => ({
+        name: String(i),
+        text: `${i}`.padEnd(length, 'a'),
+        language: 'en',
+      }));
+
+    test('asks early for long marks that short ones ahead of them cannot cover', async () => {
+      // 2 s + 2 s of audio cannot hide synthesizing the 20 s mark after them,
+      // nor 24 s the one after that; 44 s ahead of the fifth mark is enough.
+      parsedMarks = marksOf(30, 30, 300, 300, 300);
+      const provider = makeProvider({ prefetch: vi.fn() });
+      const client = await start(provider);
+      speak(client, new AbortController().signal);
+      await flush();
+      expect(prefetchCalls(provider)[0]!.texts).toHaveLength(4);
+    });
+
+    test('does not reach past marks whose audio already covers the next one', async () => {
+      parsedMarks = marksOf(300, 300, 300, 300, 300);
       const provider = makeProvider({ prefetch: vi.fn() });
       const client = await start(provider);
       speak(client, new AbortController().signal);
@@ -232,7 +261,7 @@ describe('BufferedTTSClient with a windowed provider', () => {
       expect(prefetchCalls(provider)[0]!.texts).toHaveLength(2);
     });
 
-    test('preloads become a background prefetch of the first two marks, never synthesis', async () => {
+    test('preloads become a background prefetch of the opening marks, never synthesis', async () => {
       parsedMarks = Array.from({ length: 5 }, (_, i) => ({
         name: String(i),
         text: `Sentence ${i}.`,
@@ -244,7 +273,12 @@ describe('BufferedTTSClient with a windowed provider', () => {
       await done;
       expect(events.map((e) => e.code)).toEqual(['end']);
       expect(prefetchCalls(provider)).toEqual([
-        { texts: ['Sentence 0.', 'Sentence 1.'], lane: 'listen', options: { background: true } },
+        {
+          // Five short marks (under 1 s each) all start within the lead time.
+          texts: ['Sentence 0.', 'Sentence 1.', 'Sentence 2.', 'Sentence 3.', 'Sentence 4.'],
+          lane: 'listen',
+          options: { background: true },
+        },
       ]);
       expect(provider.synthesize).not.toHaveBeenCalled();
     });
