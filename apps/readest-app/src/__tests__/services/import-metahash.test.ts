@@ -148,8 +148,8 @@ describe('importBook metaHash deduplication', () => {
 
     // Should return the existing book, not a new one
     expect(result).toBe(existingBook);
-    // Library should still have only one book
-    expect(books.length).toBe(1);
+    // One live book plus the tombstone row left for the retired hash
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
     // Hash should be updated to new file's content hash
     expect(existingBook.hash).toBe('new-hash-456');
     // Metadata should be overridden
@@ -201,6 +201,110 @@ describe('importBook metaHash deduplication', () => {
     expect(existingBook.hash).toBe('new-hash-456');
     // uploadedAt cleared → book sync / manual upload re-pushes the new file.
     expect(existingBook.uploadedAt).toBeNull();
+  });
+
+  // The re-key retires the old hash's directory on this device. Without a
+  // tombstone row, sync peers whose library still lists the old hash keep
+  // re-adding it as a live card whose file no longer exists ("Book file not
+  // found"), because nothing ever told them the hash was retired.
+  it('leaves a deletedAt tombstone for the hash a metaHash re-key retires', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const existingBook = makeBook({ hash: 'old-hash-123', metaHash });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    await service.importBook(
+      new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(existingBook.hash).toBe('new-hash-456');
+    const tombstones = books.filter((b) => b.hash === 'old-hash-123');
+    expect(tombstones).toHaveLength(1);
+    // A fresh stamp so the tombstone wins row-level LWW at sync peers.
+    expect(tombstones[0]!.deletedAt).toBeTruthy();
+    expect(tombstones[0]!.updatedAt).toBeGreaterThanOrEqual(tombstones[0]!.deletedAt!);
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
+  });
+
+  it('strands no tombstone when the import fails before the rollback point', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const existingBook = makeBook({ hash: 'old-hash-123', metaHash });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    fs.exists.mockImplementation(async (path: string) =>
+      ['old-hash-123/config.json', 'old-hash-123'].includes(path),
+    );
+    fs.readFile.mockResolvedValue(
+      JSON.stringify({
+        audiobook: {
+          version: 1,
+          files: [
+            {
+              id: 'audio-0',
+              name: 'book.m4b',
+              path: 'old-hash-123/audiobook/1-audio-0-book.m4b',
+              duration: 100,
+            },
+          ],
+          chapters: [],
+          mappings: [],
+          createdAt: 1,
+        },
+      }),
+    );
+    fs.copyFile.mockRejectedValue(new Error('audio copy failed'));
+
+    await expect(
+      service.importBook(
+        new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+        books,
+      ),
+    ).rejects.toThrow('audio copy failed');
+
+    expect(books).toHaveLength(1);
+    expect(books[0]).toBe(existingBook);
+    expect(existingBook.hash).toBe('old-hash-123');
+    expect(existingBook.deletedAt).toBeNull();
+  });
+
+  // A later import of the retired file finds the tombstone by hash and takes
+  // the standard un-delete path, restoring the old version as its own book —
+  // instead of the stable-key match re-keying the live row BACK and deleting
+  // the new version's directory. The live row carries the updated file's
+  // metaHash (a fresh uuid on every pandoc build), the tombstone the old one.
+  it('re-importing the retired file resurrects the tombstone without touching the live row', async () => {
+    const oldMetaHash = getMetadataHash(TEST_METADATA);
+    const liveBook = makeBook({ hash: 'new-hash-456', metaHash: 'meta-hash-of-new-file' });
+    const tombstone = makeBook({
+      hash: 'old-hash-123',
+      metaHash: oldMetaHash,
+      deletedAt: Date.now() - 5000,
+    });
+    const books: Book[] = [liveBook, tombstone];
+    const lookupIndex = buildBookLookupIndex(books);
+
+    mockPartialMD5.mockResolvedValue('old-hash-123');
+    setupMockBookDoc();
+
+    const result = await service.importBook(
+      new File(['old content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+      { lookupIndex },
+    );
+
+    expect(result).toBe(tombstone);
+    expect(tombstone.deletedAt).toBeNull();
+    expect(liveBook.deletedAt).toBeNull();
+    expect(liveBook.hash).toBe('new-hash-456');
+    expect(service.getFs().removeDir).not.toHaveBeenCalledWith('new-hash-456', 'Books', true);
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
   });
 
   it('should not match metaHash for deleted books', async () => {

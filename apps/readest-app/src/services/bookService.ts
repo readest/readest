@@ -504,6 +504,9 @@ export async function importBook(
   let openedSource: ClosableFile | undefined;
   let rollbackBook: Book | undefined;
   let rollbackSnapshot: Book | undefined;
+  // Set on a metaHash re-key: a deletedAt row carrying the hash the row is
+  // leaving behind. Pushed only past the rollback point below.
+  let retiredTombstone: Book | undefined;
   const rememberBookState = (book: Book) => {
     if (rollbackBook) return;
     rollbackBook = book;
@@ -714,7 +717,18 @@ export async function importBook(
     }
     // update book metadata when reimporting the same book
     if (existingBook && metaHashMatch) {
-      // MetaHash match (different file, same book): override metadata and hash
+      // MetaHash match (different file, same book): override metadata and hash.
+      // Re-keying the row retires the old hash, so leave a deletedAt tombstone
+      // for it — the same treatment mergeBooks gives duplicates — so sync
+      // peers drop their old-hash rows instead of re-adding them as live cards
+      // whose file no longer exists. The tombstone is pushed below, past the
+      // rollback point, so a failed import cannot strand one for a hash that
+      // is live again.
+      const retiredHash = existingBook.hash;
+      if (retiredHash && retiredHash !== hash) {
+        const now = Date.now();
+        retiredTombstone = { ...existingBook, hash: retiredHash, deletedAt: now, updatedAt: now };
+      }
       existingBook.hash = hash;
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
@@ -904,6 +918,9 @@ export async function importBook(
     // to a directory whose retirement may already have started.
     rollbackBook = undefined;
     rollbackSnapshot = undefined;
+    if (retiredTombstone) {
+      books.push(retiredTombstone);
+    }
 
     // The target config and its paired audio are durable. Duplicate and old
     // hash directories can now be retired without leaving a surviving config
