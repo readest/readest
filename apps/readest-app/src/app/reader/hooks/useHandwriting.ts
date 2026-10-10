@@ -102,7 +102,13 @@ export function useHandwriting(bookKey: string) {
   const [, forceRender] = useState(0);
   // Bumped when content moves without a page change (scroll, pinch preview).
   const [layoutTick, setLayoutTick] = useState(0);
-  const [enabled, setEnabled] = useState(false);
+  // In the reader store so the viewer can make room for the drawing bars.
+  const enabled = useReaderStore((state) => !!state.viewStates[bookKey]?.drawingEnabled);
+  const setDrawingEnabled = useReaderStore((state) => state.setDrawingEnabled);
+  const setEnabled = useCallback(
+    (on: boolean) => setDrawingEnabled(bookKey, on),
+    [bookKey, setDrawingEnabled],
+  );
   const [erasing, setErasing] = useState(false);
 
   const loadEditor = useCallback(() => {

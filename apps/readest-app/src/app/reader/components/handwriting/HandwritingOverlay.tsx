@@ -33,13 +33,13 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
     const onHandwritingEvent = (event: CustomEvent) => {
       const { action, bookKey: target } = event.detail as { action: string; bookKey: string };
       if (target !== bookKey) return;
-      if (action === 'toggle') setEnabled((enabled) => !enabled);
+      if (action === 'toggle') setEnabled(!enabled);
     };
     eventDispatcher.on('handwriting', onHandwritingEvent);
     return () => {
       eventDispatcher.off('handwriting', onHandwritingEvent);
     };
-  }, [bookKey, setEnabled]);
+  }, [bookKey, enabled, setEnabled]);
 
   // A tap on existing ink opens it for editing instead of turning the page.
   useEffect(() => {

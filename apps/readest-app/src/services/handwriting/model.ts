@@ -7,7 +7,7 @@
 import type { InkShape } from './anchor';
 
 export const DEFAULT_HANDWRITING_COLOR = '#1a1a1a';
-export const DEFAULT_HANDWRITING_WIDTH = 0.004;
+export const DEFAULT_HANDWRITING_WIDTH = 0.006;
 
 /** Ink colors offered in the toolbar, in swatch order. */
 export const HANDWRITING_COLORS = [
@@ -22,7 +22,7 @@ export const HANDWRITING_COLORS = [
  * Pen widths as a fraction of page width. The stored value is normalized, so
  * the same setting reads the same relative thickness on any page size.
  */
-export const HANDWRITING_WIDTHS = [0.002, DEFAULT_HANDWRITING_WIDTH, 0.008, 0.014] as const;
+export const HANDWRITING_WIDTHS = [0.004, DEFAULT_HANDWRITING_WIDTH, 0.01, 0.016] as const;
 
 /** [x, y] or [x, y, pressure]; x/y in 0..1 of the page, pressure in 0..1. */
 export type InkPoint = [number, number] | [number, number, number];

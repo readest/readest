@@ -83,6 +83,15 @@ describe('PointerHandwritingBackend palm rejection', () => {
     expect(points.map((p) => p.slice(0, 2))).toEqual([[30, 40]]);
   });
 
+  it('keeps no pressure for a finger, which reports none worth drawing with', () => {
+    const { el, points } = setup();
+
+    dispatch(el, 'pointerdown', { pointerId: 7, pointerType: 'touch', pressure: 0.1 });
+    dispatch(el, 'pointerup', { pointerId: 7, pointerType: 'touch' });
+
+    expect(points.every((p) => p.length === 2)).toBe(true);
+  });
+
   it('accepts a new touch stroke after the pen lifts', () => {
     const { el, points } = setup();
 

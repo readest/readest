@@ -107,9 +107,9 @@ export class PointerHandwritingBackend {
 
   private samplePoint(e: PointerEvent): InkPoint {
     const p = this.toPage!(e.clientX, e.clientY);
-    // pen/touch pressure is 0..1 already; mouse reports 0 while not pressed
-    // and 0.5 while a button is down, which is not real pressure data.
-    return e.pointerType === 'mouse' ? [p[0], p[1]] : [p[0], p[1], e.pressure];
+    // Only a pen reports real pressure: a mouse reports 0.5 while a button is
+    // down, and a finger's contact size often reads as a light touch.
+    return e.pointerType === 'pen' ? [p[0], p[1], e.pressure] : [p[0], p[1]];
   }
 
   private schedule() {

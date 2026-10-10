@@ -1,9 +1,9 @@
 import type { InkStroke } from './model';
 import type { PageRect } from './coords';
 
-// Pressure scales the pen width between MIN_SCALE (feather touch) and 1.
-const MIN_SCALE = 0.25;
-const pressureScale = (p: number | undefined) => MIN_SCALE + (1 - MIN_SCALE) * (p ?? 1);
+// Ordinary pressure (0.5) draws the pen width; a feather touch half of it, a
+// firm press half again more. A stroke without pressure draws the pen width.
+const pressureScale = (p: number | undefined) => 0.5 + (p ?? 0.5);
 
 /**
  * Redraws `strokes` onto a canvas whose page occupies `rect`; pass
@@ -56,7 +56,7 @@ export const renderStrokes = (
     for (let i = 1; i < pts.length; i++) {
       const a = pts[i - 1]!;
       const b = pts[i]!;
-      ctx.lineWidth = base * pressureScale(((a[2] ?? 1) + (b[2] ?? 1)) / 2);
+      ctx.lineWidth = base * pressureScale(((a[2] ?? 0.5) + (b[2] ?? 0.5)) / 2);
       ctx.beginPath();
       ctx.moveTo(a[0], a[1]);
       ctx.lineTo(b[0], b[1]);

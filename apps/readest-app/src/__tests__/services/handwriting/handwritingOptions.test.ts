@@ -20,7 +20,11 @@ describe('handwriting pen options', () => {
     const strokes = service.strokesForRender();
     expect(strokes).toEqual([]);
     expect(DEFAULT_HANDWRITING_COLOR).toBe('#1a1a1a');
-    expect(DEFAULT_HANDWRITING_WIDTH).toBe(0.004);
+    expect(DEFAULT_HANDWRITING_WIDTH).toBe(0.006);
+  });
+
+  it('offers no hairline pen: the finest is still a solid line on a phone', () => {
+    expect(Math.min(...HANDWRITING_WIDTHS)).toBeGreaterThanOrEqual(0.004);
   });
 
   it('exposes the default color as the first swatch, so a fresh install has a selected dot', () => {

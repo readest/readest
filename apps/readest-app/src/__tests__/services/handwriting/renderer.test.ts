@@ -91,6 +91,36 @@ describe('renderStrokes', () => {
     expect(new Set(widths).size).toBeGreaterThan(1);
   });
 
+  it('draws a stroke at its pen width under ordinary pressure', () => {
+    const { ctx, widths } = fakeCtx();
+    renderStrokes(
+      ctx,
+      [
+        mk('a', [
+          [0, 0, 0.5],
+          [1, 1, 0.5],
+        ]),
+      ],
+      rect,
+    );
+    expect(widths).toEqual([10]);
+  });
+
+  it('keeps a feather-light stroke at half its pen width', () => {
+    const { ctx, widths } = fakeCtx();
+    renderStrokes(
+      ctx,
+      [
+        mk('a', [
+          [0, 0, 0],
+          [1, 1, 0],
+        ]),
+      ],
+      rect,
+    );
+    expect(widths).toEqual([5]);
+  });
+
   it('uses each stroke color', () => {
     const { ctx } = fakeCtx();
     renderStrokes(
