@@ -296,6 +296,13 @@ describe('BufferedTTSClient with a windowed provider', () => {
       expect(getMeasuredDuration('v1', 'Second sentence.')).toBeGreaterThan(0);
     });
 
+    test('reports windowed prefetch only for providers that take it', async () => {
+      expect(
+        (await start(makeProvider({ prefetch: vi.fn() }))).getCapabilities().windowedPrefetch,
+      ).toBe(true);
+      expect((await start(makeProvider())).getCapabilities().windowedPrefetch).toBe(false);
+    });
+
     test('providers without prefetch keep synthesizing preloads', async () => {
       const provider = makeProvider();
       const client = await start(provider);

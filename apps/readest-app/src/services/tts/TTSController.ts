@@ -24,7 +24,7 @@ import { createBookTTSCacheStore } from './providers/bookCacheStore';
 import { CachingProvider } from './providers/cache';
 import { ReadestVoiceProvider } from './providers/readest';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
-import { hydrateProvisionalDurations } from './ttsDuration';
+import { estimateSentenceSeconds, hydrateProvisionalDurations } from './ttsDuration';
 import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
@@ -78,6 +78,10 @@ let ttsPositionSequence = 0;
 // consecutive failures so a wholly-unusable engine still stops gracefully
 // instead of silently racing to the end of the book. See #4613, #4408.
 const TTS_NATIVE_SPEAK_MAX_CONSECUTIVE_ERRORS = 5;
+// Windowed engines (TTSCapabilities.windowedPrefetch): preload upcoming
+// paragraphs until about this much estimated audio, at most this many.
+const PRELOAD_AHEAD_SEC = 180;
+const PRELOAD_MAX_PARAGRAPHS = 40;
 
 type TTSState =
   | 'stopped'
@@ -1227,7 +1231,8 @@ export class TTSController extends EventTarget {
     return {
       position: timeline.positionAt(index, within),
       duration,
-      measuredFraction: timeline.getMeasuredFraction(),
+      // The buffer bar: how far synthesized audio reaches past this sentence.
+      measuredFraction: timeline.getBufferedFraction(index),
     };
   }
 
@@ -1506,6 +1511,13 @@ export class TTSController extends EventTarget {
   async preloadNextSSML(count: number = 4) {
     const tts = this.#getTts();
     if (!tts) return;
+    // A windowed engine takes preloads as hints it batches on a GPU worker that
+    // is slower than an online voice: keep about three minutes of upcoming
+    // paragraphs requested, however short they are, so the buffer never drains.
+    const byDuration = !!this.ttsClient.getCapabilities().windowedPrefetch;
+    const maxCount = byDuration ? PRELOAD_MAX_PARAGRAPHS : count;
+    const voiceId = this.ttsClient.getVoiceId();
+    let seconds = 0;
 
     // Gather all next SSMLs and rewind synchronously to avoid a race condition:
     // tts.next() replaces TTS.#ranges (used by setMark() during playback).
@@ -1513,10 +1525,14 @@ export class TTSController extends EventTarget {
     // can dispatch marks against the wrong #ranges, causing incorrect highlights
     // and accidental page turns.
     const rawSsmls: string[] = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < maxCount; i++) {
       const ssml = tts.next();
       if (!ssml) break;
       rawSsmls.push(ssml);
+      if (!byDuration) continue;
+      const text = ssml.replace(/<[^>]*>/g, ' ');
+      seconds += estimateSentenceSeconds(text, this.ttsLang || 'en', voiceId);
+      if (seconds >= PRELOAD_AHEAD_SEC) break;
     }
     for (let i = 0; i < rawSsmls.length; i++) {
       tts.prev();

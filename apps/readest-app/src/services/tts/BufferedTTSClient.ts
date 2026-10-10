@@ -857,6 +857,7 @@ export class BufferedTTSClient implements TTSClient {
       // queue starts each session fresh, so its paragraph pause stays with the
       // controller.
       scheduledGaps: !(this.#player instanceof NativeAudioPlayer),
+      windowedPrefetch: !!this.provider.prefetch,
     };
   }
 

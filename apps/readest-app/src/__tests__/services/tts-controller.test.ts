@@ -72,6 +72,7 @@ vi.mock('@/utils/node', () => ({
 
 vi.mock('@/utils/lang', () => ({
   isValidLang: vi.fn(() => true),
+  isCJKLang: vi.fn(() => false),
 }));
 
 vi.mock('foliate-js/tts.js', () => ({
@@ -1898,6 +1899,39 @@ describe('TTSController', () => {
         expect.anything(),
         true,
       );
+    });
+
+    test('a windowed client gets about three minutes of upcoming paragraphs, not four', async () => {
+      // 450 Latin chars is about 30 s at the default estimate: six reach 180 s.
+      const paragraph = `<speak>${'a'.repeat(450)}</speak>`;
+      mockView.tts = {
+        next: vi.fn().mockReturnValue(paragraph),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        wordBoundaries: true,
+        mediaClock: true,
+        gapControl: true,
+        liveRateChange: false,
+        windowedPrefetch: true,
+      }) as unknown as typeof controller.ttsClient.getCapabilities;
+
+      await controller.preloadNextSSML();
+
+      expect(controller.ttsClient.speak).toHaveBeenCalledTimes(6);
+    });
+
+    test('other clients keep preloading four paragraphs', async () => {
+      mockView.tts = {
+        next: vi.fn().mockReturnValue(`<speak>${'a'.repeat(450)}</speak>`),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+
+      await controller.preloadNextSSML();
+
+      expect(controller.ttsClient.speak).toHaveBeenCalledTimes(4);
     });
 
     test('preloads the next paragraphs one after another, in reading order', async () => {
