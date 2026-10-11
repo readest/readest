@@ -9,7 +9,7 @@ import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { DEFAULT_PARAGRAPH_GAP_SEC, TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
-import { findBoundaryIndexAtTime } from './wordHighlight';
+import { alignBoundariesToSpeech, findBoundaryIndexAtTime } from './wordHighlight';
 import { applyEdgeFade, findSpeechBounds } from './pcm';
 import { timeStretch } from './timeStretch';
 import { gapAfterSentence } from './gap';
@@ -535,7 +535,7 @@ export class BufferedTTSClient implements TTSClient {
         if (!ready || signal.aborted) return;
         chunkMeta.push({
           mark,
-          boundaries: audio.boundaries,
+          boundaries: alignBoundariesToSpeech(audio.boundaries, prepared.trimStartSec),
           trimStartSec: prepared.trimStartSec,
           trimmedDurationSec: prepared.trimmedDurationSec,
           req,

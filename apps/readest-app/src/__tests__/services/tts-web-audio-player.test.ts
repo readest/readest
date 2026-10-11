@@ -49,6 +49,23 @@ describe('WebAudioPlayer scheduling', () => {
     ]);
   });
 
+  test('a chunk scheduled after its predecessor ended fires its chunk-start then', async () => {
+    // Its audio arrived late (synthesis still pending when the previous
+    // sentence finished): nothing announces it at the prior onended, so the
+    // schedule must, or the sentence plays with no mark and no word highlight.
+    const { ctx, player, events, onEvent } = setup();
+    await player.ensureContext();
+    const gen = player.startSession(onEvent);
+    player.scheduleChunk(gen, makeBuffer(2), { trimStartSec: 0, mediaScale: 1, gapSec: 0.2 });
+    await ctx.advanceTo(SAFETY + 3);
+    expect(events).toEqual([{ type: 'chunk-start', chunkIndex: 0 }]);
+    player.scheduleChunk(gen, makeBuffer(1), { trimStartSec: 0, mediaScale: 1, gapSec: 0.2 });
+    expect(events).toEqual([
+      { type: 'chunk-start', chunkIndex: 0 },
+      { type: 'chunk-start', chunkIndex: 1 },
+    ]);
+  });
+
   test('stale-generation scheduleChunk is a no-op', async () => {
     const { ctx, player, events, onEvent } = setup();
     await player.ensureContext();
@@ -354,6 +371,17 @@ describe('WebAudioPlayer playback position', () => {
     const pos = player.getPlaybackPosition(gen);
     expect(pos?.chunkIndex).toBe(0);
     expect(pos?.mediaTimeSec).toBeCloseTo(0.2 + 1, 5);
+  });
+
+  test('trails the context clock by the output latency', async () => {
+    const { ctx, player, onEvent } = setup();
+    await player.ensureContext();
+    const gen = player.startSession(onEvent);
+    player.scheduleChunk(gen, makeBuffer(2), { trimStartSec: 0, mediaScale: 1, gapSec: 0 });
+    // The speakers play what the clock rendered 50 ms ago.
+    Object.assign(ctx, { outputLatency: 0.05 });
+    await ctx.advanceTo(SAFETY + 1);
+    expect(player.getPlaybackPosition(gen)?.mediaTimeSec).toBeCloseTo(0.95, 5);
   });
 
   test('returns null for a stale generation or empty session', async () => {
