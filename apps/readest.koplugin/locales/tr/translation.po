@@ -338,9 +338,6 @@ msgstr "Güncelleme kontrol et"
 msgid "Please login first"
 msgstr "Önce giriş yapın"
 
-msgid "Please configure Readest settings first"
-msgstr "Önce Readest ayarlarını yapılandırın"
-
 msgid "(none)"
 msgstr "(yok)"
 
@@ -506,9 +503,6 @@ msgstr "Tam senkronizasyon: tüm açıklamalar alınıyor…"
 msgid "Pulling annotations..."
 msgstr "Açıklamalar alınıyor…"
 
-msgid "Authentication failed, please login again"
-msgstr "Kimlik doğrulama başarısız, tekrar giriş yapın"
-
 msgid "Failed to pull annotations"
 msgstr "Açıklamalar alınamadı"
 
@@ -520,6 +514,9 @@ msgstr "%1 açıklama alındı"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Readest oturumunuzun süresi doldu. Lütfen tekrar giriş yapın."
+
+msgid "Authentication failed, please login again"
+msgstr "Kimlik doğrulama başarısız, tekrar giriş yapın"
 
 msgid "Login"
 msgstr "Giriş"
@@ -566,8 +563,65 @@ msgstr "Okuma ilerlemesi alınamadı"
 msgid "Reading progress synchronized"
 msgstr "Okuma ilerlemesi senkronize edildi"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Kaydedilen okuma konumu kitabın bu kopyasıyla kullanılamıyor"
+
 msgid "No saved reading progress found for this book"
 msgstr "Bu kitap için kayıtlı okuma ilerlemesi bulunamadı"
+
+msgid "Sync was cancelled."
+msgstr "Eşitleme iptal edildi."
+
+msgid "The connection timed out. Please try again."
+msgstr "Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Ağa ulaşılamıyor. Lütfen internet bağlantısını kontrol edin."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Sunucu bulunamadı. Lütfen internet bağlantısını kontrol edin."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Sunucu bağlantıyı reddetti. Lütfen daha sonra tekrar deneyin."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Bağlantı kesildi. Lütfen tekrar deneyin."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Sunucuyla güvenli bir bağlantı kurulamadı."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Kimlik doğrulama başarısız oldu. Lütfen tekrar giriş yapın."
+
+msgid "The account changed during sync."
+msgstr "Eşitleme sırasında hesap değişti."
+
+msgid "The file was not found in the cloud."
+msgstr "Dosya bulutta bulunamadı."
+
+msgid "The local file is missing."
+msgstr "Yerel dosya eksik."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Dahili bir hata oluştu. Lütfen tekrar deneyin."
+
+msgid "Access denied."
+msgstr "Erişim reddedildi."
+
+msgid "Not found on the server."
+msgstr "Sunucuda bulunamadı."
+
+msgid "The file is too large."
+msgstr "Dosya çok büyük."
+
+msgid "Too many requests. Please try again later."
+msgstr "Çok fazla istek. Lütfen daha sonra tekrar deneyin."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Sunucu geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin."
+
+msgid "The request failed. Please try again."
+msgstr "İstek başarısız oldu. Lütfen tekrar deneyin."
 
 msgid "Reading statistics are up to date"
 msgstr "Okuma istatistikleri güncel"

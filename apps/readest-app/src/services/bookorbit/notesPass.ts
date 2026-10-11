@@ -3,6 +3,7 @@ import type { BookOrbitSettings } from '@/types/settings';
 import {
   applyAnnotationResult,
   buildAnnotationExchangeBook,
+  type ChapterResolver,
   type PositionResolver,
 } from './annotationExchange';
 import { applyBookmarkResult, buildBookmarkExchangeBook } from './bookmarkExchange';
@@ -49,6 +50,12 @@ export interface NotesPassDeps {
   resolvePosition: PositionResolver;
   /** Fill xpointer0/1 from cfi for the given notes (returns the enriched notes). */
   populateXPointers: (notes: BookNote[]) => Promise<BookNote[]>;
+  /**
+   * Chapter label of a note from the book's TOC, or null. BookOrbit files an
+   * annotation under the chapter that arrives with it, so this has to be
+   * stamped on the wire — the local note model does not carry it.
+   */
+  chapterForNote: ChapterResolver;
   /** Exchange highlights and bookmarks; off still match-checks the book. */
   syncNotes: boolean;
   syncBookStates: boolean;
@@ -141,6 +148,7 @@ const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
       hash,
       notes,
       identityOf,
+      deps.chapterForNote,
       await store.getWatermark(hash, 'annotations'),
       Number.MAX_SAFE_INTEGER,
     );
@@ -192,6 +200,7 @@ const exchangeNotes = async (deps: NotesPassDeps): Promise<void> => {
       hash,
       notes,
       identityOf,
+      deps.chapterForNote,
       await store.getWatermark(hash, 'bookmarks'),
       Number.MAX_SAFE_INTEGER,
     );

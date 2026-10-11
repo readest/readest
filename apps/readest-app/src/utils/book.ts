@@ -317,6 +317,34 @@ export const setBookGroup = (
 };
 
 /**
+ * Stamp a delete so every device hides the book, erasing its reading progress
+ * when the caller asks for a purge.
+ *
+ * `updatedAt` is bumped on purpose here, unlike the group/metadata/cover clocks
+ * (#6414): the cloud merge is whole-row last-write-wins, and a delete used to
+ * leave `updatedAt` alone — so the row's own older page-turn progress outranked
+ * the tombstone, the next pull cleared `deletedAt`, and the book came back with
+ * its progress, as if the delete (and the purge) had done nothing (#6663). The
+ * demo-shelf comment in useBooksSync names the same mechanism.
+ */
+export const markBookDeleted = (book: Book, deletedAt: number, purge: boolean) => {
+  book.deletedAt = deletedAt;
+  // A library tombstone alone is not permission to destroy bytes on a
+  // third-party file mirror. Bind the explicit cloud-and-device intent to this
+  // exact tombstone so the file-sync engine can distinguish it from a
+  // local-only or indirectly-created delete (#5695, the third recurrence of
+  // #5084).
+  book.fileSyncDeletionRequestedAt = deletedAt;
+  book.downloadedAt = null;
+  book.coverDownloadedAt = null;
+  // Strictly above any future-dated stamp a fast-clocked peer left on the row:
+  // lowering it would hand the merge back to the cloud row (ties go to it).
+  book.updatedAt = Math.max(deletedAt, (book.updatedAt ?? 0) + 1);
+  // null (not undefined, which JSON drops) clears it in the cloud too (#6532).
+  if (purge) book.progress = null;
+};
+
+/**
  * The latest local edit on any of a book row's clocks. Group, metadata and
  * cover edits stamp only their own clock and leave `updatedAt` alone (#6414),
  * so the sync push has to look at all of them to know the row changed.

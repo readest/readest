@@ -338,9 +338,6 @@ msgstr "Перевірити оновлення"
 msgid "Please login first"
 msgstr "Спочатку увійдіть"
 
-msgid "Please configure Readest settings first"
-msgstr "Спочатку налаштуйте параметри Readest"
-
 msgid "(none)"
 msgstr "(немає)"
 
@@ -506,9 +503,6 @@ msgstr "Повна синхронізація: отримання всіх но�
 msgid "Pulling annotations..."
 msgstr "Отримання нотаток…"
 
-msgid "Authentication failed, please login again"
-msgstr "Помилка автентифікації, увійдіть знову"
-
 msgid "Failed to pull annotations"
 msgstr "Не вдалося отримати нотатки"
 
@@ -520,6 +514,9 @@ msgstr "Отримано нотаток: %1"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Сеанс Readest завершився. Увійдіть знову."
+
+msgid "Authentication failed, please login again"
+msgstr "Помилка автентифікації, увійдіть знову"
 
 msgid "Login"
 msgstr "Увійти"
@@ -566,8 +563,65 @@ msgstr "Не вдалося отримати прогрес читання"
 msgid "Reading progress synchronized"
 msgstr "Прогрес читання синхронізовано"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Збережену позицію читання не можна використати з цією копією книги"
+
 msgid "No saved reading progress found for this book"
 msgstr "Збережений прогрес читання для цієї книги не знайдено"
+
+msgid "Sync was cancelled."
+msgstr "Синхронізацію скасовано."
+
+msgid "The connection timed out. Please try again."
+msgstr "Час очікування з'єднання минув. Спробуйте ще раз."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Мережа недоступна. Перевірте підключення до інтернету."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Сервер не знайдено. Перевірте підключення до інтернету."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Сервер відхилив з'єднання. Спробуйте пізніше."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "З'єднання перервано. Спробуйте ще раз."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Не вдалося встановити захищене з'єднання із сервером."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Помилка автентифікації. Увійдіть знову."
+
+msgid "The account changed during sync."
+msgstr "Обліковий запис змінився під час синхронізації."
+
+msgid "The file was not found in the cloud."
+msgstr "Файл не знайдено в хмарі."
+
+msgid "The local file is missing."
+msgstr "Локальний файл відсутній."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Сталася внутрішня помилка. Спробуйте ще раз."
+
+msgid "Access denied."
+msgstr "Доступ заборонено."
+
+msgid "Not found on the server."
+msgstr "Не знайдено на сервері."
+
+msgid "The file is too large."
+msgstr "Файл завеликий."
+
+msgid "Too many requests. Please try again later."
+msgstr "Забагато запитів. Спробуйте пізніше."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Сервер тимчасово недоступний. Спробуйте пізніше."
+
+msgid "The request failed. Please try again."
+msgstr "Запит не виконано. Спробуйте ще раз."
 
 msgid "Reading statistics are up to date"
 msgstr "Статистика читання актуальна"

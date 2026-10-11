@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "Herhalingsbegin instellen (A)",
   "Set Repeat End (B)": "Herhalingseinde instellen (B)",
   "Clear A-B Repeat": "A-B-herhaling wissen",
-  "Pause After Each Sentence": "Pauzeren na elke zin"
+  "Pause After Each Sentence": "Pauzeren na elke zin",
+  "Quote Card": "Citaatkaart",
+  "Create a quote card image from the selection": "Een citaatkaart-afbeelding maken van de selectie",
+  "Paper": "Papier",
+  "Night": "Nacht",
+  "Reader Theme": "Leesthema",
+  "The quote was shortened to fit the card.": "Het citaat is ingekort zodat het op de kaart past.",
+  "Classic": "Klassiek",
+  "Centered": "Gecentreerd",
+  "Serif": "Schreef",
+  "Sans": "Schreefloos",
+  "Shape": "Vorm",
+  "Book Info": "Boekinfo",
+  "QR Code": "QR-code",
+  "Links to this passage in Readest": "Linkt naar deze passage in Readest",
+  "via {{app}}": "via {{app}}"
 }

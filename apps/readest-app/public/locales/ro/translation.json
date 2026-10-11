@@ -2627,5 +2627,20 @@
   "Set Repeat Start (A)": "Setează începutul repetării (A)",
   "Set Repeat End (B)": "Setează sfârșitul repetării (B)",
   "Clear A-B Repeat": "Șterge repetarea A-B",
-  "Pause After Each Sentence": "Pauză după fiecare propoziție"
+  "Pause After Each Sentence": "Pauză după fiecare propoziție",
+  "Quote Card": "Card de citat",
+  "Create a quote card image from the selection": "Creează o imagine card de citat din selecție",
+  "Paper": "Hârtie",
+  "Night": "Noapte",
+  "Reader Theme": "Tema de lectură",
+  "The quote was shortened to fit the card.": "Citatul a fost scurtat pentru a încăpea pe card.",
+  "Classic": "Clasic",
+  "Centered": "Centrat",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "Formă",
+  "Book Info": "Informații carte",
+  "QR Code": "Cod QR",
+  "Links to this passage in Readest": "Trimite la acest pasaj în Readest",
+  "via {{app}}": "prin {{app}}"
 }

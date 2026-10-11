@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "Tekrar başlangıcını ayarla (A)",
   "Set Repeat End (B)": "Tekrar bitişini ayarla (B)",
   "Clear A-B Repeat": "A-B tekrarını temizle",
-  "Pause After Each Sentence": "Her cümleden sonra duraklat"
+  "Pause After Each Sentence": "Her cümleden sonra duraklat",
+  "Quote Card": "Alıntı Kartı",
+  "Create a quote card image from the selection": "Seçimden alıntı kartı görseli oluştur",
+  "Paper": "Kâğıt",
+  "Night": "Gece",
+  "Reader Theme": "Okuma Teması",
+  "The quote was shortened to fit the card.": "Alıntı karta sığması için kısaltıldı.",
+  "Classic": "Klasik",
+  "Centered": "Ortalanmış",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "Şekil",
+  "Book Info": "Kitap Bilgisi",
+  "QR Code": "QR Kodu",
+  "Links to this passage in Readest": "Readest'te bu bölüme bağlantı verir",
+  "via {{app}}": "{{app}} ile"
 }

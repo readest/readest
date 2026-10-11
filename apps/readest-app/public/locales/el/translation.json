@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "Ορισμός αρχής επανάληψης (A)",
   "Set Repeat End (B)": "Ορισμός τέλους επανάληψης (B)",
   "Clear A-B Repeat": "Διαγραφή επανάληψης A-B",
-  "Pause After Each Sentence": "Παύση μετά από κάθε πρόταση"
+  "Pause After Each Sentence": "Παύση μετά από κάθε πρόταση",
+  "Quote Card": "Κάρτα αποσπάσματος",
+  "Create a quote card image from the selection": "Δημιουργία εικόνας κάρτας αποσπάσματος από την επιλογή",
+  "Paper": "Χαρτί",
+  "Night": "Νύχτα",
+  "Reader Theme": "Θέμα ανάγνωσης",
+  "The quote was shortened to fit the card.": "Το απόσπασμα συντομεύτηκε για να χωρέσει στην κάρτα.",
+  "Classic": "Κλασικό",
+  "Centered": "Στο κέντρο",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "Σχήμα",
+  "Book Info": "Στοιχεία βιβλίου",
+  "QR Code": "Κωδικός QR",
+  "Links to this passage in Readest": "Παραπέμπει σε αυτό το απόσπασμα στο Readest",
+  "via {{app}}": "μέσω {{app}}"
 }

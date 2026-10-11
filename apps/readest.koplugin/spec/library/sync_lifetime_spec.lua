@@ -15,7 +15,7 @@ describe("library sync request lifetime", function()
         }
         opts = {settings = settings, store = store, sync_auth = {
             withFreshToken = function(_, _, _, cb) cb(true) end,
-            getReadestSyncClient = function() return client end,
+            getAuthenticatedClient = function() return client end,
         }}
     end)
     after_each(function() store:close() end)
@@ -70,5 +70,36 @@ describe("library sync request lifetime", function()
         assert.same({false, "sync cancelled"}, reply)
         assert.is_nil(pending_pull)
         assert.is_false(reconciled)
+    end)
+    it("guards token-retry dispatches with the sync context", function()
+        local guard
+        local get_client = opts.sync_auth.getAuthenticatedClient
+        opts.sync_auth.getAuthenticatedClient = function(self, s, path, can_dispatch)
+            guard = can_dispatch
+            return get_client(self, s, path)
+        end
+        pull()
+        assert.is_true(guard())
+        settings.user_id = "bob"
+        assert.is_false(guard())
+    end)
+    it("keeps the server message for a 403 that is not an auth failure", function()
+        syncbooks.pullBooks(opts, completed)
+        pending_pull(false, {error = "Permission denied"}, 403)
+        assert.same({false, "Permission denied"}, reply)
+    end)
+    it("reports a flagged session rejection as an auth failure", function()
+        syncbooks.pullBooks(opts, completed)
+        pending_pull(false, {error = "authentication required", auth_required = true}, 401)
+        assert.same({false, "auth"}, reply)
+    end)
+    it("ends silently when the auth wrapper cleared the token before the callback", function()
+        -- requireLogin drops the access token before callbacks run, so the
+        -- library toast is skipped and only the login prompt is shown.
+        pull()
+        settings.access_token = nil
+        pending_pull(false, {error = "authentication required", auth_required = true}, 401)
+        assert.same({false, "sync cancelled"}, reply)
+        assert.are.equal(0, pushes)
     end)
 end)

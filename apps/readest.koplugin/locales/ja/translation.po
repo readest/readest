@@ -338,9 +338,6 @@ msgstr "更新を確認"
 msgid "Please login first"
 msgstr "先にログインしてください"
 
-msgid "Please configure Readest settings first"
-msgstr "先に Readest の設定を行ってください"
-
 msgid "(none)"
 msgstr "（なし）"
 
@@ -506,9 +503,6 @@ msgstr "フル同期: すべての注釈を取得しています…"
 msgid "Pulling annotations..."
 msgstr "注釈を取得しています…"
 
-msgid "Authentication failed, please login again"
-msgstr "認証に失敗しました。再度ログインしてください"
-
 msgid "Failed to pull annotations"
 msgstr "注釈の取得に失敗しました"
 
@@ -520,6 +514,9 @@ msgstr "%1 件の注釈を取得しました"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Readest のセッションの有効期限が切れました。再度ログインしてください。"
+
+msgid "Authentication failed, please login again"
+msgstr "認証に失敗しました。再度ログインしてください"
 
 msgid "Login"
 msgstr "ログイン"
@@ -566,8 +563,65 @@ msgstr "読書の進捗の取得に失敗しました"
 msgid "Reading progress synchronized"
 msgstr "読書の進捗を同期しました"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "保存された読書位置はこの本のコピーでは使用できません"
+
 msgid "No saved reading progress found for this book"
 msgstr "この書籍の保存された読書進捗が見つかりません"
+
+msgid "Sync was cancelled."
+msgstr "同期はキャンセルされました。"
+
+msgid "The connection timed out. Please try again."
+msgstr "接続がタイムアウトしました。もう一度お試しください。"
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "ネットワークに到達できません。インターネット接続を確認してください。"
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "サーバーが見つかりません。インターネット接続を確認してください。"
+
+msgid "The server refused the connection. Please try again later."
+msgstr "サーバーが接続を拒否しました。しばらくしてからもう一度お試しください。"
+
+msgid "The connection was interrupted. Please try again."
+msgstr "接続が中断されました。もう一度お試しください。"
+
+msgid "A secure connection to the server could not be established."
+msgstr "サーバーとの安全な接続を確立できませんでした。"
+
+msgid "Authentication failed. Please log in again."
+msgstr "認証に失敗しました。再度ログインしてください。"
+
+msgid "The account changed during sync."
+msgstr "同期中にアカウントが変更されました。"
+
+msgid "The file was not found in the cloud."
+msgstr "クラウドにファイルが見つかりません。"
+
+msgid "The local file is missing."
+msgstr "ローカルファイルが見つかりません。"
+
+msgid "An internal error occurred. Please try again."
+msgstr "内部エラーが発生しました。もう一度お試しください。"
+
+msgid "Access denied."
+msgstr "アクセスが拒否されました。"
+
+msgid "Not found on the server."
+msgstr "サーバー上に見つかりません。"
+
+msgid "The file is too large."
+msgstr "ファイルが大きすぎます。"
+
+msgid "Too many requests. Please try again later."
+msgstr "リクエストが多すぎます。しばらくしてからもう一度お試しください。"
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "サーバーは一時的に利用できません。しばらくしてからもう一度お試しください。"
+
+msgid "The request failed. Please try again."
+msgstr "リクエストに失敗しました。もう一度お試しください。"
 
 msgid "Reading statistics are up to date"
 msgstr "読書統計は最新です"

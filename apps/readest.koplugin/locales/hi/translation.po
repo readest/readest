@@ -338,9 +338,6 @@ msgstr "अपडेट जांचें"
 msgid "Please login first"
 msgstr "कृपया पहले लॉग इन करें"
 
-msgid "Please configure Readest settings first"
-msgstr "कृपया पहले Readest सेटिंग्स कॉन्फ़िगर करें"
-
 msgid "(none)"
 msgstr "(कोई नहीं)"
 
@@ -506,9 +503,6 @@ msgstr "पूर्ण सिंक: सभी एनोटेशन प्र�
 msgid "Pulling annotations..."
 msgstr "एनोटेशन प्राप्त कर रहा है…"
 
-msgid "Authentication failed, please login again"
-msgstr "प्रमाणीकरण विफल, कृपया पुनः लॉग इन करें"
-
 msgid "Failed to pull annotations"
 msgstr "एनोटेशन प्राप्त करने में विफल"
 
@@ -520,6 +514,9 @@ msgstr "%1 एनोटेशन प्राप्त हुए"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "आपका Readest सत्र समाप्त हो गया है। कृपया पुनः लॉग इन करें।"
+
+msgid "Authentication failed, please login again"
+msgstr "प्रमाणीकरण विफल, कृपया पुनः लॉग इन करें"
 
 msgid "Login"
 msgstr "लॉग इन"
@@ -566,8 +563,65 @@ msgstr "पठन प्रगति प्राप्त करने मे�
 msgid "Reading progress synchronized"
 msgstr "पठन प्रगति सिंक हो गई"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "सहेजी गई पठन स्थिति का उपयोग पुस्तक की इस प्रति के साथ नहीं किया जा सकता"
+
 msgid "No saved reading progress found for this book"
 msgstr "इस पुस्तक के लिए सहेजी गई पठन प्रगति नहीं मिली"
+
+msgid "Sync was cancelled."
+msgstr "सिंक रद्द कर दिया गया।"
+
+msgid "The connection timed out. Please try again."
+msgstr "कनेक्शन का समय समाप्त हो गया। कृपया फिर से प्रयास करें।"
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "नेटवर्क तक पहुँचा नहीं जा सकता। कृपया इंटरनेट कनेक्शन जाँचें।"
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "सर्वर नहीं मिला। कृपया इंटरनेट कनेक्शन जाँचें।"
+
+msgid "The server refused the connection. Please try again later."
+msgstr "सर्वर ने कनेक्शन अस्वीकार कर दिया। कृपया बाद में फिर से प्रयास करें।"
+
+msgid "The connection was interrupted. Please try again."
+msgstr "कनेक्शन बाधित हो गया। कृपया फिर से प्रयास करें।"
+
+msgid "A secure connection to the server could not be established."
+msgstr "सर्वर से सुरक्षित कनेक्शन स्थापित नहीं किया जा सका।"
+
+msgid "Authentication failed. Please log in again."
+msgstr "प्रमाणीकरण विफल रहा। कृपया फिर से लॉग इन करें।"
+
+msgid "The account changed during sync."
+msgstr "सिंक के दौरान खाता बदल गया।"
+
+msgid "The file was not found in the cloud."
+msgstr "फ़ाइल क्लाउड में नहीं मिली।"
+
+msgid "The local file is missing."
+msgstr "स्थानीय फ़ाइल मौजूद नहीं है।"
+
+msgid "An internal error occurred. Please try again."
+msgstr "एक आंतरिक त्रुटि हुई। कृपया फिर से प्रयास करें।"
+
+msgid "Access denied."
+msgstr "पहुँच अस्वीकृत।"
+
+msgid "Not found on the server."
+msgstr "सर्वर पर नहीं मिला।"
+
+msgid "The file is too large."
+msgstr "फ़ाइल बहुत बड़ी है।"
+
+msgid "Too many requests. Please try again later."
+msgstr "बहुत अधिक अनुरोध। कृपया बाद में फिर से प्रयास करें।"
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "सर्वर अस्थायी रूप से अनुपलब्ध है। कृपया बाद में फिर से प्रयास करें।"
+
+msgid "The request failed. Please try again."
+msgstr "अनुरोध विफल रहा। कृपया फिर से प्रयास करें।"
 
 msgid "Reading statistics are up to date"
 msgstr "पठन आँकड़े अद्यतित हैं"

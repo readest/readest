@@ -98,6 +98,7 @@ const makeDeps = (overrides: Partial<NotesPassDeps> = {}): NotesPassDeps => ({
   mergeNotes: vi.fn(),
   resolvePosition: async () => ({ cfi: 'epubcfi(/6/10!/4/2/1:0)', verified: true }),
   populateXPointers: vi.fn(async (notes: BookNote[]) => notes),
+  chapterForNote: () => null,
   syncNotes: true,
   syncBookStates: false,
   now: () => NOW,
@@ -273,6 +274,27 @@ describe('runBookOrbitNotesPass', () => {
     );
     await expect(runBookOrbitNotesPass(deps)).rejects.toThrow('network down');
     expect(deps.store.setWatermark).not.toHaveBeenCalled();
+  });
+
+  it('sends each change with the chapter the resolver reports', async () => {
+    const deps = makeDeps({
+      getNotes: () => [makeNote({ id: 'hl' }), makeNote({ id: 'bm', type: 'bookmark' })],
+      chapterForNote: (note) => (note.type === 'bookmark' ? 'Chapter 5' : 'Chapter 4'),
+    });
+    (deps.client.getVersion as ReturnType<typeof vi.fn>).mockResolvedValue({
+      pluginVersion: '1',
+      serverVersion: '1',
+      capabilities: ['bookmarkSync'],
+    });
+
+    await runBookOrbitNotesPass(deps);
+
+    const annotations = (deps.client.exchangeAnnotations as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0][0];
+    const bookmarks = (deps.client.exchangeBookmarks as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0][0];
+    expect(annotations.changes[0].chapter).toBe('Chapter 4');
+    expect(bookmarks.changes[0].chapter).toBe('Chapter 5');
   });
 
   it('exchanges bookmarks only when the server advertises bookmarkSync', async () => {

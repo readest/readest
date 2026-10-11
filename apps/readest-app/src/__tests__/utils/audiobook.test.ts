@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  canPairAudiobook,
   isAudiobook,
   buildAbsEbookUrl,
   makeAbsFilePath,
@@ -98,5 +99,53 @@ describe('splitLibraryOpenIds', () => {
       readerIds: ['e1', 'e2'],
       droppedAudiobooks: false,
     });
+  });
+});
+
+describe('canPairAudiobook', () => {
+  const toc = [{ id: 0, label: 'Chapter 1', href: 'ch1.xhtml' }];
+  const epubDoc = { toc, rendition: { layout: 'reflowable' } };
+
+  it('allows a reflowable EPUB with a table of contents', () => {
+    expect(
+      canPairAudiobook({ book: { format: 'EPUB' }, docFormat: 'EPUB', bookDoc: epubDoc }),
+    ).toBe(true);
+    expect(canPairAudiobook({ book: { format: 'EPUB' }, bookDoc: { toc } })).toBe(true);
+  });
+
+  it('allows an EPUB streamed from Audiobookshelf, whose stub format is ABS', () => {
+    expect(canPairAudiobook({ book: { format: 'ABS' }, docFormat: 'EPUB', bookDoc: epubDoc })).toBe(
+      true,
+    );
+  });
+
+  it('rejects other formats streamed from Audiobookshelf', () => {
+    expect(canPairAudiobook({ book: { format: 'ABS' }, docFormat: 'MOBI', bookDoc: { toc } })).toBe(
+      false,
+    );
+    expect(
+      canPairAudiobook({
+        book: { format: 'ABS' },
+        docFormat: 'PDF',
+        bookDoc: { toc, rendition: { layout: 'pre-paginated' } },
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects fixed-layout EPUBs, books without a table of contents, and unloaded books', () => {
+    expect(
+      canPairAudiobook({
+        book: { format: 'EPUB' },
+        docFormat: 'EPUB',
+        bookDoc: { toc, rendition: { layout: 'pre-paginated' } },
+      }),
+    ).toBe(false);
+    expect(
+      canPairAudiobook({ book: { format: 'EPUB' }, docFormat: 'EPUB', bookDoc: { toc: [] } }),
+    ).toBe(false);
+    expect(canPairAudiobook({ book: { format: 'EPUB' }, docFormat: 'EPUB', bookDoc: null })).toBe(
+      false,
+    );
+    expect(canPairAudiobook(null)).toBe(false);
   });
 });

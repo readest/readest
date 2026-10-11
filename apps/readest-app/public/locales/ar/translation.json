@@ -2819,5 +2819,20 @@
   "Set Repeat Start (A)": "تعيين بداية التكرار (A)",
   "Set Repeat End (B)": "تعيين نهاية التكرار (B)",
   "Clear A-B Repeat": "مسح تكرار A-B",
-  "Pause After Each Sentence": "إيقاف مؤقت بعد كل جملة"
+  "Pause After Each Sentence": "إيقاف مؤقت بعد كل جملة",
+  "Quote Card": "بطاقة اقتباس",
+  "Create a quote card image from the selection": "إنشاء صورة بطاقة اقتباس من التحديد",
+  "Paper": "ورقي",
+  "Night": "ليلي",
+  "Reader Theme": "سمة القراءة",
+  "The quote was shortened to fit the card.": "تم اختصار الاقتباس ليتسع في البطاقة.",
+  "Classic": "كلاسيكي",
+  "Centered": "في المنتصف",
+  "Serif": "مذيّل",
+  "Sans": "غير مذيّل",
+  "Shape": "الشكل",
+  "Book Info": "معلومات الكتاب",
+  "QR Code": "رمز QR",
+  "Links to this passage in Readest": "رابط إلى هذا المقطع في Readest",
+  "via {{app}}": "عبر {{app}}"
 }

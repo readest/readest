@@ -2499,5 +2499,20 @@
   "Set Repeat Start (A)": "リピート開始点を設定 (A)",
   "Set Repeat End (B)": "リピート終了点を設定 (B)",
   "Clear A-B Repeat": "A-B リピートを解除",
-  "Pause After Each Sentence": "文ごとに一時停止"
+  "Pause After Each Sentence": "文ごとに一時停止",
+  "Quote Card": "引用カード",
+  "Create a quote card image from the selection": "選択範囲から引用カード画像を作成",
+  "Paper": "ペーパー",
+  "Night": "ナイト",
+  "Reader Theme": "読書テーマ",
+  "The quote was shortened to fit the card.": "引用はカードに収まるよう短縮されました。",
+  "Classic": "クラシック",
+  "Centered": "中央揃え",
+  "Serif": "明朝",
+  "Sans": "ゴシック",
+  "Shape": "形状",
+  "Book Info": "書籍情報",
+  "QR Code": "QRコード",
+  "Links to this passage in Readest": "Readest のこの箇所へのリンク",
+  "via {{app}}": "{{app}} より"
 }

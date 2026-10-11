@@ -2499,5 +2499,20 @@
   "Set Repeat Start (A)": "设置复读起点 (A)",
   "Set Repeat End (B)": "设置复读终点 (B)",
   "Clear A-B Repeat": "清除 A-B 复读",
-  "Pause After Each Sentence": "每句后暂停"
+  "Pause After Each Sentence": "每句后暂停",
+  "Quote Card": "书摘卡片",
+  "Create a quote card image from the selection": "将选中文字生成书摘卡片图片",
+  "Paper": "纸张",
+  "Night": "夜间",
+  "Reader Theme": "阅读主题",
+  "The quote was shortened to fit the card.": "引文已缩短以适应卡片。",
+  "Classic": "经典",
+  "Centered": "居中",
+  "Serif": "衬线",
+  "Sans": "无衬线",
+  "Shape": "形状",
+  "Book Info": "书籍信息",
+  "QR Code": "二维码",
+  "Links to this passage in Readest": "链接到 Readest 中的这段文字",
+  "via {{app}}": "来自 {{app}}"
 }

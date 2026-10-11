@@ -338,9 +338,6 @@ msgstr "Preveri posodobitve"
 msgid "Please login first"
 msgstr "Najprej se prijavite"
 
-msgid "Please configure Readest settings first"
-msgstr "Najprej nastavite Readest"
-
 msgid "(none)"
 msgstr "(brez)"
 
@@ -506,9 +503,6 @@ msgstr "Polna sinhronizacija: pridobivanje vseh opomb…"
 msgid "Pulling annotations..."
 msgstr "Pridobivanje opomb…"
 
-msgid "Authentication failed, please login again"
-msgstr "Preverjanje pristnosti ni uspelo, prijavite se znova"
-
 msgid "Failed to pull annotations"
 msgstr "Pridobivanje opomb ni uspelo"
 
@@ -520,6 +514,9 @@ msgstr "Pridobljenih %1 opomb"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Vaša seja Readest je potekla. Prijavite se znova."
+
+msgid "Authentication failed, please login again"
+msgstr "Preverjanje pristnosti ni uspelo, prijavite se znova"
 
 msgid "Login"
 msgstr "Prijava"
@@ -566,8 +563,65 @@ msgstr "Pridobivanje napredka branja ni uspelo"
 msgid "Reading progress synchronized"
 msgstr "Napredek branja sinhroniziran"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Shranjenega položaja branja ni mogoče uporabiti s to kopijo knjige"
+
 msgid "No saved reading progress found for this book"
 msgstr "Za to knjigo ni shranjenega napredka branja"
+
+msgid "Sync was cancelled."
+msgstr "Sinhronizacija je bila preklicana."
+
+msgid "The connection timed out. Please try again."
+msgstr "Povezava je potekla. Poskusite znova."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Omrežje ni dosegljivo. Preverite internetno povezavo."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Strežnika ni mogoče najti. Preverite internetno povezavo."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Strežnik je zavrnil povezavo. Poskusite znova pozneje."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Povezava je bila prekinjena. Poskusite znova."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Varne povezave s strežnikom ni bilo mogoče vzpostaviti."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Preverjanje pristnosti ni uspelo. Znova se prijavite."
+
+msgid "The account changed during sync."
+msgstr "Račun se je med sinhronizacijo spremenil."
+
+msgid "The file was not found in the cloud."
+msgstr "Datoteke ni bilo mogoče najti v oblaku."
+
+msgid "The local file is missing."
+msgstr "Lokalna datoteka manjka."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Prišlo je do notranje napake. Poskusite znova."
+
+msgid "Access denied."
+msgstr "Dostop zavrnjen."
+
+msgid "Not found on the server."
+msgstr "Ni najdeno na strežniku."
+
+msgid "The file is too large."
+msgstr "Datoteka je prevelika."
+
+msgid "Too many requests. Please try again later."
+msgstr "Preveč zahtev. Poskusite znova pozneje."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Strežnik začasno ni na voljo. Poskusite znova pozneje."
+
+msgid "The request failed. Please try again."
+msgstr "Zahteva ni uspela. Poskusite znova."
 
 msgid "Reading statistics are up to date"
 msgstr "Statistika branja je posodobljena"

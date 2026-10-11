@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "Ismétlés kezdetének beállítása (A)",
   "Set Repeat End (B)": "Ismétlés végének beállítása (B)",
   "Clear A-B Repeat": "A-B ismétlés törlése",
-  "Pause After Each Sentence": "Szünet minden mondat után"
+  "Pause After Each Sentence": "Szünet minden mondat után",
+  "Quote Card": "Idézetkártya",
+  "Create a quote card image from the selection": "Idézetkártya-kép készítése a kijelölésből",
+  "Paper": "Papír",
+  "Night": "Éjszaka",
+  "Reader Theme": "Olvasási téma",
+  "The quote was shortened to fit the card.": "Az idézetet lerövidítettük, hogy elférjen a kártyán.",
+  "Classic": "Klasszikus",
+  "Centered": "Középre zárt",
+  "Serif": "Talpas",
+  "Sans": "Talpatlan",
+  "Shape": "Forma",
+  "Book Info": "Könyvadatok",
+  "QR Code": "QR-kód",
+  "Links to this passage in Readest": "Erre a részre mutat a Readestben",
+  "via {{app}}": "a(z) {{app}} segítségével"
 }

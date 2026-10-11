@@ -1191,6 +1191,7 @@ export default function BrowserPage() {
             onGenerateCachedImageUrl={handleGenerateCachedImageUrl}
             isOPDSCatalog={isOPDSCatalog}
             onAddCatalog={handleOpenAddCatalog}
+            scrollKey={state.currentURL}
           />
         )}
 

@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "Takrorlash boshini belgilash (A)",
   "Set Repeat End (B)": "Takrorlash oxirini belgilash (B)",
   "Clear A-B Repeat": "A-B takrorlashni tozalash",
-  "Pause After Each Sentence": "Har bir gapdan keyin pauza"
+  "Pause After Each Sentence": "Har bir gapdan keyin pauza",
+  "Quote Card": "Iqtibos kartasi",
+  "Create a quote card image from the selection": "Tanlangan matndan iqtibos kartasi rasmini yaratish",
+  "Paper": "Qog‘oz",
+  "Night": "Tun",
+  "Reader Theme": "O‘qish mavzusi",
+  "The quote was shortened to fit the card.": "Iqtibos kartaga sig‘ishi uchun qisqartirildi.",
+  "Classic": "Klassik",
+  "Centered": "Markazda",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "Shakl",
+  "Book Info": "Kitob ma’lumoti",
+  "QR Code": "QR kod",
+  "Links to this passage in Readest": "Readest’dagi ushbu parchaga havola",
+  "via {{app}}": "{{app}} orqali"
 }

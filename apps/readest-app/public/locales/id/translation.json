@@ -2499,5 +2499,20 @@
   "Set Repeat Start (A)": "Atur awal pengulangan (A)",
   "Set Repeat End (B)": "Atur akhir pengulangan (B)",
   "Clear A-B Repeat": "Hapus pengulangan A-B",
-  "Pause After Each Sentence": "Jeda setelah setiap kalimat"
+  "Pause After Each Sentence": "Jeda setelah setiap kalimat",
+  "Quote Card": "Kartu Kutipan",
+  "Create a quote card image from the selection": "Buat gambar kartu kutipan dari pilihan",
+  "Paper": "Kertas",
+  "Night": "Malam",
+  "Reader Theme": "Tema Baca",
+  "The quote was shortened to fit the card.": "Kutipan dipersingkat agar muat di kartu.",
+  "Classic": "Klasik",
+  "Centered": "Tengah",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "Bentuk",
+  "Book Info": "Info Buku",
+  "QR Code": "Kode QR",
+  "Links to this passage in Readest": "Tautan ke bagian ini di Readest",
+  "via {{app}}": "via {{app}}"
 }

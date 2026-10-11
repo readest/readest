@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "Ange upprepningsstart (A)",
   "Set Repeat End (B)": "Ange upprepningsslut (B)",
   "Clear A-B Repeat": "Rensa A-B-upprepning",
-  "Pause After Each Sentence": "Pausa efter varje mening"
+  "Pause After Each Sentence": "Pausa efter varje mening",
+  "Quote Card": "Citatkort",
+  "Create a quote card image from the selection": "Skapa en citatkortsbild av markeringen",
+  "Paper": "Papper",
+  "Night": "Natt",
+  "Reader Theme": "Lästema",
+  "The quote was shortened to fit the card.": "Citatet kortades för att få plats på kortet.",
+  "Classic": "Klassisk",
+  "Centered": "Centrerad",
+  "Serif": "Serif",
+  "Sans": "Sans",
+  "Shape": "Form",
+  "Book Info": "Bokinfo",
+  "QR Code": "QR-kod",
+  "Links to this passage in Readest": "Länkar till det här stycket i Readest",
+  "via {{app}}": "via {{app}}"
 }

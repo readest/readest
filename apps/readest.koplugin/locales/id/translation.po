@@ -338,9 +338,6 @@ msgstr "Periksa pembaruan"
 msgid "Please login first"
 msgstr "Silakan masuk terlebih dahulu"
 
-msgid "Please configure Readest settings first"
-msgstr "Konfigurasikan pengaturan Readest terlebih dahulu"
-
 msgid "(none)"
 msgstr "(tidak ada)"
 
@@ -506,9 +503,6 @@ msgstr "Sinkronisasi penuh: mengambil semua anotasi…"
 msgid "Pulling annotations..."
 msgstr "Mengambil anotasi…"
 
-msgid "Authentication failed, please login again"
-msgstr "Autentikasi gagal, silakan masuk lagi"
-
 msgid "Failed to pull annotations"
 msgstr "Gagal mengambil anotasi"
 
@@ -520,6 +514,9 @@ msgstr "%1 anotasi diambil"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Sesi Readest Anda telah berakhir. Silakan masuk lagi."
+
+msgid "Authentication failed, please login again"
+msgstr "Autentikasi gagal, silakan masuk lagi"
 
 msgid "Login"
 msgstr "Masuk"
@@ -566,8 +563,65 @@ msgstr "Gagal mengambil progres baca"
 msgid "Reading progress synchronized"
 msgstr "Progres baca disinkronkan"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Posisi baca yang tersimpan tidak dapat digunakan dengan salinan buku ini"
+
 msgid "No saved reading progress found for this book"
 msgstr "Tidak ada progres baca tersimpan untuk buku ini"
+
+msgid "Sync was cancelled."
+msgstr "Sinkronisasi dibatalkan."
+
+msgid "The connection timed out. Please try again."
+msgstr "Waktu koneksi habis. Silakan coba lagi."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Jaringan tidak dapat dijangkau. Periksa koneksi internet."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Server tidak ditemukan. Periksa koneksi internet."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Server menolak koneksi. Silakan coba lagi nanti."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Koneksi terputus. Silakan coba lagi."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Koneksi aman ke server tidak dapat dibuat."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Autentikasi gagal. Silakan masuk lagi."
+
+msgid "The account changed during sync."
+msgstr "Akun berubah selama sinkronisasi."
+
+msgid "The file was not found in the cloud."
+msgstr "File tidak ditemukan di cloud."
+
+msgid "The local file is missing."
+msgstr "File lokal tidak ada."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Terjadi kesalahan internal. Silakan coba lagi."
+
+msgid "Access denied."
+msgstr "Akses ditolak."
+
+msgid "Not found on the server."
+msgstr "Tidak ditemukan di server."
+
+msgid "The file is too large."
+msgstr "File terlalu besar."
+
+msgid "Too many requests. Please try again later."
+msgstr "Terlalu banyak permintaan. Silakan coba lagi nanti."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Server sementara tidak tersedia. Silakan coba lagi nanti."
+
+msgid "The request failed. Please try again."
+msgstr "Permintaan gagal. Silakan coba lagi."
 
 msgid "Reading statistics are up to date"
 msgstr "Statistik baca sudah terbaru"

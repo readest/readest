@@ -2499,5 +2499,20 @@
   "Set Repeat Start (A)": "Đặt điểm bắt đầu lặp (A)",
   "Set Repeat End (B)": "Đặt điểm kết thúc lặp (B)",
   "Clear A-B Repeat": "Xóa lặp A-B",
-  "Pause After Each Sentence": "Tạm dừng sau mỗi câu"
+  "Pause After Each Sentence": "Tạm dừng sau mỗi câu",
+  "Quote Card": "Thẻ trích dẫn",
+  "Create a quote card image from the selection": "Tạo ảnh thẻ trích dẫn từ đoạn đã chọn",
+  "Paper": "Giấy",
+  "Night": "Đêm",
+  "Reader Theme": "Giao diện đọc",
+  "The quote was shortened to fit the card.": "Trích dẫn đã được rút gọn để vừa với thẻ.",
+  "Classic": "Cổ điển",
+  "Centered": "Căn giữa",
+  "Serif": "Có chân",
+  "Sans": "Không chân",
+  "Shape": "Hình dạng",
+  "Book Info": "Thông tin sách",
+  "QR Code": "Mã QR",
+  "Links to this passage in Readest": "Liên kết đến đoạn này trong Readest",
+  "via {{app}}": "qua {{app}}"
 }

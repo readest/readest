@@ -338,9 +338,6 @@ msgstr "আপডেট পরীক্ষা করুন"
 msgid "Please login first"
 msgstr "অনুগ্রহ করে প্রথমে লগ ইন করুন"
 
-msgid "Please configure Readest settings first"
-msgstr "অনুগ্রহ করে প্রথমে Readest সেটিংস কনফিগার করুন"
-
 msgid "(none)"
 msgstr "(কোনোটি না)"
 
@@ -506,9 +503,6 @@ msgstr "পূর্ণ সিঙ্ক: সকল টীকা আনা হচ
 msgid "Pulling annotations..."
 msgstr "টীকা আনা হচ্ছে…"
 
-msgid "Authentication failed, please login again"
-msgstr "প্রমাণীকরণ ব্যর্থ, অনুগ্রহ করে আবার লগ ইন করুন"
-
 msgid "Failed to pull annotations"
 msgstr "টীকা আনা ব্যর্থ"
 
@@ -520,6 +514,9 @@ msgstr "%1টি টীকা আনা হয়েছে"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "আপনার Readest সেশনের মেয়াদ শেষ হয়েছে। অনুগ্রহ করে আবার লগ ইন করুন।"
+
+msgid "Authentication failed, please login again"
+msgstr "প্রমাণীকরণ ব্যর্থ, অনুগ্রহ করে আবার লগ ইন করুন"
 
 msgid "Login"
 msgstr "লগ ইন"
@@ -566,8 +563,65 @@ msgstr "পড়ার অগ্রগতি আনা ব্যর্থ"
 msgid "Reading progress synchronized"
 msgstr "পড়ার অগ্রগতি সিঙ্ক হয়েছে"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "সংরক্ষিত পড়ার অবস্থান বইটির এই কপির সাথে ব্যবহার করা যাবে না"
+
 msgid "No saved reading progress found for this book"
 msgstr "এই বইয়ের জন্য সংরক্ষিত পড়ার অগ্রগতি পাওয়া যায়নি"
+
+msgid "Sync was cancelled."
+msgstr "সিঙ্ক বাতিল করা হয়েছে।"
+
+msgid "The connection timed out. Please try again."
+msgstr "সংযোগের সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।"
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "নেটওয়ার্কে পৌঁছানো যাচ্ছে না। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "সার্ভার খুঁজে পাওয়া যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।"
+
+msgid "The server refused the connection. Please try again later."
+msgstr "সার্ভার সংযোগ প্রত্যাখ্যান করেছে। পরে আবার চেষ্টা করুন।"
+
+msgid "The connection was interrupted. Please try again."
+msgstr "সংযোগ বিচ্ছিন্ন হয়েছে। আবার চেষ্টা করুন।"
+
+msgid "A secure connection to the server could not be established."
+msgstr "সার্ভারের সাথে নিরাপদ সংযোগ স্থাপন করা যায়নি।"
+
+msgid "Authentication failed. Please log in again."
+msgstr "প্রমাণীকরণ ব্যর্থ হয়েছে। আবার লগ ইন করুন।"
+
+msgid "The account changed during sync."
+msgstr "সিঙ্কের সময় অ্যাকাউন্ট পরিবর্তিত হয়েছে।"
+
+msgid "The file was not found in the cloud."
+msgstr "ক্লাউডে ফাইলটি পাওয়া যায়নি।"
+
+msgid "The local file is missing."
+msgstr "স্থানীয় ফাইলটি নেই।"
+
+msgid "An internal error occurred. Please try again."
+msgstr "একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। আবার চেষ্টা করুন।"
+
+msgid "Access denied."
+msgstr "অ্যাক্সেস অস্বীকৃত।"
+
+msgid "Not found on the server."
+msgstr "সার্ভারে পাওয়া যায়নি।"
+
+msgid "The file is too large."
+msgstr "ফাইলটি অনেক বড়।"
+
+msgid "Too many requests. Please try again later."
+msgstr "অনেক বেশি অনুরোধ। পরে আবার চেষ্টা করুন।"
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "সার্ভার সাময়িকভাবে অনুপলব্ধ। পরে আবার চেষ্টা করুন।"
+
+msgid "The request failed. Please try again."
+msgstr "অনুরোধ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।"
 
 msgid "Reading statistics are up to date"
 msgstr "পড়ার পরিসংখ্যান হালনাগাদ আছে"

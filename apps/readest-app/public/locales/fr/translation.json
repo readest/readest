@@ -2627,5 +2627,20 @@
   "Set Repeat Start (A)": "Définir le début de la répétition (A)",
   "Set Repeat End (B)": "Définir la fin de la répétition (B)",
   "Clear A-B Repeat": "Effacer la répétition A-B",
-  "Pause After Each Sentence": "Pause après chaque phrase"
+  "Pause After Each Sentence": "Pause après chaque phrase",
+  "Quote Card": "Carte de citation",
+  "Create a quote card image from the selection": "Créer une image de carte de citation à partir de la sélection",
+  "Paper": "Papier",
+  "Night": "Nuit",
+  "Reader Theme": "Thème de lecture",
+  "The quote was shortened to fit the card.": "La citation a été raccourcie pour tenir sur la carte.",
+  "Classic": "Classique",
+  "Centered": "Centré",
+  "Serif": "Serif",
+  "Sans": "Sans serif",
+  "Shape": "Forme",
+  "Book Info": "Infos du livre",
+  "QR Code": "Code QR",
+  "Links to this passage in Readest": "Renvoie vers ce passage dans Readest",
+  "via {{app}}": "via {{app}}"
 }

@@ -338,9 +338,6 @@ msgstr "בדוק עדכון"
 msgid "Please login first"
 msgstr "התחבר תחילה"
 
-msgid "Please configure Readest settings first"
-msgstr "הגדר תחילה את הגדרות Readest"
-
 msgid "(none)"
 msgstr "(אין)"
 
@@ -506,9 +503,6 @@ msgstr "סנכרון מלא: מושך את כל ההערות…"
 msgid "Pulling annotations..."
 msgstr "מושך הערות…"
 
-msgid "Authentication failed, please login again"
-msgstr "האימות נכשל, התחבר שוב"
-
 msgid "Failed to pull annotations"
 msgstr "משיכת ההערות נכשלה"
 
@@ -520,6 +514,9 @@ msgstr "נמשכו %1 הערות"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "תוקף ההתחברות ל-Readest פג. התחבר שוב."
+
+msgid "Authentication failed, please login again"
+msgstr "האימות נכשל, התחבר שוב"
 
 msgid "Login"
 msgstr "התחבר"
@@ -566,8 +563,65 @@ msgstr "משיכת התקדמות הקריאה נכשלה"
 msgid "Reading progress synchronized"
 msgstr "התקדמות הקריאה סונכרנה"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "לא ניתן להשתמש במיקום הקריאה השמור עם עותק זה של הספר"
+
 msgid "No saved reading progress found for this book"
 msgstr "לא נמצאה התקדמות קריאה שמורה לספר זה"
+
+msgid "Sync was cancelled."
+msgstr "הסנכרון בוטל."
+
+msgid "The connection timed out. Please try again."
+msgstr "תם הזמן הקצוב לחיבור. נא לנסות שוב."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "הרשת אינה זמינה. נא לבדוק את החיבור לאינטרנט."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "השרת לא נמצא. נא לבדוק את החיבור לאינטרנט."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "השרת דחה את החיבור. נא לנסות שוב מאוחר יותר."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "החיבור נקטע. נא לנסות שוב."
+
+msgid "A secure connection to the server could not be established."
+msgstr "לא ניתן ליצור חיבור מאובטח לשרת."
+
+msgid "Authentication failed. Please log in again."
+msgstr "האימות נכשל. נא להתחבר שוב."
+
+msgid "The account changed during sync."
+msgstr "החשבון השתנה במהלך הסנכרון."
+
+msgid "The file was not found in the cloud."
+msgstr "הקובץ לא נמצא בענן."
+
+msgid "The local file is missing."
+msgstr "הקובץ המקומי חסר."
+
+msgid "An internal error occurred. Please try again."
+msgstr "אירעה שגיאה פנימית. נא לנסות שוב."
+
+msgid "Access denied."
+msgstr "הגישה נדחתה."
+
+msgid "Not found on the server."
+msgstr "לא נמצא בשרת."
+
+msgid "The file is too large."
+msgstr "הקובץ גדול מדי."
+
+msgid "Too many requests. Please try again later."
+msgstr "יותר מדי בקשות. נא לנסות שוב מאוחר יותר."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "השרת אינו זמין זמנית. נא לנסות שוב מאוחר יותר."
+
+msgid "The request failed. Please try again."
+msgstr "הבקשה נכשלה. נא לנסות שוב."
 
 msgid "Reading statistics are up to date"
 msgstr "סטטיסטיקות הקריאה מעודכנות"

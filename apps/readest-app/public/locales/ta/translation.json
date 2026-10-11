@@ -2563,5 +2563,20 @@
   "Set Repeat Start (A)": "மீண்டும் இயக்கத் தொடக்கத்தை அமை (A)",
   "Set Repeat End (B)": "மீண்டும் இயக்க முடிவை அமை (B)",
   "Clear A-B Repeat": "A-B மீண்டும் இயக்கத்தை அழி",
-  "Pause After Each Sentence": "ஒவ்வொரு வாக்கியத்திற்கும் பின் இடைநிறுத்து"
+  "Pause After Each Sentence": "ஒவ்வொரு வாக்கியத்திற்கும் பின் இடைநிறுத்து",
+  "Quote Card": "மேற்கோள் அட்டை",
+  "Create a quote card image from the selection": "தேர்விலிருந்து மேற்கோள் அட்டைப் படத்தை உருவாக்கு",
+  "Paper": "காகிதம்",
+  "Night": "இரவு",
+  "Reader Theme": "வாசிப்புத் தீம்",
+  "The quote was shortened to fit the card.": "அட்டையில் பொருந்த மேற்கோள் சுருக்கப்பட்டது.",
+  "Classic": "கிளாசிக்",
+  "Centered": "மையப்படுத்தப்பட்டது",
+  "Serif": "செரிஃப்",
+  "Sans": "சான்ஸ்",
+  "Shape": "வடிவம்",
+  "Book Info": "புத்தகத் தகவல்",
+  "QR Code": "QR குறியீடு",
+  "Links to this passage in Readest": "Readest-இல் இந்தப் பகுதிக்கான இணைப்பு",
+  "via {{app}}": "{{app}} வழியாக"
 }
