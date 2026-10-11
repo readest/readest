@@ -2,12 +2,19 @@ import clsx from 'clsx';
 import React from 'react';
 import { FaCheck } from 'react-icons/fa';
 
-import { HANDWRITING_COLORS, HANDWRITING_WIDTHS } from '@/services/handwriting/model';
+import {
+  HANDWRITING_COLORS,
+  HANDWRITING_WIDTHS,
+  MARKER_COLORS,
+  MARKER_WIDTHS,
+  type InkTool,
+} from '@/services/handwriting/model';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 interface HandwritingOptionsProps {
+  tool: InkTool;
   color: string;
   width: number;
   onSelectColor: (color: string) => void;
@@ -16,15 +23,16 @@ interface HandwritingOptionsProps {
 
 const MIN_DOT = 3;
 const MAX_DOT = 7;
-const MIN_WIDTH = HANDWRITING_WIDTHS[0];
-const MAX_WIDTH = HANDWRITING_WIDTHS[HANDWRITING_WIDTHS.length - 1]!;
-
 /** Width swatch radius, scaled so the row reads as increasing weight. */
-const dotFor = (width: number) =>
-  MIN_DOT + ((width - MIN_WIDTH) / (MAX_WIDTH - MIN_WIDTH)) * (MAX_DOT - MIN_DOT);
+const dotFor = (width: number, widths: readonly number[]) => {
+  const min = widths[0]!;
+  const max = widths[widths.length - 1]!;
+  return MIN_DOT + ((width - min) / (max - min)) * (MAX_DOT - MIN_DOT);
+};
 
-/** Ink color and pen width swatches. B&W e-ink has no colors to offer. */
+/** The active tool's colors and widths. B&W e-ink has no colors to offer. */
 const HandwritingOptions: React.FC<HandwritingOptionsProps> = ({
+  tool,
   color,
   width,
   onSelectColor,
@@ -36,11 +44,13 @@ const HandwritingOptions: React.FC<HandwritingOptionsProps> = ({
   const showColors = !isEink || isColorEink;
   const swatchSize = useResponsiveSize(20);
   const checkSize = useResponsiveSize(10);
+  const colors = tool === 'marker' ? MARKER_COLORS : HANDWRITING_COLORS;
+  const widths = tool === 'marker' ? MARKER_WIDTHS : HANDWRITING_WIDTHS;
 
   return (
     <div className='flex shrink-0 items-center gap-1.5'>
       {showColors &&
-        HANDWRITING_COLORS.map((hex) => (
+        colors.map((hex) => (
           <button
             key={hex}
             type='button'
@@ -54,8 +64,8 @@ const HandwritingOptions: React.FC<HandwritingOptionsProps> = ({
           </button>
         ))}
       {showColors && <div className='bg-base-content/20 mx-0.5 h-5 w-px shrink-0' />}
-      {HANDWRITING_WIDTHS.map((value) => {
-        const dot = dotFor(value);
+      {widths.map((value) => {
+        const dot = dotFor(value, widths);
         return (
           <button
             key={value}

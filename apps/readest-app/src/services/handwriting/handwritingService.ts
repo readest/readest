@@ -6,6 +6,7 @@ import {
   simplifyPoints,
   type InkPoint,
   type InkStroke,
+  type InkTool,
 } from './model';
 import { screenToPage, type PageRect } from './coords';
 import type { InkAnchoring } from './anchor';
@@ -23,12 +24,14 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { getOSPlatform } from '@/utils/misc';
 
 export interface HandwritingOptions {
+  tool: InkTool;
   color: string;
   widthFraction: number; // pen width as a fraction of page width
   eraseRadiusFraction: number;
 }
 
 const DEFAULT_OPTIONS: HandwritingOptions = {
+  tool: 'pen',
   color: DEFAULT_HANDWRITING_COLOR,
   widthFraction: DEFAULT_HANDWRITING_WIDTH,
   eraseRadiusFraction: 0.012,
@@ -107,18 +110,26 @@ export class HandwritingService {
   /** The in-progress stroke alone, for views that render committed ink per page. */
   liveStrokes(): InkStroke[] {
     if (this.live.length === 0 || this.liveErase) return [];
-    return [
-      {
-        id: '__live__',
-        color: this.options.color,
-        width: this.options.widthFraction,
-        points: this.live,
-      },
-    ];
+    return [this.liveStroke()];
   }
 
   setRouter(router: ((windowPoints: InkPoint[]) => InkTarget | null) | null) {
     this.router = router;
+  }
+
+  private liveStroke(): InkStroke {
+    return {
+      id: '__live__',
+      color: this.options.color,
+      width: this.options.widthFraction,
+      ...this.toolField(),
+      points: this.live,
+    };
+  }
+
+  /** Marker ink says so; pen ink stays as it always was stored. */
+  private toolField() {
+    return this.options.tool === 'marker' ? { tool: 'marker' as const } : {};
   }
 
   /** Strokes to render right now, including the in-progress live stroke. */
@@ -128,15 +139,7 @@ export class HandwritingService {
       .flatMap((stroke) => (this.place(stroke) ?? []).map((points) => ({ ...stroke, points })));
     if (this.live.length === 0) return [...committed];
     if (this.liveErase) return [...committed];
-    return [
-      ...committed,
-      {
-        id: '__live__',
-        color: this.options.color,
-        width: this.options.widthFraction,
-        points: this.live,
-      },
-    ];
+    return [...committed, this.liveStroke()];
   }
 
   onNeedsRender(fn: () => void) {
@@ -157,13 +160,14 @@ export class HandwritingService {
    * stroke and needs nothing.
    */
   setOptions(options: Partial<HandwritingOptions>) {
-    // The eraser tracks the pen unless the caller pins it explicitly.
+    // The eraser tracks the tool: a few pen widths, or one marker band.
     const width = options.widthFraction ?? this.options.widthFraction;
+    const tool = options.tool ?? this.options.tool;
     this.options = {
       ...this.options,
       ...options,
       eraseRadiusFraction: Math.max(
-        width * ERASER_WIDTH_RATIO,
+        width * (tool === 'marker' ? 1 : ERASER_WIDTH_RATIO),
         DEFAULT_OPTIONS.eraseRadiusFraction,
       ),
     };
@@ -349,6 +353,7 @@ export class HandwritingService {
         id: nextStrokeId(),
         color: this.options.color,
         width: this.options.widthFraction * target.scale,
+        ...this.toolField(),
         ...(this.session ? { session: this.session } : {}),
         ...(this.pin(target.points, target.anchoring) ?? { points: target.points }),
       });

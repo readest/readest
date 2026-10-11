@@ -6,13 +6,22 @@ const fakeCtx = () => {
   const calls: string[] = [];
   const widths: number[] = [];
   const radii: number[] = [];
+  const alphas: number[] = [];
   const ctx = {
     clearRect: vi.fn(() => calls.push('clear')),
     beginPath: vi.fn(() => calls.push('begin')),
     moveTo: vi.fn(() => calls.push('move')),
     lineTo: vi.fn(() => calls.push('line')),
     quadraticCurveTo: vi.fn(() => calls.push('curve')),
-    stroke: vi.fn(() => calls.push('stroke')),
+    stroke: vi.fn(() => {
+      calls.push('stroke');
+      alphas.push(ctx.globalAlpha);
+    }),
+    save: vi.fn(),
+    restore: vi.fn(() => {
+      ctx.globalAlpha = 1;
+    }),
+    globalAlpha: 1,
     arc: vi.fn((_x: number, _y: number, r: number) => {
       calls.push('arc');
       radii.push(r);
@@ -27,7 +36,14 @@ const fakeCtx = () => {
     lineCap: '',
     lineJoin: '',
   };
-  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, widths, radii };
+  return {
+    ctx: ctx as unknown as CanvasRenderingContext2D,
+    calls,
+    widths,
+    radii,
+    alphas,
+    raw: ctx,
+  };
 };
 
 const rect = { left: 0, top: 0, width: 1000, height: 2000 };
@@ -158,6 +174,27 @@ describe('renderStrokes', () => {
     );
     expect(radii.length).toBeGreaterThan(0);
     expect(radii.every((r) => r === 2.5)).toBe(true);
+  });
+
+  it('draws a marker stroke translucent at its full width in one pass, ignoring pressure', () => {
+    const { ctx, calls, widths, alphas, raw } = fakeCtx();
+    const marker: InkStroke = {
+      ...mk('m', [
+        [0.1, 0.5, 0.2],
+        [0.3, 0.5, 1],
+        [0.5, 0.5, 0.4],
+      ]),
+      tool: 'marker',
+    };
+    renderStrokes(ctx, [marker], rect);
+    // One stroked path: a marker does not darken where it crosses itself.
+    expect(calls.filter((c) => c === 'stroke')).toHaveLength(1);
+    expect(calls).not.toContain('fill');
+    expect(widths).toEqual([10]);
+    expect(alphas[0]).toBeGreaterThan(0.2);
+    expect(alphas[0]).toBeLessThan(0.7);
+    // The next stroke is opaque again.
+    expect(raw.globalAlpha).toBe(1);
   });
 
   it('uses each stroke color', () => {

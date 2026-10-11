@@ -5,6 +5,10 @@ import {
   DEFAULT_HANDWRITING_WIDTH,
   HANDWRITING_COLORS,
   HANDWRITING_WIDTHS,
+  DEFAULT_MARKER_COLOR,
+  DEFAULT_MARKER_WIDTH,
+  MARKER_COLORS,
+  MARKER_WIDTHS,
 } from '@/services/handwriting/model';
 import { HandwritingService } from '@/services/handwriting/handwritingService';
 import { HandwritingEditor } from '@/services/handwriting/editor';
@@ -78,5 +82,13 @@ describe('handwriting pen options', () => {
     service.onNeedsRender(() => renders++);
     service.setOptions({ color: '#9333ea' });
     expect(renders).toBe(1);
+  });
+
+  it('gives the marker its own broad sizes and highlighter colors', () => {
+    expect([...MARKER_WIDTHS]).toEqual([...MARKER_WIDTHS].sort((a, b) => a - b));
+    expect(MARKER_WIDTHS).toContain(DEFAULT_MARKER_WIDTH);
+    expect(Math.min(...MARKER_WIDTHS)).toBeGreaterThan(Math.max(...HANDWRITING_WIDTHS));
+    expect(MARKER_COLORS[0]).toBe(DEFAULT_MARKER_COLOR);
+    for (const color of MARKER_COLORS) expect(color).toMatch(/^#[0-9a-f]{6}$/i);
   });
 });

@@ -222,3 +222,35 @@ describe('HandwritingService text anchoring', () => {
     expect(service.liveStrokes()).toHaveLength(1);
   });
 });
+
+describe('HandwritingService marker', () => {
+  const draw = (service: HandwritingService) =>
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [
+        [0.1, 0.5],
+        [0.4, 0.5],
+      ],
+      'end',
+      false,
+    );
+
+  it('records marker strokes as marker ink and pen strokes as plain ink', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'pdf:1', rect);
+    draw(service);
+    service.setOptions({ tool: 'marker', color: '#facc15', widthFraction: 0.03 });
+    draw(service);
+    const [pen, marker] = editor.strokes('pdf:1');
+    expect(pen).not.toHaveProperty('tool');
+    expect(marker).toMatchObject({ tool: 'marker', color: '#facc15', width: 0.03 });
+  });
+
+  it('sizes the eraser to a marker stroke, not three of them', () => {
+    const service = new HandwritingService(new HandwritingEditor(), 'pdf:1', rect);
+    service.setOptions({ tool: 'marker', widthFraction: 0.03 });
+    expect(
+      (service as unknown as { options: { eraseRadiusFraction: number } }).options
+        .eraseRadiusFraction,
+    ).toBeCloseTo(0.03);
+  });
+});

@@ -94,6 +94,8 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
           onSelectColor={hw.selectPenColor}
           onSelectWidth={hw.selectPenWidth}
           onDone={() => setEnabled(false)}
+          tool={hw.tool}
+          onSelectTool={hw.selectTool}
         />
       )}
     </>

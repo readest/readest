@@ -5,6 +5,9 @@ import type { PageRect } from './coords';
 // firm press half again more. A stroke without pressure draws the pen width.
 const pressureScale = (p: number | undefined) => 0.5 + (p ?? 0.5);
 
+// Light enough that the text under a marker stays easy to read.
+const MARKER_OPACITY = 0.45;
+
 /** A point on the canvas, with its pressure when it has one. */
 type Sample = readonly [number, number, number | undefined];
 
@@ -119,10 +122,15 @@ export const renderStrokes = (
     ctx.strokeStyle = stroke.color;
     ctx.fillStyle = stroke.color;
 
+    const marker = stroke.tool === 'marker';
     if (pts.length === 1) {
+      ctx.save();
+      if (marker) ctx.globalAlpha = MARKER_OPACITY;
       ctx.beginPath();
-      ctx.arc(pts[0]![0], pts[0]![1], (base * pressureScale(pts[0]![2])) / 2, 0, Math.PI * 2);
+      const scale = marker ? 1 : pressureScale(pts[0]![2]);
+      ctx.arc(pts[0]![0], pts[0]![1], (base * scale) / 2, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
       continue;
     }
 
@@ -138,15 +146,32 @@ export const renderStrokes = (
     }
     pieces.push({ from, to: pts[pts.length - 1]! });
 
-    const hasPressure = pts.some((p) => p[2] !== undefined);
-    if (!hasPressure) {
-      ctx.lineWidth = base;
+    const smoothPath = () => {
       ctx.beginPath();
       ctx.moveTo(pts[0]![0], pts[0]![1]);
       for (const { via, to } of pieces) {
         if (via) ctx.quadraticCurveTo(via[0], via[1], to[0], to[1]);
         else ctx.lineTo(to[0], to[1]);
       }
+    };
+
+    // A marker is one translucent band of even width with flat ends, stroked
+    // as a single path so it does not darken where it crosses itself.
+    if (marker) {
+      ctx.save();
+      ctx.globalAlpha = MARKER_OPACITY;
+      ctx.lineCap = 'butt';
+      ctx.lineWidth = base;
+      smoothPath();
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+
+    const hasPressure = pts.some((p) => p[2] !== undefined);
+    if (!hasPressure) {
+      ctx.lineWidth = base;
+      smoothPath();
       ctx.stroke();
       continue;
     }

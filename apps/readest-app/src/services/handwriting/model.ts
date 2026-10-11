@@ -24,6 +24,27 @@ export const HANDWRITING_COLORS = [
  */
 export const HANDWRITING_WIDTHS = [0.004, DEFAULT_HANDWRITING_WIDTH, 0.01, 0.016] as const;
 
+/**
+ * A pen draws opaque ink that follows pressure; a marker draws a broad,
+ * translucent band of even width, for highlighting what is under it.
+ */
+export type InkTool = 'pen' | 'marker';
+
+export const DEFAULT_MARKER_COLOR = '#facc15';
+export const DEFAULT_MARKER_WIDTH = 0.03;
+
+/** Highlighter colors offered for the marker, in swatch order. */
+export const MARKER_COLORS = [
+  DEFAULT_MARKER_COLOR,
+  '#4ade80',
+  '#f472b6',
+  '#60a5fa',
+  '#fb923c',
+] as const;
+
+/** Marker widths as a fraction of page width: about a line of text and up. */
+export const MARKER_WIDTHS = [0.02, DEFAULT_MARKER_WIDTH, 0.045] as const;
+
 /** [x, y] or [x, y, pressure]; x/y in 0..1 of the page, pressure in 0..1. */
 export type InkPoint = [number, number] | [number, number, number];
 
@@ -32,6 +53,8 @@ export interface InkStroke {
   color: string;
   /** Pen width as a fraction of the page width. */
   width: number;
+  /** Set for marker ink; a stroke without it is pen ink. */
+  tool?: 'marker';
   /**
    * CFI range of the text or element a reflowable stroke is bound to. When
    * set, `points` are offsets from that content's box (see anchor.ts).

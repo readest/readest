@@ -13,7 +13,8 @@ import { fixedPageKey, sectionPageKey } from '@/services/handwriting/pageKey';
 import { createInkAnchoring } from '../utils/inkAnchoring';
 import { boundsOf } from '@/services/handwriting/anchor';
 import type { PageRect } from '@/services/handwriting/coords';
-import type { InkStroke } from '@/services/handwriting/model';
+import type { InkStroke, InkTool } from '@/services/handwriting/model';
+import type { ReadSettings } from '@/types/settings';
 import type { FoliateView } from '@/types/view';
 import type { BookNote } from '@/types/book';
 
@@ -89,7 +90,12 @@ export function useHandwriting(bookKey: string) {
   const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
   // Scrolled views show several pages at once; strokes are routed per page.
   const scrolled = !!getViewSettings(bookKey)?.scrolled;
-  const { handwritingColor: penColor, handwritingWidth: penWidth } = settings.globalReadSettings;
+  // Each tool keeps its own color and width; the dock shows the active one's.
+  const readSettings = settings.globalReadSettings;
+  const tool = readSettings.handwritingTool;
+  const marker = tool === 'marker';
+  const penColor = marker ? readSettings.handwritingMarkerColor : readSettings.handwritingColor;
+  const penWidth = marker ? readSettings.handwritingMarkerWidth : readSettings.handwritingWidth;
 
   const editorRef = useRef<HandwritingEditor | null>(null);
   // The ink notes as this hook last wrote or read them.
@@ -265,6 +271,7 @@ export function useHandwriting(bookKey: string) {
   useEffect(() => {
     if (!serviceRef.current) {
       serviceRef.current = new HandwritingService(editorRef.current!, pageKey, pageRect, {
+        tool,
         color: penColor,
         widthFraction: penWidth,
       });
@@ -290,8 +297,8 @@ export function useHandwriting(bookKey: string) {
   // Pen choice is a device-wide setting, so a change here retargets the live
   // session without disturbing the ink already committed.
   useEffect(() => {
-    serviceRef.current?.setOptions({ color: penColor, widthFraction: penWidth });
-  }, [penColor, penWidth]);
+    serviceRef.current?.setOptions({ tool, color: penColor, widthFraction: penWidth });
+  }, [tool, penColor, penWidth]);
 
   const attach = useCallback(async (el: HTMLElement | null) => {
     if (!el || !serviceRef.current) return;
@@ -362,25 +369,34 @@ export function useHandwriting(bookKey: string) {
     serviceRef.current?.setEraseMode(erasing);
   }, [erasing]);
 
-  /** Persist the pen choice globally, matching how highlight colors persist. */
-  const selectPenColor = useCallback(
-    (color: string) => {
+  /** Persist the tool choice globally, matching how highlight colors persist. */
+  const saveReadSettings = useCallback(
+    (changes: Partial<ReadSettings>) =>
       saveSysSettings(envConfig, 'globalReadSettings', {
         ...settings.globalReadSettings,
-        handwritingColor: color,
-      });
-    },
+        ...changes,
+      }),
     [envConfig, settings.globalReadSettings],
   );
 
+  const selectPenColor = useCallback(
+    (color: string) =>
+      saveReadSettings(marker ? { handwritingMarkerColor: color } : { handwritingColor: color }),
+    [marker, saveReadSettings],
+  );
+
   const selectPenWidth = useCallback(
-    (width: number) => {
-      saveSysSettings(envConfig, 'globalReadSettings', {
-        ...settings.globalReadSettings,
-        handwritingWidth: width,
-      });
+    (width: number) =>
+      saveReadSettings(marker ? { handwritingMarkerWidth: width } : { handwritingWidth: width }),
+    [marker, saveReadSettings],
+  );
+
+  const selectTool = useCallback(
+    (next: InkTool) => {
+      setErasing(false);
+      saveReadSettings({ handwritingTool: next });
     },
-    [envConfig, settings.globalReadSettings],
+    [saveReadSettings],
   );
 
   const layers: InkLayer[] = scrolled
@@ -407,6 +423,8 @@ export function useHandwriting(bookKey: string) {
     penWidth,
     selectPenColor,
     selectPenWidth,
+    tool,
+    selectTool,
     undo: () => serviceRef.current?.undo(),
     redo: () => serviceRef.current?.redo(),
   };

@@ -10,9 +10,18 @@ import {
   RiSave3Line,
 } from 'react-icons/ri';
 
+import { PiHighlighter, PiPen } from 'react-icons/pi';
+import type { IconType } from 'react-icons';
+
+import type { InkTool } from '@/services/handwriting/model';
 import { useTranslation } from '@/hooks/useTranslation';
 import AnnotationToolButton from '../annotator/AnnotationToolButton';
 import HandwritingOptions from './HandwritingOptions';
+
+const TOOLS: { tool: InkTool; label: string; Icon: IconType }[] = [
+  { tool: 'pen', label: 'Pen', Icon: PiPen },
+  { tool: 'marker', label: 'Marker', Icon: PiHighlighter },
+];
 
 const BAR =
   'eink-bordered bg-base-100 border-base-300/50 absolute inset-x-0 z-30 flex items-center';
@@ -30,10 +39,12 @@ interface HandwritingDockProps {
   onSelectWidth: (width: number) => void;
   /** Ends the drawing session; every stroke is already saved as it is drawn. */
   onDone: () => void;
+  tool: InkTool;
+  onSelectTool: (tool: InkTool) => void;
   bottom?: number;
 }
 
-/** Replaces the reader footer while drawing: pen, eraser, history, paging and save. */
+/** Replaces the reader footer while drawing: pen, marker, eraser, history, paging and save. */
 export const HandwritingDock: React.FC<HandwritingDockProps> = ({
   erasing,
   onToggleErase,
@@ -46,6 +57,8 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
   onSelectColor,
   onSelectWidth,
   onDone,
+  tool,
+  onSelectTool,
   bottom = 0,
 }) => {
   const _ = useTranslation();
@@ -62,6 +75,7 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
       {optionsOpen && (
         <div className='eink-bordered bg-base-100 border-base-300/50 not-eink:shadow-md absolute bottom-full start-3 mb-2 rounded-2xl border px-3 py-2'>
           <HandwritingOptions
+            tool={tool}
             color={penColor}
             width={penWidth}
             onSelectColor={choose(onSelectColor)}
@@ -70,22 +84,41 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
         </div>
       )}
       <div className='flex items-center gap-2'>
-        <button
-          type='button'
-          aria-label={_('Pen')}
-          aria-expanded={optionsOpen}
-          onClick={() => setOptionsOpen((open) => !open)}
-          className={clsx(
-            'flex h-8 items-center gap-0.5 rounded-md px-1',
-            !erasing && 'bg-base-300 eink:border',
-          )}
-        >
-          <span
-            className='border-base-content/20 h-4 w-4 rounded-full border'
-            style={{ backgroundColor: penColor }}
-          />
-          <RiArrowDropDownLine size={20} />
-        </button>
+        {TOOLS.map(({ tool: value, label, Icon }) => {
+          const active = !erasing && tool === value;
+          return (
+            <button
+              key={value}
+              type='button'
+              aria-label={_(label)}
+              aria-pressed={active}
+              aria-expanded={active ? optionsOpen : undefined}
+              onClick={() => {
+                if (active) {
+                  setOptionsOpen((open) => !open);
+                } else {
+                  setOptionsOpen(false);
+                  onSelectTool(value);
+                }
+              }}
+              className={clsx(
+                'flex h-8 items-center gap-1 rounded-md px-1.5',
+                active && 'bg-base-300 eink:border',
+              )}
+            >
+              <Icon size={18} />
+              {active && (
+                <>
+                  <span
+                    className='border-base-content/20 h-3.5 w-3.5 rounded-full border'
+                    style={{ backgroundColor: penColor }}
+                  />
+                  <RiArrowDropDownLine size={18} className='-mx-1' />
+                </>
+              )}
+            </button>
+          );
+        })}
         <div className={clsx('rounded-md', erasing && 'bg-base-300 eink:border')}>
           <AnnotationToolButton
             showTooltip

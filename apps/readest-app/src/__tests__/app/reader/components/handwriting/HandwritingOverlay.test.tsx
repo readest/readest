@@ -26,6 +26,8 @@ vi.mock('@/app/reader/hooks/useHandwriting', () => ({
     penWidth: 0.004,
     selectPenColor: vi.fn(),
     selectPenWidth: vi.fn(),
+    tool: 'pen',
+    selectTool: vi.fn(),
   }),
 }));
 

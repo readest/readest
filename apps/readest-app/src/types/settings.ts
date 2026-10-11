@@ -1,3 +1,4 @@
+import type { InkTool } from '@/services/handwriting/model';
 import type { BookshelfState } from './bookshelf';
 import { CustomTheme } from '@/styles/themes';
 import { CustomFont } from '@/styles/fonts';
@@ -80,6 +81,10 @@ export interface ReadSettings {
   /** Ink color and pen width for the handwriting tool, remembered per install. */
   handwritingColor: string;
   handwritingWidth: number;
+  /** The drawing tool last used, and the marker's own color and width. */
+  handwritingTool: InkTool;
+  handwritingMarkerColor: string;
+  handwritingMarkerWidth: number;
 }
 
 export interface KOSyncSettings {

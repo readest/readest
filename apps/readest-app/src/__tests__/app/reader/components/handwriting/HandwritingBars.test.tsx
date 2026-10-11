@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { HandwritingDock } from '@/app/reader/components/handwriting/HandwritingBars';
 import QuickActionMenu from '@/app/reader/components/annotator/QuickActionMenu';
+import { HANDWRITING_COLORS, MARKER_COLORS } from '@/services/handwriting/model';
 
 const h = vi.hoisted(() => ({ scrolled: false, dispatch: vi.fn() }));
 
@@ -54,6 +55,8 @@ describe('drawing bars', () => {
     onSelectColor: vi.fn(),
     onSelectWidth: vi.fn(),
     onDone: vi.fn(),
+    tool: 'pen' as const,
+    onSelectTool: vi.fn(),
   });
 
   it('saves and leaves drawing from its last button', () => {
@@ -63,6 +66,30 @@ describe('drawing bars', () => {
     expect(buttons[buttons.length - 1]!.getAttribute('aria-label')).toBe('Save');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(onDone).toHaveBeenCalled();
+  });
+
+  it('offers the pen, marker and eraser side by side', () => {
+    const props = dockProps();
+    render(<HandwritingDock {...props} />);
+    expect(screen.getByRole('button', { name: 'Pen' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Eraser' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Marker' }));
+    expect(props.onSelectTool).toHaveBeenCalledWith('marker');
+  });
+
+  it('opens the active tool options with its own palette', () => {
+    render(<HandwritingDock {...dockProps()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
+    expect(screen.getAllByRole('button', { name: 'Ink Color' })).toHaveLength(
+      HANDWRITING_COLORS.length,
+    );
+    cleanup();
+
+    render(<HandwritingDock {...dockProps()} tool='marker' penColor={MARKER_COLORS[0]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Marker' }));
+    const swatches = screen.getAllByRole('button', { name: 'Ink Color' });
+    expect(swatches).toHaveLength(MARKER_COLORS.length);
+    expect(swatches[0]!.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('wires the dock tools', () => {
