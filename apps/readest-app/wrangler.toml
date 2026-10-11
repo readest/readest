@@ -40,6 +40,28 @@ PNPM_VERSION = "10.28.1"
 # STATS_COMPACT_SEGMENT_ROWS=10000. See docs/stats-archive.md.
 STATS_COMPACT_ENABLED = "true"
 STATS_COMPACT_USERS_PER_RUN = "100"
+# Readest Voice: most windows running at once on the RunPod endpoint (see the
+# TTS_DISPATCHER binding below).
+READEST_VOICE_MAX_JOBS = "4"
+# Pull workers must run this worker image version (downloads sound like
+# listening); unset admits any version.
+READEST_VOICE_WORKER_VERSION = "2.3.1"
+
+# Readest Voice fair dispatch (tts-dispatcher.ts): one global Durable Object
+# queues premium-voice windows per user and runs at most READEST_VOICE_MAX_JOBS
+# at once. Keep that at the RunPod endpoint's max workers x TTS_CONCURRENCY:
+# lower, RunPod never sees a backlog and never scales up. It also holds the
+# download job queue that workers pull from (/api/tts/readest/workers); each
+# worker's token is in the READEST_VOICE_WORKER_TOKENS secret
+# ("name:token,..."), and READEST_VOICE_WORKER_VERSION, when set, admits only
+# workers of that image version.
+[[durable_objects.bindings]]
+name = "TTS_DISPATCHER"
+class_name = "TTSDispatcher"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TTSDispatcher"]
 
 [observability]
 enabled = true
@@ -66,6 +88,14 @@ bucket_name = "readest-next-inc-cache"
 [[r2_buckets]]
 binding = "STATS_ARCHIVE_R2"
 bucket_name = "readest-stats-archive"
+
+# Readest Voice download job results: one NDJSON object per finished job
+# (tts-jobs/{job_id}), deleted when the app fetches it. Give the bucket a
+# 1-day lifecycle rule for results nobody fetched. Absent binding = downloads
+# go through the stream route (self-host).
+[[r2_buckets]]
+binding = "TTS_JOBS_R2"
+bucket_name = "readest-tts-jobs"
 
 # Per-event metrics for the App Store / Google Play subscription webhooks and the
 # reconciliation sweep. 100% capture, independent of the head-sampled Workers

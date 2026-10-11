@@ -7,6 +7,7 @@ export interface UserQuota {
 
 export type UserStorageQuota = UserQuota;
 export type UserDailyTranslationQuota = UserQuota;
+export type UserDailyTTSQuota = UserQuota;
 export type QuotaType = {
   name: string;
   tooltip: string;

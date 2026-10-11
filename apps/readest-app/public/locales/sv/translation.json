@@ -267,7 +267,6 @@
   "Play": "Spela",
   "Next Sentence": "Nästa mening",
   "Next Paragraph": "Nästa stycke",
-  "TTS not supported for this document": "Uppläsning stöds inte för detta dokument",
   "No Timeout": "Ingen timeout",
   "{{value}} minute": "{{value}} minut",
   "{{value}} minutes": "{{value}} minuter",
@@ -2578,5 +2577,9 @@
   "Book Info": "Bokinfo",
   "QR Code": "QR-kod",
   "Links to this passage in Readest": "Länkar till det här stycket i Readest",
-  "via {{app}}": "via {{app}}"
+  "via {{app}}": "via {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Daglig TTS-gräns nådd. Uppgradera din plan eller försök igen imorgon.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "Uppläsning är inte tillgänglig för den här sidan"
 }

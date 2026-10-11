@@ -298,7 +298,6 @@
   "Table of Contents": "உள்ளடக்கம்",
   "Sidebar": "பக்கப்பட்டி",
   "Disable Translation": "மொழிபெயர்ப்பை முடக்கவும்",
-  "TTS not supported for this document": "இந்த ஆவணத்திற்கு TTS ஆதரிக்கப்படவில்லை",
   "No Timeout": "நேர வரம்பு இல்லை",
   "{{value}} minute": "{{value}} நிமிடம்",
   "{{value}} minutes": "{{value}} நிமிடங்கள்",
@@ -2578,5 +2577,9 @@
   "Book Info": "புத்தகத் தகவல்",
   "QR Code": "QR குறியீடு",
   "Links to this passage in Readest": "Readest-இல் இந்தப் பகுதிக்கான இணைப்பு",
-  "via {{app}}": "{{app}} வழியாக"
+  "via {{app}}": "{{app}} வழியாக",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "தினசரி TTS வரம்பை எட்டிவிட்டது. உங்கள் திட்டத்தை மேம்படுத்துங்கள் அல்லது நாளை மீண்டும் முயற்சிக்கவும்.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "இந்தப் பக்கத்திற்கு TTS கிடைக்கவில்லை"
 }

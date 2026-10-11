@@ -653,7 +653,6 @@
   "Readwise sync failed: {{error}}": "Readwise szinkronizálás sikertelen: {{error}}",
   "Translating...": "Fordítás...",
   "Please log in to use advanced TTS features": "Kérjük, jelentkezzen be a haladó TTS-funkciók használatához",
-  "TTS not supported for this document": "A TTS nem támogatott ehhez a dokumentumhoz",
   "Delete Your Account?": "Törli a fiókját?",
   "This action cannot be undone. All your data in the cloud will be permanently deleted.": "Ez a művelet nem vonható vissza. Minden felhőbeli adata véglegesen törlődik.",
   "Delete Permanently": "Végleges törlés",
@@ -2578,5 +2577,9 @@
   "Book Info": "Könyvadatok",
   "QR Code": "QR-kód",
   "Links to this passage in Readest": "Erre a részre mutat a Readestben",
-  "via {{app}}": "a(z) {{app}} segítségével"
+  "via {{app}}": "a(z) {{app}} segítségével",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Napi TTS-korlát elérve. Frissítse tervét, vagy próbálja újra holnap.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "A TTS nem érhető el ezen az oldalon"
 }

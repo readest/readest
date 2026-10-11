@@ -12,6 +12,7 @@ Self-hosted premium TTS ("Readest Voice"): Kokoro v1.0 + v1.1-zh (Plus tier, EN/
 **Documents (all on dev, plans dir is local-only/gitignored):**
 - Spec: `docs/superpowers/specs/2026-07-08-selfhosted-premium-tts-design.md`
 - Service plan (separate repo `readest-tts-server`): `.agents/plans/2026-07-08-readest-tts-server.md`
+- 2026-10-09: the worker repo is now `readest-voice` (formerly `readest-tts-server`); v2 plans: `.agents/plans/2026-10-09-readest-tts-server-v2.md`, `.agents/plans/2026-10-09-readest-tts-app-v2.md`.
 - App integration plan: `.agents/plans/2026-07-08-readest-tts-integration.md` (contains all 3 review reports + 30-row decision audit trail)
 
 **Key user decisions (do not re-litigate):** gating plus/pro ONLY (purchase excluded — recurring GPU cost); quotas 100K/300K chars/day; self-hosted kept over managed-API despite both review models challenging it (cloning path + supplier independence); word-level alignment kept in v1; cold starts accepted but softened by warmup ping on voice-picker open (adopted at gate) + slow-start toast; usage meter and free-user upsell entry DECLINED; Edge stays default engine (premium is opt-in, `setVoice('')` must never match readest voices).

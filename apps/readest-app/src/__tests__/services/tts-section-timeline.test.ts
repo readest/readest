@@ -43,6 +43,31 @@ describe('SectionTimeline', () => {
     expect(sentences[3]!.text.trim()).toBe(SENTENCE_B1);
   });
 
+  test('buffered extent runs from a sentence through its measured successors', () => {
+    const voice = 'timeline-voice-buffered';
+    const sentences = enumerate(makeDoc());
+    recordMeasuredDuration(voice, sentences[1]!.text, 10);
+    recordMeasuredDuration(voice, sentences[2]!.text, 10);
+    const timeline = new SectionTimeline(sentences, 'en', voice);
+    const total = timeline.getDuration();
+    // Playing sentence 1: it and sentence 2 are synthesized, sentence 3 is not.
+    expect(timeline.getBufferedFraction(1)).toBeCloseTo((timeline.positionAt(1) + 20) / total, 6);
+    // Playing an unsynthesized sentence: nothing is buffered past its start.
+    expect(timeline.getBufferedFraction(0)).toBe(0);
+  });
+
+  test('a sentence with nothing to speak does not stop the buffered extent', () => {
+    // Segmentation can leave a punctuation-only fragment (" ? "): it is never
+    // synthesized, so it is never measured, yet audio after it is buffered.
+    const voice = 'timeline-voice-unspeakable';
+    const sentences = enumerate(makeDoc());
+    sentences[1] = { ...sentences[1]!, text: ' ? ' };
+    recordMeasuredDuration(voice, sentences[0]!.text, 10);
+    recordMeasuredDuration(voice, sentences[2]!.text, 10);
+    const timeline = new SectionTimeline(sentences, 'en', voice);
+    expect(timeline.getBufferedFraction(0)).toBeCloseTo(20 / timeline.getDuration(), 6);
+  });
+
   test('mixes measured and estimated durations after refresh', () => {
     const voice = 'timeline-voice-mixed';
     const sentences = enumerate(makeDoc());

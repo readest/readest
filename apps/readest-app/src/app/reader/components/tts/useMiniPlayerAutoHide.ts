@@ -25,24 +25,29 @@ const LINGER_MS = 5000;
  * dismissal: no toolbar up means show the card and arm a fresh countdown.
  * Re-running on hoveredBookKey also cancels a countdown in flight when the
  * toolbar returns, so a stale remainder can never hide a card just summoned.
+ *
+ * While `buffering` (nothing audible yet: a cold GPU worker can take far longer
+ * than the linger) the card stays up with its spinning play button, and the
+ * countdown starts once audio does.
  */
 export const useMiniPlayerAutoHide = (
   bookKey: string,
   playerStyle: TTSPlayerStyle,
   mounted: boolean,
+  buffering = false,
 ) => {
   const { hoveredBookKey } = useReaderStore();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    if (!mounted || playerStyle === 'minimal' || hoveredBookKey === bookKey) {
+    if (!mounted || playerStyle === 'minimal' || hoveredBookKey === bookKey || buffering) {
       setVisible(true);
       return;
     }
     setVisible(true);
     const timeout = setTimeout(() => setVisible(false), LINGER_MS);
     return () => clearTimeout(timeout);
-  }, [mounted, playerStyle, hoveredBookKey, bookKey]);
+  }, [mounted, playerStyle, hoveredBookKey, bookKey, buffering]);
 
   return visible;
 };

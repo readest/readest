@@ -564,6 +564,26 @@ describe('TTSPlayerSheet', () => {
     expect(viewSettings['ttsUseNarration']).toBeUndefined();
   });
 
+  test('premium voices show the plan that unlocks them', async () => {
+    const groups = [
+      {
+        id: 'readest',
+        name: 'Readest Voice',
+        voices: [
+          { id: 'kokoro:zf_001', name: 'Zifang', lang: 'zh-CN', tier: 'plus' as const },
+          { id: 'omnivoice:xiaoyu', name: 'Xiaoyu', lang: 'zh-CN', tier: 'pro' as const },
+        ],
+      },
+      ...voiceGroups,
+    ];
+    render(<TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) })} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    const row = (name: string) => screen.getByText(name).closest('button')!;
+    expect((await waitFor(() => row('Xiaoyu'))).textContent).toBe('XiaoyuPro');
+    expect(row('Zifang').textContent).toBe('ZifangPlus');
+    expect(row('Guy').textContent).toBe('Guy');
+  });
+
   test('reopening the sheet returns to the main view', async () => {
     const props = makeProps();
     const { rerender } = render(<TTSPlayerSheet {...props} />);

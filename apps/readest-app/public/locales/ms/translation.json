@@ -284,7 +284,6 @@
   "Play": "Main",
   "Next Sentence": "Ayat Seterusnya",
   "Next Paragraph": "Perenggan Seterusnya",
-  "TTS not supported for this document": "TTS tidak disokong untuk dokumen ini",
   "No Timeout": "Tiada Had Masa",
   "{{value}} minute": "{{value}} minit",
   "{{value}} minutes": "{{value}} minit",
@@ -2514,5 +2513,9 @@
   "Book Info": "Maklumat Buku",
   "QR Code": "Kod QR",
   "Links to this passage in Readest": "Pautan ke petikan ini dalam Readest",
-  "via {{app}}": "melalui {{app}}"
+  "via {{app}}": "melalui {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Had TTS harian dicapai. Naik taraf pelan anda atau cuba lagi esok.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS tidak tersedia untuk halaman ini"
 }

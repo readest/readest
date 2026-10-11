@@ -424,7 +424,6 @@
   "Terms of Service": "Ketentuan Layanan",
   "Privacy Policy": "Kebijakan Privasi",
   "Disable Double Click": "Nonaktifkan Klik Ganda",
-  "TTS not supported for this document": "TTS tidak didukung untuk dokumen ini",
   "Reset Password": "Reset Kata Sandi",
   "Reading Progress Style": "Gaya Progres Membaca",
   "Page Number": "Nomor Halaman",
@@ -2514,5 +2513,9 @@
   "Book Info": "Info Buku",
   "QR Code": "Kode QR",
   "Links to this passage in Readest": "Tautan ke bagian ini di Readest",
-  "via {{app}}": "via {{app}}"
+  "via {{app}}": "via {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Batas TTS harian tercapai. Tingkatkan paket Anda atau coba lagi besok.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS tidak tersedia untuk halaman ini"
 }

@@ -298,7 +298,6 @@
   "Table of Contents": "সূচিপত্র",
   "Sidebar": "সাইডবার",
   "Disable Translation": "অনুবাদ নিষ্ক্রিয়",
-  "TTS not supported for this document": "এই ডকুমেন্টের জন্য TTS সমর্থিত নয়",
   "No Timeout": "কোন টাইমআউট নেই",
   "{{value}} minute": "{{value}} মিনিট",
   "{{value}} minutes": "{{value}} মিনিট",
@@ -2578,5 +2577,9 @@
   "Book Info": "বইয়ের তথ্য",
   "QR Code": "QR কোড",
   "Links to this passage in Readest": "Readest-এ এই অংশের লিংক",
-  "via {{app}}": "{{app}}-এর মাধ্যমে"
+  "via {{app}}": "{{app}}-এর মাধ্যমে",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "দৈনিক TTS সীমা পৌঁছেছে। আপনার পরিকল্পনা আপগ্রেড করুন বা আগামীকাল আবার চেষ্টা করুন।",
+  "Pro": "প্রো",
+  "Plus": "প্লাস",
+  "TTS not available for this page": "এই পৃষ্ঠার জন্য TTS উপলব্ধ নয়"
 }

@@ -53,6 +53,9 @@ vi.mock('@/services/tts/WebSpeechClient', () => ({
 }));
 
 vi.mock('@/services/tts/EdgeTTSClient', () => ({
+  // constants.ts imports this named const from the same module; the mock
+  // factory replaces the whole module, so it must re-export it too.
+  DEFAULT_SENTENCE_GAP_SEC: 0.15,
   EdgeTTSClient: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
     Object.assign(this, makeMockClient('edge-tts'));
   }),
@@ -191,6 +194,17 @@ describe('TTSController section timeline', () => {
     expect(info!.position).toBeCloseTo(0.5, 5);
     expect(info!.duration).toBeGreaterThan(10);
     expect(info!.measuredFraction).toBeGreaterThan(0);
+  });
+
+  test('getPlaybackInfo follows a voice the client resolved after the timeline was built', async () => {
+    // A client whose voices load asynchronously reports no voice until its
+    // first sentence plays; durations are recorded under the resolved one.
+    vi.mocked(controller.ttsClient.getVoiceId).mockReturnValue('');
+    await controller.ensureTimeline();
+    recordMeasuredDuration('late-voice', S0, 4);
+    recordMeasuredDuration('late-voice', S1, 6);
+    vi.mocked(controller.ttsClient.getVoiceId).mockReturnValue('late-voice');
+    expect(controller.getPlaybackInfo()!.measuredFraction).toBeGreaterThan(0);
   });
 
   test('getPlaybackInfo is null before the timeline is built (reserved-slot state)', () => {

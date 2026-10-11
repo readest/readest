@@ -109,6 +109,19 @@ const createNativePackFs = (dir: string): TTSPackFs => ({
   },
 });
 
+// The per-book store every synthetic engine of one reader shares: each opens
+// the same `cache.db`, and OPFS sync access handles are exclusive, so two
+// stores on one book would fight. Entries are namespaced by provider id.
+// Null when there is no app context or the user turned the cache off.
+export const createBookTTSCacheStore = (
+  appService: AppService | null | undefined,
+  getBookHash: () => string | null,
+): BookTTSCacheStore | null => {
+  const cacheConfig = getTTSCacheConfig();
+  if (!appService || !cacheConfig.enabled) return null;
+  return new BookTTSCacheStore(appService, getBookHash, cacheConfig.budgetMB * 1024 * 1024);
+};
+
 export class BookTTSCacheStore implements TTSCacheStore {
   #appService: AppService;
   // The book key lands on the controller after construction (init()), so the
@@ -174,6 +187,10 @@ export class BookTTSCacheStore implements TTSCacheStore {
       }
     })();
     return this.#opening;
+  }
+
+  async open(): Promise<void> {
+    await this.#open();
   }
 
   async get(key: string): Promise<TTSCacheEntry | null> {

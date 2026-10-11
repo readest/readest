@@ -10,7 +10,13 @@
 import { md5 } from 'js-md5';
 import type { TTSWordBoundary } from '@/libs/edgeTTS';
 import type { TTSVoice } from '../types';
-import type { SpeechProvider, SpeechSynthesisRequest, SpeechSynthesisResult } from './types';
+import type {
+  PrefetchOptions,
+  SpeechProvider,
+  SpeechSynthesisRequest,
+  SpeechSynthesisResult,
+  TTSLane,
+} from './types';
 
 export interface TTSCacheEntry {
   audio: ArrayBuffer;
@@ -19,6 +25,8 @@ export interface TTSCacheEntry {
 }
 
 export interface TTSCacheStore {
+  // Open the backing store ahead of the first lookup (no-op if it cannot yet).
+  open?(): Promise<void>;
   get(key: string): Promise<TTSCacheEntry | null>;
   put(
     key: string,
@@ -57,16 +65,27 @@ export interface TTSCacheStore {
 export const computeTTSCacheKey = (providerId: string, req: SpeechSynthesisRequest): string =>
   md5(JSON.stringify(['tts-v1', providerId, req.lang, req.voice, req.pitch, req.text]));
 
+// Recently read or synthesized sentences kept in memory: a store read costs
+// hundreds of ms on device, and audio fetched ahead plays from here at the
+// paragraph boundary. A few minutes of speech is a few MB.
+const RECENT_BYTES = 16 * 1024 * 1024;
+
 export class CachingProvider implements SpeechProvider {
   readonly #inner: SpeechProvider;
   readonly #store: TTSCacheStore;
   // Dedups whole get-or-synthesize flows: the playback scheduler and the
   // preloader routinely race the same sentence.
   readonly #inflight = new Map<string, Promise<SpeechSynthesisResult>>();
+  readonly #recent = new Map<string, SpeechSynthesisResult>();
+  #recentBytes = 0;
+  // Present only for a windowed inner provider: callers feature-detect it to
+  // choose windowed prefetch over synthesizing preloads.
+  readonly prefetch?: SpeechProvider['prefetch'];
 
   constructor(inner: SpeechProvider, store: TTSCacheStore) {
     this.#inner = inner;
     this.#store = store;
+    if (inner.prefetch) this.prefetch = this.#prefetch.bind(this);
   }
 
   get id(): string {
@@ -81,8 +100,28 @@ export class CachingProvider implements SpeechProvider {
     return this.#inner.fallbackVoiceId;
   }
 
+  get sameLanguageVoicesOnly(): boolean | undefined {
+    return this.#inner.sameLanguageVoicesOnly;
+  }
+
   init(): Promise<boolean> {
+    // Opening the per-book database takes about a second on device: overlap it
+    // with engine init instead of the first sentence's lookup.
+    void this.#store.open?.().catch(() => {});
     return this.#inner.init();
+  }
+
+  #remember(key: string, result: SpeechSynthesisResult) {
+    const old = this.#recent.get(key);
+    if (old) this.#recentBytes -= old.audio.byteLength;
+    this.#recent.delete(key);
+    this.#recent.set(key, { audio: result.audio.slice(0), boundaries: result.boundaries });
+    this.#recentBytes += result.audio.byteLength;
+    for (const [oldest, entry] of this.#recent) {
+      if (this.#recentBytes <= RECENT_BYTES) break;
+      this.#recent.delete(oldest);
+      this.#recentBytes -= entry.audio.byteLength;
+    }
   }
 
   getAllVoices(): Promise<TTSVoice[]> {
@@ -93,12 +132,64 @@ export class CachingProvider implements SpeechProvider {
     return this.#inner.pickDefaultVoice?.(voices);
   }
 
+  #prefetch(
+    reqs: SpeechSynthesisRequest[],
+    lane: TTSLane,
+    signal: AbortSignal,
+    options?: PrefetchOptions,
+  ): void {
+    if (this.#inner.cacheable === false) {
+      this.#inner.prefetch?.(reqs, lane, signal, options);
+      return;
+    }
+    void this.#prefetchUncached(reqs, lane, signal, options);
+  }
+
+  async #prefetchUncached(
+    reqs: SpeechSynthesisRequest[],
+    lane: TTSLane,
+    signal: AbortSignal,
+    options?: PrefetchOptions,
+  ): Promise<void> {
+    const uncached: SpeechSynthesisRequest[] = [];
+    const toFill: SpeechSynthesisRequest[] = [];
+    for (const req of reqs) {
+      const key = computeTTSCacheKey(this.#inner.id, req);
+      // Already being filled: still forwarded, so the provider can raise a
+      // preload's priority once its paragraph starts.
+      if (this.#inflight.has(key)) {
+        uncached.push(req);
+        continue;
+      }
+      try {
+        const cached = this.#recent.get(key) ?? (await this.#store.get(key));
+        if (cached) {
+          this.#remember(key, cached);
+          options?.onDelivered?.(req, { audio: cached.audio, boundaries: cached.boundaries });
+          continue;
+        }
+      } catch {
+        // Unreadable store: treat as uncached.
+      }
+      uncached.push(req);
+      toFill.push(req);
+    }
+    if (signal.aborted || uncached.length === 0) return;
+    this.#inner.prefetch?.(uncached, lane, signal, options);
+    // Persist every sentence as it arrives, even one playback never asks for
+    // (stop, seek): it was synthesized and paid for, so keep it.
+    for (const req of toFill) {
+      this.synthesize(req, signal, options).catch(() => {});
+    }
+  }
+
   async synthesize(
     req: SpeechSynthesisRequest,
     signal: AbortSignal,
+    options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
     if (this.#inner.cacheable === false) {
-      return this.#inner.synthesize(req, signal);
+      return this.#inner.synthesize(req, signal, options);
     }
     const key = computeTTSCacheKey(this.#inner.id, req);
     const pending = this.#inflight.get(key);
@@ -106,7 +197,7 @@ export class CachingProvider implements SpeechProvider {
       // Joiners get their own buffer: decodeAudioData detaches its input.
       return pending.then((result) => ({ ...result, audio: result.audio.slice(0) }));
     }
-    const promise = this.#getOrSynthesize(key, req, signal);
+    const promise = this.#getOrSynthesize(key, req, signal, options);
     this.#inflight.set(key, promise);
     try {
       return await promise;
@@ -120,16 +211,21 @@ export class CachingProvider implements SpeechProvider {
     key: string,
     req: SpeechSynthesisRequest,
     signal: AbortSignal,
+    options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
+    const recent = this.#recent.get(key);
+    if (recent) return { audio: recent.audio.slice(0), boundaries: recent.boundaries };
     try {
       const cached = await this.#store.get(key);
       if (cached) {
+        this.#remember(key, cached);
         return { audio: cached.audio.slice(0), boundaries: cached.boundaries };
       }
     } catch (err) {
       console.warn('TTS cache read failed; synthesizing instead', err);
     }
-    const result = await this.#inner.synthesize(req, signal);
+    const result = await this.#inner.synthesize(req, signal, options);
+    this.#remember(key, result);
     try {
       await this.#store.put(
         key,

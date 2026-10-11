@@ -424,7 +424,6 @@
   "Terms of Service": "ข้อกำหนดในการให้บริการ",
   "Privacy Policy": "นโยบายความเป็นส่วนตัว",
   "Disable Double Click": "ปิดการคลิกสองครั้ง",
-  "TTS not supported for this document": "ไม่รองรับ TTS สำหรับเอกสารนี้",
   "Reset Password": "รีเซ็ตพาสเวิร์ด",
   "Reading Progress Style": "สไตล์ความก้าวหน้าในการอ่าน",
   "Page Number": "หมายเลขหน้า",
@@ -2514,5 +2513,9 @@
   "Book Info": "ข้อมูลหนังสือ",
   "QR Code": "คิวอาร์โค้ด",
   "Links to this passage in Readest": "ลิงก์ไปยังข้อความนี้ใน Readest",
-  "via {{app}}": "ผ่าน {{app}}"
+  "via {{app}}": "ผ่าน {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "ถึงขีดจำกัด TTS รายวันแล้ว อัพเกรดแผนของคุณหรือลองใหม่อีกครั้งในวันพรุ่งนี้",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "ไม่มี TTS สำหรับหน้านี้"
 }

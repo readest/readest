@@ -618,7 +618,6 @@
   "Readwise sync failed: {{error}}": "Sinhronizacija z Readwise ni uspela: {{error}}",
   "Translating...": "Prevajanje...",
   "Please log in to use advanced TTS features": "Prosimo, prijavite se za uporabo naprednih TTS funkcij",
-  "TTS not supported for this document": "TTS ni podprt za ta dokument",
   "Delete Your Account?": "Izbrišem vaš račun?",
   "This action cannot be undone. All your data in the cloud will be permanently deleted.": "Tega dejanja ni mogoče razveljaviti. Vsi vaši podatki v oblaku bodo trajno izbrisani.",
   "Delete Permanently": "Trajno izbriši",
@@ -2706,5 +2705,9 @@
   "Book Info": "Podatki o knjigi",
   "QR Code": "Koda QR",
   "Links to this passage in Readest": "Povezava do tega odlomka v Readest",
-  "via {{app}}": "prek {{app}}"
+  "via {{app}}": "prek {{app}}",
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Dosežena dnevna omejitev TTS. Nadgradite svojo naročnino ali poskusite jutri znova.",
+  "Pro": "Pro",
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS ni na voljo za to stran"
 }
