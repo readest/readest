@@ -1293,6 +1293,37 @@ describe('TTSController', () => {
       expect(forwardSpy).toHaveBeenCalledWith(false, true);
     });
 
+    test('next paragraphs are preloaded once this paragraph is audible, not before', async () => {
+      // Stepping the live cursor through upcoming paragraphs is synchronous
+      // DOM work: done before this paragraph's audio is scheduled, it lands in
+      // the pause between paragraphs.
+      await controller.init();
+      await controller.initViewTTS(0);
+      controller.setParagraphGap(0);
+      vi.spyOn(controller, 'forward').mockResolvedValue();
+      const preloadSpy = vi.spyOn(controller, 'preloadNextSSML').mockResolvedValue();
+      speakingControllers.push(controller);
+      let audible!: () => void;
+      const gate = new Promise<void>((resolve) => (audible = resolve));
+      vi.mocked(controller.ttsClient.speak).mockImplementation(
+        (_ssml: string, _signal: AbortSignal, preload?: boolean) =>
+          (async function* () {
+            if (preload) return;
+            await gate;
+            yield { code: 'boundary', mark: '0' } as TTSMessageEvent;
+            yield { code: 'end' } as TTSMessageEvent;
+          })(),
+      );
+
+      await controller.speak('<speak>hello</speak>');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(preloadSpy).not.toHaveBeenCalled();
+
+      audible();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(preloadSpy).toHaveBeenCalledTimes(1);
+    });
+
     test('the paragraph gap is waited out as given, not re-scaled by the rate', async () => {
       // The gap arrives already scaled for the rate (see scaleGapForRate);
       // dividing it again here cut every paragraph pause in half at 2x (#5750).
@@ -1922,6 +1953,46 @@ describe('TTSController', () => {
       expect(controller.ttsClient.speak).toHaveBeenCalledTimes(6);
     });
 
+    test('a windowed client preloads into the next chapter when this one ends', async () => {
+      // The section ends after one more paragraph: the next section's opening
+      // (the throwaway foliate TTS starts at "hello") follows it.
+      mockView.tts = {
+        next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        wordBoundaries: true,
+        mediaClock: true,
+        gapControl: true,
+        liveRateChange: false,
+        windowedPrefetch: true,
+      }) as unknown as typeof controller.ttsClient.getCapabilities;
+
+      await controller.preloadNextSSML();
+
+      const preloaded = vi.mocked(controller.ttsClient.speak).mock.calls.map(([ssml]) => ssml);
+      expect(preloaded[0]).toContain('last');
+      expect(preloaded[1]).toContain('hello');
+    });
+
+    test('other clients never preload past the chapter', async () => {
+      mockView.tts = {
+        next: vi.fn().mockReturnValueOnce('<speak>last</speak>').mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      const sections = (
+        mockView.book as unknown as { sections: { createDocument: ReturnType<typeof vi.fn> }[] }
+      ).sections;
+      for (const s of sections) s.createDocument.mockClear();
+
+      await controller.preloadNextSSML();
+
+      expect(controller.ttsClient.speak).toHaveBeenCalledTimes(1);
+      expect(sections.some((s) => s.createDocument.mock.calls.length > 0)).toBe(false);
+    });
+
     test('other clients keep preloading four paragraphs', async () => {
       mockView.tts = {
         next: vi.fn().mockReturnValue(`<speak>${'a'.repeat(450)}</speak>`),
@@ -1932,6 +2003,55 @@ describe('TTSController', () => {
       await controller.preloadNextSSML();
 
       expect(controller.ttsClient.speak).toHaveBeenCalledTimes(4);
+    });
+
+    test('a voice change withdraws the preloads queued under the old voice', async () => {
+      // A windowed provider keeps queued preloads until their signal aborts:
+      // left alive, old-voice sentences keep reaching the worker after the
+      // switch, preempting the new voice's buffer and charging the quota.
+      mockView.tts = {
+        next: vi.fn().mockReturnValueOnce('<speak>one</speak>').mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      await controller.preloadNextSSML(1);
+      const [, signal] = vi.mocked(controller.ttsClient.speak).mock.calls[0]!;
+      expect((signal as AbortSignal).aborted).toBe(false);
+
+      controller.ttsEdgeVoices = [{ id: 'edge-voice-1', name: 'Edge Voice', lang: 'en-US' }];
+      await controller.setVoice('edge-voice-1', 'en');
+
+      expect((signal as AbortSignal).aborted).toBe(true);
+    });
+
+    test('stopping withdraws queued preloads', async () => {
+      mockView.tts = {
+        next: vi.fn().mockReturnValueOnce('<speak>one</speak>').mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      await controller.preloadNextSSML(1);
+      const [, signal] = vi.mocked(controller.ttsClient.speak).mock.calls[0]!;
+
+      await controller.stop();
+
+      expect((signal as AbortSignal).aborted).toBe(true);
+    });
+
+    test('a paragraph handover keeps queued preloads', async () => {
+      // Each paragraph's speak starts with stop(true): withdrawing there would
+      // drop the next paragraphs' audio at every paragraph boundary.
+      mockView.tts = {
+        next: vi.fn().mockReturnValueOnce('<speak>one</speak>').mockReturnValue(undefined),
+        prev: vi.fn(),
+        doc: {},
+      } as unknown as FoliateView['tts'];
+      await controller.preloadNextSSML(1);
+      const [, signal] = vi.mocked(controller.ttsClient.speak).mock.calls[0]!;
+
+      await controller.stop(true);
+
+      expect((signal as AbortSignal).aborted).toBe(false);
     });
 
     test('preloads the next paragraphs one after another, in reading order', async () => {

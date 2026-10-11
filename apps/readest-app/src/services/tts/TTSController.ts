@@ -178,6 +178,12 @@ export class TTSController extends EventTarget {
   // chunk (see BufferedTTSClient/MediaOverlayClient), so it is the only signal
   // needed here. Surfaced as isBuffering() for the player's spinner.
   #awaitingAudio = false;
+  // Opening paragraphs (raw SSML) of the section after the current one, for
+  // windowed engines' preloads across a chapter end; built once per section.
+  #nextSectionOpening: { index: number; ssmls: Promise<string[]> } | null = null;
+  // Signal for queued background preloads: a windowed provider keeps them
+  // until it aborts, so a voice change or stop must withdraw them.
+  #preloadAbort = new AbortController();
   #ttsDoc: Document | null = null;
   #ttsGranularity: TTSGranularity = 'sentence';
   #skipInlineAnnotations = false;
@@ -1524,18 +1530,37 @@ export class TTSController extends EventTarget {
     // If async gaps exist between next()/prev() calls, a concurrent #speak()
     // can dispatch marks against the wrong #ranges, causing incorrect highlights
     // and accidental page turns.
+    const estimate = (ssml: string) =>
+      estimateSentenceSeconds(ssml.replace(/<[^>]*>/g, ' '), this.ttsLang || 'en', voiceId);
     const rawSsmls: string[] = [];
+    let sectionEnded = false;
     for (let i = 0; i < maxCount; i++) {
       const ssml = tts.next();
-      if (!ssml) break;
+      if (!ssml) {
+        sectionEnded = true;
+        break;
+      }
       rawSsmls.push(ssml);
       if (!byDuration) continue;
-      const text = ssml.replace(/<[^>]*>/g, ' ');
-      seconds += estimateSentenceSeconds(text, this.ttsLang || 'en', voiceId);
+      seconds += estimate(ssml);
       if (seconds >= PRELOAD_AHEAD_SEC) break;
     }
     for (let i = 0; i < rawSsmls.length; i++) {
       tts.prev();
+    }
+
+    // The chapter ends inside the budget: carry on into the next one, so a
+    // chapter change finds its opening already synthesized.
+    if (byDuration && sectionEnded && seconds < PRELOAD_AHEAD_SEC) {
+      const nextIndex = this.#ttsSectionIndex + 1;
+      if (this.#nextSectionOpening?.index !== nextIndex) {
+        this.#nextSectionOpening = { index: nextIndex, ssmls: this.#sectionOpening(nextIndex) };
+      }
+      for (const ssml of await this.#nextSectionOpening.ssmls) {
+        if (seconds >= PRELOAD_AHEAD_SEC || rawSsmls.length >= maxCount) break;
+        rawSsmls.push(ssml);
+        seconds += estimate(ssml);
+      }
     }
 
     const ssmls: string[] = [];
@@ -1546,8 +1571,36 @@ export class TTSController extends EventTarget {
     }
     // In reading order, one after another: a windowed provider queues preloads
     // as they arrive, so the paragraph read next must reach it first.
+    const { signal } = this.#preloadAbort;
     for (const ssml of ssmls) {
-      await this.preloadSSML(ssml, new AbortController().signal);
+      await this.preloadSSML(ssml, signal);
+    }
+  }
+
+  // Up to about PRELOAD_AHEAD_SEC of a section's opening paragraphs as raw
+  // SSML, from a throwaway TTS over a fresh document (never the live one), the
+  // same way the live session will produce them so preloads match playback.
+  async #sectionOpening(sectionIndex: number): Promise<string[]> {
+    const section = this.view.book.sections?.[sectionIndex];
+    if (!section?.createDocument) return [];
+    try {
+      const doc = await this.#createSectionDoc(section);
+      const { TTS } = await import('foliate-js/tts.js');
+      const { textWalker } = await import('foliate-js/text-walker.js');
+      const tts = new TTS(doc, textWalker, createTTSNodeFilter(), () => {}, this.#ttsGranularity);
+      const voiceId = this.ttsClient.getVoiceId();
+      const ssmls: string[] = [];
+      let seconds = 0;
+      for (let raw = tts.start(); raw && ssmls.length < PRELOAD_MAX_PARAGRAPHS; raw = tts.next()) {
+        ssmls.push(raw);
+        const text = raw.replace(/<[^>]*>/g, ' ');
+        seconds += estimateSentenceSeconds(text, this.ttsLang || 'en', voiceId);
+        if (seconds >= PRELOAD_AHEAD_SEC) break;
+      }
+      return ssmls;
+    } catch (err) {
+      console.warn('TTS preload of the next section failed', sectionIndex, err);
+      return [];
     }
   }
 
@@ -1653,6 +1706,7 @@ export class TTSController extends EventTarget {
         let sentenceMark: string | undefined;
         let sentenceRange: Range | undefined;
         let stepAfter: { range?: Range; advance: boolean } | null = null;
+        let preloadedNext = false;
         for await (const { code, mark } of iter) {
           // Anything the iterator yields means the client is done waiting:
           // 'boundary' is the first audible chunk, 'end'/'error' resolve the
@@ -1664,6 +1718,12 @@ export class TTSController extends EventTarget {
           }
           lastCode = code;
           if (oneTime || this.state !== 'playing') continue;
+          // Once this paragraph is audible: stepping through the next ones is
+          // synchronous DOM work that would otherwise sit in the pause before it.
+          if (!preloadedNext) {
+            preloadedNext = true;
+            void this.preloadNextSSML();
+          }
           if (code === 'end') {
             const range = this.#getTts()?.getLastRange();
             if (this.#stopsAfter(range)) {
@@ -1887,10 +1947,7 @@ export class TTSController extends EventTarget {
         }
       })
       .catch((e) => this.error(e));
-    if (!oneTime) {
-      this.preloadNextSSML();
-      this.dispatchSpeakMark();
-    }
+    if (!oneTime) this.dispatchSpeakMark();
   }
 
   play() {
@@ -1913,7 +1970,6 @@ export class TTSController extends EventTarget {
       this.resume();
     }
     this.#speak(ssml);
-    this.preloadNextSSML();
   }
 
   async pause() {
@@ -1930,8 +1986,15 @@ export class TTSController extends EventTarget {
     await this.ttsClient.resume().catch((e) => this.error(e));
   }
 
+  #withdrawPreloads() {
+    this.#preloadAbort.abort();
+    this.#preloadAbort = new AbortController();
+  }
+
   async stop(handover = false) {
     this.#awaitingAudio = false;
+    // A handover (the next paragraph starting) keeps them: they are its audio.
+    if (!handover) this.#withdrawPreloads();
     if (this.#currentSpeakAbortController) {
       this.#currentSpeakAbortController.abort();
     }
@@ -2015,7 +2078,6 @@ export class TTSController extends EventTarget {
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
     }
-    if (isPlaying && !byMark) this.preloadNextSSML();
   }
 
   async setLang(lang: string) {
@@ -2080,6 +2142,7 @@ export class TTSController extends EventTarget {
 
   async setVoice(voiceId: string, lang: string) {
     this.state = 'setvoice-paused';
+    this.#withdrawPreloads();
 
     // Switching into or out of narration changes the mark source, not just the
     // engine: the current section's TTS instance has to be rebuilt.
