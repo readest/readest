@@ -114,7 +114,7 @@ import ImageContextMenu from './ImageContextMenu';
 import TableViewer from './TableViewer';
 import ExternalLinkConfirm from './ExternalLinkConfirm';
 import { getTTSMiniPlayerClearance } from '../utils/ttsMiniPlayerPosition';
-import { getDrawingBarsClearance } from '../utils/drawingBars';
+import { getDrawingDockClearance } from '../utils/drawingDock';
 
 declare global {
   interface Window {
@@ -920,13 +920,10 @@ const FoliateViewer: React.FC<{
       : Math.max(0, miniPlayerClearance);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
-    // The drawing bars stay up for the whole drawing session, so the text
-    // makes room for them instead of running underneath.
-    const drawingBars = viewState?.drawingEnabled ? getDrawingBarsClearance(gridInsets) : null;
-    const topMargin = Math.max(
-      (showTopHeader ? insets.top : viewInsets.top) + moreTopInset,
-      drawingBars?.top ?? 0,
-    );
+    // The drawing dock stays up for the whole drawing session, so the text
+    // makes room for it instead of running underneath.
+    const drawingDock = viewState?.drawingEnabled ? getDrawingDockClearance(gridInsets) : null;
+    const topMargin = (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
     // On iPhone Duo the horizontal safe-area insets are applied to the viewer
     // container itself (see the render below), not folded into these margins:
     // the paginator treats a horizontal margin as a gutter and puts only half
@@ -935,7 +932,7 @@ const FoliateViewer: React.FC<{
     const rightMargin = (isIPhoneDuo ? viewInsets.right : insets.right) + moreRightInset;
     const bottomMargin = Math.max(
       (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset,
-      drawingBars?.bottom ?? 0,
+      drawingDock?.bottom ?? 0,
     );
     const leftMargin = (isIPhoneDuo ? viewInsets.left : insets.left) + moreLeftInset;
     viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
@@ -951,15 +948,12 @@ const FoliateViewer: React.FC<{
       // topMargin, not the raw margin sum: it carries the 16px moreTopInset
       // floor, so a negative top margin keeps the scroll viewport glued to the
       // lifted header band instead of running under it (#5303).
-      const scrollTop = drawingBars ? drawingBars.top : headerVisible ? topMargin : 0;
+      const scrollTop = headerVisible ? topMargin : 0;
       const scrollBottom = Math.max(
         footerVisible ? Math.max(footerBarHeight, miniPlayerClearance) : miniPlayerClearance,
-        drawingBars?.bottom ?? 0,
+        drawingDock?.bottom ?? 0,
       );
-      setScrollMargins({
-        top: bookData?.isFixedLayout && !drawingBars ? 0 : scrollTop,
-        bottom: scrollBottom,
-      });
+      setScrollMargins({ top: bookData?.isFixedLayout ? 0 : scrollTop, bottom: scrollBottom });
     } else {
       setScrollMargins({ top: 0, bottom: 0 });
     }

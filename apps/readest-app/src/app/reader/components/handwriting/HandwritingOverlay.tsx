@@ -5,7 +5,7 @@ import { eventDispatcher } from '@/utils/event';
 import { useReaderStore } from '@/store/readerStore';
 import { useHandwriting } from '../../hooks/useHandwriting';
 import HandwritingCanvas from './HandwritingCanvas';
-import { HandwritingDock, HandwritingTopBar } from './HandwritingBars';
+import { HandwritingDock } from './HandwritingBars';
 
 interface HandwritingOverlayProps {
   bookKey: string;
@@ -22,9 +22,9 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
   const { visible, editable, enabled, setEnabled, setErasing, hitTest } = hw;
   const { setHoveredBookKey } = useReaderStore();
 
-  // Drawing is started from the header, which leaves the reader's header and
-  // footer up; the drawing bars take their place, and the canvas takes the
-  // tap that would hide them. Each session starts with the pen: an eraser
+  // Drawing is started from the header's instant annotation tools, which
+  // leaves the reader's header and footer up; the dock takes their place, and
+  // the canvas takes the tap that would hide them. Each session starts with the pen: an eraser
   // left on last time would silently wipe ink instead of drawing.
   useEffect(() => {
     if (!enabled) return;
@@ -81,22 +81,20 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
         detach={hw.detach}
       />
       {hw.enabled && (
-        <>
-          <HandwritingTopBar onDone={() => setEnabled(false)} top={gridInsets.top} />
-          <HandwritingDock
-            bottom={gridInsets.bottom}
-            erasing={hw.erasing}
-            onToggleErase={() => hw.setErasing(!hw.erasing)}
-            onUndo={hw.undo}
-            onRedo={hw.redo}
-            onTurnLeft={() => hw.turnPage('left')}
-            onTurnRight={() => hw.turnPage('right')}
-            penColor={hw.penColor}
-            penWidth={hw.penWidth}
-            onSelectColor={hw.selectPenColor}
-            onSelectWidth={hw.selectPenWidth}
-          />
-        </>
+        <HandwritingDock
+          bottom={gridInsets.bottom}
+          erasing={hw.erasing}
+          onToggleErase={() => hw.setErasing(!hw.erasing)}
+          onUndo={hw.undo}
+          onRedo={hw.redo}
+          onTurnLeft={() => hw.turnPage('left')}
+          onTurnRight={() => hw.turnPage('right')}
+          penColor={hw.penColor}
+          penWidth={hw.penWidth}
+          onSelectColor={hw.selectPenColor}
+          onSelectWidth={hw.selectPenWidth}
+          onDone={() => setEnabled(false)}
+        />
       )}
     </>
   );

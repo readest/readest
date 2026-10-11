@@ -34,7 +34,6 @@ vi.mock('@/store/readerStore', () => ({
 }));
 
 vi.mock('@/app/reader/components/handwriting/HandwritingBars', () => ({
-  HandwritingTopBar: () => <div data-testid='handwriting-top-bar' />,
   HandwritingDock: () => <div data-testid='handwriting-dock' />,
 }));
 
@@ -53,11 +52,11 @@ describe('HandwritingOverlay', () => {
     expect(h.setHoveredBookKey).toHaveBeenCalledWith(null);
   });
 
-  it('shows its own bars in place of the reader header and footer', () => {
+  it('shows its dock in place of the reader footer, with no bar over the page top', () => {
     h.enabled = true;
     render(<HandwritingOverlay bookKey='book-1' gridInsets={insets} />);
-    expect(screen.getByTestId('handwriting-top-bar')).toBeTruthy();
     expect(screen.getByTestId('handwriting-dock')).toBeTruthy();
+    expect(screen.queryByTestId('handwriting-top-bar')).toBeNull();
   });
 
   it('starts each drawing session with the pen, not the eraser left on last time', () => {

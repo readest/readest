@@ -1,15 +1,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import HandwritingToggler from '@/app/reader/components/handwriting/HandwritingToggler';
-import {
-  HandwritingDock,
-  HandwritingTopBar,
-} from '@/app/reader/components/handwriting/HandwritingBars';
+import { HandwritingDock } from '@/app/reader/components/handwriting/HandwritingBars';
+import QuickActionMenu from '@/app/reader/components/annotator/QuickActionMenu';
 
 const h = vi.hoisted(() => ({ scrolled: false, dispatch: vi.fn() }));
 
-vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (key: string) => key }));
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => (key: string, params?: Record<string, string>) =>
+    key.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => params?.[name] ?? ''),
+}));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (n: number) => n }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: {} }) }));
 vi.mock('@/utils/event', () => ({ eventDispatcher: { dispatch: h.dispatch } }));
@@ -26,17 +26,17 @@ afterEach(() => {
   h.scrolled = false;
 });
 
-describe('HandwritingToggler', () => {
-  it('starts drawing on this book from the reader header', () => {
-    render(<HandwritingToggler bookKey='book-1' />);
-    fireEvent.click(screen.getByRole('button', { name: 'Draw' }));
+describe('Draw in the instant annotation tools', () => {
+  it('starts drawing on this book', () => {
+    render(<QuickActionMenu bookKey='book-1' onActionSelect={vi.fn()} />);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Instant Draw' }));
     expect(h.dispatch).toHaveBeenCalledWith('handwriting', { action: 'toggle', bookKey: 'book-1' });
   });
 
   it('works in scrolled mode too', () => {
     h.scrolled = true;
-    render(<HandwritingToggler bookKey='book-1' />);
-    fireEvent.click(screen.getByRole('button', { name: 'Draw' }));
+    render(<QuickActionMenu bookKey='book-1' onActionSelect={vi.fn()} />);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Instant Draw' }));
     expect(h.dispatch).toHaveBeenCalledWith('handwriting', { action: 'toggle', bookKey: 'book-1' });
   });
 });
@@ -53,13 +53,15 @@ describe('drawing bars', () => {
     penWidth: 0.004,
     onSelectColor: vi.fn(),
     onSelectWidth: vi.fn(),
+    onDone: vi.fn(),
   });
 
-  it('titles the mode and leaves it with Done', () => {
+  it('saves and leaves drawing from its last button', () => {
     const onDone = vi.fn();
-    render(<HandwritingTopBar onDone={onDone} />);
-    expect(screen.getByText('Drawing')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    render(<HandwritingDock {...dockProps()} onDone={onDone} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons[buttons.length - 1]!.getAttribute('aria-label')).toBe('Save');
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(onDone).toHaveBeenCalled();
   });
 

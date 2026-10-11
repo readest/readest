@@ -7,6 +7,7 @@ import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
   RiArrowDropDownLine,
+  RiSave3Line,
 } from 'react-icons/ri';
 
 import { useTranslation } from '@/hooks/useTranslation';
@@ -15,26 +16,6 @@ import HandwritingOptions from './HandwritingOptions';
 
 const BAR =
   'eink-bordered bg-base-100 border-base-300/50 absolute inset-x-0 z-30 flex items-center';
-
-/** Replaces the reader header while drawing: the mode's name and Done. */
-export const HandwritingTopBar: React.FC<{ onDone: () => void; top?: number }> = ({
-  onDone,
-  top = 0,
-}) => {
-  const _ = useTranslation();
-  return (
-    <div className={clsx(BAR, 'h-11 justify-center border-b px-4')} style={{ top }}>
-      <span className='text-base font-semibold'>{_('Drawing')}</span>
-      <button
-        type='button'
-        onClick={onDone}
-        className='btn btn-contrast btn-sm absolute end-3 h-8 min-h-8 px-4'
-      >
-        {_('Done')}
-      </button>
-    </div>
-  );
-};
 
 interface HandwritingDockProps {
   erasing: boolean;
@@ -47,10 +28,12 @@ interface HandwritingDockProps {
   penWidth: number;
   onSelectColor: (color: string) => void;
   onSelectWidth: (width: number) => void;
+  /** Ends the drawing session; every stroke is already saved as it is drawn. */
+  onDone: () => void;
   bottom?: number;
 }
 
-/** Replaces the reader footer while drawing: pen, eraser, history, paging. */
+/** Replaces the reader footer while drawing: pen, eraser, history, paging and save. */
 export const HandwritingDock: React.FC<HandwritingDockProps> = ({
   erasing,
   onToggleErase,
@@ -62,6 +45,7 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
   penWidth,
   onSelectColor,
   onSelectWidth,
+  onDone,
   bottom = 0,
 }) => {
   const _ = useTranslation();
@@ -136,6 +120,12 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
           tooltipText={_('Next Page')}
           Icon={RiArrowRightSLine}
           onClick={onTurnRight}
+        />
+        <AnnotationToolButton
+          showTooltip
+          tooltipText={_('Save')}
+          Icon={RiSave3Line}
+          onClick={onDone}
         />
       </div>
     </div>
