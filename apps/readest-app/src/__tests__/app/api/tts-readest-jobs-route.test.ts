@@ -111,6 +111,14 @@ describe('POST /jobs', () => {
     expect((await again.json()).jobId).toBe(jobId);
   });
 
+  it('keeps only the validated segment fields', async () => {
+    const padded = { ...seg('s0'), notes: 'x'.repeat(100_000) };
+    await POST(request('POST', '', { ...download(), segments: [padded] }));
+    expect(m.dispatcher.submitJob).toHaveBeenCalledWith(
+      expect.objectContaining({ segments: [seg('s0')] }),
+    );
+  });
+
   it('refuses listen windows and plan-locked voices', async () => {
     let res = await POST(request('POST', '', { ...download(seg('s0')), lane: 'listen' }));
     expect(res.status).toBe(400);

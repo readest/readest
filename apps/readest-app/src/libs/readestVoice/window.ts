@@ -42,6 +42,8 @@ export const parseWindow = (body: unknown): WindowRequest | null => {
   if (segments.length === 0 || segments.length > limits.segments) return null;
   const ids = new Set<string>();
   let chars = 0;
+  // Only the validated fields go on, to the worker and into stored jobs.
+  const clean: Segment[] = [];
   for (const raw of segments) {
     const { id, text, voice } = (raw ?? {}) as Record<string, unknown>;
     if (typeof id !== 'string' || !id || ids.has(id)) return null;
@@ -49,9 +51,10 @@ export const parseWindow = (body: unknown): WindowRequest | null => {
     if (typeof voice !== 'string') return null;
     ids.add(id);
     chars += text.length;
+    clean.push({ id, text, voice });
   }
   if (chars > limits.chars) return null;
-  return { clientId: client, lane, lang: lang.slice(0, 35), segments: segments as Segment[] };
+  return { clientId: client, lane, lang: lang.slice(0, 35), segments: clean };
 };
 
 // The engines the window needs, or the flat error code that refuses it.
