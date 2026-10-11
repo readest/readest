@@ -112,6 +112,23 @@ afterEach(() => {
 });
 
 describe('BooknoteItem', () => {
+  it.each([
+    ['Bookmark', { type: 'bookmark' as const, style: undefined, color: undefined }],
+    ['Highlight', {}],
+    ['Highlight', { style: 'underline' as const }],
+    ['Note', { note: 'my thought' }],
+    ['Drawing', { type: 'ink' as const, style: undefined, color: undefined, text: '' }],
+  ])('marks the item with a %s icon at its start', (kind, overrides) => {
+    renderItem(makeItem(overrides));
+    const badge = screen.getByRole('img', { name: kind });
+    const item = badge.closest('li')!;
+    // The badge leads the card: the note, or the quoted text, comes after it.
+    const firstText = item.querySelector('.prose, .booknote-text')!;
+    expect(
+      badge.compareDocumentPosition(firstText) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('refreshes the relative time every minute without remounting the item', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-20T10:00:00Z'));
