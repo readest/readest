@@ -146,6 +146,14 @@ describe('gating', () => {
     expect(await res.json()).toEqual({ error: 'UNKNOWN_VOICE' });
     expect(m.startJob).not.toHaveBeenCalled();
   });
+
+  it('rejects Qwen3 voices for Pro too', async () => {
+    m.getSubscriptionPlan.mockReturnValue('pro');
+    const res = await POST(post(listen(seg('s0', 'Hi.', 'qwen3:ryan'))));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'VOICE_TIER_REQUIRED' });
+    expect(m.startJob).not.toHaveBeenCalled();
+  });
 });
 
 describe('window validation', () => {

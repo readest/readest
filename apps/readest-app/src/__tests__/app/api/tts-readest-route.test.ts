@@ -69,18 +69,14 @@ describe('GET /api/tts/readest', () => {
     expect(await (await GET(req('GET'))).json()).toEqual({ error: 'PLAN_REQUIRED' });
   });
 
-  it('lists Kokoro for Plus and everything for Pro, one row per language', async () => {
+  it('lists Kokoro only, for Plus and Pro alike', async () => {
     m.getSubscriptionPlan.mockReturnValue('plus');
     expect(await (await GET(req('GET'))).json()).toEqual({
       voices: [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }],
     });
     m.getSubscriptionPlan.mockReturnValue('pro');
     expect(await (await GET(req('GET'))).json()).toEqual({
-      voices: [
-        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' },
-        { id: 'qwen3:serena', name: 'Serena', lang: 'en-US' },
-        { id: 'qwen3:serena', name: 'Serena', lang: 'de-DE' },
-      ],
+      voices: [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }],
     });
   });
 });
