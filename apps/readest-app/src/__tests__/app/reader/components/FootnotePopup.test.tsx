@@ -90,14 +90,18 @@ vi.mock('@/store/customFontStore', () => ({
   useCustomFontStore: () => ({ getLoadedFonts: () => [] }),
 }));
 
-vi.mock('@/utils/style', () => ({
-  applyLinkHitArea: hoisted.applyLinkHitArea,
-  getBaseFontFamily: () => '"Reader Font", serif',
-  getBaseFontSize: () => 22,
-  getFootnoteStyles: () => '',
-  getStyles: () => '',
-  getThemeCode: () => ({ bg: '#fff', fg: '#000', primary: '#000', palette: {} }),
-}));
+vi.mock('@/utils/style', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/style')>();
+  return {
+    applyLinkHitArea: hoisted.applyLinkHitArea,
+    keepTextAlignment: actual.keepTextAlignment,
+    getBaseFontFamily: () => '"Reader Font", serif',
+    getBaseFontSize: () => 22,
+    getFootnoteStyles: () => '',
+    getStyles: () => '',
+    getThemeCode: () => ({ bg: '#fff', fg: '#000', primary: '#000', palette: {} }),
+  };
+});
 
 vi.mock('@/styles/fonts', () => ({
   mountAdditionalFonts: vi.fn(),
@@ -309,6 +313,43 @@ describe('FootnotePopup jump to location', () => {
     const view = await openFootnotePopup();
     expect(screen.getByLabelText('Jump to Location')).toBeTruthy();
     expect(stylesOf(view)).not.toContain('padding-block-start');
+  });
+
+  describe('book text alignment', () => {
+    beforeEach(() => {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          observe() {}
+          disconnect() {}
+        },
+      );
+    });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('marks the loaded document alignment for the reader layout overrides', async () => {
+      await renderPopup();
+      const view = await openFootnotePopup();
+      const iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument!;
+      doc.body.innerHTML = `
+        <p style="text-align: justify">Justified footnote text.</p>
+        <blockquote style="text-align: center">Centered footnote text.</blockquote>
+        <dd style="text-align: right">Right-aligned footnote text.</dd>
+      `;
+
+      await act(async () => {
+        view.dispatchEvent(new CustomEvent('load', { detail: { doc, index: 3 } }));
+      });
+
+      expect(Array.from(doc.body.children, (element) => element.className)).toEqual([
+        'aligned-justify',
+        'aligned-center',
+        'aligned-right',
+      ]);
+    });
   });
 
   describe('selection reports (#6395)', () => {
