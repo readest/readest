@@ -424,7 +424,6 @@
   "Terms of Service": "서비스 약관",
   "Privacy Policy": "개인정보 보호정책",
   "Disable Double Click": "더블 클릭 비활성화",
-  "TTS not supported for this document": "TTS가 이 문서에서 지원되지 않습니다",
   "Reset Password": "비밀번호 재설정",
   "Reading Progress Style": "읽기 진행 상황 스타일",
   "Page Number": "페이지 번호",
@@ -2502,5 +2501,6 @@
   "Pause After Each Sentence": "문장마다 일시 정지",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "일일 TTS 한도에 도달했습니다. 플랜을 업그레이드하거나 내일 다시 시도하세요.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "이 페이지에서는 TTS를 사용할 수 없습니다"
 }

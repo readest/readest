@@ -712,7 +712,6 @@
   "Readwise sync failed: {{error}}": "Readwise sinxronlashda xato: {{error}}",
   "Translating...": "Tarjima qilinmoqda...",
   "Please log in to use advanced TTS features": "Kengaytirilgan TTS xususiyatlaridan foydalanish uchun tizimga kiring",
-  "TTS not supported for this document": "Ushbu hujjat uchun TTS qoʻllab-quvvatlanmaydi",
   "Expires in {{count}} days_one": "{{count}} kunda muddati tugaydi",
   "Expires in {{count}} days_other": "{{count}} kunda muddati tugaydi",
   "Expires in {{count}} hours_one": "{{count}} soatda muddati tugaydi",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "Har bir gapdan keyin pauza",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Kunlik TTS chegarasiga yetildi. Rejangizni yangilang yoki ertaga qayta urinib ko'ring.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "Ushbu sahifa uchun TTS mavjud emas"
 }

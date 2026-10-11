@@ -428,7 +428,6 @@
   "Terms of Service": "شرایط و قوانین",
   "Privacy Policy": "سیاست حفظ حریم خصوصی",
   "Disable Double Click": "غیرفعال کردن کلیک دوبل",
-  "TTS not supported for this document": "قابلیت تبدیل متن به گفتار برای این سند پشتیبانی نمی‌شود",
   "Reset Password": "بازنشانی رمز عبور",
   "Reading Progress Style": "سبک نمایش وضعیت مطالعه",
   "Page Number": "شماره صفحه",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "توقف پس از هر جمله",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "محدودیت روزانه TTS به پایان رسید. پلن خود را ارتقا دهید یا فردا دوباره امتحان کنید.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "تبدیل متن به گفتار برای این صفحه در دسترس نیست"
 }

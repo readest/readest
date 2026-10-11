@@ -424,7 +424,6 @@
   "Terms of Service": "ཞབས་འདེགས་ཀྱི་ཆ་རྐྱེན།",
   "Privacy Policy": "སྒེར་གསང་གི་སྲིད་ཇུས།",
   "Disable Double Click": "ཐེངས་གཉིས་མནན་པ་སྒོ་བརྒྱབ།",
-  "TTS not supported for this document": "ཡིག་ཆ་འདིར་ TTS རྒྱབ་སྐྱོར་མི་བྱེད།",
   "Reset Password": "གསང་ཨང་བསྐྱར་སྒྲིག",
   "Reading Progress Style": "ཀློག་པའི་ཡར་འཕེལ་གྱི་རྣམ་པ།",
   "Page Number": "ཤོག་ཨང་།",
@@ -2502,5 +2501,6 @@
   "Pause After Each Sentence": "ཚིག་གྲུབ་རེ་རེའི་རྗེས་སུ་མཚམས་འཇོག",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "ཉིན་རེའི་TTS ཚད་མར་སླེབས་སོང་། ཁྱོད་ཀྱི་འཇོག་ཐབས་མར་སྤར་གྱིས་ཡང་ན་སང་ཉིན་ཚོད་ལྟ་བྱོས།",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "ཤོག་ངོས་འདིར་ TTS མེད།"
 }

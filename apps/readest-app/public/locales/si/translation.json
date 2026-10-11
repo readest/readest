@@ -298,7 +298,6 @@
   "Table of Contents": "සූචිය",
   "Sidebar": "පැති තීරුව",
   "Disable Translation": "පරිවර්තනය අබල කරන්න",
-  "TTS not supported for this document": "මෙම ලේඛනය සඳහා TTS සහාය නොදක්වයි",
   "No Timeout": "කාල සීමාවක් නැත",
   "{{value}} minute": "මිනිත්තු {{value}}",
   "{{value}} minutes": "මිනිත්තු {{value}}",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "සෑම වාක්‍යයකටම පසු විරාම කරන්න",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "දෛනික TTS සීමාවට ළඟා විය. ඔබේ සැලැස්ම උසස් කරන්න හෝ හෙට නැවත උත්සාහ කරන්න.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "මෙම පිටුව සඳහා TTS ලබා ගත නොහැක"
 }

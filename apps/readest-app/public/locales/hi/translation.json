@@ -428,7 +428,6 @@
   "Terms of Service": "सेवा की शर्तें",
   "Privacy Policy": "गोपनीयता नीति",
   "Disable Double Click": "डबल क्लिक अक्षम करें",
-  "TTS not supported for this document": "TTS इस दस्तावेज़ के लिए समर्थित नहीं है",
   "Reset Password": "पासवर्ड रीसेट करें",
   "Reading Progress Style": "पढ़ने की प्रगति शैली",
   "Page Number": "पृष्ठ संख्या",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "हर वाक्य के बाद रोकें",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "दैनिक TTS सीमा पहुँच गई। अपना प्लान अपग्रेड करें या कल पुनः प्रयास करें।",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "इस पृष्ठ के लिए TTS उपलब्ध नहीं है"
 }

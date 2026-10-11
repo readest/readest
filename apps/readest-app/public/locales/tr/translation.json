@@ -428,7 +428,6 @@
   "Terms of Service": "Hizmet Şartları",
   "Privacy Policy": "Gizlilik Politikası",
   "Disable Double Click": "Çift Tıklamayı Devre Dışı Bırak",
-  "TTS not supported for this document": "TTS bu belge için desteklenmiyor",
   "Reset Password": "Şifreyi Sıfırla",
   "Reading Progress Style": "Okuma İlerlemesi Stili",
   "Page Number": "Sayfa Numarası",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "Her cümleden sonra duraklat",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Günlük TTS limitine ulaşıldı. Planınızı yükseltin veya yarın tekrar deneyin.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS bu sayfa için kullanılamıyor"
 }

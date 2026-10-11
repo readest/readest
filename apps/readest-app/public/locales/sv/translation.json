@@ -267,7 +267,6 @@
   "Play": "Spela",
   "Next Sentence": "Nästa mening",
   "Next Paragraph": "Nästa stycke",
-  "TTS not supported for this document": "Uppläsning stöds inte för detta dokument",
   "No Timeout": "Ingen timeout",
   "{{value}} minute": "{{value}} minut",
   "{{value}} minutes": "{{value}} minuter",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "Pausa efter varje mening",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Daglig TTS-gräns nådd. Uppgradera din plan eller försök igen imorgon.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "Uppläsning är inte tillgänglig för den här sidan"
 }

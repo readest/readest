@@ -432,7 +432,6 @@
   "Terms of Service": "Termos de Serviço",
   "Privacy Policy": "Política de Privacidade",
   "Disable Double Click": "Desativar Clique Duplo",
-  "TTS not supported for this document": "TTS não suportado para este documento",
   "Reset Password": "Redefinir Senha",
   "Reading Progress Style": "Estilo de Progresso de Leitura",
   "Page Number": "Número da Página",
@@ -2630,5 +2629,6 @@
   "Pause After Each Sentence": "Pausar após cada frase",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Limite diário de TTS atingido. Atualize o seu plano ou tente novamente amanhã.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS não disponível para esta página"
 }

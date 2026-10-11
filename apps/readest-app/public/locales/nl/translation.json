@@ -428,7 +428,6 @@
   "Terms of Service": "Gebruiksvoorwaarden",
   "Privacy Policy": "Privacybeleid",
   "Disable Double Click": "Dubbelklikken uitschakelen",
-  "TTS not supported for this document": "TTS niet ondersteund voor dit document",
   "Reset Password": "Wachtwoord resetten",
   "Reading Progress Style": "Stijl van leesvoortgang",
   "Page Number": "Pagina nummer",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "Pauzeren na elke zin",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Dagelijkse TTS-limiet bereikt. Upgrade uw abonnement of probeer het morgen opnieuw.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS niet beschikbaar voor deze pagina"
 }

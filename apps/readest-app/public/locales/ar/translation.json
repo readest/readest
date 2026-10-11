@@ -444,7 +444,6 @@
   "Terms of Service": "شروط الخدمة",
   "Privacy Policy": "سياسة الخصوصية",
   "Disable Double Click": "تعطيل النقر المزدوج",
-  "TTS not supported for this document": "تكنولوجيا تحويل النص إلى كلام غير مدعومة لهذا المستند.",
   "Reset Password": "إعادة تعيين",
   "Reading Progress Style": "نمط تقدم القراءة",
   "Page Number": "رقم الصفحة",
@@ -2822,5 +2821,6 @@
   "Pause After Each Sentence": "إيقاف مؤقت بعد كل جملة",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "تم الوصول إلى الحد اليومي لـ TTS. قم بترقية خطتك أو حاول مرة أخرى غداً.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "تحويل النص إلى كلام غير متاح لهذه الصفحة"
 }

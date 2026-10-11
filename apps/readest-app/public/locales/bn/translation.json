@@ -298,7 +298,6 @@
   "Table of Contents": "সূচিপত্র",
   "Sidebar": "সাইডবার",
   "Disable Translation": "অনুবাদ নিষ্ক্রিয়",
-  "TTS not supported for this document": "এই ডকুমেন্টের জন্য TTS সমর্থিত নয়",
   "No Timeout": "কোন টাইমআউট নেই",
   "{{value}} minute": "{{value}} মিনিট",
   "{{value}} minutes": "{{value}} মিনিট",
@@ -2566,5 +2565,6 @@
   "Pause After Each Sentence": "প্রতিটি বাক্যের পরে বিরতি",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "দৈনিক TTS সীমা পৌঁছেছে। আপনার পরিকল্পনা আপগ্রেড করুন বা আগামীকাল আবার চেষ্টা করুন।",
   "Pro": "প্রো",
-  "Plus": "প্লাস"
+  "Plus": "প্লাস",
+  "TTS not available for this page": "এই পৃষ্ঠার জন্য TTS উপলব্ধ নয়"
 }

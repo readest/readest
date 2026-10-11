@@ -425,7 +425,6 @@
   "Terms of Service": "服务条款",
   "Privacy Policy": "隐私政策",
   "Disable Double Click": "禁用双击",
-  "TTS not supported for this document": "TTS 不支持此文档",
   "Reset Password": "重置密码",
   "Reading Progress Style": "阅读进度样式",
   "Page Number": "页码",
@@ -2502,5 +2501,6 @@
   "Pause After Each Sentence": "每句后暂停",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "已达到每日 TTS 限额。请升级您的计划或明天再试。",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "此页面无法使用 TTS"
 }

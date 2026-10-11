@@ -424,7 +424,6 @@
   "Terms of Service": "利用規約",
   "Privacy Policy": "プライバシーポリシー",
   "Disable Double Click": "ダブルクリック無効",
-  "TTS not supported for this document": "TTSはこのドキュメントではサポートされていません",
   "Reset Password": "パスワードをリセット",
   "Reading Progress Style": "読書進捗スタイル",
   "Page Number": "ページ番号",
@@ -2502,5 +2501,6 @@
   "Pause After Each Sentence": "文ごとに一時停止",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "1日のTTS制限に達しました。プランをアップグレードするか、明日再試行してください。",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "このページではTTSを利用できません"
 }

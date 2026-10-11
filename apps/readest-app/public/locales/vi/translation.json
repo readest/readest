@@ -424,7 +424,6 @@
   "Terms of Service": "Điều khoản dịch vụ",
   "Privacy Policy": "Chính sách bảo mật",
   "Disable Double Click": "Tắt Nhấp Đôi",
-  "TTS not supported for this document": "TTS không được hỗ trợ cho tài liệu này",
   "Reset Password": "Đặt lại mật khẩu",
   "Reading Progress Style": "Phong cách tiến độ đọc",
   "Page Number": "Số trang",
@@ -2502,5 +2501,6 @@
   "Pause After Each Sentence": "Tạm dừng sau mỗi câu",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Đã đạt giới hạn TTS hàng ngày. Nâng cấp gói của bạn hoặc thử lại vào ngày mai.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS không khả dụng cho trang này"
 }

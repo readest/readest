@@ -284,7 +284,6 @@
   "Play": "Main",
   "Next Sentence": "Ayat Seterusnya",
   "Next Paragraph": "Perenggan Seterusnya",
-  "TTS not supported for this document": "TTS tidak disokong untuk dokumen ini",
   "No Timeout": "Tiada Had Masa",
   "{{value}} minute": "{{value}} minit",
   "{{value}} minutes": "{{value}} minit",
@@ -2502,5 +2501,6 @@
   "Pause After Each Sentence": "Jeda selepas setiap ayat",
   "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Had TTS harian dicapai. Naik taraf pelan anda atau cuba lagi esok.",
   "Pro": "Pro",
-  "Plus": "Plus"
+  "Plus": "Plus",
+  "TTS not available for this page": "TTS tidak tersedia untuk halaman ini"
 }
