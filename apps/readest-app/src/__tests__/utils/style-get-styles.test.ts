@@ -479,6 +479,39 @@ describe('getLayoutStyles branches (via getStyles)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// CJK widow/orphan lift under Use Book Layout
+// ---------------------------------------------------------------------------
+// The paragraph chunk lifts widows/orphans to 1 for CJK via `:lang(zh)…`, but
+// Use Book Layout skips that chunk wholesale and takes the lift with it — a
+// CJK book mislabeled `en` (#6672) then falls back to the UA default of 2 and
+// the page-bottom gap returns. A zero-specificity `:where()` twin ships in
+// every mode: inert where the chunk is present, and always subordinate to any
+// widows/orphans the book declares.
+describe('CJK widow/orphan lift (via getStyles)', () => {
+  const theme = makeThemeCode();
+  const whereRule = (css: string) =>
+    css.match(/:where\(:lang\(zh\), :lang\(ja\), :lang\(ko\)\)\s*\{([^}]*)\}/)?.[1] ?? '';
+
+  it('ships the zero-specificity lift even when Use Book Layout skips the paragraph chunk', () => {
+    const css = getStyles(makeViewSettings({ useBookLayout: true }), theme);
+    // the chunk's own class-strength lift is gone…
+    expect(css).not.toMatch(/(^|\n)\s*:lang\(zh\), :lang\(ja\), :lang\(ko\)\s*\{/);
+    // …but the lift itself survives at zero specificity
+    const rule = whereRule(css);
+    expect(rule).toContain('widows: 1');
+    expect(rule).toContain('orphans: 1');
+  });
+
+  it('keeps the chunk lift and the zero-specificity twin when Use Book Layout is off', () => {
+    const css = getStyles(makeViewSettings({ useBookLayout: false }), theme);
+    expect(css).toMatch(/(^|\n)\s*:lang\(zh\), :lang\(ja\), :lang\(ko\)\s*\{/);
+    const rule = whereRule(css);
+    expect(rule).toContain('widows: 1');
+    expect(rule).toContain('orphans: 1');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getColorStyles branches
 // ---------------------------------------------------------------------------
 describe('getColorStyles branches (via getStyles)', () => {
