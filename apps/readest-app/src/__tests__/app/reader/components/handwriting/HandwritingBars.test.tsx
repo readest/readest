@@ -54,18 +54,22 @@ describe('drawing bars', () => {
     penWidth: 0.004,
     onSelectColor: vi.fn(),
     onSelectWidth: vi.fn(),
-    onDone: vi.fn(),
+    onSave: vi.fn(),
+    onClose: vi.fn(),
     tool: 'pen' as const,
     onSelectTool: vi.fn(),
   });
 
-  it('saves and leaves drawing from its last button', () => {
-    const onDone = vi.fn();
-    render(<HandwritingDock {...dockProps()} onDone={onDone} />);
-    const buttons = screen.getAllByRole('button');
-    expect(buttons[buttons.length - 1]!.getAttribute('aria-label')).toBe('Save');
+  it('saves the drawing, then closes from its last button', () => {
+    const props = dockProps();
+    render(<HandwritingDock {...props} />);
+    const labels = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'));
+    expect(labels.slice(-2)).toEqual(['Save', 'Close']);
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(onDone).toHaveBeenCalled();
+    expect(props.onSave).toHaveBeenCalled();
+    expect(props.onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(props.onClose).toHaveBeenCalled();
   });
 
   it('offers the pen, marker and eraser side by side', () => {

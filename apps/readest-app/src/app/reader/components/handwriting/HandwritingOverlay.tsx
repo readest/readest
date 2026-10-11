@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 
 import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useReaderStore } from '@/store/readerStore';
 import { useHandwriting } from '../../hooks/useHandwriting';
 import HandwritingCanvas from './HandwritingCanvas';
@@ -18,6 +19,7 @@ interface HandwritingOverlayProps {
  * pen input and swaps the reader's header and footer for its own bars.
  */
 const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridInsets }) => {
+  const _ = useTranslation();
   const hw = useHandwriting(bookKey);
   const { visible, editable, enabled, setEnabled, setErasing, hitTest } = hw;
   const { setHoveredBookKey } = useReaderStore();
@@ -93,7 +95,15 @@ const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridIn
           penWidth={hw.penWidth}
           onSelectColor={hw.selectPenColor}
           onSelectWidth={hw.selectPenWidth}
-          onDone={() => setEnabled(false)}
+          onSave={() => {
+            if (!hw.saveDrawing()) return;
+            eventDispatcher.dispatch('toast', {
+              type: 'info',
+              timeout: 1500,
+              message: _('Drawing saved'),
+            });
+          }}
+          onClose={() => setEnabled(false)}
           tool={hw.tool}
           onSelectTool={hw.selectTool}
         />

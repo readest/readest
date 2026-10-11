@@ -28,8 +28,11 @@ vi.mock('@/app/reader/hooks/useHandwriting', () => ({
     selectPenWidth: vi.fn(),
     tool: 'pen',
     selectTool: vi.fn(),
+    saveDrawing: vi.fn(),
   }),
 }));
+
+vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (key: string) => key }));
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({ setHoveredBookKey: h.setHoveredBookKey }),

@@ -7,6 +7,7 @@ import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
   RiSave3Line,
+  RiCloseLine,
   RiPencilLine,
   RiMarkPenLine,
 } from 'react-icons/ri';
@@ -37,14 +38,16 @@ interface HandwritingDockProps {
   penWidth: number;
   onSelectColor: (color: string) => void;
   onSelectWidth: (width: number) => void;
-  /** Ends the drawing session; every stroke is already saved as it is drawn. */
-  onDone: () => void;
+  /** Finishes the drawing as one annotation and keeps drawing. */
+  onSave: () => void;
+  /** Leaves drawing mode; every stroke is already saved as it is drawn. */
+  onClose: () => void;
   tool: InkTool;
   onSelectTool: (tool: InkTool) => void;
   bottom?: number;
 }
 
-/** Replaces the reader footer while drawing: pen, marker, eraser, history, paging and save. */
+/** Replaces the reader footer while drawing: tools, history, paging, save and close. */
 export const HandwritingDock: React.FC<HandwritingDockProps> = ({
   erasing,
   onToggleErase,
@@ -56,7 +59,8 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
   penWidth,
   onSelectColor,
   onSelectWidth,
-  onDone,
+  onSave,
+  onClose,
   tool,
   onSelectTool,
   bottom = 0,
@@ -156,7 +160,13 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
           showTooltip
           tooltipText={_('Save')}
           Icon={RiSave3Line}
-          onClick={onDone}
+          onClick={onSave}
+        />
+        <AnnotationToolButton
+          showTooltip
+          tooltipText={_('Close')}
+          Icon={RiCloseLine}
+          onClick={onClose}
         />
       </div>
     </div>

@@ -7,7 +7,7 @@ import { useBookProgress } from '@/store/readerProgressStore';
 import { useEnv } from '@/context/EnvContext';
 import { saveSysSettings } from '@/helpers/settings';
 import { HandwritingEditor } from '@/services/handwriting/editor';
-import { HandwritingService } from '@/services/handwriting/handwritingService';
+import { HandwritingService, nextInkSession } from '@/services/handwriting/handwritingService';
 import { loadInkEditor, withInkNotes } from '@/services/handwriting/persistence';
 import { fixedPageKey, sectionPageKey } from '@/services/handwriting/pageKey';
 import { createInkAnchoring } from '../utils/inkAnchoring';
@@ -144,8 +144,11 @@ export function useHandwriting(bookKey: string) {
 
   // Each visit to drawing mode is one drawing session: one ink annotation.
   useEffect(() => {
-    if (enabled) serviceRef.current?.setSession(`ink-${Date.now().toString(36)}`);
+    if (enabled) serviceRef.current?.setSession(nextInkSession());
   }, [enabled]);
+
+  /** Finish the drawing as one annotation and keep drawing; true when it had ink. */
+  const saveDrawing = useCallback(() => serviceRef.current?.endSession() ?? false, []);
 
   /** Re-read the ink from the booknotes after they changed elsewhere. */
   const reload = useCallback(() => {
@@ -425,6 +428,7 @@ export function useHandwriting(bookKey: string) {
     selectPenWidth,
     tool,
     selectTool,
+    saveDrawing,
     undo: () => serviceRef.current?.undo(),
     redo: () => serviceRef.current?.redo(),
   };

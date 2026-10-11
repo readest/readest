@@ -254,3 +254,34 @@ describe('HandwritingService marker', () => {
     ).toBeCloseTo(0.03);
   });
 });
+
+describe('HandwritingService sessions', () => {
+  const draw = (service: HandwritingService) =>
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [
+        [0.1, 0.5],
+        [0.4, 0.5],
+      ],
+      'end',
+      false,
+    );
+
+  it('ends a drawing on save, so the next strokes start another annotation', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'pdf:1', rect);
+    service.setSession('ink-a');
+    draw(service);
+    expect(service.endSession()).toBe(true);
+    draw(service);
+    const [first, second] = editor.strokes('pdf:1');
+    expect(first!.session).toBe('ink-a');
+    expect(second!.session).toBeTruthy();
+    expect(second!.session).not.toBe('ink-a');
+  });
+
+  it('reports nothing saved when the drawing has no ink', () => {
+    const service = new HandwritingService(new HandwritingEditor(), 'pdf:1', rect);
+    service.setSession('ink-a');
+    expect(service.endSession()).toBe(false);
+  });
+});

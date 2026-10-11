@@ -68,6 +68,10 @@ const boundsGap = (a: Bounds, b: Bounds) =>
 let strokeCounter = 0;
 const nextStrokeId = () => `s${Date.now().toString(36)}${(strokeCounter++).toString(36)}`;
 
+/** A new drawing session id; it becomes the ink annotation's id. */
+export const nextInkSession = () =>
+  `ink-${Date.now().toString(36)}${(strokeCounter++).toString(36)}`;
+
 /**
  * Owns one page's live drawing session: picks BOOX raw drawing or the
  * generic pointer backend per detectPenBackend, and turns whichever
@@ -197,6 +201,21 @@ export class HandwritingService {
   /** Start a drawing session: strokes drawn from now on form one annotation. */
   setSession(session: string) {
     this.session = session;
+  }
+
+  /**
+   * Finish the current drawing: strokes drawn after this form a new
+   * annotation. True when the finished drawing has any ink.
+   */
+  endSession(): boolean {
+    const session = this.session;
+    const hasInk =
+      !!session &&
+      this.editor
+        .pageKeys()
+        .some((key) => this.editor.strokes(key).some((stroke) => stroke.session === session));
+    this.session = nextInkSession();
+    return hasInk;
   }
 
   /** Swap in the anchoring for the current layout and repaint. */
