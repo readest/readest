@@ -19,15 +19,18 @@ interface HandwritingOverlayProps {
  */
 const HandwritingOverlay: React.FC<HandwritingOverlayProps> = ({ bookKey, gridInsets }) => {
   const hw = useHandwriting(bookKey);
-  const { visible, editable, enabled, setEnabled, hitTest } = hw;
+  const { visible, editable, enabled, setEnabled, setErasing, hitTest } = hw;
   const { setHoveredBookKey } = useReaderStore();
 
   // Drawing is started from the header, which leaves the reader's header and
   // footer up; the drawing bars take their place, and the canvas takes the
-  // tap that would hide them.
+  // tap that would hide them. Each session starts with the pen: an eraser
+  // left on last time would silently wipe ink instead of drawing.
   useEffect(() => {
-    if (enabled) setHoveredBookKey(null);
-  }, [enabled, setHoveredBookKey]);
+    if (!enabled) return;
+    setHoveredBookKey(null);
+    setErasing(false);
+  }, [enabled, setHoveredBookKey, setErasing]);
 
   useEffect(() => {
     const onHandwritingEvent = (event: CustomEvent) => {

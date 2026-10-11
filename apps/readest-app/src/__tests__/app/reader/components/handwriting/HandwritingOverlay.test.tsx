@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import HandwritingOverlay from '@/app/reader/components/handwriting/HandwritingOverlay';
 
-const h = vi.hoisted(() => ({ enabled: false, setHoveredBookKey: vi.fn() }));
+const h = vi.hoisted(() => ({ enabled: false, setHoveredBookKey: vi.fn(), setErasing: vi.fn() }));
 
 vi.mock('@/app/reader/hooks/useHandwriting', () => ({
   useHandwriting: () => ({
@@ -18,7 +18,7 @@ vi.mock('@/app/reader/hooks/useHandwriting', () => ({
     attach: vi.fn(),
     detach: vi.fn(),
     erasing: false,
-    setErasing: vi.fn(),
+    setErasing: h.setErasing,
     undo: vi.fn(),
     redo: vi.fn(),
     turnPage: vi.fn(),
@@ -41,6 +41,7 @@ vi.mock('@/app/reader/components/handwriting/HandwritingBars', () => ({
 afterEach(() => {
   cleanup();
   h.setHoveredBookKey.mockClear();
+  h.setErasing.mockClear();
 });
 
 const insets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -57,6 +58,12 @@ describe('HandwritingOverlay', () => {
     render(<HandwritingOverlay bookKey='book-1' gridInsets={insets} />);
     expect(screen.getByTestId('handwriting-top-bar')).toBeTruthy();
     expect(screen.getByTestId('handwriting-dock')).toBeTruthy();
+  });
+
+  it('starts each drawing session with the pen, not the eraser left on last time', () => {
+    h.enabled = true;
+    render(<HandwritingOverlay bookKey='book-1' gridInsets={insets} />);
+    expect(h.setErasing).toHaveBeenCalledWith(false);
   });
 
   it('leaves the bars alone while not drawing', () => {
