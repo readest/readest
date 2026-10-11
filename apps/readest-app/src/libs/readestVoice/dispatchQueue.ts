@@ -88,6 +88,28 @@ export class DispatchQueue {
     return result;
   }
 
+  // Admits a download now or never (the download job bridge, whose jobs wait
+  // in the job queue instead): a free slot, and no waiting listen window due
+  // it first.
+  tryAcquire(request: SlotRequest): boolean {
+    if (this.#leases.size >= this.options.capacity) return false;
+    const downloads = [...this.#leases.values()].filter((l) => l.lane === 'download').length;
+    if (downloads >= this.#downloadReserve() && this.#waiting.some((w) => w.lane === 'listen')) {
+      return false;
+    }
+    this.#grant(request);
+    return true;
+  }
+
+  // Keeps a lease that legitimately runs longer than `leaseMs` (a bridged
+  // download job whose worker still reports in).
+  renew(token: string): boolean {
+    const lease = this.#leases.get(token);
+    if (!lease) return false;
+    lease.expiresAt = this.now() + this.options.leaseMs;
+    return true;
+  }
+
   // False when the lease is gone (replaced or expired): the caller cancels
   // its job.
   setJob(token: string, jobId: string): boolean {
@@ -173,9 +195,8 @@ export class DispatchQueue {
   #next(): Waiter | undefined {
     const running = [...this.#leases.values()];
     const downloads = running.filter((l) => l.lane === 'download').length;
-    const reserve = Math.max(1, Math.floor(this.options.capacity / 4));
     const lanes: DispatchLane[] =
-      downloads < reserve ? ['download', 'listen'] : ['listen', 'download'];
+      downloads < this.#downloadReserve() ? ['download', 'listen'] : ['listen', 'download'];
     for (const lane of lanes) {
       let best: Waiter | undefined;
       for (const waiter of this.#waiting) {
@@ -187,6 +208,10 @@ export class DispatchQueue {
       if (best) return best;
     }
     return undefined;
+  }
+
+  #downloadReserve(): number {
+    return Math.max(1, Math.floor(this.options.capacity / 4));
   }
 
   #turn(userId: string): number {

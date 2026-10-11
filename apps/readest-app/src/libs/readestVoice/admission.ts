@@ -1,6 +1,6 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { TTSLane } from '@/services/tts/providers/types';
-import type { SlotRequest, SlotResult } from './dispatchQueue';
+import { getDispatcher } from './bindings';
+import type { SlotResult } from './dispatchQueue';
 
 // Admission of Readest Voice windows through the TTSDispatcher Durable Object
 // (worker.ts, scheduling in dispatchQueue.ts): one global queue that runs at
@@ -16,29 +16,7 @@ export const SLOT_TTL_SECONDS = 180;
 // Longer than a window usually runs, shorter than proxies wait for a reply.
 export const SLOT_WAIT_SECONDS = 60;
 
-interface DispatcherStub {
-  acquire(request: SlotRequest): Promise<SlotResult>;
-  setJob(token: string, jobId: string): Promise<boolean>;
-  release(token: string): Promise<void>;
-}
-
-interface DispatcherNamespace {
-  idFromName(name: string): unknown;
-  get(id: unknown): DispatcherStub;
-}
-
 const ADMITTED: SlotResult = { acquired: true, previousJobId: null };
-
-const getDispatcher = (): DispatcherStub | null => {
-  try {
-    const env = getCloudflareContext().env as { TTS_DISPATCHER?: DispatcherNamespace };
-    const namespace = env.TTS_DISPATCHER;
-    return namespace ? namespace.get(namespace.idFromName('global')) : null;
-  } catch {
-    // Not on Workers.
-    return null;
-  }
-};
 
 // Resolves once the window may start (possibly after waiting its turn), or
 // with acquired false when it was refused, timed out or withdrawn.

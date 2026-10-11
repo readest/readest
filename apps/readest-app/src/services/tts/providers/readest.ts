@@ -26,7 +26,10 @@ import {
 //   current paragraph is waiting on fill a window before background preloads
 //   of later paragraphs, never mixing languages. A window frees the lane as
 //   soon as its last sentence arrives.
-// - download: chapter downloads, up to 64 sentences per window.
+// - download: chapter downloads, up to 64 sentences per window, submitted as
+//   durable jobs that any worker may run (/api/tts/readest/jobs), up to four
+//   at a time, and collected when done. A server without jobs (off Workers)
+//   gets streamed windows instead, one at a time, like listening.
 // A sentence stays requested while any caller that asked for it is still
 // interested; once every such signal is aborted it is withdrawn, and a window
 // nobody wants any more is aborted, which cancels its GPU job server-side.
@@ -41,9 +44,13 @@ const LISTEN_WINDOW_SEC = 20;
 const LISTEN_BACKGROUND_WINDOW_SEC = 60;
 const DOWNLOAD_WINDOW_SENTENCES = 64;
 const DOWNLOAD_WINDOW_CHARS = 12000;
+const DOWNLOAD_JOBS = 4;
 const BUSY_RETRY_MS = 5000;
 // Route codes that will fail again for the same sentences.
 const PERMANENT_CODES = new Set(['UNKNOWN_VOICE', 'VOICE_TIER_REQUIRED', 'INVALID_INPUT']);
+// Job codes worth submitting the window again for: another device of the user
+// cancelled the shared job, or its result is gone.
+const RESUBMIT_CODES = new Set(['CANCELLED', 'NOT_FOUND']);
 
 interface Entry {
   key: string;
@@ -57,10 +64,15 @@ interface Entry {
   reject: (error: unknown) => void;
 }
 
+interface Window {
+  entries: Entry[];
+  controller: AbortController;
+}
+
 interface Lane {
   name: TTSLane;
   queue: Entry[];
-  inflight: { entries: Entry[]; controller: AbortController } | null;
+  inflight: Window[];
   // Listen lane: position in LISTEN_WINDOW_SIZES for the next window.
   sizeIndex: number;
   retryTimer: ReturnType<typeof setTimeout> | null;
@@ -87,7 +99,7 @@ const decodeBase64 = (base64: string): ArrayBuffer => {
 const newLane = (name: TTSLane): Lane => ({
   name,
   queue: [],
-  inflight: null,
+  inflight: [],
   sizeIndex: 0,
   retryTimer: null,
 });
@@ -104,6 +116,9 @@ export class ReadestVoiceProvider implements SpeechProvider {
   #voices: Promise<TTSVoice[]> | null = null;
   #quotaExhausted = false;
   #warmupFired = false;
+  // Whether the server runs download jobs (null: not known yet, so one
+  // download goes out at a time); without them downloads stream.
+  #jobsAvailable: boolean | null = null;
   readonly #entries = new Map<string, Entry>();
   // Names this app instance to the server, which queues the windows of a
   // user's devices one after another but lets this instance replace its own.
@@ -215,7 +230,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
       if (lane.retryTimer) clearTimeout(lane.retryTimer);
       lane.retryTimer = null;
       lane.queue = [];
-      lane.inflight?.controller.abort();
+      for (const window of lane.inflight) window.controller.abort();
     }
     for (const entry of this.#entries.values()) this.#settle(entry, abortError());
     this.#entries.clear();
@@ -289,9 +304,10 @@ export class ReadestVoiceProvider implements SpeechProvider {
     // The next listen window starts small again: first audio waits for one.
     if (hadForeground) this.#lanes.listen.sizeIndex = 0;
     for (const lane of Object.values(this.#lanes)) {
-      const inflight = lane.inflight;
-      if (inflight?.entries.every((e) => e.settled || e.wanted.size === 0)) {
-        inflight.controller.abort();
+      for (const window of lane.inflight) {
+        if (window.entries.every((e) => e.settled || e.wanted.size === 0)) {
+          window.controller.abort();
+        }
       }
     }
     this.#pumpAll();
@@ -316,20 +332,25 @@ export class ReadestVoiceProvider implements SpeechProvider {
   #pump(lane: Lane) {
     if (lane.retryTimer) return;
     lane.queue = lane.queue.filter((e) => !e.settled && e.wanted.size > 0);
-    if (lane.inflight) {
+    const [current] = lane.inflight;
+    if (lane.name === 'listen' && current) {
       // Something the listener is waiting on preempts a window of preloads.
       // A window whose sentences have all arrived is just finishing; leave it.
       const waiting = lane.queue.some((e) => !e.background);
-      const unanswered = lane.inflight.entries.filter((e) => !e.settled);
+      const unanswered = current.entries.filter((e) => !e.settled);
       const serving = unanswered.some((e) => !e.background);
-      if (lane.name === 'listen' && waiting && unanswered.length > 0 && !serving) {
+      if (waiting && unanswered.length > 0 && !serving) {
         lane.sizeIndex = 0;
-        lane.inflight.controller.abort();
+        current.controller.abort();
       }
       return;
     }
-    const entries = this.#takeWindow(lane);
-    if (entries.length) void this.#runWindow(lane, entries);
+    const jobs = lane.name === 'download' && this.#jobsAvailable !== false;
+    while (lane.inflight.length < (jobs && this.#jobsAvailable ? DOWNLOAD_JOBS : 1)) {
+      const entries = this.#takeWindow(lane);
+      if (!entries.length) return;
+      void this.#runWindow(lane, entries, jobs);
+    }
   }
 
   #takeWindow(lane: Lane): Entry[] {
@@ -363,28 +384,34 @@ export class ReadestVoiceProvider implements SpeechProvider {
     return picked;
   }
 
-  async #runWindow(lane: Lane, entries: Entry[]) {
+  async #runWindow(lane: Lane, entries: Entry[], job: boolean) {
     const controller = new AbortController();
-    lane.inflight = { entries, controller };
+    const window = { entries, controller };
+    lane.inflight.push(window);
     const byId = new Map(entries.map((entry, i) => [`s${i}`, entry]));
     let busy = false;
     try {
       // fetchWithAuth throws on non-OK responses with the route's flat error
       // code as the message (DAILY_QUOTA_EXCEEDED, BUSY, ...).
-      const res = await fetchWithAuth(`${getAPIBaseUrl()}/tts/readest/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client: this.#clientId,
-          lane: lane.name,
-          lang: entries[0]!.req.lang,
-          segments: [...byId].map(([id, e]) => ({ id, text: e.req.text, voice: e.req.voice })),
-        }),
-        signal: controller.signal,
+      const request = JSON.stringify({
+        client: this.#clientId,
+        lane: lane.name,
+        lang: entries[0]!.req.lang,
+        segments: [...byId].map(([id, e]) => ({ id, text: e.req.text, voice: e.req.voice })),
       });
-      if (!res.body) throw new Error('UPSTREAM_FAILED');
+      const body = job
+        ? await this.#collectJob(request, controller.signal)
+        : (
+            await fetchWithAuth(`${getAPIBaseUrl()}/tts/readest/stream`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: request,
+              signal: controller.signal,
+            })
+          ).body;
+      if (!body) throw new Error('UPSTREAM_FAILED');
       let endError: string | undefined;
-      for await (const raw of readNDJSON(res.body)) {
+      for await (const raw of readNDJSON(body)) {
         const line = raw as WindowLine;
         if (line.done) {
           endError = typeof line.error === 'string' ? line.error : undefined;
@@ -421,6 +448,9 @@ export class ReadestVoiceProvider implements SpeechProvider {
         const code = error instanceof Error ? error.message : String(error);
         if (code === DAILY_QUOTA_EXCEEDED) {
           this.#exhaustQuota();
+        } else if (code === 'JOBS_UNAVAILABLE' || (job && RESUBMIT_CODES.has(code))) {
+          if (code === 'JOBS_UNAVAILABLE') this.#jobsAvailable = false;
+          lane.queue.unshift(...unanswered);
         } else if (code === 'BUSY') {
           // The endpoint is saturated (no turn within the server's wait, or
           // too many windows of this user waiting): wait, retry.
@@ -434,7 +464,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
         }
       }
     } finally {
-      lane.inflight = null;
+      lane.inflight = lane.inflight.filter((w) => w !== window);
       if (busy) {
         lane.retryTimer = setTimeout(() => {
           lane.retryTimer = null;
@@ -443,6 +473,37 @@ export class ReadestVoiceProvider implements SpeechProvider {
       } else {
         this.#pump(lane);
       }
+    }
+  }
+
+  // A download job: submitted, then collected once a worker has finished it.
+  // The result is the NDJSON a stream window sends. Nobody wanting the window
+  // any more cancels the job, so its worker stops too.
+  async #collectJob(request: string, signal: AbortSignal) {
+    const jobs = `${getAPIBaseUrl()}/tts/readest/jobs`;
+    const submitted = await fetchWithAuth(jobs, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: request,
+      signal,
+    });
+    const { jobId } = (await submitted.json()) as { jobId: string };
+    if (!this.#jobsAvailable) {
+      this.#jobsAvailable = true;
+      this.#pumpAll();
+    }
+    const cancel = () => {
+      fetchWithAuth(`${jobs}/${jobId}`, { method: 'DELETE' }).catch(() => {});
+    };
+    signal.addEventListener('abort', cancel, { once: true });
+    try {
+      for (;;) {
+        // Long-polls; 202 while the job runs.
+        const res = await fetchWithAuth(`${jobs}/${jobId}`, { method: 'GET', signal });
+        if (res.status !== 202) return res.body;
+      }
+    } finally {
+      signal.removeEventListener('abort', cancel);
     }
   }
 
@@ -456,7 +517,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
     const fatal = new SpeechSynthesisFatalError(DAILY_QUOTA_EXCEEDED);
     for (const lane of Object.values(this.#lanes)) {
       lane.queue = [];
-      lane.inflight?.controller.abort();
+      for (const window of lane.inflight) window.controller.abort();
     }
     for (const entry of [...this.#entries.values()]) this.#fail(entry, fatal);
   }

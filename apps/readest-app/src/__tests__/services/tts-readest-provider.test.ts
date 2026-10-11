@@ -56,11 +56,68 @@ interface WindowCall {
   completeAll: () => void;
 }
 
+interface JobCall {
+  body: WindowCall['body'];
+  id: string;
+  polls: number;
+  deleted: boolean;
+  // Answers the poll in flight: still running, the result, or an error code.
+  running: () => void;
+  complete: () => void;
+  fail: (code: string) => void;
+}
+
+// Download jobs (null: the server has none, as off Workers).
+let jobs: JobCall[] | null;
+
+const jobResult = (body: WindowCall['body']) =>
+  new Response(
+    [
+      ...body.segments.map((s) => ({ id: s.id, audio: AUDIO_B64, boundaries: B })),
+      { done: true, charged: 1 },
+    ]
+      .map((line) => `${JSON.stringify(line)}\n`)
+      .join(''),
+  );
+
+const handleJobs = (url: string, init: RequestInit): Promise<Response> => {
+  if (!jobs) return Promise.reject(new Error('JOBS_UNAVAILABLE'));
+  const all = jobs;
+  if (init.method === 'POST') {
+    const body = JSON.parse(init.body as string);
+    let poll: { resolve: (res: Response) => void; reject: (error: unknown) => void } | null = null;
+    const job: JobCall = {
+      body,
+      id: `job${all.length}`,
+      polls: 0,
+      deleted: false,
+      running: () => poll?.resolve(Response.json({ state: 'leased' }, { status: 202 })),
+      complete: () => poll?.resolve(jobResult(body)),
+      fail: (code) => poll?.reject(new Error(code)),
+    };
+    (job as JobCall & { setPoll: (p: typeof poll) => void }).setPoll = (p) => (poll = p);
+    all.push(job);
+    return Promise.resolve(Response.json({ jobId: job.id, state: 'queued' }));
+  }
+  const job = all.find((j) => url.endsWith(`/jobs/${j.id}`))!;
+  if (init.method === 'DELETE') {
+    job.deleted = true;
+    return Promise.resolve(new Response(null, { status: 204 }));
+  }
+  job.polls += 1;
+  return new Promise((resolve, reject) => {
+    (job as JobCall & { setPoll: (p: unknown) => void }).setPoll({ resolve, reject });
+    init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+  });
+};
+
 // fetchWithAuth stand-in: GET voices answers at once; each window POST returns
-// a streamed NDJSON body the test drives through the recorded WindowCall.
+// a streamed NDJSON body the test drives through the recorded WindowCall;
+// download jobs go through handleJobs.
 const installFetch = () => {
   const windows: WindowCall[] = [];
   m.fetchWithAuth.mockImplementation(async (url: string, init: RequestInit) => {
+    if (url.includes('/tts/readest/jobs')) return handleJobs(url, init);
     if (!init.method || init.method === 'GET') return Response.json({ voices: VOICES });
     const body = JSON.parse(init.body as string);
     if (body.warmup) return Response.json({ ok: true });
@@ -99,6 +156,7 @@ beforeEach(() => {
   m.getAccessToken.mockResolvedValue('tok');
   m.getSubscriptionPlan.mockReturnValue('plus');
   windows = installFetch();
+  jobs = null;
   events = new EventTarget();
   provider = new ReadestVoiceProvider(events);
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -417,7 +475,7 @@ describe('errors', () => {
   });
 });
 
-describe('download lane', () => {
+describe('download lane, streamed (no jobs on the server)', () => {
   it('uses windows of up to 64 sentences', async () => {
     provider.prefetch(reqs(70), 'download', new AbortController().signal);
     await flush();
@@ -434,10 +492,11 @@ describe('download lane', () => {
     provider.prefetch(reqs(1, 'L'), 'listen', new AbortController().signal);
     other.prefetch(reqs(1, 'O'), 'listen', new AbortController().signal);
     await flush();
-    const [first, second, third] = windows.map((w) => w.body.client);
-    expect(first).toEqual(expect.any(String));
-    expect(second).toBe(first);
-    expect(third).not.toBe(first);
+    const client = (prefix: string) =>
+      windows.find((w) => w.body.segments[0]!.text.startsWith(prefix))!.body.client;
+    expect(client('D')).toEqual(expect.any(String));
+    expect(client('L')).toBe(client('D'));
+    expect(client('O')).not.toBe(client('D'));
   });
 
   it('runs alongside a listen window', async () => {
@@ -455,5 +514,86 @@ describe('download lane', () => {
     expect(m.fetchWithAuth).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(5000);
     expect(texts(windows[0]!)).toEqual(['D0.', 'D1.']);
+  });
+});
+
+describe('download jobs', () => {
+  beforeEach(() => {
+    jobs = [];
+  });
+  const all = () => jobs!;
+
+  it('submits windows of up to 64 sentences as jobs, four at a time', async () => {
+    provider.prefetch(reqs(300), 'download', new AbortController().signal);
+    await flush();
+    expect(all().map((j) => j.body.segments.length)).toEqual([64, 64, 64, 64]);
+    expect(all()[0]!.body).toMatchObject({ lane: 'download', lang: 'en-US' });
+    expect(windows).toHaveLength(0);
+
+    all()[1]!.complete();
+    await flush();
+    expect(all().map((j) => j.body.segments.length)).toEqual([64, 64, 64, 64, 44]);
+  });
+
+  it('resolves sentences from the result once the job is done, polling meanwhile', async () => {
+    const delivered: string[] = [];
+    provider.prefetch(reqs(2, 'D'), 'download', new AbortController().signal, {
+      onDelivered: (r) => delivered.push(r.text),
+    });
+    await flush();
+    const [job] = all();
+    expect(job!.polls).toBe(1);
+    job!.running();
+    await flush();
+    expect(job!.polls).toBe(2);
+    expect(delivered).toEqual([]);
+    job!.complete();
+    await flush();
+    expect(delivered).toEqual(['D0.', 'D1.']);
+  });
+
+  it('cancels the job when nobody wants it any more', async () => {
+    const controller = new AbortController();
+    provider.prefetch(reqs(2, 'D'), 'download', controller.signal);
+    await flush();
+    controller.abort();
+    await flush();
+    expect(all()[0]!.deleted).toBe(true);
+  });
+
+  it('submits a window again when its job was cancelled elsewhere or is gone', async () => {
+    provider.prefetch(reqs(2, 'D'), 'download', new AbortController().signal);
+    await flush();
+    all()[0]!.fail('CANCELLED');
+    await flush();
+    expect(all()).toHaveLength(2);
+    all()[1]!.fail('NOT_FOUND');
+    await flush();
+    expect(all()).toHaveLength(3);
+    expect(all()[2]!.body.segments).toEqual(all()[0]!.body.segments);
+  });
+
+  it('fails the sentences of a failed job', async () => {
+    provider.prefetch([req('D0.')], 'download', new AbortController().signal);
+    // Playback reaches the sentence while its job runs: it shares the job.
+    const result = provider.synthesize(req('D0.'), new AbortController().signal);
+    await flush();
+    all()[0]!.fail('UPSTREAM_FAILED');
+    await expect(result).rejects.toThrow('UPSTREAM_FAILED');
+    expect(windows).toHaveLength(0);
+  });
+
+  it('streams downloads instead when the server has no jobs', async () => {
+    jobs = null;
+    provider.prefetch(reqs(300), 'download', new AbortController().signal);
+    await flush();
+    expect(windows).toHaveLength(1);
+    expect(windows[0]!.body.lane).toBe('download');
+    windows[0]!.completeAll();
+    await flush();
+    // Remembered: the next window streams without asking for a job again.
+    expect(windows).toHaveLength(2);
+    const asked = m.fetchWithAuth.mock.calls.filter(([url]) => String(url).includes('/jobs'));
+    expect(asked).toHaveLength(1);
   });
 });

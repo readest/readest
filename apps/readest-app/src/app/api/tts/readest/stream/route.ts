@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { TTSWordBoundary } from '@/libs/edgeTTS';
 import { getTTSQuota } from '@/utils/access';
 import { USAGE_TYPES, UsageStatsManager } from '@/utils/usage';
@@ -8,11 +7,11 @@ import {
   releaseSlot,
   setSlotJob,
   SLOT_TTL_SECONDS,
-  type TTSLane,
 } from '@/libs/readestVoice/admission';
-import { findVoice, isVoiceInPlan } from '@/libs/readestVoice/catalog';
+import { runAfterResponse } from '@/libs/readestVoice/bindings';
 import { errorResponse, gateReadestVoice } from '@/libs/readestVoice/gate';
 import { cancelJob, startJob, streamJob } from '@/libs/readestVoice/runpod';
+import { checkVoices, parseWindow, type WindowRequest } from '@/libs/readestVoice/window';
 
 // Readest Voice window route: one RunPod job per window of sentences, streamed
 // back as NDJSON, one line per sentence as soon as it is ready, then a
@@ -21,30 +20,8 @@ import { cancelJob, startJob, streamJob } from '@/libs/readestVoice/runpod';
 // client goes away (stop, seek, voice change); the RunPod job is cancelled
 // then too.
 
-const LANE_LIMITS: Record<TTSLane, { segments: number; chars: number }> = {
-  listen: { segments: 8, chars: 2000 },
-  download: { segments: 64, chars: 12000 },
-};
-const MAX_SEGMENT_CHARS = 2000;
-const MAX_CLIENT_ID_CHARS = 64;
-// Apps that send no client id share one: their listen windows replace each
-// other, as before per-client queueing.
-const DEFAULT_CLIENT_ID = 'default';
 const WINDOW_DEADLINE_MS = SLOT_TTL_SECONDS * 1000;
 const BUSY_RETRY_AFTER_SEC = 5;
-
-interface Segment {
-  id: string;
-  text: string;
-  voice: string;
-}
-
-interface WindowRequest {
-  clientId: string;
-  lane: TTSLane;
-  lang: string;
-  segments: Segment[];
-}
 
 interface WorkerFrame {
   id?: unknown;
@@ -52,42 +29,6 @@ interface WorkerFrame {
   boundaries?: unknown;
   failed?: unknown;
 }
-
-const parseWindow = (body: unknown): WindowRequest | null => {
-  const {
-    client = DEFAULT_CLIENT_ID,
-    lane,
-    lang,
-    segments,
-  } = (body ?? {}) as Record<string, unknown>;
-  if (typeof client !== 'string' || !client || client.length > MAX_CLIENT_ID_CHARS) return null;
-  if (lane !== 'listen' && lane !== 'download') return null;
-  if (typeof lang !== 'string' || !Array.isArray(segments)) return null;
-  const limits = LANE_LIMITS[lane];
-  if (segments.length === 0 || segments.length > limits.segments) return null;
-  const ids = new Set<string>();
-  let chars = 0;
-  for (const raw of segments) {
-    const { id, text, voice } = (raw ?? {}) as Record<string, unknown>;
-    if (typeof id !== 'string' || !id || ids.has(id)) return null;
-    if (typeof text !== 'string' || !text.trim() || text.length > MAX_SEGMENT_CHARS) return null;
-    if (typeof voice !== 'string') return null;
-    ids.add(id);
-    chars += text.length;
-  }
-  if (chars > limits.chars) return null;
-  return { clientId: client, lane, lang: lang.slice(0, 35), segments: segments as Segment[] };
-};
-
-// Work that must finish after the response is gone (charging, cancelling):
-// on Workers it has to be registered with waitUntil or it may be dropped.
-const runAfterResponse = (task: Promise<unknown>) => {
-  try {
-    getCloudflareContext().ctx.waitUntil(task);
-  } catch {
-    // Not on Workers (tests, Node dev): the promise just runs.
-  }
-};
 
 const encoder = new TextEncoder();
 const ndjsonLine = (value: unknown) => encoder.encode(`${JSON.stringify(value)}\n`);
@@ -106,11 +47,8 @@ export async function POST(request: NextRequest) {
   if (!window) return errorResponse('INVALID_INPUT', 400);
   const { clientId, lane, lang, segments } = window;
 
-  for (const segment of segments) {
-    const voice = findVoice(catalog, segment.voice);
-    if (!voice) return errorResponse('UNKNOWN_VOICE', 400);
-    if (!isVoiceInPlan(voice, plan)) return errorResponse('VOICE_TIER_REQUIRED', 403);
-  }
+  const voices = checkVoices(catalog, plan, segments);
+  if ('error' in voices) return errorResponse(voices.error, voices.status);
 
   // Every round trip before the job starts is heard as delay, so the quota
   // check and the slot run together. Check before starting; charge only what

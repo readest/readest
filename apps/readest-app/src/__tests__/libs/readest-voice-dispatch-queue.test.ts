@@ -187,4 +187,31 @@ describe('DispatchQueue', () => {
     await flush();
     expect(b.result()?.acquired).toBe(true);
   });
+
+  it('admits a bridged download at once only within its share while listening waits', async () => {
+    const { queue, ask } = setup(4);
+    const bridged = (token: string) =>
+      queue.tryAcquire({ userId: 'bridge', clientId: 'bridge', lane: 'download', token });
+    expect(bridged('d1')).toBe(true);
+    ask('a');
+    ask('b');
+    ask('a', 'listen', 'tablet');
+    await flush();
+    // One slot left, a listen window waits, and downloads have their share.
+    expect(bridged('d2')).toBe(false);
+    // Back within the share once the first ends.
+    queue.release('d1');
+    expect(bridged('d3')).toBe(true);
+  });
+
+  it('renews a running lease so it outlives the window deadline', async () => {
+    const { queue, ask, advance } = setup(1);
+    const a = ask('a');
+    await flush();
+    advance(LEASE_MS - 1_000);
+    expect(queue.renew(a.token)).toBe(true);
+    advance(2_000);
+    expect(queue.setJob(a.token, 'job-1')).toBe(true);
+    expect(queue.renew('missing')).toBe(false);
+  });
 });
