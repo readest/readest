@@ -295,6 +295,27 @@ describe('cancellation', () => {
     expect(texts(windows[2]!)).toEqual(['T0.']);
   });
 
+  it('a paragraph handover keeps the window size', async () => {
+    // Each paragraph's speak signal aborts when the next paragraph starts. Its
+    // sentences stay wanted by the background preload, so nothing is withdrawn
+    // and the window must not shrink back to one sentence at every paragraph.
+    const preload = new AbortController();
+    provider.prefetch(reqs(20, 'P'), 'listen', preload.signal, { background: true });
+    await flush();
+    windows[0]!.completeAll();
+    await flush();
+    expect(texts(windows[1]!)).toHaveLength(4);
+    const paragraph = new AbortController();
+    provider.prefetch(reqs(5, 'P').slice(1), 'listen', paragraph.signal);
+    windows[1]!.completeAll();
+    await flush();
+    expect(texts(windows[2]!)).toHaveLength(8);
+    paragraph.abort();
+    windows[2]!.completeAll();
+    await flush();
+    expect(texts(windows[3]!)).toHaveLength(7);
+  });
+
   it('keeps a window running while another caller still wants its sentences', async () => {
     const a = new AbortController();
     const b = new AbortController();

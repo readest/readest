@@ -72,6 +72,31 @@ describe('CachingProvider', () => {
     expect(inner.synthesize).toHaveBeenCalledTimes(1);
   });
 
+  test('a sentence synthesized ahead plays from memory, without a store read', async () => {
+    // Store reads cost hundreds of ms on device; the paragraph that was just
+    // prefetched must not wait on one at the paragraph boundary.
+    await provider.synthesize(req(), signal());
+    store.get.mockClear();
+    const result = await provider.synthesize(req(), signal());
+    expect(result.boundaries).toEqual(BOUNDARIES);
+    expect(store.get).not.toHaveBeenCalled();
+    expect(inner.synthesize).toHaveBeenCalledTimes(1);
+  });
+
+  test('a sentence found by a prefetch plays from memory, without a second store read', async () => {
+    store.map.set(
+      (await import('@/services/tts/providers/cache')).computeTTSCacheKey('fake', req('old')),
+      { audio: new ArrayBuffer(8), boundaries: BOUNDARIES },
+    );
+    const withPrefetch = new CachingProvider(makeInner({ prefetch: vi.fn() }), store);
+    withPrefetch.prefetch?.([req('old')], 'listen', signal());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    store.get.mockClear();
+    const result = await withPrefetch.synthesize(req('old'), signal());
+    expect(result.audio.byteLength).toBe(8);
+    expect(store.get).not.toHaveBeenCalled();
+  });
+
   test('hits hand out an independent buffer per call', async () => {
     // decodeAudioData detaches its input; a shared cached buffer would break
     // the second playback of the same sentence.
