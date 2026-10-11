@@ -23,6 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import {
   filterBooknotes,
+  isAnnotationEntry,
   collectAnnotationFacets,
   summarizeAnnotationHub,
   AnnotationFilterKind,
@@ -104,7 +105,7 @@ const BooknoteView: React.FC<{
   }, []);
 
   const liveAnnotations = useMemo(
-    () => allNotes.filter((note) => note.type === 'annotation' && !note.deletedAt),
+    () => allNotes.filter((note) => isAnnotationEntry(note) && !note.deletedAt),
     [allNotes],
   );
   const facets = useMemo(() => collectAnnotationFacets(liveAnnotations), [liveAnnotations]);

@@ -33,6 +33,7 @@ android {
     }
 
     flavorDimensions += "store"
+    flavorDimensions += "pen"
     productFlavors {
         create("foss") {
             dimension = "store"
@@ -40,10 +41,33 @@ android {
         create("googleplay") {
             dimension = "store"
         }
+        // Handwriting (issue #3673): BOOX raw drawing needs the Onyx Pen SDK,
+        // which only BOOX's own Maven host serves. It is opt-in
+        // (-PpenFlavor=booxPen); see android/README-pen.md.
+        create("genericPen") {
+            dimension = "pen"
+        }
+        create("booxPen") {
+            dimension = "pen"
+            consumerProguardFiles("proguard-boox.pro")
+        }
+    }
+}
+
+// Default builds never declare (or contact) the BOOX repository. The app
+// module declares it too, as consumers resolve with their own repositories.
+if (findProperty("penFlavor") == "booxPen") {
+    repositories {
+        maven { url = uri("https://repo.boox.com/repository/maven-public/") }
     }
 }
 
 dependencies {
+    "booxPenImplementation"("com.onyx.android.sdk:onyxsdk-pen:1.4.11") {
+        // An old transitive dependency (easypermissions) drags in the pre-AndroidX
+        // support library, which clashes with androidx.core.
+        exclude(group = "com.android.support")
+    }
     "googleplayImplementation"("com.android.billingclient:billing:9.1.0")
     "googleplayImplementation"("com.google.android.gms:play-services-base:18.5.0")
     "googleplayImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")

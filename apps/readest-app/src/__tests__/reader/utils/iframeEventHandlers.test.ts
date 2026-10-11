@@ -91,6 +91,26 @@ describe('iframeEventHandlers click gestures', () => {
     expect(postedTypes(postSpy)).toContain('iframe-single-click');
   });
 
+  test('a single click carries its main-window position, for ink hit-testing', async () => {
+    const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
+    const view = {
+      frameElement: {
+        getBoundingClientRect: () => ({ left: 40, top: 30, width: 200, height: 400 }),
+      },
+      document: { documentElement: { clientWidth: 200, clientHeight: 400 } },
+    } as unknown as Window;
+
+    handleMousedown('book-1', mouseEvent({ view }));
+    handleMouseup('book-1', mouseEvent({ view }));
+    handleClick('book-1', { current: false }, false, false, mouseEvent({ view }));
+    vi.advanceTimersByTime(260);
+
+    const msg = postSpy.mock.calls
+      .map((call: unknown[]) => call[0] as Record<string, unknown>)
+      .find((m: Record<string, unknown>) => m['type'] === 'iframe-single-click');
+    expect(msg).toMatchObject({ windowX: 140, windowY: 130 });
+  });
+
   test('a plain double-click posts iframe-double-click and not iframe-single-click', async () => {
     const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
     const doubleClickDisabled = { current: false };

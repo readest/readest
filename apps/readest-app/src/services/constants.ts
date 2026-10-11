@@ -38,6 +38,12 @@ import { UserStorageQuota, UserDailyTranslationQuota, UserDailyTTSQuota } from '
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
 import { stubTranslation as _ } from '@/utils/misc';
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
+import {
+  DEFAULT_HANDWRITING_COLOR,
+  DEFAULT_HANDWRITING_WIDTH,
+  DEFAULT_MARKER_COLOR,
+  DEFAULT_MARKER_WIDTH,
+} from './handwriting/model';
 import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 import { DEFAULT_SENTENCE_GAP_SEC } from './tts/EdgeTTSClient';
 import { DEFAULT_PARAGRAPH_GAP_SEC } from './tts/TTSController';
@@ -321,6 +327,11 @@ export const DEFAULT_READSETTINGS: ReadSettings = {
   wordLensAutoDownload: true,
 
   customThemes: [],
+  handwritingColor: DEFAULT_HANDWRITING_COLOR,
+  handwritingWidth: DEFAULT_HANDWRITING_WIDTH,
+  handwritingTool: 'pen',
+  handwritingMarkerColor: DEFAULT_MARKER_COLOR,
+  handwritingMarkerWidth: DEFAULT_MARKER_WIDTH,
   highlightStyle: 'highlight',
   highlightStyles: {
     highlight: 'yellow',
