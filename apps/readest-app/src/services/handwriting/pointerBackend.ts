@@ -32,6 +32,8 @@ export class PointerHandwritingBackend {
     el.addEventListener('pointermove', this.onMove);
     el.addEventListener('pointerup', this.onUp);
     el.addEventListener('pointercancel', this.onCancel);
+    el.addEventListener('touchstart', this.claimTouch, { passive: false });
+    el.addEventListener('touchmove', this.claimTouch, { passive: false });
   }
 
   detach() {
@@ -40,6 +42,8 @@ export class PointerHandwritingBackend {
     this.el.removeEventListener('pointermove', this.onMove);
     this.el.removeEventListener('pointerup', this.onUp);
     this.el.removeEventListener('pointercancel', this.onCancel);
+    this.el.removeEventListener('touchstart', this.claimTouch);
+    this.el.removeEventListener('touchmove', this.claimTouch);
     this.el = null;
     this.toPage = null;
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
@@ -49,6 +53,17 @@ export class PointerHandwritingBackend {
   onBatch(listener: PointerBatchListener) {
     this.listener = listener;
   }
+
+  /**
+   * Takes the touch sequence from the browser. `touch-action: none` only
+   * stops panning and zooming: iOS WebKit still reads a quick tap followed by
+   * a drag as its own double-tap or text-selection gesture and withholds that
+   * touch from the page, so a Pencil stroke drawn right after a tap was lost.
+   * Pointer events still arrive.
+   */
+  private claimTouch = (e: Event) => {
+    if (e.cancelable) e.preventDefault();
+  };
 
   private isEraserEvent(e: PointerEvent) {
     // Stylus eraser tip; buttons bit 5 (32) covers the barrel-eraser button

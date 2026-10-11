@@ -74,7 +74,15 @@ const HandwritingCanvas: React.FC<HandwritingCanvasProps> = ({
       <canvas
         ref={canvasRef}
         className={interactive ? 'pointer-events-auto absolute inset-0' : 'absolute inset-0'}
-        style={{ width: cellRect.width, height: cellRect.height, touchAction: 'none' }}
+        style={{
+          width: cellRect.width,
+          height: cellRect.height,
+          touchAction: 'none',
+          // Nothing to select here; keeps iOS selection gestures off the Pencil.
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none',
+        }}
       />
     </div>
   );

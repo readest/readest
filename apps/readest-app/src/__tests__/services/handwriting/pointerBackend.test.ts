@@ -189,6 +189,23 @@ describe('PointerHandwritingBackend', () => {
     expect(onBatch).toHaveBeenLastCalledWith(expect.any(Array), 'end', true);
   });
 
+  it('takes the touch sequence so iOS cannot claim a quick tap-then-draw as its own gesture', () => {
+    const el = new FakeElement();
+    const backend = new PointerHandwritingBackend();
+    backend.attach(el as unknown as HTMLElement, identity);
+    const start = new Event('touchstart', { cancelable: true });
+    const move = new Event('touchmove', { cancelable: true });
+    el.dispatchEvent(start);
+    el.dispatchEvent(move);
+    expect(start.defaultPrevented).toBe(true);
+    expect(move.defaultPrevented).toBe(true);
+
+    backend.detach();
+    const after = new Event('touchstart', { cancelable: true });
+    el.dispatchEvent(after);
+    expect(after.defaultPrevented).toBe(false);
+  });
+
   it('detach stops listening', async () => {
     const el = new FakeElement();
     const backend = new PointerHandwritingBackend();
