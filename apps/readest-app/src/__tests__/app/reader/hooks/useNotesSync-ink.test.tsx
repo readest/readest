@@ -12,33 +12,37 @@ const h = vi.hoisted(() => {
     };
   };
 
-  const booknotes = [
-    {
-      id: 'n1',
-      type: 'annotation',
-      cfi: 'epubcfi(/6/4!/4/2/1:0)',
-      text: 'hello',
-      note: '',
-      createdAt: 1000,
-      updatedAt: 1000,
-    },
-    {
-      id: 'ink-1',
-      type: 'ink',
-      cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:5)',
-      text: 'hello',
-      note: '',
-      ink: [{ id: 's', color: '#000', width: 0.004, points: [[0, 0]] }],
-      createdAt: 1000,
-      updatedAt: 1000,
-    },
-  ];
+  const note = {
+    id: 'n1',
+    type: 'annotation',
+    cfi: 'epubcfi(/6/4!/4/2/1:0)',
+    text: 'hello',
+    note: '',
+    createdAt: 1000,
+    updatedAt: 1000,
+  };
+  const drawing = (updatedAt: number) => ({
+    id: 'ink-1',
+    type: 'ink',
+    cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:5)',
+    text: 'hello',
+    note: '',
+    ink: [{ id: 's', color: '#000', width: 0.004, points: [[0, 0]] }],
+    createdAt: 1000,
+    updatedAt,
+  });
+  const booknotes = [note, drawing(3000)];
 
   return {
     makeStore,
     booknotes,
     state: { config: { location: undefined as string | undefined, booknotes } },
+    note,
+    drawing,
     syncNotesMock: vi.fn(async () => {}),
+    view: {
+      renderer: { getContents: () => [{ doc: {}, index: 0 }], primaryIndex: 0 },
+    } as unknown,
   };
 });
 
@@ -59,7 +63,13 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: h.makeStore({ getView: () => null, getViewsById: () => [] }),
+  useReaderStore: h.makeStore({ getView: () => h.view, getViewsById: () => [] }),
+}));
+
+vi.mock('@/utils/xcfi', () => ({
+  getXPointerFromCFI: async () => ({ pos0: '/body/p[1]/text().0', pos1: '/body/p[1]/text().5' }),
+  getCFIFromXPointer: async () => undefined,
+  XCFI: class {},
 }));
 
 import { useNotesSync } from '@/app/reader/hooks/useNotesSync';
@@ -69,20 +79,40 @@ describe('useNotesSync with handwriting', () => {
     cleanup();
   });
 
-  test('keeps ink annotations out of the cloud push', async () => {
-    const { rerender } = renderHook(() => useNotesSync('h1-key'));
-    expect(h.syncNotesMock).not.toHaveBeenCalled();
+  const pushed = () => (h.syncNotesMock.mock.calls.at(-1) as unknown as [{ id: string }[]])[0];
 
-    h.state.config = { location: 'epubcfi(/6/4!/4/2/1:0)', booknotes: h.booknotes };
+  test('pushes a changed drawing with its strokes, but no xpointer', async () => {
+    const { rerender } = renderHook(() => useNotesSync('h1-key'));
+    h.state.config = {
+      location: 'epubcfi(/6/4!/4/2/1:0)',
+      booknotes: [h.note, h.drawing(3000)],
+    };
     rerender();
 
-    await waitFor(() =>
-      expect(h.syncNotesMock).toHaveBeenCalledWith(
-        [expect.objectContaining({ id: 'n1' })],
-        'h1',
-        'm1',
-        'both',
-      ),
-    );
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
+    const notes = pushed() as unknown as {
+      id: string;
+      ink?: unknown[];
+      xpointer0?: string;
+    }[];
+    const ink = notes.find((n) => n.id === 'ink-1')!;
+    expect(ink.ink).toHaveLength(1);
+    // KOReader turns any pulled note with an xpointer into a highlight.
+    expect(ink.xpointer0).toBeUndefined();
+    expect(notes.find((n) => n.id === 'n1')!.xpointer0).toBe('/body/p[1]/text().0');
+  });
+
+  test('does not push an unchanged drawing again', async () => {
+    h.syncNotesMock.mockClear();
+    h.state.config = { location: undefined, booknotes: [] };
+    const { rerender } = renderHook(() => useNotesSync('h1-key'));
+    h.state.config = {
+      location: 'epubcfi(/6/4!/4/2/1:0)',
+      booknotes: [h.note, h.drawing(1000)],
+    };
+    rerender();
+
+    await waitFor(() => expect(h.syncNotesMock).toHaveBeenCalled());
+    expect(pushed().map((n) => n.id)).toEqual(['n1']);
   });
 });

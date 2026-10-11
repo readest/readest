@@ -42,7 +42,9 @@ export const useNotesSync = (bookKey: string) => {
 
     const enriched: BookNote[] = [];
     for (const note of notes) {
-      if (note.cfi && !note.xpointer0) {
+      // KOReader turns any pulled note with an xpointer into a highlight, so a
+      // drawing never gets one; without it every plugin version skips it.
+      if (note.type !== 'ink' && note.cfi && !note.xpointer0) {
         try {
           const contents = view.renderer.getContents();
           const primaryIndex = view.renderer.primaryIndex;
@@ -141,14 +143,13 @@ export const useNotesSync = (bookKey: string) => {
     if (!config?.location || !book || !user) return {};
 
     const bookNotes = config.booknotes ?? [];
-    // Readest Cloud has no field for handwriting strokes; an ink annotation
-    // would arrive on other devices empty, so it travels by file sync only.
+    // A note without an xpointer is pushed until it gets one; a drawing never
+    // does (see populateXPointersForPush), so it goes only when it changed.
     const newNotes = bookNotes.filter(
       (note) =>
-        note.type !== 'ink' &&
-        (!note.xpointer0 ||
-          lastSyncedAtNotes < note.updatedAt ||
-          lastSyncedAtNotes < (note.deletedAt ?? 0)),
+        (!note.xpointer0 && note.type !== 'ink') ||
+        lastSyncedAtNotes < note.updatedAt ||
+        lastSyncedAtNotes < (note.deletedAt ?? 0),
     );
     newNotes.forEach((note) => {
       note.bookHash = book.hash;

@@ -285,3 +285,23 @@ describe('HandwritingService sessions', () => {
     expect(service.endSession()).toBe(false);
   });
 });
+
+describe('HandwritingService stored precision', () => {
+  it('keeps committed points to a tenth of a pixel, so synced ink stays small', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'pdf:1', rect);
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [
+        [0.123456789, 0.5, 0.333333],
+        [0.456789123, 0.987654321, 0.666666],
+      ],
+      'end',
+      false,
+    );
+    const [stroke] = editor.strokes('pdf:1');
+    expect(stroke!.points).toEqual([
+      [0.1235, 0.5, 0.33],
+      [0.4568, 0.9877, 0.67],
+    ]);
+  });
+});

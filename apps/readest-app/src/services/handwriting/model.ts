@@ -97,6 +97,21 @@ const deviation = (p: InkPoint, a: InkPoint, b: InkPoint, tol2: number) => {
   return Math.max(spatial, ep * ep);
 };
 
+const round = (value: number, digits: number) => {
+  const scale = 10 ** digits;
+  return Math.round(value * scale) / scale;
+};
+
+/**
+ * Points as they are stored and synced: positions to 1/10000 (a tenth of a
+ * pixel on a 1000px page), pressure to 1/100. Full float precision would
+ * more than double the size of every drawing for no visible difference.
+ */
+export const roundPoints = (points: InkPoint[]): InkPoint[] =>
+  points.map(([x, y, p]) =>
+    p === undefined ? [round(x, 4), round(y, 4)] : [round(x, 4), round(y, 4), round(p, 2)],
+  );
+
 /**
  * Ramer–Douglas–Peucker simplification, one stroke at a time.
  *

@@ -4,6 +4,7 @@ import {
   DEFAULT_HANDWRITING_COLOR,
   DEFAULT_HANDWRITING_WIDTH,
   simplifyPoints,
+  roundPoints,
   type InkPoint,
   type InkStroke,
   type InkTool,
@@ -368,13 +369,15 @@ export class HandwritingService {
       const target = this.targetOf(simplifyPoints(this.live));
       // Undo and redo follow the page last drawn on.
       this.page = target.page;
+      const pinned = this.pin(target.points, target.anchoring);
       this.editor.addStroke(target.page, {
         id: nextStrokeId(),
         color: this.options.color,
         width: this.options.widthFraction * target.scale,
         ...this.toolField(),
         ...(this.session ? { session: this.session } : {}),
-        ...(this.pin(target.points, target.anchoring) ?? { points: target.points }),
+        ...pinned,
+        points: roundPoints(pinned?.points ?? target.points),
       });
       this.live = [];
     }
