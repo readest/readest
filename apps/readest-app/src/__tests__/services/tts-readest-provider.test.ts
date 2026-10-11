@@ -364,6 +364,19 @@ describe('listen windows', () => {
   });
 });
 
+describe('prefetched sentences', () => {
+  it('keeps a delivered sentence for playback after its window ends', async () => {
+    provider.prefetch([req('S0.')], 'listen', new AbortController().signal);
+    await flush();
+    windows[0]!.completeAll();
+    await flush();
+    // Playback reaches the sentence later: no second synthesis (or charge).
+    const result = await provider.synthesize(req('S0.'), new AbortController().signal);
+    expect(result.audio.byteLength).toBeGreaterThan(0);
+    expect(windows).toHaveLength(1);
+  });
+});
+
 describe('cancellation', () => {
   it('a stop/seek withdraws queued sentences, aborts the window, and restarts at size 1', async () => {
     const first = new AbortController();

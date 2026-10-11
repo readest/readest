@@ -295,7 +295,8 @@ export class ReadestVoiceProvider implements SpeechProvider {
     let hadForeground = false;
     for (const entry of [...this.#entries.values()]) {
       if (!entry.wanted.delete(signal)) continue;
-      if (!entry.background) hadForeground = true;
+      // Withdrawn sentences the listener waited on; delivered ones do not count.
+      if (!entry.background && !entry.settled) hadForeground = true;
       if (entry.wanted.size === 0) {
         this.#settle(entry, abortError());
         this.#entries.delete(entry.key);
@@ -437,8 +438,12 @@ export class ReadestVoiceProvider implements SpeechProvider {
           break;
         }
       }
-      // Sentences the window never answered are worth retrying.
-      for (const entry of entries) this.#fail(entry, new Error(endError ?? 'UPSTREAM_FAILED'));
+      // Sentences the window never answered are worth retrying. Answered ones
+      // stay for the caller that has not consumed them yet (#onAbort drops
+      // them if nobody does).
+      for (const entry of entries) {
+        if (!entry.settled) this.#fail(entry, new Error(endError ?? 'UPSTREAM_FAILED'));
+      }
     } catch (error) {
       const unanswered = entries.filter((e) => !e.settled);
       if (controller.signal.aborted) {
