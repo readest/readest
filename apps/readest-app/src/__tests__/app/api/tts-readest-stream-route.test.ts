@@ -52,6 +52,7 @@ import { POST } from '@/app/api/tts/readest/stream/route';
 const CATALOG = [
   { id: 'kokoro:af_heart', engine: 'kokoro', name: 'Heart', langs: ['en-US'] },
   { id: 'qwen3:ryan', engine: 'qwen3', name: 'Ryan', langs: ['en-US'] },
+  { id: 'omnivoice:clara', engine: 'omnivoice', name: 'Clara', langs: ['en-US'] },
 ];
 const CFG = { apiKey: 'k', endpointId: 'ep', base: 'https://rp.test/v2' };
 const B = [{ offset: 0, duration: 5_000_000, text: 'Hello' }];
@@ -138,7 +139,7 @@ describe('gating', () => {
   });
 
   it('rejects a Pro voice for Plus and an unknown voice', async () => {
-    let res = await POST(post(listen(seg('s0', 'Hi.', 'qwen3:ryan'))));
+    let res = await POST(post(listen(seg('s0', 'Hi.', 'omnivoice:clara'))));
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: 'VOICE_TIER_REQUIRED' });
     res = await POST(post(listen(seg('s0', 'Hi.', 'kokoro:nope'))));

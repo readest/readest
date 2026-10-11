@@ -5,6 +5,7 @@ const CATALOG: CatalogVoice[] = [
   { id: 'kokoro:af_heart', engine: 'kokoro', name: 'Heart', langs: ['en-US'] },
   { id: 'qwen3:serena', engine: 'qwen3', name: 'Serena', langs: ['en-US', 'de-DE'] },
   { id: 'future:x', engine: 'future', name: 'X', langs: ['en-US'] },
+  { id: 'omnivoice:clara', engine: 'omnivoice', name: 'Clara', langs: ['en-US'] },
 ];
 
 const fetchMock = vi.fn();
@@ -73,7 +74,7 @@ describe('getCatalog', () => {
 });
 
 describe('plan filtering', () => {
-  it('gives Plus and Pro Kokoro only, others nothing', async () => {
+  it('gives Plus Kokoro, Pro Kokoro and OmniVoice, others nothing', async () => {
     // Qwen3 voices are blocked for every plan, even though the catalog lists them.
     const { voicesForPlan } = await load();
     expect(voicesForPlan(CATALOG, 'plus')).toEqual([
@@ -81,6 +82,7 @@ describe('plan filtering', () => {
     ]);
     expect(voicesForPlan(CATALOG, 'pro')).toEqual([
       { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' },
+      { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US' },
     ]);
     expect(voicesForPlan(CATALOG, 'free')).toEqual([]);
     expect(voicesForPlan(CATALOG, 'purchase')).toEqual([]);

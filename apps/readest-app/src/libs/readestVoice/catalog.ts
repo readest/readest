@@ -24,7 +24,10 @@ const CATALOG_TTL_MS = 10 * 60 * 1000;
 // Which plan unlocks each engine. An engine missing here is hidden (fail
 // closed), so a new worker engine never reaches users before this is decided.
 // Qwen3 is left out on purpose: its voices stay blocked for every plan.
-export const ENGINE_MIN_PLAN: Record<string, 'plus' | 'pro'> = { kokoro: 'plus' };
+export const ENGINE_MIN_PLAN: Record<string, 'plus' | 'pro'> = {
+  kokoro: 'plus',
+  omnivoice: 'pro',
+};
 const PLAN_TIER: Record<UserPlan, number> = { free: 0, purchase: 0, plus: 1, pro: 2 };
 const MIN_PLAN_TIER: Record<'plus' | 'pro', number> = { plus: 1, pro: 2 };
 

@@ -28,6 +28,7 @@ import { GET, POST } from '@/app/api/tts/readest/route';
 const CATALOG = [
   { id: 'kokoro:af_heart', engine: 'kokoro', name: 'Heart', langs: ['en-US'] },
   { id: 'qwen3:serena', engine: 'qwen3', name: 'Serena', langs: ['en-US', 'de-DE'] },
+  { id: 'omnivoice:clara', engine: 'omnivoice', name: 'Clara', langs: ['en-US'] },
 ];
 const CFG = { apiKey: 'k', endpointId: 'ep', base: 'https://rp.test/v2' };
 
@@ -69,14 +70,17 @@ describe('GET /api/tts/readest', () => {
     expect(await (await GET(req('GET'))).json()).toEqual({ error: 'PLAN_REQUIRED' });
   });
 
-  it('lists Kokoro only, for Plus and Pro alike', async () => {
+  it('lists Kokoro for Plus, Kokoro and OmniVoice for Pro', async () => {
     m.getSubscriptionPlan.mockReturnValue('plus');
     expect(await (await GET(req('GET'))).json()).toEqual({
       voices: [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }],
     });
     m.getSubscriptionPlan.mockReturnValue('pro');
     expect(await (await GET(req('GET'))).json()).toEqual({
-      voices: [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }],
+      voices: [
+        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' },
+        { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US' },
+      ],
     });
   });
 });
