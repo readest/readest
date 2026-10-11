@@ -309,6 +309,17 @@ describe('BufferedTTSClient with a windowed provider', () => {
       await speak(client, new AbortController().signal, true).done;
       expect(provider.synthesize).toHaveBeenCalled();
     });
+
+    test('a cache around a provider without prefetch keeps preloads synthesizing', async () => {
+      // Edge runs behind a CachingProvider on every platform.
+      const { CachingProvider } = await import('@/services/tts/providers/cache');
+      const store = { get: async () => null, put: async () => {} };
+      const provider = makeProvider();
+      const client = await start(new CachingProvider(provider, store));
+      expect(client.getCapabilities().windowedPrefetch).toBe(false);
+      await speak(client, new AbortController().signal, true).done;
+      expect(provider.synthesize).toHaveBeenCalled();
+    });
   });
   describe('downloads', () => {
     test('prefetchSentences hands a section to the provider on the download lane', async () => {

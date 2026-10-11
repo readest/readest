@@ -231,7 +231,7 @@ describe('CachingProvider.prefetch', () => {
     deliver('b');
     await cached;
     const s = signal();
-    provider.prefetch([req('a'), req('b'), req('c')], 'listen', s, { background: true });
+    provider.prefetch!([req('a'), req('b'), req('c')], 'listen', s, { background: true });
     await flush();
     expect(inner.prefetch).toHaveBeenCalledWith([req('a'), req('c')], 'listen', s, {
       background: true,
@@ -242,7 +242,7 @@ describe('CachingProvider.prefetch', () => {
     const { inner, deliver } = windowed();
     const store = new MemoryStore();
     const provider = new CachingProvider(inner, store);
-    provider.prefetch([req('a')], 'download', signal());
+    provider.prefetch!([req('a')], 'download', signal());
     await flush();
     deliver('a');
     await flush();
@@ -253,7 +253,7 @@ describe('CachingProvider.prefetch', () => {
     const { inner } = windowed();
     const provider = new CachingProvider(inner, new MemoryStore());
     const s = signal();
-    provider.prefetch([req('a')], 'listen', s, { background: true });
+    provider.prefetch!([req('a')], 'listen', s, { background: true });
     await flush();
     expect(inner.synthesize).toHaveBeenCalledWith(req('a'), s, { background: true });
   });
@@ -266,7 +266,7 @@ describe('CachingProvider.prefetch', () => {
     deliver('b');
     await cached;
     const onDelivered = vi.fn();
-    provider.prefetch([req('b')], 'listen', signal(), { onDelivered });
+    provider.prefetch!([req('b')], 'listen', signal(), { onDelivered });
     await flush();
     expect(onDelivered).toHaveBeenCalledWith(
       req('b'),
@@ -278,7 +278,7 @@ describe('CachingProvider.prefetch', () => {
   test('a later synthesize joins the prefetch (inner synthesizes once)', async () => {
     const { inner, deliver } = windowed();
     const provider = new CachingProvider(inner, new MemoryStore());
-    provider.prefetch([req('a')], 'listen', signal());
+    provider.prefetch!([req('a')], 'listen', signal());
     await flush();
     const joined = provider.synthesize(req('a'), signal());
     deliver('a');
@@ -292,7 +292,7 @@ describe('CachingProvider.prefetch', () => {
     const { inner } = windowed();
     const provider = new CachingProvider(inner, new MemoryStore());
     void provider.synthesize(req('a'), signal());
-    provider.prefetch([req('a'), req('b')], 'listen', signal());
+    provider.prefetch!([req('a'), req('b')], 'listen', signal());
     await flush();
     expect(vi.mocked(inner.prefetch!).mock.calls[0]![0]).toEqual([req('a'), req('b')]);
     expect(vi.mocked(inner.synthesize).mock.calls.map(([r]) => r.text)).toEqual(['a', 'b']);
@@ -302,18 +302,9 @@ describe('CachingProvider.prefetch', () => {
     const { inner } = windowed();
     Object.assign(inner, { cacheable: false });
     const provider = new CachingProvider(inner, new MemoryStore());
-    provider.prefetch([req('a')], 'listen', signal());
+    provider.prefetch!([req('a')], 'listen', signal());
     await flush();
     expect(inner.prefetch).toHaveBeenCalledWith([req('a')], 'listen', expect.anything(), undefined);
-    expect(inner.synthesize).not.toHaveBeenCalled();
-  });
-
-  test('is a no-op for providers without prefetch', async () => {
-    const inner = makeInner();
-    const store = new MemoryStore();
-    new CachingProvider(inner, store).prefetch([req('a')], 'listen', signal());
-    await flush();
-    expect(store.get).not.toHaveBeenCalled();
     expect(inner.synthesize).not.toHaveBeenCalled();
   });
 
@@ -323,9 +314,15 @@ describe('CachingProvider.prefetch', () => {
       synthesize: vi.fn().mockRejectedValue(new SpeechSynthesisPermanentError('no audio')),
     });
     const provider = new CachingProvider(inner, new MemoryStore());
-    provider.prefetch([req('a')], 'listen', signal());
+    provider.prefetch!([req('a')], 'listen', signal());
     await flush();
     await flush();
     expect(inner.synthesize).toHaveBeenCalledTimes(1);
+  });
+
+  test('offers prefetch only when the inner provider has one', () => {
+    expect(new CachingProvider(makeInner(), new MemoryStore()).prefetch).toBeUndefined();
+    const windowed = makeInner({ prefetch: vi.fn() });
+    expect(new CachingProvider(windowed, new MemoryStore()).prefetch).toBeTypeOf('function');
   });
 });

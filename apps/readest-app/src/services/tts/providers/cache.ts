@@ -78,10 +78,14 @@ export class CachingProvider implements SpeechProvider {
   readonly #inflight = new Map<string, Promise<SpeechSynthesisResult>>();
   readonly #recent = new Map<string, SpeechSynthesisResult>();
   #recentBytes = 0;
+  // Present only for a windowed inner provider: callers feature-detect it to
+  // choose windowed prefetch over synthesizing preloads.
+  readonly prefetch?: SpeechProvider['prefetch'];
 
   constructor(inner: SpeechProvider, store: TTSCacheStore) {
     this.#inner = inner;
     this.#store = store;
+    if (inner.prefetch) this.prefetch = this.#prefetch.bind(this);
   }
 
   get id(): string {
@@ -128,15 +132,14 @@ export class CachingProvider implements SpeechProvider {
     return this.#inner.pickDefaultVoice?.(voices);
   }
 
-  prefetch(
+  #prefetch(
     reqs: SpeechSynthesisRequest[],
     lane: TTSLane,
     signal: AbortSignal,
     options?: PrefetchOptions,
   ): void {
-    if (!this.#inner.prefetch) return;
     if (this.#inner.cacheable === false) {
-      this.#inner.prefetch(reqs, lane, signal, options);
+      this.#inner.prefetch?.(reqs, lane, signal, options);
       return;
     }
     void this.#prefetchUncached(reqs, lane, signal, options);
