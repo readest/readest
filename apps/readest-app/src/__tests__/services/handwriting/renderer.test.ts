@@ -10,6 +10,7 @@ const fakeCtx = () => {
     beginPath: vi.fn(() => calls.push('begin')),
     moveTo: vi.fn(() => calls.push('move')),
     lineTo: vi.fn(() => calls.push('line')),
+    quadraticCurveTo: vi.fn(() => calls.push('curve')),
     stroke: vi.fn(() => calls.push('stroke')),
     arc: vi.fn(() => calls.push('arc')),
     fill: vi.fn(() => calls.push('fill')),
@@ -67,6 +68,35 @@ describe('renderStrokes', () => {
     );
     expect(ctx.moveTo).toHaveBeenCalledWith(500, 1000);
     expect(ctx.lineTo).toHaveBeenCalledWith(1000, 2000);
+  });
+
+  it('draws a smooth curve through the samples, not a polyline', () => {
+    const { ctx, calls } = fakeCtx();
+    const arc: InkStroke['points'] = [
+      [0.1, 0.5],
+      [0.2, 0.4],
+      [0.3, 0.38],
+      [0.4, 0.4],
+      [0.5, 0.5],
+    ];
+    renderStrokes(ctx, [mk('a', arc)], rect);
+    expect(calls.filter((c) => c === 'curve').length).toBeGreaterThanOrEqual(3);
+    // It still starts and ends on the stroke's own endpoints.
+    expect(ctx.moveTo).toHaveBeenCalledWith(100, 1000);
+    expect(ctx.lineTo).toHaveBeenLastCalledWith(500, 1000);
+  });
+
+  it('draws a pressure stroke as smooth pieces too', () => {
+    const { ctx, calls } = fakeCtx();
+    const arc: InkStroke['points'] = [
+      [0.1, 0.5, 0.3],
+      [0.2, 0.4, 0.5],
+      [0.3, 0.38, 0.7],
+      [0.4, 0.4, 0.5],
+      [0.5, 0.5, 0.3],
+    ];
+    renderStrokes(ctx, [mk('a', arc)], rect);
+    expect(calls.filter((c) => c === 'curve').length).toBeGreaterThanOrEqual(3);
   });
 
   it('draws a dot for a single-point stroke', () => {

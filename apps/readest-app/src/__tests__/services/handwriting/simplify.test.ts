@@ -45,14 +45,31 @@ describe('simplifyPoints', () => {
 
   it('keeps pressure on retained samples', () => {
     const points: InkPoint[] = [
-      [0, 0.5, 0.1],
-      [0.5, 0.5, 0.9],
-      [1, 0.5, 0.4],
+      [0, 0.5, 0.4],
+      [0.5, 0.5, 0.45],
+      [1, 0.5, 0.5],
     ];
     expect(simplifyPoints(points)).toEqual([
-      [0, 0.5, 0.1],
-      [1, 0.5, 0.4],
+      [0, 0.5, 0.4],
+      [1, 0.5, 0.5],
     ]);
+  });
+
+  it('keeps the sample where the pressure swells, so the width does too', () => {
+    const points: InkPoint[] = [];
+    for (let i = 0; i <= 20; i++)
+      points.push([i / 20, 0.5, 0.2 + 0.8 * (1 - Math.abs(i - 10) / 10)]);
+    expect(simplifyPoints(points)).toContainEqual([0.5, 0.5, 1]);
+  });
+
+  it('keeps a small handwritten loop round', () => {
+    // A letter-sized loop: radius 0.004 is 4px on a 1000px page.
+    const loop: InkPoint[] = [];
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      loop.push([0.5 + 0.004 * Math.cos(a), 0.5 + 0.004 * Math.sin(a)]);
+    }
+    expect(simplifyPoints(loop).length).toBeGreaterThanOrEqual(12);
   });
 
   it('handles a long stroke without overflowing the stack', () => {

@@ -51,8 +51,16 @@ export interface InkPage {
   updatedAt: number;
 }
 
-/** Squared distance from `p` to segment `a`–`b`. */
-const segDistSq = (p: InkPoint, a: InkPoint, b: InkPoint) => {
+// A sample whose pressure strays this far from the line through its
+// neighbours' pressures is kept, so a stroke's swell survives simplification.
+const PRESSURE_TOLERANCE = 0.05;
+
+/**
+ * How far `p` strays from segment `a`–`b`, relative to the tolerances: its
+ * distance from the segment and its pressure against the pressure
+ * interpolated there. Above 1 means the sample must be kept.
+ */
+const deviation = (p: InkPoint, a: InkPoint, b: InkPoint, tol2: number) => {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
   const len2 = dx * dx + dy * dy;
@@ -60,7 +68,10 @@ const segDistSq = (p: InkPoint, a: InkPoint, b: InkPoint) => {
     len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2));
   const ex = p[0] - (a[0] + t * dx);
   const ey = p[1] - (a[1] + t * dy);
-  return ex * ex + ey * ey;
+  const spatial = (ex * ex + ey * ey) / tol2;
+  if (p[2] === undefined || a[2] === undefined || b[2] === undefined) return spatial;
+  const ep = (p[2] - (a[2] + t * (b[2] - a[2]))) / PRESSURE_TOLERANCE;
+  return Math.max(spatial, ep * ep);
 };
 
 /**
@@ -68,12 +79,13 @@ const segDistSq = (p: InkPoint, a: InkPoint, b: InkPoint) => {
  *
  * Applied as each stroke is committed: pointer input delivers every coalesced
  * sample, so a page of handwriting would otherwise run to tens of thousands of
- * points. Dropping points within `tolerance` (normalized page units; 0.001 is
- * about a pixel on a 1000px page) of the line through their neighbours shrinks
- * the stored ink without a visible change. Endpoints always survive, and
- * pressure is kept on the retained samples.
+ * points. Dropping points within `tolerance` (normalized page units; 0.0002 is
+ * a fifth of a pixel on a 1000px page, small enough to keep a letter's loops
+ * round) of the line through their neighbours shrinks the stored ink without
+ * a visible change. Endpoints always survive, and so does any sample where the
+ * pressure changes, with its pressure.
  */
-export const simplifyPoints = (points: InkPoint[], tolerance = 0.001): InkPoint[] => {
+export const simplifyPoints = (points: InkPoint[], tolerance = 0.0002): InkPoint[] => {
   if (points.length < 3) return points;
   const tol2 = tolerance * tolerance;
   const keep = new Uint8Array(points.length);
@@ -85,9 +97,9 @@ export const simplifyPoints = (points: InkPoint[], tolerance = 0.001): InkPoint[
   while (stack.length > 0) {
     const [start, end] = stack.pop()!;
     let furthest = -1;
-    let furthestDist = tol2;
+    let furthestDist = 1;
     for (let i = start + 1; i < end; i++) {
-      const d = segDistSq(points[i]!, points[start]!, points[end]!);
+      const d = deviation(points[i]!, points[start]!, points[end]!, tol2);
       if (d > furthestDist) {
         furthestDist = d;
         furthest = i;
