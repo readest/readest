@@ -653,7 +653,8 @@ const getPageLayoutStyles = (
 // Paragraph-scoped CSS controlled by the Paragraph section of the Layout
 // panel. Gated by BookStyle.useBookLayout: when true, this chunk is skipped
 // and the book's own paragraph formatting takes over.
-const CJK_LANGS_SELECTOR = ':lang(zh), :lang(ja), :lang(ko)';
+const CJK_LANGS = ['zh', 'ja', 'ko'];
+const CJK_LANG_SELECTOR = CJK_LANGS.map((lang) => `:lang(${lang})`).join(', ');
 const getParagraphLayoutStyles = (
   overrideLayout: boolean,
   paragraphMargin: number,
@@ -772,7 +773,7 @@ const getParagraphLayoutStyles = (
     display: flow-root; 
   }
 
-  ${CJK_LANGS_SELECTOR} {
+  ${CJK_LANG_SELECTOR} {
     widows: 1;
     orphans: 1;
   }
@@ -796,15 +797,18 @@ const getParagraphLayoutStyles = (
   }
 `;
 
-// Zero-specificity twin of the paragraph chunk's CJK widow/orphan lift above.
-// Use Book Layout skips that chunk wholesale, taking the lift with it, so a
-// CJK book wearing the placeholder `en` its conversion tool stamped (#6672)
-// falls back to the UA default of 2 and the page-bottom gap the lift closes
-// comes back. This copy always ships: `:where()` keeps it inert wherever the
-// chunk is present, and under Use Book Layout it still yields to any
-// widows/orphans the book declares, honoring that mode's contract.
+// Zero-specificity fallback for the paragraph chunk's CJK widow/orphan lift
+// above. Use Book Layout skips that chunk wholesale, taking the lift with it,
+// so a CJK book wearing the placeholder `en` its conversion tool stamped
+// (#6672) falls back to the UA default of 2 and the page-bottom gap the lift
+// closes comes back. It is scoped to the section root on purpose: a direct
+// declaration beats an inherited value at any specificity, so an element-wide
+// fallback would stomp widows/orphans the book declares on html or body and
+// expects its paragraphs to inherit. From the root the 1s flow to every
+// paragraph the book says nothing about, while a declaration at any ancestor
+// — or on the paragraph itself — still wins.
 const getCJKLineFlowStyles = () => `
-  :where(${CJK_LANGS_SELECTOR}) {
+  :where(${CJK_LANGS.map((lang) => `html:lang(${lang})`).join(', ')}) {
     widows: 1;
     orphans: 1;
   }
