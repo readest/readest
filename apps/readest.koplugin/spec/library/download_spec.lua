@@ -44,7 +44,7 @@ describe("background book download", function()
             settings = { user_id = "alice" }, download_dir = tmp,
             sync_auth = {
                 withFreshToken = function(_, _, _, cb) cb(true) end,
-                getReadestSyncClient = function() return {
+                getAuthenticatedClient = function() return {
                     getDownloadUrl = function(_, _, cb) cb(true, { downloadUrl = "https://example.test/book" }) end,
                 } end,
             },

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
-import type { PositionResolver } from '@/services/bookorbit/annotationExchange';
+import type { ChapterResolver, PositionResolver } from '@/services/bookorbit/annotationExchange';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { BookOrbitSyncStore } from '@/services/bookorbit/BookOrbitSyncStore';
 import { isBookOrbitPassEnabled, runBookOrbitNotesPass } from '@/services/bookorbit/notesPass';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
+import { findTocItemBS } from '@/services/nav';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -79,6 +80,18 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
       return enriched;
     },
     [bookKey, getBookData, getView],
+  );
+
+  // Resolve a note's chapter label from the book's table of contents. The
+  // local note model stores no chapter, and BookOrbit files the annotation
+  // under the chapter that arrives on the wire, so it is resolved here.
+  const chapterForNote: ChapterResolver = useCallback(
+    (note: BookNote) => {
+      const bookDoc = getBookData(bookKey)?.bookDoc;
+      const toc = bookDoc?.toc ?? [];
+      return findTocItemBS(toc, note.cfi)?.label ?? null;
+    },
+    [bookKey, getBookData],
   );
 
   const resolvePosition: PositionResolver = useCallback(
@@ -191,6 +204,7 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
         mergeNotes,
         resolvePosition,
         populateXPointers,
+        chapterForNote,
         syncNotes: bookorbit.syncNotes,
         syncBookStates: bookorbit.syncBookStates,
         now: () => Date.now(),
@@ -213,7 +227,17 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
     } finally {
       passRunning.current = false;
     }
-  }, [bookKey, client, getBookData, getConfig, mergeNotes, resolvePosition, populateXPointers, _]);
+  }, [
+    bookKey,
+    client,
+    getBookData,
+    getConfig,
+    mergeNotes,
+    resolvePosition,
+    populateXPointers,
+    chapterForNote,
+    _,
+  ]);
 
   const runPassRef = useRef(runPass);
   useEffect(() => {

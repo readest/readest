@@ -338,9 +338,6 @@ msgstr "بررسی به‌روزرسانی"
 msgid "Please login first"
 msgstr "ابتدا وارد شوید"
 
-msgid "Please configure Readest settings first"
-msgstr "ابتدا تنظیمات Readest را پیکربندی کنید"
-
 msgid "(none)"
 msgstr "(هیچ‌کدام)"
 
@@ -506,9 +503,6 @@ msgstr "همگام‌سازی کامل: در حال دریافت تمام یاد
 msgid "Pulling annotations..."
 msgstr "در حال دریافت یادداشت‌ها…"
 
-msgid "Authentication failed, please login again"
-msgstr "احراز هویت ناموفق بود، دوباره وارد شوید"
-
 msgid "Failed to pull annotations"
 msgstr "دریافت یادداشت‌ها ناموفق بود"
 
@@ -520,6 +514,9 @@ msgstr "%1 یادداشت دریافت شد"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "نشست Readest شما منقضی شده است. لطفاً دوباره وارد شوید."
+
+msgid "Authentication failed, please login again"
+msgstr "احراز هویت ناموفق بود، دوباره وارد شوید"
 
 msgid "Login"
 msgstr "ورود"
@@ -566,8 +563,65 @@ msgstr "دریافت پیشرفت مطالعه ناموفق بود"
 msgid "Reading progress synchronized"
 msgstr "پیشرفت مطالعه همگام‌سازی شد"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "موقعیت خواندن ذخیره‌شده را نمی‌توان با این نسخه از کتاب استفاده کرد"
+
 msgid "No saved reading progress found for this book"
 msgstr "پیشرفت مطالعه ذخیره‌شده‌ای برای این کتاب یافت نشد"
+
+msgid "Sync was cancelled."
+msgstr "همگام‌سازی لغو شد."
+
+msgid "The connection timed out. Please try again."
+msgstr "زمان اتصال به پایان رسید. لطفاً دوباره تلاش کنید."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "شبکه در دسترس نیست. لطفاً اتصال اینترنت را بررسی کنید."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "سرور پیدا نشد. لطفاً اتصال اینترنت را بررسی کنید."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "سرور اتصال را رد کرد. لطفاً بعداً دوباره تلاش کنید."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "اتصال قطع شد. لطفاً دوباره تلاش کنید."
+
+msgid "A secure connection to the server could not be established."
+msgstr "برقراری اتصال امن با سرور ممکن نشد."
+
+msgid "Authentication failed. Please log in again."
+msgstr "احراز هویت ناموفق بود. لطفاً دوباره وارد شوید."
+
+msgid "The account changed during sync."
+msgstr "حساب در حین همگام‌سازی تغییر کرد."
+
+msgid "The file was not found in the cloud."
+msgstr "فایل در فضای ابری پیدا نشد."
+
+msgid "The local file is missing."
+msgstr "فایل محلی وجود ندارد."
+
+msgid "An internal error occurred. Please try again."
+msgstr "خطای داخلی رخ داد. لطفاً دوباره تلاش کنید."
+
+msgid "Access denied."
+msgstr "دسترسی رد شد."
+
+msgid "Not found on the server."
+msgstr "در سرور پیدا نشد."
+
+msgid "The file is too large."
+msgstr "فایل بیش از حد بزرگ است."
+
+msgid "Too many requests. Please try again later."
+msgstr "درخواست‌ها بیش از حد زیاد است. لطفاً بعداً دوباره تلاش کنید."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "سرور موقتاً در دسترس نیست. لطفاً بعداً دوباره تلاش کنید."
+
+msgid "The request failed. Please try again."
+msgstr "درخواست ناموفق بود. لطفاً دوباره تلاش کنید."
 
 msgid "Reading statistics are up to date"
 msgstr "آمار مطالعه به‌روز است"

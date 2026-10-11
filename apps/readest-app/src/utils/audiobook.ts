@@ -25,6 +25,26 @@ export const isAbsEbook = (book: {
 }): boolean => book.format === 'ABS' && book.metadata?.absMediaType === 'ebook';
 
 /**
+ * True when a separate audiobook can be paired with the open book: a
+ * reflowable EPUB with a table of contents. Reads the format the document
+ * parsed as, since a book streamed from Audiobookshelf keeps `format: 'ABS'`
+ * whatever file sits behind it.
+ */
+export const canPairAudiobook = (
+  bookData:
+    | {
+        book?: Pick<Book, 'format'> | null;
+        docFormat?: Book['format'];
+        bookDoc?: { rendition?: { layout?: string }; toc?: unknown[] } | null;
+      }
+    | null
+    | undefined,
+): boolean =>
+  (bookData?.docFormat ?? bookData?.book?.format) === 'EPUB' &&
+  bookData?.bookDoc?.rendition?.layout !== 'pre-paginated' &&
+  !!bookData?.bookDoc?.toc?.length;
+
+/**
  * True when an ABS book's media can be downloaded for offline use: audiobooks
  * and ebooks, not podcast shows. Reads both copies of the media type: a
  * metadata edit drops the mirror until the next library sync.

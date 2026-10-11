@@ -180,7 +180,8 @@ export const applyScrollableStyle = (document: Document) => {
     hoistNegativeMargins(el, wrapper, win);
     decideTableFit(wrapper, win);
   };
-  document.querySelectorAll('table').forEach(wrap);
+  // skip the hidden placeholders of a chunked section (foliate-js section-chunks.js)
+  document.querySelectorAll('table:not([data-foliate-chunk])').forEach(wrap);
   document.querySelectorAll('math').forEach((math) => {
     if (isDisplayMath(math, win)) wrap(math);
   });

@@ -338,9 +338,6 @@ msgstr "Sök efter uppdatering"
 msgid "Please login first"
 msgstr "Logga in först"
 
-msgid "Please configure Readest settings first"
-msgstr "Konfigurera Readest-inställningarna först"
-
 msgid "(none)"
 msgstr "(ingen)"
 
@@ -506,9 +503,6 @@ msgstr "Fullständig synkronisering: hämtar alla anteckningar…"
 msgid "Pulling annotations..."
 msgstr "Hämtar anteckningar…"
 
-msgid "Authentication failed, please login again"
-msgstr "Autentisering misslyckades, logga in igen"
-
 msgid "Failed to pull annotations"
 msgstr "Det gick inte att hämta anteckningarna"
 
@@ -520,6 +514,9 @@ msgstr "%1 anteckningar hämtade"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Din Readest-session har gått ut. Logga in igen."
+
+msgid "Authentication failed, please login again"
+msgstr "Autentisering misslyckades, logga in igen"
 
 msgid "Login"
 msgstr "Logga in"
@@ -566,8 +563,65 @@ msgstr "Det gick inte att hämta läsförloppet"
 msgid "Reading progress synchronized"
 msgstr "Läsförloppet synkroniserat"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Den sparade läspositionen kan inte användas med den här kopian av boken"
+
 msgid "No saved reading progress found for this book"
 msgstr "Inget sparat läsförlopp hittades för boken"
+
+msgid "Sync was cancelled."
+msgstr "Synkroniseringen avbröts."
+
+msgid "The connection timed out. Please try again."
+msgstr "Anslutningen överskred tidsgränsen. Försök igen."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Nätverket går inte att nå. Kontrollera internetanslutningen."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Servern hittades inte. Kontrollera internetanslutningen."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Servern nekade anslutningen. Försök igen senare."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Anslutningen avbröts. Försök igen."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Det gick inte att upprätta en säker anslutning till servern."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Autentiseringen misslyckades. Logga in igen."
+
+msgid "The account changed during sync."
+msgstr "Kontot ändrades under synkroniseringen."
+
+msgid "The file was not found in the cloud."
+msgstr "Filen hittades inte i molnet."
+
+msgid "The local file is missing."
+msgstr "Den lokala filen saknas."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Ett internt fel uppstod. Försök igen."
+
+msgid "Access denied."
+msgstr "Åtkomst nekad."
+
+msgid "Not found on the server."
+msgstr "Hittades inte på servern."
+
+msgid "The file is too large."
+msgstr "Filen är för stor."
+
+msgid "Too many requests. Please try again later."
+msgstr "För många förfrågningar. Försök igen senare."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Servern är tillfälligt otillgänglig. Försök igen senare."
+
+msgid "The request failed. Please try again."
+msgstr "Begäran misslyckades. Försök igen."
 
 msgid "Reading statistics are up to date"
 msgstr "Lässtatistiken är uppdaterad"

@@ -45,6 +45,22 @@ describe('applyScrollableStyle', () => {
     expect(wrappers).toHaveLength(2);
   });
 
+  it('leaves the hidden placeholders of a chunked section unwrapped', () => {
+    // A placeholder stands in for a table rendered in another chunk
+    // (foliate-js section-chunks.js); a wrapper around it would be a visible,
+    // empty block, and a blank page at the end of a chunk.
+    document.body.innerHTML = `
+      <div>
+        <table data-foliate-chunk="2"></table>
+        <table><tr><td>Cell</td></tr></table>
+      </div>
+    `;
+    applyScrollableStyle(document);
+    const placeholder = document.querySelector('table[data-foliate-chunk]')!;
+    expect(placeholder.parentElement!.classList.contains(SCROLL_WRAPPER_CLASS)).toBe(false);
+    expect(document.querySelectorAll(`.${SCROLL_WRAPPER_CLASS}`)).toHaveLength(1);
+  });
+
   it('does not double-wrap when applyScrollableStyle runs twice', () => {
     document.body.innerHTML = `
       <div>

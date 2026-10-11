@@ -338,9 +338,6 @@ msgstr "Verificar atualização"
 msgid "Please login first"
 msgstr "Faça login primeiro"
 
-msgid "Please configure Readest settings first"
-msgstr "Configure primeiro as definições do Readest"
-
 msgid "(none)"
 msgstr "(nenhum)"
 
@@ -506,9 +503,6 @@ msgstr "Sincronização completa: obtendo todas as anotações..."
 msgid "Pulling annotations..."
 msgstr "Obtendo anotações..."
 
-msgid "Authentication failed, please login again"
-msgstr "Falha de autenticação, faça login novamente"
-
 msgid "Failed to pull annotations"
 msgstr "Falha ao obter as anotações"
 
@@ -520,6 +514,9 @@ msgstr "%1 anotações obtidas"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Sua sessão do Readest expirou. Faça login novamente."
+
+msgid "Authentication failed, please login again"
+msgstr "Falha de autenticação, faça login novamente"
 
 msgid "Login"
 msgstr "Entrar"
@@ -566,8 +563,65 @@ msgstr "Falha ao obter o progresso de leitura"
 msgid "Reading progress synchronized"
 msgstr "Progresso de leitura sincronizado"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "A posição de leitura salva não pode ser usada com esta cópia do livro"
+
 msgid "No saved reading progress found for this book"
 msgstr "Nenhum progresso de leitura salvo encontrado para este livro"
+
+msgid "Sync was cancelled."
+msgstr "Sincronização cancelada."
+
+msgid "The connection timed out. Please try again."
+msgstr "A conexão expirou. Tente novamente."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "A rede está inacessível. Verifique a conexão com a internet."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "O servidor não foi encontrado. Verifique a conexão com a internet."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "O servidor recusou a conexão. Tente novamente mais tarde."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "A conexão foi interrompida. Tente novamente."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Não foi possível estabelecer uma conexão segura com o servidor."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Falha na autenticação. Faça login novamente."
+
+msgid "The account changed during sync."
+msgstr "A conta mudou durante a sincronização."
+
+msgid "The file was not found in the cloud."
+msgstr "O arquivo não foi encontrado na nuvem."
+
+msgid "The local file is missing."
+msgstr "O arquivo local está ausente."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Ocorreu um erro interno. Tente novamente."
+
+msgid "Access denied."
+msgstr "Acesso negado."
+
+msgid "Not found on the server."
+msgstr "Não encontrado no servidor."
+
+msgid "The file is too large."
+msgstr "O arquivo é grande demais."
+
+msgid "Too many requests. Please try again later."
+msgstr "Muitas solicitações. Tente novamente mais tarde."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "O servidor está temporariamente indisponível. Tente novamente mais tarde."
+
+msgid "The request failed. Please try again."
+msgstr "A solicitação falhou. Tente novamente."
 
 msgid "Reading statistics are up to date"
 msgstr "As estatísticas de leitura estão atualizadas"

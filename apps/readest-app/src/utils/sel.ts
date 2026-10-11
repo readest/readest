@@ -1004,3 +1004,108 @@ export const getTextFromRange = (range: Range, rejectTags: string[] = []): strin
 
   return text;
 };
+
+const BLOCK_DISPLAY = /^(block|flex|grid|flow-root|list-item|table)/;
+
+export interface TextRun {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+}
+
+const isBoldWeight = (weight: string) =>
+  weight === 'bold' || weight === 'bolder' || Number.parseInt(weight, 10) >= 600;
+
+// The selection as the reader sees it, for quote cards (#5830), as runs of
+// bold / italic text: whitespace collapsed the way CSS does, nodes hidden with
+// display: none (a toggled-off translation) and ruby annotations skipped, and a
+// line break at each block boundary or <br>. getTextFromRange keeps raw
+// text-node values, whose source-formatting newlines would read as paragraph
+// breaks.
+export const getRenderedRunsFromRange = (range: Range): TextRun[] => {
+  const doc = range.startContainer.ownerDocument;
+  const win = doc?.defaultView;
+  if (!doc || !win || getPdfTextLayer(range)) {
+    return [{ text: getTextFromRange(range, ['rt']), bold: false, italic: false }];
+  }
+
+  const styleOf = (el: Element) => win.getComputedStyle(el);
+  const blockOf = (node: Node) => {
+    let el = node.parentElement;
+    while (el && !BLOCK_DISPLAY.test(styleOf(el).display)) el = el.parentElement;
+    return el;
+  };
+
+  const runs: TextRun[] = [];
+  let text = '';
+  const append = (value: string, bold: boolean, italic: boolean) => {
+    if (!value) return;
+    text += value;
+    const last = runs.at(-1);
+    if (last && last.bold === bold && last.italic === italic) last.text += value;
+    else runs.push({ text: value, bold, italic });
+  };
+  const lineBreak = () => {
+    const last = runs.at(-1);
+    if (!last) return;
+    const trimmed = last.text.trimEnd();
+    text = text.slice(0, text.length - (last.text.length - trimmed.length)) + '\n';
+    last.text = `${trimmed}\n`;
+  };
+
+  let lastBlock: Element | null | undefined;
+  const addText = (node: Text) => {
+    const parent = node.parentElement;
+    const style = parent ? styleOf(parent) : null;
+    if (style?.visibility === 'hidden') return;
+    const raw = node.nodeValue ?? '';
+    const start = node === range.startContainer ? range.startOffset : 0;
+    const end = node === range.endContainer ? range.endOffset : raw.length;
+    let value = raw.slice(start, end);
+    const block = blockOf(node);
+    if (lastBlock !== undefined && block !== lastBlock && text && !text.endsWith('\n')) {
+      lineBreak();
+    }
+    lastBlock = block;
+    if (!parent?.closest('pre') && !style?.whiteSpace.startsWith('pre')) {
+      value = value.replace(/[\t\n\r ]+/g, ' ');
+      if (!text || /[ \n]$/.test(text)) value = value.replace(/^ /, '');
+    }
+    append(
+      value,
+      !!style && isBoldWeight(style.fontWeight),
+      !!style && /italic|oblique/.test(style.fontStyle),
+    );
+  };
+
+  const root = range.commonAncestorContainer;
+  if (root.nodeType === Node.TEXT_NODE) {
+    addText(root as Text);
+    return runs;
+  }
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      if (!range.intersectsNode(node)) return NodeFilter.FILTER_REJECT;
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as Element;
+        if (/^(rt|rp)$/i.test(el.tagName) || styleOf(el).display === 'none') {
+          return NodeFilter.FILTER_REJECT;
+        }
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (node.nodeType === Node.TEXT_NODE) addText(node as Text);
+    else if ((node as Element).tagName.toLowerCase() === 'br') {
+      const last = runs.at(-1);
+      append('\n', last?.bold ?? false, last?.italic ?? false);
+    }
+  }
+  return runs;
+};
+
+export const getRenderedTextFromRange = (range: Range): string =>
+  getRenderedRunsFromRange(range)
+    .map((run) => run.text)
+    .join('');

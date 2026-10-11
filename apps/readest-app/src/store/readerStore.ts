@@ -213,6 +213,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       const isPseStream = !!book.url && isPseStreamFileName(book.url);
       const isFeed = !!book.url && isFeedBookUrl(book.url);
       let bookDoc = bookData?.bookDoc;
+      let docFormat = bookData?.docFormat;
       let file: File | null = bookData?.file ?? null;
       // Per-book config and the third-party annotation module are pure IO
       // with no dependency on the document load. Kick them off here so their
@@ -265,6 +266,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             widePages: makeWidePages(config),
           }).open();
           bookDoc = doc.book;
+          docFormat = doc.format;
           if (doc.format === 'CBZ') config.widePages = getWidePages(bookDoc.sections);
         }
       }
@@ -347,7 +349,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
 
       const isFixedLayout =
         bookDoc.rendition?.layout === 'pre-paginated' || FIXED_LAYOUT_FORMATS.has(book.format);
-      const newBookData: BookData = { id, book, file, config, bookDoc, isFixedLayout };
+      const newBookData: BookData = { id, book, file, config, bookDoc, docFormat, isFixedLayout };
       useBookDataStore.setState((state) => ({
         booksData: {
           ...state.booksData,

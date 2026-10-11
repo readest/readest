@@ -338,9 +338,6 @@ msgstr "புதுப்பிப்பைச் சரிபார்"
 msgid "Please login first"
 msgstr "முதலில் உள்நுழைக"
 
-msgid "Please configure Readest settings first"
-msgstr "முதலில் Readest அமைப்புகளை உள்ளமைக்கவும்"
-
 msgid "(none)"
 msgstr "(இல்லை)"
 
@@ -506,9 +503,6 @@ msgstr "முழு ஒத்திசைவு: அனைத்து கு�
 msgid "Pulling annotations..."
 msgstr "குறிப்புகள் பெறப்படுகின்றன…"
 
-msgid "Authentication failed, please login again"
-msgstr "அங்கீகாரம் தோல்வி, மீண்டும் உள்நுழைக"
-
 msgid "Failed to pull annotations"
 msgstr "குறிப்புகளைப் பெறுவதில் தோல்வி"
 
@@ -520,6 +514,9 @@ msgstr "%1 குறிப்புகள் பெறப்பட்டன"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "உங்கள் Readest அமர்வு காலாவதியானது. மீண்டும் உள்நுழைக."
+
+msgid "Authentication failed, please login again"
+msgstr "அங்கீகாரம் தோல்வி, மீண்டும் உள்நுழைக"
 
 msgid "Login"
 msgstr "உள்நுழை"
@@ -566,8 +563,65 @@ msgstr "வாசிப்பு முன்னேற்றத்தைப் �
 msgid "Reading progress synchronized"
 msgstr "வாசிப்பு முன்னேற்றம் ஒத்திசைக்கப்பட்டது"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "சேமித்த வாசிப்பு நிலையை இந்தப் புத்தகப் பிரதியுடன் பயன்படுத்த முடியாது"
+
 msgid "No saved reading progress found for this book"
 msgstr "இந்த நூலுக்கான சேமிக்கப்பட்ட வாசிப்பு முன்னேற்றம் இல்லை"
+
+msgid "Sync was cancelled."
+msgstr "ஒத்திசைவு ரத்து செய்யப்பட்டது."
+
+msgid "The connection timed out. Please try again."
+msgstr "இணைப்பு நேரம் முடிந்தது. மீண்டும் முயலவும்."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "நெட்வொர்க்கை அணுக முடியவில்லை. இணைய இணைப்பைச் சரிபார்க்கவும்."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "சேவையகம் கண்டறியப்படவில்லை. இணைய இணைப்பைச் சரிபார்க்கவும்."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "சேவையகம் இணைப்பை மறுத்தது. பின்னர் மீண்டும் முயலவும்."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "இணைப்பு துண்டிக்கப்பட்டது. மீண்டும் முயலவும்."
+
+msgid "A secure connection to the server could not be established."
+msgstr "சேவையகத்துடன் பாதுகாப்பான இணைப்பை ஏற்படுத்த முடியவில்லை."
+
+msgid "Authentication failed. Please log in again."
+msgstr "அங்கீகாரம் தோல்வியடைந்தது. மீண்டும் உள்நுழையவும்."
+
+msgid "The account changed during sync."
+msgstr "ஒத்திசைவின் போது கணக்கு மாறியது."
+
+msgid "The file was not found in the cloud."
+msgstr "கிளவுடில் கோப்பு கண்டறியப்படவில்லை."
+
+msgid "The local file is missing."
+msgstr "உள்ளூர் கோப்பு இல்லை."
+
+msgid "An internal error occurred. Please try again."
+msgstr "உள் பிழை ஏற்பட்டது. மீண்டும் முயலவும்."
+
+msgid "Access denied."
+msgstr "அணுகல் மறுக்கப்பட்டது."
+
+msgid "Not found on the server."
+msgstr "சேவையகத்தில் கண்டறியப்படவில்லை."
+
+msgid "The file is too large."
+msgstr "கோப்பு மிகப் பெரியது."
+
+msgid "Too many requests. Please try again later."
+msgstr "அதிகமான கோரிக்கைகள். பின்னர் மீண்டும் முயலவும்."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "சேவையகம் தற்காலிகமாகக் கிடைக்கவில்லை. பின்னர் மீண்டும் முயலவும்."
+
+msgid "The request failed. Please try again."
+msgstr "கோரிக்கை தோல்வியடைந்தது. மீண்டும் முயலவும்."
 
 msgid "Reading statistics are up to date"
 msgstr "வாசிப்பு புள்ளிவிவரங்கள் புதுப்பித்த நிலையில் உள்ளன"

@@ -338,9 +338,6 @@ msgstr "Проверить обновления"
 msgid "Please login first"
 msgstr "Сначала войдите в систему"
 
-msgid "Please configure Readest settings first"
-msgstr "Сначала настройте параметры Readest"
-
 msgid "(none)"
 msgstr "(нет)"
 
@@ -506,9 +503,6 @@ msgstr "Полная синхронизация: получение всех з�
 msgid "Pulling annotations..."
 msgstr "Получение заметок…"
 
-msgid "Authentication failed, please login again"
-msgstr "Ошибка аутентификации, войдите снова"
-
 msgid "Failed to pull annotations"
 msgstr "Не удалось получить заметки"
 
@@ -520,6 +514,9 @@ msgstr "Получено заметок: %1"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Сеанс Readest истёк. Войдите снова."
+
+msgid "Authentication failed, please login again"
+msgstr "Ошибка аутентификации, войдите снова"
 
 msgid "Login"
 msgstr "Войти"
@@ -566,8 +563,65 @@ msgstr "Не удалось получить прогресс чтения"
 msgid "Reading progress synchronized"
 msgstr "Прогресс чтения синхронизирован"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "Сохранённую позицию чтения нельзя использовать с этой копией книги"
+
 msgid "No saved reading progress found for this book"
 msgstr "Сохранённый прогресс чтения для этой книги не найден"
+
+msgid "Sync was cancelled."
+msgstr "Синхронизация отменена."
+
+msgid "The connection timed out. Please try again."
+msgstr "Время ожидания подключения истекло. Попробуйте снова."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Сеть недоступна. Проверьте подключение к интернету."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "Сервер не найден. Проверьте подключение к интернету."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "Сервер отклонил подключение. Попробуйте позже."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "Подключение прервано. Попробуйте снова."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Не удалось установить защищённое подключение к серверу."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Ошибка аутентификации. Войдите снова."
+
+msgid "The account changed during sync."
+msgstr "Аккаунт изменился во время синхронизации."
+
+msgid "The file was not found in the cloud."
+msgstr "Файл не найден в облаке."
+
+msgid "The local file is missing."
+msgstr "Локальный файл отсутствует."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Произошла внутренняя ошибка. Попробуйте снова."
+
+msgid "Access denied."
+msgstr "Доступ запрещён."
+
+msgid "Not found on the server."
+msgstr "Не найдено на сервере."
+
+msgid "The file is too large."
+msgstr "Файл слишком большой."
+
+msgid "Too many requests. Please try again later."
+msgstr "Слишком много запросов. Попробуйте позже."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "Сервер временно недоступен. Попробуйте позже."
+
+msgid "The request failed. Please try again."
+msgstr "Запрос не выполнен. Попробуйте снова."
 
 msgid "Reading statistics are up to date"
 msgstr "Статистика чтения актуальна"

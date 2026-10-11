@@ -15,8 +15,16 @@ import {
 } from '@/services/send/conversion/conversionWorker';
 import type { DBSendInboxItem } from '@/types/sendRecords';
 
-const DRAIN_INTERVAL_MS = 60_000;
+// Each pass costs an auth check plus the claim RPC on Supabase, even with an
+// empty inbox, so the background poll stays slow; returning to the window
+// drains sooner, throttled to once a minute.
+const DRAIN_INTERVAL_MS = 5 * 60_000;
+const DRAIN_THROTTLE_MS = 60_000;
 const DEVICE_ID_KEY = 'readest-send-device-id';
+
+// Module-level so the throttle survives the library page remounting (e.g.
+// opening a book and coming back), which would otherwise claim again at once.
+let lastDrainAt = 0;
 
 function getDeviceId(): string {
   try {
@@ -33,25 +41,25 @@ function getDeviceId(): string {
 
 /**
  * Background controller that drains the Send to Readest inbox. Mounted once in
- * the library/app shell — runs on app focus and on a 60s interval whenever a
- * user is signed in. Not part of useBooksSync: this does network downloads and
- * CPU-bound conversion that must stay off the throttled cover-sync path.
+ * the library/app shell — runs when the app returns to the foreground and on a
+ * 5-minute interval while visible, whenever a user is signed in. Not part of
+ * useBooksSync: this does network downloads and CPU-bound conversion that must
+ * stay off the throttled cover-sync path.
  */
 export function useInboxDrainer(): void {
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings } = useSettingsStore();
   const runningRef = useRef(false);
-  const lastDrainAtRef = useRef(0);
 
   const runDrain = useCallback(async () => {
     if (!user || !appService || runningRef.current) return;
     // Per-device opt-out: this device does not claim/process inbox items.
     if (!isInboxDrainEnabled()) return;
-    // Throttle: drain (and so claim_inbox_item) at most once per interval, so
-    // the timer and focus events together never poll faster than that.
-    if (Date.now() - lastDrainAtRef.current < DRAIN_INTERVAL_MS) return;
-    lastDrainAtRef.current = Date.now();
+    // Throttle: focus, visibility and remounts fire in bursts, so drain (and so
+    // claim_inbox_item) at most once a minute.
+    if (Date.now() - lastDrainAt < DRAIN_THROTTLE_MS) return;
+    lastDrainAt = Date.now();
     runningRef.current = true;
     try {
       const device = getDeviceId();
@@ -177,12 +185,20 @@ export function useInboxDrainer(): void {
   useEffect(() => {
     if (!user) return;
     void runDrain();
-    const interval = setInterval(() => void runDrain(), DRAIN_INTERVAL_MS);
+    const isVisible = () => document.visibilityState !== 'hidden';
+    const interval = setInterval(() => {
+      if (isVisible()) void runDrain();
+    }, DRAIN_INTERVAL_MS);
     const onFocus = () => void runDrain();
+    const onVisibilityChange = () => {
+      if (isVisible()) void runDrain();
+    };
     window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
       clearInterval(interval);
       window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [user, runDrain]);
 }

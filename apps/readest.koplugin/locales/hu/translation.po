@@ -338,9 +338,6 @@ msgstr "Frissítés keresése"
 msgid "Please login first"
 msgstr "Először jelentkezz be"
 
-msgid "Please configure Readest settings first"
-msgstr "Először állítsd be a Readest paramétereit"
-
 msgid "(none)"
 msgstr "(nincs)"
 
@@ -506,9 +503,6 @@ msgstr "Teljes szinkronizálás: az összes jegyzet lekérése…"
 msgid "Pulling annotations..."
 msgstr "Jegyzetek lekérése…"
 
-msgid "Authentication failed, please login again"
-msgstr "Hitelesítés sikertelen, jelentkezz be újra"
-
 msgid "Failed to pull annotations"
 msgstr "A jegyzetek lekérése sikertelen"
 
@@ -520,6 +514,9 @@ msgstr "%1 jegyzet lekérve"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "A Readest-munkamenet lejárt. Jelentkezz be újra."
+
+msgid "Authentication failed, please login again"
+msgstr "Hitelesítés sikertelen, jelentkezz be újra"
 
 msgid "Login"
 msgstr "Bejelentkezés"
@@ -566,8 +563,65 @@ msgstr "Az olvasási haladás lekérése sikertelen"
 msgid "Reading progress synchronized"
 msgstr "Olvasási haladás szinkronizálva"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "A mentett olvasási pozíció nem használható a könyv ezen példányával"
+
 msgid "No saved reading progress found for this book"
 msgstr "Nem található mentett olvasási haladás ehhez a könyvhöz"
+
+msgid "Sync was cancelled."
+msgstr "A szinkronizálás megszakítva."
+
+msgid "The connection timed out. Please try again."
+msgstr "A kapcsolat időtúllépés miatt megszakadt. Próbálja újra."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "A hálózat nem érhető el. Ellenőrizze az internetkapcsolatot."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "A szerver nem található. Ellenőrizze az internetkapcsolatot."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "A szerver elutasította a kapcsolatot. Próbálja újra később."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "A kapcsolat megszakadt. Próbálja újra."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Nem sikerült biztonságos kapcsolatot létesíteni a szerverrel."
+
+msgid "Authentication failed. Please log in again."
+msgstr "A hitelesítés sikertelen. Jelentkezzen be újra."
+
+msgid "The account changed during sync."
+msgstr "A fiók megváltozott a szinkronizálás közben."
+
+msgid "The file was not found in the cloud."
+msgstr "A fájl nem található a felhőben."
+
+msgid "The local file is missing."
+msgstr "A helyi fájl hiányzik."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Belső hiba történt. Próbálja újra."
+
+msgid "Access denied."
+msgstr "Hozzáférés megtagadva."
+
+msgid "Not found on the server."
+msgstr "Nem található a szerveren."
+
+msgid "The file is too large."
+msgstr "A fájl túl nagy."
+
+msgid "Too many requests. Please try again later."
+msgstr "Túl sok kérés. Próbálja újra később."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "A szerver átmenetileg nem érhető el. Próbálja újra később."
+
+msgid "The request failed. Please try again."
+msgstr "A kérés sikertelen. Próbálja újra."
 
 msgid "Reading statistics are up to date"
 msgstr "Az olvasási statisztikák naprakészek"

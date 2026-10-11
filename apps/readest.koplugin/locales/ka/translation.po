@@ -338,9 +338,6 @@ msgstr "განახლების შემოწმება"
 msgid "Please login first"
 msgstr "ჯერ შედით ანგარიშში"
 
-msgid "Please configure Readest settings first"
-msgstr "ჯერ გამართეთ Readest-ის პარამეტრები"
-
 msgid "(none)"
 msgstr "(არცერთი)"
 
@@ -506,9 +503,6 @@ msgstr "სრული სინქრონიზაცია: ყველა
 msgid "Pulling annotations..."
 msgstr "ანოტაციები ჩამოიტვირთება..."
 
-msgid "Authentication failed, please login again"
-msgstr "ავთენტიფიკაცია ვერ მოხერხდა, ხელახლა შედით ანგარიშში"
-
 msgid "Failed to pull annotations"
 msgstr "ანოტაციების ჩამოტვირთვა ვერ მოხერხდა"
 
@@ -520,6 +514,9 @@ msgstr "ჩამოიტვირთა %1 ანოტაცია"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Readest-ის სესიას ვადა გაუვიდა. ხელახლა შედით ანგარიშში."
+
+msgid "Authentication failed, please login again"
+msgstr "ავთენტიფიკაცია ვერ მოხერხდა, ხელახლა შედით ანგარიშში"
 
 msgid "Login"
 msgstr "შესვლა"
@@ -566,8 +563,65 @@ msgstr "კითხვის პროგრესის ჩამოტვი�
 msgid "Reading progress synchronized"
 msgstr "კითხვის პროგრესი სინქრონიზებულია"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "შენახული კითხვის პოზიციის გამოყენება წიგნის ამ ასლთან შეუძლებელია"
+
 msgid "No saved reading progress found for this book"
 msgstr "ამ წიგნისთვის შენახული კითხვის პროგრესი ვერ მოიძებნა"
+
+msgid "Sync was cancelled."
+msgstr "სინქრონიზაცია გაუქმდა."
+
+msgid "The connection timed out. Please try again."
+msgstr "კავშირის დრო ამოიწურა. სცადეთ ხელახლა."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "ქსელი მიუწვდომელია. შეამოწმეთ ინტერნეტ-კავშირი."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "სერვერი ვერ მოიძებნა. შეამოწმეთ ინტერნეტ-კავშირი."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "სერვერმა კავშირი უარყო. სცადეთ მოგვიანებით."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "კავშირი შეწყდა. სცადეთ ხელახლა."
+
+msgid "A secure connection to the server could not be established."
+msgstr "სერვერთან დაცული კავშირის დამყარება ვერ მოხერხდა."
+
+msgid "Authentication failed. Please log in again."
+msgstr "ავთენტიფიკაცია ვერ მოხერხდა. გთხოვთ, ხელახლა შეხვიდეთ."
+
+msgid "The account changed during sync."
+msgstr "სინქრონიზაციისას ანგარიში შეიცვალა."
+
+msgid "The file was not found in the cloud."
+msgstr "ფაილი ღრუბელში ვერ მოიძებნა."
+
+msgid "The local file is missing."
+msgstr "ლოკალური ფაილი აკლია."
+
+msgid "An internal error occurred. Please try again."
+msgstr "მოხდა შიდა შეცდომა. სცადეთ ხელახლა."
+
+msgid "Access denied."
+msgstr "წვდომა აკრძალულია."
+
+msgid "Not found on the server."
+msgstr "სერვერზე ვერ მოიძებნა."
+
+msgid "The file is too large."
+msgstr "ფაილი ძალიან დიდია."
+
+msgid "Too many requests. Please try again later."
+msgstr "ძალიან ბევრი მოთხოვნაა. სცადეთ მოგვიანებით."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "სერვერი დროებით მიუწვდომელია. სცადეთ მოგვიანებით."
+
+msgid "The request failed. Please try again."
+msgstr "მოთხოვნა ვერ შესრულდა. სცადეთ ხელახლა."
 
 msgid "Reading statistics are up to date"
 msgstr "კითხვის სტატისტიკა განახლებულია"

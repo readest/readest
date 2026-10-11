@@ -13,6 +13,32 @@ const books: Book[] = Array.from({ length: 30 }, (_, index) => ({
   updatedAt: index,
 }));
 describe('bookshelf presentation parity', () => {
+  it.each([
+    true,
+    false,
+  ])('naturally interleaves numbered groups and titles (ascending: %s)', (ascending) => {
+    const numberedBooks: Book[] = [12, 1, 22, 3].map((index) => ({
+      ...books[0]!,
+      hash: `${index}`,
+      title: `Volume ${index}`,
+      groupName: index === 3 || index === 12 ? `Volume ${index}` : undefined,
+    }));
+    const expected = ['Volume 1', 'Volume 3', 'Volume 12', 'Volume 22'];
+    for (const layout of ['grid', 'list', 'carousel'] as const) {
+      const definition = {
+        ...createBookshelf('', 'default'),
+        layout,
+        sort: { by: 'title' as const, ascending, thenBy: 'none' as const, thenAscending: true },
+      };
+      const result = evaluateBookshelves(numberedBooks, [definition], 'en')[0]!;
+      const presented = presentBookshelf(result, { libraryGroupBy: 'group' }, 'en');
+
+      expect(presented.map((item) => ('books' in item ? item.name : item.title))).toEqual(
+        ascending ? expected : [...expected].reverse(),
+      );
+    }
+  });
+
   it('applies global grouping to every shelf and layout while retaining all books', () => {
     for (const layout of ['grid', 'list', 'carousel'] as const) {
       const definition = { ...createBookshelf('', 'default'), layout };

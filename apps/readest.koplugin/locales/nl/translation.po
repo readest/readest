@@ -338,9 +338,6 @@ msgstr "Controleer op update"
 msgid "Please login first"
 msgstr "Meld eerst aan"
 
-msgid "Please configure Readest settings first"
-msgstr "Configureer eerst de Readest-instellingen"
-
 msgid "(none)"
 msgstr "(geen)"
 
@@ -506,9 +503,6 @@ msgstr "Volledige synchronisatie: alle aantekeningen worden opgehaald…"
 msgid "Pulling annotations..."
 msgstr "Aantekeningen worden opgehaald…"
 
-msgid "Authentication failed, please login again"
-msgstr "Authenticatie mislukt, meld opnieuw aan"
-
 msgid "Failed to pull annotations"
 msgstr "Aantekeningen ophalen mislukt"
 
@@ -520,6 +514,9 @@ msgstr "%1 aantekeningen opgehaald"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "Je Readest-sessie is verlopen. Meld je opnieuw aan."
+
+msgid "Authentication failed, please login again"
+msgstr "Authenticatie mislukt, meld opnieuw aan"
 
 msgid "Login"
 msgstr "Aanmelden"
@@ -566,8 +563,65 @@ msgstr "Leesvoortgang ophalen mislukt"
 msgid "Reading progress synchronized"
 msgstr "Leesvoortgang gesynchroniseerd"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "De opgeslagen leespositie kan niet worden gebruikt met dit exemplaar van het boek"
+
 msgid "No saved reading progress found for this book"
 msgstr "Geen opgeslagen leesvoortgang gevonden voor dit boek"
+
+msgid "Sync was cancelled."
+msgstr "Synchronisatie geannuleerd."
+
+msgid "The connection timed out. Please try again."
+msgstr "Er is een time-out opgetreden bij de verbinding. Probeer het opnieuw."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "Het netwerk is onbereikbaar. Controleer de internetverbinding."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "De server kan niet worden gevonden. Controleer de internetverbinding."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "De server heeft de verbinding geweigerd. Probeer het later opnieuw."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "De verbinding is onderbroken. Probeer het opnieuw."
+
+msgid "A secure connection to the server could not be established."
+msgstr "Er kon geen beveiligde verbinding met de server worden gemaakt."
+
+msgid "Authentication failed. Please log in again."
+msgstr "Authenticatie mislukt. Log opnieuw in."
+
+msgid "The account changed during sync."
+msgstr "Het account is tijdens de synchronisatie gewijzigd."
+
+msgid "The file was not found in the cloud."
+msgstr "Het bestand is niet gevonden in de cloud."
+
+msgid "The local file is missing."
+msgstr "Het lokale bestand ontbreekt."
+
+msgid "An internal error occurred. Please try again."
+msgstr "Er is een interne fout opgetreden. Probeer het opnieuw."
+
+msgid "Access denied."
+msgstr "Toegang geweigerd."
+
+msgid "Not found on the server."
+msgstr "Niet gevonden op de server."
+
+msgid "The file is too large."
+msgstr "Het bestand is te groot."
+
+msgid "Too many requests. Please try again later."
+msgstr "Te veel verzoeken. Probeer het later opnieuw."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "De server is tijdelijk niet beschikbaar. Probeer het later opnieuw."
+
+msgid "The request failed. Please try again."
+msgstr "Het verzoek is mislukt. Probeer het opnieuw."
 
 msgid "Reading statistics are up to date"
 msgstr "Leesstatistieken zijn up-to-date"

@@ -45,6 +45,7 @@ import {
   getRangeRectInWebview,
   getRangeTextStyleInWebview,
   getTextFromRange,
+  getRenderedRunsFromRange,
 } from '@/utils/sel';
 import { getPopupBounds, offsetPosition } from '@/utils/insets';
 import { eventDispatcher } from '@/utils/event';
@@ -62,7 +63,7 @@ import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount, isSingleLookupTerm } from '@/utils/word';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
-import { buildAnnotationUrl } from '@/utils/deeplink';
+import { AnnotationLinkType, buildAnnotationUrl } from '@/utils/deeplink';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { canShareText, shareSelectedText } from '@/utils/share';
 import {
@@ -102,6 +103,10 @@ import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
+import QuoteCardDialog from './QuoteCardDialog';
+import type { QuoteCardColors, QuoteCardFont } from '@/utils/quoteCard';
+import { getFontFamilies } from '@/utils/style';
+import type { QuoteCardContent } from '@/utils/quoteCardRenderer';
 import ImportAnnotationsDialog from './ImportAnnotationsDialog';
 import Alert from '@/components/Alert';
 import ModalPortal from '@/components/ModalPortal';
@@ -136,7 +141,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const { envConfig, appService } = useEnv();
   const { settings, setSettingsDialogBookKey, setSettingsDialogOpen, setActiveSettingsItemId } =
     useSettingsStore();
-  const { isDarkMode, isIPhoneDuo } = useThemeStore();
+  const { isDarkMode, isIPhoneDuo, themeCode } = useThemeStore();
   // Per-field selectors — see store/readerProgressStore.ts header for the
   // "destructure-subscribes-the-whole-store" rationale.
   const getConfig = useBookDataStore((s) => s.getConfig);
@@ -209,6 +214,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const [editingAnnotation, setEditingAnnotation] = useState<BookNote | null>(null);
   const [externalDragPoint, setExternalDragPoint] = useState<Point | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [quoteCard, setQuoteCard] = useState<{
+    content: QuoteCardContent;
+    readerColors: QuoteCardColors;
+    fontFamilies: Record<QuoteCardFont, string>;
+    defaultFont: QuoteCardFont;
+  } | null>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importingAnnotations, setImportingAnnotations] = useState(false);
   // "Clear Annotations" confirm dialog. Hosted here (and not in BookMenu)
@@ -1460,17 +1471,25 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // sidebar notebook (#5452). When no note is anchored here yet the link still
   // points at the position — resolution keys off the cfi, the note id is only
   // required to be present.
-  const handleCopyLink = () => {
-    if (!selection) return;
+  // A link to the selected passage, or null for a selection without a CFI
+  // (synthesized footnote text).
+  const getSelectionLink = (linkType: AnnotationLinkType): string | null => {
+    if (!selection) return null;
     const cfi =
       selection.cfi || (selection.popup ? null : view?.getCFI(selection.index, selection.range));
-    if (!cfi) return;
+    if (!cfi) return null;
     const noteId = config.booknotes?.find((note) => note.cfi === cfi && !note.deletedAt)?.id;
-    const linkType = viewSettings.noteExportConfig?.linkType ?? DEFAULT_NOTE_EXPORT_CONFIG.linkType;
-    const url = buildAnnotationUrl(
+    return buildAnnotationUrl(
       { bookHash: bookKey.split('-')[0]!, noteId: noteId ?? uniqueId(), cfi },
       linkType,
     );
+  };
+
+  const handleCopyLink = () => {
+    const url = getSelectionLink(
+      viewSettings.noteExportConfig?.linkType ?? DEFAULT_NOTE_EXPORT_CONFIG.linkType,
+    );
+    if (!url) return;
     void writeTextToClipboard(url);
     eventDispatcher.dispatch('toast', {
       type: 'info',
@@ -1492,6 +1511,53 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       : undefined;
     void shareSelectedText(selection.text, position, appService);
     handleDismissPopupAndSelection();
+  };
+
+  const handleQuoteCard = async () => {
+    if (!selection?.text) return;
+    // The card shows the passage as rendered, without hidden translations or
+    // the source's formatting newlines.
+    const runs = getRenderedRunsFromRange(selection.range);
+    const rendered = runs
+      .map((run) => run.text)
+      .join('')
+      .trim();
+    const text = rendered || selection.text;
+    // Cameras open the HTTPS form; App Links hand it to an installed app.
+    const qrUrl = getSelectionLink('web') ?? undefined;
+    const { book } = bookData;
+    handleDismissPopupAndSelection();
+    let coverUrl: string | undefined;
+    try {
+      // A blob URL is same-origin, so drawing it doesn't taint the canvas.
+      if (book && appService) coverUrl = await appService.getCoverImageBlobUrl(book);
+    } catch {
+      // No local cover: the card is drawn without one.
+    }
+    setQuoteCard({
+      content: {
+        text,
+        title: book?.title,
+        author: book?.author,
+        chapter: progress?.sectionLabel,
+        date: new Date().toLocaleDateString(getLocale(), {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+        runs: rendered ? runs : undefined,
+        coverUrl,
+        qrUrl,
+      },
+      readerColors: { bg: themeCode.bg, fg: themeCode.fg, accent: themeCode.primary },
+      fontFamilies: getFontFamilies(viewSettings),
+      defaultFont: viewSettings.defaultFont?.toLowerCase() === 'serif' ? 'serif' : 'sans',
+    });
+  };
+
+  const handleCloseQuoteCard = () => {
+    if (quoteCard?.content.coverUrl) URL.revokeObjectURL(quoteCard.content.coverUrl);
+    setQuoteCard(null);
   };
 
   // Returns the brand-new highlight records (one per page of a cross-page
@@ -2511,6 +2577,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         };
       case 'share':
         return { tooltipText: _(label), Icon, onClick: handleShare };
+      case 'quotecard':
+        return { tooltipText: _(label), Icon, onClick: () => void handleQuoteCard() };
       default:
         return null;
     }
@@ -2721,6 +2789,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           noteAutoTurnPoint={noteAutoTurnPoint}
           cancelAutoTurn={cancelAutoTurn}
           onAutoTurn={onAutoTurn}
+        />
+      )}
+      {quoteCard && (
+        <QuoteCardDialog
+          isOpen
+          content={quoteCard.content}
+          readerColors={quoteCard.readerColors}
+          fontFamilies={quoteCard.fontFamilies}
+          defaultFont={quoteCard.defaultFont}
+          onClose={handleCloseQuoteCard}
         />
       )}
       {showExportDialog && exportData && bookData.book && (

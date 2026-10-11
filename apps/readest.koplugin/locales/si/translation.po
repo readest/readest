@@ -338,9 +338,6 @@ msgstr "යාවත්කාලීන කිරීම පරීක්ෂා ක
 msgid "Please login first"
 msgstr "කරුණාකර මුලින්ම පිවිසෙන්න"
 
-msgid "Please configure Readest settings first"
-msgstr "කරුණාකර මුලින්ම Readest සැකසුම් වින්‍යාස කරන්න"
-
 msgid "(none)"
 msgstr "(කිසිවක් නැත)"
 
@@ -506,9 +503,6 @@ msgstr "සම්පූර්ණ සමමුහූර්තකරණය: සි
 msgid "Pulling annotations..."
 msgstr "සටහන් ලබාගනිමින්…"
 
-msgid "Authentication failed, please login again"
-msgstr "සත්‍යාපනය අසාර්ථකයි, කරුණාකර නැවත පිවිසෙන්න"
-
 msgid "Failed to pull annotations"
 msgstr "සටහන් ලබාගැනීම අසාර්ථකයි"
 
@@ -520,6 +514,9 @@ msgstr "%1 සටහන් ලබා ගන්නා ලදී"
 
 msgid "Your Readest session has expired. Please log in again."
 msgstr "ඔබගේ Readest සැසිය කල් ඉකුත් වී ඇත. කරුණාකර නැවත පිවිසෙන්න."
+
+msgid "Authentication failed, please login again"
+msgstr "සත්‍යාපනය අසාර්ථකයි, කරුණාකර නැවත පිවිසෙන්න"
 
 msgid "Login"
 msgstr "පිවිසෙන්න"
@@ -566,8 +563,65 @@ msgstr "කියවීමේ ප්‍රගතිය ලබාගැනීම 
 msgid "Reading progress synchronized"
 msgstr "කියවීමේ ප්‍රගතිය සමමුහූර්ත විය"
 
+msgid "Saved reading position cannot be used with this copy of the book"
+msgstr "සුරැකි කියවීමේ ස්ථානය මෙම පොතේ පිටපත සමඟ භාවිත කළ නොහැක"
+
 msgid "No saved reading progress found for this book"
 msgstr "මෙම පොත සඳහා සුරකින ලද කියවීමේ ප්‍රගතියක් හමු නොවුණි"
+
+msgid "Sync was cancelled."
+msgstr "සමමුහුර්තකරණය අවලංගු කරන ලදී."
+
+msgid "The connection timed out. Please try again."
+msgstr "සම්බන්ධතාවයේ කාලය ඉක්මවිය. නැවත උත්සාහ කරන්න."
+
+msgid "The network is unreachable. Please check the internet connection."
+msgstr "ජාලයට ළඟා විය නොහැක. අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කරන්න."
+
+msgid "The server could not be found. Please check the internet connection."
+msgstr "සේවාදායකය සොයාගත නොහැක. අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කරන්න."
+
+msgid "The server refused the connection. Please try again later."
+msgstr "සේවාදායකය සම්බන්ධතාවය ප්‍රතික්ෂේප කළේය. පසුව නැවත උත්සාහ කරන්න."
+
+msgid "The connection was interrupted. Please try again."
+msgstr "සම්බන්ධතාවය බාධා විය. නැවත උත්සාහ කරන්න."
+
+msgid "A secure connection to the server could not be established."
+msgstr "සේවාදායකය සමඟ ආරක්ෂිත සම්බන්ධතාවයක් ඇති කළ නොහැකි විය."
+
+msgid "Authentication failed. Please log in again."
+msgstr "සත්‍යාපනය අසාර්ථක විය. නැවත පිවිසෙන්න."
+
+msgid "The account changed during sync."
+msgstr "සමමුහුර්තකරණය අතරතුර ගිණුම වෙනස් විය."
+
+msgid "The file was not found in the cloud."
+msgstr "වලාකුළේ ගොනුව සොයාගත නොහැක."
+
+msgid "The local file is missing."
+msgstr "දේශීය ගොනුව නොමැත."
+
+msgid "An internal error occurred. Please try again."
+msgstr "අභ්‍යන්තර දෝෂයක් ඇති විය. නැවත උත්සාහ කරන්න."
+
+msgid "Access denied."
+msgstr "ප්‍රවේශය ප්‍රතික්ෂේප විය."
+
+msgid "Not found on the server."
+msgstr "සේවාදායකයේ සොයාගත නොහැක."
+
+msgid "The file is too large."
+msgstr "ගොනුව ඉතා විශාලය."
+
+msgid "Too many requests. Please try again later."
+msgstr "ඉල්ලීම් වැඩිය. පසුව නැවත උත්සාහ කරන්න."
+
+msgid "The server is temporarily unavailable. Please try again later."
+msgstr "සේවාදායකය තාවකාලිකව නොමැත. පසුව නැවත උත්සාහ කරන්න."
+
+msgid "The request failed. Please try again."
+msgstr "ඉල්ලීම අසාර්ථක විය. නැවත උත්සාහ කරන්න."
 
 msgid "Reading statistics are up to date"
 msgstr "කියවීමේ සංඛ්‍යාලේඛන යාවත්කාලීනයි"

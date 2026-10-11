@@ -81,6 +81,20 @@ export const getBaseFontFamily = (viewSettings: ViewSettings): string => {
 };
 
 /**
+ * Both body font chains from the user's font settings, for top-level UI that
+ * offers a serif / sans-serif choice (the quote card).
+ */
+export const getFontFamilies = (viewSettings: ViewSettings) => {
+  const families = buildFontFamilyLists(
+    viewSettings.serifFont!,
+    viewSettings.sansSerifFont!,
+    viewSettings.monospaceFont!,
+    viewSettings.defaultCJKFont!,
+  );
+  return { serif: families.serif, sans: families.sansSerif };
+};
+
+/**
  * The body font size, in CSS px, that the reader applies to the book, for
  * top-level UI that shows book text outside the iframe.
  */
@@ -1729,7 +1743,9 @@ export const keepTextAlignment = (document: Document) => {
   // Two-phase read-then-write keeps the loop O(N) elements + 1 recalc
   // instead of O(N) recalcs.
   const win = document.defaultView ?? window;
-  const els = document.querySelectorAll('div, p, blockquote, dd');
+  // A chunk of a huge section (foliate-js section-chunks.js) holds a hidden
+  // placeholder for every element outside it; never read those.
+  const els = document.querySelectorAll(':is(div, p, blockquote, dd):not([data-foliate-chunk])');
   const alignClasses = new Array<string | null>(els.length);
   // Read pass: collect computed text-align for every element. The browser
   // computes style once for the whole document on the first call, then

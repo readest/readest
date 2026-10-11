@@ -26,7 +26,7 @@ import { clearLibrarySearchHistory, loadLibrarySearchHistory } from './utils/sea
 import type { LibrarySearchTarget } from '@/types/book';
 import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
 import { splitLibraryOpenIds } from '@/utils/audiobook';
-import { listFormater } from '@/utils/book';
+import { listFormater, markBookDeleted } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
 import { saveBookMetadataEdit } from '@/services/bookMetadataEdit';
@@ -1202,20 +1202,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         if (deleteAction === 'local' || deleteAction === 'both' || deleteAction === 'purge') {
           await appService?.deleteBook(book, deleteAction === 'purge' ? 'purge' : 'local');
           if (deleteAction === 'both' || deleteAction === 'purge') {
-            const deletedAt = Date.now();
-            book.deletedAt = deletedAt;
-            // A library tombstone alone is not permission to destroy bytes on
-            // a third-party file mirror. Bind the explicit cloud-and-device
-            // intent to this exact tombstone so the file-sync engine can
-            // distinguish it from a local-only or indirectly-created delete
-            // (#5695, the third recurrence of #5084).
-            book.fileSyncDeletionRequestedAt = deletedAt;
-            book.downloadedAt = null;
-            book.coverDownloadedAt = null;
-            // The row's progress survives the tombstone and comes back on a
-            // re-import; null (not undefined, which JSON drops) clears it in
-            // the cloud too (#6532).
-            if (deleteAction === 'purge') book.progress = null;
+            // The tombstone also bumps `updatedAt`, so it outranks the row's
+            // own older page-turn progress in the whole-row sync merge — see
+            // markBookDeleted for what broke without that (#6663).
+            markBookDeleted(book, Date.now(), deleteAction === 'purge');
           } else {
             // "Remove from Device Only" must never leave stale authorization
             // from an older delete/re-import cycle on the live row.

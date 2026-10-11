@@ -18,6 +18,9 @@ import type {
 /** Returns the KOReader identity datetime for a note. */
 export type IdentityResolver = (note: BookNote) => string;
 
+/** Returns the note's chapter label, or null when the TOC has none. */
+export type ChapterResolver = (note: BookNote) => string | null;
+
 export interface BuiltExchange {
   request: ExchangeBookRequest;
   keyToNote: Map<string, BookNote>;
@@ -32,11 +35,14 @@ const liveAnnotations = (notes: BookNote[]): BookNote[] =>
  * Builds one book's exchange request: the complete identity key list of live
  * annotations (tombstones are omitted so the server detects device deletions)
  * plus the changes that crossed the watermark since the last successful pass.
+ * Each pushed change carries its TOC label so other BookOrbit clients can file
+ * it under the same chapter as their natively created annotations.
  */
 export const buildAnnotationExchangeBook = (
   hash: string,
   notes: BookNote[],
   identityOf: IdentityResolver,
+  chapterForNote: ChapterResolver,
   watermark: number,
   maxChanges = MAX_CHANGES_PER_REQUEST,
 ): BuiltExchange => {
@@ -52,7 +58,7 @@ export const buildAnnotationExchangeBook = (
   const changes = live
     .filter((note) => note.createdAt > watermark || note.updatedAt > watermark)
     .slice(0, maxChanges)
-    .map((note) => noteToKoAnnotation(note, identityOf(note)))
+    .map((note) => noteToKoAnnotation(note, identityOf(note), chapterForNote(note)))
     .filter((annotation): annotation is KoAnnotation => annotation !== null);
   return { request: { hash, keys, keysComplete: true, changes }, keyToNote };
 };

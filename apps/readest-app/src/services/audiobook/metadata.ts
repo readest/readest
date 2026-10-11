@@ -2,7 +2,6 @@ import type { IChapter } from 'music-metadata';
 
 import type { AudiobookChapter } from '@/types/book';
 import { getBaseFilename } from '@/utils/path';
-import { readMp4Chapters } from './mp4Chapters';
 
 type ChapterSource = Pick<IChapter, 'title' | 'start' | 'end' | 'timeScale'>;
 
@@ -79,22 +78,11 @@ export const parseAudiobookFile = async (
     throw new Error(`Could not determine the duration of ${file.name}`);
   }
 
-  let sourceChapters: ChapterSource[] = metadata.format.chapters ?? [];
-  if (!sourceChapters.length) {
-    // music-metadata misses MP4 chapters when moov follows the audio, and
-    // never reads Nero chapters; see mp4Chapters.ts.
-    sourceChapters = await readMp4Chapters(file).catch((error) => {
-      console.warn(`Failed to read MP4 chapters from ${file.name}:`, error);
-      return [];
-    });
-  }
-  // The embedded title names the single chapter only when no chapter list
-  // survived, so a file whose chapters are all rejected keeps its title.
   const chapters = buildAudiobookChapters(
     fileId,
     file.name,
     duration,
-    sourceChapters,
+    metadata.format.chapters ?? [],
     metadata.common.title,
   );
 

@@ -66,9 +66,28 @@ export const styleForDrawer = (drawer: string): HighlightStyle => {
   return 'highlight';
 };
 
+/**
+ * BookOrbit validates `chapter` with @MaxLength(500) (KoreaderAnnotationDto);
+ * the annotation and bookmark exchanges both carry the field, so both cap it.
+ */
+const MAX_CHAPTER_LENGTH = 500;
+
+/**
+ * Normalizes a TOC label for the wire. BookOrbit stores the received value and
+ * lists its chapters by `chapter_title IS NOT NULL`, so an empty label has to
+ * be sent as no chapter at all. An over-long label is truncated because the
+ * validation pipe rejects the whole exchange request for that book, and the
+ * per-book watermark only advances after a clean pass.
+ */
+export const normalizeKoChapter = (label?: string | null): string | undefined => {
+  if (!label) return undefined;
+  return label.slice(0, MAX_CHAPTER_LENGTH);
+};
+
 export const noteToKoAnnotation = (
   note: BookNote,
   identityDatetime: string,
+  chapter?: string | null,
 ): KoAnnotation | null => {
   if (!note.xpointer0) return null;
   const ann: KoAnnotation = {
@@ -83,6 +102,8 @@ export const noteToKoAnnotation = (
   if (color) ann.color = color;
   if (note.text) ann.text = note.text;
   if (note.note) ann.note = note.note;
+  const chapterLabel = normalizeKoChapter(chapter);
+  if (chapterLabel) ann.chapter = chapterLabel;
   return ann;
 };
 
