@@ -1,6 +1,5 @@
 import type { TTSLane } from '@/services/tts/providers/types';
-import { getDispatcher } from './bindings';
-import type { SlotResult } from './dispatchQueue';
+import { type AdmissionResult, getDispatcher } from './bindings';
 
 // Admission of Readest Voice windows through the TTSDispatcher Durable Object
 // (worker.ts, scheduling in dispatchQueue.ts): one global queue that runs at
@@ -9,23 +8,24 @@ import type { SlotResult } from './dispatchQueue';
 // dev, self-hosting) or a failed call admits the window, and the RunPod
 // max-workers cap plus the account spend limit stay the hard ceiling.
 
-export type { SlotResult, TTSLane };
+export type { AdmissionResult, TTSLane };
 
 // Matches the route's window deadline: a slot never outlives its request.
 export const SLOT_TTL_SECONDS = 180;
 // Longer than a window usually runs, shorter than proxies wait for a reply.
 export const SLOT_WAIT_SECONDS = 60;
 
-const ADMITTED: SlotResult = { acquired: true, previousJobId: null };
+const ADMITTED: AdmissionResult = { acquired: true, previousJobId: null, pendingChars: 0 };
 
 // Resolves once the window may start (possibly after waiting its turn), or
 // with acquired false when it was refused, timed out or withdrawn.
+// pendingChars: the user's unfinished download jobs, to count against quota.
 export const acquireSlot = async (
   userId: string,
   clientId: string,
   lane: TTSLane,
   token: string,
-): Promise<SlotResult> => {
+): Promise<AdmissionResult> => {
   const dispatcher = getDispatcher();
   if (!dispatcher) return ADMITTED;
   try {

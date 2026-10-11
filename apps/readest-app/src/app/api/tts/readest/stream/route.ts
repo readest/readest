@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (slot.acquired) runAfterResponse(releaseSlot(token));
     return errorResponse('CANCELLED', 499);
   }
-  if (used + windowChars > getTTSQuota(plan)) {
+  if (used + slot.pendingChars + windowChars > getTTSQuota(plan)) {
     if (slot.acquired) runAfterResponse(releaseSlot(token));
     return errorResponse('DAILY_QUOTA_EXCEEDED', 429);
   }

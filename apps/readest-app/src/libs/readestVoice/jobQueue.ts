@@ -106,17 +106,14 @@ export class JobQueue {
     if (existing?.userId === fields.userId && !['failed', 'cancelled'].includes(existing.state)) {
       return { ok: true, state: existing.state };
     }
-    const unfinished = [...this.#jobs.values()].filter(
-      (job) => job.userId === fields.userId && (job.state === 'queued' || job.state === 'leased'),
+    const queued = [...this.#jobs.values()].filter(
+      (job) => job.userId === fields.userId && job.state === 'queued',
     );
-    if (
-      unfinished.filter((job) => job.state === 'queued').length >= this.options.maxQueuedPerUser
-    ) {
-      return { ok: false, error: 'BUSY' };
-    }
+    if (queued.length >= this.options.maxQueuedPerUser) return { ok: false, error: 'BUSY' };
     const chars = fields.segments.reduce((sum, s) => sum + s.text.length, 0);
-    const pending = unfinished.reduce((sum, job) => sum + job.chars, 0);
-    if (pending + chars > quotaLeft) return { ok: false, error: 'DAILY_QUOTA_EXCEEDED' };
+    if (this.pendingChars(fields.userId) + chars > quotaLeft) {
+      return { ok: false, error: 'DAILY_QUOTA_EXCEEDED' };
+    }
     // Re-inserted, so a resubmitted job queues behind the others.
     this.#jobs.delete(fields.id);
     this.#jobs.set(fields.id, {
@@ -132,6 +129,18 @@ export class JobQueue {
     this.#dirty.add(fields.id);
     this.#pump();
     return { ok: true, state: 'queued' };
+  }
+
+  // Characters of this user's unfinished jobs: not charged yet, but spoken
+  // for. The listen route counts them against the quota too.
+  pendingChars(userId: string): number {
+    let chars = 0;
+    for (const job of this.#jobs.values()) {
+      if (job.userId === userId && (job.state === 'queued' || job.state === 'leased')) {
+        chars += job.chars;
+      }
+    }
+    return chars;
   }
 
   hasQueued(): boolean {

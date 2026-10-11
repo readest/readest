@@ -205,4 +205,16 @@ describe('JobQueue', () => {
     expect(queue.isLeaseLive(leased.lease)).toBe(true);
     expect(queue.complete(leased.lease)).toEqual({ userId: 'a', plan: 'pro' });
   });
+
+  it('reports the characters of the unfinished jobs of a user', () => {
+    const { queue, submit } = setup();
+    submit('a');
+    submit('a');
+    submit('b');
+    queue.complete(queue.leaseNow('w1', ['kokoro'])!.lease);
+    // Each job is 12 chars; a's first job is done.
+    expect(queue.pendingChars('a')).toBe(12);
+    expect(queue.pendingChars('b')).toBe(12);
+    expect(queue.pendingChars('c')).toBe(0);
+  });
 });

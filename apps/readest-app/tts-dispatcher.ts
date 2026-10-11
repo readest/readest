@@ -96,10 +96,12 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     });
   }
 
-  acquire(request: SlotRequest): Promise<SlotResult> {
+  // Also reports the user's unfinished download characters, which the
+  // listen route counts against the daily quota.
+  async acquire(request: SlotRequest): Promise<SlotResult & { pendingChars: number }> {
     const result = this.#queue.acquire(request);
     this.#changed();
-    return result;
+    return { ...(await result), pendingChars: this.#jobs.pendingChars(request.userId) };
   }
 
   setJob(token: string, jobId: string): boolean {
