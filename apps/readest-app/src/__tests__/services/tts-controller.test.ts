@@ -659,6 +659,13 @@ describe('TTSController', () => {
 
     const armWithSentence = async (range: Range, markName = '0') => {
       await controller.initViewTTS(0);
+      // A client that reports word boundaries, as word mode needs.
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        wordBoundaries: true,
+        mediaClock: true,
+        gapControl: false,
+        liveRateChange: false,
+      }) as unknown as typeof controller.ttsClient.getCapabilities;
       mockView.tts = {
         setMark: vi.fn().mockReturnValue(range),
         getLastRange: vi.fn().mockImplementation(() => range.cloneRange()),
@@ -671,15 +678,32 @@ describe('TTSController', () => {
       });
     };
 
-    test('prepareSpeakWords immediately highlights the first word (no sentence flash)', async () => {
-      await armWithSentence(makeSentenceRange());
-      vi.mocked(mockView.getCFI).mockClear();
-      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+    const addedKeys = () => getOverlayer().add.mock.calls.map((call) => call[0]);
 
-      const getCFICalls = vi.mocked(mockView.getCFI).mock.calls;
-      expect(getCFICalls.length).toBeGreaterThanOrEqual(1);
-      expect(String(getCFICalls[0]![1])).toBe('Hello');
-      expect(getOverlayer().add).toHaveBeenCalledTimes(1);
+    test('word mode tints the sentence at its mark; the first word waits for its audio', async () => {
+      await armWithSentence(makeSentenceRange());
+      // The tint shows where reading is even while the audio is pending.
+      expect(addedKeys()).toEqual(['tts-sentence']);
+      getOverlayer().add.mockClear();
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      expect(addedKeys()).toEqual([]);
+
+      vi.mocked(mockView.getCFI).mockClear();
+      controller.dispatchSpeakWord(0);
+      expect(addedKeys()).toEqual(['tts-highlight']);
+      expect(String(vi.mocked(mockView.getCFI).mock.calls[0]![1])).toBe('Hello');
+    });
+
+    test('the next sentence replaces the tint and clears the last word', async () => {
+      await armWithSentence(makeSentenceRange());
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      controller.dispatchSpeakWord(2);
+      getOverlayer().remove.mockClear();
+      getOverlayer().add.mockClear();
+      await armWithSentence(makeSentenceRange(), '1');
+      expect(getOverlayer().remove).toHaveBeenCalledWith('tts-highlight');
+      expect(getOverlayer().remove).toHaveBeenCalledWith('tts-sentence');
+      expect(addedKeys()).toEqual(['tts-sentence']);
     });
 
     test('prepareSpeakWords with no words falls back to the full-sentence highlight', async () => {
@@ -690,7 +714,8 @@ describe('TTSController', () => {
       const getCFICalls = vi.mocked(mockView.getCFI).mock.calls;
       expect(getCFICalls.length).toBeGreaterThanOrEqual(1);
       expect(String(getCFICalls[0]![1])).toBe('Hello brave world');
-      expect(getOverlayer().add).toHaveBeenCalledTimes(1);
+      // The sentence tint from the mark, then the full-sentence highlight.
+      expect(addedKeys()).toEqual(['tts-sentence', 'tts-highlight']);
     });
 
     test('dispatchSpeakWord highlights the word sub-range of the current sentence', async () => {
@@ -732,7 +757,8 @@ describe('TTSController', () => {
     test('a new speak mark clears previously prepared words', async () => {
       await armWithSentence(makeSentenceRange());
       controller.prepareSpeakWords(['Hello', 'brave', 'world']);
-      expect(getOverlayer().add).toHaveBeenCalledTimes(1);
+      controller.dispatchSpeakWord(0);
+      expect(addedKeys()).toEqual(['tts-sentence', 'tts-highlight']);
 
       controller.dispatchSpeakMark({
         offset: 0,
@@ -749,7 +775,9 @@ describe('TTSController', () => {
       await armWithSentence(makeSentenceRange());
       controller.prepareSpeakWords(['BOGUS', 'brave']);
 
-      // First word unmatched → no eager highlight.
+      // First word unmatched: nothing to draw for it.
+      getOverlayer().add.mockClear();
+      controller.dispatchSpeakWord(0);
       expect(getOverlayer().add).not.toHaveBeenCalled();
 
       vi.mocked(mockView.getCFI).mockClear();
@@ -769,7 +797,7 @@ describe('TTSController', () => {
 
       const getCFICalls = vi.mocked(mockView.getCFI).mock.calls;
       expect(getCFICalls.length).toBeGreaterThanOrEqual(1);
-      expect(String(getCFICalls[0]![1])).toBe('brave');
+      expect(getCFICalls.map((call) => String(call[1]))).toContain('brave');
     });
 
     test('reapplyCurrentHighlight re-draws the whole sentence when not in word mode', async () => {
@@ -842,8 +870,8 @@ describe('TTSController', () => {
       await armWithSentence(makeSentenceRange());
       getOverlayer().add.mockClear();
       controller.prepareSpeakWords(['Hello', 'brave', 'world']);
-      // First word highlighted immediately and word mode engaged.
-      expect(getOverlayer().add).toHaveBeenCalledTimes(1);
+      controller.dispatchSpeakWord(0);
+      expect(addedKeys()).toEqual(['tts-highlight']);
       expect(controller.getCurrentHighlightCfi()).not.toBeNull();
     });
   });
@@ -2237,7 +2265,9 @@ describe('TTSController', () => {
       // Between a sentence's mark and its first word boundary a page relocate
       // triggers a re-apply; the whole sentence must not flash in.
       controller.reapplyCurrentHighlight();
-      expect(content.overlayer.add).not.toHaveBeenCalled();
+      expect(content.overlayer.add.mock.calls.map((call) => call[0])).not.toContain(
+        'tts-highlight',
+      );
 
       // Paused keeps the sentence re-draw (deliberate navigation UX).
       controller.state = 'paused';

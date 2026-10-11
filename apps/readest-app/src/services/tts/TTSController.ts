@@ -109,6 +109,9 @@ const SEEK_PREVIEW_KEY = 'tts-seek-preview';
 // The A-B repeat span, tinted under the spoken highlight.
 const LOOP_KEY = 'tts-loop';
 const LOOP_TINT_OPACITY = '0.12';
+// In word mode, the sounding sentence tinted under the spoken word.
+const SENTENCE_KEY = 'tts-sentence';
+const SENTENCE_TINT_OPACITY = '0.2';
 
 // Hook-supplied callbacks rebound on view attach: the constructor-captured
 // closures belong to whichever reader hook created the controller and die
@@ -127,11 +130,13 @@ export interface TTSViewBindings {
 // stop/init overhead allows, which reads as no pause at all.
 export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
 
-const drawLoopTint = (rects: DOMRectList, options: Record<string, unknown>) => {
+const drawTint = (opacity: string) => (rects: DOMRectList, options: Record<string, unknown>) => {
   const g = Overlayer.highlight(rects, options);
-  g.style.opacity = LOOP_TINT_OPACITY;
+  g.style.opacity = opacity;
   return g;
 };
+const drawLoopTint = drawTint(LOOP_TINT_OPACITY);
+const drawSentenceTint = drawTint(SENTENCE_TINT_OPACITY);
 
 export class TTSController extends EventTarget {
   // PlaybackSource tag: the media bridge and the session manager consume this
@@ -694,6 +699,7 @@ export class TTSController extends EventTarget {
     const contents = this.view.renderer.getContents() as { overlayer?: Overlayer }[];
     for (const { overlayer } of contents) {
       overlayer?.remove(HIGHLIGHT_KEY);
+      overlayer?.remove(SENTENCE_KEY);
       overlayer?.remove(SEEK_PREVIEW_KEY);
     }
   }
@@ -2288,11 +2294,17 @@ export class TTSController extends EventTarget {
         // (no boundaries) is drawn later in prepareSpeakWords. When the user
         // forces sentence granularity we keep the sentence highlight, so don't
         // suppress it.
-        this.#suppressMarkHighlight =
+        const wordMode =
           this.ttsClient.getCapabilities().wordBoundaries && this.#highlightGranularity === 'word';
+        this.#suppressMarkHighlight = wordMode;
         const range = this.#getTts()?.setMark(mark.name);
         this.#suppressMarkHighlight = false;
         this.#speakWordsArmed = !!range;
+        if (wordMode && range) {
+          // The previous sentence's last word is no longer sounding.
+          this.#getPrimaryContent()?.overlayer?.remove(HIGHLIGHT_KEY);
+          this.#drawSentenceTint(range);
+        }
         if (this.#sectionTimeline && range) {
           // Keep the timeline honest as measurements land, then locate the
           // audible sentence for position reporting.
@@ -2335,6 +2347,24 @@ export class TTSController extends EventTarget {
     this.#lastSpeakWordRange = null;
   }
 
+  // Word mode tints the sentence as soon as its mark is dispatched, before its
+  // audio may be ready, and keeps it until the next sentence: the tint is where
+  // the reader is, the word highlight is what is sounding now.
+  #drawSentenceTint(range: Range) {
+    const content = this.#getPrimaryContent();
+    const overlayer = content?.overlayer;
+    overlayer?.remove(SENTENCE_KEY);
+    if (!content?.doc || content.index !== this.#ttsSectionIndex) return;
+    try {
+      const cfi = this.view.getCFI(content.index, range);
+      const visibleRange = this.view.resolveCFI(cfi).anchor(content.doc);
+      if (!visibleRange) return;
+      overlayer?.add(SENTENCE_KEY, visibleRange, drawSentenceTint, { color: this.options.color });
+    } catch (e) {
+      console.error('Failed to tint sentence', e);
+    }
+  }
+
   // Re-apply the active highlight after the view relocates (page turn,
   // re-render). In word mode this re-draws the current word so the sentence
   // never reappears over it; otherwise it re-draws the sentence.
@@ -2342,19 +2372,21 @@ export class TTSController extends EventTarget {
     if (!this.#attached) return;
     if (this.ttsClient.getCapabilities().textHighlight === false) return;
     if (this.#wordHighlightActive && this.#lastSpeakWordRange) {
+      if (this.#speakWordBaseRange) this.#drawSentenceTint(this.#speakWordBaseRange);
       this.#getHighlighter()(this.#lastSpeakWordRange.cloneRange());
       return;
     }
     // Word mode during playback: between a sentence's mark and its first word
-    // boundary there is nothing word-level to re-draw yet, and re-drawing the
-    // sentence here is exactly the whole-sentence flash word mode suppresses
-    // at setMark. Draw nothing; the next word boundary paints momentarily.
-    // Paused/stopped states keep the sentence re-draw (navigation UX).
+    // boundary only the sentence tint shows; re-drawing the full sentence here
+    // is exactly the flash word mode suppresses at setMark. Paused/stopped
+    // states keep the sentence re-draw (navigation UX).
     if (
       this.state === 'playing' &&
       this.ttsClient.getCapabilities().wordBoundaries &&
       this.#highlightGranularity === 'word'
     ) {
+      const range = this.#getTts()?.getLastRange();
+      if (range) this.#drawSentenceTint(range);
       return;
     }
     const range = this.#getTts()?.getLastRange();
@@ -2472,10 +2504,9 @@ export class TTSController extends EventTarget {
       this.#wordHighlightActive = false;
       this.#getHighlighter()(range.cloneRange());
     } else {
-      // Highlight the first word immediately so the suppressed sentence
-      // highlight never appears before playback reaches the first boundary.
+      // The first word lights when its audio does; until then the sentence
+      // tint drawn at mark dispatch shows where reading is.
       this.#wordHighlightActive = true;
-      this.dispatchSpeakWord(0);
     }
   }
 

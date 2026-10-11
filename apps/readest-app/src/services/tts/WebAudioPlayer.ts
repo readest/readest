@@ -384,7 +384,9 @@ export class WebAudioPlayer implements TTSAudioPlayer {
       if (chunk.startTime <= t) active = chunk;
       else break;
     }
-    const within = Math.min(Math.max(t - active.startTime, 0), active.duration);
+    // Negative only before the first chunk starts, so its first word waits
+    // for its audio instead of lighting during the pause before it.
+    const within = Math.min(t - active.startTime, active.duration);
     return {
       chunkIndex: active.index,
       mediaTimeSec: active.timing.trimStartSec + within * active.timing.mediaScale,

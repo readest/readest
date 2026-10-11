@@ -358,14 +358,15 @@ describe('WebAudioPlayer playback position', () => {
     expect(pos?.mediaTimeSec).toBeCloseTo(0.3 + 1 * 1.5, 3);
   });
 
-  test('clamps before the first chunk and in the inter-chunk gap', async () => {
+  test('runs before the first chunk starts and clamps in the inter-chunk gap', async () => {
     const { ctx, player, onEvent } = setup();
     await player.ensureContext();
     const gen = player.startSession(onEvent);
     player.scheduleChunk(gen, makeBuffer(1), { trimStartSec: 0.2, mediaScale: 1, gapSec: 1 });
     player.scheduleChunk(gen, makeBuffer(1), { trimStartSec: 0.1, mediaScale: 1, gapSec: 1 });
-    // Before the first chunk starts.
-    expect(player.getPlaybackPosition(gen)?.mediaTimeSec).toBeCloseTo(0.2, 5);
+    // Before the first chunk starts: still short of its first word, which
+    // must not light during the pause before the audio.
+    expect(player.getPlaybackPosition(gen)?.mediaTimeSec).toBeCloseTo(0.2 - SAFETY, 5);
     // Inside the gap after chunk 0 (ends at SAFETY+1; next starts SAFETY+2).
     ctx.currentTime = SAFETY + 1.5;
     const pos = player.getPlaybackPosition(gen);
