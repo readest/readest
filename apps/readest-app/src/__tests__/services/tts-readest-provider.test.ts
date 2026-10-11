@@ -42,7 +42,12 @@ const flush = async (times = 3) => {
 };
 
 interface WindowCall {
-  body: { lane: string; lang: string; segments: { id: string; text: string; voice: string }[] };
+  body: {
+    client: string;
+    lane: string;
+    lang: string;
+    segments: { id: string; text: string; voice: string }[];
+  };
   signal: AbortSignal;
   // Push NDJSON lines into the response body; end closes it.
   send: (line: unknown) => void;
@@ -421,6 +426,18 @@ describe('download lane', () => {
     windows[0]!.completeAll();
     await flush();
     expect(texts(windows[1]!)).toHaveLength(6);
+  });
+
+  it('names its app instance on every window, so the server queues devices apart', async () => {
+    const other = new ReadestVoiceProvider(events);
+    provider.prefetch(reqs(1, 'D'), 'download', new AbortController().signal);
+    provider.prefetch(reqs(1, 'L'), 'listen', new AbortController().signal);
+    other.prefetch(reqs(1, 'O'), 'listen', new AbortController().signal);
+    await flush();
+    const [first, second, third] = windows.map((w) => w.body.client);
+    expect(first).toEqual(expect.any(String));
+    expect(second).toBe(first);
+    expect(third).not.toBe(first);
   });
 
   it('runs alongside a listen window', async () => {

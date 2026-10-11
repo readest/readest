@@ -46,6 +46,10 @@ export default {
   },
 };
 
+// Durable Object classes must be exported from the entry. Readest Voice's
+// fair-dispatch queue (TTS_DISPATCHER in wrangler.toml).
+export { TTSDispatcher } from './tts-dispatcher';
+
 // OpenNext's DO queue / DO tag cache classes (DOQueueHandler, DOShardedTagCache)
 // would have to be re-exported here if open-next.config.ts ever enabled them;
 // today it only sets the R2 incremental cache, so there is nothing to re-export.

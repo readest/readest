@@ -1,79 +1,83 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { TTSLane } from '@/services/tts/providers/types';
-import { createSupabaseAdminClient } from '@/utils/supabase';
+import type { SlotRequest, SlotResult } from './dispatchQueue';
 
-// Per-user in-flight windows for Readest Voice (migration 026_tts_inflight):
-// at most one listen and one download window per user. Every call fails open,
-// like the usage counters: a store outage admits the window, and the RunPod
+// Admission of Readest Voice windows through the TTSDispatcher Durable Object
+// (worker.ts, scheduling in dispatchQueue.ts): one global queue that runs at
+// most READEST_VOICE_MAX_JOBS windows, one per user and lane, and serves
+// waiting users in turn. Every call fails open: an unbound dispatcher (Node
+// dev, self-hosting) or a failed call admits the window, and the RunPod
 // max-workers cap plus the account spend limit stay the hard ceiling.
 
-export type { TTSLane };
+export type { SlotResult, TTSLane };
 
 // Matches the route's window deadline: a slot never outlives its request.
 export const SLOT_TTL_SECONDS = 180;
+// Longer than a window usually runs, shorter than proxies wait for a reply.
+export const SLOT_WAIT_SECONDS = 60;
 
-export interface SlotResult {
-  acquired: boolean;
-  previousJobId: string | null;
+interface DispatcherStub {
+  acquire(request: SlotRequest): Promise<SlotResult>;
+  setJob(token: string, jobId: string): Promise<boolean>;
+  release(token: string): Promise<void>;
+}
+
+interface DispatcherNamespace {
+  idFromName(name: string): unknown;
+  get(id: unknown): DispatcherStub;
 }
 
 const ADMITTED: SlotResult = { acquired: true, previousJobId: null };
 
+const getDispatcher = (): DispatcherStub | null => {
+  try {
+    const env = getCloudflareContext().env as { TTS_DISPATCHER?: DispatcherNamespace };
+    const namespace = env.TTS_DISPATCHER;
+    return namespace ? namespace.get(namespace.idFromName('global')) : null;
+  } catch {
+    // Not on Workers.
+    return null;
+  }
+};
+
+// Resolves once the window may start (possibly after waiting its turn), or
+// with acquired false when it was refused, timed out or withdrawn.
 export const acquireSlot = async (
   userId: string,
+  clientId: string,
   lane: TTSLane,
   token: string,
 ): Promise<SlotResult> => {
+  const dispatcher = getDispatcher();
+  if (!dispatcher) return ADMITTED;
   try {
-    const { data, error } = await createSupabaseAdminClient().rpc('tts_acquire_slot', {
-      p_user_id: userId,
-      p_lane: lane,
-      p_token: token,
-      p_ttl_seconds: SLOT_TTL_SECONDS,
-    });
-    if (error) throw error;
-    const row = (Array.isArray(data) ? data[0] : data) as
-      | { acquired?: boolean; previous_job_id?: string | null }
-      | undefined;
-    if (!row) return ADMITTED;
-    return { acquired: row.acquired !== false, previousJobId: row.previous_job_id ?? null };
+    return await dispatcher.acquire({ userId, clientId, lane, token });
   } catch (error) {
     console.warn('TTS slot acquire failed, admitting:', error);
     return ADMITTED;
   }
 };
 
-// False when another request took the slot after we acquired it.
-export const setSlotJob = async (
-  userId: string,
-  lane: TTSLane,
-  token: string,
-  jobId: string,
-): Promise<boolean> => {
+// False when another window of this client took the slot meanwhile.
+export const setSlotJob = async (token: string, jobId: string): Promise<boolean> => {
+  const dispatcher = getDispatcher();
+  if (!dispatcher) return true;
   try {
-    const { data, error } = await createSupabaseAdminClient().rpc('tts_set_slot_job', {
-      p_user_id: userId,
-      p_lane: lane,
-      p_token: token,
-      p_job_id: jobId,
-    });
-    if (error) throw error;
-    return data !== false;
+    return await dispatcher.setJob(token, jobId);
   } catch (error) {
     console.warn('TTS slot update failed, keeping the job:', error);
     return true;
   }
 };
 
-export const releaseSlot = async (userId: string, lane: TTSLane, token: string): Promise<void> => {
+// Ends a running window, or withdraws a waiting one.
+export const releaseSlot = async (token: string): Promise<void> => {
+  const dispatcher = getDispatcher();
+  if (!dispatcher) return;
   try {
-    const { error } = await createSupabaseAdminClient().rpc('tts_release_slot', {
-      p_user_id: userId,
-      p_lane: lane,
-      p_token: token,
-    });
-    if (error) throw error;
+    await dispatcher.release(token);
   } catch (error) {
-    // The slot expires on its own (SLOT_TTL_SECONDS).
+    // The lease expires on its own (SLOT_TTL_SECONDS).
     console.warn('TTS slot release failed:', error);
   }
 };

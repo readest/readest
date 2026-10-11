@@ -105,6 +105,9 @@ export class ReadestVoiceProvider implements SpeechProvider {
   #quotaExhausted = false;
   #warmupFired = false;
   readonly #entries = new Map<string, Entry>();
+  // Names this app instance to the server, which queues the windows of a
+  // user's devices one after another but lets this instance replace its own.
+  readonly #clientId = crypto.randomUUID();
   readonly #lanes: Record<TTSLane, Lane> = {
     listen: newLane('listen'),
     download: newLane('download'),
@@ -372,6 +375,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          client: this.#clientId,
           lane: lane.name,
           lang: entries[0]!.req.lang,
           segments: [...byId].map(([id, e]) => ({ id, text: e.req.text, voice: e.req.voice })),
@@ -418,7 +422,8 @@ export class ReadestVoiceProvider implements SpeechProvider {
         if (code === DAILY_QUOTA_EXCEEDED) {
           this.#exhaustQuota();
         } else if (code === 'BUSY') {
-          // Another download window of this user is in flight: wait, retry.
+          // The endpoint is saturated (no turn within the server's wait, or
+          // too many windows of this user waiting): wait, retry.
           busy = true;
           lane.queue.unshift(...unanswered);
         } else {

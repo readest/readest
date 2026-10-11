@@ -190,7 +190,7 @@ describe('quota and admission', () => {
     expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
     expect(m.startJob).not.toHaveBeenCalled();
     // The slot was taken alongside the quota check: give it back.
-    expect(m.releaseSlot).toHaveBeenCalledWith('user-1', 'listen', expect.any(String));
+    expect(m.releaseSlot).toHaveBeenCalledWith(expect.any(String));
   });
 
   it('checks the quota and takes the slot at the same time', async () => {
@@ -203,7 +203,37 @@ describe('quota and admission', () => {
     await lines(await pending);
   });
 
-  it('429s BUSY with Retry-After when a download window is already in flight', async () => {
+  it('queues as the client the request names, or as one shared client for older apps', async () => {
+    await lines(await POST(post({ ...listen(seg('s0')), client: 'phone' })));
+    expect(m.acquireSlot).toHaveBeenLastCalledWith('user-1', 'phone', 'listen', expect.any(String));
+    await lines(await POST(post(listen(seg('s0')))));
+    expect(m.acquireSlot).toHaveBeenLastCalledWith(
+      'user-1',
+      'default',
+      'listen',
+      expect.any(String),
+    );
+    const res = await POST(post({ ...listen(seg('s0')), client: 'x'.repeat(65) }));
+    expect(res.status).toBe(400);
+  });
+
+  it('withdraws a waiting window when the client goes away', async () => {
+    let admit!: (result: { acquired: boolean; previousJobId: null }) => void;
+    m.acquireSlot.mockReturnValue(new Promise((r) => (admit = r)));
+    const controller = new AbortController();
+    const pending = POST(post(listen(seg('s0')), controller.signal));
+    await flush();
+    controller.abort();
+    const token = m.acquireSlot.mock.calls[0]![3];
+    expect(m.releaseSlot).toHaveBeenCalledWith(token);
+    // Admitted in the same moment: the window must not start anyway.
+    admit({ acquired: true, previousJobId: null });
+    await pending;
+    expect(m.startJob).not.toHaveBeenCalled();
+    expect(m.releaseSlot).toHaveBeenLastCalledWith(token);
+  });
+
+  it('429s BUSY with Retry-After when the window waited too long or was refused', async () => {
     m.acquireSlot.mockResolvedValue({ acquired: false, previousJobId: null });
     const res = await POST(post({ lane: 'download', lang: 'en', segments: [seg('s0')] }));
     expect(res.status).toBe(429);
@@ -278,7 +308,7 @@ describe('streaming', () => {
       lane: 'listen',
       segments: 3,
     });
-    expect(m.releaseSlot).toHaveBeenCalledWith('user-1', 'listen', expect.any(String));
+    expect(m.releaseSlot).toHaveBeenCalledWith(expect.any(String));
   });
 
   it('charges only what was delivered when the job fails mid-window', async () => {

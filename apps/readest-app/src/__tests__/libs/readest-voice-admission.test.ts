@@ -1,91 +1,72 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const rpcMock = vi.fn();
-vi.mock('@/utils/supabase', () => ({
-  createSupabaseAdminClient: () => ({ rpc: rpcMock }),
+const stub = { acquire: vi.fn(), setJob: vi.fn(), release: vi.fn() };
+const namespace = { idFromName: vi.fn(() => 'global-id'), get: vi.fn(() => stub) };
+let env: Record<string, unknown> = {};
+vi.mock('@opennextjs/cloudflare', () => ({
+  getCloudflareContext: () => ({ env }),
 }));
 
-import {
-  acquireSlot,
-  releaseSlot,
-  setSlotJob,
-  SLOT_TTL_SECONDS,
-} from '@/libs/readestVoice/admission';
+import { acquireSlot, releaseSlot, setSlotJob } from '@/libs/readestVoice/admission';
+
+const ADMITTED = { acquired: true, previousJobId: null };
 
 beforeEach(() => {
-  rpcMock.mockReset();
+  vi.clearAllMocks();
+  env = { TTS_DISPATCHER: namespace };
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
 describe('acquireSlot', () => {
-  it('calls tts_acquire_slot and maps the row', async () => {
-    rpcMock.mockResolvedValueOnce({
-      data: [{ acquired: true, previous_job_id: 'old-job' }],
-      error: null,
-    });
-    await expect(acquireSlot('u1', 'listen', 'tok')).resolves.toEqual({
+  it('asks the global dispatcher and returns its answer', async () => {
+    stub.acquire.mockResolvedValueOnce({ acquired: true, previousJobId: 'old-job' });
+    await expect(acquireSlot('u1', 'phone', 'listen', 'tok')).resolves.toEqual({
       acquired: true,
       previousJobId: 'old-job',
     });
-    expect(rpcMock).toHaveBeenCalledWith('tts_acquire_slot', {
-      p_user_id: 'u1',
-      p_lane: 'listen',
-      p_token: 'tok',
-      p_ttl_seconds: SLOT_TTL_SECONDS,
+    expect(namespace.idFromName).toHaveBeenCalledWith('global');
+    expect(stub.acquire).toHaveBeenCalledWith({
+      userId: 'u1',
+      clientId: 'phone',
+      lane: 'listen',
+      token: 'tok',
     });
   });
 
-  it('reports a refused download', async () => {
-    rpcMock.mockResolvedValueOnce({
-      data: [{ acquired: false, previous_job_id: null }],
-      error: null,
-    });
-    await expect(acquireSlot('u1', 'download', 'tok')).resolves.toEqual({
+  it('reports a refused window', async () => {
+    stub.acquire.mockResolvedValueOnce({ acquired: false, previousJobId: null });
+    await expect(acquireSlot('u1', 'phone', 'download', 'tok')).resolves.toEqual({
       acquired: false,
       previousJobId: null,
     });
   });
 
-  it('fails open on an RPC error or a throw', async () => {
-    rpcMock.mockResolvedValueOnce({ data: null, error: { message: 'down' } });
-    await expect(acquireSlot('u1', 'download', 'tok')).resolves.toEqual({
-      acquired: true,
-      previousJobId: null,
-    });
-    rpcMock.mockRejectedValueOnce(new Error('network'));
-    await expect(acquireSlot('u1', 'download', 'tok')).resolves.toEqual({
-      acquired: true,
-      previousJobId: null,
-    });
+  it('admits when the dispatcher fails or is not bound', async () => {
+    stub.acquire.mockRejectedValueOnce(new Error('reset'));
+    await expect(acquireSlot('u1', 'phone', 'listen', 'tok')).resolves.toEqual(ADMITTED);
+    env = {};
+    await expect(acquireSlot('u1', 'phone', 'listen', 'tok')).resolves.toEqual(ADMITTED);
   });
 });
 
 describe('setSlotJob', () => {
-  it('returns whether this request still owns the slot', async () => {
-    rpcMock.mockResolvedValueOnce({ data: false, error: null });
-    await expect(setSlotJob('u1', 'listen', 'tok', 'job')).resolves.toBe(false);
-    expect(rpcMock).toHaveBeenCalledWith('tts_set_slot_job', {
-      p_user_id: 'u1',
-      p_lane: 'listen',
-      p_token: 'tok',
-      p_job_id: 'job',
-    });
+  it('records the job, false when the slot is gone', async () => {
+    stub.setJob.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    await expect(setSlotJob('tok', 'job-1')).resolves.toBe(true);
+    await expect(setSlotJob('tok', 'job-1')).resolves.toBe(false);
+    expect(stub.setJob).toHaveBeenCalledWith('tok', 'job-1');
   });
 
-  it('fails open', async () => {
-    rpcMock.mockResolvedValueOnce({ data: null, error: { message: 'down' } });
-    await expect(setSlotJob('u1', 'listen', 'tok', 'job')).resolves.toBe(true);
+  it('keeps the job when the dispatcher fails', async () => {
+    stub.setJob.mockRejectedValueOnce(new Error('reset'));
+    await expect(setSlotJob('tok', 'job-1')).resolves.toBe(true);
   });
 });
 
 describe('releaseSlot', () => {
-  it('calls tts_release_slot and never throws', async () => {
-    rpcMock.mockRejectedValueOnce(new Error('network'));
-    await expect(releaseSlot('u1', 'download', 'tok')).resolves.toBeUndefined();
-    expect(rpcMock).toHaveBeenCalledWith('tts_release_slot', {
-      p_user_id: 'u1',
-      p_lane: 'download',
-      p_token: 'tok',
-    });
+  it('releases by token and swallows failures', async () => {
+    stub.release.mockRejectedValueOnce(new Error('reset'));
+    await expect(releaseSlot('tok')).resolves.toBeUndefined();
+    expect(stub.release).toHaveBeenCalledWith('tok');
   });
 });

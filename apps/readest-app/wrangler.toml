@@ -40,6 +40,21 @@ PNPM_VERSION = "10.28.1"
 # STATS_COMPACT_SEGMENT_ROWS=10000. See docs/stats-archive.md.
 STATS_COMPACT_ENABLED = "true"
 STATS_COMPACT_USERS_PER_RUN = "100"
+# Readest Voice: most windows running at once on the RunPod endpoint (see the
+# TTS_DISPATCHER binding below).
+READEST_VOICE_MAX_JOBS = "8"
+
+# Readest Voice fair dispatch (tts-dispatcher.ts): one global Durable Object
+# queues premium-voice windows per user and runs at most READEST_VOICE_MAX_JOBS
+# at once. Keep that at the RunPod endpoint's max workers x TTS_CONCURRENCY:
+# lower, RunPod never sees a backlog and never scales up.
+[[durable_objects.bindings]]
+name = "TTS_DISPATCHER"
+class_name = "TTSDispatcher"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TTSDispatcher"]
 
 [observability]
 enabled = true

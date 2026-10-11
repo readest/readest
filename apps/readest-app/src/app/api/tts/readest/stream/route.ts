@@ -26,6 +26,10 @@ const LANE_LIMITS: Record<TTSLane, { segments: number; chars: number }> = {
   download: { segments: 64, chars: 12000 },
 };
 const MAX_SEGMENT_CHARS = 2000;
+const MAX_CLIENT_ID_CHARS = 64;
+// Apps that send no client id share one: their listen windows replace each
+// other, as before per-client queueing.
+const DEFAULT_CLIENT_ID = 'default';
 const WINDOW_DEADLINE_MS = SLOT_TTL_SECONDS * 1000;
 const BUSY_RETRY_AFTER_SEC = 5;
 
@@ -36,6 +40,7 @@ interface Segment {
 }
 
 interface WindowRequest {
+  clientId: string;
   lane: TTSLane;
   lang: string;
   segments: Segment[];
@@ -49,7 +54,13 @@ interface WorkerFrame {
 }
 
 const parseWindow = (body: unknown): WindowRequest | null => {
-  const { lane, lang, segments } = (body ?? {}) as Record<string, unknown>;
+  const {
+    client = DEFAULT_CLIENT_ID,
+    lane,
+    lang,
+    segments,
+  } = (body ?? {}) as Record<string, unknown>;
+  if (typeof client !== 'string' || !client || client.length > MAX_CLIENT_ID_CHARS) return null;
   if (lane !== 'listen' && lane !== 'download') return null;
   if (typeof lang !== 'string' || !Array.isArray(segments)) return null;
   const limits = LANE_LIMITS[lane];
@@ -65,7 +76,7 @@ const parseWindow = (body: unknown): WindowRequest | null => {
     chars += text.length;
   }
   if (chars > limits.chars) return null;
-  return { lane, lang: lang.slice(0, 35), segments: segments as Segment[] };
+  return { clientId: client, lane, lang: lang.slice(0, 35), segments: segments as Segment[] };
 };
 
 // Work that must finish after the response is gone (charging, cancelling):
@@ -93,7 +104,7 @@ export async function POST(request: NextRequest) {
     // Unparseable body: same flat code as an invalid window.
   }
   if (!window) return errorResponse('INVALID_INPUT', 400);
-  const { lane, lang, segments } = window;
+  const { clientId, lane, lang, segments } = window;
 
   for (const segment of segments) {
     const voice = findVoice(catalog, segment.voice);
@@ -103,21 +114,29 @@ export async function POST(request: NextRequest) {
 
   // Every round trip before the job starts is heard as delay, so the quota
   // check and the slot run together. Check before starting; charge only what
-  // is delivered (below).
+  // is delivered (below). The slot may wait for this user's turn; a client
+  // that goes away meanwhile withdraws the window.
   const windowChars = segments.reduce((sum, s) => sum + s.text.length, 0);
   const token = crypto.randomUUID();
+  const withdraw = () => runAfterResponse(releaseSlot(token));
+  request.signal.addEventListener('abort', withdraw, { once: true });
   const [used, slot] = await Promise.all([
     UsageStatsManager.getCurrentUsage(user.id, USAGE_TYPES.TTS_CHARS, 'daily'),
-    acquireSlot(user.id, lane, token),
+    acquireSlot(user.id, clientId, lane, token),
   ]);
+  request.signal.removeEventListener('abort', withdraw);
+  if (request.signal.aborted) {
+    if (slot.acquired) runAfterResponse(releaseSlot(token));
+    return errorResponse('CANCELLED', 499);
+  }
   if (used + windowChars > getTTSQuota(plan)) {
-    if (slot.acquired) runAfterResponse(releaseSlot(user.id, lane, token));
+    if (slot.acquired) runAfterResponse(releaseSlot(token));
     return errorResponse('DAILY_QUOTA_EXCEEDED', 429);
   }
   if (!slot.acquired) {
     return errorResponse('BUSY', 429, { 'Retry-After': String(BUSY_RETRY_AFTER_SEC) });
   }
-  // A new listen window supersedes the user's previous one (seek, voice
+  // A new listen window replaced this client's previous one (seek, voice
   // change). Best effort, so the new job does not wait on it.
   if (slot.previousJobId) runAfterResponse(cancelJob(config, slot.previousJobId));
 
@@ -126,13 +145,13 @@ export async function POST(request: NextRequest) {
     jobId = await startJob(config, { lang, segments });
   } catch (error) {
     console.error('Readest Voice job start failed:', error);
-    await releaseSlot(user.id, lane, token);
+    await releaseSlot(token);
     return errorResponse('UPSTREAM_FAILED', 502);
   }
   const headers = { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store' };
   // Recorded while the job already streams; resolves false when another
   // window from this user took the slot meanwhile (handled in the stream).
-  const slotRecorded = setSlotJob(user.id, lane, token, jobId);
+  const slotRecorded = setSlotJob(token, jobId);
 
   const textLength = new Map(segments.map((s) => [s.id, s.text.length]));
   const upstream = new AbortController();
@@ -157,7 +176,7 @@ export async function POST(request: NextRequest) {
         console.error(`Readest Voice usage charge failed (job: ${jobId}):`, error);
       }
     }
-    await releaseSlot(user.id, lane, token);
+    await releaseSlot(token);
   };
 
   const onClientGone = () => {
