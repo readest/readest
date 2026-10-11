@@ -52,6 +52,14 @@ describe('CachingProvider', () => {
     expect(strict.sameLanguageVoicesOnly).toBe(true);
   });
 
+  test('init starts opening the store, so the first lookup does not pay for it', async () => {
+    const opening = Object.assign(new MemoryStore(), {
+      open: vi.fn().mockResolvedValue(undefined),
+    });
+    await new CachingProvider(inner, opening).init();
+    expect(opening.open).toHaveBeenCalledTimes(1);
+  });
+
   test('mirrors the inner provider identity', () => {
     expect(provider.id).toBe('fake');
     expect(provider.label).toBe('Fake');

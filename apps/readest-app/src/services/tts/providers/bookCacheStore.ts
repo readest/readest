@@ -189,6 +189,10 @@ export class BookTTSCacheStore implements TTSCacheStore {
     return this.#opening;
   }
 
+  async open(): Promise<void> {
+    await this.#open();
+  }
+
   async get(key: string): Promise<TTSCacheEntry | null> {
     const opened = await this.#open();
     return opened ? opened.store.get(key) : null;

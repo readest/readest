@@ -298,6 +298,21 @@ describe('TTSController', () => {
       expect(controller.ttsWebClient.init).toHaveBeenCalled();
     });
 
+    test('initialises the engines concurrently, not one after another', async () => {
+      // Each init can take seconds (Edge synthesizes a probe sentence, system
+      // TTS waits for its voice list); in sequence they add up before play.
+      let edgeDone!: (ok: boolean) => void;
+      vi.mocked(controller.ttsEdgeClient.init).mockImplementation(
+        () => new Promise<boolean>((resolve) => (edgeDone = resolve)),
+      );
+      const ready = controller.init();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(controller.ttsWebClient.init).toHaveBeenCalled();
+      edgeDone(true);
+      await ready;
+      expect(controller.ttsClient.name).toBe('edge');
+    });
+
     test('sets ttsClient to first available client (edge)', async () => {
       await controller.init();
       // edge inits first and succeeds, so it becomes the active client
@@ -1322,6 +1337,31 @@ describe('TTSController', () => {
       audible();
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(preloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test('next paragraphs are preloaded anyway if this paragraph is slow to become audible', async () => {
+      // Uncached audio waits on the network: the next paragraphs must not.
+      vi.useFakeTimers();
+      await controller.init();
+      await controller.initViewTTS(0);
+      controller.setParagraphGap(0);
+      vi.spyOn(controller, 'forward').mockResolvedValue();
+      const preloadSpy = vi.spyOn(controller, 'preloadNextSSML').mockResolvedValue();
+      speakingControllers.push(controller);
+      vi.mocked(controller.ttsClient.speak).mockImplementation(
+        (_ssml: string, _signal: AbortSignal, preload?: boolean) =>
+          (async function* () {
+            if (preload) return;
+            await new Promise(() => {}); // never audible in this test
+          })(),
+      );
+
+      await controller.speak('<speak>hello</speak>');
+      await vi.advanceTimersByTimeAsync(400);
+      expect(preloadSpy).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(200);
+      expect(preloadSpy).toHaveBeenCalledTimes(1);
+      vi.useRealTimers();
     });
 
     test('the paragraph gap is waited out as given, not re-scaled by the rate', async () => {

@@ -82,6 +82,8 @@ const TTS_NATIVE_SPEAK_MAX_CONSECUTIVE_ERRORS = 5;
 // paragraphs until about this much estimated audio, at most this many.
 const PRELOAD_AHEAD_SEC = 180;
 const PRELOAD_MAX_PARAGRAPHS = 40;
+// Preload the next paragraphs this long after a paragraph starts at the latest.
+const PRELOAD_NEXT_AFTER_MS = 500;
 
 type TTSState =
   | 'stopped'
@@ -450,15 +452,21 @@ export class TTSController extends EventTarget {
 
   async init() {
     const availableClients = [];
+    // Started together: each can take seconds (Edge synthesizes a probe
+    // sentence, system TTS waits for its voices), and play waits on them all.
+    // Results are still taken in priority order.
     const readestReady = this.ttsReadestClient.init();
-    if (await this.ttsEdgeClient.init()) {
+    const edgeReady = this.ttsEdgeClient.init();
+    const nativeReady = this.ttsNativeClient?.init();
+    const webReady = this.ttsWebClient.init();
+    if (await edgeReady) {
       availableClients.push(this.ttsEdgeClient);
     }
-    if (this.ttsNativeClient && (await this.ttsNativeClient.init())) {
+    if (this.ttsNativeClient && (await nativeReady)) {
       availableClients.push(this.ttsNativeClient);
       this.ttsNativeVoices = await this.ttsNativeClient.getAllVoices();
     }
-    if (await this.ttsWebClient.init()) {
+    if (await webReady) {
       availableClients.push(this.ttsWebClient);
     }
     // Last: Readest Voice is never the default, only a remembered choice.
@@ -1707,6 +1715,15 @@ export class TTSController extends EventTarget {
         let sentenceRange: Range | undefined;
         let stepAfter: { range?: Range; advance: boolean } | null = null;
         let preloadedNext = false;
+        const preloadNext = () => {
+          if (preloadedNext || oneTime || signal.aborted) return;
+          preloadedNext = true;
+          void this.preloadNextSSML();
+        };
+        // Or once this paragraph is slow to become audible (uncached audio
+        // waits on the network; the next paragraphs should not).
+        const preloadTimer = setTimeout(preloadNext, PRELOAD_NEXT_AFTER_MS);
+        signal.addEventListener('abort', () => clearTimeout(preloadTimer), { once: true });
         for await (const { code, mark } of iter) {
           // Anything the iterator yields means the client is done waiting:
           // 'boundary' is the first audible chunk, 'end'/'error' resolve the
@@ -1720,10 +1737,8 @@ export class TTSController extends EventTarget {
           if (oneTime || this.state !== 'playing') continue;
           // Once this paragraph is audible: stepping through the next ones is
           // synchronous DOM work that would otherwise sit in the pause before it.
-          if (!preloadedNext) {
-            preloadedNext = true;
-            void this.preloadNextSSML();
-          }
+          clearTimeout(preloadTimer);
+          preloadNext();
           if (code === 'end') {
             const range = this.#getTts()?.getLastRange();
             if (this.#stopsAfter(range)) {

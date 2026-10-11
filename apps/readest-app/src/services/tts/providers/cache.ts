@@ -25,6 +25,8 @@ export interface TTSCacheEntry {
 }
 
 export interface TTSCacheStore {
+  // Open the backing store ahead of the first lookup (no-op if it cannot yet).
+  open?(): Promise<void>;
   get(key: string): Promise<TTSCacheEntry | null>;
   put(
     key: string,
@@ -99,6 +101,9 @@ export class CachingProvider implements SpeechProvider {
   }
 
   init(): Promise<boolean> {
+    // Opening the per-book database takes about a second on device: overlap it
+    // with engine init instead of the first sentence's lookup.
+    void this.#store.open?.().catch(() => {});
     return this.#inner.init();
   }
 
