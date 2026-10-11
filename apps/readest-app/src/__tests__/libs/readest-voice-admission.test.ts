@@ -9,7 +9,7 @@ vi.mock('@opennextjs/cloudflare', () => ({
 
 import { acquireSlot, releaseSlot, setSlotJob } from '@/libs/readestVoice/admission';
 
-const ADMITTED = { acquired: true, previousJobId: null };
+const ADMITTED = { acquired: true, previousJobId: null, pendingChars: 0 };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -19,10 +19,15 @@ beforeEach(() => {
 
 describe('acquireSlot', () => {
   it('asks the global dispatcher and returns its answer', async () => {
-    stub.acquire.mockResolvedValueOnce({ acquired: true, previousJobId: 'old-job' });
+    stub.acquire.mockResolvedValueOnce({
+      acquired: true,
+      previousJobId: 'old-job',
+      pendingChars: 7,
+    });
     await expect(acquireSlot('u1', 'phone', 'listen', 'tok')).resolves.toEqual({
       acquired: true,
       previousJobId: 'old-job',
+      pendingChars: 7,
     });
     expect(namespace.idFromName).toHaveBeenCalledWith('global');
     expect(stub.acquire).toHaveBeenCalledWith({

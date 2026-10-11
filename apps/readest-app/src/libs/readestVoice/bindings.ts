@@ -2,12 +2,17 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { SlotRequest, SlotResult } from './dispatchQueue';
 import type { JobState, JobSubmission, LeasedJob, SubmitResult } from './jobQueue';
 
+// A slot, plus the characters of the user's unfinished download jobs.
+export interface AdmissionResult extends SlotResult {
+  pendingChars: number;
+}
+
 // Cloudflare bindings of the Readest Voice routes (wrangler.toml): the
 // TTSDispatcher Durable Object (tts-dispatcher.ts) and the download result
 // bucket. Both are null off Workers (Node dev, self-hosting).
 
 export interface DispatcherStub {
-  acquire(request: SlotRequest): Promise<SlotResult>;
+  acquire(request: SlotRequest): Promise<AdmissionResult>;
   setJob(token: string, jobId: string): Promise<boolean>;
   release(token: string): Promise<void>;
   submitJob(submission: JobSubmission): Promise<SubmitResult>;
