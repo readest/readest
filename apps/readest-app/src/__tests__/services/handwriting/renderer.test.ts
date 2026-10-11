@@ -5,6 +5,7 @@ import type { InkStroke } from '@/services/handwriting/model';
 const fakeCtx = () => {
   const calls: string[] = [];
   const widths: number[] = [];
+  const radii: number[] = [];
   const ctx = {
     clearRect: vi.fn(() => calls.push('clear')),
     beginPath: vi.fn(() => calls.push('begin')),
@@ -12,7 +13,11 @@ const fakeCtx = () => {
     lineTo: vi.fn(() => calls.push('line')),
     quadraticCurveTo: vi.fn(() => calls.push('curve')),
     stroke: vi.fn(() => calls.push('stroke')),
-    arc: vi.fn(() => calls.push('arc')),
+    arc: vi.fn((_x: number, _y: number, r: number) => {
+      calls.push('arc');
+      radii.push(r);
+    }),
+    closePath: vi.fn(() => calls.push('close')),
     fill: vi.fn(() => calls.push('fill')),
     set lineWidth(w: number) {
       widths.push(w);
@@ -22,7 +27,7 @@ const fakeCtx = () => {
     lineCap: '',
     lineJoin: '',
   };
-  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, widths };
+  return { ctx: ctx as unknown as CanvasRenderingContext2D, calls, widths, radii };
 };
 
 const rect = { left: 0, top: 0, width: 1000, height: 2000 };
@@ -86,7 +91,7 @@ describe('renderStrokes', () => {
     expect(ctx.lineTo).toHaveBeenLastCalledWith(500, 1000);
   });
 
-  it('draws a pressure stroke as smooth pieces too', () => {
+  it('fills a pressure stroke as one shape, so its edge is antialiased once', () => {
     const { ctx, calls } = fakeCtx();
     const arc: InkStroke['points'] = [
       [0.1, 0.5, 0.3],
@@ -96,7 +101,8 @@ describe('renderStrokes', () => {
       [0.5, 0.5, 0.3],
     ];
     renderStrokes(ctx, [mk('a', arc)], rect);
-    expect(calls.filter((c) => c === 'curve').length).toBeGreaterThanOrEqual(3);
+    expect(calls.filter((c) => c === 'fill')).toHaveLength(1);
+    expect(calls).not.toContain('stroke');
   });
 
   it('draws a dot for a single-point stroke', () => {
@@ -106,7 +112,7 @@ describe('renderStrokes', () => {
   });
 
   it('varies line width with pressure', () => {
-    const { ctx, widths } = fakeCtx();
+    const { ctx, radii } = fakeCtx();
     renderStrokes(
       ctx,
       [
@@ -118,11 +124,12 @@ describe('renderStrokes', () => {
       ],
       rect,
     );
-    expect(new Set(widths).size).toBeGreaterThan(1);
+    expect(Math.min(...radii)).toBeCloseTo(3.5);
+    expect(Math.max(...radii)).toBeCloseTo(7.5);
   });
 
   it('draws a stroke at its pen width under ordinary pressure', () => {
-    const { ctx, widths } = fakeCtx();
+    const { ctx, radii } = fakeCtx();
     renderStrokes(
       ctx,
       [
@@ -133,11 +140,12 @@ describe('renderStrokes', () => {
       ],
       rect,
     );
-    expect(widths).toEqual([10]);
+    expect(radii.length).toBeGreaterThan(0);
+    expect(radii.every((r) => r === 5)).toBe(true);
   });
 
   it('keeps a feather-light stroke at half its pen width', () => {
-    const { ctx, widths } = fakeCtx();
+    const { ctx, radii } = fakeCtx();
     renderStrokes(
       ctx,
       [
@@ -148,7 +156,8 @@ describe('renderStrokes', () => {
       ],
       rect,
     );
-    expect(widths).toEqual([5]);
+    expect(radii.length).toBeGreaterThan(0);
+    expect(radii.every((r) => r === 2.5)).toBe(true);
   });
 
   it('uses each stroke color', () => {

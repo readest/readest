@@ -14,6 +14,80 @@ const midpoint = (a: Sample, b: Sample): Sample => [
   a[2] === undefined || b[2] === undefined ? (a[2] ?? b[2]) : (a[2] + b[2]) / 2,
 ];
 
+type Piece = { from: Sample; via?: Sample; to: Sample };
+/** [x, y, radius] */
+type Disc = [number, number, number];
+
+// Spacing of the samples along a pen stroke's outline, in CSS px: close
+// enough that the outline never shows a facet on a curve.
+const STEP = 1.5;
+
+/** Discs along the stroke's curve, sized by the pressure interpolated there. */
+const discsAlong = (pieces: Piece[], radius: (p: number | undefined) => number): Disc[] => {
+  const discs: Disc[] = [];
+  for (const { from, via, to } of pieces) {
+    const length = via
+      ? Math.hypot(via[0] - from[0], via[1] - from[1]) + Math.hypot(to[0] - via[0], to[1] - via[1])
+      : Math.hypot(to[0] - from[0], to[1] - from[1]);
+    const n = Math.max(1, Math.ceil(length / STEP));
+    for (let k = discs.length ? 1 : 0; k <= n; k++) {
+      const t = k / n;
+      const [x, y] = via
+        ? [
+            (1 - t) * (1 - t) * from[0] + 2 * (1 - t) * t * via[0] + t * t * to[0],
+            (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * via[1] + t * t * to[1],
+          ]
+        : [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
+      const p =
+        from[2] === undefined || to[2] === undefined
+          ? (from[2] ?? to[2])
+          : from[2] + (to[2] - from[2]) * t;
+      discs.push([x, y, radius(p)]);
+    }
+  }
+  return discs;
+};
+
+/**
+ * Traces the outline of a variable-width stroke through `discs` as one
+ * closed contour: one side forward, a round cap, the other side back and a
+ * round cap. With no inner edges, the fill antialiases only the true edge.
+ */
+const traceOutline = (ctx: CanvasRenderingContext2D, discs: Disc[]) => {
+  const n = discs.length;
+  const left: [number, number][] = [];
+  const right: [number, number][] = [];
+  const angles: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const [px, py] = discs[Math.max(0, i - 1)]!;
+    const [nx, ny] = discs[Math.min(n - 1, i + 1)]!;
+    const [x, y, r] = discs[i]!;
+    const angle = Math.atan2(ny - py, nx - px);
+    angles.push(angle);
+    const tx = Math.cos(angle);
+    const ty = Math.sin(angle);
+    // Where the inner side of a tight turn would fold back on itself, skip
+    // the point: a fold would wind the other way and leave a hole.
+    const push = (side: [number, number][], sx: number, sy: number) => {
+      const last = side[side.length - 1];
+      if (last && (sx - last[0]) * tx + (sy - last[1]) * ty < 0) return;
+      side.push([sx, sy]);
+    };
+    push(left, x - ty * r, y + tx * r);
+    push(right, x + ty * r, y - tx * r);
+  }
+  const [ex, ey, er] = discs[n - 1]!;
+  const [sx, sy, sr] = discs[0]!;
+  const end = angles[n - 1]!;
+  const start = angles[0]!;
+  ctx.moveTo(left[0]![0], left[0]![1]);
+  for (const [x, y] of left) ctx.lineTo(x, y);
+  ctx.arc(ex, ey, er, end + Math.PI / 2, end - Math.PI / 2, true);
+  for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i]![0], right[i]![1]);
+  ctx.arc(sx, sy, sr, start - Math.PI / 2, start - (3 * Math.PI) / 2, true);
+  ctx.closePath();
+};
+
 /**
  * Redraws `strokes` onto a canvas whose page occupies `rect`; pass
  * `clear: false` to draw another layer over what is there. Independent of any
@@ -55,7 +129,7 @@ export const renderStrokes = (
     // A smooth curve through the samples: quadratic pieces from midpoint to
     // midpoint, each bending at a sample, so a simplified stroke draws as
     // smoothly as the dense one did while it was being drawn.
-    const pieces: { from: Sample; via?: Sample; to: Sample }[] = [];
+    const pieces: Piece[] = [];
     let from: Sample = pts[0]!;
     for (let i = 1; i < pts.length - 1; i++) {
       const to = midpoint(pts[i]!, pts[i + 1]!);
@@ -77,13 +151,15 @@ export const renderStrokes = (
       continue;
     }
 
-    for (const { from, via, to } of pieces) {
-      ctx.lineWidth = base * pressureScale(((from[2] ?? 0.5) + (to[2] ?? 0.5)) / 2);
-      ctx.beginPath();
-      ctx.moveTo(from[0], from[1]);
-      if (via) ctx.quadraticCurveTo(via[0], via[1], to[0], to[1]);
-      else ctx.lineTo(to[0], to[1]);
-      ctx.stroke();
-    }
+    // A pen stroke's width follows its pressure, so it is filled as one
+    // outline traced around discs every STEP along the curve. Stroking pieces
+    // of varying width instead blends their soft edges again at every joint,
+    // which reads as a jagged, beaded edge.
+    ctx.beginPath();
+    traceOutline(
+      ctx,
+      discsAlong(pieces, (p) => (base * pressureScale(p ?? 0.5)) / 2),
+    );
+    ctx.fill();
   }
 };
