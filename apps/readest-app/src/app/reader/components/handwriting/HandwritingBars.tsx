@@ -6,11 +6,11 @@ import {
   RiArrowGoForwardLine,
   RiArrowLeftSLine,
   RiArrowRightSLine,
-  RiArrowDropDownLine,
   RiSave3Line,
+  RiPencilLine,
+  RiMarkPenLine,
 } from 'react-icons/ri';
 
-import { PiHighlighter, PiPen } from 'react-icons/pi';
 import type { IconType } from 'react-icons';
 
 import type { InkTool } from '@/services/handwriting/model';
@@ -19,8 +19,8 @@ import AnnotationToolButton from '../annotator/AnnotationToolButton';
 import HandwritingOptions from './HandwritingOptions';
 
 const TOOLS: { tool: InkTool; label: string; Icon: IconType }[] = [
-  { tool: 'pen', label: 'Pen', Icon: PiPen },
-  { tool: 'marker', label: 'Marker', Icon: PiHighlighter },
+  { tool: 'pen', label: 'Pen', Icon: RiPencilLine },
+  { tool: 'marker', label: 'Marker', Icon: RiMarkPenLine },
 ];
 
 const BAR =
@@ -102,19 +102,17 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
                 }
               }}
               className={clsx(
-                'flex h-8 items-center gap-1 rounded-md px-1.5',
-                active && 'bg-base-300 eink:border',
+                'relative flex h-8 min-h-8 w-8 items-center justify-center rounded-md p-0',
+                active ? 'bg-base-300 eink:border' : 'not-eink:hover:bg-base-200',
               )}
             >
-              <Icon size={18} />
+              <Icon />
+              {/* The active tool's ink color, like the band on a Notes tool. */}
               {active && (
-                <>
-                  <span
-                    className='border-base-content/20 h-3.5 w-3.5 rounded-full border'
-                    style={{ backgroundColor: penColor }}
-                  />
-                  <RiArrowDropDownLine size={18} className='-mx-1' />
-                </>
+                <span
+                  className='absolute bottom-1 h-0.5 w-3.5 rounded-full'
+                  style={{ backgroundColor: penColor }}
+                />
               )}
             </button>
           );

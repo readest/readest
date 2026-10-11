@@ -92,6 +92,14 @@ describe('drawing bars', () => {
     expect(swatches[0]!.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('draws every dock button in the same square, tools included', () => {
+    render(<HandwritingDock {...dockProps()} />);
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.className).toContain('h-8');
+      expect(button.className).toContain('w-8');
+    }
+  });
+
   it('wires the dock tools', () => {
     const props = dockProps();
     render(<HandwritingDock {...props} />);
