@@ -42,7 +42,10 @@ STATS_COMPACT_ENABLED = "true"
 STATS_COMPACT_USERS_PER_RUN = "100"
 # Readest Voice: most windows running at once on the RunPod endpoint (see the
 # TTS_DISPATCHER binding below).
-READEST_VOICE_MAX_JOBS = "8"
+READEST_VOICE_MAX_JOBS = "4"
+# Pull workers must run this worker image version (downloads sound like
+# listening); unset admits any version.
+READEST_VOICE_WORKER_VERSION = "2.3.1"
 
 # Readest Voice fair dispatch (tts-dispatcher.ts): one global Durable Object
 # queues premium-voice windows per user and runs at most READEST_VOICE_MAX_JOBS
