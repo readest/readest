@@ -175,6 +175,33 @@ describe('listen windows', () => {
     }
   });
 
+  it('lets a window of background preloads hold about a minute of audio', async () => {
+    // Nobody is waiting on these sentences: a bigger window amortizes the
+    // per-request overhead and lets the GPU batch them.
+    const signal = new AbortController().signal;
+    const long = Array.from({ length: 8 }, (_, i) => req(`${i}`.padEnd(150, 'a')));
+    provider.prefetch(long, 'listen', signal, { background: true });
+    await flush();
+    expect(texts(windows[0]!)).toHaveLength(1);
+    for (const expected of [4, 3]) {
+      windows.at(-1)!.completeAll();
+      await flush();
+      expect(texts(windows.at(-1)!)).toHaveLength(expected);
+    }
+  });
+
+  it('frees the lane once every sentence of the window has arrived', async () => {
+    // The stream's terminal line waits on the job's final status, seconds
+    // after the last audio: the next window must not wait for it.
+    const signal = new AbortController().signal;
+    provider.prefetch(reqs(3), 'listen', signal);
+    await flush();
+    windows[0]!.send({ id: windows[0]!.body.segments[0]!.id, audio: AUDIO_B64, boundaries: B });
+    await flush();
+    expect(windows).toHaveLength(2);
+    expect(texts(windows[1]!)).toEqual(['S1.', 'S2.']);
+  });
+
   it('resolves each sentence as its line arrives, before the stream ends', async () => {
     const signal = new AbortController().signal;
     provider.prefetch(reqs(1), 'listen', signal);

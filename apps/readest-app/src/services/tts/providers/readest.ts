@@ -21,9 +21,11 @@ import {
 // lane:
 // - listen: windows grow 1 -> 4 -> 8 sentences so the first audio after play,
 //   seek or a voice change waits for one sentence only, and hold at most about
-//   20 s of estimated audio: a sentence that falls due waits behind the window
-//   in flight. Requests the current paragraph is waiting on fill a window
-//   before background preloads of later paragraphs, never mixing languages.
+//   20 s of estimated audio (60 s for a window of background preloads only):
+//   a sentence that falls due waits behind the window in flight. Requests the
+//   current paragraph is waiting on fill a window before background preloads
+//   of later paragraphs, never mixing languages. A window frees the lane as
+//   soon as its last sentence arrives.
 // - download: chapter downloads, up to 64 sentences per window.
 // A sentence stays requested while any caller that asked for it is still
 // interested; once every such signal is aborted it is withdrawn, and a window
@@ -34,6 +36,9 @@ export const DAILY_QUOTA_EXCEEDED = 'DAILY_QUOTA_EXCEEDED';
 const LISTEN_WINDOW_SIZES = [1, 4, 8];
 const LISTEN_WINDOW_CHARS = 2000;
 const LISTEN_WINDOW_SEC = 20;
+// A window of background preloads only: nobody waits on it, so it may carry
+// more audio, amortizing the per-request overhead and batching on the GPU.
+const LISTEN_BACKGROUND_WINDOW_SEC = 60;
 const DOWNLOAD_WINDOW_SENTENCES = 64;
 const DOWNLOAD_WINDOW_CHARS = 12000;
 const BUSY_RETRY_MS = 5000;
@@ -341,7 +346,9 @@ export class ReadestVoiceProvider implements SpeechProvider {
       if (picked.length && chars + entry.req.text.length > maxChars) break;
       const { text, lang, voice } = entry.req;
       const entrySeconds = listen ? estimateSentenceSeconds(text, lang, voice ?? '') : 0;
-      if (picked.length && seconds + entrySeconds > LISTEN_WINDOW_SEC) break;
+      const backgroundOnly = entry.background && picked.every((e) => e.background);
+      const capSec = backgroundOnly ? LISTEN_BACKGROUND_WINDOW_SEC : LISTEN_WINDOW_SEC;
+      if (picked.length && seconds + entrySeconds > capSec) break;
       picked.push(entry);
       chars += text.length;
       seconds += entrySeconds;
@@ -391,6 +398,12 @@ export class ReadestVoiceProvider implements SpeechProvider {
           });
         } else {
           this.#fail(entry, new SpeechSynthesisPermanentError('synthesis failed'));
+        }
+        // Every sentence is in: the terminal line only waits on the job's
+        // final status, seconds later. Free the lane for the next window now.
+        if (entries.every((e) => e.settled)) {
+          controller.abort();
+          break;
         }
       }
       // Sentences the window never answered are worth retrying.
