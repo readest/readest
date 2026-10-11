@@ -2628,5 +2628,7 @@
   "Set Repeat End (B)": "Définir la fin de la répétition (B)",
   "Clear A-B Repeat": "Effacer la répétition A-B",
   "Pause After Each Sentence": "Pause après chaque phrase",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Limite TTS quotidienne atteinte. Améliorez votre abonnement ou réessayez demain."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Limite TTS quotidienne atteinte. Améliorez votre abonnement ou réessayez demain.",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

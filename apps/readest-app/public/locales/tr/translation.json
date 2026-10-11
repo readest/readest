@@ -2564,5 +2564,7 @@
   "Set Repeat End (B)": "Tekrar bitişini ayarla (B)",
   "Clear A-B Repeat": "A-B tekrarını temizle",
   "Pause After Each Sentence": "Her cümleden sonra duraklat",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Günlük TTS limitine ulaşıldı. Planınızı yükseltin veya yarın tekrar deneyin."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Günlük TTS limitine ulaşıldı. Planınızı yükseltin veya yarın tekrar deneyin.",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

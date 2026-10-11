@@ -2500,5 +2500,7 @@
   "Set Repeat End (B)": "བསྐྱར་ཟློས་མཇུག་གཏན་འཁེལ། (B)",
   "Clear A-B Repeat": "A-B བསྐྱར་ཟློས་གསལ་བ།",
   "Pause After Each Sentence": "ཚིག་གྲུབ་རེ་རེའི་རྗེས་སུ་མཚམས་འཇོག",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "ཉིན་རེའི་TTS ཚད་མར་སླེབས་སོང་། ཁྱོད་ཀྱི་འཇོག་ཐབས་མར་སྤར་གྱིས་ཡང་ན་སང་ཉིན་ཚོད་ལྟ་བྱོས།"
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "ཉིན་རེའི་TTS ཚད་མར་སླེབས་སོང་། ཁྱོད་ཀྱི་འཇོག་ཐབས་མར་སྤར་གྱིས་ཡང་ན་སང་ཉིན་ཚོད་ལྟ་བྱོས།",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

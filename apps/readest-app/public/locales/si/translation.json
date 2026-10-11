@@ -2564,5 +2564,7 @@
   "Set Repeat End (B)": "පුනරාවර්තන අවසානය සකසන්න (B)",
   "Clear A-B Repeat": "A-B පුනරාවර්තනය ඉවත් කරන්න",
   "Pause After Each Sentence": "සෑම වාක්‍යයකටම පසු විරාම කරන්න",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "දෛනික TTS සීමාවට ළඟා විය. ඔබේ සැලැස්ම උසස් කරන්න හෝ හෙට නැවත උත්සාහ කරන්න."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "දෛනික TTS සීමාවට ළඟා විය. ඔබේ සැලැස්ම උසස් කරන්න හෝ හෙට නැවත උත්සාහ කරන්න.",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

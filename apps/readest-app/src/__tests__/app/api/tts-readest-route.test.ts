@@ -73,13 +73,13 @@ describe('GET /api/tts/readest', () => {
   it('lists Kokoro for Plus, Kokoro and OmniVoice for Pro', async () => {
     m.getSubscriptionPlan.mockReturnValue('plus');
     expect(await (await GET(req('GET'))).json()).toEqual({
-      voices: [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }],
+      voices: [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' }],
     });
     m.getSubscriptionPlan.mockReturnValue('pro');
     expect(await (await GET(req('GET'))).json()).toEqual({
       voices: [
-        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' },
-        { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US' },
+        { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
+        { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
       ],
     });
   });

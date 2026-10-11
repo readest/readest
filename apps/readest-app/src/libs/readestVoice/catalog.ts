@@ -17,6 +17,8 @@ export interface PlanVoice {
   id: string;
   name: string;
   lang: string;
+  // The plan that unlocks the voice, shown as its badge.
+  tier: 'plus' | 'pro';
 }
 
 const CATALOG_TTL_MS = 10 * 60 * 1000;
@@ -73,7 +75,14 @@ export const isVoiceInPlan = (voice: CatalogVoice, plan: UserPlan): boolean => {
 export const voicesForPlan = (catalog: CatalogVoice[], plan: UserPlan): PlanVoice[] =>
   catalog
     .filter((voice) => isVoiceInPlan(voice, plan))
-    .flatMap((voice) => voice.langs.map((lang) => ({ id: voice.id, name: voice.name, lang })));
+    .flatMap((voice) =>
+      voice.langs.map((lang) => ({
+        id: voice.id,
+        name: voice.name,
+        lang,
+        tier: ENGINE_MIN_PLAN[voice.engine]!,
+      })),
+    );
 
 export const findVoice = (catalog: CatalogVoice[], id: string): CatalogVoice | undefined =>
   catalog.find((voice) => voice.id === id);

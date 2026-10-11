@@ -2692,5 +2692,7 @@
   "Set Repeat End (B)": "Встановити кінець повтору (B)",
   "Clear A-B Repeat": "Скинути повтор A-B",
   "Pause After Each Sentence": "Пауза після кожного речення",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Досягнуто щоденного ліміту TTS. Оновіть план або спробуйте знову завтра."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Досягнуто щоденного ліміту TTS. Оновіть план або спробуйте знову завтра.",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

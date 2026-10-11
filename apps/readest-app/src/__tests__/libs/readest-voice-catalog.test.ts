@@ -78,11 +78,11 @@ describe('plan filtering', () => {
     // Qwen3 voices are blocked for every plan, even though the catalog lists them.
     const { voicesForPlan } = await load();
     expect(voicesForPlan(CATALOG, 'plus')).toEqual([
-      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' },
+      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
     ]);
     expect(voicesForPlan(CATALOG, 'pro')).toEqual([
-      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' },
-      { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US' },
+      { id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' },
+      { id: 'omnivoice:clara', name: 'Clara', lang: 'en-US', tier: 'pro' },
     ]);
     expect(voicesForPlan(CATALOG, 'free')).toEqual([]);
     expect(voicesForPlan(CATALOG, 'purchase')).toEqual([]);

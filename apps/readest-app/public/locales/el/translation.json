@@ -2564,5 +2564,7 @@
   "Set Repeat End (B)": "Ορισμός τέλους επανάληψης (B)",
   "Clear A-B Repeat": "Διαγραφή επανάληψης A-B",
   "Pause After Each Sentence": "Παύση μετά από κάθε πρόταση",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Το ημερήσιο όριο TTS έχει επιτευχθεί. Αναβαθμίστε το πλάνο σας ή δοκιμάστε ξανά αύριο."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Το ημερήσιο όριο TTS έχει επιτευχθεί. Αναβαθμίστε το πλάνο σας ή δοκιμάστε ξανά αύριο.",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

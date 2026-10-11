@@ -221,7 +221,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
       const res = await fetchWithAuth(`${getAPIBaseUrl()}/tts/readest`, { method: 'GET' });
       const data = (await res.json()) as { voices?: TTSVoice[] };
       return Array.isArray(data.voices)
-        ? data.voices.map(({ id, name, lang }) => ({ id, name, lang }))
+        ? data.voices.map(({ id, name, lang, tier }) => ({ id, name, lang, tier }))
         : [];
     } catch {
       // 503 kill switch, 403 lapsed plan, offline: the engine is unavailable.

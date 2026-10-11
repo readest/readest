@@ -2564,5 +2564,7 @@
   "Set Repeat End (B)": "Ismétlés végének beállítása (B)",
   "Clear A-B Repeat": "A-B ismétlés törlése",
   "Pause After Each Sentence": "Szünet minden mondat után",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Napi TTS-korlát elérve. Frissítse tervét, vagy próbálja újra holnap."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Napi TTS-korlát elérve. Frissítse tervét, vagy próbálja újra holnap.",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

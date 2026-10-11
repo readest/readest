@@ -2564,5 +2564,7 @@
   "Set Repeat End (B)": "Takrorlash oxirini belgilash (B)",
   "Clear A-B Repeat": "A-B takrorlashni tozalash",
   "Pause After Each Sentence": "Har bir gapdan keyin pauza",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Kunlik TTS chegarasiga yetildi. Rejangizni yangilang yoki ertaga qayta urinib ko'ring."
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "Kunlik TTS chegarasiga yetildi. Rejangizni yangilang yoki ertaga qayta urinib ko'ring.",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

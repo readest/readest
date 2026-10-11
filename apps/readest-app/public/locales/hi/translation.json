@@ -2564,5 +2564,7 @@
   "Set Repeat End (B)": "दोहराव का अंत सेट करें (B)",
   "Clear A-B Repeat": "A-B दोहराव हटाएँ",
   "Pause After Each Sentence": "हर वाक्य के बाद रोकें",
-  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "दैनिक TTS सीमा पहुँच गई। अपना प्लान अपग्रेड करें या कल पुनः प्रयास करें।"
+  "Daily TTS limit reached. Upgrade your plan or try again tomorrow.": "दैनिक TTS सीमा पहुँच गई। अपना प्लान अपग्रेड करें या कल पुनः प्रयास करें।",
+  "Pro": "Pro",
+  "Plus": "Plus"
 }

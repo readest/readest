@@ -24,7 +24,7 @@ import {
   type SpeechSynthesisRequest,
 } from '@/services/tts/providers/types';
 
-const VOICES = [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US' }];
+const VOICES = [{ id: 'kokoro:af_heart', name: 'Heart', lang: 'en-US', tier: 'plus' }];
 const B = [{ offset: 0, duration: 5_000_000, text: 'Hello' }];
 const AUDIO_B64 = btoa('mp3!');
 
