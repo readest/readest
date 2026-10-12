@@ -20,6 +20,46 @@ const isPrivateHostAllowed = () => process.env.NODE_ENV === 'development';
  */
 class SsrfBlockedError extends Error {}
 
+// Thrown when a buffered upstream body exceeds the cap below.
+class BodyTooLargeError extends Error {}
+
+// Cap for responses we buffer fully in memory (feeds/XML/JSON and any
+// non-streamed download). This proxy is unauthenticated, and `arrayBuffer()`
+// with no limit lets an upstream (or an attacker-controlled target) stream an
+// unbounded body into a 128MB Worker and OOM it (CF 1102). Large files take the
+// streaming branch instead; this only bounds the buffered path.
+const MAX_BUFFERED_BODY_BYTES = 10 * 1024 * 1024;
+
+// Read a response body into an ArrayBuffer, aborting once more than `cap` bytes
+// have arrived. Unlike `response.arrayBuffer()` this never accumulates an
+// unbounded body in memory.
+async function readBodyCapped(response: Response, cap: number): Promise<ArrayBuffer> {
+  const body = response.body;
+  if (!body) return new ArrayBuffer(0);
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      total += value.byteLength;
+      if (total > cap) {
+        await reader.cancel();
+        throw new BodyTooLargeError();
+      }
+      chunks.push(value);
+    }
+  }
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out.buffer;
+}
+
 // Anchored (sticky) so we can test for a well-formed entity *at a given index*
 // without slicing the string. `slice(i).match(/^.../)` allocated a fresh
 // (n − i)-length substring for every `&`, which is O(n²) on an ampersand-heavy
@@ -295,7 +335,13 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
       });
       return new NextResponse(response.body, { status: 200, headers });
     } else {
-      let buf = await response.arrayBuffer();
+      // Reject early when the upstream declares an oversized body, and cap the
+      // read otherwise (a hostile upstream can omit Content-Length and stream
+      // an unbounded chunked body).
+      if (contentLength && parseInt(contentLength) > MAX_BUFFERED_BODY_BYTES) {
+        throw new BodyTooLargeError();
+      }
+      let buf = await readBodyCapped(response, MAX_BUFFERED_BODY_BYTES);
       if (contentType.toLowerCase().includes('xml')) {
         buf = sanitizeXmlBuffer(buf);
       }
@@ -314,6 +360,10 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
 
     if (error instanceof SsrfBlockedError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (error instanceof BodyTooLargeError) {
+      return NextResponse.json({ error: 'Upstream response too large' }, { status: 413 });
     }
 
     if (error instanceof Error) {

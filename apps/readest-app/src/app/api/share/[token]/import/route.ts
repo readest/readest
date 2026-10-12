@@ -113,9 +113,18 @@ export async function POST(request: Request, { params }: RouteParams) {
     });
   }
 
-  // Quota check before doing any byte-copy work. JWT-based but consistent
-  // with how the existing upload endpoint enforces it.
-  const { usage, quota } = getStoragePlanData(jwt);
+  // Quota check before doing any byte-copy work. The usage claim baked into
+  // the JWT is frozen at mint time, so repeated imports in the same token
+  // window all measured against the same stale baseline and could blow past the
+  // quota. Read the live counter the DB trigger maintains (as upload.ts does),
+  // falling back to the claim only if the row can't be read.
+  const { usage: claimUsage, quota } = getStoragePlanData(jwt);
+  const { data: planRow } = await supabase
+    .from('plans')
+    .select('storage_usage_bytes')
+    .eq('id', user.id)
+    .single();
+  const usage = planRow?.storage_usage_bytes ?? claimUsage;
   if (usage + share.bookSize > quota + STORAGE_QUOTA_GRACE_BYTES) {
     return NextResponse.json(
       { error: 'Insufficient storage quota', code: 'quota_exceeded', usage, quota },

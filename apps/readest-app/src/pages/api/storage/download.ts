@@ -4,6 +4,10 @@ import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { getDownloadSignedUrl } from '@/utils/object';
 import { validateUserAndToken } from '@/utils/access';
 
+// Bound the batch so one request cannot fan out into a huge `.in(...)` query
+// plus one signed-URL call per key.
+const MAX_DOWNLOAD_FILEKEYS = 200;
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
 
@@ -53,6 +57,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (fileKeys.length === 0) {
         return res.status(400).json({ error: 'fileKeys array cannot be empty' });
+      }
+
+      if (fileKeys.length > MAX_DOWNLOAD_FILEKEYS) {
+        return res.status(413).json({ error: 'Too many fileKeys requested' });
       }
 
       if (!fileKeys.every((key) => typeof key === 'string')) {

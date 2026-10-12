@@ -41,7 +41,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      await deleteObject(fileKey);
+      // Delete the object FIRST and confirm it succeeded. supabase/R2 fetch
+      // returns a Response whose `.ok` must be checked: dropping the `files`
+      // row after a failed R2 delete orphans the object in the bucket with no
+      // index pointing at it. (`.ok === undefined` on the S3 path is tolerated
+      // so non-R2 deployments keep working.)
+      const r2Res = (await deleteObject(fileKey)) as { ok?: boolean; status?: number } | undefined;
+      if (r2Res && r2Res.ok === false) {
+        console.error('Error deleting file from storage: status', r2Res.status, fileKey);
+        return res.status(502).json({ error: 'Could not delete file from storage' });
+      }
       const { error: deleteError } = await supabase.from('files').delete().eq('id', fileRecord.id);
 
       if (deleteError) {
