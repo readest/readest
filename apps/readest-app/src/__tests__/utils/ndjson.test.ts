@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readNDJSON } from '@/utils/ndjson';
 
 const streamOf = (chunks: (string | Uint8Array)[]) => {
@@ -46,5 +46,25 @@ describe('readNDJSON', () => {
     const body = streamOf(['{"a":1}\n{"b":2}\n']);
     for await (const _ of readNDJSON(body)) break;
     expect(body.locked).toBe(false);
+  });
+
+  it('cancels the stream when the signal aborts, even mid-read', async () => {
+    const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"a":1}\n'));
+      },
+      cancel,
+    });
+    const abort = new AbortController();
+    const seen: unknown[] = [];
+    const reading = (async () => {
+      for await (const line of readNDJSON(body, abort.signal)) seen.push(line);
+    })();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    abort.abort();
+    await reading;
+    expect(seen).toEqual([{ a: 1 }]);
+    expect(cancel).toHaveBeenCalled();
   });
 });
