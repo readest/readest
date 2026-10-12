@@ -253,8 +253,12 @@ const TTSPlayerSheet = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    // A request superseded by a newer one (the clients became ready, the
+    // language changed) must not overwrite its result.
+    let current = true;
     const fetchVoices = async () => {
       const groups = await onGetVoices(ttsLang);
+      if (!current) return;
       const voicesCount = groups.reduce((acc, group) => acc + group.voices.length, 0);
       if (!groups || voicesCount === 0) {
         setVoiceGroups([
@@ -269,6 +273,9 @@ const TTSPlayerSheet = ({
       }
     };
     fetchVoices();
+    return () => {
+      current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ttsLang, clientsReady]);
 
@@ -519,6 +526,7 @@ const TTSPlayerSheet = ({
                 title={prevLargeLabel}
                 aria-label={prevLargeLabel}
                 onClick={() => onBackward(false)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <MdSkipPrevious size={iconSize24} />
@@ -532,6 +540,7 @@ const TTSPlayerSheet = ({
                 title={prevSmallLabel}
                 aria-label={prevSmallLabel}
                 onClick={() => onBackward(true)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <RiReplay15Line size={iconSize24} />
@@ -545,6 +554,7 @@ const TTSPlayerSheet = ({
                 aria-label={isPlaying ? _('Pause') : _('Play')}
                 aria-busy={buffering}
                 onClick={onTogglePlay}
+                disabled={!clientsReady}
               >
                 {isPlaying ? (
                   <MdOutlinePause size={iconSize32} />
@@ -561,6 +571,7 @@ const TTSPlayerSheet = ({
                 title={nextSmallLabel}
                 aria-label={nextSmallLabel}
                 onClick={() => onForward(true)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <RiForward30Line size={iconSize24} />
@@ -574,6 +585,7 @@ const TTSPlayerSheet = ({
                 title={nextLargeLabel}
                 aria-label={nextLargeLabel}
                 onClick={() => onForward(false)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <MdSkipNext size={iconSize24} />

@@ -2601,7 +2601,10 @@ export class TTSController extends EventTarget {
   async shutdown() {
     stopAudioKeepAlive();
     await this.stop();
-    this.#clearAllHighlights();
+    // A controller replaced by a newer session leaves that session's text
+    // and highlights on the shared view alone.
+    const ownsView = !this.view.tts || this.view.tts === this.#tts;
+    if (ownsView) this.#clearAllHighlights();
     this.#ttsSectionIndex = -1;
     this.#sectionTimeline = null;
     this.#timelineSectionIndex = -1;
@@ -2609,7 +2612,7 @@ export class TTSController extends EventTarget {
     this.#ttsDoc = null;
     this.#tts = null;
     this.#mediaOverlaySection = null;
-    this.view.tts = null;
+    if (ownsView) this.view.tts = null;
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
     }

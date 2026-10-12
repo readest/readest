@@ -147,6 +147,22 @@ describe('TTSController lifecycle', () => {
     expect(mockTtsInstances[0]!.next).toHaveBeenCalled();
   });
 
+  test('a replaced controller shutting down leaves the new one its view', async () => {
+    const replacement = new TTSController(null, view);
+    await replacement.init();
+    await replacement.initViewTTS(0);
+    const owned = view.tts;
+    expect(owned).not.toBeNull();
+    const overlayer = view.renderer.getContents()[0]!.overlayer as unknown as {
+      remove: ReturnType<typeof vi.fn>;
+    };
+    overlayer.remove.mockClear();
+    // The first (superseded) controller is torn down after the new one took over.
+    await controller.shutdown();
+    expect(view.tts).toBe(owned);
+    expect(overlayer.remove).not.toHaveBeenCalled();
+  });
+
   test('state changes dispatch tts-state-change once per actual change, on a microtask', async () => {
     const events: string[] = [];
     controller.addEventListener('tts-state-change', (e) => {
