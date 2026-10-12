@@ -50,7 +50,14 @@ const generateCacheKey = (text: string, sourceLang: string, targetLang: string):
 
 const checkDailyUsage = async (userId: string, token: string, chars: number) => {
   const { quota: dailyQuota } = getDailyTranslationPlanData(token);
-  const dailyUsage = await UsageStatsManager.getCurrentUsage(userId, 'translation_chars', 'daily');
+  // Fail CLOSED: use the strict read so a usage-counter outage rejects the
+  // request (caught below as a 500) rather than reading 0 and translating
+  // unmetered against the paid DeepL key.
+  const dailyUsage = await UsageStatsManager.getCurrentUsageOrThrow(
+    userId,
+    'translation_chars',
+    'daily',
+  );
 
   if (dailyQuota <= dailyUsage + chars) {
     throw new Error(ErrorCodes.DAILY_QUOTA_EXCEEDED);

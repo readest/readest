@@ -17,6 +17,10 @@ const stripeMocks = vi.hoisted(() => ({
 const db = vi.hoisted(() => ({
   existingSubscription: null as unknown,
   planUpdates: [] as Array<Record<string, unknown>>,
+  // Settable so a test can simulate a failed Supabase write; supabase-js
+  // resolves with `{ error }` rather than throwing.
+  subWriteError: null as { message: string } | null,
+  planUpdateError: null as { message: string } | null,
 }));
 
 vi.mock('stripe', () => {
@@ -40,7 +44,7 @@ vi.mock('@/utils/supabase', () => ({
           update: (values: Record<string, unknown>) => ({
             eq: () => {
               db.planUpdates.push(values);
-              return Promise.resolve({ data: null, error: null });
+              return Promise.resolve({ data: null, error: db.planUpdateError });
             },
           }),
         };
@@ -52,8 +56,8 @@ vi.mock('@/utils/supabase', () => ({
               single: () => Promise.resolve({ data: db.existingSubscription }),
             }),
           }),
-          update: () => ({ eq: () => Promise.resolve({ data: null, error: null }) }),
-          insert: () => Promise.resolve({ data: null, error: null }),
+          update: () => ({ eq: () => Promise.resolve({ data: null, error: db.subWriteError }) }),
+          insert: () => Promise.resolve({ data: null, error: db.subWriteError }),
         };
       }
       if (table === 'google_iap_subscriptions' || table === 'apple_iap_subscriptions') {
@@ -103,6 +107,8 @@ beforeEach(() => {
   stripeMocks.subscriptionsList.mockReset();
   db.existingSubscription = null;
   db.planUpdates = [];
+  db.subWriteError = null;
+  db.planUpdateError = null;
   process.env['STRIPE_SECRET_KEY_DEV'] = 'sk_test_dummy';
 });
 
@@ -205,5 +211,27 @@ describe('createOrUpdateSubscription', () => {
     await createOrUpdateSubscription('user-1', 'cus_1', 'sub_plus');
 
     expect(db.planUpdates.at(-1)?.['plan']).toBe('free');
+  });
+
+  it('throws when the subscriptions write fails so the webhook returns 500 and Stripe retries', async () => {
+    db.existingSubscription = { id: 1 };
+    db.subWriteError = { message: 'db down' };
+    stripeMocks.subscriptionsRetrieve.mockResolvedValue(makeSub('sub_plus', 'plus'));
+    stripeMocks.subscriptionsList.mockResolvedValue({
+      data: [{ id: 'sub_plus', status: 'active' }],
+    });
+
+    await expect(createOrUpdateSubscription('user-1', 'cus_1', 'sub_plus')).rejects.toThrow();
+  });
+
+  it('throws when the plans update fails', async () => {
+    db.existingSubscription = { id: 1 };
+    db.planUpdateError = { message: 'db down' };
+    stripeMocks.subscriptionsRetrieve.mockResolvedValue(makeSub('sub_plus', 'plus'));
+    stripeMocks.subscriptionsList.mockResolvedValue({
+      data: [{ id: 'sub_plus', status: 'active' }],
+    });
+
+    await expect(createOrUpdateSubscription('user-1', 'cus_1', 'sub_plus')).rejects.toThrow();
   });
 });

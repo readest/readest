@@ -63,4 +63,28 @@ export class UsageStatsManager {
       return 0;
     }
   }
+
+  // Strict variant for quota ENFORCEMENT: unlike `getCurrentUsage` (which
+  // returns 0 on error — safe for read-only display), this throws when the
+  // usage counter cannot be read. Callers that gate a paid/metered operation
+  // must use this so a Supabase outage fails CLOSED (the operation is refused)
+  // instead of silently treating usage as 0 and letting it through unmetered.
+  static async getCurrentUsageOrThrow(
+    userId: string,
+    usageType: string,
+    period: 'daily' | 'monthly' = 'daily',
+  ): Promise<number> {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase.rpc('get_current_usage', {
+      p_user_id: userId,
+      p_usage_type: usageType,
+      p_period: period,
+    });
+
+    if (error) {
+      throw new Error(`Could not read current usage: ${error.message}`);
+    }
+
+    return data || 0;
+  }
 }

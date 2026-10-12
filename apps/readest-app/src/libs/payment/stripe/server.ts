@@ -81,26 +81,30 @@ export const createOrUpdateSubscription = async (
   const subscriptionItem = subscription.items.data[0]!;
   const priceId = subscriptionItem.price.id;
 
-  try {
-    const { data: existingSubscription } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('stripe_subscription_id', subscriptionId)
-      .single();
+  // A missing row here is the normal "new subscription" case, so the lookup
+  // error is tolerated (data is just null). The WRITES below, however, must
+  // surface their errors: supabase-js resolves with `{ error }` instead of
+  // throwing, and the Stripe webhook relies on a thrown error to answer 500 so
+  // Stripe retries. Swallowing them (the previous log-only catch) left a paying
+  // user stuck on the wrong plan with no retry.
+  const { data: existingSubscription } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('stripe_subscription_id', subscriptionId)
+    .single();
 
-    const period_start = new Date(subscriptionItem.current_period_start * 1000).toISOString();
-    const period_end = new Date(subscriptionItem.current_period_end * 1000).toISOString();
-    if (existingSubscription) {
-      await supabase
+  const period_start = new Date(subscriptionItem.current_period_start * 1000).toISOString();
+  const period_end = new Date(subscriptionItem.current_period_end * 1000).toISOString();
+  const { error: writeError } = existingSubscription
+    ? await supabase
         .from('subscriptions')
         .update({
           status: subscription.status,
           current_period_start: period_start,
           current_period_end: period_end,
         })
-        .eq('id', existingSubscription.id);
-    } else {
-      await supabase.from('subscriptions').insert({
+        .eq('id', existingSubscription.id)
+    : await supabase.from('subscriptions').insert({
         user_id: userId,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
@@ -110,21 +114,25 @@ export const createOrUpdateSubscription = async (
         current_period_end: period_end,
         created_at: new Date().toISOString(),
       });
-    }
-  } catch (error) {
-    console.error('Error checking existing subscription:', error);
+  if (writeError) {
+    throw new Error(
+      `subscriptions ${existingSubscription ? 'update' : 'insert'} failed: ${writeError.message}`,
+    );
   }
 
   // Across every provider, not just Stripe: this user may also hold a Google
   // Play or App Store subscription that must not be cancelled out from here.
   const plan = await resolveUserPlan(userId, { stripeCustomerId: customerId });
-  await supabase
+  const { error: planError } = await supabase
     .from('plans')
     .update({
       plan,
       status: subscription.status,
     })
     .eq('id', userId);
+  if (planError) {
+    throw new Error(`plans update failed: ${planError.message}`);
+  }
 };
 
 export const COMPLETED_PAYMENT_STATUSES: PaymentStatus[] = ['completed', 'succeeded'];
