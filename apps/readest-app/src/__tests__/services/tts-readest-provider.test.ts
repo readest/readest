@@ -605,6 +605,58 @@ describe('download jobs', () => {
     expect(all().map((j) => j.body.segments.length)).toEqual([64, 36]);
   });
 
+  it('takes over sentences only queued as listening preloads, as download jobs', async () => {
+    const listen = new AbortController().signal;
+    // Playback is busy with the sentence it waits on; later ones queue up.
+    provider.synthesize(req('Now.'), listen).catch(() => {});
+    provider.prefetch(reqs(10, 'P'), 'listen', listen, { background: true });
+    await flush();
+    expect(windows.map(texts)).toEqual([['Now.']]);
+
+    provider.prefetch(reqs(10, 'P'), 'download', new AbortController().signal);
+    await flush(6);
+    expect(all().map((j) => j.body.segments.map((seg) => seg.text))).toEqual([
+      reqs(10, 'P').map((r) => r.text),
+    ]);
+    // The next listen window no longer carries them.
+    windows[0]!.completeAll();
+    await flush();
+    expect(windows).toHaveLength(1);
+  });
+
+  it('leaves a sentence a listen window already carries to that window', async () => {
+    const listen = new AbortController().signal;
+    provider.prefetch([req('P0.')], 'listen', listen, { background: true });
+    await flush();
+    expect(windows.map(texts)).toEqual([['P0.']]);
+    provider.prefetch([req('P0.')], 'download', new AbortController().signal);
+    await flush(6);
+    expect(all()).toHaveLength(0);
+  });
+
+  it('drops sentences the cache filled meanwhile, cancelling a job left with nothing to do', async () => {
+    // 900-character sentences: two per window, four windows sent, one queued.
+    const long = Array.from({ length: 10 }, (_, i) => req(`${'a'.repeat(898)}${i}.`));
+    const delivered: string[] = [];
+    provider.prefetch(long, 'download', new AbortController().signal, {
+      onDelivered: (r) => delivered.push(r.text.slice(-2)),
+    });
+    await flush(6);
+    expect(all()).toHaveLength(4);
+    // A synced pack arrives with the first window's and the queued window's
+    // sentences.
+    const cached = { audio: new ArrayBuffer(4), boundaries: B };
+    for (const i of [0, 1, 8, 9]) provider.fulfill!(long[i]!, cached);
+    await flush();
+    expect(delivered).toEqual(['0.', '1.', '8.', '9.']);
+    expect(all()[0]!.deleted).toBe(true);
+    expect(all()[1]!.deleted).toBe(false);
+    // The queued window is never sent.
+    for (const job of all().slice(1)) job.complete();
+    await flush();
+    expect(all()).toHaveLength(4);
+  });
+
   it('resolves sentences from the result once the job is done, polling meanwhile', async () => {
     const delivered: string[] = [];
     provider.prefetch(reqs(2, 'D'), 'download', new AbortController().signal, {

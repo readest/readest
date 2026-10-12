@@ -229,12 +229,12 @@ export class CachingProvider implements SpeechProvider {
     options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
     const recent = this.#recent.get(key);
-    if (recent) return { audio: recent.audio.slice(0), boundaries: recent.boundaries };
+    if (recent) return this.#served(req, recent);
     try {
       const cached = await this.#store.get(key);
       if (cached) {
         this.#remember(key, cached);
-        return { audio: cached.audio.slice(0), boundaries: cached.boundaries };
+        return this.#served(req, cached);
       }
     } catch (err) {
       console.warn('TTS cache read failed; synthesizing instead', err);
@@ -251,6 +251,13 @@ export class CachingProvider implements SpeechProvider {
       console.warn('TTS cache write failed; continuing uncached', err);
     }
     return result;
+  }
+
+  // A sentence served from the cache may still be pending in the provider
+  // (prefetched before a synced pack brought it): it need not synthesize it.
+  #served(req: SpeechSynthesisRequest, cached: SpeechSynthesisResult): SpeechSynthesisResult {
+    this.#inner.fulfill?.(req, { audio: cached.audio.slice(0), boundaries: cached.boundaries });
+    return { audio: cached.audio.slice(0), boundaries: cached.boundaries };
   }
 
   // Ordered sentence labels for a section, from the timeline enumeration.
@@ -284,6 +291,10 @@ export class CachingProvider implements SpeechProvider {
 
   async clearDownloads(): Promise<void> {
     await this.#store.clearDownloads?.();
+    // Audio kept in memory would be served without reaching the store again,
+    // so a re-downloaded section could never pack.
+    this.#recent.clear();
+    this.#recentBytes = 0;
   }
 
   async compact(): Promise<void> {

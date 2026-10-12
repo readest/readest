@@ -46,6 +46,35 @@ describe('CachingProvider', () => {
     provider = new CachingProvider(inner, store);
   });
 
+  test('clearing downloads forgets the audio kept in memory too', async () => {
+    const clearing = Object.assign(store, {
+      clearDownloads: vi.fn(async () => store.map.clear()),
+    });
+    await provider.synthesize(req('a'), signal());
+    await provider.clearDownloads();
+    expect(clearing.clearDownloads).toHaveBeenCalled();
+    // Served from memory, it would never reach the store again, so the
+    // re-downloaded section could not pack.
+    await provider.synthesize(req('a'), signal());
+    expect(inner.synthesize).toHaveBeenCalledTimes(2);
+    expect(store.put).toHaveBeenCalledTimes(2);
+  });
+
+  test('tells the inner provider when the cache serves a sentence it may still have pending', async () => {
+    const fulfill = vi.fn();
+    const withFulfill = new CachingProvider(makeInner({ fulfill }), store);
+    await withFulfill.synthesize(req('a'), signal());
+    expect(fulfill).not.toHaveBeenCalled();
+    // From memory, then (a fresh provider) from the store.
+    await withFulfill.synthesize(req('a'), signal());
+    await new CachingProvider(makeInner({ fulfill }), store).synthesize(req('a'), signal());
+    expect(fulfill).toHaveBeenCalledTimes(2);
+    expect(fulfill).toHaveBeenCalledWith(
+      req('a'),
+      expect.objectContaining({ boundaries: BOUNDARIES }),
+    );
+  });
+
   test('mirrors the inner provider voice-language policy', () => {
     expect(provider.sameLanguageVoicesOnly).toBeUndefined();
     const strict = new CachingProvider(makeInner({ sameLanguageVoicesOnly: true }), store);
