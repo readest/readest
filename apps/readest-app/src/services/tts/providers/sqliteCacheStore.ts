@@ -305,7 +305,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     for (let start = 0; start < keys.length; start += BATCH_ROWS * 3) {
       const batch = keys.slice(start, start + BATCH_ROWS * 3);
       const rows = await this.#db.select<DatabaseRow & { key: string }>(
-        `SELECT key FROM entries WHERE key IN (${batch.map(() => '?').join(', ')})`,
+        // A row a deleted pack left without audio (and without a pack) is a miss.
+        `SELECT key FROM entries
+          WHERE key IN (${batch.map(() => '?').join(', ')})
+            AND (audio IS NOT NULL OR pack_id IS NOT NULL)`,
         batch,
       );
       for (const row of rows) cached.add(row.key);

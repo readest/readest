@@ -48,6 +48,18 @@ describe('SqliteTTSCacheStore', () => {
     expect(select.mock.calls.length).toBeLessThanOrEqual(3);
   });
 
+  test('does not report an entry its deleted pack left without audio', async () => {
+    const store = makeStore(1024 * 1024);
+    await store.put('kept', entry(8));
+    // What pack deletion leaves when no other pack holds the key.
+    await db.execute(
+      `INSERT INTO entries (key, audio, pack_id, boundaries, size, created_at, accessed_at)
+       VALUES ('detached', NULL, NULL, '[]', 0, 1, 1)`,
+    );
+    expect(await store.get('detached')).toBeNull();
+    expect(await store.cachedKeys(['kept', 'detached'])).toEqual(new Set(['kept']));
+  });
+
   test('round-trips audio, boundaries, and duration', async () => {
     const store = makeStore(1024 * 1024);
     await store.put('key1', entry(64, 7), { provider: 'edge-tts', voice: 'v1' });
