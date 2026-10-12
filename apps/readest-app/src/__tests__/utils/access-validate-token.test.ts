@@ -49,6 +49,11 @@ describe('validateUserAndToken', () => {
     expect(await validateUserAndToken('Bearer service')).toEqual({});
   });
 
+  it('rejects authenticated claims without a subject', async () => {
+    getClaimsMock.mockResolvedValue(claimsResult({ role: 'authenticated' }));
+    expect(await validateUserAndToken('Bearer missing-sub')).toEqual({});
+  });
+
   it('returns nothing without an auth header', async () => {
     expect(await validateUserAndToken(null)).toEqual({});
     expect(getClaimsMock).not.toHaveBeenCalled();
