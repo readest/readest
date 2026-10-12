@@ -63,3 +63,26 @@ describe('middleware cross-origin isolation headers', () => {
     expect(res.headers.get('Cross-Origin-Embedder-Policy')).toBeNull();
   });
 });
+
+describe('middleware security headers', () => {
+  it('sets nosniff, Referrer-Policy, HSTS and a framing CSP on document responses', () => {
+    const res = middleware(new NextRequest('http://localhost:3000/library'));
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(res.headers.get('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
+    expect(res.headers.get('Strict-Transport-Security')).toContain('max-age=');
+    // The bearer token lives in localStorage, so clickjacking a framed Readest
+    // is an account-takeover vector; only same-origin framing is allowed.
+    expect(res.headers.get('Content-Security-Policy')).toContain("frame-ancestors 'self'");
+  });
+
+  it('sets nosniff and HSTS on API responses without disturbing CORS', () => {
+    const res = middleware(
+      new NextRequest('https://web.readest.com/api/sync', {
+        headers: { origin: 'https://web.readest.com' },
+      }),
+    );
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(res.headers.get('Strict-Transport-Security')).toContain('max-age=');
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://web.readest.com');
+  });
+});

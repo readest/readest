@@ -17,6 +17,20 @@ import {
 // unlike `temp/` objects they are durable and their URLs never rotate.
 const PUBLIC_MEDIA_KINDS = ['book_covers'];
 
+// The public bucket is served from the assets domain with no quota accounting,
+// so uploads to it are capped hard and restricted to raster image types. The
+// app only ever publishes small cover/presence PNGs and JPEGs here; rejecting
+// everything else stops the public bucket being used to host arbitrary HTML/JS
+// (phishing/malware) or to run up unbounded storage on the assets domain.
+const MAX_PUBLIC_UPLOAD_BYTES = 10 * 1024 * 1024;
+const PUBLIC_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif'];
+
+const hasAllowedPublicImageExt = (fileName: string): boolean => {
+  const dot = fileName.lastIndexOf('.');
+  if (dot < 0) return false;
+  return PUBLIC_IMAGE_EXTENSIONS.includes(fileName.slice(dot + 1).toLowerCase());
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
 
@@ -37,6 +51,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // namespace (GHSA-mfmj-2frf-vhgw).
   if (!isSafeObjectKeyName(fileName)) {
     return res.status(400).json({ error: 'Invalid fileName' });
+  }
+
+  // `fileSize` is client-controlled and flows into the quota comparison
+  // (`usage + fileSize > quota`), into the `files.file_size` column, and into
+  // the signed PUT's content-length on the public media/temp branches. Reject
+  // anything that is not a positive safe integer: a negative value otherwise
+  // passes the quota check and can drive the usage counter down, a numeric
+  // string turns the comparison into string concatenation, and a fractional or
+  // non-finite value corrupts the stored size. Every legitimate caller sends a
+  // positive integer byte count, so this rejects only malformed/abusive input.
+  if (!Number.isSafeInteger(fileSize) || fileSize <= 0) {
+    return res.status(400).json({ error: 'Invalid fileSize' });
+  }
+
+  // The public media/temp branches skip quota accounting entirely, so bound
+  // them here: image file types only (no HTML/JS/SVG hosting) and a hard size
+  // ceiling well above any legitimate cover or presence image.
+  if (media || temp) {
+    if (!hasAllowedPublicImageExt(fileName)) {
+      return res.status(400).json({ error: 'Invalid public file type' });
+    }
+    if (fileSize > MAX_PUBLIC_UPLOAD_BYTES) {
+      return res.status(413).json({ error: 'Public upload too large' });
+    }
   }
 
   if (media) {

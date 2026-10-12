@@ -20,7 +20,13 @@ const isPrivateHostAllowed = () => process.env.NODE_ENV === 'development';
  */
 class SsrfBlockedError extends Error {}
 
-const sanitizeXmlBuffer = (buf: ArrayBuffer): ArrayBuffer => {
+// Anchored (sticky) so we can test for a well-formed entity *at a given index*
+// without slicing the string. `slice(i).match(/^.../)` allocated a fresh
+// (n − i)-length substring for every `&`, which is O(n²) on an ampersand-heavy
+// body and lets an anonymous caller burn the Worker's CPU budget.
+const XML_ENTITY_AT = /&(amp|lt|gt|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);/y;
+
+export const sanitizeXmlBuffer = (buf: ArrayBuffer): ArrayBuffer => {
   let text = '';
   const bytes = new Uint8Array(buf);
   for (const byte of bytes) text += String.fromCharCode(byte);
@@ -40,13 +46,12 @@ const sanitizeXmlBuffer = (buf: ArrayBuffer): ArrayBuffer => {
       i += ']]>'.length - 1;
       continue;
     }
-    if (
-      !inCdata &&
-      text[i] === '&' &&
-      !text.slice(i).match(/^&(amp|lt|gt|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);/)
-    ) {
-      out += '&amp;';
-      continue;
+    if (!inCdata && text[i] === '&') {
+      XML_ENTITY_AT.lastIndex = i;
+      if (!XML_ENTITY_AT.test(text)) {
+        out += '&amp;';
+        continue;
+      }
     }
     out += text[i];
   }

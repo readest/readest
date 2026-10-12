@@ -149,7 +149,28 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     const { library, hashIndex, setLibrary } = useLibraryStore.getState();
     const hash = bookKey.split('-')[0]!;
     const idx = hashIndex.get(hash);
-    if (idx === undefined) return;
+    if (idx === undefined) {
+      // The book is open in the reader but missing from the library index — a
+      // mid-session library reload can drop the in-memory entry. The early
+      // `return` here used to skip EVERYTHING, including the per-book
+      // config.json write, silently losing the highlight/bookmark/progress the
+      // user just made. Fall back to writing config.json (the source of truth
+      // sync uses to reconstruct the shelf) from the open book, skipping only
+      // the library move-to-front that we can't do without the index entry.
+      const openBook = get().booksData[hash]?.book;
+      if (!openBook) {
+        console.warn('saveConfig: book missing from library index and reader; skipping', hash);
+        return;
+      }
+      console.warn(
+        'saveConfig: book missing from library index; writing config.json without library update',
+        hash,
+      );
+      const now = Date.now();
+      get().setConfig(bookKey, { updatedAt: now });
+      await appService.saveBookConfig(openBook, { ...config, updatedAt: now }, settings);
+      return;
+    }
 
     // Immutably move the book to the front of the library with updated
     // progress and timestamps. We do NOT mutate the existing book object or

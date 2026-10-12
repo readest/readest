@@ -13,6 +13,15 @@ import { UsageStatsManager } from '@/utils/usage';
 const DEFAULT_DEEPL_FREE_API = 'https://api-free.deepl.com/v2/translate';
 const DEFAULT_DEEPL_PRO_API = 'https://api.deepl.com/v2/translate';
 
+// Hard per-request caps, independent of the per-user daily quota. They bound
+// the work a single request can trigger (one upstream fetch per item, run in
+// parallel) so one caller cannot fan out thousands of concurrent DeepL calls
+// or buffer megabytes of text in a 128MB Worker. The largest daily quota (pro)
+// is 500 KiB, so a 50K-char request ceiling never gets in the way of a
+// legitimate batch while still blocking the 500×9000 abuse case.
+const MAX_TRANSLATION_ITEMS = 100;
+const MAX_TRANSLATION_TOTAL_CHARS = 50_000;
+
 interface KVNamespace {
   get(key: string): Promise<string | null>;
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
@@ -114,7 +123,36 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     use_cache: useCache = false,
   }: { text: string[]; source_lang: string; target_lang: string; use_cache: boolean } = req.body;
 
+  // Authenticate up front. The only auth check used to live inside the
+  // per-item `Promise.all` callback below, which let an unauthenticated caller
+  // read cached translations before the check, and — worse — still ran the
+  // success `res.status(200)` after the in-callback `res.status(401)`, sending
+  // two responses for one request. Validating `text` as a string array here
+  // also stops a non-array body from throwing inside `.map` and surfacing as an
+  // opaque 500.
+  if (!user || !token) {
+    return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
+  }
+  if (!Array.isArray(text) || text.some((t) => typeof t !== 'string')) {
+    return res.status(400).json({ error: 'Invalid text' });
+  }
+
+  // Bound the request before doing any work. Without this a single request can
+  // carry hundreds of items of thousands of chars each.
+  const totalChars = text.reduce((sum, t) => sum + t.length, 0);
+  if (text.length > MAX_TRANSLATION_ITEMS || totalChars > MAX_TRANSLATION_TOTAL_CHARS) {
+    return res.status(413).json({ error: 'Translation request too large' });
+  }
+
   try {
+    // Reserve the whole request against the daily quota *once*, up front. The
+    // old per-item check ran inside the `Promise.all` map where every item read
+    // the same pre-increment usage snapshot, so N items each under the quota
+    // would all pass and translate N× the quota in a single request. Checking
+    // the summed character count here closes that bypass; usage is incremented
+    // after a successful translation via `updateDailyUsage` below.
+    await checkDailyUsage(user.id, token, totalChars);
+
     const translations = await Promise.all(
       text.map(async (singleText) => {
         if (!singleText?.trim()) {
@@ -136,9 +174,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             console.error('Cache retrieval error:', cacheError);
           }
         }
-
-        if (!user || !token) return res.status(401).json({ error: ErrorCodes.UNAUTHORIZED });
-        await checkDailyUsage(user?.id, token, singleText.length);
 
         return await callDeepLAPI(
           singleText,

@@ -25,6 +25,10 @@ vi.mock('@/utils/supabase', () => ({
     from: (table: string) => ({
       upsert: (...a: unknown[]) => orphanUpsertMock(table, ...a),
       delete: () => ({ eq: (...a: unknown[]) => orphanDeleteEqMock(table, ...a) }),
+      // The handler also lists the user's `files` rows (primary-bucket object
+      // keys) before deleting the identity so it can purge those R2 objects.
+      // These tests are about the stats archive, so return an empty page.
+      select: () => ({ eq: () => ({ range: () => Promise.resolve({ data: [], error: null }) }) }),
     }),
   }),
 }));

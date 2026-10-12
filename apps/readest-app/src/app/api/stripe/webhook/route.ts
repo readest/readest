@@ -8,6 +8,17 @@ import {
 import { resolveUserPlan } from '@/libs/payment/entitlements';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
+// supabase-js resolves with `{ error }` rather than throwing. A webhook handler
+// that ignores it returns 200 on a failed write, so Stripe treats the event as
+// delivered and never retries — the user's billing state then diverges
+// permanently. Convert a write error into a throw so the POST handler answers
+// 500 and Stripe redelivers.
+const throwIfError = (result: { error: { message: string } | null }, context: string): void => {
+  if (result.error) {
+    throw new Error(`${context}: ${result.error.message}`);
+  }
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
@@ -108,20 +119,26 @@ async function handleSuccessfulInvoice(invoice: Stripe.Invoice) {
     return;
   }
 
-  await supabase
-    .from('subscriptions')
-    .update({
-      status: 'active',
-      current_period_end: new Date(invoice.lines.data[0]!.period.end * 1000).toISOString(),
-    })
-    .eq('stripe_subscription_id', subscriptionId);
+  throwIfError(
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'active',
+        current_period_end: new Date(invoice.lines.data[0]!.period.end * 1000).toISOString(),
+      })
+      .eq('stripe_subscription_id', subscriptionId),
+    'subscriptions update (invoice succeeded)',
+  );
 
-  await supabase
-    .from('plans')
-    .update({
-      status: 'active',
-    })
-    .eq('user_id', customerData.user_id);
+  throwIfError(
+    await supabase
+      .from('plans')
+      .update({
+        status: 'active',
+      })
+      .eq('user_id', customerData.user_id),
+    'plans update (invoice succeeded)',
+  );
 }
 
 async function handleFailedInvoice(invoice: Stripe.Invoice) {
@@ -144,19 +161,25 @@ async function handleFailedInvoice(invoice: Stripe.Invoice) {
     return;
   }
 
-  await supabase
-    .from('subscriptions')
-    .update({
-      status: 'past_due',
-    })
-    .eq('stripe_subscription_id', subscriptionId);
+  throwIfError(
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'past_due',
+      })
+      .eq('stripe_subscription_id', subscriptionId),
+    'subscriptions update (invoice failed)',
+  );
 
-  await supabase
-    .from('plans')
-    .update({
-      status: 'past_due',
-    })
-    .eq('id', customerData.user_id);
+  throwIfError(
+    await supabase
+      .from('plans')
+      .update({
+        status: 'past_due',
+      })
+      .eq('id', customerData.user_id),
+    'plans update (invoice failed)',
+  );
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -181,13 +204,16 @@ async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
   const subscriptionId = subscription.id;
 
   const supabase = createSupabaseAdminClient();
-  await supabase
-    .from('subscriptions')
-    .update({
-      status: 'cancelled',
-      cancelled_at: new Date().toISOString(),
-    })
-    .eq('stripe_subscription_id', subscriptionId);
+  throwIfError(
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq('stripe_subscription_id', subscriptionId),
+    'subscriptions update (subscription cancelled)',
+  );
 
   const { data: subscriptionData } = await supabase
     .from('subscriptions')
@@ -203,12 +229,15 @@ async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
     const plan = await resolveUserPlan(subscriptionData.user_id, {
       stripeCustomerId: subscriptionData.stripe_customer_id,
     });
-    await supabase
-      .from('plans')
-      .update({
-        plan,
-        status: plan === 'free' ? 'cancelled' : 'active',
-      })
-      .eq('id', subscriptionData.user_id);
+    throwIfError(
+      await supabase
+        .from('plans')
+        .update({
+          plan,
+          status: plan === 'free' ? 'cancelled' : 'active',
+        })
+        .eq('id', subscriptionData.user_id),
+      'plans update (subscription cancelled)',
+    );
   }
 }

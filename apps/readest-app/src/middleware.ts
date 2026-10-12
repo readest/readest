@@ -14,6 +14,19 @@ const corsOptions = {
   'Access-Control-Max-Age': '86400',
 };
 
+// Baseline security headers applied to every response. `nosniff` stops the
+// browser MIME-sniffing a response into an executable type; `Referrer-Policy`
+// avoids leaking full URLs (which carry share tokens) cross-origin; HSTS pins
+// HTTPS for the apex. `includeSubDomains`/`preload` are intentionally omitted:
+// other *.readest.com hosts (e.g. the assets domain) are out of scope here and
+// must not be forced onto HSTS from this app.
+const applySecurityHeaders = (response: NextResponse): NextResponse => {
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Strict-Transport-Security', 'max-age=63072000');
+  return response;
+};
+
 export function middleware(request: NextRequest) {
   const isApi = request.nextUrl.pathname.startsWith('/api/');
 
@@ -50,7 +63,7 @@ export function middleware(request: NextRequest) {
       response.headers.set(key, value);
     });
 
-    return response;
+    return applySecurityHeaders(response);
   }
 
   // Cross-origin isolation enables SharedArrayBuffer, which the Turso WASM
@@ -70,7 +83,13 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const coep = path === '/s' || path.startsWith('/s/') ? 'credentialless' : 'require-corp';
   response.headers.set('Cross-Origin-Embedder-Policy', coep);
-  return response;
+  // The access token is stored in localStorage, so a clickjacked frame of
+  // Readest is an account-takeover vector. Restrict framing to same-origin.
+  // Kept as a minimal, enforce-safe CSP (framing only) so it cannot break
+  // script/style/connect loading the way a full content policy might; a full
+  // Report-Only CSP can be layered on later.
+  response.headers.set('Content-Security-Policy', "frame-ancestors 'self'");
+  return applySecurityHeaders(response);
 }
 
 export const config = {

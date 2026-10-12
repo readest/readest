@@ -4,8 +4,12 @@ name = "readest-web"
 main = "./worker.ts"
 compatibility_date = "2026-04-10"
 compatibility_flags = ["nodejs_compat"]
-workers_dev = true
-preview_urls = true
+# Serve the API only through the custom domains below, which sit behind the
+# zone WAF / rate limiting. `*.workers.dev` and per-version preview URLs bypass
+# the zone entirely, so an attacker could hit the same expensive routes without
+# any rate limit — disable both for production.
+workers_dev = false
+preview_urls = false
 
 # Reading-statistics compaction (POST /api/stats/compact via worker.ts
 # scheduled()). Every 10 minutes; each run does bounded work (mostly I/O wait,

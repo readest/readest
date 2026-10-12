@@ -1058,13 +1058,51 @@ export async function loadBookConfig(
     ...settings.globalViewSettings,
     ...(FIXED_LAYOUT_FORMATS.has(book.format) ? DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS : {}),
   };
+  const filename = getConfigFilename(book);
+
+  let exists = false;
   try {
-    let str = '{}';
-    if (await fs.exists(getConfigFilename(book), 'Books')) {
-      str = (await fs.readFile(getConfigFilename(book), 'Books', 'text')) as string;
-    }
-    return deserializeConfig(str, globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
+    exists = await fs.exists(filename, 'Books');
   } catch {
+    exists = false;
+  }
+
+  // No config yet — a genuinely new book. Defaults are correct and there is
+  // nothing to lose.
+  if (!exists) {
+    return deserializeConfig('{}', globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
+  }
+
+  let str: string;
+  try {
+    str = (await fs.readFile(filename, 'Books', 'text')) as string;
+  } catch (readError) {
+    // The file exists but can't be read. We can't recover or back up what we
+    // can't read; returning defaults at least lets the reader open.
+    console.error('loadBookConfig: config exists but could not be read', readError);
+    return deserializeConfig('{}', globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
+  }
+
+  try {
+    return deserializeConfig(str, globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
+  } catch (parseError) {
+    // The config file exists and was read, but is corrupt (unparseable).
+    // Returning defaults is dangerous: the ~1.5s autosave would immediately
+    // overwrite config.json with an empty config, permanently wiping the user's
+    // highlights, bookmarks and reading position. Preserve the raw bytes in a
+    // one-time `.bak` first so the data can be recovered, then fall back to
+    // defaults so the reader still opens.
+    console.error('loadBookConfig: config exists but could not be parsed; backing up', parseError);
+    try {
+      const backup = `${filename}.bak`;
+      // Only write the backup once: a repeated corrupt read must not clobber a
+      // good `.bak` with the already-overwritten (empty) config.
+      if (!(await fs.exists(backup, 'Books'))) {
+        await fs.writeFile(backup, 'Books', str);
+      }
+    } catch (backupError) {
+      console.error('loadBookConfig: failed to back up corrupt config', backupError);
+    }
     return deserializeConfig('{}', globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG);
   }
 }
