@@ -30,7 +30,7 @@ import {
 // - download: chapter downloads, in windows of up to 2000 characters (about
 //   two minutes of audio, so progress moves often and work spreads across
 //   workers), submitted as durable jobs that any worker may run
-//   (/api/tts/readest/jobs), up to four at a time, and collected when done.
+//   (/api/tts/readest/jobs), up to two at a time, and collected when done.
 //   A server without jobs (off Workers) gets streamed windows instead, one
 //   at a time, like listening.
 // A sentence stays requested while any caller that asked for it is still
@@ -46,7 +46,9 @@ const LISTEN_BACKGROUND_WINDOW_SEC = 60;
 // The most sentences a download window may hold (the route's limit).
 const DOWNLOAD_WINDOW_SENTENCES = 64;
 const DOWNLOAD_WINDOW_CHARS = 2000;
-const DOWNLOAD_JOBS = 4;
+// Download jobs in flight per app: enough to keep two workers busy (the
+// GPU endpoint runs at most two) without one download taking every worker.
+const DOWNLOAD_JOBS = 2;
 const BUSY_RETRY_MS = 5000;
 // After a quota refusal, ask the server again no sooner than this: a retry,
 // an upgrade or a new day may have made room.
