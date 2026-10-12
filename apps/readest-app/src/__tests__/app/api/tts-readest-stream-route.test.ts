@@ -1,19 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import type { StreamEvent } from '@/libs/readestVoice/runpod';
 import { readNDJSON } from '@/utils/ndjson';
 
 const m = vi.hoisted(() => ({
   validateUserAndToken: vi.fn(),
   getSubscriptionPlan: vi.fn(),
   getCatalog: vi.fn(),
-  getRunPodConfig: vi.fn(),
-  startJob: vi.fn(),
-  streamJob: vi.fn(),
-  cancelJob: vi.fn(),
-  acquireSlot: vi.fn(),
-  setSlotJob: vi.fn(),
-  releaseSlot: vi.fn(),
+  getVoiceService: vi.fn(),
+  service: { admitWindow: vi.fn(), streamWindow: vi.fn(), releaseWindow: vi.fn() },
   getCurrentUsage: vi.fn(),
   trackUsage: vi.fn(),
 }));
@@ -27,17 +21,9 @@ vi.mock('@/libs/readestVoice/catalog', async (orig) => ({
   ...(await orig<typeof import('@/libs/readestVoice/catalog')>()),
   getCatalog: m.getCatalog,
 }));
-vi.mock('@/libs/readestVoice/runpod', () => ({
-  getRunPodConfig: m.getRunPodConfig,
-  startJob: m.startJob,
-  streamJob: m.streamJob,
-  cancelJob: m.cancelJob,
-}));
-vi.mock('@/libs/readestVoice/admission', async (orig) => ({
-  ...(await orig<typeof import('@/libs/readestVoice/admission')>()),
-  acquireSlot: m.acquireSlot,
-  setSlotJob: m.setSlotJob,
-  releaseSlot: m.releaseSlot,
+vi.mock('@/libs/readestVoice/service', async (orig) => ({
+  ...(await orig<typeof import('@/libs/readestVoice/service')>()),
+  getVoiceService: m.getVoiceService,
 }));
 vi.mock('@/utils/usage', async (orig) => {
   const actual = await orig<typeof import('@/utils/usage')>();
@@ -54,7 +40,6 @@ const CATALOG = [
   { id: 'qwen3:ryan', engine: 'qwen3', name: 'Ryan', langs: ['en-US'] },
   { id: 'omnivoice:clara', engine: 'omnivoice', name: 'Clara', langs: ['en-US'] },
 ];
-const CFG = { apiKey: 'k', endpointId: 'ep', base: 'https://rp.test/v2' };
 const B = [{ offset: 0, duration: 5_000_000, text: 'Hello' }];
 
 const seg = (id: string, text = 'Hello world.', voice = 'kokoro:af_heart') => ({ id, text, voice });
@@ -79,34 +64,47 @@ const lines = async (res: Response) => {
   return out;
 };
 
-// streamJob stand-in: yields the given events, then (if `hang`) waits for the
-// abort signal like a long-poll that never gets more frames.
-const fakeStream = (events: StreamEvent[], hang = false) =>
-  async function* (_cfg: unknown, _job: string, signal: AbortSignal) {
-    for (const e of events) yield e;
-    if (hang) {
-      await new Promise((_, reject) =>
-        signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true }),
-      );
-    }
-  };
+// The service's NDJSON stream; with `hang` it stays open until cancelled.
+const serviceStream = (items: unknown[], hang = false) => {
+  const cancel = vi.fn();
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const item of items) controller.enqueue(encoder.encode(`${JSON.stringify(item)}\n`));
+      if (!hang) controller.close();
+    },
+    cancel,
+  });
+  return { stream, cancel };
+};
+
+const streams = (items: unknown[], hang = false) => {
+  const { stream, cancel } = serviceStream(items, hang);
+  m.service.streamWindow.mockResolvedValue({ ok: true, stream });
+  return cancel;
+};
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
-  for (const fn of Object.values(m)) fn.mockReset();
+  for (const fn of [
+    m.validateUserAndToken,
+    m.getSubscriptionPlan,
+    m.getCatalog,
+    m.getVoiceService,
+    m.getCurrentUsage,
+    m.trackUsage,
+    ...Object.values(m.service),
+  ]) {
+    fn.mockReset();
+  }
   m.validateUserAndToken.mockResolvedValue({ user: { id: 'user-1' }, token: 'tok' });
   m.getSubscriptionPlan.mockReturnValue('plus');
   m.getCatalog.mockResolvedValue(CATALOG);
-  m.getRunPodConfig.mockReturnValue(CFG);
-  m.startJob.mockResolvedValue('job-1');
-  m.streamJob.mockImplementation(
-    fakeStream([{ output: { id: 's0', audio: 'AAA', boundaries: B } }, { status: 'COMPLETED' }]),
-  );
-  m.cancelJob.mockResolvedValue(undefined);
-  m.acquireSlot.mockResolvedValue({ acquired: true, previousJobId: null, pendingChars: 0 });
-  m.setSlotJob.mockResolvedValue(true);
-  m.releaseSlot.mockResolvedValue(undefined);
+  m.getVoiceService.mockResolvedValue(m.service);
+  m.service.admitWindow.mockResolvedValue({ acquired: true, pendingChars: 0 });
+  m.service.releaseWindow.mockResolvedValue(undefined);
+  streams([{ id: 's0', audio: 'AAA', boundaries: B }, { done: true }]);
   m.getCurrentUsage.mockResolvedValue(0);
   m.trackUsage.mockResolvedValue(0);
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -122,8 +120,8 @@ describe('gating', () => {
     expect(await res.json()).toEqual({ error: 'NOT_AUTHENTICATED' });
   });
 
-  it('503s when RunPod is unconfigured (kill switch) or the catalog is down', async () => {
-    m.getRunPodConfig.mockReturnValueOnce(null);
+  it('503s without the Readest Voice service (kill switch) or when the catalog is down', async () => {
+    m.getVoiceService.mockResolvedValueOnce(null);
     expect((await POST(post(listen(seg('s0'))))).status).toBe(503);
     m.getCatalog.mockResolvedValueOnce(null);
     const res = await POST(post(listen(seg('s0'))));
@@ -145,7 +143,7 @@ describe('gating', () => {
     res = await POST(post(listen(seg('s0', 'Hi.', 'kokoro:nope'))));
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'UNKNOWN_VOICE' });
-    expect(m.startJob).not.toHaveBeenCalled();
+    expect(m.service.admitWindow).not.toHaveBeenCalled();
   });
 
   it('rejects Qwen3 voices for Pro too', async () => {
@@ -153,7 +151,7 @@ describe('gating', () => {
     const res = await POST(post(listen(seg('s0', 'Hi.', 'qwen3:ryan'))));
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: 'VOICE_TIER_REQUIRED' });
-    expect(m.startJob).not.toHaveBeenCalled();
+    expect(m.service.admitWindow).not.toHaveBeenCalled();
   });
 });
 
@@ -183,27 +181,23 @@ describe('window validation', () => {
 });
 
 describe('quota and admission', () => {
-  it('counts unfinished download jobs of the user against the quota', async () => {
+  it('counts the uncharged download jobs of the user against the quota', async () => {
     m.getCurrentUsage.mockResolvedValue(50 * 1024);
-    m.acquireSlot.mockResolvedValue({
-      acquired: true,
-      previousJobId: null,
-      pendingChars: 50 * 1024,
-    });
+    m.service.admitWindow.mockResolvedValue({ acquired: true, pendingChars: 50 * 1024 });
     const res = await POST(post(listen(seg('s0', 'a'.repeat(200)))));
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
-    expect(m.startJob).not.toHaveBeenCalled();
+    expect(m.service.streamWindow).not.toHaveBeenCalled();
   });
 
-  it('429s when the window would exceed the daily quota, before starting a job', async () => {
+  it('429s when the window would exceed the daily quota, and gives the slot back', async () => {
     m.getCurrentUsage.mockResolvedValue(100 * 1024 - 100);
     const res = await POST(post(listen(seg('s0', 'a'.repeat(200)))));
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
-    expect(m.startJob).not.toHaveBeenCalled();
-    // The slot was taken alongside the quota check: give it back.
-    expect(m.releaseSlot).toHaveBeenCalledWith(expect.any(String));
+    expect(m.service.streamWindow).not.toHaveBeenCalled();
+    const token = m.service.admitWindow.mock.calls[0]![0].token;
+    expect(m.service.releaseWindow).toHaveBeenCalledWith(token);
   });
 
   it('checks the quota and takes the slot at the same time', async () => {
@@ -211,95 +205,86 @@ describe('quota and admission', () => {
     m.getCurrentUsage.mockReturnValue(new Promise<number>((r) => (resolveUsage = r)));
     const pending = POST(post(listen(seg('s0'))));
     await flush();
-    expect(m.acquireSlot).toHaveBeenCalled();
+    expect(m.service.admitWindow).toHaveBeenCalled();
     resolveUsage(0);
     await lines(await pending);
   });
 
   it('queues as the client the request names, or as one shared client for older apps', async () => {
     await lines(await POST(post({ ...listen(seg('s0')), client: 'phone' })));
-    expect(m.acquireSlot).toHaveBeenLastCalledWith('user-1', 'phone', 'listen', expect.any(String));
+    expect(m.service.admitWindow).toHaveBeenLastCalledWith({
+      token: expect.any(String),
+      userId: 'user-1',
+      clientId: 'phone',
+      lane: 'listen',
+    });
+    streams([{ done: true }]);
     await lines(await POST(post(listen(seg('s0')))));
-    expect(m.acquireSlot).toHaveBeenLastCalledWith(
-      'user-1',
-      'default',
-      'listen',
-      expect.any(String),
+    expect(m.service.admitWindow).toHaveBeenLastCalledWith(
+      expect.objectContaining({ clientId: 'default' }),
     );
     const res = await POST(post({ ...listen(seg('s0')), client: 'x'.repeat(65) }));
     expect(res.status).toBe(400);
   });
 
   it('withdraws a waiting window when the client goes away', async () => {
-    let admit!: (result: { acquired: boolean; previousJobId: null }) => void;
-    m.acquireSlot.mockReturnValue(new Promise((r) => (admit = r)));
+    let admit!: (result: { acquired: boolean; pendingChars: number }) => void;
+    m.service.admitWindow.mockReturnValue(new Promise((r) => (admit = r)));
     const controller = new AbortController();
     const pending = POST(post(listen(seg('s0')), controller.signal));
     await flush();
     controller.abort();
-    const token = m.acquireSlot.mock.calls[0]![3];
-    expect(m.releaseSlot).toHaveBeenCalledWith(token);
+    const token = m.service.admitWindow.mock.calls[0]![0].token;
+    expect(m.service.releaseWindow).toHaveBeenCalledWith(token);
     // Admitted in the same moment: the window must not start anyway.
-    admit({ acquired: true, previousJobId: null });
+    admit({ acquired: true, pendingChars: 0 });
     await pending;
-    expect(m.startJob).not.toHaveBeenCalled();
-    expect(m.releaseSlot).toHaveBeenLastCalledWith(token);
+    expect(m.service.streamWindow).not.toHaveBeenCalled();
+    expect(m.service.releaseWindow).toHaveBeenLastCalledWith(token);
   });
 
   it('429s BUSY with Retry-After when the window waited too long or was refused', async () => {
-    m.acquireSlot.mockResolvedValue({ acquired: false, previousJobId: null });
+    m.service.admitWindow.mockResolvedValue({ acquired: false, pendingChars: 0 });
     const res = await POST(post({ lane: 'download', lang: 'en', segments: [seg('s0')] }));
     expect(res.status).toBe(429);
     expect(res.headers.get('Retry-After')).toBe('5');
     expect(await res.json()).toEqual({ error: 'BUSY' });
-    expect(m.startJob).not.toHaveBeenCalled();
+    expect(m.service.streamWindow).not.toHaveBeenCalled();
   });
 
-  it('cancels the superseded listen job without waiting on it', async () => {
-    m.acquireSlot.mockResolvedValue({ acquired: true, previousJobId: 'old-job' });
-    m.cancelJob.mockReturnValue(new Promise(() => {}));
-    const res = await POST(post(listen(seg('s0'))));
-    await lines(res);
-    expect(m.cancelJob).toHaveBeenCalledWith(CFG, 'old-job');
-    expect(m.startJob).toHaveBeenCalled();
-  });
-
-  it('streams without waiting for the job id to be recorded on the slot', async () => {
-    m.setSlotJob.mockReturnValue(new Promise(() => {}));
-    const res = await POST(post(listen(seg('s0'))));
-    expect(await lines(res)).toEqual([
-      { id: 's0', audio: 'AAA', boundaries: B },
-      { done: true, charged: 'Hello world.'.length },
-    ]);
-  });
-
-  it('cancels its own job when it turns out to have lost the slot race', async () => {
-    m.setSlotJob.mockResolvedValue(false);
-    m.streamJob.mockImplementation(fakeStream([], true));
-    const res = await POST(post(listen(seg('s0'))));
-    expect(await lines(res)).toEqual([{ done: true, charged: 0 }]);
-    expect(m.cancelJob).toHaveBeenCalledWith(CFG, 'job-1');
-  });
-
-  it('502s and frees the slot when the job cannot start', async () => {
-    m.startJob.mockRejectedValue(new Error('RunPod run failed: 500'));
-    const res = await POST(post(listen(seg('s0'))));
+  it('502s when the window cannot start, 503s when the service is switched off', async () => {
+    m.service.streamWindow.mockResolvedValueOnce({ ok: false, error: 'UPSTREAM_FAILED' });
+    let res = await POST(post(listen(seg('s0'))));
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ error: 'UPSTREAM_FAILED' });
-    expect(m.releaseSlot).toHaveBeenCalled();
+    m.service.streamWindow.mockResolvedValueOnce({ ok: false, error: 'NOT_CONFIGURED' });
+    res = await POST(post(listen(seg('s0'))));
+    expect(res.status).toBe(503);
+    expect(m.trackUsage).not.toHaveBeenCalled();
+  });
+
+  it('502s when the service cannot be reached, giving the slot back', async () => {
+    m.service.admitWindow.mockRejectedValueOnce(new Error('unreachable'));
+    expect((await POST(post(listen(seg('s0'))))).status).toBe(502);
+    m.service.streamWindow.mockRejectedValueOnce(new Error('unreachable'));
+    expect((await POST(post(listen(seg('s0'))))).status).toBe(502);
+    expect(m.service.releaseWindow).toHaveBeenCalled();
   });
 });
 
 describe('streaming', () => {
-  it('streams ordered lines and charges delivered segments once', async () => {
-    m.streamJob.mockImplementation(
-      fakeStream([
-        { output: { id: 's0', audio: 'AAA', boundaries: B } },
-        { output: { id: 's1', failed: true } },
-        { output: { id: 's2', audio: 'BBB', boundaries: B } },
-        { status: 'COMPLETED' },
-      ]),
-    );
+  it('leaves a window that ended on its own to the service', async () => {
+    await lines(await POST(post(listen(seg('s0')))));
+    expect(m.service.releaseWindow).not.toHaveBeenCalled();
+  });
+
+  it('relays the lines and charges delivered sentences once', async () => {
+    streams([
+      { id: 's0', audio: 'AAA', boundaries: B },
+      { id: 's1', error: 'synthesis failed' },
+      { id: 's2', audio: 'BBB', boundaries: B },
+      { done: true },
+    ]);
     const res = await POST(
       post(listen(seg('s0', 'Hello.'), seg('s1', 'Bad one.'), seg('s2', 'Third!!'))),
     );
@@ -311,7 +296,8 @@ describe('streaming', () => {
       { id: 's2', audio: 'BBB', boundaries: B },
       { done: true, charged: 13 },
     ]);
-    expect(m.startJob).toHaveBeenCalledWith(CFG, {
+    const token = m.service.admitWindow.mock.calls[0]![0].token;
+    expect(m.service.streamWindow).toHaveBeenCalledWith(token, {
       lang: 'en-US',
       segments: [seg('s0', 'Hello.'), seg('s1', 'Bad one.'), seg('s2', 'Third!!')],
     });
@@ -321,16 +307,13 @@ describe('streaming', () => {
       lane: 'listen',
       segments: 3,
     });
-    expect(m.releaseSlot).toHaveBeenCalledWith(expect.any(String));
   });
 
-  it('charges only what was delivered when the job fails mid-window', async () => {
-    m.streamJob.mockImplementation(
-      fakeStream([
-        { output: { id: 's0', audio: 'AAA', boundaries: B } },
-        { status: 'FAILED', error: 'synthesis failed' },
-      ]),
-    );
+  it('charges only what was delivered when the window fails mid-way', async () => {
+    streams([
+      { id: 's0', audio: 'AAA', boundaries: B },
+      { done: true, error: 'UPSTREAM_FAILED' },
+    ]);
     const res = await POST(post(listen(seg('s0', 'Hello.'), seg('s1', 'World.'))));
     expect(await lines(res)).toEqual([
       { id: 's0', audio: 'AAA', boundaries: B },
@@ -340,30 +323,40 @@ describe('streaming', () => {
   });
 
   it('does not charge a window that delivered nothing', async () => {
-    m.streamJob.mockImplementation(fakeStream([{ status: 'CANCELLED' }]));
+    streams([{ done: true, error: 'CANCELLED' }]);
     const res = await POST(post(listen(seg('s0'))));
     expect(await lines(res)).toEqual([{ done: true, charged: 0, error: 'CANCELLED' }]);
     expect(m.trackUsage).not.toHaveBeenCalled();
   });
 
-  it('ignores frames for ids outside the window', async () => {
-    m.streamJob.mockImplementation(
-      fakeStream([{ output: { id: 'zz', audio: 'X', boundaries: [] } }, { status: 'COMPLETED' }]),
-    );
-    expect(await lines(await POST(post(listen(seg('s0')))))).toEqual([{ done: true, charged: 0 }]);
-  });
-
-  it('turns a polling error into a terminal line and cancels the job', async () => {
-    m.streamJob.mockImplementation(async function* () {
-      yield { output: { id: 's0', audio: 'AAA', boundaries: B } };
-      throw new Error('RunPod stream failed: 502');
+  it('ends with UPSTREAM_FAILED when the service stream breaks or stops early', async () => {
+    const encoder = new TextEncoder();
+    let pulls = 0;
+    // One line, then the stream breaks on the next read.
+    const broken = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (pulls++ === 0) {
+          controller.enqueue(
+            encoder.encode(`${JSON.stringify({ id: 's0', audio: 'AAA', boundaries: B })}\n`),
+          );
+        } else {
+          controller.error(new Error('RPC stream broke'));
+        }
+      },
     });
-    const res = await POST(post(listen(seg('s0', 'Hello.'), seg('s1'))));
-    expect(await lines(res)).toEqual([
+    m.service.streamWindow.mockResolvedValueOnce({ ok: true, stream: broken });
+    expect(await lines(await POST(post(listen(seg('s0', 'Hello.'), seg('s1')))))).toEqual([
       { id: 's0', audio: 'AAA', boundaries: B },
       { done: true, charged: 6, error: 'UPSTREAM_FAILED' },
     ]);
-    expect(m.cancelJob).toHaveBeenCalledWith(CFG, 'job-1');
+    streams([{ id: 's0', audio: 'AAA', boundaries: B }]);
+    expect((await lines(await POST(post(listen(seg('s0', 'Hello.')))))).at(-1)).toEqual({
+      done: true,
+      charged: 6,
+      error: 'UPSTREAM_FAILED',
+    });
+    // Both windows were given up, so both were ended in the service.
+    expect(m.service.releaseWindow).toHaveBeenCalledTimes(2);
   });
 
   it('still closes the stream when charging fails (fail open)', async () => {
@@ -372,20 +365,19 @@ describe('streaming', () => {
     expect((await lines(res)).at(-1)).toEqual({ done: true, charged: 12 });
   });
 
-  it('on client disconnect: cancels the job, charges delivered only, frees the slot', async () => {
-    m.streamJob.mockImplementation(
-      fakeStream([{ output: { id: 's0', audio: 'AAA', boundaries: B } }], true),
-    );
+  it('on client disconnect: stops the service stream and charges delivered only', async () => {
+    const cancel = streams([{ id: 's0', audio: 'AAA', boundaries: B }], true);
     const client = new AbortController();
     const res = await POST(post(listen(seg('s0', 'Hello.'), seg('s1')), client.signal));
     const reader = readNDJSON(res.body!);
     expect((await reader.next()).value).toEqual({ id: 's0', audio: 'AAA', boundaries: B });
     client.abort();
     await reader.return(undefined);
-    await vi.waitFor(() => expect(m.releaseSlot).toHaveBeenCalled());
-    await flush();
-    expect(m.cancelJob).toHaveBeenCalledWith(CFG, 'job-1');
-    expect(m.trackUsage).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(cancel).toHaveBeenCalled());
+    // Stopped explicitly too: a cancel across the binding may not arrive.
+    const token = m.service.admitWindow.mock.calls[0]![0].token;
+    await vi.waitFor(() => expect(m.service.releaseWindow).toHaveBeenCalledWith(token));
+    await vi.waitFor(() => expect(m.trackUsage).toHaveBeenCalledTimes(1));
     expect(m.trackUsage).toHaveBeenCalledWith('user-1', 'tts_chars', 6, expect.any(Object));
   });
 });

@@ -5,16 +5,15 @@ const m = vi.hoisted(() => ({
   validateUserAndToken: vi.fn(),
   getSubscriptionPlan: vi.fn(),
   getCatalog: vi.fn(),
-  getRunPodConfig: vi.fn(),
+  getVoiceService: vi.fn(),
   getCurrentUsage: vi.fn(),
-  dispatcher: {
+  trackUsage: vi.fn(),
+  service: {
     submitJob: vi.fn(),
     waitJob: vi.fn(),
+    takeResult: vi.fn(),
     cancelJob: vi.fn(),
-    forgetJob: vi.fn(),
   },
-  bucket: { put: vi.fn(), get: vi.fn(), delete: vi.fn() },
-  bound: true,
 }));
 
 vi.mock('@/utils/access', async (orig) => ({
@@ -26,15 +25,13 @@ vi.mock('@/libs/readestVoice/catalog', async (orig) => ({
   ...(await orig<typeof import('@/libs/readestVoice/catalog')>()),
   getCatalog: m.getCatalog,
 }));
-vi.mock('@/libs/readestVoice/runpod', () => ({ getRunPodConfig: m.getRunPodConfig }));
-vi.mock('@/libs/readestVoice/bindings', async (orig) => ({
-  ...(await orig<typeof import('@/libs/readestVoice/bindings')>()),
-  getDispatcher: () => (m.bound ? m.dispatcher : null),
-  getResultBucket: () => (m.bound ? m.bucket : null),
+vi.mock('@/libs/readestVoice/service', async (orig) => ({
+  ...(await orig<typeof import('@/libs/readestVoice/service')>()),
+  getVoiceService: m.getVoiceService,
 }));
 vi.mock('@/utils/usage', async (orig) => ({
   ...(await orig<typeof import('@/utils/usage')>()),
-  UsageStatsManager: { getCurrentUsage: m.getCurrentUsage },
+  UsageStatsManager: { getCurrentUsage: m.getCurrentUsage, trackUsage: m.trackUsage },
 }));
 
 import { POST } from '@/app/api/tts/readest/jobs/route';
@@ -67,54 +64,45 @@ beforeEach(() => {
     m.validateUserAndToken,
     m.getSubscriptionPlan,
     m.getCatalog,
-    m.getRunPodConfig,
+    m.getVoiceService,
     m.getCurrentUsage,
-    ...Object.values(m.dispatcher),
-    ...Object.values(m.bucket),
+    m.trackUsage,
+    ...Object.values(m.service),
   ]) {
     fn.mockReset();
   }
-  m.bound = true;
   m.validateUserAndToken.mockResolvedValue({ user: { id: 'user-1' }, token: 'tok' });
   m.getSubscriptionPlan.mockReturnValue('pro');
   m.getCatalog.mockResolvedValue(CATALOG);
-  m.getRunPodConfig.mockReturnValue({ apiKey: 'k', endpointId: 'ep', base: 'https://rp.test' });
+  m.getVoiceService.mockResolvedValue(m.service);
   m.getCurrentUsage.mockResolvedValue(1_000);
-  m.dispatcher.submitJob.mockResolvedValue({ ok: true, state: 'queued' });
-  m.dispatcher.forgetJob.mockResolvedValue(undefined);
-  m.bucket.delete.mockResolvedValue(undefined);
+  m.trackUsage.mockResolvedValue(0);
+  m.service.submitJob.mockResolvedValue({ ok: true, jobId: JOB_ID, state: 'queued' });
+  m.service.cancelJob.mockResolvedValue(undefined);
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('POST /jobs', () => {
-  it('queues the window with its engines and the quota left, under a stable id', async () => {
+  it('queues the window with its engines and the quota left', async () => {
     const body = download(seg('s0'), seg('s1', 'Hi there.', 'omnivoice:clara'));
     const res = await POST(request('POST', '', body));
     expect(res.status).toBe(200);
-    const { jobId, state } = await res.json();
-    expect(jobId).toMatch(/^[0-9a-f]{32}$/);
-    expect(state).toBe('queued');
-    expect(m.dispatcher.submitJob).toHaveBeenCalledWith({
-      id: jobId,
+    expect(await res.json()).toEqual({ jobId: JOB_ID, state: 'queued' });
+    expect(m.service.submitJob).toHaveBeenCalledWith({
       userId: 'user-1',
-      plan: 'pro',
       lang: 'en-US',
       segments: body.segments,
       engines: ['kokoro', 'omnivoice'],
       quotaLeft: 300 * 1024 - 1_000,
     });
-
-    // The same window gets the same id.
-    const again = await POST(request('POST', '', body));
-    expect((await again.json()).jobId).toBe(jobId);
   });
 
   it('keeps only the validated segment fields', async () => {
     const padded = { ...seg('s0'), notes: 'x'.repeat(100_000) };
     await POST(request('POST', '', { ...download(), segments: [padded] }));
-    expect(m.dispatcher.submitJob).toHaveBeenCalledWith(
+    expect(m.service.submitJob).toHaveBeenCalledWith(
       expect.objectContaining({ segments: [seg('s0')] }),
     );
   });
@@ -125,52 +113,66 @@ describe('POST /jobs', () => {
     m.getSubscriptionPlan.mockReturnValue('plus');
     res = await POST(request('POST', '', download(seg('s0', 'Hi.', 'omnivoice:clara'))));
     expect(res.status).toBe(403);
-    expect(m.dispatcher.submitJob).not.toHaveBeenCalled();
+    expect(m.service.submitJob).not.toHaveBeenCalled();
   });
 
   it('passes on BUSY with a retry hint and a spent quota', async () => {
-    m.dispatcher.submitJob.mockResolvedValueOnce({ ok: false, error: 'BUSY' });
+    m.service.submitJob.mockResolvedValueOnce({ ok: false, error: 'BUSY' });
     let res = await POST(request('POST', '', download(seg('s0'))));
     expect(res.status).toBe(429);
     expect(res.headers.get('Retry-After')).toBe('5');
     expect(await res.json()).toEqual({ error: 'BUSY' });
-    m.dispatcher.submitJob.mockResolvedValueOnce({ ok: false, error: 'DAILY_QUOTA_EXCEEDED' });
+    m.service.submitJob.mockResolvedValueOnce({ ok: false, error: 'DAILY_QUOTA_EXCEEDED' });
     res = await POST(request('POST', '', download(seg('s0'))));
     expect(await res.json()).toEqual({ error: 'DAILY_QUOTA_EXCEEDED' });
   });
 
-  it('says jobs are unavailable off Workers or when the dispatcher fails', async () => {
-    m.bound = false;
-    let res = await POST(request('POST', '', download(seg('s0'))));
+  it('says jobs are unavailable when the service call fails (the app then streams)', async () => {
+    m.service.submitJob.mockRejectedValueOnce(new Error('reset'));
+    const res = await POST(request('POST', '', download(seg('s0'))));
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({ error: 'JOBS_UNAVAILABLE' });
-    m.bound = true;
-    m.dispatcher.submitJob.mockRejectedValueOnce(new Error('reset'));
-    res = await POST(request('POST', '', download(seg('s0'))));
-    expect(await res.json()).toEqual({ error: 'JOBS_UNAVAILABLE' });
+  });
+
+  it('is unavailable without the service', async () => {
+    m.getVoiceService.mockResolvedValueOnce(null);
+    expect((await POST(request('POST', '', download(seg('s0'))))).status).toBe(503);
   });
 });
 
 describe('GET /jobs/:id', () => {
   it('answers 202 while the job runs', async () => {
-    m.dispatcher.waitJob.mockResolvedValueOnce('leased');
+    m.service.waitJob.mockResolvedValueOnce('leased');
     const res = await GET(request('GET', `/${JOB_ID}`), params());
     expect(res.status).toBe(202);
     expect(await res.json()).toEqual({ state: 'leased' });
-    expect(m.dispatcher.waitJob).toHaveBeenCalledWith(JOB_ID, 'user-1', expect.any(Number));
+    expect(m.service.waitJob).toHaveBeenCalledWith(JOB_ID, 'user-1', expect.any(Number));
   });
 
-  it('hands over the result once, then drops it', async () => {
-    m.dispatcher.waitJob.mockResolvedValueOnce('done');
-    const result = '{"id":"s0","audio":"AAA","boundaries":[]}\n{"done":true,"charged":12}\n';
-    m.bucket.get.mockResolvedValueOnce({ text: () => Promise.resolve(result) });
+  it('hands over the result once and charges what it delivered', async () => {
+    m.service.waitJob.mockResolvedValueOnce('done');
+    const result =
+      '{"id":"s0","audio":"AAA","boundaries":[]}\n{"id":"s1","error":"synthesis failed"}\n{"done":true,"charged":12}\n';
+    m.service.takeResult.mockResolvedValueOnce({ body: result, charged: 12 });
     const res = await GET(request('GET', `/${JOB_ID}`), params());
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toBe('application/x-ndjson');
     expect(await res.text()).toBe(result);
-    expect(m.bucket.get).toHaveBeenCalledWith(`tts-jobs/${JOB_ID}`);
-    expect(m.bucket.delete).toHaveBeenCalledWith(`tts-jobs/${JOB_ID}`);
-    expect(m.dispatcher.forgetJob).toHaveBeenCalledWith(JOB_ID, 'user-1');
+    expect(m.service.takeResult).toHaveBeenCalledWith(JOB_ID, 'user-1');
+    await vi.waitFor(() =>
+      expect(m.trackUsage).toHaveBeenCalledWith('user-1', 'tts_chars', 12, {
+        plan: 'pro',
+        lane: 'download',
+        segments: 2,
+      }),
+    );
+  });
+
+  it('charges nothing for a result that delivered nothing', async () => {
+    m.service.waitJob.mockResolvedValueOnce('done');
+    m.service.takeResult.mockResolvedValueOnce({ body: '{"done":true,"charged":0}\n', charged: 0 });
+    expect((await GET(request('GET', `/${JOB_ID}`), params())).status).toBe(200);
+    expect(m.trackUsage).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -178,34 +180,49 @@ describe('GET /jobs/:id', () => {
     ['failed', 502, 'UPSTREAM_FAILED'],
     ['cancelled', 409, 'CANCELLED'],
   ])('maps a %s job to %i', async (state, status, error) => {
-    m.dispatcher.waitJob.mockResolvedValueOnce(state);
+    m.service.waitJob.mockResolvedValueOnce(state);
     const res = await GET(request('GET', `/${JOB_ID}`), params());
     expect(res.status).toBe(status);
     expect(await res.json()).toEqual({ error });
   });
 
   it('treats a done job whose result is gone as not found', async () => {
-    m.dispatcher.waitJob.mockResolvedValueOnce('done');
-    m.bucket.get.mockResolvedValueOnce(null);
+    m.service.waitJob.mockResolvedValueOnce('done');
+    m.service.takeResult.mockResolvedValueOnce(null);
     const res = await GET(request('GET', `/${JOB_ID}`), params());
     expect(res.status).toBe(404);
-    expect(m.dispatcher.forgetJob).toHaveBeenCalledWith(JOB_ID, 'user-1');
+    expect(m.trackUsage).not.toHaveBeenCalled();
+  });
+
+  it('says jobs are unavailable when the service call fails', async () => {
+    m.service.waitJob.mockRejectedValueOnce(new Error('reset'));
+    let res = await GET(request('GET', `/${JOB_ID}`), params());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'JOBS_UNAVAILABLE' });
+    m.service.waitJob.mockResolvedValueOnce('done');
+    m.service.takeResult.mockRejectedValueOnce(new Error('reset'));
+    res = await GET(request('GET', `/${JOB_ID}`), params());
+    expect(res.status).toBe(503);
   });
 
   it('400s on a malformed id', async () => {
     const res = await GET(request('GET', '/nope'), params('nope'));
     expect(res.status).toBe(400);
-    expect(m.dispatcher.waitJob).not.toHaveBeenCalled();
+    expect(m.service.waitJob).not.toHaveBeenCalled();
   });
 });
 
 describe('DELETE /jobs/:id', () => {
-  it('cancels the job and drops anything it left', async () => {
-    m.dispatcher.cancelJob.mockResolvedValueOnce(true);
+  it('says jobs are unavailable when the service call fails', async () => {
+    m.service.cancelJob.mockRejectedValueOnce(new Error('reset'));
+    const res = await DELETE(request('DELETE', `/${JOB_ID}`), params());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'JOBS_UNAVAILABLE' });
+  });
+
+  it('cancels the job in the service', async () => {
     const res = await DELETE(request('DELETE', `/${JOB_ID}`), params());
     expect(res.status).toBe(204);
-    expect(m.dispatcher.cancelJob).toHaveBeenCalledWith(JOB_ID, 'user-1');
-    expect(m.dispatcher.forgetJob).toHaveBeenCalledWith(JOB_ID, 'user-1');
-    expect(m.bucket.delete).toHaveBeenCalledWith(`tts-jobs/${JOB_ID}`);
+    expect(m.service.cancelJob).toHaveBeenCalledWith(JOB_ID, 'user-1');
   });
 });

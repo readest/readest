@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { voicesForPlan } from '@/libs/readestVoice/catalog';
 import { errorResponse, gateReadestVoice } from '@/libs/readestVoice/gate';
-import { warmup } from '@/libs/readestVoice/runpod';
 
 // Readest Voice voices for the caller's plan. Doubles as the capability
 // probe: 403/503 hide the engine in the app (kill switch, lapsed plan).
@@ -18,6 +17,9 @@ export async function POST(request: NextRequest) {
   if (!gate.ok) return gate.response;
   const body = (await request.json().catch(() => null)) as { warmup?: unknown } | null;
   if (body?.warmup !== true) return errorResponse('INVALID_INPUT', 400);
-  await warmup(gate.ctx.config);
+  // Best effort: the voice picker does not wait on it.
+  await gate.ctx.service.warmup().catch((error) => {
+    console.warn('Readest Voice warmup failed:', error);
+  });
   return NextResponse.json({ ok: true });
 }

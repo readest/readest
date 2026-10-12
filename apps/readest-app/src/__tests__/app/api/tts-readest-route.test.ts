@@ -5,8 +5,8 @@ const m = vi.hoisted(() => ({
   validateUserAndToken: vi.fn(),
   getSubscriptionPlan: vi.fn(),
   getCatalog: vi.fn(),
-  getRunPodConfig: vi.fn(),
-  warmup: vi.fn(),
+  getVoiceService: vi.fn(),
+  service: { warmup: vi.fn() },
 }));
 
 vi.mock('@/utils/access', async (orig) => ({
@@ -18,9 +18,9 @@ vi.mock('@/libs/readestVoice/catalog', async (orig) => ({
   ...(await orig<typeof import('@/libs/readestVoice/catalog')>()),
   getCatalog: m.getCatalog,
 }));
-vi.mock('@/libs/readestVoice/runpod', () => ({
-  getRunPodConfig: m.getRunPodConfig,
-  warmup: m.warmup,
+vi.mock('@/libs/readestVoice/service', async (orig) => ({
+  ...(await orig<typeof import('@/libs/readestVoice/service')>()),
+  getVoiceService: m.getVoiceService,
 }));
 
 import { GET, POST } from '@/app/api/tts/readest/route';
@@ -30,7 +30,6 @@ const CATALOG = [
   { id: 'qwen3:serena', engine: 'qwen3', name: 'Serena', langs: ['en-US', 'de-DE'] },
   { id: 'omnivoice:clara', engine: 'omnivoice', name: 'Clara', langs: ['en-US'] },
 ];
-const CFG = { apiKey: 'k', endpointId: 'ep', base: 'https://rp.test/v2' };
 
 const req = (method: 'GET' | 'POST', body?: unknown) =>
   new NextRequest('https://web.readest.com/api/tts/readest', {
@@ -40,12 +39,20 @@ const req = (method: 'GET' | 'POST', body?: unknown) =>
   });
 
 beforeEach(() => {
-  for (const fn of Object.values(m)) fn.mockReset();
+  for (const fn of [
+    m.validateUserAndToken,
+    m.getSubscriptionPlan,
+    m.getCatalog,
+    m.getVoiceService,
+    m.service.warmup,
+  ]) {
+    fn.mockReset();
+  }
   m.validateUserAndToken.mockResolvedValue({ user: { id: 'user-1' }, token: 'tok' });
   m.getSubscriptionPlan.mockReturnValue('pro');
   m.getCatalog.mockResolvedValue(CATALOG);
-  m.getRunPodConfig.mockReturnValue(CFG);
-  m.warmup.mockResolvedValue(undefined);
+  m.getVoiceService.mockResolvedValue(m.service);
+  m.service.warmup.mockResolvedValue(undefined);
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -58,8 +65,8 @@ describe('GET /api/tts/readest', () => {
     expect(await res.json()).toEqual({ error: 'NOT_AUTHENTICATED' });
   });
 
-  it('503s when RunPod or the catalog is missing', async () => {
-    m.getRunPodConfig.mockReturnValueOnce(null);
+  it('503s when the Readest Voice service or the catalog is missing', async () => {
+    m.getVoiceService.mockResolvedValueOnce(null);
     expect((await GET(req('GET'))).status).toBe(503);
     m.getCatalog.mockResolvedValueOnce(null);
     expect((await GET(req('GET'))).status).toBe(503);
@@ -86,16 +93,23 @@ describe('GET /api/tts/readest', () => {
 });
 
 describe('POST /api/tts/readest', () => {
-  it('fires a RunPod warmup', async () => {
+  it('asks the service to warm a GPU worker', async () => {
     const res = await POST(req('POST', { warmup: true }));
     expect(await res.json()).toEqual({ ok: true });
-    expect(m.warmup).toHaveBeenCalledWith(CFG);
+    expect(m.service.warmup).toHaveBeenCalled();
+  });
+
+  it('stays best-effort when the service cannot warm up', async () => {
+    m.service.warmup.mockRejectedValueOnce(new Error('unreachable'));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const res = await POST(req('POST', { warmup: true }));
+    expect(await res.json()).toEqual({ ok: true });
   });
 
   it('is gated like GET', async () => {
     m.getSubscriptionPlan.mockReturnValue('free');
     expect((await POST(req('POST', { warmup: true }))).status).toBe(403);
-    expect(m.warmup).not.toHaveBeenCalled();
+    expect(m.service.warmup).not.toHaveBeenCalled();
   });
 
   it('400s on anything but a warmup', async () => {

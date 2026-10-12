@@ -15,10 +15,10 @@ import {
   type TTSLane,
 } from './types';
 
-// Readest Voice: premium voices synthesized on a GPU worker behind
-// /api/tts/readest/stream. Sentences are requested in windows (one RunPod job
-// per window, one NDJSON line back per sentence), one window in flight per
-// lane:
+// Readest Voice: premium voices synthesized by the Readest Voice service on a
+// GPU worker, behind /api/tts/readest/stream. Sentences are requested in
+// windows (one synthesis job per window, one NDJSON line back per sentence),
+// one window in flight per lane:
 // - listen: windows grow 1 -> 4 -> 8 sentences so the first audio after play,
 //   seek or a voice change waits for one sentence only, and hold at most about
 //   20 s of estimated audio (60 s for a window of background preloads only):
