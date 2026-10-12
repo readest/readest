@@ -33,7 +33,7 @@ describe('WorkerRegistry', () => {
 
   it('records workers it only hears from (secret tokens, the bridge)', () => {
     const { registry, tick } = setup();
-    registry.seen('home', KOKORO, 'secret');
+    registry.seen('home', KOKORO, null);
     tick(5_000);
     registry.touch('runpod');
     const [home, runpod] = registry.list();
@@ -50,15 +50,15 @@ describe('WorkerRegistry', () => {
 
   it('marks a worker turned away for its version until it is accepted again', () => {
     const { registry } = setup();
-    registry.rejected('home', { engines: ['kokoro'], version: '2.3.0' }, 'secret');
+    registry.rejected('home', { engines: ['kokoro'], version: '2.3.0' }, null);
     expect(registry.list()[0]).toMatchObject({ version: '2.3.0', rejected: true });
-    registry.seen('home', KOKORO, 'secret');
+    registry.seen('home', KOKORO, null);
     expect(registry.list()[0]).toMatchObject({ version: '2.3.1', rejected: false });
   });
 
   it('refreshes last seen from a heartbeat, keeping what the worker reported', () => {
     const { registry, tick } = setup();
-    registry.seen('home', KOKORO, 'secret');
+    registry.seen('home', KOKORO, null);
     tick(30_000);
     registry.touch('home');
     expect(registry.list()[0]).toMatchObject({ lastSeen: 31_000, engines: ['kokoro'] });
@@ -75,17 +75,32 @@ describe('WorkerRegistry', () => {
   it('refuses a dashboard-token worker it no longer knows, without recreating it', () => {
     const { registry } = setup();
     registry.create('gpu-box', 'h1');
-    expect(registry.seen('gpu-box', KOKORO, 'dashboard')).toBe(true);
+    expect(registry.seen('gpu-box', KOKORO, 'h1')).toBe(true);
     registry.remove('gpu-box');
-    expect(registry.seen('gpu-box', KOKORO, 'dashboard')).toBe(false);
-    expect(registry.rejected('gpu-box', KOKORO, 'dashboard')).toBe(false);
+    expect(registry.seen('gpu-box', KOKORO, 'h1')).toBe(false);
+    expect(registry.rejected('gpu-box', KOKORO, 'h1')).toBe(false);
+    expect(registry.list()).toEqual([]);
+  });
+
+  it('refuses a removed token even when its name was given to a new worker', () => {
+    const { registry } = setup();
+    registry.create('gpu-box', 'h1');
+    registry.remove('gpu-box');
+    registry.create('gpu-box', 'h2');
+    expect(registry.seen('gpu-box', KOKORO, 'h1')).toBe(false);
+    expect(registry.seen('gpu-box', KOKORO, 'h2')).toBe(true);
+  });
+
+  it('keeps the bridge name for the bridge even before it is known', () => {
+    const { registry } = setup();
+    expect(registry.seen('runpod', KOKORO, null)).toBe(false);
     expect(registry.list()).toEqual([]);
   });
 
   it('refuses a secret-token worker using the name of a dashboard worker', () => {
     const { registry } = setup();
     registry.create('gpu-box', 'h1');
-    expect(registry.seen('gpu-box', KOKORO, 'secret')).toBe(false);
+    expect(registry.seen('gpu-box', KOKORO, null)).toBe(false);
     expect(registry.list()[0]).toMatchObject({ source: 'dashboard', lastSeen: null });
   });
 
@@ -129,14 +144,14 @@ describe('WorkerRegistry', () => {
   it('never removes the bridge, nor lets a secret token use its name', () => {
     const { registry } = setup();
     registry.known('runpod');
-    expect(registry.seen('runpod', KOKORO, 'secret')).toBe(false);
+    expect(registry.seen('runpod', KOKORO, null)).toBe(false);
     expect(registry.remove('runpod')).toBe(false);
   });
 
   it('reports records to persist, without presence, and restores them', () => {
     const { registry } = setup();
     registry.create('gpu-box', 'h1');
-    registry.seen('gpu-box', KOKORO, 'dashboard');
+    registry.seen('gpu-box', KOKORO, 'h1');
     registry.create('lab', 'h2');
     registry.remove('lab');
     const { put, deleted } = registry.takeChanges();
@@ -155,9 +170,9 @@ describe('WorkerRegistry', () => {
 
   it('only rewrites a record for presence when the worker is new', () => {
     const { registry } = setup();
-    registry.seen('home', KOKORO, 'secret');
+    registry.seen('home', KOKORO, null);
     expect(registry.takeChanges().put).toHaveLength(1);
-    registry.seen('home', KOKORO, 'secret');
+    registry.seen('home', KOKORO, null);
     expect(registry.takeChanges().put).toHaveLength(0);
   });
 });

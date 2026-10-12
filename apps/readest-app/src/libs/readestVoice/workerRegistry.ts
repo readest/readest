@@ -10,8 +10,6 @@
 //   version) lives in memory and comes back with the next long poll.
 
 export type WorkerSource = 'dashboard' | 'secret' | 'bridge';
-// Where the token a worker called with was found.
-export type TokenSource = 'dashboard' | 'secret';
 
 export interface WorkerRecord {
   name: string;
@@ -99,15 +97,17 @@ export class WorkerRegistry {
     if (!this.#records.has(name)) this.#put(this.#record(name, this.#source(name), null));
   }
 
-  // False when the name does not belong to that kind of token: a removed
-  // dashboard worker, or a secret token named like a dashboard worker or
-  // the bridge. The caller must then turn the worker away.
-  seen(name: string, info: WorkerInfo, via: TokenSource): boolean {
-    return this.#heard(name, info, false, via);
+  // `tokenHash`: the hash of the dashboard token the worker called with, or
+  // null for a token from the secret. False when the name is not that
+  // token's: a removed dashboard token (even if its name was reused), a
+  // secret token named like a dashboard worker, or the bridge's name. The
+  // caller must then turn the worker away.
+  seen(name: string, info: WorkerInfo, tokenHash: string | null): boolean {
+    return this.#heard(name, info, false, tokenHash);
   }
 
-  rejected(name: string, info: WorkerInfo, via: TokenSource): boolean {
-    return this.#heard(name, info, true, via);
+  rejected(name: string, info: WorkerInfo, tokenHash: string | null): boolean {
+    return this.#heard(name, info, true, tokenHash);
   }
 
   // A heartbeat: keeps the engines and version a worker last reported. Only
@@ -183,12 +183,11 @@ export class WorkerRegistry {
     for (const record of records) this.#records.set(record.name, { ...record });
   }
 
-  #heard(name: string, info: WorkerInfo, rejected: boolean, via: TokenSource): boolean {
+  #heard(name: string, info: WorkerInfo, rejected: boolean, tokenHash: string | null): boolean {
+    if (name === BRIDGE_WORKER) return false;
     const record = this.#records.get(name);
     const owned =
-      via === 'dashboard'
-        ? record?.source === 'dashboard'
-        : record?.source !== 'dashboard' && record?.source !== 'bridge';
+      tokenHash === null ? !record || record.source === 'secret' : record?.tokenHash === tokenHash;
     if (!owned) return false;
     this.known(name);
     this.#presence.set(name, { ...info, lastSeen: this.now(), rejected });

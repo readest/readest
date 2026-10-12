@@ -82,7 +82,7 @@ describe('lease', () => {
       ['kokoro', 'omnivoice'],
       expect.any(Number),
       '2.3.0',
-      'secret',
+      null,
     );
     expect(m.dispatcher.authenticateWorker).not.toHaveBeenCalled();
   });
@@ -92,15 +92,15 @@ describe('lease', () => {
     m.dispatcher.leaseJob.mockResolvedValueOnce(null);
     const res = await POST(post(lease, 'dashboard-token'));
     expect(res.status).toBe(204);
-    expect(m.dispatcher.authenticateWorker).toHaveBeenCalledWith(
-      await sha256Hex('dashboard-token'),
-    );
+    const hash = await sha256Hex('dashboard-token');
+    expect(m.dispatcher.authenticateWorker).toHaveBeenCalledWith(hash);
+    // The dispatcher checks the hash again when it leases.
     expect(m.dispatcher.leaseJob).toHaveBeenCalledWith(
       'gpu-2',
       ['kokoro', 'omnivoice'],
       expect.any(Number),
       '2.3.0',
-      'dashboard',
+      hash,
     );
   });
 
@@ -122,7 +122,7 @@ describe('lease', () => {
     expect(m.dispatcher.workerRejected).toHaveBeenCalledWith(
       'gpu-box',
       { engines: ['kokoro', 'omnivoice'], version: '2.2.0' },
-      'secret',
+      null,
     );
   });
 

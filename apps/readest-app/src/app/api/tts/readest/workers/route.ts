@@ -7,7 +7,7 @@ import {
   resultKey,
 } from '@/libs/readestVoice/bindings';
 import { errorResponse } from '@/libs/readestVoice/gate';
-import { type TokenSource, parseWorkerTokens, sha256Hex } from '@/libs/readestVoice/workerRegistry';
+import { parseWorkerTokens, sha256Hex } from '@/libs/readestVoice/workerRegistry';
 
 // Readest Voice workers pull download jobs here (see ../jobs/route.ts), one
 // JSON body per call, by `action`:
@@ -41,14 +41,17 @@ const sameSecret = (a: string, b: string) => {
 const workerName = async (
   request: NextRequest,
   dispatcher: DispatcherStub,
-): Promise<{ name: string; via: TokenSource } | null> => {
+  // tokenHash: a dashboard token's hash, which the dispatcher checks again
+  // when it leases; null for a token from the secret.
+): Promise<{ name: string; tokenHash: string | null } | null> => {
   const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return null;
   for (const entry of parseWorkerTokens(process.env['READEST_VOICE_WORKER_TOKENS'])) {
-    if (sameSecret(entry.token, token)) return { name: entry.name, via: 'secret' };
+    if (sameSecret(entry.token, token)) return { name: entry.name, tokenHash: null };
   }
-  const name = await dispatcher.authenticateWorker(await sha256Hex(token));
-  return name ? { name, via: 'dashboard' } : null;
+  const tokenHash = await sha256Hex(token);
+  const name = await dispatcher.authenticateWorker(tokenHash);
+  return name ? { name, tokenHash } : null;
 };
 
 export async function POST(request: NextRequest) {
@@ -75,7 +78,11 @@ export async function POST(request: NextRequest) {
       const reported = typeof body['version'] === 'string' ? body['version'] : '';
       const version = process.env['READEST_VOICE_WORKER_VERSION'];
       if (version && reported !== version) {
-        await dispatcher.workerRejected(worker.name, { engines, version: reported }, worker.via);
+        await dispatcher.workerRejected(
+          worker.name,
+          { engines, version: reported },
+          worker.tokenHash,
+        );
         return errorResponse('VERSION_MISMATCH', 409);
       }
       const job = await dispatcher.leaseJob(
@@ -83,7 +90,7 @@ export async function POST(request: NextRequest) {
         engines,
         LEASE_WAIT_MS,
         reported,
-        worker.via,
+        worker.tokenHash,
       );
       return job ? NextResponse.json(job) : new NextResponse(null, { status: 204 });
     }

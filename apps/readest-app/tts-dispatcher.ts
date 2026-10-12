@@ -32,19 +32,17 @@ import {
   type JobSubmission,
   JobQueue,
   type LeasedJob,
-  type QueueSummary,
   type SubmitResult,
 } from './src/libs/readestVoice/jobQueue';
+import type { AdminSnapshot, DispatcherAdmin } from './src/libs/readestVoice/admin';
 import { getRunPodConfig, startJob } from './src/libs/readestVoice/runpod';
 import {
   BRIDGE_WORKER,
   type CreateResult,
   parseWorkerTokens,
-  type TokenSource,
   type WorkerInfo,
   WorkerRegistry,
   type WorkerRecord,
-  type WorkerView,
   sha256Hex,
 } from './src/libs/readestVoice/workerRegistry';
 
@@ -53,16 +51,6 @@ interface DispatcherEnv {
   READEST_VOICE_MAX_JOBS?: string;
   // The worker version download jobs need (shown on the dashboard).
   READEST_VOICE_WORKER_VERSION?: string;
-}
-
-export interface AdminSnapshot {
-  now: number;
-  requiredVersion: string;
-  workers: (WorkerView & { running: number; waiting: number })[];
-  queue: Omit<QueueSummary, 'running' | 'waiting'>;
-  // Windows on the RunPod endpoint: listening, and bridged downloads.
-  slots: { capacity: number; listen: number; download: number };
-  bridge: { configured: boolean; paused: boolean };
 }
 
 interface DispatcherState {
@@ -97,7 +85,7 @@ const JOB_RETAIN_MS = 86_400_000;
 // The bridge's name as a worker and as a user of the listen queue.
 const BRIDGE = BRIDGE_WORKER;
 
-export class TTSDispatcher extends DurableObject<DispatcherEnv> {
+export class TTSDispatcher extends DurableObject<DispatcherEnv> implements DispatcherAdmin {
   #state: DispatcherState;
   #queue: DispatchQueue;
   #jobs: JobQueue;
@@ -180,9 +168,11 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     engines: string[],
     waitMs: number,
     version: string,
-    via: TokenSource,
+    // The dashboard token's hash, checked again here so a token removed
+    // since the route authenticated it gets nothing; null: a secret token.
+    tokenHash: string | null,
   ): Promise<LeasedJob | null> {
-    if (!this.#workers.seen(worker, { engines, version }, via)) return Promise.resolve(null);
+    if (!this.#workers.seen(worker, { engines, version }, tokenHash)) return Promise.resolve(null);
     const job = this.#jobs.lease(worker, engines, waitMs);
     this.#changed();
     return job;
@@ -194,8 +184,8 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
   }
 
   // A worker turned away for its version: shown as needing an upgrade.
-  workerRejected(worker: string, info: WorkerInfo, via: TokenSource): void {
-    this.#workers.rejected(worker, info, via);
+  workerRejected(worker: string, info: WorkerInfo, tokenHash: string | null): void {
+    this.#workers.rejected(worker, info, tokenHash);
     this.#changed();
   }
 
@@ -227,7 +217,6 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     this.#changed();
   }
 
-  // Counts and worker data only: no users, book text or job ids.
   adminSnapshot(): AdminSnapshot {
     const { running, waiting, ...queue } = this.#jobs.summary();
     const leases = this.#queue.snapshot();
@@ -249,7 +238,6 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     };
   }
 
-  // The token is returned once; only its hash is kept.
   async adminCreateWorker(name: string): Promise<CreateResult & { token?: string }> {
     // A name in the secret already belongs to that token.
     const configured = parseWorkerTokens(process.env['READEST_VOICE_WORKER_TOKENS']);
@@ -261,7 +249,6 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     return result.ok ? { ...result, token } : result;
   }
 
-  // Its jobs go back to the queue at once.
   adminRemoveWorker(name: string): boolean {
     const removed = this.#workers.remove(name);
     if (removed) {
@@ -272,7 +259,6 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     return removed;
   }
 
-  // Pausing the bridge leaves downloads to the pull workers.
   adminSetPaused(name: string, paused: boolean): boolean {
     const known = this.#workers.setPaused(name, paused);
     if (known) this.#jobs.setPaused(name, paused);
