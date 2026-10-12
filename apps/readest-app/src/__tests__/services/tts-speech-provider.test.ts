@@ -168,6 +168,18 @@ describe('EdgeSpeechProvider', () => {
     ).rejects.toBeInstanceOf(SpeechSynthesisFatalError);
   });
 
+  test('stops without skipping when the HTTPS route fails after a successful probe', async () => {
+    const provider = new EdgeSpeechProvider();
+    await expect(provider.init('https')).resolves.toBe(true);
+    h.createAudioData.mockRejectedValueOnce(new Error('Edge proxy returned HTTP 500'));
+    await expect(
+      provider.synthesize(
+        { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 },
+        new AbortController().signal,
+      ),
+    ).rejects.toBeInstanceOf(SpeechSynthesisFatalError);
+  });
+
   test('exposes the static Edge voice list', async () => {
     const provider = await initializedProvider();
     const voices = await provider.getAllVoices();

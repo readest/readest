@@ -107,8 +107,9 @@ export class EdgeSpeechProvider implements SpeechProvider {
       const message = failure instanceof Error ? failure.message : String(failure);
       // A failed startup probe can be masked by cached sentences. Stop at the
       // first uncached failure instead of silently advancing through the book.
-      // An explicit 403 is a service refusal even when the probe succeeded.
-      if (this.#probeFailed || /\b403\b/.test(message)) {
+      // A proxy failure or explicit 403 is a service refusal even when the
+      // startup probe succeeded. Neither route can speak this sentence.
+      if (this.#probeFailed || this.#protocol === 'https' || /\b403\b/.test(message)) {
         throw new SpeechSynthesisFatalError('Edge TTS is unavailable.', { cause: failure });
       }
       // Permanent for this sentence: Edge answered without audio frames.
