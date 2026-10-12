@@ -31,7 +31,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     onRequestHidePanel: () => setShowPlayerSheet(false),
   });
 
-  const downloads = useTTSDownloads(bookKey, tts.getController, showPlayerSheet);
+  const downloads = useTTSDownloads(
+    bookKey,
+    tts.getController,
+    showPlayerSheet,
+    tts.ttsClientsInited,
+  );
   const activeSectionIndex = tts.ttsSectionIndex;
 
   const viewSettings = getViewSettings(bookKey);
