@@ -43,9 +43,9 @@ describe('validateUserAndToken', () => {
   });
 
   it('rejects anon and service-role tokens', async () => {
-    getClaimsMock.mockResolvedValue(claimsResult({ role: 'anon' }));
+    getClaimsMock.mockResolvedValue(claimsResult({ role: 'anon', sub: 'anon-user' }));
     expect(await validateUserAndToken('Bearer anon')).toEqual({});
-    getClaimsMock.mockResolvedValue(claimsResult({ role: 'service_role' }));
+    getClaimsMock.mockResolvedValue(claimsResult({ role: 'service_role', sub: 'service-user' }));
     expect(await validateUserAndToken('Bearer service')).toEqual({});
   });
 
