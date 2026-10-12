@@ -396,6 +396,23 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       ordinal,
     ]);
   }
+  // recordMarkKey for many ordinals of a section, in a few statements.
+  async recordMarkKeys(section: number, marks: { ordinal: number; key: string }[]): Promise<void> {
+    await this.#ensureSchema();
+    for (let start = 0; start < marks.length; start += BATCH_ROWS) {
+      const batch = marks.slice(start, start + BATCH_ROWS);
+      await this.#db.execute(
+        `UPDATE manifest_marks
+            SET key = CASE ordinal ${batch.map(() => 'WHEN ? THEN ?').join(' ')} END
+          WHERE section = ? AND ordinal IN (${batch.map(() => '?').join(', ')})`,
+        [
+          ...batch.flatMap(({ ordinal, key }) => [ordinal, key]),
+          section,
+          ...batch.map(({ ordinal }) => ordinal),
+        ],
+      );
+    }
+  }
 
   // Explicit downloads are durable user data, not disposable warm-cache
   // entries. Mark the target sections before synthesis so their loose rows

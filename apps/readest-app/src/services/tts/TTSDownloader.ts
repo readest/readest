@@ -52,6 +52,9 @@ export interface CacheWarmer {
     sentences: { lang: string; text: string }[],
     signal?: AbortSignal,
   ): Promise<boolean>;
+  // The ordinals of this section's sentences already in the cache, with
+  // their marks recorded (in a few queries for the whole section).
+  cachedSentences?(section: number, sentences: DownloadableSentence[]): Promise<Set<number>>;
 }
 
 export interface SectionDownloadProgress {
@@ -104,63 +107,47 @@ export class TTSDownloader {
         sentences.map((s) => s.label),
       );
 
+      // Progress counts sentences in the cache. Those already there (an
+      // earlier run, listening, a synced pack) count at once and are not
+      // synthesized again, so a retry resumes instead of starting over.
+      const cached = (await this.#warmer.cachedSentences?.(sectionIndex, sentences)) ?? new Set();
+      const missing = sentences.filter((s) => !cached.has(s.ordinal));
+      let done = sentences.length - missing.length;
+      let synthesized = 0;
+      const report = () =>
+        onProgress?.({ sectionIndex, total: sentences.length, done, synthesized });
+      if (done > 0) report();
+      const warm = async (s: DownloadableSentence) => {
+        const ok = await this.#warmer.warmSentence(sectionIndex, s.ordinal, s.lang, s.text, signal);
+        if (ok) {
+          done++;
+          synthesized++;
+          report();
+        }
+        return ok;
+      };
+
       const windowed = await this.#warmer.prefetchSentences?.(
-        sentences.map(({ lang, text }) => ({ lang, text })),
+        missing.map(({ lang, text }) => ({ lang, text })),
         signal,
       );
 
-      let synthesized = 0;
       let failed = false;
       let aborted = false;
       if (windowed) {
         // Windows run several at a time and may finish in any order: wait on
-        // every sentence at once and count each as it lands in the cache, so
-        // progress moves as soon as any window is done.
-        const results = await Promise.all(
-          sentences.map(async (s) => {
-            const ok = await this.#warmer.warmSentence(
-              sectionIndex,
-              s.ordinal,
-              s.lang,
-              s.text,
-              signal,
-            );
-            if (ok) {
-              synthesized++;
-              onProgress?.({
-                sectionIndex,
-                total: sentences.length,
-                done: synthesized,
-                synthesized,
-              });
-            }
-            return ok;
-          }),
-        );
+        // every sentence at once, so progress moves as soon as any window is
+        // done.
+        const results = await Promise.all(missing.map(warm));
         aborted = !!signal?.aborted;
         failed = results.includes(false);
       } else {
-        for (let done = 0; done < sentences.length; done++) {
+        for (const s of missing) {
           if (signal?.aborted) {
             aborted = true;
             break;
           }
-          const s = sentences[done]!;
-          const ok = await this.#warmer.warmSentence(
-            sectionIndex,
-            s.ordinal,
-            s.lang,
-            s.text,
-            signal,
-          );
-          if (ok) synthesized++;
-          else failed = true;
-          onProgress?.({
-            sectionIndex,
-            total: sentences.length,
-            done: done + 1,
-            synthesized,
-          });
+          if (!(await warm(s))) failed = true;
         }
       }
 

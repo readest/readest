@@ -233,6 +233,11 @@ export class BookTTSCacheStore implements TTSCacheStore {
     await opened?.store.recordMarkKey(section, ordinal, key);
   }
 
+  async recordMarkKeys(section: number, marks: { ordinal: number; key: string }[]): Promise<void> {
+    const opened = await this.#open();
+    await opened?.store.recordMarkKeys(section, marks);
+  }
+
   async beginDownloadSections(sections: number[]): Promise<void> {
     const opened = await this.#open();
     if (!opened) return;

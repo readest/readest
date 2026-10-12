@@ -42,6 +42,8 @@ export interface TTSCacheStore {
   // labels per section, and the observed synthesis key per sentence ordinal.
   registerSectionMarks?(section: number, marks: string[]): Promise<void>;
   recordMarkKey?(section: number, ordinal: number, key: string): Promise<void>;
+  // recordMarkKey for many ordinals of a section at once.
+  recordMarkKeys?(section: number, marks: { ordinal: number; key: string }[]): Promise<void>;
   beginDownloadSections?(sections: number[]): Promise<void>;
   completeDownloadSections?(sections: number[]): Promise<void>;
   cancelDownloadSections?(sections: number[]): Promise<void>;
@@ -280,6 +282,31 @@ export class CachingProvider implements SpeechProvider {
   #served(req: SpeechSynthesisRequest, cached: SpeechSynthesisResult): SpeechSynthesisResult {
     this.#inner.fulfill?.(req, { audio: cached.audio.slice(0), boundaries: cached.boundaries });
     return { audio: cached.audio.slice(0), boundaries: cached.boundaries };
+  }
+
+  // A download's sentences already stored, with their marks recorded, for a
+  // whole section in a few queries. Only stored audio counts: what is only
+  // in memory cannot pack.
+  async cachedSentences(
+    section: number,
+    sentences: { ordinal: number; req: SpeechSynthesisRequest }[],
+  ): Promise<Set<number>> {
+    if (this.#inner.cacheable === false || !this.#store.cachedKeys || !this.#store.recordMarkKeys) {
+      return new Set();
+    }
+    const keyed = sentences.map(({ ordinal, req }) => ({
+      ordinal,
+      key: computeTTSCacheKey(this.#inner.id, req),
+    }));
+    try {
+      const stored = await this.#store.cachedKeys(keyed.map(({ key }) => key));
+      const hits = keyed.filter(({ key }) => stored.has(key));
+      if (hits.length) await this.#store.recordMarkKeys(section, hits);
+      return new Set(hits.map(({ ordinal }) => ordinal));
+    } catch {
+      // Unreadable store: synthesize as if nothing were cached.
+      return new Set();
+    }
   }
 
   // Ordered sentence labels for a section, from the timeline enumeration.

@@ -732,6 +732,22 @@ export class BufferedTTSClient implements TTSClient {
     return true;
   }
 
+  // The ordinals of a section's sentences already stored, with their marks
+  // recorded, keyed exactly as warmSentence keys them (a whole section in a
+  // few queries).
+  async cachedSentences(
+    section: number,
+    sentences: { ordinal: number; lang: string; text: string }[],
+  ): Promise<Set<number>> {
+    if (!(this.provider instanceof CachingProvider)) return new Set();
+    const reqs = [];
+    for (const { ordinal, lang, text } of sentences) {
+      const voice = await this.getVoiceIdFromLang(lang);
+      reqs.push({ ordinal, req: { lang, text, voice, pitch: this.#pitch } });
+    }
+    return this.provider.cachedSentences(section, reqs);
+  }
+
   // Synthesize one sentence into the cache (a hit is a no-op) and record its
   // key against the section manifest. Resolves the voice exactly as live
   // playback does, so the computed key matches. Returns whether audio is now

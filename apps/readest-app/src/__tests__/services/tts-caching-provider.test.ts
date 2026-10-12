@@ -103,6 +103,22 @@ describe('CachingProvider', () => {
     );
   });
 
+  test('finds the sentences of a section already stored and records their marks in one go', async () => {
+    const batched = Object.assign(store, {
+      cachedKeys: vi.fn(async (keys: string[]) => new Set(keys.filter((k) => store.map.has(k)))),
+      recordMarkKeys: vi.fn(async () => {}),
+    });
+    await provider.synthesize(req('b'), signal());
+    const cached = await provider.cachedSentences(7, [
+      { ordinal: 0, req: req('a') },
+      { ordinal: 1, req: req('b') },
+    ]);
+    expect(cached).toEqual(new Set([1]));
+    expect(batched.recordMarkKeys).toHaveBeenCalledWith(7, [
+      { ordinal: 1, key: computeTTSCacheKey('fake', req('b')) },
+    ]);
+  });
+
   test('mirrors the inner provider voice-language policy', () => {
     expect(provider.sameLanguageVoicesOnly).toBeUndefined();
     const strict = new CachingProvider(makeInner({ sameLanguageVoicesOnly: true }), store);

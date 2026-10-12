@@ -82,6 +82,23 @@ export class TTSDownloadManager {
     return true;
   }
 
+  // The voice changed: audio is cached per voice, so a running download of
+  // the book starts over with the new one. Cancelling the old run withdraws
+  // what it still had pending (its jobs are cancelled).
+  restartBook(bookHash: string): void {
+    this.#ensureLoaded();
+    const store = useTTSDownloadStore.getState();
+    for (const active of [...this.#activeDownloads.values()]) {
+      if (active.bookHash !== bookHash) continue;
+      active.abortController.abort();
+      this.#activeDownloads.delete(active.id);
+      void this.#cancelActive(active);
+      store.requeue(active.id);
+    }
+    this.persist();
+    void this.processQueue();
+  }
+
   queueAll(bookHash: string, chapters: DownloadChapter[]): void {
     this.#ensureLoaded();
     // 'Download all' batches run ahead of individually tapped chapters.
