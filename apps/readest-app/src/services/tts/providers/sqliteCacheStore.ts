@@ -175,6 +175,7 @@ const CURRENT_PACK_PREDICATE = `(p.fingerprint = m.fingerprint OR p.fingerprint 
 export class SqliteTTSCacheStore implements TTSCacheStore {
   #db: DatabaseService;
   #budgetBytes: number;
+  readonly #importListeners = new Set<(keys: string[]) => void>();
   #now: () => number;
   #packFs: TTSPackFs | null;
   #ready: Promise<void> | null = null;
@@ -815,11 +816,22 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     if (existing.length) return false;
     if (sidecar.totalSize > this.#budgetBytes) return false;
     if (!(await this.#evictUntilFits(sidecar.totalSize, ''))) return false;
-    return this.#adoptPack(
+    const adopted = await this.#adoptPack(
       new Uint8Array(data),
       sidecar,
       `${IMPORTED_FINGERPRINT_PREFIX}${sidecar.keysFingerprint}`,
     );
+    if (adopted) {
+      const keys = sidecar.entries.map((entry) => entry.key);
+      for (const listener of this.#importListeners) listener(keys);
+    }
+    return adopted;
+  }
+
+  // Told the keys an imported pack brought, so a sentence still waiting to
+  // be synthesized need not be.
+  onImported(listener: (keys: string[]) => void): void {
+    this.#importListeners.add(listener);
   }
 
   // Per-section download status for the podcast UI. `recorded` is the count

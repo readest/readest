@@ -772,7 +772,11 @@ describe('SqliteTTSCacheStore pack portability', () => {
       now: () => clock.t++,
       packFs: otherFs,
     });
+    const imported = vi.fn();
+    other.onImported(imported);
     expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(true);
+    // Whoever still waits on these sentences can stop synthesizing them.
+    expect(imported).toHaveBeenCalledWith(['k1', 'k2']);
 
     const got = await other.get('k2');
     expect(got).not.toBeNull();
@@ -780,6 +784,7 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(got!.boundaries).toEqual(BOUNDARIES);
     // Re-import is a no-op.
     expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(false);
+    expect(imported).toHaveBeenCalledTimes(1);
   });
 
   test('importPack rejects a sidecar that does not match the bytes', async () => {

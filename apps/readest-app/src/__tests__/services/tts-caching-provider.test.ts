@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { CachingProvider, TTSCacheStore } from '@/services/tts/providers/cache';
+import { CachingProvider, computeTTSCacheKey, TTSCacheStore } from '@/services/tts/providers/cache';
 import {
   SpeechProvider,
   SpeechSynthesisPermanentError,
@@ -69,6 +69,34 @@ describe('CachingProvider', () => {
     await withFulfill.synthesize(req('a'), signal());
     await new CachingProvider(makeInner({ fulfill }), store).synthesize(req('a'), signal());
     expect(fulfill).toHaveBeenCalledTimes(2);
+    expect(fulfill).toHaveBeenCalledWith(
+      req('a'),
+      expect.objectContaining({ boundaries: BOUNDARIES }),
+    );
+  });
+
+  test('a synced pack that brings a sentence a fill is waiting on fulfils it', async () => {
+    let onImported: (keys: string[]) => void = () => {};
+    const importing = Object.assign(new MemoryStore(), {
+      onImported: (listener: (keys: string[]) => void) => {
+        onImported = listener;
+      },
+    });
+    const fulfill = vi.fn();
+    const pending = makeInner({
+      fulfill,
+      synthesize: vi.fn(() => new Promise<SpeechSynthesisResult>(() => {})),
+    });
+    const withSync = new CachingProvider(pending, importing);
+    void withSync.synthesize(req('a'), signal());
+    await new Promise((r) => setTimeout(r, 0));
+    // The pull imports the pack after the fill's own lookup missed.
+    importing.get.mockImplementation(async () => ({
+      audio: new ArrayBuffer(4),
+      boundaries: BOUNDARIES,
+    }));
+    onImported([computeTTSCacheKey('fake', req('a')), 'unrelated']);
+    await new Promise((r) => setTimeout(r, 0));
     expect(fulfill).toHaveBeenCalledWith(
       req('a'),
       expect.objectContaining({ boundaries: BOUNDARIES }),

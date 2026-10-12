@@ -31,6 +31,8 @@ export interface TTSCacheStore {
   // Which of these keys are cached, in one lookup (a download checks a whole
   // section at once).
   cachedKeys?(keys: string[]): Promise<Set<string>>;
+  // Called with the keys a synced pack brought, once it is imported.
+  onImported?(listener: (keys: string[]) => void): void;
   put(
     key: string,
     entry: TTSCacheEntry,
@@ -80,6 +82,8 @@ export class CachingProvider implements SpeechProvider {
   // preloader routinely race the same sentence.
   readonly #inflight = new Map<string, Promise<SpeechSynthesisResult>>();
   readonly #recent = new Map<string, SpeechSynthesisResult>();
+  // The request behind each in-flight key, for #onImported.
+  readonly #inflightReqs = new Map<string, SpeechSynthesisRequest>();
   #recentBytes = 0;
   // Present only for a windowed inner provider: callers feature-detect it to
   // choose windowed prefetch over synthesizing preloads.
@@ -89,6 +93,7 @@ export class CachingProvider implements SpeechProvider {
     this.#inner = inner;
     this.#store = store;
     if (inner.prefetch) this.prefetch = this.#prefetch.bind(this);
+    store.onImported?.((keys) => this.#onImported(keys));
   }
 
   get id(): string {
@@ -214,11 +219,13 @@ export class CachingProvider implements SpeechProvider {
     }
     const promise = this.#getOrSynthesize(key, req, signal, options);
     this.#inflight.set(key, promise);
+    this.#inflightReqs.set(key, req);
     try {
       return await promise;
     } finally {
       // Always cleared — a failed slot must not poison the retry path.
       this.#inflight.delete(key);
+      this.#inflightReqs.delete(key);
     }
   }
 
@@ -251,6 +258,21 @@ export class CachingProvider implements SpeechProvider {
       console.warn('TTS cache write failed; continuing uncached', err);
     }
     return result;
+  }
+
+  // A synced pack arrived after these sentences' own lookups missed: the
+  // provider need not synthesize the ones still in flight.
+  #onImported(keys: string[]): void {
+    for (const key of keys) {
+      const req = this.#inflightReqs.get(key);
+      if (!req) continue;
+      void this.#store
+        .get(key)
+        .then((cached) => {
+          if (cached) this.#served(req, cached);
+        })
+        .catch(() => {});
+    }
   }
 
   // A sentence served from the cache may still be pending in the provider
