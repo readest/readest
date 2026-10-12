@@ -449,6 +449,37 @@ describe('useTTSControl changing the voice', () => {
   });
 });
 
+describe('useTTSControl a start that fails', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('closes the player sheet it may have opened early', async () => {
+    const onRequestHidePanel = vi.fn();
+    const FailingHarness = () => {
+      useTTSControl({ bookKey: 'book-1', onRequestHidePanel });
+      return null;
+    };
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<FailingHarness />);
+    await act(async () => {
+      const started = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      (
+        ttsControllerInstances[0] as { initViewTTS: ReturnType<typeof vi.fn> }
+      ).initViewTTS.mockRejectedValueOnce(new Error('no text on this page'));
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await started;
+    });
+    expect(onRequestHidePanel).toHaveBeenCalled();
+  });
+});
+
 describe('useTTSControl stopping while a start is still initializing', () => {
   beforeEach(() => {
     ttsControllerInstances.length = 0;
