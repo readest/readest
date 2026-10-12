@@ -14,6 +14,7 @@
 //   leases it fails.
 // - Book text lives only until a job ends; ended jobs are forgotten after
 //   `retainMs`, as is any job nobody touched for that long.
+// - A paused worker keeps polling but gets no job; what it holds finishes.
 
 export type JobState = 'queued' | 'leased' | 'done' | 'failed' | 'cancelled';
 
@@ -63,6 +64,17 @@ export interface LeasedJob {
   segments: JobSegment[];
 }
 
+export interface QueueSummary {
+  queued: number;
+  oldestQueuedAt: number | null;
+  leased: number;
+  // Keyed by the engines a job needs, joined with '+'.
+  engines: Record<string, { queued: number; leased: number }>;
+  // Jobs each worker holds, and lease calls each worker has waiting.
+  running: Record<string, number>;
+  waiting: Record<string, number>;
+}
+
 export interface JobOptions {
   leaseMs: number;
   maxAttempts: number;
@@ -94,6 +106,7 @@ export class JobQueue {
   #served = new Map<string, number>();
   #leases = 0;
   #dirty = new Set<string>();
+  #paused = new Set<string>();
 
   constructor(
     private readonly options: JobOptions,
@@ -154,6 +167,7 @@ export class JobQueue {
     engines: string[] | null,
     lease: string = crypto.randomUUID(),
   ): LeasedJob | null {
+    if (this.#paused.has(worker)) return null;
     const job = this.#pick(engines);
     return job ? this.#grant(job, worker, lease) : null;
   }
@@ -177,6 +191,30 @@ export class JobQueue {
     return !!this.#byLease(lease);
   }
 
+  workerOf(lease: string): string | null {
+    return this.#byLease(lease)?.worker ?? null;
+  }
+
+  setPaused(worker: string, paused: boolean): void {
+    if (paused) this.#paused.add(worker);
+    else this.#paused.delete(worker);
+    this.#pump();
+  }
+
+  // Puts the jobs a worker holds back in the queue (a removed worker); its
+  // next heartbeat answers that the lease is gone.
+  requeueWorker(worker: string): number {
+    let count = 0;
+    for (const job of this.#jobs.values()) {
+      if (job.state === 'leased' && job.worker === worker) {
+        this.#requeue(job);
+        count += 1;
+      }
+    }
+    this.#pump();
+    return count;
+  }
+
   // Renews a live lease; false tells the worker to stop (cancelled, or the
   // lease ran out and the job went to someone else).
   heartbeat(lease: string): boolean {
@@ -188,11 +226,12 @@ export class JobQueue {
   }
 
   // Null when the lease is no longer live: the result must be discarded.
-  complete(lease: string): { userId: string; plan: string } | null {
+  complete(lease: string): { userId: string; plan: string; worker: string } | null {
     const job = this.#byLease(lease);
     if (!job) return null;
+    const worker = job.worker!;
     this.#end(job, 'done');
-    return { userId: job.userId, plan: job.plan };
+    return { userId: job.userId, plan: job.plan, worker };
   }
 
   cancel(jobId: string, userId: string): boolean {
@@ -223,19 +262,16 @@ export class JobQueue {
     this.#wake(jobId, null);
   }
 
-  sweep(): void {
+  // Expires leases, waits and old jobs; returns the worker of each lease that
+  // ran out.
+  sweep(): string[] {
     const now = this.now();
+    const lost: string[] = [];
     for (const job of [...this.#jobs.values()]) {
       if (job.state === 'leased' && job.leaseExpiresAt <= now) {
-        if (job.attempts >= this.options.maxAttempts) {
-          this.#end(job, 'failed');
-        } else {
-          job.state = 'queued';
-          job.lease = null;
-          job.worker = null;
-          job.updatedAt = now;
-          this.#dirty.add(job.id);
-        }
+        lost.push(job.worker!);
+        if (job.attempts >= this.options.maxAttempts) this.#end(job, 'failed');
+        else this.#requeue(job);
       } else if (job.state !== 'leased' && job.updatedAt + this.options.retainMs <= now) {
         this.#jobs.delete(job.id);
         this.#dirty.add(job.id);
@@ -259,6 +295,36 @@ export class JobQueue {
         if (!active.has(user)) this.#served.delete(user);
       }
     }
+    return lost;
+  }
+
+  summary(): QueueSummary {
+    const summary: QueueSummary = {
+      queued: 0,
+      oldestQueuedAt: null,
+      leased: 0,
+      engines: {},
+      running: {},
+      waiting: {},
+    };
+    for (const job of this.#jobs.values()) {
+      if (job.state !== 'queued' && job.state !== 'leased') continue;
+      const key = job.engines.join('+');
+      const engine = (summary.engines[key] ??= { queued: 0, leased: 0 });
+      if (job.state === 'queued') {
+        summary.queued += 1;
+        engine.queued += 1;
+        summary.oldestQueuedAt = Math.min(summary.oldestQueuedAt ?? job.updatedAt, job.updatedAt);
+      } else {
+        summary.leased += 1;
+        engine.leased += 1;
+        summary.running[job.worker!] = (summary.running[job.worker!] ?? 0) + 1;
+      }
+    }
+    for (const { worker } of this.#workers) {
+      summary.waiting[worker] = (summary.waiting[worker] ?? 0) + 1;
+    }
+    return summary;
   }
 
   nextDeadline(): number | null {
@@ -330,11 +396,20 @@ export class JobQueue {
 
   #pump() {
     for (const waiter of [...this.#workers]) {
+      if (this.#paused.has(waiter.worker)) continue;
       const job = this.#pick(waiter.engines);
       if (!job) continue;
       this.#workers = this.#workers.filter((w) => w !== waiter);
       waiter.resolve(this.#grant(job, waiter.worker));
     }
+  }
+
+  #requeue(job: Job) {
+    job.state = 'queued';
+    job.lease = null;
+    job.worker = null;
+    job.updatedAt = this.now();
+    this.#dirty.add(job.id);
   }
 
   #end(job: Job, state: JobState) {

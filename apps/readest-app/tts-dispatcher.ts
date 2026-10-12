@@ -4,7 +4,10 @@
 // - holds the download job queue that workers pull from
 //   (src/libs/readestVoice/jobQueue.ts, reached through jobs.ts), and starts
 //   RunPod jobs for queued downloads within the downloads' share of the
-//   endpoint (the bridge), so downloads run even with no other worker.
+//   endpoint (the bridge), so downloads run even with no other worker;
+// - keeps track of those workers (src/libs/readestVoice/workerRegistry.ts)
+//   for the admin dashboard, which reaches the admin* methods through its
+//   own binding (script_name readest-web).
 // Re-exported by worker.ts, bound as TTS_DISPATCHER in wrangler.toml.
 //
 // Running leases and every job are persisted, so an evicted or restarted
@@ -29,13 +32,35 @@ import {
   type JobSubmission,
   JobQueue,
   type LeasedJob,
+  type QueueSummary,
   type SubmitResult,
 } from './src/libs/readestVoice/jobQueue';
 import { getRunPodConfig, startJob } from './src/libs/readestVoice/runpod';
+import {
+  BRIDGE_WORKER,
+  type CreateResult,
+  type WorkerInfo,
+  WorkerRegistry,
+  type WorkerRecord,
+  type WorkerView,
+  sha256Hex,
+} from './src/libs/readestVoice/workerRegistry';
 
 interface DispatcherEnv {
   // Most windows running at once: RunPod max workers x TTS_CONCURRENCY.
   READEST_VOICE_MAX_JOBS?: string;
+  // The worker version download jobs need (shown on the dashboard).
+  READEST_VOICE_WORKER_VERSION?: string;
+}
+
+export interface AdminSnapshot {
+  now: number;
+  requiredVersion: string;
+  workers: (WorkerView & { running: number; waiting: number })[];
+  queue: Omit<QueueSummary, 'running' | 'waiting'>;
+  // Windows on the RunPod endpoint: listening, and bridged downloads.
+  slots: { capacity: number; listen: number; download: number };
+  bridge: { configured: boolean; paused: boolean };
 }
 
 interface DispatcherState {
@@ -59,6 +84,7 @@ const WAIT_MS = 60_000;
 const MAX_WAITING_PER_LANE = 4;
 const LEASES_KEY = 'leases';
 const JOB_PREFIX = 'job:';
+const WORKER_PREFIX = 'worker:';
 // A worker renews its job lease every 30 s (WORKER_HEARTBEAT in the worker).
 const JOB_LEASE_MS = 120_000;
 const JOB_MAX_ATTEMPTS = 3;
@@ -67,18 +93,23 @@ const MAX_QUEUED_JOBS_PER_USER = 32;
 // Matches the result bucket's lifecycle rule.
 const JOB_RETAIN_MS = 86_400_000;
 // The bridge's name as a worker and as a user of the listen queue.
-const BRIDGE = 'runpod';
+const BRIDGE = BRIDGE_WORKER;
 
 export class TTSDispatcher extends DurableObject<DispatcherEnv> {
   #state: DispatcherState;
   #queue: DispatchQueue;
   #jobs: JobQueue;
+  #workers = new WorkerRegistry();
+  #capacity: number;
+  #requiredVersion: string;
 
   constructor(state: DispatcherState, env: DispatcherEnv) {
     super(state, env);
     this.#state = state;
+    this.#capacity = Number(env.READEST_VOICE_MAX_JOBS) || DEFAULT_MAX_JOBS;
+    this.#requiredVersion = env.READEST_VOICE_WORKER_VERSION ?? '';
     this.#queue = new DispatchQueue({
-      capacity: Number(env.READEST_VOICE_MAX_JOBS) || DEFAULT_MAX_JOBS,
+      capacity: this.#capacity,
       leaseMs: LEASE_MS,
       waitMs: WAIT_MS,
       maxWaiting: MAX_WAITING_PER_LANE,
@@ -93,6 +124,10 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
       this.#queue.restore((await state.storage.get<Lease[]>(LEASES_KEY)) ?? []);
       const jobs = await state.storage.list<Job>({ prefix: JOB_PREFIX });
       this.#jobs.restore([...jobs.values()]);
+      const workers = await state.storage.list<WorkerRecord>({ prefix: WORKER_PREFIX });
+      this.#workers.restore([...workers.values()]);
+      if (getRunPodConfig()) this.#workers.known(BRIDGE);
+      for (const name of this.#workers.paused()) this.#jobs.setPaused(name, true);
     });
   }
 
@@ -138,10 +173,27 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     this.#changed();
   }
 
-  leaseJob(worker: string, engines: string[], waitMs: number): Promise<LeasedJob | null> {
+  leaseJob(
+    worker: string,
+    engines: string[],
+    waitMs: number,
+    version = '',
+  ): Promise<LeasedJob | null> {
+    this.#workers.seen(worker, { engines, version });
     const job = this.#jobs.lease(worker, engines, waitMs);
     this.#changed();
     return job;
+  }
+
+  // The name of the dashboard-made worker holding this token hash.
+  authenticateWorker(tokenHash: string): string | null {
+    return this.#workers.authenticate(tokenHash);
+  }
+
+  // A worker turned away for its version: shown as needing an upgrade.
+  workerRejected(worker: string, info: WorkerInfo): void {
+    this.#workers.rejected(worker, info);
+    this.#changed();
   }
 
   leasedJob(lease: string): LeasedJob | null {
@@ -149,23 +201,77 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
   }
 
   heartbeat(lease: string): boolean {
+    const worker = this.#jobs.workerOf(lease);
     const live = this.#jobs.heartbeat(lease);
+    if (worker) this.#workers.touch(worker);
     // A bridged job also holds a slot of the listen queue.
     if (live) this.#queue.renew(lease);
     this.#changed();
     return live;
   }
 
-  completeJob(lease: string): { userId: string; plan: string } | null {
+  // `chars`: the characters the worker delivered (charged to the user).
+  completeJob(lease: string, chars = 0): { userId: string; plan: string } | null {
     const owner = this.#jobs.complete(lease);
+    if (owner) this.#workers.jobDone(owner.worker, chars);
     this.#changed();
-    return owner;
+    return owner && { userId: owner.userId, plan: owner.plan };
   }
 
   alarm(): void {
     this.#queue.sweep();
-    this.#jobs.sweep();
+    for (const worker of this.#jobs.sweep()) this.#workers.jobLost(worker);
     this.#changed();
+  }
+
+  // Counts and worker data only: no users, book text or job ids.
+  adminSnapshot(): AdminSnapshot {
+    const { running, waiting, ...queue } = this.#jobs.summary();
+    const leases = this.#queue.snapshot();
+    return {
+      now: Date.now(),
+      requiredVersion: this.#requiredVersion,
+      workers: this.#workers.list().map((worker) => ({
+        ...worker,
+        running: running[worker.name] ?? 0,
+        waiting: waiting[worker.name] ?? 0,
+      })),
+      queue,
+      slots: {
+        capacity: this.#capacity,
+        listen: leases.filter((lease) => lease.lane === 'listen').length,
+        download: leases.filter((lease) => lease.lane === 'download').length,
+      },
+      bridge: { configured: !!getRunPodConfig(), paused: this.#workers.isPaused(BRIDGE) },
+    };
+  }
+
+  // The token is returned once; only its hash is kept.
+  async adminCreateWorker(name: string): Promise<CreateResult & { token?: string }> {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    const token = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+    const result = this.#workers.create(name, await sha256Hex(token));
+    this.#changed();
+    return result.ok ? { ...result, token } : result;
+  }
+
+  // Its jobs go back to the queue at once.
+  adminRemoveWorker(name: string): boolean {
+    const removed = this.#workers.remove(name);
+    if (removed) {
+      this.#jobs.setPaused(name, false);
+      this.#jobs.requeueWorker(name);
+    }
+    this.#changed();
+    return removed;
+  }
+
+  // Pausing the bridge leaves downloads to the pull workers.
+  adminSetPaused(name: string, paused: boolean): boolean {
+    const known = this.#workers.setPaused(name, paused);
+    if (known) this.#jobs.setPaused(name, paused);
+    this.#changed();
+    return known;
   }
 
   // Every grant, release and expiry happens inside one of the calls above,
@@ -186,6 +292,9 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     const { put, deleted } = this.#jobs.takeChanges();
     for (const job of put) void storage.put(JOB_PREFIX + job.id, job);
     for (const id of deleted) void storage.delete(JOB_PREFIX + id);
+    const workers = this.#workers.takeChanges();
+    for (const record of workers.put) void storage.put(WORKER_PREFIX + record.name, record);
+    for (const name of workers.deleted) void storage.delete(WORKER_PREFIX + name);
     const times = [this.#queue.nextDeadline(), this.#jobs.nextDeadline()].filter(
       (time): time is number => time !== null,
     );
@@ -198,12 +307,13 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
   // lease until it runs out, then queues again.
   #bridge() {
     const config = getRunPodConfig();
-    if (!config) return;
+    if (!config || this.#workers.isPaused(BRIDGE)) return;
     while (this.#jobs.hasQueued()) {
       const lease = crypto.randomUUID();
       const request = { userId: BRIDGE, clientId: BRIDGE, lane: 'download' as const, token: lease };
       if (!this.#queue.tryAcquire(request)) return;
       this.#jobs.leaseNow(BRIDGE, null, lease);
+      this.#workers.touch(BRIDGE);
       this.#state.waitUntil(
         startJob(config, { lease }).catch((error) => {
           console.error('Readest Voice bridge job start failed:', error);

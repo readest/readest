@@ -4,6 +4,8 @@ import { NextRequest } from 'next/server';
 const m = vi.hoisted(() => ({
   trackUsage: vi.fn(),
   dispatcher: {
+    authenticateWorker: vi.fn(),
+    workerRejected: vi.fn(),
     leaseJob: vi.fn(),
     leasedJob: vi.fn(),
     heartbeat: vi.fn(),
@@ -24,6 +26,7 @@ vi.mock('@/utils/usage', async (orig) => ({
 }));
 
 import { POST } from '@/app/api/tts/readest/workers/route';
+import { sha256Hex } from '@/libs/readestVoice/workerRegistry';
 
 const JOB = {
   jobId: 'a'.repeat(32),
@@ -56,6 +59,8 @@ beforeEach(() => {
   m.bucket.put.mockResolvedValue(undefined);
   m.bucket.delete.mockResolvedValue(undefined);
   m.trackUsage.mockResolvedValue(0);
+  m.dispatcher.authenticateWorker.mockResolvedValue(null);
+  m.dispatcher.workerRejected.mockResolvedValue(undefined);
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -76,6 +81,24 @@ describe('lease', () => {
       'lab',
       ['kokoro', 'omnivoice'],
       expect.any(Number),
+      '2.3.0',
+    );
+    expect(m.dispatcher.authenticateWorker).not.toHaveBeenCalled();
+  });
+
+  it('accepts a worker made on the dashboard by its token hash', async () => {
+    m.dispatcher.authenticateWorker.mockResolvedValueOnce('gpu-2');
+    m.dispatcher.leaseJob.mockResolvedValueOnce(null);
+    const res = await POST(post(lease, 'dashboard-token'));
+    expect(res.status).toBe(204);
+    expect(m.dispatcher.authenticateWorker).toHaveBeenCalledWith(
+      await sha256Hex('dashboard-token'),
+    );
+    expect(m.dispatcher.leaseJob).toHaveBeenCalledWith(
+      'gpu-2',
+      ['kokoro', 'omnivoice'],
+      expect.any(Number),
+      '2.3.0',
     );
   });
 
@@ -93,6 +116,11 @@ describe('lease', () => {
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ error: 'VERSION_MISMATCH' });
     expect(m.dispatcher.leaseJob).not.toHaveBeenCalled();
+    // Shown on the dashboard as needing an upgrade.
+    expect(m.dispatcher.workerRejected).toHaveBeenCalledWith('gpu-box', {
+      engines: ['kokoro', 'omnivoice'],
+      version: '2.2.0',
+    });
   });
 
   it('refuses every worker when no tokens are configured', async () => {
@@ -138,6 +166,7 @@ describe('complete', () => {
     const res = await POST(post({ action: 'complete', lease: 'lease-1', frames }));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ charged: 12 });
+    expect(m.dispatcher.completeJob).toHaveBeenCalledWith('lease-1', 12);
     expect(m.bucket.put).toHaveBeenCalledWith(
       `tts-jobs/${JOB.jobId}`,
       [

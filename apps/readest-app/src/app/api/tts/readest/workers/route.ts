@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { USAGE_TYPES, UsageStatsManager } from '@/utils/usage';
-import { getDispatcher, getResultBucket, resultKey } from '@/libs/readestVoice/bindings';
+import {
+  type DispatcherStub,
+  getDispatcher,
+  getResultBucket,
+  resultKey,
+} from '@/libs/readestVoice/bindings';
 import { errorResponse } from '@/libs/readestVoice/gate';
+import { sha256Hex } from '@/libs/readestVoice/workerRegistry';
 
 // Readest Voice workers pull download jobs here (see ../jobs/route.ts), one
 // JSON body per call, by `action`:
 // - lease {engines, version}: long-polls for a job the worker can run. Needs
-//   a worker token (READEST_VOICE_WORKER_TOKENS: "name:token,...") and the
+//   a worker token (READEST_VOICE_WORKER_TOKENS: "name:token,...", or one
+//   made on the admin dashboard, which the dispatcher keeps hashed) and the
 //   deployed worker version (READEST_VOICE_WORKER_VERSION, when set), so a
 //   download sounds like listening.
 // - job {lease}: the leased window (a RunPod job started by the dispatcher's
@@ -31,7 +38,10 @@ const sameSecret = (a: string, b: string) => {
   return diff === 0;
 };
 
-const workerName = (request: NextRequest): string | null => {
+const workerName = async (
+  request: NextRequest,
+  dispatcher: DispatcherStub,
+): Promise<string | null> => {
   const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return null;
   for (const entry of (process.env['READEST_VOICE_WORKER_TOKENS'] ?? '').split(',')) {
@@ -40,7 +50,7 @@ const workerName = (request: NextRequest): string | null => {
     const secret = entry.slice(separator + 1).trim();
     if (separator > 0 && secret && sameSecret(secret, token)) return name;
   }
-  return null;
+  return dispatcher.authenticateWorker(await sha256Hex(token));
 };
 
 export async function POST(request: NextRequest) {
@@ -58,15 +68,19 @@ export async function POST(request: NextRequest) {
 
   switch (action) {
     case 'lease': {
-      const worker = workerName(request);
+      const worker = await workerName(request, dispatcher);
       if (!worker) return errorResponse('NOT_AUTHENTICATED', 401);
-      const version = process.env['READEST_VOICE_WORKER_VERSION'];
-      if (version && body['version'] !== version) return errorResponse('VERSION_MISMATCH', 409);
       const engines = body['engines'];
       if (!Array.isArray(engines) || !engines.every((e) => typeof e === 'string')) {
         return errorResponse('INVALID_INPUT', 400);
       }
-      const job = await dispatcher.leaseJob(worker, engines, LEASE_WAIT_MS);
+      const reported = typeof body['version'] === 'string' ? body['version'] : '';
+      const version = process.env['READEST_VOICE_WORKER_VERSION'];
+      if (version && reported !== version) {
+        await dispatcher.workerRejected(worker, { engines, version: reported });
+        return errorResponse('VERSION_MISMATCH', 409);
+      }
+      const job = await dispatcher.leaseJob(worker, engines, LEASE_WAIT_MS, reported);
       return job ? NextResponse.json(job) : new NextResponse(null, { status: 204 });
     }
     case 'job': {
@@ -95,7 +109,7 @@ export async function POST(request: NextRequest) {
       lines.push({ done: true, charged });
       const key = resultKey(job.jobId);
       await bucket.put(key, lines.map((line) => `${JSON.stringify(line)}\n`).join(''));
-      const owner = await dispatcher.completeJob(lease as string);
+      const owner = await dispatcher.completeJob(lease as string, charged);
       if (!owner) {
         // Cancelled or re-leased while the result uploaded.
         await bucket.delete(key);

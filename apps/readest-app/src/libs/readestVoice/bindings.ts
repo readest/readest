@@ -1,6 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { SlotRequest, SlotResult } from './dispatchQueue';
 import type { JobState, JobSubmission, LeasedJob, SubmitResult } from './jobQueue';
+import type { WorkerInfo } from './workerRegistry';
 
 // A slot, plus the characters of the user's unfinished download jobs.
 export interface AdmissionResult extends SlotResult {
@@ -19,10 +20,17 @@ export interface DispatcherStub {
   waitJob(jobId: string, userId: string, waitMs: number): Promise<JobState | null>;
   cancelJob(jobId: string, userId: string): Promise<boolean>;
   forgetJob(jobId: string, userId: string): Promise<void>;
-  leaseJob(worker: string, engines: string[], waitMs: number): Promise<LeasedJob | null>;
+  leaseJob(
+    worker: string,
+    engines: string[],
+    waitMs: number,
+    version: string,
+  ): Promise<LeasedJob | null>;
+  authenticateWorker(tokenHash: string): Promise<string | null>;
+  workerRejected(worker: string, info: WorkerInfo): Promise<void>;
   leasedJob(lease: string): Promise<LeasedJob | null>;
   heartbeat(lease: string): Promise<boolean>;
-  completeJob(lease: string): Promise<{ userId: string; plan: string } | null>;
+  completeJob(lease: string, chars: number): Promise<{ userId: string; plan: string } | null>;
 }
 
 export interface ResultBucket {

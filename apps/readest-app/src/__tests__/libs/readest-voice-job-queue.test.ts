@@ -27,7 +27,7 @@ const setup = (maxQueuedPerUser = 3) => {
   };
   const advance = (ms: number) => {
     now += ms;
-    queue.sweep();
+    return queue.sweep();
   };
   return { queue, submit, advance };
 };
@@ -49,7 +49,7 @@ describe('JobQueue', () => {
     expect(queue.job(leased!.lease)).toEqual(leased);
     expect(queue.status(id, 'a')).toBe('leased');
 
-    expect(queue.complete(leased!.lease)).toEqual({ userId: 'a', plan: 'pro' });
+    expect(queue.complete(leased!.lease)).toEqual({ userId: 'a', plan: 'pro', worker: 'w1' });
     expect(queue.complete(leased!.lease)).toBeNull();
     expect(queue.status(id, 'a')).toBe('done');
     expect(queue.job(leased!.lease)).toBeNull();
@@ -128,13 +128,13 @@ describe('JobQueue', () => {
     expect(queue.heartbeat(first.lease)).toBe(true);
     advance(LEASE_MS - 1);
     expect(queue.status(id, 'a')).toBe('leased');
-    advance(1);
+    expect(advance(1)).toEqual(['w1']);
     expect(queue.status(id, 'a')).toBe('queued');
     expect(queue.heartbeat(first.lease)).toBe(false);
     expect(queue.complete(first.lease)).toBeNull();
 
     queue.leaseNow('w2', ['kokoro']);
-    advance(LEASE_MS);
+    expect(advance(LEASE_MS)).toEqual(['w2']);
     expect(queue.status(id, 'a')).toBe('failed');
   });
 
@@ -203,7 +203,7 @@ describe('JobQueue', () => {
     queue.restore(put);
     expect(queue.status(id, 'a')).toBe('leased');
     expect(queue.isLeaseLive(leased.lease)).toBe(true);
-    expect(queue.complete(leased.lease)).toEqual({ userId: 'a', plan: 'pro' });
+    expect(queue.complete(leased.lease)).toEqual({ userId: 'a', plan: 'pro', worker: 'w1' });
   });
 
   it('reports the characters of the unfinished jobs of a user', () => {
@@ -216,5 +216,64 @@ describe('JobQueue', () => {
     expect(queue.pendingChars('a')).toBe(12);
     expect(queue.pendingChars('b')).toBe(12);
     expect(queue.pendingChars('c')).toBe(0);
+  });
+
+  it('parks a paused worker without work until it is resumed', async () => {
+    const { queue, submit } = setup();
+    submit('a');
+    queue.setPaused('w1', true);
+    expect(queue.leaseNow('w1', ['kokoro'])).toBeNull();
+    let got: unknown = 'pending';
+    void queue.lease('w1', ['kokoro'], 25_000).then((job) => (got = job));
+    await flush();
+    expect(got).toBe('pending');
+    expect(queue.leaseNow('w2', ['kokoro'])).not.toBeNull();
+
+    submit('b');
+    queue.setPaused('w1', false);
+    await flush();
+    expect(got).toMatchObject({ lang: 'en' });
+  });
+
+  it('names the worker holding a lease', () => {
+    const { queue, submit } = setup();
+    submit('a');
+    const leased = queue.leaseNow('w1', ['kokoro'])!;
+    expect(queue.workerOf(leased.lease)).toBe('w1');
+    expect(queue.workerOf('nope')).toBeNull();
+  });
+
+  it('puts the jobs of a removed worker back in the queue', () => {
+    const { queue, submit } = setup();
+    const { id } = submit('a');
+    const leased = queue.leaseNow('w1', ['kokoro'])!;
+    expect(queue.requeueWorker('w1')).toBe(1);
+    expect(queue.status(id, 'a')).toBe('queued');
+    expect(queue.heartbeat(leased.lease)).toBe(false);
+    expect(queue.leaseNow('w2', ['kokoro'])).toMatchObject({ jobId: id });
+  });
+
+  it('summarizes the queue without users or book text', async () => {
+    const { queue, submit, advance } = setup();
+    submit('a');
+    advance(1_000);
+    submit('b', { engines: ['omnivoice'] });
+    submit('c', { engines: ['kokoro', 'omnivoice'] });
+    queue.leaseNow('w1', ['kokoro']);
+    void queue.lease('w2', ['kokoro'], 25_000);
+    void queue.lease('w2', ['kokoro'], 25_000);
+    await flush();
+    expect(queue.summary()).toEqual({
+      queued: 2,
+      oldestQueuedAt: 2_000,
+      leased: 1,
+      engines: {
+        kokoro: { queued: 0, leased: 1 },
+        omnivoice: { queued: 1, leased: 0 },
+        'kokoro+omnivoice': { queued: 1, leased: 0 },
+      },
+      running: { w1: 1 },
+      waiting: { w2: 2 },
+    });
   });
 });
