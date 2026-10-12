@@ -1,0 +1,16 @@
+{
+  "name": "readest-voice-admin-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Worker behind Access for managing Readest Voice workers",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
+    "typescript": "^5.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

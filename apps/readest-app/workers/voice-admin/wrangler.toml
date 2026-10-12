@@ -1,0 +1,25 @@
+# Readest Voice admin dashboard. Reachable only through Cloudflare Access on
+# its custom domain: no workers.dev or preview URLs, and the Worker checks the
+# Access JWT itself (fails closed until both vars are set).
+name = "readest-voice-admin"
+main = "src/index.ts"
+compatibility_date = "2026-04-10"
+workers_dev = false
+preview_urls = false
+
+[[routes]]
+pattern = "voice-admin.readest.com"
+custom_domain = true
+
+[vars]
+# https://<team>.cloudflareaccess.com
+ACCESS_TEAM_DOMAIN = ""
+# The Access application's Audience (AUD) tag.
+ACCESS_AUD = ""
+
+# The dispatcher lives in the readest-web Worker; its admin* RPC methods are
+# what this dashboard calls.
+[[durable_objects.bindings]]
+name = "TTS_DISPATCHER"
+class_name = "TTSDispatcher"
+script_name = "readest-web"
