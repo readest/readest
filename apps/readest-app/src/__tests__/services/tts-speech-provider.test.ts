@@ -141,6 +141,33 @@ describe('EdgeSpeechProvider', () => {
     ).rejects.toBeInstanceOf(SpeechSynthesisFatalError);
   });
 
+  test('recovers the failed sentence through HTTPS after a WebSocket failure', async () => {
+    const provider = new EdgeSpeechProvider(() => true);
+    await expect(provider.init()).resolves.toBe(true);
+    h.createAudioData.mockRejectedValueOnce(new Error('WebSocket error occurred: HTTP 403'));
+    const result = await provider.synthesize(
+      { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 },
+      new AbortController().signal,
+    );
+    expect(h.lastConstructedProtocol).toBe('https');
+    expect(h.create).toHaveBeenCalledTimes(2);
+    expect(h.createAudioData).toHaveBeenCalledTimes(2);
+    expect(result.audio.byteLength).toBe(4);
+  });
+
+  test('stops at the failed sentence when the HTTPS route also fails', async () => {
+    const provider = new EdgeSpeechProvider(() => true);
+    await provider.init();
+    h.createAudioData.mockRejectedValueOnce(new Error('WebSocket error occurred: HTTP 403'));
+    h.create.mockRejectedValueOnce(new Error('Edge proxy unavailable'));
+    await expect(
+      provider.synthesize(
+        { lang: 'en', text: 'keep reading', voice: 'en-US-AriaNeural', pitch: 1.0 },
+        new AbortController().signal,
+      ),
+    ).rejects.toBeInstanceOf(SpeechSynthesisFatalError);
+  });
+
   test('exposes the static Edge voice list', async () => {
     const provider = await initializedProvider();
     const voices = await provider.getAllVoices();

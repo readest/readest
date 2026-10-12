@@ -21,12 +21,17 @@ export class EdgeSpeechProvider implements SpeechProvider {
 
   #tts: EdgeSpeechTTS | null = null;
   #probeFailed = false;
+  #protocol: EDGE_TTS_PROTOCOL = 'wss';
+  #httpsFallback: Promise<boolean> | null = null;
+
+  constructor(private readonly canUseHttps: () => boolean = () => false) {}
 
   // The wss transport is free but intermittently blocked; the https fallback
   // goes through the authenticated proxy route. The Edge client owns the
   // fallback policy (auth state lives there); the provider just takes the
   // protocol to probe with.
   async init(protocol: EDGE_TTS_PROTOCOL = 'wss'): Promise<boolean> {
+    this.#protocol = protocol;
     this.#tts = new EdgeSpeechTTS(protocol);
     let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -62,7 +67,7 @@ export class EdgeSpeechProvider implements SpeechProvider {
 
   async synthesize(
     req: SpeechSynthesisRequest,
-    _signal: AbortSignal,
+    signal: AbortSignal,
   ): Promise<SpeechSynthesisResult> {
     const tts = this.#tts;
     if (!tts) throw new Error('EdgeSpeechProvider not initialized');
@@ -79,18 +84,38 @@ export class EdgeSpeechProvider implements SpeechProvider {
       this.#probeFailed = false;
       return { audio: data, boundaries };
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      let failure = err;
+      // A startup probe can pass and a later sentence can still lose its
+      // WebSocket. Retry that sentence through the account-backed route once.
+      if (!signal.aborted && this.#protocol === 'wss' && this.canUseHttps()) {
+        this.#httpsFallback ??= this.init('https');
+        if (await this.#httpsFallback) {
+          try {
+            const { data, boundaries } = await this.#tts!.createAudioData({
+              lang: req.lang,
+              text: req.text,
+              voice: req.voice,
+              rate: 1.0,
+              pitch: req.pitch,
+            });
+            return { audio: data, boundaries };
+          } catch (fallbackError) {
+            failure = fallbackError;
+          }
+        }
+      }
+      const message = failure instanceof Error ? failure.message : String(failure);
       // A failed startup probe can be masked by cached sentences. Stop at the
       // first uncached failure instead of silently advancing through the book.
       // An explicit 403 is a service refusal even when the probe succeeded.
       if (this.#probeFailed || /\b403\b/.test(message)) {
-        throw new SpeechSynthesisFatalError('Edge TTS is unavailable.', { cause: err });
+        throw new SpeechSynthesisFatalError('Edge TTS is unavailable.', { cause: failure });
       }
       // Permanent for this sentence: Edge answered without audio frames.
-      if (err instanceof Error && err.message === 'No audio data received.') {
-        throw new SpeechSynthesisPermanentError(err.message, { cause: err });
+      if (failure instanceof Error && failure.message === 'No audio data received.') {
+        throw new SpeechSynthesisPermanentError(failure.message, { cause: failure });
       }
-      throw err;
+      throw failure;
     }
   }
 
