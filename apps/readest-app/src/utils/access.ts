@@ -290,11 +290,17 @@ export const validateUserAndToken = async (authHeader: string | null | undefined
   if (!authHeader) return {};
 
   const token = authHeader.replace('Bearer ', '');
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
-
-  if (error || !user) return {};
-  return { user, token };
+  // getClaims verifies asymmetric (ES256) tokens locally against the cached JWKS, so API
+  // routes skip a GET /auth/v1/user round trip per request. HS256 tokens (legacy secret,
+  // self-hosted) still fall back to getUser inside getClaims.
+  try {
+    const { data, error } = await supabase.auth.getClaims(token);
+    const claims = data?.claims;
+    // The anon and service-role keys are JWTs too.
+    if (error || claims?.role !== 'authenticated' || !claims.sub) return {};
+    return { user: { id: claims.sub, email: claims.email }, token };
+  } catch {
+    // getClaims throws, rather than returns, an error for expired tokens.
+    return {};
+  }
 };

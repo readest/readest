@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import type { User } from '@supabase/supabase-js';
 import type { UserPlan } from '@/types/quota';
 import { getSubscriptionPlan, isTTSInPlan, validateUserAndToken } from '@/utils/access';
 import { type CatalogVoice, getCatalog } from './catalog';
@@ -11,7 +10,7 @@ import { getRunPodConfig, type RunPodConfig } from './runpod';
 // "[object Object]".
 
 export interface ReadestVoiceContext {
-  user: User;
+  user: { id: string };
   plan: UserPlan;
   config: RunPodConfig;
   catalog: CatalogVoice[];
