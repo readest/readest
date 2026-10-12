@@ -787,6 +787,25 @@ describe('SqliteTTSCacheStore pack portability', () => {
     expect(imported).toHaveBeenCalledTimes(1);
   });
 
+  test('a packed sentence counts as cached only while its pack file is there', async () => {
+    const sidecar = await readSidecar();
+    const bytes = packFs.files.get(await packName())!;
+    const otherDb = await NodeDatabaseService.open(':memory:');
+    const otherFs = new FakePackFs();
+    const other = new SqliteTTSCacheStore(otherDb, {
+      budgetBytes: 1024 * 1024,
+      now: () => clock.t++,
+      packFs: otherFs,
+    });
+    expect(await other.importPack(bytes.slice().buffer as ArrayBuffer, sidecar)).toBe(true);
+    expect(await other.cachedKeys(['k1', 'k2'])).toEqual(new Set(['k1', 'k2']));
+
+    // The pack file is gone (cleared storage): a download must synthesize
+    // these again instead of counting them done.
+    for (const name of await otherFs.list()) await otherFs.remove(name);
+    expect(await other.cachedKeys(['k1', 'k2'])).toEqual(new Set());
+  });
+
   test('importPack rejects a sidecar that does not match the bytes', async () => {
     const sidecar = await readSidecar();
     const bytes = packFs.files.get(await packName())!;

@@ -303,16 +303,29 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
   async cachedKeys(keys: string[]): Promise<Set<string>> {
     await this.#ensureSchema();
     const cached = new Set<string>();
+    // Packed rows count only while their pack file is there (one listing);
+    // a missing file is a miss, as get() would find.
+    let packFiles: Set<string> | null = null;
     for (let start = 0; start < keys.length; start += BATCH_ROWS * 3) {
       const batch = keys.slice(start, start + BATCH_ROWS * 3);
-      const rows = await this.#db.select<DatabaseRow & { key: string }>(
-        // A row a deleted pack left without audio (and without a pack) is a miss.
-        `SELECT key FROM entries
-          WHERE key IN (${batch.map(() => '?').join(', ')})
-            AND (audio IS NOT NULL OR pack_id IS NOT NULL)`,
+      // A row a deleted pack left without audio (and without a pack) is a miss.
+      const rows = await this.#db.select<
+        DatabaseRow & { key: string; loose: number; path: string | null }
+      >(
+        `SELECT e.key, e.audio IS NOT NULL AS loose, p.path
+           FROM entries e LEFT JOIN packs p ON p.id = e.pack_id
+          WHERE e.key IN (${batch.map(() => '?').join(', ')})
+            AND (e.audio IS NOT NULL OR e.pack_id IS NOT NULL)`,
         batch,
       );
-      for (const row of rows) cached.add(row.key);
+      for (const row of rows) {
+        if (!row.loose) {
+          if (!row.path || !this.#packFs) continue;
+          packFiles ??= new Set(await this.#packFs.list().catch(() => []));
+          if (!packFiles.has(row.path)) continue;
+        }
+        cached.add(row.key);
+      }
     }
     return cached;
   }
