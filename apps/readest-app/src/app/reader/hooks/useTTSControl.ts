@@ -28,6 +28,7 @@ import { estimateTTSTime } from '@/utils/ttsTime';
 import { pageBreakFraction } from '@/utils/ttsPageFollow';
 import { getTextSubRange, rangeTextExcludingInert } from '@/services/tts/wordHighlight';
 import { releaseUnblockAudio, ttsMediaBridge, unblockAudio } from '@/services/tts/ttsMediaBridge';
+import { ttsDownloadManager } from '@/services/tts/ttsDownloadManager';
 import {
   asTTSController,
   getBookHashFromKey,
@@ -84,6 +85,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const previousSectionLabelRef = useRef<string | undefined>(undefined);
   const ttsControllerRef = useRef<TTSController | null>(null);
   const isStartingTTSRef = useRef(false);
+  // Each start takes a generation; stopping moves it on, so a start still
+  // initializing when the user turns read aloud off is cancelled (and never
+  // blocks the next start).
+  const startGenerationRef = useRef(0);
   // Last broadcast playback state, so a follower engaging mid-session can be
   // replayed the current state on demand (see handleTTSSyncRequest).
   const playbackStateRef = useRef<'playing' | 'paused' | 'stopped'>('stopped');
@@ -869,6 +874,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       // must never block or skip these resets if it hangs or throws, which was
       // observed with iOS system TTS (Edge TTS was unaffected). See #4676.
       ttsControllerRef.current = null;
+      // Cancels a start still initializing, and lets the next one through.
+      startGenerationRef.current++;
+      isStartingTTSRef.current = false;
       setTtsController(null);
       setIsPlaying(false);
       emitPlaybackState('stopped');
@@ -902,6 +910,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // end up creating two TTSController instances that speak simultaneously.
     if (isStartingTTSRef.current) return;
     isStartingTTSRef.current = true;
+    const generation = ++startGenerationRef.current;
 
     try {
       const view = getView(bookKey);
@@ -1013,7 +1022,17 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         // own narration or a synthesized voice.
         ttsController.useNarration = viewSettings.ttsUseNarration ?? true;
         await ttsController.init();
+        // Turned off while the engines initialized: never touch the view a
+        // newer session may own.
+        if (startGenerationRef.current !== generation) {
+          void ttsController.shutdown();
+          return;
+        }
         await ttsController.initViewTTS(ttsFromIndex);
+        if (startGenerationRef.current !== generation) {
+          void ttsController.shutdown();
+          return;
+        }
         ttsController.updateHighlightOptions(
           getTTSHighlightOptions(
             viewSettings.ttsHighlightOptions,
@@ -1059,6 +1078,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         syncClientCapabilities();
         setTTSEnabled(bookKey, true);
       } catch (error) {
+        // A start the user cancelled must not touch the session after it.
+        if (startGenerationRef.current !== generation) return;
         setShowIndicator(false);
         setIsPlaying(false);
         eventDispatcher.dispatch('toast', {
@@ -1068,7 +1089,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         console.error(error);
       }
     } finally {
-      isStartingTTSRef.current = false;
+      if (startGenerationRef.current === generation) isStartingTTSRef.current = false;
     }
   };
 
@@ -1307,6 +1328,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           await ttsController.setVoice(voice, lang);
         }
         syncClientCapabilities();
+        // Audio is cached per voice: a running download of this book starts
+        // over with the new one instead of finishing the old voice's.
+        ttsDownloadManager.restartBook(getBookHashFromKey(bookKey));
       }
     }, 3000),
     [],

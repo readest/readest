@@ -147,6 +147,63 @@ describe('TTSDownloadManager', () => {
     }
   });
 
+  test('restarting a book after a voice change reruns its active download with the new voice', async () => {
+    const { downloader, controller, packed } = makeController();
+    let release: () => void = () => {};
+    const signals: AbortSignal[] = [];
+    downloader.download
+      .mockImplementationOnce(
+        async (_sections: number[], _onProgress: unknown, signal: AbortSignal) => {
+          signals.push(signal);
+          await new Promise<void>((resolve) => (release = resolve));
+          return { completed: [], skipped: [], synthesized: 0 };
+        },
+      )
+      .mockImplementation(async (sections: number[]) => {
+        for (const section of sections) packed.add(section);
+        return { completed: [...sections], skipped: [], synthesized: 0 };
+      });
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+    await vi.waitFor(() => expect(downloader.download).toHaveBeenCalledTimes(1));
+
+    manager.restartBook('book');
+    // The old run is cancelled (its pending synthesis withdrawn)...
+    expect(signals[0]!.aborted).toBe(true);
+    release();
+    // ...and the chapter runs again, now with the session's current voice.
+    await vi.waitFor(() => expect(downloader.download).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined(),
+    );
+  });
+
+  test('a voice change while a run reads its cache status reruns it with the new voice', async () => {
+    const { downloader, controller, packed } = makeController();
+    let releaseStatuses: () => void = () => {};
+    const statuses = vi.mocked(controller.getSectionCacheStatuses);
+    statuses.mockImplementationOnce(async () => {
+      await new Promise<void>((resolve) => (releaseStatuses = resolve));
+      // The old voice already had this section packed.
+      return new Map([[0, { total: 1, recorded: 1, packed: true, pinned: true, active: false }]]);
+    });
+    downloader.download.mockImplementation(async (sections: number[]) => {
+      for (const section of sections) packed.add(section);
+      return { completed: [...sections], skipped: [], synthesized: 0 };
+    });
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+    await vi.waitFor(() => expect(statuses).toHaveBeenCalledTimes(1));
+
+    manager.restartBook('book');
+    releaseStatuses();
+    // The stale status (packed for the old voice) does not end the item: it
+    // runs again with the new voice.
+    await vi.waitFor(() => expect(downloader.download).toHaveBeenCalledTimes(1));
+  });
+
   test('a failure that would only repeat (quota) is not retried', async () => {
     const { downloader, controller } = makeController();
     downloader.download.mockRejectedValue(new SpeechSynthesisFatalError('DAILY_QUOTA_EXCEEDED'));

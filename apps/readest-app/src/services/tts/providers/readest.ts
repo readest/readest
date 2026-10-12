@@ -30,7 +30,7 @@ import {
 // - download: chapter downloads, in windows of up to 2000 characters (about
 //   two minutes of audio, so progress moves often and work spreads across
 //   workers), submitted as durable jobs that any worker may run
-//   (/api/tts/readest/jobs), up to four at a time, and collected when done.
+//   (/api/tts/readest/jobs), up to two at a time, and collected when done.
 //   A server without jobs (off Workers) gets streamed windows instead, one
 //   at a time, like listening.
 // A sentence stays requested while any caller that asked for it is still
@@ -46,7 +46,9 @@ const LISTEN_BACKGROUND_WINDOW_SEC = 60;
 // The most sentences a download window may hold (the route's limit).
 const DOWNLOAD_WINDOW_SENTENCES = 64;
 const DOWNLOAD_WINDOW_CHARS = 2000;
-const DOWNLOAD_JOBS = 4;
+// Download jobs in flight per app: enough to keep two workers busy (the
+// GPU endpoint runs at most two) without one download taking every worker.
+const DOWNLOAD_JOBS = 2;
 const BUSY_RETRY_MS = 5000;
 // After a quota refusal, ask the server again no sooner than this: a retry,
 // an upgrade or a new day may have made room.
@@ -223,6 +225,7 @@ export class ReadestVoiceProvider implements SpeechProvider {
       let entry = this.#entries.get(entryKey(req));
       if (entry) {
         this.#want(entry, signal);
+        if (lane === 'download') this.#takeListenPreload(entry);
         if (!background) entry.background = false;
       } else {
         entry = this.#enqueue(req, this.#lanes[lane], signal, background, false);
@@ -234,6 +237,22 @@ export class ReadestVoiceProvider implements SpeechProvider {
         );
     }
     this.#pumpAll();
+  }
+
+  // The cache has the sentence now (a synced pack arrived): settle it, drop
+  // it from windows not sent yet, and cancel a window left with nothing to
+  // deliver, so no worker synthesizes it again.
+  fulfill(req: SpeechSynthesisRequest, result: SpeechSynthesisResult): void {
+    const entry = this.#entries.get(entryKey(req));
+    if (!entry || entry.settled) return;
+    entry.settled = true;
+    entry.resolve(result);
+    for (const lane of Object.values(this.#lanes)) {
+      lane.queue = lane.queue.filter((e) => e !== entry);
+      for (const window of lane.inflight) {
+        if (window.entries.every((e) => e.settled)) window.controller.abort();
+      }
+    }
   }
 
   async shutdown(): Promise<void> {
@@ -292,6 +311,18 @@ export class ReadestVoiceProvider implements SpeechProvider {
     else lane.queue.push(entry);
     this.#want(entry, signal);
     return entry;
+  }
+
+  // A download of the chapter being read finds its sentences queued as
+  // listening preloads, which the listen lane serves a window at a time. Ones
+  // only queued in the background go out as download jobs instead; what the
+  // listener waits on, or a window already carries, stays.
+  #takeListenPreload(entry: Entry) {
+    const listen = this.#lanes.listen;
+    const index = listen.queue.indexOf(entry);
+    if (index < 0 || !entry.background) return;
+    listen.queue.splice(index, 1);
+    this.#lanes.download.queue.push(entry);
   }
 
   #want(entry: Entry, signal: AbortSignal) {

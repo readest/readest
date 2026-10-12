@@ -1,6 +1,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -126,6 +127,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onToggleLoop: vi.fn(),
   onGetLyricLoopRange: vi.fn().mockReturnValue(null),
   onSetRate: vi.fn(),
+  clientsReady: true,
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
   onGetVoiceId: vi.fn().mockReturnValue('ava'),
@@ -184,6 +186,40 @@ describe('TTSPlayerSheet', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  test('opened while the clients initialize, it loads the voices once they are ready', async () => {
+    const props = makeProps({
+      clientsReady: false,
+      onGetVoices: vi.fn().mockResolvedValue([]),
+      onGetVoiceId: vi.fn().mockReturnValue(''),
+    });
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    // Transport waits for the clients: a pause now would be undone by startup.
+    expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(true);
+    props.onGetVoices.mockResolvedValue(voiceGroups);
+    props.onGetVoiceId.mockReturnValue('ava');
+    rerender(<TTSPlayerSheet {...props} clientsReady />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+    expect(props.onGetVoices).toHaveBeenCalledTimes(2);
+    expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  test('a voice list that arrives after a newer one is discarded', async () => {
+    let answerEarly: (groups: typeof voiceGroups) => void = () => {};
+    const props = makeProps({
+      clientsReady: false,
+      onGetVoices: vi
+        .fn()
+        .mockImplementationOnce(() => new Promise((r) => (answerEarly = r)))
+        .mockResolvedValue(voiceGroups),
+    });
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    rerender(<TTSPlayerSheet {...props} clientsReady />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+    // The request made before the clients were ready answers last, empty.
+    await act(async () => answerEarly([]));
+    expect(screen.getByText('Ava')).toBeTruthy();
   });
 
   test('shows title, chapter, scrubber, and transport on the main view', async () => {

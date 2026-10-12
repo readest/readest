@@ -85,6 +85,25 @@ const PRELOAD_AHEAD_SEC = 180;
 const PRELOAD_MAX_PARAGRAPHS = 40;
 // Preload the next paragraphs this long after a paragraph starts at the latest.
 const PRELOAD_NEXT_AFTER_MS = 500;
+// An engine that does not answer in time (a server that never replies, a
+// voice list that never loads) is unavailable for this session: one stuck
+// engine must not hold up the others, the player sheet, or the next start.
+const ENGINE_INIT_TIMEOUT_MS = 15_000;
+
+const withinEngineTimeout = <T>(work: Promise<T>, fallback: T): Promise<T> =>
+  new Promise<T>((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ENGINE_INIT_TIMEOUT_MS);
+    work.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      },
+    );
+  });
 
 type TTSState =
   | 'stopped'
@@ -461,22 +480,25 @@ export class TTSController extends EventTarget {
     // Started together: each can take seconds (Edge synthesizes a probe
     // sentence, system TTS waits for its voices), and play waits on them all.
     // Results are still taken in priority order.
-    const readestReady = this.ttsReadestClient.init();
-    const edgeReady = this.ttsEdgeClient.init();
-    const nativeReady = this.ttsNativeClient?.init();
-    const webReady = this.ttsWebClient.init();
+    const readestReady = withinEngineTimeout(this.ttsReadestClient.init(), false);
+    const edgeReady = withinEngineTimeout(this.ttsEdgeClient.init(), false);
+    const nativeReady = this.ttsNativeClient
+      ? withinEngineTimeout(this.ttsNativeClient.init(), false)
+      : undefined;
+    const webReady = withinEngineTimeout(this.ttsWebClient.init(), false);
     if (await edgeReady) {
       availableClients.push(this.ttsEdgeClient);
     }
     if (this.ttsNativeClient && (await nativeReady)) {
       availableClients.push(this.ttsNativeClient);
-      this.ttsNativeVoices = await this.ttsNativeClient.getAllVoices();
+      this.ttsNativeVoices = await withinEngineTimeout(this.ttsNativeClient.getAllVoices(), []);
     }
     if (await webReady) {
       availableClients.push(this.ttsWebClient);
     }
     // Last: Readest Voice is never the default, only a remembered choice.
-    if (await readestReady) {
+    const readestOk = await readestReady;
+    if (readestOk) {
       availableClients.push(this.ttsReadestClient);
     }
     this.ttsClient = availableClients[0] || this.ttsWebClient;
@@ -489,9 +511,12 @@ export class TTSController extends EventTarget {
         this.ttsClient = preferredClient;
       }
     }
-    this.ttsWebVoices = await this.ttsWebClient.getAllVoices();
-    this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
-    this.ttsReadestVoices = await this.ttsReadestClient.getAllVoices();
+    // An engine whose init failed or timed out has no voices to list.
+    [this.ttsWebVoices, this.ttsEdgeVoices, this.ttsReadestVoices] = await Promise.all([
+      withinEngineTimeout(this.ttsWebClient.getAllVoices(), []),
+      withinEngineTimeout(this.ttsEdgeClient.getAllVoices(), []),
+      readestOk ? withinEngineTimeout(this.ttsReadestClient.getAllVoices(), []) : [],
+    ]);
 
     // A book that ships its own narration should be read by its narrator, not
     // synthesized — that is the whole point of having the recording. The
@@ -2576,7 +2601,10 @@ export class TTSController extends EventTarget {
   async shutdown() {
     stopAudioKeepAlive();
     await this.stop();
-    this.#clearAllHighlights();
+    // A controller replaced by a newer session leaves that session's text
+    // and highlights on the shared view alone.
+    const ownsView = !this.view.tts || this.view.tts === this.#tts;
+    if (ownsView) this.#clearAllHighlights();
     this.#ttsSectionIndex = -1;
     this.#sectionTimeline = null;
     this.#timelineSectionIndex = -1;
@@ -2584,7 +2612,7 @@ export class TTSController extends EventTarget {
     this.#ttsDoc = null;
     this.#tts = null;
     this.#mediaOverlaySection = null;
-    this.view.tts = null;
+    if (ownsView) this.view.tts = null;
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
     }

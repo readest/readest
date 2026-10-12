@@ -46,6 +46,9 @@ export class TTSDownloadManager {
   #controllers = new Map<string, () => TTSController | null>();
   #activeDownloads = new Map<string, ActiveDownload>();
   #unsettledDownloads = new Map<string, Set<ActiveDownload>>();
+  // Bumped by restartBook: a run that started reading statuses under an
+  // older voice starts over instead of acting on them.
+  #voiceGenerations = new Map<string, number>();
   // Items waiting out their retry delay.
   #retryWaits = new Map<string, ReturnType<typeof setTimeout>>();
   #isProcessing = false;
@@ -80,6 +83,24 @@ export class TTSDownloadManager {
     }
     store.enqueue(chapter, bookHash, priority);
     return true;
+  }
+
+  // The voice changed: audio is cached per voice, so a running download of
+  // the book starts over with the new one. Cancelling the old run withdraws
+  // what it still had pending (its jobs are cancelled).
+  restartBook(bookHash: string): void {
+    this.#ensureLoaded();
+    this.#voiceGenerations.set(bookHash, (this.#voiceGenerations.get(bookHash) ?? 0) + 1);
+    const store = useTTSDownloadStore.getState();
+    for (const active of [...this.#activeDownloads.values()]) {
+      if (active.bookHash !== bookHash) continue;
+      active.abortController.abort();
+      this.#activeDownloads.delete(active.id);
+      void this.#cancelActive(active);
+      store.requeue(active.id);
+    }
+    this.persist();
+    void this.processQueue();
   }
 
   queueAll(bookHash: string, chapters: DownloadChapter[]): void {
@@ -177,7 +198,11 @@ export class TTSDownloadManager {
     try {
       // Read section statuses fresh so restored rows and stale closures never
       // re-download a section that packed while the item sat in the queue.
+      const generation = this.#voiceGenerations.get(item.bookHash) ?? 0;
       const statuses = await controller.getSectionCacheStatuses();
+      // The voice changed meanwhile: these statuses (and this downloader)
+      // are the old voice's. The item stays pending and runs again.
+      if ((this.#voiceGenerations.get(item.bookHash) ?? 0) !== generation) return true;
       // Cancellation can land while SQLite is reading the statuses. The row
       // object is attempt identity until setInProgress replaces it; never
       // start synthesis for a row that disappeared or was requeued meanwhile.

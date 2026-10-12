@@ -67,10 +67,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     }
   }, [tts.showBackToCurrentTTSLocation]);
 
+  // The full player opens whenever the mini player shows, even while the
+  // clients initialize: it fills in its voices once they are ready.
   const handleExpand = () => {
-    // The mini player mounts as soon as the session starts; the full sheet
-    // needs initialized clients (voices, timeline), so ignore taps until then.
-    if (!tts.ttsClientsInited) return;
     tts.refreshTtsLang();
     setShowPlayerSheet(true);
   };
@@ -127,10 +126,11 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
         />
       )}
-      {tts.ttsClientsInited && showPlayerSheet && (
+      {showPlayerSheet && (
         <TTSPlayerSheet
           bookKey={bookKey}
           isOpen={showPlayerSheet}
+          clientsReady={tts.ttsClientsInited}
           ttsLang={tts.ttsLang}
           isPlaying={tts.isPlaying}
           hasTimeline={hasTimeline}

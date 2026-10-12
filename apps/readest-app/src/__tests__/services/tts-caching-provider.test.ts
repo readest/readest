@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { CachingProvider, TTSCacheStore } from '@/services/tts/providers/cache';
+import { CachingProvider, computeTTSCacheKey, TTSCacheStore } from '@/services/tts/providers/cache';
 import {
   SpeechProvider,
   SpeechSynthesisPermanentError,
@@ -44,6 +44,79 @@ describe('CachingProvider', () => {
     inner = makeInner();
     store = new MemoryStore();
     provider = new CachingProvider(inner, store);
+  });
+
+  test('clearing downloads forgets the audio kept in memory too', async () => {
+    const clearing = Object.assign(store, {
+      clearDownloads: vi.fn(async () => store.map.clear()),
+    });
+    await provider.synthesize(req('a'), signal());
+    await provider.clearDownloads();
+    expect(clearing.clearDownloads).toHaveBeenCalled();
+    // Served from memory, it would never reach the store again, so the
+    // re-downloaded section could not pack.
+    await provider.synthesize(req('a'), signal());
+    expect(inner.synthesize).toHaveBeenCalledTimes(2);
+    expect(store.put).toHaveBeenCalledTimes(2);
+  });
+
+  test('tells the inner provider when the cache serves a sentence it may still have pending', async () => {
+    const fulfill = vi.fn();
+    const withFulfill = new CachingProvider(makeInner({ fulfill }), store);
+    await withFulfill.synthesize(req('a'), signal());
+    expect(fulfill).not.toHaveBeenCalled();
+    // From memory, then (a fresh provider) from the store.
+    await withFulfill.synthesize(req('a'), signal());
+    await new CachingProvider(makeInner({ fulfill }), store).synthesize(req('a'), signal());
+    expect(fulfill).toHaveBeenCalledTimes(2);
+    expect(fulfill).toHaveBeenCalledWith(
+      req('a'),
+      expect.objectContaining({ boundaries: BOUNDARIES }),
+    );
+  });
+
+  test('a synced pack that brings a sentence a fill is waiting on fulfils it', async () => {
+    let onImported: (keys: string[]) => void = () => {};
+    const importing = Object.assign(new MemoryStore(), {
+      onImported: (listener: (keys: string[]) => void) => {
+        onImported = listener;
+      },
+    });
+    const fulfill = vi.fn();
+    const pending = makeInner({
+      fulfill,
+      synthesize: vi.fn(() => new Promise<SpeechSynthesisResult>(() => {})),
+    });
+    const withSync = new CachingProvider(pending, importing);
+    void withSync.synthesize(req('a'), signal());
+    await new Promise((r) => setTimeout(r, 0));
+    // The pull imports the pack after the fill's own lookup missed.
+    importing.get.mockImplementation(async () => ({
+      audio: new ArrayBuffer(4),
+      boundaries: BOUNDARIES,
+    }));
+    onImported([computeTTSCacheKey('fake', req('a')), 'unrelated']);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fulfill).toHaveBeenCalledWith(
+      req('a'),
+      expect.objectContaining({ boundaries: BOUNDARIES }),
+    );
+  });
+
+  test('finds the sentences of a section already stored and records their marks in one go', async () => {
+    const batched = Object.assign(store, {
+      cachedKeys: vi.fn(async (keys: string[]) => new Set(keys.filter((k) => store.map.has(k)))),
+      recordMarkKeys: vi.fn(async () => {}),
+    });
+    await provider.synthesize(req('b'), signal());
+    const cached = await provider.cachedSentences(7, [
+      { ordinal: 0, req: req('a') },
+      { ordinal: 1, req: req('b') },
+    ]);
+    expect(cached).toEqual(new Set([1]));
+    expect(batched.recordMarkKeys).toHaveBeenCalledWith(7, [
+      { ordinal: 1, key: computeTTSCacheKey('fake', req('b')) },
+    ]);
   });
 
   test('mirrors the inner provider voice-language policy', () => {

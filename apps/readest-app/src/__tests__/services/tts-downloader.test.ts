@@ -179,6 +179,32 @@ describe('TTSDownloader', () => {
     expect(result).toEqual({ completed: [], skipped: [0], synthesized: 2 });
   });
 
+  test('counts sentences already cached at once and synthesizes only the rest', async () => {
+    enumerated[0] = [sentence(0, 'a'), sentence(1, 'b'), sentence(2, 'c'), sentence(3, 'd')];
+    const cachedSentences = vi.fn(async () => new Set([0, 2]));
+    const progress: string[] = [];
+    const result = await new TTSDownloader(enumerator, { ...warmer, cachedSentences }).download(
+      [0],
+      (p) => progress.push(`${p.done}/${p.total}`),
+    );
+    expect(cachedSentences).toHaveBeenCalledWith(0, enumerated[0]);
+    expect(warmer.warmed.map((w) => w.text)).toEqual(['b', 'd']);
+    // A retry resumes where it left off: the count never falls back to 0.
+    expect(progress).toEqual(['0/4', '2/4', '3/4', '4/4']);
+    expect(result).toEqual({ completed: [0], skipped: [], synthesized: 2 });
+  });
+
+  test('progress counts only sentences that reached the cache, never failures', async () => {
+    enumerated[0] = [sentence(0, 'a'), sentence(1, 'bad'), sentence(2, 'c')];
+    warmFails.add('bad');
+    const progress: string[] = [];
+    const result = await new TTSDownloader(enumerator, warmer).download([0], (p) =>
+      progress.push(`${p.done}/${p.total}`),
+    );
+    expect(progress).toEqual(['0/3', '1/3', '2/3']);
+    expect(result.skipped).toEqual([0]);
+  });
+
   test('a fatal synthesis failure (quota) ends a windowed download too', async () => {
     const { SpeechSynthesisFatalError } = await import('@/services/tts/providers/types');
     enumerated[0] = [sentence(0, 'A.'), sentence(1, 'B.')];

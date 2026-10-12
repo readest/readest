@@ -31,6 +31,8 @@ export interface TTSCacheStore {
   // Which of these keys are cached, in one lookup (a download checks a whole
   // section at once).
   cachedKeys?(keys: string[]): Promise<Set<string>>;
+  // Called with the keys a synced pack brought, once it is imported.
+  onImported?(listener: (keys: string[]) => void): void;
   put(
     key: string,
     entry: TTSCacheEntry,
@@ -40,6 +42,8 @@ export interface TTSCacheStore {
   // labels per section, and the observed synthesis key per sentence ordinal.
   registerSectionMarks?(section: number, marks: string[]): Promise<void>;
   recordMarkKey?(section: number, ordinal: number, key: string): Promise<void>;
+  // recordMarkKey for many ordinals of a section at once.
+  recordMarkKeys?(section: number, marks: { ordinal: number; key: string }[]): Promise<void>;
   beginDownloadSections?(sections: number[]): Promise<void>;
   completeDownloadSections?(sections: number[]): Promise<void>;
   cancelDownloadSections?(sections: number[]): Promise<void>;
@@ -80,6 +84,8 @@ export class CachingProvider implements SpeechProvider {
   // preloader routinely race the same sentence.
   readonly #inflight = new Map<string, Promise<SpeechSynthesisResult>>();
   readonly #recent = new Map<string, SpeechSynthesisResult>();
+  // The request behind each in-flight key, for #onImported.
+  readonly #inflightReqs = new Map<string, SpeechSynthesisRequest>();
   #recentBytes = 0;
   // Present only for a windowed inner provider: callers feature-detect it to
   // choose windowed prefetch over synthesizing preloads.
@@ -89,6 +95,7 @@ export class CachingProvider implements SpeechProvider {
     this.#inner = inner;
     this.#store = store;
     if (inner.prefetch) this.prefetch = this.#prefetch.bind(this);
+    store.onImported?.((keys) => this.#onImported(keys));
   }
 
   get id(): string {
@@ -214,11 +221,13 @@ export class CachingProvider implements SpeechProvider {
     }
     const promise = this.#getOrSynthesize(key, req, signal, options);
     this.#inflight.set(key, promise);
+    this.#inflightReqs.set(key, req);
     try {
       return await promise;
     } finally {
       // Always cleared — a failed slot must not poison the retry path.
       this.#inflight.delete(key);
+      this.#inflightReqs.delete(key);
     }
   }
 
@@ -229,12 +238,12 @@ export class CachingProvider implements SpeechProvider {
     options?: PrefetchOptions,
   ): Promise<SpeechSynthesisResult> {
     const recent = this.#recent.get(key);
-    if (recent) return { audio: recent.audio.slice(0), boundaries: recent.boundaries };
+    if (recent) return this.#served(req, recent);
     try {
       const cached = await this.#store.get(key);
       if (cached) {
         this.#remember(key, cached);
-        return { audio: cached.audio.slice(0), boundaries: cached.boundaries };
+        return this.#served(req, cached);
       }
     } catch (err) {
       console.warn('TTS cache read failed; synthesizing instead', err);
@@ -251,6 +260,53 @@ export class CachingProvider implements SpeechProvider {
       console.warn('TTS cache write failed; continuing uncached', err);
     }
     return result;
+  }
+
+  // A synced pack arrived after these sentences' own lookups missed: the
+  // provider need not synthesize the ones still in flight.
+  #onImported(keys: string[]): void {
+    for (const key of keys) {
+      const req = this.#inflightReqs.get(key);
+      if (!req) continue;
+      void this.#store
+        .get(key)
+        .then((cached) => {
+          if (cached) this.#served(req, cached);
+        })
+        .catch(() => {});
+    }
+  }
+
+  // A sentence served from the cache may still be pending in the provider
+  // (prefetched before a synced pack brought it): it need not synthesize it.
+  #served(req: SpeechSynthesisRequest, cached: SpeechSynthesisResult): SpeechSynthesisResult {
+    this.#inner.fulfill?.(req, { audio: cached.audio.slice(0), boundaries: cached.boundaries });
+    return { audio: cached.audio.slice(0), boundaries: cached.boundaries };
+  }
+
+  // A download's sentences already stored, with their marks recorded, for a
+  // whole section in a few queries. Only stored audio counts: what is only
+  // in memory cannot pack.
+  async cachedSentences(
+    section: number,
+    sentences: { ordinal: number; req: SpeechSynthesisRequest }[],
+  ): Promise<Set<number>> {
+    if (this.#inner.cacheable === false || !this.#store.cachedKeys || !this.#store.recordMarkKeys) {
+      return new Set();
+    }
+    const keyed = sentences.map(({ ordinal, req }) => ({
+      ordinal,
+      key: computeTTSCacheKey(this.#inner.id, req),
+    }));
+    try {
+      const stored = await this.#store.cachedKeys(keyed.map(({ key }) => key));
+      const hits = keyed.filter(({ key }) => stored.has(key));
+      if (hits.length) await this.#store.recordMarkKeys(section, hits);
+      return new Set(hits.map(({ ordinal }) => ordinal));
+    } catch {
+      // Unreadable store: synthesize as if nothing were cached.
+      return new Set();
+    }
   }
 
   // Ordered sentence labels for a section, from the timeline enumeration.
@@ -284,6 +340,10 @@ export class CachingProvider implements SpeechProvider {
 
   async clearDownloads(): Promise<void> {
     await this.#store.clearDownloads?.();
+    // Audio kept in memory would be served without reaching the store again,
+    // so a re-downloaded section could never pack.
+    this.#recent.clear();
+    this.#recentBytes = 0;
   }
 
   async compact(): Promise<void> {

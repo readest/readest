@@ -45,3 +45,38 @@ describe('BufferedTTSClient.warmSentence', () => {
     expect(recordMarkKey).not.toHaveBeenCalled();
   });
 });
+
+describe('BufferedTTSClient.cachedSentences', () => {
+  test('finds stored sentences under the same keys warmSentence records', async () => {
+    const inner: SpeechProvider = {
+      id: 'fake',
+      label: 'Fake',
+      init: async () => true,
+      getAllVoices: async () => [{ id: 'v1', name: 'Voice 1', lang: 'en' }],
+      synthesize: async () => ({ audio: new ArrayBuffer(4), boundaries: [] }),
+    };
+    const stored = new Set<string>();
+    const recordMarkKey = vi.fn(async (_s: number, _o: number, key: string) => {
+      stored.add(key);
+    });
+    const recordMarkKeys = vi.fn(async () => {});
+    const store: TTSCacheStore = {
+      get: async () => null,
+      put: async () => {},
+      recordMarkKey,
+      recordMarkKeys,
+      cachedKeys: async (keys) => new Set(keys.filter((k) => stored.has(k))),
+    };
+    const client = new BufferedTTSClient(new CachingProvider(inner, store));
+    await client.init();
+    await client.warmSentence(3, 0, 'en', 'Hello there.');
+    const key = recordMarkKey.mock.calls[0]![2];
+
+    const cached = await client.cachedSentences(3, [
+      { ordinal: 0, lang: 'en', text: 'Hello there.' },
+      { ordinal: 1, lang: 'en', text: 'Not yet.' },
+    ]);
+    expect(cached).toEqual(new Set([0]));
+    expect(recordMarkKeys).toHaveBeenCalledWith(3, [{ ordinal: 0, key }]);
+  });
+});

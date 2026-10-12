@@ -108,4 +108,7 @@ export interface SpeechProvider {
     signal: AbortSignal,
     options?: PrefetchOptions,
   ): void;
+  // The cache already has this sentence (e.g. a synced pack arrived): a
+  // prefetching provider settles it and stops synthesizing it.
+  fulfill?(req: SpeechSynthesisRequest, result: SpeechSynthesisResult): void;
 }

@@ -93,6 +93,8 @@ type TTSPlayerSheetProps = {
   onToggleLoop: () => void;
   onGetLyricLoopRange: () => { start: number; end: number } | null;
   onSetRate: (rate: number) => void;
+  // The TTS clients finished initializing: until then there are no voices.
+  clientsReady: boolean;
   onGetVoices: (lang: string) => Promise<TTSVoicesGroup[]>;
   onSetVoice: (voice: string, lang: string) => void;
   onGetVoiceId: () => string;
@@ -134,6 +136,7 @@ const TTSPlayerSheet = ({
   onToggleLoop,
   onGetLyricLoopRange,
   onSetRate,
+  clientsReady,
   onGetVoices,
   onSetVoice,
   onGetVoiceId,
@@ -241,10 +244,21 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Opened while the clients initialized: pick up the voice once they are
+  // ready, without leaving the view the user is on.
+  useEffect(() => {
+    if (isOpen && clientsReady) setSelectedVoice(onGetVoiceId());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientsReady]);
+
   useEffect(() => {
     if (!isOpen) return;
+    // A request superseded by a newer one (the clients became ready, the
+    // language changed) must not overwrite its result.
+    let current = true;
     const fetchVoices = async () => {
       const groups = await onGetVoices(ttsLang);
+      if (!current) return;
       const voicesCount = groups.reduce((acc, group) => acc + group.voices.length, 0);
       if (!groups || voicesCount === 0) {
         setVoiceGroups([
@@ -259,8 +273,11 @@ const TTSPlayerSheet = ({
       }
     };
     fetchVoices();
+    return () => {
+      current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, ttsLang]);
+  }, [isOpen, ttsLang, clientsReady]);
 
   const handleSelectRate = (value: number) => {
     setRate(value);
@@ -509,6 +526,7 @@ const TTSPlayerSheet = ({
                 title={prevLargeLabel}
                 aria-label={prevLargeLabel}
                 onClick={() => onBackward(false)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <MdSkipPrevious size={iconSize24} />
@@ -522,6 +540,7 @@ const TTSPlayerSheet = ({
                 title={prevSmallLabel}
                 aria-label={prevSmallLabel}
                 onClick={() => onBackward(true)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <RiReplay15Line size={iconSize24} />
@@ -535,6 +554,7 @@ const TTSPlayerSheet = ({
                 aria-label={isPlaying ? _('Pause') : _('Play')}
                 aria-busy={buffering}
                 onClick={onTogglePlay}
+                disabled={!clientsReady}
               >
                 {isPlaying ? (
                   <MdOutlinePause size={iconSize32} />
@@ -551,6 +571,7 @@ const TTSPlayerSheet = ({
                 title={nextSmallLabel}
                 aria-label={nextSmallLabel}
                 onClick={() => onForward(true)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <RiForward30Line size={iconSize24} />
@@ -564,6 +585,7 @@ const TTSPlayerSheet = ({
                 title={nextLargeLabel}
                 aria-label={nextLargeLabel}
                 onClick={() => onForward(false)}
+                disabled={!clientsReady}
               >
                 {audioTransport ? (
                   <MdSkipNext size={iconSize24} />

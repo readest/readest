@@ -48,6 +48,20 @@ describe('SqliteTTSCacheStore', () => {
     expect(select.mock.calls.length).toBeLessThanOrEqual(3);
   });
 
+  test('records many marks in a few statements', async () => {
+    const store = makeStore(1024 * 1024);
+    const marks = Array.from({ length: 400 }, (_, i) => `0:s${i}`);
+    await store.registerSectionMarks(2, marks);
+    for (let i = 0; i < 400; i++) await store.put(`k${i}`, entry(4));
+    const execute = vi.spyOn(db, 'execute');
+    await store.recordMarkKeys(
+      2,
+      marks.map((_, i) => ({ ordinal: i, key: `k${i}` })),
+    );
+    expect(execute.mock.calls.length).toBeLessThanOrEqual(3);
+    expect((await store.getSectionStatuses()).get(2)).toMatchObject({ total: 400, recorded: 400 });
+  });
+
   test('does not report an entry its deleted pack left without audio', async () => {
     const store = makeStore(1024 * 1024);
     await store.put('kept', entry(8));
