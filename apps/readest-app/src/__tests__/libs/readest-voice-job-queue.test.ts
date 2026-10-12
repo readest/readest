@@ -243,11 +243,15 @@ describe('JobQueue', () => {
     expect(queue.workerOf('nope')).toBeNull();
   });
 
-  it('puts the jobs of a removed worker back in the queue', () => {
+  it('puts the jobs of a removed worker back in the queue, never back to it', async () => {
     const { queue, submit } = setup();
     const { id } = submit('a');
     const leased = queue.leaseNow('w1', ['kokoro'])!;
+    let waiting: unknown = 'pending';
+    void queue.lease('w1', ['kokoro'], 25_000).then((job) => (waiting = job));
     expect(queue.requeueWorker('w1')).toBe(1);
+    await flush();
+    expect(waiting).toBeNull();
     expect(queue.status(id, 'a')).toBe('queued');
     expect(queue.heartbeat(leased.lease)).toBe(false);
     expect(queue.leaseNow('w2', ['kokoro'])).toMatchObject({ jobId: id });

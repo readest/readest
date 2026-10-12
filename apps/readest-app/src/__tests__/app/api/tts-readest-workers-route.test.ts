@@ -82,6 +82,7 @@ describe('lease', () => {
       ['kokoro', 'omnivoice'],
       expect.any(Number),
       '2.3.0',
+      'secret',
     );
     expect(m.dispatcher.authenticateWorker).not.toHaveBeenCalled();
   });
@@ -99,6 +100,7 @@ describe('lease', () => {
       ['kokoro', 'omnivoice'],
       expect.any(Number),
       '2.3.0',
+      'dashboard',
     );
   });
 
@@ -117,10 +119,11 @@ describe('lease', () => {
     expect(await res.json()).toEqual({ error: 'VERSION_MISMATCH' });
     expect(m.dispatcher.leaseJob).not.toHaveBeenCalled();
     // Shown on the dashboard as needing an upgrade.
-    expect(m.dispatcher.workerRejected).toHaveBeenCalledWith('gpu-box', {
-      engines: ['kokoro', 'omnivoice'],
-      version: '2.2.0',
-    });
+    expect(m.dispatcher.workerRejected).toHaveBeenCalledWith(
+      'gpu-box',
+      { engines: ['kokoro', 'omnivoice'], version: '2.2.0' },
+      'secret',
+    );
   });
 
   it('refuses every worker when no tokens are configured', async () => {

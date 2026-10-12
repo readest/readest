@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { WorkerRegistry, sha256Hex } from '@/libs/readestVoice/workerRegistry';
+import { WorkerRegistry, parseWorkerTokens, sha256Hex } from '@/libs/readestVoice/workerRegistry';
 
 const setup = () => {
   let now = 1_000;
@@ -33,9 +33,9 @@ describe('WorkerRegistry', () => {
 
   it('records workers it only hears from (secret tokens, the bridge)', () => {
     const { registry, tick } = setup();
-    registry.seen('home', KOKORO);
+    registry.seen('home', KOKORO, 'secret');
     tick(5_000);
-    registry.seen('runpod', { engines: [], version: '' });
+    registry.touch('runpod');
     const [home, runpod] = registry.list();
     expect(home).toMatchObject({
       name: 'home',
@@ -50,15 +50,15 @@ describe('WorkerRegistry', () => {
 
   it('marks a worker turned away for its version until it is accepted again', () => {
     const { registry } = setup();
-    registry.rejected('home', { engines: ['kokoro'], version: '2.3.0' });
+    registry.rejected('home', { engines: ['kokoro'], version: '2.3.0' }, 'secret');
     expect(registry.list()[0]).toMatchObject({ version: '2.3.0', rejected: true });
-    registry.seen('home', KOKORO);
+    registry.seen('home', KOKORO, 'secret');
     expect(registry.list()[0]).toMatchObject({ version: '2.3.1', rejected: false });
   });
 
   it('refreshes last seen from a heartbeat, keeping what the worker reported', () => {
     const { registry, tick } = setup();
-    registry.seen('home', KOKORO);
+    registry.seen('home', KOKORO, 'secret');
     tick(30_000);
     registry.touch('home');
     expect(registry.list()[0]).toMatchObject({ lastSeen: 31_000, engines: ['kokoro'] });
@@ -70,6 +70,31 @@ describe('WorkerRegistry', () => {
       source: 'bridge',
       lastSeen: 31_000,
     });
+  });
+
+  it('refuses a dashboard-token worker it no longer knows, without recreating it', () => {
+    const { registry } = setup();
+    registry.create('gpu-box', 'h1');
+    expect(registry.seen('gpu-box', KOKORO, 'dashboard')).toBe(true);
+    registry.remove('gpu-box');
+    expect(registry.seen('gpu-box', KOKORO, 'dashboard')).toBe(false);
+    expect(registry.rejected('gpu-box', KOKORO, 'dashboard')).toBe(false);
+    expect(registry.list()).toEqual([]);
+  });
+
+  it('refuses a secret-token worker using the name of a dashboard worker', () => {
+    const { registry } = setup();
+    registry.create('gpu-box', 'h1');
+    expect(registry.seen('gpu-box', KOKORO, 'secret')).toBe(false);
+    expect(registry.list()[0]).toMatchObject({ source: 'dashboard', lastSeen: null });
+  });
+
+  it('never recreates a removed worker from a heartbeat', () => {
+    const { registry } = setup();
+    registry.create('gpu-box', 'h1');
+    registry.remove('gpu-box');
+    registry.touch('gpu-box');
+    expect(registry.list()).toEqual([]);
   });
 
   it('counts finished and lost jobs per worker', () => {
@@ -101,16 +126,17 @@ describe('WorkerRegistry', () => {
     expect(registry.setPaused('runpod', true)).toBe(true);
   });
 
-  it('never removes the bridge', () => {
+  it('never removes the bridge, nor lets a secret token use its name', () => {
     const { registry } = setup();
-    registry.seen('runpod', { engines: [], version: '' });
+    registry.known('runpod');
+    expect(registry.seen('runpod', KOKORO, 'secret')).toBe(false);
     expect(registry.remove('runpod')).toBe(false);
   });
 
   it('reports records to persist, without presence, and restores them', () => {
     const { registry } = setup();
     registry.create('gpu-box', 'h1');
-    registry.seen('gpu-box', KOKORO);
+    registry.seen('gpu-box', KOKORO, 'dashboard');
     registry.create('lab', 'h2');
     registry.remove('lab');
     const { put, deleted } = registry.takeChanges();
@@ -129,9 +155,9 @@ describe('WorkerRegistry', () => {
 
   it('only rewrites a record for presence when the worker is new', () => {
     const { registry } = setup();
-    registry.seen('home', KOKORO);
+    registry.seen('home', KOKORO, 'secret');
     expect(registry.takeChanges().put).toHaveLength(1);
-    registry.seen('home', KOKORO);
+    registry.seen('home', KOKORO, 'secret');
     expect(registry.takeChanges().put).toHaveLength(0);
   });
 });
@@ -141,5 +167,15 @@ describe('sha256Hex', () => {
     expect(await sha256Hex('abc')).toBe(
       'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
     );
+  });
+});
+
+describe('parseWorkerTokens', () => {
+  it('reads name:token pairs, skipping malformed entries', () => {
+    expect(parseWorkerTokens(' gpu-box:abc , lab:d:ef,:x,nocolon,empty:')).toEqual([
+      { name: 'gpu-box', token: 'abc' },
+      { name: 'lab', token: 'd:ef' },
+    ]);
+    expect(parseWorkerTokens(undefined)).toEqual([]);
   });
 });

@@ -10,6 +10,8 @@
 //   version) lives in memory and comes back with the next long poll.
 
 export type WorkerSource = 'dashboard' | 'secret' | 'bridge';
+// Where the token a worker called with was found.
+export type TokenSource = 'dashboard' | 'secret';
 
 export interface WorkerRecord {
   name: string;
@@ -45,6 +47,15 @@ export type CreateResult = { ok: true } | { ok: false; error: 'INVALID_NAME' | '
 
 export const BRIDGE_WORKER = 'runpod';
 const NAME = /^[a-z0-9][a-z0-9-]{0,31}$/;
+
+// READEST_VOICE_WORKER_TOKENS: "name:token,name:token".
+export const parseWorkerTokens = (value: string | undefined): { name: string; token: string }[] =>
+  (value ?? '').split(',').flatMap((entry) => {
+    const separator = entry.indexOf(':');
+    const name = entry.slice(0, separator).trim();
+    const token = entry.slice(separator + 1).trim();
+    return separator > 0 && name && token ? [{ name, token }] : [];
+  });
 
 export const sha256Hex = async (text: string): Promise<string> => {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -88,19 +99,26 @@ export class WorkerRegistry {
     if (!this.#records.has(name)) this.#put(this.#record(name, this.#source(name), null));
   }
 
-  seen(name: string, info: WorkerInfo): void {
-    this.#heard(name, info, false);
+  // False when the name does not belong to that kind of token: a removed
+  // dashboard worker, or a secret token named like a dashboard worker or
+  // the bridge. The caller must then turn the worker away.
+  seen(name: string, info: WorkerInfo, via: TokenSource): boolean {
+    return this.#heard(name, info, false, via);
   }
 
-  rejected(name: string, info: WorkerInfo): void {
-    this.#heard(name, info, true);
+  rejected(name: string, info: WorkerInfo, via: TokenSource): boolean {
+    return this.#heard(name, info, true, via);
   }
 
-  // Keeps the engines and version a worker last reported.
+  // A heartbeat: keeps the engines and version a worker last reported. Only
+  // the bridge gets a record this way; a removed worker stays removed.
   touch(name: string): void {
+    if (!this.#records.has(name) && name !== BRIDGE_WORKER) return;
+    this.known(name);
     const presence = this.#presence.get(name);
     if (presence) presence.lastSeen = this.now();
-    else this.seen(name, { engines: [], version: '' });
+    else
+      this.#presence.set(name, { engines: [], version: '', lastSeen: this.now(), rejected: false });
   }
 
   jobDone(name: string, chars: number): void {
@@ -165,9 +183,16 @@ export class WorkerRegistry {
     for (const record of records) this.#records.set(record.name, { ...record });
   }
 
-  #heard(name: string, info: WorkerInfo, rejected: boolean) {
+  #heard(name: string, info: WorkerInfo, rejected: boolean, via: TokenSource): boolean {
+    const record = this.#records.get(name);
+    const owned =
+      via === 'dashboard'
+        ? record?.source === 'dashboard'
+        : record?.source !== 'dashboard' && record?.source !== 'bridge';
+    if (!owned) return false;
     this.known(name);
     this.#presence.set(name, { ...info, lastSeen: this.now(), rejected });
+    return true;
   }
 
   #source(name: string): WorkerSource {

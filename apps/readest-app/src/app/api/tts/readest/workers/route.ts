@@ -7,7 +7,7 @@ import {
   resultKey,
 } from '@/libs/readestVoice/bindings';
 import { errorResponse } from '@/libs/readestVoice/gate';
-import { sha256Hex } from '@/libs/readestVoice/workerRegistry';
+import { type TokenSource, parseWorkerTokens, sha256Hex } from '@/libs/readestVoice/workerRegistry';
 
 // Readest Voice workers pull download jobs here (see ../jobs/route.ts), one
 // JSON body per call, by `action`:
@@ -41,16 +41,14 @@ const sameSecret = (a: string, b: string) => {
 const workerName = async (
   request: NextRequest,
   dispatcher: DispatcherStub,
-): Promise<string | null> => {
+): Promise<{ name: string; via: TokenSource } | null> => {
   const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return null;
-  for (const entry of (process.env['READEST_VOICE_WORKER_TOKENS'] ?? '').split(',')) {
-    const separator = entry.indexOf(':');
-    const name = entry.slice(0, separator).trim();
-    const secret = entry.slice(separator + 1).trim();
-    if (separator > 0 && secret && sameSecret(secret, token)) return name;
+  for (const entry of parseWorkerTokens(process.env['READEST_VOICE_WORKER_TOKENS'])) {
+    if (sameSecret(entry.token, token)) return { name: entry.name, via: 'secret' };
   }
-  return dispatcher.authenticateWorker(await sha256Hex(token));
+  const name = await dispatcher.authenticateWorker(await sha256Hex(token));
+  return name ? { name, via: 'dashboard' } : null;
 };
 
 export async function POST(request: NextRequest) {
@@ -77,10 +75,16 @@ export async function POST(request: NextRequest) {
       const reported = typeof body['version'] === 'string' ? body['version'] : '';
       const version = process.env['READEST_VOICE_WORKER_VERSION'];
       if (version && reported !== version) {
-        await dispatcher.workerRejected(worker, { engines, version: reported });
+        await dispatcher.workerRejected(worker.name, { engines, version: reported }, worker.via);
         return errorResponse('VERSION_MISMATCH', 409);
       }
-      const job = await dispatcher.leaseJob(worker, engines, LEASE_WAIT_MS, reported);
+      const job = await dispatcher.leaseJob(
+        worker.name,
+        engines,
+        LEASE_WAIT_MS,
+        reported,
+        worker.via,
+      );
       return job ? NextResponse.json(job) : new NextResponse(null, { status: 204 });
     }
     case 'job': {

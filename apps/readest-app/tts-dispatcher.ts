@@ -39,6 +39,8 @@ import { getRunPodConfig, startJob } from './src/libs/readestVoice/runpod';
 import {
   BRIDGE_WORKER,
   type CreateResult,
+  parseWorkerTokens,
+  type TokenSource,
   type WorkerInfo,
   WorkerRegistry,
   type WorkerRecord,
@@ -177,9 +179,10 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
     worker: string,
     engines: string[],
     waitMs: number,
-    version = '',
+    version: string,
+    via: TokenSource,
   ): Promise<LeasedJob | null> {
-    this.#workers.seen(worker, { engines, version });
+    if (!this.#workers.seen(worker, { engines, version }, via)) return Promise.resolve(null);
     const job = this.#jobs.lease(worker, engines, waitMs);
     this.#changed();
     return job;
@@ -191,8 +194,8 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
   }
 
   // A worker turned away for its version: shown as needing an upgrade.
-  workerRejected(worker: string, info: WorkerInfo): void {
-    this.#workers.rejected(worker, info);
+  workerRejected(worker: string, info: WorkerInfo, via: TokenSource): void {
+    this.#workers.rejected(worker, info, via);
     this.#changed();
   }
 
@@ -248,6 +251,9 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
 
   // The token is returned once; only its hash is kept.
   async adminCreateWorker(name: string): Promise<CreateResult & { token?: string }> {
+    // A name in the secret already belongs to that token.
+    const configured = parseWorkerTokens(process.env['READEST_VOICE_WORKER_TOKENS']);
+    if (configured.some((entry) => entry.name === name)) return { ok: false, error: 'NAME_TAKEN' };
     const bytes = crypto.getRandomValues(new Uint8Array(32));
     const token = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
     const result = this.#workers.create(name, await sha256Hex(token));
@@ -259,8 +265,8 @@ export class TTSDispatcher extends DurableObject<DispatcherEnv> {
   adminRemoveWorker(name: string): boolean {
     const removed = this.#workers.remove(name);
     if (removed) {
-      this.#jobs.setPaused(name, false);
       this.#jobs.requeueWorker(name);
+      this.#jobs.setPaused(name, false);
     }
     this.#changed();
     return removed;

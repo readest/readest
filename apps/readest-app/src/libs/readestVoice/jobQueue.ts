@@ -202,8 +202,13 @@ export class JobQueue {
   }
 
   // Puts the jobs a worker holds back in the queue (a removed worker); its
-  // next heartbeat answers that the lease is gone.
+  // next heartbeat answers that the lease is gone, and its waiting lease
+  // calls end empty so none of them gets a job.
   requeueWorker(worker: string): number {
+    for (const waiter of this.#workers.filter((w) => w.worker === worker)) {
+      this.#workers = this.#workers.filter((w) => w !== waiter);
+      waiter.resolve(null);
+    }
     let count = 0;
     for (const job of this.#jobs.values()) {
       if (job.state === 'leased' && job.worker === worker) {
