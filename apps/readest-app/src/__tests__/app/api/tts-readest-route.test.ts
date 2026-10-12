@@ -99,6 +99,13 @@ describe('POST /api/tts/readest', () => {
     expect(m.service.warmup).toHaveBeenCalled();
   });
 
+  it('stays best-effort when the service cannot warm up', async () => {
+    m.service.warmup.mockRejectedValueOnce(new Error('unreachable'));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const res = await POST(req('POST', { warmup: true }));
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
   it('is gated like GET', async () => {
     m.getSubscriptionPlan.mockReturnValue('free');
     expect((await POST(req('POST', { warmup: true }))).status).toBe(403);

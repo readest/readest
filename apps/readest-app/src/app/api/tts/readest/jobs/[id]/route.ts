@@ -28,12 +28,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   if (!JOB_ID.test(id)) return errorResponse('INVALID_INPUT', 400);
 
-  const state = await service.waitJob(id, user.id, WAIT_MS);
+  let state;
+  let result = null;
+  try {
+    state = await service.waitJob(id, user.id, WAIT_MS);
+    if (state === 'done') result = await service.takeResult(id, user.id);
+  } catch (error) {
+    console.error(`Readest Voice job fetch failed (job: ${id}):`, error);
+    return errorResponse('JOBS_UNAVAILABLE', 503);
+  }
   if (state === 'queued' || state === 'leased') {
     return NextResponse.json({ state }, { status: 202 });
   }
-  if (state && ENDED_ERRORS[state]) return errorResponse(...ENDED_ERRORS[state]);
-  const result = state === 'done' ? await service.takeResult(id, user.id) : null;
+  const ended = state ? ENDED_ERRORS[state] : undefined;
+  if (ended) return errorResponse(...ended);
   if (!result) return errorResponse('NOT_FOUND', 404);
   if (result.charged > 0) {
     // One line per sentence, then {done}.
@@ -56,6 +64,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!gate.ok) return gate.response;
   const { id } = await params;
   if (!JOB_ID.test(id)) return errorResponse('INVALID_INPUT', 400);
-  await gate.ctx.service.cancelJob(id, gate.ctx.user.id);
+  try {
+    await gate.ctx.service.cancelJob(id, gate.ctx.user.id);
+  } catch (error) {
+    console.error(`Readest Voice job cancel failed (job: ${id}):`, error);
+    return errorResponse('JOBS_UNAVAILABLE', 503);
+  }
   return new NextResponse(null, { status: 204 });
 }

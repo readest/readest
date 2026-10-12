@@ -194,6 +194,17 @@ describe('GET /jobs/:id', () => {
     expect(m.trackUsage).not.toHaveBeenCalled();
   });
 
+  it('says jobs are unavailable when the service call fails', async () => {
+    m.service.waitJob.mockRejectedValueOnce(new Error('reset'));
+    let res = await GET(request('GET', `/${JOB_ID}`), params());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'JOBS_UNAVAILABLE' });
+    m.service.waitJob.mockResolvedValueOnce('done');
+    m.service.takeResult.mockRejectedValueOnce(new Error('reset'));
+    res = await GET(request('GET', `/${JOB_ID}`), params());
+    expect(res.status).toBe(503);
+  });
+
   it('400s on a malformed id', async () => {
     const res = await GET(request('GET', '/nope'), params('nope'));
     expect(res.status).toBe(400);
@@ -202,6 +213,13 @@ describe('GET /jobs/:id', () => {
 });
 
 describe('DELETE /jobs/:id', () => {
+  it('says jobs are unavailable when the service call fails', async () => {
+    m.service.cancelJob.mockRejectedValueOnce(new Error('reset'));
+    const res = await DELETE(request('DELETE', `/${JOB_ID}`), params());
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'JOBS_UNAVAILABLE' });
+  });
+
   it('cancels the job in the service', async () => {
     const res = await DELETE(request('DELETE', `/${JOB_ID}`), params());
     expect(res.status).toBe(204);

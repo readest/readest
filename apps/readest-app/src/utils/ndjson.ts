@@ -11,6 +11,7 @@ export async function* readNDJSON(
   let buffer = '';
   const cancel = () => void reader.cancel().catch(() => {});
   signal?.addEventListener('abort', cancel, { once: true });
+  if (signal?.aborted) cancel();
   try {
     for (;;) {
       const { done, value } = await reader.read();

@@ -48,6 +48,15 @@ describe('readNDJSON', () => {
     expect(body.locked).toBe(false);
   });
 
+  it('reads nothing from a stream whose signal already aborted', async () => {
+    const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>({ cancel });
+    const seen: unknown[] = [];
+    for await (const line of readNDJSON(body, AbortSignal.abort())) seen.push(line);
+    expect(seen).toEqual([]);
+    expect(cancel).toHaveBeenCalled();
+  });
+
   it('cancels the stream when the signal aborts, even mid-read', async () => {
     const cancel = vi.fn();
     const body = new ReadableStream<Uint8Array>({
