@@ -56,11 +56,19 @@ vi.mock('@/app/reader/components/tts/TTSPlayerSheet', () => ({
   default: ({
     isOpen,
     activeSectionIndex,
+    clientsReady,
   }: {
     isOpen: boolean;
     activeSectionIndex: number | null;
+    clientsReady: boolean;
   }) =>
-    isOpen ? <div data-testid='player-sheet' data-active-section={activeSectionIndex} /> : null,
+    isOpen ? (
+      <div
+        data-testid='player-sheet'
+        data-active-section={activeSectionIndex}
+        data-ready={String(clientsReady)}
+      />
+    ) : null,
 }));
 
 import TTSControl from '@/app/reader/components/tts/TTSControl';
@@ -122,10 +130,11 @@ describe('TTSControl', () => {
     Object.assign(ttsState, { showIndicator: true, ttsClientsInited: false });
     render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
     expect(screen.getByTestId('mini-player')).toBeTruthy();
-    // Expanding needs initialized clients; taps are ignored until then.
+    // The full player opens whenever the mini player shows, even while the
+    // clients initialize (it fills in once they are ready).
     fireEvent.click(screen.getByTestId('mini-player'));
-    expect(screen.queryByTestId('player-sheet')).toBeNull();
-    expect(screen.getByTestId('mini-player')).toBeTruthy();
+    expect(screen.getByTestId('player-sheet').getAttribute('data-ready')).toBe('false');
+    expect(screen.queryByTestId('mini-player')).toBeNull();
   });
 
   test('shows loading throughout initialization, then follows audio buffering', () => {

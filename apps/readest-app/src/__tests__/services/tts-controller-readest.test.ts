@@ -15,6 +15,8 @@ const h = vi.hoisted(() => ({
   warmup: vi.fn(),
   store: { get: async () => null, put: async () => {} },
   readestInit: true,
+  // The Readest server never answers (init and voice list hang).
+  readestHang: false,
   readestVoices: [] as TTSVoice[],
 }));
 
@@ -95,11 +97,12 @@ vi.mock('@/services/tts/BufferedTTSClient', () => ({
     (this['init'] as ReturnType<typeof vi.fn>).mockImplementation(async function (this: {
       initialized: boolean;
     }) {
+      if (h.readestHang) return new Promise<boolean>(() => {});
       this.initialized = h.readestInit;
       return h.readestInit;
     });
-    (this['getAllVoices'] as ReturnType<typeof vi.fn>).mockImplementation(
-      async () => h.readestVoices,
+    (this['getAllVoices'] as ReturnType<typeof vi.fn>).mockImplementation(() =>
+      h.readestHang ? new Promise(() => {}) : Promise.resolve(h.readestVoices),
     );
     h.readestClient = this;
   }),
@@ -173,6 +176,25 @@ describe('construction', () => {
 });
 
 describe('init', () => {
+  test('an engine that never answers does not hold up init or the other engines', async () => {
+    vi.useFakeTimers();
+    h.readestHang = true;
+    try {
+      vi.mocked(TTSUtils.getPreferredClient).mockReturnValue('readest-tts');
+      let done = false;
+      void controller.init().then(() => (done = true));
+      await vi.advanceTimersByTimeAsync(14_000);
+      expect(done).toBe(false);
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(done).toBe(true);
+      // Readest Voice is unavailable this session; Edge reads.
+      expect(controller.ttsClient.name).toBe('edge-tts');
+    } finally {
+      h.readestHang = false;
+      vi.useRealTimers();
+    }
+  });
+
   test('Readest Voice is available but Edge stays the default engine', async () => {
     await controller.init();
     expect(readest().init).toHaveBeenCalled();

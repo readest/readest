@@ -93,6 +93,8 @@ type TTSPlayerSheetProps = {
   onToggleLoop: () => void;
   onGetLyricLoopRange: () => { start: number; end: number } | null;
   onSetRate: (rate: number) => void;
+  // The TTS clients finished initializing: until then there are no voices.
+  clientsReady: boolean;
   onGetVoices: (lang: string) => Promise<TTSVoicesGroup[]>;
   onSetVoice: (voice: string, lang: string) => void;
   onGetVoiceId: () => string;
@@ -134,6 +136,7 @@ const TTSPlayerSheet = ({
   onToggleLoop,
   onGetLyricLoopRange,
   onSetRate,
+  clientsReady,
   onGetVoices,
   onSetVoice,
   onGetVoiceId,
@@ -241,6 +244,13 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Opened while the clients initialized: pick up the voice once they are
+  // ready, without leaving the view the user is on.
+  useEffect(() => {
+    if (isOpen && clientsReady) setSelectedVoice(onGetVoiceId());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientsReady]);
+
   useEffect(() => {
     if (!isOpen) return;
     const fetchVoices = async () => {
@@ -260,7 +270,7 @@ const TTSPlayerSheet = ({
     };
     fetchVoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, ttsLang]);
+  }, [isOpen, ttsLang, clientsReady]);
 
   const handleSelectRate = (value: number) => {
     setRate(value);

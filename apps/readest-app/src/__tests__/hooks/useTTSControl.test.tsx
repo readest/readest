@@ -414,6 +414,44 @@ describe('useTTSControl concurrent tts-speak events', () => {
   });
 });
 
+describe('useTTSControl stopping while a start is still initializing', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('turning read aloud off cancels the start, and turning it on again works', async () => {
+    render(<Harness />);
+    await act(async () => {
+      const first = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      expect(ttsControllerInstances).toHaveLength(1);
+
+      // The engines are slow to initialize; the user turns read aloud off.
+      await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
+      // ...and on again, without a reload.
+      const second = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      expect(ttsControllerInstances).toHaveLength(2);
+
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await Promise.all([first, second]);
+    });
+    const [stale, live] = ttsControllerInstances as Array<{
+      speak: ReturnType<typeof vi.fn>;
+      shutdown: ReturnType<typeof vi.fn>;
+    }>;
+    // The cancelled start never speaks over the new session.
+    expect(stale!.speak).not.toHaveBeenCalled();
+    expect(stale!.shutdown).toHaveBeenCalled();
+    expect(live!.speak).toHaveBeenCalled();
+  });
+});
+
 // Reading a selection aloud has to mean different things for the two kinds of
 // engine: a synthesizer can render the selected words, a recording only has the
 // clips the publisher timed. Handing raw text to the narration client ended the
